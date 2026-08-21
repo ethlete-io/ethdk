@@ -27,9 +27,9 @@ Fable for batch design, synthesis and cross-checks.
 | 10 | stream | 6.9k | opus | done — 4 high / 10 medium / 15 low |
 | 11 | bracket | 7.9k | opus | done — 3 high / 8 medium / 12 low |
 | 12 | scheduler | 5.4k | opus | done — 3 high / 8 medium / 12 low |
-| 13 | grid + masonry | 4.5k | opus | pending |
-| 14 | menu + command-palette + toggletip + tooltip | 5.5k | opus | pending |
-| 15 | carousel + scrollable + scrollbar | 5.2k | opus | pending |
+| 13 | grid + masonry | 4.5k | opus | done — 5 high / 8 medium / 15 low |
+| 14 | menu + command-palette + toggletip + tooltip | 5.5k | opus | done — 4 high / 9 medium / 10 low |
+| 15 | carousel + scrollable + scrollbar | 5.2k | opus | done — 5 high / 8 medium / 20 low |
 | 16 | calendar + time-picker | 4.0k | opus | pending |
 | 17 | notification + tabs + accordion + tree | 5.6k | opus | pending |
 | 18 | match + standings | 2.6k | sonnet | pending |
@@ -3112,5 +3112,1288 @@ The `DATE_FORMAT` round-trip in the time-range field is lossless (ISO with time 
 the standard `defineLabels`/`toProvideFn` shape with `@__PURE__` annotations. The three view
 directives' `ngDevMode`-gated `afterNextRender` misplacement checks, the five error codes, and the
 feature-host injection helpers are all consistent with the rest of the lib.
+
+---
+
+## Batch 14 — menu / command-palette / toggletip / tooltip
+
+Scope reviewed: every non-spec `.ts` / `.html` / `.css` under
+`libs/components/src/lib/{menu,command-palette,toggletip,tooltip}` (incl. `headless/`,
+`headless/internals/`, `stories/`), every spec in those folders, and
+`apps/docs/components/{menu,command-palette,toggletip,tooltip}.md` plus the relevant rows of
+`apps/docs/components/error-codes.md`.
+
+Runtime verification used two throwaway specs
+(`libs/components/src/lib/menu/__scan-verify.spec.ts`,
+`libs/components/src/lib/command-palette/__scan-verify.spec.ts`), run with
+`NX_NO_CLOUD=true npx vitest run --root libs/components <path>`; both were **deleted** afterwards.
+No source file was modified.
+
+---
+
+## menu / command-palette / toggletip / tooltip
+
+### High
+
+- **The command palette closes on the first `Escape` even when the query is non-empty, so the documented "clear first, close second" never happens.**
+  `command-palette-search.directive.ts:80-85` tries to swallow the key with a bubble-phase handler
+  (`event.preventDefault(); event.stopPropagation();`) on the input, but the overlay registers its
+  escape handler on the **document in capture phase** and checks neither `defaultPrevented` nor the
+  event target: `libs/core/src/lib/overlay/overlay-runtime.ts:363-381`
+  (`targetDocument.addEventListener('keydown', onKeyDown, true)` →
+  `overlayRef.close(undefined, 'escape')`). The capture listener therefore runs *before* the input's
+  handler. `command-palette.directive.ts` never opts out — `command-palette.overlay.ts:8-15` leaves
+  `closeOnEscape` at its default `true`. `apps/docs/components/command-palette.md:202` promises
+  "`Escape` | Clears the query, **or** closes the palette when the query is already empty."
+  The menu gets this right by contrast: `menu.directive.ts:637` sets `closeOnEscape: false` and
+  `menu.directive.ts:754-764` uses a bubble-phase document listener that skips
+  `event.defaultPrevented`.
+  *Runtime verified* — real overlay-mounted palette, query `"add"`, one `Escape` on the input:
+  `[VERIFY palette esc] query after Escape = "" | overlay closed = true`. Both happened at once.
+  Note `command-palette.component.spec.ts:188` ("clears the query on Escape instead of leaving it")
+  passes only because it mounts the component directly, with no overlay runtime attached — the spec
+  asserts a behaviour that does not hold in the only supported usage (`injectCommandPalette().open()`).
+
+- **`etToggletipTrigger` overwrites the consumer's `etToggletipDisabled`, so a toggletip explicitly marked disabled still opens.**
+  `toggletip-trigger.directive.ts:32-38` runs `setInputSignal(toggletip.disabled, button.isInactive())`
+  on every change of the button's inactive state — including its first run, where `isInactive()` is
+  `false`. The write is a blanket assignment, not a merge, so the value the consumer bound is lost.
+  `toggletip-trigger.directive.ts:75` does the same again on destroy.
+  *Runtime verified* — `<button [etToggletip]="'Hi'" [etToggletipDisabled]="true" etButton etToggletipTrigger>`:
+  `[VERIFY toggletip trigger] etToggletipDisabled=true -> disabled() = false` and
+  `[VERIFY toggletip trigger] opened anyway = true`. `apps/docs/components/toggletip.md:37,51`
+  documents both `etToggletipDisabled` and the trigger's disable coupling as if they compose.
+
+- **`[etTooltip]` destroys any `aria-describedby` already on its host element.**
+  `tooltip.directive.ts:294-296` (`syncHostDescription`) calls
+  `renderer.setAttribute(hostElement, 'aria-describedby', descriptionId)` unconditionally, from the
+  constructor effect (`tooltip.directive.ts:92-102`), on every show
+  (`tooltip.directive.ts:181`) and on every close (`:193`). A field that already points at its own
+  help text or error line loses that reference the moment a tooltip is attached, and the
+  `destroyRef.onDestroy` at `:115-118` sets it to `null` rather than restoring the original.
+  *Runtime verified* — `<button [etTooltip]="…" aria-describedby="consumer-hint">` right after the
+  first CD: `[VERIFY tooltip] aria-describedby after init = et-tooltip-description-1`. The
+  consumer's id is gone before any interaction. (ARIA allows a space-separated list here, which is
+  what the correct fix looks like.)
+
+- **`autoFocus` does nothing when a menu is opened programmatically, leaving an open menu with no keyboard entry point — the opposite of what the docs say.**
+  `menu.directive.ts:687-690`: `applyInitialFocus()` returns early when
+  `this.openSource === 'hover' || this.openSource === 'api'`, and `openSource` is `'api'` for both
+  `show()` (default parameter, `:192`) and any write to the `open` model (the mount effect at
+  `:151-157` never sets a source). Nothing is focused, so the roving tabindex has no anchor
+  (`activeItem()` stays `null`) and every arrow/Enter/Escape key the menu handles is unreachable —
+  `handleKeydown` only fires from the panel, an item, or the search input, none of which have focus.
+  `apps/docs/components/menu.md:143` documents `autoFocus` / default `true` as "Focus the panel/first
+  item on open" with no exception, and `:144` lists `show()` alongside `[(open)]` as the way to open.
+  *Runtime verified* — `menu.show()` with `autoFocus() === true`:
+  `[VERIFY menu api-open] activeElement = BODY`, `[VERIFY menu api-open] activeItem = null`
+  (the click path, covered by `menu.directive.spec.ts:132`, does focus the first item).
+
+### Medium
+
+- **A tooltip or toggletip whose content changes while it is open keeps rendering the old content, and keeps the old accessible name.**
+  Both directives capture the content in a local and bind that local rather than the signal:
+  `toggletip.directive.ts:163,186` (`mountToggletip(content)` → `inputBinding('content', () => content)`)
+  and `tooltip.directive.ts:126,153` (same shape). The mount effect at
+  `toggletip.directive.ts:104-122` does nothing when the overlay already exists and the content is
+  merely different, so nothing re-renders. `toggletip.directive.ts:191-193` has the same problem one
+  level worse: `ariaLabel`, `ariaLabelledBy` and `ariaDescribedBy` are read once into the
+  `OverlayConfig` and can never be refreshed.
+  *Runtime verified* — toggletip open, `text.set('Second content')`:
+  `before = "First content"` / `after = "First content"` / `ariaLabel config = First content`.
+  Same for the tooltip: `panel before = "First tip"` / `panel after = "First tip"`. A tooltip over a
+  live value ("Last saved 5 minutes ago", the very example in `tooltip.md:14`) silently goes stale.
+
+- **The palette's search field claims `aria-expanded="true"` and points `aria-controls` at an element that is not in the document whenever the query matches nothing.**
+  `command-palette-search.directive.ts:22` hardcodes `'aria-expanded': 'true'` as a static host
+  attribute and `:23` binds `aria-controls` to `palette.listboxId` unconditionally, but
+  `command-palette.component.html:7-23` only renders the `role="listbox"` element inside
+  `@if (resultGroups.length)` — the empty state replaces it with a `<p>`. A combobox pointing at a
+  missing id with `aria-expanded="true"` is exactly the state screen readers report as a broken
+  popup.
+  *Runtime verified* — one registered command, then typing `zzzzz`:
+  `aria-expanded = true | aria-controls = et-command-palette-list-0 | listbox present = false | resolves = false`.
+
+- **A hover-shown tooltip cannot be dismissed with `Escape`, because the only Escape handler is a host listener that needs the trigger focused.**
+  `tooltip.directive.ts:40-42` is the whole mechanism: `host: { '(keydown.escape)': 'hide()' }`.
+  Hover does not move focus (that is the design — `setupHoverBehavior`, `:203-240`, never focuses
+  anything), so `document.activeElement` is elsewhere and the keydown never reaches the host. There
+  is no document-level fallback, unlike the menu (`menu.directive.ts:754-764`) or the toggletip
+  (which gets it from the overlay's `closeOnEscape: true`, `toggletip.directive.ts:198`).
+  `apps/docs/components/tooltip.md:37` states unconditionally "Hides when neither hover nor focus
+  remains, **or on Escape**", and `:75` repeats it in the comparison table. WCAG 2.1 SC 1.4.13
+  (Content on Hover or Focus) requires the dismiss mechanism to work without moving the pointer or
+  focus. *Code-verified only* (needs a real hover to reproduce end-to-end).
+
+- **`closeOnActivate="false"` is silently ignored on a selection item activated with `Enter`.**
+  `menu-selection-item.directive.ts:153-156` closes the tree from `handleActivation` whenever
+  `event.source === 'keyboard-enter'`, without consulting the item's `closeOnActivate`. Because
+  `handleActivation` is driven by the `activate` output (`:79-84`) it runs synchronously inside
+  `menuItem.activate.emit()` at `menu-item.directive.ts:163` — i.e. *before* the honest check at
+  `menu-item.directive.ts:165` (`this.closeOnActivate() ?? this.defaultCloseOnActivate`) is even
+  reached. So on a `<et-menu-checkbox-item [closeOnActivate]="false">` pointer clicks and `Space`
+  keep the menu open as documented, but `Enter` closes it anyway. `closeOnActivate` is forwarded by
+  both selection components (`menu-checkbox-item.component.ts:16`,
+  `menu-radio-item.component.ts:16`) and documented as an item-level input in `menu.md:45`.
+  *Code-verified only.*
+
+- **The menu panel is a `role="menu"` whose `menuitem` children are three generic elements deep, and which also owns a textbox and a decorative scrollbar element.**
+  `role="menu"` sits on `.et-menu` via the `MenuPanelDirective` host directive
+  (`menu.component.ts:23`, `menu-panel.directive.ts:10`), but `menu.component.html` puts the items
+  under `.et-menu-body-wrapper` → `.et-menu-body` → `.et-menu-body-content`
+  (`menu.component.html:17-21`), and gives the same `role="menu"` two more children with no menu
+  role: `.et-menu-header` containing `input[etMenuSearch]` (`:1-15`) and `<et-scrollbar>` (`:24`),
+  which carries no `aria-hidden` (`scrollbar.component.ts:35-37`,
+  `scrollbar/headless/scrollbar.directive.ts:67-69`). None of the wrappers carries
+  `role="presentation"`/`role="none"`. WAI-ARIA requires a `menu` to own only
+  `menuitem`/`menuitemradio`/`menuitemcheckbox`/`group`/`separator`, and a `textbox` is not among
+  them — which is why the APG's searchable variant is a `combobox`, the shape the command palette
+  itself uses (`command-palette-search.directive.ts:20-24`). `menu.md:172` claims "Full
+  menu-pattern semantics are emitted automatically". *Code-verified only* (AT behaviour, not
+  reproducible in jsdom).
+
+- **`[etToggletip]` on a non-interactive element produces an `aria-haspopup="dialog"` popup nobody can open with a keyboard, with no dev-mode error.**
+  `toggletip.directive.ts:31-38` binds `(click)`, `aria-expanded`, `aria-haspopup` and
+  `aria-controls` on whatever host it is placed on, and adds neither `tabindex` nor a role. Only the
+  separate `etToggletipTrigger` enforces a button (`toggletip-trigger.directive.ts:50-58`,
+  `ET1501`), and `TOGGLETIP_IMPORTS` exports `ToggletipDirective` on its own
+  (`toggletip.imports.ts:4-9`). A `<div [etToggletip]="…">` is a mouse-only dialog trigger that
+  still advertises itself to assistive technology. The tooltip has the mirror-image gap: it listens
+  for `focus` on the host (`tooltip.directive.ts:268`), which does not bubble, so `[etTooltip]` on a
+  wrapper around a focusable child never shows on keyboard focus. *Code-verified only.*
+
+- **The palette's global chord opens a second palette when one is already open from `injectCommandPalette().open()`.**
+  `command-palette-shortcut.directive.ts:86-105` toggles against its own `openRef` only. A palette
+  opened by a button handler (the documented alternative, `command-palette.md:146-154`) is invisible
+  to it, so `mod+k` mounts a second `COMMAND_PALETTE_OVERLAY` on top of the first. The `preventDefault()`
+  at `:78` fires unconditionally too, so the chord is swallowed from inside any other overlay as
+  well. `command-palette.md:120` says the directive "opens the palette on a key chord, and closes it
+  again on the same chord" without qualification. *Code-verified only.*
+
+- **Every `[etTooltip]` with string content appends a hidden `<div>` to `document.body` before any interaction, and one per instance.**
+  `tooltip.directive.ts:92-102` runs `syncDescriptionElement` from a constructor effect, and
+  `:298-327` appends the element to `document.body` on first run. A table with 200 tooltipped cells
+  puts 200 permanently-mounted nodes in `body` for descriptions no reader has asked for; the
+  live tooltip already carries `role="tooltip"` and its own id (`tooltip.component.ts:13-18`), which
+  is what `:181` switches `aria-describedby` to while shown.
+  *Runtime verified* — one tooltip directive, no hover, no focus:
+  `[VERIFY tooltip] hidden description divs in body = 1`.
+
+- **`MenuSelectionGroupDirective` never re-syncs when `multiple` changes, so a group that flips modes at runtime keeps stale checked states.**
+  `menu-selection-group.directive.ts:42-61`: the effect tracks `value()` and `items()` but reads
+  `this.multiple()` inside the `untracked` block at `:52-53`. Flipping `[multiple]` while the value
+  stays put leaves every item's `checked` as the old mode computed it — a single-select group turned
+  multiple keeps exactly one item checked even though `value` is now read as an array (and vice
+  versa: an array value under `multiple === false` matches nothing, so everything unchecks only on
+  the next `value` write). `multiple` is a documented public input (`menu.md:104`). *Code-verified only.*
+
+### Low
+
+- **The `Escape` behaviour claimed for the palette's search field is unreachable dead code.**
+  `command-palette-search.directive.ts:79-85` — the comment ("Escape clears a query before it closes
+  the palette, so one key both undoes a search and leaves"), the `preventDefault`, the
+  `stopPropagation` and the manual `element.value = ''` all exist to beat a listener that has
+  already run. See the first High finding.
+
+- **`ToggletipDirective.isOpen()/controls()/expanded()/popupRole()` and `ToggletipTriggerDirective.isOpen()/pressedVariant()` are `public` but exist only to back host bindings.**
+  `toggletip.directive.ts:147-161`, `toggletip-trigger.directive.ts:81-92`. Compare
+  `MenuTriggerDirective`, which correctly marks the equivalents `protected`
+  (`menu-trigger.directive.ts:63-73`) and keeps only `isOpen()` public. They are also plain methods
+  rather than `computed`, so `pressedVariant()` does a `getAttribute('data-variant')` DOM read on
+  every change detection pass (`toggletip-trigger.directive.ts:90`), reading an attribute another
+  directive's host binding owns.
+
+- **`tooltip.showDelay` is the only delay input in the batch without a `numberAttribute` transform.**
+  `tooltip.directive.ts:66` vs. `menu.directive.ts:88-89` (`hoverOpenDelay`, `hoverCloseDelay`, both
+  transformed). Inconsistent, and it makes the static-attribute form (`showDelay="500"`) a template
+  type error where the menu's equivalent is fine.
+
+- **Two group headings whose labels differ only in punctuation collide on one DOM id.**
+  `command-palette.component.ts:57-59`: `label.toLowerCase().replace(/[^a-z0-9]+/g, '-')` maps
+  `"Rows!"` and `"Rows?"` to the same string, so `aria-labelledby`
+  (`command-palette.component.html:14`) points two `role="group"`s at one heading. The palette
+  already solves this correctly for rows by handing out ids **by position**
+  (`command-palette.directive.ts:78-84`, with a comment explaining exactly why).
+
+- **The ungrouped bucket renders a nameless `role="group"`.**
+  `command-palette.component.html:14` emits `<div role="group">` for every group, but the ungrouped
+  bucket has `label === null` (`rank-commands.ts:128`), so `aria-labelledby` binds `null` and the
+  group has no accessible name. Wrapping only the labelled buckets would be equivalent and quieter.
+
+- **The palette's result list is labelled with the search field's own name.**
+  `command-palette.component.html:2,8` put `labels().searchLabel` on both the `combobox` and the
+  `listbox`, so a reader hears "Search for a command" twice. `command-palette.md:180` documents this
+  as intentional ("Accessible name of the field **and the list**"), but a list of commands is not a
+  search field — a separate `listLabel` label would read better.
+
+- **`error-codes.md:461` describes `ET4801` as checked "when the directive is created".**
+  It is checked in `afterNextRender`, exactly like `ET4800` —
+  `command-palette-shortcut.directive.ts:60-72`, with a comment saying why
+  ("so the chord checked is the one the consumer wrote and not the default").
+
+- **Two positional selectors couple the tooltip and toggletip stylesheets to the overlay's internal child order.**
+  `tooltip.component.css:45` and `toggletip.component.css:38`
+  (`.et-overlay--tooltip > :nth-child(2)`). Any change to what the overlay runtime stamps into a pane
+  before the content silently retargets these rules; a class or `[data-*]` hook on the pane's content
+  wrapper would survive.
+
+- **`--et-command-palette-item-padding-inline` is registered in the item stylesheet but consumed in the palette stylesheet.**
+  `@property` in `command-palette-item.component.css:8-12`, used by `.et-command-palette-group-label`
+  in `command-palette.component.css:79`. A palette that renders no item never registers the
+  property, so the heading's `padding-inline` resolves to the guaranteed-invalid value. Harmless
+  today (no headings without items) but the wrong file.
+
+- **Comment-policy: a handful of comments restate the code or narrate a mechanical choice.**
+  `menu-item-submenu-icon.component.ts:6-14` (a four-line class JSDoc on an `@internal` component
+  that explains the file layout), `command-palette-item.component.ts:42-43` ("Optional call: the test
+  environment's DOM has no `scrollIntoView`" — narrating a test-env workaround at a call site),
+  `command-palette-item.component.html:11-12`. `menu.directive.ts:250` ("already mounted (or still
+  closing) …") and the `runs[i][j]` block in `fuzzy-match.ts:84-92` are the good kind and should stay
+  — they name invariants a future edit would break.
+
+### Spec coverage
+
+**Well covered.**
+- `menu/headless/menu.directive.spec.ts` (435 lines) is the strongest suite in the batch: open/close
+  semantics, roving focus in DOM order incl. late-registered items, disabled skipping, `loop` off,
+  submenu open/close with focus restoration, Enter/Space activation, `closeOnActivate`, outside
+  pointerdown vs. pointerdown inside a pane, per-level Escape, Tab, typeahead, and a `hover intent`
+  block with fake timers.
+- `menu/headless/menu-search.directive.spec.ts` — query model, Escape-clears-first, the input as an
+  arrow-key cycle stop, focus retained while the pointer crosses items, `aria-busy`, the error
+  element wiring, printable-key forwarding.
+- `menu/headless/menu-selection-group.directive.spec.ts` + `menu/menu-selection-groups.component.spec.ts`
+  — single/multi selection, Enter-closes vs. Space-keeps-open, external value writes, standalone
+  items, the icon variant, `formField` integration both directions.
+- `command-palette/headless/internals/fuzzy-match.spec.ts` (20 cases) and `rank-commands.spec.ts`
+  (18 cases) pin the ranking properties, not just examples — "matches every query character exactly
+  once", "ranges ascending and non-overlapping", "the whole label across the segments".
+- `command-palette/command-palette-registry.spec.ts` covers registration lifetime, signal sources,
+  id collisions, double-destroy and `clear()`.
+
+**Real logic with zero tests.**
+- `command-palette-shortcut.directive.ts` (106 lines) — no spec at all. Neither chord matching, the
+  bare-attribute transform at `:54`, the `ET4801` guard, nor `toggle()`'s ref tracking (the
+  double-open Medium above) is exercised.
+- `menu/headless/menu-context-trigger.directive.spec.ts` covers opening and repositioning but never
+  the document-level listener's attach/detach cycle (`:81-108`) — the one place a listener could
+  outlive its menu.
+- `menu.component.ts` — the search spinner's deferred-loading gate (`:46`), the error-id effect
+  (`:65-67`) and `injectAnimatedBlockSize` (`:71-74`) have no direct spec; only the
+  directive-level `aria-busy`/`aria-describedby` are asserted, from the search spec.
+- `menu-item.component.ts` — the `destructive` variant's forced error theme (`:43-55`) and the
+  static `isSubmenuTrigger` chevron (`:40`) are untested.
+- `tooltip/headless/tooltip.directive.spec.ts` (81 lines, 4 cases) tests only the description element,
+  the describedby swap and the two guards. Untested: the whole hover pipeline with `showDelay`
+  (`:203-240`), `pointerType === 'touch'` exclusion, the focus-visible gate (`:265-292`), and
+  `dismissOnOutsidePointer` (`:247-263`).
+- `toggletip/headless/toggletip.directive.spec.ts` (83 lines, 4 cases) never exercises the `(click)`
+  toggle, `[(etToggletipOpen)]`, outside-click/Escape dismissal, focus restore, or
+  `ToggletipCloseDirective` (13 lines, zero tests).
+- `command-palette-item.component.ts`'s `afterRenderEffect` scroll-into-view (`:41-47`) and
+  `command-palette-labels.ts`'s locale selection are untested.
+
+**A spec that asserts the wrong thing.**
+- `command-palette/command-palette.component.spec.ts:188` — "clears the query on Escape instead of
+  leaving it". It mounts `CommandPaletteComponent` directly, with no overlay runtime, so the
+  document-capture escape listener that actually wins in production is absent. The spec is green and
+  the documented behaviour is broken (first High finding). Any fix must run the assertion through
+  `injectCommandPalette().open()`, not the bare component.
+
+---
+
+### Improvements
+
+#### Features (ranked)
+
+- **Give the menu a virtualized / paged long-list mode, or at least an `activeItem`-driven scroll anchor.**
+  `menu.directive.ts:557-612` walks `enabledItems()` linearly and `menu-item.directive.ts:124-129`
+  scrolls each into view; a 500-row "assign to player" menu (the shape
+  `menu-search-async-storybook.component.ts` demonstrates) renders every row. Material's
+  `mat-select` and Ark UI's combobox both pair the panel with a virtual scroller.
+
+- **Add `MenuDirective.openAt` support for the `contextmenu` key and long-press.**
+  `menu-context-trigger.directive.ts:69-79` only listens for `contextmenu` from a mouse. The
+  keyboard `ContextMenu`/`Shift+F10` key does fire `contextmenu` in browsers, but with
+  `clientX/clientY` at 0 (or the element centre), so the menu lands in the viewport corner. Falling
+  back to the focused element's rect when the event has no usable coordinates would make context
+  menus keyboard-reachable, which they currently are not.
+
+- **Let the command palette nest: sub-command modes ("go to file →", "change theme →").**
+  `command-palette.directive.ts` has exactly one `query` and one flat `results`; every real palette
+  (VS Code, Linear, Raycast) supports a command that swaps the list for its own arguments. The
+  registry already keys by id (`command-palette-registry.ts:30-40`), so a `parent?: string` on
+  `CommandPaletteCommand` plus a `mode` signal would be a small addition to a type that already has
+  ten fields.
+
+- **Add recency/frecency ordering to the palette.** `rank-commands.ts:90-101` breaks score ties by
+  `priority`, label length, then alphabetically — deterministic but blind to what the reader actually
+  runs. A `lastRun` timestamp kept by the registry and folded into the tie-break is the single
+  highest-value ranking change; every peer palette does it.
+
+- **Ship a `menu-item` loading/busy state.** `menu.component.ts` already knows about deferred
+  loading for the search spinner (`:46`), but an item that kicks off async work has nowhere to show
+  it — consumers currently disable the row, which also removes it from the roving focus order
+  (`menu.directive.ts:121`).
+
+#### DX (ranked)
+
+- **`MenuDirective.show()` should focus by default, or take focus as an explicit option.**
+  `show(source: MenuOpenSource = 'api', initialFocus: 'first' | 'last' = 'first')` overloads a
+  *provenance* parameter with a *behaviour* decision — `applyInitialFocus` (`:687-690`) reads
+  `openSource` to decide whether to focus at all, so the only way to open programmatically *and*
+  focus is `show('keyboard')`, which is a lie about where the gesture came from. `show({ focus: true })`
+  or a separate `focusOnOpen` argument would say what it means; either way the `autoFocus` docs
+  (`menu.md:143`) need the caveat.
+
+- **Make the toggletip/tooltip content bindings reactive instead of snapshots.**
+  Replacing `inputBinding('content', () => content)` with
+  `inputBinding('content', () => this.content())` in `toggletip.directive.ts:186` /
+  `tooltip.directive.ts:153` is a one-line fix each and removes a whole class of "why didn't it
+  update" reports. The aria fields (`toggletip.directive.ts:191-193`) need the overlay to accept
+  signals or a post-mount setter, which is the larger part of the work.
+
+- **Give the tooltip/toggletip a shared `[etTooltipOpen]`-style model.**
+  The toggletip has `open` as a two-way model (`toggletip.directive.ts:62`); the tooltip has only
+  `show()`/`hide()` and an internal `overlayRef` signal (`:70`). Sibling components with the same job
+  should expose the same surface — a consumer wiring a tour or an onboarding hint has to reach for
+  the imperative API on one and the declarative one on the other.
+
+- **Reuse `lib/testing/driver-core.ts` in these specs instead of re-declaring its helpers.**
+  `menu/headless/menu.directive.spec.ts:57-69` hand-rolls `keydown`, `pointerdown`, `pointerenter`
+  and `flushFrames`; `driver-core.ts` already exports `flushFrames`, `latestPane`,
+  `pointerDownOutside`, `pressKey`, `resetOverlays` and `tick`, and
+  `overlay-control-driver.ts` wraps the two-frame open/close dance jsdom needs. Every spec in the
+  batch pays for its own copy.
+
+- **`ET1303` covers two unrelated misuses.** `menu-errors.ts:1303` is thrown both for "item outside
+  a menu surface" (`menu-item.directive.ts:109`) and "selection item without `etMenuItem` on the
+  same element" (`menu-selection-item.directive.ts:97`). `error-codes.md:178` has to describe both in
+  one row. The 13xx range has plenty of room for a second code.
+
+#### Bundle size (ranked)
+
+- **Split `menu.component.css` (411 lines): the search header is a minority feature.**
+  Lines 173-229 (header, search field, spinner slot, error line) plus the `--et-menu-search-height`
+  property serve only a menu with `input[etMenuSearch]`, and lines 86-118 + 251-271 (the
+  `@property`/`@keyframes`/mask block for the scroll fade) only a menu long enough to scroll. Both
+  are exactly the "opt-in feature" case AGENTS.md describes: a styles-only component mounted from
+  `MenuSearchDirective` via `injectStyleManager().mount(...)`, like
+  `etTableVirtualScroll → TableVirtualScrollStylesComponent`.
+
+- **`MenuComponent` eagerly imports `ScrollbarComponent` and `SpinnerComponent` for features most menus never use.**
+  `menu.component.ts:11-12,22` — `<et-scrollbar>` is unconditional in the template
+  (`menu.component.html:24`) and `<et-spinner>` only ever renders behind
+  `@if (showSearchSpinner())` (`:5-7`). Both references are static, so both components and their
+  stylesheets land in any bundle that imports a menu. The spinner is the easy win (move the header
+  into a component the search directive pulls in); the scrollbar needs the panel to decide at runtime
+  whether it scrolls.
+
+- **`tooltip.component.css` (183 lines) and `toggletip.component.css` (205 lines) are near-duplicates.**
+  The surface tokens (`--_et-*-background/color/border/shadow/radius/max-width`), the
+  `> :nth-child(2)` fix, and all five animation blocks (enter/leave × four placements +
+  `prefers-reduced-motion`) differ only in the class prefix and two timing values. An
+  `et-floating-panel` base stylesheet both opt into, with per-component overrides, would remove ~150
+  duplicated lines — and the menu's animation block (`menu.component.css:344-410`) is a third copy
+  of the same structure.
+
+- **`CommandPaletteItemComponent` pulls in `KbdComponent` for a field most commands omit.**
+  `command-palette-item.component.ts:16` imports it statically for
+  `@if (currentCommand.shortcut)` (`command-palette-item.component.html:27-29`). `shortcut` is
+  documented as display-only and optional (`command-palette.md:92`), so the common palette pays for
+  the keycap renderer and its stylesheet unconditionally.
+
+#### UI/UX (ranked)
+
+- **Nothing about the menu is reachable by keyboard after a programmatic open** — see the High
+  finding. Even with `autoFocus` deliberately off, the panel should stay focusable enough that
+  `Tab` lands somewhere sensible; today `activeItem()` is `null` and the first enabled item quietly
+  holds `tabindex="0"` (`menu-item.directive.ts:69-83`) inside a pane appended at the end of `body`.
+
+- **The tooltip is not hoverable, so the pointer cannot travel to it.**
+  `tooltip.component.css:40,62` set `pointer-events: none` on both the pane and the surface, and
+  `setupHoverBehavior` (`tooltip.directive.ts:228-239`) hides on `pointerleave` of the trigger. With
+  `offset: 8` there is also a gap to cross. WCAG 1.4.13 requires hover content to remain visible
+  while the pointer is over it — a "safe polygon" between trigger and panel (what Floating UI ships
+  as `safePolygon`) plus dropping `pointer-events: none` is the standard fix, and it is what makes a
+  tooltip with a link inside usable at all.
+
+- **`hoverOpenDelay`/`hoverCloseDelay` are wall-clock only; there is no pointer-path intent.**
+  `menu-hover-intent.ts` is a pair of timers. Crossing a sibling row on the way to a submenu still
+  cancels the open (`menu.directive.ts:536,545`) and starts a 300ms close, which is the diagonal-travel
+  problem every nested menu has. Tracking the pointer's direction — or the same safe-polygon trick —
+  would make deep submenus feel intentional rather than twitchy.
+
+- **A palette row's `mouseenter` steals the active row from the keyboard.**
+  `command-palette-item.component.ts:27` (`(mouseenter)': 'palette.setActive(result())'`) fires
+  whenever the list scrolls under a stationary pointer, because `afterRenderEffect` at `:41-47`
+  scrolls the active row into view — arrow-keying past a row that happens to land under the cursor
+  hands the highlight straight back. The usual guard is to ignore `mouseenter` until a real
+  `mousemove` has been seen. The menu has the equivalent problem handled well
+  (`menu.directive.ts:462-474`) and its reasoning is worth copying.
+
+- **The palette's empty state is a bare centred sentence.**
+  `command-palette.component.html:21-23`. `empty-state.md` exists as a domain in this library; a
+  palette that found nothing is precisely where it belongs, and `noCommands` (nothing registered at
+  all) deserves different treatment from `empty` (nothing matched) beyond a different string.
+
+- **Nothing in the batch reflects `prefers-reduced-motion` for the *content* transitions.**
+  All four stylesheets guard their overlay enter/leave (`menu.component.css:393`,
+  `tooltip.component.css:165`, `toggletip.component.css:187`), and
+  `menu-selection-item.component.css:82-86` guards the check mark. But
+  `menu.component.css:296-299` (item background/colour/opacity, 120ms) and the whole
+  `et-menu--resizing` block-size animation (`:163-171`, driven by `injectAnimatedBlockSize`) keep
+  animating.
+
+#### Testing (ranked)
+
+- **First: an overlay-mounted palette spec.** The Escape bug, the `aria-controls`/`aria-expanded`
+  mismatch and the double-open are all invisible to a bare-component fixture. One `describe` that
+  opens through `injectCommandPalette()` — the way `command-palette/__scan-verify.spec.ts` did during
+  this review — would have caught all three, and `overlay-control-driver.ts` already has the
+  open/close plumbing.
+
+- **Second: a hover/focus timeline spec for the tooltip.** `showDelay`, the `pointerType === 'touch'`
+  exclusion, the focus-visible gate and `dismissOnOutsidePointer` are the whole point of the
+  directive and none is tested. It needs `vi.useFakeTimers()` for the RxJS `timer` — and note the
+  repo memory that fake timers never patch `window.setTimeout`, only the bare global.
+
+- **Third: `command-palette-shortcut.directive.ts` from scratch.** `matchesKbdChord` is tested in the
+  `kbd` domain, but the bare-attribute transform (`:54`), the `ET4801` guard and `toggle()`'s ref
+  tracking are not. A spec here is cheap: dispatch a `KeyboardEvent` at `document` and assert one
+  pane exists.
+
+- **Fourth: a menu a11y-shape assertion.** A single spec that walks the open pane and asserts every
+  child of `[role="menu"]` is an allowed owned role would have caught the header/scrollbar/wrapper
+  problem, and would keep catching it as the panel template grows.
+
+- **Fifth: `ToggletipCloseDirective` and `[(etToggletipOpen)]`.** Thirteen lines and a two-way model,
+  both documented (`toggletip.md:38,48`), neither exercised.
+
+---
+
+`Clean:` The ranking core is genuinely solid — `fuzzy-match.ts`'s DP table, its traceback and the
+`runs` third-state trade-off are correct and honestly documented, `rank-commands.ts` keeps the label
+whole across segments, and both are pinned by property-style specs. The command palette registry
+(`command-palette-registry.ts`) is leak-free: every `registerCommands` is tied to a `DestroyRef`,
+`destroy()` is idempotent, and the id-collision rule is specified and tested. Subscription hygiene
+across the batch is good — `menu.directive.ts`'s root document listeners are attached on mount,
+detached on close *and* on destroy, `MenuContextTriggerDirective` mirrors that for its reposition
+listener, `createMenuHoverIntent` cancels both timers on destroy, and the `MenuDirective` destroy
+hook also unhooks itself from its parent's `openSubmenu`. Every registration directive
+(trigger/surface/panel/search/item/selection item/group label) pairs its `set` with an
+identity-checked `unregister`, so a re-rendered piece cannot null out its replacement. All eight
+stylesheets are correctly wrapped in `@layer components`, use `:where()` for config modifiers while
+leaving interaction states bare, resolve every colour from `--et-surface-*` / `--et-theme-color-*`
+with static fallbacks only, and contain no Tailwind. Reactive-state conventions hold throughout:
+synchronous state is signals, the only RxJS is genuinely async (document events, hover timers,
+`afterClosed`), and there is no subscribe-and-assign anywhere. The menu's placement reasoning
+(`resolvedMinAvailableSpace`, `resolvedArrow`, `resolvedOffset`) matches its docs, the roving-tabindex
+computation correctly handles the no-active-item case, `sortByDomOrder` keeps late-registered items in
+visual order, and the submenu-trigger-item's dual registration (item belongs to the parent, trigger to
+the child) is both subtle and right. Story ids referenced from all four docs pages resolve against the
+actual story titles.
+
+---
+
+## grid + masonry
+
+Scope: `libs/components/src/lib/grid/**`, `libs/components/src/lib/masonry/**`, `apps/docs/components/grid.md`,
+`apps/docs/components/masonry.md`. All non-spec sources read in full; specs read; four claims verified at runtime
+with throwaway specs (now deleted, tree left clean).
+
+Runtime verification command used:
+`NX_NO_CLOUD=true npx vitest run --root libs/components --config vite.config.mts <spec>`
+
+## High
+
+- **A `Shift+Arrow` keypress inside any text field in a grid item resizes the widget and swallows the text
+  selection.** `grid-item.component.ts:53` binds `(keydown)` on the item host and `applyKeyboardShortcut`
+  (`grid-item.component.ts:261-330`) never checks `event.target`, so every keydown that bubbles up from
+  projected content is treated as a grid command. Any dashboard widget containing an `<input>`, `<textarea>`,
+  `contenteditable` or a `<select>` is affected — `Shift+ArrowRight` is "extend selection by one character" in
+  every OS. **Runtime-verified**: a projected `et-grid-item` with an `<input>` inside, `keydown`
+  `{key:'ArrowRight', shiftKey:true, bubbles:true}` dispatched from the input →
+  `before {"col":0,"row":0,"colSpan":2,"rowSpan":2} after {"col":0,"row":0,"colSpan":3,"rowSpan":2}` and
+  `defaultPrevented: true` (the selection is cancelled by `event.preventDefault()` at line 318).
+- **`Ctrl/Cmd+Backspace` inside a text field in a grid item deletes the whole widget.**
+  `grid-item.component.ts:323-328` removes the item for `Delete`/`Backspace` with a ctrl/meta modifier, again
+  without an event-target check. `Ctrl+Backspace` (Windows/Linux "delete previous word") and `Cmd+Backspace`
+  (macOS "delete to line start") are ordinary text editing keys, so a user editing a widget's title loses the
+  widget — and the layout change is emitted, so the app persists the deletion. **Runtime-verified**: dispatching
+  `{key:'Backspace', ctrlKey:true, bubbles:true}` from an `<input>` inside the item left
+  `grid.currentItems() === []` (was `['test-item']`).
+- **Grid items are focusable but have no focus indicator at all.** `grid-item.component.ts:52` sets
+  `tabindex="0"`, `grid-item.component.ts:75` sets `outline: none` on `.et-grid-item`, and there is no
+  `:focus`/`:focus-visible` rule anywhere in the domain (`grep -rn focus libs/components/src/lib/grid` returns
+  nothing). Every keyboard interaction the docs advertise (`grid.md:118`) requires focusing an item first, so a
+  keyboard user must move/resize blind. WCAG 2.4.7. Code-verified only (needs a browser to see, but the CSS is
+  unambiguous — `outline: none` with no replacement).
+- **Masonry never reveals its items if an item's border box is wider than the width the masonry assigns it.**
+  `masonry-item.directive.ts:84-89` treats an item as measured only while
+  `|rect().width - columnInlineSize| < 1`; `masonry-styles.component.css:41` never sets `box-sizing`. In an app
+  without a global border-box reset, a card with padding or a border reports a border box wider than the
+  content width the masonry set, so `isMeasured()` is false forever → `isSettled()` false forever →
+  `hasBeenPlaced` never latches → every item stays at `opacity: 0` (`masonry-styles.component.css:49`), and an
+  infinite scroll gated on `isSettled()` (the documented pattern, `masonry.md:102-112`) never fires.
+  **Runtime-verified consequence chain**: with the spec's layout stub reporting a border box 10px wider than the
+  assigned width, `isSettled: false`, `any [data-positioned]: false`, container height still `300px` — i.e. a
+  blank block the size of the layout, no error. The trigger itself (getBoundingClientRect returns the border
+  box while `style.width` sets the content box under `box-sizing: content-box`) is standard CSS and was not
+  re-verified in a browser; Tailwind's preflight is why Storybook doesn't show it.
+- **`masonry.items()` goes stale when the DOM is re-ordered, so a re-sorted feed does not re-lay-out.**
+  `masonry.directive.ts:86` computes the pack order with `sortByDomOrder(...)` inside a `computed` whose only
+  dependency is `registeredItems()`. A `@for` with `track` re-orders DOM nodes without creating or destroying
+  directives, so nothing invalidates it. **Runtime-verified**: after reversing a 4-item list,
+  `DOM order: [d,c,b,a]` but `items(): [a,b,c,d]`, and every placement is byte-identical to before the reverse
+  (`d` still at column 1, block `116px`) — the item that is now first in reading order still renders stacked
+  under `b`. This breaks the exact invariant both the code and the docs sell ("DOM order is reading order",
+  `masonry.md:183`; "`items()` — the items in DOM order, which is the order they are packed in",
+  `masonry.md:144`). `repack()` does not help: **runtime-verified** that after a reorder + `repack()` the
+  placements are still the pre-reorder ones.
+
+## Medium
+
+- **The `remove` output on `et-grid-item` does not fire when the built-in remove button is used.**
+  `grid-item-default-actions.component.ts:48-50` calls `grid.removeItem(itemId())` directly; the only
+  `this.remove.emit()` is in the keyboard path (`grid-item.component.ts:326`). A consumer following
+  `grid.md:83` ("the `remove` output … only reachable this way") and binding `(remove)` on a projected item gets
+  nothing for the one removal path the UI actually offers. Code-verified.
+- **An item removed with `removeItem()` (or the toolbar's remove button) comes back the next time the host's
+  `items` signal emits.** The reconciliation effect classifies any id present in `items` but absent from
+  `itemConfigs` as new and places it (`grid.directive.ts:387-391, 451-453`). Since `removeItem` only mutates the
+  grid's own state, an app that persists `layoutChange` asynchronously (or not at all into that same signal) and
+  then touches `items` for an unrelated reason — appending a widget, a re-fetch — resurrects the deleted item.
+  Nothing in `grid.md:89` warns about it. Code-verified from the reconciliation branch.
+- **`Ctrl+Shift+Arrow` performs a move *and* a resize in one keystroke.** `applyKeyboardShortcut` uses two
+  independent `if` blocks (`grid-item.component.ts:271` and `:297`), not an `else if`, so both branches run.
+  **Runtime-verified** on a 12-column breakpoint: `before {"col":0,…,"colSpan":2}` →
+  `after {"col":1,…,"colSpan":3}`. The docs describe the two modifiers as separate gestures (`grid.md:118`).
+- **`GridComponentRegistration.configComponent` and `GridItemRef` are dead config.**
+  `grid.types.ts:92` accepts `configComponent`, and `grid.types.ts:99-103` declares an abstract `GridItemRef`
+  documented as "Injectable reference provided to configComponent instances" — nothing in the domain reads
+  either (`grep` across `libs/**`, `apps/**` finds only the declarations). A consumer wiring an edit-mode config
+  component gets silence, and `GridItemRef` can never be injected because nothing provides it.
+- **The grid's entire stylesheet is outside `@layer components`.** `grid.component.ts:74`,
+  `grid-item.component.ts:55`, `grid-item-toolbar.component.ts:11` and
+  `grid-item-default-actions.component.ts:27` are bare inline `styles`. AGENTS.md requires the wrap, and the
+  reason bites here: `.et-grid-item { background: … }` (grid-item.component.ts:78) is unlayered, so it beats a
+  Tailwind `bg-*` utility regardless of specificity and a consumer needs `!` to restyle a card. Siblings do wrap
+  (`tabs/tabs/tab-group.component.ts`, `scrollable/headless/scrollable-*.component.ts`, and every `.css` file in
+  the lib); grid is the largest bare sheet (~180 lines on the item alone).
+- **Neither domain renders anything server-side, and masonry renders invisibly.** `grid.component.ts:27` gates
+  every item behind `@if (grid.isReady())`, which is `containerWidth() > 0` — never true without a
+  `ResizeObserver`, so SSR emits an empty region. Masonry emits the items but at `opacity: 0` with no offsets
+  until JS measures. Neither is documented as a limitation, and for masonry it means a failed hydration leaves a
+  correctly-sized but permanently blank block (same mechanism as the High above).
+- **`masonry.isResizing()` / `data-resizing` is true for the first 150 ms after mount.**
+  `masonry-resize-settled.ts:29` filters only the `0` emission, so the *first real* width flips `isResizing` on
+  and it clears one debounce later — the exact opposite of the comment above it ("the first real width is not a
+  resize") and of `masonry.md:141` ("changed width in the last 150ms"). **Runtime-verified**: right after the
+  first measurement, `isResizing() === true` and the host carries `data-resizing=""`. Harmless for the built-in
+  motion (nothing is armed to move yet), but any consumer styling or gating on it sees a phantom resize on
+  every mount.
+- **Masonry measures its container with `clientWidth`, so any horizontal padding on the host silently overflows
+  the columns.** `masonry.directive.ts:93` reads `dimensions().client?.width`, which includes padding, while the
+  absolutely positioned items are laid out from the padding box. `masonry.md:210` documents "don't put
+  horizontal padding on the masonry element" as a constraint the consumer must remember — with no dev-mode
+  check, unlike the two other things masonry does check. The grid solves the same problem properly by
+  subtracting the computed paddings (`grid.directive.ts:246-274`).
+
+## Low
+
+- **`gridDebug()` / `isGridDebugEnabled()` / `GRID_DEBUG_STORAGE_KEY` are dead code with a module-level latch.**
+  `grid.directive.ts:64-85`: `gridDebug` is never called anywhere in the repo, `cachedGridDebug` caches
+  `localStorage` once per realm, and none of the three is exported from `headless/index.ts` — so they are neither
+  used nor reachable.
+- **`grid.imports.ts:16-18` claims a runtime gate that does not exist**: "the `et-grid-debug` localStorage flag
+  only gates it at runtime". `GridDebugComponent` never reads that flag (or any flag) — once imported it always
+  renders.
+- **`layout-engine.ts:207` documents logging that does not exist**: "Log whenever a single-collision drag is
+  evaluated so we can see why the swap does/doesn't fire" sits above a block with no logging in it.
+- **All grid layout internals are public API of `@ethlete/components` and none are documented.**
+  `grid/index.ts` → `headless/index.ts:11` → `internals/index.ts` re-exports `autoPlace`, `compactLayout`,
+  `resolveCollisions`, `computeGeometry`, `createAutoScroller`, `findScrollableAncestor`, `hysteresisRound`,
+  `SNAP_HYSTERESIS`, `clampResizeRect`, … Masonry does the opposite (`masonry/headless/index.ts` exports only the
+  two directives and the token) — pick one.
+- **`mapLayoutToBreakpoint` (`responsive.ts:29`) and `deserializeGridLayout` (`serialization.ts:36`) are used by
+  nothing but their own specs**, yet are public exports with JSDoc. `deserializeGridLayout` also duplicates what
+  `restoreState()` does.
+- **Types used in the public API are not exported.** `ResizeItemOptions` and `GridDragState`
+  (`grid.directive.ts:50-62`) are the parameter/return shapes of `resizeItem()` and `dragState()`, but
+  `headless/index.ts` exports neither, so a consumer cannot name them.
+- **Documented "One public token" is wrong.** `grid.md:220` lists only `--et-grid-padding` (+ the toolbar
+  tokens), but the item stylesheet reads `--et-grid-item-radius`, `--et-grid-item-bg` and
+  `--et-grid-item-resize-handle-color` (`grid-item.component.ts:77-78, 122`) and the directive publishes
+  `--et-grid-gap` (`grid.directive.ts:170`).
+- **Masonry's per-breakpoint maps resolve against the viewport, not the container.** `columnWidth`/`gap` use
+  `numberBreakpointTransform`, which resolves through `injectCurrentBreakpoint()` (viewport media queries,
+  `libs/core/src/lib/signals/breakpoint-input.ts:60`). The docs offer the map inside the section titled "Columns
+  come from the container, not from breakpoints" (`masonry.md:44-61`) without saying the map is a window
+  measurement — so a masonry in a collapsing sidebar gets its `md` column width from the window.
+- **`MasonryItemDirective.isMeasured()`, `canMove()` and `inlineSize()` are public and undocumented**
+  (`masonry.md:155-160` lists four members, the class exposes seven).
+- **`aria-grabbed` is a deprecated ARIA 1.1 attribute** and is bound unconditionally (`"false"` when idle) at
+  `grid-drag.directive.ts:30`; `grid.md:216` advertises it as the drag affordance. No AT support today.
+- **An orphan projected `et-grid-item` (an id not in `items`) renders on top of the first item.** It gets no
+  position, so `renderedRect()` is null and the host keeps `position:absolute; top:0; left:0` with intrinsic
+  size, and no dev-mode error covers this direction (only the reverse, ET1904/ET1905). `grid.md:79` says such an
+  item "has no position and is never placed", which reads as harmless.
+- **Comment-policy violations are dense in this domain.** Beyond the three wrong comments above, `grid.directive.ts`
+  carries ~20 explanatory/rationale comments (e.g. `:105-110`, `:129-134`, `:217-218`, `:393-395`, `:449-450`,
+  `:516-518`, `:1065`, `:1085-1094`, `:1117-1128`), `layout-engine.ts` and `grid-math.ts` narrate most functions,
+  and `grid.component.ts:29-31` puts a three-line explanation in the template. Masonry's are equally long, though
+  more of them describe real invariants. Per AGENTS.md most of these are "rationale for a mechanical choice" and
+  should go.
+- **`grid-debug.component.ts` hardcodes ~20 hex colours** (`#d1d5db`, `#dc2626`, …) as primary values, against
+  the token rule. Dev-only, but it also puts `takeUntilDestroyed` first in the pipe at `:219` (before `tap`),
+  against the "`takeUntilDestroyed` last" rule; the same file gets it right at `:213`.
+- **`masonry.directive.ts:17-20` interleaves `import` statements with a const declaration** (`isSameAssignment`
+  sits between two import blocks).
+- **`resolveBreakpoint` falls back to the string `'sm'`** for an empty `breakpoints` array
+  (`responsive.ts:22`) — an SDK-invented breakpoint name in a domain where names are consumer-defined.
+
+## Spec coverage
+
+Well covered:
+
+- `grid/headless/internals/*`: `layout-engine.spec.ts` (378 lines), `grid-math.spec.ts` (314),
+  `responsive.spec.ts`, `serialization.spec.ts` — the pure geometry/packing is the best-tested part of the domain.
+- `grid.directive.spec.ts` (675 lines): readiness, geometry, constraint layering incl. per-breakpoint merges and
+  capping, item reconciliation (add/remove/data-only change), drag and resize lifecycles, withheld compaction,
+  the uncovered-breakpoint warnings.
+- `grid.component.spec.ts`: ET1904/ET1905 dev errors, ghost rendering, typed `layoutChange`.
+- `masonry.spec.ts` (311 lines): column arithmetic (incl. the gap-aware count the docs promise), settling
+  handshake, appending, re-columning, column-stability/pinning and `repack()`.
+- `masonry-layout.spec.ts`: `resolveMasonryColumns` and the greedy/pinned packing.
+
+Zero tests despite real logic:
+
+- `internals/auto-scroll.ts` — a rAF loop with root-vs-element rect branching and four edge conditions; nothing
+  exercises it.
+- `grid-debug.component.ts` — 224 lines of diff/issue computation plus clipboard, untested.
+- `grid-item-default-actions.component.ts` / `grid-labels.ts` — the remove button and the label wiring.
+- `grid-adapter.ts`'s `toGridPosition`/`fromGridPosition` (the `mapGridLayout`/breakpoint parts are covered).
+- `masonry-resize-settled.ts` — no spec, which is why the phantom-resize-on-mount above went unnoticed.
+- `grid-drag.directive.spec.ts` is 84 lines with two smoke assertions ("instantiates without error", "not
+  dragging by default"): the whole pointer drag path — grab-offset re-anchoring, the clamp to grid bounds, the
+  document scroll/Escape listeners, breakpoint-change cancellation — is untested.
+- Keyboard: only "no modifier does nothing" and "Shift+ArrowRight grows" exist
+  (`grid-item.component.spec.ts:132-154`). `Ctrl+Arrow` moves, `Ctrl+Delete` removal, the `remove` output and
+  the event-target problem behind the two High findings have no coverage.
+
+Specs asserting the wrong thing:
+
+- `masonry.spec.ts:198` "re-packs in DOM order when the items are re-ordered" passes while the reorder bug is
+  live: it reverses three items across three columns and only asserts that all three `block` offsets are `0px`
+  plus the container height — both true whether the pack order updated or not. It never checks `data-column`,
+  the inline offsets, or `items()`.
+- `grid-item.component.spec.ts:143` asserts `newPos.colSpan` is `toBeGreaterThanOrEqual(initialPos.colSpan)`,
+  which also passes if nothing happened.
+- `grid-item.component.spec.ts:26`, `grid.component.spec.ts:215/226/244` and `grid-drag.directive.spec.ts:36`
+  put a `version: 1` property on `GridItemConfig` literals; the type has no such member, so these specs are not
+  being type-checked by the vitest run (leftover from an older config shape).
+
+Missing infrastructure: five grid spec files and the masonry spec each hand-roll a ~40-line `ResizeObserver`
+mock plus `clientWidth`/`getBoundingClientRect` stubs. There is no grid or masonry test driver, unlike the
+recently added form/dropzone drivers.
+
+## Improvements
+
+### Features (ranked)
+
+- **Per-item `static` / `isDraggable` / `isResizable`.** The single biggest gap against react-grid-layout and
+  gridstack for real dashboards: a KPI strip that must stay put currently has to be faked with
+  `min*Span === max*Span` (which only pins size, not position). The constraint resolver
+  (`grid.directive.ts:135-156`) is the natural place to carry the flags, and `resolveCollisions` already has the
+  per-item `rowFloors` concept to build "immovable" on.
+- **A drag-handle restriction on grid items.** Today the whole `.et-grid-item__content` is the handle
+  (`grid-item.component.ts:216-219`), so a widget with a scrollable body, a chart with pan, or a text field is
+  fighting the gesture. An `etGridItemHandle` marker directive that scopes `GridDragDirective`'s handle would
+  also remove the need for the three `pointerdown` `stopPropagation` patches in the item's template.
+- **Masonry windowing / measurement pooling.** One `ResizeObserver` per item (`masonry-item.directive.ts:51`)
+  is fine for a page of cards and expensive for the infinite feed the docs target; a single shared observer
+  (one instance, many `observe()` calls) would cut it without changing the API.
+- **A fixed `columns` count for masonry.** `columnWidth` is the only lever; `auto-fit`-style "exactly N
+  columns, share the width" is the other half of what `repeat()` gives in CSS and is trivial on top of
+  `resolveMasonryColumns`.
+- **Either implement or delete `configComponent`/`GridItemRef`.** An edit-mode config overlay per widget type is
+  a real dashboard feature and the type already promises it (see the Medium above).
+- **`gap`/`rowHeight` as breakpoint maps on the grid.** Masonry accepts `BreakpointInput`; the grid takes plain
+  `numberAttribute` (`grid.directive.ts:182-183`), so a denser phone layout needs a host-side computed.
+
+### DX (ranked)
+
+- **Ship a grid and a masonry test driver.** Six spec files duplicate the same `ResizeObserver` +
+  `clientWidth` + `getBoundingClientRect` stub. A `createGridHarness({ width, breakpoints })` /
+  `createMasonryHarness({ containerWidth, heights })` in `libs/components/src/test-helpers` would make the
+  keyboard and gesture paths cheap enough to actually test.
+- **`GridItemConfig.layout` should be `Partial<Record<TBp, …>>`.** It is typed total
+  (`grid.types.ts:39`), but `addItem` writes `{}` and the docs devote a paragraph to that case
+  (`grid.md:208`) — the type currently lies about the one value the grid itself produces.
+- **Make the `items` reconciliation rules discoverable.** "Structural change wins over a layout change",
+  "`data` is copied by reference identity", "`removeItem` is invisible to the input" are three surprising rules
+  living in comments inside one effect (`grid.directive.ts:370-459`). A short "how reconciliation decides"
+  subsection in `grid.md` (and a named private method per branch) would make the two Medium findings above
+  self-evident to a reader.
+- **Export `ResizeItemOptions`, `GridDragState`, and stop exporting `internals/*`.**
+- **Warn in dev when the masonry host has horizontal padding**, next to the two checks it already has — the
+  failure (columns overflowing) is silent and the docs can only ask the reader to remember.
+
+### Bundle size
+
+- **Split the grid item's resize chrome into a styles-only component.** ~120 of the ~180 lines in
+  `grid-item.component.ts:55-240` are the eight `:hover`/`--resizing` handle-marker rules; mounted from
+  `GridResizeDirective` via `injectStyleManager()` (the `MasonryStylesComponent` pattern that this same domain
+  already models), a read-only grid would never inject them.
+- **Collapse the duplicated hover/resizing selector groups.** Each marker rule is written twice, once for
+  `.et-grid-item:hover` and once for `.et-grid-item--resizing`; `:is()` halves 16 selectors to 8 and removes the
+  copy-paste risk.
+- **`GridDebugComponent` is a 224-line dev tool exported from the same barrel as everything else.** It is
+  tree-shakeable only as long as nobody in the graph touches `GRID_DEBUG_IMPORTS`; moving it (and the dead
+  `gridDebug` helpers) behind a `grid/debug` sub-path would make "never in production" structural rather than
+  aspirational, and would match how `query-devtools` is split.
+
+### UI/UX
+
+- **Announce keyboard moves and resizes.** Ctrl+Arrow / Shift+Arrow change the layout with no `aria-live`
+  feedback and no `aria-keyshortcuts`/`aria-describedby` on the item, so a screen-reader user has no way to
+  learn the shortcuts or to know what happened. `GRID_LABELS` is already the localization seam for the
+  message.
+- **Restore focus after a removal.** `removeItem` destroys the focused element (`grid-item.component.ts:325`),
+  dropping focus to `<body>`; focusing the next/previous item would keep keyboard editing continuous.
+- **Resize affordances are hover-only.** The marker bars appear on `:hover` (`grid-item.component.ts:103-124`), so
+  on touch there is no indication an edge is grabbable — the docs' 14px targets are invisible. A
+  `@media (hover: none)` always-on (or on-focus) variant would help; the same file already uses
+  `@media (hover: hover)` correctly in the actions component.
+- **`role="group"` + `tabindex="0"` per item scales badly**: 20 widgets are 20 tab stops before any content.
+  A roving-tabindex `role="application"`-ish container (or `role="grid"`/`gridcell` proper) is the peer-library
+  answer.
+- **Masonry has no empty state and no way to know it is packing.** `isSettled()` exists, but between mount and
+  the first placement everything is `opacity: 0` with the container already sized — a skeleton hook (e.g. an
+  `data-settling` attribute on the host, which `data-settled` almost is) would let a feed show something.
+
+### Testing (ranked)
+
+1. The two High keyboard findings: a spec per shortcut, dispatched from a nested `<input>` as well as from the
+   host, asserting the layout does *not* change.
+2. Masonry reorder: assert `items()` equals DOM order and that placements change, not just that three
+   equal-column offsets stay `0px` (the current spec cannot fail).
+3. `masonry-resize-settled`: mount → `isResizing()` false; one width change → true → false after the debounce.
+4. `auto-scroll.ts` as a unit (it takes an injected `document` and `getScrollElement`, so it is directly
+   testable with fake rects) — the scroll conditions and the `scrollBy` deltas.
+5. A real drag gesture through `GridDragDirective` with a fake pointer sequence: grab offset, clamp at the grid
+   edges, Escape cancellation, breakpoint-change cancellation.
+6. `masonry` measurement mismatch: an item whose reported width never matches the assigned one should be
+   surfaced as a failure mode, whatever the fix (assert on a dev warning, or on `box-sizing: border-box`).
+
+Clean: the layout engine's termination properties (`compactLayout`, `resolveCollisions`' cascade and
+`autoPlace` all terminate — the cascade only ever increases rows, and `autoPlace`'s inner loop always runs for
+`columns >= 0`); geometry/serialization arithmetic matches every number in `grid.md` and `masonry.md`
+(incl. the 1000px/240px/16px → 3 × 322.67px worked example); every gesture directive tears down its
+listeners, its rAF loop and its subscriptions on destroy (`grid-drag.directive.ts:129-132`,
+`grid-resize.directive.ts:112-115`, `grid-item.directive.ts:149`) and `takeUntilDestroyed` is used correctly
+everywhere except the one debug-component pipe noted above; disabling the core resize handles mid-gesture is
+harmless (the gesture runs off document listeners, `libs/core/.../resize-handles.component.ts:51-81`, and
+`disabled` only sets `inert`); constraint registration is correctly value-compared and `untracked` so an inline
+object literal cannot loop; the masonry pin/freeze feedback loop is correctly guarded
+(`masonry.directive.ts:188-196`); masonry's CSS is properly layered, token-free by design and reduced-motion
+gated; no XSS sinks, no Tailwind in component source, no hardcoded colour used as a primary value outside the
+dev-only debug overlay; both domains' dev-mode `RuntimeError` messages are specific and actionable, and the
+error-code ranges match the docs.
+
+---
+
+## Batch 15 — carousel / scrollable / scrollbar
+
+Scope: `libs/components/src/lib/{carousel,scrollable,scrollbar}` (all non-spec `.ts`/`.html`/`.css`, plus
+specs), and `apps/docs/components/{carousel,scrollable,scrollbar}.md` (+ the `error-codes.md` and
+`sport-recipes.md` rows that reference them).
+
+Runtime verification used `NX_NO_CLOUD=true npx vitest run --root libs/components --config vite.config.mts <spec>`
+with scratch specs in the domain folders; all scratch files were deleted and the working tree is as found.
+
+---
+
+## Carousel
+
+### High
+
+- **`playOnInit="false"` does nothing — a carousel told not to start plays anyway.**
+  `carousel-autoplay.directive.ts:182` sets the initial stopped state in the constructor:
+  `this.isStopped.set(!this.playOnInit())`. A signal input is not bound yet when the directive is
+  constructed, so `playOnInit()` returns its declared default (`true`) and `isStopped` is set to
+  `false` regardless of the binding. The input is forwarded from `<et-carousel>` too
+  (`carousel.component.ts:101`), so both the component and the headless directive are affected.
+  **Verified at runtime.** `<et-carousel [playOnInit]="false" autoplay>` logged
+  `playOnInit(): false`, `isStopped(): false`, `pauseReason(): null`, `isPlaying(): true` — i.e. the
+  input reads as `false` after binding, but the latch that consumed it ran before that. The fix is a
+  `linkedSignal`/effect off `playOnInit`, or reading it in `afterNextRender`.
+
+- **A looping carousel whose slides have no layout on the first alignment pass never scrolls off the
+  clones — it opens showing the second-to-last slide, permanently.**
+  `carousel-loop.ts:198-228`: the effect writes the latch (`alignedShape = shape`, line 215) *before*
+  attempting the measurement, then bails at line 224 when `trackLength` is 0. The comment on 221-223
+  says "The children signal will fire again once they do", but (a) `domCount` is a `computed` over a
+  length, so a children-array change that keeps the count produces no notification, and (b) even if
+  the effect did re-run, `alignedShape === shape` short-circuits at line 213. So the one-shot
+  alignment is consumed by a failed attempt. `trackLength` is 0 whenever every child's `offsetLeft`
+  is 0 — a carousel inside a hidden tab panel, a closed accordion, a `display: none` overlay, or one
+  rendered before its stylesheet is applied.
+  **Verified at runtime.** Case A (four slides, `loop`, `cloneCount()=2`, `domCount()=8`; layout
+  stubbed only *after* the first pass, then the children signal nudged with an ignored child):
+  `scroll calls: []` — the container is never repositioned, so the track stays parked on
+  `children[0]`, which is the clone of slide 3. Case B (same carousel with `offsetLeft`/`offsetWidth`/
+  `clientWidth` stubbed from the very first render) reached `ScrollableDirective.scrollToOffsetUnsnapped`
+  → `scrollElement.scroll(...)` on the first pass, proving the difference is the latch and not the
+  stubs. Fix: set `alignedShape` only after a successful `scrollTo`.
+
+- **The play/pause control's ARIA state contradicts both the carousel's actual state and its own
+  rendered icon whenever autoplay is paused for any reason other than `stop()`.**
+  `CarouselPlayToggleDirective.isPlaying` (`carousel-controls.directive.ts:110`) is
+  `!(autoplay?.isStopped() ?? true)` — it only looks at the explicit stop flag — while
+  `CarouselAutoplayDirective.isPlaying` (`carousel-autoplay.directive.ts:179`) is
+  `pauseReason() === null && duration() > 0`, and the template's `data-playing`
+  (`carousel.component.html:74`) uses the latter. Two different `isPlaying()` in one domain.
+  **Verified at runtime.** With `autoplay` on and `isHovered` set: `pauseReason: hover`,
+  `directive isPlaying: false`, `data-playing: null` (so the *play* icon is the visible one), but
+  `aria-pressed: "true"` and `aria-label: "Pause automatic slide show"`. A screen-reader user is told
+  the slide show is running and offered a pause when it is stopped and showing a play button. The
+  same mismatch holds for `reduced-motion`, `page-hidden`, `off-screen` and `focus` — and
+  `prefers-reduced-motion` means it is the *permanent* state for those users, which is exactly the
+  cohort WCAG 2.2.2 is about.
+
+### Medium
+
+- **`autoplayTime="0"` leaves `pauseReason()` reporting "running" while nothing ever advances.**
+  `carousel-autoplay.directive.ts:157-179`: `pauseReason()` never inspects `duration()`, so it
+  returns `null` (its documented "autoplay is running" value, and what the docs table at
+  `carousel.md:269-278` enumerates), while `isPlaying()` is `false` because of the `duration() > 0`
+  guard. The two public signals disagree and neither says why. `duration` comes from
+  `numberAttribute`, so `autoplayTime=""` also yields `0`. Code-verified only (the interaction is
+  visible in the two computed definitions).
+
+- **`transition="wipe"` is silently a no-op at any `itemSize` other than `'full'`.**
+  Both driver blocks gate the whole effect on `:where([item-size='full'])`
+  (`carousel-transition-styles.component.css:137-138`, `:201`, `:230`), so
+  `<et-carousel itemSize="half" transition="wipe">` reports `data-transition="wipe"`, mounts the
+  transition stylesheet, and runs the JS progress driver on every scroll frame — while producing no
+  visible effect at all. The restriction is documented (`carousel.md:204-206`) and justified, but
+  there is no dev-mode warning and the wasted driver still costs a per-frame custom-property write
+  per slide. Code-verified only (needs real layout).
+
+- **`transition="custom"` + `transitionDriver="none"` fills nothing, with no warning.**
+  `carousel.directive.ts:331-339` resolves the driver to `'none'`, so
+  `--et-carousel-slide-progress` is never written and any consumer CSS hanging off it sits at the
+  registered initial value `0` (`carousel-transition-styles.component.css:13-17`) — every slide
+  reads as permanently centred. The existing spec (`carousel.component.spec.ts:435-445`) asserts this
+  combination is accepted; nothing asserts or warns that it is inert.
+
+### Low
+
+- **`playOnInit`, `pauseOnHover`, `pauseOnFocus` and `pauseOnOffScreen` are public inputs on
+  `<et-carousel>` that the docs table never lists.** `carousel.component.ts:101` forwards all four via
+  `hostDirectives`; the input table at `carousel.md:74-85` stops at `labels`. `pauseOnOffScreen` is
+  named once in prose (`carousel.md:283`); `playOnInit` appears nowhere in `apps/docs`, and is also
+  absent from the story argTypes (`carousel/stories/carousel.stories.ts:33-44`).
+- **`CarouselAutoplayPauseReason`'s doc comment claims the union is written "in the order the reasons
+  are checked" and it is not.** `carousel-autoplay.directive.ts:27-28` puts `'no-slides'` last, but
+  `pauseReason()` checks it fourth (line 161), ahead of `page-hidden`, `off-screen`, `hover` and
+  `focus`. The docs table (`carousel.md:269-278`) uses a third order again.
+- **`CAROUSEL_ERROR_CODES` declares `MISSING_SCROLLABLE: 3803` before
+  `AUTOPLAY_WITHOUT_PAUSE_CONTROL: 3802`** (`carousel-errors.ts:8-10`) — out of numeric order relative
+  to every sibling error-code file, and relative to the docs table.
+- **`--et-carousel-wipe-dim-color` registers `#000` as its `initial-value`**
+  (`carousel-transition-styles.component.css:36-40`), a hardcoded colour used as the primary value of
+  `background:` at line 155. The comment argues the case (a dimming, not a tint) and it is overridable,
+  but it is the one place in this batch that does not resolve from a `--et-surface-*` /
+  `--et-theme-color-*` token.
+- **Comment-policy: the carousel is by far the most heavily commented domain in the batch.**
+  `carousel.directive.ts` alone carries ~120 lines of explanatory prose, including banner dividers
+  (`carousel-transition-styles.component.css:42`, `:129`, `:161`, `:213`;
+  `carousel-autoplay-styles.component.css:37-51`) and rationale-for-a-mechanical-choice paragraphs
+  that AGENTS.md lists under "Always delete". Several are genuinely case 1/2/3 material (the snap
+  overrule, the `scrollend`-not-mid-animation constraint, the ±1 progress range) and should survive;
+  the perf archaeology and the "why the effects are written twice" essay belong in the docs page,
+  which already carries most of it verbatim.
+- **Typo in a comment: `--et-carousole-slide-progress`** (`carousel-transition-styles.component.css:48`).
+- **The measured numbers in the code comment and in the docs disagree.**
+  `carousel-autoplay-styles.component.css:50` says "~120 paints and ~45 recalculations";
+  `carousel.md:318` says "~139 and ~89" for the same measurement.
+- **The dots have no group label.** `carousel.component.html:38` renders a bare `<div class="et-carousel-dots">`
+  around N buttons; each button is labelled, but the set is not named or exposed as a `tablist`/`group`,
+  so a screen-reader user meets eight unrelated "Go to slide N" buttons.
+
+---
+
+## Scrollable
+
+### High
+
+- **`[etScrollableActiveChild]` does nothing at all, and three doc pages promise that it does.**
+  `scrollable-active-child.directive.ts:19-26` builds the `ref` object and then only registers the
+  *unregister* callback — there is no call that adds it to the scrollable. `ScrollableDirective` has
+  no `registerActiveChild` method either: `activeChildren` (line 141) is only ever read by
+  `getActiveChildren()` (line 420) and only ever *filtered* by `unregisterActiveChild()` (line 275).
+  Nothing anywhere reads `getActiveChildren()`, so nothing scrolls to an active child even in
+  principle. Meanwhile `apps/docs/components/scrollable.md:111` says "marks a child as active so it's
+  auto-scrolled into view (great for tab-bar-like lists)", line 117 says `getActiveChildren()`
+  "expose[s] the tracked children", the page's opening example uses it (line 8), and
+  `apps/docs/components/sport-recipes.md:45` builds a recipe on it ("the rail opens on the match
+  that's being played"). The `sport-recipes` story
+  (`match/stories/sport-recipes-storybook.component.ts:35`) demonstrates the same dead binding.
+  **Verified at runtime.** Two `[etScrollableActiveChild]="true"` children inside an `<et-scrollable>`:
+  `getActiveChildren()()` logged `length: 0`. Also `isActiveChildEnabledSignal`
+  (`scrollable-active-child.directive.ts:14`) is a `linkedSignal` nothing ever reads, and
+  `ScrollableActiveChildRef` is an exported type describing a shape that is never constructed for a
+  consumer.
+
+- **`ScrollableNavigationComponent` puts `takeUntilDestroyed()` first in a pipe that `switchMap`s into
+  `fromEvent`, so the scroll listener it opens is never torn down.**
+  `scrollable-navigation.component.ts:198-215`: `takeUntilDestroyed()` is the first operator (line
+  200), then `filter` → `switchMap(() => fromEvent(container, 'scroll'))`. On destroy the *source*
+  completes, but `switchMap` does not complete until its inner observable does, and `fromEvent` never
+  completes — so the subscription (and the DOM listener, and the `tap` that writes
+  `manualActiveNavigationIndex` on a destroyed component) outlives the component. Triggered by any
+  click on a navigation dot. This is exactly the AGENTS.md rule "`takeUntilDestroyed` last in pipes".
+  **Verified at runtime** with the same operator chain in isolation: with `takeUntil` first,
+  `scroll listeners added: 1`, `scroll listeners removed after destroy: 0`; moving `takeUntil` to the
+  end of the pipe gives `scroll listeners removed: 1`.
+
+### Medium
+
+- **`(intersectionChange)` silently emits nothing unless some unrelated feature happens to have turned
+  the observer on.** `ScrollableDirective.childIntersections` (`scrollable.directive.ts:129-133`) is
+  gated on `childIntersectionsActivated`, which only `activateChildIntersections()` flips —
+  called by the masks component, the snap/darken/navigation directives and `etCarousel`, but never by
+  the output itself (`scrollable.component.ts:72-85`). So `<et-scrollable renderMasks="false"
+  (intersectionChange)="…">` with no opt-in feature is a documented output
+  (`scrollable.md:116`) that never fires.
+  **Verified at runtime.** `renderMasks=false`, three children: one emission, `[[]]`. With
+  `renderMasks` left at its default: one emission with three entries. The output should call
+  `activateChildIntersections()` when it has a subscriber, or the docs should state the dependency.
+
+- **The `ET2100` error message and its docs row both point at a `registerScrollContainer()` that does
+  not exist.** `scrollable.directive.ts:255-257` tells the developer to "Use registerScrollContainer()
+  from the Tier 3 template"; `apps/docs/components/error-codes.md:264` repeats it. `grep` over
+  `libs` + `apps` finds the identifier only in those two strings. The actual mechanism is setting the
+  public-but-`@internal` `scrollContainerRef` signal (`scrollable.directive.ts:85`), which
+  `ScrollableComponent` does at `scrollable.component.ts:111-118`. The message also leaks internal
+  jargon ("Tier 3 template") into a consumer-facing error, and there is no documented headless path
+  for `[etScrollable]` at all despite the directive being exported.
+
+- **`ScrollableComponent` bridges two view queries with `.subscribe()`-and-assign.**
+  `scrollable.component.ts:111-127` runs `toObservable(viewChild).pipe(tap(set))` twice to copy a
+  signal into another signal — the pattern AGENTS.md's reactive-state rule forbids ("never by
+  `.subscribe()`-ing and assigning the value somewhere"). The carousel does the same job with an
+  `effect` and an explicit `prefer-linked-signal` disable (`carousel.component.ts:204-209`), so the
+  two siblings solve one problem two ways. It also means the `takeUntilDestroyed()` on line 112/121 is
+  the only thing keeping two subscriptions alive for the component's whole life to do the work of one
+  `effect`.
+
+- **`scrollOneItemSize` / `scrollOneContainerSize` do nothing when the intersection observer was never
+  activated.** `scrollable.directive.ts:353-357` returns early on an empty `childIntersections()`, and
+  line 338 needs it too. Both are reachable from `scrollToStartDirection()` / `scrollToEndDirection()`
+  — documented public API (`scrollable.md:117`) — on a scrollable with `renderMasks="false"` and no
+  snap directive. Same root cause as the `intersectionChange` finding.
+
+### Low
+
+- **`ScrollableIntersectionChange`, `ScrollableScrollState` and `ScrollableActiveChildRef` are exported
+  from `headless/index.ts` (lines 14, 18, 26) but `ScrollableActiveChildRef` describes a shape no
+  consumer can obtain** — see the High finding.
+- **A `FIXME` with no issue link.** `scrollable-navigation.component.ts:206-207` — AGENTS.md lists
+  "`TODO`/`FIXME` without an issue link" under "Always delete". (The sentence after it is also just
+  restating the `eslint-disable` on the next line.)
+- **Section-divider comments throughout.** `scrollable.directive.ts:69`, `:82`, `:87`, `:91`, `:102`,
+  `:127`, `:135`, `:139`, `:143`, `:150`, `:175`, `:197`, `:224`, `:264`, `:329`; and
+  `scrollable.component.css:51`, `:94`, `:182`, `:285`, `:315`, `:347`, `:380`, `:388`, `:410`, `:431`.
+  All are the `// --- Inputs ---` / `/* --- Vertical --- */` form AGENTS.md says to delete.
+- **`ScrollableNavigationComponent` reads `--et-theme-color-primary` where the rest of the library
+  reads `--et-theme-color-primary-solid`.** `scrollable-navigation.component.ts:60` vs 233 uses of the
+  `-solid` form under `libs/components/src`. The alias is legitimate here (the component does not
+  override `--et-theme-color-primary-opacity`), but `libs/core/src/lib/theming/color-theming.docs.mdx:183`
+  warns the alias resolves at its declaring scope, so this is the fragile choice of the two.
+- **Un-prefixed custom properties on a public component.** `scrollable.component.css:3-5` declares
+  `--mask-size` and `--darken-non-intersecting-items-amount` — the two knobs a consumer would want to
+  set — with no `--et-` prefix, no `@property` registration, and no mention in `scrollable.md`'s
+  options table. Every sibling in this batch (`--et-carousel-*`, `--et-scrollbar-*`) does the opposite.
+- **`showLoadingTemplate` is missing from the docs options table** (`scrollable.md:53-65`); it is only
+  named in passing at line 111, while its companion `loadingTemplatePosition` gets a row.
+- **`scrollable.md:102-108` has a broken list: an em-dash clause starting the next bullet** ("- a mouse
+  button produces no fling…"), which renders as a second list item mid-sentence.
+
+---
+
+## Scrollbar
+
+### Medium
+
+- **A headless `[etScrollbar]` marks its target `et-scrollbar-host` and then leaves the native
+  scrollbar visible, so the container shows two scrollbars.** `scrollbar.directive.ts:213-219` adds the
+  class unconditionally, but the rule that acts on it lives in `scrollbar.component.css:27-33` — i.e.
+  it only reaches the document once `<et-scrollbar>` is instantiated. Both the directive JSDoc
+  (`scrollbar.directive.ts:55-56`) and the docs (`scrollbar.md:107-118`) state this and give the
+  snippet to copy, so it is a documented cost rather than a surprise — but it is the one piece of the
+  domain that the styles-only-component pattern used elsewhere in this repo (see
+  `CarouselTransitionStylesComponent`, mounted by the *directive* via `injectStyleManager()`) would
+  fix outright, and the class the directive writes has no effect without it.
+
+### Low
+
+- **`--et-scrollbar-thumb-color` and `--et-scrollbar-thumb-active-color` are read
+  (`scrollbar.component.css:73`, `:97`) but neither `@property`-registered alongside the other four
+  tokens (lines 2-24) nor listed in the docs theming table** (`scrollbar.md:137-142`); they are only
+  mentioned in the prose at line 146. Unregistered means they cannot interpolate, which matters
+  because the thumb transitions `background-color`.
+- **`data-direction` is undocumented.** `scrollbar.md:104-105` lists what the headless directive writes
+  and names only `data-orientation`; `scrollbar.directive.ts:197` also writes `data-direction="rtl"`,
+  which `scrollbar.component.css:47-49` depends on — a consumer building their own track from the
+  documented list will get a right-to-left thumb positioned from the wrong edge.
+- **`ELEMENT_NODE_TYPE = 1`** (`scrollbar.directive.ts:42`) reimplements `Node.ELEMENT_NODE`.
+- **`isRtl()` calls `getComputedStyle`** (`scrollbar.directive.ts:134`), as does
+  `ScrollableDirective.gapValue` (`scrollable.directive.ts:232`). Neither is platform-guarded. Both are
+  reached from a `computed` that the host bindings read, so a server render evaluates them; whether
+  that throws depends on the SSR DOM shim, so this is flagged rather than claimed — no SSR harness
+  exists in this workspace to check it against.
+
+---
+
+## Spec coverage
+
+**Well covered**
+
+- `scrollbar/headless/internals/scrollbar-geometry.spec.ts` (141 lines) is the strongest spec in the
+  batch: thumb sizing, `minThumbSize` clamping, the track-size clamp, end-of-content offset, the
+  no-overflow and no-layout cases, and both RTL paths (reading `scrollLeft` as a magnitude, writing a
+  negative offset). Pure functions against a fake target, so it does not need layout.
+- `scrollbar/scrollbar.component.spec.ts` covers the ref-counted `et-scrollbar-host` class across two
+  axes and destruction, `preventDefault` on a thumb press (and its absence while `disabled`), and
+  `et-scrollbar--visible` while disabled.
+- `carousel/carousel.component.spec.ts` (447 lines) covers the region/slide/dot semantics, label
+  localization, the `<et-carousel>`-must-not-autoplay override, the pause-control hover/focus
+  subtraction, `pauseReason` transitions, `autoplayTimeFor`, and a thorough `looping` block (clone
+  count and placement, `slideIndexOf` mapping, no clones without `loop` or without overflow, re-cloning
+  on a slides change, `itemSize="third"` growth and the cap at `count`).
+
+**Files with real logic and zero tests**
+
+- `carousel/headless/internals/carousel-loop.ts` — the seam crossing, `restingChildIndex`, the
+  centred-vs-start resting offset, and the alignment effect that carries the latch bug above. Nothing
+  covers any of it; it is also the file the two carousel High findings live in or next to.
+- `carousel/headless/internals/carousel-slide-progress.ts` — the progress formula, the
+  `WRITE_THRESHOLD` skip, `clearWrittenProgress`, and `flush()`. The formula is a pure expression over
+  three numbers and is directly unit-testable.
+- `carousel/headless/internals/carousel-scroll-settled.ts` — the `scrollend`-vs-debounced-`scroll`
+  fallback, and the deferral while a pointer is down (`isSettleDeferred`), which is the whole reason
+  the file exists.
+- `carousel/headless/carousel.directive.ts` — `goToDomIndex`'s two-hop instant-then-animate scroll,
+  `stepDomIndex`, `nearestDomIndexOf` (the "shorter way round" the docs promise at
+  `carousel.md:141-142`), and `requestedDomIndex` bookkeeping. The spec only ever reads
+  `slideIndexOf`; no test calls `next()`, `previous()` or `goTo()`.
+- `carousel/headless/carousel-controls.directive.ts` — the `aria-pressed`/label logic that the third
+  High finding is about.
+- `scrollable/headless/scrollable-navigation.component.ts` — the `navigation()` computed (start/end
+  overrides, highest-ratio reduce, `activeOffset`), the sliding-window `transform`, and the manual-index
+  reset that leaks. Zero tests.
+- `scrollable/headless/scrollable-snap.directive.ts` — the ref-counted suspend/release around a cursor
+  drag, and `glideToNearestChild`'s three-way race (`scrollend` / `pointerdown` / timeout). Zero tests.
+- `scrollable/headless/scrollable-buttons.directive.ts`, `scrollable-darken.directive.ts`,
+  `scrollable-drag.directive.ts`, `scrollable-loading-template.directive.ts` — the shared
+  `config === '' ? … : …` shorthand and the `enabled` gate are only touched indirectly by the one
+  opt-in-features test (`scrollable.component.spec.ts:126-138`).
+- `scrollable/headless/scrollable.directive.ts` — `suspendSnap`'s ref counting, `scrollToOffsetUnsnapped`,
+  the `isScrollableChildIgnored` filter and the whole `registerChrome`/`activeChrome`
+  filter-sort-resolve pipeline. Only `snap` presence and the chrome *stamping* are asserted.
+- `scrollbar/headless/scrollbar.directive.ts` — `startThumbDrag`'s delta→offset mapping (including the
+  RTL sign flip and the `cancelled` restore) and `pageTowardsPointer`'s direction choice. The geometry
+  helpers they call are tested; the mapping is not.
+- `scrollbar/headless/internals/scrollbar-host-class.ts` — covered indirectly by the component spec,
+  which is adequate.
+
+**Specs asserting something questionable**
+
+- Nothing asserts a wrong behaviour. Two things are worth noting:
+  `carousel.component.spec.ts:435-445` locks in `transition="wipe"` + `transitionDriver="none"` as
+  "accepted" without asserting that anything happens, which is the inert combination flagged under
+  Medium; and `carousel.component.spec.ts:128-130` correctly annotates that it is asserting a
+  jsdom-no-layout artefact (`canGoPrevious()` false because the active slide never leaves 0) rather
+  than real behaviour — fine as written, but it means the non-looping end-of-track behaviour is
+  effectively untested.
+- `scrollable/scrollable.component.spec.ts:12-69` hand-rolls `ResizeObserver` and
+  `IntersectionObserver` mocks in the spec file even though it already imports `../../test-helpers`,
+  which is where the repo's jsdom shims live. That divergence is why this spec cannot assert anything
+  about intersections.
+- `scrollable/headless/scrollable-ignore-child.directive.spec.ts` binds `[enabled]` but never checks
+  the thing the attribute exists for — that `ScrollableDirective.scrollableChildren()` actually drops
+  the child, and that the CSS snap rule
+  (`scrollable.component.css:87`) skips it.
+
+---
+
+## Improvements
+
+### Features
+
+1. **Give the carousel keyboard navigation on the track.** Material's and Ark UI's carousels answer
+   `ArrowLeft`/`ArrowRight`/`Home`/`End` on the region; here the only keyboard path is the native
+   scroll container's, which moves by scroll step rather than by slide, so a keyboard user cannot
+   reach "slide 4" the way a mouse user can. `CarouselDirective` already has `goTo`/`next`/`previous`
+   and the region host — a `(keydown)` host binding on `carousel.directive.ts:91-99` is nearly the
+   whole feature.
+2. **Add `activeIndexChange` (and a `scrollend`-settled `slideChange`) to `etCarousel`.** `activeIndex()`
+   is a signal a consumer has to `effect` over to react to; every peer library exposes an event. The
+   settle callback in `carousel.directive.ts:359-384` is already the exact place a "the carousel has
+   arrived at slide N" output belongs.
+3. **A `role="scrollbar"` opt-in for `etScrollbar`.** `scrollbar.md:120-133` argues well for the
+   default, but a container that is *not* itself focusable (a virtualised list, a `contenteditable`
+   sibling) has no keyboard path at all, and PrimeNG/Radix both offer the ARIA scrollbar as a choice.
+   `geometry().progress` already supplies `aria-valuenow`.
+4. **Expose the scrollable's `activeSnapOrigin`/`isSnapSuspended` and `suspendSnap()` as public API.**
+   All three are `@internal` (`scrollable.directive.ts:161`, `:173`, `:297`) yet `scrollable.md:92-108`
+   documents `suspendSnap()` to consumers by name. Any app writing its own scroll offset onto a
+   snapping track needs it for the reason that section explains.
+5. **Vertical `wipe`.** `carousel-transition-styles.component.css:101-108` hardcodes the inline axis
+   (`50cqw`, `translate:` with one value), so `direction="vertical"` + `transition="wipe"` produces a
+   horizontal wipe on a vertical track. `dim` is axis-agnostic already.
+
+### DX
+
+1. **Delete or finish `etScrollableActiveChild`.** It is the single worst DX item in the batch: a
+   documented, story-demonstrated, recipe-endorsed directive that does nothing. Either wire
+   `registerActiveChild` + an effect that scrolls the first enabled child into view, or remove the
+   directive, `ScrollableActiveChildRef`, `activeChildren`, `unregisterActiveChild` and
+   `getActiveChildren`, and fix the three doc pages.
+2. **Make `ET2100`'s message describe an API that exists.** See the Medium finding. While there,
+   drop "Tier 3" from consumer-facing text — the tier vocabulary is internal architecture and appears
+   nowhere in `apps/docs`.
+3. **Have the intersection-dependent public API activate the observer itself.** `intersectionChange`,
+   `scrollToStartDirection()`/`scrollToEndDirection()` and `scrollOneItemSize` all quietly no-op when
+   no feature happened to call `activateChildIntersections()`. Making the output activate on
+   subscription, and the scroll methods activate on first call, removes a whole class of
+   "why is nothing happening" reports.
+4. **A test driver for each of the three domains.** None exists. The carousel spec re-invents
+   `settleChildren` (`carousel.component.spec.ts:65-68`) and the scrollable spec re-invents the
+   observer shims; a `CarouselDriver` (slides, dots, controls, `settle()`), a `ScrollableDriver`
+   (`fakeLayout(slideSize)`, chrome queries) and a `ScrollbarDriver` (thumb drag as a pointer
+   sequence) would make the untested files above testable at all. A shared `fakeLayout` helper is the
+   highest-leverage single piece: it is what let me verify the loop-alignment finding, and it is what
+   every layout-dependent behaviour in this batch needs.
+5. **`ScrollableChrome` registration is a good extension point with no documentation.**
+   `scrollable-chrome.ts` is well commented and `registerChrome()` is public and unmarked
+   (`scrollable.directive.ts:270`), but `scrollable.md` never mentions it, so the only way to learn how
+   to add chrome is to read the buttons directive.
+6. **`config === '' ? {} : config` is repeated in both chrome directives**
+   (`scrollable-buttons.directive.ts:41-45`, `scrollable-navigation.directive.ts:26-30`) with
+   slightly different shapes. One `resolveChromeConfig` helper would also give the two the same
+   behaviour for `[etScrollableButtons]="undefined"`.
+
+### Bundle size
+
+1. **Move the `et-scrollbar-host` rule into a styles-only component the *directive* mounts.**
+   `scrollbar.component.css:27-33` is four declarations that every headless consumer has to copy by
+   hand (see the Medium finding). A `ScrollbarHostStylesComponent` mounted from
+   `scrollbar.directive.ts:213` via `injectStyleManager()` follows the pattern AGENTS.md documents,
+   costs nothing when unused, and makes the class the directive already writes actually work.
+2. **`scrollable.component.css` is the largest sheet in the batch (472 lines) and roughly half of it
+   serves opt-in features.** The button positioning and sticky rules (lines 142-160, 224-242, 301-303,
+   317-345 partially, 388-408), the navigation/dots rules (350-359, 275-282), the footer block
+   (410-429) and the darken rules (373-386) are all reachable only through
+   `SCROLLABLE_NAVIGATION_IMPORTS` / `SCROLLABLE_DARKEN_IMPORTS`. The chrome components already carry
+   a small `styles:` block each (`scrollable-buttons.component.ts:45-58`,
+   `scrollable-navigation.component.ts:39-108`), so the split direction is established — the
+   position-dependent rules just were not moved with them. A track that only scrolls currently pays
+   for all of it.
+3. **The masks are ~40 lines of the same sheet and are opt-out, not opt-in.** `renderMasks` defaults
+   to `true` (`scrollable.component.ts:65`), so `ScrollableMasksComponent` is a static import
+   (`scrollable.component.ts:42`) and its rules (lines 125-140, 207-222, 294-308, 431-470) are always
+   injected. Moving the mask CSS onto `ScrollableMasksComponent` itself would at least tie it to the
+   `@if (renderMasks())` at `scrollable.component.html:24`.
+4. **`carousel-autoplay-styles.component.css` and `carousel-transition-styles.component.css` are
+   already the right pattern and worth citing as the model** — 188 and 240 lines that a default
+   `<et-carousel>` never injects. No change needed; noting it so the scrollable split above is not
+   reinvented.
+
+### UI/UX
+
+1. **The play/pause control should follow `pauseReason()`, not `isStopped()`.** See the third High
+   finding. Beyond the ARIA contradiction, the button currently offers "pause" for a carousel the
+   reader has already paused by hovering it, which reads as broken.
+2. **Nothing tells a reader why autoplay stopped.** `pauseReason()` is a rich public signal
+   (`carousel-autoplay.directive.ts:157`) that `<et-carousel>` never surfaces — no paused affordance
+   on the dots, no `data-pause-reason` on the host. One host attribute would let an app style it
+   without reaching into the directive.
+3. **The navigation dots' sliding window is silent about what is off-window.**
+   `scrollable-navigation.component.ts:168-191` shows five dots and translates the strip; with 40
+   children the reader sees five dots and no indication that there are 40. A count, or fading the
+   edge dots, is what Material's paginated dots do.
+4. **`--et-carousel-dot-target-size` is 24px, below the 44px WCAG 2.5.8 (AAA) / 24px (AA) target.**
+   `carousel.component.css:15-19` sits exactly on the AA minimum, and the dots are adjacent with no
+   gap (`carousel.component.css:103-107` has no `gap`), so neighbouring targets touch. Bumping the
+   default or adding a small gap costs nothing.
+5. **`prefers-reduced-motion` is honoured for the carousel's transitions and autoplay but not for its
+   programmatic scrolls.** `goToDomIndex` (`carousel.directive.ts:494-521`) and
+   `ScrollableSnapDirective.glideToNearestChild` both request `behavior: 'smooth'` unconditionally.
+   Chrome and Firefox map `scroll-behavior: smooth` to instant under reduced motion but do *not* do
+   the same for a `behavior: 'smooth'` argument, so the one motion a reduced-motion user cannot avoid
+   is the slide change itself. `injectPrefersReducedMotion()` is already injected in
+   `carousel.directive.ts:103`.
+6. **`et-scrollbar` has no minimum thumb hit area.** `--et-scrollbar-thumb-thickness` is 6px
+   (`scrollbar.component.css:8-12`) and the thumb is the drag target, inside a 12px track. The track
+   press handler softens this (a miss pages instead of doing nothing), but a 6px-wide grab target is
+   below every pointer-target guideline; a transparent `::before` inflating the hit box to the track
+   width would fix it without changing the look.
+
+### Testing
+
+1. **First pass: the two carousel High findings, as regression tests.** `playOnInit="false"` keeps
+   `isStopped()` true; and a looping carousel whose layout appears late still gets positioned onto the
+   real run. Both are cheap once the `fakeLayout` helper from the DX section exists — the second one
+   is the A/B pair I used above.
+2. **Then the RxJS teardown.** A spec that clicks a navigation dot, destroys the fixture and asserts
+   no `scroll` listener remains on the container. Generalise it: grep the batch for
+   `takeUntilDestroyed()` that is not the last operator — this was the only one here, but the pattern
+   is worth a lint rule rather than a test.
+3. **`carousel-loop.ts` and `carousel-slide-progress.ts` are the two files where a unit test buys the
+   most.** `restingChildIndex` and the progress formula are pure functions over numbers; extracting
+   the offset math the way `scrollbar-geometry.ts` already is would let them be tested exactly as
+   `scrollbar-geometry.spec.ts` tests its own — which is the model to copy, and the reason the
+   scrollbar is the best-covered domain in the batch.
+4. **A driver-level test for `suspendSnap` ref counting.** `scrollable.directive.ts:297-308` is the
+   invariant the whole loop-seam and drag-settle design rests on ("whichever finishes first must not
+   hand snapping back to the other"), and it is asserted nowhere. It is pure signal arithmetic — a
+   three-line test.
+5. **Replace the local observer mocks in `scrollable.component.spec.ts` with `test-helpers`.** As long
+   as they diverge, no scrollable spec can assert anything about intersections, which is what the
+   dots, the darkening, the masks' `has-partial-items` class and the carousel's active slide all read.
+
+---
+
+`Clean:` I read every non-spec source file in the three domains plus all five spec files and the three
+docs pages, and the following all held up. Carousel: the clone-run arithmetic (`cloneCount` capped at
+`count`, lead clones taken from the tail, `slideIndexOf`'s modulo, `nearestDomIndexOf`'s three-candidate
+shorter-way-round) is correct and well tested; clones are `aria-hidden` + `inert` + unlabelled and left
+out of `count()`; the styles-only-component split for the transition and autoplay CSS is exactly the
+AGENTS.md pattern and measurably worth it; `useCarouselScrollSettled`'s pointer deferral, the
+`requestedDomIndex` "not this navigation's settle" guard, and `slideProgress.flush()` on a seam crossing
+are each solving a real problem correctly; the `pauseControl` dev-mode WCAG 2.2.2 check and the
+hover/focus subtraction for the control itself are right; all `takeUntilDestroyed` calls in the carousel
+are last in their pipes; `CarouselItemDirective` and `CarouselSlideDirective` both unregister
+defensively (identity-checked). Scrollable: the native-CSS-snap design and its `snap-suspended` gate are
+sound, `suspendSnap` is correctly ref-counted and idempotent per release, `ScrollableSnapDirective`
+releases on destroy, the mutation-observer `attributeFilter` narrowing (and the reasoning for excluding
+`style`) is right, `activeChrome`'s filter/sort/resolve is correct, and the two chrome components'
+`aria-hidden` + `tabindex="-1"` decision is deliberate and documented. Scrollbar: this is the
+best-engineered domain in the batch — the RTL handling (magnitude on read, sign on write, direction read
+off the *target*) is correct and tested, `markScrollbarHost` is properly ref-counted with a `WeakMap`,
+`preventDefault` on the thumb press to avoid closing a focus-dismissed panel is a real fix with a real
+test, the drag's `cancelled` branch restores the original offset, `pageTowardsPointer` relies on the
+thumb's `stopPropagation` rather than a fragile hit test, and `measureScrollbar`'s clamps handle both
+degenerate cases. All CSS in all three domains is wrapped in `@layer components { … }`, uses `:where()`
+for config modifiers while leaving `:hover`/`:focus-visible` bare, contains no Tailwind, and resolves
+every colour from `--et-surface-*` / `--et-theme-color-*` tokens (the one exception is noted above);
+`prefers-reduced-motion` is handled in the scrollbar CSS and in the carousel's driver resolution; and
+the `can-animate` first-render suppression is applied consistently in both the carousel and the
+scrollable.
 
 ---
