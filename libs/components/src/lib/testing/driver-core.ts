@@ -26,7 +26,7 @@ export const hostElement = (fixture: ComponentFixture<unknown>) =>
   fixture.debugElement.children[0]!.nativeElement as HTMLElement;
 
 export const pressKey = (target: EventTarget, key: string) => {
-  target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
   tick();
 };
 
