@@ -42,6 +42,22 @@ describe('doctorCommand', () => {
     expect(errors.join('\n')).toContain('apiRepoPaths.hub');
   });
 
+  it('names the fix with the invocation it was given', () => {
+    const root = makeRoot();
+
+    mkdirSync(join(root, 'api/development'), { recursive: true });
+    write(root, LOCAL_CONFIG_FILE_NAME, JSON.stringify({ apiRepoPaths: { hub: './api' } }));
+    write(root, 'package.json', JSON.stringify({ name: 'host' }));
+    write(
+      root,
+      'ethlete.apis.js',
+      "module.exports = { hub: { composeDir: 'development', envFile: '.env', setupCommand: 'make setup' } };",
+    );
+
+    expect(doctorCommand({ root, apiInvocation: 'yarn api' })).toBe(1);
+    expect(errors.join('\n')).toContain('Run "yarn api setup hub".');
+  });
+
   it('lists a resolved API and succeeds', () => {
     const root = makeRoot();
 

@@ -1,7 +1,7 @@
 import { API_DEFINITIONS_FILE_NAMES, loadApiDefinitions } from './load-definitions';
 import { runApiCommand } from './run';
 
-export const apiCommand = ({ root, argv }: { root: string; argv: string[] }) => {
+export const apiCommand = ({ root, argv, invocation }: { root: string; argv: string[]; invocation?: string }) => {
   const { found, apis } = loadApiDefinitions(root);
 
   if (!found) {
@@ -24,5 +24,5 @@ export const apiCommand = ({ root, argv }: { root: string; argv: string[] }) => 
     return 1;
   }
 
-  return runApiCommand({ apis, argv, root });
+  return runApiCommand({ apis, argv, root, invocation });
 };

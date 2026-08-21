@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +16,9 @@ const HUB: ApiDefinition = {
   examplePath: '../fut-hub-backend',
   exec: { install: ['composer', 'install'] },
 };
+
+// Both confirm prompts read stdin, which never answers here and would hang the run.
+process.stdin.isTTY = false;
 
 const errors: string[] = [];
 const warnings: string[] = [];
@@ -38,13 +41,41 @@ const makeRoot = (files: Record<string, unknown> = {}) => {
   return root;
 };
 
+const captureLogs = () => {
+  const lines: string[] = [];
+  const log = vi.spyOn(console, 'log').mockImplementation((message: unknown) => void lines.push(String(message)));
+
+  return { lines, restore: () => log.mockRestore() };
+};
+
 const run = (argv: string[], root: string) => runApiCommand({ apis: { hub: HUB }, argv, root });
 
+const runWith = (api: Partial<ApiDefinition>, argv: string[], root: string) =>
+  runApiCommand({ apis: { hub: { ...HUB, ...api } }, argv, root });
+
+const makeCheckout = () => {
+  const root = makeRoot({ [LOCAL_CONFIG_FILE_NAME]: { apiRepoPaths: { hub: './api' } } });
+
+  mkdirSync(join(root, 'api/development'), { recursive: true });
+
+  return root;
+};
+
 describe('runApiCommand', () => {
-  it('prints the help and the known APIs when the API is unknown', async () => {
+  it('lists the known APIs when the API is unknown', async () => {
     expect(await run(['up', 'nope'], makeRoot())).toBe(1);
-    expect(errors[0]).toContain('Usage: et api <command> <api>');
-    expect(errors[0]).toContain('hub');
+    expect(errors[0]).toContain('Unknown API "nope".');
+    expect(errors[0]).toContain('APIs: hub');
+  });
+
+  it('suggests the API name behind a typo', async () => {
+    expect(await run(['up', 'hup'], makeRoot())).toBe(1);
+    expect(errors[0]).toContain('Did you mean "hub"?');
+  });
+
+  it('suggests the command behind a typo', async () => {
+    expect(await run(['sehll', 'hub'], makeRoot())).toBe(1);
+    expect(errors[0]).toContain('Did you mean "shell"?');
   });
 
   it('prints the help when no API is named', async () => {
@@ -52,21 +83,36 @@ describe('runApiCommand', () => {
     expect(errors[0]).toContain('Usage: et api <command> <api>');
   });
 
+  it('answers help for one API with the commands it accepts', async () => {
+    const logs = captureLogs();
+
+    expect(await run(['help', 'hub'], makeCheckout())).toBe(0);
+    expect(logs.lines[0]).toContain('Usage: et api <command> hub');
+    expect(logs.lines[0]).toContain('Run "make setup" in development');
+    expect(logs.lines[0]).toContain('Run "et api setup hub".');
+
+    logs.restore();
+  });
+
+  it('suggests the API name behind a typo after help', async () => {
+    expect(await run(['help', 'hup'], makeRoot())).toBe(1);
+    expect(errors[0]).toContain('Did you mean "hub"?');
+  });
+
   it('answers --help on stdout and succeeds', async () => {
-    const logs: string[] = [];
-    const log = vi.spyOn(console, 'log').mockImplementation((message: unknown) => void logs.push(String(message)));
+    const logs = captureLogs();
 
     expect(await run(['--help'], makeRoot())).toBe(0);
-    expect(logs[0]).toContain('Usage: et api <command> <api>');
+    expect(logs.lines[0]).toContain('Usage: et api <command> <api>');
     expect(errors).toEqual([]);
 
-    log.mockRestore();
+    logs.restore();
   });
 
   it('lists the API’s own commands when the command is unknown', async () => {
     expect(await run(['bogus', 'hub'], makeRoot())).toBe(1);
     expect(errors[0]).toContain('Unknown command "bogus" for the hub API.');
-    expect(errors[0]).toContain('up, down, logs, shell, clone, checkout, pull, install');
+    expect(errors[0]).toContain('up, down, logs, shell, clone, checkout, pull, setup, install');
   });
 
   it('names the config file when it does not exist', async () => {
@@ -98,14 +144,71 @@ describe('runApiCommand', () => {
     expect(errors[0]).toContain('has no development directory');
   });
 
-  it('names the setup command when the env file is missing', async () => {
-    const root = makeRoot({ [LOCAL_CONFIG_FILE_NAME]: { apiRepoPaths: { hub: './api' } } });
-
-    mkdirSync(join(root, 'api/development'), { recursive: true });
+  it('offers the setup command when the env file is missing', async () => {
+    const root = makeCheckout();
 
     expect(await run(['up', 'hub'], root)).toBe(1);
     expect(errors[0]).toContain('Missing .env in');
-    expect(errors[0]).toContain('Run "make setup" there first.');
+    expect(errors[0]).toContain('Re-run with --setup to run "make setup" in');
+  });
+
+  it('runs the setup command in the compose directory', async () => {
+    const root = makeCheckout();
+
+    expect(await runWith({ setupCommand: 'touch .env' }, ['setup', 'hub'], root)).toBe(0);
+    expect(existsSync(join(root, 'api/development/.env'))).toBe(true);
+  });
+
+  it('reports the created env file and keeps the setup output back', async () => {
+    const root = makeCheckout();
+    const logs = captureLogs();
+
+    expect(await runWith({ setupCommand: 'echo noise && touch .env' }, ['setup', 'hub'], root)).toBe(0);
+    expect(logs.lines[1]).toBe('Created .env.');
+    expect(logs.lines.includes('noise')).toBe(false);
+    expect(errors).toEqual([]);
+
+    logs.restore();
+  });
+
+  it('says the env file already existed', async () => {
+    const root = makeCheckout();
+    const logs = captureLogs();
+
+    writeFileSync(join(root, 'api/development/.env'), '', 'utf8');
+
+    expect(await runWith({ setupCommand: 'true' }, ['setup', 'hub'], root)).toBe(0);
+    expect(logs.lines.join('\n')).toContain('.env already existed.');
+
+    logs.restore();
+  });
+
+  it('shows the setup output when the command fails', async () => {
+    const root = makeCheckout();
+    const logs = captureLogs();
+
+    expect(await runWith({ setupCommand: 'echo boom >&2 && exit 3' }, ['setup', 'hub'], root)).toBe(3);
+    expect(errors.join('\n')).toContain('boom');
+    expect(errors.join('\n')).toContain('failed with exit code 3');
+
+    logs.restore();
+  });
+
+  it('fails when the setup command leaves the env file missing', async () => {
+    const root = makeCheckout();
+    const logs = captureLogs();
+
+    expect(await runWith({ setupCommand: 'true' }, ['setup', 'hub'], root)).toBe(1);
+    expect(errors[0]).toContain('still does not exist');
+
+    logs.restore();
+  });
+
+  it('has no setup command when the API declares none', async () => {
+    const root = makeCheckout();
+
+    expect(await runWith({ setupCommand: undefined }, ['setup', 'hub'], root)).toBe(1);
+    expect(errors[0]).toContain('Unknown command "setup"');
   });
 
   it('warns once when the paths still live in the legacy file', async () => {

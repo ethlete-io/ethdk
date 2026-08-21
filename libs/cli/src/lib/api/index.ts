@@ -8,3 +8,5 @@ export * from './help';
 export * from './load-definitions';
 export * from './resolve-checkout';
 export * from './run';
+export * from './setup';
+export * from './suggest';

@@ -10,7 +10,7 @@ export type ApiDefinition = {
   port: number;
   /** File that must exist in `composeDir` before the API can start, for example `.env`. */
   envFile?: string;
-  /** Command that creates `envFile`. Named in the error when the file is missing. */
+  /** Command that creates `envFile`, run by `setup` in `composeDir`. */
   setupCommand?: string;
   /** External container network to create before the first `up`. */
   network?: string;
@@ -28,9 +28,13 @@ export type ApiDefinition = {
 
 export type ApiDefinitions = Record<string, ApiDefinition>;
 
-export const BUILT_IN_API_COMMANDS = ['up', 'down', 'logs', 'shell', 'clone', 'checkout', 'pull'] as const;
+export const BUILT_IN_API_COMMANDS = ['up', 'down', 'logs', 'shell', 'clone', 'checkout', 'pull', 'setup'] as const;
 
-/** These act on the checkout itself, so they run before `make setup` and need no container engine. */
+/** These act on the checkout itself, so they run before `setupCommand` and need no container engine. */
 export const GIT_API_COMMANDS: string[] = ['clone', 'checkout', 'pull'];
 
-export const apiCommandNames = (api: ApiDefinition) => [...BUILT_IN_API_COMMANDS, ...Object.keys(api.exec ?? {})];
+/** `setup` is dropped for an API that declares no `setupCommand`, so nothing lists a command it cannot run. */
+export const apiCommandNames = (api: ApiDefinition) => [
+  ...BUILT_IN_API_COMMANDS.filter((command) => command !== 'setup' || api.setupCommand),
+  ...Object.keys(api.exec ?? {}),
+];

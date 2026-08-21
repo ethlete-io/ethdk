@@ -10,8 +10,21 @@ const definition = (exec?: Record<string, string[]>): ApiDefinition => ({
 });
 
 describe('apiCommandNames', () => {
-  it('lists the built-in commands when the API has no exec entries', () => {
+  it('leaves out setup when the API declares no setupCommand', () => {
     expect(apiCommandNames(definition())).toEqual(['up', 'down', 'logs', 'shell', 'clone', 'checkout', 'pull']);
+  });
+
+  it('lists setup when the API declares a setupCommand', () => {
+    expect(apiCommandNames({ ...definition(), setupCommand: 'make setup' })).toEqual([
+      'up',
+      'down',
+      'logs',
+      'shell',
+      'clone',
+      'checkout',
+      'pull',
+      'setup',
+    ]);
   });
 
   it('appends the API’s own exec entries', () => {

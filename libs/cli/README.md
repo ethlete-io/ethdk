@@ -22,6 +22,7 @@ Runs the API an app in this repo talks to, from a checkout on your own machine.
 
 ```bash
 yarn et api --help              # the commands, the APIs and what each one accepts
+yarn et api help hub            # what hub accepts, and where its checkout is
 yarn et api up hub              # start the containers
 yarn et api down hub            # stop them
 yarn et api logs hub            # follow the API's log
@@ -32,10 +33,11 @@ yarn et api checkout hub        # switch the checkout to the branch apiRepoBranc
 yarn et api pull hub            # fetch and fast-forward the checked-out branch
 yarn et api pull hub --force    # the same, discarding local commits and tracked changes
 yarn et api clone hub           # clone the API into .ethlete/hub
+yarn et api setup hub           # run the API's own setupCommand, which writes its .env
 ```
 
-`checkout` and `pull` act on the checkout itself, so they work before `make setup` has run and need
-no container engine. `pull` refuses to run on a checkout with uncommitted changes unless you pass
+`checkout`, `pull` and `setup` act on the checkout itself, so they work before the API has an `.env`
+and need no container engine. `pull` refuses to run on a checkout with uncommitted changes unless you pass
 `--force`. `--force` resets the branch to its remote and throws away local commits and tracked
 changes; it never touches untracked or ignored files, so a `vendor/` directory or a `.env` survives.
 

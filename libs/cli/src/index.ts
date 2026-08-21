@@ -1,13 +1,38 @@
-import { apiCommand, doctorCommand, release } from './lib';
+import { apiCommand, doctorCommand, release, repoInvocation } from './lib';
 
-const USAGE = `et — Ethlete repo tooling
+const USAGE_ROWS = [
+  { subcommand: 'release', args: '', lines: ['Turn pending changesets into a tagged, pushed release commit'] },
+  {
+    subcommand: 'api',
+    args: ' <cmd> <api>',
+    lines: [
+      "Run an API from this repo's ethlete.apis.js locally",
+      "(up, down, logs, shell, setup, plus that API's own exec entries)",
+    ],
+  },
+  {
+    subcommand: 'doctor',
+    args: '',
+    lines: ["Check this machine's ethlete.config.local.json, container engine", 'and every API checkout'],
+  },
+];
 
-  et release            Turn pending changesets into a tagged, pushed release commit
-  et api <cmd> <api>    Run an API from this repo's ethlete.apis.js locally
-                        (up, down, logs, shell, plus that API's own exec entries)
-  et doctor             Check this machine's ethlete.config.local.json, container engine
-                        and every API checkout
-`;
+const usage = (root: string) => {
+  const rows = USAGE_ROWS.map((row) => ({
+    ...row,
+    command: `${repoInvocation({ root, subcommand: row.subcommand })}${row.args}`,
+  }));
+  const width = Math.max(...rows.map((row) => row.command.length));
+
+  return [
+    'et — Ethlete repo tooling',
+    '',
+    ...rows.flatMap((row) =>
+      row.lines.map((line, index) => `  ${(index === 0 ? row.command : '').padEnd(width)}  ${line}`),
+    ),
+    '',
+  ].join('\n');
+};
 
 const cli = async (args: string[]): Promise<number> => {
   switch (args[0]) {
@@ -19,13 +44,21 @@ const cli = async (args: string[]): Promise<number> => {
       return 0;
 
     case 'api':
-      return apiCommand({ root: process.cwd(), argv: args.slice(1) });
+      return apiCommand({
+        root: process.cwd(),
+        argv: args.slice(1),
+        invocation: repoInvocation({ root: process.cwd(), subcommand: 'api' }),
+      });
 
     case 'doctor':
-      return doctorCommand({ root: process.cwd() });
+      // Every fix it names is an `et api` command, so it needs that script rather than its own.
+      return doctorCommand({
+        root: process.cwd(),
+        apiInvocation: repoInvocation({ root: process.cwd(), subcommand: 'api' }),
+      });
 
     default:
-      console.log(USAGE);
+      console.log(usage(process.cwd()));
 
       return args[0] === undefined || args[0] === '--help' || args[0] === '-h' ? 0 : 1;
   }

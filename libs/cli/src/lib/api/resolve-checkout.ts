@@ -10,6 +10,7 @@ import {
 } from '../config/local-config';
 import { DEFAULT_CHECKOUT_DIR, CloneRequest } from './clone';
 import { ApiDefinition } from './definition';
+import { SetupRequest } from './setup';
 
 export type ApiCheckout = {
   repoPath: string;
@@ -17,19 +18,33 @@ export type ApiCheckout = {
   composePath: string;
 };
 
+export type ApiCheckoutFailure = {
+  ok: false;
+  problem: string;
+  /** Set when the managed directory is empty and the API declares where to clone from. */
+  clonable?: CloneRequest;
+  /** Set when the env file is missing and the API declares a `setupCommand` that creates it. */
+  setupable?: SetupRequest;
+};
+
 /**
  * `legacyConfigWarning` is set on failure too. A wrong path is exactly when the developer needs to
  * know which file the value actually came from.
  */
 export type ApiCheckoutResult = { legacyConfigWarning?: string } & (
-  | { ok: true; checkout: ApiCheckout }
-  | {
-      ok: false;
-      problem: string;
-      /** Set when the managed directory is empty and the API declares where to clone from. */
-      clonable?: CloneRequest;
-    }
+  { ok: true; checkout: ApiCheckout } | ApiCheckoutFailure
 );
+
+/** The problem, plus the `et api` command that fixes it, so no message sends the reader to a Makefile. */
+export const checkoutProblem = (options: { failure: ApiCheckoutFailure; name: string; invocation: string }) => {
+  const { failure, name, invocation } = options;
+
+  if (failure.clonable) return `${failure.problem} Run "${invocation} clone ${name}".`;
+
+  if (failure.setupable) return `${failure.problem} Run "${invocation} setup ${name}".`;
+
+  return failure.problem;
+};
 
 const isDirectory = (path: string) => existsSync(path) && statSync(path).isDirectory();
 
@@ -52,12 +67,12 @@ export const resolveApiCheckout = (options: {
   name: string;
   api: ApiDefinition;
   /**
-   * The git commands act on the checkout itself, so they must not demand a compose directory or the
-   * output of `setupCommand` — both can legitimately be absent on a checkout that was just cloned.
+   * How much of the checkout the command needs. The git commands act on the checkout itself, and
+   * `setup` writes the env file, so neither can demand what it is there to produce.
    */
-  requireCompose?: boolean;
+  needs?: 'repo' | 'compose' | 'env';
 }): ApiCheckoutResult => {
-  const { root, name, api, requireCompose = true } = options;
+  const { root, name, api, needs = 'env' } = options;
   const { config, fileName, isLegacy } = readLocalConfig(root);
   const configured = configuredApiRepoPath(config, name);
   const legacyConfigWarning = isLegacy
@@ -103,7 +118,9 @@ export const resolveApiCheckout = (options: {
 
   const composePath = join(repoPath, api.composeDir);
 
-  if (requireCompose && !isDirectory(composePath)) {
+  if (needs === 'repo') return { ok: true, legacyConfigWarning, checkout: { repoPath, composePath } };
+
+  if (!isDirectory(composePath)) {
     return {
       ok: false,
       legacyConfigWarning,
@@ -111,13 +128,12 @@ export const resolveApiCheckout = (options: {
     };
   }
 
-  if (requireCompose && api.envFile && !existsSync(join(composePath, api.envFile))) {
+  if (needs === 'env' && api.envFile && !existsSync(join(composePath, api.envFile))) {
     return {
       ok: false,
       legacyConfigWarning,
-      problem: `Missing ${api.envFile} in ${composePath}.${
-        api.setupCommand ? ` Run "${api.setupCommand}" there first.` : ''
-      }`,
+      problem: `Missing ${api.envFile} in ${composePath}.`,
+      setupable: api.setupCommand ? { setupCommand: api.setupCommand, composePath, envFile: api.envFile } : undefined,
     };
   }
 

@@ -2,8 +2,10 @@ import { spawnSync } from 'child_process';
 import { composeToolNames, engineEnv, lanAddress, resolveComposeTool } from './compose';
 import { ApiDefinitions, GIT_API_COMMANDS, apiCommandNames } from './definition';
 import { checkoutApiBranch, pullApiBranch } from './git';
-import { apiHelp } from './help';
-import { resolveApiCheckout } from './resolve-checkout';
+import { apiHelp, singleApiHelp } from './help';
+import { checkoutProblem, resolveApiCheckout } from './resolve-checkout';
+import { runApiSetup } from './setup';
+import { didYouMean } from './suggest';
 import { cloneApiRepo, isGitIgnored, DEFAULT_CHECKOUT_DIR } from './clone';
 import { gitUrlHost, printPrivateDependencyHint } from './auth-hint';
 import { askQuestion } from '../utils';
@@ -18,16 +20,17 @@ export type RunApiCommandOptions = {
   invocation?: string;
 };
 
-const confirmClone = async (options: { problem: string; repoUrl: string; into: string }) => {
-  const { problem, repoUrl, into } = options;
+/** Asks before a fix `et api` can apply itself. Without a terminal it names the flag that skips the question. */
+const confirmFix = async (options: { problem: string; question: string; hint: string }) => {
+  const { problem, question, hint } = options;
 
   if (!process.stdin.isTTY) {
-    console.error(`${problem}\n\nRe-run with --clone to clone ${repoUrl} into ${into}.`);
+    console.error(`${problem}\n\n${hint}`);
 
     return false;
   }
 
-  const answer = await askQuestion(`${problem}\n\nClone ${repoUrl}\ninto ${into}? [y/N] `);
+  const answer = await askQuestion(`${problem}\n\n${question} [y/N] `);
 
   return /^y(es)?$/i.test(answer.trim());
 };
@@ -45,14 +48,45 @@ export const runApiCommand = async ({
   const [command, name] = argv.filter((arg) => !arg.startsWith('--'));
   const api = name === undefined ? undefined : apis[name];
 
-  if (argv.includes('--help') || argv.includes('-h') || command === 'help') {
+  const wantsHelp = argv.includes('--help') || argv.includes('-h') || command === 'help';
+
+  if (wantsHelp && name === undefined) {
     console.log(apiHelp(apis, invocation));
 
     return 0;
   }
 
-  if (command === undefined || name === undefined || !api) {
+  if (wantsHelp && api && name !== undefined) {
+    const checkout = resolveApiCheckout({ root, name, api });
+
+    console.log(
+      singleApiHelp({
+        name,
+        api,
+        invocation,
+        checkout: checkout.ok
+          ? checkout.checkout.composePath
+          : checkoutProblem({ failure: checkout, name, invocation }),
+      }),
+    );
+
+    return 0;
+  }
+
+  if (command === undefined || name === undefined) {
     console.error(apiHelp(apis, invocation));
+
+    return 1;
+  }
+
+  if (!api) {
+    const names = Object.keys(apis);
+
+    console.error(
+      names.length === 0
+        ? apiHelp(apis, invocation)
+        : `Unknown API "${name}".${didYouMean(name, names)}\n\nAPIs: ${names.join(', ')}`,
+    );
 
     return 1;
   }
@@ -60,48 +94,79 @@ export const runApiCommand = async ({
   const commands = apiCommandNames(api);
 
   if (!commands.includes(command)) {
-    console.error(`Unknown command "${command}" for the ${name} API.\n\nCommands: ${commands.join(', ')}`);
+    console.error(
+      `Unknown command "${command}" for the ${name} API.${didYouMean(command, commands)}\n\n` +
+        `Commands: ${commands.join(', ')}`,
+    );
 
     return 1;
   }
 
   const isGitCommand = GIT_API_COMMANDS.includes(command);
-  const checkout = resolveApiCheckout({ root, name, api, requireCompose: !isGitCommand });
+  const checkout = resolveApiCheckout({
+    root,
+    name,
+    api,
+    needs: isGitCommand ? 'repo' : command === 'setup' ? 'compose' : 'env',
+  });
 
   if (checkout.legacyConfigWarning) {
     console.warn(`${checkout.legacyConfigWarning}\n`);
   }
 
   if (!checkout.ok) {
-    if (!checkout.clonable) {
-      console.error(checkout.problem);
+    if (checkout.clonable) {
+      const { repoUrl, into, branch } = checkout.clonable;
+      const accepted =
+        command === 'clone' ||
+        argv.includes('--clone') ||
+        (await confirmFix({
+          problem: checkout.problem,
+          question: `Clone ${repoUrl}\ninto ${into}?`,
+          hint: `Re-run with --clone to clone ${repoUrl} into ${into}.`,
+        }));
 
-      return 1;
+      if (!accepted) return 1;
+
+      if (!isGitIgnored(root, into)) {
+        console.warn(`\n${DEFAULT_CHECKOUT_DIR}/ is not gitignored. Add it before you commit anything.\n`);
+      }
+
+      const cloned = cloneApiRepo({ repoUrl, into, branch });
+
+      if (cloned !== 0) {
+        printPrivateDependencyHint({ repoHost: gitUrlHost(repoUrl) });
+
+        return cloned;
+      }
+
+      if (command === 'clone') return 0;
+
+      return runApiCommand({ apis, argv, root, invocation });
     }
 
-    const { repoUrl, into, branch } = checkout.clonable;
-    const accepted =
-      command === 'clone' ||
-      argv.includes('--clone') ||
-      (await confirmClone({ problem: checkout.problem, repoUrl, into }));
+    if (checkout.setupable) {
+      const { setupCommand, composePath } = checkout.setupable;
+      const accepted =
+        argv.includes('--setup') ||
+        (await confirmFix({
+          problem: checkout.problem,
+          question: `Run "${setupCommand}" in ${composePath}?`,
+          hint: `Re-run with --setup to run "${setupCommand}" in ${composePath}.`,
+        }));
 
-    if (!accepted) return 1;
+      if (!accepted) return 1;
 
-    if (!isGitIgnored(root, into)) {
-      console.warn(`\n${DEFAULT_CHECKOUT_DIR}/ is not gitignored. Add it before you commit anything.\n`);
+      const prepared = runApiSetup(checkout.setupable);
+
+      if (prepared !== 0) return prepared;
+
+      return runApiCommand({ apis, argv, root, invocation });
     }
 
-    const cloned = cloneApiRepo({ repoUrl, into, branch });
+    console.error(checkout.problem);
 
-    if (cloned !== 0) {
-      printPrivateDependencyHint({ repoHost: gitUrlHost(repoUrl) });
-
-      return cloned;
-    }
-
-    if (command === 'clone') return 0;
-
-    return runApiCommand({ apis, argv, root, invocation });
+    return 1;
   }
 
   if (command === 'clone') {
@@ -111,6 +176,16 @@ export const runApiCommand = async ({
   }
 
   const { repoPath, composePath: cwd } = checkout.checkout;
+
+  if (command === 'setup') {
+    if (!api.setupCommand) {
+      console.error(`The ${name} API declares no setupCommand.`);
+
+      return 1;
+    }
+
+    return runApiSetup({ setupCommand: api.setupCommand, composePath: cwd, envFile: api.envFile });
+  }
 
   if (isGitCommand) {
     const expectedBranch = configuredApiRepoBranch(readLocalConfig(root).config, name);

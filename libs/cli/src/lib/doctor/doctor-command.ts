@@ -1,7 +1,7 @@
 import { composeToolNames, composeBinary, resolveComposeTool } from '../api/compose';
 import { join } from 'path';
 import { API_DEFINITIONS_FILE_NAMES, loadApiDefinitions } from '../api/load-definitions';
-import { resolveApiCheckout } from '../api/resolve-checkout';
+import { checkoutProblem, resolveApiCheckout } from '../api/resolve-checkout';
 import { diagnoseLocalConfig } from '../config/diagnose';
 import { LEGACY_LOCAL_CONFIG_FILE_NAME, LOCAL_CONFIG_FILE_NAME, readLocalConfigFile } from '../config/local-config';
 
@@ -15,7 +15,7 @@ const describeComposeTool = () => {
     : { line: undefined, problems: [`No compose tool found. Tried: ${composeToolNames().join(', ')}.`] };
 };
 
-const describeApis = (root: string) => {
+const describeApis = (root: string, apiInvocation: string) => {
   const { found, apis, fileName } = loadApiDefinitions(root);
 
   if (!found) return { lines: [], problems: [] };
@@ -28,10 +28,8 @@ const describeApis = (root: string) => {
 
     if (checkout.ok) {
       lines.push(`${fileName}: ${name} → ${checkout.checkout.composePath}`);
-    } else if (checkout.clonable) {
-      problems.push(`${checkout.problem} Run "et api clone ${name}".`);
     } else {
-      problems.push(checkout.problem);
+      problems.push(checkoutProblem({ failure: checkout, name, invocation: apiInvocation }));
     }
   }
 
@@ -39,7 +37,7 @@ const describeApis = (root: string) => {
 };
 
 /** Reports every problem with this machine's setup, so `et api` does not have to find them one at a time. */
-export const doctorCommand = ({ root }: { root: string }) => {
+export const doctorCommand = ({ root, apiInvocation = 'et api' }: { root: string; apiInvocation?: string }) => {
   // A file that exists but cannot be parsed still has to be reported, so this asks whether the file
   // is there rather than whether it could be read.
   const hasConfig = [LOCAL_CONFIG_FILE_NAME, LEGACY_LOCAL_CONFIG_FILE_NAME].some(
@@ -55,7 +53,7 @@ export const doctorCommand = ({ root }: { root: string }) => {
 
   const configProblems = diagnoseLocalConfig({ root });
   const compose = describeComposeTool();
-  const apis = describeApis(root);
+  const apis = describeApis(root, apiInvocation);
 
   const problems = [...configProblems, ...compose.problems, ...apis.problems];
 
