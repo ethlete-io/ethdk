@@ -1,9 +1,10 @@
 import { Component, ErrorHandler, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { form, FormField } from '@angular/forms/signals';
 import { QueryTestSetup, setupQueryTest } from '@ethlete/query/testing';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
+import { MountedDropzoneDriver, mountDropzone } from '../../testing/dropzone-driver';
 import { DropzoneEntry } from './dropzone-entry';
 import { AnyDropzoneUploadConfig, createDropzoneUpload } from './dropzone-upload';
 import { DropzoneFileConstraints, DropzoneFileRejection, dropzoneFiles } from './dropzone-validation';
@@ -18,16 +19,6 @@ const deleteUrl = (id: string) => `https://api.test.com/media/${id}`;
 
 const createFile = (name = 'photo.png', type = 'image/png', size = 4) =>
   new File([new Uint8Array(size)], name, { type });
-
-const createDragEvent = (type: string, files: File[] = []) => {
-  const event = new Event(type, { bubbles: true, cancelable: true });
-
-  Object.defineProperty(event, 'dataTransfer', {
-    value: { types: ['Files'], files },
-  });
-
-  return event;
-};
 
 @Component({
   template: `
@@ -126,8 +117,6 @@ const createUploadConfig = (
   });
 
 describe('DropzoneDirective', () => {
-  let setup: QueryTestSetup;
-
   beforeEach(() => {
     // jsdom does not implement object URLs
     URL.createObjectURL = vi.fn(() => `blob:mock-${Math.random()}`);
@@ -135,327 +124,311 @@ describe('DropzoneDirective', () => {
   });
 
   describe('with test host', () => {
-    let fixture: ComponentFixture<DropzoneTestHost>;
-    let host: DropzoneTestHost;
-
-    const dropzone = () =>
-      fixture.debugElement.children[0]!.injector.get(DropzoneDirective) as DropzoneDirective<string>;
-    const dropzoneEl = () => fixture.nativeElement.querySelector('[etDropzone]') as HTMLElement;
+    let driver: MountedDropzoneDriver<DropzoneTestHost>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [DropzoneTestHost] });
-      setup = setupQueryTest();
-      fixture = TestBed.createComponent(DropzoneTestHost);
-      host = fixture.componentInstance;
-      host.upload.set(createUploadConfig(setup));
-      fixture.detectChanges();
+      driver = mountDropzone(DropzoneTestHost);
+      driver.host.upload.set(createUploadConfig(driver.query));
+      driver.tick();
     });
 
     afterEach(() => {
-      fixture.destroy();
-      setup.httpTesting.verify();
+      driver.fixture.destroy();
+      driver.query.httpTesting.verify();
     });
 
     it('should upload a selected file and write the selected value into the control', () => {
-      dropzone().selectFiles([createFile()]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
 
-      expect(dropzone().entries().length).toBe(1);
-      expect(dropzone().entries()[0]!.status()).toBe('uploading');
-      expect(dropzone().anyUploading()).toBe(true);
-      expect(host.value()).toBe(null);
+      expect(driver.dropzone.entries().length).toBe(1);
+      expect(driver.dropzone.entries()[0]!.status()).toBe('uploading');
+      expect(driver.dropzone.anyUploading()).toBe(true);
+      expect(driver.host.value()).toBe(null);
 
-      const req = setup.httpTesting.expectOne(UPLOAD_URL);
+      const req = driver.query.httpTesting.expectOne(UPLOAD_URL);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toBeInstanceOf(FormData);
       expect((req.request.body as FormData).get('file')).toBeInstanceOf(File);
 
       req.flush({ uuid: 'uuid-1' });
-      fixture.detectChanges();
+      driver.tick();
 
-      expect(dropzone().entries()[0]!.status()).toBe('success');
-      expect(dropzone().hasValue()).toBe(true);
-      expect(host.value()).toBe('uuid-1');
-      expect(host.succeeded.length).toBe(1);
+      expect(driver.dropzone.entries()[0]!.status()).toBe('success');
+      expect(driver.dropzone.hasValue()).toBe(true);
+      expect(driver.host.value()).toBe('uuid-1');
+      expect(driver.host.succeeded.length).toBe(1);
     });
 
     it('should set touched when files are selected', () => {
-      expect(dropzone().touched()).toBe(false);
+      expect(driver.dropzone.touched()).toBe(false);
 
-      dropzone().selectFiles([createFile()]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
 
-      expect(dropzone().touched()).toBe(true);
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+      expect(driver.dropzone.touched()).toBe(true);
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
     });
 
     it('should create an image preview object url and revoke it on remove', () => {
-      dropzone().selectFiles([createFile()]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
 
-      const entry = dropzone().entries()[0]!;
+      const entry = driver.dropzone.entries()[0]!;
       expect(entry.previewUrl()).toMatch(/^blob:mock-/);
       expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
 
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
-      fixture.detectChanges();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+      driver.tick();
 
-      dropzone().removeEntry(entry.id);
-      fixture.detectChanges();
+      driver.dropzone.removeEntry(entry.id);
+      driver.tick();
 
       expect(URL.revokeObjectURL).toHaveBeenCalledWith(entry.previewUrl());
     });
 
     it('should not create an object url for non-image files', () => {
-      dropzone().selectFiles([createFile('doc.pdf', 'application/pdf')]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('doc.pdf', 'application/pdf')]);
+      driver.tick();
 
-      expect(dropzone().entries()[0]!.previewUrl()).toBe(null);
+      expect(driver.dropzone.entries()[0]!.previewUrl()).toBe(null);
       expect(URL.createObjectURL).not.toHaveBeenCalled();
 
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
     });
 
     it('should upload multiple files and keep the control value in entry order', () => {
-      host.multiple.set(true);
-      fixture.detectChanges();
+      driver.host.multiple.set(true);
+      driver.tick();
 
-      dropzone().selectFiles([createFile('a.png'), createFile('b.png')]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('a.png'), createFile('b.png')]);
+      driver.tick();
 
-      const requests = setup.httpTesting.match(UPLOAD_URL);
+      const requests = driver.query.httpTesting.match(UPLOAD_URL);
       expect(requests.length).toBe(2);
 
       // resolve out of order - the value order must follow the entry order
       requests[1]!.flush({ uuid: 'uuid-b' });
-      fixture.detectChanges();
-      expect(host.value()).toEqual(['uuid-b']);
+      driver.tick();
+      expect(driver.host.value()).toEqual(['uuid-b']);
 
       requests[0]!.flush({ uuid: 'uuid-a' });
-      fixture.detectChanges();
-      expect(host.value()).toEqual(['uuid-a', 'uuid-b']);
+      driver.tick();
+      expect(driver.host.value()).toEqual(['uuid-a', 'uuid-b']);
     });
 
     it('should replace the current entry in single mode', () => {
-      dropzone().selectFiles([createFile('a.png')]);
-      fixture.detectChanges();
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('a.png')]);
+      driver.tick();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
+      driver.tick();
 
-      expect(host.value()).toBe('uuid-a');
-      const firstEntry = dropzone().entries()[0]!;
+      expect(driver.host.value()).toBe('uuid-a');
+      const firstEntry = driver.dropzone.entries()[0]!;
 
-      dropzone().selectFiles([createFile('b.png')]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('b.png')]);
+      driver.tick();
 
-      expect(dropzone().entries().length).toBe(1);
-      expect(dropzone().entries()[0]).not.toBe(firstEntry);
-      expect(host.value()).toBe(null);
+      expect(driver.dropzone.entries().length).toBe(1);
+      expect(driver.dropzone.entries()[0]).not.toBe(firstEntry);
+      expect(driver.host.value()).toBe(null);
       expect(URL.revokeObjectURL).toHaveBeenCalledWith(firstEntry.previewUrl());
 
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-b' });
-      fixture.detectChanges();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-b' });
+      driver.tick();
 
-      expect(host.value()).toBe('uuid-b');
+      expect(driver.host.value()).toBe('uuid-b');
     });
 
     it('should only keep the first file in single mode and reject the rest', () => {
-      dropzone().selectFiles([createFile('a.png'), createFile('b.png')]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('a.png'), createFile('b.png')]);
+      driver.tick();
 
-      expect(dropzone().entries().length).toBe(1);
-      expect(host.rejections[0]).toEqual([{ file: expect.any(File), reason: 'maxFiles' }]);
+      expect(driver.dropzone.entries().length).toBe(1);
+      expect(driver.host.rejections[0]).toEqual([{ file: expect.any(File), reason: 'maxFiles' }]);
 
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
     });
 
     it('should cancel the upload when an in-flight entry is removed', () => {
-      dropzone().selectFiles([createFile()]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
 
-      const req = setup.httpTesting.expectOne(UPLOAD_URL);
-      const entry = dropzone().entries()[0]!;
+      const req = driver.query.httpTesting.expectOne(UPLOAD_URL);
+      const entry = driver.dropzone.entries()[0]!;
 
-      dropzone().removeEntry(entry.id);
-      fixture.detectChanges();
+      driver.dropzone.removeEntry(entry.id);
+      driver.tick();
 
       expect(req.cancelled).toBe(true);
-      expect(dropzone().entries().length).toBe(0);
-      expect(host.value()).toBe(null);
+      expect(driver.dropzone.entries().length).toBe(0);
+      expect(driver.host.value()).toBe(null);
     });
 
     it('should update the control value when a successful entry is removed', () => {
-      host.multiple.set(true);
-      fixture.detectChanges();
+      driver.host.multiple.set(true);
+      driver.tick();
 
-      dropzone().selectFiles([createFile('a.png'), createFile('b.png')]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('a.png'), createFile('b.png')]);
+      driver.tick();
 
-      const requests = setup.httpTesting.match(UPLOAD_URL);
+      const requests = driver.query.httpTesting.match(UPLOAD_URL);
       requests[0]!.flush({ uuid: 'uuid-a' });
       requests[1]!.flush({ uuid: 'uuid-b' });
-      fixture.detectChanges();
+      driver.tick();
 
-      expect(host.value()).toEqual(['uuid-a', 'uuid-b']);
+      expect(driver.host.value()).toEqual(['uuid-a', 'uuid-b']);
 
-      dropzone().removeEntry(dropzone().entries()[0]!.id);
-      fixture.detectChanges();
+      driver.dropzone.removeEntry(driver.dropzone.entries()[0]!.id);
+      driver.tick();
 
-      expect(host.value()).toEqual(['uuid-b']);
+      expect(driver.host.value()).toEqual(['uuid-b']);
     });
 
     it('should keep failed uploads out of the control value and retry with the original args', () => {
-      dropzone().selectFiles([createFile()]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
 
-      const firstReq = setup.httpTesting.expectOne(UPLOAD_URL);
+      const firstReq = driver.query.httpTesting.expectOne(UPLOAD_URL);
       const firstBody = firstReq.request.body;
       firstReq.flush('upload failed', { status: 500, statusText: 'Server Error' });
-      fixture.detectChanges();
+      driver.tick();
 
-      const entry = dropzone().entries()[0]!;
+      const entry = driver.dropzone.entries()[0]!;
       expect(entry.status()).toBe('error');
       expect(entry.error()).toBeTruthy();
-      expect(dropzone().anyFailed()).toBe(true);
-      expect(host.value()).toBe(null);
-      expect(host.failed.length).toBe(1);
+      expect(driver.dropzone.anyFailed()).toBe(true);
+      expect(driver.host.value()).toBe(null);
+      expect(driver.host.failed.length).toBe(1);
 
-      dropzone().retryEntry(entry.id);
-      fixture.detectChanges();
+      driver.dropzone.retryEntry(entry.id);
+      driver.tick();
 
-      const retryReq = setup.httpTesting.expectOne(UPLOAD_URL);
+      const retryReq = driver.query.httpTesting.expectOne(UPLOAD_URL);
       expect(retryReq.request.body).toBe(firstBody);
 
       retryReq.flush({ uuid: 'uuid-1' });
-      fixture.detectChanges();
+      driver.tick();
 
       expect(entry.status()).toBe('success');
-      expect(host.value()).toBe('uuid-1');
+      expect(driver.host.value()).toBe('uuid-1');
     });
 
     it('should clear all entries and reset the control value', () => {
-      host.multiple.set(true);
-      fixture.detectChanges();
+      driver.host.multiple.set(true);
+      driver.tick();
 
-      dropzone().selectFiles([createFile('a.png')]);
-      fixture.detectChanges();
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('a.png')]);
+      driver.tick();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
+      driver.tick();
 
-      dropzone().clear();
-      fixture.detectChanges();
+      driver.dropzone.clear();
+      driver.tick();
 
-      expect(dropzone().entries().length).toBe(0);
-      expect(host.value()).toEqual([]);
+      expect(driver.dropzone.entries().length).toBe(0);
+      expect(driver.host.value()).toEqual([]);
     });
 
     it('should hydrate existing entries from an inbound control value', () => {
-      host.multiple.set(true);
-      host.value.set(['e1', 'e2']);
-      fixture.detectChanges();
+      driver.host.multiple.set(true);
+      driver.host.value.set(['e1', 'e2']);
+      driver.tick();
 
-      const entries = dropzone().entries();
+      const entries = driver.dropzone.entries();
       expect(entries.length).toBe(2);
       expect(entries[0]!.status()).toBe('existing');
       expect(entries[0]!.name()).toBe('existing-e1');
       expect(entries[0]!.previewUrl()).toBe('https://cdn.test.com/e1');
       expect(entries[0]!.value()).toBe('e1');
-      expect(dropzone().hasValue()).toBe(true);
+      expect(driver.dropzone.hasValue()).toBe(true);
 
-      dropzone().removeEntry(entries[0]!.id);
-      fixture.detectChanges();
+      driver.dropzone.removeEntry(entries[0]!.id);
+      driver.tick();
 
-      expect(host.value()).toEqual(['e2']);
+      expect(driver.host.value()).toEqual(['e2']);
     });
 
     it('should hydrate a single existing entry in single mode', () => {
-      host.value.set('e1');
-      fixture.detectChanges();
+      driver.host.value.set('e1');
+      driver.tick();
 
-      expect(dropzone().entries().length).toBe(1);
-      expect(dropzone().entries()[0]!.status()).toBe('existing');
-      expect(dropzone().entries()[0]!.name()).toBe('existing-e1');
+      expect(driver.dropzone.entries().length).toBe(1);
+      expect(driver.dropzone.entries()[0]!.status()).toBe('existing');
+      expect(driver.dropzone.entries()[0]!.name()).toBe('existing-e1');
     });
 
     it('should keep uploading entries when the value is reconciled', () => {
-      host.multiple.set(true);
-      fixture.detectChanges();
+      driver.host.multiple.set(true);
+      driver.tick();
 
-      dropzone().selectFiles([createFile('a.png')]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('a.png')]);
+      driver.tick();
 
-      host.value.set(['e1']);
-      fixture.detectChanges();
+      driver.host.value.set(['e1']);
+      driver.tick();
 
-      const entries = dropzone().entries();
+      const entries = driver.dropzone.entries();
       expect(entries.length).toBe(2);
       expect(entries[0]!.status()).toBe('existing');
       expect(entries[1]!.status()).toBe('uploading');
 
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
-      fixture.detectChanges();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
+      driver.tick();
 
-      expect(host.value()).toEqual(['e1', 'uuid-a']);
+      expect(driver.host.value()).toEqual(['e1', 'uuid-a']);
     });
 
     it('should not upload while disabled', () => {
-      host.disabled.set(true);
-      fixture.detectChanges();
+      driver.host.disabled.set(true);
+      driver.tick();
 
-      dropzone().selectFiles([createFile()]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
 
-      expect(dropzone().entries().length).toBe(0);
-      setup.httpTesting.expectNone(UPLOAD_URL);
+      expect(driver.dropzone.entries().length).toBe(0);
+      driver.query.httpTesting.expectNone(UPLOAD_URL);
     });
 
     it('should track drag over state via dragenter/dragleave', () => {
-      const element = dropzoneEl();
+      driver.drag('dragenter');
 
-      element.dispatchEvent(createDragEvent('dragenter'));
-      fixture.detectChanges();
+      expect(driver.dropzone.isDragOver()).toBe(true);
+      expect(driver.attr('data-drag-over')).toBe('true');
 
-      expect(dropzone().isDragOver()).toBe(true);
-      expect(element.getAttribute('data-drag-over')).toBe('true');
+      driver.drag('dragleave');
 
-      element.dispatchEvent(createDragEvent('dragleave'));
-      fixture.detectChanges();
-
-      expect(dropzone().isDragOver()).toBe(false);
-      expect(element.getAttribute('data-drag-over')).toBe(null);
+      expect(driver.dropzone.isDragOver()).toBe(false);
+      expect(driver.attr('data-drag-over')).toBe(null);
     });
 
     it('should upload dropped files and reset the drag over state', () => {
-      const element = dropzoneEl();
+      driver.drag('dragenter');
+      driver.drag('drop', [createFile()]);
 
-      element.dispatchEvent(createDragEvent('dragenter'));
-      element.dispatchEvent(createDragEvent('drop', [createFile()]));
-      fixture.detectChanges();
+      expect(driver.dropzone.isDragOver()).toBe(false);
+      expect(driver.dropzone.entries().length).toBe(1);
 
-      expect(dropzone().isDragOver()).toBe(false);
-      expect(dropzone().entries().length).toBe(1);
-
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
     });
 
     it('should ignore drag events while disabled', () => {
-      host.disabled.set(true);
-      fixture.detectChanges();
+      driver.host.disabled.set(true);
+      driver.tick();
 
-      dropzoneEl().dispatchEvent(createDragEvent('dragenter'));
-      fixture.detectChanges();
+      driver.drag('dragenter');
 
-      expect(dropzone().isDragOver()).toBe(false);
-      expect(dropzoneEl().getAttribute('data-disabled')).toBe('true');
+      expect(driver.dropzone.isDragOver()).toBe(false);
+      expect(driver.attr('data-disabled')).toBe('true');
     });
 
     it('should dispose all entries on destroy', () => {
-      dropzone().selectFiles([createFile()]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
 
-      const req = setup.httpTesting.expectOne(UPLOAD_URL);
+      const req = driver.query.httpTesting.expectOne(UPLOAD_URL);
 
-      fixture.destroy();
+      driver.fixture.destroy();
 
       expect(req.cancelled).toBe(true);
       expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
@@ -463,131 +436,124 @@ describe('DropzoneDirective', () => {
   });
 
   describe('delete on remove', () => {
-    let fixture: ComponentFixture<DropzoneTestHost>;
-    let host: DropzoneTestHost;
-
-    const dropzone = () =>
-      fixture.debugElement.children[0]!.injector.get(DropzoneDirective) as DropzoneDirective<string>;
+    let driver: MountedDropzoneDriver<DropzoneTestHost>;
 
     // effects (the settlement signal `executeUntilSettled` awaits) only flush on a CD tick, and the
     // resulting promise chain still needs a real microtask turn to run its `.then()`s.
     const flushMicrotasks = () => new Promise<void>((resolve) => setTimeout(resolve));
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [DropzoneTestHost] });
-      setup = setupQueryTest();
-      fixture = TestBed.createComponent(DropzoneTestHost);
-      host = fixture.componentInstance;
-      host.upload.set(createUploadConfig(setup, { withDelete: true, includeExisting: true }));
-      fixture.detectChanges();
+      driver = mountDropzone(DropzoneTestHost);
+      driver.host.upload.set(createUploadConfig(driver.query, { withDelete: true, includeExisting: true }));
+      driver.tick();
     });
 
     afterEach(() => {
-      fixture.destroy();
-      setup.httpTesting.verify();
+      driver.fixture.destroy();
+      driver.query.httpTesting.verify();
     });
 
     it('should fire the delete request when a successfully uploaded entry is removed', async () => {
-      dropzone().selectFiles([createFile()]);
-      fixture.detectChanges();
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+      driver.tick();
 
-      dropzone().removeEntry(dropzone().entries()[0]!.id);
-      fixture.detectChanges();
+      driver.dropzone.removeEntry(driver.dropzone.entries()[0]!.id);
+      driver.tick();
 
-      const deleteReq = setup.httpTesting.expectOne(deleteUrl('uuid-1'));
+      const deleteReq = driver.query.httpTesting.expectOne(deleteUrl('uuid-1'));
       expect(deleteReq.request.method).toBe('DELETE');
       deleteReq.flush(null);
 
-      fixture.detectChanges();
+      driver.tick();
       await flushMicrotasks();
-      fixture.detectChanges();
+      driver.tick();
 
-      expect(host.deleteSucceeded).toEqual(['uuid-1']);
-      expect(host.deleteFailed).toEqual([]);
+      expect(driver.host.deleteSucceeded).toEqual(['uuid-1']);
+      expect(driver.host.deleteFailed).toEqual([]);
     });
 
     it('should fire the delete request when an existing entry is removed and includeExisting is on', async () => {
-      host.value.set('e1');
-      fixture.detectChanges();
+      driver.host.value.set('e1');
+      driver.tick();
 
-      dropzone().removeEntry(dropzone().entries()[0]!.id);
-      fixture.detectChanges();
+      driver.dropzone.removeEntry(driver.dropzone.entries()[0]!.id);
+      driver.tick();
 
-      setup.httpTesting.expectOne(deleteUrl('e1')).flush(null);
+      driver.query.httpTesting.expectOne(deleteUrl('e1')).flush(null);
 
-      fixture.detectChanges();
+      driver.tick();
       await flushMicrotasks();
-      fixture.detectChanges();
+      driver.tick();
 
-      expect(host.deleteSucceeded).toEqual(['e1']);
+      expect(driver.host.deleteSucceeded).toEqual(['e1']);
     });
 
     it('should not delete an existing entry by default, and stay silent about it', async () => {
-      host.upload.set(createUploadConfig(setup, { withDelete: true }));
-      host.value.set('e1');
-      fixture.detectChanges();
+      driver.host.upload.set(createUploadConfig(driver.query, { withDelete: true }));
+      driver.host.value.set('e1');
+      driver.tick();
 
-      dropzone().removeEntry(dropzone().entries()[0]!.id);
-      fixture.detectChanges();
+      driver.dropzone.removeEntry(driver.dropzone.entries()[0]!.id);
+      driver.tick();
       await flushMicrotasks();
-      fixture.detectChanges();
+      driver.tick();
 
-      setup.httpTesting.expectNone(deleteUrl('e1'));
-      expect(host.value()).toBe(null);
-      expect(host.deleteSucceeded).toEqual([]);
-      expect(host.deleteFailed).toEqual([]);
+      driver.query.httpTesting.expectNone(deleteUrl('e1'));
+      expect(driver.host.value()).toBe(null);
+      expect(driver.host.deleteSucceeded).toEqual([]);
+      expect(driver.host.deleteFailed).toEqual([]);
     });
 
     it('should still delete an uploaded entry while includeExisting is off', async () => {
-      host.upload.set(createUploadConfig(setup, { withDelete: true }));
-      fixture.detectChanges();
+      driver.host.upload.set(createUploadConfig(driver.query, { withDelete: true }));
+      driver.tick();
 
-      dropzone().selectFiles([createFile()]);
-      fixture.detectChanges();
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+      driver.tick();
 
-      dropzone().removeEntry(dropzone().entries()[0]!.id);
-      fixture.detectChanges();
+      driver.dropzone.removeEntry(driver.dropzone.entries()[0]!.id);
+      driver.tick();
 
-      setup.httpTesting.expectOne(deleteUrl('uuid-1')).flush(null);
+      driver.query.httpTesting.expectOne(deleteUrl('uuid-1')).flush(null);
 
-      fixture.detectChanges();
+      driver.tick();
       await flushMicrotasks();
-      fixture.detectChanges();
+      driver.tick();
 
-      expect(host.deleteSucceeded).toEqual(['uuid-1']);
+      expect(driver.host.deleteSucceeded).toEqual(['uuid-1']);
     });
 
     it('should emit deleteFail (and not remove the value a second time) when the delete request fails', async () => {
-      host.value.set('e1');
-      fixture.detectChanges();
+      driver.host.value.set('e1');
+      driver.tick();
 
-      dropzone().removeEntry(dropzone().entries()[0]!.id);
-      fixture.detectChanges();
+      driver.dropzone.removeEntry(driver.dropzone.entries()[0]!.id);
+      driver.tick();
 
-      setup.httpTesting.expectOne(deleteUrl('e1')).flush('nope', { status: 500, statusText: 'Server Error' });
+      driver.query.httpTesting.expectOne(deleteUrl('e1')).flush('nope', { status: 500, statusText: 'Server Error' });
 
-      fixture.detectChanges();
+      driver.tick();
       await flushMicrotasks();
-      fixture.detectChanges();
+      driver.tick();
 
-      expect(host.deleteSucceeded).toEqual([]);
-      expect(host.deleteFailed.length).toBe(1);
-      expect(host.deleteFailed[0]!.value).toBe('e1');
-      expect(dropzone().entries().length).toBe(0);
+      expect(driver.host.deleteSucceeded).toEqual([]);
+      expect(driver.host.deleteFailed.length).toBe(1);
+      expect(driver.host.deleteFailed[0]!.value).toBe('e1');
+      expect(driver.dropzone.entries().length).toBe(0);
     });
 
     it('should not fire a delete request for a still-uploading entry (nothing persisted yet)', () => {
-      dropzone().selectFiles([createFile()]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
 
-      const req = setup.httpTesting.expectOne(UPLOAD_URL);
+      const req = driver.query.httpTesting.expectOne(UPLOAD_URL);
 
-      dropzone().removeEntry(dropzone().entries()[0]!.id);
-      fixture.detectChanges();
+      driver.dropzone.removeEntry(driver.dropzone.entries()[0]!.id);
+      driver.tick();
 
       expect(req.cancelled).toBe(true);
       // `afterEach`'s `httpTesting.verify()` would fail if a DELETE request had also been queued.
@@ -595,114 +561,108 @@ describe('DropzoneDirective', () => {
   });
 
   describe('with form schema constraints (dropzoneFiles)', () => {
-    let fixture: ComponentFixture<DropzoneSchemaTestHost>;
-    let host: DropzoneSchemaTestHost;
+    let driver: MountedDropzoneDriver<DropzoneSchemaTestHost>;
 
-    const dropzone = () =>
-      fixture.debugElement.children[0]!.injector.get(DropzoneDirective) as DropzoneDirective<string>;
-    const fieldErrors = () => host.demoForm.media().errors();
+    const fieldErrors = () => driver.host.demoForm.media().errors();
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [DropzoneSchemaTestHost] });
-      setup = setupQueryTest();
-      fixture = TestBed.createComponent(DropzoneSchemaTestHost);
-      host = fixture.componentInstance;
-      host.upload.set(createUploadConfig(setup));
-      fixture.detectChanges();
+      driver = mountDropzone(DropzoneSchemaTestHost);
+      driver.host.upload.set(createUploadConfig(driver.query));
+      driver.tick();
     });
 
     afterEach(() => {
-      fixture.destroy();
-      setup.httpTesting.verify();
+      driver.fixture.destroy();
+      driver.query.httpTesting.verify();
     });
 
     it('should read the accept constraint from the schema', () => {
-      host.constraints.set({ accept: 'image/*' });
-      fixture.detectChanges();
+      driver.host.constraints.set({ accept: 'image/*' });
+      driver.tick();
 
-      expect(dropzone().accept()).toBe('image/*');
+      expect(driver.dropzone.accept()).toBe('image/*');
     });
 
     it('should reject files not matching accept and put a validation error on the field', () => {
-      host.constraints.set({ accept: 'image/*' });
-      fixture.detectChanges();
+      driver.host.constraints.set({ accept: 'image/*' });
+      driver.tick();
 
-      dropzone().selectFiles([createFile('doc.pdf', 'application/pdf')]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('doc.pdf', 'application/pdf')]);
+      driver.tick();
 
-      expect(dropzone().entries().length).toBe(0);
-      expect(host.rejections[0]).toEqual([{ file: expect.any(File), reason: 'accept' }]);
-      expect(dropzone().lastRejections()).toEqual([{ file: expect.any(File), reason: 'accept' }]);
+      expect(driver.dropzone.entries().length).toBe(0);
+      expect(driver.host.rejections[0]).toEqual([{ file: expect.any(File), reason: 'accept' }]);
+      expect(driver.dropzone.lastRejections()).toEqual([{ file: expect.any(File), reason: 'accept' }]);
       expect(fieldErrors()).toEqual([
         expect.objectContaining({ kind: 'dropzoneFiles', message: '"doc.pdf" has an unsupported file type.' }),
       ]);
-      expect(host.demoForm.media().invalid()).toBe(true);
-      setup.httpTesting.expectNone(UPLOAD_URL);
+      expect(driver.host.demoForm.media().invalid()).toBe(true);
+      driver.query.httpTesting.expectNone(UPLOAD_URL);
     });
 
     it('should reject files exceeding maxFileSize with the built-in message', () => {
-      host.constraints.set({ maxFileSize: 2 });
-      fixture.detectChanges();
+      driver.host.constraints.set({ maxFileSize: 2 });
+      driver.tick();
 
-      dropzone().selectFiles([createFile('big.png', 'image/png', 10)]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('big.png', 'image/png', 10)]);
+      driver.tick();
 
       expect(fieldErrors()).toEqual([
         expect.objectContaining({ kind: 'dropzoneFiles', message: '"big.png" is too large (max 2 B).' }),
       ]);
-      setup.httpTesting.expectNone(UPLOAD_URL);
+      driver.query.httpTesting.expectNone(UPLOAD_URL);
     });
 
     it('should reject files below minFileSize', () => {
-      host.constraints.set({ minFileSize: 10 });
-      fixture.detectChanges();
+      driver.host.constraints.set({ minFileSize: 10 });
+      driver.tick();
 
-      dropzone().selectFiles([createFile('tiny.png', 'image/png', 2)]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('tiny.png', 'image/png', 2)]);
+      driver.tick();
 
       expect(fieldErrors()).toEqual([
         expect.objectContaining({ kind: 'dropzoneFiles', message: '"tiny.png" is too small (min 10 B).' }),
       ]);
-      setup.httpTesting.expectNone(UPLOAD_URL);
+      driver.query.httpTesting.expectNone(UPLOAD_URL);
     });
 
     it('should use a custom rejection message when provided', () => {
-      host.constraints.set({ accept: 'image/*', message: (rejection) => `nope: ${rejection.file.name}` });
-      fixture.detectChanges();
+      driver.host.constraints.set({ accept: 'image/*', message: (rejection) => `nope: ${rejection.file.name}` });
+      driver.tick();
 
-      dropzone().selectFiles([createFile('doc.pdf', 'application/pdf')]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('doc.pdf', 'application/pdf')]);
+      driver.tick();
 
       expect(fieldErrors()).toEqual([expect.objectContaining({ kind: 'dropzoneFiles', message: 'nope: doc.pdf' })]);
-      setup.httpTesting.expectNone(UPLOAD_URL);
+      driver.query.httpTesting.expectNone(UPLOAD_URL);
     });
 
     it('should clear the validation errors on the next valid selection', () => {
-      host.constraints.set({ accept: 'image/*' });
-      fixture.detectChanges();
+      driver.host.constraints.set({ accept: 'image/*' });
+      driver.tick();
 
-      dropzone().selectFiles([createFile('doc.pdf', 'application/pdf')]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('doc.pdf', 'application/pdf')]);
+      driver.tick();
 
       expect(fieldErrors().length).toBe(1);
 
-      dropzone().selectFiles([createFile('pic.png')]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('pic.png')]);
+      driver.tick();
 
       expect(fieldErrors()).toEqual([]);
-      expect(dropzone().lastRejections()).toEqual([]);
+      expect(driver.dropzone.lastRejections()).toEqual([]);
 
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
-      fixture.detectChanges();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+      driver.tick();
 
-      expect(host.model().media).toBe('uuid-1');
+      expect(driver.host.model().media).toBe('uuid-1');
     });
 
     it('should reject extra files in single mode with the built-in message', () => {
-      dropzone().selectFiles([createFile('a.png'), createFile('b.png')]);
-      fixture.detectChanges();
+      driver.dropzone.selectFiles([createFile('a.png'), createFile('b.png')]);
+      driver.tick();
 
-      expect(dropzone().entries().length).toBe(1);
+      expect(driver.dropzone.entries().length).toBe(1);
       expect(fieldErrors()).toEqual([
         expect.objectContaining({
           kind: 'dropzoneFiles',
@@ -710,34 +670,34 @@ describe('DropzoneDirective', () => {
         }),
       ]);
 
-      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
     });
   });
 
   describe('inside form field', () => {
     it('should register and unregister with the parent form field', () => {
-      TestBed.configureTestingModule({ imports: [DropzoneInFormFieldTestHost] });
-      setup = setupQueryTest();
+      const driver = mountDropzone(DropzoneInFormFieldTestHost, { directiveSelector: '[etDropzone]' });
 
-      const fixture = TestBed.createComponent(DropzoneInFormFieldTestHost);
-      fixture.componentInstance.upload.set(createUploadConfig(setup));
-      fixture.detectChanges();
+      driver.host.upload.set(createUploadConfig(driver.query));
+      driver.tick();
 
-      const formFieldDir = fixture.debugElement.children[0]!.injector.get(FormFieldDirective);
-      expect(formFieldDir.registeredControl()).toBeTruthy();
-      expect(formFieldDir.registeredControl()!.controlType()).toBe('dropzone');
+      const formField = driver.directive(FormFieldDirective);
 
-      fixture.destroy();
-      expect(formFieldDir.registeredControl()).toBe(null);
+      expect(formField.registeredControl()).toBeTruthy();
+      expect(formField.registeredControl()!.controlType()).toBe('dropzone');
+
+      driver.fixture.destroy();
+      expect(formField.registeredControl()).toBe(null);
     });
   });
 
   describe('dev mode errors', () => {
     it('should throw when the control value is an array in single mode', () => {
       TestBed.configureTestingModule({ imports: [DropzoneTestHost] });
-      setup = setupQueryTest();
 
+      const setup = setupQueryTest();
       const fixture = TestBed.createComponent(DropzoneTestHost);
+
       fixture.componentInstance.upload.set(createUploadConfig(setup));
       fixture.componentInstance.value.set(['a', 'b']);
 
@@ -746,9 +706,10 @@ describe('DropzoneDirective', () => {
 
     it('should throw when the control has an initial value but no resolveExisting is configured', () => {
       TestBed.configureTestingModule({ imports: [DropzoneTestHost] });
-      setup = setupQueryTest();
 
+      const setup = setupQueryTest();
       const fixture = TestBed.createComponent(DropzoneTestHost);
+
       fixture.componentInstance.upload.set(createUploadConfig(setup, { withResolver: false }));
       fixture.componentInstance.value.set('e1');
 
@@ -762,7 +723,7 @@ describe('DropzoneDirective', () => {
         imports: [DropzoneTestHost],
         providers: [{ provide: ErrorHandler, useValue: { handleError: (error: unknown) => errors.push(error) } }],
       });
-      setup = setupQueryTest({ mockErrorHandler: false });
+      setupQueryTest({ mockErrorHandler: false });
 
       const fixture = TestBed.createComponent(DropzoneTestHost);
       fixture.componentInstance.upload.set({} as AnyDropzoneUploadConfig<string>);

@@ -4,10 +4,16 @@ import { provideColorThemes } from '@ethlete/core';
 import { TEST_COLOR_THEMES } from './color-themes';
 import { directiveAt, hostDirective, hostElement, resetOverlays, tick } from './driver-core';
 
-export const mountControl = <T>(component: Type<T>, providers: Provider[] = []) => {
+/**
+ * `beforeCreate` runs after the testing module is configured and before the component exists - the
+ * only window where a setup that instantiates the TestBed itself (`setupQueryTest`) can run.
+ */
+export const mountControl = <T>(component: Type<T>, providers: Provider[] = [], beforeCreate?: () => void) => {
   resetOverlays();
 
   TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES), ...providers] });
+
+  beforeCreate?.();
 
   const fixture = TestBed.createComponent(component);
 
