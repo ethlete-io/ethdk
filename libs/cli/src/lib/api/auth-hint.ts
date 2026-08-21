@@ -28,3 +28,16 @@ export const gitUrlHost = (repoUrl: string) => {
     return undefined;
   }
 };
+
+/** The `group/project` part of a git url, for addressing the project in a host's own API. */
+export const gitUrlProjectPath = (repoUrl: string) => {
+  const scpLike = /^[^/]+@[^:]+:(.+)$/.exec(repoUrl);
+
+  if (scpLike) return (scpLike[1] ?? '').replace(/\.git$/, '') || undefined;
+
+  try {
+    return new URL(repoUrl).pathname.replace(/^\/+/, '').replace(/\.git$/, '') || undefined;
+  } catch {
+    return undefined;
+  }
+};

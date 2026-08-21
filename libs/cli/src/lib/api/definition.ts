@@ -33,6 +33,15 @@ export const BUILT_IN_API_COMMANDS = ['up', 'down', 'logs', 'shell', 'clone', 'c
 /** These act on the checkout itself, so they run before `setupCommand` and need no container engine. */
 export const GIT_API_COMMANDS: string[] = ['clone', 'checkout', 'pull'];
 
+const DEPENDENCY_INSTALLERS = ['composer', 'npm', 'yarn', 'pnpm', 'bun', 'bundle', 'pip', 'pip3'];
+
+/** Whether an exec entry downloads dependencies, which is the only failure the private-dependency hint explains. */
+export const installsDependencies = (execCommand: readonly string[]) => DEPENDENCY_INSTALLERS.includes(execCommand[0] ?? '');
+
+/** The exec entry that installs dependencies, so a failure in another entry can point at it. */
+export const dependencyInstallCommandName = (api: ApiDefinition) =>
+  Object.keys(api.exec ?? {}).find((name) => installsDependencies(api.exec?.[name] ?? []));
+
 /** `setup` is dropped for an API that declares no `setupCommand`, so nothing lists a command it cannot run. */
 export const apiCommandNames = (api: ApiDefinition) => [
   ...BUILT_IN_API_COMMANDS.filter((command) => command !== 'setup' || api.setupCommand),

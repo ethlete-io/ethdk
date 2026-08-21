@@ -16,6 +16,21 @@ yarn et release
 
 Turns pending changesets into a tagged, pushed release commit (version → tag → commit → push).
 
+## `et auth`
+
+Writes a GitLab token into composer's `auth.json`, so a private PHP dependency can be downloaded.
+The compose file of each API mounts `$HOME/.composer` into its container, so this is the token the
+composer inside the container reads.
+
+```bash
+yarn et auth glpat-xxxxxxxxxxxxxxxxxxxx                     # the host comes from ethlete.apis.js
+yarn et auth gitlab.example.com glpat-xxxxxxxxxxxxxxxxxxxx  # name it when more than one is in use
+```
+
+The token is checked against the host first: once for the token itself, and once by downloading one
+byte of a project archive. A token that can read the API but not fetch code answers `403` there, and
+nothing is written. `--force` writes it anyway.
+
 ## `et api`
 
 Runs the API an app in this repo talks to, from a checkout on your own machine.

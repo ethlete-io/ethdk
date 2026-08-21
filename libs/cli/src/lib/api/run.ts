@@ -1,6 +1,12 @@
 import { spawnSync } from 'child_process';
 import { composeToolNames, engineEnv, lanAddress, resolveComposeTool } from './compose';
-import { ApiDefinitions, GIT_API_COMMANDS, apiCommandNames } from './definition';
+import {
+  ApiDefinitions,
+  GIT_API_COMMANDS,
+  apiCommandNames,
+  dependencyInstallCommandName,
+  installsDependencies,
+} from './definition';
 import { checkoutApiBranch, pullApiBranch } from './git';
 import { apiHelp, singleApiHelp } from './help';
 import { checkoutProblem, resolveApiCheckout } from './resolve-checkout';
@@ -272,10 +278,21 @@ export const runApiCommand = async ({
   } else if (command === 'shell') {
     runCompose('exec', api.execService, 'bash');
   } else {
-    runCompose('exec', api.execService, ...(api.exec?.[command] ?? []));
+    const execCommand = api.exec?.[command] ?? [];
+
+    runCompose('exec', api.execService, ...execCommand);
 
     if (exitCode !== 0) {
-      printPrivateDependencyHint({ repoHost: api.repoUrl ? gitUrlHost(api.repoUrl) : undefined });
+      const install = dependencyInstallCommandName(api);
+
+      if (installsDependencies(execCommand)) {
+        printPrivateDependencyHint({ repoHost: api.repoUrl ? gitUrlHost(api.repoUrl) : undefined });
+      } else if (install !== undefined) {
+        console.error(
+          `\nIf the ${api.execService} container has no dependencies installed yet, ` +
+            `run "${invocation} ${install} ${name}" first.`,
+        );
+      }
     }
   }
 

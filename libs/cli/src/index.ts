@@ -1,4 +1,4 @@
-import { apiCommand, doctorCommand, release, repoInvocation } from './lib';
+import { apiCommand, authCommand, doctorCommand, release, repoInvocation } from './lib';
 
 const USAGE_ROWS = [
   { subcommand: 'release', args: '', lines: ['Turn pending changesets into a tagged, pushed release commit'] },
@@ -8,6 +8,14 @@ const USAGE_ROWS = [
     lines: [
       "Run an API from this repo's ethlete.apis.js locally",
       "(up, down, logs, shell, setup, plus that API's own exec entries)",
+    ],
+  },
+  {
+    subcommand: 'auth',
+    args: ' [host] <token>',
+    lines: [
+      "Write a GitLab token into composer's auth.json, which the",
+      'API containers mount, after checking it can download code',
     ],
   },
   {
@@ -48,6 +56,13 @@ const cli = async (args: string[]): Promise<number> => {
         root: process.cwd(),
         argv: args.slice(1),
         invocation: repoInvocation({ root: process.cwd(), subcommand: 'api' }),
+      });
+
+    case 'auth':
+      return authCommand({
+        root: process.cwd(),
+        argv: args.slice(1),
+        invocation: repoInvocation({ root: process.cwd(), subcommand: 'auth' }),
       });
 
     case 'doctor':

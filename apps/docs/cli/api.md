@@ -155,9 +155,16 @@ Created .env.
 
 A setup command that exits `0` and still leaves `envFile` missing is reported as a failure, with its output, rather than sending the original command into a loop.
 
-## When a private dependency will not download
+## When a command fails
 
-A failed clone, or a failed `exec` entry such as `install`, prints what to check: a token with permission to **download** code rather than only read it, an SSH key the host accepts, and the token being where the package manager looks for it rather than only in your shell. A read-only token is the common case, and the server reports it as a bare `403`.
+A failed clone, or a failed `exec` entry that runs a package manager such as `install`, prints what to
+check: a token with permission to **download** code rather than only read it, an SSH key the host
+accepts, and the token being where the package manager looks for it rather than only in your shell.
+A read-only token is the common case, and the server reports it as a bare `403`. [`et auth`](/cli/auth)
+writes a token that passes those checks.
+
+Any other failed `exec` entry says nothing about tokens. It suggests running the install entry first,
+because a container whose dependencies were never installed fails every other command in it.
 
 ## Container commands
 
