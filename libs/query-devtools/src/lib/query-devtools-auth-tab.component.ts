@@ -1,10 +1,13 @@
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import {
   addQueryDevtoolsAuthAccount,
+  QueryDevtoolsAuthField,
+  queryDevtoolsAuthFieldsFor,
   clearQueryDevtoolsAuthCredentials,
   clearQueryDevtoolsAuthSessions,
   clearQueryDevtoolsTokenTtl,
   forgetQueryDevtoolsAuthSession,
+  forgetQueryDevtoolsAuthSessionsFor,
   loginQueryDevtoolsAuthAccount,
   logoutQueryDevtoolsAuthSession,
   QUERY_DEVTOOLS_TOKEN_TTL_LIMIT,
@@ -29,6 +32,13 @@ import {
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
+
+/** `username, password` as typed in the add row, into the fields the login args are built from. */
+const parseAuthFields = (value: string): QueryDevtoolsAuthField[] =>
+  [...new Set(value.split(/[\s,]+/).filter(Boolean))].map((name) => ({
+    name,
+    type: /pass|secret|token/i.test(name) ? ('password' as const) : ('text' as const),
+  }));
 
 /** The Auth tab: registered bearer auth providers, their tokens, their sessions and their queries. */
 @Component({
@@ -110,6 +120,10 @@ export class QueryDevtoolsAuthTabComponent {
     forgetQueryDevtoolsAuthSession(session.id);
   }
 
+  protected forgetAll(entry: QueryDevtoolsEntry) {
+    forgetQueryDevtoolsAuthSessionsFor(this.providerName(entry));
+  }
+
   protected logout(entry: QueryDevtoolsEntry) {
     logoutQueryDevtoolsAuthSession(this.providerName(entry));
   }
@@ -165,15 +179,25 @@ export class QueryDevtoolsAuthTabComponent {
     });
   }
 
-  protected addAccount(options: { entry: QueryDevtoolsEntry; label: string; loginQuery: string }) {
+  /** The keys the application's own accounts send on this provider, which a new one starts from. */
+  protected defaultFieldNames(entry: QueryDevtoolsEntry) {
+    return queryDevtoolsAuthFieldsFor(this.providerName(entry))
+      .map((field) => field.name)
+      .join(', ');
+  }
+
+  protected addAccount(options: { entry: QueryDevtoolsEntry; label: string; loginQuery: string; fields: string }) {
     const { entry, label, loginQuery } = options;
 
     if (label.trim() === '' || !loginQuery) return;
+
+    const fields = parseAuthFields(options.fields);
 
     const id = addQueryDevtoolsAuthAccount({
       provider: this.providerName(entry),
       label: label.trim(),
       loginQuery,
+      fields: fields.length ? fields : undefined,
     });
 
     this.expandedAccounts.update((current) => new Set(current).add(id));

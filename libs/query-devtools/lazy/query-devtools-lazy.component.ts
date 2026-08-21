@@ -1,11 +1,12 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, computed, inject, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   queryDevtoolsArmedMocks,
   queryDevtoolsEntries,
   queryDevtoolsFaults,
   queryDevtoolsTokenTtls,
+  setQueryDevtoolsUiMounted,
 } from '@ethlete/query';
 import { filter, fromEvent, tap } from 'rxjs';
 import { QueryDevtoolsComponent } from '@ethlete/query-devtools';
@@ -67,6 +68,9 @@ export class QueryDevtoolsLazyComponent {
   );
 
   constructor() {
+    setQueryDevtoolsUiMounted(true);
+    inject(DestroyRef).onDestroy(() => setQueryDevtoolsUiMounted(false));
+
     // The same shortcut the panel installs, for the one press that has to happen before it exists. Once
     // the panel is loaded it owns the key, so this stops at the first press it handles.
     fromEvent<KeyboardEvent>(this.document, 'keydown')

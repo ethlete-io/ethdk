@@ -26,6 +26,8 @@ const HUB_WITH_PRODUCTION: QueryDevtoolsApiEnvSwitch = {
   ],
 };
 
+import { markQueryDevtoolsAppSettled, setQueryDevtoolsUiMounted } from './query-devtools-ui';
+
 const pill = () => document.getElementById('et-query-devtools-pill')?.shadowRoot;
 
 describe('query devtools api envs', () => {
@@ -148,6 +150,33 @@ describe('query devtools api envs', () => {
     expect(labels).toEqual(['default (staging)', 'staging', '⚠ production']);
   });
 
+  it('should fold the pill into a summary chip until somebody unfolds it', () => {
+    localStorage.setItem('hubApiEnv', 'local');
+    setQueryDevtoolsApiEnvs([HUB]);
+
+    expect(document.getElementById('et-query-devtools-pill')?.hasAttribute('data-collapsed')).toBe(true);
+    expect(pill()?.querySelector('.chip .values')?.textContent).toBe('local');
+  });
+
+  it('should unfold the pill on a click on the chip, and remember it', () => {
+    setQueryDevtoolsApiEnvs([HUB]);
+    pill()?.querySelector<HTMLButtonElement>('.chip')?.click();
+
+    expect(document.getElementById('et-query-devtools-pill')?.hasAttribute('data-collapsed')).toBe(false);
+
+    setQueryDevtoolsApiEnvs([HUB]);
+
+    expect(document.getElementById('et-query-devtools-pill')?.hasAttribute('data-collapsed')).toBe(false);
+  });
+
+  it('should unfold the pill and drop the chip while a production env is the pick', () => {
+    localStorage.setItem('hubApiEnv', 'production');
+    setQueryDevtoolsApiEnvs([HUB_WITH_PRODUCTION]);
+
+    expect(document.getElementById('et-query-devtools-pill')?.hasAttribute('data-collapsed')).toBe(false);
+    expect(pill()?.querySelector('.chip')).toBeNull();
+  });
+
   it('should leave the other switches alone', () => {
     const items: QueryDevtoolsApiEnvSwitch = { name: 'Items API', storageKey: 'itemsApiEnv', envs: [{ id: 'local' }] };
 
@@ -155,5 +184,21 @@ describe('query devtools api envs', () => {
     setQueryDevtoolsApiEnv('hubApiEnv', 'local');
 
     expect(queryDevtoolsApiEnvValues()).toEqual({ hubApiEnv: 'local', itemsApiEnv: null });
+  });
+
+  // Keep last: a settled application is module state nothing here can unsettle, so every test after this
+  // one would find no pills at all.
+  it('should paint no pills once the application settled with no devtools UI on the page', () => {
+    setQueryDevtoolsApiEnvs([HUB]);
+
+    expect(document.getElementById('et-query-devtools-pill')).not.toBeNull();
+
+    markQueryDevtoolsAppSettled();
+
+    expect(document.getElementById('et-query-devtools-pill')).toBeNull();
+
+    setQueryDevtoolsUiMounted(true);
+
+    expect(document.getElementById('et-query-devtools-pill')).not.toBeNull();
   });
 });

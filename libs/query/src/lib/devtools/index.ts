@@ -16,3 +16,4 @@ export * from './query-devtools-settings';
 export * from './query-devtools-stats';
 export * from './query-devtools-token-ttl';
 export * from './query-devtools-tombstone';
+export { setQueryDevtoolsUiMounted } from './query-devtools-ui';

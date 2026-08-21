@@ -70,6 +70,12 @@ export type QueryDevtoolsAuthLocalAccount = {
 
   /** The api env scope it was added under, so a backend's accounts stay with that backend. */
   scope: string;
+
+  /**
+   * What the login needs, which is not `email` and `password` for every backend. Absent on an account
+   * added before the panel asked: those fall back to the shape a declared account uses.
+   */
+  fields?: QueryDevtoolsAuthField[];
 };
 
 /** One session the vault holds, which is a token pair plus who it belongs to. */
@@ -90,6 +96,18 @@ export type QueryDevtoolsAuthSession = {
 
   /** The `sub` claim, which is how a session is recognised again after a plain login. */
   subject: string | null;
+
+  /**
+   * The name the token claimed, for a backend that issues no `sub`. This is what tells two users apart
+   * there, so it is written from the claims on every capture and never from {@link label}.
+   */
+  identity: string | null;
+
+  /**
+   * The account id a devtools login created it for, or `null` for a login in the application itself.
+   * How a login as a declared account finds its own session again where the tokens carry no `sub`.
+   */
+  account: string | null;
 
   /** The access token's `exp` claim, in seconds, or `null` for a token that carries none. */
   expiresAt: number | null;
@@ -160,6 +178,13 @@ const providers = /* @__PURE__ */ signal<string[]>([]);
 const tabLocal = /* @__PURE__ */ signal<Record<string, boolean>>({});
 
 const live = /* @__PURE__ */ new Map<string, LiveProvider>();
+
+/**
+ * The account each provider's next captured token pair was logged in as, set by
+ * `loginQueryDevtoolsAuthAccount` and consumed by the capture it causes. `previous` is the session that
+ * was in force before, which the logout on the way out would otherwise take out of reach.
+ */
+const pendingLogins = /* @__PURE__ */ new Map<string, { id: string; label: string; previous: string | null }>();
 
 let idCounter = 0;
 
@@ -257,6 +282,8 @@ const sanitizeSession = (value: unknown): QueryDevtoolsAuthSession | null => {
     accessToken: session.accessToken,
     refreshToken: session.refreshToken,
     subject: typeof session.subject === 'string' ? session.subject : null,
+    identity: typeof session.identity === 'string' ? session.identity : null,
+    account: typeof session.account === 'string' ? session.account : null,
     expiresAt: typeof session.expiresAt === 'number' ? session.expiresAt : null,
     savedAt: typeof session.savedAt === 'number' ? session.savedAt : 0,
   };
@@ -379,29 +406,60 @@ const remember = (options: { provider: string; accessToken: string; refreshToken
   const scope = scopeOf();
   const identity = identityOf(accessToken);
   const activeId = active()[provider] ?? null;
+  const account = pendingLogins.get(provider) ?? null;
 
-  const activeSession = store().sessions.find((session) => session.id === activeId);
-  const bySubject = identity.subject
-    ? store().sessions.find(
-        (session) => session.provider === provider && session.scope === scope && session.subject === identity.subject,
+  pendingLogins.delete(provider);
+
+  const mine = store().sessions.filter((session) => session.provider === provider && session.scope === scope);
+
+  // This pair is already on record: the tab it belongs to lost only the pointer, which a new tab always
+  // does - the pointer is the tab's own. Without this a token that carries no `sub` grows a second entry
+  // per tab, and a third, until the picker is a column of sessions all named the same.
+  const byTokens = mine.find((session) => session.refreshToken === refreshToken || session.accessToken === accessToken);
+  const byAccount = account ? mine.find((session) => session.account === account.id) : undefined;
+  const bySubject = identity.subject ? mine.find((session) => session.subject === identity.subject) : undefined;
+
+  // The name the token claims, for a backend that issues no `sub`. A session held for another account is
+  // left alone: two accounts are two slots even where one person's name is on both.
+  const byIdentity = identity.label
+    ? mine.find(
+        (session) =>
+          session.identity === identity.label && (!account || !session.account || session.account === account.id),
       )
     : undefined;
 
-  // The session on record is only a rotation of the live one while both name the same user. Logging in as
-  // somebody else without logging out first would otherwise overwrite the tokens of the user this tab is
-  // switching away from - which is the one pair the vault exists to keep.
-  const isRotation =
-    !activeSession || !identity.subject || !activeSession.subject || activeSession.subject === identity.subject;
-  const target = isRotation ? (activeSession ?? bySubject) : bySubject;
+  // An account login logs out on the way in, and a logout lets go of the pointer, so the session this tab
+  // was on has to be carried in by the pending login instead.
+  const candidate = mine.find((session) => session.id === (activeId ?? account?.previous ?? null));
+
+  // Whoever the live tokens belong to, the candidate is a different user as soon as one claim says so.
+  // Without this a login as somebody else would overwrite the tokens of the user this tab is leaving,
+  // which is the one pair the vault exists to keep.
+  const isOtherUser =
+    !!candidate &&
+    ((!!identity.subject && !!candidate.subject && candidate.subject !== identity.subject) ||
+      (!!identity.label && !!candidate.identity && candidate.identity !== identity.label) ||
+      (!!account && !!candidate.account && candidate.account !== account.id));
+
+  // The last resort for a token that names nobody at all: the newest session nothing can tell it apart
+  // from. An account login is left out - it is asking for a session of its own.
+  const byNothing =
+    identity.subject || identity.label || account
+      ? undefined
+      : mine.filter((session) => !session.subject && !session.account).sort((a, b) => b.savedAt - a.savedAt)[0];
+
+  const target = byTokens ?? byAccount ?? bySubject ?? byIdentity ?? (isOtherUser ? undefined : candidate) ?? byNothing;
 
   const session: QueryDevtoolsAuthSession = {
     id: target?.id ?? nextId('session'),
     provider,
-    label: target?.label ?? identity.label ?? 'session',
+    label: target?.label ?? identity.label ?? account?.label ?? 'session',
     scope,
     accessToken,
     refreshToken,
     subject: identity.subject,
+    identity: identity.label ?? target?.identity ?? null,
+    account: target?.account ?? account?.id ?? null,
     expiresAt: identity.expiresAt,
     savedAt: Date.now(),
   };
@@ -505,7 +563,7 @@ export const queryDevtoolsAuthAccountsFor = (provider: string): QueryDevtoolsAut
         provider,
         label: account.label,
         loginQuery: account.loginQuery,
-        fields: DEFAULT_FIELDS,
+        fields: account.fields?.length ? account.fields : queryDevtoolsAuthFieldsFor(provider, account.loginQuery),
         declared: false,
       }),
     );
@@ -536,8 +594,24 @@ export const clearQueryDevtoolsAuthCredentials = (accountId: string) => {
   syncPill();
 };
 
+/**
+ * What a login needs on one provider, taken from an account the application declared for the same query.
+ * The shape a hand-added account starts from, for a backend whose login is not `email` and `password`.
+ */
+export const queryDevtoolsAuthFieldsFor = (provider: string, loginQuery?: string): QueryDevtoolsAuthField[] => {
+  const mine = declared().filter((account) => account.provider === provider && account.fields?.length);
+  const shape = (loginQuery ? mine.find((account) => account.loginQuery === loginQuery) : undefined) ?? mine[0];
+
+  return (shape?.fields ?? DEFAULT_FIELDS).map(({ name, label, type }) => ({ name, label, type }));
+};
+
 /** Adds an account the application does not declare, for the backend in force. */
-export const addQueryDevtoolsAuthAccount = (options: { provider: string; label: string; loginQuery: string }) => {
+export const addQueryDevtoolsAuthAccount = (options: {
+  provider: string;
+  label: string;
+  loginQuery: string;
+  fields?: QueryDevtoolsAuthField[];
+}) => {
   const account: QueryDevtoolsAuthLocalAccount = { ...options, id: nextId('account'), scope: scopeOf() };
 
   store.update((current) => ({ ...current, accounts: [...current.accounts, account] }));
@@ -579,6 +653,29 @@ export const forgetQueryDevtoolsAuthSession = (sessionId: string) => {
   }));
   active.update((current) =>
     Object.fromEntries(Object.entries(current).map(([provider, id]) => [provider, id === sessionId ? null : id])),
+  );
+  persist();
+  syncPill();
+};
+
+/**
+ * Drops every session this backend issued for one provider. The accounts and what was typed in for them
+ * are left alone, so the way back in is one login.
+ */
+export const forgetQueryDevtoolsAuthSessionsFor = (provider: string) => {
+  const scope = scopeOf();
+  const dropped = new Set(
+    store()
+      .sessions.filter((session) => session.provider === provider && session.scope === scope)
+      .map((session) => session.id),
+  );
+
+  store.update((current) => ({
+    ...current,
+    sessions: current.sessions.filter((session) => !dropped.has(session.id)),
+  }));
+  active.update((current) =>
+    Object.fromEntries(Object.entries(current).map(([name, id]) => [name, id && dropped.has(id) ? null : id])),
   );
   persist();
   syncPill();
@@ -662,8 +759,11 @@ export const loginQueryDevtoolsAuthAccount = (accountId: string) => {
 
   if (!entry || !query) return;
 
+  const previous = active()[account.provider] ?? null;
+
   clearClientData(entry);
   setActive(account.provider, null);
+  pendingLogins.set(account.provider, { id: account.id, label: account.label, previous });
   persist();
 
   query.execute(account.buildArgs?.(account.values) ?? { body: account.values });
@@ -706,6 +806,12 @@ export const setQueryDevtoolsAuthTabLocal = (options: { provider: string; tabLoc
   reload();
 };
 
+/** When a session's tokens were last written, which is what tells two same-named ones apart. */
+const savedAtLabel = (session: QueryDevtoolsAuthSession) =>
+  session.savedAt
+    ? new Date(session.savedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+    : 'unknown';
+
 /** What the floating pill offers, rebuilt whenever any of it changes. */
 const syncPill = () => {
   const rows = untracked(() =>
@@ -715,6 +821,13 @@ const syncPill = () => {
       const activeId = active()[provider] ?? null;
       const current = sessions.find((session) => session.id === activeId);
 
+      const shared = new Map<string, number>();
+
+      for (const session of sessions) shared.set(session.label, (shared.get(session.label) ?? 0) + 1);
+
+      const labelOf = (session: QueryDevtoolsAuthSession) =>
+        shared.get(session.label) === 1 ? session.label : `${session.label} · ${savedAtLabel(session)}`;
+
       return {
         name: provider,
         current: current?.label ?? (live.get(provider)?.handle.accessToken() ? 'unnamed session' : 'anonymous'),
@@ -722,7 +835,7 @@ const syncPill = () => {
         options: [
           ...sessions.map((session) => ({
             value: `session:${session.id}`,
-            label: session.label,
+            label: labelOf(session),
             title: `Switch to ${session.label}`,
             selected: session.id === activeId,
             disabled: false,

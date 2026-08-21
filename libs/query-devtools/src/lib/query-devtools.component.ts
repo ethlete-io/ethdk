@@ -92,6 +92,7 @@ import {
   QuerySequenceStatus,
   restoredQueryDevtoolsOverrides,
   setQueryDevtoolsOverridePersistence,
+  setQueryDevtoolsUiMounted,
   WebSocketDevtoolsHandle,
   WebSocketDevtoolsMessage,
 } from '@ethlete/query';
@@ -1403,6 +1404,9 @@ export class QueryDevtoolsComponent implements OnInit {
   protected readonly FLOAT_RESIZE_EDGES: ResizeEdge[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
   constructor() {
+    setQueryDevtoolsUiMounted(true);
+    this.destroyRef.onDestroy(() => setQueryDevtoolsUiMounted(false));
+
     // Assigned here (not as an arrow property) so `this` is bound for the value-explorer callback.
     this.toggleJsonPath = (path: string, expand: boolean) => {
       const expanded = new Set(this.jsonExpandedPaths());

@@ -1942,6 +1942,20 @@ renders anything - a blocking initial navigation waiting out an auth call, say -
 when somebody needs to pick a different backend. The picker is on the page before
 `bootstrapApplication` starts, so a bad pick is always recoverable without the console.
 
+The pills follow the devtools trigger: an application that renders neither
+`<et-query-devtools-lazy>` nor `<et-query-devtools>` - a production build, or a `@if (isDev())` that
+is false - gets no pills either. They still paint before the application has rendered anything, which
+is the case above; once it has settled with no devtools UI on the page they take themselves off it.
+An application that mounts the bare `<et-query-devtools-toggle>` and nothing else declares no UI, and
+calls `setQueryDevtoolsUiMounted(true)` itself to keep them.
+
+The pickers are folded away by default. What sits above the toggle button is one small chip, which
+reads the current values and nothing else - the session first, then each switch's env. A click on the
+chip unfolds every picker, and another click folds them back. The state is kept in `localStorage`
+under `et-query-devtools-pills-collapsed`, so it survives the reload a pick causes. While a
+production env is the pick the pickers stay unfolded and the chip is dropped: the way out of
+production is never one click further away than the warning that put it there.
+
 | Field        | What it is                                                                               |
 | ------------ | ---------------------------------------------------------------------------------------- |
 | `name`       | what the picker calls the switch                                                         |
@@ -1999,6 +2013,14 @@ The access token in a stored session is usually expired, and the list says so. T
 to solve - it is what the refresh token is for, and the provider refreshes on the first request the
 switch makes.
 
+A session is recognised again by four things, in this order: the token pair itself, the account it was
+logged in as, the `sub` claim, and the name the token claims. The last one is what a backend that
+issues no `sub` is recognised by, so it keeps one session per user rather than one per login. A login
+whose token names nobody at all falls back to the session this tab was on, which the list shows as
+`nobody named`. Where two sessions read the same in the floating picker, the time their tokens were
+last written is shown after the name. **Forget all** drops every session this backend issued, and
+leaves the accounts and the credentials typed into them alone.
+
 ### Accounts: log in as somebody, with no login form
 
 Declare the accounts the panel may log in as. Declare the **slot** only - never a password:
@@ -2029,7 +2051,11 @@ the way the application issues them and the vault picks the session up like any 
 
 An account can also be added in the panel, for a user the repository has no business naming. It is
 kept with the API env it was added under, and its login query is picked from the ones the provider
-registered.
+registered. The row also takes the **body keys** the login needs, separated by commas - a backend
+whose login takes `username` is not an unusual one. The keys start out as those of the accounts the
+application declared for the same query, so an app that declares one is already right; with none
+declared they start as `email, password`. A key that reads as a secret (`password`, `secret`,
+`token`) is masked as it is typed.
 
 ::: danger Never put a password in the repository
 This is why `authAccounts` takes no credentials at all. The panel collects them, keeps them on the
@@ -2065,7 +2091,8 @@ switcher. Turn it off for an app that holds nothing outside the query layer, and
 instant.
 
 The floating pill carries the same picker as the tab, next to the API env one, so a switch does not
-need the panel open.
+need the panel open. Both sit behind the same
+[summary chip](#switching-the-api-environment), folded away until you ask for them.
 
 ## Settings: what the panel keeps, and where
 

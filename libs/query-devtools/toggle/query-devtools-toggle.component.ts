@@ -6,6 +6,10 @@ import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
  * host application's global CSS (Tailwind resets, button styles, …) can never touch it and its own
  * styles can never leak out. Uses px (not rem) internally so it doesn't depend on the host's root
  * font-size; theme accent colour is read from an inherited custom property with a fallback.
+ *
+ * Mounted on its own - without `<et-query-devtools-lazy>` or `<et-query-devtools>` - it declares no
+ * devtools UI, so the floating API env and session pills take themselves off the page once the
+ * application settles. Call `setQueryDevtoolsUiMounted(true)` to keep them.
  */
 @Component({
   selector: 'et-query-devtools-toggle',

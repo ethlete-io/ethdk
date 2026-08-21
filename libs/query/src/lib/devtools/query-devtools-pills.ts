@@ -2,6 +2,7 @@
    component with a Renderer2 and a template. These pills have neither on purpose: see
    `renderPills` below for why they cannot be components. */
 import { QueryDevtoolsApiEnv, QueryDevtoolsApiEnvSwitch } from './query-devtools-api-envs';
+import { onQueryDevtoolsUiChange, queryDevtoolsPillsAllowed } from './query-devtools-ui';
 
 const HOST_ID = 'et-query-devtools-pill';
 
@@ -11,8 +12,13 @@ const DEFAULT_VALUE = '';
 /** Prefixes a production env's name, so the open dropdown says which option is the real backend. */
 const PRODUCTION_MARK = '⚠ ';
 
+/** Holds `1` while the pills are folded into the summary chip. Unwritten reads as folded. */
+const COLLAPSED_KEY = 'et-query-devtools-pills-collapsed';
+
 const STYLE = `
   :host {
+    --_accent: var(--et-theme-color-primary-solid, #60a5fa);
+
     position: fixed;
     display: flex;
     flex-direction: column;
@@ -28,8 +34,6 @@ const STYLE = `
   }
 
   label {
-    --_accent: var(--et-theme-color-primary-solid, #60a5fa);
-
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -103,11 +107,7 @@ const STYLE = `
     background: #450a0a;
   }
 
-  label[data-auth] {
-    --_accent: var(--et-theme-color-success-solid, #34d399);
-  }
-
-  button {
+  label button {
     padding: 3px 7px;
     border: none;
     border-radius: 5px;
@@ -121,13 +121,67 @@ const STYLE = `
     cursor: pointer;
   }
 
-  button:hover {
+  label button:hover {
     box-shadow: inset 0 0 0 1px var(--_accent);
   }
 
-  button[data-on] {
-    background: rgb(52 211 153 / 0.18);
-    box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.7);
+  label button[data-on] {
+    background: color-mix(in srgb, var(--_accent) 18%, transparent);
+    box-shadow: inset 0 0 0 1px var(--_accent);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    box-sizing: border-box;
+    min-block-size: 28px;
+    max-inline-size: min(340px, 70vw);
+    padding: 4px 12px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #1f1f23, #2a2a30);
+    box-shadow:
+      0 6px 20px rgb(0 0 0 / 0.35),
+      inset 0 0 0 1px rgb(255 255 255 / 0.08);
+    color: #fafafa;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    cursor: pointer;
+  }
+
+  .chip:hover {
+    box-shadow:
+      0 6px 20px rgb(0 0 0 / 0.35),
+      inset 0 0 0 1px var(--_accent);
+  }
+
+  .caret {
+    color: var(--_accent);
+    font-size: 9px;
+    line-height: 1;
+    transition: transform 0.15s ease;
+  }
+
+  .values {
+    overflow: hidden;
+    color: #d4d4d8;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :host([data-collapsed]) label {
+    display: none;
+  }
+
+  :host(:not([data-collapsed])) .caret {
+    transform: rotate(180deg);
+  }
+
+  :host(:not([data-collapsed])) .values {
+    display: none;
   }
 
   /* The whole viewport, so the warning is on screen wherever the reader is looking. Outside the pill's
@@ -186,6 +240,31 @@ const resolvedEnvOf = (apiSwitch: QueryDevtoolsApiEnvSwitch, stored: string): Qu
   apiSwitch.envs.find((env) => env.id === (stored || apiSwitch.fallback));
 
 const nameOf = (env: QueryDevtoolsApiEnv) => `${env.production ? PRODUCTION_MARK : ''}${env.label ?? env.id}`;
+
+/** The one value a folded switch reads as: the env behind the pick, or a typed URL. */
+const summaryOfSwitch = (apiSwitch: QueryDevtoolsApiEnvSwitch, stored: string) => {
+  const env = resolvedEnvOf(apiSwitch, stored);
+
+  return env ? nameOf(env) : stored || apiSwitch.name;
+};
+
+const summaryOfAuthRow = (row: QueryDevtoolsAuthPillRow) => (row.tabLocal ? `${row.current} · own tab` : row.current);
+
+const readCollapsed = () => {
+  try {
+    return window.localStorage.getItem(COLLAPSED_KEY) !== '0';
+  } catch {
+    return true;
+  }
+};
+
+const writeCollapsed = (collapsed: boolean) => {
+  try {
+    window.localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0');
+  } catch {
+    // ignore (private mode / disabled storage / quota)
+  }
+};
 
 const optionsOf = (apiSwitch: QueryDevtoolsApiEnvSwitch, stored: string): EnvOption[] => {
   const fallback = apiSwitch.envs.find((env) => env.id === apiSwitch.fallback);
@@ -308,11 +387,16 @@ const buildAuthRow = (doc: Document, row: QueryDevtoolsAuthPillRow) => {
   const select = doc.createElement('select');
   select.setAttribute('aria-label', `${row.name} session`);
 
-  const current = doc.createElement('option');
-  current.value = '';
-  current.textContent = row.current;
-  current.selected = !row.options.some((option) => option.selected);
-  select.append(current);
+  // Only where the live tokens belong to no stored session: with one selected below, this would read as
+  // a second session of the same name.
+  if (!row.options.some((option) => option.selected)) {
+    const current = doc.createElement('option');
+
+    current.value = '';
+    current.textContent = row.current;
+    current.selected = true;
+    select.append(current);
+  }
 
   for (const option of row.options) {
     const element = doc.createElement('option');
@@ -344,6 +428,30 @@ const buildAuthRow = (doc: Document, row: QueryDevtoolsAuthPillRow) => {
   return label;
 };
 
+const buildChip = (doc: Document, values: string[], collapsed: boolean, toggle: () => void) => {
+  const chip = doc.createElement('button');
+  chip.type = 'button';
+  chip.className = 'chip';
+  chip.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  chip.title = collapsed ? 'Show the devtools switches' : 'Hide the devtools switches';
+  // The summary text is the only content, and the unfolded state hides it - hence a name of its own.
+  chip.setAttribute('aria-label', chip.title);
+
+  const caret = doc.createElement('span');
+  caret.className = 'caret';
+  caret.textContent = '▲';
+  caret.setAttribute('aria-hidden', 'true');
+
+  const text = doc.createElement('span');
+  text.className = 'values';
+  text.textContent = values.join(' · ');
+
+  chip.append(caret, text);
+  chip.addEventListener('click', toggle);
+
+  return chip;
+};
+
 const render = (doc: Document) => {
   doc.getElementById(HOST_ID)?.remove();
 
@@ -351,6 +459,7 @@ const render = (doc: Document) => {
   const rows = authState?.rows ?? [];
 
   if (!switches.length && !rows.length) return;
+  if (!queryDevtoolsPillsAllowed()) return;
 
   const host = doc.createElement('div');
   host.id = HOST_ID;
@@ -362,15 +471,20 @@ const render = (doc: Document) => {
   style.textContent = STYLE;
   shadow.append(style);
 
-  let production = false;
+  const storedOf = (apiSwitch: QueryDevtoolsApiEnvSwitch) => envState?.read(apiSwitch.storageKey) ?? DEFAULT_VALUE;
+  const production = switches.some((apiSwitch) => resolvedEnvOf(apiSwitch, storedOf(apiSwitch))?.production === true);
+
+  // A production pick unfolds the pills whatever is stored: the warning is the point of the pill.
+  const collapsed = !production && readCollapsed();
+
+  if (collapsed) host.setAttribute('data-collapsed', '');
 
   for (const row of rows) shadow.append(buildAuthRow(doc, row));
 
   for (const apiSwitch of switches) {
-    const stored = envState?.read(apiSwitch.storageKey) ?? DEFAULT_VALUE;
-
-    production ||= resolvedEnvOf(apiSwitch, stored)?.production === true;
-    shadow.append(buildSwitch(doc, apiSwitch, stored, (storageKey, value) => envState?.pick(storageKey, value)));
+    shadow.append(
+      buildSwitch(doc, apiSwitch, storedOf(apiSwitch), (storageKey, value) => envState?.pick(storageKey, value)),
+    );
   }
 
   if (production) {
@@ -378,6 +492,18 @@ const render = (doc: Document) => {
     frame.className = 'frame';
     frame.setAttribute('aria-hidden', 'true');
     shadow.append(frame);
+  } else {
+    const values = [
+      ...rows.map(summaryOfAuthRow),
+      ...switches.map((apiSwitch) => summaryOfSwitch(apiSwitch, storedOf(apiSwitch))),
+    ];
+
+    shadow.append(
+      buildChip(doc, values, collapsed, () => {
+        writeCollapsed(!collapsed);
+        render(doc);
+      }),
+    );
   }
 
   doc.body.append(host);
@@ -393,6 +519,10 @@ const render = (doc: Document) => {
  * part of this is on the page before `bootstrapApplication` starts.
  */
 const renderPills = () => {
+  // Registered here rather than at module scope: a module-scope call would make this module
+  // unshakeable, and cost every application that never renders a pill the whole renderer.
+  onQueryDevtoolsUiChange(renderPills);
+
   const doc = globalThis.document as Document | undefined;
 
   if (!doc) return;

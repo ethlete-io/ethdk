@@ -6,6 +6,7 @@ import {
   addQueryDevtoolsAuthAccount,
   clearQueryDevtoolsAuthSessions,
   forgetQueryDevtoolsAuthSession,
+  forgetQueryDevtoolsAuthSessionsFor,
   initQueryDevtoolsAuthSessions,
   loginQueryDevtoolsAuthAccount,
   queryDevtoolsAuthAccountsFor,
@@ -34,6 +35,14 @@ const token = (payload: Record<string, unknown>) =>
 
 const ADMIN = token({ sub: 'admin-1', name: 'Admin', exp: 4000 });
 const MEMBER = token({ sub: 'member-1', name: 'Member', exp: 5000 });
+
+/** A backend whose access token names nobody: no `sub` to recognise a session by, and no name to show. */
+const NAMELESS = token({ exp: 6000 });
+
+/** A backend that names who is logged in but issues no `sub`, which is what the hub API does. */
+const NAMED = token({ name: 'Admin', exp: 6000 });
+const NAMED_AGAIN = token({ name: 'Admin', exp: 7000 });
+const NAMED_OTHER = token({ name: 'Member', exp: 7000 });
 
 type Fake = {
   handle: QueryDevtoolsAuthProviderHandle;
@@ -174,6 +183,46 @@ describe('query devtools auth sessions', () => {
     expect(queryDevtoolsAuthSessionsFor('hub-auth').map((session) => session.label)).toEqual(['Admin', 'Member']);
   });
 
+  it('should recognise a pair it already holds where the token names nobody', () => {
+    const first = createProvider('hub-auth');
+
+    first.handle.setTokens(NAMELESS, 'refresh-1');
+    flush();
+    first.stop();
+
+    // A new tab: which session the live tokens belong to is the tab's own answer, and this tab has none.
+    sessionStorage.clear();
+    initQueryDevtoolsAuthSessions([]);
+
+    const second = createProvider('hub-auth');
+
+    second.handle.setTokens(NAMELESS, 'refresh-1');
+    flush();
+
+    expect(queryDevtoolsAuthSessionsFor('hub-auth').length).toBe(1);
+  });
+
+  it('should keep one session where the token names nobody and the pair was rotated since', () => {
+    const first = createProvider('hub-auth');
+
+    first.handle.setTokens(NAMELESS, 'refresh-1');
+    flush();
+    first.stop();
+
+    sessionStorage.clear();
+    initQueryDevtoolsAuthSessions([]);
+
+    const second = createProvider('hub-auth');
+
+    second.handle.setTokens(NAMELESS, 'refresh-2');
+    flush();
+
+    const sessions = queryDevtoolsAuthSessionsFor('hub-auth');
+
+    expect(sessions.length).toBe(1);
+    expect(sessions[0]?.refreshToken).toBe('refresh-2');
+  });
+
   it('should put a stored session in force, and drop what the last user cached', () => {
     const provider = createProvider('hub-auth');
 
@@ -305,6 +354,82 @@ describe('query devtools auth sessions', () => {
       expect(provider.logins).toEqual([{ body: { email: 'admin@example.com', password: 'hunter2' } }]);
     });
 
+    it('should name a session after the account it was logged in as, and reuse it', () => {
+      const provider = createProvider('hub-auth');
+      const id = addQueryDevtoolsAuthAccount({ provider: 'hub-auth', label: 'Tester', loginQuery: 'login' });
+
+      setQueryDevtoolsAuthCredentials({ accountId: id, values: { email: 'tester@example.com', password: 'x' } });
+
+      loginQueryDevtoolsAuthAccount(id);
+      provider.handle.setTokens(NAMELESS, 'refresh-1');
+      flush();
+
+      expect(queryDevtoolsAuthSessionsFor('hub-auth').map((session) => session.label)).toEqual(['Tester']);
+
+      loginQueryDevtoolsAuthAccount(id);
+      provider.handle.setTokens(NAMELESS, 'refresh-2');
+      flush();
+
+      const sessions = queryDevtoolsAuthSessionsFor('hub-auth');
+
+      expect(sessions.length).toBe(1);
+      expect(sessions[0]?.refreshToken).toBe('refresh-2');
+    });
+
+    it('should log an account in on top of the plain login of the same user', () => {
+      const provider = createProvider('hub-auth');
+      const id = addQueryDevtoolsAuthAccount({ provider: 'hub-auth', label: 'Admin', loginQuery: 'login' });
+
+      setQueryDevtoolsAuthCredentials({ accountId: id, values: { email: 'admin@example.com', password: 'x' } });
+
+      provider.handle.setTokens(NAMED, 'refresh-1');
+      flush();
+
+      loginQueryDevtoolsAuthAccount(id);
+      provider.handle.logout();
+      flush();
+      provider.handle.setTokens(NAMED_AGAIN, 'refresh-2');
+      flush();
+
+      const sessions = queryDevtoolsAuthSessionsFor('hub-auth');
+
+      expect(sessions.length).toBe(1);
+      expect(sessions[0]?.refreshToken).toBe('refresh-2');
+    });
+
+    it('should keep the plain login of another user beside an account login', () => {
+      const provider = createProvider('hub-auth');
+      const id = addQueryDevtoolsAuthAccount({ provider: 'hub-auth', label: 'Admin', loginQuery: 'login' });
+
+      setQueryDevtoolsAuthCredentials({ accountId: id, values: { email: 'admin@example.com', password: 'x' } });
+
+      provider.handle.setTokens(NAMED_OTHER, 'refresh-1');
+      flush();
+
+      loginQueryDevtoolsAuthAccount(id);
+      provider.handle.logout();
+      flush();
+      provider.handle.setTokens(NAMED, 'refresh-2');
+      flush();
+
+      expect(queryDevtoolsAuthSessionsFor('hub-auth').length).toBe(2);
+    });
+
+    it('should forget every session of one provider and keep the accounts', () => {
+      const provider = createProvider('hub-auth');
+      const id = addQueryDevtoolsAuthAccount({ provider: 'hub-auth', label: 'Tester', loginQuery: 'login' });
+
+      setQueryDevtoolsAuthCredentials({ accountId: id, values: { email: 'tester@example.com', password: 'x' } });
+      provider.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+
+      forgetQueryDevtoolsAuthSessionsFor('hub-auth');
+
+      expect(queryDevtoolsAuthSessionsFor('hub-auth')).toEqual([]);
+      expect(queryDevtoolsAuthAccountsFor('hub-auth').map((account) => account.label)).toEqual(['Tester']);
+      expect(queryDevtoolsAuthAccountsFor('hub-auth')[0]?.ready).toBe(true);
+    });
+
     it('should not log in as an account nobody filled in', () => {
       initQueryDevtoolsAuthSessions([{ provider: 'hub-auth', label: 'Admin', loginQuery: 'login' }]);
 
@@ -313,6 +438,41 @@ describe('query devtools auth sessions', () => {
       loginQueryDevtoolsAuthAccount(queryDevtoolsAuthAccountsFor('hub-auth')[0]!.id);
 
       expect(provider.logins).toEqual([]);
+    });
+
+    it('should send the field names the application declares, not email and password', () => {
+      initQueryDevtoolsAuthSessions([
+        {
+          provider: 'hub-auth',
+          label: 'Admin',
+          loginQuery: 'login',
+          fields: [
+            { name: 'username', label: 'E-mail', type: 'email', default: 'admin@example.com' },
+            { name: 'password', type: 'password' },
+          ],
+        },
+      ]);
+
+      const id = addQueryDevtoolsAuthAccount({ provider: 'hub-auth', label: 'Tester', loginQuery: 'login' });
+      const account = queryDevtoolsAuthAccountsFor('hub-auth').find((entry) => entry.id === id);
+
+      expect(account?.fields.map((field) => field.name)).toEqual(['username', 'password']);
+      expect(account?.values).toEqual({ username: '', password: '' });
+    });
+
+    it('should keep the field names an account was added with', () => {
+      const id = addQueryDevtoolsAuthAccount({
+        provider: 'hub-auth',
+        label: 'Tester',
+        loginQuery: 'login',
+        fields: [{ name: 'handle' }, { name: 'secret', type: 'password' }],
+      });
+      const provider = createProvider('hub-auth');
+
+      setQueryDevtoolsAuthCredentials({ accountId: id, values: { handle: 'tester', secret: 'x' } });
+      loginQueryDevtoolsAuthAccount(id);
+
+      expect(provider.logins).toEqual([{ body: { handle: 'tester', secret: 'x' } }]);
     });
 
     it('should keep an account added in the panel with the backend it was added on', () => {

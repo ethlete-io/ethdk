@@ -1,4 +1,13 @@
-import { EnvironmentProviders, isDevMode, makeEnvironmentProviders, Signal, signal } from '@angular/core';
+import {
+  ApplicationRef,
+  EnvironmentProviders,
+  inject,
+  isDevMode,
+  makeEnvironmentProviders,
+  provideEnvironmentInitializer,
+  Signal,
+  signal,
+} from '@angular/core';
 import { CORE_VERSION } from '@ethlete/core';
 import { AnyCreateQueryClientResult } from '../http/query-client';
 import { QUERY_VERSION } from '../version';
@@ -31,6 +40,7 @@ import {
   withQueryDevtoolsOverridePersistence,
 } from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
+import { markQueryDevtoolsAppSettled } from './query-devtools-ui';
 import { initQueryDevtoolsMocks, resolveQueryDevtoolsMockForAttempt } from './query-devtools-mocks';
 import { QueryDevtoolsSchemaLoaders, setQueryDevtoolsSchemaLoader } from './query-devtools-schema';
 import { initQueryDevtoolsSettings } from './query-devtools-settings';
@@ -354,5 +364,14 @@ export const provideQueryDevtools = (options?: QueryDevtoolsOptions): Environmen
     );
   }
 
-  return makeEnvironmentProviders([]);
+  return makeEnvironmentProviders([
+    // The floating pills paint before this - before `bootstrapApplication`, so a boot that hangs on the
+    // backend it was just pointed at can still be pointed somewhere else. Once the application has
+    // settled they follow the devtools trigger instead, and an app that renders none shows no pills.
+    provideEnvironmentInitializer(() => {
+      void inject(ApplicationRef)
+        .whenStable()
+        .then(() => markQueryDevtoolsAppSettled());
+    }),
+  ]);
 };
