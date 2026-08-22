@@ -140,9 +140,17 @@ Inputs on `[etMenu]`:
 | `arrow`              | `true`         | Floating arrow pointing at the trigger (root, trigger-anchored menus only); `arrowPadding` (default `14`) keeps it off rounded corners |
 | `hoverOpen`          | `true`         | Submenu hover-open with `hoverOpenDelay` (120ms) / `hoverCloseDelay` (300ms)                                                           |
 | `loop`               | `true`         | Wrap the arrow keys at the ends. Off makes them stop instead - better for a long menu, where wrapping reads as a jump somewhere else.  |
-| `autoFocus`          | `true`         | Focus the panel/first item on open                                                                                                     |
+| `autoFocus`          | `true`         | Focus the search field/first item on open, however the menu was opened - except a hover-opened submenu, which never takes focus        |
 | `open`               | `model(false)` | Two-way open state; methods `show()`, `hide()`, `toggle()`, `closeAll()`, `openAt(point)`                                              |
 | `disabled`           | `false`        | Ignores open requests (trigger clicks, hover, `openAt`) while set                                                                      |
+
+`show()`, `toggle()` and `openAt(point)` take the same options object: `focus` overrides `autoFocus` for that one open (`false` to leave focus alone, `'last'` to land on the last item), and `source` records where the request came from without affecting focus.
+
+```ts
+this.menu.show(); // opens and focuses, same as a trigger click
+this.menu.show({ focus: false }); // opens without moving focus
+this.menu.show({ focus: 'last' }); // opens on the last item
+```
 
 ### Panel placement
 

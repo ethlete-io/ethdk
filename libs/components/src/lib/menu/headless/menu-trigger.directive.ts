@@ -73,7 +73,7 @@ export class MenuTriggerDirective {
   }
 
   protected handleClick() {
-    this.menu?.toggle('click');
+    this.menu?.toggle({ source: 'click' });
   }
 
   protected handleKeydown(event: KeyboardEvent) {
@@ -98,13 +98,13 @@ export class MenuTriggerDirective {
       case ' ':
       case 'ArrowDown': {
         event.preventDefault();
-        menu.show('keyboard');
+        menu.show({ source: 'keyboard' });
 
         return;
       }
       case 'ArrowUp': {
         event.preventDefault();
-        menu.show('keyboard', 'last');
+        menu.show({ source: 'keyboard', focus: 'last' });
 
         return;
       }

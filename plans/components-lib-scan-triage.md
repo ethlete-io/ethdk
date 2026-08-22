@@ -328,6 +328,17 @@ single-domain reach.
 
 - **Menu `autoFocus` does nothing on a programmatic open** — an open menu with no keyboard entry
   point (menu High). Fix with the DX item "`show({ focus })` instead of overloading `openSource`". S
+  — **DONE 2026-08-22**
+
+  Done: `show()`, `toggle()` and `openAt()` now take one `MenuShowOptions` object (`{ source, focus }`)
+  instead of positional `(source, initialFocus)`, and `applyInitialFocus` no longer reads `openSource`
+  at all: focus is `options.focus ?? (source === 'hover' ? false : autoFocus())`. So `show()`, a write
+  to `[(open)]` and a trigger click all focus the same way, hover-opened submenus still keep their
+  hands off focus, and `focus: false | 'first' | 'last'` says what it means per call. Breaking:
+  the positional signatures are gone (no call sites in `ea-frontend`). Left open on purpose: the
+  scan's related Medium — "a panel with `autoFocus` off should still stay focusable" — is a separate
+  question about the panel's `tabindex`, not about who decides to focus.
+
 - **Notification pause/resume is not ref-counted** — a focused toast dismisses itself on
   `mouseleave`; a click on a hovered toast re-arms it (notification High ×2). Fix as the Features item
   "a pause _reason_ set on the ref". Note `notification.component.spec.ts:93-101` locks in the bug. S

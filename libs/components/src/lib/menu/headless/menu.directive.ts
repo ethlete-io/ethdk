@@ -49,6 +49,20 @@ export type MenuOpenSource = 'click' | 'hover' | 'keyboard' | 'api';
 
 export type MenuAnchorPoint = { x: number; y: number };
 
+/** Options for {@link MenuDirective.show}, {@link MenuDirective.toggle} and {@link MenuDirective.openAt}. */
+export type MenuShowOptions = {
+  /** Where the request came from. Provenance only - it never decides whether the menu takes focus. @default 'api' */
+  source?: MenuOpenSource;
+
+  /**
+   * Move focus into the panel once it is up: the search field if there is one, otherwise the first
+   * (`true` / `'first'`) or last (`'last'`) enabled item. `false` leaves focus where it is.
+   *
+   * Defaults to the `autoFocus` input, except for a hover-opened submenu, which never takes focus.
+   */
+  focus?: boolean | 'first' | 'last';
+};
+
 const MENU_MIN_AVAILABLE_SPACE = 160;
 
 @Directive({
@@ -123,7 +137,7 @@ export class MenuDirective {
   public isMounted = computed(() => this.overlayRef() !== null);
 
   private openSource: MenuOpenSource = 'api';
-  private initialFocusTarget: 'first' | 'last' = 'first';
+  private requestedFocus: boolean | 'first' | 'last' | null = null;
   private hoverIntent = createMenuHoverIntent();
   private typeahead = createMenuTypeahead();
   private rootListenersCleanup: (() => void) | null = null;
@@ -189,13 +203,14 @@ export class MenuDirective {
     }
   }
 
-  public show(source: MenuOpenSource = 'api', initialFocus: 'first' | 'last' = 'first') {
+  /** Opens the menu. Focus follows the `autoFocus` input unless {@link MenuShowOptions.focus} says otherwise. */
+  public show({ source = 'api', focus }: MenuShowOptions = {}) {
     if (this.disabled() || this.open()) {
       return;
     }
 
     this.openSource = source;
-    this.initialFocusTarget = initialFocus;
+    this.requestedFocus = focus ?? null;
     this.parent?.openSubmenuExclusive(this);
     this.open.set(true);
   }
@@ -215,14 +230,14 @@ export class MenuDirective {
     }
   }
 
-  public toggle(source: MenuOpenSource = 'api') {
+  public toggle(options: MenuShowOptions = {}) {
     if (this.open()) {
       this.hide();
 
       return;
     }
 
-    this.show(source);
+    this.show(options);
   }
 
   /** Closes the whole menu tree, regardless of which level this is called on. */
@@ -237,7 +252,7 @@ export class MenuDirective {
   }
 
   /** Opens the menu anchored to a viewport point instead of the trigger element. */
-  public openAt(point: MenuAnchorPoint, source: MenuOpenSource = 'click') {
+  public openAt(point: MenuAnchorPoint, options: MenuShowOptions = {}) {
     if (this.disabled()) {
       return;
     }
@@ -254,7 +269,7 @@ export class MenuDirective {
       return;
     }
 
-    this.show(source);
+    this.show({ source: 'click', ...options });
   }
 
   /** @internal Closes this level and returns focus to the trigger item in the parent menu. */
@@ -370,7 +385,7 @@ export class MenuDirective {
 
         if (submenu) {
           event.preventDefault();
-          submenu.show('keyboard');
+          submenu.show({ source: 'keyboard' });
         }
 
         return;
@@ -414,7 +429,7 @@ export class MenuDirective {
         event.preventDefault();
 
         if (item.submenu) {
-          item.submenu.show('keyboard');
+          item.submenu.show({ source: 'keyboard' });
         } else {
           item.activateFromKeyboard(event.key === 'Enter' ? 'keyboard-enter' : 'keyboard-space');
         }
@@ -542,7 +557,7 @@ export class MenuDirective {
         return;
       }
 
-      this.hoverIntent.scheduleOpen(() => submenu.show('hover'), this.hoverOpenDelay());
+      this.hoverIntent.scheduleOpen(() => submenu.show({ source: 'hover' }), this.hoverOpenDelay());
     }
 
     if (currentSubmenu && currentSubmenu !== submenu) {
@@ -678,14 +693,18 @@ export class MenuDirective {
 
           this.anchorPoint.set(null);
           this.openSource = 'api';
-          this.initialFocusTarget = 'first';
+          this.requestedFocus = null;
         }),
       )
       .subscribe();
   }
 
   private applyInitialFocus() {
-    if (!this.autoFocus() || this.openSource === 'hover' || this.openSource === 'api') {
+    // A hover-opened submenu is the one case the pointer stays in charge of; everything else - a
+    // click, a key, `show()`, a write to `open` - follows `autoFocus`, or whatever `show()` asked for.
+    const focus = this.requestedFocus ?? (this.openSource === 'hover' ? false : this.autoFocus());
+
+    if (!focus) {
       return;
     }
 
@@ -699,7 +718,7 @@ export class MenuDirective {
     }
 
     const items = this.enabledItems();
-    const target = this.initialFocusTarget === 'last' ? items.at(-1) : items[0];
+    const target = focus === 'last' ? items.at(-1) : items[0];
 
     if (target) {
       this.setActiveItem(target);

@@ -10,7 +10,7 @@ import { MenuDirective } from './menu.directive';
 
 @Component({
   template: `
-    <div [loop]="loop()" etMenu>
+    <div [autoFocus]="menuAutoFocus()" [loop]="loop()" etMenu>
       <button class="root-trigger" etMenuTrigger type="button">Open menu</button>
 
       <ng-template etMenuSurface>
@@ -54,6 +54,7 @@ class MenuDirectiveTestHost {
   bravoDisabled = signal(false);
   extraLabels = signal<string[]>([]);
   loop = signal(true);
+  menuAutoFocus = signal(true);
 }
 
 const keydown = (element: Element, key: string) =>
@@ -361,6 +362,60 @@ describe('MenuDirective', () => {
 
     expect(menu.open()).toBe(true);
     expect(document.activeElement).toBe(query('.submenu-trigger'));
+  });
+
+  describe('programmatic open', () => {
+    const settle = async () => {
+      tick();
+      await flushFrames();
+      tick();
+    };
+
+    it('focuses the first enabled item after show()', async () => {
+      menu.show();
+      await settle();
+
+      expect(document.activeElement).toBe(query('.item-alpha'));
+      expect(menu.activeItem()).not.toBeNull();
+    });
+
+    it('focuses the item show() asks for', async () => {
+      menu.show({ focus: 'last' });
+      await settle();
+
+      expect(document.activeElement).toBe(query('.submenu-trigger'));
+    });
+
+    it('leaves focus where it is when show() opts out', async () => {
+      trigger.focus();
+
+      menu.show({ focus: false });
+      await settle();
+
+      expect(menu.open()).toBe(true);
+      expect(document.activeElement).toBe(trigger);
+      expect(menu.activeItem()).toBeNull();
+    });
+
+    it('focuses the first enabled item after a write to the open model', async () => {
+      menu.open.set(true);
+      await settle();
+
+      expect(document.activeElement).toBe(query('.item-alpha'));
+    });
+
+    it('takes no focus while autoFocus is off', async () => {
+      fixture.componentInstance.menuAutoFocus.set(false);
+      fixture.detectChanges();
+
+      trigger.focus();
+
+      menu.show();
+      await settle();
+
+      expect(menu.open()).toBe(true);
+      expect(document.activeElement).toBe(trigger);
+    });
   });
 
   describe('hover intent', () => {
