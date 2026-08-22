@@ -7,6 +7,8 @@ import { AppUpdatesConfig, injectAppUpdates, provideAppUpdates } from './app-upd
 
 const RELOADED_AT_KEY = 'et-app-update-reloaded-at';
 
+type MutableDocument = Omit<Document, 'defaultView'> & { defaultView?: Document['defaultView'] };
+
 const reload = vi.fn();
 
 // jsdom seals both `window.location` and its `reload`, so the stub goes on the seam the provider
@@ -63,7 +65,7 @@ describe('provideAppUpdates', () => {
     reload.mockClear();
     vi.unstubAllGlobals();
 
-    delete (document as Partial<Document>).defaultView;
+    delete (document as MutableDocument).defaultView;
   });
 
   describe('when a lazy chunk fails to load', () => {

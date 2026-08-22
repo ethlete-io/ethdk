@@ -8,13 +8,13 @@ describe('normalizeMatchState', () => {
   });
 
   it('identifies a preparing round', () => {
-    const match = { status: 'created', round: { state: 'preparing' } } as MatchListView;
+    const match = { status: 'created', round: { state: 'preparing' } } as unknown as MatchListView;
 
     expect(normalizeMatchState(match)).toBe(MatchStateType.PREPARING_ROUND);
   });
 
   it('does not identify a started round as preparing', () => {
-    const match = { status: 'created', round: { state: 'started' } } as MatchListView;
+    const match = { status: 'created', round: { state: 'started' } } as unknown as MatchListView;
 
     expect(normalizeMatchState(match)).toBeNull();
   });

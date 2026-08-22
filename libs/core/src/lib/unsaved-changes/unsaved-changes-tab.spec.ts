@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { createUnsavedChangesTabLock } from './unsaved-changes-tab';
 import { createUnsavedChangesTracker, CreateUnsavedChangesTrackerConfig } from './unsaved-changes-tracker';
 
-type BadgingNavigator = Navigator & {
+type BadgingNavigator = Omit<Navigator, 'setAppBadge' | 'clearAppBadge'> & {
   setAppBadge?: (contents?: number) => Promise<void>;
   clearAppBadge?: () => Promise<void>;
 };

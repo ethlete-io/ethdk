@@ -9,8 +9,8 @@ describe('overlay focus utilities', () => {
     const last = document.createElement('button');
     pane.append(first, last);
     document.body.append(outside, pane);
-    vi.spyOn(first, 'getClientRects').mockReturnValue([{} as DOMRect]);
-    vi.spyOn(last, 'getClientRects').mockReturnValue([{} as DOMRect]);
+    vi.spyOn(first, 'getClientRects').mockReturnValue([{} as DOMRect] as unknown as DOMRectList);
+    vi.spyOn(last, 'getClientRects').mockReturnValue([{} as DOMRect] as unknown as DOMRectList);
 
     const cleanup = setupFocusTrap(pane, {} as OverlayRuntimeRef<object, unknown>, true, () => true, document);
     outside.focus();

@@ -39,9 +39,9 @@ describe('devtools-about generator', () => {
 
     const project = readProjectConfiguration(tree, 'my-app');
 
-    expect(project.targets?.['build-info'].executor).toBe('nx:run-commands');
-    expect(project.targets?.['build'].dependsOn).toContain('build-info');
-    expect(project.targets?.['serve'].dependsOn).toContain('build-info');
+    expect(project.targets?.['build-info']?.executor).toBe('nx:run-commands');
+    expect(project.targets?.['build']?.dependsOn).toContain('build-info');
+    expect(project.targets?.['serve']?.dependsOn).toContain('build-info');
   });
 
   it('ignores the generated file - its SHA changes with every commit', async () => {

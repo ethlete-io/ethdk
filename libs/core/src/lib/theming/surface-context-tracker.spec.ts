@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { injectSurfaceContextTracker } from './surface-context-tracker';
 
 describe('surfaceContextTracker', () => {
-  const inTracker = <T>(fn: (tracker: ReturnType<typeof injectSurfaceContextTracker>) => T): T =>
+  const inTracker = <T>(fn: (tracker: NonNullable<ReturnType<typeof injectSurfaceContextTracker>>) => T): T =>
     TestBed.runInInjectionContext(() => fn(injectSurfaceContextTracker()));
 
   const el = (parent?: HTMLElement) => {
