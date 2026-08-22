@@ -15,7 +15,7 @@ import {
   TABLE_ROW_ROUTER_LINK_IMPORTS,
   TABLE_SELECTION_IMPORTS,
 } from './table.imports';
-import { TableColumns, TableFilter, TableSort } from './table.types';
+import { TableColumns, TableFilter, TableSort, TableState } from './table.types';
 
 type Person = { id: number; name: string; role: string };
 
@@ -564,6 +564,22 @@ describe('TableComponent', () => {
       expect(fixture.componentInstance.visibleColumns().map((c) => c.key)).toEqual(['id']);
     });
 
+    it('ignores a hand-edited state instead of throwing part-way through the restore', () => {
+      const { componentInstance: table } = create(columns());
+
+      table.restoreState({
+        v: 3,
+        columns: [
+          { key: 'role', hidden: false },
+          { key: 'name', hidden: true },
+        ],
+      });
+      expect(table.visibleColumns().map((c) => c.key)).toEqual(['role']);
+
+      expect(() => table.restoreState({ v: 3, columns: [null] } as unknown as TableState)).not.toThrow();
+      expect(table.visibleColumns().map((c) => c.key)).toEqual(['role']);
+    });
+
     it('round-trips a multi-sort through state()/restoreState() preserving priority', () => {
       const fixture = create(stateColumns(), UNSORTED);
       fixture.componentRef.setInput('multiSort', true);
@@ -1048,6 +1064,61 @@ describe('TableComponent', () => {
       expect(table.filterValuesFor('role')).toEqual(['Admin']);
       expect(source.setSort).not.toHaveBeenCalled();
       expect(source.setFilters).not.toHaveBeenCalled();
+    });
+
+    it('owns the sort and filters a source takes through setters but never publishes', () => {
+      const setSort = vi.fn();
+      const setFilters = vi.fn();
+      const source = { rows: signal<Person[]>(PEOPLE), setSort, setFilters };
+      const fixture = create({
+        name: { header: 'Name', value: (person: Person) => person.name, sortable: true },
+        role: { header: 'Role', value: (person: Person) => person.role, filterable: true },
+      } satisfies TableColumns<Person>);
+      const table = fixture.componentInstance;
+
+      fixture.componentRef.setInput('rowsSource', source);
+      fixture.detectChanges();
+
+      table.toggleSort('name');
+      fixture.detectChanges();
+      expect(table.sortDirection('name')).toBe('asc');
+
+      // Nothing mirrors the source's answer back, so a header that is not written here can never
+      // leave the direction it reached first.
+      table.toggleSort('name');
+      fixture.detectChanges();
+      expect(setSort).toHaveBeenLastCalledWith([{ key: 'name', direction: 'desc' }]);
+      expect(table.sortDirection('name')).toBe('desc');
+      expect(table.state().columns.find((column) => column.key === 'name')?.sort).toBe('desc');
+
+      table.setFilterValues('role', ['Admin']);
+      fixture.detectChanges();
+      expect(setFilters).toHaveBeenLastCalledWith([{ key: 'role', values: ['Admin'] }]);
+      expect(table.filterValuesFor('role')).toEqual(['Admin']);
+    });
+
+    it('names a source that publishes sort without the setter the table would write through', () => {
+      const source = { rows: signal<Person[]>(PEOPLE), sort: signal<TableSort[]>([]) };
+      const fixture = create({
+        name: { header: 'Name', value: (person: Person) => person.name, sortable: true },
+      } satisfies TableColumns<Person>);
+
+      fixture.componentRef.setInput('rowsSource', source);
+
+      expect(() => fixture.detectChanges()).toThrow(
+        expect.objectContaining({
+          code: TABLE_ERROR_CODES.UNPAIRED_ROWS_SOURCE_STATE,
+        }) as unknown as RuntimeError,
+      );
+    });
+
+    it('leaves a read-only source alone when no column offers the control it would drive', () => {
+      const source = { rows: signal<Person[]>(PEOPLE), sort: signal<TableSort[]>([]) };
+      const fixture = create(columns());
+
+      fixture.componentRef.setInput('rowsSource', source);
+
+      expect(() => fixture.detectChanges()).not.toThrow();
     });
 
     it('leaves an explicit mode alone, and keeps the modes client-side without a source', () => {

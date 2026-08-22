@@ -68,6 +68,7 @@ import { TableFooterDirective } from './headless/table-footer.directive';
 import { TableRowsSource } from './headless/table-rows-source';
 import { injectTableLabels, TableLabels } from './headless/table-labels';
 import { sortRows } from './headless/table-sort';
+import { isRestorableTableState } from './headless/table-state-url';
 import {
   TableCellContext,
   TableCellState,
@@ -218,6 +219,12 @@ const NO_PIN: TableCellPinning = { stickyStart: false, stickyEnd: false, offsetS
 const NO_LEAD_PIN = { sticky: false, offset: null };
 const NO_INSET = { start: 0, end: 0 };
 const EMPTY_COLUMN_KEYS: ReadonlySet<string> = /* @__PURE__ */ new Set();
+
+/** Each `rowsSource` state signal with the setter it needs and the column flag whose UI writes it. */
+const UNPAIRED_ROWS_SOURCE_CHECKS = [
+  ['sort', 'setSort', 'sortable'],
+  ['filters', 'setFilters', 'filterable'],
+] as const;
 
 // Per-table counter, so the ids a row link is named by are unique across every table on the page.
 let uniqueTableId = 0;
@@ -1157,6 +1164,26 @@ export class TableComponent<T> {
           { element: this.elementRef.nativeElement },
         );
       });
+
+      // A source's `sort`/`filters` signal and its setter are one contract the optional members cannot
+      // express: the table writes through the setter and reads the signal back. Published without the
+      // setter, the signal wins every mirror pass and the control the user clicks does nothing at all.
+      effect(() => {
+        const source = this.rowsSource();
+
+        if (!source) return;
+
+        for (const [state, setter, columnFlag] of UNPAIRED_ROWS_SOURCE_CHECKS) {
+          if (!source[state] || source[setter]) continue;
+          if (!this.columnDefs().some((column) => column[columnFlag])) continue;
+
+          throw new RuntimeError(
+            TABLE_ERROR_CODES.UNPAIRED_ROWS_SOURCE_STATE,
+            `[et-table] [rowsSource] publishes \`${state}\` but no \`${setter}\`, so the table can never hand a change back to it and the ${columnFlag} columns would do nothing. Add \`${setter}\`, or drop \`${state}\` and let the table own the state.`,
+            { element: this.elementRef.nativeElement },
+          );
+        }
+      });
     }
 
     // A bound rows source owns the sort/filter state, but everything here - features, `state()`, the
@@ -1506,9 +1533,12 @@ export class TableComponent<T> {
   /**
    * Apply a previously captured {@link TableState} - column order, visibility, sort, filters and feature
    * slices. A bound {@link rowsSource} keeps the sort and the filters it publishes; only the layout and
-   * the feature slices are restored onto such a table.
+   * the feature slices are restored onto such a table. A state this build cannot read (a hand-edited
+   * stored setup or link) is ignored rather than partially applied - see `isRestorableTableState`.
    */
   public restoreState(next: TableState) {
+    if (!isRestorableTableState(next)) return;
+
     this.restoredColumns = next.columns.map((column) => ({ key: column.key, hidden: column.hidden }));
     this.columnOrder.set(next.columns.map((column) => column.key));
     this.hiddenColumns.set(new Set(next.columns.filter((column) => column.hidden).map((column) => column.key)));
@@ -1605,13 +1635,10 @@ export class TableComponent<T> {
     const next = values.length ? [...others, { key, values }] : others;
     const source = this.rowsSource();
 
-    if (source?.setFilters) {
-      source.setFilters(next);
+    source?.setFilters?.(next);
 
-      return;
-    }
-
-    this.filters.set(next);
+    // See `applySort`: without a `filters` signal on the source nothing writes the value back.
+    if (!source?.filters) this.filters.set(next);
   }
 
   /** Whether a column is currently visible. */
@@ -1913,8 +1940,8 @@ export class TableComponent<T> {
 
   /**
    * The one place sort state is written. A bound {@link rowsSource} owns it - it resets the page and
-   * refetches - and its own value syncs back into `sort` (see the constructor), so everything else can
-   * keep reading `sort()` whichever drives it.
+   * refetches - and a source that publishes a `sort` signal syncs its own value back into `sort` (see
+   * the constructor), so everything else can keep reading `sort()` whichever drives it.
    */
   private applySort(sort: TableSort[]) {
     this.sortGesture.set(true);
@@ -1928,13 +1955,11 @@ export class TableComponent<T> {
 
     const source = this.rowsSource();
 
-    if (source?.setSort) {
-      source.setSort(sort);
+    source?.setSort?.(sort);
 
-      return;
-    }
-
-    this.sort.set(sort);
+    // Only a source that publishes `sort` mirrors the new value back; skipping the local write for one
+    // that does not would leave the header on the direction it already had, forever.
+    if (!source?.sort) this.sort.set(sort);
   }
 
   // ── Render models ───────────────────────────────────────────────────────

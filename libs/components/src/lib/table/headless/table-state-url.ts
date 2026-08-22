@@ -1,4 +1,4 @@
-import { TableState } from '../table.types';
+import { TableColumnState, TableState } from '../table.types';
 
 /**
  * Serialize a {@link TableState} to a compact string for a URL query param (or any
@@ -11,6 +11,27 @@ import { TableState } from '../table.types';
  * building a URL string by hand.
  */
 export const serializeTableState = (state: TableState) => JSON.stringify(state);
+
+const isColumnState = (value: unknown): value is TableColumnState =>
+  typeof value === 'object' && value !== null && typeof (value as TableColumnState).key === 'string';
+
+/**
+ * Whether a value is a {@link TableState} this build can restore - a known version, and a `columns`
+ * array whose every entry carries a `key`. `deserializeTableState` and `restoreState()` both apply it,
+ * so a state that reaches a table from anywhere else (a server payload, a hand-built object) can be
+ * checked the same way.
+ */
+export const isRestorableTableState = (value: unknown): value is TableState => {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const candidate = value as Partial<TableState>;
+
+  // v1 predates the `features` bag and v2 the expansion feature's slice; all three restore, so an older
+  // link or stored setup keeps working - see TableState.
+  if (![1, 2, 3].includes(candidate.v as number) || !Array.isArray(candidate.columns)) return false;
+
+  return candidate.columns.every(isColumnState);
+};
 
 /**
  * Parse a {@link TableState} from a string produced by {@link serializeTableState}.
@@ -28,13 +49,5 @@ export const deserializeTableState = (raw: string | null | undefined): TableStat
     return null;
   }
 
-  if (typeof parsed !== 'object' || parsed === null) return null;
-
-  const candidate = parsed as Partial<TableState>;
-
-  // v1 predates the `features` bag and v2 the expansion feature's slice; all three restore, so an older
-  // link or stored setup keeps working - see TableState.
-  if (![1, 2, 3].includes(candidate.v as number) || !Array.isArray(candidate.columns)) return null;
-
-  return candidate as TableState;
+  return isRestorableTableState(parsed) ? parsed : null;
 };

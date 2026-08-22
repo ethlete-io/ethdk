@@ -684,6 +684,13 @@ read `resolvedSortMode()` / `resolvedFilterMode()` for what is actually in effec
 source's `sort`/`filters` are mirrored into the table's own `sort()` / `filters()`, so
 features, `state()` and the header keep a single read path.
 
+A state signal and its setter are a **pair**. Publish both and the source owns the value;
+publish only the setter and the table keeps its own `sort()` / `filters()` in step with
+what it handed over, so a header still cycles through every direction. Publishing `sort`
+without `setSort` (or `filters` without `setFilters`) leaves the matching control with
+nothing to write to - the table names that in dev mode rather than rendering a header that
+does nothing.
+
 ## Row expansion
 
 Expansion is **opt-in**: import `TABLE_ROW_EXPANSION_IMPORTS` and put
@@ -1766,7 +1773,11 @@ alone.
 `serializeTableState()` / `deserializeTableState()` turn a snapshot into a string
 you can put in a URL query param (and back), so a filtered, sorted, reordered
 table is shareable as a link. Deserialize returns `null` for an absent, malformed
-or unknown-version value, so a stale link just falls back to the default view.
+or unknown-version value - including one whose `columns` carry entries that are not
+columns - so a stale or hand-edited link just falls back to the default view.
+`restoreState()` applies the same check (`isRestorableTableState()`, exported for a
+state that reaches you from somewhere else) and ignores a state it cannot read rather
+than applying half of it.
 
 ```ts
 import { deserializeTableState, serializeTableState } from '@ethlete/components';

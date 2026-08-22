@@ -178,7 +178,7 @@ Done: all five landed, each with a pinning spec; the SEO directive falls back to
 manager and a new ET3702 dev error names the misuse. The submit resolver treats a null count with
 nothing in flight as submittable (the old spec asserted the stuck state and was re-pointed).
 
-### 11. Table: two supported configurations that fail silently or crash · M
+### 11. Table: two supported configurations that fail silently or crash · M · **DONE 2026-08-22**
 
 Both in `table.component.ts`, both documented as supported: a hand-rolled `rowsSource` with `setSort`
 but no `sort` leaves the header permanently stuck (never reaching descending), and `restoreState`
@@ -186,6 +186,15 @@ throws on a hand-edited stored/linked state that `deserializeTableState` promise
 gracefully. Fix the mirror-write, guard the restore, add the dev error the DX item asks for.
 Resolves: table High "partial `rowsSource` stalls sort/filter", High "stored state crashes
 `restoreState`".
+
+Done: `applySort`/`setFilterValues` now call the source's setter _and_ write the table's own signal
+unless the source publishes the matching one, so a setter-only source cycles a header normally. A new
+`isRestorableTableState` (in `table-state-url.ts`) validates every column entry; `deserializeTableState`
+and `restoreState` both apply it, so a hand-edited stored state or link degrades to "no restore".
+New dev error ET3510 fires when a source publishes `sort`/`filters` without its setter _and_ a column
+declares the matching control. Deliberately left open: the DX item's other half - narrowing
+`TableRowsSource` so the pair is expressible in the type - would be a breaking type change, and no
+error fires for the now-working setter-only shape, which would be user-hostile boilerplate.
 
 ### 12. Scheduler: an ordinary immutable `appointments` update breaks the edit surface · M · **DONE 2026-08-22**
 
@@ -212,7 +221,7 @@ class has only this one occurrence today, so a kit would have a single caller; a
 `selectedAppointmentId` stays the documented default rather than becoming an opt-in input, which
 would be an API change rather than a fix.
 
-### 13. Stream: leaving PiP strands the player, and late consent registers the wrong id · M
+### 13. Stream: leaving PiP strands the player, and late consent registers the wrong id · M · **DONE 2026-08-22**
 
 `pip-manager.ts:183-185` is the one `pipDeactivate` branch that forgets the `animatingOutIds` latch,
 so the video disappears from the page for good — reachable through the documented
@@ -221,6 +230,24 @@ Ship the DX framing: one exit path with the latch set unconditionally. Pair with
 `playerId` signal into the deferred player creation.
 Resolves: stream High "leaving PiP strands the player in the hidden container", stream High "consent
 accepted after an id change registers the old id".
+
+Done: `pip-manager.ts` funnels all three `pipDeactivate` branches through one `endPip()` (empty
+`pips` + clear `isInPip`) and one `beginExitAnimation()` that returns its own clearer, so a branch
+can no longer forget half the bookkeeping. The `animatingOutIds` mirror set is gone:
+`parkPlayerElement` now refuses whenever the player has already left PiP (`isPlayerInPip`), which
+covers the plain branch, `{ skipAnimation: true }` and the empty-rect/hidden-tab default alike, and
+cannot get stuck set. `stream-player-slot.ts`'s `createAndRegisterPlayer()` reads
+`options.playerId()` at call time instead of taking a captured string, fixing both the
+`consentComponent` and the bare-`ConsentHandler` path. New `pip-manager.spec.ts` (4 cases) and
+`stream-player-slot.spec.ts` (3 cases); the two strand cases and the two consent cases were each
+verified to fail with the respective fix backed out. Docs: the consent section gained the
+"rebinding while the gate is up" guarantee; the PiP section already described the fixed behaviour.
+Still open: no stream test driver (DX #3) - the two specs hand-roll their fakes, and one shared
+driver only pays off once the rest of the domain's spec-coverage table is attempted; the missing
+`.et-stream-manager` / PiP-window CSS (the other stream High) is a separate shipping-decision item,
+not a bug fix; and `anim.onfinish` still never fires under the jsdom animation mock, so the
+scaleFadeIn latch clears only in a real browser - fixing the shared mock would touch every
+animation spec in the lib and belongs with the "destroyed mid-gesture" helper from item #16.
 
 ### 14. Cascader: out-of-order level responses drop columns; Space stops activating nodes · M · **DONE 2026-08-22**
 

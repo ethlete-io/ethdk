@@ -20,4 +20,6 @@ export const TABLE_ERROR_CODES = {
   MISSING_ROW_EXPANSION: 3508,
   /** A `rowLink` answered with router commands on a table without `etTableRowRouterLink` to resolve them. */
   MISSING_ROW_ROUTER_LINK: 3509,
+  /** A `rowsSource` publishes a `sort`/`filters` signal without the setter the table would write through. */
+  UNPAIRED_ROWS_SOURCE_STATE: 3510,
 } as const;

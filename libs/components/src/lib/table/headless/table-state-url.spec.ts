@@ -39,6 +39,12 @@ describe('table state URL adapter', () => {
     });
   });
 
+  it('returns null when a column entry is not a column', () => {
+    expect(deserializeTableState(JSON.stringify({ v: 3, columns: [null] }))).toBeNull();
+    expect(deserializeTableState(JSON.stringify({ v: 3, columns: ['name'] }))).toBeNull();
+    expect(deserializeTableState(JSON.stringify({ v: 3, columns: [{ hidden: true }] }))).toBeNull();
+  });
+
   it('returns null for an unknown version or missing columns', () => {
     expect(deserializeTableState(JSON.stringify({ v: 4, columns: [] }))).toBeNull();
     expect(deserializeTableState(JSON.stringify({ v: 1 }))).toBeNull();
