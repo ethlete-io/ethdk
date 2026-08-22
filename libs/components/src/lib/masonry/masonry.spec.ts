@@ -1,8 +1,10 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { query, queryAll } from '../testing/driver-core';
 import { MasonryDirective } from './headless';
 import { MASONRY_IMPORTS } from './masonry.imports';
+import { createMasonryHarness, MasonryHarness } from './testing/masonry-driver';
 
 /**
  * jsdom has no layout, so the geometry every part of this depends on has to be faked. The fake is deliberately
@@ -11,72 +13,7 @@ import { MASONRY_IMPORTS } from './masonry.imports';
  */
 const CONTAINER_WIDTH = 1000;
 
-let flushResizeObservers: () => void = () => undefined;
-
-/**
- * @param borderBoxOverflow How much wider than the width it was given an item reports itself - what a padded
- *   card does under `content-box`, where no measurement can ever match the assignment.
- */
-const stubLayout = ({ borderBoxOverflow = 0 }: { borderBoxOverflow?: number } = {}) => {
-  const observers: ResizeObserverCallback[] = [];
-
-  class RecordingResizeObserver implements ResizeObserver {
-    constructor(private callback: ResizeObserverCallback) {
-      observers.push(callback);
-    }
-
-    private targets = new Set<Element>();
-
-    public observe(target: Element) {
-      this.targets.add(target);
-    }
-
-    public unobserve(target: Element) {
-      this.targets.delete(target);
-    }
-
-    public disconnect() {
-      this.targets.clear();
-    }
-
-    /** The entries the real observer would deliver - only `target` is read by `signalElementDimensions`. */
-    public deliver() {
-      for (const target of this.targets) {
-        this.callback([{ target } as ResizeObserverEntry], this);
-      }
-    }
-  }
-
-  const instances: RecordingResizeObserver[] = [];
-
-  Object.defineProperty(globalThis, 'ResizeObserver', {
-    configurable: true,
-    writable: true,
-    value: class extends RecordingResizeObserver {
-      constructor(callback: ResizeObserverCallback) {
-        super(callback);
-        instances.push(this);
-      }
-    },
-  });
-
-  flushResizeObservers = () => instances.forEach((instance) => instance.deliver());
-
-  Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
-    configurable: true,
-    get(this: HTMLElement) {
-      return this.classList.contains('et-masonry') ? CONTAINER_WIDTH : 0;
-    },
-  });
-
-  HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
-    const isItem = this.classList.contains('et-masonry-item');
-    const width = isItem ? (Number.parseFloat(this.style.width) || 0) + borderBoxOverflow : CONTAINER_WIDTH;
-    const height = isItem ? Number(this.dataset['testHeight'] ?? 0) : 0;
-
-    return { width, height, top: 0, left: 0, right: width, bottom: height, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
-  };
-};
+let masonry: MasonryHarness;
 
 @Component({
   selector: 'et-test-masonry-host',
@@ -115,21 +52,11 @@ const createHost = (): ComponentFixture<MasonryHostComponent> => {
   return fixture;
 };
 
-const settle = (fixture: ComponentFixture<MasonryHostComponent>) => {
-  // Twice: the first delivery gives the container its width (and so the items theirs), the second lets the
-  // items report their heights at that width.
-  flushResizeObservers();
-  fixture.detectChanges();
-  flushResizeObservers();
-  fixture.detectChanges();
-};
+const settle = (fixture: ComponentFixture<MasonryHostComponent>) => masonry.settle(fixture);
 
-const container = (fixture: ComponentFixture<MasonryHostComponent>) =>
-  (fixture.nativeElement as HTMLElement).querySelector('.et-masonry') as HTMLElement;
+const container = (fixture: ComponentFixture<MasonryHostComponent>) => query(fixture, '.et-masonry')!;
 
-const items = (fixture: ComponentFixture<MasonryHostComponent>) => [
-  ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.et-masonry-item'),
-];
+const items = (fixture: ComponentFixture<MasonryHostComponent>) => queryAll(fixture, '.et-masonry-item');
 
 /** What `items()` holds, in its order - a `@for` re-order moves nodes without touching a registration. */
 const masonryItemTexts = (fixture: ComponentFixture<MasonryHostComponent>) =>
@@ -148,7 +75,9 @@ const offsets = (fixture: ComponentFixture<MasonryHostComponent>) =>
   }));
 
 describe('MasonryDirective', () => {
-  beforeEach(() => stubLayout());
+  beforeEach(() => {
+    masonry = createMasonryHarness({ containerWidth: CONTAINER_WIDTH });
+  });
 
   it('exposes list semantics on the container and its items', () => {
     const fixture = createHost();
@@ -196,6 +125,7 @@ describe('MasonryDirective', () => {
 
   it('sends an appended item to the shortest column and leaves the others where they are', () => {
     const fixture = createHost();
+    const columnWidth = (CONTAINER_WIDTH - 2 * 16) / 3;
     const before = offsets(fixture);
 
     fixture.componentInstance.items.update((current) => [...current, { id: 'd', height: 50 }]);
@@ -205,8 +135,9 @@ describe('MasonryDirective', () => {
     const after = offsets(fixture);
 
     expect(after.slice(0, 3)).toEqual(before);
-    // Column 1 holds the 100px item, so it is the shortest - the new item stacks below it.
-    expect(after[3]).toEqual({ inline: before[1]?.inline, block: '116px' });
+    // Column 1 holds the 100px item, so it is the shortest - the new item stacks below it. Compared against
+    // the absolute offset, not `before[1]`, so a bug that shifted every column together cannot slip past this.
+    expect(after[3]).toEqual({ inline: `${columnWidth + 16}px`, block: '116px' });
   });
 
   it('re-packs in DOM order when the items are re-ordered', () => {
@@ -338,7 +269,9 @@ describe('MasonryDirective', () => {
   });
 
   describe('an item whose reported box can never match the width it is given', () => {
-    beforeEach(() => stubLayout({ borderBoxOverflow: 20 }));
+    beforeEach(() => {
+      masonry = createMasonryHarness({ containerWidth: CONTAINER_WIDTH, borderBoxOverflow: 20 });
+    });
 
     it('still settles, places and reveals every item', () => {
       const fixture = createHost();

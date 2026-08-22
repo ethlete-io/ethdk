@@ -1,40 +1,13 @@
 import { Component, ErrorHandler, input, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { query } from '../testing/driver-core';
 import { GridItemComponent } from './grid-item.component';
 import { GridComponent } from './grid.component';
 import { provideGridConfig } from './headless/grid-config';
 import { GridDirective } from './headless/grid.directive';
 import { GridItemConfig, GridSerializedState } from './headless/grid.types';
-
-class ResizeObserverMock {
-  static instances: ResizeObserverMock[] = [];
-
-  private targets = new Set<Element>();
-
-  constructor(private callback: ResizeObserverCallback) {
-    ResizeObserverMock.instances.push(this);
-  }
-
-  observe(target: Element) {
-    this.targets.add(target);
-  }
-
-  unobserve(target: Element) {
-    this.targets.delete(target);
-  }
-
-  disconnect() {
-    this.targets.clear();
-  }
-
-  emit() {
-    const entries = [...this.targets].map((target) => ({ target }) as ResizeObserverEntry);
-    if (entries.length > 0) {
-      this.callback(entries, this as unknown as ResizeObserver);
-    }
-  }
-}
+import { createGridHarness, GridHarness } from './testing/grid-driver';
 
 @Component({
   template: '',
@@ -132,26 +105,14 @@ class TypedHostComponent {
 
 describe('GridComponent', () => {
   let fixture: ComponentFixture<TestHostComponent>;
-  let originalResizeObserverDescriptor: PropertyDescriptor | undefined;
+  let grid: GridHarness;
 
   const getGrid = () => fixture.debugElement.query(By.directive(GridDirective)).injector.get(GridDirective);
 
-  const measureGrid = (width = 1216) => {
-    const gridEl = fixture.debugElement.query(By.directive(GridDirective)).nativeElement as HTMLElement;
-    Object.defineProperty(gridEl, 'clientWidth', { configurable: true, value: width });
-    TestBed.tick();
-    ResizeObserverMock.instances.forEach((instance) => instance.emit());
-    fixture.detectChanges();
-  };
+  const measureGrid = (width?: number) => grid.measure(fixture, width);
 
   beforeEach(() => {
-    originalResizeObserverDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'ResizeObserver');
-    ResizeObserverMock.instances = [];
-
-    Object.defineProperty(globalThis, 'ResizeObserver', {
-      configurable: true,
-      value: ResizeObserverMock,
-    });
+    grid = createGridHarness();
 
     TestBed.configureTestingModule({
       imports: [TestHostComponent],
@@ -160,26 +121,14 @@ describe('GridComponent', () => {
     fixture = TestBed.createComponent(TestHostComponent);
   });
 
-  afterEach(() => {
-    if (originalResizeObserverDescriptor) {
-      Object.defineProperty(globalThis, 'ResizeObserver', originalResizeObserverDescriptor);
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (globalThis as any).ResizeObserver;
-    }
-  });
-
   it('renders the grid host element with class et-grid', () => {
     fixture.detectChanges();
-    const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('.et-grid')).not.toBeNull();
+    expect(query(fixture, '.et-grid')).not.toBeNull();
   });
 
   it('has role="region" on the grid element', () => {
     fixture.detectChanges();
-    const el = fixture.nativeElement as HTMLElement;
-    const grid = el.querySelector('.et-grid') as HTMLElement;
-    expect(grid.getAttribute('role')).toBe('region');
+    expect(query(fixture, '.et-grid')?.getAttribute('role')).toBe('region');
   });
 
   it('starts with no items in the grid directive', () => {
@@ -253,8 +202,7 @@ describe('GridComponent', () => {
     getGrid().beginDrag('a');
     fixture.detectChanges();
 
-    const ghost = (fixture.nativeElement as HTMLElement).querySelector('.et-grid-ghost');
-    expect(ghost).not.toBeNull();
+    expect(query(fixture, '.et-grid-ghost')).not.toBeNull();
   });
   describe('unrendered items', () => {
     let reportedErrors: unknown[];
@@ -262,7 +210,6 @@ describe('GridComponent', () => {
     const createHost = <T>(host: Type<T>) => {
       reportedErrors = [];
       TestBed.resetTestingModule();
-      Object.defineProperty(globalThis, 'ResizeObserver', { configurable: true, value: ResizeObserverMock });
       TestBed.configureTestingModule({
         imports: [host],
         providers: [
@@ -312,7 +259,6 @@ describe('GridComponent', () => {
   describe('typed items', () => {
     it('hands the item payload type back through layoutChange', () => {
       TestBed.resetTestingModule();
-      Object.defineProperty(globalThis, 'ResizeObserver', { configurable: true, value: ResizeObserverMock });
       TestBed.configureTestingModule({
         imports: [TypedHostComponent],
         providers: [...provideGridConfig({ registrations: [{ type: 'test', component: TestItemComponent }] })],
@@ -320,18 +266,13 @@ describe('GridComponent', () => {
 
       const typedFixture = TestBed.createComponent(TypedHostComponent);
       typedFixture.detectChanges();
+      grid.measure(typedFixture);
 
-      const gridEl = typedFixture.debugElement.query(By.directive(GridDirective)).nativeElement as HTMLElement;
-      Object.defineProperty(gridEl, 'clientWidth', { configurable: true, value: 1216 });
-      TestBed.tick();
-      ResizeObserverMock.instances.forEach((instance) => instance.emit());
-      typedFixture.detectChanges();
+      const gridDirective = typedFixture.debugElement.query(By.directive(GridDirective)).injector.get(GridDirective);
 
-      const grid = typedFixture.debugElement.query(By.directive(GridDirective)).injector.get(GridDirective);
+      expect(gridDirective.currentItems().map((item) => item.id)).toEqual(['a']);
 
-      expect(grid.currentItems().map((item) => item.id)).toEqual(['a']);
-
-      grid.moveItem('a', { col: 2, row: 0, colSpan: 1, rowSpan: 1 });
+      gridDirective.moveItem('a', { col: 2, row: 0, colSpan: 1, rowSpan: 1 });
       typedFixture.detectChanges();
 
       const emitted = typedFixture.componentInstance.states.at(-1);

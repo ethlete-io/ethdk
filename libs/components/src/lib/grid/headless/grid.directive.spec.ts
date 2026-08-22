@@ -1,38 +1,10 @@
 import { Component, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { createGridHarness, GridHarness } from '../testing/grid-driver';
 import { provideGridConfig } from './grid-config';
 import { GridDirective } from './grid.directive';
 import { GridItemConfig, GridItemConstraints, GridItemPosition, GridSerializedState } from './grid.types';
-
-class ResizeObserverMock {
-  static instances: ResizeObserverMock[] = [];
-
-  private targets = new Set<Element>();
-
-  constructor(private callback: ResizeObserverCallback) {
-    ResizeObserverMock.instances.push(this);
-  }
-
-  observe(target: Element) {
-    this.targets.add(target);
-  }
-
-  unobserve(target: Element) {
-    this.targets.delete(target);
-  }
-
-  disconnect() {
-    this.targets.clear();
-  }
-
-  emit() {
-    const entries = [...this.targets].map((target) => ({ target }) as ResizeObserverEntry);
-    if (entries.length > 0) {
-      this.callback(entries, this as unknown as ResizeObserver);
-    }
-  }
-}
 
 const everyBreakpoint = (position: GridItemPosition) => ({ sm: position, md: position, lg: position });
 
@@ -53,38 +25,17 @@ class TestItemComponent {
 
 describe('GridDirective', () => {
   let fixture: ComponentFixture<TestHostComponent>;
-  let originalResizeObserverDescriptor: PropertyDescriptor | undefined;
+  let grid: GridHarness;
 
   const getDirective = () => fixture.debugElement.query(By.directive(GridDirective)).injector.get(GridDirective);
 
-  const measureGrid = (width = 1216) => {
-    const gridEl = fixture.debugElement.query(By.directive(GridDirective)).nativeElement as HTMLElement;
-    Object.defineProperty(gridEl, 'clientWidth', { configurable: true, value: width });
-    TestBed.tick();
-    ResizeObserverMock.instances.forEach((instance) => instance.emit());
-    fixture.detectChanges();
-  };
+  const measureGrid = (width?: number) => grid.measure(fixture, width);
 
   beforeEach(() => {
-    originalResizeObserverDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'ResizeObserver');
-    ResizeObserverMock.instances = [];
-
-    Object.defineProperty(globalThis, 'ResizeObserver', {
-      configurable: true,
-      value: ResizeObserverMock,
-    });
+    grid = createGridHarness();
 
     TestBed.configureTestingModule({ imports: [TestHostComponent] });
     fixture = TestBed.createComponent(TestHostComponent);
-  });
-
-  afterEach(() => {
-    if (originalResizeObserverDescriptor) {
-      Object.defineProperty(globalThis, 'ResizeObserver', originalResizeObserverDescriptor);
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (globalThis as any).ResizeObserver;
-    }
   });
 
   describe('initial state', () => {

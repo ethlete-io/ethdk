@@ -1,24 +1,12 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { query } from '../testing/driver-core';
 import { GridItemComponent } from './grid-item.component';
 import { GridItemDirective } from './headless/grid-item.directive';
 import { GridDirective } from './headless/grid.directive';
 import { GridItemConfig } from './headless/grid.types';
-
-class ResizeObserverMock {
-  observe() {
-    return;
-  }
-
-  unobserve() {
-    return;
-  }
-
-  disconnect() {
-    return;
-  }
-}
+import { createGridHarness } from './testing/grid-driver';
 
 const TEST_ITEM: GridItemConfig = {
   id: 'test-item',
@@ -35,7 +23,7 @@ const TEST_ITEM: GridItemConfig = {
   imports: [GridDirective, GridItemComponent],
   template: `
     <div [items]="items" [readOnly]="readOnly" etGrid>
-      <et-grid-item [ariaLabel]="ariaLabel" itemId="test-item">
+      <et-grid-item [ariaLabel]="ariaLabel" (remove)="removed = true" itemId="test-item">
         <input type="text" />
       </et-grid-item>
     </div>
@@ -45,13 +33,13 @@ class TestHostComponent {
   items: GridItemConfig[] = [TEST_ITEM];
   ariaLabel = 'My widget';
   readOnly = false;
+  removed = false;
 }
 
 describe('GridItemComponent', () => {
   let fixture: ComponentFixture<TestHostComponent>;
-  let originalResizeObserverDescriptor: PropertyDescriptor | undefined;
 
-  const getItemEl = () => (fixture.nativeElement as HTMLElement).querySelector('et-grid-item') as HTMLElement;
+  const getItemEl = () => query(fixture, 'et-grid-item')!;
 
   const getItemDirective = () =>
     fixture.debugElement.query(By.directive(GridItemDirective)).injector.get(GridItemDirective);
@@ -59,24 +47,10 @@ describe('GridItemComponent', () => {
   const getGridDirective = () => fixture.debugElement.query(By.directive(GridDirective)).injector.get(GridDirective);
 
   beforeEach(() => {
-    originalResizeObserverDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'ResizeObserver');
-
-    Object.defineProperty(globalThis, 'ResizeObserver', {
-      configurable: true,
-      value: ResizeObserverMock,
-    });
+    createGridHarness();
 
     TestBed.configureTestingModule({ imports: [TestHostComponent] });
     fixture = TestBed.createComponent(TestHostComponent);
-  });
-
-  afterEach(() => {
-    if (originalResizeObserverDescriptor) {
-      Object.defineProperty(globalThis, 'ResizeObserver', originalResizeObserverDescriptor);
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (globalThis as any).ResizeObserver;
-    }
   });
 
   it('renders with class et-grid-item', () => {
@@ -178,6 +152,48 @@ describe('GridItemComponent', () => {
       const newPos = getItemDirective().currentPosition();
       expect(newPos?.col).toBe(initialPos.col + 1);
       expect(newPos?.colSpan).toBe(initialPos.colSpan);
+    });
+
+    it('moves item right on Ctrl+ArrowRight', () => {
+      fixture.detectChanges();
+      const initialPos = getItemDirective().currentPosition();
+      if (!initialPos) return;
+
+      getItemEl().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', ctrlKey: true, bubbles: true }));
+      fixture.detectChanges();
+
+      const newPos = getItemDirective().currentPosition();
+      expect(newPos?.col).toBe(initialPos.col + 1);
+      expect(newPos?.colSpan).toBe(initialPos.colSpan);
+    });
+
+    it('removes the item and emits remove on Ctrl+Delete', () => {
+      fixture.detectChanges();
+
+      getItemEl().dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', ctrlKey: true, bubbles: true }));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.removed).toBe(true);
+      expect(
+        getGridDirective()
+          .currentItems()
+          .find((item) => item.id === 'test-item'),
+      ).toBeUndefined();
+    });
+
+    it('ignores Ctrl+Delete that bubbles out of a form field inside the item', () => {
+      fixture.detectChanges();
+      const input = getItemEl().querySelector('input') as HTMLInputElement;
+
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', ctrlKey: true, bubbles: true }));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.removed).toBe(false);
+      expect(
+        getGridDirective()
+          .currentItems()
+          .find((item) => item.id === 'test-item'),
+      ).toBeDefined();
     });
   });
 });
