@@ -1,10 +1,9 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../test-helpers';
 import { provideStandingsLabels } from './standings-labels';
 import { STANDINGS_IMPORTS } from './standings.imports';
 import { NormalizedStandingRow, StandingsZone } from './standings.types';
+import { mountStandings } from './testing/standings-driver';
 
 const row = (overrides: Partial<NormalizedStandingRow> = {}): NormalizedStandingRow => ({
   id: 'fcb',
@@ -54,58 +53,32 @@ class HostComponent {
   public showLegend = signal(true);
 }
 
-const create = () => {
-  TestBed.configureTestingModule({
-    providers: [
-      provideColorThemesWithTailwind4([
-        {
-          name: 'brand',
-          isDefault: true,
-          primary: {
-            color: { default: '0 0 0', hover: '0 0 0', active: '0 0 0', disabled: '0 0 0' },
-            onColor: { default: '255 255 255' },
-          },
-        },
-      ]),
-    ],
-  });
-
-  const fixture = TestBed.createComponent(HostComponent);
-
-  fixture.detectChanges();
-
-  return fixture;
-};
-
-const all = (fixture: ComponentFixture<HostComponent>, selector: string) =>
-  Array.from((fixture.nativeElement as HTMLElement).querySelectorAll(selector));
-
-const cells = (fixture: ComponentFixture<HostComponent>, column: string) =>
-  all(fixture, `tbody [data-column='${column}']`).map((element) => element.textContent?.trim());
+const create = () => mountStandings(HostComponent);
 
 describe('StandingsComponent', () => {
   it('is a real table, with a caption and column headers', () => {
-    const fixture = create();
-    const host = fixture.nativeElement as HTMLElement;
+    const driver = create();
 
-    expect(host.querySelector('table')).not.toBeNull();
-    expect(host.querySelector('caption')?.textContent?.trim()).toBe('Standings');
-    expect(all(fixture, 'thead th[scope="col"]').length).toBeGreaterThan(3);
+    expect(driver.query('table')).not.toBeNull();
+    expect(driver.text('caption')).toBe('Standings');
+    expect(driver.queryAll('thead th[scope="col"]').length).toBeGreaterThan(3);
   });
 
   it('makes the position a row header, since it is what identifies the row', () => {
-    const positions = all(create(), 'tbody th[scope="row"]').map((element) => element.textContent?.trim());
+    const positions = create()
+      .queryAll('tbody th[scope="row"]')
+      .map((element) => element.textContent?.trim());
 
     expect(positions).toEqual(['1', '2', '3']);
   });
 
   it('spells out every abbreviated column for assistive tech', () => {
-    const fixture = create();
+    const driver = create();
     // The participant column is the only header that is already a word, so it is the only one without an
     // `abbr` - every abbreviation has one.
-    const abbreviated = all(fixture, 'thead th').filter(
-      (element) => element.getAttribute('data-column') !== 'participant',
-    );
+    const abbreviated = driver
+      .queryAll('thead th')
+      .filter((element) => element.getAttribute('data-column') !== 'participant');
 
     expect(abbreviated.map((element) => element.getAttribute('abbr'))).toEqual([
       'Position',
@@ -119,12 +92,12 @@ describe('StandingsComponent', () => {
   });
 
   it('draws the rows in the order given, without re-sorting them', () => {
-    const fixture = create();
+    const driver = create();
 
-    fixture.componentInstance.rows.set([ROWS[2]!, ROWS[0]!, ROWS[1]!]);
-    fixture.detectChanges();
+    driver.host.rows.set([ROWS[2]!, ROWS[0]!, ROWS[1]!]);
+    driver.detectChanges();
 
-    expect(all(fixture, 'tbody th[scope="row"]').map((element) => element.textContent?.trim())).toEqual([
+    expect(driver.queryAll('tbody th[scope="row"]').map((element) => element.textContent?.trim())).toEqual([
       '3',
       '1',
       '2',
@@ -132,35 +105,35 @@ describe('StandingsComponent', () => {
   });
 
   it('signs the difference, which is the whole point of the column', () => {
-    const fixture = create();
+    const driver = create();
 
-    fixture.componentInstance.rows.set([row({ difference: 4 }), row({ id: 'neo', position: 2, difference: -9 })]);
-    fixture.detectChanges();
+    driver.host.rows.set([row({ difference: 4 }), row({ id: 'neo', position: 2, difference: -9 })]);
+    driver.detectChanges();
 
-    expect(cells(fixture, 'detail').filter((value) => value?.startsWith('+') || value?.startsWith('-'))).toEqual([
+    expect(driver.cells('detail').filter((value) => value?.startsWith('+') || value?.startsWith('-'))).toEqual([
       '+4',
       '-9',
     ]);
   });
 
   it('drops the difference column when no row reports one', () => {
-    const fixture = create();
+    const driver = create();
 
-    fixture.componentInstance.rows.set([row({ difference: null })]);
-    fixture.detectChanges();
+    driver.host.rows.set([row({ difference: null })]);
+    driver.detectChanges();
 
-    expect(all(fixture, 'thead th').map((element) => element.getAttribute('abbr'))).not.toContain('Difference');
+    expect(driver.queryAll('thead th').map((element) => element.getAttribute('abbr'))).not.toContain('Difference');
   });
 
   it('drops the form column when no competition reports form', () => {
-    const fixture = create();
+    const driver = create();
 
-    expect(all(fixture, '.et-standings-form')).toHaveLength(0);
+    expect(driver.queryAll('.et-standings-form')).toHaveLength(0);
 
-    fixture.componentInstance.rows.set([row({ form: ['win', 'tie', 'loss'] })]);
-    fixture.detectChanges();
+    driver.host.rows.set([row({ form: ['win', 'tie', 'loss'] })]);
+    driver.detectChanges();
 
-    expect(all(fixture, '.et-standings-form-result').map((element) => element.getAttribute('aria-label'))).toEqual([
+    expect(driver.queryAll('.et-standings-form-result').map((element) => element.getAttribute('aria-label'))).toEqual([
       'Win',
       'Draw',
       'Loss',
@@ -169,90 +142,93 @@ describe('StandingsComponent', () => {
 
   describe('zones', () => {
     const zoned = () => {
-      const fixture = create();
+      const driver = create();
 
-      fixture.componentInstance.zones.set([{ from: 1, to: 2, color: 'brand', label: 'Advances' }]);
-      fixture.detectChanges();
+      driver.host.zones.set([{ from: 1, to: 2, color: 'brand', label: 'Advances' }]);
+      driver.detectChanges();
 
-      return fixture;
+      return driver;
     };
 
     it('band the rows they cover and no others', () => {
-      const marked = all(zoned(), 'tbody tr').map((element) => element.hasAttribute('data-zone'));
+      const marked = zoned()
+        .queryAll('tbody tr')
+        .map((element) => element.hasAttribute('data-zone'));
 
       expect(marked).toEqual([true, true, false]);
     });
 
     it('say what they mean in text, so the banding is never colour-only', () => {
-      expect(all(zoned(), '.et-standings-zone-note').map((element) => element.textContent?.trim())).toEqual([
-        'Advances',
-        'Advances',
-      ]);
+      expect(
+        zoned()
+          .queryAll('.et-standings-zone-note')
+          .map((element) => element.textContent?.trim()),
+      ).toEqual(['Advances', 'Advances']);
     });
 
     it('draw the legend from the same config, so the two cannot drift', () => {
-      const fixture = zoned();
+      const driver = zoned();
 
-      expect(all(fixture, '.et-standings-legend-item').map((element) => element.textContent?.trim())).toEqual([
+      expect(driver.queryAll('.et-standings-legend-item').map((element) => element.textContent?.trim())).toEqual([
         'Advances',
       ]);
 
-      fixture.componentInstance.showLegend.set(false);
-      fixture.detectChanges();
+      driver.host.showLegend.set(false);
+      driver.detectChanges();
 
-      expect(all(fixture, '.et-standings-legend')).toHaveLength(0);
+      expect(driver.queryAll('.et-standings-legend')).toHaveLength(0);
     });
 
     it('are rejected when they overlap, whenever the overlap appears', () => {
-      const fixture = create();
+      const driver = create();
 
-      fixture.componentInstance.zones.set([
+      driver.host.zones.set([
         { from: 1, to: 2, color: 'brand', label: 'Advances' },
         { from: 2, to: 3, color: 'brand', label: 'Playoffs' },
       ]);
 
-      expect(() => fixture.detectChanges()).toThrow(/both cover a position/);
+      expect(() => driver.detectChanges()).toThrow(/both cover a position/);
     });
 
     it('are absent entirely without a config', () => {
-      const fixture = create();
+      const driver = create();
 
-      expect(all(fixture, '[data-zone]')).toHaveLength(0);
-      expect(all(fixture, '.et-standings-legend')).toHaveLength(0);
+      expect(driver.queryAll('[data-zone]')).toHaveLength(0);
+      expect(driver.queryAll('.et-standings-legend')).toHaveLength(0);
     });
   });
 
   describe('the highlighted row', () => {
     it('is marked as current, and says why', () => {
-      const fixture = create();
+      const driver = create();
 
-      fixture.componentInstance.highlightedRowId.set('neo');
-      fixture.detectChanges();
+      driver.host.highlightedRowId.set('neo');
+      driver.detectChanges();
 
-      const rows = all(fixture, 'tbody tr');
+      const rows = driver.queryAll('tbody tr');
 
       expect(rows.map((element) => element.getAttribute('aria-current'))).toEqual([null, 'true', null]);
-      expect(all(fixture, '.et-standings-zone-note').map((element) => element.textContent?.trim())).toEqual([
+      expect(driver.queryAll('.et-standings-zone-note').map((element) => element.textContent?.trim())).toEqual([
         'Your team',
       ]);
     });
 
     it('is nobody when the id matches no row', () => {
-      const fixture = create();
+      const driver = create();
 
-      fixture.componentInstance.highlightedRowId.set('nope');
-      fixture.detectChanges();
+      driver.host.highlightedRowId.set('nope');
+      driver.detectChanges();
 
-      expect(all(fixture, '[data-highlighted]')).toHaveLength(0);
+      expect(driver.queryAll('[data-highlighted]')).toHaveLength(0);
     });
   });
 
   it('takes its strings from the standings labels', () => {
-    TestBed.configureTestingModule({ providers: [provideStandingsLabels({ caption: 'Tabelle', points: 'Pkt' })] });
+    const driver = mountStandings(HostComponent, [provideStandingsLabels({ caption: 'Tabelle', points: 'Pkt' })]);
 
-    const fixture = create();
-
-    expect((fixture.nativeElement as HTMLElement).querySelector('caption')?.textContent?.trim()).toBe('Tabelle');
-    expect(all(fixture, "thead [data-column='points']").map((element) => element.textContent?.trim())).toEqual(['Pkt']);
+    expect(driver.text('caption')).toBe('Tabelle');
+    expect(driver.queryAll("thead [data-column='points']").map((element) => element.textContent?.trim())).toEqual([
+      'Pkt',
+    ]);
   });
 });
