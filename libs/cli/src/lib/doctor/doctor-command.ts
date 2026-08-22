@@ -1,4 +1,4 @@
-import { composeToolNames, composeBinary, resolveComposeTool } from '../api/compose';
+import { ComposeTool, composeToolNames, composeBinary, resolveComposeTool } from '../api/compose';
 import { join } from 'path';
 import { API_DEFINITIONS_FILE_NAMES, loadApiDefinitions } from '../api/load-definitions';
 import { checkoutProblem, resolveApiCheckout } from '../api/resolve-checkout';
@@ -7,12 +7,12 @@ import { LEGACY_LOCAL_CONFIG_FILE_NAME, LOCAL_CONFIG_FILE_NAME, readLocalConfigF
 
 const indent = (text: string) => text.replace(/\n/g, '\n    ');
 
-const describeComposeTool = () => {
-  const tool = resolveComposeTool();
+const describeComposeTool = (composeTools?: ComposeTool[]) => {
+  const tool = resolveComposeTool(composeTools);
 
   return tool
     ? { line: `container engine: ${composeBinary(tool.compose).join(' ')}`, problems: [] }
-    : { line: undefined, problems: [`No compose tool found. Tried: ${composeToolNames().join(', ')}.`] };
+    : { line: undefined, problems: [`No compose tool found. Tried: ${composeToolNames(composeTools).join(', ')}.`] };
 };
 
 const describeApis = (root: string, apiInvocation: string) => {
@@ -37,7 +37,15 @@ const describeApis = (root: string, apiInvocation: string) => {
 };
 
 /** Reports every problem with this machine's setup, so `et api` does not have to find them one at a time. */
-export const doctorCommand = ({ root, apiInvocation = 'et api' }: { root: string; apiInvocation?: string }) => {
+export const doctorCommand = ({
+  root,
+  apiInvocation = 'et api',
+  composeTools,
+}: {
+  root: string;
+  apiInvocation?: string;
+  composeTools?: ComposeTool[];
+}) => {
   // A file that exists but cannot be parsed still has to be reported, so this asks whether the file
   // is there rather than whether it could be read.
   const hasConfig = [LOCAL_CONFIG_FILE_NAME, LEGACY_LOCAL_CONFIG_FILE_NAME].some(
@@ -52,7 +60,7 @@ export const doctorCommand = ({ root, apiInvocation = 'et api' }: { root: string
   }
 
   const configProblems = diagnoseLocalConfig({ root });
-  const compose = describeComposeTool();
+  const compose = describeComposeTool(composeTools);
   const apis = describeApis(root, apiInvocation);
 
   const problems = [...configProblems, ...compose.problems, ...apis.problems];
