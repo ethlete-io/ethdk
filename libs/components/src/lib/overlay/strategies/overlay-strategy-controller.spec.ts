@@ -1,46 +1,12 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
+import { FakeMatchMedia, fakeMatchMedia } from '../../testing/fake-match-media';
 import { injectOverlayManager } from '../overlay-manager';
 import { OverlayRef } from '../overlay-ref';
 import { OverlayStrategy, OverlayStrategyContext } from './overlay-strategy.types';
 
 const MD_QUERY = '(min-width: 768px)';
-
-type FakeMediaQueryList = MediaQueryList & { matches: boolean };
-
-class FakeMatchMedia {
-  private readonly lists = new Map<string, FakeMediaQueryList>();
-  private readonly listeners = new Map<string, ((event: MediaQueryListEvent) => void)[]>();
-
-  readonly matchMedia = (query: string): FakeMediaQueryList => {
-    const existing = this.lists.get(query);
-
-    if (existing) return existing;
-
-    const list = {
-      media: query,
-      matches: false,
-      addEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) => {
-        this.listeners.set(query, [...(this.listeners.get(query) ?? []), listener]);
-      },
-      removeEventListener: () => undefined,
-    } as unknown as FakeMediaQueryList;
-
-    this.lists.set(query, list);
-
-    return list;
-  };
-
-  setMatches(query: string, matches: boolean) {
-    const list = this.matchMedia(query);
-    list.matches = matches;
-
-    for (const listener of this.listeners.get(query) ?? []) {
-      listener({ matches } as MediaQueryListEvent);
-    }
-  }
-}
 
 @Component({ template: 'overlay content' })
 class StrategyTestContentComponent {}
@@ -50,7 +16,6 @@ const flushFrames = () =>
 
 describe('overlay strategy controller', () => {
   let fakeBreakpoints: FakeMatchMedia;
-  let originalMatchMedia: typeof window.matchMedia;
 
   const createTestStrategy = (id: string, config: OverlayStrategy['config']): OverlayStrategy => ({
     id,
@@ -68,9 +33,7 @@ describe('overlay strategy controller', () => {
   let openedRef: OverlayRef<StrategyTestContentComponent, unknown> | null = null;
 
   beforeEach(() => {
-    fakeBreakpoints = new FakeMatchMedia();
-    originalMatchMedia = window.matchMedia;
-    window.matchMedia = fakeBreakpoints.matchMedia as typeof window.matchMedia;
+    fakeBreakpoints = fakeMatchMedia();
     openedRef = null;
 
     TestBed.configureTestingModule({});
@@ -93,7 +56,6 @@ describe('overlay strategy controller', () => {
 
   afterEach(() => {
     openedRef?.close();
-    window.matchMedia = originalMatchMedia;
   });
 
   const openOverlay = () => {
@@ -225,6 +187,23 @@ describe('overlay strategy controller', () => {
     expect(smallStrategy.onSwitchedTo).toHaveBeenCalledOnce();
     expect(elements?.paneElement.classList.contains('et-overlay--bottom-sheet')).toBe(true);
     expect(document.documentElement.classList.contains('large-document')).toBe(false);
+  });
+
+  it('switches strategies when the viewport width crosses the breakpoint', () => {
+    const overlayRef = openOverlay();
+    const elements = overlayRef.elements;
+
+    fakeBreakpoints.setViewportWidth(1024);
+    TestBed.tick();
+
+    expect(largeStrategy.onSwitchedTo).toHaveBeenCalledOnce();
+    expect(elements?.paneElement.classList.contains('et-overlay--dialog')).toBe(true);
+
+    fakeBreakpoints.setViewportWidth(600);
+    TestBed.tick();
+
+    expect(smallStrategy.onSwitchedTo).toHaveBeenCalledOnce();
+    expect(elements?.paneElement.classList.contains('et-overlay--bottom-sheet')).toBe(true);
   });
 
   describe('document and body classes shared between overlays', () => {
