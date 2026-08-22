@@ -1,7 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { vi } from 'vitest';
 import '../../test-helpers';
+import { LayoutRule, fakeElementScroll, fakeLayout, fakeResizeObserver, stackedChildren } from '../testing/fake-layout';
 import { CarouselComponent } from './carousel.component';
 import { CAROUSEL_IMPORTS } from './carousel.imports';
 import { provideCarouselLabels } from './carousel-labels';
@@ -70,94 +70,11 @@ const settleChildren = async (fixture: ComponentFixture<CarouselHostComponent>) 
 
 const SLIDE_SIZE = 300;
 
-/**
- * jsdom has no layout, so every offset and every container size reads `0`. Hand the track's children a width
- * and a position, and their container a viewport, until the returned function puts the real getters back.
- */
-const fakeLayout = () => {
-  const originalOffsetLeft = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetLeft');
-  const originalOffsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
-  const originalClientWidth = Object.getOwnPropertyDescriptor(Element.prototype, 'clientWidth');
-
-  const isSlide = (element: Element) => element.classList.contains('et-carousel-item');
-
-  Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
-    configurable: true,
-    get(this: HTMLElement) {
-      return isSlide(this) ? SLIDE_SIZE : 0;
-    },
-  });
-
-  Object.defineProperty(HTMLElement.prototype, 'offsetLeft', {
-    configurable: true,
-    get(this: HTMLElement) {
-      const parent = this.parentElement;
-
-      if (!parent || !isSlide(this)) return 0;
-
-      return Array.from(parent.children).filter(isSlide).indexOf(this) * SLIDE_SIZE;
-    },
-  });
-
-  Object.defineProperty(Element.prototype, 'clientWidth', {
-    configurable: true,
-    get() {
-      return SLIDE_SIZE;
-    },
-  });
-
-  return () => {
-    if (originalOffsetLeft) Object.defineProperty(HTMLElement.prototype, 'offsetLeft', originalOffsetLeft);
-    if (originalOffsetWidth) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', originalOffsetWidth);
-    if (originalClientWidth) Object.defineProperty(Element.prototype, 'clientWidth', originalClientWidth);
-  };
-};
-
-/** A ResizeObserver whose callbacks a test can fire - the shared mock in `test-helpers` never reports. */
-const fakeResizeObserver = () => {
-  const original = Object.getOwnPropertyDescriptor(globalThis, 'ResizeObserver');
-  const observations: { callback: ResizeObserverCallback; targets: Element[] }[] = [];
-
-  class RecordingResizeObserver {
-    private observation: { callback: ResizeObserverCallback; targets: Element[] };
-
-    constructor(callback: ResizeObserverCallback) {
-      this.observation = { callback, targets: [] };
-      observations.push(this.observation);
-    }
-
-    observe(target: Element) {
-      this.observation.targets.push(target);
-    }
-
-    unobserve(target: Element) {
-      this.observation.targets = this.observation.targets.filter((candidate) => candidate !== target);
-    }
-
-    disconnect() {
-      this.observation.targets = [];
-    }
-  }
-
-  Object.defineProperty(globalThis, 'ResizeObserver', {
-    configurable: true,
-    value: RecordingResizeObserver,
-    writable: true,
-  });
-
-  return {
-    resize: () => {
-      for (const observation of observations) {
-        for (const target of observation.targets) {
-          observation.callback([{ target } as ResizeObserverEntry], {} as ResizeObserver);
-        }
-      }
-    },
-    restore: () => {
-      if (original) Object.defineProperty(globalThis, 'ResizeObserver', original);
-    },
-  };
-};
+/** The track's slides laid out in a row, inside a viewport exactly one slide wide. */
+const CAROUSEL_LAYOUT: LayoutRule[] = [
+  stackedChildren('.et-carousel-item', SLIDE_SIZE),
+  { match: '.et-scrollable-container', clientWidth: SLIDE_SIZE },
+];
 
 describe('CarouselComponent', () => {
   it('is a labelled carousel region wrapping the track and its controls', () => {
@@ -435,42 +352,26 @@ describe('CarouselComponent', () => {
 
     it('leaves the clones once layout arrives, even when the first alignment pass could not measure', async () => {
       const resizeObserver = fakeResizeObserver();
-      const hadOwnScroll = Object.hasOwn(Element.prototype, 'scroll');
-      const originalScroll = Object.getOwnPropertyDescriptor(Element.prototype, 'scroll');
-      const scroll = vi.fn();
-      let restoreLayout: (() => void) | null = null;
+      const scroll = fakeElementScroll();
 
-      Object.defineProperty(Element.prototype, 'scroll', { configurable: true, value: scroll, writable: true });
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
 
-      try {
-        const fixture = await createLoopingHost();
-        const carousel = fixture.componentInstance.carousel();
+      expect(carousel.cloneCount()).toBe(2);
+      expect(carousel.domCount()).toBe(8);
+      // a carousel in a hidden tab panel or a collapsed accordion: nothing to measure, so nowhere to go
+      expect(scroll.calls()).toEqual([]);
 
-        expect(carousel.cloneCount()).toBe(2);
-        expect(carousel.domCount()).toBe(8);
-        // a carousel in a hidden tab panel or a collapsed accordion: nothing to measure, so nowhere to go
-        expect(scroll).not.toHaveBeenCalled();
+      fakeLayout(CAROUSEL_LAYOUT);
+      resizeObserver.fire();
+      fixture.detectChanges();
 
-        restoreLayout = fakeLayout();
-        resizeObserver.resize();
-        fixture.detectChanges();
+      // the track opens parked on child 0, which is a clone - the real child for the same slide sits a
+      // whole clone run further in, and that is where a looping carousel has to be put before it is seen
+      const restingOffset = (carousel.cloneCount() + carousel.activeIndex()) * SLIDE_SIZE;
 
-        // the track opens parked on child 0, which is a clone - the real child for the same slide sits a
-        // whole clone run further in, and that is where a looping carousel has to be put before it is seen
-        const restingOffset = (carousel.cloneCount() + carousel.activeIndex()) * SLIDE_SIZE;
-
-        expect(restingOffset).toBeGreaterThan(0);
-        expect(scroll).toHaveBeenCalledWith({ left: restingOffset, behavior: 'instant' });
-      } finally {
-        restoreLayout?.();
-        resizeObserver.restore();
-
-        if (hadOwnScroll && originalScroll) {
-          Object.defineProperty(Element.prototype, 'scroll', originalScroll);
-        } else {
-          Reflect.deleteProperty(Element.prototype, 'scroll');
-        }
-      }
+      expect(restingOffset).toBeGreaterThan(0);
+      expect(scroll.lastCall()?.options).toEqual({ left: restingOffset, behavior: 'instant' });
     });
 
     it('renders clones either side of the slides, marked hidden and inert and left out of the count', async () => {
