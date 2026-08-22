@@ -280,11 +280,12 @@ describe('TabGroupComponent', () => {
     );
 
     secondTabButtons.forEach((button) => {
-      button?.click();
+      button!.click();
       repeatedFixture.detectChanges();
     });
 
     expect(storageEntries.size).toBe(3);
+    expect([...storageEntries.values()]).toEqual(['1', '1', '1']);
 
     repeatedFixture.destroy();
   });
@@ -292,6 +293,7 @@ describe('TabGroupComponent', () => {
   it('skips trigger transitions on initial render', () => {
     fixture.detectChanges();
 
+    expect(getTriggerButtons().length).toBeGreaterThan(0);
     expect(
       getTriggerButtons().every((button) => button.classList.contains('et-tab-bar-trigger--no-initial-transition')),
     ).toBe(true);
@@ -305,6 +307,7 @@ describe('TabGroupComponent', () => {
       vi.runAllTimers();
       fixture.detectChanges();
 
+      expect(getTriggerButtons().length).toBeGreaterThan(0);
       expect(
         getTriggerButtons().every((button) => !button.classList.contains('et-tab-bar-trigger--no-initial-transition')),
       ).toBe(true);

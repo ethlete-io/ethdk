@@ -86,6 +86,7 @@ describe('TableKeyboardNavDirective', () => {
     fixture.componentInstance.enabled.set(false);
     fixture.detectChanges();
 
+    expect(cells(fixture).length).toBeGreaterThan(0);
     expect(cells(fixture).some((cell) => cell.hasAttribute('tabindex'))).toBe(false);
   });
 

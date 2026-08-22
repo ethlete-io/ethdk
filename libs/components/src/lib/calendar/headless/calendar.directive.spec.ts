@@ -481,13 +481,13 @@ describe('CalendarDirective', () => {
       host.mode.set('range');
       fixture.detectChanges();
 
-      cellFor(10)?.click();
+      cellFor(10)!.click();
       fixture.detectChanges();
 
       calendar.zoomOut();
       fixture.detectChanges();
 
-      cellWithText('Sep')?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
+      cellWithText('Sep')!.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
       fixture.detectChanges();
 
       expect(calendar.hoveredDate()).toBeNull();
@@ -550,6 +550,7 @@ describe('CalendarDirective', () => {
       grid().dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
       fixture.detectChanges();
 
+      expect(cells().length).toBeGreaterThan(0);
       expect(bandedCells()).toEqual([]);
     });
 
@@ -715,7 +716,7 @@ describe('CalendarDirective', () => {
       host.min.set(new Date(2026, 6, 10));
       fixture.detectChanges();
 
-      cellFor(9)?.click();
+      cellFor(9)!.click();
       fixture.detectChanges();
 
       expect(host.multipleValue()).toEqual([]);
@@ -991,7 +992,7 @@ describe('CalendarDirective', () => {
       host.min.set(new Date(2026, 6, 10));
       fixture.detectChanges();
 
-      cellWithText('Jun')?.click();
+      cellWithText('Jun')!.click();
       fixture.detectChanges();
 
       expect(host.value()).toBeNull();

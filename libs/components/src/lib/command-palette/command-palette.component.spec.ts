@@ -121,6 +121,8 @@ describe('CommandPaletteComponent', () => {
   it('shows the empty message when nothing matches', () => {
     const { type, host, rows } = create();
 
+    expect(rows().length).toBeGreaterThan(0);
+
     type('zzzz');
 
     expect(rows()).toHaveLength(0);
@@ -183,7 +185,7 @@ describe('CommandPaletteComponent', () => {
   it('does not run a disabled command that is clicked', () => {
     const { fixture, rows } = create();
 
-    rows()[2]?.click();
+    rows()[2]!.click();
 
     expect(fixture.componentInstance.ran).toEqual([]);
   });

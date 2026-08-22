@@ -342,7 +342,7 @@ describe('TimePickerDirective', () => {
       host.min.set(new Date(2026, 6, 17, 9));
       tick();
 
-      optionButton('hour', 4)?.click();
+      optionButton('hour', 4)!.click();
       tick();
 
       expect(host.value()?.getHours()).toBe(12);
