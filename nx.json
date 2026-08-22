@@ -22,7 +22,8 @@
     "sharedGlobals": [
       "{workspaceRoot}/.github/workflows/ci-main.yml",
       "{workspaceRoot}/.github/workflows/ci-next.yml",
-      "{workspaceRoot}/.github/workflows/ci-pr.yml"
+      "{workspaceRoot}/.github/workflows/ci-pr.yml",
+      "{workspaceRoot}/tools/testing/**/*"
     ]
   },
   "targetDefaults": {
