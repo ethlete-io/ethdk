@@ -377,7 +377,12 @@ single-domain reach.
   model on a no-op keystroke; **paste discards the pending text**; **a full input holding rejected
   text is a keyboard dead end** (tag-input Medium ×3). S / M
 - **`phone-input` `defaultCountry` applies only on the first computation** — a geo/locale default
-  that resolves late never lands (phone Medium). S
+  that resolves late never lands (phone Medium). S — **DONE 2026-08-22**. `country`'s `linkedSignal`
+  now carries `defaultCountry` in its _source_, so a change re-runs the computation, and the new
+  default is adopted only while the previous value still equals the previous default — a country the
+  user picked or one derived from the value survives. Left open: a manual pick of exactly the current
+  default is indistinguishable from the untouched default, so it would be overwritten by a later one;
+  telling them apart needs a separate "picked" flag and was not worth the state.
 - **Table: `etTableCsvExport` config makes every later `export({ file })` throw ET3507**; **a
   cancelled resize leaves a width override**; **selection/expansion state writes
   `"[object Object]"` without a `rowKey`** (table Medium ×3). S each

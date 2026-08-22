@@ -87,18 +87,24 @@ export class PhoneInputDirective
    * A manual pick survives value edits as long as its dial code still fits - dial codes are
    * shared (`+1` → US, CA, …) and typing digits must not flip a chosen country.
    */
-  public country = linkedSignal<string | null, string>({
-    source: () => matchCountryByDialCode(onlyDigits(this.value()))?.iso2 ?? null,
-    computation: (matched, previous) => {
-      const fallback = previous?.value ?? this.defaultCountry();
+  public country = linkedSignal<{ matched: string | null; fallback: string }, string>({
+    source: () => ({
+      matched: matchCountryByDialCode(onlyDigits(this.value()))?.iso2 ?? null,
+      fallback: this.defaultCountry(),
+    }),
+    computation: (source, previous) => {
+      // a defaultCountry that resolves late (a locale or geo lookup) still lands, but only while
+      // nothing has moved the country off the previous default
+      const fallback =
+        previous === undefined || previous.value === previous.source.fallback ? source.fallback : previous.value;
 
-      if (!matched) {
+      if (!source.matched) {
         return fallback;
       }
 
-      const matchedDial = this.dialCodeOf(matched);
+      const matchedDial = this.dialCodeOf(source.matched);
 
-      return this.dialCodeOf(fallback) === matchedDial && previous !== undefined ? fallback : matched;
+      return this.dialCodeOf(fallback) === matchedDial && previous !== undefined ? fallback : source.matched;
     },
   });
 

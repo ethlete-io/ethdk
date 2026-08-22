@@ -431,11 +431,11 @@ regional-indicator emoji.
 
 <StoryEmbed id="components-forms-phone-input--default" height="220px" />
 
-| Input                | Type             | Default  | Description                                            |
-| -------------------- | ---------------- | -------- | ------------------------------------------------------ |
-| `defaultCountry`     | `string`         | `'us'`   | ISO alpha-2 country used while the value carries none. |
-| `preferredCountries` | `string[]`       | `[]`     | Listed on top of the country dropdown.                 |
-| `countryLabel`       | `string \| null` | `null` ¹ | `aria-label` of the flag/dial-code country trigger.    |
+| Input                | Type             | Default  | Description                                                                                                                                                                                                                   |
+| -------------------- | ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `defaultCountry`     | `string`         | `'us'`   | ISO alpha-2 country used while the value carries none. A late change (a locale or geo lookup that resolves after the first render) still applies, as long as the country has not been picked or derived from the value since. |
+| `preferredCountries` | `string[]`       | `[]`     | Listed on top of the country dropdown.                                                                                                                                                                                        |
+| `countryLabel`       | `string \| null` | `null` ¹ | `aria-label` of the flag/dial-code country trigger.                                                                                                                                                                           |
 
 ¹ `null` falls through to [`PHONE_INPUT_LABELS.selectCountry`](/components/localization) (`'Select country'`).
 

@@ -10,9 +10,9 @@ import { matchCountryByDialCode, phoneCountryFlag } from './phone-countries';
     <et-phone-input
       [value]="value()"
       [mixed]="mixed()"
+      [defaultCountry]="defaultCountry()"
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
-      defaultCountry="de"
       placeholder="Phone number"
     />
   `,
@@ -21,6 +21,7 @@ import { matchCountryByDialCode, phoneCountryFlag } from './phone-countries';
 class PhoneInputTestHost {
   value = signal('');
   mixed = signal(false);
+  defaultCountry = signal('de');
 }
 
 describe('phone-countries', () => {
@@ -134,6 +135,33 @@ describe('PhoneInputDirective', () => {
     // +1 matches the US first, but Canada was chosen explicitly
     expect(driver.phone.country()).toBe('ca');
     expect(driver.host.value()).toBe('+12025550123');
+  });
+
+  it('adopts a defaultCountry that resolves after the first render', () => {
+    driver.host.defaultCountry.set('fr');
+    driver.tick();
+
+    expect(driver.phone.country()).toBe('fr');
+    expect(driver.phone.dialCode()).toBe('33');
+  });
+
+  it('leaves a manually picked country alone when a late defaultCountry arrives', () => {
+    driver.selectCountry('at');
+
+    driver.host.defaultCountry.set('fr');
+    driver.tick();
+
+    expect(driver.phone.country()).toBe('at');
+  });
+
+  it('leaves a country derived from the value alone when a late defaultCountry arrives', () => {
+    driver.host.value.set('+818012345678');
+    driver.tick();
+
+    driver.host.defaultCountry.set('fr');
+    driver.tick();
+
+    expect(driver.phone.country()).toBe('jp');
   });
 
   it('derives the country from an external value', () => {
