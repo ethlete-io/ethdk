@@ -125,7 +125,7 @@ handler is unreachable dead code"), overlay High "an all-breakpoints `strategies
 Note the palette spec at `command-palette.component.spec.ts:188` asserts the broken behaviour and
 must be re-pointed through `injectCommandPalette().open()`.
 
-### 8. Bracket: `swissColors` is an attribute-injection sink, and swiss never renders · M
+### 8. Bracket: `swissColors` is an attribute-injection sink, and swiss never renders · M · **DONE 2026-08-22**
 
 `drawing/draw-man-swiss.ts:146` / `drawing/path.ts:10` interpolate a public input into an SVG string
 that reaches the DOM through `bypassSecurityTrustHtml` — runtime-verified to produce a real `onload`
@@ -134,6 +134,14 @@ It is the only XSS-shaped finding in the scan, and swiss is currently unusable a
 Resolves: bracket High "`swissColors` interpolated into a `bypassSecurityTrustHtml` string", bracket
 High "swiss throws ET3408 for any source with participant ids" (+ Medium "ET3409 only when round
 headers are on").
+Done: a new `escapeSvgAttributeValue` runs on every colour written by `path()`, the group border rect
+and the gradient stops; the group lookup subtracts the current match's own result, so a match lands in
+the record its participants entered the round with; and a round's theoretically-available groups that
+end up with no match are dropped, which makes `ET3409` unreachable and the header/no-header paths
+identical. New `swiss.spec.ts` covers grouping, both header modes and the escaping. Left open on
+purpose: the Medium "swiss elimination flags fire one loss early" (`isEliminationMatch = lossesTilNow >= 2`)
+and the DX ask for a better `ET3408` message — both are separate findings and the flags are public data
+nothing reads, so changing them is its own change.
 
 ### 9. Tooltip / toggletip: clobbered attributes and snapshot content · S · **DONE 2026-08-22**
 

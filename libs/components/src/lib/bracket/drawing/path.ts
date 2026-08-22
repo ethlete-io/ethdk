@@ -1,3 +1,5 @@
+import { escapeSvgAttributeValue } from './svg';
+
 export type PathOptions = {
   width: number;
   dashArray: number;
@@ -7,4 +9,4 @@ export type PathOptions = {
 };
 
 export const path = (d: string, options: PathOptions) =>
-  `<path d="${d.replace(/\s+/g, ' ').trim()}" stroke="${options.stroke ?? 'currentColor'}" fill="none" stroke-width="${options.width}" stroke-dasharray="${options.dashArray}" stroke-dashoffset="${options.dashOffset}" class="${options.className}" />`;
+  `<path d="${d.replace(/\s+/g, ' ').trim()}" stroke="${escapeSvgAttributeValue(options.stroke ?? 'currentColor')}" fill="none" stroke-width="${options.width}" stroke-dasharray="${options.dashArray}" stroke-dashoffset="${options.dashOffset}" class="${escapeSvgAttributeValue(options.className)}" />`;

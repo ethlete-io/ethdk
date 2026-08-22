@@ -1,4 +1,4 @@
-import { BracketMap, BracketMatchId, BracketRoundId, TOURNAMENT_MODE } from '../core';
+import { BracketMap, BracketMatchId, BracketMatchParticipantBase, BracketRoundId, TOURNAMENT_MODE } from '../core';
 import { Bracket, BracketMatch } from './bracket';
 import { RuntimeError } from '@ethlete/core';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
@@ -109,6 +109,11 @@ export const getAvailableSwissGroupsForRound = (roundNumber: number, totalMatche
   }));
 };
 
+const getRecordBeforeMatch = (participant: BracketMatchParticipantBase) => ({
+  wins: participant.winCount - (participant.result === 'win' ? 1 : 0),
+  losses: participant.lossCount - (participant.result === 'loss' ? 1 : 0),
+});
+
 export const generateBracketRoundSwissGroupMaps = <TRoundData, TMatchData>(
   bracketData: Bracket<TRoundData, TMatchData>,
 ) => {
@@ -147,8 +152,7 @@ export const generateBracketRoundSwissGroupMaps = <TRoundData, TMatchData>(
         continue;
       }
 
-      const wins = anyParticipant.winCount;
-      const losses = anyParticipant.lossCount;
+      const { wins, losses } = getRecordBeforeMatch(anyParticipant);
 
       const group = roundSwissData.groups.get(`${wins}-${losses}` as BracketRoundSwissGroupId);
 
@@ -173,6 +177,10 @@ export const generateBracketRoundSwissGroupMaps = <TRoundData, TMatchData>(
       if (!groupFound) {
         throw new RuntimeError(BRACKET_ERROR_CODES.SWISS_GROUPING_FAILED, 'No group found for empty match');
       }
+    }
+
+    for (const [groupId, group] of roundSwissData.groups) {
+      if (!group.matches.size) roundSwissData.groups.delete(groupId);
     }
 
     roundsWithSwissGroups.set(bracketRound.id, roundSwissData);

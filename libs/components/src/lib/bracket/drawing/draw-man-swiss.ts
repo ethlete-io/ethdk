@@ -6,6 +6,7 @@ import { ComputedBracketGrid } from './grid/types';
 import { linePath } from './line';
 import { BracketPosition } from './math';
 import { PathOptions } from './path';
+import { escapeSvgAttributeValue } from './svg';
 import { RuntimeError } from '@ethlete/core';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
 
@@ -143,7 +144,7 @@ const groupBorderRect = (
   const width = group.position.inline.end - group.position.inline.start - border.width;
   const height = group.position.block.end - group.position.block.start + boxPadding * 2 - border.width;
 
-  return `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${border.radius}" stroke="${color ?? 'currentColor'}" fill="none" stroke-width="${border.width}" class="et-bracket-swiss-group-border et-bracket-swiss-group-border--${group.id} et-bracket-swiss-group-border--${group.colorType}" />`;
+  return `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${border.radius}" stroke="${escapeSvgAttributeValue(color ?? 'currentColor')}" fill="none" stroke-width="${border.width}" class="et-bracket-swiss-group-border et-bracket-swiss-group-border--${group.id} et-bracket-swiss-group-border--${group.colorType}" />`;
 };
 
 // A horizontal gradient for the connection lines: they leave the source group in its
@@ -153,7 +154,7 @@ const groupBorderRect = (
 // the bounding box has no height).
 // eslint-disable-next-line max-params -- SVG gradient stops are inherently positional (id, fromX, toX, from, neutral, to)
 const lineGradientDef = (id: string, fromX: number, toX: number, from: string, neutral: string, to: string) =>
-  `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${fromX}" y1="0" x2="${toX}" y2="0"><stop offset="0%" stop-color="${from}" /><stop offset="50%" stop-color="${neutral}" /><stop offset="100%" stop-color="${to}" /></linearGradient>`;
+  `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${fromX}" y1="0" x2="${toX}" y2="0"><stop offset="0%" stop-color="${escapeSvgAttributeValue(from)}" /><stop offset="50%" stop-color="${escapeSvgAttributeValue(neutral)}" /><stop offset="100%" stop-color="${escapeSvgAttributeValue(to)}" /></linearGradient>`;
 
 export const drawSwissMan = <TRoundData, TMatchData>(dimensions: DrawSwissManDimensions<TRoundData, TMatchData>) => {
   const svgParts: string[] = [];

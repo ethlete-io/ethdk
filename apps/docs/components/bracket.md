@@ -346,10 +346,11 @@ front-truncated winners bracket whose opening round is played elsewhere. It also
 
 ## Swiss
 
-`swissBracketLayout()` draws `swiss-with-elimination` sources: matches are grouped by their win–loss
-record and each group is wrapped in a border box; connectors run group-to-group (winners advance to
-the `w+1` group, losers to the `l+1` group) and fade between group colors. Everything swiss-only is an
-option of the factory:
+`swissBracketLayout()` draws `swiss-with-elimination` sources: matches are grouped by the win–loss
+record their participants brought into the round (a decided round-1 match still sits in `0-0`) and
+each group is wrapped in a border box; connectors run group-to-group (winners advance to the `w+1`
+group, losers to the `l+1` group) and fade between group colors. A group a round could hold but has
+no match for is not drawn. Everything swiss-only is an option of the factory:
 
 ```ts
 providers: [
