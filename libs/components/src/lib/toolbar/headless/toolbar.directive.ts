@@ -84,6 +84,7 @@ export class ToolbarDirective {
     if (!target) return;
 
     event.preventDefault();
+    event.stopPropagation();
     target.focus();
   }
 

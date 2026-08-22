@@ -11,6 +11,7 @@ import { FocusRingStylesComponent } from './focus-ring-styles.component';
     '(keyup.enter)': 'active.set(false)',
     '(keydown.space)': 'active.set(true)',
     '(keyup.space)': 'active.set(false)',
+    '(blur)': 'active.set(false)',
   },
 })
 export class FocusRingDirective {

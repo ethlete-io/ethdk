@@ -179,4 +179,16 @@ describe('ToolbarComponent', () => {
 
     expect(document.activeElement).toBe(outer);
   });
+
+  it('keeps an arrow key pressed inside a nested toolbar away from the outer one', () => {
+    const fixture = TestBed.createComponent(NestedToolbarHostComponent);
+    fixture.detectChanges();
+
+    const [, inner] = buttonsOf(fixture);
+
+    inner.focus();
+    press(inner, 'ArrowRight');
+
+    expect(document.activeElement).toBe(inner);
+  });
 });

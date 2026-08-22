@@ -1,5 +1,7 @@
 import { booleanAttribute, computed, Directive, inject, input } from '@angular/core';
-import { applyStructuredDataBinding, JsonLD } from '@ethlete/core';
+import { applyStructuredDataBinding, JsonLD, RuntimeError } from '@ethlete/core';
+import { injectBreadcrumbManager } from '../breadcrumb-manager';
+import { BREADCRUMB_ERROR_CODES } from '../breadcrumb-errors';
 import { BREADCRUMB_TOKEN } from '../headless/breadcrumb.tokens';
 
 /**
@@ -33,7 +35,8 @@ import { BREADCRUMB_TOKEN } from '../headless/breadcrumb.tokens';
   exportAs: 'etBreadcrumbSeo',
 })
 export class BreadcrumbSeoDirective {
-  private breadcrumb = inject(BREADCRUMB_TOKEN);
+  private breadcrumb = inject(BREADCRUMB_TOKEN, { optional: true });
+  private breadcrumbManager = injectBreadcrumbManager({ optional: true });
 
   /**
    * Turn the markup off without removing the directive - a directive can't be applied conditionally,
@@ -50,8 +53,7 @@ export class BreadcrumbSeoDirective {
   public structuredData = computed<JsonLD.WithContext<JsonLD.BreadcrumbList> | null>(() => {
     if (!this.enabled()) return null;
 
-    const named = this.breadcrumb
-      .items()
+    const named = (this.breadcrumb?.items() ?? this.breadcrumbManager?.crumbs() ?? [])
       .filter((crumb) => !crumb.loading() && !!crumb.name?.())
       .map((crumb) => ({ name: crumb.name?.() ?? '', url: crumb.url?.() ?? null }));
 
@@ -73,6 +75,13 @@ export class BreadcrumbSeoDirective {
   });
 
   constructor() {
+    if (ngDevMode && !this.breadcrumb && !this.breadcrumbManager) {
+      throw new RuntimeError(
+        BREADCRUMB_ERROR_CODES.SEO_OUTSIDE_BREADCRUMB,
+        '[BreadcrumbSeoDirective] etBreadcrumbSeo must sit on an element with etBreadcrumb, or on <et-breadcrumb-outlet> with provideBreadcrumbManager() in scope.',
+      );
+    }
+
     applyStructuredDataBinding(this.structuredData);
   }
 }

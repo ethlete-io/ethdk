@@ -108,4 +108,13 @@ describe('PictureComponent', () => {
       expect(picture.state()).toBe('loading');
     });
   });
+
+  it('reports an error instead of loading forever when sources are set without defaultSrc', () => {
+    fixture.componentRef.setInput('defaultSrc', null);
+    fixture.componentRef.setInput('sources', ['wide.avif']);
+    fixture.detectChanges();
+
+    expect(getImgEl()).toBeNull();
+    expect(picture.state()).toBe('error');
+  });
 });

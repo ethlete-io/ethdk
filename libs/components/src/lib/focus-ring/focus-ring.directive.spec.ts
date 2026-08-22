@@ -71,6 +71,15 @@ describe('FocusRingDirective', () => {
       expect(button.classList.contains('et-focus-ring--active')).toBe(true);
     });
 
+    it('is removed on blur, so a keyup delivered elsewhere cannot leave it stuck', () => {
+      fixture.detectChanges();
+      button.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      fixture.detectChanges();
+      button.dispatchEvent(new FocusEvent('blur'));
+      fixture.detectChanges();
+      expect(button.classList.contains('et-focus-ring--active')).toBe(false);
+    });
+
     it('is removed on keyup Space', () => {
       fixture.detectChanges();
       button.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));

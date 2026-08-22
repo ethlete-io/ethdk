@@ -36,7 +36,8 @@ Sources are considered in order and the **first match wins**, so put the most sp
 modern `type` first. A browser skips a `type` it can't decode without downloading anything.
 
 `defaultSrc` is not optional in practice: a `<picture>` with no `<img>` renders nothing at all. It is what
-loads when no source matched, so give it your most compatible format.
+loads when no source matched, so give it your most compatible format. A picture with `sources` but no
+`defaultSrc` reports `state() === 'error'` (and warns in dev mode) instead of loading forever.
 
 ### `srcset` and `sizes` go together
 

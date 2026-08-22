@@ -115,7 +115,7 @@ signal that composes with `disabled`; the content bindings read the signal. Stil
 content Medium: the toggletip's `ariaLabel`/`ariaLabelledBy`/`ariaDescribedBy` overlay config is
 read once at mount and cannot refresh.
 
-### 10. Stuck-forever UI states — five unrelated one-liners, one sweep · S
+### 10. Stuck-forever UI states — five unrelated one-liners, one sweep · S · **DONE 2026-08-22**
 
 Each has a permanently-wrong end state and a different owner file, so batch them as one "unstick"
 change set: `focus-ring.directive.ts` needs a `blur` reset (focus-ring High "stuck
@@ -125,6 +125,9 @@ change set: `focus-ring.directive.ts` needs a `blur` reset (focus-ring High "stu
 "`etBreadcrumbSeo` on the outlet throws NG0201"); `picture.component` must not sit in `loading`
 forever with `sources` and no `defaultSrc` (picture High); `resolveFilterOverlaySubmitButton` must
 distinguish "skipped" from "not started yet" (filter-overlay High "submit stuck on Loading results…").
+Done: all five landed, each with a pinning spec; the SEO directive falls back to the breadcrumb
+manager and a new ET3702 dev error names the misuse. The submit resolver treats a null count with
+nothing in flight as submittable (the old spec asserted the stuck state and was re-pointed).
 
 ### 11. Table: two supported configurations that fail silently or crash · M
 

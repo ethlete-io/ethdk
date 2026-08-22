@@ -168,8 +168,15 @@ describe('resolveFilterOverlaySubmitButton', () => {
     maxCountedHits: 250,
   };
 
-  it('waits when a preview exists but has not reported yet', () => {
+  it('stays pressable when the preview skipped the draft (args returned null)', () => {
     expect(resolveFilterOverlaySubmitButton(state, DEFAULT_FILTER_OVERLAY_LABELS)).toEqual({
+      label: 'Show results',
+      disabled: false,
+    });
+  });
+
+  it('waits while a count is in flight', () => {
+    expect(resolveFilterOverlaySubmitButton({ ...state, loading: true }, DEFAULT_FILTER_OVERLAY_LABELS)).toEqual({
       label: 'Loading results…',
       disabled: true,
     });

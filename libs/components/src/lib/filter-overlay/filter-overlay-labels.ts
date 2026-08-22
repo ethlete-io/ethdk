@@ -90,8 +90,9 @@ export const resolveFilterOverlaySubmitButton = (
 
   const totalHits = state.totalHits;
 
-  // No count yet, and nothing in flight - the first request has not started.
-  if (totalHits === null) return { label: labels.loading, disabled: true };
+  // No count, nothing in flight, no error: the preview skipped this draft (`args` returned null).
+  // Waiting here would disable the button forever - the draft is submittable, just uncounted.
+  if (totalHits === null) return { label: labels.apply, disabled: false };
 
   if (totalHits === 0) return { label: labels.empty, disabled: true };
   if (totalHits === 1) return { label: labels.one, disabled: false };

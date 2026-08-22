@@ -8,6 +8,7 @@ import { BreadcrumbComponent } from './breadcrumb.component';
 import { BreadcrumbOverflowComponent } from './breadcrumb-overflow.component';
 import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from './breadcrumb.imports';
 import { BreadcrumbDirective } from './headless';
+import { BreadcrumbSeoDirective } from './seo/breadcrumb-seo.directive';
 
 @Component({
   selector: 'et-test-breadcrumb-host',
@@ -227,5 +228,37 @@ describe('breadcrumb collapse', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.breadcrumb().overflowComponent).toBe(BreadcrumbOverflowComponent);
+  });
+});
+
+@Component({
+  selector: 'et-test-breadcrumb-seo-shell',
+  template: `
+    <et-breadcrumb-outlet etBreadcrumbSeo />
+
+    <ng-template etBreadcrumbSegment>
+      <ng-template etBreadcrumbItemTemplate name="Home" url="https://example.com/">
+        <a etBreadcrumbItem href="#">Home</a>
+      </ng-template>
+      <ng-template etBreadcrumbItemTemplate name="Teams">
+        <span etBreadcrumbItem>Teams</span>
+      </ng-template>
+    </ng-template>
+  `,
+  imports: [BREADCRUMB_IMPORTS, BreadcrumbSeoDirective],
+  providers: [provideBreadcrumbManager()],
+})
+class BreadcrumbSeoShellComponent {
+  public seo = viewChild.required(BreadcrumbSeoDirective);
+}
+
+describe('BreadcrumbSeoDirective on the outlet', () => {
+  it('reads the trail from the manager instead of crashing', () => {
+    const fixture = TestBed.createComponent(BreadcrumbSeoShellComponent);
+    fixture.detectChanges();
+
+    const data = fixture.componentInstance.seo().structuredData();
+
+    expect(data?.itemListElement.map((item) => item.name)).toEqual(['Home', 'Teams']);
   });
 });
