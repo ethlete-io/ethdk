@@ -217,7 +217,11 @@ The `BackendIntegration` story shows the full round trip. A `<et-grid-debug />` 
 
 ## Theming
 
-One public token: `--et-grid-padding` (default `0px`) pads the grid container. The default item toolbar exposes `--et-grid-item-toolbar-gap` / `-padding` / `-radius` / `-background` overrides.
+`--et-grid-padding` (default `0px`) pads the grid container. Each item resolves
+`--et-grid-item-radius` (default `0`) and `--et-grid-item-bg` (default
+`--et-surface-background-solid`) for its own box, and `--et-grid-item-resize-handle-color`
+(default `--et-surface-color-solid`) for the resize handles. The default item toolbar exposes
+`--et-grid-item-toolbar-gap` / `-padding` / `-radius` / `-background` overrides.
 
 ## Error codes
 

@@ -79,6 +79,10 @@ your app wants; both take `size="sm"` so they shrink together.
 | `size`     | `'sm' \| 'md'`      | `'md'`              | Density, to match the paginator beside it                |
 | `labels`   | `Partial<…>`        | `null`              | Per-instance strings - see [Localization](#localization) |
 
+Its height is its own token, `--et-page-size-select-height` (default `36px`, `44px` on a
+coarse pointer) - not the paginator's `--et-pagination-item-size`, so it can follow its own
+density without also resizing the paginator wherever the two aren't paired.
+
 ### Changing the size does not reset the page
 
 Which page 1-based position 47 belongs to depends on what you're paging, so that decision

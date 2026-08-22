@@ -57,10 +57,11 @@ chips and inputs are usually better off inheriting.
 
 ## Brand loader
 
-The animated Ethlete "E" for full-page or initial loading states. No inputs - drop it in and size/color via CSS:
+The animated Ethlete "E" for full-page or initial loading states. No inputs - drop it in and size it
+via CSS; color comes from its own custom properties, not `currentColor` (see [Theming](#theming)):
 
 ```html
-<et-brand-loader class="size-16 text-et-brand" />
+<et-brand-loader class="size-16" />
 ```
 
 <StoryEmbed id="components-feedback-loader-brand-loader--default" height="240px" />
@@ -82,4 +83,4 @@ All three render `role="progressbar"`; spinner and progress bar expose `aria-val
 
 ## Theming
 
-Spinner tokens: `--et-spinner-size` (`18px`), `--et-spinner-stroke-width` (`2.25px`), `--et-spinner-color` (`currentColor`), `--et-spinner-track-color` (`currentColor` at 24%), `--et-spinner-duration` (`1333ms`) - the `diameter`/`strokeWidth` inputs win over the size tokens. The `color` input fills `--et-spinner-color` from its color scope; a rule that sets the token on a specific spinner (as `et-button` does for its loading spinner, `et-notification` for its status spinner) is more specific and keeps winning. Before this release `--et-spinner-track-color` was registered with an `initial-value`, so `track` rendered a ring that never painted. Progress bar tokens: `--et-progress-bar-height` (`4px`), `--et-progress-bar-border-radius` (`9999px`), `--et-progress-bar-track-color` (`currentColor` at 12%), `--et-progress-bar-indicator-color` (`currentColor`) - set them on the `et-progress-bar` element or anywhere above it (they inherit; before this release the height and radius were registered as non-inheriting and silently kept their defaults). The brand loader has no tokens - size and color it via CSS (`currentColor`).
+Spinner tokens: `--et-spinner-size` (`18px`), `--et-spinner-stroke-width` (`2.25px`), `--et-spinner-color` (`currentColor`), `--et-spinner-track-color` (`currentColor` at 24%), `--et-spinner-duration` (`1333ms`) - the `diameter`/`strokeWidth` inputs win over the size tokens. The `color` input fills `--et-spinner-color` from its color scope; a rule that sets the token on a specific spinner (as `et-button` does for its loading spinner, `et-notification` for its status spinner) is more specific and keeps winning. Before this release `--et-spinner-track-color` was registered with an `initial-value`, so `track` rendered a ring that never painted. Progress bar tokens: `--et-progress-bar-height` (`4px`), `--et-progress-bar-border-radius` (`9999px`), `--et-progress-bar-track-color` (`currentColor` at 12%), `--et-progress-bar-indicator-color` (`currentColor`), `--et-progress-bar-duration` (`2s`, the indeterminate sweep) - set them on the `et-progress-bar` element or anywhere above it (they inherit; before this release the height and radius were registered as non-inheriting and silently kept their defaults). The brand loader has its own tokens rather than `currentColor`: `--et-brand-loader-accent` (`#00ffa1`), `--et-brand-loader-ghost` and `--et-brand-loader-glow` (both a `color-mix` of the accent), `--et-brand-loader-duration` (`3200ms`), `--et-brand-loader-size` (`10rem`).

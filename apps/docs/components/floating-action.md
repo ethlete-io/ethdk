@@ -26,7 +26,7 @@ Import `FLOATING_ACTION_IMPORTS`. No provider, no default component: the trigger
 
 ## Anatomy
 
-Four parts, of which two are optional:
+Five parts, of which two are optional:
 
 | Part                        | Required | What it is                                                                |
 | --------------------------- | -------- | ------------------------------------------------------------------------- |

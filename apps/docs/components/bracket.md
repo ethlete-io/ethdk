@@ -616,19 +616,19 @@ This component is the `@ethlete/cdk` `NewBracket` renderer, moved into `@ethlete
 and renamed. The layout engine and the `BracketDataSource` shape are unchanged; the breaking changes
 are naming, packaging, and how a layout is chosen:
 
-| Area          | `@ethlete/cdk`                                                               | `@ethlete/components`                                                                                     |
-| ------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Import        | `BracketNew` namespace / `NewBracket*` from `@ethlete/cdk`                   | flat exports from `@ethlete/components`                                                                   |
-| Selector      | `et-new-bracket`                                                             | `et-bracket`                                                                                              |
-| Component     | `NewBracketComponent`                                                        | `BracketComponent` (+ `BRACKET_IMPORTS`)                                                                  |
-| Config        | `NewBracketConfig`, `provideNewBracketConfig`, `injectNewBracketConfig`      | `BracketConfig`, `provideBracketConfig`, `injectBracketConfig`                                            |
-| Layout choice | every mode always bundled; `layout="left-to-right" \| "mirrored"` input      | [register layout factories](#layouts) (`layouts` in the config, or the `layouts` input) - mirrored is one |
-| Default cards | `NewBracketDefault*Component`                                                | `BracketDefault*Component`                                                                                |
-| Data types    | `NewBracket`, `NewBracketRound`, `NewBracketMatch`, `createNewBracket`       | `Bracket`, `BracketRound`, `BracketMatch`, `createBracket`                                                |
-| CSS classes   | `et-new-bracket*` / `et-bracket-new*` (+ `et-legacy` marker)                 | `et-bracket*` (no `et-legacy`)                                                                            |
-| Color tokens  | `--bracket-line-color` (default `red`), `--bracket-swiss-group-border-color` | `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` (default `--et-surface-border-solid`) |
-| Errors        | native `Error`                                                               | `RuntimeError` (ET34xx)                                                                                   |
-| Styling       | unlayered global CSS                                                         | wrapped in `@layer components` (utilities override without `!important`)                                  |
+| Area          | `@ethlete/cdk`                                                               | `@ethlete/components`                                                                                             |
+| ------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Import        | `BracketNew` namespace / `NewBracket*` from `@ethlete/cdk`                   | flat exports from `@ethlete/components`                                                                           |
+| Selector      | `et-new-bracket`                                                             | `et-bracket`                                                                                                      |
+| Component     | `NewBracketComponent`                                                        | `BracketComponent` (+ `BRACKET_IMPORTS`)                                                                          |
+| Config        | `NewBracketConfig`, `provideNewBracketConfig`, `injectNewBracketConfig`      | `BracketConfig`, `provideBracketConfig`, `injectBracketConfig`                                                    |
+| Layout choice | every mode always bundled; `layout="left-to-right" \| "mirrored"` input      | [register layout factories](#layouts) (`layouts` in the config, or the `layouts` input) - mirrored is one         |
+| Default cards | `NewBracketDefault*Component`                                                | `BracketDefault*Component`                                                                                        |
+| Data types    | `NewBracket`, `NewBracketRound`, `NewBracketMatch`, `createNewBracket`       | `Bracket`, `BracketRound`, `BracketMatch` (build a `BracketDataSource` by hand - see [Data source](#data-source)) |
+| CSS classes   | `et-new-bracket*` / `et-bracket-new*` (+ `et-legacy` marker)                 | `et-bracket*` (no `et-legacy`)                                                                                    |
+| Color tokens  | `--bracket-line-color` (default `red`), `--bracket-swiss-group-border-color` | `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` (default `--et-surface-border-solid`)         |
+| Errors        | native `Error`                                                               | `RuntimeError` (ET34xx)                                                                                           |
+| Styling       | unlayered global CSS                                                         | wrapped in `@layer components` (utilities override without `!important`)                                          |
 
 Also note:
 

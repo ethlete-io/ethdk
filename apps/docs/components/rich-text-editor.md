@@ -661,7 +661,7 @@ Public design tokens, overridable in your CSS scope - all colors resolve through
 | `et-rich-text-editor-link-editor`    | `--et-rich-text-editor-link-editor-width`, `-radius`, `-gap`, `-padding`                                                                                                                                                                               |
 | `et-rich-text-editor-image-editor`   | `--et-rich-text-editor-image-editor-width`, `-radius`, `-gap`, `-padding`, `-thumb-size`                                                                                                                                                               |
 | `et-rich-text-editor-token-palette`  | `--et-rich-text-editor-token-palette-gap` (buttons follow the `et-button` `tonal` variant)                                                                                                                                                             |
-| `et-multi-language-rich-text-editor` | `--et-multi-language-rich-text-editor-badge-size` (plus every `et-rich-text-editor` token, inherited by the embedded editor)                                                                                                                           |
+| `et-multi-language-rich-text-editor` | `--et-multi-language-rich-text-editor-badge-size`, `-dot-size` (plus every `et-rich-text-editor` token, inherited by the embedded editor)                                                                                                              |
 
 ## Error codes
 

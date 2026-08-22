@@ -1887,8 +1887,9 @@ Colors come from the [surface theming](/core/theming) tokens of the nearest
 surface scope - header/body text from `--et-surface-color-*-solid`, separators
 from `--et-surface-border-solid`, and the row hover tint from
 `--et-surface-interaction-solid`. Cell padding is tunable via the
-`--et-table-cell-padding-block` / `--et-table-cell-padding-inline` custom
-properties, and the utility columns via `--et-table-expander-width`
+`--et-table-cell-padding-block` (`10px`) / `--et-table-cell-padding-inline`
+(`12px`) custom properties, a disabled column's header label dims by
+`--et-table-opacity-disabled` (`0.4`), and the utility columns via `--et-table-expander-width`
 (`32px`) / `--et-table-select-width` (`44px`, matching the ≥44px touch-target
 guideline the bare label-less checkbox otherwise falls short of) - both sized to
 their control, so the expander button and the checkbox keep their own size even

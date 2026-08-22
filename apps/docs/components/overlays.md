@@ -169,14 +169,15 @@ The header, body, and footer must have an `etOverlayMain` ancestor - either an `
 
 Spacing is tokenized, so an overlay can retune it per instance via `panelClass` without restyling the pieces:
 
-| Token                                     | Default | Applies to                                                         |
-| ----------------------------------------- | ------- | ------------------------------------------------------------------ |
-| `--et-overlay-padding-inline`             | `16px`  | Inline padding of header, body and footer                          |
-| `--et-overlay-padding-block`              | `16px`  | Block padding at the pane's outer edges (header start, footer end) |
-| `--et-overlay-header-padding-block-end`   | `16px`  | Gap between the header and the body                                |
-| `--et-overlay-body-padding-block`         | `0`     | Block padding inside the scrolling body                            |
-| `--et-overlay-footer-padding-block-start` | `16px`  | Gap between the body and the footer                                |
-| `--et-overlay-body-min-block-size`        | `100px` | Floor for the body's row before the pane starts scrolling          |
+| Token                                     | Default   | Applies to                                                                |
+| ----------------------------------------- | --------- | ------------------------------------------------------------------------- |
+| `--et-overlay-padding-inline`             | `16px`    | Inline padding of header, body and footer                                 |
+| `--et-overlay-padding-block`              | `16px`    | Block padding at the pane's outer edges (header start, footer end)        |
+| `--et-overlay-header-padding-block-end`   | `16px`    | Gap between the header and the body                                       |
+| `--et-overlay-body-padding-block`         | `0`       | Block padding inside the scrolling body                                   |
+| `--et-overlay-footer-padding-block-start` | `16px`    | Gap between the body and the footer                                       |
+| `--et-overlay-body-min-block-size`        | `100px`   | Floor for the body's row before the pane starts scrolling                 |
+| `--et-overlay-body-divider-color`         | `#565656` | The body's edge dividers (`dividers`) and the sidebar's inline-end border |
 
 `--et-overlay-body-padding-block` is applied to the body's inner wrapper rather than to the scroll container itself, so its end value is part of the scrollable area: content scrolled to the bottom stops that far short of the edge instead of ending flush against the divider, which would clip the last child's border and focus ring.
 
@@ -201,6 +202,9 @@ Override per instance via `panelClass` and the pane tokens:
 | `--et-overlay-surface-border-color` | `--et-surface-border-solid`     |
 | `--et-overlay-surface-border-width` | `0.1rem`                        |
 | `--et-overlay-radius`               | `1.6rem`                        |
+
+The backdrop behind a modal overlay dims independently of the pane's own surface:
+`--et-overlay-backdrop-color` (default `rgb(0 0 0 / 0.32)`).
 
 ## Strategies
 
@@ -279,7 +283,7 @@ Give the array one entry **without** a `breakpoint`: that is the base strategy, 
 
 ### Anchored overlays and the arrow
 
-Anchored strategies position relative to `config.origin` using floating-ui (`placement`, `fallbackPlacements`, `offset`, `shift`, `autoHide`, …). With `arrow: true` (the `anchoredDialogOverlayStrategy` default) the pane renders an arrow pointing at the origin. The arrow takes its background and border from the [surface theme](/core/theming) so it reads as part of the panel - overridable via `--et-overlay-arrow-background` / `--et-overlay-arrow-border` - and is the same arrow used by menus, tooltips and toggletips. Half of it hangs off the pane, so its two bordered sides end exactly where the pane's own border line resumes and the two read as one outline.
+Anchored strategies position relative to `config.origin` using floating-ui (`placement`, `fallbackPlacements`, `offset`, `shift`, `autoHide`, …). With `arrow: true` (the `anchoredDialogOverlayStrategy` default) the pane renders an arrow pointing at the origin. The arrow takes its background and border from the [surface theme](/core/theming) so it reads as part of the panel - overridable via `--et-overlay-arrow-background` / `--et-overlay-arrow-border` / `--et-overlay-arrow-shadow` (default `none`) - and is the same arrow used by menus, tooltips and toggletips. Half of it hangs off the pane, so its two bordered sides end exactly where the pane's own border line resumes and the two read as one outline.
 
 **`minAvailableSpace`** changes _when_ the pane switches sides. By default that is floating-ui's `flip`: as soon as the pane's content does not fit below the origin, it goes above. For a pane that scrolls - a listbox, a menu - the better trade is usually the opposite, and that is what `minAvailableSpace` expresses: keep the pane below while at least that many pixels are left there (`autoResize` shrinks it into them), switch sides only below the minimum, and take the roomier side when neither reaches it. It replaces `flip` (so `fallbackPlacements` no longer applies) and forces `shift`'s cross axis off, since a pane that shrinks into its side must not slide over the origin instead.
 

@@ -416,6 +416,7 @@ Badge and selection colors come from the nearest [color theme](/core/theming) vi
 | `--et-scheduler-time-grid-hour-size`        | `48px`  | Block size of one hour row in the time grid.         |
 | `--et-scheduler-time-grid-gutter-size`      | `56px`  | Inline size of the time grid's hour-label gutter.    |
 | `--et-scheduler-time-grid-all-day-row-size` | `24px`  | Block size of one stacking row in the all-day strip. |
+| `--et-scheduler-time-grid-body-max-height`  | `600px` | Max block size of the time grid's scrollable body.   |
 
 ## Error codes
 

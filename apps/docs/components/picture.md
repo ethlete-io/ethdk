@@ -228,7 +228,7 @@ represents nothing); an error slot is not, since its text is the only account of
 Picture paints nothing and declares no design tokens - the CSS is structural only: `display: block`, a
 margin-free `<figure>`, `max-inline-size: 100%` on the image, and the positioning the slots need.
 
-Every element it renders carries a stable class, and these four are **public API** - style them from your own
+Every element it renders carries a stable class, and these five are **public API** - style them from your own
 stylesheet and they will keep working:
 
 | Class                    | Element                                      |

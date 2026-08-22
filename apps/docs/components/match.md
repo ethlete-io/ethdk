@@ -41,7 +41,7 @@ type NormalizedMatch = {
   away: NormalizedMatchParticipant | null;
   homeScore: number | string | null; // the headline value; null = none yet
   awayScore: number | string | null;
-  resultKind: 'score' | 'points'; // what those two values are
+  resultKind: 'score' | 'points' | 'outcome'; // what those two values are, or ignored for 'outcome'
   gameScores: { home: number; away: number }[] | null; // Bo3/Bo5/Bo7 games; null = single game
   winnerSide: 'home' | 'away' | null;
   label: string | null; // "Match 3", "Grand Final"
@@ -106,13 +106,14 @@ For `'score'`, a single-game match's headline value _is_ that game's score, whic
 `null` there rather than listing one game. A best-of-N puts its games in `gameScores` - up to seven for a Bo7 -
 and the headline values are then the games each side won.
 
-## Three layouts, one component
+## Four layouts, one component
 
-The card measures **itself** with a container query, and the same DOM lands on one of three layouts:
+The card measures **itself** with a container query, and the same DOM lands on one of four layouts:
 
 | Width     | Layout                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------- |
-| < 320px   | **Dense row** - a bracket column or a results list: small emblems, no subtitles, no game breakdown      |
+| < 150px   | **Minimal** - below the dense row: emblems drop entirely, leaving a code and a score                    |
+| 150–319px | **Dense row** - a bracket column or a results list: small emblems, no subtitles, no game breakdown      |
 | 320–559px | **Featured card** - bigger emblems and score, participant subtitles, the per-game breakdown of a series |
 | ≥ 560px   | **Wide row** - the two sides stop stacking and face each other, results meeting in the middle           |
 
@@ -142,7 +143,7 @@ keeps full names and lets them ellipsize; a bracket cell that wants codes sets `
 The wide row is pure CSS over the same markup - the away side is mirrored with `row-reverse`, which is also why
 it keeps working in RTL - so nothing re-renders when the card crosses a threshold.
 
-The two thresholds are constants rather than tokens, because a `@container` condition may not contain
+The thresholds are constants rather than tokens, because a `@container` condition may not contain
 `var()` - there is nothing a custom property could point at. Tune the layouts through their tokens
 instead (see [Theming](#theming)), or pin one with `size`.
 
@@ -415,6 +416,10 @@ reuses the featured card's tokens and changes only the arrangement:
 | `--et-match-card-expanded-name-font-size`  | `15px`  | Participant name size, featured card                      |
 | `--et-match-card-compact-score-font-size`  | `14px`  | Score size, dense row                                     |
 | `--et-match-card-expanded-score-font-size` | `20px`  | Score size, featured card and wide row                    |
+| `--et-match-card-minimal-padding`          | `6px`   | Padding, minimal layout                                   |
+| `--et-match-card-minimal-gap`              | `3px`   | Row gap, minimal layout                                   |
+| `--et-match-card-minimal-name-font-size`   | `11px`  | Participant name size, minimal layout                     |
+| `--et-match-card-minimal-score-font-size`  | `12px`  | Score size, minimal layout                                |
 
 The participant primitive has its own three, which apply wherever it is used standalone:
 
