@@ -791,3 +791,12 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
 --noEmit` reports 431 errors across 68 spec files, there is no `typecheck` target, and no CI
     step runs it — see the scan's "Cross-cutting: spec files are never type-checked" section.
     Adding that target (after a burn-down) belongs at the top of any spec-infrastructure work.
+    **Calendar slice burned down 2026-08-22**: all 156 calendar errors (`calendar.directive.spec.ts`,
+    `calendar.component.spec.ts`) traced to one root cause — `fixture.nativeElement` is `any`, and a
+    generic call through `any` (`.querySelectorAll<HTMLButtonElement>(...)`) is itself a type error
+    (TS2347) whose fallout collapses every chained `Array.from(...)` element to `{}`, cascading into
+    dozens of unrelated-looking `TS2339`/`TS18046`s. Fixed by casting `fixture.nativeElement as
+    HTMLElement` before the generic call, in both files. No assertion turned out dead or vacuous — the
+    underlying DOM properties (`textContent`, `hasAttribute`, `click`, …) were always real; TS just
+    wasn't checking them. No calendar source defect found; no casts left beyond the one narrowing cast
+    above.

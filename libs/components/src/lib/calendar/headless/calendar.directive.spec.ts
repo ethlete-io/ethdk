@@ -107,7 +107,8 @@ describe('CalendarDirective', () => {
   let calendar: CalendarDirective;
 
   const grid = () => fixture.nativeElement.querySelector('[role="grid"]') as HTMLElement;
-  const cells = () => Array.from(fixture.nativeElement.querySelectorAll<HTMLButtonElement>('[etcalendarcell]'));
+  const cells = () =>
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('[etcalendarcell]'));
   const cellFor = (label: number, extraSelector = '') => {
     const matches = cells().filter(
       (cell) => cell.textContent?.trim() === `${label}` && (!extraSelector || cell.matches(extraSelector)),

@@ -31,7 +31,8 @@ describe('CalendarComponent', () => {
   let host: HostComponent;
 
   const query = (selector: string) => fixture.nativeElement.querySelector(selector) as HTMLElement | null;
-  const queryAll = (selector: string) => Array.from(fixture.nativeElement.querySelectorAll<HTMLElement>(selector));
+  const queryAll = (selector: string) =>
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(selector));
 
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [HostComponent] });
