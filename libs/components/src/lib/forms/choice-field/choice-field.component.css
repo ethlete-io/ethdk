@@ -230,5 +230,10 @@
         }
       }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      --et-choice-field-support-duration: 1ms;
+      --et-choice-field-support-offset: 0px;
+    }
   }
 }
