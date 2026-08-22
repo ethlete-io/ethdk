@@ -63,7 +63,7 @@
        re-creates it and its enter transition runs (see `transitionParity`). Both grids share the
        viewport's single grid area for the length of the transition, which is what lets the outgoing
        one fade out under the incoming one rather than disappear a frame before it arrives. -->
-  <div class="et-calendar-weeks-viewport">
+  <div class="et-calendar-weeks-viewport" role="presentation">
     @if (calendar.transitionParity()) {
       <ng-container *ngTemplateOutlet="weeks" />
     } @else {
@@ -103,9 +103,9 @@
         }
       }
       @default {
-        <div class="et-calendar-months">
+        <div class="et-calendar-months" role="presentation">
           @for (page of calendar.monthPages(); track page.key) {
-            <div class="et-calendar-month" role="rowgroup">
+            <div class="et-calendar-month" role="presentation">
               @if (calendar.monthsShown() > 1) {
                 <!-- the span's own header cannot name each month, so each column says which it is -->
                 <div class="et-calendar-month-label">{{ page.label }}</div>

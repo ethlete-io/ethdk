@@ -77,6 +77,7 @@ type SchedulerTimeGridAllDayDrag = Omit<SchedulerTimeGridAllDayDragTarget, 'lane
   hostDirectives: [SchedulerTimeGridDirective],
   host: {
     class: 'et-scheduler-time-grid-view',
+    role: 'grid',
   },
 })
 export class SchedulerTimeGridViewComponent {

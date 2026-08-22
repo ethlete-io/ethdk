@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { expectAriaGrid, expectUniformCellsPerRow, resolveAriaOwner } from '../testing/aria-structure';
 import { CalendarHeaderDirective } from './calendar-header.directive';
 import { CalendarComponent } from './calendar.component';
 
@@ -78,6 +79,35 @@ describe('CalendarComponent', () => {
     expect(numbers[0]?.getAttribute('role')).toBe('rowheader');
     expect(numbers[0]?.textContent?.trim()).toBe('27');
     expect(query('.et-calendar')?.hasAttribute('data-week-numbers')).toBe(true);
+  });
+
+  it('exposes a grid that owns its row groups, in every view', () => {
+    const grid = () => query('[role="grid"]')!;
+
+    expectAriaGrid(grid());
+    expectUniformCellsPerRow(grid());
+    expect(resolveAriaOwner(query('.et-calendar-weeks')!)).toBe(grid());
+    expect(queryAll('[role="rowgroup"] [role="rowgroup"]')).toHaveLength(0);
+
+    query('.et-calendar-header-label')?.click();
+    fixture.detectChanges();
+
+    expectAriaGrid(grid());
+    expectUniformCellsPerRow(grid());
+
+    query('.et-calendar-header-label')?.click();
+    fixture.detectChanges();
+
+    expectAriaGrid(grid());
+    expectUniformCellsPerRow(grid());
+  });
+
+  it('keeps the grid structure with week numbers on', () => {
+    host.weekNumbers.set(true);
+    fixture.detectChanges();
+
+    expectAriaGrid(query('[role="grid"]')!);
+    expectUniformCellsPerRow(query('[role="grid"]')!);
   });
 
   it('exposes the headless directive for chrome of the consumer’s own', () => {

@@ -134,7 +134,7 @@ The first enabled marker in DOM order wins, and `scrollOrigin` decides where it 
 
 ## Accessibility
 
-The prev/next buttons and dot navigation are pointer conveniences: both are `aria-hidden` and removed from the tab order, since the same content is reachable by scrolling natively. The scroll container itself carries no implicit semantics - describe your content via `scrollableRole` (e.g. `role="list"`) and the children's own markup.
+The prev/next buttons and dot navigation are pointer conveniences: both are `aria-hidden` and removed from the tab order, since the same content is reachable by scrolling natively. The scroll container itself carries no implicit semantics - describe your content via `scrollableRole` (e.g. `role="list"`) and the children's own markup. The wrapper it sits in is `role="presentation"`, so a composite role on an ancestor (a `tablist`, a `listbox`) still owns the scrolled children - set `scrollableRole="presentation"` on the container too when that is what you need.
 
 ## Error codes
 

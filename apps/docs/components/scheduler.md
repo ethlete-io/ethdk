@@ -401,7 +401,7 @@ Adding your own piece is the same mechanism: write a directive that injects `SCH
 
 ## Accessibility
 
-- Weekday/day headers are `columnheader`s named by the full weekday (`aria-label` in the month view); day cells are `gridcell`s in both grid views. The agenda view is a flat list, not a grid, so its day headers carry no grid role.
+- Both grid views carry `role="grid"` on their own host, so their rows, row groups and cells are owned by a real grid; the layout wrappers in between (the day track, the hour gutter) are `role="presentation"`. Weekday/day headers are `columnheader`s named by the full weekday (`aria-label` in the month view); day cells are `gridcell`s in both grid views. The agenda view is a flat list, not a grid, so its day headers carry no grid role.
 - Every appointment badge/block and the "+N more" trigger are real `<button>`s, reachable by Tab; the overflow popover is an `et-menu` and inherits its full [keyboard model](/components/menu#accessibility).
 - Neither grid implements the ARIA grid roving-tabindex pattern the [calendar](/components/calendar#accessibility) uses yet - each badge/block is independently tabbable, same as the agenda's badges.
 - The Month/Week/Day/Agenda toolbar control is a real [`et-segmented-button-group`](/components/choice-inputs#selection-lists): a `radiogroup` of `radio`s, arrow-key navigable, with a projected (visually hidden) `<et-label>` supplying its accessible name.

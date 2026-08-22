@@ -1,7 +1,7 @@
 <div class="et-scheduler-time-grid-row et-scheduler-time-grid-header" role="row">
-  <div class="et-scheduler-time-grid-gutter"></div>
+  <div class="et-scheduler-time-grid-gutter" role="presentation"></div>
 
-  <div class="et-scheduler-time-grid-days">
+  <div class="et-scheduler-time-grid-days" role="presentation">
     @for (day of grid.days(); track day.date.getTime()) {
       <div [attr.data-today]="day.today ? '' : null" class="et-scheduler-time-grid-header-day" role="columnheader">
         <span class="et-scheduler-time-grid-header-weekday">{{ weekdayLabel(day.date) }}</span>
@@ -13,7 +13,7 @@
 
 @if (grid.allDayRowCount() > 0) {
   <div class="et-scheduler-time-grid-row et-scheduler-time-grid-all-day" role="row">
-    <div class="et-scheduler-time-grid-gutter"></div>
+    <div class="et-scheduler-time-grid-gutter" role="presentation"></div>
 
     <div
       #allDayLane
@@ -74,7 +74,7 @@
   </div>
 }
 
-<div #timeGridBody class="et-scheduler-time-grid-row et-scheduler-time-grid-body">
+<div #timeGridBody class="et-scheduler-time-grid-row et-scheduler-time-grid-body" role="row">
   <div class="et-scheduler-time-grid-gutter" role="presentation">
     @for (hour of hours(); track hour.hour) {
       <div #hourRow class="et-scheduler-time-grid-hour-row">
@@ -83,7 +83,7 @@
     }
   </div>
 
-  <div class="et-scheduler-time-grid-days">
+  <div class="et-scheduler-time-grid-days" role="presentation">
     @for (day of grid.days(); track day.date.getTime(); let dayIndex = $index) {
       <div
         #dayColumn

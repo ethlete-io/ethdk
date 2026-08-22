@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router, RouterOutlet, provideRouter } from '@angular/router';
 import '../../../test-helpers';
+import { expectAriaTablist } from '../../testing/aria-structure';
 import { NavTabLinkComponent } from './nav-tab-link.component';
 import { NavTabsOutletComponent } from './nav-tabs-outlet.component';
 import { NavTabsComponent } from './nav-tabs.component';
@@ -169,6 +170,12 @@ describe('NavTabsComponent', () => {
     expect(secondLink?.getAttribute('aria-selected')).toBe('false');
     expect(outlet?.getAttribute('aria-labelledby')).toBe(firstLink?.id ?? null);
     expect(fixture.nativeElement.textContent).toContain('Route one');
+  });
+
+  it('owns its tabs from the tablist', async () => {
+    await navigateTo('/one');
+
+    expectAriaTablist(fixture.nativeElement.querySelector('[role="tablist"]') as HTMLElement);
   });
 
   it('navigates on Space and updates the active link and outlet labeling', async () => {

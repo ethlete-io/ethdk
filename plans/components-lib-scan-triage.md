@@ -546,7 +546,20 @@ single-domain reach.
 - **ARIA structure claims that do not hold — `role="grid"`/`tablist` with unowned or nested children**
   in calendar (High), scheduler (High: no `grid` owner at all), table page-sticky (Medium) and tabs
   (Medium). One shape, four domains; cheap (`role="presentation"` on layout wrappers) but needs the
-  a11y-tree assertions from _Spec-coverage_ #6 or it regresses. M
+  a11y-tree assertions from _Spec-coverage_ #6 or it regresses. M · **DONE 2026-08-22**
+  Done: _Spec-coverage_ #6 landed first as `testing/aria-structure.ts` (`expectOwnedAriaRoles`,
+  `expectAriaGrid`, `expectAriaTablist`, `expectUniformCellsPerRow`, `resolveAriaOwner` — the walk
+  skips only `presentation`/`none`, so a role-less wrapper fails), then the four fixes: the calendar's
+  weeks viewport and month wrappers are `presentation` and the nested `.et-calendar-month` rowgroup is
+  gone; both scheduler grid views carry `role="grid"` on their host, the time grid's body row is a
+  `row` and its day/gutter tracks are `presentation`; the table's page-sticky strip and scroller are
+  `presentation`; and the tab bars' scrollable host, wrapper and container are `presentation` so the
+  tablist owns its tabs (`scrollableRole="presentation"` plus a `role="presentation"` wrapper in
+  `et-scrollable`). Left open: the multi-month calendar rows that carry fewer than seven gridcells
+  (its own Medium — `expectUniformCellsPerRow` is in the kit but not pointed at that case yet); the
+  scheduler grids still have no `aria-label` and no roving tabindex (both separate items); the dead
+  `role`/`aria-orientation` host bindings on `TabBarDirective` under `et-tab-group` (separate tabs
+  Medium); and the `menu`→owned-roles half of #6, which no fix here needed.
 - **`et-color-input` never reports `expanded`**, so the field drops its open-popup styling
   (color-input Medium); **the picker's thumbs use logical offsets against physical gradients**, so it
   is wrong in RTL (color-input High). S / M
@@ -713,6 +726,9 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
 6. **A11y-structure assertions per domain** — walk `grid`→`rowgroup`→`row`→`gridcell` (calendar,
    scheduler, table's two layouts), `menu`→owned roles, `tablist`→`tab`, and a uniform cell count per
    row. Would have caught four Mediums and one High, and guards the docs' explicit claims.
+   **DONE 2026-08-22** with the "ARIA structure claims" fix — `libs/components/src/lib/testing/aria-structure.ts`,
+   used by the calendar, scheduler, table page-sticky and both tab-bar specs. `menu`→owned roles is
+   covered by the same ownership walk but has no caller yet.
 7. **Overlay-mounted specs instead of bare-component specs.** The palette's Escape, its
    `aria-controls`/`aria-expanded` mismatch and its double-open are all invisible to a bare fixture —
    and one existing spec is green on broken behaviour because of it. Same argument for

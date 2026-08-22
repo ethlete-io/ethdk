@@ -1,6 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { expectAriaGrid, expectUniformCellsPerRow, resolveAriaOwner } from '../testing/aria-structure';
 import { TablePageStickyHeaderDirective } from './table-page-sticky-header.directive';
 import { TableComponent } from './table.component';
 import { TABLE_DRAG_SCROLL_IMPORTS, TABLE_IMPORTS, TABLE_PAGE_STICKY_HEADER_IMPORTS } from './table.imports';
@@ -60,7 +61,9 @@ describe('TablePageStickyHeaderDirective', () => {
     expect(host.getAttribute('role')).toBe('grid');
     expect(host.querySelector('.et-table-header-strip')).not.toBeNull();
     expect(host.querySelector('.et-table-scroller')).not.toBeNull();
-    expect(host.querySelector('.et-table-header')?.getAttribute('role')).toBe('rowgroup');
+    expect(host.querySelector(':scope > .et-table-header-strip > .et-table-header')?.getAttribute('role')).toBe(
+      'rowgroup',
+    );
 
     fixture.componentInstance.pinned.set(false);
     fixture.detectChanges();
@@ -70,6 +73,25 @@ describe('TablePageStickyHeaderDirective', () => {
     expect(host.querySelector('.et-table-header-strip')).toBeNull();
     expect(host.querySelector('.et-table-scroller')).toBeNull();
     expect(host.querySelector(':scope > .et-table')?.getAttribute('role')).toBe('grid');
+  });
+
+  it('keeps the grid owning its row groups in both layouts', () => {
+    const fixture = create();
+    const host = hostOf(fixture);
+    const rowgroups = () => Array.from(host.querySelectorAll('[role="rowgroup"]'));
+
+    expectAriaGrid(host);
+    expectUniformCellsPerRow(host);
+    expect(rowgroups()).toHaveLength(2);
+    expect(rowgroups().map((rowgroup) => resolveAriaOwner(rowgroup))).toEqual([host, host]);
+
+    fixture.componentInstance.pinned.set(false);
+    fixture.detectChanges();
+
+    const grid = host.querySelector<HTMLElement>(':scope > .et-table')!;
+
+    expectAriaGrid(grid);
+    expectUniformCellsPerRow(grid);
   });
 
   it('shares the body grid tracks with the separate header grid', () => {

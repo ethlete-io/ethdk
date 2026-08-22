@@ -16,9 +16,11 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
       class="et-nav-tabs__scrollable"
       etScrollableButtons
       renderMasks="false"
+      role="presentation"
       scrollMode="element"
       scrollOrigin="center"
       scrollableClass="et-nav-tabs__container"
+      scrollableRole="presentation"
     >
       <ng-content />
     </et-scrollable>

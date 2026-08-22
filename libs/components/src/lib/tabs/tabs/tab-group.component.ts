@@ -23,9 +23,11 @@ import { TabComponent } from './tab.component';
         class="et-tab-group__header-scrollable"
         etScrollableButtons
         renderMasks="false"
+        role="presentation"
         scrollMode="element"
         scrollOrigin="center"
         scrollableClass="et-tab-group__header"
+        scrollableRole="presentation"
       >
         @for (tab of tabs(); track tab; let idx = $index) {
           <button

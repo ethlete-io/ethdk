@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
+import { expectAriaTablist } from '../../testing/aria-structure';
 import { TabBarDirective } from '../headless/tab-bar.directive';
 import { TabBarTriggerDirective } from '../headless/tab-bar-trigger.directive';
 import { TabGroupDirective } from './headless/tab-group.directive';
@@ -182,6 +183,12 @@ describe('TabGroupComponent', () => {
     }
 
     Reflect.deleteProperty(globalThis, 'sessionStorage');
+  });
+
+  it('owns its triggers from the tablist', () => {
+    fixture.detectChanges();
+
+    expectAriaTablist(fixture.nativeElement.querySelector('[role="tablist"]') as HTMLElement);
   });
 
   it('restores the selected tab from session storage', () => {

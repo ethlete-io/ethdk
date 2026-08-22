@@ -379,7 +379,7 @@
 </ng-template>
 
 @if (pageStickyHeader()) {
-  <div class="et-table-header-strip">
+  <div class="et-table-header-strip" role="presentation">
     <div
       #headerGrid
       [style.grid-template-columns]="pageHeaderColumns()"
@@ -389,7 +389,7 @@
       <ng-container *ngTemplateOutlet="headerContent" />
     </div>
   </div>
-  <div #scroller (scroll)="syncScrollState()" class="et-table-scroller">
+  <div #scroller (scroll)="syncScrollState()" class="et-table-scroller" role="presentation">
     <div #grid [style.grid-template-columns]="templateColumns()" class="et-table" role="rowgroup">
       <ng-container *ngTemplateOutlet="bodyContent" />
     </div>

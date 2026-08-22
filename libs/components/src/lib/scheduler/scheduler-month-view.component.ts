@@ -29,6 +29,7 @@ import { Appointment } from './scheduler.types';
   hostDirectives: [SchedulerMonthDirective],
   host: {
     class: 'et-scheduler-month-view',
+    role: 'grid',
   },
 })
 export class SchedulerMonthViewComponent {

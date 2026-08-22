@@ -3,9 +3,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../test-helpers';
 import { injectOverlayManager } from '../overlay';
+import { expectAriaGrid, expectUniformCellsPerRow } from '../testing/aria-structure';
 import { TEST_COLOR_THEMES } from '../testing/color-themes';
 import { SchedulerComponent } from './scheduler.component';
-import { Appointment } from './scheduler.types';
+import { Appointment, SchedulerView } from './scheduler.types';
 
 const appointment = (id: string): Appointment => ({
   id,
@@ -16,12 +17,13 @@ const appointment = (id: string): Appointment => ({
 });
 
 @Component({
-  template: `<et-scheduler [(selectedAppointmentId)]="selectedId" [appointments]="appointments()" />`,
+  template: ` <et-scheduler [(selectedAppointmentId)]="selectedId" [appointments]="appointments()" [view]="view()" /> `,
   imports: [SchedulerComponent],
 })
 class SchedulerTestHostComponent {
   appointments = signal<Appointment[]>([appointment('a'), appointment('b')]);
   selectedId = signal<string | null>(null);
+  view = signal<SchedulerView>('month');
 }
 
 describe('SchedulerComponent', () => {
@@ -83,6 +85,22 @@ describe('SchedulerComponent', () => {
     fixture.detectChanges();
 
     expect(openSurfaces()).toBe(1);
+  });
+
+  it('exposes the month view as a grid that owns its rows', () => {
+    const view = fixture.nativeElement.querySelector('et-scheduler-month-view') as HTMLElement;
+
+    expectAriaGrid(view);
+    expectUniformCellsPerRow(view);
+  });
+
+  it('exposes the time grid as a grid whose day cells sit in a row', () => {
+    host.view.set('week');
+    fixture.detectChanges();
+
+    const view = fixture.nativeElement.querySelector('et-scheduler-time-grid-view') as HTMLElement;
+
+    expectAriaGrid(view);
   });
 
   it('ignores an open request for an appointment it does not know', () => {

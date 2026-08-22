@@ -1871,6 +1871,10 @@ on each row, `role="columnheader"` on header cells and `role="gridcell"` on body
 cells. Sortable headers are real `<button>`s (keyboard-operable) and set
 `aria-sort` on their column header.
 
+With a [page-sticky header](#on-a-page-that-scrolls-instead) the grid is the host and the
+separate header and body grids are `rowgroup`s owned by it; the strip and the scroller
+between them are `role="presentation"`, so the rows are owned by the grid in either layout.
+
 Cell-by-cell keyboard navigation is [opt-in](#keyboard-navigation): without it Tab
 skips past the body, which is what a read-only display table usually wants.
 
