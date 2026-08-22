@@ -15,9 +15,9 @@ describe('setupMultiTabSync', () => {
   let accessToken: ReturnType<typeof signal<string | null>>;
   let refreshToken: ReturnType<typeof signal<string | null>>;
   let sessionEndCause: ReturnType<typeof signal<BearerAuthSessionEndCause | null>>;
-  let applyTokens: ReturnType<typeof vi.fn>;
-  let setTokens: ReturnType<typeof vi.fn>;
-  let logout: ReturnType<typeof vi.fn>;
+  let applyTokens: ReturnType<typeof vi.fn<(access: string, refresh: string) => void>>;
+  let setTokens: ReturnType<typeof vi.fn<(access: string, refresh: string) => void>>;
+  let logout: ReturnType<typeof vi.fn<(cause?: BearerAuthSessionEndCause) => void>>;
   let localStorageMock: {
     getItem: ReturnType<typeof vi.fn>;
     setItem: ReturnType<typeof vi.fn>;

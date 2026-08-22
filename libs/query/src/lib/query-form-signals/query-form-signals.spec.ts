@@ -356,7 +356,7 @@ describe('defineQueryForm', () => {
     const fixture = TestBed.createComponent(Host);
     fixture.detectChanges();
 
-    const control = fixture.debugElement.children[0].componentInstance as TestControl;
+    const control = fixture.debugElement.children[0]!.componentInstance as TestControl;
     control.value.set('typed');
     TestBed.tick();
 

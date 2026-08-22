@@ -30,6 +30,8 @@ const CHANNEL = 'spec-channel';
 
 type PolledTab = { query: Query<QueryArgs>; destroy: () => void };
 
+type FlushBody = Parameters<TestRequest['flush']>[0];
+
 describe('multi tab sync', () => {
   let bus: FakeBroadcastChannelHandle;
   let locks: FakeWebLocksHandle;
@@ -98,7 +100,7 @@ describe('multi tab sync', () => {
   };
 
   /** Settles the oldest request in flight, then lets the sync messages it produced land. */
-  const flushNext = async (body: unknown, headers?: Record<string, string>) => {
+  const flushNext = async (body: FlushBody, headers?: Record<string, string>) => {
     const req = pending().shift();
 
     if (!req) throw new Error('Expected a request to be in flight.');
@@ -109,7 +111,7 @@ describe('multi tab sync', () => {
     await flushMultiTabSync();
   };
 
-  const flushAll = async (body: unknown) => {
+  const flushAll = async (body: FlushBody) => {
     for (const req of pending().splice(0)) {
       req.flush(body);
     }

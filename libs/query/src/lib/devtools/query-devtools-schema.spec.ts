@@ -292,7 +292,7 @@ describe('query devtools schema', () => {
       const body = seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView', 'realistic')?.body as Record<string, string>;
 
       expect(body['title']).not.toBe('title');
-      expect(body['title'].length).toBeLessThanOrEqual(10);
+      expect(body['title']!.length).toBeLessThanOrEqual(10);
       expect(body['id']).toBe('00000000-0000-4000-8000-000000000000');
       expect(body['startsAt']).toBe('2026-01-01T00:00:00.000Z');
     });

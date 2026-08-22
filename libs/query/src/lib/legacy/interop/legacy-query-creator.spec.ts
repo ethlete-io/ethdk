@@ -190,7 +190,7 @@ describe('LegacyQueryCreator.prepare', () => {
     let responsesSeen: Person[];
 
     const makeEntityCreator = (options: { withGet?: boolean } = {}) =>
-      createLegacyQueryCreator({
+      createLegacyQueryCreator<{ response: Person }, Person, EntityStore<Person>, number, Person | null>({
         name: 'legacyGetPerson',
         creator: createQueryCreator<{ response: Person }>(undefined, { client, method: 'GET', route: '/person' }),
         entity: {

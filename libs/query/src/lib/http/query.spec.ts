@@ -1,9 +1,11 @@
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
 import { createEnvironmentInjector, EnvironmentInjector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { createQuery } from './query';
 import { createQueryClient, QueryClientRef } from './query-client';
+
+type FlushBody = Parameters<TestRequest['flush']>[0];
 
 describe('createQuery', () => {
   let client: QueryClientRef;
@@ -73,7 +75,7 @@ describe('createQuery - returning to a retained cache entry', () => {
     return { query, destroy: () => injector.destroy() };
   };
 
-  const flushAll = (body: unknown) => {
+  const flushAll = (body: FlushBody) => {
     for (const req of httpTesting.match(() => true)) {
       req.flush(body);
     }

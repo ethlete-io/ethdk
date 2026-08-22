@@ -47,6 +47,7 @@ describe('createQuerySnapshotFn', () => {
       injector: envInjector,
       ngErrorHandler: TestBed.inject(ErrorHandler),
       httpClient: TestBed.inject(HttpClient),
+      hostElement: null,
     };
 
     const { provide: provideQueryContext } = createQueryContext({ deps });

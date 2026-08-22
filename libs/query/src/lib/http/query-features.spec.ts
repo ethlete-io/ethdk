@@ -73,6 +73,7 @@ describe('query features', () => {
 
     const flags: QueryFeatureFlags = {
       hasWithArgsFeature: false,
+      hasPollingFeature: false,
       shouldAutoExecuteMethod: true,
       shouldAutoExecute: false,
       hasRouteFunction: false,
@@ -191,6 +192,7 @@ describe('query features', () => {
 
     const flags: QueryFeatureFlags = {
       hasWithArgsFeature: false,
+      hasPollingFeature: false,
       shouldAutoExecuteMethod: true,
       shouldAutoExecute: false,
       hasRouteFunction: false,
@@ -370,6 +372,7 @@ describe('query features', () => {
 
     const flags: QueryFeatureFlags = {
       hasWithArgsFeature: true,
+      hasPollingFeature: false,
       shouldAutoExecuteMethod: true,
       shouldAutoExecute: false,
       hasRouteFunction: false,

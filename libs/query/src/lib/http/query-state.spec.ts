@@ -108,7 +108,7 @@ describe('setupQueryState', () => {
     const events$ = new Observable<never>(() => unsubscribe);
     const state = setupQueryState<{ response: string }>({ destroyRef: injector.get(DestroyRef) });
 
-    state.subtle.bindRequestEvents({ events$ } as HttpRequest<{ response: string }>);
+    state.subtle.bindRequestEvents({ events$ } as unknown as HttpRequest<{ response: string }>);
     injector.destroy();
 
     expect(unsubscribe).toHaveBeenCalledOnce();

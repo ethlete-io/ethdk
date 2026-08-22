@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { RouteString } from '../http/query-creator';
 import { createQuery } from '../http/query';
 import { createQueryClient, QueryClientRef } from '../http/query-client';
 import {
@@ -226,7 +227,7 @@ describe('query devtools mocks', () => {
       vi.useRealTimers();
     });
 
-    const makeQuery = (route: string | ((args: { pathParams: { id: string } }) => string) = '/posts/12') =>
+    const makeQuery = (route: RouteString = '/posts/12') =>
       TestBed.runInInjectionContext(() =>
         createQuery({
           creatorInternals: { client, method: 'GET', route },

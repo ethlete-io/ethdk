@@ -23,6 +23,8 @@ import { QueryPersistenceEngine } from './query-persistence-engine';
 
 const DAY = 86_400_000;
 
+type FlushBody = Parameters<TestRequest['flush']>[0];
+
 type MountedQuery = { query: Query<QueryArgs>; destroy: () => void };
 
 describe('query persistence', () => {
@@ -92,7 +94,7 @@ describe('query persistence', () => {
     return held;
   };
 
-  const flushAll = (body: unknown, headers?: Record<string, string>) => {
+  const flushAll = (body: FlushBody, headers?: Record<string, string>) => {
     for (const req of pending().splice(0)) {
       req.flush(body, headers ? { headers } : undefined);
     }
@@ -101,7 +103,7 @@ describe('query persistence', () => {
   };
 
   /** Settles the oldest request in flight, leaving any others alone. */
-  const flushNext = (body: unknown) => {
+  const flushNext = (body: FlushBody) => {
     const req = pending().shift();
 
     if (!req) throw new Error('Expected a request to be in flight.');
@@ -289,7 +291,7 @@ describe('query persistence', () => {
       await endSession(first, firstQuery);
 
       const [stored] = store.entries();
-      store.seed([{ ...stored, persistedAt: Date.now() - 2 * DAY }]);
+      store.seed([{ ...stored!, persistedAt: Date.now() - 2 * DAY }]);
 
       const second = createSession({ maxAge: DAY });
       const secondQuery = mountQuery(second);

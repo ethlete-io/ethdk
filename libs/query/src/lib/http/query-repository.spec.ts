@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders, provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
 import { DestroyRef, ErrorHandler, Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
@@ -9,6 +9,8 @@ import {
   QueryRepository,
   QueryRepositoryEvent,
 } from './query-repository';
+
+type FlushBody = Parameters<TestRequest['flush']>[0];
 
 describe('createQueryRepository', () => {
   let repo: QueryRepository;
@@ -252,7 +254,7 @@ describe('createQueryRepository - keepUnusedFor (unused entry retention)', () =>
   };
 
   /** Settles every request the repository has in flight, so entries actually hold a response. */
-  const flushAll = (body: unknown = { ok: true }) => {
+  const flushAll = (body: FlushBody = { ok: true }) => {
     for (const req of httpTesting.match(() => true)) {
       req.flush(body);
     }
