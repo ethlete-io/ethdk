@@ -796,7 +796,7 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
     generic call through `any` (`.querySelectorAll<HTMLButtonElement>(...)`) is itself a type error
     (TS2347) whose fallout collapses every chained `Array.from(...)` element to `{}`, cascading into
     dozens of unrelated-looking `TS2339`/`TS18046`s. Fixed by casting `fixture.nativeElement as
-    HTMLElement` before the generic call, in both files. No assertion turned out dead or vacuous — the
+HTMLElement` before the generic call, in both files. No assertion turned out dead or vacuous — the
     underlying DOM properties (`textContent`, `hasAttribute`, `click`, …) were always real; TS just
     wasn't checking them. No calendar source defect found; no casts left beyond the one narrowing cast
     above.
@@ -805,10 +805,30 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
     cascade, plus `noUncheckedIndexedAccess` non-null assertions (`buttons[0]!`) for toolbar's array
     indexing - both idioms already established elsewhere in the suite. `filter-overlay.spec.ts` had a
     stale type argument (`FilterOverlay<typeof FIELDS>`, the field-def map) where the API wants the
-    *value* shape (`FilterOverlay<QueryFormModel<typeof FIELDS>>`); rewritten via a `FactoryProvider`
+    _value_ shape (`FilterOverlay<QueryFormModel<typeof FIELDS>>`); rewritten via a `FactoryProvider`
     cast (a real member of Angular's `Provider` union) instead of the `as unknown as X` TS suggested,
     to keep the cast narrow. `query-error.component.spec.ts` built ad hoc `ColorTheme` fixtures missing
     `ThemeColorMap`'s `hover`/`active`/`disabled`; swapped in the existing `testColorSwatch()` test
     helper (`libs/components/src/lib/testing/color-themes.ts`), which already exists for this. No
     assertion was dead or vacuous, no source defect found, and no `as any`/`as unknown as X`/
     `@ts-expect-error` were needed.
+    **forms slice burned down 2026-08-22**: 19 errors, thinly spread, no shared root cause. Six
+    `MixedStateContractHarness` object literals (`slider`, `range-slider`, `selection-list`, `rating`,
+    `select` ×2) leaked a `KeyboardEvent`/click return value through `commit`/`clear`, which the
+    harness types as `void | Promise<void>` - TS's void-return exemption doesn't cover a `void |
+Promise<void>` union, so wrapping each in a block body fixed it with no behavior change. Two
+    `debugElement.children[0]` reads (date-time input/range-input) became `By.directive(...)` queries
+    instead of the `children[0]!` idiom used elsewhere, since exactly one directive-bearing child
+    exists in both host templates. `dropzone-driver.ts`'s `MountedDropzoneDriver<T>` intersected the
+    base driver's `query` (a query-selector function) with `{ query: QueryTestSetup }` - an impossible
+    intersection that only surfaced once the four dropzone specs' object literals were checked;
+    genuine defect, fixed with `Omit<DropzoneDriver<T>, 'query'>` (test-only helper, no changeset).
+    `scrollable.component.spec.ts`'s `IntersectionObserverMock` was missing `scrollMargin`, absent from
+    older lib.dom snapshots; added it. `notification-promise.spec.ts`'s fake progress state was missing
+    `remainingTime`. `cascader-from-query.spec.ts` had TS infer `TValue` as `{}` from an `args` callback
+    whose parameter is only used contravariantly - an explicit `CascaderNode<string> | null` annotation
+    fixed it (the working sibling call site nearby has the same annotation via a typed override
+    parameter, which is why only this one call failed). `rich-text-editor-tool-history.spec.ts` swapped
+    a hand-rolled `new (...args: never[]) => T` constructor type for Angular's `Type<T>`. No assertion
+    was found dead or vacuous, and no `as any`/`as unknown as X`/`@ts-expect-error` were used anywhere
+    in this slice.

@@ -116,7 +116,10 @@ describe('notification promise', () => {
       hasCachedResponse: false,
       loading: {
         executeTime: 0,
-        progress: percentage === undefined ? null : { total: 100, loaded: percentage, percentage, speed: null },
+        progress:
+          percentage === undefined
+            ? null
+            : { total: 100, loaded: percentage, percentage, speed: null, remainingTime: null },
       },
     });
 

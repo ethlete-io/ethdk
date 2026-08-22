@@ -1487,7 +1487,9 @@ describe('SelectDirective (single)', () => {
       },
       externallyWrittenValue: () => 'cherry',
       // closed typeahead - a real keyboard commit that needs no open panel
-      commit: () => driver.press('a'),
+      commit: () => {
+        driver.press('a');
+      },
       committedValue: () => 'apple',
       assertMasked: () => {
         expect(driver.select.displayValue()).toBe('Mixed');
@@ -1521,7 +1523,9 @@ describe('SelectDirective (multiple, contract)', () => {
         driver.detectChanges();
       },
       externallyWrittenValue: () => ['apple'],
-      commit: () => driver.press('a'),
+      commit: () => {
+        driver.press('a');
+      },
       // replace semantics: a fresh array around the committed option, not a toggle
       committedValue: () => ['apple'],
       assertMasked: () => {

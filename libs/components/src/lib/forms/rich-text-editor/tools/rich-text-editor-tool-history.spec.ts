@@ -1,4 +1,4 @@
-import { Component, DebugElement } from '@angular/core';
+import { Component, DebugElement, Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { RichTextEditorDirective } from '../headless/rich-text-editor.directive';
@@ -71,7 +71,7 @@ describe('rich text editor tools and the undo stack', () => {
     dir.syncFromDom();
   };
 
-  const createTool = <T>(type: new (...args: never[]) => T): T => {
+  const createTool = <T>(type: Type<T>): T => {
     const fixture = TestBed.createComponent(type);
     fixture.componentRef.setInput('editor', dir);
     fixture.detectChanges();

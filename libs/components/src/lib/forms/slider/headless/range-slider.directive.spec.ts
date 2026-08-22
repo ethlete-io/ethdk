@@ -261,7 +261,9 @@ describe('RangeSliderDirective (mixed contract)', () => {
         driver.tick();
       },
       externallyWrittenValue: () => [10, 90],
-      commit: () => driver.press('ArrowRight', 0),
+      commit: () => {
+        driver.press('ArrowRight', 0);
+      },
       // start thumb steps from the effective minimum; the untouched end gets its default bound
       committedValue: () => [1, 100],
       assertMasked: () => {

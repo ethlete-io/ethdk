@@ -285,7 +285,9 @@ describe('RatingDirective (mixed contract)', () => {
         expect(driver.hasAttr('aria-valuenow')).toBe(false);
         expect(driver.attr('aria-valuetext')).toBe('Mixed');
       },
-      clear: () => driver.press('Backspace'),
+      clear: () => {
+        driver.press('Backspace');
+      },
       emptyValue: () => null,
     };
   });

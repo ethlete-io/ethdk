@@ -16,7 +16,7 @@ export default defineConfig(() => ({
     include: ['{src,tests,generators}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     setupFiles: ['src/test-setup.mjs'],
     reporters: ['default'],
-    onConsoleLog: (log, type) => {
+    onConsoleLog: (log: string, type: 'stdout' | 'stderr') => {
       // every spec that bootstraps an ApplicationRef prints it, and a spec run is always dev mode
       if (log.includes('Angular is running in development mode')) {
         return false;

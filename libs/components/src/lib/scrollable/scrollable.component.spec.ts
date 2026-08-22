@@ -59,9 +59,10 @@ const ensureObserverMocks = () => {
         return [];
       }
 
-      root = null;
+      root: Element | Document | null = null;
       rootMargin = '';
-      thresholds = [];
+      scrollMargin = '';
+      thresholds: ReadonlyArray<number> = [];
     }
 
     windowWithObservers.IntersectionObserver = IntersectionObserverMock as typeof IntersectionObserver;

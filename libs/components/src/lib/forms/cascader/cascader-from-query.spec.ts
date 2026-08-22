@@ -170,7 +170,7 @@ describe('cascaderFromQuery', () => {
 
       return cascaderFromQuery({
         queryCreator: getChildren,
-        args: (parent) => ({ queryParams: { parent: parent?.value ?? 'root' } }),
+        args: (parent: CascaderNode<string> | null) => ({ queryParams: { parent: parent?.value ?? 'root' } }),
         toNodes: (response) => response.items.map((item) => ({ value: item.id, label: item.name })),
         search: {
           queryCreator: searchNodes,

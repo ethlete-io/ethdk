@@ -299,7 +299,9 @@ describe('SelectionListDirective (multiple, mixed contract)', () => {
       },
       externallyWrittenValue: () => ['a'],
       // Space on an option - a real keyboard commit
-      commit: () => driver.pressOption(0, ' '),
+      commit: () => {
+        driver.pressOption(0, ' ');
+      },
       // replace semantics: a fresh array around the committed option, not a toggle
       committedValue: () => ['a'],
       assertMasked: () => {

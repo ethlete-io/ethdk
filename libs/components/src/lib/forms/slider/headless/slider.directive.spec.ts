@@ -431,7 +431,9 @@ describe('SliderDirective (mixed contract)', () => {
         driver.tick();
       },
       externallyWrittenValue: () => 70,
-      commit: () => driver.press('ArrowRight'),
+      commit: () => {
+        driver.press('ArrowRight');
+      },
       // the first keyboard step starts from the effective minimum (0), not the hidden 40
       committedValue: () => 1,
       assertMasked: () => {

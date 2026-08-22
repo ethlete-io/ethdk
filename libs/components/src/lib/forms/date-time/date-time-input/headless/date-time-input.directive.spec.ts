@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import '../../../../../test-helpers';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
@@ -400,7 +401,7 @@ describe('DateTimeInputDirective time zone', () => {
     host = fixture.componentInstance;
     host.timeZone.set(FIELD.zone);
     fixture.detectChanges();
-    input = fixture.debugElement.children[0].injector.get(DateTimeInputDirective);
+    input = fixture.debugElement.query(By.directive(DateTimeInputDirective)).injector.get(DateTimeInputDirective);
   });
 
   const setValue = (value: string) => {

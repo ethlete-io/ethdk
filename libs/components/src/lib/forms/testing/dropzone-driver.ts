@@ -74,7 +74,7 @@ export const createDropzoneDriver = <T>(fixture: ComponentFixture<T>, options: C
 };
 
 export type DropzoneDriver<T> = ReturnType<typeof createDropzoneDriver<T>>;
-export type MountedDropzoneDriver<T> = DropzoneDriver<T> & { query: QueryTestSetup };
+export type MountedDropzoneDriver<T> = Omit<DropzoneDriver<T>, 'query'> & { query: QueryTestSetup };
 
 /**
  * Mounts a dropzone with a query test setup in place - the upload config needs one, and it has to

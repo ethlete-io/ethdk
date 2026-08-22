@@ -464,10 +464,12 @@ describe('RichTextEditorDirective', () => {
 
       // chip landed after the existing content, not before it
       const chip = editable.querySelector('[data-et-token]');
+      const paragraph = editable.querySelector('p');
       expect(chip).not.toBeNull();
-      expect(
-        editable.querySelector('p')?.compareDocumentPosition(chip as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+      expect(paragraph).not.toBeNull();
+      expect(paragraph!.compareDocumentPosition(chip as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
       expect(dir.value()).toContain('Hello');
       expect(dir.value()).toContain('{{block:company}}');
     });
