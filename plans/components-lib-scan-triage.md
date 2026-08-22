@@ -113,7 +113,7 @@ Done: `SelectionListDirective.activate()` now delegates to `focus()`, matching e
 control. The label-level "safe by default" fallback would need a group marker on the control
 contract - left for the _Improvements_ contract work.
 
-### 7. Command palette / overlay Escape, and the strategies reduce crash · M
+### 7. Command palette / overlay Escape, and the strategies reduce crash · M · **DONE 2026-08-22**
 
 Two independent overlay-runtime defects worth landing together because both are in the escape/config
 resolution path and both are cheap: the capture-phase document `keydown` in
@@ -124,6 +124,14 @@ handler is unreachable dead code"), overlay High "an all-breakpoints `strategies
 `open()`"; the overlay DX item "give `strategies` a base-case type or a dev error" is the durable fix.
 Note the palette spec at `command-palette.component.spec.ts:188` asserts the broken behaviour and
 must be re-pointed through `injectCommandPalette().open()`.
+Done: the runtime's document `keydown` moved to the bubble phase and now skips `defaultPrevented`,
+so the palette's existing clear-then-close works; the old palette spec was replaced by two specs that
+open through `injectCommandPalette().open()`. `getHighestMatchedStrategy` seeds its reduce with the
+smallest entry (plus a dev-mode warning naming the missing base entry) and an empty `strategies`
+array now throws `ET1210` instead of a bare `TypeError`. Left open on purpose: the DX proposal to
+change the public shape to `{ base, breakpoints? }` - it is a breaking API change and the fallback
+plus warning already closes the crash; and the shortcut directive's "second palette on `mod+k`"
+High, which is a separate defect in `command-palette-shortcut.directive.ts`.
 
 ### 8. Bracket: `swissColors` is an attribute-injection sink, and swiss never renders · M · **DONE 2026-08-22**
 

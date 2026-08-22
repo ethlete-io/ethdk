@@ -167,6 +167,7 @@ The date input, date range input, [time picker](/components/time-picker), time i
 | `ET1207` | An overlay definition's `injectRef()` was called outside a component opened via that definition.   | Call it only inside the component the definition opens.                                       |
 | `ET1208` | An `et-overlay-header`, `et-overlay-body`, or `et-overlay-footer` has no `etOverlayMain` ancestor. | Wrap them in an `<et-overlay-main>` element or a host carrying the `etOverlayMain` directive. |
 | `ET1209` | The full-screen enter animation ran without an origin element to grow out of.                      | Pass `origin` in the overlay config (the strategy otherwise uses its reduced animation).      |
+| `ET1210` | The `strategies` factory returned an empty array, so the overlay has no strategy to open with.     | Return at least one entry, including one without a `breakpoint` as the base strategy.         |
 
 ## Menu (ET13xx)
 

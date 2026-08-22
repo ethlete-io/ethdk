@@ -1,8 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { OverlayRef } from '../overlay';
+import { CommandPaletteComponent } from './command-palette.component';
 import { COMMAND_PALETTE_IMPORTS } from './command-palette.imports';
 import { provideCommandPaletteRegistry, registerCommands } from './command-palette-registry';
+import { injectCommandPalette } from './command-palette.overlay';
 import { CommandPaletteCommand } from './command-palette.types';
 
 @Component({
@@ -185,16 +188,6 @@ describe('CommandPaletteComponent', () => {
     expect(fixture.componentInstance.ran).toEqual([]);
   });
 
-  it('clears the query on Escape instead of leaving it', () => {
-    const { type, press, input, labels } = create();
-
-    type('table');
-    press('Escape');
-
-    expect(input.value).toBe('');
-    expect(labels()).toHaveLength(5);
-  });
-
   it('points aria-activedescendant at the active row', () => {
     const { input, host, press } = create();
 
@@ -203,5 +196,81 @@ describe('CommandPaletteComponent', () => {
     const activeRow = host.querySelector('.et-command-palette-item--active') as HTMLElement;
 
     expect(input.getAttribute('aria-activedescendant')).toBe(activeRow.id);
+  });
+});
+
+describe('CommandPaletteComponent opened as an overlay', () => {
+  let openedRef: OverlayRef<CommandPaletteComponent, unknown> | null = null;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    openedRef = null;
+  });
+
+  afterEach(() => {
+    openedRef?.close();
+  });
+
+  const flushFrames = () =>
+    new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
+  const open = async () => {
+    TestBed.runInInjectionContext(() =>
+      registerCommands([
+        { id: 'row.add', label: 'Add row', run: () => undefined },
+        { id: 'table.create', label: 'Create table', run: () => undefined },
+      ]),
+    );
+
+    const overlayRef = TestBed.runInInjectionContext(() => injectCommandPalette().open());
+    let closedVia: string | null = null;
+
+    overlayRef.afterClosedEvent().subscribe((event) => (closedVia = event.source ?? 'unknown'));
+
+    openedRef = overlayRef;
+    TestBed.tick();
+    await flushFrames();
+    await flushFrames();
+    await flushFrames();
+
+    const input = overlayRef.elements?.paneElement.querySelector('input') as HTMLInputElement;
+
+    const type = (value: string) => {
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      TestBed.tick();
+    };
+
+    const pressEscape = async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      TestBed.tick();
+      await flushFrames();
+      await flushFrames();
+    };
+
+    return { input, type, pressEscape, closedVia: () => closedVia };
+  };
+
+  it('clears the query on the first Escape and stays open', async () => {
+    const { input, type, pressEscape, closedVia } = await open();
+
+    type('table');
+    await pressEscape();
+
+    expect(input.value).toBe('');
+    expect(closedVia()).toBeNull();
+  });
+
+  it('closes on Escape once the query is empty', async () => {
+    const { type, pressEscape, closedVia } = await open();
+
+    type('table');
+    await pressEscape();
+
+    expect(closedVia()).toBeNull();
+
+    await pressEscape();
+
+    expect(closedVia()).toBe('escape');
   });
 });

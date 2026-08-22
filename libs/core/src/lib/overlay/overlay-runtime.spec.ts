@@ -229,6 +229,51 @@ describe('overlay runtime', () => {
     trigger.remove();
   });
 
+  describe('escape', () => {
+    const pressEscape = (target: EventTarget) =>
+      target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+
+    const mountWithButton = async () => {
+      const ref = mount({}, FocusableOverlayComponent);
+
+      await flushFrames();
+
+      return { ref, button: ref.elements.paneElement.querySelector('button') as HTMLButtonElement };
+    };
+
+    it('closes on an Escape raised inside the overlay', async () => {
+      const { ref, button } = await mountWithButton();
+
+      pressEscape(button);
+
+      expect(ref.state()).toBe('closed');
+    });
+
+    it('leaves the overlay open when content already handled the Escape', async () => {
+      const { ref, button } = await mountWithButton();
+
+      button.addEventListener('keydown', (event) => event.preventDefault());
+
+      pressEscape(button);
+
+      expect(ref.state()).toBe('mounted');
+
+      ref.close();
+    });
+
+    it('leaves the overlay open when content stops the Escape from propagating', async () => {
+      const { ref, button } = await mountWithButton();
+
+      button.addEventListener('keydown', (event) => event.stopPropagation());
+
+      pressEscape(button);
+
+      expect(ref.state()).toBe('mounted');
+
+      ref.close();
+    });
+  });
+
   describe('close guards', () => {
     it('vetoes a close when a guard returns false', async () => {
       const ref = mount();

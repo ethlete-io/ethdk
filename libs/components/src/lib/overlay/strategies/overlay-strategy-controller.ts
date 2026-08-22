@@ -13,6 +13,7 @@ import {
   OverlayRuntimeAnimationDelegate,
   OverlayRuntimePositionStrategy,
   OverlayRuntimeRef,
+  RuntimeError,
   animationDebugLog,
   equal,
   injectBreakpointObserver,
@@ -23,6 +24,7 @@ import {
 } from '@ethlete/core';
 import { tap } from 'rxjs';
 import { OverlayConfig } from '../overlay-config';
+import { OVERLAY_ERROR_CODES } from '../overlay-errors';
 import { OverlayRef } from '../overlay-ref';
 import { findNextRelevantHtmlElement } from './overlay-origin';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyContext } from './overlay-strategy.types';
@@ -109,10 +111,26 @@ export const createOverlayStrategyController = (
     ),
   );
 
-  const getHighestMatchedStrategy = () => {
-    const activeBreakpoints = breakpointMatchResults.filter((entry) => entry.isActive());
-    return activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr)).strategy;
-  };
+  if (!breakpointMatchResults.length) {
+    throw new RuntimeError(
+      OVERLAY_ERROR_CODES.EMPTY_STRATEGIES,
+      '[Overlay] `strategies` resolved to an empty array. It must return at least one entry.',
+    );
+  }
+
+  const smallestEntry = breakpointMatchResults.reduce((prev, curr) => (prev.size <= curr.size ? prev : curr));
+
+  if (ngDevMode && smallestEntry.size > 0) {
+    console.warn(
+      '[Overlay] `strategies` has no entry without a `breakpoint`, so nothing matches below the smallest one. Falling back to the smallest entry - add a base entry to make the fallback explicit.',
+    );
+  }
+
+  // seeded with the smallest entry so an all-breakpoints array still resolves below its smallest one
+  const getHighestMatchedStrategy = () =>
+    breakpointMatchResults
+      .filter((entry) => entry.isActive())
+      .reduce((prev, curr) => (prev.size > curr.size ? prev : curr), smallestEntry).strategy;
 
   let activeStrategy = untracked(() => getHighestMatchedStrategy());
 

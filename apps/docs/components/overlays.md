@@ -275,6 +275,8 @@ A switch carries the strategy's own `hasBackdrop` over too: morphing a backdropp
 
 Also available: `transformingFullScreenDialogToDialogOverlayStrategy` and `transformingFullScreenDialogToRightSheetOverlayStrategy`. Custom combinations are just arrays - each strategy provider (e.g. `injectDialogStrategy()`) exposes `.build(config)`, and app-wide defaults can be tuned via `provideDialogStrategyDefaults` and friends.
 
+Give the array one entry **without** a `breakpoint`: that is the base strategy, used below every breakpoint listed. An array whose entries all declare one falls back to its smallest entry and warns in dev mode; an empty array throws `ET1210`.
+
 ### Anchored overlays and the arrow
 
 Anchored strategies position relative to `config.origin` using floating-ui (`placement`, `fallbackPlacements`, `offset`, `shift`, `autoHide`, …). With `arrow: true` (the `anchoredDialogOverlayStrategy` default) the pane renders an arrow pointing at the origin. The arrow takes its background and border from the [surface theme](/core/theming) so it reads as part of the panel - overridable via `--et-overlay-arrow-background` / `--et-overlay-arrow-border` - and is the same arrow used by menus, tooltips and toggletips. Half of it hangs off the pane, so its two bordered sides end exactly where the pane's own border line resumes and the two read as one outline.
@@ -429,6 +431,7 @@ While it renders inline the sidebar is the content grid's first column and a fle
 - **Name/description**: set `ariaLabel`, `ariaLabelledBy` or `ariaDescribedBy` in the config - or just use `[et-overlay-title]`, which auto-wires the overlay's `aria-labelledby` to the title element when nothing else names it.
 - **Focus**: `autoFocus` targets `'container' | 'first-heading' | 'first-tabbable'`, a CSS selector, or `false`; `restoreFocus` (default `true`) returns focus to the opener on close. With the overlay router, each navigation re-applies initial focus to the new page (default `'first-tabbable'`), and `[etOverlayRouterLink]` sets `aria-current="page"` on the active link.
 - **Dismissal & scroll**: `closeOnEscape` and `closeOnOutsidePointer` default to `true` (`disableClose` forces both off), and body scroll is locked while any overlay that is _modal_ or shows a _backdrop_ is open. A non-modal overlay that leaves the page visible - a tooltip, a popover, an anchored pane - never locks it. The two are checked separately because a breakpoint switch can add a backdrop to an overlay that is already open: a non-modal picker anchored to its field above `md` becomes a backdropped bottom sheet below it, and the page locks on the switch and unlocks again on the way back.
+- **Escape from inside the overlay**: the escape listener runs in the bubble phase and skips an event that content already handled, so a control inside the pane can `preventDefault()` or `stopPropagation()` an <kbd>Escape</kbd> to consume it first - that is how the command palette clears its query before a second <kbd>Escape</kbd> closes it.
 - **Reduced motion**: every built-in strategy's enter/leave animation is skipped under `prefers-reduced-motion` - the overlay still opens and closes, just without the transition.
 
 ## Error codes

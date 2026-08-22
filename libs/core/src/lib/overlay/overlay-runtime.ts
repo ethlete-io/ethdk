@@ -363,7 +363,11 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       const closeOnEscape = config.closeOnEscape ?? true;
       if (closeOnEscape) {
         const onKeyDown = (event: KeyboardEvent) => {
-          if (event.key !== 'Escape' || !isTopMost(overlayRef as OverlayRuntimeRef<object, unknown>)) {
+          if (
+            event.key !== 'Escape' ||
+            event.defaultPrevented ||
+            !isTopMost(overlayRef as OverlayRuntimeRef<object, unknown>)
+          ) {
             return;
           }
 
@@ -377,8 +381,9 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           overlayRef.close(undefined, 'escape');
         };
 
-        targetDocument.addEventListener('keydown', onKeyDown, true);
-        cleanupFns.push(() => targetDocument.removeEventListener('keydown', onKeyDown, true));
+        // bubble phase so content inside the overlay can preventDefault or stopPropagation an Escape first
+        targetDocument.addEventListener('keydown', onKeyDown);
+        cleanupFns.push(() => targetDocument.removeEventListener('keydown', onKeyDown));
       }
 
       const closeOnOutsidePointer = config.closeOnOutsidePointer ?? config.modal === false;

@@ -53,6 +53,8 @@ export type OverlayConfig = {
   /**
    * Breakpoint-driven overlay strategies (dialog, sheets, full-screen, …).
    * When set, position, sizing and classes are controlled by the active strategy.
+   * Include one entry without a `breakpoint` as the base strategy - an array without one falls back
+   * to its smallest entry below every breakpoint it lists.
    */
   strategies?: () => OverlayStrategyBreakpoint[];
 

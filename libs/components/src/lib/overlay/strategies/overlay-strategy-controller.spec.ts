@@ -226,4 +226,54 @@ describe('overlay strategy controller', () => {
     expect(elements?.paneElement.classList.contains('et-overlay--bottom-sheet')).toBe(true);
     expect(document.documentElement.classList.contains('large-document')).toBe(false);
   });
+
+  describe('strategies without a breakpoint-less entry', () => {
+    const openWithoutBaseStrategy = () => {
+      const overlayRef = TestBed.runInInjectionContext(() =>
+        injectOverlayManager().open<StrategyTestContentComponent, unknown>(StrategyTestContentComponent, {
+          strategies: () => [{ breakpoint: 'md', strategy: largeStrategy }],
+        }),
+      );
+
+      openedRef = overlayRef;
+      TestBed.tick();
+
+      return overlayRef;
+    };
+
+    it('falls back to the smallest entry below its breakpoint instead of throwing', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      const overlayRef = openWithoutBaseStrategy();
+
+      expect(overlayRef.elements?.paneElement.classList.contains('et-overlay--dialog')).toBe(true);
+      expect(warn).toHaveBeenCalledOnce();
+
+      warn.mockRestore();
+    });
+
+    it('does not throw when a resize drops below the smallest breakpoint', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      fakeBreakpoints.setMatches(MD_QUERY, true);
+      openWithoutBaseStrategy();
+
+      expect(() => {
+        fakeBreakpoints.setMatches(MD_QUERY, false);
+        TestBed.tick();
+      }).not.toThrow();
+
+      warn.mockRestore();
+    });
+
+    it('throws a named error when strategies resolves to an empty array', () => {
+      expect(() =>
+        TestBed.runInInjectionContext(() =>
+          injectOverlayManager().open<StrategyTestContentComponent, unknown>(StrategyTestContentComponent, {
+            strategies: () => [],
+          }),
+        ),
+      ).toThrow(/strategies` resolved to an empty array/);
+    });
+  });
 });
