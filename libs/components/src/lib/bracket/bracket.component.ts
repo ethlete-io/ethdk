@@ -1,5 +1,6 @@
 import { NgComponentOutlet } from '@angular/common';
 import {
+  afterRenderEffect,
   Component,
   computed,
   effect,
@@ -336,7 +337,13 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
       onCleanup(() => controller.destroy());
     });
 
-    // A signal rather than a local, so a controller rebuilt by the effect above re-applies the pin.
-    effect(() => this.journeyController()?.setFocused(this.focusedParticipantId()));
+    // After render, not in an effect: the marks are classes on cells the grid's `@for` re-uses and on
+    // connector paths a redraw re-parses, so they have to be re-applied once the new nodes exist - an
+    // effect runs before the view is refreshed and would mark the old drawing. Reading the grid is what
+    // makes a new source (or new settings) re-run this at all.
+    afterRenderEffect(() => {
+      this.bracketGrid();
+      this.journeyController()?.setFocused(this.focusedParticipantId());
+    });
   }
 }

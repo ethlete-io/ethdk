@@ -25,6 +25,24 @@ const normalizer: BracketMatchNormalizer = (match): NormalizedMatch => ({
   label: null,
 });
 
+/**
+ * The same bracket with its opening two matches swapped - a re-seeding a live feed can ship, and one
+ * that moves a journey without moving the `p<n>` short id the grid marks its cells with.
+ */
+const reseededOpeningRound = (source: BracketDataSource<null, null>): BracketDataSource<null, null> => {
+  const [first, second] = source.matches;
+
+  return {
+    ...source,
+    matches: source.matches.map((match) => {
+      if (match.id === first.id) return { ...match, home: second.home, away: second.away };
+      if (match.id === second.id) return { ...match, home: first.home, away: first.away };
+
+      return match;
+    }),
+  };
+};
+
 @Component({
   template: `<et-bracket
     [(focusedParticipantId)]="focusedParticipantId"
@@ -126,6 +144,56 @@ describe('BracketComponent participant focus', () => {
     fixture.detectChanges();
 
     expect(host.focusedParticipantId()).toBe('p1');
+  });
+
+  it('re-marks a pinned journey against the cells of a new source', () => {
+    host.focusedParticipantId.set('p1');
+    fixture.detectChanges();
+
+    host.source.set(generateSingleEliminationBracket(16));
+    fixture.detectChanges();
+
+    expect(activeMatchIds()).toEqual(['se-r0-m0', 'se-r1-m0', 'se-r2-m0', 'se-r3-m0']);
+  });
+
+  it('lights a pin that only the new source knows, and dims nothing until then', () => {
+    host.focusedParticipantId.set('p9');
+    fixture.detectChanges();
+
+    expect(activeMatchIds()).toEqual([]);
+    expect(bracket.classList).not.toContain('et-bracket-host--journey-focused');
+
+    host.source.set(generateSingleEliminationBracket(16));
+    fixture.detectChanges();
+
+    expect(activeMatchIds()).toEqual(['se-r0-m4', 'se-r1-m2', 'se-r2-m1', 'se-r3-m0']);
+    expect(bracket.classList).toContain('et-bracket-host--journey-focused');
+  });
+
+  it('stops marking a participant the new source dropped', () => {
+    host.source.set(generateSingleEliminationBracket(16));
+    fixture.detectChanges();
+
+    host.focusedParticipantId.set('p9');
+    fixture.detectChanges();
+
+    expect(activeMatchIds()).toEqual(['se-r0-m4', 'se-r1-m2', 'se-r2-m1', 'se-r3-m0']);
+
+    host.source.set(generateSingleEliminationBracket(8));
+    fixture.detectChanges();
+
+    expect(activeMatchIds()).toEqual([]);
+    expect(bracket.classList).not.toContain('et-bracket-host--journey-hover');
+  });
+
+  it('re-marks a journey whose cells moved under an unchanged short id', () => {
+    host.focusedParticipantId.set('p1');
+    fixture.detectChanges();
+
+    host.source.set(reseededOpeningRound(generateSingleEliminationBracket(8)));
+    fixture.detectChanges();
+
+    expect(activeMatchIds()).toEqual(['se-r0-m1', 'se-r1-m0', 'se-r2-m0']);
   });
 
   it('draws nothing once the journey highlight is off', async () => {

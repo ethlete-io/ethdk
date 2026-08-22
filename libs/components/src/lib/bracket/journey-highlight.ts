@@ -43,6 +43,10 @@ export type SetupJourneyHighlightConfig = {
 
 /** Lets the component push `focusedParticipantId` in, and tear the listeners down. */
 export type JourneyHighlightController = {
+  /**
+   * Sets the pinned participant and re-marks the journey in effect. Call it after every render, not
+   * from an effect: the marks are classes on cells and connector paths the render just replaced.
+   */
   setFocused: (participantId: string | null) => void;
   destroy: () => void;
 };
@@ -96,9 +100,12 @@ export const setupJourneyHighlight = (config: SetupJourneyHighlightConfig): Jour
   let renderedPinned = false;
 
   /** The transient journey under the pointer or the focus ring. */
-  let previewed: BracketJourneyParticipant[] = [];
-  /** The pinned one, which outranks it until it is dropped. */
-  let focused: BracketJourneyParticipant | null = null;
+  let previewedIds: string[] = [];
+  /**
+   * The pinned one, which outranks it until it is dropped. Held as an id rather than a resolved
+   * participant: a source that does not contain it yet must keep the pin, because the next one may.
+   */
+  let focusedId: string | null = null;
   let stopListeningForEscape: (() => void) | null = null;
 
   const clear = () => {
@@ -141,8 +148,11 @@ export const setupJourneyHighlight = (config: SetupJourneyHighlightConfig): Jour
 
   /** Draws whichever journey is in effect - the pin if there is one, the preview otherwise. */
   const render = () => {
-    const journey = focused ? [focused] : previewed;
-    const pinned = !!focused;
+    const known = participants();
+    const journey = (focusedId ? [focusedId] : previewedIds)
+      .map((id) => known.find((participant) => participant.id === id))
+      .filter((participant) => !!participant);
+    const pinned = !!focusedId && journey.length > 0;
     const key = journey.map((participant) => participant.shortId).join(' ');
 
     if (key === renderedKey && pinned === renderedPinned) return;
@@ -192,30 +202,31 @@ export const setupJourneyHighlight = (config: SetupJourneyHighlightConfig): Jour
   };
 
   const preview = (journey: BracketJourneyParticipant[]) => {
-    previewed = journey;
+    previewedIds = journey.map((participant) => participant.id);
     render();
   };
 
   const onKeyDown = (event: Event) => {
-    if ((event as KeyboardEvent).key !== 'Escape' || !focused) return;
+    if ((event as KeyboardEvent).key !== 'Escape' || !focusedId) return;
 
     setFocused(null);
     onFocusChange(null);
   };
 
   const setFocused = (participantId: string | null) => {
-    const next = participantId ? (participants().find((p) => p.id === participantId) ?? null) : null;
+    if (participantId !== focusedId) {
+      focusedId = participantId;
 
-    if (next?.id === focused?.id) return;
+      // On the document, and only while something is pinned. The pin is usually set from a control
+      // *outside* the bracket (a participants list), so focus is rarely inside it - a listener on the host
+      // would mean Escape worked only in the one case where the user had already tabbed into the bracket.
+      stopListeningForEscape?.();
+      stopListeningForEscape = focusedId ? renderer.listen(host.ownerDocument, 'keydown', onKeyDown) : null;
+    }
 
-    focused = next;
-
-    // On the document, and only while something is pinned. The pin is usually set from a control
-    // *outside* the bracket (a participants list), so focus is rarely inside it - a listener on the host
-    // would mean Escape worked only in the one case where the user had already tabbed into the bracket.
-    stopListeningForEscape?.();
-    stopListeningForEscape = focused ? renderer.listen(host.ownerDocument, 'keydown', onKeyDown) : null;
-
+    // Never through the render guard: the caller is a render pass, and the cells the marks sat on may
+    // now hold other matches - or, for the connectors, be detached nodes replaced by a fresh parse.
+    clear();
     render();
   };
 
@@ -240,7 +251,7 @@ export const setupJourneyHighlight = (config: SetupJourneyHighlightConfig): Jour
 
     // eslint-disable-next-line ethlete/no-dom-query -- hit-testing outside Angular against outlet-rendered cells
     if (target?.closest('.et-bracket-element--match')) return;
-    if (!focused) return;
+    if (!focusedId) return;
 
     setFocused(null);
     onFocusChange(null);

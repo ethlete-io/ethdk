@@ -546,6 +546,12 @@ The bracket drops the pin on <kbd>Escape</kbd> (anywhere on the page, while pinn
 that lands past the cells, writing the `null` back through the model - bind it two-way, or listen
 to `(focusedParticipantIdChange)` for URL sync and analytics.
 
+The pin outlives the data: a new `source` - a live-updating feed, a lazy first load - is re-marked
+against its own cells, so the journey follows the participant to wherever their matches now are. A
+pin the current source has never heard of highlights nothing and dims nothing, and lights up on its
+own once a source that does contain it arrives - restoring the pin from a query param before the
+bracket has loaded is therefore fine.
+
 <StoryEmbed id="components-sports-bracket--participant-focus" height="520px" />
 
 ## Accessibility

@@ -439,7 +439,16 @@ single-domain reach.
   already gone by the time we could react), only the tab stop; that would need an effect and was out
   of scope for an S.
 - **Bracket: a pinned journey breaks on any `source` change** — the whole bracket dims with nothing
-  highlighted (bracket High). M
+  highlighted (bracket High). M — **DONE 2026-08-22**. The highlight holds the pin as an _id_ and
+  resolves it per render, so an id no source knows yet marks (and dims) nothing and lights up on its
+  own once a source containing it arrives; the component re-applies the marks from an
+  `afterRenderEffect` keyed on `bracketGrid()` (an `effect` runs before the view refresh and marked
+  the old grid), and that path always clears before re-marking, so cells re-used by `@for` cannot
+  keep a mark for a match they no longer hold. Left open: the controller is still torn down and
+  rebuilt on any `settings()` change (it reads the whole computed for one boolean) - wasteful but
+  harmless, and the rebuild is what keeps the connector paths marked through a layout change, so
+  narrowing it needs its own change. Docs: the "Participant focus" section now states what a pin
+  does across a source change.
 - **Grid items are focusable with `outline: none` and no replacement** (grid High), and **the chip
   docs' own quick-start is keyboard-unremovable** (chip High). S each — **DONE 2026-08-22**. The grid
   item keeps `outline: none` for a pointer press but draws a `:focus-visible` ring
