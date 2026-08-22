@@ -126,7 +126,7 @@ describe('OverlayNavTabLinkComponent', () => {
   it('navigates the overlay router on click and moves the active link', async () => {
     const router = await open();
 
-    links()[1]?.click();
+    links()[1]!.click();
     await flushFrames();
     tick();
 
@@ -142,7 +142,7 @@ describe('OverlayNavTabLinkComponent', () => {
 
     underlineFlips = 0;
 
-    links()[1]?.click();
+    links()[1]!.click();
     await flushMicrotasks();
     await flushFrames();
     tick();
@@ -165,7 +165,7 @@ describe('OverlayNavTabLinkComponent', () => {
 
     router.registerNavigationGuard(() => Promise.resolve(false));
 
-    links()[1]?.click();
+    links()[1]!.click();
     await flushMicrotasks();
     await flushFrames();
     tick();

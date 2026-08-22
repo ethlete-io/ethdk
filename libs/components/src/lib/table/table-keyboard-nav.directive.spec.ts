@@ -184,9 +184,9 @@ describe('TableKeyboardNavDirective', () => {
   describe('while drilled into a cell', () => {
     const drilledIn = () => {
       const fixture = create();
-      const button = cells(fixture)[1]?.querySelector('button');
+      const button = cells(fixture)[1]!.querySelector<HTMLButtonElement>('button')!;
 
-      button?.focus();
+      button.focus();
       fixture.detectChanges();
 
       return fixture;
@@ -233,6 +233,7 @@ describe('TableKeyboardNavDirective', () => {
   it('suppresses the row tab stop, so the body has only one', () => {
     const fixture = create();
 
+    expect(host(fixture).querySelectorAll('.et-table-row').length).toBeGreaterThan(0);
     expect(host(fixture).querySelectorAll('.et-table-row[tabindex]')).toHaveLength(0);
   });
 });

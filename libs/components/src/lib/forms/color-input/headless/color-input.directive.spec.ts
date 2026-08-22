@@ -168,7 +168,7 @@ describe('ColorInputDirective', () => {
 
     it('keeps the picker open while focus moves inside the pane', async () => {
       await driver.open();
-      pickButton()?.focus();
+      pickButton()!.focus();
       driver.tick();
 
       expect(driver.colorInput.pickerOpen()).toBe(true);

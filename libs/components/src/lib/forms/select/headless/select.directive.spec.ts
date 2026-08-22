@@ -987,7 +987,7 @@ describe('SelectDirective (search)', () => {
 
     // both the custom path and the option path reject further adds
     expect(driver.select.commitCustomValue('papaya')).toBe(false);
-    driver.visibleOptions()[0]?.click();
+    driver.visibleOptions()[0]!.click();
     tick();
     expect(driver.host.value()).toEqual(['kiwi', 'mango']);
 
