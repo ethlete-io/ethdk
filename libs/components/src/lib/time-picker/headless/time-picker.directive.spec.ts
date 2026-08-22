@@ -126,6 +126,34 @@ describe('TimePickerDirective', () => {
     expect(values.indexOf('32')).toBe(values.indexOf('30') + 1);
   });
 
+  it('clamps a zero, negative or fractional minuteStep to one minute instead of hanging', () => {
+    host.minuteStep.set(0);
+    tick();
+
+    expect(column('minute')?.querySelectorAll('button').length).toBe(60);
+
+    host.minuteStep.set(-5);
+    tick();
+
+    expect(column('minute')?.querySelectorAll('button').length).toBe(60);
+
+    host.minuteStep.set(0.5);
+    tick();
+
+    expect(column('minute')?.querySelectorAll('button').length).toBe(60);
+  });
+
+  it('keeps a clamped step focusable by the keyboard', async () => {
+    host.minuteStep.set(Number.NaN);
+    tick();
+    await fixture.whenStable();
+
+    const options = Array.from(column('minute')?.querySelectorAll<HTMLButtonElement>('button') ?? []);
+
+    expect(options.length).toBe(60);
+    expect(options.some((option) => option.tabIndex === 0)).toBe(true);
+  });
+
   it('maps 12-hour picks through the period', async () => {
     host.format.set('h:mm a');
     host.value.set(new Date(2026, 6, 17, 14, 0));

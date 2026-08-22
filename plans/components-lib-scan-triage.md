@@ -337,7 +337,13 @@ single-domain reach.
   motion. The first two need the `fakeLayout` helper to guard. M
 - **Calendar: both shipped range strategies band an untouched calendar** (calendar High) and
   **`minuteStep="0"` throws `RangeError` inside a computed** (time-picker High). Fix the second with
-  one shared `positiveIntegerAttribute`, per the calendar DX item. S each
+  one shared `positiveIntegerAttribute`, per the calendar DX item. S each — **DONE 2026-08-22**
+  (`minuteStep` half only). `internals/number-attributes.ts` holds the shared
+  `positiveIntegerAttribute`; `TimePickerDirective.minuteStep`/`secondStep`, the same pair on the
+  four date-time wrapper components, and `CalendarDirective.monthsShown` (whose inline clamp it
+  replaces) all use it, so `0`, a negative, a fraction and `NaN` all land on `1`. The calendar
+  range-strategy half is **untouched** — it is a separate behaviour question (when a strategy may
+  band without a user pick), not a transform.
 - **`[etScrollableActiveChild]` registers nothing** — a documented, story-demonstrated,
   recipe-endorsed directive that does not exist at runtime (scrollable High). Wire it, or delete it
   plus three doc pages. M

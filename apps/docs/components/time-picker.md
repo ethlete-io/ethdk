@@ -18,15 +18,15 @@ import { TIME_PICKER_IMPORTS } from '@ethlete/components';
 
 On `et-time-picker` (forwarded from the headless `[etTimePicker]` directive):
 
-| Input        | Type                                | Default             | Description                                                                           |
-| ------------ | ----------------------------------- | ------------------- | ------------------------------------------------------------------------------------- |
-| `format`     | `string`                            | `TIME_FORMAT` token | date-fns time format the columns derive from (token default: `HH:mm`).                |
-| `locale`     | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Expands localized format tokens (`p`, `pp`) and the AM/PM labels.                     |
-| `minuteStep` | `number`                            | `5`                 | Minute column granularity. An off-step selection is kept visible in the column.       |
-| `secondStep` | `number`                            | `1`                 | Seconds column granularity (the column only renders when the format carries seconds). |
-| `min`        | `Date \| null`                      | `null`              | Earliest selectable time - only the time of day is read, so it applies every day.     |
-| `max`        | `Date \| null`                      | `null`              | Latest selectable time, same reading.                                                 |
-| `timeFilter` | `((date: Date) => boolean) \| null` | `null`              | Return `false` to make a time unselectable. Receives the full candidate timestamp.    |
+| Input        | Type                                | Default             | Description                                                                                                              |
+| ------------ | ----------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `format`     | `string`                            | `TIME_FORMAT` token | date-fns time format the columns derive from (token default: `HH:mm`).                                                   |
+| `locale`     | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Expands localized format tokens (`p`, `pp`) and the AM/PM labels.                                                        |
+| `minuteStep` | `number`                            | `5`                 | Minute column granularity, clamped to a whole number of at least 1. An off-step selection is kept visible in the column. |
+| `secondStep` | `number`                            | `1`                 | Seconds column granularity, clamped the same way (the column only renders when the format carries seconds).              |
+| `min`        | `Date \| null`                      | `null`              | Earliest selectable time - only the time of day is read, so it applies every day.                                        |
+| `max`        | `Date \| null`                      | `null`              | Latest selectable time, same reading.                                                                                    |
+| `timeFilter` | `((date: Date) => boolean) \| null` | `null`              | Return `false` to make a time unselectable. Receives the full candidate timestamp.                                       |
 
 | Model   | Type           | Description                                                                   |
 | ------- | -------------- | ----------------------------------------------------------------------------- |

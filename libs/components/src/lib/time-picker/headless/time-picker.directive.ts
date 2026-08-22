@@ -1,4 +1,4 @@
-import { Directive, computed, input, model, numberAttribute, output, signal } from '@angular/core';
+import { Directive, computed, input, model, output, signal } from '@angular/core';
 import { Locale, setHours, setMilliseconds, setMinutes, setSeconds, startOfDay } from 'date-fns';
 import { injectDateLocale, injectTimeFormat } from '../../forms/date-time/date-time-formats';
 import { formatDateValue } from '../../forms/date-time/internals/date-value';
@@ -13,6 +13,7 @@ import {
 } from './internals/time-availability';
 import { TimeParts, deriveTimeFormatSpec, generateSteppedValues, getTimeParts } from './internals/time-format';
 import { injectTimePickerLabels } from '../../time-picker/time-picker-labels';
+import { positiveIntegerAttribute } from '../../internals/number-attributes';
 
 export type TimePickerUnit = 'hour' | 'minute' | 'second' | 'period';
 
@@ -127,8 +128,8 @@ export class TimePickerDirective {
   /** date-fns time format the column layout derives from. Defaults to the `TIME_FORMAT` token. */
   public format = input<string | undefined>(undefined);
   public locale = input<Locale | null>(null);
-  public minuteStep = input(5, { transform: numberAttribute });
-  public secondStep = input(1, { transform: numberAttribute });
+  public minuteStep = input(5, { transform: positiveIntegerAttribute });
+  public secondStep = input(1, { transform: positiveIntegerAttribute });
 
   /** Earliest selectable time. Only the time of day is read, so the bound applies to every day. */
   public min = input<Date | null>(null);

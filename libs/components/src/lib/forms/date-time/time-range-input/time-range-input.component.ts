@@ -1,12 +1,5 @@
-import {
-  Component,
-  ViewEncapsulation,
-  booleanAttribute,
-  computed,
-  inject,
-  input,
-  numberAttribute,
-} from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
+import { positiveIntegerAttribute } from '../../../internals/number-attributes';
 import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { CLOCK_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
@@ -83,8 +76,8 @@ export class TimeRangeInputComponent {
 
   public pickerTriggerLabel = input<string | null>(null);
   public dialogLabel = input<string | null>(null);
-  public minuteStep = input(5, { transform: numberAttribute });
-  public secondStep = input(1, { transform: numberAttribute });
+  public minuteStep = input(5, { transform: positiveIntegerAttribute });
+  public secondStep = input(1, { transform: positiveIntegerAttribute });
   /** The time picker's two ends, on the control that switches between them. */
   public startTimeLabel = input<string | null>(null);
   public endTimeLabel = input<string | null>(null);

@@ -272,7 +272,7 @@ with an anchored [time picker](/components/time-picker) overlay.
 | `valueFormat`               | `string`                            | `TIME_FORMAT` token  | date-fns format of the string value (token default: `HH:mm`).              |
 | `displayFormat`             | `string`                            | `'p'`                | date-fns format shown in and parsed from the field (locale-aware).         |
 | `locale`                    | `Locale \| null` (date-fns)         | `DATE_LOCALE` token  | Display/parse locale (also decides the picker's 12/24-hour layout).        |
-| `minuteStep` / `secondStep` | `number`                            | `5` / `1`            | Forwarded to the picker columns.                                           |
+| `minuteStep` / `secondStep` | `number`                            | `5` / `1`            | Forwarded to the picker columns, clamped to at least 1.                    |
 | `minTime` / `maxTime`       | `Date \| null`                      | `null`               | Bound the picker's time of day (`min`/`max` are reserved by signal forms). |
 | `timeFilter`                | `((date: Date) => boolean) \| null` | `null`               | Rejects individual times in the picker.                                    |
 | `pickerOpen`                | `boolean` (model)                   | `false`              | The picker overlay's open state.                                           |
@@ -320,7 +320,7 @@ daily window - instead of pairing two `et-time-input`s.
 | `valueFormat`                         | `string`                                                    | `TIME_FORMAT` token | date-fns format of both string values (token default: `HH:mm`).        |
 | `displayFormat`                       | `string`                                                    | `'p'`               | date-fns format shown in and parsed from both fields (locale-aware).   |
 | `locale`                              | `Locale \| null` (date-fns)                                 | `DATE_LOCALE` token | Display/parse locale (also decides the picker's 12/24-hour layout).    |
-| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the picker columns.                                       |
+| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the picker columns, clamped to at least 1.                |
 | `minTime` / `maxTime`                 | `Date \| null`                                              | `null`              | Bound the picker's time of day, for both ends.                         |
 | `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the end being filled.               |
 | `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                        |
@@ -390,7 +390,7 @@ correct the day is never interrupted.
 | `startAt`                       | `Date \| null`                               | `null`                      | Month the picker calendar opens at while the value is empty.                      |
 | `startView`                     | `'month' \| 'year' \| 'multiYear'`           | `'month'`                   | Which grid the picker calendar opens on.                                          |
 | `dateClass`                     | `(date, view) => string \| string[] \| null` | `null`                      | Per-cell classes for the picker calendar.                                         |
-| `minuteStep` / `secondStep`     | `number`                                     | `5` / `1`                   | Forwarded to the time picker columns.                                             |
+| `minuteStep` / `secondStep`     | `number`                                     | `5` / `1`                   | Forwarded to the time picker columns, clamped to at least 1.                      |
 | `minTime` / `maxTime`           | `Date \| null`                               | `null`                      | Bound the time pane's time of day (see the time input).                           |
 | `timeFilter`                    | `((date: Date) => boolean) \| null`          | `null`                      | Rejects individual times; receives the full candidate timestamp.                  |
 | `pickerOpen`                    | `boolean` (model)                            | `false`                     | The picker overlay's open state.                                                  |

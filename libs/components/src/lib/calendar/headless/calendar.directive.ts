@@ -1,4 +1,4 @@
-import { Directive, computed, input, linkedSignal, model, numberAttribute, output, signal } from '@angular/core';
+import { Directive, computed, input, linkedSignal, model, output, signal } from '@angular/core';
 import {
   addMonths,
   addYears,
@@ -24,6 +24,7 @@ import {
 import { Locale } from 'date-fns';
 import { injectDateLocale } from '../../forms/date-time/date-time-formats';
 import { isFormInputTarget } from '../../internals/form-input-target';
+import { positiveIntegerAttribute } from '../../internals/number-attributes';
 import { CalendarWeekStartsOn, generateMonthGrid } from './internals/calendar-month';
 import { resolveCalendarKeyboardDate } from './internals/calendar-keyboard';
 import {
@@ -159,7 +160,7 @@ export class CalendarDirective {
    * The coarser grids are unaffected: drilling out shows one month grid or one year page whatever
    * this says. Wide surfaces only; a picker that has to fit a phone should leave it at one.
    */
-  public monthsShown = input(1, { transform: (value: unknown) => Math.max(1, Math.trunc(numberAttribute(value, 1))) });
+  public monthsShown = input(1, { transform: positiveIntegerAttribute });
 
   /**
    * How precise a selection is. `'month'` makes this a month picker and

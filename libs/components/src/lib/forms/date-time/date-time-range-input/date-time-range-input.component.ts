@@ -1,14 +1,5 @@
-import {
-  Component,
-  ViewEncapsulation,
-  booleanAttribute,
-  computed,
-  effect,
-  inject,
-  input,
-  numberAttribute,
-  signal,
-} from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, effect, inject, input, signal } from '@angular/core';
+import { positiveIntegerAttribute } from '../../../internals/number-attributes';
 import { CALENDAR_IMPORTS } from '../../../calendar';
 import { CALENDAR_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { TIME_PICKER_IMPORTS } from '../../../time-picker';
@@ -106,8 +97,8 @@ export class DateTimeRangeInputComponent {
 
   public pickerTriggerLabel = input<string | null>(null);
   public dialogLabel = input<string | null>(null);
-  public minuteStep = input(5, { transform: numberAttribute });
-  public secondStep = input(1, { transform: numberAttribute });
+  public minuteStep = input(5, { transform: positiveIntegerAttribute });
+  public secondStep = input(1, { transform: positiveIntegerAttribute });
   /** The bottom sheet's two tab labels. */
   public datesTabLabel = input<string | null>(null);
   public timesTabLabel = input<string | null>(null);

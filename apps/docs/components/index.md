@@ -26,7 +26,9 @@ static value needs no binding - write it as a plain attribute:
 ```
 
 Presence alone means `true`, and the string `"false"` coerces to `false` (so `clearable="false"`
-works). Dynamic values still take a binding. The `@ethlete/eslint-plugin` rule
+works). Dynamic values still take a binding. Numeric inputs that count something - a step size, a
+number of months - additionally clamp to a whole number of at least 1, so a binding that is briefly
+`0` or unparseable falls back to `1` instead of producing an empty or endless column. The `@ethlete/eslint-plugin` rule
 [`prefer-static-boolean-properties`](/eslint/rules) flags the redundant form.
 
 ::: warning Control state belongs in the schema, not the template
