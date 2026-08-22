@@ -9,6 +9,13 @@ export type NotificationEntry = {
   isDismissed: boolean;
 };
 
+/**
+ * Why a notification's auto-dismiss timer is held. The built-in ones are the pointer over the toast
+ * (`'hover'`), focus inside it (`'focus'`), a swipe in progress (`'gesture'`) and a bare
+ * `pauseTimer()` call (`'api'`); a consumer may use any other string as its own key.
+ */
+export type NotificationPauseReason = 'hover' | 'focus' | 'gesture' | 'api' | (string & {});
+
 const ID_PREFIX = 'et-notification-';
 let uniqueId = 0;
 
@@ -26,6 +33,7 @@ export const createNotificationRef = (
   });
 
   const afterDismissedSubject$ = new Subject<void>();
+  const pauseReasons = new Set<NotificationPauseReason>();
   let timerSubscription: Subscription | null = null;
   let timerStartedAt = 0;
   let remainingDuration = 0;
@@ -45,12 +53,23 @@ export const createNotificationRef = (
     remainingDuration = duration;
     timerStartedAt = Date.now();
 
+    // A config change while the toast is held (a progress update under the pointer) re-arms the
+    // countdown but must not un-hold it - the reasons for the hold have not gone anywhere.
+    if (pauseReasons.size > 0) return;
+
     timerSubscription = timer(duration)
       .pipe(tap(() => dismiss()))
       .subscribe();
   };
 
-  const pauseTimer = () => {
+  /**
+   * Holds the auto-dismiss countdown until every reason that asked for it has released it, so a
+   * toast the pointer left but the keyboard is still in does not dismiss itself. Pass the same
+   * `reason` to {@link resumeTimer}.
+   */
+  const pauseTimer = (reason: NotificationPauseReason = 'api') => {
+    pauseReasons.add(reason);
+
     if (!timerSubscription || remainingDuration <= 0) return;
 
     const elapsed = Date.now() - timerStartedAt;
@@ -60,8 +79,11 @@ export const createNotificationRef = (
     timerSubscription = null;
   };
 
-  const resumeTimer = () => {
-    if (timerSubscription || remainingDuration <= 0) return;
+  /** Releases one {@link pauseTimer} reason. The countdown resumes once the last one is gone. */
+  const resumeTimer = (reason: NotificationPauseReason = 'api') => {
+    pauseReasons.delete(reason);
+
+    if (pauseReasons.size > 0 || timerSubscription || remainingDuration <= 0) return;
 
     timerStartedAt = Date.now();
 

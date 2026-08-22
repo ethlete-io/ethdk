@@ -160,7 +160,7 @@ export class NotificationSwipeToDismissDirective {
 
     // A touch never hovers, so this is the only thing that keeps a notification from timing out
     // under the finger holding it.
-    this.notification?.ref().pauseTimer();
+    this.notification?.ref().pauseTimer('gesture');
   }
 
   private trackGesture(event: PointerEvent) {
@@ -173,7 +173,7 @@ export class NotificationSwipeToDismissDirective {
       // The pointer is panning the page, not swiping the notification.
       if (isScrolling) {
         this.forgetGesture();
-        this.notification?.ref().resumeTimer();
+        this.notification?.ref().resumeTimer('gesture');
 
         return;
       }
@@ -215,7 +215,7 @@ export class NotificationSwipeToDismissDirective {
       this.settleBack();
     }
 
-    this.notification?.ref().resumeTimer();
+    this.notification?.ref().resumeTimer('gesture');
   }
 
   private cancelGesture() {
@@ -225,7 +225,7 @@ export class NotificationSwipeToDismissDirective {
 
     if (wasCommitted) this.settleBack();
 
-    this.notification?.ref().resumeTimer();
+    this.notification?.ref().resumeTimer('gesture');
   }
 
   private forgetGesture() {

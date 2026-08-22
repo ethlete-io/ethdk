@@ -152,7 +152,15 @@ ref.update({ progress });
 ref.update({ status: 'success', title: 'Upload complete', progress: undefined, duration: 5000 });
 ```
 
-The ref also offers `dismiss()`, `pauseTimer()` / `resumeTimer()` (hover and focus pause automatically) and `afterDismissed()`. `manager.dismissAll()` clears everything.
+The ref also offers `dismiss()`, `pauseTimer()` / `resumeTimer()` and `afterDismissed()`. `manager.dismissAll()` clears everything.
+
+Both timer methods take a reason: the toast holds its countdown until every reason that asked for it has released it, so hover (`'hover'`), focus inside (`'focus'`) and a swipe in progress (`'gesture'`) can overlap without one release re-arming the timer under the others. Pass your own string for your own hold, and release it with the same one - `pauseTimer()` with no argument uses `'api'`. A hold also survives `update()`: the new duration is armed, but not started until the last reason is gone.
+
+```ts
+ref.pauseTimer('confirm-open');
+// …
+ref.resumeTimer('confirm-open');
+```
 
 ## Live demo
 

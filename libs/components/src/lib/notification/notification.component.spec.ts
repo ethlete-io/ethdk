@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { NotificationConfig, provideNotificationManagerConfig } from './notification-config';
 import { provideNotificationLabels } from './notification-labels';
-import { NotificationRef, createNotificationRef } from './notification-ref';
+import { NotificationPauseReason, NotificationRef, createNotificationRef } from './notification-ref';
 import { NotificationComponent } from './notification.component';
 
 describe('NotificationComponent', () => {
@@ -10,13 +10,13 @@ describe('NotificationComponent', () => {
   let host: HTMLElement;
   let ref: NotificationRef;
   let dismissCalls: number;
-  let pauseTimerCalls: number;
-  let resumeTimerCalls: number;
+  let pauseReasons: (NotificationPauseReason | undefined)[];
+  let resumeReasons: (NotificationPauseReason | undefined)[];
 
   beforeEach(() => {
     dismissCalls = 0;
-    pauseTimerCalls = 0;
-    resumeTimerCalls = 0;
+    pauseReasons = [];
+    resumeReasons = [];
 
     TestBed.configureTestingModule({
       imports: [NotificationComponent],
@@ -54,15 +54,15 @@ describe('NotificationComponent', () => {
     };
 
     const pauseTimer = ref.pauseTimer;
-    ref.pauseTimer = () => {
-      pauseTimerCalls += 1;
-      pauseTimer();
+    ref.pauseTimer = (reason) => {
+      pauseReasons.push(reason);
+      pauseTimer(reason);
     };
 
     const resumeTimer = ref.resumeTimer;
-    ref.resumeTimer = () => {
-      resumeTimerCalls += 1;
-      resumeTimer();
+    ref.resumeTimer = (reason) => {
+      resumeReasons.push(reason);
+      resumeTimer(reason);
     };
 
     fixture = TestBed.createComponent(NotificationComponent);
@@ -90,14 +90,14 @@ describe('NotificationComponent', () => {
     expect(ref.entry().isDismissing).toBe(true);
   });
 
-  it('pauses and resumes the timer on pointer and focus transitions', () => {
+  it('pauses and resumes the timer per reason on pointer and focus transitions', () => {
     host.dispatchEvent(new Event('mouseenter'));
     host.dispatchEvent(new Event('focusin'));
     host.dispatchEvent(new Event('mouseleave'));
     host.dispatchEvent(new Event('focusout'));
 
-    expect(pauseTimerCalls).toBe(2);
-    expect(resumeTimerCalls).toBe(2);
+    expect(pauseReasons).toEqual(['hover', 'focus']);
+    expect(resumeReasons).toEqual(['hover', 'focus']);
   });
 
   it('uses the configured dismiss label on the dismiss button', () => {
@@ -147,6 +147,69 @@ describe('NotificationComponent', () => {
 
       expect(withIcon.querySelector('et-spinner')).toBeNull();
       expect(withIcon.querySelector('.et-notification-icon')).not.toBeNull();
+    });
+  });
+
+  describe('auto-dismiss hold', () => {
+    let timedRef: NotificationRef;
+    let timedHost: HTMLElement;
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+
+      timedRef = createNotificationRef(
+        { status: 'info', title: 'Saved', duration: 4000 },
+        { managerConfig: { position: 'bottom-end', maxVisible: 3, defaultDuration: {} } },
+      );
+
+      const timedFixture = TestBed.createComponent(NotificationComponent);
+      timedFixture.componentRef.setInput('ref', timedRef);
+      timedFixture.detectChanges();
+      timedHost = timedFixture.nativeElement;
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('dismisses itself once the duration is up', () => {
+      vi.advanceTimersByTime(4000);
+
+      expect(timedRef.entry().isDismissing).toBe(true);
+    });
+
+    it('keeps holding after the pointer leaves while focus is still inside', () => {
+      timedHost.dispatchEvent(new Event('mouseenter'));
+      timedHost.dispatchEvent(new Event('focusin'));
+      timedHost.dispatchEvent(new Event('mouseleave'));
+
+      vi.advanceTimersByTime(5000);
+
+      expect(timedRef.entry().isDismissing).toBe(false);
+
+      timedHost.dispatchEvent(new Event('focusout'));
+      vi.advanceTimersByTime(4000);
+
+      expect(timedRef.entry().isDismissing).toBe(true);
+    });
+
+    it('keeps holding after a click released the gesture while the pointer is still over it', () => {
+      timedHost.dispatchEvent(new Event('mouseenter'));
+      timedRef.pauseTimer('gesture');
+      timedRef.resumeTimer('gesture');
+
+      vi.advanceTimersByTime(5000);
+
+      expect(timedRef.entry().isDismissing).toBe(false);
+    });
+
+    it('keeps holding when the config changes while it is held', () => {
+      timedHost.dispatchEvent(new Event('mouseenter'));
+      timedRef.update({ title: 'Saved again' });
+
+      vi.advanceTimersByTime(5000);
+
+      expect(timedRef.entry().isDismissing).toBe(false);
     });
   });
 

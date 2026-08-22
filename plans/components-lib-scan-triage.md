@@ -342,6 +342,21 @@ single-domain reach.
 - **Notification pause/resume is not ref-counted** — a focused toast dismisses itself on
   `mouseleave`; a click on a hovered toast re-arms it (notification High ×2). Fix as the Features item
   "a pause _reason_ set on the ref". Note `notification.component.spec.ts:93-101` locks in the bug. S
+  — **DONE 2026-08-22**
+
+  Done: `pauseTimer(reason)` / `resumeTimer(reason)` keep a `Set<NotificationPauseReason>` on the ref
+  (`'hover' | 'focus' | 'gesture' | 'api' | (string & {})`, the shape
+  `CarouselAutoplayPauseReason` set), and the countdown only restarts once the set is empty. The
+  component's four host listeners pass `'hover'`/`'focus'`, the swipe directive passes `'gesture'`.
+  `startTimer` also respects the set now, so `update()` under the pointer re-arms the duration without
+  un-holding it. The old spec that asserted `pauseTimerCalls === 2 && resumeTimerCalls === 2` is gone;
+  it is now a reason-wiring test plus four behavioural ones, three of which fail without the fix.
+  Not breaking - the reason is optional and defaults to `'api'`. Left open on purpose: `focusout`
+  still fires when focus merely moves between two elements _inside_ the toast, so the hold is dropped
+  and retaken within the same tick (harmless - `Date.now()` has not moved - but a `relatedTarget`
+  check would be the honest fix, and that is a separate change to the component's listeners). Also
+  untouched: the notification Medium `maxVisible: 0`, and the swipe directive's zero test coverage.
+
 - **Carousel, three Highs, one PR:** `playOnInit="false"` read in the constructor; the loop alignment
   latch consumed by a failed measurement (opens on a clone forever); play/pause ARIA contradicting the
   rendered icon whenever autoplay is paused for any reason but `stop()` — permanent under reduced

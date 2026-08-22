@@ -58,10 +58,10 @@ import { injectNotificationLabels } from './notification-labels';
   host: {
     class: 'et-notification',
     '(keydown.escape)': 'notification.ref().dismiss()',
-    '(mouseenter)': 'notification.ref().pauseTimer()',
-    '(mouseleave)': 'notification.ref().resumeTimer()',
-    '(focusin)': 'notification.ref().pauseTimer()',
-    '(focusout)': 'notification.ref().resumeTimer()',
+    '(mouseenter)': 'notification.ref().pauseTimer("hover")',
+    '(mouseleave)': 'notification.ref().resumeTimer("hover")',
+    '(focusin)': 'notification.ref().pauseTimer("focus")',
+    '(focusout)': 'notification.ref().resumeTimer("focus")',
   },
 })
 export class NotificationComponent {
