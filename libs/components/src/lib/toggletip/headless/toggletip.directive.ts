@@ -61,6 +61,11 @@ export class ToggletipDirective {
   public disabled = input(false, { alias: 'etToggletipDisabled', transform: booleanAttribute });
   public open = model(false, { alias: 'etToggletipOpen' });
 
+  /** @internal Set by `etToggletipTrigger` while its button is inactive; composes with `disabled` instead of overwriting it. */
+  public triggerInactive = signal(false);
+
+  private effectiveDisabled = computed(() => this.disabled() || this.triggerInactive());
+
   /** @internal */
   public overlayRef = signal<OverlayRef<ToggletipComponent, unknown> | null>(null);
 
@@ -92,7 +97,7 @@ export class ToggletipDirective {
   constructor() {
     effect(() => {
       const content = this.content();
-      const disabled = this.disabled();
+      const disabled = this.effectiveDisabled();
 
       if ((content === null || disabled) && this.open()) {
         untracked(() => {
@@ -103,7 +108,7 @@ export class ToggletipDirective {
 
     effect(() => {
       const content = this.content();
-      const disabled = this.disabled();
+      const disabled = this.effectiveDisabled();
       const open = this.open();
 
       if (!open || disabled || content === null) {
@@ -123,7 +128,7 @@ export class ToggletipDirective {
   }
 
   public toggle() {
-    if (this.disabled() || this.content() === null) {
+    if (this.effectiveDisabled() || this.content() === null) {
       this.hide();
 
       return;
@@ -133,7 +138,7 @@ export class ToggletipDirective {
   }
 
   public show() {
-    if (this.disabled() || this.content() === null) {
+    if (this.effectiveDisabled() || this.content() === null) {
       return;
     }
 
@@ -153,11 +158,11 @@ export class ToggletipDirective {
   }
 
   public expanded() {
-    return this.content() && !this.disabled() ? this.open() : null;
+    return this.content() && !this.effectiveDisabled() ? this.open() : null;
   }
 
   public popupRole() {
-    return this.content() && !this.disabled() ? 'dialog' : null;
+    return this.content() && !this.effectiveDisabled() ? 'dialog' : null;
   }
 
   private mountToggletip(content: ToggletipContent) {
@@ -184,7 +189,7 @@ export class ToggletipDirective {
       bindings: [
         inputBinding('toggletipId', () => this.toggletipId),
         inputBinding('contentId', () => this.contentId),
-        inputBinding('content', () => content),
+        inputBinding('content', () => this.content() ?? content),
         inputBinding('colorProvider', () => this.colorProvider ?? null),
       ],
       role: 'dialog',

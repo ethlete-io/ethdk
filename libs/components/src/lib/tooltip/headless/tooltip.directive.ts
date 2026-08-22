@@ -73,6 +73,7 @@ export class TooltipDirective {
   private hasFocus = signal(false);
   private descriptionId = createTooltipId('et-tooltip-description');
   private descriptionElement: HTMLElement | null = null;
+  private appliedDescriptionId: string | null = null;
 
   private accessibleDescription = computed(() => {
     const ariaDescription = this.ariaDescription();
@@ -150,7 +151,7 @@ export class TooltipDirective {
       id: tooltipId,
       bindings: [
         inputBinding('tooltipId', () => tooltipId),
-        inputBinding('content', () => content),
+        inputBinding('content', () => this.content() ?? content),
         inputBinding('colorProvider', () => this.colorProvider ?? null),
       ],
       disableClose: true,
@@ -292,7 +293,19 @@ export class TooltipDirective {
   }
 
   private syncHostDescription(descriptionId: string | null) {
-    this.renderer.setAttribute(this.elementRef.nativeElement, 'aria-describedby', descriptionId);
+    const hostElement = this.elementRef.nativeElement;
+    const rest = (hostElement.getAttribute('aria-describedby') ?? '')
+      .split(/\s+/)
+      .filter((id) => id && id !== this.appliedDescriptionId && id !== descriptionId);
+    const next = descriptionId ? [...rest, descriptionId] : rest;
+
+    this.appliedDescriptionId = descriptionId;
+
+    if (next.length) {
+      this.renderer.setAttribute(hostElement, 'aria-describedby', next.join(' '));
+    } else {
+      this.renderer.removeAttribute(hostElement, 'aria-describedby');
+    }
   }
 
   private syncDescriptionElement(description: string | null) {

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { setInputSignal } from '@ethlete/core';
 import '../../../test-helpers';
 import { ButtonComponent } from '../../button/button.component';
 import { ToggletipTriggerDirective } from './toggletip-trigger.directive';
@@ -48,5 +49,18 @@ describe('ToggletipTriggerDirective', () => {
     expect(button.getAttribute('data-pressed')).toBe('true');
     expect(button.getAttribute('data-pressed-variant')).toBe('filled');
     expect(button.getAttribute('aria-pressed')).toBeNull();
+  });
+
+  it('keeps a consumer-bound etToggletipDisabled instead of overwriting it', () => {
+    fixture.detectChanges();
+
+    setInputSignal(toggletipDirective.disabled, true);
+    fixture.detectChanges();
+
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    expect(toggletipDirective.open()).toBe(false);
+    expect(toggletipDirective.overlayRef()).toBeNull();
   });
 });

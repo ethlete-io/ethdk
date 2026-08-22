@@ -19,6 +19,12 @@ class TooltipDirectiveTestHost {
   tooltipTemplate = viewChild.required<TemplateRef<unknown>>('tooltipTemplate');
 }
 
+@Component({
+  template: `<button aria-describedby="consumer-hint" etTooltip type="button">Trigger</button>`,
+  imports: [TooltipDirective],
+})
+class DescribedTooltipTestHost {}
+
 describe('TooltipDirective', () => {
   let fixture: ComponentFixture<TooltipDirectiveTestHost>;
   let button: HTMLButtonElement;
@@ -70,6 +76,45 @@ describe('TooltipDirective', () => {
     tooltipDirective.show();
 
     expect(tooltipDirective.overlayRef()).toBeNull();
+  });
+
+  it('re-renders content that changes while shown', () => {
+    tooltipDirective.show();
+    fixture.detectChanges();
+
+    setInputSignal(tooltipDirective.content, 'Updated body');
+    fixture.detectChanges();
+
+    const panelId = tooltipDirective.overlayRef()?.config.id ?? '';
+    expect(document.getElementById(panelId)?.textContent).toContain('Updated body');
+  });
+
+  it('appends to a consumer aria-describedby instead of replacing it', () => {
+    const describedFixture = TestBed.createComponent(DescribedTooltipTestHost);
+    describedFixture.detectChanges();
+    const describedButton = describedFixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    const directive = describedFixture.debugElement
+      .query(By.directive(TooltipDirective))
+      .injector.get(TooltipDirective);
+    setInputSignal(directive.content, 'Tooltip body');
+    describedFixture.detectChanges();
+
+    const idle = describedButton.getAttribute('aria-describedby') ?? '';
+    expect(idle).toContain('consumer-hint');
+    expect(idle).toContain('et-tooltip-description');
+
+    directive.show();
+    describedFixture.detectChanges();
+
+    const shown = describedButton.getAttribute('aria-describedby') ?? '';
+    expect(shown).toContain('consumer-hint');
+    expect(shown).toContain(directive.overlayRef()?.config.id ?? '');
+    expect(shown).not.toContain('et-tooltip-description');
+
+    directive.hide();
+    describedFixture.detectChanges();
+
+    expect(describedButton.getAttribute('aria-describedby')).toBe(idle);
   });
 
   it('throws when template content is used without an aria description', () => {

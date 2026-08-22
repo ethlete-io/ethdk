@@ -102,7 +102,7 @@ Resolves: bracket High "`swissColors` interpolated into a `bypassSecurityTrustHt
 High "swiss throws ET3408 for any source with participant ids" (+ Medium "ET3409 only when round
 headers are on").
 
-### 9. Tooltip / toggletip: clobbered attributes and snapshot content · S
+### 9. Tooltip / toggletip: clobbered attributes and snapshot content · S · **DONE 2026-08-22**
 
 Three separate one-to-few-line defects in two sibling directives: `syncHostDescription` overwrites a
 consumer's `aria-describedby` instead of appending; `etToggletipTrigger` blanket-assigns
@@ -110,6 +110,10 @@ consumer's `aria-describedby` instead of appending; `etToggletipTrigger` blanket
 Resolves: menu-batch High "`[etTooltip]` destroys an existing `aria-describedby`", High
 "`etToggletipTrigger` overwrites `etToggletipDisabled`", Medium "content changed while open keeps
 rendering the old value"; realises the DX item "make the content bindings reactive".
+Done: describedby appends via a tracked applied id; the trigger writes an internal `triggerInactive`
+signal that composes with `disabled`; the content bindings read the signal. Still open from the
+content Medium: the toggletip's `ariaLabel`/`ariaLabelledBy`/`ariaDescribedBy` overlay config is
+read once at mount and cannot refresh.
 
 ### 10. Stuck-forever UI states — five unrelated one-liners, one sweep · S
 

@@ -33,7 +33,7 @@ export class ToggletipTriggerDirective {
         const inactive = button.isInactive();
 
         untracked(() => {
-          setInputSignal(toggletip.disabled, inactive);
+          toggletip.triggerInactive.set(inactive);
         });
       });
 
@@ -72,7 +72,7 @@ export class ToggletipTriggerDirective {
         return;
       }
 
-      setInputSignal(toggletip.disabled, false);
+      toggletip.triggerInactive.set(false);
       setInputSignal(button.pressed, false);
       setInputSignal(button.emitAriaPressed, true);
     });

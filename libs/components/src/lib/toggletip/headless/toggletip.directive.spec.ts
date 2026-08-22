@@ -59,6 +59,17 @@ describe('ToggletipDirective', () => {
     expect(toggletipDirective.overlayRef()?.config.ariaLabel).toBe('More information');
   });
 
+  it('re-renders content that changes while open', () => {
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    setInputSignal(toggletipDirective.content, 'Second content');
+    fixture.detectChanges();
+
+    const panelId = toggletipDirective.overlayRef()?.config.id ?? '';
+    expect(document.getElementById(panelId)?.textContent).toContain('Second content');
+  });
+
   it('clears its open state when disabled after opening', () => {
     toggletipDirective.show();
     fixture.detectChanges();
