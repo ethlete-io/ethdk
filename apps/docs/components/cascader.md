@@ -228,7 +228,7 @@ For [flat search](#flat-search), place an `input[etCascaderSearch]` in the surfa
 | Type a name     | Jump to the first matching node in column                                                   |
 | Enter / Space   | Select the focused node (commit or drill)                                                   |
 
-With a [flat search](#flat-search) active, the panel reports itself as a `role="listbox"` of `role="option"` results instead, typing routes into the search input (replacing the in-column jump), and Escape clears the query before it closes the panel.
+With a [flat search](#flat-search) active, the panel reports itself as a `role="listbox"` of `role="option"` results instead, typing routes into the search input (replacing the in-column jump - except Space, which keeps activating the focused node), and Escape clears the query before it closes the panel.
 
 ## Theming
 

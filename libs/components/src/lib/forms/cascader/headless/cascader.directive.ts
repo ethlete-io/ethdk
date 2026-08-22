@@ -429,9 +429,10 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
       untracked(() => this.knownChildren.set([]));
     });
 
-    // clear the browse state whenever the value is externally reset to nothing, so a
-    // reopened panel starts at the root instead of a stale branch - and in multi mode,
-    // prune the known chains of values that were removed from outside
+    // drop the committed chain whenever the value stops matching its tail (an external reset or
+    // patch), so the trigger shows the placeholder instead of the previous value's breadcrumb
+    // and a reopened panel starts at the root - and in multi mode, prune the chains of values
+    // that were removed from outside
     effect(() => {
       const value = this.value();
 
@@ -453,7 +454,21 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
           return;
         }
 
-        if ((value === null || value === undefined) && this.path().length) {
+        const path = this.path();
+
+        if (!path.length) {
+          return;
+        }
+
+        const last = path[path.length - 1];
+        const matchesValue =
+          last !== undefined &&
+          value !== null &&
+          value !== undefined &&
+          !Array.isArray(value) &&
+          this.compareWith()(last.value, value);
+
+        if (!matchesValue) {
           this.path.set([]);
         }
       });
@@ -882,7 +897,9 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
       }
     }
 
-    if (event.key.length !== 1) {
+    // Space activates the focused node (the native button's own default) - it must never be
+    // taken for a printable character, or the node stops being activatable by keyboard
+    if (event.key.length !== 1 || event.key === ' ') {
       return;
     }
 
@@ -1281,9 +1298,11 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     ]);
   }
 
+  // levels load concurrently and answer in whatever order the source gives, so a write must
+  // leave the tail alone - only a real navigation truncates, through `truncateColumns`
   private setColumn(columnIndex: number, state: CascaderColumnState<T>) {
     this.columns.update((columns) => {
-      const next = columns.slice(0, columnIndex);
+      const next = [...columns];
 
       next[columnIndex] = state;
 

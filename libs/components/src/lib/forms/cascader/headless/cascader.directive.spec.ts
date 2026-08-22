@@ -181,6 +181,59 @@ describe('CascaderDirective', () => {
     expect(driver.nodesIn(1).map((node) => node.textContent?.trim())).toEqual(['Final']);
   });
 
+  it('keeps the deeper columns when a level resolves after its own child', async () => {
+    await driver.open();
+    driver.clickNode('Euro');
+    driver.clickNode('Group stage');
+    driver.clickNode('Group A');
+    await flushFrames();
+
+    const pending = new Map<string, (nodes: CascaderNode<string>[]) => void>();
+    const outOfOrderSource: CascaderDataSource<string> = {
+      loadChildren: (parent) =>
+        new Promise<CascaderNode<string>[]>((resolve) => pending.set(parent ? parent.value : '__root__', resolve)),
+    };
+
+    const settle = async (key: string) => {
+      pending.get(key)!(TREE[key] ?? []);
+      await Promise.resolve();
+      await Promise.resolve();
+      tick();
+    };
+
+    driver.host.dataSource.set(outOfOrderSource);
+    driver.detectChanges();
+
+    // re-opening onto the committed branch starts all three levels at once
+    await driver.open();
+    await flushFrames();
+
+    // the deepest level answers first, the root last
+    await settle('euro-group');
+    await settle('euro');
+    await settle('__root__');
+
+    expect(driver.cascader.columns().length).toBe(3);
+    expect(driver.nodeLabels(0)).toEqual(['Euro', 'World Cup', 'Empty competition']);
+    expect(driver.nodeLabels(2)).toEqual(['Group A', 'Group B']);
+  });
+
+  it('drops the committed breadcrumb when the value is replaced from outside', async () => {
+    await driver.open();
+    driver.clickNode('World Cup');
+    driver.clickNode('Final');
+    await flushFrames();
+
+    expect(driver.cascader.displayValue()).toBe('World Cup / Final');
+
+    driver.host.value.set('euro-group-a');
+    driver.detectChanges();
+    tick();
+
+    expect(driver.cascader.displayValue()).toBeNull();
+    expect(driver.cascader.path()).toEqual([]);
+  });
+
   it('commits an intermediate branch in any-level mode without closing', async () => {
     driver.host.selectableLevels.set('any');
     driver.detectChanges();
@@ -494,6 +547,14 @@ describe('CascaderDirective', () => {
 
       expect(driver.cascader.searchQuery()).toBe('g');
       expect(document.activeElement).toBe(driver.searchInput());
+    });
+
+    it('leaves Space to the focused node instead of typing it into the search input', async () => {
+      const event = driver.pressOnNode('Euro', ' ');
+      await driver.settle();
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(driver.cascader.searchQuery()).toBe('');
     });
 
     it('moves roving focus from the input into the results and back', async () => {
