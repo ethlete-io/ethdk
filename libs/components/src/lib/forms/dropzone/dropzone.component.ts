@@ -147,11 +147,7 @@ export class DropzoneComponent {
     const entries = this.dropzoneDir.entries();
     const uploading = entries.filter((entry) => entry.status() === DROPZONE_ENTRY_STATUSES.UPLOADING).length;
 
-    if (uploading > 0) {
-      return uploading === 1 ? 'Uploading 1 file' : `Uploading ${uploading} files`;
-    }
-
-    return '';
+    return uploading > 0 ? this.dropzoneLabels().uploading(uploading) : '';
   });
 
   /** Upload failures, rendered like validation errors below the field. */

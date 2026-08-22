@@ -119,6 +119,8 @@ protected upload = createDropzoneUpload<UploadMediaArgs, string>({
 
 `createArgs` builds the request args from the entry's control value, the same way the top-level `createArgs` builds them from a `File`. Removing an entry that's still uploading just cancels the in-flight request; nothing was persisted yet, so no delete request is made.
 
+Picking a new file in single mode is a removal too: the value it replaces is deleted under exactly the same rules, so "Replace file" and remove-then-pick leave the server in the same state.
+
 ### Existing values are not deleted by default
 
 A `delete` runs for entries **uploaded in this session**. A value the control started with - one resolved through `resolveExisting` in an edit form - is only detached from the control; no request fires. Deleting a record the form was merely handed is destructive, and it usually belongs to something else: the same media may be rendered by another view, or attached to a submission that is still pending.
@@ -153,7 +155,7 @@ On `et-dropzone` (forwarded to the headless `etDropzone` directive):
 
 `readonly` and `disabled` both come from the form schema (`readonly(s.media, …)` /
 `disabled(s, …)`) and both stop every mutation - selecting, dropping, replacing,
-retrying and removing. They differ in what the user sees: a **read-only** dropzone
+retrying, removing and `clear()`. They differ in what the user sees: a **read-only** dropzone
 keeps its entries at full contrast, because there is nothing to operate; a
 **disabled** one dims and shows `not-allowed`. See
 [Forms](/components/forms#the-field-shell) for the shared convention.
@@ -168,7 +170,7 @@ gesture it will refuse:
 - With no file at all the box shrinks to `--et-dropzone-readonly-min-height` and reads
   the `empty` label ("No files") in place of the prompt.
 
-The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop `prompt`, the read-only `empty` text, `retry` / `remove` / `replaceFile` for the action buttons, and the `uploadFailed` wording. Per instance, the matching `retryLabel` / `removeLabel` / `replaceLabel` inputs override them, and `uploadErrorMessage` replaces the whole per-entry failure message.
+The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop `prompt`, the read-only `empty` text, `retry` / `remove` / `replaceFile` for the action buttons, the `uploadFailed` wording and the `uploading` live-region announcement. Per instance, the matching `retryLabel` / `removeLabel` / `replaceLabel` inputs override them, and `uploadErrorMessage` replaces the whole per-entry failure message.
 
 ## Validation
 

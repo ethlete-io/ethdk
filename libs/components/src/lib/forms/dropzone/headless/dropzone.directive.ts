@@ -246,12 +246,22 @@ export class DropzoneDirective<TValue = unknown>
     if (multiple) {
       this.internalEntries.update((entries) => [...entries, ...newEntries]);
     } else {
-      for (const entry of this.internalEntries()) {
+      const replaced = this.internalEntries();
+      // read before disposing - `disposeEntry` tears the upload handle down, resetting entry.value()
+      const deletableValues = replaced.map((entry) => this.deletableValueOf(entry));
+
+      for (const entry of replaced) {
         this.disposeEntry(entry);
       }
 
       this.internalEntries.set(newEntries);
       this.syncValue();
+
+      for (const value of deletableValues) {
+        if (value !== null) {
+          this.executeDelete(value);
+        }
+      }
     }
   }
 
@@ -268,8 +278,7 @@ export class DropzoneDirective<TValue = unknown>
     }
 
     const wasInControl = isValueInControl(entry);
-    const persistedValue = wasInControl ? entry.value() : null;
-    const wasExisting = entry.status() === DROPZONE_ENTRY_STATUSES.EXISTING;
+    const deletableValue = this.deletableValueOf(entry);
 
     this.internalEntries.update((entries) => entries.filter((item) => item !== entry));
     this.setRejections([]);
@@ -279,10 +288,8 @@ export class DropzoneDirective<TValue = unknown>
     if (wasInControl) {
       this.syncValue();
 
-      const mayDelete = !wasExisting || (this.upload().deleteIncludesExisting ?? false);
-
-      if (persistedValue !== null && mayDelete) {
-        this.executeDelete(persistedValue);
+      if (deletableValue !== null) {
+        this.executeDelete(deletableValue);
       }
     }
   }
@@ -304,7 +311,7 @@ export class DropzoneDirective<TValue = unknown>
 
   /** Removes all entries and resets the control value. */
   public clear() {
-    if (!this.internalEntries().length) {
+    if (!this.interactive() || !this.internalEntries().length) {
       return;
     }
 
@@ -414,6 +421,18 @@ export class DropzoneDirective<TValue = unknown>
     this.entryWatchers.get(entry.id)?.destroy();
     this.entryWatchers.delete(entry.id);
     disposeDropzoneEntry(entry);
+  }
+
+  /** The persisted value a dropped entry should have deleted server-side, or `null` for none. */
+  private deletableValueOf(entry: DropzoneEntry<TValue>) {
+    if (!isValueInControl(entry)) {
+      return null;
+    }
+
+    const mayDelete =
+      entry.status() !== DROPZONE_ENTRY_STATUSES.EXISTING || (this.upload().deleteIncludesExisting ?? false);
+
+    return mayDelete ? entry.value() : null;
   }
 
   private executeDelete(value: TValue) {

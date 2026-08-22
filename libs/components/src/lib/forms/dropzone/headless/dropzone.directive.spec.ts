@@ -27,6 +27,7 @@ const createFile = (name = 'photo.png', type = 'image/png', size = 4) =>
       [upload]="upload()!"
       [multiple]="multiple()"
       [disabled]="disabled()"
+      [readonly]="readonly()"
       (filesReject)="rejections.push($event)"
       (uploadSucceed)="succeeded.push($event)"
       (uploadFail)="failed.push($event)"
@@ -41,6 +42,7 @@ class DropzoneTestHost {
   upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
   multiple = signal(false);
   disabled = signal(false);
+  readonly = signal(false);
   value = signal<string | string[] | null>(null);
 
   rejections: DropzoneFileRejection[][] = [];
@@ -330,6 +332,30 @@ describe('DropzoneDirective', () => {
       expect(driver.host.value()).toEqual([]);
     });
 
+    it('should not clear while readonly or disabled', () => {
+      driver.dropzone.selectFiles([createFile('a.png')]);
+      driver.tick();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
+      driver.tick();
+
+      driver.host.readonly.set(true);
+      driver.tick();
+      driver.dropzone.clear();
+      driver.tick();
+
+      expect(driver.dropzone.entries().length).toBe(1);
+      expect(driver.host.value()).toBe('uuid-a');
+
+      driver.host.readonly.set(false);
+      driver.host.disabled.set(true);
+      driver.tick();
+      driver.dropzone.clear();
+      driver.tick();
+
+      expect(driver.dropzone.entries().length).toBe(1);
+      expect(driver.host.value()).toBe('uuid-a');
+    });
+
     it('should hydrate existing entries from an inbound control value', () => {
       driver.host.multiple.set(true);
       driver.host.value.set(['e1', 'e2']);
@@ -544,6 +570,57 @@ describe('DropzoneDirective', () => {
       expect(driver.host.deleteFailed.length).toBe(1);
       expect(driver.host.deleteFailed[0]!.value).toBe('e1');
       expect(driver.dropzone.entries().length).toBe(0);
+    });
+
+    it('should fire the delete request for the value replaced in single mode', async () => {
+      driver.dropzone.selectFiles([createFile('a.png')]);
+      driver.tick();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
+      driver.tick();
+
+      driver.dropzone.selectFiles([createFile('b.png')]);
+      driver.tick();
+
+      driver.query.httpTesting.expectOne(deleteUrl('uuid-a')).flush(null);
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-b' });
+
+      driver.tick();
+      await flushMicrotasks();
+      driver.tick();
+
+      expect(driver.host.value()).toBe('uuid-b');
+      expect(driver.host.deleteSucceeded).toEqual(['uuid-a']);
+    });
+
+    it('should delete the replaced existing value only when includeExisting is on', async () => {
+      driver.host.upload.set(createUploadConfig(driver.query, { withDelete: true }));
+      driver.host.value.set('e1');
+      driver.tick();
+
+      driver.dropzone.selectFiles([createFile('b.png')]);
+      driver.tick();
+
+      driver.query.httpTesting.expectNone(deleteUrl('e1'));
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-b' });
+
+      driver.tick();
+      await flushMicrotasks();
+      driver.tick();
+
+      expect(driver.host.deleteSucceeded).toEqual([]);
+    });
+
+    it('should not fire a delete request for a replaced entry that was still uploading', () => {
+      driver.dropzone.selectFiles([createFile('a.png')]);
+      driver.tick();
+
+      const req = driver.query.httpTesting.expectOne(UPLOAD_URL);
+
+      driver.dropzone.selectFiles([createFile('b.png')]);
+      driver.tick();
+
+      expect(req.cancelled).toBe(true);
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-b' });
     });
 
     it('should not fire a delete request for a still-uploading entry (nothing persisted yet)', () => {

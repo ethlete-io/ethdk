@@ -3,6 +3,7 @@ import { form, FormField } from '@angular/forms/signals';
 import '../../../test-helpers';
 import { LabelDirective } from '../form-field/headless';
 import { MountedDropzoneDriver, mountDropzone } from '../testing/dropzone-driver';
+import { provideDropzoneLabels } from './dropzone-labels';
 import { DropzoneComponent } from './dropzone.component';
 import { AnyDropzoneUploadConfig, createDropzoneUpload } from './headless/dropzone-upload';
 import { DropzoneFileConstraints, dropzoneFiles } from './headless/dropzone-validation';
@@ -45,6 +46,19 @@ class DropzoneSchemaComponentTestHost {
   demoForm = form(this.model, (s) => {
     dropzoneFiles(s.media, () => this.constraints());
   });
+}
+
+@Component({
+  template: `
+    <et-dropzone [upload]="upload()!">
+      <et-label>Media</et-label>
+    </et-dropzone>
+  `,
+  imports: [DropzoneComponent, LabelDirective],
+  providers: [provideDropzoneLabels({ uploading: (count) => `Lade ${count} Datei${count === 1 ? '' : 'en'} hoch` })],
+})
+class DropzoneLocalizedComponentTestHost {
+  upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
 }
 
 describe('DropzoneComponent', () => {
@@ -192,6 +206,37 @@ describe('DropzoneComponent', () => {
     expect(driver.previewEl()!.getAttribute('data-status')).toBe('existing');
     expect(driver.previewName()).toBe('existing-e1');
     expect(driver.previewImage()!.src).toBe('https://cdn.test.com/e1');
+  });
+});
+
+describe('DropzoneComponent with localized labels', () => {
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => `blob:mock-${Math.random()}`);
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  it('should announce upload activity through the DROPZONE_LABELS uploading label', () => {
+    const driver = mountDropzone(DropzoneLocalizedComponentTestHost);
+
+    driver.host.upload.set(
+      createDropzoneUpload<UploadArgs, string>({
+        queryCreator: driver.query.createPost<UploadArgs>('/upload'),
+        selectValue: (response) => response.uuid,
+      }),
+    );
+    driver.tick();
+
+    driver.pickFiles([createFile()]);
+
+    expect(driver.liveStatus()).toBe('Lade 1 Datei hoch');
+
+    driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+    driver.tick();
+
+    expect(driver.liveStatus()).toBe('');
+
+    driver.fixture.destroy();
+    driver.query.httpTesting.verify();
   });
 });
 

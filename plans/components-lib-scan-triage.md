@@ -441,7 +441,18 @@ single-domain reach.
   telling them apart needs a separate "picked" flag and was not worth the state.
 - **Table: `etTableCsvExport` config makes every later `export({ file })` throw ET3507**; **a
   cancelled resize leaves a width override**; **selection/expansion state writes
-  `"[object Object]"` without a `rowKey`** (table Medium ×3). S each
+  `"[object Object]"` without a `rowKey`** (table Medium ×3). S each — **DONE 2026-08-22**.
+  Done: `mergeTableCsvExportOptions` (headless) merges a call's overrides so that `file` and the
+  build options (`rows`/`columns`/`header`/`delimiter`/`formulaGuard`/`bom`) drop each other across
+  the config/call boundary — `ET3507` now only fires for both in one call; `etTableResize` records
+  whether the column had a width override when the drag began and `cancel()` resets instead of
+  writing the rendered width back; the selection and expansion state slices read and write nothing
+  unless the table has a `rowKey` (new `hasRowKey()` on `TableFeatureHost`). New specs:
+  `table-csv-export.directive.spec.ts`, `table-resize.directive.spec.ts`, plus state cases in the
+  selection/expansion specs. Left open: the ET3507 message still does not name the config as the
+  source of an option (table DX #3) — with the merge fixed the assert can only ever see one call's
+  own options, so there is nothing left to blame elsewhere; and RTL resize (a separate Medium) is
+  untouched.
 - **Overlay: container elevation ignores the strategy's `hasBackdrop`; `documentClass`/`bodyClass`
   are not ref-counted; a destroyed query-param opener orphans an open overlay** (overlay Medium ×3).
   Fix the first two via the DX item "one `resolveHasBackdrop`, one `resolveOrigin`". S / M
@@ -454,7 +465,14 @@ single-domain reach.
   is wrong in RTL (color-input High). S / M
 - **Dropzone: single-mode replace never fires the configured `delete`** (orphaned server file);
   **`clear()` ignores `disabled`/`readonly`**; **`DROPZONE_LABELS.uploading` is never read** (dropzone
-  High + Medium ×2). S each
+  High + Medium ×2). S each · **DONE 2026-08-22**
+  Done: `selectFiles`'s single-mode branch now deletes what it replaces through the same
+  `deletableValueOf()` helper `removeEntry` uses (so `includeExisting` and the still-uploading
+  exemption apply identically), `clear()` gained the `interactive()` guard the other three mutators
+  had, and `liveStatusMessage` reads `DROPZONE_LABELS.uploading`. Left open: `clear()` still fires no
+  deletes at all - it is a bulk reset a custom UI drives, and whether wiping a field should delete
+  every file server-side is a product call, not a bug; and no per-instance `uploadingLabel` input was
+  added (the domain token is the only override, matching how the live region is documented).
 - **Slider: a tick press does not commit the tick's value without `snapToMarks`** (slider High) —
   documented as always doing so. S
 - **RTE: `pruneEmptyInline` skips `u`/`code`**, leaking raw HTML into the Markdown value (rte High);
