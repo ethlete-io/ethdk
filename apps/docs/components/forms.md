@@ -322,10 +322,10 @@ The field chrome handles error display and aria wiring uniformly:
   control is `required`.
 - The `et-label` is **optional**, but every control needs an accessible name.
   When you omit the label, give the control its own `aria-label` or
-  `aria-labelledby` (the text-field controls - `et-input`, `et-number-input`,
-  `et-password-input`, `et-color-input`, `et-textarea` - forward both onto the
-  native element, and a consumer `aria-labelledby` overrides the projected
-  label). A placeholder is **not** an accessible name. Without a label, the
+  `aria-labelledby`. Every control forwards both onto the element that carries
+  its role - the native input, the trigger, the editable, the group - and a
+  consumer `aria-labelledby` overrides the projected label. A placeholder is
+  **not** an accessible name. Without a label, the
   layout no longer reserves the label band in `static` / `floating-outside`
   modes.
 - Selection groups use correct roles for their mode: a single-select group is a

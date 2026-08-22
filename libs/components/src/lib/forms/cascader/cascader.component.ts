@@ -25,6 +25,7 @@ import {
 } from './headless';
 import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
 import { injectCascaderLabels } from '../../forms/cascader/cascader-labels';
+import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
 @Component({
   selector: 'et-cascader',
@@ -71,6 +72,7 @@ import { injectCascaderLabels } from '../../forms/cascader/cascader-labels';
         'errors',
         'required',
         'name',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'openChange', 'afterOpen', 'afterClose'],
     },

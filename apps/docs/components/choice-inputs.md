@@ -343,6 +343,9 @@ assistive tech (it reflects `aria-checked="mixed"`; the switch keeps
   `aria-readonly`.
 - The rating host is a `role="slider"` with a single keyboard stop and a spoken
   `aria-valuetext`.
+- An option's `et-description` is wired as its `aria-describedby`, so the
+  secondary text is announced after the option's name instead of folding into
+  it.
 - Every group/control needs an accessible name - a projected `et-label` or your
   own `aria-label`/`aria-labelledby`. See
   [Validation & accessibility](/components/forms#validation-accessibility).

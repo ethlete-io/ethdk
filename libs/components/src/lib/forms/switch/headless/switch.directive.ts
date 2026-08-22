@@ -10,7 +10,12 @@ import {
   signal,
 } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import {
+  AccessibleNameControlDirective,
+  FORM_FIELD_CONTROL_TYPES,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+} from '../../form-field/headless';
 
 @Directive({
   selector: '[etSwitch]',
@@ -26,6 +31,7 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
     '[attr.data-readonly]': 'readonly() || null',
     '[attr.aria-required]': 'required() || null',
     '[attr.aria-describedby]': 'describedBy() || null',
+    '[attr.aria-label]': 'ariaLabel() || null',
     '[attr.aria-labelledby]': 'labelId() || null',
     '[attr.tabindex]': 'disabled() ? -1 : 0',
     '(click)': 'toggle()',
@@ -33,7 +39,7 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
     '(blur)': 'touched.set(true)',
   },
 })
-export class SwitchDirective implements FormFieldControl {
+export class SwitchDirective extends AccessibleNameControlDirective implements FormFieldControl {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private el = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -59,9 +65,9 @@ export class SwitchDirective implements FormFieldControl {
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.SWITCH);
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
   constructor() {
+    super();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
   }

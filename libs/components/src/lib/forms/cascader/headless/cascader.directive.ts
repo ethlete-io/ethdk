@@ -22,6 +22,7 @@ import { EMPTY, Subscription, catchError, fromEvent, merge, switchMap, take, tap
 import { createTypeahead } from '../../../internals/typeahead';
 import { anchoredOverlayStrategy, injectBottomSheetStrategy } from '../../../overlay/strategies';
 import {
+  AccessibleNameControlDirective,
   AnchoredPanelOverlayRef,
   createAnchoredPanelController,
   FORM_FIELD_CONTROL_TYPES,
@@ -74,7 +75,10 @@ type CascaderSearchLike = {
     '[attr.data-readonly]': 'readonly() || null',
   },
 })
-export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] | null>, FormFieldControl {
+export class CascaderDirective<T = unknown>
+  extends AccessibleNameControlDirective
+  implements FormValueControl<T | T[] | null>, FormFieldControl
+{
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -159,8 +163,6 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
   /** @internal Keeps the form field in its focused style while the panel is open. */
   public expanded = computed(() => this.open());
-
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
   /** @internal */
   public registeredTrigger = signal<CascaderTriggerLike | null>(null);
@@ -416,6 +418,8 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   private typeaheadColumn = -1;
 
   constructor() {
+    super();
+
     mountTextFieldShellStyles();
 
     this.formField?.registerControl(this);

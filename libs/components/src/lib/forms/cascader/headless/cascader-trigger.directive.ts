@@ -17,6 +17,7 @@ import { CascaderDirective } from './cascader.directive';
     '[attr.aria-disabled]': 'cascader?.disabled() || null',
     '[attr.aria-required]': 'cascader?.required() || null',
     '[attr.aria-invalid]': 'cascader?.shouldDisplayError() || null',
+    '[attr.aria-label]': 'cascader?.ariaLabel() || null',
     '[attr.aria-labelledby]': 'cascader?.labelId()',
     '[attr.aria-describedby]': 'cascader?.describedBy()',
     '[attr.tabindex]': 'isNativeButton ? null : cascader?.disabled() ? -1 : 0',

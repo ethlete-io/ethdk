@@ -14,7 +14,12 @@ import {
 } from '@angular/core';
 import { FORM_FIELD, FormValueControl, ValidationError } from '@angular/forms/signals';
 import { Locale } from 'date-fns';
-import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from '../../form-field/headless';
+import {
+  AccessibleNameControlDirective,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+  FormFieldControlType,
+} from '../../form-field/headless';
 import { mountControlSuffixStyles } from '../../form-field/form-field-control-suffix-styles.component';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
@@ -60,6 +65,7 @@ type SideState = {
   },
 })
 export abstract class DateRangePickerInputDirective
+  extends AccessibleNameControlDirective
   implements FormValueControl<DateRangeValue>, FormFieldControl, DatePickerHost
 {
   private formFieldLabels = injectFormFieldLabels();
@@ -107,6 +113,15 @@ export abstract class DateRangePickerInputDirective
   public name = input('');
   public startPlaceholder = input('');
   public endPlaceholder = input('');
+
+  /**
+   * Accessible name of the start field, which is the named widget - the group around both fields
+   * takes the projected `<et-label>` (or the control's own `aria-label`) instead. Defaults to the
+   * domain's label set.
+   */
+  public startAriaLabel = input<string | null>(null);
+  /** Accessible name of the end field. See {@link startAriaLabel}. */
+  public endAriaLabel = input<string | null>(null);
   /**
    * Placeholder both fields show while `mixed` is set. Presentation only - a masked
    * date field cannot render arbitrary text, so the fields stay empty and the label
@@ -208,7 +223,16 @@ export abstract class DateRangePickerInputDirective
 
   public shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
+  /**
+   * A range is named as a group: by the author's `aria-label`/`aria-labelledby` on the control, or
+   * by naming both of its fields - either way the field's labelling guard has a name to find.
+   */
+  public override hasCustomAccessibleName = computed(
+    () =>
+      !!this.ariaLabel()?.trim() ||
+      !!this.ariaLabelledby()?.trim() ||
+      (!!this.startAriaLabel()?.trim() && !!this.endAriaLabel()?.trim()),
+  );
 
   /** The `[etInputMask]` pattern derived from the format in effect - `null` while `mask` is off or the format is refused. */
   public maskPattern = computed(() =>
@@ -240,6 +264,7 @@ export abstract class DateRangePickerInputDirective
     expanded: this.expanded,
     hasValue: this.hasValue,
     parseError: this.parseError,
+    hasCustomAccessibleName: this.hasCustomAccessibleName,
     activate: () => this.activate(),
   };
 
@@ -260,6 +285,8 @@ export abstract class DateRangePickerInputDirective
   });
 
   constructor() {
+    super();
+
     mountTextFieldShellStyles();
     mountControlSuffixStyles();
 

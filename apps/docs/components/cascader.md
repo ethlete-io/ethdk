@@ -145,6 +145,8 @@ On `et-cascader` (forwarded from the headless `[etCascader]` directive):
 | `mixedLabel`        | `string \| null`                | `null` ¹ | Trigger text shown while `mixed` is true.                                                                                                                                              |
 | `placeholder`       | `string`                        | `''`     | Shown on the trigger until a value is committed.                                                                                                                                       |
 | `searchPlaceholder` | `string \| null`                | `null` ¹ | Placeholder of the panel's [flat search](#flat-search) input (rendered only when the data source has a `search` hook).                                                                 |
+| `aria-label`        | `string \| null`                | `null`   | Names the trigger when no `et-label` is projected.                                                                                                                                     |
+| `aria-labelledby`   | `string \| null`                | `null`   | Ids naming the trigger. Takes precedence over a projected `et-label`.                                                                                                                  |
 
 ¹ `null` falls through to the domain's label set - [`FORM_FIELD_LABELS.mixed`](/components/localization) for `mixedLabel`, [`CASCADER_LABELS`](/components/localization) for `searchPlaceholder`, `backLabel` and the panel's loading/empty/retry states.
 
@@ -218,6 +220,7 @@ For [flat search](#flat-search), place an `input[etCascaderSearch]` in the surfa
 
 - The trigger is a `role="combobox"` with `aria-haspopup="tree"`, `aria-expanded`, and `aria-controls` pointing at the open tree panel; the panel is a `role="tree"` of `role="group"` columns and `role="treeitem"` nodes carrying `aria-level`, `aria-selected`, and `aria-expanded` on branches.
 - The panel takes focus on open. Roving tabindex keeps exactly one node tabbable.
+- A cascader named by something other than a projected `et-label` - a shared caption over a filter row - takes `aria-label` / `aria-labelledby` on the control itself; both reach the trigger, and either satisfies the field's [`ET2201`](/components/error-codes) labelling guard.
 
 | Key             | Action                                                                                      |
 | --------------- | ------------------------------------------------------------------------------------------- |

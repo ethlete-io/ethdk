@@ -86,7 +86,7 @@ adding the enter/leave animation CSS to eight components, which is a design deci
 fix. Note also that `form-field.component.ts` keeps its own copy of the presentation state machine
 rather than using `injectFormSupport`; folding the two is what the DX item really asks for.
 
-### 5. Controls that cannot be given an accessible name · L
+### 5. Controls that cannot be given an accessible name · L · **DONE 2026-08-22**
 
 The same omission repeated across every control that hand-rolls `FormValueControl` instead of
 extending `TextFieldControlDirective`: no `aria-label` / `aria-labelledby` inputs and no
@@ -99,6 +99,32 @@ rich-text-editor High "a required editor never announces `aria-required`", selec
 "`<et-description>` inside an option reaches no AT".
 Land it as the batch-07 DX item "make these extend `TextFieldControlDirective`" — that single change
 also closes phone/otp/tag's missing `hidden`, `warnings`, `maxLength` and `pending`.
+
+Done: one new base, `form-field/headless/accessible-name-control.directive.ts`
+(`AccessibleNameControlDirective` + the exported `ACCESSIBLE_NAME_INPUTS`, which
+`TEXT_FIELD_CONTROL_INPUTS` now spreads), owns `aria-label`/`aria-labelledby`, `labelId` and
+`hasCustomAccessibleName`. Fifteen control directives extend it — the two picker bases (six
+date/time controls), phone, tag, otp, cascader, rich-text-editor, dropzone, checkbox, switch,
+rating — and `text-field-control`, `duration-input`, `selection-list` and `select` dropped their
+four copies of the same members for it. Each control now renders the name on the element that
+carries its role (picker/phone/tag fields, the otp input, the select + cascader triggers, the
+select's inline search, the RTE editable, the dropzone trigger, the checkbox/switch/rating hosts);
+the ranges name their existing `role="group"` host and moved `startAriaLabel`/`endAriaLabel` onto
+the base so naming both sides counts as a name. Also in scope from the Resolves list: the RTE
+editable binds `aria-required`, `et-segmented-button` renders the label span its `aria-labelledby`
+names, and `et-description` gets an id that an option binds as `aria-describedby`. Contract kit
+`forms/testing/accessible-name.ts` (`describeAccessibleNameContract` + `resolveAccessibleName`) runs
+21 controls × 2 from `form-field/accessible-name.spec.ts`; `selection-list/option-aria.spec.ts` and
+`rich-text-editor/rich-text-editor.component.spec.ts` cover the other three. All were verified to
+fail without the fix.
+
+Still open on purpose: the slider and range slider (their name lives per thumb via
+`etSliderThumb label`, which already satisfies the guard, and a control-level name has no element to
+land on); `et-multi-language-rich-text-editor` (its directive is not a `FormFieldControl` — the
+inner editor registers, so forwarding a name needs a wrapper input, not this base); and the rest of
+the batch-07 DX item — phone/otp/tag still hand-roll `hidden`, `warnings`, `maxLength` and
+`pending`, since folding them into `TextFieldControlDirective` means re-parenting three controls
+with their own `shouldDisplayError`/`focus` semantics, not adding a naming base.
 
 ### 6. Selection groups: clicking the group caption mutates the form value · S · **DONE 2026-08-22**
 

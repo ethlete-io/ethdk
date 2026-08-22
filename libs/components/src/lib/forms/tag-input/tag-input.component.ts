@@ -2,6 +2,7 @@ import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { ColorInteractiveDirective } from '@ethlete/core';
 import { ChipComponent } from '../../chip';
 import { TagInputDirective, TagInputFieldDirective } from './headless';
+import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
 @Component({
   selector: 'et-tag-input',
@@ -30,6 +31,7 @@ import { TagInputDirective, TagInputFieldDirective } from './headless';
         'allowDuplicates',
         'normalizeTag',
         'maxTags',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },

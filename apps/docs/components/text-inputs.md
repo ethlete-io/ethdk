@@ -482,14 +482,14 @@ These controls inherit the field shell's label/error/`aria-describedby` wiring -
 see [Validation & accessibility](/components/forms#validation-accessibility) in
 the overview. Control-specific notes:
 
-- The text-field controls (`et-input`, `et-number-input`, `et-password-input`,
-  `et-color-input`, `et-textarea`) forward `aria-label`/`aria-labelledby` onto
-  the native element when you omit the `et-label` (a consumer `aria-labelledby`
-  overrides the projected label). A placeholder is **not** an accessible name.
+- Every control on this page - including `et-tag-input`, `et-phone-input` and
+  `et-otp-input` - forwards `aria-label`/`aria-labelledby` onto the native
+  element when you omit the `et-label` (a consumer `aria-labelledby` overrides
+  the projected label). A placeholder is **not** an accessible name.
 - The password reveal toggle exposes `aria-pressed`; the Caps Lock warning is a
   `role="status"`.
-- The phone-input host is labelled by the field label; the country trigger takes
-  its own `countryLabel` `aria-label`.
+- The phone-input's tel field is labelled by the field label (or the control's
+  own `aria-label`); the country trigger takes its own `countryLabel`.
 
 ## Theming
 

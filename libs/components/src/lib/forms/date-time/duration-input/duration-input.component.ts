@@ -2,6 +2,7 @@ import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input
 import { IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { DurationInputDirective, DurationInputFieldDirective } from './headless';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
 
 @Component({
   selector: 'et-duration-input',
@@ -27,8 +28,7 @@ import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labe
         'placeholder',
         'parseErrorMessage',
         'durationFormat',
-        'aria-label',
-        'aria-labelledby',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },

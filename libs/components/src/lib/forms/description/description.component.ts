@@ -1,4 +1,5 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ElementRef, inject, ViewEncapsulation } from '@angular/core';
+import { createComponentId } from '@ethlete/core';
 
 @Component({
   selector: 'et-description',
@@ -6,6 +7,7 @@ import { Component, ViewEncapsulation } from '@angular/core';
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-description',
+    '[attr.id]': 'id',
   },
   styles: `
     et-description {
@@ -15,4 +17,9 @@ import { Component, ViewEncapsulation } from '@angular/core';
     }
   `,
 })
-export class DescriptionComponent {}
+export class DescriptionComponent {
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /** The id whatever this describes points its `aria-describedby` at. */
+  public readonly id = this.elementRef.nativeElement.id || createComponentId('et-description');
+}

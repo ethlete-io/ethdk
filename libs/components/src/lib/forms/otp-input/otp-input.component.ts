@@ -4,6 +4,7 @@ import { FormErrorComponent } from '../form-field/form-error.component';
 import { FormWarningComponent } from '../form-field/form-warning.component';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
 import { OtpInputDirective } from './headless';
+import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
 @Component({
   selector: 'et-otp-input',
@@ -28,6 +29,7 @@ import { OtpInputDirective } from './headless';
         'length',
         'charset',
         'masked',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'touchedChange', 'complete'],
     },

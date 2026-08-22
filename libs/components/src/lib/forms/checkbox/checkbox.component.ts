@@ -12,6 +12,7 @@ import {
 import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
 import { FocusRingDirective } from '../../focus-ring';
 import { CheckboxDirective } from './headless';
+import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
 @Component({
   selector: 'et-checkbox',
@@ -21,7 +22,18 @@ import { CheckboxDirective } from './headless';
   hostDirectives: [
     {
       directive: CheckboxDirective,
-      inputs: ['checked', 'indeterminate', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name'],
+      inputs: [
+        'checked',
+        'indeterminate',
+        'touched',
+        'disabled',
+        'readonly',
+        'invalid',
+        'errors',
+        'required',
+        'name',
+        ...ACCESSIBLE_NAME_INPUTS,
+      ],
       outputs: ['checkedChange', 'indeterminateChange', 'touchedChange'],
     },
     ColorInteractiveDirective,

@@ -574,9 +574,11 @@ the overview. Notes specific to this family:
   error once touched: `parseErrorMessage` renders as an `et-form-error` with
   matching `aria-invalid` and `aria-describedby` - no silent invalid state.
 - A field in a dense row that cannot carry a visible label takes `aria-label` (or
-  `aria-labelledby`) on the control itself - `[attr.aria-label]` would land on the
-  wrapper and leave the native field unnamed, which throws
-  [`ET2201`](/components/error-codes) in dev mode.
+  `aria-labelledby`) on the control itself - all seven accept both, and forward
+  them onto the native field (a range names its `role="group"` host instead,
+  where `startAriaLabel` / `endAriaLabel` keep naming the two fields). Writing
+  `[attr.aria-label]` instead would land on the wrapper and leave the native
+  field unnamed, which throws [`ET2201`](/components/error-codes) in dev mode.
 - The picker overlay is a named `role="dialog"` - its name is the control's
   `dialogLabel`, falling through to [`DATE_TIME_LABELS`](/components/localization)
   (`chooseDate`, `chooseTime`, `chooseDateRange`, `chooseTimeRange`,

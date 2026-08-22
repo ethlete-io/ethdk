@@ -1,6 +1,11 @@
 import { DestroyRef, Directive, booleanAttribute, computed, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import {
+  AccessibleNameControlDirective,
+  FORM_FIELD_CONTROL_TYPES,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+} from '../../form-field/headless';
 import { TagInputFieldDirective } from './tag-input-field.directive';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
@@ -20,7 +25,10 @@ const defaultNormalizeTag = (raw: string) => {
     '[attr.data-mixed]': 'mixed() || null',
   },
 })
-export class TagInputDirective implements FormValueControl<string[]>, FormFieldControl {
+export class TagInputDirective
+  extends AccessibleNameControlDirective
+  implements FormValueControl<string[]>, FormFieldControl
+{
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -82,8 +90,6 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TAG_INPUT);
   public focused = signal(false);
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
   /** @internal */
   public registeredField = signal<TagInputFieldDirective | null>(null);
 
@@ -102,6 +108,8 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   public keySeparators = computed(() => this.separators().filter((separator) => separator.length > 1));
 
   constructor() {
+    super();
+
     mountTextFieldShellStyles();
 
     this.formField?.registerControl(this);

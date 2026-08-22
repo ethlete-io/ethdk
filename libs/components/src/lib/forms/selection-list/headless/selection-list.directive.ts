@@ -1,6 +1,11 @@
 import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import {
+  AccessibleNameControlDirective,
+  FORM_FIELD_CONTROL_TYPES,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+} from '../../form-field/headless';
 import { createSelectionState } from './internals/selection-state';
 import {
   SELECTION_LIST_MULTIPLE,
@@ -27,7 +32,10 @@ import {
     '[attr.data-readonly]': 'readonly() || null',
   },
 })
-export class SelectionListDirective implements SelectionListDirectiveBase, FormFieldControl {
+export class SelectionListDirective
+  extends AccessibleNameControlDirective
+  implements SelectionListDirectiveBase, FormFieldControl
+{
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private multipleOverride = inject(SELECTION_LIST_MULTIPLE, { optional: true });
@@ -49,15 +57,6 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
-  /**
-   * `aria-label` / `aria-labelledby` written on the group itself, for a set of options named by
-   * something other than a projected `<et-label>` - a filter toolbar whose caption sits elsewhere, a
-   * segmented control whose name should not be visible. Without them the field's dev-time labelling
-   * guard (ET2201) fires on a group that *is* labelled.
-   */
-  public ariaLabel = input<string | null>(null, { alias: 'aria-label' });
-  public ariaLabelledby = input<string | null>(null, { alias: 'aria-labelledby' });
-
   public multiple = computed(() => this.multipleOverride ?? this.multipleInput());
 
   public selection = createSelectionState<unknown, SelectionListItem>({
@@ -78,14 +77,9 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.SELECTION_LIST);
 
-  private registeredLabelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
-  /** A consumer-supplied `aria-labelledby` wins over the id of a projected `<et-label>`. */
-  public labelId = computed(() => this.ariaLabelledby()?.trim() || this.registeredLabelId());
-
-  public hasCustomAccessibleName = computed(() => !!this.ariaLabel()?.trim() || !!this.ariaLabelledby()?.trim());
-
   constructor() {
+    super();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
   }

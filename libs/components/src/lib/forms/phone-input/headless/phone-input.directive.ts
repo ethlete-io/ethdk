@@ -10,7 +10,12 @@ import {
   signal,
 } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import {
+  AccessibleNameControlDirective,
+  FORM_FIELD_CONTROL_TYPES,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+} from '../../form-field/headless';
 import { PHONE_COUNTRIES, matchCountryByDialCode, stripTrunkZero } from './phone-countries';
 import { PhoneInputFieldDirective } from './phone-input-field.directive';
 import { PhoneInputFlagDirective } from './phone-input-flag.directive';
@@ -29,7 +34,10 @@ const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
     '[attr.data-readonly]': 'readonly() || null',
   },
 })
-export class PhoneInputDirective implements FormValueControl<string>, FormFieldControl {
+export class PhoneInputDirective
+  extends AccessibleNameControlDirective
+  implements FormValueControl<string>, FormFieldControl
+{
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -66,8 +74,6 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.PHONE_INPUT);
   public focused = signal(false);
-
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
   /** @internal */
   public registeredField = signal<PhoneInputFieldDirective | null>(null);
@@ -128,6 +134,8 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   });
 
   constructor() {
+    super();
+
     mountTextFieldShellStyles();
     mountControlSuffixStyles();
 

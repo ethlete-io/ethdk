@@ -12,7 +12,12 @@ import {
   signal,
 } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import {
+  AccessibleNameControlDirective,
+  FORM_FIELD_CONTROL_TYPES,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+} from '../../form-field/headless';
 
 export type OtpInputCharset = 'numeric' | 'alphanumeric' | RegExp;
 
@@ -25,7 +30,10 @@ const CHARSET_PATTERNS: Record<'numeric' | 'alphanumeric', RegExp> = {
   selector: '[etOtpInput]',
   exportAs: 'etOtpInput',
 })
-export class OtpInputDirective implements FormValueControl<string>, FormFieldControl {
+export class OtpInputDirective
+  extends AccessibleNameControlDirective
+  implements FormValueControl<string>, FormFieldControl
+{
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
 
@@ -54,8 +62,6 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.OTP_INPUT);
   public focused = signal(false);
-
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
   /**
    * The native input this directive controls. Auto-initialized when the directive sits on
@@ -87,6 +93,8 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
   });
 
   constructor() {
+    super();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
 

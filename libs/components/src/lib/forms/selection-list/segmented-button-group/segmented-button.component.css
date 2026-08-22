@@ -65,6 +65,12 @@
     white-space: nowrap;
     user-select: none;
 
+    /* the option's aria-labelledby points at this span, so it wraps the content without
+       becoming a flex item of its own */
+    .et-segmented-button-label {
+      display: contents;
+    }
+
     .et-segmented-button-bg {
       position: absolute;
       inset: 0;

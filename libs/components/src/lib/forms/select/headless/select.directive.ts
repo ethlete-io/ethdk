@@ -26,6 +26,7 @@ import { createTypeahead } from '../../../internals/typeahead';
 import { createVirtualWindow } from '../../../internals/virtual-window';
 import { anchoredOverlayStrategy } from '../../../overlay/strategies';
 import {
+  AccessibleNameControlDirective,
   AnchoredPanelOverlayRef,
   createAnchoredPanelController,
   FORM_FIELD_CONTROL_TYPES,
@@ -88,7 +89,10 @@ const defaultNormalizeCustomValue = (raw: string) => {
     '[attr.data-mixed]': 'mixed() || null',
   },
 })
-export class SelectDirective implements FormValueControl<unknown>, FormFieldControl {
+export class SelectDirective
+  extends AccessibleNameControlDirective
+  implements FormValueControl<unknown>, FormFieldControl
+{
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -159,15 +163,6 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
    */
   public pickOnly = input(false, { transform: booleanAttribute });
 
-  /**
-   * `aria-label` / `aria-labelledby` written on the select itself, for a control named by something
-   * outside its field - a page-size select under a shared "Items per page:" label, a filter row where
-   * one caption covers several controls. Without them the field's dev-time labelling guard (ET2201)
-   * fires on a select that *is* labelled, just not by a projected `<et-label>`.
-   */
-  public ariaLabel = input<string | null>(null, { alias: 'aria-label' });
-  public ariaLabelledby = input<string | null>(null, { alias: 'aria-labelledby' });
-
   public queryChange = output<string>();
   public loadMore = output<void>();
   /** The user picked the "Add new" row (`allowAddNew`). Emits the current search query for prefilling. */
@@ -236,10 +231,6 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   /** @internal Keeps the form field in its focused style while the panel is open. */
   public expanded = computed(() => this.open());
-
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
-  public hasCustomAccessibleName = computed(() => !!this.ariaLabel()?.trim() || !!this.ariaLabelledby()?.trim());
 
   /** @internal */
   public registeredTrigger = signal<SelectTriggerDirective | null>(null);
@@ -567,6 +558,8 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   private typeahead = createTypeahead();
 
   constructor() {
+    super();
+
     mountTextFieldShellStyles();
 
     this.formField?.registerControl(this);

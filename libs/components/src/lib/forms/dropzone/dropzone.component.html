@@ -20,6 +20,7 @@
     [attr.tabindex]="singleEntry() ? '-1' : null"
     [attr.aria-invalid]="dropzoneDir.shouldDisplayError() || null"
     [attr.aria-describedby]="dropzoneDir.describedBy() || null"
+    [attr.aria-label]="dropzoneDir.ariaLabel() || null"
     [attr.aria-labelledby]="dropzoneDir.labelId() || null"
     (click)="openFilePicker()"
     (focus)="resetFilePickerState()"

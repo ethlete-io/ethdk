@@ -22,6 +22,7 @@ import { DateTimePickerPanesDirective } from '../internals/date-time-panes.direc
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
 import { DateTimeRangeInputDirective, DateTimeRangeInputFieldDirective } from './headless';
+import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
 
 /** Which pane the bottom-sheet tabs show; the desktop panel renders both side by side. */
 type DateTimeRangePane = 'dates' | 'times';
@@ -82,6 +83,9 @@ const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
         'maxTime',
         'timeFilter',
         'pickerOpen',
+        'startAriaLabel',
+        'endAriaLabel',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],
     },
@@ -89,6 +93,7 @@ const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
   host: {
     class: 'et-date-time-range-input',
     role: 'group',
+    '[attr.aria-label]': 'rangeInput.ariaLabel() || null',
     '[attr.aria-labelledby]': 'rangeInput.labelId()',
   },
 })
@@ -99,8 +104,6 @@ export class DateTimeRangeInputComponent {
 
   protected rangeInput = inject(DateTimeRangeInputDirective);
 
-  public startAriaLabel = input<string | null>(null);
-  public endAriaLabel = input<string | null>(null);
   public pickerTriggerLabel = input<string | null>(null);
   public dialogLabel = input<string | null>(null);
   public minuteStep = input(5, { transform: numberAttribute });
@@ -116,10 +119,12 @@ export class DateTimeRangeInputComponent {
   public clearLabel = input<string | null>(null);
 
   /** The string in effect: this instance's `startAriaLabel`, else the domain's label set. */
-  protected resolvedStartAriaLabel = computed(() => this.startAriaLabel() ?? this.dateTimeLabels().startDateTime);
+  protected resolvedStartAriaLabel = computed(
+    () => this.rangeInput.startAriaLabel() ?? this.dateTimeLabels().startDateTime,
+  );
 
   /** The string in effect: this instance's `endAriaLabel`, else the domain's label set. */
-  protected resolvedEndAriaLabel = computed(() => this.endAriaLabel() ?? this.dateTimeLabels().endDateTime);
+  protected resolvedEndAriaLabel = computed(() => this.rangeInput.endAriaLabel() ?? this.dateTimeLabels().endDateTime);
 
   /** The string in effect: this instance's `pickerTriggerLabel`, else the domain's label set. */
   protected resolvedPickerTriggerLabel = computed(

@@ -14,6 +14,7 @@ import {
 import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
 import { injectPhoneInputLabels } from '../../forms/phone-input/phone-input-labels';
 import { ControlSuffixDirective, FormFieldBarrierDirective } from '../form-field/partials';
+import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
 @Component({
   selector: 'et-phone-input',
@@ -46,6 +47,7 @@ import { ControlSuffixDirective, FormFieldBarrierDirective } from '../form-field
         'mixedLabel',
         'defaultCountry',
         'preferredCountries',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },

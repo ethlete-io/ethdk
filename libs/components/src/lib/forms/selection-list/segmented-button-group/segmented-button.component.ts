@@ -7,7 +7,9 @@ import { SegmentedButtonGroupComponent } from './segmented-button-group.componen
   selector: 'et-segmented-button',
   template: `
     <div #background class="et-segmented-button-bg"></div>
-    <ng-content />
+    <span [attr.id]="optionDirective.labelId()" class="et-segmented-button-label">
+      <ng-content />
+    </span>
   `,
   styleUrl: './segmented-button.component.css',
   encapsulation: ViewEncapsulation.None,

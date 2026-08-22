@@ -1,6 +1,7 @@
 import {
   booleanAttribute,
   computed,
+  contentChild,
   DestroyRef,
   Directive,
   ElementRef,
@@ -9,6 +10,7 @@ import {
   model,
   signal,
 } from '@angular/core';
+import { DescriptionComponent } from '../../description/description.component';
 import { SELECTION_LIST_TOKEN } from './selection-list.tokens';
 
 let uniqueOptionLabelId = 0;
@@ -29,6 +31,7 @@ const UNBOUND_VALUE = /* @__PURE__ */ Symbol('et-selection-option-unbound');
     // name from the label span only - a projected <et-description> lives in the host too, so
     // relying on name-from-contents would fold the description into the accessible name
     '[attr.aria-labelledby]': 'labelId()',
+    '[attr.aria-describedby]': 'descriptionId()',
     '[attr.aria-disabled]': 'effectiveDisabled() || null',
     // only in multi mode: role=checkbox supports aria-readonly, role=radio does not - the
     // single-select case reflects it on the radiogroup host instead
@@ -54,6 +57,8 @@ export class SelectionOptionDirective {
   public checked = model(false);
   public disabled = input(false, { transform: booleanAttribute });
 
+  private description = contentChild(DescriptionComponent);
+
   public effectiveDisabled = computed(() => this.disabled() || (this.list?.disabled() ?? false));
   public effectiveReadonly = computed(() => this.list?.readonly() ?? false);
   // multi-select lives in a `role="group"`, where `option` is invalid ARIA (it's listbox-only) -
@@ -61,6 +66,12 @@ export class SelectionOptionDirective {
   public role = computed(() => (this.list?.multiple() ? 'checkbox' : 'radio'));
 
   public labelId = signal(`et-selection-option-label-${uniqueOptionLabelId++}`);
+
+  /**
+   * The id of a projected `<et-description>`. The option pins its name to the label span, so the
+   * description is outside the name computation and only reaches assistive tech as a description.
+   */
+  public descriptionId = computed(() => this.description()?.id ?? null);
 
   // reading through this computed keeps registry-wide reads (value↔checked sync) crash-free
   // while the required `value` input has not executed its binding yet

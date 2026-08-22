@@ -36,6 +36,7 @@ import { SelectDirective } from './select.directive';
     '[attr.aria-required]': 'select?.required() || null',
     '[attr.aria-invalid]': 'select?.shouldDisplayError() || null',
     '[attr.aria-describedby]': 'describedBy()',
+    '[attr.aria-label]': 'select?.ariaLabel() || null',
     '[attr.aria-labelledby]': 'select?.labelId() || null',
     '[disabled]': 'select?.disabled() || false',
     '[readOnly]': 'select?.readonly() || isFull()',

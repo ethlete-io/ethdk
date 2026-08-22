@@ -39,6 +39,7 @@ import { RICH_TEXT_EDITOR_FLOATING_TOOLBAR } from './rich-text-editor-floating-t
 import { richTextEditorToolLabel } from './rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_LINK_EDITOR } from './rich-text-editor-link-editor.token';
 import { RICH_TEXT_EDITOR_TOOL, RICH_TEXT_EDITOR_TOOLS, RichTextEditorToolDefinition } from './rich-text-editor-tools';
+import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
 /** How often the docked toolbar re-checks where the keyboard is, to recover a missed viewport event. */
 const DOCKED_TOOLBAR_POLL_MS = 500;
@@ -104,6 +105,7 @@ const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
         'tools',
         'autoformat',
         'labels',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'touchedChange'],
     },

@@ -1,6 +1,11 @@
 import { DestroyRef, Directive, booleanAttribute, computed, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../../form-field/headless';
+import {
+  AccessibleNameControlDirective,
+  FORM_FIELD_CONTROL_TYPES,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+} from '../../../form-field/headless';
 import { deriveDurationFormatSpec, formatDuration, parseDuration } from './internals/duration-format';
 import { DurationInputFieldDirective } from './duration-input-field.directive';
 import { injectFormFieldLabels } from '../../../../forms/form-field/form-field-labels';
@@ -20,7 +25,10 @@ import { mountTextFieldShellStyles } from '../../../form-field/form-field-text-s
     '[attr.data-mixed]': 'mixed() || null',
   },
 })
-export class DurationInputDirective implements FormValueControl<number | null>, FormFieldControl {
+export class DurationInputDirective
+  extends AccessibleNameControlDirective
+  implements FormValueControl<number | null>, FormFieldControl
+{
   private dateTimeLabels = injectDateTimeLabels();
 
   private formFieldLabels = injectFormFieldLabels();
@@ -48,12 +56,6 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
 
   /** Message the form field shows when typed text can't be parsed as a duration. */
   public parseErrorMessage = input<string | null>(null);
-
-  /** Author-supplied `aria-label`, forwarded onto the field. Names a control with no projected label. */
-  public ariaLabel = input<string | null>(null, { alias: 'aria-label' });
-
-  /** Author-supplied `aria-labelledby`, forwarded onto the field. Takes precedence over the projected label. */
-  public ariaLabelledby = input<string | null>(null, { alias: 'aria-labelledby' });
 
   /** The segment layout: `h`/`m`/`s`/`S` token runs plus separators. @default `'mm:ss'` */
   public durationFormat = input('mm:ss');
@@ -86,14 +88,12 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DURATION_INPUT);
 
-  public labelId = computed(() => this.ariaLabelledby()?.trim() || (this.formField?.registeredLabel()?.id() ?? null));
-
-  public hasCustomAccessibleName = computed(() => !!this.ariaLabel()?.trim() || !!this.ariaLabelledby()?.trim());
-
   /** @internal */
   public registeredField = signal<DurationInputFieldDirective | null>(null);
 
   constructor() {
+    super();
+
     mountTextFieldShellStyles();
 
     this.formField?.registerControl(this);

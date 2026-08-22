@@ -35,6 +35,7 @@ import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupp
 import { DropzoneEntry, DROPZONE_ENTRY_STATUSES, formatFileSize } from './headless/dropzone-entry';
 import { DropzoneDirective } from './headless/dropzone.directive';
 import { injectDropzoneLabels } from '../../forms/dropzone/dropzone-labels';
+import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
 @Component({
   selector: 'et-dropzone',
@@ -67,6 +68,7 @@ import { injectDropzoneLabels } from '../../forms/dropzone/dropzone-labels';
         'name',
         'upload',
         'multiple',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: [
         'valueChange',

@@ -12,6 +12,7 @@ import { SelectPanelComponent } from './select-panel.component';
 import { SelectVirtualOptionComponent } from './select-virtual-option.component';
 import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
 import { injectSelectLabels } from '../../forms/select/select-labels';
+import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
 @Component({
   selector: 'et-select',
@@ -62,10 +63,7 @@ import { injectSelectLabels } from '../../forms/select/select-labels';
         'hasMoreItems',
         'pickOnly',
         'mirrorPanelWidth',
-        // Named by something outside the field (a shared caption) rather than a projected <et-label> -
-        // forwarded so the field's labelling guard sees the name. See SelectDirective.ariaLabel.
-        'aria-label',
-        'aria-labelledby',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: [
         'valueChange',

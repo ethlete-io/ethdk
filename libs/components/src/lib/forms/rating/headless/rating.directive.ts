@@ -10,7 +10,12 @@ import {
   signal,
 } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import {
+  AccessibleNameControlDirective,
+  FORM_FIELD_CONTROL_TYPES,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+} from '../../form-field/headless';
 import { RatingIconDirective } from './rating-icon.directive';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
@@ -34,7 +39,8 @@ export type RatingIconState = 'full' | 'half' | 'empty';
     '[attr.aria-disabled]': 'disabled() || null',
     '[attr.aria-required]': 'required() || null',
     '[attr.aria-invalid]': 'shouldDisplayError() || null',
-    '[attr.aria-labelledby]': 'labelId()',
+    '[attr.aria-label]': 'ariaLabel() || null',
+    '[attr.aria-labelledby]': 'labelId() || null',
     '[attr.aria-describedby]': 'describedBy()',
     '[attr.data-disabled]': 'disabled() || null',
     '[attr.data-readonly]': 'readonly() || null',
@@ -44,7 +50,10 @@ export type RatingIconState = 'full' | 'half' | 'empty';
     '(pointerleave)': 'clearHover()',
   },
 })
-export class RatingDirective implements FormValueControl<number | null>, FormFieldControl {
+export class RatingDirective
+  extends AccessibleNameControlDirective
+  implements FormValueControl<number | null>, FormFieldControl
+{
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -96,8 +105,6 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.RATING);
   public focused = signal(false);
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
   /** @internal */
   public registeredIconTemplate = signal<RatingIconDirective | null>(null);
 
@@ -112,6 +119,8 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
   });
 
   constructor() {
+    super();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
   }

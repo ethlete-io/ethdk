@@ -1,6 +1,7 @@
 import { Component, inject, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
 import { SwitchDirective } from './headless';
+import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
 @Component({
   selector: 'et-switch',
@@ -10,7 +11,18 @@ import { SwitchDirective } from './headless';
   hostDirectives: [
     {
       directive: SwitchDirective,
-      inputs: ['checked', 'indeterminate', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name'],
+      inputs: [
+        'checked',
+        'indeterminate',
+        'touched',
+        'disabled',
+        'readonly',
+        'invalid',
+        'errors',
+        'required',
+        'name',
+        ...ACCESSIBLE_NAME_INPUTS,
+      ],
       outputs: ['checkedChange', 'indeterminateChange', 'touchedChange'],
     },
     ColorInteractiveDirective,

@@ -6,6 +6,7 @@ import { FORM_FIELD_SIZES, FormFieldSize } from '../../form-field/form-field.var
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../../form-field/headless';
 import { SELECTION_LIST_MULTIPLE, SelectionListDirective } from '../headless';
 import { SelectionListOrientation } from '../selection-list.types';
+import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
 
 @Component({
   selector: 'et-checkbox-group',
@@ -28,8 +29,7 @@ import { SelectionListOrientation } from '../selection-list.types';
         'errors',
         'required',
         'name',
-        'aria-label',
-        'aria-labelledby',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },

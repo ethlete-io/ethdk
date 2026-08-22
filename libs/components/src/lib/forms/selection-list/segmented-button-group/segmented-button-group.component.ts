@@ -16,6 +16,7 @@ import { FormWarningComponent } from '../../form-field/form-warning.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../../form-field/form-field.variants';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../../form-field/headless';
 import { SelectionListDirective } from '../headless';
+import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
 
 /** How a segmented button group presents its selection. See {@link SegmentedButtonGroupComponent.variant}. */
 export const SEGMENTED_BUTTON_GROUP_VARIANTS = {
@@ -47,8 +48,7 @@ export type SegmentedButtonGroupVariant =
         'errors',
         'required',
         'name',
-        'aria-label',
-        'aria-labelledby',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },

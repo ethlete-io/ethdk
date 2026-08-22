@@ -1,3 +1,4 @@
+export * from './accessible-name-control.directive';
 export * from './field-warnings';
 export * from './form-field-errors';
 export * from './form-field.directive';

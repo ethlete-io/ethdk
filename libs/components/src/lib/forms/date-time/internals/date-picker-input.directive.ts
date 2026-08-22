@@ -14,7 +14,12 @@ import {
 } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { Locale } from 'date-fns';
-import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from '../../form-field/headless';
+import {
+  AccessibleNameControlDirective,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+  FormFieldControlType,
+} from '../../form-field/headless';
 import { injectDateLocale } from '../date-time-formats';
 import { DatePickerHost, DatePickerSurfaceBase, DatePickerTriggerBase } from '../picker/date-picker-host';
 import { createDatePickerOverlay } from './date-picker-overlay';
@@ -52,6 +57,7 @@ export type DatePickerInputFieldBase = {
   },
 })
 export abstract class DatePickerInputDirective
+  extends AccessibleNameControlDirective
   implements FormValueControl<string | null>, FormFieldControl, DatePickerHost
 {
   private formFieldLabels = injectFormFieldLabels();
@@ -163,8 +169,6 @@ export abstract class DatePickerInputDirective
   /** What the field renders as its placeholder - `mixedLabel` while mixed masks the value. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
   /** The `[etInputMask]` pattern derived from the format in effect - `null` while `mask` is off or the format is refused. */
   public maskPattern = computed(() =>
     this.mask() ? maskPatternFromDisplayFormat(this.effectiveDisplayFormat()) : null,
@@ -187,6 +191,8 @@ export abstract class DatePickerInputDirective
   });
 
   constructor() {
+    super();
+
     mountTextFieldShellStyles();
     mountControlSuffixStyles();
 

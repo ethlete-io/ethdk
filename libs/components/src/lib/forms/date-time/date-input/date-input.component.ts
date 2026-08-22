@@ -9,6 +9,7 @@ import { DateInputDirective, DateInputFieldDirective } from './headless';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
 import { ControlSuffixDirective } from '../../form-field/partials';
+import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
 
 @Component({
   selector: 'et-date-input',
@@ -55,6 +56,7 @@ import { ControlSuffixDirective } from '../../form-field/partials';
         'dateClass',
         'weekNumbers',
         'pickerOpen',
+        ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],
     },

@@ -613,7 +613,9 @@ it is already in your language. See the [localization guide](/components/localiz
 
 The editable region is a `role="textbox" aria-multiline="true"` and inherits the field shell's
 `aria-describedby` / `aria-labelledby` / `*`-marker wiring, so errors and hints work exactly as they
-do for [text fields](/components/forms#validation-accessibility). Toolbar buttons expose their
+do for [text fields](/components/forms#validation-accessibility). A `required` editor also announces
+itself as required (`aria-required`), and an editor named from outside its field takes `aria-label` /
+`aria-labelledby` on the control itself. Toolbar buttons expose their
 pressed state - buttons that open a menu or popover (block style, alignment, table, link) also show
 it while their popover is open (announced via `aria-expanded`, not `aria-pressed`, for the menu
 triggers). Undo and redo are actions rather than toggles, so they never report a pressed state; they

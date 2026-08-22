@@ -2,7 +2,12 @@ import { DOCUMENT } from '@angular/common';
 import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { htmlToMarkdown, injectRenderer, injectStyleManager, markdownToHtml, RuntimeError } from '@ethlete/core';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import {
+  AccessibleNameControlDirective,
+  FORM_FIELD_CONTROL_TYPES,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+} from '../../form-field/headless';
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { injectRichTextEditorLabels, RichTextEditorLabels } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.token';
@@ -49,7 +54,10 @@ const missingDomFeature = (method: string, provider: string) =>
   exportAs: 'etRichTextEditor',
   providers: [provideRichTextEditorDom()],
 })
-export class RichTextEditorDirective implements FormValueControl<string>, FormFieldControl {
+export class RichTextEditorDirective
+  extends AccessibleNameControlDirective
+  implements FormValueControl<string>, FormFieldControl
+{
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
@@ -166,8 +174,6 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.RICH_TEXT);
   public focused = signal(false);
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
   public boldActive = signal(false);
   public italicActive = signal(false);
   public strikeActive = signal(false);
@@ -251,6 +257,8 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public linkEditorOpen = signal(false);
 
   constructor() {
+    super();
+
     injectStyleManager().mount(FormFieldRichTextStylesComponent);
 
     mountTextFieldShellStyles();

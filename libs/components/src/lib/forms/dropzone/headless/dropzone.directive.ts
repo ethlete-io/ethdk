@@ -16,7 +16,12 @@ import {
 } from '@angular/core';
 import { FORM_FIELD, FormValueControl, ValidationError } from '@angular/forms/signals';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import {
+  AccessibleNameControlDirective,
+  FORM_FIELD_CONTROL_TYPES,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+} from '../../form-field/headless';
 import {
   createExistingDropzoneEntry,
   createFileDropzoneEntry,
@@ -64,6 +69,7 @@ const valuesEqual = (a: unknown, b: unknown) => {
   },
 })
 export class DropzoneDirective<TValue = unknown>
+  extends AccessibleNameControlDirective
   implements FormValueControl<TValue | TValue[] | null>, FormFieldControl
 {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -150,12 +156,12 @@ export class DropzoneDirective<TValue = unknown>
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DROPZONE);
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
   /** @internal */
   public focusTarget = signal<HTMLElement | null>(null);
 
   constructor() {
+    super();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => {
       this.formField?.unregisterControl(this);

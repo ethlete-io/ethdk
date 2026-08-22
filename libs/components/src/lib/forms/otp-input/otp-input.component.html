@@ -23,6 +23,7 @@
     #nativeInput
     [attr.aria-describedby]="otp.describedBy() || null"
     [attr.aria-invalid]="otp.shouldDisplayError() || null"
+    [attr.aria-label]="otp.ariaLabel() || null"
     [attr.aria-labelledby]="otp.labelId() || null"
     [attr.inputmode]="otp.inputMode()"
     [attr.maxlength]="otp.length()"
