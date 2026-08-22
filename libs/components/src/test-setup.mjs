@@ -2,6 +2,7 @@ import '@analogjs/vitest-angular/setup-serializers';
 import '@analogjs/vitest-angular/setup-snapshots';
 import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import '@angular/compiler';
+import { applyStrictTestEnvironment } from '../../../tools/testing/strict-test-environment';
 
 const isRecord = (value) => {
   if (typeof value !== 'object' || value === null) {
@@ -61,4 +62,5 @@ const suppressJSDOMCssParsingNoise = () => {
 };
 
 setupTestBed();
+applyStrictTestEnvironment();
 suppressJSDOMCssParsingNoise();
