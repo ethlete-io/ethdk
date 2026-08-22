@@ -30,6 +30,18 @@ export const directiveAt = <T>(fixture: ComponentFixture<unknown>, type: Type<T>
 export const hostElement = (fixture: ComponentFixture<unknown>) =>
   fixture.debugElement.children[0]!.nativeElement as HTMLElement;
 
+/**
+ * Queries the fixture's root element, narrowing `nativeElement` (typed `any`) to `HTMLElement`
+ * once - a generic call directly through `fixture.nativeElement.querySelectorAll<E>(...)` fails
+ * with TS2347 and collapses every downstream member access to `{}`.
+ */
+export const queryAll = <E extends Element = HTMLElement>(fixture: ComponentFixture<unknown>, selector: string) =>
+  Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<E>(selector));
+
+/** Single-result counterpart of {@link queryAll}. */
+export const query = <E extends Element = HTMLElement>(fixture: ComponentFixture<unknown>, selector: string) =>
+  (fixture.nativeElement as HTMLElement).querySelector<E>(selector);
+
 export const pressKey = (target: EventTarget, key: string, init: KeyboardEventInit = {}) => {
   const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
 
