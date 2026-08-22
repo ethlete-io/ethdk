@@ -160,7 +160,7 @@ Resolves: cascader High ×3 — "out-of-order level responses destroy the deeper
 into the search box instead of activating the node", "single mode keeps the previous value's
 breadcrumb".
 
-### 15. Tabs: insertion order vs template index desync · S
+### 15. Tabs: insertion order vs template index desync · S · **DONE 2026-08-22**
 
 `tab-bar.directive.ts:82-84` registers triggers in creation order while everything else indexes by
 `$index`, so inserting a tab anywhere but the end permanently mismatches `aria-selected`, the roving
@@ -168,6 +168,7 @@ tab stop, `aria-labelledby` and the visible panel. Fix per the DX item: reuse `s
 masonry and the accordion already use for this. (The durable fix — the Features item "key selection
 off tab identity, not an index" — is _Improvements_ material; do the sort first.)
 Resolves: tabs High "a tab inserted before the selected one desyncs selection from the panel".
+Done: `triggers` is a `sortByDomOrder` computed over the raw registrations, mirroring masonry.
 
 ### 16. Gesture and stream teardown leaks · S
 

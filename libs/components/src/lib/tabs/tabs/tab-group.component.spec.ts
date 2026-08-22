@@ -322,6 +322,25 @@ class HeadlessTabsHostComponent {
   labels = signal(['First', 'Second', 'Third']);
 }
 
+describe('TabBarDirective trigger order', () => {
+  it('keeps the triggers in DOM order when a tab is inserted before existing ones', () => {
+    const fixture = TestBed.createComponent(HeadlessTabsHostComponent);
+    fixture.detectChanges();
+
+    const bar = fixture.debugElement.query(By.directive(TabBarDirective)).injector.get(TabBarDirective);
+
+    fixture.componentInstance.labels.set(['Zeroth', 'First', 'Second', 'Third']);
+    fixture.detectChanges();
+
+    expect(bar.triggers().map((trigger) => trigger.getElement().textContent?.trim())).toEqual([
+      'Zeroth',
+      'First',
+      'Second',
+      'Third',
+    ]);
+  });
+});
+
 describe('TabPanelDirective registration', () => {
   it('unregisters a panel that is removed from the DOM', () => {
     const fixture = TestBed.createComponent(HeadlessTabsHostComponent);

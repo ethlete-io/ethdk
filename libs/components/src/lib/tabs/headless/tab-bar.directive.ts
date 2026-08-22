@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap, timer } from 'rxjs';
+import { sortByDomOrder } from '../../internals/dom-order';
 import { TabBarTriggerDirective } from './tab-bar-trigger.directive';
 import { TAB_BAR_TOKEN } from './tab-bar.tokens';
 import {
@@ -40,8 +41,12 @@ export class TabBarDirective {
   public fit = input<TabBarFit>(TAB_BAR_FITS.CONTENT);
   public variant = input<TabBarVariant>(TAB_BAR_VARIANTS.SECONDARY);
   public divider = input(true, { transform: booleanAttribute });
-  /** @internal */
-  public triggers = signal<TabBarTriggerDirective[]>([]);
+  private registeredTriggers = signal<TabBarTriggerDirective[]>([]);
+  /**
+   * @internal The triggers in DOM order - registration follows creation order, so a tab inserted
+   * anywhere but the end would otherwise desync every `$index`-keyed consumer from the rendered bar.
+   */
+  public triggers = computed(() => sortByDomOrder(this.registeredTriggers(), (trigger) => trigger.getElement()));
   /** @internal */
   public focusedIndex = signal(-1);
   public selectedIndex = signal(0);
@@ -83,12 +88,12 @@ export class TabBarDirective {
 
   /** @internal */
   public registerTrigger(trigger: TabBarTriggerDirective) {
-    this.triggers.update((list) => [...list, trigger]);
+    this.registeredTriggers.update((list) => [...list, trigger]);
   }
 
   /** @internal */
   public unregisterTrigger(trigger: TabBarTriggerDirective) {
-    this.triggers.update((list) => list.filter((t) => t !== trigger));
+    this.registeredTriggers.update((list) => list.filter((t) => t !== trigger));
   }
 
   /** @internal */
