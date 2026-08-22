@@ -1,1 +1,1 @@
-export { StageListView } from './stageList.view';
+export type { StageListView } from './stageList.view';

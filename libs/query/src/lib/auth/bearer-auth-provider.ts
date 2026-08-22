@@ -57,7 +57,7 @@ import {
 } from './features';
 import { BearerAuthSessionAdoption } from './internal';
 
-export { AnyQueryBuilder } from './bearer-auth-query-builders';
+export type { AnyQueryBuilder } from './bearer-auth-query-builders';
 
 export type BearerAuthExecutionStateLoading<TType extends string = string> = {
   type: TType;

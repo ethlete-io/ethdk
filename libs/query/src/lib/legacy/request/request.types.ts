@@ -35,7 +35,7 @@ export type RequestError<Detail = unknown> = {
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export type RequestHeaders = Record<string, string>;
-export { BuildQueryStringConfig, PathParams, QueryParams } from '../../http/internal/request-route';
+export type { BuildQueryStringConfig, PathParams, QueryParams } from '../../http/internal/request-route';
 
 /**
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.

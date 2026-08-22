@@ -1,1 +1,1 @@
-export { ClubListView } from './clubList.view';
+export type { ClubListView } from './clubList.view';

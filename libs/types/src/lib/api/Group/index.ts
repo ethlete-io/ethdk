@@ -1,4 +1,4 @@
-export { GroupListViewUnion } from './groupListView.union';
-export { GroupListView } from './groupList.view';
-export { GroupRankingView } from './groupRanking.view';
-export { GroupDetailView } from './groupDetail.view';
+export type { GroupListViewUnion } from './groupListView.union';
+export type { GroupListView } from './groupList.view';
+export type { GroupRankingView } from './groupRanking.view';
+export type { GroupDetailView } from './groupDetail.view';
