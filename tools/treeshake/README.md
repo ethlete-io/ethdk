@@ -66,7 +66,8 @@ Two shapes make a dependency unshakeable, and neither is visible in `--external`
   and `INLINES` cost ~2.4 kB gz that way, which is why `rich-text-node-types.ts` keeps local literal
   maps and every import of that package stays `import type`.
 
-`goldens.json` carries one `"thirdParty": true` entry per lib for exactly this surface.
+`goldens.json` carries one `"thirdParty": true` floor per lib for exactly this surface, plus
+`menu-anchored-deps` - the only entry in which `@floating-ui/dom`'s middleware is visible.
 
 ### Consumer caveat
 

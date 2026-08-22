@@ -7,8 +7,9 @@
     "The floors are what an app pays for importing one tiny symbol; the rest is one real entry per",
     "big domain, so a regression can be attributed instead of just noticed.",
     "`thirdParty: true` externalizes only the framework, so date-fns / socket.io-client /",
-    "@contentful/rich-text-types count towards the size. Those entries - one per lib - are the only",
-    "ones that catch a dependency that stopped tree-shaking (e.g. a TS enum imported as a value)."
+    "@contentful/rich-text-types count towards the size. Those entries - one floor per lib, plus",
+    "`menu-anchored-deps` for @floating-ui/dom's middleware - are the only ones that catch a",
+    "dependency that stopped tree-shaking (e.g. a TS enum imported as a value)."
   ],
   "tolerance": {
     "percent": 2,
@@ -67,6 +68,34 @@
       "entry": "import { SELECT_IMPORTS } from '@ethlete/components';\nconsole.log(SELECT_IMPORTS);",
       "gzip": 45687
     },
+    "phone-input": {
+      "entry": "import { PHONE_INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(PHONE_INPUT_IMPORTS);",
+      "gzip": 42503
+    },
+    "date-input": {
+      "entry": "import { DATE_INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(DATE_INPUT_IMPORTS);",
+      "gzip": 50365
+    },
+    "date-time-input": {
+      "entry": "import { DATE_TIME_INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(DATE_TIME_INPUT_IMPORTS);",
+      "gzip": 70845
+    },
+    "duration-input": {
+      "entry": "import { DURATION_INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(DURATION_INPUT_IMPORTS);",
+      "gzip": 10331
+    },
+    "scrollable": {
+      "entry": "import { SCROLLABLE_IMPORTS } from '@ethlete/components';\nconsole.log(SCROLLABLE_IMPORTS);",
+      "gzip": 15336
+    },
+    "stream-youtube-slot": {
+      "entry": "import { STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS } from '@ethlete/components';\nconsole.log(STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS);",
+      "gzip": 32738
+    },
+    "stream-all": {
+      "entry": "import { STREAM_ALL_IMPORTS } from '@ethlete/components';\nconsole.log(STREAM_ALL_IMPORTS);",
+      "gzip": 38025
+    },
     "overlay-dialog": {
       "entry": "import { defineOverlay, dialogOverlayStrategy, OVERLAY_IMPORTS } from '@ethlete/components';\nconsole.log(defineOverlay, dialogOverlayStrategy, OVERLAY_IMPORTS);",
       "gzip": 21921
@@ -112,6 +141,11 @@
     "components-deps": {
       "entry": "import { paginate } from '@ethlete/components';\nconsole.log(paginate);",
       "gzip": 4355,
+      "thirdParty": true
+    },
+    "menu-anchored-deps": {
+      "entry": "import { MENU_IMPORTS } from '@ethlete/components';\nconsole.log(MENU_IMPORTS);",
+      "gzip": 47546,
       "thirdParty": true
     },
     "contentful-deps": {
