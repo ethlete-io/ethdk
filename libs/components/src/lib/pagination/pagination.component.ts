@@ -11,7 +11,7 @@ import {
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
-import { signalHostElementDimensions } from '@ethlete/core';
+import { createComponentId, signalHostElementDimensions } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../button';
 import { PaginationDirective } from './headless/pagination.directive';
 import { PaginationRangeContext } from './pagination-labels';
@@ -116,6 +116,8 @@ export class PaginationComponent {
   private listEl = viewChild<ElementRef<HTMLUListElement>>('paginationList');
   private itemEls = viewChildren<ElementRef<HTMLElement>>('paginationItem');
 
+  protected jumpInputId = createComponentId('et-pagination-jump-input');
+
   // Re-fit the page window whenever the paginator's own width changes (viewport resize, footer layout).
   private hostDimensions = signalHostElementDimensions();
 
@@ -186,6 +188,7 @@ export class PaginationComponent {
       currentPage: this.pagination.page(),
       totalPages: this.pagination.totalPages(),
       hideFirstLast: true,
+      hidePreviousNext: this.pagination.hidePreviousNext(),
       labels: this.pagination.resolvedLabels(),
     });
 

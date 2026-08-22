@@ -1,8 +1,19 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { PaginationDirective } from './headless/pagination.directive';
 import { PaginationRangeContext, providePaginationLabels } from './pagination-labels';
 import { PaginationComponent } from './pagination.component';
+
+@Component({
+  selector: 'et-two-paginators-test',
+  imports: [PaginationComponent],
+  template: `
+    <et-pagination [totalPages]="5" [page]="1" showJumpTo />
+    <et-pagination [totalPages]="5" [page]="1" showJumpTo />
+  `,
+})
+class TwoPaginatorsComponent {}
 
 const create = (): ComponentFixture<PaginationComponent> => {
   const fixture = TestBed.createComponent(PaginationComponent);
@@ -203,6 +214,38 @@ describe('PaginationComponent', () => {
         .querySelector('.et-pagination-status .et-pagination-readout-text')
         ?.textContent?.trim(),
     ).toBe('1–10 von 40');
+  });
+
+  it('omits the compact pager controls when hidePreviousNext is set', () => {
+    const fixture = TestBed.createComponent(PaginationComponent);
+    fixture.componentRef.setInput('totalPages', 5);
+    fixture.componentRef.setInput('page', 2);
+    fixture.componentRef.setInput('compact', true);
+    fixture.componentRef.setInput('hidePreviousNext', true);
+    fixture.detectChanges();
+
+    const nav = fixture.nativeElement as HTMLElement;
+
+    expect(nav.querySelectorAll('[data-type="previous"]').length).toBe(0);
+    expect(nav.querySelectorAll('[data-type="next"]').length).toBe(0);
+    expect(nav.querySelector('.et-pagination-status .et-pagination-readout-text')?.textContent?.trim()).toBe('2 / 5');
+  });
+
+  it('gives each paginator its own jump input id, so two on a page stay independently labelled', () => {
+    const fixture = TestBed.createComponent(TwoPaginatorsComponent);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const hosts = [...root.querySelectorAll('et-pagination')];
+    const ids = hosts.map((host) => host.querySelector('.et-pagination-jump-input')?.id);
+
+    expect(ids.filter(Boolean).length).toBe(2);
+    expect(new Set(ids).size).toBe(2);
+
+    hosts.forEach((host, index) => {
+      expect(host.querySelector('.et-pagination-jump-label')?.getAttribute('for')).toBe(ids[index]);
+      expect(root.querySelectorAll(`[id="${ids[index]}"]`).length).toBe(1);
+    });
   });
 
   it('keeps an explicit ariaLabel ahead of the label set (multiple paginators on a page)', () => {

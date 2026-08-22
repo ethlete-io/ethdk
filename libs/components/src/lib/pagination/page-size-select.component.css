@@ -14,6 +14,14 @@
     align-items: center;
   }
 
+  /* Follows the paginator's coarse-pointer target so the two stay level on touch. Zero specificity, so
+     the `sm` rule below still wins. */
+  @media (pointer: coarse) {
+    :where(.et-page-size-select-host) {
+      --et-page-size-select-height: 44px;
+    }
+  }
+
   .et-page-size-select-label {
     display: inline-flex;
     align-items: center;

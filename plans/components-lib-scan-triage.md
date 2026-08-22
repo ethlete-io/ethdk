@@ -346,7 +346,17 @@ single-domain reach.
   band without a user pick), not a transform.
 - **`[etScrollableActiveChild]` registers nothing** — a documented, story-demonstrated,
   recipe-endorsed directive that does not exist at runtime (scrollable High). Wire it, or delete it
-  plus three doc pages. M
+  plus three doc pages. M — **DONE 2026-08-22**. Wired, not deleted: the mechanism was already there
+  (`unregisterActiveChild`, `getActiveChildren`, and `signalElementScrollState`'s
+  `initialScrollPosition`), so it needed a `registerActiveChild` call and one computed, no new public
+  API. The directive registers its ref in DOM order; `ScrollableDirective` feeds the first enabled
+  one to the container's `initialScrollPosition`, and holds back offsetless coordinates so the
+  one-shot effect isn't spent before the track can scroll. `apps/docs/components/scrollable.md` gains
+  an "Active child" section and `sport-recipes.md` links it. Left open on purpose: the scroll stays a
+  one-time **initial** position, as in the cdk — making it live would need a re-scroll policy (what
+  happens mid-drag, mid-scroll, with mandatory snap) and a public opt-out input, which is a design
+  question, not a fix. `disableActiveElementScrolling` was not ported for the same reason: binding
+  the marker to `false` covers it without new API.
 - **Masonry never reveals items whose border box exceeds the assigned width** (no global
   border-box reset) and **`items()` goes stale on a DOM reorder** (grid batch High ×2). S / M
 - **Tree: collapsing a branch programmatically drops focus to `<body>`** (tree High). S —
@@ -362,7 +372,17 @@ single-domain reach.
 - **Grid items are focusable with `outline: none` and no replacement** (grid High), and **the chip
   docs' own quick-start is keyboard-unremovable** (chip High). S each
 - **Pagination: `hidePreviousNext` ignored in compact mode; static `id` on the jump input; a
-  documented 44px coarse-pointer target that no rule implements** (pagination High ×3). S
+  documented 44px coarse-pointer target that no rule implements** (pagination High ×3). S —
+  **DONE 2026-08-22**. `compactControls()` forwards `hidePreviousNext` to `paginate()`, so the compact
+  pager collapses to its readout alone; the jump input takes a `createComponentId()` id that both the
+  `<label for>` and the `[id]` bind to; a `@media (pointer: coarse)` rule raises
+  `--et-pagination-item-size` to 44px (and `--et-page-size-select-height` with it, so the two stay
+  level), held at `:where()` zero specificity so the `sm` and compact rules still win. Verified in
+  headless Chromium with `hasTouch`: 36→44px on the default density, 34px unchanged when compact.
+  Left open: the compact pager (34px) and `size="sm"` (28px) still sit below 44px on touch. Both
+  floors are deliberate - the compact chevrons exist to sit level with a small page-size select, and
+  `sm` is documented as below the comfortable touch size - so raising them is a design call, not this
+  fix; the docs now state the carve-out instead of promising 44px everywhere.
 - **Split button silently accepts a second action and can end up with none** (button Medium). S —
   **DONE 2026-08-22**. `SplitButtonDirective` keeps a list per segment kind, so `registeredAction`/
   `registeredTrigger` resolve to the first registration and survive the removal of a duplicate; the
@@ -372,7 +392,14 @@ single-domain reach.
   `registerSingleton` helper (select/cascader/date-picker triggers); changing that reaches ten
   domains and is its own item.
 - **`et-otp-input`: a `g`-flagged charset drops every other character; shrinking `length` leaves an
-  over-long value; `complete` never fires for a programmatic value** (otp Medium ×3). S
+  over-long value; `complete` never fires for a programmatic value** (otp Medium ×3). S —
+  **DONE 2026-08-22**. `charPattern` strips `g`/`y` off a consumer's RegExp, and one constructor
+  effect now owns both re-sanitizing `value` against the current `length`/`charset` and emitting
+  `complete`, so the `input` handler is no longer the only path that can complete. Left open: a
+  runtime `length` shrink that lands the value exactly on the new length emits `complete` (it did
+  reach the full length) — suppressing that needs a "who wrote this" distinction the model signal
+  does not carry, and `length` rarely changes after mount. The caret/`data-readonly`/`hidden`
+  items from the same batch are separate entries.
 - **Tag input: `removeLast()` on an empty value emits a new array**, writing spuriously into the form
   model on a no-op keystroke; **paste discards the pending text**; **a full input holding rejected
   text is a keyboard dead end** (tag-input Medium ×3). S / M

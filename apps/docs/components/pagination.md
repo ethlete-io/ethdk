@@ -232,7 +232,8 @@ full configured number row.
 The compact pager is a range readout followed by previous/next - the item range
 ("1–10 of 40") when `totalItems`/`pageSize` are set, otherwise the page position -
 with the readout _before_ the chevrons, and its width reserved for the longest range
-it can show, so the controls hold their position across page changes. Because auto-collapse measures
+it can show, so the controls hold their position across page changes. `hidePreviousNext`
+applies here too, leaving the readout on its own. Because auto-collapse measures
 the paginator's own box, give it a definite
 width where it would otherwise shrink to its content (e.g. a flex item) - stretch it
 (`w-full`, `flex: 1`). Or skip measurement entirely with `[compact]="true"` for a
@@ -307,8 +308,11 @@ unavailable controls (previous on the first page, etc.) are `disabled`. Each ite
 a standard tab stop, so keyboard users move through them with Tab and activate with
 Enter/Space (links also with the usual anchor semantics). Ellipses are inert and
 `aria-hidden`; the readout is an `aria-live="polite"` region. On coarse pointers
-(touch) the controls grow to a comfortable ~44px tap target, and when a large set
-doesn't fit they wrap (rather than scrolling) so every control stays reachable.
+(touch) the default density grows to a comfortable 44px tap target - and the
+page-size select with it, so the two stay level; `size="sm"` (28px) and the compact
+pager (34px) keep their tighter floors on purpose, for the tight spots they exist
+for. When a large set doesn't fit, the controls wrap (rather than scrolling) so
+every one stays reachable.
 
 ## Theming
 

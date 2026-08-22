@@ -24,6 +24,14 @@
     gap: var(--et-pagination-gap);
   }
 
+  /* Touch gets the comfortable 44px target. `:where()` holds this at zero specificity so the `sm` and
+     compact rules below - which floor the size on purpose - still win over it. */
+  @media (pointer: coarse) {
+    :where(.et-pagination-host) {
+      --et-pagination-item-size: 44px;
+    }
+  }
+
   .et-pagination-list {
     display: flex;
     flex-wrap: wrap;

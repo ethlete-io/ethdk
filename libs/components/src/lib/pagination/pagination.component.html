@@ -75,15 +75,15 @@
 
 @if (showJumpTo()) {
   <div class="et-pagination-jump">
-    <label class="et-pagination-jump-label" for="et-pagination-jump-input">
+    <label [attr.for]="jumpInputId" class="et-pagination-jump-label">
       {{ pagination.resolvedLabels().jumpTo }}
     </label>
     <input
       #jumpInput
       [min]="1"
       [max]="pagination.totalPages()"
+      [id]="jumpInputId"
       (keydown.enter)="jump(jumpInput.value); jumpInput.value = ''"
-      id="et-pagination-jump-input"
       class="et-pagination-jump-input"
       inputmode="numeric"
       type="number"
