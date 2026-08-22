@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
 import { InputMaskDirective } from '../../../masked-input/headless';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
+import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { TimePickerColumnDirective } from '../../../../time-picker/headless/time-picker-column.directive';
 import { TimePickerOptionDirective } from '../../../../time-picker/headless/time-picker-option.directive';
 import { TimePickerDirective } from '../../../../time-picker/headless/time-picker.directive';
@@ -15,7 +16,15 @@ import { pressKey, tick } from '../../../../testing/driver-core';
 
 @Component({
   template: `
-    <div [(value)]="value" [(mixed)]="mixed" [disabled]="disabled()" displayFormat="HH:mm" etTimeInput>
+    <div
+      [(value)]="value"
+      [(mixed)]="mixed"
+      [disabled]="disabled()"
+      [readonly]="readonly()"
+      [valueFormat]="valueFormat()"
+      displayFormat="HH:mm"
+      etTimeInput
+    >
       <input etTimeInputField />
       <button class="open-picker" etDatePickerTrigger>open</button>
 
@@ -53,6 +62,8 @@ class TimeInputTestHost {
   value = signal<string | null>(null);
   mixed = signal(false);
   disabled = signal(false);
+  readonly = signal(false);
+  valueFormat = signal<string | undefined>(undefined);
 }
 
 describe('TimeInputDirective', () => {
@@ -327,5 +338,32 @@ describe('TimeInputDirective with the opt-in typing mask', () => {
 
     expect(fixture.componentInstance.value()).toBe('09:30');
     expect(timeInput.parseError()).toBe(false);
+  });
+});
+
+describe('TimeInputDirective commit contract', () => {
+  describePickerCommitContract(() => {
+    // a wire format carrying seconds against an HH:mm display is what makes an unedited blur
+    // observable: re-parsing "14:30" would write back a zeroed second
+    const driver = mountDatePicker(TimeInputTestHost, TimeInputDirective);
+
+    driver.host.valueFormat.set('HH:mm:ss');
+    driver.host.value.set('14:30:45');
+    tick();
+
+    return {
+      commitValue: () => tick(),
+      committedValue: () => '14:30:45',
+      emptyValue: () => null,
+      value: () => driver.host.value(),
+      parseError: () => driver.control.parseError(),
+      focus: () => driver.focusField(),
+      blur: () => driver.blurField(),
+      typeAndBlur: (text: string) => driver.typeAndBlur(text),
+      makeReadonly: () => {
+        driver.host.readonly.set(true);
+        tick();
+      },
+    };
   });
 });

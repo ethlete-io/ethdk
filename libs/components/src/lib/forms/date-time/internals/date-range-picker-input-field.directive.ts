@@ -139,6 +139,16 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
     this.elementRef.nativeElement.focus(options ?? { preventScroll: true });
   }
 
+  /**
+   * @internal Blanks this side's field text. `value` is what an attached mask reads and what
+   * `commitText()` hands to the next commit, so blanking the element alone would let the mask's
+   * text come back on the next blur.
+   */
+  public resetText() {
+    this.value.set('');
+    this.elementRef.nativeElement.value = '';
+  }
+
   /** @internal `InputMaskHost` - an attached mask owns value-sync; our input/mirror handling stands down. */
   public suppressNativeSync() {
     this.maskAttached.set(true);

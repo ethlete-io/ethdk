@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
+import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateTimeRangeInputFieldDirective } from './date-time-range-input-field.directive';
@@ -15,6 +16,7 @@ import { pressKey, tick } from '../../../../testing/driver-core';
       [(value)]="value"
       [(mixed)]="mixed"
       [disabled]="disabled()"
+      [readonly]="readonly()"
       displayFormat="MM/dd/yyyy, HH:mm"
       etDateTimeRangeInput
       valueFormat="yyyy-MM-dd HH:mm"
@@ -56,6 +58,7 @@ class DateTimeRangeInputTestHost {
   value = signal<DateTimeRangeValue>({ start: null, end: null });
   mixed = signal(false);
   disabled = signal(false);
+  readonly = signal(false);
   pickStartDay = new Date(2026, 6, 8);
   pickEndDay = new Date(2026, 6, 23);
   pickTime = new Date(2026, 0, 1, 21, 45);
@@ -478,5 +481,26 @@ describe('DateTimeRangeInputDirective time zone', () => {
 
     expect(rangeInput.effectiveTimeZone()).toBeNull();
     expect(rangeInput.localReadingId()).toBeNull();
+  });
+});
+
+describe('DateTimeRangeInputDirective commit contract', () => {
+  describePickerCommitContract(() => {
+    const driver = mountDatePicker(DateTimeRangeInputTestHost, DateTimeRangeInputDirective);
+
+    return {
+      commitValue: () => driver.typeAndBlur('07/20/2026, 14:30', '.start'),
+      committedValue: () => ({ start: '2026-07-20 14:30', end: null }),
+      emptyValue: () => ({ start: null, end: null }),
+      value: () => driver.host.value(),
+      parseError: () => driver.control.sideParseError('start'),
+      focus: () => driver.focusField('.start'),
+      blur: () => driver.blurField('.start'),
+      typeAndBlur: (text: string) => driver.typeAndBlur(text, '.start'),
+      makeReadonly: () => {
+        driver.host.readonly.set(true);
+        tick();
+      },
+    };
   });
 });

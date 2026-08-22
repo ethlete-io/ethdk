@@ -214,51 +214,18 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     }
   }
 
-  /**
-   * @internal Commits typed field text: empty clears, a strict-then-lenient
-   * parse writes the value, anything else keeps the raw text and raises
-   * `parseError` (the value stays `null`).
-   */
-  public commitInput(raw: string) {
-    // blurring a field nobody typed in is not an edit - and while a half-pick is on screen its
-    // placeholder text is not something to parse
-    if (raw === this.displayValue()) {
-      return;
-    }
-
+  /** An actual edit invalidates whatever half was held. */
+  public override beforeCommit() {
     this.halfPick.clear();
+  }
 
-    if (!raw.trim()) {
-      this.inputText.set('');
-      this.parseError.set(false);
+  /** @internal A strict parse against `displayFormat`, then a lenient one. */
+  public parseCommitText(raw: string) {
+    return parseDateTimeText(raw, { format: this.displayFormat(), locale: this.effectiveLocale() });
+  }
 
-      // while mixed the field is empty anyway - a blank commit is a plain blur, not a user
-      // clear, so the hidden raw value survives (the clear affordance resolves instead)
-      if (this.mixed()) {
-        return;
-      }
-
-      if (this.value() !== null) {
-        this.value.set(null);
-      }
-
-      return;
-    }
-
-    const parsed = parseDateTimeText(raw, { format: this.displayFormat(), locale: this.effectiveLocale() });
-
-    if (parsed === null) {
-      this.inputText.set(raw);
-      this.parseError.set(true);
-
-      // a failed parse resolves nothing: mixed stays set and the masked raw value untouched
-      if (!this.mixed() && this.value() !== null) {
-        this.value.set(null);
-      }
-
-      return;
-    }
-
+  /** @internal */
+  public writeCommitted(parsed: Date) {
     this.commitInstant(reinterpretInZone(parsed, this.effectiveTimeZone()));
   }
 

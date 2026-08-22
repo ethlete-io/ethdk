@@ -37,6 +37,13 @@ scalar - see below) shares one design:
   it's announced as a real error (`parseErrorMessage`) with matching
   `aria-invalid`/`aria-describedby`. <kbd>Alt</kbd>+<kbd>ArrowDown</kbd> opens the
   picker.
+- **A commit is an edit, and only an edit.** Typed text commits on blur and on
+  <kbd>Enter</kbd>. Focusing a field and leaving it again without typing commits
+  nothing, so a `displayFormat` that carries fewer units than `valueFormat` (the
+  date input's date-only default against a time-bearing wire format, say) can
+  never silently drop the rest of the value. Erasing text that didn't parse
+  resets `parseError` and clears the value. A `readonly` or `disabled` control
+  commits nothing at all - tabbing through one leaves its value untouched.
 - **Opt-in typing mask.** With `mask` set, a fixed-width numeric `displayFormat`
   (`dd.MM.yyyy`, `MM/dd/yyyy`, `HH:mm`, …) drives a live
   [input mask](/components/text-inputs#masked-input) - guide placeholders

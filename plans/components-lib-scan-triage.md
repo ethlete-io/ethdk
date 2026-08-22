@@ -9,7 +9,7 @@ corruption > crash on documented usage > a11y promise broken at a shipped defaul
 
 ## Fix now
 
-### 1. Date/time picker commit contract — one shared core for the two bases · L
+### 1. Date/time picker commit contract — one shared core for the two bases · L · **DONE 2026-08-22**
 
 The four date-time Highs and one Medium are one behaviour implemented twice, in
 `forms/date-time/internals/date-picker-input.directive.ts` and
@@ -22,6 +22,18 @@ destroys the time component of the value that gets submitted.
 Resolves: date-time High "unedited focus+blur rewrites the wire value", High "erasing unparseable
 text latches parseError", High "clear button vs attached mask", Medium "readonly control still
 commits on blur"; realises date-time DX "fold the two abstract bases into one core".
+
+Done: `internals/picker-input-commit.ts` (`resolvePickerCommit`) is the one core both bases now
+route every commit through - it applies the `interactive()` gate, the "nothing was typed" guard
+(which no longer swallows an erase, because `parseError` forces the commit past it) and the
+empty/parse-error/success split. The three single controls kept only `parseCommitText()` +
+`writeCommitted()`; the range base kept `parseSideCommit()`. `clearValue()`/`clearRange()` call a
+new `resetText()` on the field, which blanks the mask host's `value` as well as the element.
+Contract kit `forms/testing/picker-commit-contract.ts` runs from all six specs; each of its three
+tests was verified to fail without the fix. Still open: the two abstract Angular bases remain
+separate classes (the DX item asked to fold them entirely - only the commit logic is shared so
+far), and the mask's optional `mixed` member is still unimplemented for this family (date-time
+Medium, separate).
 
 ### 2. Container `keydown` handlers that ignore `event.target` · S · **DONE 2026-08-22**
 

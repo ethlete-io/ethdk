@@ -85,49 +85,17 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
     return formatDateValue(time, { format: this.displayFormat(), locale: this.effectiveLocale() }) ?? '';
   });
 
-  /**
-   * @internal Commits typed field text: empty clears, a strict-then-lenient
-   * parse writes the value, anything else keeps the raw text and raises
-   * `parseError` (the value stays `null`).
-   */
-  public commitInput(raw: string) {
-    if (!raw.trim()) {
-      this.inputText.set('');
-      this.parseError.set(false);
-
-      // while mixed the field is empty anyway - a blank commit is a plain blur, not a user
-      // clear, so the hidden raw value survives (the clear affordance resolves instead)
-      if (this.mixed()) {
-        return;
-      }
-
-      if (this.value() !== null) {
-        this.value.set(null);
-      }
-
-      return;
-    }
-
-    const parsed = parseTimeText(raw, {
+  /** @internal A strict parse against `displayFormat`, then a lenient one. */
+  public parseCommitText(raw: string) {
+    return parseTimeText(raw, {
       format: this.displayFormat(),
       locale: this.effectiveLocale(),
       referenceDate: this.referenceDate,
     });
+  }
 
-    if (parsed === null) {
-      this.inputText.set(raw);
-      this.parseError.set(true);
-
-      // a failed parse resolves nothing: mixed stays set and the masked raw value untouched
-      if (!this.mixed() && this.value() !== null) {
-        this.value.set(null);
-      }
-
-      return;
-    }
-
-    this.inputText.set('');
-    this.parseError.set(false);
+  /** @internal */
+  public writeCommitted(parsed: Date) {
     this.value.set(formatDateValue(parsed, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));
     this.mixed.set(false);
   }
@@ -143,8 +111,7 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
 
     this.inputText.set('');
     this.parseError.set(false);
-    this.value.set(formatDateValue(time, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));
-    this.mixed.set(false);
+    this.writeCommitted(time);
     this.touched.set(true);
   }
 }

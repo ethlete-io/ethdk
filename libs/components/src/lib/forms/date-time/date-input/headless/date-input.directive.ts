@@ -105,54 +105,17 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
     return formatDateValue(date, { format: this.effectiveDisplayFormat(), locale: this.effectiveLocale() }) ?? '';
   });
 
-  /**
-   * @internal Commits typed field text: empty clears, a strict `displayFormat`
-   * parse writes the value, anything else keeps the raw text and raises
-   * `parseError` (the value stays `null`).
-   */
-  public commitInput(raw: string) {
-    if (!raw.trim()) {
-      this.inputText.set('');
-      this.parseError.set(false);
-
-      // while mixed the field is empty anyway - a blank commit is a plain blur, not a user
-      // clear, so the hidden raw value survives (the clear affordance resolves instead)
-      if (this.mixed()) {
-        return;
-      }
-
-      if (this.value() !== null) {
-        this.value.set(null);
-      }
-
-      return;
-    }
-
+  /** @internal A strict parse against `displayFormat`. */
+  public parseCommitText(raw: string) {
     // reference midnight, not `new Date()`: a date-only `displayFormat` leaves date-fns to
     // fill H/M/S from the reference, so without this a typed day would carry the current
     // wall-clock time into a time-bearing `valueFormat` while the same day picked in the
     // calendar (startOfDay) would not - two entry paths, two wire values for one date.
-    const parsed = parseDateValue(raw, {
+    return parseDateValue(raw, {
       format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),
       referenceDate: startOfDay(new Date()),
     });
-
-    if (parsed === null) {
-      this.inputText.set(raw);
-      this.parseError.set(true);
-
-      // a failed parse resolves nothing: mixed stays set and the masked raw value untouched
-      if (!this.mixed() && this.value() !== null) {
-        this.value.set(null);
-      }
-
-      return;
-    }
-
-    this.inputText.set('');
-    this.parseError.set(false);
-    this.writeDate(parsed);
   }
 
   /** Commits a picker-selected date and closes the picker. */
@@ -163,7 +126,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
     this.inputText.set('');
     this.parseError.set(false);
-    this.writeDate(date);
+    this.writeCommitted(date);
     this.touched.set(true);
     this.closePicker();
   }
@@ -174,7 +137,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
    * against `MM.yyyy` yields *today's* day of July. Normalizing here is what makes a typed month and
    * a picked month the same value.
    */
-  private writeDate(date: Date) {
+  public writeCommitted(date: Date) {
     const unitStart = startOfCalendarUnit(date, this.precision());
 
     this.value.set(formatDateValue(unitStart, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));

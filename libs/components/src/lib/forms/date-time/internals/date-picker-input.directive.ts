@@ -19,6 +19,7 @@ import { injectDateLocale } from '../date-time-formats';
 import { DatePickerHost, DatePickerSurfaceBase, DatePickerTriggerBase } from '../picker/date-picker-host';
 import { createDatePickerOverlay } from './date-picker-overlay';
 import { maskPatternFromDisplayFormat } from './display-format-mask';
+import { resolvePickerCommit } from './picker-input-commit';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { mountControlSuffixStyles } from '../../form-field/form-field-control-suffix-styles.component';
@@ -26,6 +27,12 @@ import { mountControlSuffixStyles } from '../../form-field/form-field-control-su
 /** The registered text field a date-picker input focuses and anchors to. */
 export type DatePickerInputFieldBase = {
   focus(options?: FocusOptions): void;
+  /**
+   * Blanks the field text, including an attached mask's own copy of it. The field only mirrors
+   * control state while unfocused (mid-typing rewrites would fight the caret) and a mask owns the
+   * element text outright, so a clear has to reach both directly.
+   */
+  resetText(): void;
   elementRef: ElementRef<HTMLInputElement>;
 };
 
@@ -66,11 +73,13 @@ export abstract class DatePickerInputDirective
   public abstract displayValue: Signal<string>;
 
   /**
-   * @internal Commits typed field text: empty clears, a successful parse writes
-   * the value, anything else keeps the raw text and raises `parseError`. The
-   * parse rules (strict vs lenient) are the subclasses'.
+   * @internal Parses committed field text with the control's own rules (strict vs lenient);
+   * `null` when the text does not parse.
    */
-  public abstract commitInput(raw: string): void;
+  public abstract parseCommitText(raw: string): Date | null;
+
+  /** @internal Writes a parsed commit into the wire value, in the control's own shape. */
+  public abstract writeCommitted(parsed: Date): void;
 
   /** The wire value in `valueFormat`, or `null` while empty/unparseable. */
   public value = model<string | null>(null);
@@ -202,6 +211,45 @@ export abstract class DatePickerInputDirective
     this.focus();
   }
 
+  /**
+   * @internal Commits typed field text: empty clears, a successful parse writes the value,
+   * anything else keeps the raw text and raises `parseError`. A disabled or readonly control and
+   * a field nobody typed in commit nothing.
+   */
+  public commitInput(raw: string) {
+    const outcome = resolvePickerCommit(raw, {
+      displayValue: this.displayValue(),
+      parseError: this.parseError(),
+      interactive: this.interactive(),
+      parse: (text) => this.parseCommitText(text),
+    });
+
+    if (outcome === null) {
+      return;
+    }
+
+    this.beforeCommit();
+
+    this.inputText.set(outcome.text);
+    this.parseError.set(outcome.text.length > 0);
+
+    if (outcome.parsed !== null) {
+      this.writeCommitted(outcome.parsed);
+
+      return;
+    }
+
+    // a cleared or unparseable field resolves nothing: while mixed the hidden raw value survives
+    if (!this.mixed() && this.value() !== null) {
+      this.value.set(null);
+    }
+  }
+
+  /** @internal Runs once a commit is known to apply - the date-time input drops its held half here. */
+  public beforeCommit() {
+    return;
+  }
+
   public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
@@ -220,14 +268,7 @@ export abstract class DatePickerInputDirective
     this.mixed.set(false);
     this.inputText.set('');
     this.parseError.set(false);
-
-    // the field only mirrors state while unfocused (mid-typing rewrites would fight the
-    // caret) - a clear happens while focused, so reset the element text directly
-    const field = this.registeredField();
-
-    if (field) {
-      field.elementRef.nativeElement.value = '';
-    }
+    this.registeredField()?.resetText();
   }
 
   public openPicker() {

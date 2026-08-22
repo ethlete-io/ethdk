@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import '../../../../../test-helpers';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
+import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { TimeRangeInputFieldDirective } from './time-range-input-field.directive';
@@ -14,6 +15,7 @@ import { pressKey, tick } from '../../../../testing/driver-core';
       [(value)]="value"
       [(mixed)]="mixed"
       [disabled]="disabled()"
+      [readonly]="readonly()"
       displayFormat="HH:mm"
       etTimeRangeInput
       valueFormat="HH:mm"
@@ -41,6 +43,7 @@ class TimeRangeInputTestHost {
   value = signal<TimeRangeValue>({ start: null, end: null });
   mixed = signal(false);
   disabled = signal(false);
+  readonly = signal(false);
   pickTime = new Date(2026, 0, 1, 21, 45);
 }
 
@@ -240,6 +243,27 @@ describe('TimeRangeInputDirective mixed state', () => {
         expect(driver.field('.end').value).toBe('');
         expect(driver.field('.start').getAttribute('placeholder')).toBe('Mixed');
         expect(driver.field('.end').getAttribute('placeholder')).toBe('Mixed');
+      },
+    };
+  });
+});
+
+describe('TimeRangeInputDirective commit contract', () => {
+  describePickerCommitContract(() => {
+    const driver = mountDatePicker(TimeRangeInputTestHost, TimeRangeInputDirective);
+
+    return {
+      commitValue: () => driver.typeAndBlur('14:30', '.start'),
+      committedValue: () => ({ start: '14:30', end: null }),
+      emptyValue: () => ({ start: null, end: null }),
+      value: () => driver.host.value(),
+      parseError: () => driver.control.sideParseError('start'),
+      focus: () => driver.focusField('.start'),
+      blur: () => driver.blurField('.start'),
+      typeAndBlur: (text: string) => driver.typeAndBlur(text, '.start'),
+      makeReadonly: () => {
+        driver.host.readonly.set(true);
+        tick();
       },
     };
   });

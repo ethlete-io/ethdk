@@ -231,12 +231,8 @@ export class DateTimeRangeInputDirective
   }
 
   /** An actual edit to a side's field invalidates whatever half was held for it. */
-  public override commitSide(side: DateRangeSide, raw: string) {
-    if (raw !== this.displayValue(side)) {
-      this.halfPicks[side].clear();
-    }
-
-    super.commitSide(side, raw);
+  public override beforeCommitSide(side: DateRangeSide) {
+    this.halfPicks[side].clear();
   }
 
   /** Drops both held halves along with the range - they are one control state. */

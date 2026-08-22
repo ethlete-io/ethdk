@@ -8,6 +8,7 @@ import { silenceExpectedConsole } from '../../../../testing/expected-console';
 import { pressKey, tick } from '../../../../testing/driver-core';
 import { DatePickerDriver, mountDatePicker } from '../../../testing/date-picker-driver';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
+import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateRangeInputFieldDirective } from './date-range-input-field.directive';
@@ -20,8 +21,9 @@ import { CalendarPrecision } from '../../../../calendar/headless';
       [(value)]="value"
       [(mixed)]="mixed"
       [disabled]="disabled()"
+      [readonly]="readonly()"
       [precision]="precision()"
-      valueFormat="yyyy-MM-dd"
+      [valueFormat]="valueFormat()"
       etDateRangeInput
     >
       <input class="start" etDateRangeInputField side="start" />
@@ -57,6 +59,8 @@ class DateRangeInputTestHost {
   value = signal<DateRangeValue>({ start: null, end: null });
   mixed = signal(false);
   disabled = signal(false);
+  readonly = signal(false);
+  valueFormat = signal('yyyy-MM-dd');
   precision = signal<CalendarPrecision>('day');
   pickStart = new Date(2026, 6, 8);
   pickEnd = new Date(2026, 6, 23);
@@ -556,5 +560,31 @@ describe('DateRangeInputDirective with the opt-in typing mask', () => {
     await blur(startField);
 
     expect(host.value().start).toBe('2026-07-16');
+  });
+});
+
+describe('DateRangeInputDirective commit contract', () => {
+  describePickerCommitContract(() => {
+    const driver = mountDatePicker(DateRangeInputTestHost, DateRangeInputDirective);
+
+    // a wire format carrying a time against the date-only display default is what makes an
+    // unedited blur observable: re-parsing "07/20/2026" would write back midnight
+    driver.host.valueFormat.set('yyyy-MM-dd HH:mm');
+    driver.host.value.set({ start: '2026-07-20 14:30', end: null });
+    tick();
+    return {
+      commitValue: () => tick(),
+      committedValue: () => ({ start: '2026-07-20 14:30', end: null }),
+      emptyValue: () => ({ start: null, end: null }),
+      value: () => driver.host.value(),
+      parseError: () => driver.control.sideParseError('start'),
+      focus: () => driver.focusField('.start'),
+      blur: () => driver.blurField('.start'),
+      typeAndBlur: (text: string) => driver.typeAndBlur(text, '.start'),
+      makeReadonly: () => {
+        driver.host.readonly.set(true);
+        tick();
+      },
+    };
   });
 });

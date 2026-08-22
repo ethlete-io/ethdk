@@ -25,6 +25,7 @@ import { createDatePickerOverlay } from './date-picker-overlay';
 import { parseDateValue } from './date-value';
 import { formatInZone, reinterpretInZone, zonedProxy } from './time-zone';
 import { maskPatternFromDisplayFormat } from './display-format-mask';
+import { resolvePickerCommit } from './picker-input-commit';
 
 /** The two wire strings a range control holds; a side is `null` while empty/unparseable. */
 export type DateRangeValue = {
@@ -363,47 +364,48 @@ export abstract class DateRangePickerInputDirective
     this.sides[side].inputText.set(text);
   }
 
-  /** @internal Commits one side's typed text, with the subclass's parse rules. */
+  /**
+   * @internal Commits one side's typed text, with the subclass's parse rules: empty clears that
+   * side, a successful parse writes it, anything else keeps the raw text and raises `parseError`.
+   * A disabled or readonly control and a field nobody typed in commit nothing.
+   */
   public commitSide(side: DateRangeSide, raw: string) {
-    // blurring a field nobody typed in is not an edit - and while a half-pick is on screen its
-    // placeholder text is not something to parse
-    if (raw === this.displayValue(side)) {
+    const outcome = resolvePickerCommit(raw, {
+      displayValue: this.displayValue(side),
+      parseError: this.sideParseError(side),
+      interactive: this.interactive(),
+      parse: (text) => this.parseSideCommit(text),
+    });
+
+    if (outcome === null) {
       return;
     }
+
+    this.beforeCommitSide(side);
 
     const state = this.sides[side];
 
-    if (!raw.trim()) {
-      state.inputText.set('');
-      state.parseError.set(false);
+    state.inputText.set(outcome.text);
+    state.parseError.set(outcome.text.length > 0);
 
-      // while mixed the fields are empty anyway - a blank commit is a plain blur, not a
-      // user clear, so the hidden raw range survives
-      if (!this.mixed()) {
-        this.writeSide(side, null);
-      }
+    if (outcome.parsed !== null) {
+      this.commitSideValue(side, this.formatSide(reinterpretInZone(outcome.parsed, this.effectiveTimeZone())));
 
       return;
     }
 
-    const parsed = this.parseSideCommit(raw);
-
-    if (parsed === null) {
-      state.inputText.set(raw);
-      state.parseError.set(true);
-
-      // a failed parse resolves nothing: mixed stays set and the masked raw range untouched
-      if (!this.mixed()) {
-        this.writeSide(side, null);
-      }
-
-      return;
+    // a cleared or unparseable side resolves nothing: while mixed the hidden raw range survives
+    if (!this.mixed()) {
+      this.writeSide(side, null);
     }
+  }
 
-    state.inputText.set('');
-    state.parseError.set(false);
-
-    this.commitSideValue(side, this.formatSide(reinterpretInZone(parsed, this.effectiveTimeZone())));
+  /**
+   * @internal Runs once a side's commit is known to apply - the date-time range drops that side's
+   * held half here.
+   */
+  public beforeCommitSide(side: DateRangeSide) {
+    void side;
   }
 
   /** Clears both sides and any uncommitted field text - wired to the styled input's clear button. */
@@ -417,11 +419,7 @@ export abstract class DateRangePickerInputDirective
 
     for (const side of DATE_RANGE_SIDES) {
       this.clearSideText(side);
-      // the field only mirrors state while unfocused; a clear happens while focused, so blank the element directly
-      const el = this.sides[side].field()?.elementRef.nativeElement;
-      if (el) {
-        el.value = '';
-      }
+      this.sides[side].field()?.resetText();
     }
   }
 

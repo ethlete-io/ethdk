@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
+import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateTimeInputFieldDirective } from './date-time-input-field.directive';
@@ -15,6 +16,7 @@ import { pressKey, tick } from '../../../../testing/driver-core';
       [(value)]="value"
       [(mixed)]="mixed"
       [disabled]="disabled()"
+      [readonly]="readonly()"
       displayFormat="MM/dd/yyyy, HH:mm"
       etDateTimeInput
       valueFormat="yyyy-MM-dd HH:mm"
@@ -38,6 +40,7 @@ import { pressKey, tick } from '../../../../testing/driver-core';
 class DateTimeInputTestHost {
   value = signal<string | null>(null);
   mixed = signal(false);
+  readonly = signal(false);
   disabled = signal(false);
   pickDate = new Date(2026, 6, 16);
   pickTime = new Date(2026, 0, 1, 21, 45);
@@ -473,5 +476,26 @@ describe('DateTimeInputDirective time zone', () => {
     setValue(FIELD.wire);
 
     expect(input.describedByIds()).toBe(input.localReadingId());
+  });
+});
+
+describe('DateTimeInputDirective commit contract', () => {
+  describePickerCommitContract(() => {
+    const driver = mountDatePicker(DateTimeInputTestHost, DateTimeInputDirective);
+
+    return {
+      commitValue: () => driver.typeAndBlur('07/20/2026, 14:30'),
+      committedValue: () => '2026-07-20 14:30',
+      emptyValue: () => null,
+      value: () => driver.host.value(),
+      parseError: () => driver.control.parseError(),
+      focus: () => driver.focusField(),
+      blur: () => driver.blurField(),
+      typeAndBlur: (text: string) => driver.typeAndBlur(text),
+      makeReadonly: () => {
+        driver.host.readonly.set(true);
+        tick();
+      },
+    };
   });
 });

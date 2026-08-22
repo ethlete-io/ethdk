@@ -6,6 +6,7 @@ import { InputMaskDirective } from '../../../masked-input/headless';
 import { silenceExpectedConsole } from '../../../../testing/expected-console';
 import { DatePickerDriver, mountDatePicker } from '../../../testing/date-picker-driver';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
+import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateInputFieldDirective } from './date-input-field.directive';
@@ -20,7 +21,8 @@ import { CalendarPrecision } from '../../../../calendar/headless';
       [disabled]="disabled()"
       [precision]="precision()"
       [displayFormat]="displayFormat()"
-      valueFormat="yyyy-MM-dd"
+      [valueFormat]="valueFormat()"
+      [readonly]="readonly()"
       etDateInput
     >
       <input etDateInputField />
@@ -37,6 +39,8 @@ class DateInputTestHost {
   value = signal<string | null>(null);
   mixed = signal(false);
   disabled = signal(false);
+  readonly = signal(false);
+  valueFormat = signal('yyyy-MM-dd');
   precision = signal<CalendarPrecision>('day');
   displayFormat = signal<string | null>(null);
   pickDate = new Date(2026, 6, 16);
@@ -478,6 +482,25 @@ describe('DateInputDirective with the opt-in typing mask', () => {
     expect(field.value).toBe('');
   });
 
+  it('does not bring cleared text back on the next blur', async () => {
+    await focus();
+    await type('1807');
+
+    expect(field.value).toBe('18.07.____');
+
+    dateInput.clearValue();
+    await fixture.whenStable();
+
+    expect(field.value).toBe('__.__.____');
+    expect(dateInput.hasValue()).toBe(false);
+
+    await blur();
+
+    expect(host.value()).toBeNull();
+    expect(dateInput.parseError()).toBe(false);
+    expect(field.value).toBe('');
+  });
+
   it('filters pasted text down to the mask shape', async () => {
     await focus();
     await paste('18/07/2026');
@@ -529,5 +552,32 @@ describe('DateInputDirective with the opt-in typing mask', () => {
     await blur();
 
     expect(host.value()).toBe('2026-07-16');
+  });
+});
+
+describe('DateInputDirective commit contract', () => {
+  describePickerCommitContract(() => {
+    // a wire format carrying a time against the date-only display default is what makes an
+    // unedited blur observable: re-parsing "07/20/2026" would write back midnight
+    const driver = mountDatePicker(DateInputTestHost, DateInputDirective);
+
+    driver.host.valueFormat.set('yyyy-MM-dd HH:mm');
+    driver.host.value.set('2026-07-20 14:30');
+    tick();
+
+    return {
+      commitValue: () => tick(),
+      committedValue: () => '2026-07-20 14:30',
+      emptyValue: () => null,
+      value: () => driver.host.value(),
+      parseError: () => driver.control.parseError(),
+      focus: () => driver.focusField(),
+      blur: () => driver.blurField(),
+      typeAndBlur: (text: string) => driver.typeAndBlur(text),
+      makeReadonly: () => {
+        driver.host.readonly.set(true);
+        tick();
+      },
+    };
   });
 });
