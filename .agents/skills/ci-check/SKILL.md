@@ -30,14 +30,15 @@ yarn nx format:check                      # 2. Prettier across the workspace
 yarn agents:check                         # 3. generated agent files vs libs/agent-rules/content
 yarn versions:check                       # 4. libs/*/src/lib/version.ts vs each package.json
 yarn lint:changesets                      # 5. unreleased changeset notes: ≤40 words, 1 paragraph, ≤3 bullets
-yarn nx run-many -t lint                  # 6. ESLint, incl. @nx/dependency-checks
-yarn nx run-many -t test                  # 7. all unit tests
-yarn nx run-many -t build                 # 8. all libs + apps (docs build fails on dead links)
-yarn nx run treeshake:bundle-goldens      # 9. bundle-size goldens
-yarn nx run storybook:build-storybook:ci # 10. Storybook production build
+yarn nx run-many -t typecheck             # 6. spec-file types (nothing else checks them)
+yarn nx run-many -t lint                  # 7. ESLint, incl. @nx/dependency-checks
+yarn nx run-many -t test                  # 8. all unit tests
+yarn nx run-many -t build                 # 9. all libs + apps (docs build fails on dead links)
+yarn nx run treeshake:bundle-goldens      # 10. bundle-size goldens
+yarn nx run storybook:build-storybook:ci  # 11. Storybook production build
 ```
 
-Step 10 is the slowest by far. Skip it only when the change touches no component source
+Step 11 is the slowest by far. Skip it only when the change touches no component source
 and no story - and say so rather than reporting a clean run you didn't do.
 
 ## Reading the results
@@ -57,6 +58,12 @@ and no story - and say so rather than reporting a clean run you didn't do.
   right after a release bump; because `build` regenerates these files as a target dependency,
   running build first silently fixes the drift instead of reporting it - which is why the
   check runs before build.
+- **`typecheck`** - every lib's build tsconfig excludes the spec files, so this is the only
+  step that type-checks them. The target exists for **components**, **cdk** and
+  **query-devtools**; `run-many` skips a project that does not declare it. `core`, `query` and
+  `contentful` have a `tsconfig.spec.json` but do not pass yet, and `cli`, `agent-rules` and
+  `timetrack` have specs but no spec tsconfig. Make a lib's spec types clean first. Then add
+  the target to that lib.
 - **`lint`** - re-run with `--fix` **scoped to the files you changed**:
   `npx eslint libs/components/src/lib/<domain> --fix`. Never
   `npx nx lint <project> --fix` - a project-wide fix races the user's editor autosave.
