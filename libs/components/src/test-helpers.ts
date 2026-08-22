@@ -97,18 +97,32 @@ if (!Element.prototype.animate) {
     public onfinish: (() => void) | null = null;
     public oncancel: (() => void) | null = null;
 
+    // An animation settles exactly once. Without this latch a `cancel()` before the constructor's
+    // queued auto-finish would still let that finish through, firing `oncancel` then `onfinish` on
+    // one animation - a sequence no real Animation produces. Set it before notifying, so a handler
+    // that re-enters `cancel()`/`finish()` (pip-animation's `cleanup` does) is a no-op.
+    private settled = false;
+
     constructor() {
       super();
       this.finished = Promise.resolve(this);
-      queueMicrotask(() => this.dispatchEvent(new Event('finish')));
+      queueMicrotask(() => this.finish());
     }
 
     cancel() {
+      if (this.settled) return;
+      this.settled = true;
+      this.playState = 'idle';
       this.dispatchEvent(new Event('cancel'));
+      this.oncancel?.();
     }
 
     finish() {
+      if (this.settled) return;
+      this.settled = true;
+      this.playState = 'finished';
       this.dispatchEvent(new Event('finish'));
+      this.onfinish?.();
     }
 
     play() {
