@@ -2,6 +2,7 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { FORM_FIELD_CONTROL_TYPES, FormFieldDirective, LabelDirective } from '../../form-field/headless';
+import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
 import { provideRichTextEditorDefaultTools } from '../tools/rich-text-editor-default-tools.provider';
 import { createRichTextEditorTokenCodec } from './internals/rich-text-editor-token';
@@ -484,8 +485,10 @@ describe('RichTextEditorDirective', () => {
     it('throws in dev for an invalid token type or id', () => {
       placeCaretAtStart();
 
-      expect(() => dir.insertToken('Block', 'firstName')).toThrow();
-      expect(() => dir.insertToken('block', 'has space')).toThrow();
+      expect(() => dir.insertToken('Block', 'firstName')).toThrow(
+        `ET${RICH_TEXT_EDITOR_ERROR_CODES.INVALID_TOKEN_TYPE}`,
+      );
+      expect(() => dir.insertToken('block', 'has space')).toThrow(`ET${RICH_TEXT_EDITOR_ERROR_CODES.INVALID_TOKEN_ID}`);
     });
 
     it('does nothing without an editable element', () => {

@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import * as iconExports from './index';
+import { ICON_ERROR_CODES } from './icon-errors';
 import { ET_BUILT_IN_ICON_NAMES, IconDefinition, provideIconOverrides, provideIcons } from './icon-provider';
 import { IconDirective } from './icon.directive';
 
@@ -94,7 +95,7 @@ describe('IconDirective', () => {
   describe('without icons provided', () => {
     it('throws when ICONS_TOKEN is missing', () => {
       TestBed.configureTestingModule({ imports: [IconTestHost] });
-      expect(() => TestBed.createComponent(IconTestHost)).toThrow();
+      expect(() => TestBed.createComponent(IconTestHost)).toThrow(`ET${ICON_ERROR_CODES.NO_ICONS_PROVIDED}`);
     });
   });
 
@@ -106,14 +107,14 @@ describe('IconDirective', () => {
       });
       const fixture = TestBed.createComponent(IconTestHost);
       fixture.componentInstance.name = 'et-nonexistent';
-      expect(() => fixture.detectChanges()).toThrow();
+      expect(() => fixture.detectChanges()).toThrow(`ET${ICON_ERROR_CODES.ICON_NOT_FOUND}`);
     });
   });
 
   describe('provideIcons', () => {
     it('throws when two icons share the same name', () => {
       const duplicate = { ...VALID_ICON };
-      expect(() => provideIcons(VALID_ICON, duplicate)).toThrow();
+      expect(() => provideIcons(VALID_ICON, duplicate)).toThrow(`ET${ICON_ERROR_CODES.DUPLICATE_ICON_NAME}`);
     });
 
     it('allows the same name across different variants', () => {
@@ -124,7 +125,7 @@ describe('IconDirective', () => {
 
     it('throws when the same name/variant pair is registered twice', () => {
       const solid = { name: 'shield', variant: 'solid', data: VALID_ICON.data };
-      expect(() => provideIcons(solid, { ...solid })).toThrow();
+      expect(() => provideIcons(solid, { ...solid })).toThrow(`ET${ICON_ERROR_CODES.DUPLICATE_ICON_NAME}`);
     });
   });
 
@@ -181,7 +182,9 @@ describe('IconDirective', () => {
     });
 
     it('throws when two overrides share the same name/variant', () => {
-      expect(() => provideIconOverrides(OVERRIDE_TEST, { ...OVERRIDE_TEST })).toThrow();
+      expect(() => provideIconOverrides(OVERRIDE_TEST, { ...OVERRIDE_TEST })).toThrow(
+        `ET${ICON_ERROR_CODES.DUPLICATE_ICON_NAME}`,
+      );
     });
   });
 
@@ -241,7 +244,7 @@ describe('IconDirective', () => {
 
     it('throws when the requested variant is not registered', () => {
       fixture.componentInstance.variant = 'thin';
-      expect(() => fixture.detectChanges()).toThrow();
+      expect(() => fixture.detectChanges()).toThrow(`ET${ICON_ERROR_CODES.ICON_NOT_FOUND}`);
     });
   });
 });
