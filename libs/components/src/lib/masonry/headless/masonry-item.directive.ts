@@ -9,7 +9,7 @@ import {
   linkedSignal,
   signal,
 } from '@angular/core';
-import { RuntimeError, nextFrame, signalHostElementDimensions } from '@ethlete/core';
+import { ElementRect, RuntimeError, nextFrame, signalHostElementDimensions } from '@ethlete/core';
 import { MASONRY_ERROR_CODES } from '../masonry-errors';
 import { MASONRY_TOKEN } from './masonry.tokens';
 
@@ -77,15 +77,38 @@ export class MasonryItemDirective {
   });
 
   /**
+   * Whether a measurement has arrived since the masonry last changed the width it assigns. Resetting on the
+   * width and latching on the next report is the actual question `isMeasured` asks; the width comparison
+   * there is a shortcut that answers it a delivery earlier, but only for an item whose border box can equal
+   * the width it was given. One that cannot - a card with padding or a border under `content-box`, which is
+   * every card in an app that ships no global border-box reset - reports a wider box forever, and would
+   * never count as measured at all.
+   */
+  private hasReportedSinceWidthChange = linkedSignal<
+    { columnInlineSize: number | null; measured: ElementRect | null },
+    boolean
+  >({
+    source: () => ({ columnInlineSize: this.columnInlineSize(), measured: this.measured() }),
+    computation: ({ columnInlineSize, measured }, previous) => {
+      if (!previous || previous.source.columnInlineSize !== columnInlineSize) return false;
+
+      // `measured` is a fresh object per delivery, so an identity change *is* a new report.
+      return previous.value || previous.source.measured !== measured;
+    },
+  });
+
+  /**
    * Whether the item has reported its size *at the width the masonry gave it*. Until it has, its height is
    * the height it had at some other width, so the placement derived from it would be wrong. The observer
-   * delivers both sizes together, which is what makes the width a reliable proxy for "this height is current".
+   * delivers both sizes together, which is what makes the width a usable proxy for "this height is current".
    */
   public isMeasured = computed(() => {
     const columnInlineSize = this.columnInlineSize();
 
+    if (columnInlineSize === null) return false;
+
     // Sub-pixel column widths are normal - the remainder is shared out between the columns.
-    return columnInlineSize !== null && Math.abs(this.inlineSize() - columnInlineSize) < 1;
+    return Math.abs(this.inlineSize() - columnInlineSize) < 1 || this.hasReportedSinceWidthChange();
   });
 
   /** Where the masonry has put this item, or `null` before it has. */

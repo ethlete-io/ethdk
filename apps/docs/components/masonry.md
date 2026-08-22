@@ -66,6 +66,11 @@ Every item observes its own size, so content that arrives or changes after layou
 loads late, a description that expands on click, text that reflows when a translation swaps in. The items below
 it move down.
 
+Items are set to `box-sizing: border-box`, because the masonry assigns each one a width and then checks the box
+it reports back against it - padding and a border have to be inside the width it was given, not added to it. It
+is the one property the layout dictates rather than leaves to you; an app with its own global reset already
+agrees with it.
+
 <StoryEmbed id="components-layout-masonry--appending-items" height="560px" />
 
 ### A card changing height doesn't rearrange the grid
@@ -79,10 +84,13 @@ columns because a paragraph two columns over expanded. Instead, growing a card p
 in its own column.
 
 The cost is that heights which change a lot after the first layout leave the columns less even than a fresh pack
-would. Two things rebalance:
+would. Three things rebalance:
 
 - a resize that changes the **column count** - the old assignments say nothing about a different grid, so it
   packs from scratch;
+- a **re-sort**: if the items' DOM order changes, keeping every card in the column it happens to be in would
+  leave the item that is now read first wherever that column is, so the new reading order is packed from
+  scratch as well. Sorting a feed needs no call of your own;
 - **`repack()`**, the explicit escape hatch, for when you have replaced the content wholesale.
 
 ```ts

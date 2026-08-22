@@ -13,7 +13,11 @@ const CONTAINER_WIDTH = 1000;
 
 let flushResizeObservers: () => void = () => undefined;
 
-const stubLayout = () => {
+/**
+ * @param borderBoxOverflow How much wider than the width it was given an item reports itself - what a padded
+ *   card does under `content-box`, where no measurement can ever match the assignment.
+ */
+const stubLayout = ({ borderBoxOverflow = 0 }: { borderBoxOverflow?: number } = {}) => {
   const observers: ResizeObserverCallback[] = [];
 
   class RecordingResizeObserver implements ResizeObserver {
@@ -67,7 +71,7 @@ const stubLayout = () => {
 
   HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
     const isItem = this.classList.contains('et-masonry-item');
-    const width = isItem ? Number.parseFloat(this.style.width) || 0 : CONTAINER_WIDTH;
+    const width = isItem ? (Number.parseFloat(this.style.width) || 0) + borderBoxOverflow : CONTAINER_WIDTH;
     const height = isItem ? Number(this.dataset['testHeight'] ?? 0) : 0;
 
     return { width, height, top: 0, left: 0, right: width, bottom: height, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
@@ -126,6 +130,16 @@ const container = (fixture: ComponentFixture<MasonryHostComponent>) =>
 const items = (fixture: ComponentFixture<MasonryHostComponent>) => [
   ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.et-masonry-item'),
 ];
+
+/** What `items()` holds, in its order - a `@for` re-order moves nodes without touching a registration. */
+const masonryItemTexts = (fixture: ComponentFixture<MasonryHostComponent>) =>
+  fixture.componentInstance
+    .masonry()
+    .items()
+    .map((item) => item.elementRef.nativeElement.textContent?.trim());
+
+/** A `MutationObserver` delivers on a microtask, and the DOM order is only observable through one. */
+const flushMutations = () => Promise.resolve();
 
 const offsets = (fixture: ComponentFixture<MasonryHostComponent>) =>
   items(fixture).map((item) => ({
@@ -206,6 +220,31 @@ describe('MasonryDirective', () => {
     // Heights 200 / 100 / 300 across three columns: still one per column, and the container follows the tallest.
     expect(offsets(fixture).map((offset) => offset.block)).toEqual(['0px', '0px', '0px']);
     expect(container(fixture).style.height).toBe('300px');
+  });
+
+  it('re-sorts a feed that only moved its DOM nodes, and rebalances the columns for the new order', async () => {
+    const fixture = createHost();
+    const columnWidth = (CONTAINER_WIDTH - 2 * 16) / 3;
+
+    // A fourth item shares a column, so the pack before the re-sort is not one item per column.
+    fixture.componentInstance.items.update((current) => [...current, { id: 'd', height: 50 }]);
+    fixture.detectChanges();
+    settle(fixture);
+
+    fixture.componentInstance.items.update((current) => [...current].reverse());
+    fixture.detectChanges();
+    await flushMutations();
+    settle(fixture);
+
+    expect(masonryItemTexts(fixture)).toEqual(['d', 'c', 'b', 'a']);
+    // d, c and b take a column each in reading order; a is the tallest and goes under the 50px d.
+    expect(offsets(fixture)).toEqual([
+      { inline: '0px', block: '0px' },
+      { inline: `${columnWidth + 16}px`, block: '0px' },
+      { inline: `${2 * (columnWidth + 16)}px`, block: '0px' },
+      { inline: '0px', block: '66px' },
+    ]);
+    expect(container(fixture).style.height).toBe('366px');
   });
 
   it('re-columns when the column width changes', () => {
@@ -295,6 +334,32 @@ describe('MasonryDirective', () => {
       settle(fixture);
 
       expect(columnsOf(fixture)).toEqual(['0', '1', '0', '0']);
+    });
+  });
+
+  describe('an item whose reported box can never match the width it is given', () => {
+    beforeEach(() => stubLayout({ borderBoxOverflow: 20 }));
+
+    it('still settles, places and reveals every item', () => {
+      const fixture = createHost();
+
+      expect(fixture.componentInstance.masonry().isSettled()).toBe(true);
+      expect(items(fixture).every((item) => item.hasAttribute('data-positioned'))).toBe(true);
+      expect(offsets(fixture).map((offset) => offset.block)).toEqual(['0px', '0px', '0px']);
+      expect(container(fixture).style.height).toBe('300px');
+    });
+
+    it('waits for a report at the new width before it counts as settled again', () => {
+      const fixture = createHost();
+
+      fixture.componentInstance.columnWidth.set(480);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.masonry().isSettled()).toBe(false);
+
+      settle(fixture);
+
+      expect(fixture.componentInstance.masonry().isSettled()).toBe(true);
     });
   });
 

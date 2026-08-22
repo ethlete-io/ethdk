@@ -41,6 +41,10 @@
   .et-masonry-item {
     position: absolute;
     top: 0;
+    /* The masonry sets the item's width and then checks the box it reports against it, so the two have to be
+       the same box. An item with padding or a border in an app that ships no global reset would report a
+       wider one forever. */
+    box-sizing: border-box;
     /* Anchored at the inline start, so the offset below is measured from the correct side in both writing
        directions. */
     inset-inline-start: 0;

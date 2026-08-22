@@ -5,6 +5,7 @@ import {
   numberBreakpointTransform,
   provideBreakpointInstance,
   signalElementChildren,
+  signalElementMutations,
   signalHostElementDimensions,
 } from '@ethlete/core';
 import { sortByDomOrder } from '../../internals/dom-order';
@@ -16,6 +17,23 @@ import { useMasonryResizeSettled } from './internals/masonry-resize-settled';
 
 const isSameAssignment = (a: ReadonlyMap<MasonryItemDirective, number>, b: ReadonlyMap<MasonryItemDirective, number>) =>
   a.size === b.size && [...a].every(([item, column]) => b.get(item) === column);
+
+const isSameOrder = (a: readonly MasonryItemDirective[], b: readonly MasonryItemDirective[]) =>
+  a.length === b.length && a.every((item, index) => b[index] === item);
+
+const isFrozenReadingOrder = (
+  items: readonly MasonryItemDirective[],
+  frozen: { order: readonly MasonryItemDirective[]; byItem: ReadonlyMap<MasonryItemDirective, number> },
+) => {
+  const current = new Set(items);
+
+  // Only the items that were around when the columns were frozen and still are: an appended one has no
+  // frozen column yet, and a removed one cannot say anything about the order of the rest.
+  return isSameOrder(
+    items.filter((item) => frozen.byItem.has(item)),
+    frozen.order.filter((item) => current.has(item)),
+  );
+};
 import { MasonryItemDirective } from './masonry-item.directive';
 import { MASONRY_TOKEN } from './masonry.tokens';
 
@@ -79,11 +97,26 @@ export class MasonryDirective {
   private registeredItems = signal<MasonryItemDirective[]>([]);
 
   /**
+   * A `@for` with a `track` re-orders DOM nodes without creating or destroying a single directive, so nothing
+   * about the registrations changes and only the DOM itself can say that the reading order did. Read by
+   * `items` purely to invalidate its sort - which is also why that sort needs an order equality: this fires
+   * for every insertion anywhere in a card, and only one that changes the order may re-lay-out.
+   */
+  private childMutations = signalElementMutations(this.elementRef, { childList: true, subtree: true });
+
+  /**
    * @internal The items in DOM order, which for masonry *is* the placement order: registration order follows
    * creation order, and a `@for` that re-orders its items would otherwise pack them by the order they were
    * born in rather than the order they are read in.
    */
-  public items = computed(() => sortByDomOrder(this.registeredItems(), (item) => item.elementRef.nativeElement));
+  public items = computed(
+    () => {
+      this.childMutations();
+
+      return sortByDomOrder(this.registeredItems(), (item) => item.elementRef.nativeElement);
+    },
+    { equal: isSameOrder },
+  );
 
   /**
    * How wide the container is. Only the inline size is taken from the observed dimensions, deliberately: this
@@ -102,12 +135,14 @@ export class MasonryDirective {
   );
 
   /**
-   * The columns items have already been given, and the column count they were given for. Rebalancing is a
-   * *geometry* decision, not a content one: see `repack()`.
+   * The columns items have already been given, the column count they were given for, and the reading order
+   * they were given in. Rebalancing is a *geometry* decision, not a content one: see `repack()`.
    */
-  private columnAssignments = signal<{ columnCount: number; byItem: ReadonlyMap<MasonryItemDirective, number> } | null>(
-    null,
-  );
+  private columnAssignments = signal<{
+    columnCount: number;
+    order: readonly MasonryItemDirective[];
+    byItem: ReadonlyMap<MasonryItemDirective, number>;
+  } | null>(null);
 
   /**
    * Every item's position, derived rather than assigned. The whole layout is one `computed` over the item
@@ -122,8 +157,12 @@ export class MasonryDirective {
     const assignments = this.columnAssignments();
 
     // Assignments made for a different number of columns say nothing about this one, so a resize that changes
-    // the count rebalances from scratch.
-    const pinned = assignments?.columnCount === count ? assignments.byItem : null;
+    // the count rebalances from scratch - and so does a re-sorted feed, because keeping every card in the
+    // column it happens to be in would put the item that is now read first wherever that column is.
+    const pinned =
+      assignments && assignments.columnCount === count && isFrozenReadingOrder(items, assignments)
+        ? assignments.byItem
+        : null;
 
     const packing = packMasonryItems({
       itemBlockSizes: items.map((item) => item.blockSize()),
@@ -179,6 +218,7 @@ export class MasonryDirective {
       if (!this.isSettled()) return;
 
       const columnCount = this.columns().count;
+      const order = this.items();
       const byItem = new Map<MasonryItemDirective, number>();
 
       for (const [item, placement] of this.layout().placements) {
@@ -187,12 +227,21 @@ export class MasonryDirective {
 
       untracked(() => {
         // Only when something actually changed: the write feeds back into the layout this was derived from,
-        // and re-freezing an identical mapping every time would never come to rest.
+        // and re-freezing an identical mapping every time would never come to rest. The order counts as part
+        // of it - a re-sort that happens to land on the same columns must still be recorded, or the layout
+        // would keep reading the stale order as a reason to drop the pins.
         const current = this.columnAssignments();
 
-        if (current && current.columnCount === columnCount && isSameAssignment(current.byItem, byItem)) return;
+        if (
+          current &&
+          current.columnCount === columnCount &&
+          isSameAssignment(current.byItem, byItem) &&
+          isSameOrder(current.order, order)
+        ) {
+          return;
+        }
 
-        this.columnAssignments.set({ columnCount, byItem });
+        this.columnAssignments.set({ columnCount, order, byItem });
       });
     });
 
