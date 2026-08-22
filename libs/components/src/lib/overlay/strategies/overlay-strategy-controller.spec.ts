@@ -227,6 +227,54 @@ describe('overlay strategy controller', () => {
     expect(document.documentElement.classList.contains('large-document')).toBe(false);
   });
 
+  describe('document and body classes shared between overlays', () => {
+    const openWithoutBreakpoints = () => {
+      const overlayRef = TestBed.runInInjectionContext(() =>
+        injectOverlayManager().open<StrategyTestContentComponent, unknown>(StrategyTestContentComponent, {
+          strategies: () => [{ strategy: smallStrategy }],
+        }),
+      );
+
+      TestBed.tick();
+
+      return overlayRef;
+    };
+
+    it('keeps them while another open overlay still asks for them', async () => {
+      const first = openOverlay();
+      const second = openWithoutBreakpoints();
+
+      expect(document.body.classList.contains('small-body')).toBe(true);
+
+      first.close();
+      TestBed.tick();
+      await flushFrames();
+
+      expect(document.body.classList.contains('small-body')).toBe(true);
+
+      second.close();
+      TestBed.tick();
+      await flushFrames();
+
+      expect(document.body.classList.contains('small-body')).toBe(false);
+    });
+
+    it('keeps them when another overlay switches to a strategy without them', async () => {
+      const switching = openOverlay();
+      const staying = openWithoutBreakpoints();
+
+      fakeBreakpoints.setMatches(MD_QUERY, true);
+      TestBed.tick();
+
+      expect(document.body.classList.contains('small-body')).toBe(true);
+
+      switching.close();
+      staying.close();
+      TestBed.tick();
+      await flushFrames();
+    });
+  });
+
   describe('strategies without a breakpoint-less entry', () => {
     const openWithoutBaseStrategy = () => {
       const overlayRef = TestBed.runInInjectionContext(() =>

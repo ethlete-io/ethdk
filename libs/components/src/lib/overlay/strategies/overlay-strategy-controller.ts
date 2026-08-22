@@ -25,6 +25,7 @@ import {
 import { tap } from 'rxjs';
 import { OverlayConfig } from '../overlay-config';
 import { OVERLAY_ERROR_CODES } from '../overlay-errors';
+import { resolveOverlayHasBackdrop } from '../overlay-has-backdrop';
 import { OverlayRef } from '../overlay-ref';
 import { findNextRelevantHtmlElement } from './overlay-origin';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyContext } from './overlay-strategy.types';
@@ -54,6 +55,14 @@ const normalizeClasses = (value?: string | string[]): string[] => {
 
 /** Set by the overlay container while the overlay is open - see `overlay-container.component.css`. */
 const BACKDROP_VISIBLE_CLASS = 'et-overlay-backdrop--visible';
+
+/**
+ * `documentClass` and `bodyClass` land on elements every open overlay shares, so they are reference
+ * counted per element: two open full-screen dialogs both want the same document class, and the
+ * first one to close must not strip it from the other. Every add must go through
+ * `retainSharedClasses` and every remove through `releaseSharedClasses`.
+ */
+const sharedClassCounts = /* @__PURE__ */ new WeakMap<HTMLElement, Map<string, number>>();
 
 const coerceCssPixelValue = (value: number | string) => {
   return typeof value === 'number' ? `${value}px` : value;
@@ -178,10 +187,6 @@ export const createOverlayStrategyController = (
     return strategyConfig.positionStrategy?.(originElement) ?? { kind: 'global' };
   };
 
-  const resolveHasBackdrop = (strategyConfig: OverlayBreakpointConfig) => {
-    return config.hasBackdrop ?? strategyConfig.hasBackdrop ?? config.mode !== 'non-modal';
-  };
-
   const composeMaxSize = (value: number | string | undefined, cssVar: string) => {
     if (value === undefined) return `var(${cssVar})`;
 
@@ -223,6 +228,59 @@ export const createOverlayStrategyController = (
     }
   };
 
+  const retainSharedClasses = (element: HTMLElement, classes: string[]) => {
+    if (!classes.length) return;
+
+    let counts = sharedClassCounts.get(element);
+
+    if (!counts) {
+      counts = new Map();
+      sharedClassCounts.set(element, counts);
+    }
+
+    for (const className of classes) {
+      const count = (counts.get(className) ?? 0) + 1;
+
+      counts.set(className, count);
+
+      if (count === 1) {
+        renderer.addClass(element, className);
+      }
+    }
+  };
+
+  const releaseSharedClasses = (element: HTMLElement, classes: string[]) => {
+    const counts = sharedClassCounts.get(element);
+
+    if (!counts) return;
+
+    for (const className of classes) {
+      const count = (counts.get(className) ?? 1) - 1;
+
+      if (count > 0) {
+        counts.set(className, count);
+
+        continue;
+      }
+
+      counts.delete(className);
+      renderer.removeClass(element, className);
+    }
+  };
+
+  const applySharedClassChange = (
+    element: HTMLElement,
+    change: { prev?: string | string[]; curr?: string | string[] },
+  ) => {
+    const { prev, curr } = change;
+
+    if (equal(prev, curr)) return;
+
+    // retained before the previous set is released, so a class both configs ask for is never dropped
+    retainSharedClasses(element, normalizeClasses(curr));
+    releaseSharedClasses(element, normalizeClasses(prev));
+  };
+
   const applyClasses = (options: {
     runtimeRef: OverlayRuntimeRef<object, unknown>;
     prevConfig: OverlayBreakpointConfig | undefined;
@@ -234,22 +292,20 @@ export const createOverlayStrategyController = (
 
     applyClassChange(paneElement, { prev: prevConfig?.containerClass, curr: currConfig.containerClass });
     applyClassChange(hostElement, { prev: prevConfig?.hostClass, curr: currConfig.hostClass });
-    applyClassChange(document.documentElement, { prev: prevConfig?.documentClass, curr: currConfig.documentClass });
-    applyClassChange(document.body, { prev: prevConfig?.bodyClass, curr: currConfig.bodyClass });
+    applySharedClassChange(document.documentElement, {
+      prev: prevConfig?.documentClass,
+      curr: currConfig.documentClass,
+    });
+    applySharedClassChange(document.body, { prev: prevConfig?.bodyClass, curr: currConfig.bodyClass });
 
     if (backdropElement) {
       applyClassChange(backdropElement, { prev: prevConfig?.backdropClass, curr: currConfig.backdropClass });
     }
   };
 
-  const removeClassesFromDocumentAndBody = (strategyConfig: OverlayBreakpointConfig) => {
-    if (strategyConfig.documentClass) {
-      renderer.removeClass(document.documentElement, ...normalizeClasses(strategyConfig.documentClass));
-    }
-
-    if (strategyConfig.bodyClass) {
-      renderer.removeClass(document.body, ...normalizeClasses(strategyConfig.bodyClass));
-    }
+  const releaseClassesFromDocumentAndBody = (strategyConfig: OverlayBreakpointConfig) => {
+    releaseSharedClasses(document.documentElement, normalizeClasses(strategyConfig.documentClass));
+    releaseSharedClasses(document.body, normalizeClasses(strategyConfig.bodyClass));
   };
 
   /**
@@ -260,7 +316,7 @@ export const createOverlayStrategyController = (
   const applyBackdrop = (runtimeRef: OverlayRuntimeRef<object, unknown>, strategyConfig: OverlayBreakpointConfig) => {
     const hadBackdrop = !!runtimeRef.elements.backdropElement();
 
-    runtimeRef.updateBackdrop(resolveHasBackdrop(strategyConfig));
+    runtimeRef.updateBackdrop(resolveOverlayHasBackdrop(config, strategyConfig));
 
     const backdropElement = runtimeRef.elements.backdropElement();
     const lifecycleState = getLifecycle()?.state$.value;
@@ -336,13 +392,8 @@ export const createOverlayStrategyController = (
       applyClassChange(backdropElement, { curr: activeStrategy.config.backdropClass });
     }
 
-    if (activeStrategy.config.documentClass) {
-      renderer.addClass(document.documentElement, ...normalizeClasses(activeStrategy.config.documentClass));
-    }
-
-    if (activeStrategy.config.bodyClass) {
-      renderer.addClass(document.body, ...normalizeClasses(activeStrategy.config.bodyClass));
-    }
+    retainSharedClasses(document.documentElement, normalizeClasses(activeStrategy.config.documentClass));
+    retainSharedClasses(document.body, normalizeClasses(activeStrategy.config.bodyClass));
 
     runtimeRef
       .afterOpened()
@@ -369,7 +420,7 @@ export const createOverlayStrategyController = (
             strategy.onAfterLeave(context);
           }
 
-          removeClassesFromDocumentAndBody(strategy.config);
+          releaseClassesFromDocumentAndBody(strategy.config);
           childInjector.destroy();
         }),
       )
@@ -417,7 +468,7 @@ export const createOverlayStrategyController = (
       hostClass: normalizeClasses(activeStrategy.config.hostClass),
       animationDelegate,
       renderArrow: activeStrategy.config.arrow ?? false,
-      hasBackdrop: resolveHasBackdrop(activeStrategy.config),
+      hasBackdrop: resolveOverlayHasBackdrop(config, activeStrategy.config),
     },
     attach,
   };

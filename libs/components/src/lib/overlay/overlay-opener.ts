@@ -248,9 +248,16 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
   destroyRef.onDestroy(() => {
     teardown();
 
-    if (overlayRef) {
-      updateQueryParam(null);
-    }
+    const openRef = overlayRef;
+
+    if (!openRef) return;
+
+    overlayRef = null;
+
+    // clearing the param is what normally closes the overlay, but the effect doing that is destroyed
+    // with this context - and the overlay outlives it, so it has to be closed directly
+    openRef.close();
+    updateQueryParam(null);
   });
 
   return {

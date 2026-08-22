@@ -125,7 +125,7 @@ this.product.close();    // clears the param → overlay closes
 `open(value)` is typed from the component's model - `model<'grid' | 'list'>()` gives you `open('grid' | 'list')`.
 
 ::: tip Openers react for as long as they live
-A query-param opener watches the URL from creation until its injection context is destroyed. Create it once in a long-lived component (the page that owns the overlay, or the app shell for globally deep-linkable overlays).
+A query-param opener watches the URL from creation until its injection context is destroyed. Create it once in a long-lived component (the page that owns the overlay, or the app shell for globally deep-linkable overlays). Destroying the context closes an overlay it still has open and clears the param - the overlay is mounted outside the component tree, so nothing else would take it down.
 :::
 
 ### Opening from templates

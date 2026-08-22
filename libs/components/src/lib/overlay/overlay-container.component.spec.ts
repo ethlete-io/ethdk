@@ -8,12 +8,18 @@ import {
   inject,
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ColorTheme, ProvideColorDirective, provideColorThemesWithTailwind4 } from '@ethlete/core';
+import {
+  ColorTheme,
+  ProvideColorDirective,
+  SurfaceTheme,
+  provideColorThemesWithTailwind4,
+  provideSurfaceThemesWithTailwind4,
+} from '@ethlete/core';
 import '../../test-helpers';
 import { OverlayConfig } from './overlay-config';
 import { injectOverlayManager } from './overlay-manager';
 import { OverlayRef } from './overlay-ref';
-import { dialogOverlayStrategy } from './strategies';
+import { anchoredDialogOverlayStrategy, dialogOverlayStrategy } from './strategies';
 
 const BRAND_THEME: ColorTheme = {
   name: 'brand',
@@ -162,6 +168,92 @@ describe('OverlayContainerComponent color context', () => {
     const overlayRef = openDialog();
 
     expect(overlayRef.elements?.paneElement.classList.contains('et-color--inherited')).toBe(true);
+  });
+});
+
+const surface = (name: string, elevation: number, isDefault?: boolean): SurfaceTheme => ({
+  name,
+  type: 'dark',
+  elevation,
+  isDefault,
+  background: '0 0 0',
+  color: '255 255 255',
+  colorMuted: '180 180 180',
+  colorSubtle: '80 80 80',
+  border: '40 40 40',
+});
+
+const SURFACE_THEMES = [surface('night', 0, true), surface('night-1', 1), surface('night-2', 2)];
+
+describe('OverlayContainerComponent surface elevation', () => {
+  let openedRef: OverlayRef<OverlayContentComponent, unknown> | null = null;
+  let origin: HTMLElement | null = null;
+
+  beforeEach(() => {
+    openedRef = null;
+
+    TestBed.configureTestingModule({ providers: [provideSurfaceThemesWithTailwind4(SURFACE_THEMES)] });
+  });
+
+  afterEach(() => {
+    openedRef?.close();
+    origin?.closest('.et-surface--night-1')?.remove();
+    origin = null;
+  });
+
+  /** A trigger painted on an elevation-1 surface, as it would be inside an open dialog. */
+  const createElevatedOrigin = () => {
+    const parent = document.createElement('div');
+    parent.classList.add('et-surface--night-1');
+
+    const trigger = document.createElement('button');
+    parent.appendChild(trigger);
+    document.body.appendChild(parent);
+    origin = trigger;
+
+    return trigger;
+  };
+
+  const open = (config: Partial<OverlayConfig>) => {
+    const overlayRef = TestBed.runInInjectionContext(() =>
+      injectOverlayManager().open<OverlayContentComponent, unknown>(OverlayContentComponent, config),
+    );
+
+    openedRef = overlayRef;
+    TestBed.tick();
+
+    return overlayRef;
+  };
+
+  const surfaceNameOf = (overlayRef: OverlayRef<OverlayContentComponent, unknown>) =>
+    Array.from(overlayRef.elements?.paneElement.classList ?? []).find((cls) => cls.startsWith('et-surface--')) ?? null;
+
+  it('elevates above the trigger when the strategy renders no backdrop', () => {
+    const overlayRef = open({
+      origin: createElevatedOrigin(),
+      strategies: anchoredDialogOverlayStrategy(),
+    });
+
+    expect(surfaceNameOf(overlayRef)).toBe('et-surface--night-2');
+  });
+
+  it('resets to elevation 1 when the strategy renders a backdrop', () => {
+    const overlayRef = open({
+      origin: createElevatedOrigin(),
+      strategies: dialogOverlayStrategy(),
+    });
+
+    expect(surfaceNameOf(overlayRef)).toBe('et-surface--night-1');
+  });
+
+  it('lets the overlay config override the strategy default', () => {
+    const overlayRef = open({
+      origin: createElevatedOrigin(),
+      strategies: anchoredDialogOverlayStrategy(),
+      hasBackdrop: true,
+    });
+
+    expect(surfaceNameOf(overlayRef)).toBe('et-surface--night-1');
   });
 });
 

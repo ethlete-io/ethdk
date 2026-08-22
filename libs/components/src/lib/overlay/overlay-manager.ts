@@ -10,6 +10,7 @@ import {
 } from '@ethlete/core';
 import { OverlayConfig } from './overlay-config';
 import { OverlayContainerComponent } from './overlay-container.component';
+import { OVERLAY_HAS_BACKDROP, resolveOverlayHasBackdrop } from './overlay-has-backdrop';
 import { OVERLAY_REF, OverlayRef, createOverlayRef } from './overlay-ref';
 import { createOverlayStrategyController } from './strategies/overlay-strategy-controller';
 
@@ -116,7 +117,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         bindings: config.bindings,
         role,
         positionStrategy,
-        hasBackdrop: config.hasBackdrop ?? modal,
+        hasBackdrop: resolveOverlayHasBackdrop(config),
         modal,
         autoFocus: config.autoFocus,
         restoreFocus: config.restoreFocus,
@@ -163,7 +164,11 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         zIndex: resolvedConfig.zIndex ?? resolveZIndex(resolvedConfig.origin, document),
         viewContainerRef: resolvedConfig.viewContainerRef,
         injector: resolvedConfig.injector,
-        providers: [{ provide: OVERLAY_REF, useValue: overlayRef }, ...(resolvedConfig.providers ?? [])],
+        providers: [
+          { provide: OVERLAY_REF, useValue: overlayRef },
+          { provide: OVERLAY_HAS_BACKDROP, useValue: controller.initialMountConfig.hasBackdrop },
+          ...(resolvedConfig.providers ?? []),
+        ],
         bindings: [
           inputBinding('component', () => component),
           inputBinding('componentBindings', () => resolvedConfig.bindings),

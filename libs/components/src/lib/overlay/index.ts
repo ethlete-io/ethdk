@@ -8,6 +8,7 @@ export * from './overlay-container.component';
 export * from './overlay-definition';
 export * from './overlay-errors';
 export * from './overlay-footer.directive';
+export * from './overlay-has-backdrop';
 export * from './overlay-header.directive';
 export * from './overlay-header-template.directive';
 export * from './overlay-main.directive';

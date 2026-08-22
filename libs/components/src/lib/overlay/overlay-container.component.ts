@@ -38,6 +38,7 @@ import {
   resolveSurfaceByElevation,
 } from '@ethlete/core';
 import { tap } from 'rxjs';
+import { OVERLAY_HAS_BACKDROP, resolveOverlayHasBackdrop } from './overlay-has-backdrop';
 import { OVERLAY_REF } from './overlay-ref';
 
 @Component({
@@ -60,6 +61,7 @@ export class OverlayContainerComponent {
   private destroyRef = inject(DestroyRef);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private appRef = inject(ApplicationRef);
+  private mountedHasBackdrop = inject(OVERLAY_HAS_BACKDROP, { optional: true });
 
   protected overlayRef = inject(OVERLAY_REF);
   private surfaceThemes = injectSurfaceThemes({ optional: true });
@@ -100,7 +102,9 @@ export class OverlayContainerComponent {
       // and fall back to DI (openers that pass a viewContainerRef but no origin).
       const parentSurface = this.resolveOriginSurface() ?? this.parentDiSurface();
       const parentType = parentSurface?.type ?? 'dark';
-      const hasBackdrop = this.overlayRef.config.hasBackdrop ?? this.overlayRef.config.mode !== 'non-modal';
+      // a strategy's own `hasBackdrop` never reaches `overlayRef.config` - only the value the overlay
+      // actually mounted with accounts for it
+      const hasBackdrop = this.mountedHasBackdrop ?? resolveOverlayHasBackdrop(this.overlayRef.config);
       const elevation = hasBackdrop || !parentSurface ? 1 : parentSurface.elevation + 1;
       const resolved = resolveSurfaceByElevation(this.surfaceThemes, parentType, elevation);
 

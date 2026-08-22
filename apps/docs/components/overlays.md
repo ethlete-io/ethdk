@@ -53,7 +53,7 @@ Defaults worth knowing:
 | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `mode`                                   | `'modal'` - set `'non-modal'` for popover-style overlays                                                                   |
 | `role`                                   | `'dialog'` when modal                                                                                                      |
-| `hasBackdrop`                            | Follows `mode` (modal → backdrop)                                                                                          |
+| `hasBackdrop`                            | The strategy's own default when it sets one, otherwise follows `mode` (modal → backdrop)                                   |
 | `closeOnEscape`, `closeOnOutsidePointer` | `true`; `disableClose: true` forces both off                                                                               |
 | Position                                 | Anchored to `origin` when it's an element, otherwise centered                                                              |
 | `origin` (with strategies)               | Falls back to the currently focused element (used as transform origin too)                                                 |
@@ -190,7 +190,7 @@ The boxed overlay kinds - `dialog`, `anchoredDialog`, the four sheets and the fu
 
 Content inherits the radius through the pane, and the anchored-dialog arrow reads the pane's real background and border so it matches. Anchored/centered panes (menu, tooltip, select, date-picker, …) are deliberately excluded - they paint their own surface.
 
-Every overlay resolves its elevation one level **above the surface its trigger sits on**, found from the trigger's nearest surface ancestor in the DOM. This works across the portal boundary: a `select` opened from inside a dialog (elevation 1) mounts at elevation 2, a picker anchored to a field inside an elevated card elevates above the card, and a submenu elevates above its parent menu. Modal dialogs are the exception - a backdrop resets the visual context, so they always mount at elevation 1.
+Every overlay resolves its elevation one level **above the surface its trigger sits on**, found from the trigger's nearest surface ancestor in the DOM. This works across the portal boundary: a `select` opened from inside a dialog (elevation 1) mounts at elevation 2, a picker anchored to a field inside an elevated card elevates above the card, and a submenu elevates above its parent menu. An overlay with a backdrop is the exception - the backdrop resets the visual context, so it always mounts at elevation 1. That is resolved from the same `hasBackdrop` the overlay mounted with, so a strategy that turns the backdrop off (the anchored dialog) keeps elevating above its trigger even in the default modal mode.
 
 Override per instance via `panelClass` and the pane tokens:
 
@@ -216,7 +216,7 @@ A strategy controls the overlay's position, sizing, classes and animation. Pass 
 | `anchoredDialogOverlayStrategy`                          | Anchored popover next to `origin` (floating-ui), arrow by default |
 | `centeredOverlayStrategy`                                | Plain centered pane with size overrides                           |
 
-Every factory accepts a partial `OverlayBreakpointConfig` (sizes, classes, `dragToDismiss`, `hasBackdrop`, `arrow`, …).
+Every factory accepts a partial `OverlayBreakpointConfig` (sizes, classes, `dragToDismiss`, `hasBackdrop`, `arrow`, …). Its `documentClass` and `bodyClass` land on elements every overlay shares, so they are reference counted: two open overlays asking for the same document class keep it until the last of them closes.
 
 Size a non-anchored overlay in percentages rather than viewport units (`80%`, not `80vh`). The pane fills a cell that spans the space an overlay may use, which is the viewport minus whatever [reserved it](/core/overlay-runtime#reserved-viewport-space) - a docked devtools panel, for example. `vh` and `vw` measure the whole window instead, so a pane sized that way can reach under such a surface. This is why the dialog and sheet defaults are percentages.
 
