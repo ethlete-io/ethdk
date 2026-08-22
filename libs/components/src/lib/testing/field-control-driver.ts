@@ -1,7 +1,7 @@
 import { Provider, Type } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { ControlDriverOptions, createControlDriver, mountControl } from './control-driver';
-import { blurField, focusField, pointerEvent, pressKey, setInputValue } from './driver-core';
+import { blurField, focusField, pointerEvent, pressKey, setInputValue, typeChars } from './driver-core';
 
 export type FieldControlDriverOptions = ControlDriverOptions & {
   /** Matches the editable field, when it is not the host's only `input`. */
@@ -29,6 +29,8 @@ export const createFieldControlDriver = <T, D>(
     placeholder: () => field().placeholder,
 
     type: (text: string) => setInputValue(field(), text),
+    /** Types one character at a time - what a keyboard produces, unlike `type`'s single event. */
+    typeChars: (text: string) => typeChars(field(), text),
     typeAndBlur: (text: string) => {
       setInputValue(field(), text);
       blurField(field());

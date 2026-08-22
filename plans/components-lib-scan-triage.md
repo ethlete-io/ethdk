@@ -46,12 +46,19 @@ Resolves: grid High "Shift+Arrow inside a text field resizes the widget", grid H
 _and_ resizes", calendar Low "handleKeydown claims every key with no target check".
 Done: `internals/form-input-target.ts` guards both handlers; the grid branches are exclusive now.
 
-### 3. Phone input: character-by-character international entry corrupts the value · M
+### 3. Phone input: character-by-character international entry corrupts the value · M · **DONE 2026-08-22**
 
 `forms/phone-input/headless/phone-input-field.directive.ts:36-54` rewrites the element to the
 national interpretation mid-entry, so each subsequent keystroke re-prepends the dial code.
 Resolves: phone-input High "typing `+…` one character at a time corrupts the value".
 Needs the `typeChars()` driver from _Spec-coverage_ #1 to be regression-guarded at all.
+
+Done: `phone-input-field.directive.ts` no longer rewrites the element while focused - the field
+shows what the user typed and normalizes to the grouped national form on blur, so every keystroke
+re-reads a faithful record of the entry. `typeChars()` landed in `testing/driver-core.ts` and on
+`createFieldControlDriver` (_Spec-coverage_ #1); the existing phone typing tests were re-run
+through it and all pass, so no further mid-entry defect is hiding in that domain. The paste test
+deliberately stays on the single-event `type()`.
 
 ### 4. Support-region ids: `aria-describedby` pointing at nothing · M
 
@@ -379,6 +386,8 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
 1. **A character-by-character `typeChars()` in `driver-core.ts`.** `typeInField` sets the whole value
    in one event, which is exactly why the phone-input High is invisible to a 261-line suite. Re-run
    the existing phone tests through it. Cheapest highest-value item in the scan.
+   **DONE 2026-08-22** with item #3 - `typeChars()` is in `driver-core.ts` and exposed on
+   `createFieldControlDriver`, so every text-control driver has it.
 2. **`aria-describedby` resolution as a shared assertion** (`expectDescribedByResolves`). Would have
    caught otp, rating, slider, dropzone and the three selection groups in one pass, and keeps catching
    the next one.

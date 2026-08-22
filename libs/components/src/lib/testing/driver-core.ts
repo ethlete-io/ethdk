@@ -71,6 +71,25 @@ export const typeInField = (field: HTMLInputElement, text: string) => {
   setInputValue(field, text);
 };
 
+/**
+ * Types `text` one character at a time, each with its own `input` event and the caret left after
+ * the inserted character - what a real keyboard produces. Use it instead of {@link typeInField}
+ * whenever the control reads or rewrites the element between keystrokes; a whole-string
+ * {@link setInputValue} hides every defect that only appears mid-entry.
+ */
+export const typeChars = (field: HTMLInputElement, text: string) => {
+  field.focus();
+
+  for (const char of text) {
+    const caret = field.selectionStart ?? field.value.length;
+
+    field.value = field.value.slice(0, caret) + char + field.value.slice(caret);
+    field.setSelectionRange(caret + 1, caret + 1);
+    field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+    tick();
+  }
+};
+
 export const blurField = (field: HTMLInputElement) => {
   field.blur();
   field.dispatchEvent(new Event('blur'));

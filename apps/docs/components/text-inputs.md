@@ -445,9 +445,11 @@ the `0` is part of the number), and the `00` international call prefix works lik
 `+` (`0049…` → `+49…`). Typing or pasting a full `+…` number re-derives the
 country by longest dial-code match - but a manually picked country survives shared
 dial codes (`+1` stays Canada if you chose Canada). Switching countries keeps the
-national number. The display groups digits in threes while unfocused (**cosmetic
-only** - not per-country metadata formatting; validate on the backend/schema, with
-`isPlausible` as a cheap length-window helper).
+national number. A focused field always shows exactly what you typed, `+` prefix
+included; it collapses to the national number when you leave it. The display groups
+digits in threes while unfocused (**cosmetic only** - not per-country metadata
+formatting; validate on the backend/schema, with `isPlausible` as a cheap
+length-window helper).
 
 The country dropdown searches names **and** dial codes (`49` or `+49` finds
 Germany) and shows an empty row when nothing matches. Replace the emoji flags

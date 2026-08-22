@@ -31,8 +31,10 @@ export class PhoneInputFieldDirective {
   constructor() {
     registerSingleton(this.phoneInput?.registeredField, this);
 
-    // the element shows raw digits while editing and the grouped form otherwise -
-    // rewriting the value mid-typing would fight the caret
+    // the element mirrors the grouped national form only while unfocused. Never rewrite it
+    // during an edit: the text the user is part-way through typing is what `setNationalInput`
+    // re-reads on the next keystroke, so replacing a half-typed `+33…` with its national
+    // interpretation makes the next character read as national digits and re-prepend the dial code
     effect(() => {
       const phoneInput = this.phoneInput;
 
@@ -41,14 +43,9 @@ export class PhoneInputFieldDirective {
       }
 
       const element = this.elementRef.nativeElement;
-      const text = phoneInput.focused() ? phoneInput.nationalNumber() : phoneInput.formattedNational();
+      const text = phoneInput.formattedNational();
 
       if (!phoneInput.focused() && element.value !== text) {
-        element.value = text;
-      }
-
-      if (phoneInput.focused() && element.value.trim().startsWith('+')) {
-        // a `+…` entry was normalized into value/country - show the national part again
         element.value = text;
       }
     });

@@ -54,7 +54,7 @@ describe('PhoneInputDirective', () => {
     expect(driver.clearButton()).toBeNull();
 
     driver.focus();
-    driver.type('170 123');
+    driver.typeChars('170 123');
 
     expect(driver.clearButton()).not.toBeNull();
 
@@ -68,14 +68,14 @@ describe('PhoneInputDirective', () => {
   });
 
   it('normalizes typed national digits into +dial value', () => {
-    driver.type('170 123');
+    driver.typeChars('170 123');
 
     expect(driver.host.value()).toBe('+49170123');
     expect(driver.phone.nationalNumber()).toBe('170123');
   });
 
   it('strips the national trunk 0 ("0170…" means +49170…)', () => {
-    driver.type('0170 1234567');
+    driver.typeChars('0170 1234567');
 
     expect(driver.host.value()).toBe('+491701234567');
     expect(driver.phone.nationalNumber()).toBe('1701234567');
@@ -83,20 +83,34 @@ describe('PhoneInputDirective', () => {
 
   it('keeps the leading 0 for countries where it is part of the number', () => {
     driver.selectCountry('it');
-    driver.type('06 6981');
+    driver.typeChars('06 6981');
 
     expect(driver.host.value()).toBe('+39066981');
     expect(driver.phone.nationalNumber()).toBe('066981');
   });
 
   it('treats the 00 international call prefix like +', () => {
-    driver.type('0033 1 23 45 67 89');
+    driver.typeChars('0033 1 23 45 67 89');
 
     expect(driver.phone.country()).toBe('fr');
     expect(driver.host.value()).toBe('+33123456789');
   });
 
+  it('re-derives the country from an international number typed one character at a time', () => {
+    driver.focus();
+    driver.typeChars('+33123456789');
+
+    expect(driver.phone.country()).toBe('fr');
+    expect(driver.host.value()).toBe('+33123456789');
+
+    driver.blur();
+
+    expect(driver.phone.nationalNumber()).toBe('123456789');
+    expect(driver.fieldValue()).toBe('123 456 789');
+  });
+
   it('re-derives the country from a pasted international number', () => {
+    // one input event for the whole string is what a paste produces
     driver.type('+33 1 23 45 67 89');
 
     expect(driver.phone.country()).toBe('fr');
@@ -105,7 +119,7 @@ describe('PhoneInputDirective', () => {
   });
 
   it('switches the country while keeping the national number', () => {
-    driver.type('123456789');
+    driver.typeChars('123456789');
     driver.selectCountry('at');
 
     expect(driver.phone.country()).toBe('at');
@@ -115,7 +129,7 @@ describe('PhoneInputDirective', () => {
 
   it('keeps a manually selected country when the dial code is shared', () => {
     driver.selectCountry('ca');
-    driver.type('2025550123');
+    driver.typeChars('2025550123');
 
     // +1 matches the US first, but Canada was chosen explicitly
     expect(driver.phone.country()).toBe('ca');
@@ -190,7 +204,7 @@ describe('PhoneInputDirective', () => {
       enterMixed('+491701234567');
 
       driver.selectCountry('fr');
-      driver.type('612345678');
+      driver.typeChars('612345678');
 
       expect(driver.host.value()).toBe('+33612345678');
       expect(driver.host.mixed()).toBe(false);
