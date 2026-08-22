@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { ColorInteractiveDirective } from '@ethlete/core';
-import { ChipComponent } from '../../chip';
+import { CHIP_REMOVE_TAB_STOP, ChipComponent } from '../../chip';
 import { TagInputDirective, TagInputFieldDirective } from './headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
@@ -10,6 +10,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
   styleUrl: './tag-input.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [ChipComponent, TagInputFieldDirective],
+  providers: [{ provide: CHIP_REMOVE_TAB_STOP, useValue: false }],
   hostDirectives: [
     {
       directive: TagInputDirective,

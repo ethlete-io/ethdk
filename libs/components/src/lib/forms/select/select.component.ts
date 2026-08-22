@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { booleanAttribute, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { ColorInteractiveDirective, ProvideColorDirective, createComponentId, injectErrorTheme } from '@ethlete/core';
-import { ChipComponent } from '../../chip';
+import { CHIP_REMOVE_TAB_STOP, ChipComponent } from '../../chip';
 import { CHEVRON_ICON, IconDirective, PLUS_ICON, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
 import { mountControlSuffixStyles } from '../form-field/form-field-control-suffix-styles.component';
@@ -32,7 +32,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
     SpinnerComponent,
     ProvideColorDirective,
   ],
-  providers: [provideIcons(CHEVRON_ICON, TIMES_ICON, PLUS_ICON)],
+  providers: [provideIcons(CHEVRON_ICON, TIMES_ICON, PLUS_ICON), { provide: CHIP_REMOVE_TAB_STOP, useValue: false }],
   hostDirectives: [
     {
       directive: SelectDirective,

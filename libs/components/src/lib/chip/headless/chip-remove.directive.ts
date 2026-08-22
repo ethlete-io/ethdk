@@ -1,6 +1,7 @@
 import { afterNextRender, computed, Directive, ElementRef, inject, input } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { CHIP_ERROR_CODES } from './chip-errors';
+import { CHIP_REMOVE_TAB_STOP } from './chip.tokens';
 import { ChipDirective } from './chip.directive';
 import { injectChipLabels } from '../../chip/chip-labels';
 
@@ -9,9 +10,7 @@ import { injectChipLabels } from '../../chip/chip-labels';
   exportAs: 'etChipRemove',
   host: {
     class: 'et-chip-remove',
-    // chips are never tab stops - contexts like the select trigger or the tag input move
-    // focus across chips virtually, and pointer/Backspace removal works without a tab stop
-    tabindex: '-1',
+    '[attr.tabindex]': 'tabIndex()',
     '[attr.type]': 'IS_BUTTON ? "button" : null',
     '[attr.disabled]': 'IS_BUTTON && chip?.disabled() ? "" : null',
     '[attr.aria-label]': 'resolvedRemoveLabel()',
@@ -25,11 +24,21 @@ export class ChipRemoveDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public removeLabel = input<string | null>(null);
+  private isTabStop = inject(CHIP_REMOVE_TAB_STOP, { optional: true }) ?? true;
+
+  protected readonly IS_BUTTON = this.elementRef.nativeElement.tagName === 'BUTTON';
 
   /** The string in effect: this instance's `removeLabel`, else the domain's label set. */
   public resolvedRemoveLabel = computed(() => this.removeLabel() ?? this.chipLabels().remove);
 
-  protected readonly IS_BUTTON = this.elementRef.nativeElement.tagName === 'BUTTON';
+  /** `null` leaves a `<button>` in its natural tab order; any other host needs an explicit value. */
+  public tabIndex = computed(() => {
+    if (!this.isTabStop || this.chip?.disabled() || !this.chip?.removable()) {
+      return '-1';
+    }
+
+    return this.IS_BUTTON ? null : '0';
+  });
 
   constructor() {
     if (ngDevMode) {

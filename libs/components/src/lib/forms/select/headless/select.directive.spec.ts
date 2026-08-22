@@ -602,6 +602,13 @@ describe('SelectDirective (multiple)', () => {
     expect(driver.chipRemoveButton(0)).toBeNull();
     expect(driver.chips()[0]!.hasAttribute('data-disabled')).toBe(false);
   });
+
+  it('keeps the trigger chips out of the tab order', () => {
+    driver.host.value.set(['apple']);
+    driver.detectChanges();
+
+    expect(driver.chipRemoveButton(0)?.getAttribute('tabindex')).toBe('-1');
+  });
 });
 
 describe('SelectDirective (search)', () => {

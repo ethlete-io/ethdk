@@ -93,6 +93,13 @@ describe('TagInputDirective', () => {
     expect(driver.host.value()).toEqual(['one', 'two']);
   });
 
+  it('keeps the chips out of the tab order', () => {
+    driver.host.value.set(['one']);
+    driver.tick();
+
+    expect(driver.queryAll('.et-chip-remove-button')[0]!.getAttribute('tabindex')).toBe('-1');
+  });
+
   it('removes the last tag with Backspace on an empty field', () => {
     driver.host.value.set(['one', 'two']);
     driver.tick();

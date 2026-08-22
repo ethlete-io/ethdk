@@ -441,7 +441,22 @@ single-domain reach.
 - **Bracket: a pinned journey breaks on any `source` change** — the whole bracket dims with nothing
   highlighted (bracket High). M
 - **Grid items are focusable with `outline: none` and no replacement** (grid High), and **the chip
-  docs' own quick-start is keyboard-unremovable** (chip High). S each
+  docs' own quick-start is keyboard-unremovable** (chip High). S each — **DONE 2026-08-22**. The grid
+  item keeps `outline: none` for a pointer press but draws a `:focus-visible` ring
+  (`--et-theme-color-primary-solid`, inset 2px); verified headlessly: `solid 2px rgb(0, 255, 161)`
+  at `offset=-2px` on keyboard focus, `outline: none` and `:focus-visible` false after a pointer-only
+  click. `ChipRemoveDirective` stops hardcoding `tabindex="-1"`: a `<button>` remove control keeps its
+  natural tab order (any other host gets `0`), drops to `-1` while the chip is disabled or not
+  removable, and drops to `-1` wherever a widget provides the new `CHIP_REMOVE_TAB_STOP` as `false` —
+  which `et-select` and `et-tag-input` now do, so their chips stay out of the tab order. The remove
+  button also gained a `:focus-visible` ring. Driving the docs' own quick-start story: Tab lands on
+  the remove button (ring shown), Enter removes the chip (4 → 3). Left open: the chip **host** still
+  never becomes a tab stop, so `Backspace`/`Delete` on the chip itself remains programmatic-focus-only.
+  Making the host focusable would collide with `etSelectionOption`'s roving tabindex on filter chips
+  and doubles the tab stops per chip, which is a design call rather than an S; the docs now state that
+  limit. `.et-grid-item` styles are also still unlayered inline `styles`, so a consumer rule at equal
+  specificity (e.g. ea-frontend's edit-mode dotted outline) can still beat the ring; wrapping that
+  sheet in `@layer components` touches every grid rule and is its own item.
 - **Pagination: `hidePreviousNext` ignored in compact mode; static `id` on the jump input; a
   documented 44px coarse-pointer target that no rule implements** (pagination High ×3). S —
   **DONE 2026-08-22**. `compactControls()` forwards `hidePreviousNext` to `paginate()`, so the compact
@@ -504,7 +519,21 @@ single-domain reach.
   untouched.
 - **Overlay: container elevation ignores the strategy's `hasBackdrop`; `documentClass`/`bodyClass`
   are not ref-counted; a destroyed query-param opener orphans an open overlay** (overlay Medium ×3).
-  Fix the first two via the DX item "one `resolveHasBackdrop`, one `resolveOrigin`". S / M
+  Fix the first two via the DX item "one `resolveHasBackdrop`, one `resolveOrigin`". S / M · **DONE 2026-08-22**
+  Done: one exported `resolveOverlayHasBackdrop(config, strategyConfig?)` (new `overlay-has-backdrop.ts`)
+  now backs the controller and both manager paths, and the container elevates against the resolved value
+  the overlay mounted with, handed to it through the new internal `OVERLAY_HAS_BACKDROP` provider (a
+  strategy's own `hasBackdrop` never reaches `overlayRef.config`, and the container is constructed before
+  its inputs are set, so DI is the only route). `documentClass`/`bodyClass` are reference counted per
+  element in the controller, on attach, on a breakpoint switch and on close. A destroyed query-param
+  opener now closes the overlay before clearing the param. New specs: `overlay-opener.spec.ts` (the
+  domain's largest untested surface got its first coverage), plus elevation cases in the container spec
+  and shared-class cases in the controller spec. Left open: the `resolveOrigin` half of the DX item (the
+  two manager paths still resolve `origin` differently - it is a readability asymmetry, not a bug, and
+  unifying it changes the no-strategies path's focused-element fallback, which `overlays.md:59` documents
+  as deliberate); the elevation is still decided once at mount, so a breakpoint switch that adds or
+  removes the backdrop does not re-elevate the pane; and `OverlayBreakpointConfig.hasBackdrop`'s wrong
+  JSDoc (its own Medium bullet) is untouched.
 - **ARIA structure claims that do not hold — `role="grid"`/`tablist` with unowned or nested children**
   in calendar (High), scheduler (High: no `grid` owner at all), table page-sticky (Medium) and tabs
   (Medium). One shape, four domains; cheap (`role="presentation"` on layout wrappers) but needs the

@@ -212,7 +212,7 @@ The `BackendIntegration` story shows the full round trip. A `<et-grid-debug />` 
 ## Accessibility
 
 - The grid host is a `role="region"` labelled from `GRID_LABELS` - `interactiveGrid` normally, `readonlyGrid` when `readOnly` (both [localizable](/components/localization)).
-- Each item is a focusable `role="group"` (`tabindex="0"`) with its `ariaLabel` input as the accessible name - set it per item, the default is a generic `'Grid item'`.
+- Each item is a focusable `role="group"` (`tabindex="0"`) with its `ariaLabel` input as the accessible name - set it per item, the default is a generic `'Grid item'`. A keyboard-focused item draws an inset ring in `--et-theme-color-primary-solid` (`:focus-visible` only - a pointer press leaves no ring).
 - All editing is keyboard-reachable (see [Interaction](#interaction)); the drag handle reflects an active drag via `aria-grabbed`, and the default remove button is labelled by `GRID_LABELS.removeItem`.
 
 ## Theming

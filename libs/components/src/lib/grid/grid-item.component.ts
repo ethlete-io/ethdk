@@ -78,6 +78,11 @@ import { GRID_TOKEN } from './headless/grid.tokens';
       border-radius: var(--et-grid-item-radius, 0);
       background: var(--et-grid-item-bg, var(--et-surface-background-solid));
 
+      &:focus-visible {
+        outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+        outline-offset: -2px;
+      }
+
       &:is(.et-grid-item--dragging, .et-grid-item--resizing, .et-grid-item--direct, .et-grid-item--settling) {
         z-index: 100;
       }

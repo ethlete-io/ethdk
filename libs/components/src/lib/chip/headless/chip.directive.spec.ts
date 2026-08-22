@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import { ChipRemoveDirective } from './chip-remove.directive';
+import { CHIP_REMOVE_TAB_STOP } from './chip.tokens';
 import { ChipDirective } from './chip.directive';
 
 @Component({
@@ -24,6 +25,29 @@ class ChipTestHost {
   removable = signal(true);
   removeCount = 0;
 }
+
+@Component({
+  template: `
+    <span removable etChip>
+      Chip
+      <span etChipRemove>x</span>
+    </span>
+  `,
+  imports: [ChipDirective, ChipRemoveDirective],
+})
+class NonButtonRemoveHost {}
+
+@Component({
+  template: `
+    <span removable etChip>
+      Chip
+      <button etChipRemove>x</button>
+    </span>
+  `,
+  imports: [ChipDirective, ChipRemoveDirective],
+  providers: [{ provide: CHIP_REMOVE_TAB_STOP, useValue: false }],
+})
+class ManagedFocusHost {}
 
 describe('ChipDirective', () => {
   let fixture: ComponentFixture<ChipTestHost>;
@@ -80,10 +104,17 @@ describe('ChipDirective', () => {
     expect(fixture.componentInstance.removeCount).toBe(0);
   });
 
-  it('keeps the remove button out of the tab order and labelled', () => {
-    expect(removeButton.getAttribute('tabindex')).toBe('-1');
+  it('leaves the remove button in the tab order and labelled', () => {
+    expect(removeButton.hasAttribute('tabindex')).toBe(false);
     expect(removeButton.getAttribute('type')).toBe('button');
     expect(removeButton.getAttribute('aria-label')).toBe('Remove');
+  });
+
+  it('takes the remove button out of the tab order while not removable', () => {
+    fixture.componentInstance.removable.set(false);
+    fixture.detectChanges();
+
+    expect(removeButton.getAttribute('tabindex')).toBe('-1');
   });
 
   it('disables the native remove button while the chip is disabled', () => {
@@ -91,5 +122,23 @@ describe('ChipDirective', () => {
     fixture.detectChanges();
 
     expect(removeButton.hasAttribute('disabled')).toBe(true);
+  });
+});
+
+describe('ChipRemoveDirective tab order', () => {
+  it('gives a non-button remove control an explicit tab stop', () => {
+    TestBed.configureTestingModule({ imports: [NonButtonRemoveHost] });
+    const fixture = TestBed.createComponent(NonButtonRemoveHost);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[etChipRemove]').getAttribute('tabindex')).toBe('0');
+  });
+
+  it('drops out of the tab order where an ancestor manages chip focus', () => {
+    TestBed.configureTestingModule({ imports: [ManagedFocusHost] });
+    const fixture = TestBed.createComponent(ManagedFocusHost);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[etChipRemove]').getAttribute('tabindex')).toBe('-1');
   });
 });

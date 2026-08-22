@@ -18,10 +18,10 @@ import { CHIP_IMPORTS } from '@ethlete/components';
 
 On `et-chip` (forwarded from the headless `[etChip]` directive):
 
-| Input       | Type      | Default | Description                                                                 |
-| ----------- | --------- | ------- | --------------------------------------------------------------------------- |
-| `disabled`  | `boolean` | `false` | Dims the chip, blocks pointer events and disables removal.                  |
-| `removable` | `boolean` | `false` | Shows the remove button and enables removal via pointer, Backspace, Delete. |
+| Input       | Type      | Default | Description                                                                                |
+| ----------- | --------- | ------- | ------------------------------------------------------------------------------------------ |
+| `disabled`  | `boolean` | `false` | Dims the chip, blocks pointer events and disables removal.                                 |
+| `removable` | `boolean` | `false` | Shows the remove button - a tab stop - and enables removal via pointer, Backspace, Delete. |
 
 | Output   | Payload | Emitted when                                                              |
 | -------- | ------- | ------------------------------------------------------------------------- |
@@ -70,10 +70,21 @@ For custom chip markup, compose the directives directly - `[etChip]` owns the st
 
 ¹ `null` falls through to [`CHIP_LABELS.remove`](/components/localization) (`'Remove'`).
 
+A widget that owns the tab order around its chips - a select trigger, a tag input, anything with roving focus - provides `CHIP_REMOVE_TAB_STOP` as `false` so its chips' remove controls drop out of the tab order:
+
+```ts
+@Component({
+  // ...
+  providers: [{ provide: CHIP_REMOVE_TAB_STOP, useValue: false }],
+})
+export class MyTagList {}
+```
+
 ## Accessibility
 
 - The chip host mirrors its state as `aria-disabled` plus `data-disabled` / `data-removable` attributes.
-- The remove control is a real `<button type="button">` with an `aria-label` (`removeLabel`), but sits at `tabindex="-1"` - **chips are never tab stops**. Composite widgets (a select trigger, a tag input) move focus across chips virtually; standalone chips are removed via pointer or via Backspace/Delete while the chip element has (programmatic) focus.
+- The remove control is a real `<button type="button">` with an `aria-label` (`removeLabel`) and a **tab stop**, so a standalone chip is removable with <kbd>Tab</kbd> then <kbd>Enter</kbd> - no ancestor widget and no `tabindex` of your own required. It drops to `tabindex="-1"` while the chip is disabled or not `removable`, and inside a widget that provides `CHIP_REMOVE_TAB_STOP` as `false` (the select trigger and the tag input do, since they move focus across their chips themselves - there, removal stays pointer-only or goes through the widget's own keyboard path).
+- <kbd>Backspace</kbd>/<kbd>Delete</kbd> also remove, while the chip element itself has focus - which needs a `tabindex` on the chip or programmatic focus; the chip host never becomes a tab stop on its own.
 - Clicking remove calls `stopPropagation()`, so a chip that is itself clickable doesn't also activate.
 - Dev mode throws when `etChipRemove` is placed outside an `[etChip]` element.
 

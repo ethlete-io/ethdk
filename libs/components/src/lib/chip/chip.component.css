@@ -140,6 +140,11 @@
         background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 28%, transparent);
       }
 
+      &:focus-visible {
+        outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+        outline-offset: 1px;
+      }
+
       .et-icon {
         inline-size: calc(var(--et-chip-remove-size) - 6px);
         block-size: calc(var(--et-chip-remove-size) - 6px);
