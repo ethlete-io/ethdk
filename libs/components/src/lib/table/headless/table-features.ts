@@ -393,6 +393,8 @@ export type TableFeatureHost = {
   rows(): readonly unknown[];
   /** Stable identity for a row - `rowKey`'s string form, else the row reference. */
   rowIdentity(row: unknown): unknown;
+  /** Whether a `rowKey` is bound, i.e. whether row identity is stable enough to serialize. */
+  hasRowKey(): boolean;
   /** A rendered body cell, for a feature that needs to measure real row height. */
   firstBodyCellElement(): HTMLElement | null;
 

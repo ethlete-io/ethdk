@@ -2,6 +2,7 @@ import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { TableSelectionDirective } from './table-selection.directive';
+import { TableComponent } from './table.component';
 import { TABLE_IMPORTS, TABLE_SELECTION_IMPORTS } from './table.imports';
 import { TableColumns } from './table.types';
 
@@ -24,7 +25,7 @@ const columns = () =>
     <et-table
       [columns]="cols()"
       [data]="data()"
-      [rowKey]="rowKey"
+      [rowKey]="keyed() ? rowKey : undefined"
       [etTableSelection]="{ selection: selection, selectableRow: selectableRow(), side: side() }"
     />
   `,
@@ -36,7 +37,9 @@ class HostComponent {
   public selection = signal<Set<unknown>>(new Set());
   public selectableRow = signal<((row: Person) => boolean) | undefined>(undefined);
   public side = signal<'start' | 'end' | undefined>(undefined);
+  public keyed = signal(true);
   public feature = viewChild.required<TableSelectionDirective<Person>>(TableSelectionDirective);
+  public table = viewChild.required<TableComponent<Person>>(TableComponent);
 
   public rowKey = (row: Person) => row.id;
 }
@@ -151,5 +154,51 @@ describe('TableSelectionDirective', () => {
     const grid = (fixture.nativeElement as HTMLElement).querySelector('.et-table') as HTMLElement;
 
     expect(grid.style.gridTemplateColumns.startsWith('var(--et-table-select-width, 44px)')).toBe(true);
+  });
+
+  describe('state', () => {
+    it('serializes the selected rows into its own feature slice and round-trips them', () => {
+      const fixture = create();
+      const selection = featureOf(fixture);
+      const table = fixture.componentInstance.table();
+
+      selection.setSelected(PEOPLE[0]!, true);
+
+      const snapshot = table.state();
+      expect(snapshot.features?.['selection']).toEqual([String(PEOPLE[0]!.id)]);
+
+      fixture.componentInstance.selection.set(new Set());
+      table.restoreState(snapshot);
+
+      expect(selection.isSelected(PEOPLE[0]!)).toBe(true);
+    });
+
+    it('contributes nothing for a table without a rowKey, rather than serialized row references', () => {
+      const fixture = create();
+
+      fixture.componentInstance.keyed.set(false);
+      fixture.detectChanges();
+
+      featureOf(fixture).setSelected(PEOPLE[0]!, true);
+
+      expect(fixture.componentInstance.table().state().features).toBeUndefined();
+    });
+
+    it('leaves the live selection alone when a stored slice is restored without a rowKey', () => {
+      const fixture = create();
+      const selection = featureOf(fixture);
+
+      fixture.componentInstance.keyed.set(false);
+      fixture.detectChanges();
+
+      selection.setSelected(PEOPLE[0]!, true);
+
+      // Reference-keyed selection: a stored key matches no row, so writing it would only clear it.
+      fixture.componentInstance
+        .table()
+        .restoreState({ v: 3, columns: [], features: { selection: [String(PEOPLE[1]!.id)] } });
+
+      expect(selection.isSelected(PEOPLE[0]!)).toBe(true);
+    });
   });
 });

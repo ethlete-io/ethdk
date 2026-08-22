@@ -111,12 +111,14 @@ export class TableSelectionDirective<T> {
     this.table.registerStateSlice({
       key: 'selection',
       read: () => {
+        if (!this.table.hasRowKey()) return undefined;
+
         const keys = [...this.selection()()];
 
         return keys.length ? keys.map(String) : undefined;
       },
       write: (value) => {
-        if (Array.isArray(value)) this.selection().set(new Set(value.map(String)));
+        if (this.table.hasRowKey() && Array.isArray(value)) this.selection().set(new Set(value.map(String)));
       },
     });
   }

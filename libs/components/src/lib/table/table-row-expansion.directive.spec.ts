@@ -158,6 +158,34 @@ describe('TableRowExpansionDirective', () => {
       expect(fixture.componentInstance.table().state().features).toBeUndefined();
     });
 
+    it('contributes nothing for a table without a rowKey, rather than serialized row references', () => {
+      const fixture = create();
+
+      fixture.componentInstance.keyed.set(false);
+      fixture.detectChanges();
+
+      featureOf(fixture).toggle(PEOPLE[0]!);
+
+      expect(fixture.componentInstance.table().state().features).toBeUndefined();
+    });
+
+    it('leaves the open rows alone when a stored slice is restored without a rowKey', () => {
+      const fixture = create();
+      const expansion = featureOf(fixture);
+
+      fixture.componentInstance.keyed.set(false);
+      fixture.detectChanges();
+
+      expansion.toggle(PEOPLE[0]!);
+
+      // Reference-keyed expansion: a stored key matches no row, so writing it would only close it.
+      fixture.componentInstance
+        .table()
+        .restoreState({ v: 3, columns: [], features: { expansion: [String(PEOPLE[1]!.id)] } });
+
+      expect(expansion.isExpanded(PEOPLE[0]!)).toBe(true);
+    });
+
     it('ignores a v2 state’s top-level expanded list rather than clearing what is open', () => {
       const fixture = create();
       const expansion = featureOf(fixture);

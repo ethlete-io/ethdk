@@ -285,15 +285,43 @@ export const resolveTableCsvRows = <T>(
     return isObservable(produced) ? produced.pipe(take(1)) : from(produced);
   });
 
+// The options that describe how to *build* a file, which `file` excludes - see `file`.
+const BUILD_OPTIONS = ['rows', 'columns', 'header', 'delimiter', 'formulaGuard', 'bom'] as const;
+
+const without = <T>(options: TableCsvExportOptions<T>, keys: readonly (keyof TableCsvExportOptions<T>)[]) => {
+  const rest = { ...options };
+
+  for (const key of keys) delete rest[key];
+
+  return rest;
+};
+
+/**
+ * A bound `etTableCsvExport` config with one `export()` call's overrides applied. `file` and the
+ * options that build a file are mutually exclusive, so whichever of the two the *call* asked for
+ * drops the other group from the config - a `bom: false` default must not make `export({ file })`
+ * a conflict the call site never wrote. Passing both in the same call still throws `ET3507`.
+ *
+ * @internal
+ */
+export const mergeTableCsvExportOptions = <T>(
+  config: TableCsvExportOptions<T>,
+  overrides: TableCsvExportOptions<T>,
+): TableCsvExportOptions<T> => {
+  if (overrides.file !== undefined) return { ...without(config, BUILD_OPTIONS), ...overrides };
+
+  if (BUILD_OPTIONS.some((key) => overrides[key] !== undefined)) return { ...without(config, ['file']), ...overrides };
+
+  return { ...config, ...overrides };
+};
+
 /**
  * Refuse the combination that cannot mean anything: the server already wrote the file, so nothing
  * describing how to build one can apply to it. Silently ignoring `columns` here would look like the
  * option was broken.
  */
 const assertFileOptions = <T>(options: TableCsvExportOptions<T>) => {
-  const ignored = (['rows', 'columns', 'header', 'delimiter', 'formulaGuard', 'bom'] as const).filter(
-    (key) => options[key] !== undefined,
-  );
+  const ignored = BUILD_OPTIONS.filter((key) => options[key] !== undefined);
 
   if (!ignored.length || !isDevMode()) return;
 

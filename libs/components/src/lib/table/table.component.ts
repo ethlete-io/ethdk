@@ -1721,6 +1721,14 @@ export class TableComponent<T> {
     return rowKey ? String(rowKey(row)) : row;
   }
 
+  /**
+   * Whether a `rowKey` is bound, i.e. whether {@link rowIdentity} is a stable string rather than the
+   * row reference - which is what a feature needs before it can serialize row-keyed state.
+   */
+  public hasRowKey() {
+    return this.rowKey() !== undefined;
+  }
+
   /** The table's own element. Part of the feature contract (a feature is a directive on it). */
   public get element() {
     return this.elementRef.nativeElement;

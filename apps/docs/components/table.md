@@ -1237,8 +1237,8 @@ because the columns are already sitting where it puts them. Reduced-motion drops
 sliding, not the preview. It's pure column-order state - no DOM surgery, since the
 grid re-lays-out from the order. A gesture the browser takes away mid-drag - a system
 gesture, an incoming call, the tab going to the background - slides back to the resting
-order instead of committing; a cancelled column resize likewise returns to the width it
-was grabbed at.
+order instead of committing; a cancelled column resize likewise leaves the column as it
+was grabbed - a column that carried no width override keeps none, so it stays flexible.
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" etTableReorder />
@@ -1500,8 +1500,11 @@ protected exportAll() {
 
 The file is saved exactly as it came: the server chose the columns, the delimiter and the
 encoding, so this side adds no BOM and applies no options. Passing `file` together with
-`rows`, `columns`, `header`, `delimiter`, `formulaGuard` or `bom` is a dev-mode error
-(`ET3507`) rather than a silently ignored option.
+`rows`, `columns`, `header`, `delimiter`, `formulaGuard` or `bom` **in the same call** is a
+dev-mode error (`ET3507`) rather than a silently ignored option. Options bound on the
+directive are not part of that: `file` and the options that build a file are exclusive, so
+whichever of the two a call asks for drops the other from the config - a directive with
+`bom: false` on it still serves an `export({ file })` button.
 
 **2. Walk the pages.** Without such an endpoint, `tableCsvRowsFromPages` fetches every page
 in order and concatenates them, producing exactly what `rows` consumes:

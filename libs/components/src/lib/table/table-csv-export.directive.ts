@@ -4,6 +4,7 @@ import { finalize, map } from 'rxjs';
 import { RuntimeError } from '@ethlete/core';
 import {
   injectTableCsvExport,
+  mergeTableCsvExportOptions,
   resolveTableCsvRows,
   TableCsvExportOptions,
   tableToCsv,
@@ -70,7 +71,8 @@ export class TableCsvExportDirective<T> {
 
   /**
    * Build and download the file, now. Anything passed here wins over the bound config, so one
-   * directive can serve an "export all" and an "export selection" button.
+   * directive can serve an "export all" and an "export selection" button - including a `file` call
+   * on a directive that binds serializer options, which drops them rather than conflicting.
    *
    * Fire-and-forget, so a `(click)` handler is the whole call site: it starts the work, keeps
    * {@link exporting} true while it runs, and stops with the directive. A failure reaches the app's
@@ -80,7 +82,7 @@ export class TableCsvExportDirective<T> {
   public export(overrides: TableCsvExportOptions<T> = {}) {
     this.running.update((count) => count + 1);
 
-    this.download(this.table, { ...this.config(), ...overrides })
+    this.download(this.table, mergeTableCsvExportOptions(this.config(), overrides))
       .pipe(
         finalize(() => this.running.update((count) => count - 1)),
         takeUntilDestroyed(this.destroyRef),
@@ -94,7 +96,7 @@ export class TableCsvExportDirective<T> {
    * has no meaning here: the whole point of it is that this side never builds the string.
    */
   public toCsv(overrides: TableCsvExportOptions<T> = {}) {
-    const options = { ...this.config(), ...overrides };
+    const options = mergeTableCsvExportOptions(this.config(), overrides);
 
     return resolveTableCsvRows(options.rows, () => this.table.rows()).pipe(
       map((rows) => tableToCsv(this.table, { ...options, rows })),

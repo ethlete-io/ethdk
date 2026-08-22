@@ -96,12 +96,14 @@ export class TableRowExpansionDirective<T> {
     this.table.registerStateSlice({
       key: 'expansion',
       read: () => {
+        if (!this.table.hasRowKey()) return undefined;
+
         const keys = [...this.expanded()()];
 
         return keys.length ? keys.map(String) : undefined;
       },
       write: (value) => {
-        if (Array.isArray(value)) this.expanded().set(new Set(value.map(String)));
+        if (this.table.hasRowKey() && Array.isArray(value)) this.expanded().set(new Set(value.map(String)));
       },
     });
 

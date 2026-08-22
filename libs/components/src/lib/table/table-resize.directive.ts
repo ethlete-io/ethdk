@@ -36,7 +36,7 @@ export class TableResizeDirective {
 
   // The column being dragged, with the width it had when the drag began - every move applies the
   // pointer's cumulative delta to that baseline, so the column can't drift over a long drag.
-  private resizing = signal<{ key: string; startWidth: number } | null>(null);
+  private resizing = signal<{ key: string; startWidth: number; hadOverride: boolean } | null>(null);
 
   constructor() {
     // Renders after the filter trigger: the grip is absolutely positioned at the cell's edge.
@@ -51,7 +51,11 @@ export class TableResizeDirective {
   }
 
   public start(column: TableColumnMeta) {
-    this.resizing.set({ key: column.key, startWidth: this.table.renderedColumnWidth(column.key) });
+    this.resizing.set({
+      key: column.key,
+      startWidth: this.table.renderedColumnWidth(column.key),
+      hadOverride: this.table.hasColumnWidthOverride(column.key),
+    });
   }
 
   public update(event: DragMoveEvent) {
@@ -67,13 +71,21 @@ export class TableResizeDirective {
     this.resizing.set(null);
   }
 
-  /** The browser took the gesture away - put the column back to the width it was grabbed at. */
+  /**
+   * The browser took the gesture away - leave the column as it was grabbed. A column that carried no
+   * width override keeps none, so a cancelled drag can't turn a flexible column rigid.
+   */
   public cancel() {
     const resizing = this.resizing();
 
     if (!resizing) return;
 
-    this.table.setColumnWidth(resizing.key, resizing.startWidth);
+    if (resizing.hadOverride) {
+      this.table.setColumnWidth(resizing.key, resizing.startWidth);
+    } else {
+      this.table.resetColumnWidth(resizing.key);
+    }
+
     this.resizing.set(null);
   }
 
