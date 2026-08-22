@@ -155,7 +155,7 @@ Rows are `role="treeitem"` with `aria-level`, `aria-posinset`, `aria-setsize`, `
 | <kbd>\*</kbd>                    | Expands every sibling of the focused row                                |
 | any character                    | Type-ahead: focuses the next row whose label starts with what was typed |
 
-<kbd>→</kbd> and <kbd>←</kbd> expand and collapse, so they follow the writing direction and swap under `direction: rtl` (as does the chevron). The tab stop stays on the row the user last focused, so <kbd>Shift</kbd>+<kbd>Tab</kbd> back into the tree re-enters where they left off; arrow navigation does not wrap, since running off the end of a tree is disorienting rather than helpful.
+<kbd>→</kbd> and <kbd>←</kbd> expand and collapse, so they follow the writing direction and swap under `direction: rtl` (as does the chevron). The tab stop stays on the row the user last focused, so <kbd>Shift</kbd>+<kbd>Tab</kbd> back into the tree re-enters where they left off; arrow navigation does not wrap, since running off the end of a tree is disorienting rather than helpful. Collapsing a branch that contains the focused row - by `collapse()`, `collapseAll()`, or a write to `[(expandedValues)]` - moves the tab stop up to the nearest surviving ancestor rather than back to the first row, and hands it DOM focus when the tree held focus at the time.
 
 ## Theming
 

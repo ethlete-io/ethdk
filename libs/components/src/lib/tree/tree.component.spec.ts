@@ -150,6 +150,50 @@ describe('TreeComponent', () => {
     expect(rows().map((row) => row.tabIndex)).toEqual([-1, -1, 0, -1]);
   });
 
+  it('hands focus to the collapsed branch when a descendant row held it', async () => {
+    fixture.componentInstance.expandedValues.set(['docs']);
+    await settle();
+
+    rowByLabel('guide.md')?.focus();
+    tick();
+
+    const docs = tree.visibleRows().find((row) => row.node.value === 'docs')!.node;
+
+    tree.collapse(docs);
+    await settle();
+
+    expect(document.activeElement).toBe(rowByLabel('docs'));
+    expect(rows().map((row) => row.tabIndex)).toEqual([-1, 0, -1, -1]);
+  });
+
+  it('hands focus to the outermost surviving ancestor on collapseAll', async () => {
+    fixture.componentInstance.expandedValues.set(['src', 'src/app', 'docs']);
+    await settle();
+
+    rowByLabel('routes.ts')?.focus();
+    tick();
+
+    tree.collapseAll();
+    await settle();
+
+    expect(document.activeElement).toBe(rowByLabel('src'));
+    expect(rows().map((row) => row.tabIndex)).toEqual([0, -1, -1, -1]);
+  });
+
+  it('leaves the tab stop on the surviving ancestor after an outside collapse, without stealing focus', async () => {
+    fixture.componentInstance.expandedValues.set(['docs']);
+    await settle();
+
+    rowByLabel('guide.md')?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    tick();
+
+    fixture.componentInstance.expandedValues.set([]);
+    await settle();
+
+    expect(rows().map((row) => row.tabIndex)).toEqual([-1, 0, -1, -1]);
+    expect(document.activeElement).toBe(document.body);
+  });
+
   it('loads and reveals the children of a branch when it is expanded', async () => {
     rowByLabel('src')?.click();
     await settle();

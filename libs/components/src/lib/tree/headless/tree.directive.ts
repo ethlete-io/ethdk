@@ -128,6 +128,10 @@ export class TreeDirective<T = unknown> {
    */
   public focusedNode = signal<TreeNode<T> | null>(null);
 
+  // written while the focused row is still visible: once a collapse destroys it, this is the only
+  // record of where in the tree that row was
+  private focusedPath = signal<readonly TreeNode<T>[]>([]);
+
   /**
    * The flattened tree: every row that is currently visible, in DOM order - the root's children plus
    * the loaded children of every expanded branch below them.
@@ -215,7 +219,11 @@ export class TreeDirective<T = unknown> {
       return focused;
     }
 
-    return rows[0]?.node ?? null;
+    const survivor = [...this.focusedPath()]
+      .reverse()
+      .find((ancestor) => rows.some((row) => compareWith(row.node.value, ancestor.value)));
+
+    return survivor ?? rows[0]?.node ?? null;
   });
 
   // type-to-focus by label across the visible rows - a deep tree cannot be navigated by name otherwise
@@ -254,6 +262,7 @@ export class TreeDirective<T = unknown> {
           untracked(() => {
             this.levels.set([]);
             this.focusedNode.set(null);
+            this.focusedPath.set([]);
           });
 
           if (!source) return EMPTY;
@@ -308,6 +317,7 @@ export class TreeDirective<T = unknown> {
 
     const compareWith = this.compareWith();
 
+    this.moveFocusOutOf([node]);
     this.expandedValues.update((values) => values.filter((value) => !compareWith(value, node.value)));
   }
 
@@ -340,6 +350,11 @@ export class TreeDirective<T = unknown> {
   public collapseAll() {
     if (this.disabled()) return;
 
+    this.moveFocusOutOf(
+      this.visibleRows()
+        .filter((row) => row.isExpanded)
+        .map((row) => row.node),
+    );
     this.expandedValues.set([]);
   }
 
@@ -420,10 +435,9 @@ export class TreeDirective<T = unknown> {
   /** Move roving focus - and DOM focus, when the row is rendered - to a node. */
   public focusNode(node: TreeNode<T>) {
     this.focusedNode.set(node);
+    this.focusedPath.set(this.rowOf(node)?.path ?? []);
 
-    const compareWith = this.compareWith();
-    const element = this.registeredNodes().find((registered) => compareWith(registered.row().node.value, node.value))
-      ?.elementRef.nativeElement;
+    const element = this.elementOf(node);
 
     if (!element) return;
 
@@ -438,6 +452,12 @@ export class TreeDirective<T = unknown> {
     if (first) {
       this.focusNode(first);
     }
+  }
+
+  /** @internal Called from a row's `focusin`: the path goes with the node so a collapse can fall back to an ancestor. */
+  public markFocused(row: TreeRow<T>) {
+    this.focusedNode.set(row.node);
+    this.focusedPath.set(row.path);
   }
 
   /** @internal Called from a node's constructor; the registration is undone when the row is destroyed. */
@@ -564,6 +584,40 @@ export class TreeDirective<T = unknown> {
     const compareWith = this.compareWith();
 
     return this.visibleRows().find((row) => compareWith(row.node.value, node.value)) ?? null;
+  }
+
+  private elementOf(node: TreeNode<T>) {
+    const compareWith = this.compareWith();
+
+    return (
+      this.registeredNodes().find((registered) => compareWith(registered.row().node.value, node.value))?.elementRef
+        .nativeElement ?? null
+    );
+  }
+
+  // must run before the collapse, while the surviving ancestor and the focused row are both rendered
+  private moveFocusOutOf(collapsed: readonly TreeNode<T>[]) {
+    const focused = this.focusedNode();
+
+    if (!focused) return;
+
+    const compareWith = this.compareWith();
+    const survivor = this.focusedPath().find(
+      (ancestor) =>
+        !compareWith(ancestor.value, focused.value) &&
+        collapsed.some((node) => compareWith(node.value, ancestor.value)),
+    );
+
+    if (!survivor) return;
+
+    const element = this.elementOf(focused);
+
+    if (element?.contains(element.ownerDocument.activeElement)) {
+      this.focusNode(survivor);
+    } else {
+      this.focusedNode.set(survivor);
+      this.focusedPath.set(this.rowOf(survivor)?.path ?? []);
+    }
   }
 
   private focusRow(rows: readonly TreeRow<T>[], index: number) {

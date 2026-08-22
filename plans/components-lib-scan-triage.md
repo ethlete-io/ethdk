@@ -349,7 +349,14 @@ single-domain reach.
   plus three doc pages. M
 - **Masonry never reveals items whose border box exceeds the assigned width** (no global
   border-box reset) and **`items()` goes stale on a DOM reorder** (grid batch High ×2). S / M
-- **Tree: collapsing a branch programmatically drops focus to `<body>`** (tree High). S
+- **Tree: collapsing a branch programmatically drops focus to `<body>`** (tree High). S —
+  **DONE 2026-08-22**. `TreeDirective` snapshots the focused row's `path` (written by `focusNode()`
+  and the row's `focusin`), so `collapse()`/`collapseAll()` hand focus to the nearest surviving
+  ancestor before the rows below are destroyed, and `activeNode()` falls back to that ancestor
+  instead of `rows[0]` for any path - including an outside `[(expandedValues)]` write. DOM focus
+  only moves when the tree held it. Left open: an outside write cannot restore DOM focus (the row is
+  already gone by the time we could react), only the tab stop; that would need an effect and was out
+  of scope for an S.
 - **Bracket: a pinned journey breaks on any `source` change** — the whole bracket dims with nothing
   highlighted (bracket High). M
 - **Grid items are focusable with `outline: none` and no replacement** (grid High), and **the chip
