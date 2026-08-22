@@ -269,6 +269,10 @@ describe('SelectionListDirective (single, mixed contract)', () => {
         driver.tick();
       },
       externallyWrittenValue: () => 'c',
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.tick();
+      },
       commit: () => driver.selectOption(0),
       committedValue: () => 'a',
       assertMasked: () => {
@@ -298,6 +302,10 @@ describe('SelectionListDirective (multiple, mixed contract)', () => {
         driver.tick();
       },
       externallyWrittenValue: () => ['a'],
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.tick();
+      },
       // Space on an option - a real keyboard commit
       commit: () => {
         driver.pressOption(0, ' ');

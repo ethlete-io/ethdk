@@ -261,6 +261,12 @@ describe('RangeSliderDirective (mixed contract)', () => {
         driver.tick();
       },
       externallyWrittenValue: () => [10, 90],
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.tick();
+      },
+      mixedLabel: () => driver.host.mixedLabel(),
+      mixedDisplayText: () => driver.thumbAttrs('aria-valuetext')[0] ?? '',
       commit: () => {
         driver.press('ArrowRight', 0);
       },

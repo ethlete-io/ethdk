@@ -184,6 +184,12 @@ describe('PasswordInputDirective mixed state', () => {
         driver.tick();
       },
       externallyWrittenValue: () => 'correct horse',
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.tick();
+      },
+      mixedLabel: () => 'Mixed values',
+      mixedDisplayText: () => driver.placeholder(),
       commit: () => driver.type('new password'),
       committedValue: () => 'new password',
       assertMasked: () => {

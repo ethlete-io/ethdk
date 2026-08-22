@@ -234,6 +234,12 @@ describe('TimeRangeInputDirective mixed state', () => {
         tick();
       },
       externallyWrittenValue: () => ({ start: '12:00', end: '13:00' }),
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        tick();
+      },
+      mixedLabel: () => 'Mixed',
+      mixedDisplayText: () => driver.field('.start').placeholder,
       // replace semantics: the resolving commit starts a fresh range - no merge with the hidden end
       commit: () => driver.typeAndBlur('14:30', '.start'),
       committedValue: () => ({ start: '14:30', end: null }),
@@ -244,6 +250,11 @@ describe('TimeRangeInputDirective mixed state', () => {
         expect(driver.field('.start').getAttribute('placeholder')).toBe('Mixed');
         expect(driver.field('.end').getAttribute('placeholder')).toBe('Mixed');
       },
+      clear: () => {
+        driver.control.clearRange();
+        tick();
+      },
+      emptyValue: () => ({ start: null, end: null }),
     };
   });
 });

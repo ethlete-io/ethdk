@@ -287,6 +287,12 @@ describe('ColorInputDirective', () => {
           driver.tick();
         },
         externallyWrittenValue: () => '#00ff00',
+        resolveMixedFromConsumer: () => {
+          driver.host.mixed.set(false);
+          driver.tick();
+        },
+        mixedLabel: () => 'Mixed colors',
+        mixedDisplayText: () => driver.valueText() ?? '',
         commit: () => pick('#123456'),
         committedValue: () => '#123456',
         assertMasked: async () => {

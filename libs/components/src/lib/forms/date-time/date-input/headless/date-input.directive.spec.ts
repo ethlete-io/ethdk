@@ -311,6 +311,12 @@ describe('DateInputDirective mixed state', () => {
         tick();
       },
       externallyWrittenValue: () => '2026-01-01',
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        tick();
+      },
+      mixedLabel: () => 'Mixed',
+      mixedDisplayText: () => driver.field().placeholder,
       commit: () => driver.typeAndBlur('07/20/2026'),
       committedValue: () => '2026-07-20',
       assertMasked: () => {

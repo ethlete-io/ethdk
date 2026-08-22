@@ -933,6 +933,12 @@ describe('CascaderDirective (single, mixed contract)', () => {
         driver.detectChanges();
       },
       externallyWrittenValue: () => 'euro-group-b',
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.detectChanges();
+      },
+      mixedLabel: () => 'Mixed',
+      mixedDisplayText: () => driver.valueText() ?? '',
       commit: commitGroupA,
       committedValue: () => 'euro-group-a',
       assertMasked: () => {
@@ -967,6 +973,12 @@ describe('CascaderDirective (multiple, mixed contract)', () => {
         driver.detectChanges();
       },
       externallyWrittenValue: () => ['euro-group-b'],
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.detectChanges();
+      },
+      mixedLabel: () => 'Mixed',
+      mixedDisplayText: () => driver.valueText() ?? '',
       // "Group A" is inside the hidden raw array - replace semantics must still yield a fresh
       // one-entry array instead of toggling it away
       commit: commitGroupA,

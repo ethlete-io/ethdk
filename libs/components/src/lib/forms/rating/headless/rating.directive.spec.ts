@@ -279,6 +279,12 @@ describe('RatingDirective (mixed contract)', () => {
         driver.tick();
       },
       externallyWrittenValue: () => 1,
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.tick();
+      },
+      mixedLabel: () => driver.host.mixedLabel(),
+      mixedDisplayText: () => driver.attr('aria-valuetext') ?? '',
       commit: () => driver.clickIcon(1),
       committedValue: () => 2,
       assertMasked: () => {

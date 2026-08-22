@@ -37,12 +37,18 @@ export type MixedStateContractHarness = {
   writeValueExternally: () => void | Promise<void>;
   /** The value `writeValueExternally` wrote. */
   externallyWrittenValue: () => unknown;
+  /** Sets the consumer's `mixed` binding to `false` without any user interaction. Must leave the view stable. */
+  resolveMixedFromConsumer: () => void | Promise<void>;
   /** Performs a real user commit interaction (pointer/keyboard). Must leave the view stable. */
   commit: () => void | Promise<void>;
   /** The value expected after `commit` - replace semantics, no merging with the hidden raw value. */
   committedValue: () => unknown;
   /** Control-specific masking assertions run while mixed (display text, aria, chips, …). */
   assertMasked?: () => void;
+  /** The `mixedLabel` the host binds - required together with `mixedDisplayText`. */
+  mixedLabel?: () => string;
+  /** The control's text display slot (field placeholder, trigger text, `aria-valuetext`, …), never `null`. */
+  mixedDisplayText?: () => string;
   /** Drives the control's clear affordance, if it has one. Must leave the view stable. */
   clear?: () => void | Promise<void>;
   /** The control's empty value shape - required when `clear` is provided. */
@@ -75,6 +81,17 @@ export const describeMixedStateContract = (
       expect(harness.hostElement().getAttribute('data-mixed')).toBe('true');
     });
 
+    it('resolves mixed when the consumer clears the flag, keeping the raw value', async () => {
+      const harness = await setup();
+
+      await harness.enterMixed();
+      await harness.resolveMixedFromConsumer();
+
+      expect(harness.mixed()).toBe(false);
+      expect(harness.value()).toEqual(harness.rawValue());
+      expect(harness.hostElement().hasAttribute('data-mixed')).toBe(false);
+    });
+
     it('resolves mixed on the first user commit, replacing the raw value', async () => {
       const harness = await setup();
 
@@ -86,11 +103,40 @@ export const describeMixedStateContract = (
       expect(harness.hostElement().hasAttribute('data-mixed')).toBe(false);
     });
 
-    it('clears to the empty shape and resolves mixed', async () => {
+    it('displays mixedLabel while mixed and keeps it out of the value', async (ctx) => {
       const harness = await setup();
 
+      if (!harness.mixedLabel && !harness.mixedDisplayText) {
+        ctx.skip('the control has no text display slot for mixedLabel');
+      }
+
+      if (!harness.mixedLabel || !harness.mixedDisplayText) {
+        throw new Error('mixed state contract: mixedLabel and mixedDisplayText must be provided together');
+      }
+
+      await harness.enterMixed();
+
+      const label = harness.mixedLabel();
+
+      expect(label).not.toBe('');
+      expect(harness.mixedDisplayText()).toContain(label);
+      expect(harness.value()).toEqual(harness.rawValue());
+
+      await harness.commit();
+
+      expect(harness.mixedDisplayText()).not.toContain(label);
+      expect(harness.value()).toEqual(harness.committedValue());
+    });
+
+    it('clears to the empty shape and resolves mixed', async (ctx) => {
+      const harness = await setup();
+
+      if (!harness.clear && !harness.emptyValue) {
+        ctx.skip('the control has no clear affordance');
+      }
+
       if (!harness.clear || !harness.emptyValue) {
-        return;
+        throw new Error('mixed state contract: clear and emptyValue must be provided together');
       }
 
       await harness.enterMixed();
@@ -98,6 +144,7 @@ export const describeMixedStateContract = (
 
       expect(harness.mixed()).toBe(false);
       expect(harness.value()).toEqual(harness.emptyValue());
+      expect(harness.hostElement().hasAttribute('data-mixed')).toBe(false);
     });
   });
 };

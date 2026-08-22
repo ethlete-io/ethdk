@@ -293,6 +293,12 @@ describe('TagInputDirective (contract)', () => {
         driver.tick();
       },
       externallyWrittenValue: () => ['three'],
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.tick();
+      },
+      mixedLabel: () => 'Mixed',
+      mixedDisplayText: () => driver.placeholder(),
       commit: () => driver.typeAndPress('fresh', 'Enter'),
       // replace semantics: a fresh array around the committed tag, not an append
       committedValue: () => ['fresh'],

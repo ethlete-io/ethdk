@@ -288,6 +288,12 @@ describe('PhoneInputDirective (contract)', () => {
         driver.tick();
       },
       externallyWrittenValue: () => '+33123456789',
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.tick();
+      },
+      mixedLabel: () => 'Mixed',
+      mixedDisplayText: () => driver.placeholder(),
       commit: () => driver.type('170555'),
       // replace semantics: built from scratch with the active country, no hidden digits
       committedValue: () => '+49170555',

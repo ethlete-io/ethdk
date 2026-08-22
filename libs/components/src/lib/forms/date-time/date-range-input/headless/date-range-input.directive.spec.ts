@@ -348,6 +348,12 @@ describe('DateRangeInputDirective mixed state', () => {
         tick();
       },
       externallyWrittenValue: () => ({ start: '2026-01-01', end: '2026-01-05' }),
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        tick();
+      },
+      mixedLabel: () => 'Mixed',
+      mixedDisplayText: () => driver.field('.start').placeholder,
       // replace semantics: the resolving commit starts a fresh range - no merge with the hidden end
       commit: () => driver.typeAndBlur('07/20/2026', '.start'),
       committedValue: () => ({ start: '2026-07-20', end: null }),
@@ -358,6 +364,11 @@ describe('DateRangeInputDirective mixed state', () => {
         expect(driver.field('.start').getAttribute('placeholder')).toBe('Mixed');
         expect(driver.field('.end').getAttribute('placeholder')).toBe('Mixed');
       },
+      clear: () => {
+        driver.control.clearRange();
+        tick();
+      },
+      emptyValue: () => ({ start: null, end: null }),
     };
   });
 });

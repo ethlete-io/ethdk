@@ -431,6 +431,12 @@ describe('SliderDirective (mixed contract)', () => {
         driver.tick();
       },
       externallyWrittenValue: () => 70,
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.tick();
+      },
+      mixedLabel: () => driver.host.mixedLabel(),
+      mixedDisplayText: () => driver.thumbAttr('aria-valuetext') ?? '',
       commit: () => {
         driver.press('ArrowRight');
       },

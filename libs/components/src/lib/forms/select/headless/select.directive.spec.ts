@@ -1486,6 +1486,12 @@ describe('SelectDirective (single)', () => {
         driver.detectChanges();
       },
       externallyWrittenValue: () => 'cherry',
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.detectChanges();
+      },
+      mixedLabel: () => driver.host.mixedLabel(),
+      mixedDisplayText: () => driver.select.displayValue() ?? '',
       // closed typeahead - a real keyboard commit that needs no open panel
       commit: () => {
         driver.press('a');
@@ -1523,6 +1529,12 @@ describe('SelectDirective (multiple, contract)', () => {
         driver.detectChanges();
       },
       externallyWrittenValue: () => ['apple'],
+      resolveMixedFromConsumer: () => {
+        driver.host.mixed.set(false);
+        driver.detectChanges();
+      },
+      mixedLabel: () => 'Mixed',
+      mixedDisplayText: () => driver.select.displayValue() ?? '',
       commit: () => {
         driver.press('a');
       },

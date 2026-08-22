@@ -166,6 +166,12 @@ describe('TextareaDirective', () => {
           driver.tick();
         },
         externallyWrittenValue: () => 'server write',
+        resolveMixedFromConsumer: () => {
+          driver.host.mixed.set(false);
+          driver.tick();
+        },
+        mixedLabel: () => 'Mixed values',
+        mixedDisplayText: () => driver.placeholder(),
         commit: () => driver.type('typed over'),
         committedValue: () => 'typed over',
         assertMasked: () => {

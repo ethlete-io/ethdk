@@ -416,6 +416,12 @@ describe('NumberInputDirective', () => {
           driver.tick();
         },
         externallyWrittenValue: () => 7,
+        resolveMixedFromConsumer: () => {
+          driver.host.mixed.set(false);
+          driver.tick();
+        },
+        mixedLabel: () => 'Mixed values',
+        mixedDisplayText: () => driver.placeholder(),
         commit: () => driver.type('5'),
         committedValue: () => 5,
         assertMasked: () => {
