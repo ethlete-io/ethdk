@@ -147,11 +147,12 @@ Without a `delete` config, removing an entry only updates the control locally, s
 
 On `et-dropzone` (forwarded to the headless `etDropzone` directive):
 
-| Input      | Type                   | Default | Description                                              |
-| ---------- | ---------------------- | ------- | -------------------------------------------------------- |
-| `upload`   | `DropzoneUploadConfig` | -       | The upload workflow config (required).                   |
-| `multiple` | `boolean`              | `false` | Allow several files; the control value becomes an array. |
-| `readonly` | `boolean`              | `false` | View-only: the entries stay visible, nothing can change. |
+| Input      | Type                        | Default | Description                                              |
+| ---------- | --------------------------- | ------- | -------------------------------------------------------- |
+| `upload`   | `DropzoneUploadConfig`      | -       | The upload workflow config (required).                   |
+| `multiple` | `boolean`                   | `false` | Allow several files; the control value becomes an array. |
+| `readonly` | `boolean`                   | `false` | View-only: the entries stay visible, nothing can change. |
+| `color`    | registered color theme name | -       | Scopes a [color theme](/core/theming) to the control.    |
 
 `readonly` and `disabled` both come from the form schema (`readonly(s.media, …)` /
 `disabled(s, …)`) and both stop every mutation - selecting, dropping, replacing,

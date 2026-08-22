@@ -42,6 +42,8 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `error`             | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                                                                                          |
 | `hasMoreItems`      | `boolean`                            | `false`      | Shows a load-more control emitting `loadMore` (label via `loadMoreLabel`, else [`SELECT_LABELS.loadMore`](/components/localization)).                                                                                         |
 | `mirrorPanelWidth`  | `boolean`                            | `true`       | Panel matches the field's width. Set `false` for a compact trigger (page size, country code) whose option rows need more room than the field - the panel then sizes to its content, capped at `min(400px, 100vw - 24px)`.     |
+| `clearable`         | `boolean`                            | `true`       | Shows a clear (×) button while a value is selected and the field is focused.                                                                                                                                                  |
+| `clearLabel`        | `string \| null`                     | `null`       | Accessible label for the clear button.                                                                                                                                                                                        |
 
 ¹ `null` falls through to [`FORM_FIELD_LABELS.mixed`](/components/localization) (`'Mixed'`) - set it only for one-off wording.
 
