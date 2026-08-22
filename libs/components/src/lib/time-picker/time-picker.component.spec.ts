@@ -21,7 +21,8 @@ describe('TimePickerComponent - side switch', () => {
 
     fixture.detectChanges();
 
-    const chips = () => Array.from(fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.et-time-picker-side'));
+    const chips = () =>
+      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.et-time-picker-side'));
     const textOf = (chip: HTMLElement, part: 'label' | 'value') =>
       chip.querySelector(`.et-time-picker-side-${part}`)?.textContent?.trim();
 
@@ -69,7 +70,9 @@ describe('TimePickerComponent - side switch', () => {
 
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.et-time-picker-sides')).toBeNull();
-    expect(fixture.nativeElement.querySelectorAll('.et-time-picker-column').length).toBe(2);
+    const hostElement = fixture.nativeElement as HTMLElement;
+
+    expect(hostElement.querySelector('.et-time-picker-sides')).toBeNull();
+    expect(hostElement.querySelectorAll('.et-time-picker-column').length).toBe(2);
   });
 });

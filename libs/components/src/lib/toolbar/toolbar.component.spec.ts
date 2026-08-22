@@ -87,7 +87,7 @@ describe('ToolbarComponent', () => {
 
     const buttons = buttonsOf(fixture);
 
-    buttons[2].dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    buttons[2]!.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     fixture.detectChanges();
 
     expect(buttons.map((button) => button.tabIndex)).toEqual([-1, -1, 0]);
@@ -114,7 +114,7 @@ describe('ToolbarComponent', () => {
     const buttons = buttonsOf(fixture);
     const toolbar = fixture.nativeElement.querySelector('et-toolbar') as HTMLElement;
 
-    buttons[0].focus();
+    buttons[0]!.focus();
     press(toolbar, 'ArrowRight');
 
     expect(document.activeElement).toBe(buttons[2]);
@@ -135,7 +135,7 @@ describe('ToolbarComponent', () => {
     const buttons = buttonsOf(fixture);
     const toolbar = fixture.nativeElement.querySelector('et-toolbar') as HTMLElement;
 
-    buttons[1].focus();
+    buttons[1]!.focus();
     press(toolbar, 'End');
 
     expect(document.activeElement).toBe(buttons[2]);
@@ -153,7 +153,7 @@ describe('ToolbarComponent', () => {
     const buttons = buttonsOf(fixture);
     const toolbar = fixture.nativeElement.querySelector('et-toolbar') as HTMLElement;
 
-    buttons[0].focus();
+    buttons[0]!.focus();
     press(toolbar, 'ArrowDown');
 
     expect(document.activeElement).toBe(buttons[1]);
@@ -167,7 +167,9 @@ describe('ToolbarComponent', () => {
     const fixture = TestBed.createComponent(NestedToolbarHostComponent);
     fixture.detectChanges();
 
-    const [outer, inner] = buttonsOf(fixture);
+    const buttons = buttonsOf(fixture);
+    const outer = buttons[0]!;
+    const inner = buttons[1]!;
 
     expect(outer.tabIndex).toBe(0);
     expect(inner.tabIndex).toBe(0);
@@ -184,7 +186,7 @@ describe('ToolbarComponent', () => {
     const fixture = TestBed.createComponent(NestedToolbarHostComponent);
     fixture.detectChanges();
 
-    const [, inner] = buttonsOf(fixture);
+    const inner = buttonsOf(fixture)[1]!;
 
     inner.focus();
     press(inner, 'ArrowRight');

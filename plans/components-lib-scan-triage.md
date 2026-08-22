@@ -800,3 +800,15 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
     underlying DOM properties (`textContent`, `hasAttribute`, `click`, …) were always real; TS just
     wasn't checking them. No calendar source defect found; no casts left beyond the one narrowing cast
     above.
+    **time-picker/filter-overlay/toolbar/query-error slice burned down 2026-08-22**: 46 errors, same
+    `fixture.nativeElement as HTMLElement` root cause for the time-picker specs' `TS2347`/`TS18046`
+    cascade, plus `noUncheckedIndexedAccess` non-null assertions (`buttons[0]!`) for toolbar's array
+    indexing - both idioms already established elsewhere in the suite. `filter-overlay.spec.ts` had a
+    stale type argument (`FilterOverlay<typeof FIELDS>`, the field-def map) where the API wants the
+    *value* shape (`FilterOverlay<QueryFormModel<typeof FIELDS>>`); rewritten via a `FactoryProvider`
+    cast (a real member of Angular's `Provider` union) instead of the `as unknown as X` TS suggested,
+    to keep the cast narrow. `query-error.component.spec.ts` built ad hoc `ColorTheme` fixtures missing
+    `ThemeColorMap`'s `hover`/`active`/`disabled`; swapped in the existing `testColorSwatch()` test
+    helper (`libs/components/src/lib/testing/color-themes.ts`), which already exists for this. No
+    assertion was dead or vacuous, no source defect found, and no `as any`/`as unknown as X`/
+    `@ts-expect-error` were needed.

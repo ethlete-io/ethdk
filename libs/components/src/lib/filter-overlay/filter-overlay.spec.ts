@@ -1,8 +1,8 @@
-import { signal } from '@angular/core';
+import { FactoryProvider, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideLocale } from '@ethlete/core';
 import { provideRouter } from '@angular/router';
-import { defineQueryForm, queryField } from '@ethlete/query';
+import { QueryFormModel, defineQueryForm, queryField } from '@ethlete/query';
 import '../../test-helpers';
 import { FilterOverlay, provideFilterOverlay } from './filter-overlay';
 import { DEFAULT_FILTER_OVERLAY_LABELS, resolveFilterOverlaySubmitButton } from './filter-overlay-labels';
@@ -39,9 +39,10 @@ const setup = (config: { preview?: (v: never) => FilterOverlayPreview; maxCounte
 
     // The provider's factory is what builds the service; call it in this injection context directly rather than
     // standing up an overlay, which is not what these assertions are about.
-    const factory = (providers[0] as { useFactory: () => FilterOverlay<typeof FIELDS> }).useFactory;
+    const factoryProvider = providers[0] as FactoryProvider;
+    const filterOverlay = factoryProvider.useFactory() as FilterOverlay<QueryFormModel<typeof FIELDS>>;
 
-    return { queryForm, filterOverlay: factory() };
+    return { queryForm, filterOverlay };
   });
 
 describe('provideFilterOverlay', () => {

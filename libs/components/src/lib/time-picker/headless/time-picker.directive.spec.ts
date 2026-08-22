@@ -43,8 +43,10 @@ describe('TimePickerDirective', () => {
 
   const tick = () => TestBed.inject(ApplicationRef).tick();
 
-  const column = (unit: string) => fixture.nativeElement.querySelector<HTMLElement>(`[data-unit='${unit}']`);
-  const columns = () => Array.from(fixture.nativeElement.querySelectorAll<HTMLElement>('[data-unit]'));
+  const hostElement = () => fixture.nativeElement as HTMLElement;
+
+  const column = (unit: string) => hostElement().querySelector<HTMLElement>(`[data-unit='${unit}']`);
+  const columns = () => Array.from(hostElement().querySelectorAll<HTMLElement>('[data-unit]'));
   const optionButton = (unit: string, value: number) =>
     column(unit)?.querySelector<HTMLButtonElement>(`[data-value='${value}']`) ?? null;
   const selectedIn = (unit: string) => column(unit)?.querySelector<HTMLButtonElement>('[data-selected]') ?? null;

@@ -50,7 +50,9 @@ describe('TimePickerDirective - range mode', () => {
 
   const tick = () => TestBed.inject(ApplicationRef).tick();
 
-  const column = (unit: string) => fixture.nativeElement.querySelector<HTMLElement>(`[data-unit='${unit}']`);
+  const hostElement = () => fixture.nativeElement as HTMLElement;
+
+  const column = (unit: string) => hostElement().querySelector<HTMLElement>(`[data-unit='${unit}']`);
   const optionButton = (unit: string, value: number) =>
     column(unit)?.querySelector<HTMLButtonElement>(`[data-value='${value}']`) ?? null;
   const labelsWith = (unit: string, attribute: string) =>

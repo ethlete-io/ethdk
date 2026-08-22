@@ -11,6 +11,7 @@ import {
   symfonyQueryErrorParser,
 } from '@ethlete/query';
 import '../../test-helpers';
+import { testColorSwatch } from '../testing/color-themes';
 
 // The component renders whatever the client's error pipeline produced; these specs
 // describe an app opted into withEthleteApiErrors().
@@ -24,15 +25,8 @@ import { QUERY_ERROR_IMPORTS } from './query-error.imports';
 
 /** The component needs *a* theme registered with `type: 'error'` - the name is the app's business. */
 const COLOR_THEMES: ColorTheme[] = [
-  {
-    name: 'danger',
-    type: 'error',
-    primary: { color: { default: '220 38 38' }, onColor: { default: '255 255 255' } },
-  },
-  {
-    name: 'calm',
-    primary: { color: { default: '100 116 139' }, onColor: { default: '255 255 255' } },
-  },
+  { name: 'danger', type: 'error', primary: testColorSwatch('220 38 38') },
+  { name: 'calm', primary: testColorSwatch('100 116 139') },
 ];
 
 const errorResponse = (status: number, body: unknown): QueryErrorResponse =>
