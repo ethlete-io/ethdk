@@ -50,6 +50,11 @@ jobs:
       # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.
       - run: yarn lint:changesets
 
+      # Spec files are excluded from every lib's build tsconfig, so this is the only step that
+      # type-checks them. Runs before lint and test: it is the cheapest of the three, and broken
+      # spec types make both of their failures unreadable.
+      - run: yarn nx run-many -t typecheck
+
       - run: yarn nx run-many -t lint
 
       - run: yarn nx run-many -t test

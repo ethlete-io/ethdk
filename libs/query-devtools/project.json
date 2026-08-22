@@ -41,6 +41,12 @@
         }
       ]
     },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/query-devtools/tsconfig.spec.json --noEmit"
+      }
+    },
     "generate-version": {
       "executor": "nx:run-commands",
       "options": {
