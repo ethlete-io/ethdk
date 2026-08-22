@@ -7,24 +7,11 @@ import { ScrollableDirective } from './scrollable.directive';
     <div class="et-scrollable-mask et-scrollable-mask--start"></div>
     <div class="et-scrollable-mask et-scrollable-mask--end"></div>
   `,
+  styleUrl: './scrollable-masks.component.css',
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-scrollable-masks',
   },
-  styles: `
-    @layer components {
-      .et-scrollable-masks {
-        grid-row: 1 / 1;
-        grid-column: 1 / 1;
-        pointer-events: none;
-
-        .et-scrollable-mask {
-          position: absolute;
-          opacity: 0;
-        }
-      }
-    }
-  `,
 })
 export class ScrollableMasksComponent {
   private scrollable = inject(ScrollableDirective);

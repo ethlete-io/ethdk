@@ -1,0 +1,122 @@
+@layer components {
+  .et-scrollable-masks {
+    grid-row: 1 / 1;
+    grid-column: 1 / 1;
+    pointer-events: none;
+
+    .et-scrollable-mask {
+      position: absolute;
+      opacity: 0;
+    }
+  }
+
+  .et-scrollable {
+    /* --- Horizontal (default) --- */
+
+    &[direction='horizontal'],
+    &:not([direction]) {
+      & .et-scrollable-mask {
+        inline-size: var(--mask-size);
+        block-size: 100%;
+      }
+
+      & .et-scrollable-mask--start {
+        inset-block-start: 0;
+        inset-inline: 0 0;
+        background: linear-gradient(to right, var(--_mask-color) 0, transparent 100%);
+      }
+
+      & .et-scrollable-mask--end {
+        inset-block-start: 0;
+        inset-inline: calc(100% - var(--mask-size)) 100%;
+        background: linear-gradient(to left, var(--_mask-color) 0, transparent 100%);
+      }
+    }
+
+    /* --- Vertical --- */
+
+    &[direction='vertical'] {
+      & .et-scrollable-mask {
+        block-size: var(--mask-size);
+        inline-size: 100%;
+      }
+
+      & .et-scrollable-mask--start {
+        inset-block-start: 0;
+        inset-inline-start: 0;
+        background: linear-gradient(to bottom, var(--_mask-color) 0, transparent 100%);
+      }
+
+      & .et-scrollable-mask--end {
+        inset-block-end: 0;
+        inset-inline-start: 0;
+        background: linear-gradient(to top, var(--_mask-color) 0, transparent 100%);
+      }
+    }
+
+    /* --- State-driven visibility --- */
+
+    &.et-scrollable--can-scroll.et-scrollable--has-partial-items:not(.et-scrollable--is-at-start) {
+      & .et-scrollable-masks .et-scrollable-mask--start {
+        opacity: 1;
+        transform: translate(0);
+      }
+    }
+
+    &.et-scrollable--can-scroll.et-scrollable--has-partial-items:not(.et-scrollable--is-at-end) {
+      & .et-scrollable-masks .et-scrollable-mask--end {
+        opacity: 1;
+        transform: translate(0);
+      }
+    }
+
+    /* --- Animations --- */
+
+    &.et-scrollable--can-animate.et-scrollable--can-scroll {
+      & .et-scrollable-mask {
+        transition: opacity 300ms var(--ease-5);
+      }
+    }
+
+    /* --- Mask variant: border --- */
+
+    &[mask-variant='border'] {
+      & .et-scrollable-mask {
+        background: none;
+      }
+
+      &[direction='horizontal'],
+      &:not([direction]) {
+        & .et-scrollable-mask {
+          inline-size: 0;
+          block-size: 100%;
+          border-inline-start: 1px solid var(--et-surface-border-solid, #404040);
+        }
+
+        & .et-scrollable-mask--start {
+          inset-inline: 0;
+        }
+
+        & .et-scrollable-mask--end {
+          inset-inline: auto 0;
+        }
+      }
+
+      &[direction='vertical'] {
+        & .et-scrollable-mask {
+          block-size: 0;
+          inline-size: 100%;
+          border-block-start: 1px solid var(--et-surface-border-solid, #404040);
+        }
+
+        & .et-scrollable-mask--start {
+          inset-block-start: 0;
+        }
+
+        & .et-scrollable-mask--end {
+          inset-block: auto 0;
+        }
+      }
+    }
+  }
+}

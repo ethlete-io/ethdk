@@ -1,0 +1,132 @@
+@layer components {
+  .et-scrollable-buttons {
+    grid-row: 1 / 1;
+    grid-column: 1 / 1;
+    pointer-events: none;
+
+    .et-scrollable-button {
+      position: absolute;
+      opacity: 0;
+    }
+  }
+
+  .et-scrollable {
+    /* --- Horizontal (default) --- */
+
+    &[direction='horizontal'],
+    &:not([direction]) {
+      & .et-scrollable-button--start {
+        inset-block-start: calc(50% - 1.4rem);
+        inset-inline: 0 0;
+        transform: translateX(-10px);
+
+        & .et-icon--et-chevron {
+          transform: rotate(-90deg);
+        }
+      }
+
+      & .et-scrollable-button--end {
+        inset-block-start: calc(50% - 1.4rem);
+        inset-inline: calc(100% - 2.8rem) 0;
+        transform: translateX(10px);
+
+        & .et-icon--et-chevron {
+          transform: rotate(90deg);
+        }
+      }
+    }
+
+    /* --- Vertical --- */
+
+    &[direction='vertical'] {
+      & .et-scrollable-button--start {
+        inset-block-start: 0;
+        inset-inline-start: calc(50% - 1.4rem);
+        transform: translateY(-10px);
+
+        & .et-icon--et-chevron {
+          transform: rotate(0deg);
+        }
+      }
+
+      & .et-scrollable-button--end {
+        inset-block-end: 0;
+        inset-inline-start: calc(50% - 1.4rem);
+        transform: translateY(10px);
+
+        & .et-icon--et-chevron {
+          transform: rotate(180deg);
+        }
+      }
+    }
+
+    & .et-scrollable-button {
+      color: var(--et-surface-interaction-solid, currentColor);
+    }
+
+    /* --- State-driven visibility --- */
+
+    &.et-scrollable--can-scroll:not(.et-scrollable--is-at-start) {
+      & .et-scrollable-buttons .et-scrollable-button--start {
+        opacity: 1;
+        transform: translate(0);
+        pointer-events: all;
+      }
+    }
+
+    &.et-scrollable--can-scroll:not(.et-scrollable--is-at-end) {
+      & .et-scrollable-buttons .et-scrollable-button--end {
+        opacity: 1;
+        transform: translate(0);
+        pointer-events: all;
+      }
+    }
+
+    /* --- Animations --- */
+
+    &.et-scrollable--can-animate.et-scrollable--can-scroll {
+      & .et-scrollable-button {
+        transition:
+          opacity 300ms var(--ease-5),
+          transform 300ms var(--ease-5);
+      }
+    }
+
+    /* --- Sticky buttons --- */
+
+    &.et-scrollable--sticky-buttons {
+      --_sticky-margin: 10%;
+
+      & .et-scrollable-button {
+        position: sticky;
+      }
+
+      &[direction='horizontal'] .et-scrollable-buttons {
+        margin-block: var(--_sticky-margin);
+      }
+
+      &[direction='vertical'] .et-scrollable-buttons {
+        margin-inline: var(--_sticky-margin);
+
+        & .et-scrollable-button--end {
+          inset-block-start: 100%;
+        }
+      }
+    }
+
+    /* Wins the equal-weight tie with the direction rules above only by coming after them - keep the
+       footer overrides in this file, below them. */
+    & .et-scrollable-footer {
+      & .et-scrollable-buttons {
+        display: contents;
+      }
+
+      & .et-scrollable-button {
+        position: static;
+        opacity: 1;
+        pointer-events: all;
+        transform: none;
+      }
+    }
+  }
+}

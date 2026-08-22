@@ -34,6 +34,7 @@ import { ScrollableButtonPosition } from './scrollable.types';
       <i etIcon="et-chevron"></i>
     </button>
   `,
+  styleUrls: ['./scrollable-buttons.component.css', './scrollable-footer.css'],
   encapsulation: ViewEncapsulation.None,
   imports: [IconDirective, IconButtonComponent],
   providers: [provideIcons(CHEVRON_ICON)],
@@ -42,20 +43,6 @@ import { ScrollableButtonPosition } from './scrollable.types';
     '[class.et-scrollable-buttons--inside]': 'position() === "inside"',
     '[class.et-scrollable-buttons--footer]': 'position() === "footer"',
   },
-  styles: `
-    @layer components {
-      .et-scrollable-buttons {
-        grid-row: 1 / 1;
-        grid-column: 1 / 1;
-        pointer-events: none;
-
-        .et-scrollable-button {
-          position: absolute;
-          opacity: 0;
-        }
-      }
-    }
-  `,
 })
 export class ScrollableButtonsComponent {
   protected scrollable = inject(ScrollableDirective);

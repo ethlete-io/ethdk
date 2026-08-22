@@ -1,0 +1,25 @@
+@layer components {
+  .et-scrollable {
+    &[direction='vertical'] {
+      &:has(.et-scrollable-footer) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      & .et-scrollable-footer {
+        flex-direction: column;
+        margin-block-start: 0;
+      }
+    }
+
+    & .et-scrollable-footer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-block-start: 10px;
+    }
+  }
+}

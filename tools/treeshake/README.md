@@ -227,6 +227,12 @@ Measured and rejected during the 2026-07-31 / 2026-08-01 / 2026-08-04 rounds:
   392 B (`choice-field`), 452 B (`carousel`) and 217 B (`cascader`).
 - **Per-feature RTE label defaults - 526 B**, for a new layering mechanism in `core`, a split of a
   documented public constant and a second way to localize one domain.
+- **The scrollable's darken CSS in a styles-only component.** Moving the rest of that sheet onto the
+  chrome components that already carry stylesheets is worth **-467 B** at the base `scrollable`
+  entry (+134 B for a consumer that also imports the navigation barrel). Routing the ten remaining
+  darken lines through the style manager on top buys the base entry a further **32 B** and costs
+  `SCROLLABLE_DARKEN_IMPORTS` **309 B** for the component definition - the same trade as the table's
+  sticky CSS. They stay in the base sheet.
 - **The table's per-cell sticky bindings - a further ~360 B.** Only the machinery moved out of the
   base; the `[class.et-table-sticky-*]` / `[style.inset-inline-*]` bindings stayed, because no seam
   lets a feature contribute an attribute to a cell the table draws. Cutting them needs a per-cell
