@@ -60,7 +60,7 @@ re-reads a faithful record of the entry. `typeChars()` landed in `testing/driver
 through it and all pass, so no further mid-entry defect is hiding in that domain. The paste test
 deliberately stays on the single-event `type()`.
 
-### 4. Support-region ids: `aria-describedby` pointing at nothing · M
+### 4. Support-region ids: `aria-describedby` pointing at nothing · M · **DONE 2026-08-22**
 
 One root cause — `form-field/headless/form-support.ts` never returns the support ids (nor
 `directions`) that `reduceSupportPresentation` already computes — with seven affected templates.
@@ -71,6 +71,20 @@ Resolves: selection-controls High "hint/error/warning under the four group contr
 announced", otp-input High "`aria-describedby` points at a non-existent element", selection-controls
 Medium "the severity-direction half of the state machine is dead for every group"; realises
 selection-controls DX "give `injectFormSupport` the ids and directions it already computes".
+
+Done (the two Highs): `injectFormSupport` now returns `errorId`/`warningId`/`hintId`, and all eight
+templates that render their own support region bind `[id]` (`choice-field` already did). No docs
+change - `forms.md:319` already promised this. New shared assertion
+`forms/testing/described-by.ts` (`expectDescribedByResolves`, _Spec-coverage_ #2) with
+`form-field/support-region-ids.spec.ts` covering all eight in one mount, hint path and error path;
+both fail without the `[id]` bindings.
+
+Still open (the Medium, deliberately): `directions` is still not exposed and the eight templates
+still bind no `data-direction`/`data-state`. Only `form-field.component.css` has the rules that
+animate on them, so binding them elsewhere would be inert markup - making that half live means
+adding the enter/leave animation CSS to eight components, which is a design decision, not an id
+fix. Note also that `form-field.component.ts` keeps its own copy of the presentation state machine
+rather than using `injectFormSupport`; folding the two is what the DX item really asks for.
 
 ### 5. Controls that cannot be given an accessible name · L
 
@@ -391,6 +405,7 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
 2. **`aria-describedby` resolution as a shared assertion** (`expectDescribedByResolves`). Would have
    caught otp, rating, slider, dropzone and the three selection groups in one pass, and keeps catching
    the next one.
+   **DONE 2026-08-22** with item #4 - `forms/testing/described-by.ts`.
 3. **A "wrapper exposes its base's inputs" loop** over the five text-control components. One test,
    catches the `[warnings]` High and every future recurrence.
 4. **The three shared contract suites** — `describePickerCommitContract` (all four date-time Highs),

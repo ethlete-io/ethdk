@@ -174,6 +174,11 @@ const formSupportFactory = () => {
     errorColorTheme,
     warningColorTheme,
     formFieldDir,
+    // the support region a control's `aria-describedby` points at has to carry the matching id,
+    // or the message it names resolves to nothing and is never announced
+    errorId: formFieldDir.errorId,
+    warningId: formFieldDir.warningId,
+    hintId: formFieldDir.hintId,
     errorContent,
     warningContent,
     hintContent,

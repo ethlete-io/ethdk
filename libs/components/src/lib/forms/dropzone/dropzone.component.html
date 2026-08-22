@@ -191,6 +191,7 @@
         <div
           #errorContent
           #errorAnimatable="etAnimatable"
+          [id]="support.errorId()"
           [attr.aria-atomic]="support.errorActive() ? 'true' : null"
           [attr.aria-hidden]="!support.errorActive() ? 'true' : null"
           [attr.aria-live]="support.errorActive() ? 'polite' : null"
@@ -209,6 +210,7 @@
         <div
           #warningContent
           #warningAnimatable="etAnimatable"
+          [id]="support.warningId()"
           [attr.aria-atomic]="support.warningActive() ? 'true' : null"
           [attr.aria-hidden]="!support.warningActive() ? 'true' : null"
           [attr.aria-live]="support.warningActive() ? 'polite' : null"
@@ -227,6 +229,7 @@
         <div
           #hintContent
           #hintAnimatable="etAnimatable"
+          [id]="support.hintId()"
           [attr.aria-hidden]="!support.hintActive() ? 'true' : null"
           [attr.data-active]="support.hintActive() || null"
           class="et-dropzone-support-content et-dropzone-hint"
