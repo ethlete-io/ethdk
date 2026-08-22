@@ -1,0 +1,53 @@
+<div class="et-form-support-stack">
+  @if (support.shouldRenderError()) {
+    <div
+      #errorContent
+      #errorAnimatable="etAnimatable"
+      [id]="support.errorId()"
+      [attr.aria-atomic]="support.errorActive() ? 'true' : null"
+      [attr.aria-hidden]="!support.errorActive() ? 'true' : null"
+      [attr.aria-live]="support.errorActive() ? 'polite' : null"
+      [attr.data-active]="support.errorActive() || null"
+      [etProvideColor]="support.errorColorTheme"
+      class="et-form-support-content et-form-support-errors"
+      etAnimatable
+    >
+      @for (error of support.visibleErrors(); track $index) {
+        <et-form-error [error]="error" />
+      }
+    </div>
+  }
+
+  @if (support.shouldRenderWarning()) {
+    <div
+      #warningContent
+      #warningAnimatable="etAnimatable"
+      [id]="support.warningId()"
+      [attr.aria-atomic]="support.warningActive() ? 'true' : null"
+      [attr.aria-hidden]="!support.warningActive() ? 'true' : null"
+      [attr.aria-live]="support.warningActive() ? 'polite' : null"
+      [attr.data-active]="support.warningActive() || null"
+      [etProvideColor]="support.warningColorTheme()"
+      class="et-form-support-content et-form-support-warnings"
+      etAnimatable
+    >
+      @for (warning of support.visibleWarnings(); track $index) {
+        <et-form-warning [warning]="warning" />
+      }
+    </div>
+  }
+
+  @if (support.shouldRenderHint()) {
+    <div
+      #hintContent
+      #hintAnimatable="etAnimatable"
+      [id]="support.hintId()"
+      [attr.aria-hidden]="!support.hintActive() ? 'true' : null"
+      [attr.data-active]="support.hintActive() || null"
+      class="et-form-support-content et-form-support-hint"
+      etAnimatable
+    >
+      <ng-content />
+    </div>
+  }
+</div>

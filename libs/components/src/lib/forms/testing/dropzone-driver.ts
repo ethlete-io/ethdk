@@ -69,7 +69,7 @@ export const createDropzoneDriver = <T>(fixture: ComponentFixture<T>, options: C
     liveStatus: () => base.text('.et-dropzone-live-status'),
     internalErrors: () => base.query('.et-dropzone-internal-errors'),
     internalErrorsText: () => textOf(base.query('.et-dropzone-internal-errors')),
-    errorsText: () => textOf(base.query('.et-dropzone-errors')),
+    errorsText: () => textOf(base.query('.et-form-support-errors')),
   };
 };
 

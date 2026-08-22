@@ -11,7 +11,6 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import {
-  AnimatableDirective,
   createCanAnimateSignal,
   createFlipAnimationGroup,
   injectPrefersReducedMotion,
@@ -29,9 +28,8 @@ import {
   UPLOAD_ICON,
 } from '../../icon/headless';
 import { ProgressBarComponent } from '../../loader/progress-bar/progress-bar.component';
-import { FormErrorComponent } from '../form-field/form-error.component';
-import { FormWarningComponent } from '../form-field/form-warning.component';
-import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
+import { FormSupportComponent } from '../form-field/partials/form-support.component';
+import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
 import { DropzoneEntry, DROPZONE_ENTRY_STATUSES, formatFileSize } from './headless/dropzone-entry';
 import { DropzoneDirective } from './headless/dropzone.directive';
 import { injectDropzoneLabels } from '../../forms/dropzone/dropzone-labels';
@@ -43,14 +41,12 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
   styleUrl: './dropzone.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
-    AnimatableDirective,
-    FormErrorComponent,
-    FormWarningComponent,
-    ProvideColorDirective,
-    ProgressBarComponent,
     FocusRingDirective,
+    FormSupportComponent,
     IconButtonComponent,
     IconDirective,
+    ProgressBarComponent,
+    ProvideColorDirective,
   ],
   providers: [provideFormSupport(), provideIcons(UPLOAD_ICON, FILE_ICON, ROTATE_RIGHT_ICON, TIMES_ICON)],
   hostDirectives: [
@@ -116,12 +112,6 @@ export class DropzoneComponent {
 
   private fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
   private browseButton = viewChild<ElementRef<HTMLButtonElement>>('browseButton');
-  private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
-  private warningContentRef = viewChild<ElementRef<HTMLElement>>('warningContent');
-  private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
-  private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
-  private warningAnimatableRef = viewChild<AnimatableDirective>('warningAnimatable');
-  private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
   private entryElements = viewChildren<ElementRef<HTMLElement>>('entryEl');
 
   /** The string in effect: this instance's `retryLabel`, else the domain's label set. */
@@ -166,15 +156,6 @@ export class DropzoneComponent {
   protected readonly FORMAT_FILE_SIZE = formatFileSize;
 
   constructor() {
-    wireFormSupport(this.support, {
-      errorContent: this.errorContentRef,
-      warningContent: this.warningContentRef,
-      hintContent: this.hintContentRef,
-      errorAnimatable: this.errorAnimatableRef,
-      warningAnimatable: this.warningAnimatableRef,
-      hintAnimatable: this.hintAnimatableRef,
-    });
-
     afterNextRender(() => {
       this.dropzoneDir.focusTarget.set(this.browseButton()?.nativeElement ?? null);
     });

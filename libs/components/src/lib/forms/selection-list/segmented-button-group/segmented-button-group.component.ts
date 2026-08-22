@@ -1,20 +1,9 @@
-import {
-  Component,
-  computed,
-  effect,
-  ElementRef,
-  inject,
-  input,
-  signal,
-  viewChild,
-  ViewEncapsulation,
-} from '@angular/core';
-import { AnimatableDirective, createCanAnimateSignal, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
+import { Component, computed, effect, inject, input, signal, ViewEncapsulation } from '@angular/core';
+import { createCanAnimateSignal, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import { TabScaleStylesComponent } from '../../../tabs/tab-scale-styles.component';
-import { FormErrorComponent } from '../../form-field/form-error.component';
-import { FormWarningComponent } from '../../form-field/form-warning.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../../form-field/form-field.variants';
-import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../../form-field/headless';
+import { FormSupportComponent } from '../../form-field/partials/form-support.component';
+import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../../form-field/headless';
 import { SelectionListDirective } from '../headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
 
@@ -32,7 +21,7 @@ export type SegmentedButtonGroupVariant =
   templateUrl: './segmented-button-group.component.html',
   styleUrl: './segmented-button-group.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [AnimatableDirective, FormErrorComponent, FormWarningComponent, ProvideColorDirective],
+  imports: [FormSupportComponent],
   providers: [provideFormSupport()],
   hostDirectives: [
     FormFieldDirective,
@@ -79,13 +68,6 @@ export class SegmentedButtonGroupComponent {
    */
   public variant = input<SegmentedButtonGroupVariant>(SEGMENTED_BUTTON_GROUP_VARIANTS.PILL);
 
-  private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
-  private warningContentRef = viewChild<ElementRef<HTMLElement>>('warningContent');
-  private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
-  private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
-  private warningAnimatableRef = viewChild<AnimatableDirective>('warningAnimatable');
-  private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
-
   protected isTabsVariant = computed(() => this.variant() === SEGMENTED_BUTTON_GROUP_VARIANTS.TABS);
 
   /** @internal The active background element of the currently checked button. Used as the flip animation origin. */
@@ -99,15 +81,6 @@ export class SegmentedButtonGroupComponent {
       if (this.isTabsVariant()) {
         styleManager.mount(TabScaleStylesComponent);
       }
-    });
-
-    wireFormSupport(this.support, {
-      errorContent: this.errorContentRef,
-      warningContent: this.warningContentRef,
-      hintContent: this.hintContentRef,
-      errorAnimatable: this.errorAnimatableRef,
-      warningAnimatable: this.warningAnimatableRef,
-      hintAnimatable: this.hintAnimatableRef,
     });
   }
 

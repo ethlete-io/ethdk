@@ -1,27 +1,11 @@
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  ViewEncapsulation,
-  computed,
-  inject,
-  viewChild,
-  viewChildren,
-} from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewEncapsulation, computed, inject, viewChildren } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  AnimatableDirective,
-  DragGestureEvent,
-  ProvideColorDirective,
-  createCanAnimateSignal,
-  dragGestureFrom,
-} from '@ethlete/core';
+import { DragGestureEvent, ProvideColorDirective, createCanAnimateSignal, dragGestureFrom } from '@ethlete/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { tap } from 'rxjs';
 import { STAR_ICON, IconDirective, provideIcons } from '../../icon';
-import { FormErrorComponent } from '../form-field/form-error.component';
-import { FormWarningComponent } from '../form-field/form-warning.component';
-import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
+import { FormSupportComponent } from '../form-field/partials/form-support.component';
+import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
 import { RatingDirective, RatingIconContext } from './headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
@@ -30,14 +14,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
   templateUrl: './rating.component.html',
   styleUrl: './rating.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [
-    AnimatableDirective,
-    FormErrorComponent,
-    FormWarningComponent,
-    IconDirective,
-    NgTemplateOutlet,
-    ProvideColorDirective,
-  ],
+  imports: [FormSupportComponent, IconDirective, NgTemplateOutlet],
   providers: [provideFormSupport(), provideIcons(STAR_ICON)],
   hostDirectives: [
     FormFieldDirective,
@@ -76,12 +53,6 @@ export class RatingComponent {
 
   private baseIcons = viewChildren<ElementRef<HTMLElement>>('baseIcon');
 
-  private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
-  private warningContentRef = viewChild<ElementRef<HTMLElement>>('warningContent');
-  private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
-  private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
-  private warningAnimatableRef = viewChild<AnimatableDirective>('warningAnimatable');
-  private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
   public canAnimate = createCanAnimateSignal();
 
   protected iconIndexes = computed(() => Array.from({ length: this.rating.effectiveMax() }, (_, index) => index + 1));
@@ -93,17 +64,6 @@ export class RatingComponent {
 
   private dragging = false;
   private pointerCommitted = false;
-
-  constructor() {
-    wireFormSupport(this.support, {
-      errorContent: this.errorContentRef,
-      warningContent: this.warningContentRef,
-      hintContent: this.hintContentRef,
-      errorAnimatable: this.errorAnimatableRef,
-      warningAnimatable: this.warningAnimatableRef,
-      hintAnimatable: this.hintAnimatableRef,
-    });
-  }
 
   protected iconContext(index: number): RatingIconContext {
     return { $implicit: this.rating.iconState(index), index };

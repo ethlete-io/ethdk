@@ -5,25 +5,19 @@ import {
   effect,
   ElementRef,
   inject,
-  Injector,
   input,
-  runInInjectionContext,
-  signal,
   untracked,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { ValidationError } from '@angular/forms/signals';
 import {
   AnimatableDirective,
   ColorInteractiveExcludeDirective,
   ColorInteractiveHasFocusDirective,
   createCanAnimateSignal,
-  injectErrorTheme,
   injectParentSurface,
   injectSurfaceThemes,
-  injectWarningTheme,
   ProvideColorDirective,
   ProvideSurfaceDirective,
   resolveSurfaceByElevation,
@@ -44,14 +38,11 @@ import {
   FormFieldSize,
 } from './form-field.variants';
 import {
-  clearLeavingSupportStateOnExit,
   FormFieldDirective,
-  INITIAL_SUPPORT_PRESENTATION_STATE,
+  injectFormSupport,
   isInteractiveElement,
-  reduceSupportPresentation,
-  SUPPORT_CONTENT_STATE,
-  SupportContentState,
-  SupportPresentationState,
+  provideFormSupport,
+  wireFormSupport,
 } from './headless';
 
 @Component({
@@ -68,6 +59,7 @@ import {
     ProvideColorDirective,
     SpinnerComponent,
   ],
+  providers: [provideFormSupport()],
   hostDirectives: [
     FormFieldDirective,
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
@@ -81,8 +73,8 @@ import {
     '[style.display]': 'formFieldDir.isHidden() ? "none" : null',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-control-type]': 'formFieldDir.controlType()',
-    '[attr.data-error]': 'displaysError() || null',
-    '[attr.data-warning]': 'displaysWarning() || null',
+    '[attr.data-error]': 'support.displaysError() || null',
+    '[attr.data-warning]': 'support.displaysWarning() || null',
     '[attr.aria-busy]': 'isBusy() ? "true" : null',
     '[attr.data-busy]': 'isBusy() || null',
     '[attr.data-expanded]': 'formFieldDir.usesTextFieldShell() && formFieldDir.expanded() ? "" : null',
@@ -103,14 +95,12 @@ import {
   },
 })
 export class FormFieldComponent {
-  private provideColor = inject(ProvideColorDirective);
   private provideSurface = inject(ProvideSurfaceDirective);
   private parentSurface = injectParentSurface();
-  private injector = inject(Injector);
 
   protected formFieldDir = inject(FormFieldDirective);
 
-  protected errorColorTheme = injectErrorTheme();
+  public support = injectFormSupport();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
 
   public appearance = input<FormFieldAppearance>(FORM_FIELD_APPEARANCES.BOX);
@@ -143,13 +133,7 @@ export class FormFieldComponent {
    */
   protected showBusySpinner = signalDeferredLoading(this.isBusy);
 
-  private errorDimensions = signalElementDimensions(this.errorContent);
-  private warningDimensions = signalElementDimensions(this.warningContent);
-  private hintDimensions = signalElementDimensions(this.hintContent);
-  private counterDimensions = signalElementDimensions(this.counterContent);
   private prefixDimensions = signalElementDimensions(this.prefixEl);
-
-  private supportPresentation = signal<SupportPresentationState>(INITIAL_SUPPORT_PRESENTATION_STATE);
 
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
@@ -169,41 +153,6 @@ export class FormFieldComponent {
   });
 
   public canAnimate = createCanAnimateSignal();
-
-  // real validation errors, or - when the control only has an unparseable committed value - a
-  // synthetic one carrying its parse message, so a parse error renders like any other error
-  // (red styling + a message + aria-describedby) instead of a silent `aria-invalid`
-  public effectiveErrors = computed<readonly ValidationError.WithOptionalFieldTree[]>(() => {
-    const errors = this.formFieldDir.errors();
-
-    if (errors.length > 0) {
-      return errors;
-    }
-
-    const parseMessage = this.formFieldDir.parseError() ? this.formFieldDir.parseErrorMessage() : null;
-
-    return parseMessage ? [{ kind: 'etParseError', message: parseMessage }] : [];
-  });
-
-  public semanticSupportState = computed<SupportContentState>(() => {
-    if (this.formFieldDir.shouldDisplayError() && this.effectiveErrors().length > 0) {
-      return SUPPORT_CONTENT_STATE.ERROR;
-    }
-
-    if (this.formFieldDir.warnings().length > 0) {
-      return SUPPORT_CONTENT_STATE.WARNING;
-    }
-
-    if (this.formFieldDir.registeredHint()) {
-      return SUPPORT_CONTENT_STATE.HINT;
-    }
-
-    return SUPPORT_CONTENT_STATE.NONE;
-  });
-
-  protected displaysError = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR);
-
-  protected displaysWarning = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.WARNING);
 
   protected hasFloatingTextLabel = computed(
     () =>
@@ -226,146 +175,21 @@ export class FormFieldComponent {
     return `calc(${width}px + var(--et-form-field-control-affix-gap))`;
   });
 
-  protected shouldRenderSupport = computed(() => {
-    const presentation = this.supportPresentation();
-
-    // A counter alone is reason enough to open the support region - it is persistent, so unlike the
-    // hint and error it isn't part of the swapping state machine.
-    return (
-      !!this.formFieldDir.registeredCounter() ||
-      presentation.renderedState !== SUPPORT_CONTENT_STATE.NONE ||
-      presentation.leavingState !== SUPPORT_CONTENT_STATE.NONE
-    );
-  });
-
-  protected shouldRenderError = computed(() => {
-    const presentation = this.supportPresentation();
-
-    return (
-      presentation.renderedState === SUPPORT_CONTENT_STATE.ERROR ||
-      presentation.leavingState === SUPPORT_CONTENT_STATE.ERROR
-    );
-  });
-
-  protected shouldRenderWarning = computed(() => {
-    const presentation = this.supportPresentation();
-
-    return (
-      presentation.renderedState === SUPPORT_CONTENT_STATE.WARNING ||
-      presentation.leavingState === SUPPORT_CONTENT_STATE.WARNING
-    );
-  });
-
-  protected shouldRenderHint = computed(() => {
-    const presentation = this.supportPresentation();
-
-    return (
-      presentation.renderedState === SUPPORT_CONTENT_STATE.HINT ||
-      presentation.leavingState === SUPPORT_CONTENT_STATE.HINT
-    );
-  });
-
-  // Resolved only once a warning actually renders: a field that never warns shouldn't force the app
-  // to register a `type: 'warning'` theme. It colors the message and nothing else - the control frame
-  // keeps its normal styling, because a warned field is not an invalid one.
-  protected warningColorTheme = computed(() =>
-    this.shouldRenderWarning() ? runInInjectionContext(this.injector, injectWarningTheme) : null,
-  );
-
-  protected errorActive = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR);
-  protected errorState = computed(() => {
-    const presentation = this.supportPresentation();
-
-    return presentation.leavingState === SUPPORT_CONTENT_STATE.ERROR ? 'leaving' : 'active';
-  });
-  protected errorDirection = computed(() => this.supportPresentation().directions.error);
-  protected visibleErrors = computed(() => this.supportPresentation().renderedErrors);
-
-  protected warningActive = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.WARNING);
-  protected warningState = computed(() => {
-    const presentation = this.supportPresentation();
-
-    return presentation.leavingState === SUPPORT_CONTENT_STATE.WARNING ? 'leaving' : 'active';
-  });
-  protected warningDirection = computed(() => this.supportPresentation().directions.warning);
-  protected visibleWarnings = computed(() => this.supportPresentation().renderedWarnings);
-
-  protected hintActive = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.HINT);
-  protected hintState = computed(() => {
-    const presentation = this.supportPresentation();
-
-    return presentation.leavingState === SUPPORT_CONTENT_STATE.HINT ? 'leaving' : 'active';
-  });
-  protected hintDirection = computed(() => this.supportPresentation().directions.hint);
-
-  protected supportHeight = computed(() => {
-    const stackHeight = (() => {
-      switch (this.semanticSupportState()) {
-        case SUPPORT_CONTENT_STATE.ERROR:
-          return this.errorDimensions().offset?.height ?? 0;
-        case SUPPORT_CONTENT_STATE.WARNING:
-          return this.warningDimensions().offset?.height ?? 0;
-        case SUPPORT_CONTENT_STATE.HINT:
-          return this.hintDimensions().offset?.height ?? 0;
-        default:
-          return 0;
-      }
-    })();
-
-    // The support region animates its own height, so a counter with no hint or error still has to
-    // contribute one - otherwise the row it sits in would be clipped to zero.
-    const counterHeight = this.formFieldDir.registeredCounter() ? (this.counterDimensions().offset?.height ?? 0) : 0;
-
-    return Math.max(stackHeight, counterHeight);
-  });
-
   constructor() {
+    wireFormSupport(this.support, {
+      errorContent: this.errorContent,
+      warningContent: this.warningContent,
+      hintContent: this.hintContent,
+      counterContent: this.counterContent,
+      errorAnimatable: this.errorAnimatable,
+      warningAnimatable: this.warningAnimatable,
+      hintAnimatable: this.hintAnimatable,
+    });
+
     effect(() => {
       const element = this.controlFrame()?.nativeElement ?? null;
 
       untracked(() => this.formFieldDir.controlFrameElement.set(element));
-    });
-
-    for (const [state, animatable] of [
-      [SUPPORT_CONTENT_STATE.ERROR, this.errorAnimatable],
-      [SUPPORT_CONTENT_STATE.WARNING, this.warningAnimatable],
-      [SUPPORT_CONTENT_STATE.HINT, this.hintAnimatable],
-    ] as const) {
-      clearLeavingSupportStateOnExit({
-        state,
-        animatable,
-        presentation: this.supportPresentation,
-        semanticSupportState: this.semanticSupportState,
-      });
-    }
-
-    effect(() => {
-      const semanticSupportState = this.semanticSupportState();
-      const errors = this.effectiveErrors();
-      const warnings = this.formFieldDir.warnings();
-
-      this.supportPresentation.update((presentation) =>
-        reduceSupportPresentation({
-          presentation,
-          semanticSupportState,
-          errors,
-          warnings,
-        }),
-      );
-    });
-
-    effect(() => {
-      const showError = this.displaysError();
-
-      untracked(() => {
-        if (showError) {
-          this.provideColor.forceColor(this.errorColorTheme);
-
-          return;
-        }
-
-        this.provideColor.clearForcedColor();
-      });
     });
 
     effect(() => {

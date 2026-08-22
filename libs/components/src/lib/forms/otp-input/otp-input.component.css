@@ -69,6 +69,12 @@
     gap: 6px;
     color: var(--et-surface-color-solid, currentColor);
 
+    --et-form-support-duration: var(--et-otp-input-support-duration);
+    --et-form-support-offset: var(--et-otp-input-support-offset);
+    --et-form-support-error-font-size: var(--et-otp-input-error-font-size);
+    --et-form-support-warning-font-size: var(--et-otp-input-warning-font-size);
+    --et-form-support-hint-font-size: var(--et-otp-input-hint-font-size);
+
     > et-label {
       font-size: var(--et-otp-input-label-font-size);
       font-weight: 500;
@@ -163,74 +169,7 @@
       }
     }
 
-    .et-otp-input-support {
-      overflow: clip;
-      block-size: 0;
-    }
-
-    .et-otp-input-support-stack {
-      position: relative;
-      display: grid;
-    }
-
-    .et-otp-input-support-content {
-      grid-area: 1 / 1;
-      min-inline-size: 0;
-      opacity: 0;
-      transform: translateY(0);
-
-      &[data-active] {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .et-otp-input-errors {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      padding-block-start: 4px;
-      font-size: var(--et-otp-input-error-font-size);
-      color: var(--et-theme-color-primary-solid, currentColor);
-    }
-
-    .et-otp-input-warnings {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      padding-block-start: 4px;
-      font-size: var(--et-otp-input-warning-font-size);
-      color: var(--et-theme-color-primary-solid, currentColor);
-    }
-
-    .et-otp-input-hint {
-      padding-block-start: 4px;
-      font-size: var(--et-otp-input-hint-font-size);
-      color: var(--et-surface-color-muted-solid, currentColor);
-
-      &:empty {
-        display: none;
-      }
-    }
-
     &[data-can-animate] {
-      .et-otp-input-support {
-        transition: block-size var(--et-otp-input-support-duration) ease;
-      }
-
-      .et-otp-input-support-content {
-        transition:
-          opacity var(--et-otp-input-support-duration) ease,
-          transform var(--et-otp-input-support-duration) ease;
-
-        @starting-style {
-          &[data-active] {
-            opacity: 0;
-            transform: translateY(calc(var(--et-otp-input-support-offset) * -1));
-          }
-        }
-      }
-
       .et-otp-input-segment {
         transition:
           border-color 120ms ease,
@@ -251,9 +190,6 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      --et-otp-input-support-duration: 1ms;
-      --et-otp-input-support-offset: 0px;
-
       .et-otp-input-caret {
         animation: none;
       }

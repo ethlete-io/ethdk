@@ -55,13 +55,19 @@
     gap: var(--et-checkbox-group-gap);
     color: var(--et-surface-color-solid, currentColor);
 
+    --et-form-support-duration: var(--et-checkbox-group-support-duration);
+    --et-form-support-offset: var(--et-checkbox-group-support-offset);
+    --et-form-support-error-font-size: var(--et-checkbox-group-error-font-size);
+    --et-form-support-warning-font-size: var(--et-checkbox-group-warning-font-size);
+    --et-form-support-hint-font-size: var(--et-checkbox-group-hint-font-size);
+
     /* The group carries the state cursor, not the options: a disabled option sets
        `pointer-events: none` on itself, so its own cursor never reaches the pointer. The support
        row keeps the plain arrow - a hint is text, not a control. */
     &[data-disabled] {
       cursor: not-allowed;
 
-      .et-checkbox-group-support {
+      .et-form-support {
         cursor: auto;
       }
     }
@@ -131,80 +137,6 @@
       border-style: dashed;
       border-color: var(--et-theme-color-primary-solid, currentColor);
     }
-
-    .et-checkbox-group-support {
-      overflow: clip;
-      block-size: 0;
-    }
-
-    .et-checkbox-group-support-stack {
-      position: relative;
-      display: grid;
-    }
-
-    .et-checkbox-group-support-content {
-      grid-area: 1 / 1;
-      min-inline-size: 0;
-      opacity: 0;
-      transform: translateY(0);
-
-      &[data-active] {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .et-checkbox-group-errors {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      padding-block-start: 4px;
-      font-size: var(--et-checkbox-group-error-font-size);
-      color: var(--et-theme-color-primary-solid, currentColor);
-    }
-
-    .et-checkbox-group-warnings {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      padding-block-start: 4px;
-      font-size: var(--et-checkbox-group-warning-font-size);
-      color: var(--et-theme-color-primary-solid, currentColor);
-    }
-
-    .et-checkbox-group-hint {
-      padding-block-start: 4px;
-      font-size: var(--et-checkbox-group-hint-font-size);
-      color: var(--et-surface-color-muted-solid, currentColor);
-
-      &:empty {
-        display: none;
-      }
-    }
-
-    &[data-can-animate] {
-      .et-checkbox-group-support {
-        transition: block-size var(--et-checkbox-group-support-duration) ease;
-      }
-
-      .et-checkbox-group-support-content {
-        transition:
-          opacity var(--et-checkbox-group-support-duration) ease,
-          transform var(--et-checkbox-group-support-duration) ease;
-
-        @starting-style {
-          &[data-active] {
-            opacity: 0;
-            transform: translateY(calc(var(--et-checkbox-group-support-offset) * -1));
-          }
-        }
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      --et-checkbox-group-support-duration: 1ms;
-      --et-checkbox-group-support-offset: 0px;
-    }
   }
 
   /* Horizontal layout. The host stays the one flex container — no wrapper around the options — and the
@@ -219,7 +151,7 @@
 
   et-checkbox-group:where([data-orientation='horizontal']) > et-label,
   et-checkbox-group:where([data-orientation='horizontal']) > .et-checkbox-group-label,
-  et-checkbox-group:where([data-orientation='horizontal']) > .et-checkbox-group-support {
+  et-checkbox-group:where([data-orientation='horizontal']) > .et-form-support {
     flex-basis: 100%;
   }
 }

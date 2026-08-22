@@ -36,61 +36,61 @@
   </div>
 </div>
 
-@if (shouldRenderSupport()) {
-  <div [style.block-size.px]="supportHeight()" class="et-form-field-support" etColorInteractiveExclude>
+@if (support.shouldRenderSupport()) {
+  <div [style.block-size.px]="support.supportHeight()" class="et-form-field-support" etColorInteractiveExclude>
     <div class="et-form-field-support-row">
       <div class="et-form-field-support-stack">
-        @if (shouldRenderError()) {
+        @if (support.shouldRenderError()) {
           <div
             #errorContent
             #errorAnimatable="etAnimatable"
             [id]="formFieldDir.errorId()"
-            [attr.aria-atomic]="errorActive() ? 'true' : null"
-            [attr.aria-hidden]="!errorActive() ? 'true' : null"
-            [attr.aria-live]="errorActive() ? 'polite' : null"
-            [attr.data-active]="errorActive() || null"
-            [attr.data-direction]="errorDirection()"
-            [attr.data-state]="errorState()"
-            [etProvideColor]="errorColorTheme"
+            [attr.aria-atomic]="support.errorActive() ? 'true' : null"
+            [attr.aria-hidden]="!support.errorActive() ? 'true' : null"
+            [attr.aria-live]="support.errorActive() ? 'polite' : null"
+            [attr.data-active]="support.errorActive() || null"
+            [attr.data-direction]="support.errorDirection()"
+            [attr.data-state]="support.errorState()"
+            [etProvideColor]="support.errorColorTheme"
             class="et-form-field-support-content et-form-field-errors"
             etAnimatable
           >
-            @for (error of visibleErrors(); track $index) {
+            @for (error of support.visibleErrors(); track $index) {
               <et-form-error [error]="error" />
             }
           </div>
         }
 
-        @if (shouldRenderWarning()) {
+        @if (support.shouldRenderWarning()) {
           <div
             #warningContent
             #warningAnimatable="etAnimatable"
             [id]="formFieldDir.warningId()"
-            [attr.aria-atomic]="warningActive() ? 'true' : null"
-            [attr.aria-hidden]="!warningActive() ? 'true' : null"
-            [attr.aria-live]="warningActive() ? 'polite' : null"
-            [attr.data-active]="warningActive() || null"
-            [attr.data-direction]="warningDirection()"
-            [attr.data-state]="warningState()"
-            [etProvideColor]="warningColorTheme()"
+            [attr.aria-atomic]="support.warningActive() ? 'true' : null"
+            [attr.aria-hidden]="!support.warningActive() ? 'true' : null"
+            [attr.aria-live]="support.warningActive() ? 'polite' : null"
+            [attr.data-active]="support.warningActive() || null"
+            [attr.data-direction]="support.warningDirection()"
+            [attr.data-state]="support.warningState()"
+            [etProvideColor]="support.warningColorTheme()"
             class="et-form-field-support-content et-form-field-warnings"
             etAnimatable
           >
-            @for (warning of visibleWarnings(); track $index) {
+            @for (warning of support.visibleWarnings(); track $index) {
               <et-form-warning [warning]="warning" />
             }
           </div>
         }
 
-        @if (shouldRenderHint()) {
+        @if (support.shouldRenderHint()) {
           <div
             #hintContent
             #hintAnimatable="etAnimatable"
             [id]="formFieldDir.hintId()"
-            [attr.aria-hidden]="!hintActive() ? 'true' : null"
-            [attr.data-active]="hintActive() || null"
-            [attr.data-direction]="hintDirection()"
-            [attr.data-state]="hintState()"
+            [attr.aria-hidden]="!support.hintActive() ? 'true' : null"
+            [attr.data-active]="support.hintActive() || null"
+            [attr.data-direction]="support.hintDirection()"
+            [attr.data-state]="support.hintState()"
             class="et-form-field-support-content et-form-field-hint"
             etAnimatable
           >
@@ -105,7 +105,7 @@
        error (an untouched field is not yet in its error state). -->
       <div
         #counterContent
-        [etProvideColor]="errorColorTheme"
+        [etProvideColor]="support.errorColorTheme"
         [hidden]="!formFieldDir.registeredCounter()"
         class="et-form-field-support-counter"
       >

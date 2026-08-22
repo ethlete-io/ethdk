@@ -54,6 +54,12 @@
     color: var(--et-surface-color-solid, currentColor);
     outline: none;
 
+    --et-form-support-duration: var(--et-rating-support-duration);
+    --et-form-support-offset: var(--et-rating-support-offset);
+    --et-form-support-error-font-size: var(--et-rating-error-font-size);
+    --et-form-support-warning-font-size: var(--et-rating-warning-font-size);
+    --et-form-support-hint-font-size: var(--et-rating-hint-font-size);
+
     > et-label {
       font-size: var(--et-rating-label-font-size);
       font-weight: 500;
@@ -173,82 +179,10 @@
       }
     }
 
-    .et-rating-support {
-      overflow: clip;
-      block-size: 0;
-    }
-
-    .et-rating-support-stack {
-      position: relative;
-      display: grid;
-    }
-
-    .et-rating-support-content {
-      grid-area: 1 / 1;
-      min-inline-size: 0;
-      opacity: 0;
-      transform: translateY(0);
-
-      &[data-active] {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .et-rating-errors {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      padding-block-start: 4px;
-      font-size: var(--et-rating-error-font-size);
-      color: var(--et-theme-color-primary-solid, currentColor);
-    }
-
-    .et-rating-warnings {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      padding-block-start: 4px;
-      font-size: var(--et-rating-warning-font-size);
-      color: var(--et-theme-color-primary-solid, currentColor);
-    }
-
-    .et-rating-hint {
-      padding-block-start: 4px;
-      font-size: var(--et-rating-hint-font-size);
-      color: var(--et-surface-color-muted-solid, currentColor);
-
-      &:empty {
-        display: none;
-      }
-    }
-
     &[data-can-animate] {
-      .et-rating-support {
-        transition: block-size var(--et-rating-support-duration) ease;
-      }
-
-      .et-rating-support-content {
-        transition:
-          opacity var(--et-rating-support-duration) ease,
-          transform var(--et-rating-support-duration) ease;
-
-        @starting-style {
-          &[data-active] {
-            opacity: 0;
-            transform: translateY(calc(var(--et-rating-support-offset) * -1));
-          }
-        }
-      }
-
       .et-rating-row--fill {
         transition: clip-path 160ms ease;
       }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      --et-rating-support-duration: 1ms;
-      --et-rating-support-offset: 0px;
     }
   }
 }

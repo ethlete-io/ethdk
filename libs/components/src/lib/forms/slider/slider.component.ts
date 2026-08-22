@@ -1,9 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
-import { AnimatableDirective, ProvideColorDirective, createCanAnimateSignal } from '@ethlete/core';
-import { FormErrorComponent } from '../form-field/form-error.component';
-import { FormWarningComponent } from '../form-field/form-warning.component';
-import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
+import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
+import { ProvideColorDirective, createCanAnimateSignal } from '@ethlete/core';
+import { FormSupportComponent } from '../form-field/partials/form-support.component';
+import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
 import { SliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderTrackDirective } from './headless';
 
 @Component({
@@ -11,15 +10,7 @@ import { SliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderT
   templateUrl: './slider.component.html',
   styleUrl: './slider.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [
-    AnimatableDirective,
-    FormErrorComponent,
-    FormWarningComponent,
-    NgTemplateOutlet,
-    ProvideColorDirective,
-    SliderThumbDirective,
-    SliderTrackDirective,
-  ],
+  imports: [FormSupportComponent, NgTemplateOutlet, SliderThumbDirective, SliderTrackDirective],
   providers: [provideFormSupport()],
   hostDirectives: [
     FormFieldDirective,
@@ -62,27 +53,9 @@ export class SliderComponent {
   public support = injectFormSupport();
   protected slider = inject(SliderDirective);
 
-  private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
-  private warningContentRef = viewChild<ElementRef<HTMLElement>>('warningContent');
-  private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
-  private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
-  private warningAnimatableRef = viewChild<AnimatableDirective>('warningAnimatable');
-  private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
-
   /** Labelled ticks need room next to the track - the stylesheet reserves it off this flag. */
   protected hasMarkLabels = computed(() => this.slider.markStops().some((mark) => !!mark.label));
   public canAnimate = createCanAnimateSignal();
-
-  constructor() {
-    wireFormSupport(this.support, {
-      errorContent: this.errorContentRef,
-      warningContent: this.warningContentRef,
-      hintContent: this.hintContentRef,
-      errorAnimatable: this.errorAnimatableRef,
-      warningAnimatable: this.warningAnimatableRef,
-      hintAnimatable: this.hintAnimatableRef,
-    });
-  }
 
   protected thumbLabelContext(index: number): SliderThumbLabelContext {
     return { $implicit: this.slider.thumbValues()[index] ?? 0, index };

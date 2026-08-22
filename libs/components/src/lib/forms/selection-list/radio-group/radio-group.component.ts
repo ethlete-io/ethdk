@@ -1,9 +1,8 @@
-import { Component, ElementRef, inject, input, viewChild, ViewEncapsulation } from '@angular/core';
-import { AnimatableDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
-import { FormErrorComponent } from '../../form-field/form-error.component';
-import { FormWarningComponent } from '../../form-field/form-warning.component';
+import { Component, inject, input, ViewEncapsulation } from '@angular/core';
+import { createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../../form-field/form-field.variants';
-import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../../form-field/headless';
+import { FormSupportComponent } from '../../form-field/partials/form-support.component';
+import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../../form-field/headless';
 import { SelectionListDirective } from '../../selection-list/headless';
 import { SelectionListOrientation } from '../selection-list.types';
 import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
@@ -13,7 +12,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
   templateUrl: './radio-group.component.html',
   styleUrl: './radio-group.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [AnimatableDirective, FormErrorComponent, FormWarningComponent, ProvideColorDirective],
+  imports: [FormSupportComponent],
   providers: [provideFormSupport()],
   hostDirectives: [
     FormFieldDirective,
@@ -59,24 +58,7 @@ export class RadioGroupComponent {
    */
   public orientation = input<SelectionListOrientation>('vertical');
 
-  private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
-  private warningContentRef = viewChild<ElementRef<HTMLElement>>('warningContent');
-  private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
-  private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
-  private warningAnimatableRef = viewChild<AnimatableDirective>('warningAnimatable');
-  private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
   public canAnimate = createCanAnimateSignal();
-
-  constructor() {
-    wireFormSupport(this.support, {
-      errorContent: this.errorContentRef,
-      warningContent: this.warningContentRef,
-      hintContent: this.hintContentRef,
-      errorAnimatable: this.errorAnimatableRef,
-      warningAnimatable: this.warningAnimatableRef,
-      hintAnimatable: this.hintAnimatableRef,
-    });
-  }
 
   public focus(options?: FocusOptions) {
     this.list.focus(options);

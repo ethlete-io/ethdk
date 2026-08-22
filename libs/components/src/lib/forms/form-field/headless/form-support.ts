@@ -1,5 +1,6 @@
 import {
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
@@ -9,6 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { ValidationError } from '@angular/forms/signals';
 import {
   AnimatableDirective,
   defineProvider,
@@ -37,6 +39,7 @@ const formSupportFactory = () => {
   const errorContent = signal<ElementRef<HTMLElement> | undefined>(undefined);
   const warningContent = signal<ElementRef<HTMLElement> | undefined>(undefined);
   const hintContent = signal<ElementRef<HTMLElement> | undefined>(undefined);
+  const counterContent = signal<ElementRef<HTMLElement> | undefined>(undefined);
   const errorAnimatable = signal<AnimatableDirective | undefined>(undefined);
   const warningAnimatable = signal<AnimatableDirective | undefined>(undefined);
   const hintAnimatable = signal<AnimatableDirective | undefined>(undefined);
@@ -44,9 +47,25 @@ const formSupportFactory = () => {
   const errorDimensions = signalElementDimensions(errorContent);
   const warningDimensions = signalElementDimensions(warningContent);
   const hintDimensions = signalElementDimensions(hintContent);
+  const counterDimensions = signalElementDimensions(counterContent);
+
+  // real validation errors, or - when the control only has an unparseable committed value - a
+  // synthetic one carrying its parse message, so a parse error renders like any other error
+  // (accent styling + a message + aria-describedby) instead of a silent `aria-invalid`
+  const effectiveErrors = computed<readonly ValidationError.WithOptionalFieldTree[]>(() => {
+    const errors = formFieldDir.errors();
+
+    if (errors.length > 0) {
+      return errors;
+    }
+
+    const parseMessage = formFieldDir.parseError() ? formFieldDir.parseErrorMessage() : null;
+
+    return parseMessage ? [{ kind: 'etParseError', message: parseMessage }] : [];
+  });
 
   const semanticSupportState = computed<SupportContentState>(() => {
-    if (formFieldDir.shouldDisplayError() && formFieldDir.errors().length > 0) {
+    if (formFieldDir.shouldDisplayError() && effectiveErrors().length > 0) {
       return SUPPORT_CONTENT_STATE.ERROR;
     }
 
@@ -70,9 +89,14 @@ const formSupportFactory = () => {
   const supportPresentation = signal(INITIAL_SUPPORT_PRESENTATION_STATE);
 
   const shouldRenderSupport = computed(() => {
+    const presentation = supportPresentation();
+
+    // A counter alone is reason enough to open the region - it is persistent, so unlike the hint
+    // and the error it isn't part of the swapping state machine.
     return (
+      !!formFieldDir.registeredCounter() ||
       semanticSupportState() !== SUPPORT_CONTENT_STATE.NONE ||
-      supportPresentation().leavingState !== SUPPORT_CONTENT_STATE.NONE
+      presentation.leavingState !== SUPPORT_CONTENT_STATE.NONE
     );
   });
 
@@ -101,6 +125,17 @@ const formSupportFactory = () => {
   const warningActive = computed(() => semanticSupportState() === SUPPORT_CONTENT_STATE.WARNING);
   const hintActive = computed(() => semanticSupportState() === SUPPORT_CONTENT_STATE.HINT);
 
+  const leavingStateOf = (state: SupportContentState) =>
+    computed(() => (supportPresentation().leavingState === state ? 'leaving' : 'active'));
+
+  const errorState = leavingStateOf(SUPPORT_CONTENT_STATE.ERROR);
+  const warningState = leavingStateOf(SUPPORT_CONTENT_STATE.WARNING);
+  const hintState = leavingStateOf(SUPPORT_CONTENT_STATE.HINT);
+
+  const errorDirection = computed(() => supportPresentation().directions.error);
+  const warningDirection = computed(() => supportPresentation().directions.warning);
+  const hintDirection = computed(() => supportPresentation().directions.hint);
+
   // resolved only once a warning renders, so a control that never warns doesn't force the app to
   // register a `type: 'warning'` theme
   const warningColorTheme = computed(() =>
@@ -109,7 +144,7 @@ const formSupportFactory = () => {
 
   const visibleErrors = computed(() => {
     if (semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR) {
-      return formFieldDir.errors();
+      return effectiveErrors();
     }
 
     return supportPresentation().renderedErrors;
@@ -124,16 +159,24 @@ const formSupportFactory = () => {
   });
 
   const supportHeight = computed(() => {
-    switch (semanticSupportState()) {
-      case SUPPORT_CONTENT_STATE.ERROR:
-        return errorDimensions().offset?.height ?? 0;
-      case SUPPORT_CONTENT_STATE.WARNING:
-        return warningDimensions().offset?.height ?? 0;
-      case SUPPORT_CONTENT_STATE.HINT:
-        return hintDimensions().offset?.height ?? 0;
-      default:
-        return 0;
-    }
+    const stackHeight = (() => {
+      switch (semanticSupportState()) {
+        case SUPPORT_CONTENT_STATE.ERROR:
+          return errorDimensions().offset?.height ?? 0;
+        case SUPPORT_CONTENT_STATE.WARNING:
+          return warningDimensions().offset?.height ?? 0;
+        case SUPPORT_CONTENT_STATE.HINT:
+          return hintDimensions().offset?.height ?? 0;
+        default:
+          return 0;
+      }
+    })();
+
+    // The region animates its own height, so a counter with no hint or error still has to
+    // contribute one - otherwise the row it sits in would be clipped to zero.
+    const counterHeight = formFieldDir.registeredCounter() ? (counterDimensions().offset?.height ?? 0) : 0;
+
+    return Math.max(stackHeight, counterHeight);
   });
 
   for (const [state, animatable] of [
@@ -146,7 +189,7 @@ const formSupportFactory = () => {
 
   effect(() => {
     const state = semanticSupportState();
-    const errors = formFieldDir.errors();
+    const errors = effectiveErrors();
     const warnings = formFieldDir.warnings();
 
     supportPresentation.update((presentation) =>
@@ -182,9 +225,11 @@ const formSupportFactory = () => {
     errorContent,
     warningContent,
     hintContent,
+    counterContent,
     errorAnimatable,
     warningAnimatable,
     hintAnimatable,
+    effectiveErrors,
     semanticSupportState,
     displaysError,
     displaysWarning,
@@ -195,6 +240,12 @@ const formSupportFactory = () => {
     errorActive,
     warningActive,
     hintActive,
+    errorState,
+    warningState,
+    hintState,
+    errorDirection,
+    warningDirection,
+    hintDirection,
     visibleErrors,
     visibleWarnings,
     supportHeight,
@@ -211,10 +262,10 @@ export const injectFormSupport = /* @__PURE__ */ toInjectFn(FORM_SUPPORT_DEF);
 export type FormSupport = ReturnType<typeof formSupportFactory>;
 
 /**
- * Forwards a component's support-region view children into its `FormSupport`. The `viewChild`
- * queries themselves must stay as class fields (`NG8110` - the compiler only accepts them in
- * direct field initializers); this owns the wiring so the mapping lives in one place. Call
- * from the constructor (needs an injection context for the effect).
+ * Forwards a support-region view children into its `FormSupport`, and drops them again when the
+ * region is torn down. The `viewChild` queries themselves must stay as class fields (`NG8110` - the
+ * compiler only accepts them in direct field initializers); this owns the wiring so the mapping
+ * lives in one place. Call from the constructor (needs an injection context for the effect).
  */
 export const wireFormSupport = (
   support: FormSupport,
@@ -222,6 +273,7 @@ export const wireFormSupport = (
     errorContent: Signal<ElementRef<HTMLElement> | undefined>;
     warningContent: Signal<ElementRef<HTMLElement> | undefined>;
     hintContent: Signal<ElementRef<HTMLElement> | undefined>;
+    counterContent?: Signal<ElementRef<HTMLElement> | undefined>;
     errorAnimatable: Signal<AnimatableDirective | undefined>;
     warningAnimatable: Signal<AnimatableDirective | undefined>;
     hintAnimatable: Signal<AnimatableDirective | undefined>;
@@ -231,8 +283,21 @@ export const wireFormSupport = (
     support.errorContent.set(refs.errorContent());
     support.warningContent.set(refs.warningContent());
     support.hintContent.set(refs.hintContent());
+    support.counterContent.set(refs.counterContent?.());
     support.errorAnimatable.set(refs.errorAnimatable());
     support.warningAnimatable.set(refs.warningAnimatable());
     support.hintAnimatable.set(refs.hintAnimatable());
+  });
+
+  // the region can be torn down while the `FormSupport` lives on (it belongs to the control), and a
+  // measured height read off a detached element would keep the closed region open
+  inject(DestroyRef).onDestroy(() => {
+    support.errorContent.set(undefined);
+    support.warningContent.set(undefined);
+    support.hintContent.set(undefined);
+    support.counterContent.set(undefined);
+    support.errorAnimatable.set(undefined);
+    support.warningAnimatable.set(undefined);
+    support.hintAnimatable.set(undefined);
   });
 };
