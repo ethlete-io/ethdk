@@ -79,6 +79,8 @@ provideStreamConfig({
 
 The built-in `et-stream-consent` shows a lock icon, heading/description and an accept button; texts are configurable via `provideStreamLabels` and react to the app [locale](/core/providers#locale); `provideStreamConsentConfig` keeps only the accept button's color. Loading (`et-stream-player-loading`) and error (`et-stream-player-error`, with retry) overlays are equally replaceable via `provideStreamConfig`.
 
+Rebinding the slot to another video while the gate is still up is safe: accepting creates the player for the id the slot holds at that moment, not the one it held when the gate appeared.
+
 ## Picture-in-picture
 
 A slot's player can detach into a floating, draggable PiP window and hand back later - even across different slots (the player instance is transferred, playback uninterrupted):

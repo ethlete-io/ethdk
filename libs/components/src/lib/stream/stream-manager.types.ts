@@ -256,6 +256,9 @@ export type PipManager = {
    * changing PIP state. Call this before a pip-player component is destroyed so
    * the iframe remains connected to the document and `moveBefore` can preserve
    * its state when another pip-player picks it up immediately after.
+   *
+   * No-op once the player has left PIP, so a teardown that runs after
+   * `pipDeactivate` cannot pull the player back out of its slot.
    */
   parkPlayerElement(playerId: StreamPlayerId): void;
 };

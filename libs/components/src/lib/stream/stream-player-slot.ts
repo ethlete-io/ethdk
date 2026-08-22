@@ -110,7 +110,8 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     currentPlayerIdSignal.set(newPlayerId);
   });
 
-  const createAndRegisterPlayer = (currentPlayerId: StreamPlayerId) => {
+  const createAndRegisterPlayer = () => {
+    const currentPlayerId = options.playerId();
     const componentRef = options.createPlayer(envInjector, elementInjector);
     appRef.attachView(componentRef.hostView);
 
@@ -217,7 +218,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     }
   };
 
-  const showConsentComponent = (currentPlayerId: StreamPlayerId) => {
+  const showConsentComponent = () => {
     const { consentComponent } = streamConfig;
 
     if (!consentComponent) {
@@ -254,7 +255,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
           appRef.detachView(consentRef.hostView);
           consentRef.destroy();
           consentComponentRef = null;
-          createAndRegisterPlayer(currentPlayerId);
+          createAndRegisterPlayer();
         }),
         takeUntilDestroyed(destroyRef),
       )
@@ -290,13 +291,13 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     const { consentComponent } = streamConfig;
 
     if (consentHandler?.isGranted()) {
-      createAndRegisterPlayer(currentPlayerId);
+      createAndRegisterPlayer();
 
       return;
     }
 
     if (!consentHandler && !consentComponent) {
-      createAndRegisterPlayer(currentPlayerId);
+      createAndRegisterPlayer();
 
       return;
     }
@@ -306,7 +307,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
         .pipe(
           filter(Boolean),
           take(1),
-          tap(() => createAndRegisterPlayer(currentPlayerId)),
+          tap(() => createAndRegisterPlayer()),
           takeUntilDestroyed(destroyRef),
         )
         .subscribe();
@@ -314,7 +315,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
       return;
     }
 
-    showConsentComponent(currentPlayerId);
+    showConsentComponent();
   };
 
   const destroy = () => {

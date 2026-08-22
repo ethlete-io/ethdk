@@ -25,7 +25,6 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
     const pipInitialRects = new Map<StreamPlayerId, DOMRect>();
     const pendingBackPulses = new Set<StreamPlayerId>();
     const backPulseCounter = signal(0);
-    const animatingOutIds = new Set<StreamPlayerId>();
     const latestPip = computed(() => {
       const currentPips = pips();
 
@@ -97,6 +96,17 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       ]);
     };
 
+    const endPip = (playerId: StreamPlayerId) => {
+      pips.update((current) => current.filter((p) => p.playerId !== playerId));
+      streamManager.setPlayerInPip(playerId, false);
+    };
+
+    const beginExitAnimation = (playerId: StreamPlayerId) => {
+      streamManager.setPlayerAnimatingOut(playerId, true);
+
+      return () => streamManager.setPlayerAnimatingOut(playerId, false);
+    };
+
     const pipDeactivate = (
       playerId: StreamPlayerId,
       options?: { skipAnimation?: boolean; animation?: 'flip' | 'scaleFadeIn' },
@@ -107,8 +117,7 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
 
       const playerEl = streamManager.getPlayerElement(playerId);
       if (!playerEl) {
-        pips.update((current) => current.filter((p) => p.playerId !== playerId));
-        streamManager.setPlayerInPip(playerId, false);
+        endPip(playerId);
 
         return;
       }
@@ -116,8 +125,7 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       const bestSlot = streamManager.resolveBestSlot(playerId);
 
       if (!bestSlot) {
-        pips.update((current) => current.filter((p) => p.playerId !== playerId));
-        streamManager.setPlayerInPip(playerId, false);
+        endPip(playerId);
         streamManager.unregisterPlayer(playerId);
 
         return;
@@ -134,24 +142,19 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
           requestedAnim === 'flip' && featuredId !== null && playerId !== featuredId ? 'scaleFadeIn' : requestedAnim;
 
         if (animMode === 'scaleFadeIn') {
-          animatingOutIds.add(playerId);
-          streamManager.setPlayerAnimatingOut(playerId, true);
+          const endExitAnimation = beginExitAnimation(playerId);
           renderer.moveBefore({ newParent: targetParent, child: playerEl });
           const anim = playerEl.animate(
             [
               { transform: 'scale(0.85)', opacity: '0' },
               { transform: 'scale(1)', opacity: '1' },
             ],
-            // Zeroed rather than skipped under reduced motion so `onfinish` still clears the
-            // animating-out bookkeeping below.
+            // Zeroed rather than skipped under reduced motion so `onfinish` still runs and clears
+            // the animating-out latch.
             { duration: matchesReducedMotion(playerEl) ? 0 : 200, easing: 'ease-out' },
           );
-          anim.onfinish = () => {
-            animatingOutIds.delete(playerId);
-            streamManager.setPlayerAnimatingOut(playerId, false);
-          };
-          pips.update((current) => current.filter((p) => p.playerId !== playerId));
-          streamManager.setPlayerInPip(playerId, false);
+          anim.onfinish = endExitAnimation;
+          endPip(playerId);
 
           return;
         }
@@ -159,8 +162,7 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         const toRect = targetParent.getBoundingClientRect();
 
         if (fromRect.width > 0 && fromRect.height > 0 && toRect.width > 0 && toRect.height > 0) {
-          animatingOutIds.add(playerId);
-          streamManager.setPlayerAnimatingOut(playerId, true);
+          const endExitAnimation = beginExitAnimation(playerId);
           animateWithFixedWrapper({
             playerEl,
             fromRect,
@@ -168,21 +170,18 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
             document,
             renderer,
             onFinish: () => {
-              animatingOutIds.delete(playerId);
-              streamManager.setPlayerAnimatingOut(playerId, false);
+              endExitAnimation();
               renderer.moveBefore({ newParent: targetParent, child: playerEl });
             },
           });
-          pips.update((current) => current.filter((p) => p.playerId !== playerId));
-          streamManager.setPlayerInPip(playerId, false);
+          endPip(playerId);
 
           return;
         }
       }
 
       renderer.moveBefore({ newParent: targetParent, child: playerEl });
-      pips.update((current) => current.filter((p) => p.playerId !== playerId));
-      streamManager.setPlayerInPip(playerId, false);
+      endPip(playerId);
     };
 
     const getInitialRect = (playerId: StreamPlayerId): DOMRect | null => {
@@ -192,7 +191,7 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
     };
 
     const parkPlayerElement = (playerId: StreamPlayerId) => {
-      if (animatingOutIds.has(playerId)) return;
+      if (!streamManager.isPlayerInPip(playerId)) return;
       streamManager.movePlayerToContainer(playerId);
     };
 
