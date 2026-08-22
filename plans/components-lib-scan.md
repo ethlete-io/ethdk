@@ -8264,3 +8264,18 @@ bundles (Storybook-only), so bundle-size concerns from AGENTS.md's stylesheet-sp
 apply to this scope.
 
 ---
+
+## Cross-cutting: spec files are never type-checked
+
+**`tsc -p libs/components/tsconfig.spec.json --noEmit` fails with 431 errors across 68 spec
+files, and nothing ever runs it.** The `test` target executes vitest, whose Angular plugin
+transpiles without type checking; the `build` target uses `tsconfig.lib.json`, which excludes
+specs; the project has no `typecheck` target and no CI workflow runs `tsc` over the spec
+include set. Verified 2026-08-22 by running the command directly. This is how excess
+properties like the grid specs' `version: 1` (on a type that does not declare it) survive —
+spec code can drift arbitrarily far from the real API and stay green. A `typecheck` target
+over `tsconfig.spec.json` (after burning down the 431) would make every spec assertion
+trustworthy again; until then, spec-driven claims about API shapes are weaker evidence than
+they look.
+
+---

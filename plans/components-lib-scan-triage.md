@@ -390,4 +390,7 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
     grid structure), `masonry.spec.ts:198` (cannot fail), `grid-item.component.spec.ts:143`
     (`toBeGreaterThanOrEqual` passes on no-op) and `:26` plus three others carrying a `version: 1`
     property the type does not have — which means those files are not being type-checked by the vitest
-    run at all. That last one is worth chasing on its own.
+    run at all. **Chased and confirmed 2026-08-22**: `tsc -p libs/components/tsconfig.spec.json
+--noEmit` reports 431 errors across 68 spec files, there is no `typecheck` target, and no CI
+    step runs it — see the scan's "Cross-cutting: spec files are never type-checked" section.
+    Adding that target (after a burn-down) belongs at the top of any spec-infrastructure work.
