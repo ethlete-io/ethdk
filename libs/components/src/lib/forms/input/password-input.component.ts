@@ -15,6 +15,7 @@ import { TooltipDirective } from '../../tooltip';
 import { PasswordInputDirective } from './headless';
 import { injectInputLabels } from '../../forms/input/input-labels';
 import { ControlSuffixDirective } from '../form-field/partials';
+import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-control.directive';
 
 @Component({
   selector: 'et-password-input',
@@ -26,26 +27,7 @@ import { ControlSuffixDirective } from '../form-field/partials';
   hostDirectives: [
     {
       directive: PasswordInputDirective,
-      inputs: [
-        'placeholder',
-        'autocomplete',
-        'value',
-        'mixed',
-        'touched',
-        'mixedLabel',
-        'revealed',
-        'disabled',
-        'readonly',
-        'hidden',
-        'invalid',
-        'errors',
-        'required',
-        'name',
-        'maxLength',
-        'pending',
-        'aria-label',
-        'aria-labelledby',
-      ],
+      inputs: ['placeholder', 'autocomplete', 'value', 'revealed', ...TEXT_FIELD_CONTROL_INPUTS],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'revealedChange'],
     },
     ColorInteractiveDirective,

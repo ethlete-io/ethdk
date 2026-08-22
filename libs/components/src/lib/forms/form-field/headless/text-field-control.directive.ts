@@ -6,6 +6,28 @@ import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labe
 import { mountTextFieldShellStyles } from '../form-field-text-shell-styles.component';
 
 /**
+ * The base's inputs, for a wrapper component's `hostDirectives` list. Spread it instead of copying
+ * the names - a dropped entry makes that binding an NG0303 on the wrapper.
+ */
+export const TEXT_FIELD_CONTROL_INPUTS = [
+  'touched',
+  'mixed',
+  'mixedLabel',
+  'disabled',
+  'readonly',
+  'hidden',
+  'invalid',
+  'errors',
+  'warnings',
+  'required',
+  'name',
+  'maxLength',
+  'pending',
+  'aria-label',
+  'aria-labelledby',
+] as const;
+
+/**
  * Shared wiring for the native-input-backed controls that render inside the text-field shell
  * (`et-input`, `et-number-input`, `et-password-input`, `et-color-input`, `et-textarea`). It owns
  * the pieces those directives copy-pasted verbatim: the standard form-control inputs, the

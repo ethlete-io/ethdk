@@ -1,5 +1,6 @@
 import { afterNextRender, Component, ElementRef, inject, viewChild, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective } from '@ethlete/core';
+import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-control.directive';
 import { InputDirective } from './headless';
 
 @Component({
@@ -10,28 +11,7 @@ import { InputDirective } from './headless';
   hostDirectives: [
     {
       directive: InputDirective,
-      inputs: [
-        'type',
-        'placeholder',
-        'autocomplete',
-        'textAlign',
-        'value',
-        'mixed',
-        'touched',
-        'mixedLabel',
-        'disabled',
-        'readonly',
-        'hidden',
-        'invalid',
-        'errors',
-        'warnings',
-        'required',
-        'name',
-        'maxLength',
-        'pending',
-        'aria-label',
-        'aria-labelledby',
-      ],
+      inputs: ['type', 'placeholder', 'autocomplete', 'textAlign', 'value', ...TEXT_FIELD_CONTROL_INPUTS],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
     ColorInteractiveDirective,

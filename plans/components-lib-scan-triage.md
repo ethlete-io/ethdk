@@ -178,12 +178,14 @@ outlives the component (scrollable High); three `timer(...).subscribe()` calls i
 `pip-window-position.ts` have no teardown (stream Medium). Add the lint rule the carousel/scrollable
 batch suggests ("`takeUntilDestroyed` last") rather than only fixing the instances.
 
-### 17. `[warnings]` is a hard NG0303 on every text control but `et-input` · S
+### 17. `[warnings]` is a hard NG0303 on every text control but `et-input` · S · **DONE 2026-08-22**
 
 The base declares it; three of four `hostDirectives` input lists dropped it.
 Resolves: form-field High "`[warnings]` only exists on `et-input`". Land with the DX fix that
 prevents recurrence — export `TEXT_FIELD_CONTROL_INPUTS` and spread it — plus the one-loop spec from
 _Spec-coverage_ #3.
+Done: the five shell wrappers (color-input dropped it too) spread the exported list; the loop spec
+is `text-field-control-inputs.spec.ts`; the production build statically expands the spread.
 
 ## Fix soon
 

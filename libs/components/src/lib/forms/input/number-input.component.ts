@@ -17,6 +17,7 @@ import { finalize, fromEvent, merge, Subscription, takeUntil, tap, timer } from 
 import { IconDirective, MINUS_ICON, PLUS_ICON, provideIcons } from '../../icon';
 import { NumberInputDirective, numberInputStepMultiplierFrom } from './headless';
 import { injectInputLabels } from '../../forms/input/input-labels';
+import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-control.directive';
 
 const STEPPER_REPEAT_DELAY = 400;
 const STEPPER_REPEAT_INTERVAL = 75;
@@ -40,29 +41,7 @@ const SCRUB_ACTIVE_CLASS = 'et-number-input-scrubbing';
   hostDirectives: [
     {
       directive: NumberInputDirective,
-      inputs: [
-        'min',
-        'max',
-        'step',
-        'placeholder',
-        'autocomplete',
-        'textAlign',
-        'value',
-        'mixed',
-        'touched',
-        'mixedLabel',
-        'disabled',
-        'readonly',
-        'hidden',
-        'invalid',
-        'errors',
-        'required',
-        'name',
-        'maxLength',
-        'pending',
-        'aria-label',
-        'aria-labelledby',
-      ],
+      inputs: ['min', 'max', 'step', 'placeholder', 'autocomplete', 'textAlign', 'value', ...TEXT_FIELD_CONTROL_INPUTS],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
     ColorInteractiveDirective,

@@ -1,6 +1,7 @@
 import { afterNextRender, Component, ElementRef, inject, viewChild, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective } from '@ethlete/core';
 import { TextareaDirective } from './headless';
+import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-control.directive';
 
 @Component({
   selector: 'et-textarea',
@@ -19,20 +20,7 @@ import { TextareaDirective } from './headless';
         'maxRows',
         'resize',
         'value',
-        'mixed',
-        'touched',
-        'mixedLabel',
-        'disabled',
-        'readonly',
-        'hidden',
-        'invalid',
-        'errors',
-        'required',
-        'name',
-        'maxLength',
-        'pending',
-        'aria-label',
-        'aria-labelledby',
+        ...TEXT_FIELD_CONTROL_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },

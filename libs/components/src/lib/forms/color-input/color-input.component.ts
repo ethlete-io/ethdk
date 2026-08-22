@@ -3,6 +3,7 @@ import { ColorInteractiveDirective } from '@ethlete/core';
 import { injectColorInputLabels } from './color-input-labels';
 import { ColorPickerPanelComponent } from './color-picker-panel.component';
 import { ColorInputDirective, ColorPickerSurfaceDirective, ColorPickerTriggerDirective } from './headless';
+import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-control.directive';
 
 @Component({
   selector: 'et-color-input',
@@ -13,27 +14,7 @@ import { ColorInputDirective, ColorPickerSurfaceDirective, ColorPickerTriggerDir
   hostDirectives: [
     {
       directive: ColorInputDirective,
-      inputs: [
-        'value',
-        'mixed',
-        'touched',
-        'mixedLabel',
-        'disabled',
-        'readonly',
-        'hidden',
-        'invalid',
-        'errors',
-        'required',
-        'name',
-        'maxLength',
-        'pending',
-        'alpha',
-        'swatches',
-        'notations',
-        'pickerOpen',
-        'aria-label',
-        'aria-labelledby',
-      ],
+      inputs: ['value', 'alpha', 'swatches', 'notations', 'pickerOpen', ...TEXT_FIELD_CONTROL_INPUTS],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],
     },
     ColorInteractiveDirective,
