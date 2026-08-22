@@ -1,4 +1,4 @@
-import { RichTextEditorDomCore, InlineTag } from './rich-text-editor-dom-core';
+import { INLINE_TAGS, RichTextEditorDomCore, InlineTag } from './rich-text-editor-dom-core';
 
 /**
  * Inline mark (bold/italic/strike/underline/code) toggling over arbitrary selections - including
@@ -314,7 +314,7 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
   // wrapInline's surroundContents fallback uses Range.extractContents(), which - per spec -
   // leaves the original ancestor element in place (now empty) whenever the range's boundary
   // fully consumes that ancestor's content, since only a clone of it travels into the extracted
-  // fragment. That empty shell can be of any of the three inline tags, not just the one being
+  // fragment. That empty shell can be of any of the inline tags, not just the one being
   // toggled (e.g. italicizing text that starts inside a <strong> can strand an empty <strong>).
   const pruneEmptyInline = () => {
     const el = root();
@@ -323,14 +323,18 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
       return;
     }
 
-    const tags: InlineTag[] = ['strong', 'em', 'del'];
     let removed = true;
 
     while (removed) {
       removed = false;
 
-      for (const t of tags) {
+      for (const t of INLINE_TAGS) {
         for (const node of collectDescendants(el, t)) {
+          // A <code> directly inside a <pre> is a fenced code block emptied of its text, not a
+          // stranded mark shell - removing it leaves a bare <pre> the Markdown pipeline cannot
+          // round-trip (repairCodeBlock turns that into a paragraph instead).
+          if (t === 'code' && node.parentElement?.tagName === 'PRE') continue;
+
           // extractContents() fully drains a wholly-selected text node's data via replaceData
           // rather than removing the node, so an "empty" shell can still hold a zero-length
           // Text child - check textContent, not childNodes.length, to catch that case too.
@@ -376,7 +380,7 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
   };
 
   // The inline mark elements a caret can sit inside; used for the collapsed-caret "stored marks" flow.
-  const inlineMarkTags = new Set<string>(['STRONG', 'EM', 'DEL', 'U', 'CODE']);
+  const inlineMarkTags = new Set<string>(INLINE_TAGS.map((tag) => tag.toUpperCase()));
 
   /** The inline mark tags wrapping the collapsed caret (innermost-first). */
   const activeInlineTags = (): InlineTag[] => {

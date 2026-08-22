@@ -9,6 +9,7 @@ import { createRichTextEditorKeymap } from './rich-text-editor-dom-keymap';
 import { createRichTextEditorLists } from './rich-text-editor-dom-lists';
 import { createRichTextEditorPaste } from './rich-text-editor-dom-paste';
 
+export { INLINE_TAGS } from './rich-text-editor-dom-core';
 export type {
   EditableSelection,
   HeadingTag,

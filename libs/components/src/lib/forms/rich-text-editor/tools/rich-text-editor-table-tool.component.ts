@@ -211,7 +211,7 @@ export class RichTextEditorTableToolComponent {
       this.renderer.insertBefore(root, this.emptyParagraph(), table.nextSibling);
     }
 
-    editor.syncFromDom();
+    editor.syncFromDom({ boundary: true });
     queueMicrotask(() => this.restoreCaret(firstTableCell(table)));
   }
 
@@ -245,7 +245,7 @@ export class RichTextEditorTableToolComponent {
     if (!ctx || this.disabled()) return;
 
     operation(ctx);
-    this.editor().syncFromDom();
+    this.editor().syncFromDom({ boundary: true });
 
     // keep the caret inside the (surviving) table so reopening the menu still shows the edit actions
     const survivingCell = ctx.table.isConnected ? cellAt(ctx) : null;

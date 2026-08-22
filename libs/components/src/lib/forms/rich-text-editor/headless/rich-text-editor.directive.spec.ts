@@ -357,6 +357,36 @@ describe('RichTextEditorDirective', () => {
     });
   });
 
+  describe('markdown value', () => {
+    let dir: RichTextEditorDirective;
+    let editable: HTMLElement;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [StandaloneEditorTestHost] });
+      const fixture = TestBed.createComponent(StandaloneEditorTestHost);
+      fixture.detectChanges();
+      dir = (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
+
+      editable = document.createElement('div');
+      editable.contentEditable = 'true';
+      document.body.appendChild(editable);
+      dir.editorDom.root.set(editable);
+    });
+
+    afterEach(() => {
+      editable.remove();
+      document.getSelection()?.removeAllRanges();
+    });
+
+    it('drops an empty inline mark of any tag instead of leaking it as raw html', () => {
+      editable.innerHTML = '<p><strong></strong>a<em></em>b<del></del>c<u></u>d<code></code>e<a href="#"></a></p>';
+
+      dir.syncFromDom();
+
+      expect(dir.value()).toBe('abcde');
+    });
+  });
+
   describe('insertToken', () => {
     let fixture: ComponentFixture<StandaloneEditorTestHost>;
     let dir: RichTextEditorDirective;

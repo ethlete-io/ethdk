@@ -45,6 +45,11 @@ export const resolveTriggerMatch = ({
   const caretOffset = range.startOffset;
   const text = textNode.data;
 
+  // `lastIndexOf` clamps a negative `fromIndex` to 0, so a caret parked at a node's start would
+  // match the trigger char it stands in front of - and the replacement range an insert then builds
+  // is collapsed, so picking an item would add the chip without consuming the literal text.
+  if (caretOffset === 0) return null;
+
   let best: RichTextEditorTriggerMatch | null = null;
 
   for (const trigger of triggers) {

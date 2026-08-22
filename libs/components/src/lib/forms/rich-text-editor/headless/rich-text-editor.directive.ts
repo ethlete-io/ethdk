@@ -23,6 +23,7 @@ import { RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
 import {
   HeadingTag,
   injectRichTextEditorDom,
+  INLINE_TAGS,
   InlineTag,
   provideRichTextEditorDom,
   RichTextMarkStates,
@@ -37,6 +38,10 @@ import {
 } from './internals/rich-text-editor-token';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { FormFieldRichTextStylesComponent } from '../../form-field/form-field-rich-text-styles.component';
+
+/** Elements that carry no meaning once empty, so serialization drops them instead of emitting the
+ *  raw tag into the Markdown value. Every inline mark plus the anchor, which has no mark tag. */
+const EMPTY_INLINE_SWEEP_SELECTOR = /* @__PURE__ */ [...INLINE_TAGS, 'a'].join(', ');
 
 /**
  * Calling a command whose DOM domain was never provided is a wiring mistake, so it throws - but only
@@ -765,7 +770,7 @@ export class RichTextEditorDirective
       removed = false;
 
       // eslint-disable-next-line ethlete/no-dom-query
-      clone.querySelectorAll('strong, em, del, a').forEach((el) => {
+      clone.querySelectorAll(EMPTY_INLINE_SWEEP_SELECTOR).forEach((el) => {
         if ((el.textContent ?? '').length === 0) {
           el.remove();
           removed = true;

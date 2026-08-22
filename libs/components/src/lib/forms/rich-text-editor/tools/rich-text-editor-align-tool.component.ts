@@ -97,7 +97,7 @@ export class RichTextEditorAlignToolComponent {
     }
 
     this.current.set(align);
-    this.editor().syncFromDom();
+    this.editor().syncFromDom({ boundary: true });
     queueMicrotask(() => this.editor().activate());
   }
 

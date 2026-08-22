@@ -4,7 +4,8 @@ import { injectRenderer } from '@ethlete/core';
 /** The Ethlete renderer wrapper returned by `injectRenderer()`. */
 export type EditorRenderer = NonNullable<ReturnType<typeof injectRenderer>>;
 
-export type InlineTag = 'strong' | 'em' | 'del' | 'u' | 'code';
+export const INLINE_TAGS = ['strong', 'em', 'del', 'u', 'code'] as const;
+export type InlineTag = (typeof INLINE_TAGS)[number];
 export type ListTag = 'ul' | 'ol';
 export type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 

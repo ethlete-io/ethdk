@@ -130,6 +130,36 @@ describe('RichTextEditorDom', () => {
       expect(root.innerHTML).toBe('<strong>two</strong> rest');
     });
 
+    it('prunes an underline shell emptied by the split, instead of leaking the tag', () => {
+      const { root, dom } = setup('<u>abc</u>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 0, text, 0);
+
+      dom.insertInlineText('X', []);
+
+      expect(root.innerHTML).toBe('X<u>abc</u>');
+    });
+
+    it('prunes an inline-code shell emptied by the split', () => {
+      const { root, dom } = setup('<code>abc</code>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 0, text, 0);
+
+      dom.insertInlineText('X', []);
+
+      expect(root.innerHTML).toBe('X<code>abc</code>');
+    });
+
+    it('leaves an emptied fenced code block alone - it is not a stranded mark shell', () => {
+      const { root, dom } = setup('<pre><code></code></pre><p>ab</p>');
+      const text = (root.querySelector('p') as HTMLElement).firstChild as Node;
+      select(text, 1, text, 1);
+
+      dom.insertInlineText('X', []);
+
+      expect(root.querySelector('pre > code')).toBeTruthy();
+    });
+
     it('reports the inline marks wrapping the caret', () => {
       const { root, dom } = setup('<strong><em>x</em></strong>');
       const text = (root.querySelector('em') as HTMLElement).firstChild as Node;

@@ -412,7 +412,24 @@ single-domain reach.
   question, not a fix. `disableActiveElementScrolling` was not ported for the same reason: binding
   the marker to `false` covers it without new API.
 - **Masonry never reveals items whose border box exceeds the assigned width** (no global
-  border-box reset) and **`items()` goes stale on a DOM reorder** (grid batch High ×2). S / M
+  border-box reset) and **`items()` goes stale on a DOM reorder** (grid batch High ×2). S / M —
+  **DONE 2026-08-22**. Reveal: `.et-masonry-item` declares `box-sizing: border-box` (from
+  `@layer components`, so it beats an app's `@layer base` reset), and the item's measurement
+  handshake no longer depends on it - `isMeasured()` also latches on the first report that arrives
+  after the assigned width changed, so a box that can never match one stops bricking the masonry
+  instead of leaving a blank block at `opacity: 0` forever. Reorder: `items()` reads a `childList`
+  `signalElementMutations` (the only thing that can see a `@for` moving nodes) behind an
+  order-equality, and the frozen column assignments now record the reading order they were made for
+  and are dropped when it changes, so a re-sorted feed re-packs greedily instead of keeping every
+  card in the column it happened to be in. Measured in Chromium: with content-box cards, 0/18 items
+  positioned and `isSettled()` false before, 18/18 and settled after; after reversing 18 nodes the
+  new first card went from `blockOffset: 2185px` (container height byte-identical at 2727.89px) to
+  column 0 / `0px` / 2819.97px. Left open on purpose: the container is still measured with
+  `clientWidth`, so horizontal padding on the masonry host still overflows (a separate scan finding,
+  and the docs still carry it as a constraint), and the `MutationObserver` is `subtree: true`, which
+  costs a signal write on unrelated DOM churn inside cards - the order equality keeps it from
+  re-laying out, but a narrower observer would need items to be direct children, which nothing
+  enforces.
 - **Tree: collapsing a branch programmatically drops focus to `<body>`** (tree High). S —
   **DONE 2026-08-22**. `TreeDirective` snapshots the focused row's `path` (written by `focusNode()`
   and the row's `focusin`), so `collapse()`/`collapseAll()` hand focus to the nearest surviving
@@ -510,6 +527,21 @@ single-domain reach.
 - **RTE: `pruneEmptyInline` skips `u`/`code`**, leaking raw HTML into the Markdown value (rte High);
   **the trigger popup opens before an existing trigger char and leaves the literal text** (rte High);
   **tools commit without a history boundary**, so the next keystroke swallows them (rte Medium). S / M
+  · **DONE 2026-08-22**
+  Done: `INLINE_TAGS` is now the single list `pruneEmptyInline` and the directive's serialization
+  sweep both iterate (they had hardcoded three of five tags). `pruneEmptyInline` skips a `<code>`
+  inside a `<pre>`: that is an emptied fenced code block, and removing it from the live DOM would
+  leave the bare `<pre>` the editor never builds itself (the serialization sweep needs no such
+  guard - `htmlToMarkdown` emits the same fence either way).
+  `resolveTriggerMatch` returns `null` at `caretOffset === 0`
+  (`lastIndexOf` clamps a negative `fromIndex` to 0, which is what matched a trigger char the caret
+  stood in front of); the char is still only ever consumed by the insert's replacement range, so a
+  future autoformat rule may reserve `#`/`@` without fighting this. The table tool's `insert`/`mutate`
+  and the align tool's `select` now pass `{ boundary: true }`. Left open: the triggers directive's
+  own `syncFromDom()` calls (`insertItem`'s trailing nbsp, `deletePrecedingChip`) still omit the
+  boundary - that is a separate _rte Medium_ finding, not listed here, and it sits on the chip
+  insert path rather than the toolbar tools. Also left: the stale "three inline tags" wording was
+  corrected, but nothing was done about the other rte findings in the same batch.
 - **Smaller singletons:** the copy-button subscription is not lifecycle-bound (dev warning only);
   `maxVisible: 0` shows every notification instead of none; the standings overlapping-zones guard only
   ever checks the first render. S each
