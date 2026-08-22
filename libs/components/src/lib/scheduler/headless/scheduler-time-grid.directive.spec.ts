@@ -36,7 +36,7 @@ describe('SchedulerTimeGridDirective', () => {
     fixture = TestBed.createComponent(SchedulerTimeGridTestHostComponent);
     host = fixture.componentInstance;
     fixture.detectChanges();
-    directive = fixture.debugElement.children[0].children[0].injector.get(SchedulerTimeGridDirective);
+    directive = fixture.debugElement.children[0]!.children[0]!.injector.get(SchedulerTimeGridDirective);
   });
 
   it('lays out a Monday-starting week as seven day columns', () => {

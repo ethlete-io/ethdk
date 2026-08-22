@@ -832,3 +832,28 @@ Promise<void>` union, so wrapping each in a block body fixed it with no behavior
     a hand-rolled `new (...args: never[]) => T` constructor type for Angular's `Type<T>`. No assertion
     was found dead or vacuous, and no `as any`/`as unknown as X`/`@ts-expect-error` were used anywhere
     in this slice.
+    **table/bracket/grid/scheduler slice burned down 2026-08-22**: 39 errors. `grid-item.component.spec.ts:143`
+    (line drifted to 130-131 in the current file) really was vacuous - `toBeGreaterThanOrEqual(1)` passes
+    even if the grid never placed the item, since the layout config it seeds already has `colSpan`/`rowSpan: 1`.
+    Rewritten as `expect(pos).toEqual({ col: 0, row: 0, colSpan: 1, rowSpan: 1 })`; confirmed it can fail by
+    temporarily widening `colSpan` in `currentPosition()` and watching it go red. The `version: 1` property
+    (`:26` plus three more in `grid.component.spec.ts` and `grid-drag.directive.spec.ts`) was dead weight -
+    `GridItemConfig` has no such field; deleted in all four spots. Checked `masonry.spec.ts:198` (now the
+    "sends an appended item to the shortest column" test, `:209` after drift) as asked: fault-injecting a
+    broken `shortestColumn` **did** turn it red on the `block` half of the comparison, so it is not simply
+    "cannot fail" as documented - but the `inline` half compares against `before[1]?.inline`, captured from
+    the same fixture, so it only checks that the appended item lands in whatever column `b` is already in,
+    not that either is actually the shortest; a bug that shifts every column together would still slip past
+    that half. Left as found (file is outside this slice's list). Other fixes: eight `table-csv-rows-from-pages.spec.ts`
+    call sites wrapped `tableCsvRowsFromPages(...)()` in `from(...)` before `firstValueFrom`, since the
+    provider's declared return type is `Promise<T> | Observable<T>` even though this factory always returns
+    an `Observable`; `RuntimeError` needs its type argument everywhere, not just where an existing cast
+    already supplied one; a `createHost<T>(host: new (...args: never[]) => T)` generic switched to Angular's
+    `Type<T>` (grid.component.spec.ts); `grid.directive.spec.ts` registered `TestHostComponent` (no `data`
+    input) as a grid item's `component` - genuine mismatch, fixed by adding a minimal `TestItemComponent`
+    stand-in, matching the one already used in the sibling `grid.component.spec.ts`. `URL.createObjectURL`
+    mocks in both table CSV specs narrowed `Blob | MediaSource` with an `instanceof Blob` guard instead of a
+    cast. Six `scheduler/*.spec.ts` files hit `noUncheckedIndexedAccess` on `debugElement.children[0]`; used
+    the `children[0]!` idiom already established across the suite (tree, calendar, forms, dropzone, etc.)
+    rather than inventing a new guard. No `as any`/`as unknown as X`/`@ts-expect-error` anywhere in this
+    slice; the only casts are the pre-existing `RuntimeError<number>` idiom and the `instanceof` narrowing.

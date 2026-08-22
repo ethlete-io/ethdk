@@ -23,7 +23,6 @@ class ResizeObserverMock {
 const TEST_ITEM: GridItemConfig = {
   id: 'test-item',
   type: 'test',
-  version: 1,
   data: undefined,
   layout: {
     lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
@@ -126,9 +125,7 @@ describe('GridItemComponent', () => {
   it('has a valid current position once the grid has placed it', () => {
     fixture.detectChanges();
     const pos = getItemDirective().currentPosition();
-    expect(pos).not.toBeNull();
-    expect(pos?.colSpan).toBeGreaterThanOrEqual(1);
-    expect(pos?.rowSpan).toBeGreaterThanOrEqual(1);
+    expect(pos).toEqual({ col: 0, row: 0, colSpan: 1, rowSpan: 1 });
   });
 
   describe('keyboard navigation', () => {

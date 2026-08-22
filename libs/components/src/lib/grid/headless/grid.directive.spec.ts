@@ -44,6 +44,13 @@ class TestHostComponent {
   items = input<GridItemConfig[]>([]);
 }
 
+@Component({
+  template: '',
+})
+class TestItemComponent {
+  data = input<unknown>();
+}
+
 describe('GridDirective', () => {
   let fixture: ComponentFixture<TestHostComponent>;
   let originalResizeObserverDescriptor: PropertyDescriptor | undefined;
@@ -224,7 +231,7 @@ describe('GridDirective', () => {
             registrations: [
               {
                 type: 'widget',
-                component: TestHostComponent,
+                component: TestItemComponent,
                 constraints: { maxColSpan: 6, perBreakpoint: { md: { maxColSpan: 2 } } },
               },
             ],

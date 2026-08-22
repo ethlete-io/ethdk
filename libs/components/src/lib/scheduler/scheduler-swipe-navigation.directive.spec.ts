@@ -41,7 +41,7 @@ describe('SchedulerSwipeNavigationDirective', () => {
     fixture = TestBed.createComponent(SwipeNavigationTestHostComponent);
     host = fixture.componentInstance;
     fixture.detectChanges();
-    element = fixture.debugElement.children[0].nativeElement;
+    element = fixture.debugElement.children[0]!.nativeElement;
   });
 
   it('steps to the next period on a swipe toward the inline start', () => {
@@ -69,7 +69,7 @@ describe('SchedulerSwipeNavigationDirective', () => {
   });
 
   it('leaves the gesture alone once a drag-to-create range is being drawn', () => {
-    const scheduler = fixture.debugElement.children[0].injector.get(SchedulerDirective);
+    const scheduler = fixture.debugElement.children[0]!.injector.get(SchedulerDirective);
 
     element.dispatchEvent(touchEvent('touchstart', 300, 200));
     scheduler.setDraftRange({ start: new Date(2026, 6, 15), end: new Date(2026, 6, 16) });

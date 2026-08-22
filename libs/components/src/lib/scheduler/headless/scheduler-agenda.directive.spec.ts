@@ -44,7 +44,7 @@ describe('SchedulerAgendaDirective', () => {
     fixture = TestBed.createComponent(SchedulerAgendaTestHostComponent);
     host = fixture.componentInstance;
     fixture.detectChanges();
-    directive = fixture.debugElement.children[0].children[0].injector.get(SchedulerAgendaDirective);
+    directive = fixture.debugElement.children[0]!.children[0]!.injector.get(SchedulerAgendaDirective);
   });
 
   it('lays out a Monday-starting week as seven days', () => {

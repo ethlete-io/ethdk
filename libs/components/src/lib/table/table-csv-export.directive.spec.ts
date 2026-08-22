@@ -55,6 +55,8 @@ beforeEach(() => {
   written = [];
   // jsdom has no object URLs, and this is also how the file's content is read back.
   vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
+    if (!(blob instanceof Blob)) throw new Error('expected a Blob');
+
     written.push([blob]);
 
     return 'blob:test';

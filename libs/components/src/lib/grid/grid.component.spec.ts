@@ -1,4 +1,4 @@
-import { Component, ErrorHandler, input } from '@angular/core';
+import { Component, ErrorHandler, input, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { GridItemComponent } from './grid-item.component';
@@ -212,7 +212,6 @@ describe('GridComponent', () => {
       {
         id: 'a',
         type: 'test',
-        version: 1,
         data: undefined,
         layout: {
           lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
@@ -223,7 +222,6 @@ describe('GridComponent', () => {
       {
         id: 'b',
         type: 'test',
-        version: 1,
         data: undefined,
         layout: {
           lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
@@ -241,7 +239,6 @@ describe('GridComponent', () => {
       {
         id: 'a',
         type: 'test',
-        version: 1,
         data: undefined,
         layout: {
           lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
@@ -262,7 +259,7 @@ describe('GridComponent', () => {
   describe('unrendered items', () => {
     let reportedErrors: unknown[];
 
-    const createHost = <T>(host: new (...args: never[]) => T) => {
+    const createHost = <T>(host: Type<T>) => {
       reportedErrors = [];
       TestBed.resetTestingModule();
       Object.defineProperty(globalThis, 'ResizeObserver', { configurable: true, value: ResizeObserverMock });

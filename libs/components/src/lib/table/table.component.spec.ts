@@ -1108,7 +1108,7 @@ describe('TableComponent', () => {
       expect(() => fixture.detectChanges()).toThrow(
         expect.objectContaining({
           code: TABLE_ERROR_CODES.UNPAIRED_ROWS_SOURCE_STATE,
-        }) as unknown as RuntimeError,
+        }) as unknown as RuntimeError<number>,
       );
     });
 
@@ -1418,7 +1418,7 @@ describe('TableComponent', () => {
       const fixture = TestBed.createComponent(CommandsHost);
 
       expect(() => fixture.detectChanges()).toThrow(
-        expect.objectContaining({ code: TABLE_ERROR_CODES.MISSING_ROW_ROUTER_LINK }) as unknown as RuntimeError,
+        expect.objectContaining({ code: TABLE_ERROR_CODES.MISSING_ROW_ROUTER_LINK }) as unknown as RuntimeError<number>,
       );
     });
 

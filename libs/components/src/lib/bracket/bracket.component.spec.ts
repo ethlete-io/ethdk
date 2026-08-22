@@ -32,6 +32,8 @@ const normalizer: BracketMatchNormalizer = (match): NormalizedMatch => ({
 const reseededOpeningRound = (source: BracketDataSource<null, null>): BracketDataSource<null, null> => {
   const [first, second] = source.matches;
 
+  if (!first || !second) throw new Error('expected at least two matches in the opening round');
+
   return {
     ...source,
     matches: source.matches.map((match) => {

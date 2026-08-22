@@ -44,7 +44,7 @@ describe('SchedulerDirective', () => {
     fixture = TestBed.createComponent(SchedulerTestHostComponent);
     host = fixture.componentInstance;
     fixture.detectChanges();
-    directive = fixture.debugElement.children[0].injector.get(SchedulerDirective);
+    directive = fixture.debugElement.children[0]!.injector.get(SchedulerDirective);
   });
 
   it('pads the month view to full weeks starting Monday', () => {

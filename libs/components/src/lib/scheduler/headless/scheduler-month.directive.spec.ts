@@ -36,7 +36,7 @@ describe('SchedulerMonthDirective', () => {
     fixture = TestBed.createComponent(SchedulerMonthTestHostComponent);
     host = fixture.componentInstance;
     fixture.detectChanges();
-    directive = fixture.debugElement.children[0].children[0].injector.get(SchedulerMonthDirective);
+    directive = fixture.debugElement.children[0]!.children[0]!.injector.get(SchedulerMonthDirective);
   });
 
   it('pads the grid to full Monday-starting weeks', () => {

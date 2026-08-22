@@ -220,7 +220,7 @@ describe('TableRowExpansionDirective', () => {
     const fixture = TestBed.createComponent(UnfeaturedHost);
 
     expect(() => fixture.detectChanges()).toThrow(
-      expect.objectContaining({ code: TABLE_ERROR_CODES.MISSING_ROW_EXPANSION }) as RuntimeError,
+      expect.objectContaining({ code: TABLE_ERROR_CODES.MISSING_ROW_EXPANSION }) as RuntimeError<number>,
     );
   });
 });

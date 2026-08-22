@@ -41,7 +41,7 @@ describe('SchedulerComponent', () => {
     fixture = TestBed.createComponent(SchedulerTestHostComponent);
     host = fixture.componentInstance;
     fixture.detectChanges();
-    scheduler = fixture.debugElement.children[0].componentInstance;
+    scheduler = fixture.debugElement.children[0]!.componentInstance;
   });
 
   afterEach(() => {

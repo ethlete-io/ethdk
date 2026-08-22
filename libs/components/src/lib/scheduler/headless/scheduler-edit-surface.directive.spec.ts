@@ -41,7 +41,7 @@ describe('SchedulerEditSurfaceDirective', () => {
     fixture = TestBed.createComponent(SchedulerEditSurfaceTestHostComponent);
     host = fixture.componentInstance;
     fixture.detectChanges();
-    directive = fixture.debugElement.children[0].injector.get(SchedulerEditSurfaceDirective);
+    directive = fixture.debugElement.children[0]!.injector.get(SchedulerEditSurfaceDirective);
   });
 
   it('drafts a copy of the opened appointment', () => {

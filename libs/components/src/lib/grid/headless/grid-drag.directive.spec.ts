@@ -33,7 +33,6 @@ class TestHostComponent {
     {
       id: 'drag-item',
       type: 'test',
-      version: 1,
       data: undefined,
       layout: {
         lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },

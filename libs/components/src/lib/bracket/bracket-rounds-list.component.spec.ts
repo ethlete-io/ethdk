@@ -73,9 +73,9 @@ describe('BracketRoundsListComponent', () => {
     }));
 
   const roundNames = () =>
-    Array.from(fixture.nativeElement.querySelectorAll<HTMLElement>('.et-bracket-default-round-header-name')).map((el) =>
-      el.textContent?.trim(),
-    );
+    Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.et-bracket-default-round-header-name'),
+    ).map((el) => el.textContent?.trim());
 
   const matchCount = () => fixture.nativeElement.querySelectorAll('.et-bracket-rounds-list-match').length;
 
