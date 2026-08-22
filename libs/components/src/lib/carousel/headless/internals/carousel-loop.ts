@@ -200,6 +200,11 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
     const count = config.count();
     const domCount = config.domCount();
 
+    // Tracked so the alignment is retried once the carousel has layout: inside a hidden tab panel or a
+    // collapsed accordion every offset reads as 0, and the container's size is the only thing here that
+    // changes when that ends - `domCount` is a length, so re-rendering the same children notifies nothing.
+    config.scrollable()?.scrollableDimensions();
+
     if (!cloneCount || !count) {
       alignedShape = null;
 
@@ -212,18 +217,19 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
 
     if (alignedShape === shape) return;
 
-    alignedShape = shape;
-
     untracked(() => {
       const geometry = readGeometry();
       const target = geometry?.children[cloneCount + Math.min(lastRealIndex, count - 1)];
 
       // No measurable track length with clones present means the slides have no layout yet - every offset
-      // reads as 0, so there is no resting place to put the carousel on. The children signal will fire again
-      // once they do.
+      // reads as 0, so there is no resting place to put the carousel on.
       if (!geometry || !geometry.trackLength || !target) return;
 
       scrollTo(geometry, geometry.restingOffsetOf(target));
+
+      // Latched only on success: a failed measurement must not consume the one-shot alignment, or the track
+      // stays parked on a clone for as long as the carousel lives.
+      alignedShape = shape;
     });
   });
 

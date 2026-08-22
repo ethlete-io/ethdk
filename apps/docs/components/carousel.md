@@ -78,6 +78,7 @@ On `<et-carousel>`:
 | `slideAlign`       | `'start'` | Where the current slide rests: `'start'` or `'center'` - see [Alignment](#alignment).         |
 | `autoplay`         | `false`   | Advance on its own. Renders the required pause control.                                       |
 | `autoplayTime`     | `5000`    | Milliseconds per slide.                                                                       |
+| `playOnInit`       | `true`    | Whether autoplay starts by itself. Off waits for the play control (or `start()`).             |
 | `transition`       | `'none'`  | `'dim'`, `'wipe'` or `'custom'` - see [Transitions](#transitions).                            |
 | `transitionDriver` | `'auto'`  | What drives the transition - see [Two drivers](#two-drivers).                                 |
 | `showControls`     | `true`    | Render the previous/next controls.                                                            |
@@ -304,7 +305,9 @@ pause control for you, and the headless `etCarouselAutoplay` throws in dev mode 
 `etCarouselPlayToggle` is registered. Hovering or focusing **that control** is not counted as the hover or
 focus pause: it lives inside the carousel, so pressing play would otherwise be cancelled by the pointer
 still resting on the button that was just pressed, and autoplay could never be restarted. Hovering a
-_slide_ pauses as it should. The
+_slide_ pauses as it should. The control's icon, its label and its `aria-pressed` all follow
+`pauseReason()` rather than only an explicit `stop()`, so a carousel paused for any reason offers "play"
+and pressing it starts. The
 [Autoplay](https://ethlete-sdk.web.app/?path=/story/components-media-carousel--autoplay) story shows it live.
 
 On the headless `etCarouselAutoplay`, `enabled` defaults to `true` - putting the directive on an element

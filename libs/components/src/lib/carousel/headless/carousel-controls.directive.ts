@@ -83,7 +83,8 @@ export class CarouselNextDirective {
  * Stops and restarts autoplay - the control WCAG 2.2.2 requires whenever a carousel moves on its own.
  * Registering it is what satisfies the dev-mode check in `etCarouselAutoplay`.
  *
- * Its label and `aria-pressed` follow the state, so one button covers both directions.
+ * Its label and `aria-pressed` follow whether autoplay is actually running - any `pauseReason()`, not just
+ * an explicit `stop()` - so one button covers both directions and says the same thing as the icon it renders.
  *
  * It also tells autoplay when the pointer or focus is on *it*, which is what keeps pressing play from
  * being cancelled by the hover/focus pause it was pressed with - see `isPointerOnPauseControl`.
@@ -107,7 +108,7 @@ export class CarouselPlayToggleDirective {
   private autoplay = inject(CAROUSEL_AUTOPLAY_TOKEN, { optional: true });
 
   /** Whether autoplay is currently running - the pressed state of the control. */
-  public isPlaying = computed(() => !(this.autoplay?.isStopped() ?? true));
+  public isPlaying = computed(() => this.autoplay?.isPlaying() ?? false);
 
   protected label = computed(() => {
     const labels = this.carousel?.resolvedLabels();

@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   input,
+  linkedSignal,
   numberAttribute,
   signal,
 } from '@angular/core';
@@ -115,8 +116,11 @@ export class CarouselAutoplayDirective {
   /** @internal Set by `etCarouselPlayToggle`, and checked in dev mode: autoplay without a pause control fails WCAG 2.2.2. */
   public pauseControl = signal<unknown | null>(null);
 
-  /** Whether the user (or code) has stopped autoplay - the only pause that outlives hover and focus. */
-  public isStopped = signal(false);
+  /**
+   * Whether the user (or code) has stopped autoplay - the only pause that outlives hover and focus. Starts
+   * out as the opposite of {@link playOnInit}, and follows it again whenever that binding changes.
+   */
+  public isStopped = linkedSignal(() => !this.playOnInit());
 
   /** @internal */
   public isHovered = signal(false);
@@ -179,8 +183,6 @@ export class CarouselAutoplayDirective {
   public isPlaying = computed(() => this.pauseReason() === null && this.duration() > 0);
 
   constructor() {
-    this.isStopped.set(!this.playOnInit());
-
     // `<et-carousel>` always carries this directive, so the countdown ring and pause control only reach the
     // document once autoplay is actually switched on.
     let hasMountedStyles = false;
@@ -244,12 +246,12 @@ export class CarouselAutoplayDirective {
     this.isStopped.set(true);
   }
 
-  /** Stop if playing, start if stopped - what the play/pause control calls. */
+  /** Stop if playing, start if not - what the play/pause control calls, so it matches the icon it renders. */
   public toggle() {
-    if (this.isStopped()) {
-      this.start();
-    } else {
+    if (this.isPlaying()) {
       this.stop();
+    } else {
+      this.start();
     }
   }
 
