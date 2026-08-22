@@ -261,6 +261,16 @@ The state behind it lives on the headless directive, so a custom view can drive 
 
 Clicking any appointment badge or block opens `<et-scheduler-edit-surface>`, built on the [overlay](/components/overlays) system, which `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when it does. This is the zero-config path: a plain `<et-scheduler>` with no feature directives applied already gets a full edit experience.
 
+The auto-open is keyed on the **selected id**, not on the selected `Appointment` object, so replacing `appointments` with a fresh array while the surface is open - a poll, a websocket push, or merging an `appointmentSave` back in - never stacks a second surface on top of the first.
+
+Three methods on `<et-scheduler>` drive the same surface directly (`<et-scheduler #s>` then `s.openEditSurface(id)`):
+
+| Method                          | Does                                                                                                                        |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `openEditSurface(id)`           | Selects the appointment and opens the surface for it - what the auto-open runs. No-op for an id not in `appointments`.      |
+| `closeEditSurface()`            | Closes the surface without saving, clearing `selectedAppointmentId` back to `null`.                                         |
+| `selectAppointment(id \| null)` | Selects (or clears) **without** opening the surface - for highlighting an appointment from a sidebar or a list of your own. |
+
 Where it opens depends on whether there is something on the calendar to open it over:
 
 | Opened by                                      | Below `md`  | `md` and up                            |
@@ -334,6 +344,8 @@ Add your own with `registerAppointmentAction({ label, icon?, run, order, enabled
 ### Navigation: breadcrumb and children
 
 The surface shows an ancestor breadcrumb (when the current appointment has a parent) and a children list (when it has any) - clicking either **navigates the same dialog instance** to that appointment rather than opening a new one. Navigating discards any unsaved edits to the appointment navigated away from, the same "edit a copy" tradeoff the [filter overlay](/components/filter-overlay) makes: the draft resets from the newly-shown appointment's real data every time.
+
+Navigating is the **only** thing that resets the draft. Replacing `appointments` underneath an open surface leaves whatever the user has typed alone, so a background refresh cannot discard a half-finished edit - the breadcrumb, the children list and the descendant-aware delete do pick up the new data.
 
 ### Edit-surface feature host
 

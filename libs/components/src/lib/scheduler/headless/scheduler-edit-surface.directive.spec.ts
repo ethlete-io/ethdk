@@ -82,6 +82,19 @@ describe('SchedulerEditSurfaceDirective', () => {
     expect(directive.draft().title).toBe('b');
   });
 
+  it('keeps unsaved draft edits when appointments is replaced with new object identities', () => {
+    host.appointments.set([appointment('a'), appointment('b')]);
+    host.appointment.set(appointment('a'));
+    fixture.detectChanges();
+
+    directive.draft.update((draft) => ({ ...draft, title: 'typed by the user' }));
+
+    host.appointments.set([appointment('a'), appointment('b')]);
+    fixture.detectChanges();
+
+    expect(directive.draft().title).toBe('typed by the user');
+  });
+
   it('starts a blank child of the current appointment and navigates to it', () => {
     host.appointments.set([appointment('a')]);
     host.appointment.set(appointment('a'));

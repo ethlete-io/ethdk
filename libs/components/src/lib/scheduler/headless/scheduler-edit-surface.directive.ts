@@ -1,4 +1,4 @@
-import { computed, Directive, input, linkedSignal, output, signal } from '@angular/core';
+import { computed, Directive, input, linkedSignal, output, signal, untracked } from '@angular/core';
 import { randomId } from '@ethlete/core';
 import { Appointment, AppointmentId } from '../scheduler.types';
 import { buildAppointmentTree, collectDescendantIds, findAppointmentNode } from './internals/scheduler-tree';
@@ -49,9 +49,13 @@ export class SchedulerEditSurfaceDirective<TExtra = unknown> {
   /**
    * The live draft every edit field reads and writes. Resets to `currentAppointment()` whenever
    * the surface navigates - unsaved edits are discarded on navigation, the same "edit a copy"
-   * tradeoff the filter overlay makes.
+   * tradeoff the filter overlay makes. Keyed on which appointment is shown, never on
+   * `appointments()` itself, so a background refetch replacing the array leaves the draft alone.
    */
-  public draft = linkedSignal(() => this.currentAppointment());
+  public draft = linkedSignal<AppointmentId, Appointment<TExtra>>({
+    source: () => this.currentAppointmentId(),
+    computation: () => untracked(() => this.currentAppointment()),
+  });
 
   /** `currentAppointment()`'s ancestor chain, root first - what the breadcrumb renders. */
   public ancestors = computed(() => {

@@ -179,7 +179,7 @@ gracefully. Fix the mirror-write, guard the restore, add the dev error the DX it
 Resolves: table High "partial `rowsSource` stalls sort/filter", High "stored state crashes
 `restoreState`".
 
-### 12. Scheduler: an ordinary immutable `appointments` update breaks the edit surface · M
+### 12. Scheduler: an ordinary immutable `appointments` update breaks the edit surface · M · **DONE 2026-08-22**
 
 One root cause (an `effect` that opens the surface keyed on object identity, plus a `linkedSignal`
 draft sourced from the same array), two user-visible failures. Fix as the scheduler DX item "give the
@@ -187,6 +187,22 @@ two effects an explicit imperative API" — `openEditSurface(id)` + an id-keyed 
 the missing "select without opening" capability.
 Resolves: scheduler High "immutable update opens a second stacked surface", High "the same update
 discards the user's draft".
+
+Done: `scheduler.component.ts` keeps a `handledSelectionId` and the auto-open effect compares that
+id against `selectedAppointment().id`, so a fresh `Appointment` object for the same selection no
+longer re-opens. The private opener became public `openEditSurface(id)`, joined by
+`closeEditSurface()` (holds the `OverlayRef`) and `selectAppointment(id)`, which arms the same guard
+to give the missing "select without opening" capability. In the headless directive `draft` is now
+`linkedSignal({ source: currentAppointmentId, computation: untracked(currentAppointment) })`, so it
+resets on navigation only - a background `appointments` replacement leaves the user's typing alone.
+New `scheduler.component.spec.ts` (5 cases, the first for this file) plus one case in
+`scheduler-edit-surface.directive.spec.ts`; both were verified to fail with the fix backed out (the
+stacked-surface case reproduces the scan's `2`). Docs: edit-surface section gained the method table
+and the "keyed on the selected id" note; the navigation section now says navigating is the only
+thing that resets the draft. Still open: no shared contract kit - the identity-keyed-reset defect
+class has only this one occurrence today, so a kit would have a single caller; and the auto-open on
+`selectedAppointmentId` stays the documented default rather than becoming an opt-in input, which
+would be an API change rather than a fix.
 
 ### 13. Stream: leaving PiP strands the player, and late consent registers the wrong id · M
 
@@ -198,7 +214,7 @@ Ship the DX framing: one exit path with the latch set unconditionally. Pair with
 Resolves: stream High "leaving PiP strands the player in the hidden container", stream High "consent
 accepted after an id change registers the old id".
 
-### 14. Cascader: out-of-order level responses drop columns; Space stops activating nodes · M
+### 14. Cascader: out-of-order level responses drop columns; Space stops activating nodes · M · **DONE 2026-08-22**
 
 Both in `forms/cascader/headless/cascader.directive.ts`: `setColumn` truncates the tail on every
 write (so a slow root drops an already-loaded child column — exactly what `cascaderFromQuery`
@@ -207,6 +223,12 @@ longer matches its tail, so the trigger stops showing a stale breadcrumb for a n
 Resolves: cascader High ×3 — "out-of-order level responses destroy the deeper columns", "Space types
 into the search box instead of activating the node", "single mode keeps the previous value's
 breadcrumb".
+Done: `setColumn` writes in place (`truncateColumns` stays the only truncation), the node keydown
+handler exempts `' '` from the single-character search/typeahead routing, and the value effect drops
+`path` whenever the value stops matching its tail. Left open: the medium/low cascader findings from
+the same section (premature `touched` on open, the missing `aria-label`/`ariaLabelledby` inputs, the
+`minQueryLength` "No matches" row, the dead `CascaderNodeSignal` export) — separate defects with
+their own API surface, not part of this item.
 
 ### 15. Tabs: insertion order vs template index desync · S · **DONE 2026-08-22**
 

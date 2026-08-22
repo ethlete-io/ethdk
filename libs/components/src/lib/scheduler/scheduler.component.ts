@@ -16,7 +16,7 @@ import { BUTTON_IMPORTS } from '../button';
 import { FLOATING_ACTION_IMPORTS } from '../floating-action';
 import { LabelDirective, SEGMENTED_BUTTON_IMPORTS } from '../forms';
 import { CALENDAR_ICON, CHEVRON_ICON, IconDirective, PLUS_ICON, provideIcons } from '../icon';
-import { createOverlayOpener } from '../overlay';
+import { OverlayRef, createOverlayOpener } from '../overlay';
 import {
   SCHEDULER_FEATURE_HOST,
   SchedulerBadgeAdornment,
@@ -35,6 +35,7 @@ import { SchedulerBadgeTitleDirective } from './scheduler-badge-title.directive'
 import {
   SCHEDULER_ADD_SURFACE_OVERLAY,
   SCHEDULER_EDIT_SURFACE_OVERLAY,
+  SchedulerEditSurfaceComponent,
   SchedulerEditSurfaceResult,
 } from './scheduler-edit-surface.component';
 import { injectSchedulerLabels } from './scheduler-labels';
@@ -176,6 +177,8 @@ export class SchedulerComponent implements SchedulerFeatureHost {
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   );
 
+  private editSurfaceRef: OverlayRef<SchedulerEditSurfaceComponent, SchedulerEditSurfaceResult> | null = null;
+
   /**
    * Opens `<et-scheduler-edit-surface>` for the selected appointment - covers the zero-config
    * case (no feature directives applied) per the plan. Its result bubbles as `appointmentSave` /
@@ -183,8 +186,16 @@ export class SchedulerComponent implements SchedulerFeatureHost {
    * clicking the same appointment again reopens a fresh surface.
    */
   private editSurfaceOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, {
-    afterClosed: (result) => this.handleEditSurfaceResult(result),
+    afterClosed: (result) => {
+      this.editSurfaceRef = null;
+      this.handleEditSurfaceResult(result);
+    },
   });
+
+  // Which selection the edit surface has already acted on. Compared by id, not by appointment
+  // identity: an immutable `appointments` replacement gives the selected appointment a new object
+  // every time, and re-opening on that stacks a second surface over the open one.
+  private handledSelectionId: AppointmentId | null = null;
 
   /** The toolbar's add has no appointment to anchor to, so it opens a plain dialog instead. */
   private addSurfaceOpener = createOverlayOpener(SCHEDULER_ADD_SURFACE_OVERLAY, {
@@ -209,11 +220,11 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     effect(() => {
       const appointment = this.headless.selectedAppointment();
 
-      if (!appointment) {
+      if (!appointment || appointment.id === this.handledSelectionId) {
         return;
       }
 
-      untracked(() => this.openEditSurface(appointment));
+      untracked(() => this.openEditSurface(appointment.id));
     });
 
     effect(() => {
@@ -276,11 +287,40 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     this.toolbarActionList.update((list) => [...list, action]);
   }
 
-  private openEditSurface(appointment: Appointment) {
-    this.editSurfaceOpener.open({
+  /**
+   * Selects an appointment and opens the default edit surface for it, anchored to whatever the
+   * view registered for the interaction. Runs for you whenever `selectedAppointmentId` changes to
+   * an appointment the surface is not already open for; call it to re-open the surface for the
+   * appointment that is already selected, or to open one from your own UI.
+   */
+  public openEditSurface(id: AppointmentId) {
+    const appointment = untracked(this.headless.appointments).find((candidate) => candidate.id === id);
+
+    if (!appointment) {
+      return;
+    }
+
+    this.handledSelectionId = id;
+    this.headless.selectedAppointmentId.set(id);
+
+    this.editSurfaceRef = this.editSurfaceOpener.open({
       origin: this.takeSurfaceAnchor(),
       bindings: this.editSurfaceBindings(appointment),
     });
+  }
+
+  /** Closes the default edit surface without saving, clearing `selectedAppointmentId` back to `null`. */
+  public closeEditSurface() {
+    this.editSurfaceRef?.close();
+  }
+
+  /**
+   * Selects an appointment without opening the edit surface - for highlighting one from a sidebar
+   * or a list of your own. Writing `selectedAppointmentId` directly always opens the surface.
+   */
+  public selectAppointment(id: AppointmentId | null) {
+    this.handledSelectionId = id;
+    this.headless.selectedAppointmentId.set(id);
   }
 
   private openAddSurface(appointment: Appointment) {
@@ -332,6 +372,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
       this.appointmentsDelete.emit(result.ids);
     }
 
+    this.handledSelectionId = null;
     this.headless.selectedAppointmentId.set(null);
   }
 }
