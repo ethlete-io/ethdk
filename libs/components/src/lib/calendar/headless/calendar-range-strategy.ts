@@ -21,7 +21,8 @@ export type CalendarRangeSelectionStrategy = {
   /**
    * The range to band while the reader is only hovering (or has moved keyboard focus) over `date`.
    * Defaults to whatever {@link select} would produce, which is usually what a reader wants to be
-   * shown - return `null` to preview nothing.
+   * shown - return `null` to preview nothing. Neither callback is asked for a preview until there
+   * is a real pointer hover or keyboard focus in the grid, so an untouched calendar bands nothing.
    */
   preview?: (date: Date, current: CalendarRange) => CalendarRange | null;
 };

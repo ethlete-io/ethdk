@@ -315,6 +315,15 @@ export class CalendarDirective {
   public hoveredDate = signal<Date | null>(null);
 
   /**
+   * The grid DOM focus is in, or `null` while focus is outside all of them. Identity only - a grid
+   * claims it on `focusin` and hands it back on `focusout`, and nothing here reads anything off it
+   * beyond whether keyboard focus is real.
+   *
+   * @internal
+   */
+  public focusedGrid = signal<unknown>(null);
+
+  /**
    * How the grid last changed - drives the transition styling. Chronological for a step within one view,
    * and which way the reader zoomed for a view change (`'zoomOut'` towards the year grid).
    */
@@ -526,12 +535,19 @@ export class CalendarDirective {
    * default: the preview shows what the pick would do.
    */
   private previewRange = computed<CalendarRange>(() => {
-    if (this.mode() !== 'range') {
+    if (this.mode() !== 'range' || this.view() !== this.selectionView()) {
+      return { start: null, end: null };
+    }
+
+    // the roving target exists from first render, so it may only anchor a preview once focus is
+    // really in a grid - otherwise a strategy without a `preview` bands an untouched calendar
+    const at = this.hoveredDate() ?? (this.focusedGrid() === null ? null : this.focusedDate());
+
+    if (at === null) {
       return { start: null, end: null };
     }
 
     const strategy = this.effectiveRangeStrategy();
-    const at = this.hoveredDate() ?? this.focusedDate();
     const current = this.rangeValue();
 
     return (

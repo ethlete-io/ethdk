@@ -116,6 +116,10 @@ describe('CalendarDirective', () => {
     return matches.find((cell) => !cell.hasAttribute('data-outside-month')) ?? matches[0] ?? null;
   };
   const focusedCell = () => cells().find((cell) => cell.tabIndex === 0) ?? null;
+  const bandedCells = () =>
+    cells()
+      .filter((cell) => cell.hasAttribute('data-band'))
+      .map((cell) => cell.textContent?.trim());
 
   const keydown = (key: string, shiftKey = false) => {
     grid().dispatchEvent(new KeyboardEvent('keydown', { key, shiftKey, bubbles: true, cancelable: true }));
@@ -499,6 +503,8 @@ describe('CalendarDirective', () => {
       host.rangeStrategy.set(createWeekRangeStrategy({ weekStartsOn: 1 }));
       fixture.detectChanges();
 
+      expect(bandedCells()).toEqual([]);
+
       cellFor(16)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
       fixture.detectChanges();
 
@@ -511,6 +517,39 @@ describe('CalendarDirective', () => {
       fixture.detectChanges();
 
       expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 13), end: null });
+    });
+
+    it('bands nothing on an untouched calendar, and follows the roving cell once focus is in the grid', async () => {
+      host.rangeStrategy.set(createFixedLengthRangeStrategy({ days: 7 }));
+      fixture.detectChanges();
+
+      expect(bandedCells()).toEqual([]);
+      expect(cells().some((cell) => cell.hasAttribute('data-preview'))).toBe(false);
+
+      grid().dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+      fixture.detectChanges();
+
+      expect(bandedCells()).toEqual(['1', '2', '3', '4', '5', '6', '7']);
+
+      focusedCell()?.blur();
+      grid().dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(bandedCells()).toEqual([]);
+    });
+
+    it('does not band a coarse grid from the roving cell either', () => {
+      host.rangeStrategy.set(createFixedLengthRangeStrategy({ days: 40 }));
+      fixture.detectChanges();
+
+      calendar.zoomOut();
+      fixture.detectChanges();
+
+      grid().dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+      fixture.detectChanges();
+
+      expect(bandedCells()).toEqual([]);
     });
 
     it('closes on the second pick, at the end of its week', () => {

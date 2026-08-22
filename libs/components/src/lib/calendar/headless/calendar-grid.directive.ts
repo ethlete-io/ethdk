@@ -1,12 +1,13 @@
-import { Directive, ElementRef, afterNextRender, inject, signal } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { CALENDAR_ERROR_CODES } from '../calendar-errors';
 import { CalendarDirective } from './calendar.directive';
 
 /**
  * The ARIA grid hosting the cell rows of whichever view is showing: routes the
- * keyboard model to the calendar and tracks whether focus is inside (cells only
- * pull DOM focus along while the user is actually keyboard-navigating the grid).
+ * keyboard model to the calendar and claims its focus while DOM focus is inside -
+ * which is what lets a cell pull DOM focus along, and a range preview anchor,
+ * only while the reader is really keyboard-navigating the grid.
  */
 @Directive({
   selector: '[etCalendarGrid]',
@@ -16,7 +17,7 @@ import { CalendarDirective } from './calendar.directive';
     '[attr.aria-label]': 'calendar?.headerLabel()',
     '[attr.aria-multiselectable]': "calendar?.mode() === 'multiple' ? true : null",
     '(keydown)': 'calendar?.handleKeydown($event)',
-    '(focusin)': 'focusIsInside.set(true)',
+    '(focusin)': 'claimFocus()',
     '(focusout)': 'handleFocusOut($event)',
     '(pointerleave)': 'calendar?.hoveredDate?.set(null)',
   },
@@ -26,9 +27,11 @@ export class CalendarGridDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /** @internal */
-  public focusIsInside = signal(false);
+  public focusIsInside = computed(() => this.calendar?.focusedGrid() === this);
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.releaseFocus());
+
     if (ngDevMode) {
       afterNextRender(() => {
         if (!this.calendar) {
@@ -40,6 +43,10 @@ export class CalendarGridDirective {
         }
       });
     }
+  }
+
+  protected claimFocus() {
+    this.calendar?.focusedGrid.set(this);
   }
 
   protected handleFocusOut(event: FocusEvent) {
@@ -57,8 +64,18 @@ export class CalendarGridDirective {
       const active = element.ownerDocument.activeElement;
 
       if (!(active instanceof Node) || !element.contains(active)) {
-        this.focusIsInside.set(false);
+        this.releaseFocus();
       }
     });
+  }
+
+  // only ever give back a claim that is still ours: focus moving to a sibling grid claims it
+  // there before this microtask runs
+  private releaseFocus() {
+    const calendar = this.calendar;
+
+    if (calendar?.focusedGrid() === this) {
+      calendar.focusedGrid.set(null);
+    }
   }
 }
