@@ -111,8 +111,10 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
 
   private resolvedMarks = computed(() => resolveMarks(this.marks(), this.bounds()));
 
+  private markValues = computed(() => this.resolvedMarks().map((mark) => mark.value));
+
   /** The mark grid commits snap to, or empty when `snapToMarks` is off. */
-  private snapMarkValues = computed(() => (this.snapToMarks() ? this.resolvedMarks().map((mark) => mark.value) : []));
+  private snapMarkValues = computed(() => (this.snapToMarks() ? this.markValues() : []));
 
   // while mixed, both thumbs park at the track start so the DOM (positions, ARIA) exposes
   // nothing of the hidden raw range - the keyboard model then also steps from the minimum
@@ -249,20 +251,31 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   private snapValue(value: number) {
     const markValues = this.snapMarkValues();
 
-    return markValues.length ? snapValueToMarks(value, { markValues }) : snapValueToStep(value, this.bounds());
+    if (markValues.length) {
+      return snapValueToMarks(value, { markValues });
+    }
+
+    // a rendered tick advertises its value as a stop, so a press on one must not be pulled onto the step grid
+    return this.markValues().includes(value) ? value : snapValueToStep(value, this.bounds());
   }
 
   /**
-   * Snaps `value`, keeps it clear of the sibling, then snaps again - the sibling limit itself
-   * need not sit on the grid, so the second snap moves away from the sibling, never across it.
+   * Snaps `value` and keeps it clear of the sibling. A sibling limit that moved the value need not
+   * sit on the grid, so it is snapped once more - away from the sibling, never across it.
    */
   private constrainAndSnap(value: number, thumb: { index: number; otherValue: number }) {
     const end = thumb.index === 0 ? 'start' : 'end';
-    const constrained = constrainRangeThumb(this.snapValue(value), {
+    const snapped = this.snapValue(value);
+    const constrained = constrainRangeThumb(snapped, {
       end,
       otherValue: thumb.otherValue,
       minDistance: this.minDistance(),
     });
+
+    if (constrained === snapped) {
+      return constrained;
+    }
+
     const markValues = this.snapMarkValues();
 
     return markValues.length

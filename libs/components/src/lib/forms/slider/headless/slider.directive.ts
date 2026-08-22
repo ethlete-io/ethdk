@@ -105,8 +105,10 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
 
   private resolvedMarks = computed(() => resolveMarks(this.marks(), this.bounds()));
 
+  private markValues = computed(() => this.resolvedMarks().map((mark) => mark.value));
+
   /** The mark grid commits snap to, or empty when `snapToMarks` is off. */
-  private snapMarkValues = computed(() => (this.snapToMarks() ? this.resolvedMarks().map((mark) => mark.value) : []));
+  private snapMarkValues = computed(() => (this.snapToMarks() ? this.markValues() : []));
 
   // while mixed, the thumb parks at the track start so the DOM (position, ARIA) exposes
   // nothing of the hidden raw value - the keyboard model then also steps from the minimum
@@ -218,6 +220,11 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   private snapValue(value: number) {
     const markValues = this.snapMarkValues();
 
-    return markValues.length ? snapValueToMarks(value, { markValues }) : snapValueToStep(value, this.bounds());
+    if (markValues.length) {
+      return snapValueToMarks(value, { markValues });
+    }
+
+    // a rendered tick advertises its value as a stop, so a press on one must not be pulled onto the step grid
+    return this.markValues().includes(value) ? value : snapValueToStep(value, this.bounds());
   }
 }

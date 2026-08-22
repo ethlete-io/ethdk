@@ -98,7 +98,7 @@ const qualityMarks = [
 
 - Ticks inside the filled part of the track (between the thumbs, for a range) render in the theme's on-primary color; the rest sit on the neutral rail.
 - Explicit marks are sorted, de-duplicated and clipped to the bounds. `marks="true"` refuses to generate more than 200 ticks - raise the `step` or pass an array ([`ET3104`](/components/error-codes#slider-et31xx)).
-- A pointer press that starts on a tick (or its label) commits **that exact value**, not the value under the pointer.
+- A pointer press that starts on a tick (or its label) commits **that exact value**, not the value under the pointer - a mark that sits off the `step` grid included. The arrow keys still move along the `step` grid, so reach for `snapToMarks` when the marks are meant to be the only stops.
 - Labels are decoration: the whole tick layer is `aria-hidden`, and the accessible value stays on the thumb.
 
 ### snapToMarks

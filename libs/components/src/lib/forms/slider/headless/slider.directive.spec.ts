@@ -272,6 +272,27 @@ describe('SliderDirective', () => {
       expect(driver.host.value()).toBe(33);
     });
 
+    it('keeps a tick press on the tick even when the mark is off the step grid', () => {
+      driver.host.step.set(10);
+      driver.host.marks.set([{ value: 25, label: 'quarter' }, { value: 50 }]);
+      driver.tick();
+
+      driver.pointerOnMark(0);
+
+      expect(driver.host.value()).toBe(25);
+      expect(driver.thumbAttr('aria-valuenow')).toBe('25');
+    });
+
+    it('still snaps a press on the bare track onto the step grid', () => {
+      driver.host.step.set(10);
+      driver.host.marks.set([{ value: 25 }]);
+      driver.tick();
+
+      driver.pointer('pointerdown', 26);
+
+      expect(driver.host.value()).toBe(30);
+    });
+
     describe('snapToMarks', () => {
       beforeEach(() => {
         driver.host.marks.set([

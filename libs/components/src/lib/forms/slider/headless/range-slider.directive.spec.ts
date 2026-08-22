@@ -148,6 +148,17 @@ describe('RangeSliderDirective', () => {
       expect(driver.markActives()).toEqual([false, true, true, true, false]);
     });
 
+    it('commits an off-grid tick exactly to the nearest thumb', () => {
+      driver.host.step.set(10);
+      driver.host.marks.set([{ value: 25 }, { value: 50 }]);
+      driver.tick();
+
+      driver.pointerOnMark(0);
+
+      expect(driver.host.value()).toEqual([25, 80]);
+      expect(driver.thumbAttrs('aria-valuenow')).toEqual(['25', '80']);
+    });
+
     it('snaps both thumbs onto the marks while honoring minDistance', () => {
       driver.host.marks.set([{ value: 0 }, { value: 25 }, { value: 50 }, { value: 75 }, { value: 100 }]);
       driver.host.snapToMarks.set(true);

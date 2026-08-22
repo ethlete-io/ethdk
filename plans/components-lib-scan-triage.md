@@ -574,7 +574,20 @@ single-domain reach.
   every file server-side is a product call, not a bug; and no per-instance `uploadingLabel` input was
   added (the domain token is the only override, matching how the live region is documented).
 - **Slider: a tick press does not commit the tick's value without `snapToMarks`** (slider High) —
-  documented as always doing so. S
+  documented as always doing so. S · **DONE 2026-08-22**
+  Done: the code was the wrong half - `SLIDER_MARK_VALUE_ATTRIBUTE`'s JSDoc, the track's own comment
+  and the existing spec name all state the tick press commits that exact value; only the commit path
+  dropped it. Both hosts' private `snapValue` now leaves a value that equals one of the rendered marks
+  alone instead of pulling it onto the `step` grid (so the display no longer re-snaps it either), and
+  the range slider's `constrainAndSnap` skips its second snap when the sibling limit did not move the
+  value. No public API change - `snapValue`/`constrainAndSnap` are private and `commitThumbValue`'s
+  signature is untouched. New specs: an off-grid tick press in `slider.directive.spec.ts` (value plus
+  `aria-valuenow`) and in `range-slider.directive.spec.ts`, plus a bare-track press that must still
+  snap. Left open: the keyboard still steps the `step` grid from an off-grid mark (arrow-right from 25
+  with `step: 10` lands on 40, not 35) - a mark-aware keyboard model without `snapToMarks` would make
+  the marks a second grid, which is what `snapToMarks` is for; and `thumbValueText` still announces a
+  mark's label only while snapping, even though a thumb can now sit exactly on a labelled off-grid
+  mark - `slider.md` documents the label-as-`aria-valuetext` rule as a `snapToMarks` feature.
 - **RTE: `pruneEmptyInline` skips `u`/`code`**, leaking raw HTML into the Markdown value (rte High);
   **the trigger popup opens before an existing trigger char and leaves the literal text** (rte High);
   **tools commit without a history boundary**, so the next keystroke swallows them (rte Medium). S / M
@@ -595,7 +608,21 @@ single-domain reach.
   corrected, but nothing was done about the other rte findings in the same batch.
 - **Smaller singletons:** the copy-button subscription is not lifecycle-bound (dev warning only);
   `maxVisible: 0` shows every notification instead of none; the standings overlapping-zones guard only
-  ever checks the first render. S each
+  ever checks the first render. S each · **DONE 2026-08-22**
+  Done: `requestCopy()`'s clipboard pipe ends in `takeUntilDestroyed(this.destroyRef)`, so a copy that
+  settles after the host is gone no longer sets `copied` or trips NG0953. The notification manager reads
+  `maxVisible` once through `Math.max(1, Math.floor(...))` (the `maxVisibleColumns` precedent) and both
+  the `slice` cap and the `open()` dismiss use that value. The standings guard is now
+  `effect(() => this.assertZonesDoNotOverlap(this.zones()))` instead of `afterNextRender`, matching the
+  RTE trigger-uniqueness guard, so zones assembled or swapped after mount are checked too. Left open:
+  the scan's `maxVisible: 0` claim does not reproduce - `open()` already dismisses the oldest whenever
+  `active.length >= maxVisible`, so with `0` at most one notification is ever active and `slice(-0)`
+  has nothing extra to show; the reachable misbehaviour is a negative cap (hides live toasts entirely)
+  and a fractional one (parks an undismissed toast out of sight), which is what the specs pin. Nothing
+  validates `maxVisible` loudly - a dev-mode error was the scan's alternative, and silently clamping
+  matches how the cascader treats the same input. The standings check now runs during change detection
+  rather than after render, which is fine for a pure input check but would not suit a guard that needs
+  the DOM.
 
 ## Improvements worth scheduling
 
