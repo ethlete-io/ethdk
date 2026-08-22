@@ -37,6 +37,7 @@ Fable for batch design, synthesis and cross-checks.
 | 20  | icon + picture + skeleton + loader + empty-state                                                                  | 3.4k  | sonnet | done — 1 high / 1 medium / 3 low   |
 | 21  | pagination + breadcrumb + progress-steps + timeline + kbd + toolbar + description-list + copy-button + focus-ring | 3.2k  | sonnet | done — 6 high / 5 medium / 7 low   |
 | 22  | query-error + filter-overlay + floating-action + testing + internals                                              | 2.0k  | sonnet | done — 1 high / 1 medium / 2 low   |
+| 23  | storybook stories (cross-cutting)                                                                                 | —     | sonnet | done — 0 high / 2 medium / 3 low   |
 
 Severity counts: **66 high**, **148 medium**, **219 low**, across 22 review batches.
 Besides defects, each batch also collects ranked improvement ideas (features, DX,
@@ -8134,5 +8135,132 @@ None found; the JSDoc on `focusRingDisabled` is legitimate public-API documentat
 | **Total**        | **6** | **5**  | **7** |
 
 Worst finding overall: the nested-toolbar arrow-key focus theft (toolbar, High) and the focus-ring stuck `--active` class (focus-ring, High) are the two with the most concrete, everyday-reachable user impact; the breadcrumb outlet + SEO directive NG0201 crash is the most severe in kind (a hard crash on the documented usage) but narrower in reach (only apps combining both features).
+
+---
+
+## Storybook stories (libs/components)
+
+Scope: all 113 `*.stories.ts` files and their sibling `stories/` demo components across
+`libs/components/src/lib` (78 `stories/` directories, one per visual domain). Static review only
+(per scan-instructions.md, runtime verification was skipped).
+
+### High
+
+None found. No story crashes on inspection, no use of a removed/deprecated input, no
+`ControlValueAccessor`-style binding (`ngModel`/`formControlName`) leaking into the signal-forms-native
+control stories (verified with a repo-wide grep - zero hits for either).
+
+### Medium
+
+- **Every story in the menu domain hand-rolls CSS and opts out of the repo's demo typeface instead of
+  using the Tailwind `font-sans` utility every other domain uses.** `libs/components/src/lib/menu/stories/components/menu-storybook.component.ts:80-86`,
+  `menu-selection-storybook.component.ts:51-58`, `menu-search-storybook.component.ts:35-41`, and
+  `menu-context-storybook.component.ts:32-37` all declare a `styles:` block with
+  `font-family: sans-serif;` for their demo shell. Per the storybook-styling skill, story demo chrome
+  should use Tailwind utilities (`font-sans` = Archivo, the repo's actual sans stack) so a story reads
+  the same as the app it's demoing for; these four components instead render in the browser's default
+  sans-serif, visibly inconsistent with every sibling story (button, table, scrollbar, overlay, etc. all
+  use `class="font-sans"`). Code-verified only - not a broken render, but a real visual inconsistency
+  that would show up the moment someone opens the Menu stories next to any other domain.
+
+- **Zero Storybook interaction tests (`play` functions) across all 113 story files.** A grep for
+  `play:`, `userEvent`, and `within(` returns no genuine hits (the three superficial `play:` matches are
+  false positives from `autoplay:`/`display:` substrings, confirmed by inspection). Every story is a
+  static/controls-only demo; nothing exercises keyboard nav, focus trapping, or async flows (menu
+  search, overlay unsaved-changes guard, command palette) through Storybook's own test runner. See
+  Improvements/Testing below.
+
+### Low
+
+- **Story title casing is inconsistent across domains**, mixing Title Case second words
+  (`Time Input`, `Date Range Input`, `Number Input`) with lowercase ones (`Masked input`,
+  `Filter overlay`, `Description list`, `Range slider`, `Sport recipes`, `Query error`,
+  `Progress steps`, `Command palette`, `Otp Input`) - see e.g.
+  `libs/components/src/lib/forms/masked-input/stories/masked-input.stories.ts:5` vs
+  `libs/components/src/lib/forms/input/stories/number-input.stories.ts:5`. Docs embeds reference these
+  ids by exact string, so the inconsistency is cosmetic (visible in the Storybook sidebar and any
+  generated nav) rather than a broken embed, but it's a five-minute fix for readability.
+
+- **`overlay-unsaved-changes.stories.ts` sizes a demo panel with the rem-based Tailwind container
+  scale the storybook-styling skill specifically warns about.** `libs/components/src/lib/overlay/stories/overlay-unsaved-changes.stories.ts:48`
+  uses `w-[28rem] max-w-full` for the edit-item form width. At the site's `html { font-size: 62.5% }`
+  root, `28rem` renders as 280px, not the 448px the literal value suggests - probably still an
+  acceptable form width by accident, but it's the exact trap the skill calls out ("bind px instead of
+  guessing a rem width when width matters"). Low because the rendered result is still a reasonable
+  layout, not visibly broken.
+
+- **`copy-button.stories.ts` and `icon.stories.ts` (plus ~13 other files) define no `argTypes` at
+  all**, so Storybook's controls panel is empty for them. For `copy-button` this is defensible - the
+  directive's only inputs are `text` and `resetDelay`
+  (`libs/components/src/lib/copy-button/copy-button.directive.ts:31,34`) and the story already renders
+  both button variants - but `icon.stories.ts` (`libs/components/src/lib/icon/stories/icon.stories.ts`)
+  gives a reviewer no way to page through the icon set or size/color options interactively; whatever
+  variety exists is baked into the wrapped `IconStorybookComponent` template instead of being
+  controls-driven.
+
+### Consistency (not a defect, noted for the improvements below)
+
+The repo's dominant pattern - a thin `*.stories.ts` with `argTypes`/`args` plus a single `Default`
+export, backed by a purpose-built `*-storybook.component.ts` that does the real demo work (multiple
+scenarios inside one component, e.g. `scrollbar-storybook.component.ts`'s vertical/horizontal branches,
+or `menu-selection-storybook.component.ts`'s full radio/checkbox-group form) - is used consistently and
+works well. A raw "export count per file" metric is therefore misleading on its own; domains that look
+like "one story" (menu selection, command palette, notification, timeline) are not under-covered once
+the wrapped component is read.
+
+### Spec coverage
+
+Not applicable in the usual sense - these are demo/story files, not units with their own spec files.
+No story file has a matching `.spec.ts`, which is expected: behavior coverage for the underlying
+components lives in each domain's own `*.component.spec.ts` / `*.directive.spec.ts`, reviewed by the
+domain-scoped batches of this scan, not this one. The one gap that does belong to the story surface
+itself is the missing `play`-function interaction coverage noted under Medium.
+
+Clean: title-to-component wiring, `moduleMetadata`/`applicationConfig` decorator usage, and
+`Meta`/`StoryObj` typing were all checked and are correct throughout the sample read in depth (button,
+checkbox, scrollbar, time-picker, menu, command-palette, carousel, twitch-player, color-input,
+bracket, overlay-unsaved-changes). No story binds a non-existent input, no story uses a hardcoded
+palette color or `text-sm`/`text-xs`-style Tailwind class outside the repo's trimmed theme (repo-wide
+grep for palette-color utilities, off-scale text utilities, `dark:` variants, and `font-mono`/`font-serif`
+came back empty), and hex/rgb literals that do appear (`color-input.stories.ts`, `bracket.stories.ts`)
+are legitimate component _data_ (swatch/status colors the control edits or the bracket renders), not
+paint applied to the story's own layout. Coverage of component domains is essentially complete: every
+visual domain under `libs/components/src/lib` has a `stories/` directory; the three domains without one
+(`focus-ring`, `internals`, `testing`) are non-visual utility code with no UI to demo.
+
+### Improvements
+
+**Testing**
+
+1. **Add `play` functions to the interactive-flow stories that most need regression protection** - menu
+   keyboard nav (`menu.stories.ts`, `menu-search.stories.ts`), the overlay unsaved-changes guard
+   (`overlay-unsaved-changes.stories.ts`), and the command palette
+   (`command-palette-storybook.component.ts`) are exactly the kind of async/focus-sensitive behavior a
+   `play` function with `userEvent` would catch on a regression that a visual read-through won't. Right
+   now all 113 stories are controls-only; this is the single highest-value testing gap in the story set.
+2. **Wire Storybook's test runner into CI** once a handful of `play` functions exist, so the interaction
+   coverage above actually gates merges rather than being verified ad hoc by whoever last touched the
+   story.
+
+**DX**
+
+1. **Give `icon.stories.ts` real `argTypes`** (icon name/size/color) instead of a single baked-in
+   `Default` - right now browsing the icon set means opening
+   `libs/components/src/lib/icon/stories/components/icon-storybook.component.ts` source rather than
+   using Storybook's own UI, which is exactly the kind of task Storybook controls exist for.
+2. **Normalize story titles to Title Case** across the ~10 files listed under Low - a one-line rename
+   per file, no behavior risk, and it removes a visible inconsistency in the Storybook sidebar.
+
+**UI/UX**
+
+1. **Fix the menu domain's demo typography** (Medium finding above) - swap the four `styles:` blocks'
+   `font-family: sans-serif` for the `font-sans` Tailwind utility (or delete the `styles:` block
+   entirely and move the few layout rules that remain into Tailwind classes), matching every sibling
+   domain's demo chrome.
+
+**Bundle size / Features**
+Nothing rises to a ranked finding here - the story set does not ship in the published `@ethlete/*`
+bundles (Storybook-only), so bundle-size concerns from AGENTS.md's stylesheet-splitting guidance don't
+apply to this scope.
 
 ---
