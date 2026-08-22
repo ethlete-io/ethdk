@@ -209,6 +209,19 @@ describe('CalendarDirective', () => {
     expect(focusedCell()?.textContent?.trim()).toBe('20');
   });
 
+  it('ignores keys that bubble out of a form field inside the grid', () => {
+    calendar.focusedDate.set(new Date(2026, 6, 16));
+    fixture.detectChanges();
+
+    const input = document.createElement('input');
+    grid().appendChild(input);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    input.remove();
+
+    expect(calendar.focusedDate()).toEqual(new Date(2026, 6, 16));
+  });
+
   it('follows keyboard focus across month boundaries', () => {
     calendar.focusedDate.set(new Date(2026, 6, 31));
     fixture.detectChanges();

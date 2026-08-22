@@ -6,6 +6,7 @@ import {
   injectSurfaceThemes,
   resolveSurfaceByElevation,
 } from '@ethlete/core';
+import { isFormInputTarget } from '../internals/form-input-target';
 import { GridDragDirective } from './headless/grid-drag.directive';
 import { GridItemDirective } from './headless/grid-item.directive';
 import { GridResizeDirective } from './headless/grid-resize.directive';
@@ -261,7 +262,7 @@ export class GridItemComponent {
   public applyKeyboardShortcut(event: KeyboardEvent) {
     const grid = this.grid;
 
-    if (!grid || this.isReadOnly()) return;
+    if (!grid || this.isReadOnly() || isFormInputTarget(event.target)) return;
     const pos = this.gridItem.currentPosition();
 
     if (!pos) return;
@@ -292,9 +293,7 @@ export class GridItemComponent {
         event.preventDefault();
         event.stopPropagation();
       }
-    }
-
-    if (event.shiftKey) {
+    } else if (event.shiftKey) {
       let handled = true;
 
       switch (event.key) {

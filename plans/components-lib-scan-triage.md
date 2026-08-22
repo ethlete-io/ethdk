@@ -23,7 +23,7 @@ Resolves: date-time High "unedited focus+blur rewrites the wire value", High "er
 text latches parseError", High "clear button vs attached mask", Medium "readonly control still
 commits on blur"; realises date-time DX "fold the two abstract bases into one core".
 
-### 2. Container `keydown` handlers that ignore `event.target` · S
+### 2. Container `keydown` handlers that ignore `event.target` · S · **DONE 2026-08-22**
 
 `grid/grid-item.component.ts:53` (`applyKeyboardShortcut`) and
 `calendar/headless/calendar.directive.ts:690-705` claim every arrow/modifier key that bubbles out of
@@ -32,6 +32,7 @@ contenteditable). While in the grid file, make the move/resize branches mutually
 Resolves: grid High "Shift+Arrow inside a text field resizes the widget", grid High
 "Ctrl/Cmd+Backspace deletes the whole widget" (and persists it), grid Medium "Ctrl+Shift+Arrow moves
 _and_ resizes", calendar Low "handleKeydown claims every key with no target check".
+Done: `internals/form-input-target.ts` guards both handlers; the grid branches are exclusive now.
 
 ### 3. Phone input: character-by-character international entry corrupts the value · M
 

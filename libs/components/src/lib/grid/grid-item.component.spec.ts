@@ -36,7 +36,9 @@ const TEST_ITEM: GridItemConfig = {
   imports: [GridDirective, GridItemComponent],
   template: `
     <div [items]="items" [readOnly]="readOnly" etGrid>
-      <et-grid-item [ariaLabel]="ariaLabel" itemId="test-item" />
+      <et-grid-item [ariaLabel]="ariaLabel" itemId="test-item">
+        <input type="text" />
+      </et-grid-item>
     </div>
   `,
 })
@@ -149,7 +151,36 @@ describe('GridItemComponent', () => {
       fixture.detectChanges();
 
       const newPos = getItemDirective().currentPosition();
-      expect(newPos?.colSpan).toBeGreaterThanOrEqual(initialPos.colSpan);
+      expect(newPos?.colSpan).toBe(initialPos.colSpan + 1);
+    });
+
+    it('ignores shortcuts that bubble out of a form field inside the item', () => {
+      fixture.detectChanges();
+      const initialPos = getItemDirective().currentPosition();
+      const input = getItemEl().querySelector('input') as HTMLInputElement;
+
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', shiftKey: true, bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', ctrlKey: true, bubbles: true }));
+      fixture.detectChanges();
+
+      const newPos = getItemDirective().currentPosition();
+      expect(newPos?.colSpan).toBe(initialPos?.colSpan);
+      expect(getGridDirective().getConstraints('test-item')).toBeDefined();
+    });
+
+    it('moves without resizing on Ctrl+Shift+Arrow', () => {
+      fixture.detectChanges();
+      const initialPos = getItemDirective().currentPosition();
+      if (!initialPos) return;
+
+      getItemEl().dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', ctrlKey: true, shiftKey: true, bubbles: true }),
+      );
+      fixture.detectChanges();
+
+      const newPos = getItemDirective().currentPosition();
+      expect(newPos?.col).toBe(initialPos.col + 1);
+      expect(newPos?.colSpan).toBe(initialPos.colSpan);
     });
   });
 });

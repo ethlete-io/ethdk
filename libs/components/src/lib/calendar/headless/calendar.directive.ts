@@ -23,6 +23,7 @@ import {
 } from 'date-fns';
 import { Locale } from 'date-fns';
 import { injectDateLocale } from '../../forms/date-time/date-time-formats';
+import { isFormInputTarget } from '../../internals/form-input-target';
 import { CalendarWeekStartsOn, generateMonthGrid } from './internals/calendar-month';
 import { resolveCalendarKeyboardDate } from './internals/calendar-keyboard';
 import {
@@ -688,6 +689,8 @@ export class CalendarDirective {
 
   /** @internal ARIA-grid keyboard model; selection stays with the cell button's native activation. */
   public handleKeydown(event: KeyboardEvent) {
+    if (isFormInputTarget(event.target)) return;
+
     const target = resolveCalendarKeyboardDate(event.key, {
       shiftKey: event.shiftKey,
       focusedDate: this.focusedDate(),
