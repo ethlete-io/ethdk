@@ -179,6 +179,13 @@ The target builds `core`, `query` and `components` first, so it is self-containe
 512 B, whichever is larger - FESM linking is deterministic, but a dependency bump moves a few bytes. A
 new entry with `"gzip": 0` is recorded rather than failed, which is how you add one.
 
+**Accept every entry, not just the one you were watching.** `--update` rewrites the whole file, and
+that is the point. Hand-editing the single golden your own change moved leaves every other entry
+carrying the drift it added, and since the next partial accept re-bases only what _its_ author looked
+at, the untouched entries creep towards the tolerance until a real regression fits inside it. The
+2026-08-23 re-baseline found 25 of 33 entries drifted that way - the table entries at 78-88 % of their
+band - with nothing over the line and nothing individually wrong.
+
 When it fails, the cause is almost always a module-scope statement that stopped being droppable: an
 unannotated call (`ethlete/no-impure-top-level-provider` catches most of these), a computed key or
 property read inside a top-level literal, or a destructured factory result. `decompose.mjs` on the
