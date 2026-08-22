@@ -1,5 +1,5 @@
-import { DestroyRef, Directive, ElementRef, booleanAttribute, inject, input, linkedSignal } from '@angular/core';
-import { ScrollableDirective } from './scrollable.directive';
+import { DestroyRef, Directive, ElementRef, booleanAttribute, inject, input } from '@angular/core';
+import { ScrollableActiveChildRef, ScrollableDirective } from './scrollable.directive';
 
 @Directive({
   selector: '[etScrollableActiveChild]',
@@ -11,18 +11,18 @@ export class ScrollableActiveChildDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   public isActiveChildEnabled = input(true, { alias: 'etScrollableActiveChild', transform: booleanAttribute });
 
-  private isActiveChildEnabledSignal = linkedSignal(() => this.isActiveChildEnabled());
-
   constructor() {
-    if (!this.scrollable) return;
+    const scrollable = this.scrollable;
 
-    const ref = {
+    if (!scrollable) return;
+
+    const ref: ScrollableActiveChildRef = {
       elementRef: this.elementRef,
-      isActiveChildEnabled: this.isActiveChildEnabledSignal,
+      isActiveChildEnabled: this.isActiveChildEnabled,
     };
 
-    this.destroyRef.onDestroy(() => {
-      this.scrollable?.unregisterActiveChild(ref);
-    });
+    scrollable.registerActiveChild(ref);
+
+    this.destroyRef.onDestroy(() => scrollable.unregisterActiveChild(ref));
   }
 }

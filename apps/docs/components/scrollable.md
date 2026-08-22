@@ -108,7 +108,21 @@ every mouse move; on release it glides to the nearest child in JavaScript and ha
 
 `itemSize`, `direction` and `scrollMode` also accept per-breakpoint maps (e.g. `[itemSize]="{ xs: 'full', md: 'third' }"`) - see [breakpoint inputs](/core/signal-utils#breakpoint-inputs) for how these resolve. The underlying scroll math (snap targets, `scrollToElement`) comes from the [core scrolling primitives](/core/scrolling).
 
-Helper directives: `[etScrollableActiveChild]` marks a child as active so it's auto-scrolled into view (great for tab-bar-like lists); `[etScrollableIgnoreChild]` excludes an element from child tracking; `ng-template[etScrollableLoadingTemplate]` renders skeleton content while `showLoadingTemplate` is on.
+Helper directives: `[etScrollableActiveChild]` marks the child the track should open on - see [Active child](#active-child); `[etScrollableIgnoreChild]` excludes an element from child tracking; `ng-template[etScrollableLoadingTemplate]` renders skeleton content while `showLoadingTemplate` is on.
+
+### Active child
+
+Mark a child with `[etScrollableActiveChild]` and the track opens scrolled to it - for when the selected tab, day or match sits somewhere in the middle of a long list:
+
+```html
+<et-scrollable>
+  @for (day of days(); track day.id) {
+  <button [etScrollableActiveChild]="day.id === selectedDayId()">{{ day.label }}</button>
+  }
+</et-scrollable>
+```
+
+The first enabled marker in DOM order wins, and `scrollOrigin` decides where it comes to rest. This is a one-time **initial** scroll position, not a live binding: it is applied the first time the track is actually able to scroll to that child, and later changes to the bindings don't re-scroll it - drive those with `scrollToElement(...)` instead. A marker bound to `false` registers the child but never claims the initial position, so `[etScrollableActiveChild]="false"` on every child means the track opens at the start.
 
 ## State & programmatic scrolling
 

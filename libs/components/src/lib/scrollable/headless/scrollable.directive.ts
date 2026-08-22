@@ -99,6 +99,22 @@ export class ScrollableDirective {
 
   public scrollableChildren = computed(() => this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)));
 
+  // --- Active children (self-registration) ---
+
+  private activeChildren = signal<ScrollableActiveChildRef[]>([]);
+
+  private initialActiveChildScrollPosition = computed(() => {
+    const firstActive = this.activeChildren().find((child) => child.isActiveChildEnabled());
+
+    if (!firstActive) return null;
+
+    const position = this.getElementScrollCoordinates({ element: firstActive.elementRef.nativeElement });
+
+    // `signalElementScrollState` stops watching once it gets a position, and the coordinates come back
+    // offsetless while the track cannot scroll yet - handing those over would spend the one shot on nothing.
+    return position.left === undefined && position.top === undefined ? null : position;
+  });
+
   // --- Scroll state ---
 
   /** @internal */
@@ -113,6 +129,7 @@ export class ScrollableDirective {
   // container's own ResizeObserver still covers everything about the viewport.
   public containerScrollState = signalElementScrollState(this.scrollContainerRef, {
     mutations: { childList: true, subtree: true, attributeFilter: ['class', 'hidden'] },
+    initialScrollPosition: this.initialActiveChildScrollPosition,
   });
 
   public isAtStart = computed(() => this.scrollObserverRef()?.isAtStart() ?? false);
@@ -135,10 +152,6 @@ export class ScrollableDirective {
   // --- Container dimensions (always available, cheap) ---
 
   public scrollableDimensions = signalElementDimensions(this.scrollContainerRef);
-
-  // --- Active children (self-registration) ---
-
-  private activeChildren = signal<ScrollableActiveChildRef[]>([]);
 
   // --- Loading template (self-registration) ---
 
@@ -269,6 +282,16 @@ export class ScrollableDirective {
    */
   public registerChrome(chrome: ScrollableChrome) {
     this.registeredChrome.update((entries) => [...entries, chrome]);
+  }
+
+  /**
+   * Register a child as the one to open the track on. Registration order is DOM order, and the first
+   * registered child whose `isActiveChildEnabled` reads `true` wins.
+   *
+   * @internal
+   */
+  public registerActiveChild(child: ScrollableActiveChildRef) {
+    this.activeChildren.update((children) => [...children, child]);
   }
 
   /** @internal */

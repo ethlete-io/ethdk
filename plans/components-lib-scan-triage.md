@@ -334,7 +334,25 @@ single-domain reach.
 - **Carousel, three Highs, one PR:** `playOnInit="false"` read in the constructor; the loop alignment
   latch consumed by a failed measurement (opens on a clone forever); play/pause ARIA contradicting the
   rendered icon whenever autoplay is paused for any reason but `stop()` — permanent under reduced
-  motion. The first two need the `fakeLayout` helper to guard. M
+  motion. The first two need the `fakeLayout` helper to guard. M — **DONE 2026-08-22**
+
+  Done: `isStopped` is a `linkedSignal` off `playOnInit` instead of a constructor read, so the binding
+  is honoured whenever it arrives. `carousel-loop.ts` latches `alignedShape` only after a successful
+  `scrollTo` and tracks the container's `scrollableDimensions()`, which is what brings the effect back
+  when a carousel inside a hidden tab panel or a collapsed accordion finally gets layout (the latch
+  move alone is not enough — nothing else that effect reads changes then). `CarouselPlayToggle`'s
+  `isPlaying` is now `autoplay.isPlaying()`, and `CarouselAutoplayDirective.toggle()` follows the same
+  signal, so the icon, the label, `aria-pressed` and what pressing the button does all agree. A local
+  `fakeLayout()` plus a fireable ResizeObserver live in `carousel.component.spec.ts`; all four
+  assertions were verified to fail without their fix.
+
+  Left open deliberately: the helpers stayed local rather than going into `test-helpers.ts` — the
+  shared fakes are _Spec-coverage_ #3, a programme of their own. `pauseOnHover`/`pauseOnFocus`/
+  `pauseOnOffScreen` are still missing from the docs input table (carousel Low, separate finding);
+  only `playOnInit` was added, since only its behaviour changed. Nothing surfaces `pauseReason()` on
+  the host yet (carousel UI/UX #2), so a reduced-motion reader still gets a control that is honest but
+  inert.
+
 - **Calendar: both shipped range strategies band an untouched calendar** (calendar High) and
   **`minuteStep="0"` throws `RangeError` inside a computed** (time-picker High). Fix the second with
   one shared `positiveIntegerAttribute`, per the calendar DX item. S each — **DONE 2026-08-22**

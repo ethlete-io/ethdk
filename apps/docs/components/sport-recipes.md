@@ -42,8 +42,10 @@ Four details worth keeping:
 
 - **The gap goes on the scroll container**, via `scrollableClass` - `et-scrollable` reads its computed value
   to work out how wide a half- or third-width child is, so there is no `gap` input to set instead.
-- **`etScrollableActiveChild` on the live match** - the rail opens on the match that's being played rather
-  than at the start of the week.
+- **`etScrollableActiveChild` on the live match** - the rail
+  [opens on](/components/scrollable#active-child) the match that's being played rather than at the start of
+  the week. It is the initial scroll position only, so a match going live later doesn't move the rail under
+  the reader.
 - **The wrapper carries `role="listitem"`**, not the card. The card owns its own role (a labelled group), so
   a `role` set on it from outside is overwritten.
 - **`grid h-full` on the card** equalises the heights: a live card has a badge row the others don't, and a
