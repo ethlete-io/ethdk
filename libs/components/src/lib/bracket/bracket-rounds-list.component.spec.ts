@@ -1,32 +1,11 @@
-import { Component, input, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, input } from '@angular/core';
 import '../../test-helpers';
-import { NormalizedMatch } from '../match';
-import { BracketMatchNormalizer } from './bracket-card-context';
-import { bracketFitsWidth, bracketNaturalWidth } from './bracket-fits-width';
+import { query, queryAll, textOf } from '../testing/driver-core';
 import { provideBracketLabels } from './bracket-labels';
-import { BracketRoundsListComponent } from './bracket-rounds-list.component';
+import { bracketFitsWidth, bracketNaturalWidth } from './bracket-fits-width';
 import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
-import { BracketDataSource } from './integrations';
-import { doubleEliminationBracketLayout, singleEliminationBracketLayout } from './layouts';
+import { bracketTestDriver, testBracketLayouts } from './testing/bracket-driver';
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from './stories/generate-bracket';
-
-/** The modes the fixtures below use - a source nothing here matches would throw ET3413. */
-const LAYOUTS = [singleEliminationBracketLayout(), doubleEliminationBracketLayout()];
-
-const normalizer: BracketMatchNormalizer = (match): NormalizedMatch => ({
-  id: match.id,
-  status: 'finished',
-  startTime: null,
-  home: { id: match.home?.id ?? 'h', name: 'Home', code: 'HOM', subtitle: null, emblem: null, seed: null },
-  away: { id: match.away?.id ?? 'a', name: 'Away', code: 'AWY', subtitle: null, emblem: null, seed: null },
-  homeScore: 2,
-  awayScore: 1,
-  resultKind: 'score',
-  gameScores: null,
-  winnerSide: 'home',
-  label: null,
-});
 
 /** Stands in for a consumer's own cell, to prove the overrides reach the list. */
 @Component({
@@ -39,69 +18,35 @@ class TestMatchComponent {
   public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<unknown, unknown> | null>();
 }
 
-@Component({
-  template: `
-    <et-bracket-rounds-list
-      [source]="source()"
-      [layouts]="LAYOUTS"
-      [matchNormalizer]="NORMALIZER"
-      [selectedRoundId]="selectedRoundId()"
-      [matchComponent]="matchComponent()"
-    />
-  `,
-  imports: [BracketRoundsListComponent],
-})
-class HostComponent {
-  // Signals, not plain fields: a plain field never refreshes a signal input.
-  public source = signal<BracketDataSource<null, null>>(generateSingleEliminationBracket(8));
-  public selectedRoundId = signal<string | null>(null);
-  public matchComponent = signal<typeof TestMatchComponent | undefined>(undefined);
-
-  protected readonly LAYOUTS = LAYOUTS;
-
-  protected readonly NORMALIZER = normalizer;
-}
-
 describe('BracketRoundsListComponent', () => {
-  let fixture: ComponentFixture<HostComponent>;
-  let host: HostComponent;
+  let driver: ReturnType<typeof bracketTestDriver>;
 
-  const sectionNames = () =>
-    Array.from(fixture.nativeElement.querySelectorAll('.et-bracket-rounds-list-section')).map((section) => ({
-      id: (section as HTMLElement).dataset['section'],
-      name: (section as HTMLElement).querySelector('.et-bracket-rounds-list-section-name')?.textContent?.trim() ?? null,
-    }));
+  const roundNames = () => queryAll(driver.fixture, '.et-bracket-default-round-header-name').map(textOf);
+  const matchCount = () => queryAll(driver.fixture, '.et-bracket-rounds-list-match').length;
 
-  const roundNames = () =>
-    Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.et-bracket-default-round-header-name'),
-    ).map((el) => el.textContent?.trim());
-
-  const matchCount = () => fixture.nativeElement.querySelectorAll('.et-bracket-rounds-list-match').length;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [HostComponent] }).compileComponents();
-
-    fixture = TestBed.createComponent(HostComponent);
-    host = fixture.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    driver = bracketTestDriver({
+      component: 'rounds-list',
+      source: generateSingleEliminationBracket(8),
+      layouts: testBracketLayouts,
+    });
   });
 
   it('renders every round of a single-elimination source in one unnamed section', () => {
-    expect(sectionNames()).toEqual([{ id: 'all', name: null }]);
+    expect(driver.sections()).toEqual([{ id: 'all', name: null }]);
     expect(roundNames()).toEqual(['Round 1', 'Round 2', 'Final']);
     expect(matchCount()).toBe(7);
   });
 
   it('draws the deciding round with the final card', () => {
-    expect(fixture.nativeElement.querySelectorAll('.et-bracket-final-host').length).toBe(1);
+    expect(queryAll(driver.fixture, '.et-bracket-final-host').length).toBe(1);
   });
 
   it('splits a double-elimination source into upper, lower and finals sections', () => {
-    host.source.set(generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true }));
-    fixture.detectChanges();
+    driver.host.source.set(generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true }));
+    driver.detectChanges();
 
-    expect(sectionNames()).toEqual([
+    expect(driver.sections()).toEqual([
       { id: 'upper', name: 'Upper bracket' },
       { id: 'lower', name: 'Lower bracket' },
       { id: 'finals', name: 'Finals' },
@@ -109,50 +54,45 @@ describe('BracketRoundsListComponent', () => {
   });
 
   it('gives the bracket-reset final the final card, not the grand final', () => {
-    host.source.set(generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true }));
-    fixture.detectChanges();
+    driver.host.source.set(generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true }));
+    driver.detectChanges();
 
-    const finalCards = fixture.nativeElement.querySelectorAll('.et-bracket-final-host');
+    const finalCards = queryAll(driver.fixture, '.et-bracket-final-host');
 
     expect(finalCards.length).toBe(1);
-    expect(finalCards[0].textContent).toContain('Bracket reset');
+    expect(finalCards[0]?.textContent).toContain('Bracket reset');
   });
 
   it('pins the final card so a wide list cannot flip it to the side-by-side arrangement', () => {
     // A list row is as wide as the page; only the grid, whose cells have a chosen width, leaves this open.
-    expect(fixture.nativeElement.querySelector('.et-bracket-final-card').getAttribute('data-size')).toBe('expanded');
+    expect(query(driver.fixture, '.et-bracket-final-card')?.getAttribute('data-size')).toBe('expanded');
   });
 
   it('narrows to a single round when selectedRoundId is set', () => {
-    host.selectedRoundId.set('se-r1');
-    fixture.detectChanges();
+    driver.host.selectedRoundId.set('se-r1');
+    driver.detectChanges();
 
     expect(roundNames()).toEqual(['Round 2']);
     expect(matchCount()).toBe(2);
   });
 
   it('renders a matchComponent of your own instead of the default card', () => {
-    host.matchComponent.set(TestMatchComponent);
-    fixture.detectChanges();
+    driver.host.matchComponent.set(TestMatchComponent);
+    driver.detectChanges();
 
     // The final keeps its own card - only the ordinary cells were overridden.
-    expect(fixture.nativeElement.querySelectorAll('.test-match').length).toBe(6);
+    expect(queryAll(driver.fixture, '.test-match').length).toBe(6);
   });
 
-  it('localizes the section headings', async () => {
-    TestBed.resetTestingModule();
-    await TestBed.configureTestingModule({
-      imports: [HostComponent],
+  it('localizes the section headings', () => {
+    driver = bracketTestDriver({
+      component: 'rounds-list',
+      source: generateDoubleEliminationBracket({ participantCount: 8 }),
+      layouts: testBracketLayouts,
       providers: [provideBracketLabels({ upperBracketSection: 'Oberes Bracket' })],
-    }).compileComponents();
+    });
 
-    const localized = TestBed.createComponent(HostComponent);
-    localized.componentInstance.source.set(generateDoubleEliminationBracket({ participantCount: 8 }));
-    localized.detectChanges();
-
-    expect(localized.nativeElement.querySelector('.et-bracket-rounds-list-section-name').textContent).toContain(
-      'Oberes Bracket',
-    );
+    expect(query(driver.fixture, '.et-bracket-rounds-list-section-name')?.textContent).toContain('Oberes Bracket');
   });
 });
 
@@ -162,23 +102,28 @@ describe('bracketNaturalWidth', () => {
 
     // 2 ordinary columns + the wider final column + 2 gaps.
     expect(
-      bracketNaturalWidth(source, { layouts: LAYOUTS, columnWidth: 200, finalColumnWidth: 300, columnGap: 50 }),
+      bracketNaturalWidth(source, {
+        layouts: testBracketLayouts,
+        columnWidth: 200,
+        finalColumnWidth: 300,
+        columnGap: 50,
+      }),
     ).toBe(800);
   });
 
   it('grows with the column width', () => {
     const source = generateSingleEliminationBracket(8);
 
-    expect(bracketNaturalWidth(source, { layouts: LAYOUTS, columnWidth: 300 })).toBeGreaterThan(
-      bracketNaturalWidth(source, { layouts: LAYOUTS, columnWidth: 200 }),
+    expect(bracketNaturalWidth(source, { layouts: testBracketLayouts, columnWidth: 300 })).toBeGreaterThan(
+      bracketNaturalWidth(source, { layouts: testBracketLayouts, columnWidth: 200 }),
     );
   });
 
   it('draws narrower at compact density', () => {
     const source = generateSingleEliminationBracket(8);
 
-    expect(bracketNaturalWidth(source, { layouts: LAYOUTS, density: 'compact' })).toBeLessThan(
-      bracketNaturalWidth(source, { layouts: LAYOUTS }),
+    expect(bracketNaturalWidth(source, { layouts: testBracketLayouts, density: 'compact' })).toBeLessThan(
+      bracketNaturalWidth(source, { layouts: testBracketLayouts }),
     );
   });
 
@@ -186,13 +131,15 @@ describe('bracketNaturalWidth', () => {
     const source = generateSingleEliminationBracket(8);
 
     // Two 400px columns and the preset's 200px final, with the preset's 32px gaps.
-    expect(bracketNaturalWidth(source, { layouts: LAYOUTS, density: 'compact', columnWidth: 400 })).toBe(1064);
+    expect(bracketNaturalWidth(source, { layouts: testBracketLayouts, density: 'compact', columnWidth: 400 })).toBe(
+      1064,
+    );
   });
 
   it('needs more room for a double-elimination source than a single-elimination one', () => {
     expect(
-      bracketNaturalWidth(generateDoubleEliminationBracket({ participantCount: 8 }), { layouts: LAYOUTS }),
-    ).toBeGreaterThan(bracketNaturalWidth(generateSingleEliminationBracket(8), { layouts: LAYOUTS }));
+      bracketNaturalWidth(generateDoubleEliminationBracket({ participantCount: 8 }), { layouts: testBracketLayouts }),
+    ).toBeGreaterThan(bracketNaturalWidth(generateSingleEliminationBracket(8), { layouts: testBracketLayouts }));
   });
 
   it('throws ET3413 when no layout is registered for the source', () => {
@@ -202,7 +149,7 @@ describe('bracketNaturalWidth', () => {
 
 describe('bracketFitsWidth', () => {
   const source = generateSingleEliminationBracket(8);
-  const config = { layouts: LAYOUTS, columnWidth: 200, finalColumnWidth: 300, columnGap: 50 };
+  const config = { layouts: testBracketLayouts, columnWidth: 200, finalColumnWidth: 300, columnGap: 50 };
 
   it('fits at exactly its natural width', () => {
     expect(bracketFitsWidth(source, config, 800)).toBe(true);
