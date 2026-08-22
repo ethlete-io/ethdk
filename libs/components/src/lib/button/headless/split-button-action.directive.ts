@@ -16,7 +16,7 @@ export class SplitButtonActionDirective {
   private hostElement = injectHostElement();
 
   constructor() {
-    this.splitButton?.registeredAction.set(this);
+    this.splitButton?.registerAction(this);
 
     this.destroyRef.onDestroy(() => {
       this.splitButton?.unregisterAction(this);

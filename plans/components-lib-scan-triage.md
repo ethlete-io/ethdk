@@ -363,7 +363,14 @@ single-domain reach.
   docs' own quick-start is keyboard-unremovable** (chip High). S each
 - **Pagination: `hidePreviousNext` ignored in compact mode; static `id` on the jump input; a
   documented 44px coarse-pointer target that no rule implements** (pagination High ×3). S
-- **Split button silently accepts a second action and can end up with none** (button Medium). S
+- **Split button silently accepts a second action and can end up with none** (button Medium). S —
+  **DONE 2026-08-22**. `SplitButtonDirective` keeps a list per segment kind, so `registeredAction`/
+  `registeredTrigger` resolve to the first registration and survive the removal of a duplicate; the
+  existing `afterNextRender` dev check now also throws `ET2304`/`ET2305` on more than one. Both
+  signals turned from writable into computeds - the sub-directives call the new `@internal`
+  `registerAction`/`registerTrigger`. Left open: the same clobbering shape exists in the shared
+  `registerSingleton` helper (select/cascader/date-picker triggers); changing that reaches ten
+  domains and is its own item.
 - **`et-otp-input`: a `g`-flagged charset drops every other character; shrinking `length` leaves an
   over-long value; `complete` never fires for a programmatic value** (otp Medium ×3). S
 - **Tag input: `removeLast()` on an empty value emits a new array**, writing spuriously into the form

@@ -281,6 +281,8 @@ All split button checks run in dev mode only.
 | `ET2301` | An `[etSplitButton]` element has no trigger segment.               | Add a button with the `etSplitButtonTrigger` directive.       |
 | `ET2302` | `etSplitButtonAction` is not inside an `[etSplitButton]` element.  | Move the action inside the split button (`et-split-button`).  |
 | `ET2303` | `etSplitButtonTrigger` is not inside an `[etSplitButton]` element. | Move the trigger inside the split button (`et-split-button`). |
+| `ET2304` | An `[etSplitButton]` element has more than one action segment.     | Remove the extra `etSplitButtonAction` buttons.               |
+| `ET2305` | An `[etSplitButton]` element has more than one trigger segment.    | Remove the extra `etSplitButtonTrigger` buttons.              |
 
 ## Dropzone (ET24xx)
 

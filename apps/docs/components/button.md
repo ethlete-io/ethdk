@@ -125,7 +125,7 @@ Every flavor works on `<a>` for navigation with identical styling:
 <StoryEmbed id="components-actions-button-split--default" height="500px" />
 
 - Give both segments the **same `variant`, `size` and `color`** - the container aligns their heights and outer corner radius, but the segment inputs stay yours to set.
-- Both segments are **required**; a missing one throws in dev mode (see [error codes](#error-codes)).
+- **Exactly one of each segment**: a missing _or_ a duplicated segment throws in dev mode (see [error codes](#error-codes)). When a duplicate slips through in production, the first segment of each kind is the one the group uses, and it stays registered when the extra one is removed.
 - The divider color is themeable via `--et-split-button-divider-color` (defaults to `currentColor` at 32%, so it adapts to the variant).
 - For custom-styled split buttons, the headless `SplitButtonDirective` (`[etSplitButton]`) plus the two segment directives carry the grouping semantics without the default styling.
 

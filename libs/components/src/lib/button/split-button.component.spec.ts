@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import '../../test-helpers';
 import { BUTTON_IMPORTS } from './button.imports';
-import { SplitButtonDirective } from './headless';
+import { SplitButtonActionDirective, SplitButtonDirective } from './headless';
 
 @Component({
   template: `
@@ -32,6 +32,24 @@ class SplitButtonEmptyTestHost {}
   imports: [...BUTTON_IMPORTS],
 })
 class SplitButtonOrphanActionTestHost {}
+
+@Component({
+  template: `
+    <et-split-button>
+      <button et-button etSplitButtonAction type="button">Save</button>
+
+      @if (showSecondAction()) {
+        <button et-button etSplitButtonAction type="button">Publish</button>
+      }
+
+      <button et-icon-button etSplitButtonTrigger type="button" aria-label="More save options">v</button>
+    </et-split-button>
+  `,
+  imports: [...BUTTON_IMPORTS],
+})
+class SplitButtonDuplicateActionTestHost {
+  showSecondAction = signal(true);
+}
 
 describe('SplitButtonComponent', () => {
   const tick = () => TestBed.inject(ApplicationRef).tick();
@@ -73,6 +91,31 @@ describe('SplitButtonComponent', () => {
     });
   });
 
+  describe('with a duplicate action segment', () => {
+    it('keeps the first action registered, and keeps it when the duplicate is removed', () => {
+      TestBed.configureTestingModule({ imports: [SplitButtonDuplicateActionTestHost] });
+
+      const fixture = TestBed.createComponent(SplitButtonDuplicateActionTestHost);
+
+      fixture.detectChanges();
+
+      const splitButton = fixture.debugElement
+        .query(By.directive(SplitButtonDirective))
+        .injector.get(SplitButtonDirective);
+      const actions = fixture.debugElement
+        .queryAll(By.directive(SplitButtonActionDirective))
+        .map((debugElement) => debugElement.injector.get(SplitButtonActionDirective));
+
+      expect(actions.length).toBe(2);
+      expect(splitButton.registeredAction()).toBe(actions[0]);
+
+      fixture.componentInstance.showSecondAction.set(false);
+      fixture.detectChanges();
+
+      expect(splitButton.registeredAction()).toBe(actions[0]);
+    });
+  });
+
   describe('dev mode enforcement', () => {
     class CollectingErrorHandler implements ErrorHandler {
       errors: unknown[] = [];
@@ -82,7 +125,12 @@ describe('SplitButtonComponent', () => {
       }
     }
 
-    const renderAndCollectErrors = (host: typeof SplitButtonEmptyTestHost | typeof SplitButtonOrphanActionTestHost) => {
+    const renderAndCollectErrors = (
+      host:
+        | typeof SplitButtonEmptyTestHost
+        | typeof SplitButtonOrphanActionTestHost
+        | typeof SplitButtonDuplicateActionTestHost,
+    ) => {
       TestBed.configureTestingModule({
         imports: [host],
         providers: [{ provide: ErrorHandler, useClass: CollectingErrorHandler }],
@@ -100,6 +148,12 @@ describe('SplitButtonComponent', () => {
       const errors = renderAndCollectErrors(SplitButtonEmptyTestHost);
 
       expect(errors.some((error) => String(error).includes('ET2300'))).toBe(true);
+    });
+
+    it('errors when a second action segment is added', () => {
+      const errors = renderAndCollectErrors(SplitButtonDuplicateActionTestHost);
+
+      expect(errors.some((error) => String(error).includes('ET2304'))).toBe(true);
     });
 
     it('errors when a segment is used outside a split button', () => {

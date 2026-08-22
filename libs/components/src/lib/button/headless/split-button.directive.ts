@@ -1,4 +1,4 @@
-import { Directive, afterNextRender, signal } from '@angular/core';
+import { Directive, afterNextRender, computed, signal } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { SplitButtonActionDirective } from './split-button-action.directive';
 import { SPLIT_BUTTON_ERROR_CODES } from './split-button-errors';
@@ -14,8 +14,14 @@ import { SplitButtonTriggerDirective } from './split-button-trigger.directive';
 export class SplitButtonDirective {
   private hostElement = injectHostElement();
 
-  public registeredAction = signal<SplitButtonActionDirective | null>(null);
-  public registeredTrigger = signal<SplitButtonTriggerDirective | null>(null);
+  private actions = signal<SplitButtonActionDirective[]>([]);
+  private triggers = signal<SplitButtonTriggerDirective[]>([]);
+
+  /** The action segment of the group, or `null` while none is registered. */
+  public registeredAction = computed(() => this.actions()[0] ?? null);
+
+  /** The trigger segment of the group, or `null` while none is registered. */
+  public registeredTrigger = computed(() => this.triggers()[0] ?? null);
 
   constructor() {
     if (ngDevMode) {
@@ -29,6 +35,15 @@ export class SplitButtonDirective {
           );
         }
 
+        if (this.actions().length > 1) {
+          throw new RuntimeError(
+            SPLIT_BUTTON_ERROR_CODES.DUPLICATE_ACTION,
+            '[SplitButtonDirective] A split button groups exactly two segments, but ' +
+              `${this.actions().length} [etSplitButtonAction] elements were found. Remove the extra ones.`,
+            { element: this.hostElement },
+          );
+        }
+
         if (!this.registeredTrigger()) {
           throw new RuntimeError(
             SPLIT_BUTTON_ERROR_CODES.MISSING_TRIGGER,
@@ -37,21 +52,36 @@ export class SplitButtonDirective {
             { element: this.hostElement },
           );
         }
+
+        if (this.triggers().length > 1) {
+          throw new RuntimeError(
+            SPLIT_BUTTON_ERROR_CODES.DUPLICATE_TRIGGER,
+            '[SplitButtonDirective] A split button groups exactly two segments, but ' +
+              `${this.triggers().length} [etSplitButtonTrigger] elements were found. Remove the extra ones.`,
+            { element: this.hostElement },
+          );
+        }
       });
     }
   }
 
   /** @internal */
+  public registerAction(action: SplitButtonActionDirective) {
+    this.actions.update((actions) => [...actions, action]);
+  }
+
+  /** @internal */
   public unregisterAction(action: SplitButtonActionDirective) {
-    if (this.registeredAction() === action) {
-      this.registeredAction.set(null);
-    }
+    this.actions.update((actions) => actions.filter((candidate) => candidate !== action));
+  }
+
+  /** @internal */
+  public registerTrigger(trigger: SplitButtonTriggerDirective) {
+    this.triggers.update((triggers) => [...triggers, trigger]);
   }
 
   /** @internal */
   public unregisterTrigger(trigger: SplitButtonTriggerDirective) {
-    if (this.registeredTrigger() === trigger) {
-      this.registeredTrigger.set(null);
-    }
+    this.triggers.update((triggers) => triggers.filter((candidate) => candidate !== trigger));
   }
 }

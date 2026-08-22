@@ -16,7 +16,7 @@ export class SplitButtonTriggerDirective {
   private hostElement = injectHostElement();
 
   constructor() {
-    this.splitButton?.registeredTrigger.set(this);
+    this.splitButton?.registerTrigger(this);
 
     this.destroyRef.onDestroy(() => {
       this.splitButton?.unregisterTrigger(this);
