@@ -370,10 +370,13 @@ raw string.
 | `charset` | `'numeric' \| 'alphanumeric' \| RegExp` | `'numeric'` | Accepted characters - everything else is stripped (pastes included).  |
 | `masked`  | `boolean`                               | `false`     | Renders dots instead of characters (PIN entry); the value stays real. |
 
-The `complete` output emits the value each time it reaches the full length.
-Pastes strip separators (`123-456` → `123456`) and truncate. Editing is
-append/delete-at-end (the caret is pinned to the end), with the active segment
-marked visually. Tokens: `--et-otp-input-segment-size` (`44px`),
+The `complete` output emits the value each time it reaches the full length, no
+matter who wrote it - typing, paste, SMS autofill or a programmatic write into
+the bound field. Pastes strip separators (`123-456` → `123456`) and truncate.
+Editing is append/delete-at-end (the caret is pinned to the end), with the active
+segment marked visually. A `charset` RegExp is tested per character, so its `g`
+and `y` flags are ignored. Narrowing `charset` or shrinking `length` at runtime
+re-sanitizes the value that is already in the field. Tokens: `--et-otp-input-segment-size` (`44px`),
 `--et-otp-input-segment-gap` (`8px`), `--et-otp-input-segment-radius` (`8px`).
 
 ::: warning Verify autofill on real devices

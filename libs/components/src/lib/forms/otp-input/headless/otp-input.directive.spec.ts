@@ -9,7 +9,7 @@ import { OtpInputCharset } from './otp-input.directive';
   template: `
     <et-otp-input
       [value]="value()"
-      [length]="4"
+      [length]="length()"
       [charset]="charset()"
       [masked]="masked()"
       (valueChange)="value.set($event)"
@@ -22,6 +22,7 @@ import { OtpInputCharset } from './otp-input.directive';
 })
 class OtpTestHost {
   value = signal('');
+  length = signal(4);
   charset = signal<OtpInputCharset>('numeric');
   masked = signal(false);
   completions: string[] = [];
@@ -78,6 +79,43 @@ describe('OtpInputDirective', () => {
     expect(driver.host.completions).toEqual(['1234', '1235']);
   });
 
+  it('emits completed for a programmatic value', () => {
+    driver.host.value.set('1234');
+    driver.tick();
+
+    expect(driver.host.completions).toEqual(['1234']);
+
+    driver.host.value.set('12');
+    driver.tick();
+    driver.host.value.set('1234');
+    driver.tick();
+
+    expect(driver.host.completions).toEqual(['1234', '1234']);
+  });
+
+  it('truncates the value when length shrinks', () => {
+    driver.type('1234');
+
+    driver.host.length.set(2);
+    driver.tick();
+
+    expect(driver.host.value()).toBe('12');
+    expect(driver.fieldValue()).toBe('12');
+    expect(driver.segmentTexts()).toEqual(['1', '2']);
+    expect(driver.host.completions).toEqual(['1234', '12']);
+  });
+
+  it('strips the value when the charset narrows', () => {
+    driver.host.charset.set('alphanumeric');
+    driver.tick();
+    driver.type('a1b2');
+
+    driver.host.charset.set('numeric');
+    driver.tick();
+
+    expect(driver.host.value()).toBe('12');
+  });
+
   it('masks the rendered characters, not the value', () => {
     driver.host.masked.set(true);
     driver.tick();
@@ -98,6 +136,18 @@ describe('OtpInputDirective', () => {
     driver.tick();
     driver.type('abc123def');
     expect(driver.host.value()).toBe('abcd');
+  });
+
+  it('ignores the g and y flags on a custom charset', () => {
+    driver.host.charset.set(/[0-9]/g);
+    driver.tick();
+    driver.type('123456');
+    expect(driver.host.value()).toBe('1234');
+
+    driver.host.charset.set(/[0-9]/y);
+    driver.tick();
+    driver.type('567890');
+    expect(driver.host.value()).toBe('5678');
   });
 
   it('marks the caret segment while focused', () => {

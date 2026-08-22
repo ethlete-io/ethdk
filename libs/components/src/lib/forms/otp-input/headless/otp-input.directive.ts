@@ -4,12 +4,14 @@ import {
   ElementRef,
   booleanAttribute,
   computed,
+  effect,
   inject,
   input,
   model,
   numberAttribute,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
@@ -89,14 +91,47 @@ export class OtpInputDirective
   private charPattern = computed(() => {
     const charset = this.charset();
 
-    return typeof charset === 'string' ? CHARSET_PATTERNS[charset] : charset;
+    if (typeof charset === 'string') {
+      return CHARSET_PATTERNS[charset];
+    }
+
+    // `test` on a global/sticky regex advances its `lastIndex`, so the per-character scan in
+    // `sanitize` would alternate true/false - strip both flags off a consumer's charset
+    return charset.global || charset.sticky ? new RegExp(charset.source, charset.flags.replace(/[gy]/g, '')) : charset;
   });
+
+  private completedValue: string | null = null;
 
   constructor() {
     super();
 
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+
+    // the segments and the native `maxlength` follow `length`/`charset`, an already committed
+    // value does not - so re-sanitize it here, and emit `complete` from the value rather than
+    // from the `input` handler, which never sees a programmatic write
+    effect(() => {
+      const sanitized = this.sanitize(this.value());
+      const isComplete = sanitized.length === this.length();
+
+      untracked(() => {
+        if (sanitized !== this.value()) {
+          this.value.set(sanitized);
+        }
+
+        if (!isComplete) {
+          this.completedValue = null;
+
+          return;
+        }
+
+        if (sanitized !== this.completedValue) {
+          this.completedValue = sanitized;
+          this.complete.emit(sanitized);
+        }
+      });
+    });
 
     const hostRef = inject<ElementRef<HTMLElement | null>>(ElementRef);
     const hostElement = hostRef.nativeElement;
@@ -136,7 +171,6 @@ export class OtpInputDirective
       return;
     }
 
-    const previous = this.value();
     const sanitized = this.sanitize(element.value);
 
     // normalize the element (rejected characters must not linger) and pin the caret to the
@@ -148,13 +182,6 @@ export class OtpInputDirective
 
     element.setSelectionRange(sanitized.length, sanitized.length);
     this.value.set(sanitized);
-
-    // emit whenever a *different* full-length code lands - not just when growing from incomplete,
-    // or replacing one complete code with another (select-all + paste, autofill over a filled
-    // field) would silently never re-complete
-    if (sanitized.length === this.length() && sanitized !== previous) {
-      this.complete.emit(sanitized);
-    }
   }
 
   /** @internal */
