@@ -217,7 +217,11 @@ the same as the [date and time pickers](/components/date-time-inputs) and the
 | Eyedropper                     | Only where the browser has the [EyeDropper API](https://developer.mozilla.org/docs/Web/API/EyeDropper) (Chromium at the time of writing); hidden everywhere else                                                    |
 
 Every surface is built around a native range input, which is what carries the
-keyboard and touch handling. Picking commits live - there is no confirm step, and
+keyboard and touch handling. **The surfaces read left to right in every writing
+direction** - their gradients are the picture the value is read off, so an RTL page
+gets the same area, hue and opacity tracks, unmirrored, and `ArrowRight` still means
+"more". Everything around them (the entry field, the swatch row, the advisory) follows
+the page direction as usual. Picking commits live - there is no confirm step, and
 closing the panel is not a cancel. The panel closes on `Escape`, on a click outside
 it, and on a `Tab` past its last control - see
 [how a field panel closes](/components/forms#how-a-field-panel-closes).

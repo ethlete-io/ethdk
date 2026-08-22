@@ -1,13 +1,15 @@
 import { Provider, Type } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { pasteInto, pointerEnter, pressKey, setInputValue, textOf, tick } from '../../testing/driver-core';
+import { ControlDriverOptions } from '../../testing/control-driver';
 import { createOverlayControlDriver, mountControl } from '../../testing/overlay-control-driver';
 import { SelectDirective } from '../select/headless/select.directive';
 
-export const createSelectDriver = <T>(fixture: ComponentFixture<T>) => {
+export const createSelectDriver = <T>(fixture: ComponentFixture<T>, controlOptions: ControlDriverOptions = {}) => {
   const base = createOverlayControlDriver(fixture, SelectDirective, {
     triggerSelector: '[etselecttrigger], [role="combobox"]',
     hide: (select) => select.hide(),
+    ...controlOptions,
   });
 
   // a trigger-inline search renders in the fixture, a panel-hosted one in the pane
@@ -79,5 +81,8 @@ export const createSelectDriver = <T>(fixture: ComponentFixture<T>) => {
 
 export type SelectDriver<T> = ReturnType<typeof createSelectDriver<T>>;
 
-export const mountSelect = <T>(component: Type<T>, providers: Provider[] = []) =>
-  createSelectDriver(mountControl(component, providers));
+export const mountSelect = <T>(
+  component: Type<T>,
+  providers: Provider[] = [],
+  controlOptions: ControlDriverOptions = {},
+) => createSelectDriver(mountControl(component, providers), controlOptions);

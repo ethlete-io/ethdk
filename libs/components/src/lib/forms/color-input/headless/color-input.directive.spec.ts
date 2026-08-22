@@ -2,6 +2,8 @@ import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
 import { ColorInputDriver, mountColorInput } from '../../testing/color-input-driver';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
+import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
+import { describeExpandedStateContract } from '../../testing/expanded-contract';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { COLOR_INPUT_IMPORTS } from '../color-input.imports';
 import { COLOR_NOTATION_ORDER, ColorNotation } from '../color-input.types';
@@ -63,6 +65,17 @@ class ColorInputTestHost {
 
 @Component({
   template: `
+    <et-form-field>
+      <et-label>Brand color</et-label>
+      <et-color-input />
+    </et-form-field>
+  `,
+  imports: [COLOR_INPUT_IMPORTS, FORM_FIELD_IMPORTS],
+})
+class ColorInputComponentInFormFieldTestHost {}
+
+@Component({
+  template: `
     <et-color-input [(value)]="value" [(mixed)]="mixed" [notations]="notations()" mixedLabel="Mixed colors" />
   `,
   imports: [COLOR_INPUT_IMPORTS],
@@ -88,6 +101,17 @@ describe('ColorInputDirective', () => {
     it('should compute labelId from registered label', () => {
       expect(driver.colorInput.labelId()).toMatch(/^et-label-\d+$/);
     });
+  });
+
+  describeExpandedStateContract(() => {
+    const driver = mountColorInput(ColorInputComponentInFormFieldTestHost, { directiveSelector: 'et-color-input' });
+
+    return {
+      open: () => driver.open(),
+      close: () => driver.close(),
+      trigger: () => driver.trigger(),
+      field: () => driver.query('et-form-field')!,
+    };
   });
 
   describe('value, state and picker', () => {

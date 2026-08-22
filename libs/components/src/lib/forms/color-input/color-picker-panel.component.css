@@ -70,6 +70,14 @@
     inline-size: var(--et-color-picker-area-size);
   }
 
+  /* pinned LTR: the gradients below paint physically and the pointer reading in
+     `internals/color-picker-engine.ts` is deliberately not mirrored, so a mirrored surface would
+     put the thumbs' `inset-inline-start` and the range inputs' arrow keys at odds with both */
+  .et-color-picker-area,
+  .et-color-picker-track {
+    direction: ltr;
+  }
+
   .et-color-picker-area {
     position: relative;
     aspect-ratio: 1;

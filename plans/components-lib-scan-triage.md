@@ -562,7 +562,17 @@ single-domain reach.
   Medium); and the `menu`→owned-roles half of #6, which no fix here needed.
 - **`et-color-input` never reports `expanded`**, so the field drops its open-popup styling
   (color-input Medium); **the picker's thumbs use logical offsets against physical gradients**, so it
-  is wrong in RTL (color-input High). S / M
+  is wrong in RTL (color-input High). S / M · **DONE 2026-08-22**
+  Done: `ColorInputDirective.expanded` is `computed(() => this.pickerOpen())` like every sibling
+  picker, and the picker's area and tracks are pinned `direction: ltr` - which fixes the thumbs, the
+  hue/alpha tracks' own pointer reading (the native range input mirrored, so an RTL press at 75%
+  committed 25%) and the arrow keys in one go, while the footer, swatch row and advisory keep the
+  page direction. New shared kit `forms/testing/expanded-contract.ts`, run from the color-input and
+  select specs. Left open: the other three popup controls (cascader, date-picker, date-range-picker)
+  are not yet wired to the contract - their drivers would each need the nested-directive selector
+  `select-driver` just gained, and their `expanded` is already correct, so it is coverage, not a fix;
+  and the picker still has no `dir`-aware option for consumers who would rather see a mirrored
+  gradient, since the pointer reading in `color-picker-engine.ts` is documented as un-mirrored.
 - **Dropzone: single-mode replace never fires the configured `delete`** (orphaned server file);
   **`clear()` ignores `disabled`/`readonly`**; **`DROPZONE_LABELS.uploading` is never read** (dropzone
   High + Medium ×2). S each · **DONE 2026-08-22**
