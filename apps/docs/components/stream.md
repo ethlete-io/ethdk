@@ -90,7 +90,20 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 <button (click)="slot.slotDirective.slot.pipActivate(() => goBackToThisView())" et-button>Enter PiP</button>
 ```
 
-`pipActivate(onBack?)` / `pipDeactivate()` control it; the PiP window chrome (close, back, grid toggle for multiple simultaneous PiP players) and window sizing are configurable via `provideStreamConfig({ pipChromeComponent, pipChrome, pipWindow, pipSlotPlaceholderComponent })` - `pipChrome` tunes the appearance of the built-in chrome without replacing it. Picture-in-picture is opt-in: add `STREAM_PIP_IMPORTS` for the floating window, the PiP player and the controls. A custom chrome component composes the headless PiP directives from that barrel: `etPipClose`, `etPipBack`, `etPipBringBack` and `etPipGridToggle`. The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
+`pipActivate(onBack?)` / `pipDeactivate()` control it; the PiP window chrome (close, back, grid toggle for multiple simultaneous PiP players) and window sizing are configurable via `provideStreamConfig({ pipChromeComponent, pipChrome, pipWindow, pipSlotPlaceholderComponent })` - `pipChrome` tunes the appearance of the built-in chrome without replacing it. Picture-in-picture is opt-in: add `STREAM_PIP_IMPORTS` for the floating window, the PiP player and the controls. A custom chrome component composes the headless PiP directives from that barrel: `etPipClose`, `etPipBack`, `etPipBringBack` and `etPipGridToggle`. It must also implement `PipChromeRef` (a `state` and an `animations` member) and provide itself under `PIP_CHROME_REF_TOKEN`, which is how the manager reaches into it - a chrome without that provider throws `ET1604`:
+
+```ts
+@Component({
+  providers: [{ provide: PIP_CHROME_REF_TOKEN, useExisting: MyPipChromeComponent }],
+  // …
+})
+export class MyPipChromeComponent implements PipChromeRef {
+  public state = createPipChromeState();
+  public animations = createPipChromeAnimations(this.state, {/* … */});
+}
+```
+
+The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
 
 <StoryEmbed id="components-media-stream-mixed--mixed-aspect-ratios" height="560px" />
 

@@ -695,7 +695,18 @@ Deduplicated across all 22 batches; several batches independently proposed the s
     `et-filter-overlay-submit-label`, `exportTableToCsv`, the four-of-six picker host names), guards
     that fire once per element after render instead of once at construction, and the missing duplicate
     registration guards (split button, `etRatingIcon`, range fields). Cheap, and each one currently
-    costs somebody a debugging session. M
+    costs somebody a debugging session. M — **batch 1 done 2026-08-22** (button, table, stream,
+    filter-overlay): `ET1604` now names `PIP_CHROME_REF_TOKEN` + `PipChromeRef` instead of an
+    impossible `hostDirectives` entry (Angular rejects a component there), the three
+    `{@link exportTableToCsv}` links became `tableToCsv` / `injectTableCsvExport`, and the
+    `et-filter-overlay-submit-label` JSDoc became the real `#submit="etFilterOverlaySubmit"` +
+    `submit.label()` pattern. The split-button segment guards (`ET2302`/`ET2303`) and
+    `assertInsideFilterOverlay` (`ET4200`) moved from `afterNextRender` into the constructor — the
+    optional parent inject is already resolved there, so the throw lands on the template's stack and
+    once instead of once per element. Duplicate registration for the split button was already done in
+    `45e1f169a`. Still open for a later batch: `registerScrollContainer`, the four-of-six picker host
+    names, `etRatingIcon` and the range-field duplicate guards (scrollable/forms — held by other
+    agents), and the calendar's per-cell `afterNextRender` structural throws.
 11. **Comment-policy cleanup where it is dense** (table — 34 % of non-spec TS — plus carousel, grid,
     bracket, calendar, scheduler, selection-controls). Not urgent, except the comments the scan proved
     _wrong_: the table keyboard-nav comment, the cascader column comment, `pruneEmptyInline`'s "three

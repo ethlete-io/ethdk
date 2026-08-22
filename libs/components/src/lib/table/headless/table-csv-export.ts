@@ -73,7 +73,7 @@ export type TableCsvSerializeOptions<T> = {
   formulaGuard?: boolean;
 };
 
-/** Options for {@link exportTableToCsv} - everything {@link TableCsvSerializeOptions} has, plus the file. */
+/** Options for {@link injectTableCsvExport} - everything {@link TableCsvSerializeOptions} has, plus the file. */
 export type TableCsvExportOptions<T> = Omit<TableCsvSerializeOptions<T>, 'rows'> & {
   /**
    * The rows to write - see {@link TableCsvSerializeOptions.rows}, plus a **provider** for rows the
@@ -201,8 +201,8 @@ const resolveColumns = <T>(table: TableCsvSource<T>, columns: TableCsvExportOpti
 
 /**
  * Build a table's rows as RFC 4180 CSV, without downloading anything - for uploading the file,
- * putting it on the clipboard, or asserting on it in a test. {@link exportTableToCsv} is the same
- * thing plus the download.
+ * putting it on the clipboard, or asserting on it in a test. {@link injectTableCsvExport} returns the
+ * same thing plus the download.
  *
  * A cell's text comes from the column's `exportValue`, else its `value` accessor. A column rendered
  * through an `etTableCell` template needs `exportValue`: a template is DOM, and there is nothing to

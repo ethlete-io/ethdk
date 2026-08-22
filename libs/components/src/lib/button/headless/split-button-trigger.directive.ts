@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, afterNextRender, inject } from '@angular/core';
+import { DestroyRef, Directive, inject } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { SPLIT_BUTTON_ERROR_CODES } from './split-button-errors';
 import { SplitButtonDirective } from './split-button.directive';
@@ -16,22 +16,18 @@ export class SplitButtonTriggerDirective {
   private hostElement = injectHostElement();
 
   constructor() {
+    if (ngDevMode && !this.splitButton) {
+      throw new RuntimeError(
+        SPLIT_BUTTON_ERROR_CODES.TRIGGER_OUTSIDE_SPLIT_BUTTON,
+        '[SplitButtonTriggerDirective] etSplitButtonTrigger must be placed inside an [etSplitButton] element.',
+        { element: this.hostElement },
+      );
+    }
+
     this.splitButton?.registerTrigger(this);
 
     this.destroyRef.onDestroy(() => {
       this.splitButton?.unregisterTrigger(this);
     });
-
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.splitButton) {
-          throw new RuntimeError(
-            SPLIT_BUTTON_ERROR_CODES.TRIGGER_OUTSIDE_SPLIT_BUTTON,
-            '[SplitButtonTriggerDirective] etSplitButtonTrigger must be placed inside an [etSplitButton] element.',
-            { element: this.hostElement },
-          );
-        }
-      });
-    }
   }
 }

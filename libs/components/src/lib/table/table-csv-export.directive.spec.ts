@@ -3,7 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import '../../test-helpers';
+import * as tableExports from './index';
 import { TableCsvExportConfig, TableCsvExportDirective } from './table-csv-export.directive';
+import { TableComponent } from './table.component';
 import { TABLE_CSV_EXPORT_IMPORTS, TABLE_IMPORTS } from './table.imports';
 import { TableColumns } from './table.types';
 
@@ -29,6 +31,7 @@ class HostComponent {
   public data = PEOPLE;
   public config = signal<TableCsvExportConfig<Person>>({});
   public csv = viewChild.required<TableCsvExportDirective<Person>>(TableCsvExportDirective);
+  public table = viewChild.required<TableComponent<Person>>(TableComponent);
 }
 
 /** The blob parts the download handed to `URL.createObjectURL`, so a test can read the written file. */
@@ -97,5 +100,29 @@ describe('TableCsvExportDirective', () => {
       expect(() => csv.export({ rows: [PEOPLE[0]!] })).not.toThrow();
       await expect(writtenText()).resolves.toBe('Name,Role\r\nAda,Admin');
     });
+  });
+});
+
+describe('the CSV export functions the directive docs point at', () => {
+  it('are both on the table barrel, under the names the docs use', () => {
+    expect(typeof tableExports.tableToCsv).toBe('function');
+    expect(typeof tableExports.injectTableCsvExport).toBe('function');
+    expect(Object.keys(tableExports)).not.toContain('exportTableToCsv');
+  });
+
+  it('serialize without downloading, and download the same bytes', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+
+    fixture.detectChanges();
+
+    const table = fixture.componentInstance.table();
+
+    expect(tableExports.tableToCsv(table)).toBe('Name,Role\r\nAda,Admin\r\nBob,Editor');
+
+    const download = TestBed.runInInjectionContext(() => tableExports.injectTableCsvExport());
+
+    await new Promise<void>((resolve) => download(table).subscribe({ complete: () => resolve() }));
+
+    await expect(writtenText()).resolves.toBe('Name,Role\r\nAda,Admin\r\nBob,Editor');
   });
 });

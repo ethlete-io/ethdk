@@ -1,24 +1,18 @@
-import { Directive, afterNextRender, computed, inject } from '@angular/core';
+import { Directive, computed, inject } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { FILTER_OVERLAY_ERROR_CODES } from '../filter-overlay-errors';
 import { FILTER_OVERLAY_TOKEN } from '../filter-overlay';
 
 /** Dev-mode guard: a control with no filter overlay above it has nothing to submit or reset. */
 const assertInsideFilterOverlay = (hasOverlay: boolean, directiveName: string) => {
-  if (!ngDevMode) return;
+  if (!ngDevMode || hasOverlay) return;
 
-  const element = injectHostElement();
-
-  afterNextRender(() => {
-    if (!hasOverlay) {
-      throw new RuntimeError(
-        FILTER_OVERLAY_ERROR_CODES.MISSING_FILTER_OVERLAY,
-        `[${directiveName}] No filter overlay was found. Add provideFilterOverlay({ … }) to the providers of the ` +
-          'overlay component this control lives in.',
-        { element },
-      );
-    }
-  });
+  throw new RuntimeError(
+    FILTER_OVERLAY_ERROR_CODES.MISSING_FILTER_OVERLAY,
+    `[${directiveName}] No filter overlay was found. Add provideFilterOverlay({ … }) to the providers of the ` +
+      'overlay component this control lives in.',
+    { element: injectHostElement() },
+  );
 };
 
 /**
@@ -45,7 +39,11 @@ export class FilterOverlaySubmitDirective {
 
   protected isDisabled = computed(() => this.filterOverlay?.submitButton().disabled ?? true);
 
-  /** The label the button should show. Rendered by `<et-filter-overlay-submit-label>`, or read it yourself. */
+  /**
+   * The label the button should show, e.g. "Show 42 results". Nothing renders it for you - reach the directive
+   * through its `exportAs` and interpolate it: `<button #submit="etFilterOverlaySubmit" etFilterOverlaySubmit>`
+   * then `submit.label()` in the button's content.
+   */
   public label = computed(() => this.filterOverlay?.submitButton().label ?? '');
 
   constructor() {

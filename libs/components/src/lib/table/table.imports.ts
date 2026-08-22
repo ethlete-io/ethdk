@@ -68,7 +68,8 @@ export const TABLE_COLUMN_CHOOSER_IMPORTS = [TableColumnChooserComponent] as con
 
 /**
  * Download the table as CSV from a button of your own (`etTableCsvExport`). No extra dependency - the
- * serializer is a pure function you can also call directly ({@link exportTableToCsv}).
+ * serializer is a pure function you can also call directly (`tableToCsv`), and the download is
+ * `injectTableCsvExport()`.
  */
 export const TABLE_CSV_EXPORT_IMPORTS = [TableCsvExportDirective] as const;
 

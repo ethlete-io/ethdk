@@ -47,7 +47,8 @@ const PIP_CHROME_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         if (ngDevMode && !ref.injector.get(PIP_CHROME_REF_TOKEN, null)) {
           throw new RuntimeError(
             STREAM_ERROR_CODES.MISSING_PIP_CHROME_TOKEN,
-            '[PipChromeManager] pipChromeComponent does not provide PIP_CHROME_REF_TOKEN. Ensure the component has hostDirectives: [StreamPipChromeComponent].',
+            '[PipChromeManager] pipChromeComponent does not provide PIP_CHROME_REF_TOKEN. Implement PipChromeRef on the ' +
+              'component and add { provide: PIP_CHROME_REF_TOKEN, useExisting: YourChromeComponent } to its providers.',
           );
         }
 

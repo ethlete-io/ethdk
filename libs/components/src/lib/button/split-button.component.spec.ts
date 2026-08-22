@@ -126,10 +126,7 @@ describe('SplitButtonComponent', () => {
     }
 
     const renderAndCollectErrors = (
-      host:
-        | typeof SplitButtonEmptyTestHost
-        | typeof SplitButtonOrphanActionTestHost
-        | typeof SplitButtonDuplicateActionTestHost,
+      host: typeof SplitButtonEmptyTestHost | typeof SplitButtonDuplicateActionTestHost,
     ) => {
       TestBed.configureTestingModule({
         imports: [host],
@@ -156,10 +153,10 @@ describe('SplitButtonComponent', () => {
       expect(errors.some((error) => String(error).includes('ET2304'))).toBe(true);
     });
 
-    it('errors when a segment is used outside a split button', () => {
-      const errors = renderAndCollectErrors(SplitButtonOrphanActionTestHost);
+    it('throws while the segment is constructed, before anything renders', () => {
+      TestBed.configureTestingModule({ imports: [SplitButtonOrphanActionTestHost] });
 
-      expect(errors.some((error) => String(error).includes('ET2302'))).toBe(true);
+      expect(() => TestBed.createComponent(SplitButtonOrphanActionTestHost)).toThrowError(/ET2302/);
     });
   });
 });

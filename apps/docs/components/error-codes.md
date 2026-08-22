@@ -206,7 +206,7 @@ The date input, date range input, [time picker](/components/time-picker), time i
 | `ET1601` | A platform SDK script failed to load.                                       | Check the URL and network - ad blockers commonly block player SDKs.                  |
 | `ET1602` | The Twitch Embed SDK loaded but its global isn't available.                 | Ensure the Twitch Embed SDK URL is accessible and not rewritten.                     |
 | `ET1603` | The YouTube IFrame API loaded but `YT.Player` isn't available.              | Ensure the YouTube IFrame API URL is accessible and not rewritten.                   |
-| `ET1604` | The configured PiP chrome component doesn't provide the PiP chrome token.   | Add `hostDirectives: [StreamPipChromeComponent]` to the chrome component.            |
+| `ET1604` | The configured PiP chrome component doesn't provide the PiP chrome token.   | Implement `PipChromeRef` and provide `PIP_CHROME_REF_TOKEN` with `useExisting`.      |
 | `ET1605` | The Facebook SDK loaded but its global isn't available.                     | Ensure the Facebook SDK URL is accessible and not rewritten.                         |
 | `ET1606` | The Vimeo Player SDK isn't available, or the player failed to become ready. | Ensure the Vimeo SDK URL is accessible; the message contains the underlying failure. |
 | `ET1607` | The TikTok player reported an error.                                        | The message contains the platform's error value; the video may be unavailable.       |
