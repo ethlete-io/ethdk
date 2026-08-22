@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, computed, inject, signal } from '@angular/core';
 import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { TAG_INPUT_ERROR_CODES } from '../tag-input-errors';
@@ -17,7 +17,7 @@ import { TagInputDirective } from './tag-input.directive';
     '[attr.aria-label]': 'tagInput?.ariaLabel() || null',
     '[attr.aria-labelledby]': 'tagInput?.labelId() || null',
     '[disabled]': 'tagInput?.disabled() || false',
-    '[readOnly]': 'tagInput?.readonly() || isFull()',
+    '[readOnly]': 'isReadOnly()',
     '(input)': 'handleInput()',
     '(keydown)': 'handleKeydown($event)',
     '(paste)': 'handlePaste($event)',
@@ -29,7 +29,15 @@ export class TagInputFieldDirective {
   protected tagInput = inject(TagInputDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
 
-  protected isFull = computed(() => this.tagInput?.isFull() ?? false);
+  private pendingText = signal('');
+
+  private isFull = computed(() => this.tagInput?.isFull() ?? false);
+
+  /**
+   * A full field locks - but never while it still holds text, or text a full input rejected would
+   * have no keyboard way out: the chips' remove buttons are not tab stops.
+   */
+  protected isReadOnly = computed(() => this.tagInput?.readonly() || (this.isFull() && !this.pendingText()));
 
   constructor() {
     registerSingleton(this.tagInput?.registeredField, this);
@@ -61,7 +69,7 @@ export class TagInputFieldDirective {
     }
 
     if (this.tagInput?.add(element.value) ?? false) {
-      element.value = '';
+      this.writeField('');
     }
   }
 
@@ -73,6 +81,8 @@ export class TagInputFieldDirective {
       return;
     }
 
+    this.pendingText.set(element.value);
+
     // typing a single-character separator commits the text before it
     const separators = tagInput.characterSeparators();
     const value = element.value;
@@ -81,10 +91,10 @@ export class TagInputFieldDirective {
     if (lastChar !== undefined && separators.includes(lastChar)) {
       const pending = value.slice(0, -1);
 
-      element.value = pending;
+      this.writeField(pending);
 
       if (pending && tagInput.add(pending)) {
-        element.value = '';
+        this.writeField('');
       }
     }
   }
@@ -128,16 +138,22 @@ export class TagInputFieldDirective {
       return;
     }
 
+    const element = this.elementRef.nativeElement;
+    const selectionStart = element.selectionStart ?? element.value.length;
+    const selectionEnd = element.selectionEnd ?? selectionStart;
+    const merged = element.value.slice(0, selectionStart) + text + element.value.slice(selectionEnd);
+
     const pattern = new RegExp(
       `[\\n${separators.map((separator) => separator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('')}]`,
     );
-    const parts = text.split(pattern);
+    const parts = merged.split(pattern);
 
     if (parts.length < 2) {
       return;
     }
 
     event.preventDefault();
+    this.writeField('');
     tagInput.addAll(parts);
   }
 
@@ -150,5 +166,10 @@ export class TagInputFieldDirective {
     this.commitPending();
     this.tagInput?.focused.set(false);
     this.tagInput?.touched.set(true);
+  }
+
+  private writeField(value: string) {
+    this.elementRef.nativeElement.value = value;
+    this.pendingText.set(value);
   }
 }

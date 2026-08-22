@@ -183,7 +183,15 @@ export class TagInputDirective
       return;
     }
 
-    this.value.set(this.value().filter((_, candidate) => candidate !== index));
+    const current = this.value();
+
+    // a no-op removal must not write: `filter` always allocates, so the model would notify with
+    // an equal-but-new array and dirty the bound form field on a keystroke that changed nothing
+    if (index < 0 || index >= current.length) {
+      return;
+    }
+
+    this.value.set(current.filter((_, candidate) => candidate !== index));
   }
 
   public removeLast() {

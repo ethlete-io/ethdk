@@ -408,12 +408,17 @@ panel at all.
 | `separators`      | `string[]`                        | `['Enter', ',']` | What commits the pending text: multi-character entries are key names, single characters commit as typed and split pastes. |
 | `allowDuplicates` | `boolean`                         | `false`          | Rejected duplicates keep the text in the field for editing.                                                               |
 | `normalizeTag`    | `(raw: string) => string \| null` | trim             | Maps raw text to the stored tag - return `null` to reject.                                                                |
-| `maxTags`         | `number \| undefined`             | `undefined`      | Further adds are ignored once reached.                                                                                    |
+| `maxTags`         | `number \| undefined`             | `undefined`      | Further adds are ignored once reached, and the field locks - unless it still holds text.                                  |
 
 Pending text also commits on blur; <kbd>Backspace</kbd> on the empty field
-removes the last tag; pastes split on separator characters and newlines. The
-chips are pointer-removable (`×`, out of the tab order) - see the
-[chip](/components/chip) guide.
+removes the last tag - and writes nothing at all when there is no tag left to
+remove, so a no-op keystroke never dirties the bound field. A paste splits on
+separator characters and newlines, spliced into the pending text at the caret
+the way the browser would insert it: field text `pre` plus a pasted `one,two`
+commits `preone` and `two`. Once `maxTags` is reached the field goes read-only,
+but never while it still holds text - text a full input refused stays editable
+instead of stranding the keyboard. The chips are pointer-removable (`×`, out of
+the tab order) - see the [chip](/components/chip) guide.
 
 An [`<et-counter />`](/components/forms#character-counter) counts tags rather than characters here, since the default measure is the array's length. Note the two limits differ in kind: `maxTags` **refuses** further tags, while a schema `maxLength()` lets them through and reports a validation error - pair the counter with the latter when you want the user to see they've gone over.
 

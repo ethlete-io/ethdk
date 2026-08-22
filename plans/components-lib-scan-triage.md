@@ -385,9 +385,19 @@ single-domain reach.
   (`minuteStep` half only). `internals/number-attributes.ts` holds the shared
   `positiveIntegerAttribute`; `TimePickerDirective.minuteStep`/`secondStep`, the same pair on the
   four date-time wrapper components, and `CalendarDirective.monthsShown` (whose inline clamp it
-  replaces) all use it, so `0`, a negative, a fraction and `NaN` all land on `1`. The calendar
-  range-strategy half is **untouched** — it is a separate behaviour question (when a strategy may
-  band without a user pick), not a transform.
+  replaces) all use it, so `0`, a negative, a fraction and `NaN` all land on `1`. **Both halves DONE
+  2026-08-22.** The range-strategy half is a gate on the preview _anchor_, not on the strategies: a
+  strategy may band whenever the reader has actually pointed at or keyboard-focused a cell — no pick
+  required, since `createFixedLengthRangeStrategy` never has an open endpoint and the week strategy
+  bands from the first hover on purpose. `CalendarDirective.focusedGrid` (`@internal`) holds the grid
+  DOM focus sits in, claimed on `focusin` and released on `focusout`/destroy by
+  `CalendarGridDirective` (whose `focusIsInside` is now a computed over it, so the cell focus-pull and
+  the preview read one truth); `previewRange` falls back to `focusedDate()` only while that is set,
+  and returns nothing at all outside `selectionView()`, which also kills the phantom band a
+  drilled-out coarse grid used to paint. Left open: nothing surfaces "has the reader interacted" as
+  public API, and `hoveredDate` is still only cleared by `pointerleave` and a completed pick — a
+  programmatic `view.set()` while the pointer rests on a cell keeps the hover anchor alive, which the
+  new `selectionView()` check now hides rather than fixes.
 - **`[etScrollableActiveChild]` registers nothing** — a documented, story-demonstrated,
   recipe-endorsed directive that does not exist at runtime (scrollable High). Wire it, or delete it
   plus three doc pages. M — **DONE 2026-08-22**. Wired, not deleted: the mechanism was already there
@@ -446,7 +456,14 @@ single-domain reach.
   items from the same batch are separate entries.
 - **Tag input: `removeLast()` on an empty value emits a new array**, writing spuriously into the form
   model on a no-op keystroke; **paste discards the pending text**; **a full input holding rejected
-  text is a keyboard dead end** (tag-input Medium ×3). S / M
+  text is a keyboard dead end** (tag-input Medium ×3). S / M — **DONE 2026-08-22**. `removeAt` now
+  returns early for an out-of-range index (so the model keeps the same array identity), `handlePaste`
+  splices the clipboard text into the field's pending text at the caret before splitting, and the
+  field's `readOnly` is `isFull() && !pendingText()` — a full field holding text stays editable and
+  locks again once emptied. Left open: `select-search.directive.ts`'s `handlePaste` has the identical
+  discard-the-query bug for `allowCustomValues` multi-selects (its own finding, and the query lives
+  in a signal there, so it is a different edit); the chips are still not keyboard-reachable, which is
+  the roving-tabindex enhancement, not this fix.
 - **`phone-input` `defaultCountry` applies only on the first computation** — a geo/locale default
   that resolves late never lands (phone Medium). S — **DONE 2026-08-22**. `country`'s `linkedSignal`
   now carries `defaultCountry` in its _source_, so a change re-runs the computation, and the new

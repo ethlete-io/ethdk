@@ -12,7 +12,7 @@ import { TAG_INPUT_IMPORTS } from '../tag-input.imports';
       [maxTags]="maxTags()"
       [disabled]="disabled()"
       [mixed]="mixed()"
-      (valueChange)="value.set($event)"
+      (valueChange)="writeValue($event)"
       (mixedChange)="mixed.set($event)"
       placeholder="Add tags"
     />
@@ -25,6 +25,14 @@ class TagInputTestHost {
   maxTags = signal<number | undefined>(undefined);
   disabled = signal(false);
   mixed = signal(false);
+
+  /** Every `valueChange` the control emitted - a no-op interaction must add nothing here. */
+  writes: string[][] = [];
+
+  writeValue(next: string[]) {
+    this.writes.push(next);
+    this.value.set(next);
+  }
 }
 
 describe('TagInputDirective', () => {
@@ -94,6 +102,32 @@ describe('TagInputDirective', () => {
     expect(driver.host.value()).toEqual(['one']);
   });
 
+  it('emits nothing when a removal has no tag to remove', () => {
+    const empty = driver.tagInput.value();
+
+    driver.press('Backspace');
+    driver.press('Backspace');
+
+    expect(driver.host.writes).toEqual([]);
+    expect(driver.tagInput.value()).toBe(empty);
+
+    driver.host.value.set(['one']);
+    driver.tick();
+
+    const filled = driver.tagInput.value();
+
+    driver.tagInput.removeAt(99);
+    driver.tagInput.removeAt(-1);
+    driver.tick();
+
+    expect(driver.host.writes).toEqual([]);
+    expect(driver.tagInput.value()).toBe(filled);
+
+    driver.press('Backspace');
+
+    expect(driver.host.writes).toEqual([[]]);
+  });
+
   it('removes a tag via its chip', () => {
     driver.host.value.set(['one', 'two']);
     driver.tick();
@@ -107,6 +141,41 @@ describe('TagInputDirective', () => {
     driver.paste('one, two\nthree');
 
     expect(driver.host.value()).toEqual(['one', 'two', 'three']);
+  });
+
+  it('splices a paste into the pending text at the caret', () => {
+    driver.type('pre');
+    driver.paste('one,two');
+
+    expect(driver.host.value()).toEqual(['preone', 'two']);
+    expect(driver.fieldValue()).toBe('');
+
+    driver.type('ab');
+    driver.field().setSelectionRange(1, 1);
+    driver.paste('x,y');
+
+    expect(driver.host.value()).toEqual(['preone', 'two', 'ax', 'yb']);
+    expect(driver.fieldValue()).toBe('');
+  });
+
+  it('keeps a full field editable while it still holds text', () => {
+    driver.host.value.set(['one']);
+    driver.host.maxTags.set(2);
+    driver.tick();
+
+    driver.typeAndPress('one', 'Enter');
+
+    expect(driver.fieldValue()).toBe('one');
+
+    driver.host.value.set(['one', 'two']);
+    driver.tick();
+
+    expect(driver.tagInput.isFull()).toBe(true);
+    expect(driver.field().readOnly).toBe(false);
+
+    driver.type('');
+
+    expect(driver.field().readOnly).toBe(true);
   });
 
   it('ignores interaction while disabled', () => {
