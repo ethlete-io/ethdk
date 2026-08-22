@@ -1,5 +1,5 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Directive, input, numberAttribute, output, signal } from '@angular/core';
+import { DestroyRef, Directive, inject, input, numberAttribute, output, signal } from '@angular/core';
 import { copyToClipboard } from '@ethlete/core';
 import { Subject, switchMap, tap, timer } from 'rxjs';
 
@@ -27,6 +27,8 @@ import { Subject, switchMap, tap, timer } from 'rxjs';
   },
 })
 export class CopyButtonDirective {
+  private destroyRef = inject(DestroyRef);
+
   /** The value to copy, or a getter for it - a getter avoids re-serializing on every change detection. */
   public text = input<string | (() => string)>('');
 
@@ -63,6 +65,7 @@ export class CopyButtonDirective {
           this.copySuccess.emit();
           this.reset$.next();
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }

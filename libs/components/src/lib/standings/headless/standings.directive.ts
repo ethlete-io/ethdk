@@ -1,4 +1,4 @@
-import { afterNextRender, booleanAttribute, computed, Directive, input } from '@angular/core';
+import { booleanAttribute, computed, Directive, effect, input } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { injectStandingsLabels, StandingsLabels } from '../standings-labels';
 import { STANDINGS_ERROR_CODES } from '../standings-errors';
@@ -76,25 +76,25 @@ export class StandingsDirective {
 
   constructor() {
     if (ngDevMode) {
-      afterNextRender(() => {
-        const zones = this.zones();
+      effect(() => this.assertZonesDoNotOverlap(this.zones()));
+    }
+  }
 
-        for (const [index, zone] of zones.entries()) {
-          const overlapping = zones.find(
-            (other, otherIndex) => otherIndex !== index && other.from <= zone.to && other.to >= zone.from,
-          );
+  private assertZonesDoNotOverlap(zones: readonly StandingsZone[]) {
+    for (const [index, zone] of zones.entries()) {
+      const overlapping = zones.find(
+        (other, otherIndex) => otherIndex !== index && other.from <= zone.to && other.to >= zone.from,
+      );
 
-          if (!overlapping) continue;
+      if (!overlapping) continue;
 
-          throw new RuntimeError(
-            STANDINGS_ERROR_CODES.OVERLAPPING_ZONES,
-            `[StandingsDirective] The zones "${zone.label}" (${zone.from}-${zone.to}) and "${overlapping.label}" ` +
-              `(${overlapping.from}-${overlapping.to}) both cover a position, so a row would be in both. ` +
-              'Give every zone its own range.',
-            { element: this.hostElement },
-          );
-        }
-      });
+      throw new RuntimeError(
+        STANDINGS_ERROR_CODES.OVERLAPPING_ZONES,
+        `[StandingsDirective] The zones "${zone.label}" (${zone.from}-${zone.to}) and "${overlapping.label}" ` +
+          `(${overlapping.from}-${overlapping.to}) both cover a position, so a row would be in both. ` +
+          'Give every zone its own range.',
+        { element: this.hostElement },
+      );
     }
   }
 }

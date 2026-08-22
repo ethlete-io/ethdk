@@ -77,7 +77,7 @@ export const toNotificationContent = (content: NotificationContentInput): Notifi
 export type NotificationManagerConfig = {
   /** Position of the notification stack on screen. @default 'bottom-end' */
   position: 'bottom-center' | 'bottom-start' | 'bottom-end' | 'top-center' | 'top-start' | 'top-end';
-  /** Maximum number of simultaneously visible notifications. @default 3 */
+  /** Maximum number of simultaneously visible notifications, floored at `1`. @default 3 */
   maxVisible: number;
   /**
    * Default auto-dismiss duration (ms) per status.

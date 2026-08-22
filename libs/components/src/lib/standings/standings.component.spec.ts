@@ -203,6 +203,17 @@ describe('StandingsComponent', () => {
       expect(all(fixture, '.et-standings-legend')).toHaveLength(0);
     });
 
+    it('are rejected when they overlap, whenever the overlap appears', () => {
+      const fixture = create();
+
+      fixture.componentInstance.zones.set([
+        { from: 1, to: 2, color: 'brand', label: 'Advances' },
+        { from: 2, to: 3, color: 'brand', label: 'Playoffs' },
+      ]);
+
+      expect(() => fixture.detectChanges()).toThrow(/both cover a position/);
+    });
+
     it('are absent entirely without a config', () => {
       const fixture = create();
 

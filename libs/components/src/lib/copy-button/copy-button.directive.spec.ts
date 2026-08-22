@@ -1,6 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import '../../test-helpers';
+import { CopyButtonDirective } from './copy-button.directive';
 import { COPY_BUTTON_IMPORTS } from './copy-button.imports';
 
 const stubClipboard = (clipboard: Partial<Clipboard> | undefined) => {
@@ -87,6 +89,28 @@ describe('CopyButtonDirective', () => {
     fixture.detectChanges();
 
     expect(button(fixture).getAttribute('data-copied')).toBeNull();
+  });
+
+  it('drops a copy that is still pending when the host is destroyed', async () => {
+    let settle: () => void = vi.fn();
+    stubClipboard({ writeText: vi.fn(() => new Promise<void>((resolve) => (settle = resolve))) });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const fixture = TestBed.createComponent(CopyButtonHostComponent);
+    fixture.detectChanges();
+
+    const directive = fixture.debugElement.query(By.directive(CopyButtonDirective)).injector.get(CopyButtonDirective);
+
+    button(fixture).click();
+    fixture.destroy();
+    settle();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(warn).not.toHaveBeenCalled();
+    expect(directive.copied()).toBe(false);
+
+    warn.mockRestore();
   });
 
   it('does not tick copied() or emit when the copy fails', async () => {

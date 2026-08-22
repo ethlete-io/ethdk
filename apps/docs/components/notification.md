@@ -16,7 +16,7 @@ provideNotificationManager({
 | Config option        | Default                                               | Notes                                                                           |
 | -------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `position`           | `'bottom-end'`                                        | `bottom/top` × `start/center/end` - `start`/`end` are logical (see below)       |
-| `maxVisible`         | `3`                                                   | Opening past the cap auto-dismisses the oldest                                  |
+| `maxVisible`         | `3`                                                   | Opening past the cap auto-dismisses the oldest (whole number, min 1)            |
 | `defaultDuration`    | `{ success: 4000, info: 4000, loading: 0, error: 0 }` | Per-status auto-dismiss (0 = sticky)                                            |
 | `statusColorMapping` | -                                                     | Status → app-registered color theme name for buttons inside the toast           |
 | `controlsColor`      | -                                                     | Color theme for control elements (e.g. dismiss); falls back to the status color |
