@@ -1,4 +1,14 @@
-import { afterNextRender, computed, Directive, effect, inject, Injector, input, signal } from '@angular/core';
+import {
+  afterNextRender,
+  computed,
+  DestroyRef,
+  Directive,
+  effect,
+  inject,
+  Injector,
+  input,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { dragGestureFrom, injectPrefersReducedMotion, injectRenderer } from '@ethlete/core';
 import { EMPTY, exhaustMap, fromEvent, tap } from 'rxjs';
@@ -100,6 +110,8 @@ export class TableReorderDirective {
   private autoScrollStep = 0;
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.stopAutoScroll());
+
     this.table.registerLayer({
       component: TableReorderOverlayComponent,
       injector: this.injector,

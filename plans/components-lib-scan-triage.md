@@ -177,7 +177,7 @@ off tab identity, not an index" — is _Improvements_ material; do the sort firs
 Resolves: tabs High "a tab inserted before the selected one desyncs selection from the panel".
 Done: `triggers` is a `sortByDomOrder` computed over the raw registrations, mirroring masonry.
 
-### 16. Gesture and stream teardown leaks · S
+### 16. Gesture and stream teardown leaks · S · **DONE 2026-08-22** (instances only)
 
 Three instances of one shape: `etTableReorder`'s edge-auto-scroll `rAF` loop has no destroy hook and
 re-queues forever on a detached table (table High); `ScrollableNavigationComponent` puts
@@ -185,6 +185,8 @@ re-queues forever on a detached table (table High); `ScrollableNavigationCompone
 outlives the component (scrollable High); three `timer(...).subscribe()` calls in
 `pip-window-position.ts` have no teardown (stream Medium). Add the lint rule the carousel/scrollable
 batch suggests ("`takeUntilDestroyed` last") rather than only fixing the instances.
+Done: the three instances are fixed. Still open: the "`takeUntilDestroyed` last" lint rule
+(eslint-plugin work) and the shared "destroyed mid-gesture" spec helper from _Spec-coverage_ #8.
 
 ### 17. `[warnings]` is a hard NG0303 on every text control but `et-input` · S · **DONE 2026-08-22**
 

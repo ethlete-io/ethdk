@@ -78,6 +78,7 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
       .pipe(
         take(1),
         tap(() => renderer.removeStyle(el.nativeElement, 'transition')),
+        takeUntilDestroyed(destroyRef),
       )
       .subscribe();
   };
@@ -90,6 +91,7 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
       .pipe(
         take(1),
         tap(() => renderer.removeStyle(el.nativeElement, 'transition')),
+        takeUntilDestroyed(destroyRef),
       )
       .subscribe();
   };
@@ -479,6 +481,7 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
             // eslint-disable-next-line @typescript-eslint/no-unused-expressions
             apply ? apply() : snapToViewport();
           }),
+          takeUntilDestroyed(destroyRef),
         )
         .subscribe();
     },

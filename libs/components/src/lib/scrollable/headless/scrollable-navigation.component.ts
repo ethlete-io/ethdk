@@ -197,7 +197,6 @@ export class ScrollableNavigationComponent {
 
     toObservable(this.manualActiveNavigationIndex)
       .pipe(
-        takeUntilDestroyed(),
         filter((i) => i !== null),
         switchMap(() =>
           scrollContainerRef$.pipe(
@@ -211,6 +210,8 @@ export class ScrollableNavigationComponent {
         ),
         debounceTime(50),
         tap(() => this.manualActiveNavigationIndex.set(null)),
+        // last, so it also unsubscribes the switched-in scroll listener - completion alone would not
+        takeUntilDestroyed(),
       )
       .subscribe();
   }
