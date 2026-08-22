@@ -132,6 +132,14 @@ describe('SelectionListDirective', () => {
       expect(driver.host.value()).toBe('b');
     });
 
+    it('focuses without selecting on activate (the label-click path)', () => {
+      driver.list.activate();
+      driver.fixture.detectChanges();
+
+      expect(driver.host.value()).toBeNull();
+      expect(document.activeElement).toBe(driver.optionEl(0));
+    });
+
     it('should deselect previous option on new selection', () => {
       driver.selectOption(0);
       driver.selectOption(1);

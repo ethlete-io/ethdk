@@ -113,14 +113,6 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
   }
 
   public activate() {
-    const firstItem = this.selection.items().find((i) => !i.disabled());
-
-    if (firstItem) {
-      if (!this.readonly()) {
-        this.selection.select(firstItem);
-      }
-
-      this.focusItem(firstItem);
-    }
+    this.focus({ preventScroll: true });
   }
 }

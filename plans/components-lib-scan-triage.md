@@ -67,7 +67,7 @@ rich-text-editor High "a required editor never announces `aria-required`", selec
 Land it as the batch-07 DX item "make these extend `TextFieldControlDirective`" — that single change
 also closes phone/otp/tag's missing `hidden`, `warnings`, `maxLength` and `pending`.
 
-### 6. Selection groups: clicking the group caption mutates the form value · S
+### 6. Selection groups: clicking the group caption mutates the form value · S · **DONE 2026-08-22**
 
 `selection-list/headless/selection-list.directive.ts:115-125` selects the first option from
 `activate()`, and `LabelDirective` calls `activate()` on every caption click. Every sibling
@@ -76,6 +76,9 @@ Resolves: selection-controls High "clicking a group's `<et-label>` selects/toggl
 selection-controls Medium "the `activate()`/`focus()` split is never used for the group case".
 Prefer the DX framing: have `LabelDirective` fall back to `focus()` for group controls, so the next
 group-shaped control is safe by default.
+Done: `SelectionListDirective.activate()` now delegates to `focus()`, matching every sibling group
+control. The label-level "safe by default" fallback would need a group marker on the control
+contract - left for the _Improvements_ contract work.
 
 ### 7. Command palette / overlay Escape, and the strategies reduce crash · M
 
