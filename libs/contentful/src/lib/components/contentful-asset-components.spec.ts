@@ -60,14 +60,20 @@ describe('Contentful asset components', () => {
     [ContentfulVideoComponent, 'et-contentful-video'],
     [ContentfulAudioComponent, 'et-contentful-audio'],
     [ContentfulFileComponent, 'et-contentful-file'],
-  ] as const)('skips a nullable gql url in %s', (component, hostClass) => {
-    TestBed.configureTestingModule({ imports: [component] });
+  ] as const)(
+    'skips a nullable gql url in %s',
+    (
+      component: Type<ContentfulVideoComponent | ContentfulAudioComponent | ContentfulFileComponent>,
+      hostClass: string,
+    ) => {
+      TestBed.configureTestingModule({ imports: [component] });
 
-    const fixture = createAssetFixture(component, gqlAsset({ url: null }));
+      const fixture = createAssetFixture(component, gqlAsset({ url: null }));
 
-    expect(fixture.nativeElement.classList).toContain(hostClass);
-    expect(fixture.nativeElement.children).toHaveLength(0);
-  });
+      expect(fixture.nativeElement.classList).toContain(hostClass);
+      expect(fixture.nativeElement.children).toHaveLength(0);
+    },
+  );
 
   it('protects file links opened in a new tab', () => {
     TestBed.configureTestingModule({ imports: [ContentfulFileComponent] });

@@ -487,7 +487,7 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(instance?.fields()).toBe(entry.fields);
       expect(instance?.sys()).toBe(entry.sys);
       expect(instance?.metadata()).toBe(entry.metadata);
-      expect(typeof instance?.includes().getEntry).toBe('function');
+      expect(typeof instance?.includes()?.getEntry).toBe('function');
     });
 
     it('only sets inputs that the component declares', () => {
@@ -848,7 +848,7 @@ describe('ContentfulRichTextRendererComponent', () => {
       }
 
       expect(error).toBeInstanceOf(RuntimeError);
-      expect((error as RuntimeError).message).toContain('No custom component found for entry type');
+      expect((error as RuntimeError<number>).message).toContain('No custom component found for entry type');
     });
 
     it('throws when the referenced asset is not in the includes', () => {

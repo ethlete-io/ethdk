@@ -59,11 +59,11 @@ and no story - and say so rather than reporting a clean run you didn't do.
   running build first silently fixes the drift instead of reporting it - which is why the
   check runs before build.
 - **`typecheck`** - every lib's build tsconfig excludes the spec files, so this is the only
-  step that type-checks them. The target exists for **components**, **cdk** and
-  **query-devtools**; `run-many` skips a project that does not declare it. `core`, `query` and
-  `contentful` have a `tsconfig.spec.json` but do not pass yet, and `cli`, `agent-rules` and
-  `timetrack` have specs but no spec tsconfig. Make a lib's spec types clean first. Then add
-  the target to that lib.
+  step that type-checks them. The target exists for **components**, **cdk**,
+  **query-devtools**, **core**, **query** and **contentful**; `run-many` skips a project that
+  does not declare it. `cli`, `agent-rules` and `libs/timetrack` have specs but no spec
+  tsconfig - giving one is a strictness decision that hasn't been made. Make a lib's spec
+  types clean first. Then add the target to that lib.
 - **`lint`** - re-run with `--fix` **scoped to the files you changed**:
   `npx eslint libs/components/src/lib/<domain> --fix`. Never
   `npx nx lint <project> --fix` - a project-wide fix races the user's editor autosave.
