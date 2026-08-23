@@ -1,9 +1,8 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../../form-field/headless';
+import { DurationInputDriver, mountDurationInput } from '../../../testing/duration-input-driver';
 import { DURATION_INPUT_IMPORTS } from '../duration-input.imports';
-import { DurationInputDirective } from './duration-input.directive';
 
 @Component({
   template: `
@@ -47,134 +46,107 @@ class AriaLabelledbyOverrideTestHost {}
 
 describe('DurationInputDirective accessible name forwarding', () => {
   it('forwards a consumer aria-label onto the field', () => {
-    TestBed.configureTestingModule({ imports: [AriaLabelDurationInputTestHost] });
-    const fixture = TestBed.createComponent(AriaLabelDurationInputTestHost);
-    fixture.detectChanges();
+    const driver = mountDurationInput(AriaLabelDurationInputTestHost);
 
-    const native = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-
-    expect(native.getAttribute('aria-label')).toBe('Time logged');
+    expect(driver.field().getAttribute('aria-label')).toBe('Time logged');
   });
 
   it('lets a consumer aria-labelledby override the projected label id', () => {
-    TestBed.configureTestingModule({ imports: [AriaLabelledbyOverrideTestHost] });
-    const fixture = TestBed.createComponent(AriaLabelledbyOverrideTestHost);
-    fixture.detectChanges();
+    const driver = mountDurationInput(AriaLabelledbyOverrideTestHost, { directiveSelector: 'et-duration-input' });
 
-    const native = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-
-    expect(native.getAttribute('aria-labelledby')).toBe('external-label-id');
+    expect(driver.field().getAttribute('aria-labelledby')).toBe('external-label-id');
   });
 });
 
 describe('DurationInputDirective', () => {
-  let fixture: ComponentFixture<DurationInputTestHost>;
-  let directive: DurationInputDirective;
-  let field: HTMLInputElement;
-
-  const type = (text: string) => {
-    field.value = text;
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-    fixture.detectChanges();
-  };
-
-  const blur = () => {
-    field.dispatchEvent(new FocusEvent('blur'));
-    fixture.detectChanges();
-  };
-
-  const enter = () => {
-    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    fixture.detectChanges();
-  };
+  let driver: DurationInputDriver<DurationInputTestHost>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [DurationInputTestHost] });
-    fixture = TestBed.createComponent(DurationInputTestHost);
-    fixture.detectChanges();
-    directive = fixture.debugElement.children[0]!.injector.get(DurationInputDirective);
-    field = fixture.nativeElement.querySelector('input');
+    driver = mountDurationInput(DurationInputTestHost);
   });
 
   it('renders a numeric text field', () => {
-    expect(field.getAttribute('type')).toBe('text');
-    expect(field.getAttribute('inputmode')).toBe('numeric');
+    expect(driver.field().getAttribute('type')).toBe('text');
+    expect(driver.field().getAttribute('inputmode')).toBe('numeric');
   });
 
   it('displays a preset value formatted', () => {
-    fixture.componentInstance.value.set(90_000);
-    fixture.detectChanges();
+    driver.host.value.set(90_000);
+    driver.tick();
 
-    expect(field.value).toBe('01:30');
+    expect(driver.fieldValue()).toBe('01:30');
   });
 
   it('commits a lenient bare-digit entry on blur (130 → 1:30)', () => {
-    field.dispatchEvent(new FocusEvent('focus'));
-    type('130');
-    blur();
+    driver.focus();
+    driver.type('130');
+    driver.blur();
 
-    expect(fixture.componentInstance.value()).toBe(90_000);
-    expect(field.value).toBe('01:30');
+    expect(driver.host.value()).toBe(90_000);
+    expect(driver.fieldValue()).toBe('01:30');
   });
 
   it('commits and reformats in place on Enter', () => {
-    field.dispatchEvent(new FocusEvent('focus'));
-    type('90');
-    enter();
+    driver.focus();
+    driver.type('90');
+    driver.enter();
 
-    expect(fixture.componentInstance.value()).toBe(90_000);
-    expect(field.value).toBe('01:30');
+    expect(driver.host.value()).toBe(90_000);
+    expect(driver.fieldValue()).toBe('01:30');
   });
 
   it('respects a custom format layout', () => {
-    fixture.componentInstance.durationFormat.set('hh:mm:ss');
-    fixture.detectChanges();
+    driver.host.durationFormat.set('hh:mm:ss');
+    driver.tick();
 
-    field.dispatchEvent(new FocusEvent('focus'));
-    type('12345');
-    blur();
+    driver.focus();
+    driver.type('12345');
+    driver.blur();
 
-    expect(fixture.componentInstance.value()).toBe(5_025_000);
-    expect(field.value).toBe('01:23:45');
+    expect(driver.host.value()).toBe(5_025_000);
+    expect(driver.fieldValue()).toBe('01:23:45');
   });
 
   it('keeps unparseable text visible and flags a parse error', () => {
-    field.dispatchEvent(new FocusEvent('focus'));
-    type('abc');
-    blur();
+    driver.focus();
+    driver.type('abc');
+    driver.blur();
 
-    expect(fixture.componentInstance.value()).toBeNull();
-    expect(directive.parseError()).toBe(true);
-    expect(field.value).toBe('abc');
-    expect(directive.shouldDisplayError()).toBe(true);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.durationInput.parseError()).toBe(true);
+    expect(driver.fieldValue()).toBe('abc');
+    expect(driver.durationInput.shouldDisplayError()).toBe(true);
   });
 
   it('clears the value on an empty commit', () => {
-    fixture.componentInstance.value.set(90_000);
-    fixture.detectChanges();
+    driver.host.value.set(90_000);
+    driver.tick();
 
-    field.dispatchEvent(new FocusEvent('focus'));
-    type('');
-    blur();
+    driver.focus();
+    driver.type('');
+    driver.blur();
 
-    expect(fixture.componentInstance.value()).toBeNull();
-    expect(directive.parseError()).toBe(false);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.durationInput.parseError()).toBe(false);
   });
 
   it('marks the control touched on blur', () => {
-    field.dispatchEvent(new FocusEvent('focus'));
-    blur();
+    driver.focus();
+    expect(document.activeElement).toBe(driver.field());
 
-    expect(fixture.componentInstance.touched()).toBe(true);
+    driver.blur();
+    expect(document.activeElement).not.toBe(driver.field());
+
+    expect(driver.host.touched()).toBe(true);
   });
 
   it('ignores input while disabled', () => {
-    fixture.componentInstance.disabled.set(true);
-    fixture.detectChanges();
+    driver.host.disabled.set(true);
+    driver.tick();
 
-    expect(field.disabled).toBe(true);
+    expect(driver.field().disabled).toBe(true);
 
-    directive.commitInput('130');
-    expect(fixture.componentInstance.value()).toBeNull();
+    driver.durationInput.commitInput('130');
+    expect(driver.host.value()).toBeNull();
   });
 });

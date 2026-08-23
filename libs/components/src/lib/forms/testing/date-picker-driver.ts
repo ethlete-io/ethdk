@@ -1,7 +1,14 @@
 import { Provider, Type } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
-import { blurField, focusField, pressKey, textOf, tick, typeInField } from '../../testing/driver-core';
+import { blurField, focusField, pressKey, textOf, tick, typeChars, typeInField } from '../../testing/driver-core';
 import { createOverlayControlDriver, mountControl } from '../../testing/overlay-control-driver';
+
+/**
+ * Types masked date/time text one character at a time, with the caret tracking the insertion -
+ * what `InputMaskDirective`'s live reformatting needs, unlike a whole-string {@link typeInField}.
+ * Every date/time mask spec re-implemented this loop; this is the one copy.
+ */
+export const typeMasked = (field: HTMLInputElement, text: string) => typeChars(field, text);
 
 /**
  * Driver for every date-time control that pairs text fields with a picker overlay: date, date
@@ -34,6 +41,7 @@ export const createDatePickerDriver = <T, D extends { closePicker: () => void }>
     field,
     fields: () => base.queryAll<HTMLInputElement>('input'),
     type: (text: string, selector?: string) => typeInField(field(selector), text),
+    typeMasked: (text: string, selector?: string) => typeMasked(field(selector), text),
     typeAndBlur: (text: string, selector?: string) => {
       typeInField(field(selector), text);
       blurField(field(selector));

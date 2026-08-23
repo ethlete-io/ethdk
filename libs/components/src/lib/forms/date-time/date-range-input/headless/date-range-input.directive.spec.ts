@@ -6,7 +6,7 @@ import { FormFieldDirective, LabelDirective } from '../../../form-field/headless
 import { InputMaskDirective } from '../../../masked-input/headless';
 import { silenceExpectedConsole } from '../../../../testing/expected-console';
 import { pressKey, tick } from '../../../../testing/driver-core';
-import { DatePickerDriver, mountDatePicker } from '../../../testing/date-picker-driver';
+import { DatePickerDriver, mountDatePicker, typeMasked } from '../../../testing/date-picker-driver';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
@@ -420,6 +420,7 @@ describe('DateRangeInputDirective with the opt-in typing mask', () => {
     field.focus();
     field.dispatchEvent(new FocusEvent('focus'));
     await fixture.whenStable();
+    expect(document.activeElement).toBe(field);
   };
 
   const blur = async (field: HTMLInputElement) => {
@@ -429,14 +430,8 @@ describe('DateRangeInputDirective with the opt-in typing mask', () => {
   };
 
   const type = async (field: HTMLInputElement, text: string) => {
-    for (const char of text) {
-      const caret = field.selectionStart ?? field.value.length;
-
-      field.value = field.value.slice(0, caret) + char + field.value.slice(caret);
-      field.setSelectionRange(caret + 1, caret + 1);
-      field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
-      await fixture.whenStable();
-    }
+    typeMasked(field, text);
+    await fixture.whenStable();
   };
 
   beforeEach(async () => {

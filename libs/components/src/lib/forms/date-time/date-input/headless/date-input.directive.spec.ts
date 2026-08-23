@@ -4,7 +4,7 @@ import '../../../../../test-helpers';
 import { pressKey, tick } from '../../../../testing/driver-core';
 import { InputMaskDirective } from '../../../masked-input/headless';
 import { silenceExpectedConsole } from '../../../../testing/expected-console';
-import { DatePickerDriver, mountDatePicker } from '../../../testing/date-picker-driver';
+import { DatePickerDriver, mountDatePicker, typeMasked } from '../../../testing/date-picker-driver';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
@@ -365,6 +365,7 @@ describe('DateInputDirective with the opt-in typing mask', () => {
     field.focus();
     field.dispatchEvent(new FocusEvent('focus'));
     await fixture.whenStable();
+    expect(document.activeElement).toBe(field);
   };
 
   const blur = async () => {
@@ -380,14 +381,8 @@ describe('DateInputDirective with the opt-in typing mask', () => {
   };
 
   const type = async (text: string) => {
-    for (const char of text) {
-      await edit((el) => {
-        const caret = el.selectionStart ?? el.value.length;
-
-        el.value = el.value.slice(0, caret) + char + el.value.slice(caret);
-        el.setSelectionRange(caret + 1, caret + 1);
-      }, 'insertText');
-    }
+    typeMasked(field, text);
+    await fixture.whenStable();
   };
 
   const paste = (text: string) =>

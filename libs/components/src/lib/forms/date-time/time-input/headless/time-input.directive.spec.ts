@@ -11,7 +11,7 @@ import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.dir
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { TimeInputFieldDirective } from './time-input-field.directive';
 import { TimeInputDirective } from './time-input.directive';
-import { DatePickerDriver, mountDatePicker } from '../../../testing/date-picker-driver';
+import { DatePickerDriver, mountDatePicker, typeMasked } from '../../../testing/date-picker-driver';
 import { pressKey, tick } from '../../../../testing/driver-core';
 
 @Component({
@@ -326,15 +326,10 @@ describe('TimeInputDirective with the opt-in typing mask', () => {
     field.focus();
     field.dispatchEvent(new FocusEvent('focus'));
     await fixture.whenStable();
+    expect(document.activeElement).toBe(field);
 
-    for (const char of '0930') {
-      const caret = field.selectionStart ?? field.value.length;
-
-      field.value = field.value.slice(0, caret) + char + field.value.slice(caret);
-      field.setSelectionRange(caret + 1, caret + 1);
-      field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
-      await fixture.whenStable();
-    }
+    typeMasked(field, '0930');
+    await fixture.whenStable();
 
     expect(field.value).toBe('09:30');
 

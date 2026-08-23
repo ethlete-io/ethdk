@@ -1,9 +1,9 @@
 import { Component, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import '../../../../test-helpers';
-import { FieldControlDriver, mountFieldControl } from '../../../testing/field-control-driver';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { MASKED_INPUT_IMPORTS } from '../../masked-input/masked-input.imports';
+import { InputDriver, mountInput } from '../../testing/input-driver';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { INPUT_IMPORTS } from '../input.imports';
 import { InputDirective } from './input.directive';
@@ -88,9 +88,6 @@ class NullableFieldTestHost {
 })
 class AriaLabelledbyOverrideTestHost {}
 
-const mountInput = <T>(component: new () => T, directiveSelector?: string) =>
-  mountFieldControl(component, InputDirective, { directiveSelector });
-
 describe('InputDirective', () => {
   describe('accessible name forwarding', () => {
     it('forwards a consumer aria-label onto the native input', () => {
@@ -100,17 +97,17 @@ describe('InputDirective', () => {
     });
 
     it('lets a consumer aria-labelledby override the projected label id', () => {
-      const driver = mountInput(AriaLabelledbyOverrideTestHost, 'et-input');
+      const driver = mountInput(AriaLabelledbyOverrideTestHost, { directiveSelector: 'et-input' });
 
       expect(driver.field().getAttribute('aria-labelledby')).toBe('external-label-id');
     });
   });
 
   describe('inside form field', () => {
-    let driver: FieldControlDriver<InputInFormFieldTestHost, InputDirective>;
+    let driver: InputDriver<InputInFormFieldTestHost>;
 
     beforeEach(() => {
-      driver = mountInput(InputInFormFieldTestHost, '[etInput]');
+      driver = mountInput(InputInFormFieldTestHost, { directiveSelector: '[etInput]' });
     });
 
     it('should create', () => {
@@ -132,7 +129,7 @@ describe('InputDirective', () => {
   });
 
   describe('standalone', () => {
-    let driver: FieldControlDriver<StandaloneInputTestHost, InputDirective>;
+    let driver: InputDriver<StandaloneInputTestHost>;
 
     beforeEach(() => {
       driver = mountInput(StandaloneInputTestHost);
@@ -152,7 +149,7 @@ describe('InputDirective', () => {
   });
 
   describe('value and state', () => {
-    let driver: FieldControlDriver<StandaloneInputTestHost, InputDirective>;
+    let driver: InputDriver<StandaloneInputTestHost>;
 
     beforeEach(() => {
       driver = mountInput(StandaloneInputTestHost);
@@ -172,7 +169,7 @@ describe('InputDirective', () => {
   });
 
   describe('nullable bound field', () => {
-    let driver: FieldControlDriver<NullableFieldTestHost, InputDirective>;
+    let driver: InputDriver<NullableFieldTestHost>;
 
     beforeEach(() => {
       driver = mountInput(NullableFieldTestHost);
