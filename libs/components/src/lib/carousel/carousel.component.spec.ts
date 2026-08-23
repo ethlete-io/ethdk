@@ -1,11 +1,13 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { flushFrames } from '../testing/driver-core';
 import { LayoutRule, fakeElementScroll, fakeLayout, fakeResizeObserver, stackedChildren } from '../testing/fake-layout';
 import { CarouselComponent } from './carousel.component';
 import { CAROUSEL_IMPORTS } from './carousel.imports';
 import { provideCarouselLabels } from './carousel-labels';
 import { CarouselAutoplayDirective, CarouselDirective } from './headless';
+import { CAROUSEL_SLIDE_PROGRESS_PROPERTY } from './headless/internals/carousel-slide-progress';
 
 type Slide = { title: string };
 
@@ -374,6 +376,59 @@ describe('CarouselComponent', () => {
       expect(scroll.lastCall()?.options).toEqual({ left: restingOffset, behavior: 'instant' });
     });
 
+    it('crosses the seam once the scroll settles on a clone, landing on the same picture a track away', async () => {
+      const resizeObserver = fakeResizeObserver();
+      const scroll = fakeElementScroll();
+
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
+
+      fakeLayout(CAROUSEL_LAYOUT);
+      resizeObserver.fire();
+      fixture.detectChanges();
+
+      const container = host(fixture).querySelector('.et-scrollable-container') as HTMLElement;
+      const cloneCount = carousel.cloneCount();
+      const trackLength = carousel.count() * SLIDE_SIZE;
+
+      // resting on the leading clone run - the far side of the seam from the real run
+      container.scrollLeft = 0;
+      container.dispatchEvent(new Event('scrollend'));
+      fixture.detectChanges();
+
+      expect(scroll.lastCall()?.options).toEqual({ left: trackLength, behavior: 'instant' });
+
+      // and the same holds crossing the trailing seam, in the other direction
+      const trailingOffset = (cloneCount + carousel.count()) * SLIDE_SIZE;
+
+      container.scrollLeft = trailingOffset;
+      container.dispatchEvent(new Event('scrollend'));
+      fixture.detectChanges();
+
+      expect(scroll.lastCall()?.options).toEqual({ left: trailingOffset - trackLength, behavior: 'instant' });
+    });
+
+    it('does not cross the seam while a real slide is resting, even though it settled', async () => {
+      const resizeObserver = fakeResizeObserver();
+      const scroll = fakeElementScroll();
+
+      const fixture = await createLoopingHost();
+
+      fakeLayout(CAROUSEL_LAYOUT);
+      resizeObserver.fire();
+      fixture.detectChanges();
+
+      const container = host(fixture).querySelector('.et-scrollable-container') as HTMLElement;
+      const callsBeforeSettle = scroll.calls().length;
+
+      // the first real slide, not a clone - nothing to correct
+      container.scrollLeft = SLIDE_SIZE * 2;
+      container.dispatchEvent(new Event('scrollend'));
+      fixture.detectChanges();
+
+      expect(scroll.calls().length).toBe(callsBeforeSettle);
+    });
+
     it('renders clones either side of the slides, marked hidden and inert and left out of the count', async () => {
       const fixture = await createLoopingHost();
       const carousel = fixture.componentInstance.carousel();
@@ -536,6 +591,52 @@ describe('CarouselComponent', () => {
       expect(fixture.componentInstance.carousel().resolvedTransitionDriver()).toBe('none');
       // the effect is still reported, so a consumer's own CSS can still hang off it
       expect(host(fixture).querySelector('et-carousel')?.getAttribute('data-transition')).toBe('wipe');
+    });
+  });
+
+  describe('slide progress', () => {
+    const progressOf = (slide: Element | undefined) =>
+      (slide as HTMLElement | undefined)?.style.getPropertyValue(CAROUSEL_SLIDE_PROGRESS_PROPERTY);
+
+    it('fills the progress property for every slide once the js driver takes over', () => {
+      const fixture = createHost();
+
+      fakeLayout(CAROUSEL_LAYOUT);
+      fixture.componentInstance.transition.set('dim');
+      fixture.componentInstance.transitionDriver.set('js');
+      fixture.detectChanges();
+
+      const slides = slideElements(fixture);
+
+      // slide 0 fills the viewport exactly (0), slide 1 sits just past it (-1, clamped), and so does 2
+      expect(progressOf(slides[0])).toBe('0.000');
+      expect(progressOf(slides[1])).toBe('-1.000');
+      expect(progressOf(slides[2])).toBe('-1.000');
+    });
+
+    it('recomputes the progress as the track scrolls, and clears it when the driver hands back off', async () => {
+      const fixture = createHost();
+
+      fakeLayout(CAROUSEL_LAYOUT);
+      fixture.componentInstance.transition.set('dim');
+      fixture.componentInstance.transitionDriver.set('js');
+      fixture.detectChanges();
+
+      const container = host(fixture).querySelector('.et-scrollable-container') as HTMLElement;
+      const slides = slideElements(fixture);
+
+      container.scrollLeft = SLIDE_SIZE;
+      container.dispatchEvent(new Event('scroll'));
+      await flushFrames();
+
+      // slide 1 is now exactly where slide 0 was - centred in the viewport
+      expect(progressOf(slides[1])).toBe('0.000');
+
+      fixture.componentInstance.transitionDriver.set('none');
+      fixture.detectChanges();
+
+      // nothing is filling the property any more, so it must not be left behind stale
+      expect(progressOf(slides[1])).toBe('');
     });
   });
 });

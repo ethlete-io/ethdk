@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { createScrollableDriver } from './testing/scrollable-driver';
 import { ScrollableComponent } from './scrollable.component';
 import {
   SCROLLABLE_DARKEN_IMPORTS,
@@ -9,87 +10,25 @@ import {
   SCROLLABLE_NAVIGATION_IMPORTS,
 } from './scrollable.imports';
 
-const ensureObserverMocks = () => {
-  const windowWithObservers = window as typeof window & {
-    ResizeObserver?: typeof ResizeObserver;
-    IntersectionObserver?: typeof IntersectionObserver;
-  };
-
-  if (!windowWithObservers.ResizeObserver) {
-    class ResizeObserverMock {
-      constructor(callback: ResizeObserverCallback) {
-        void callback;
-      }
-
-      observe() {
-        return undefined;
-      }
-
-      unobserve() {
-        return undefined;
-      }
-
-      disconnect() {
-        return undefined;
-      }
-    }
-
-    windowWithObservers.ResizeObserver = ResizeObserverMock as typeof ResizeObserver;
-  }
-
-  if (!windowWithObservers.IntersectionObserver) {
-    class IntersectionObserverMock {
-      constructor(callback: IntersectionObserverCallback) {
-        void callback;
-      }
-
-      observe() {
-        return undefined;
-      }
-
-      unobserve() {
-        return undefined;
-      }
-
-      disconnect() {
-        return undefined;
-      }
-
-      takeRecords() {
-        return [];
-      }
-
-      root: Element | Document | null = null;
-      rootMargin = '';
-      scrollMargin = '';
-      thresholds: ReadonlyArray<number> = [];
-    }
-
-    windowWithObservers.IntersectionObserver = IntersectionObserverMock as typeof IntersectionObserver;
-  }
-};
-
 describe('ScrollableComponent', () => {
   let fixture: ComponentFixture<ScrollableComponent>;
-  let host: HTMLElement;
+  let driver: ReturnType<typeof createScrollableDriver<ScrollableComponent>>;
 
   beforeEach(() => {
-    ensureObserverMocks();
-
     TestBed.configureTestingModule({
       imports: [ScrollableComponent],
     });
 
     fixture = TestBed.createComponent(ScrollableComponent);
-    host = fixture.nativeElement;
+    driver = createScrollableDriver(fixture);
   });
 
   it('renders masks by default and no chrome until a feature registers some', () => {
     fixture.detectChanges();
 
-    expect(host.querySelector('et-scrollable-masks')).not.toBeNull();
-    expect(host.querySelector('et-scrollable-buttons')).toBeNull();
-    expect(host.querySelector('et-scrollable-navigation')).toBeNull();
+    expect(driver.masks()).not.toBeNull();
+    expect(driver.buttons()).toBeNull();
+    expect(driver.navigation()).toBeNull();
   });
 
   it('forwards container role and custom class inputs', () => {
@@ -97,7 +36,7 @@ describe('ScrollableComponent', () => {
     fixture.componentRef.setInput('scrollableClass', 'custom-scroll-container');
     fixture.detectChanges();
 
-    const container = host.querySelector('.et-scrollable-container');
+    const container = driver.container();
     expect(container?.getAttribute('role')).toBe('tablist');
     expect(container?.classList.contains('custom-scroll-container')).toBe(true);
   });
@@ -106,7 +45,7 @@ describe('ScrollableComponent', () => {
     fixture.componentRef.setInput('renderMasks', false);
     fixture.detectChanges();
 
-    expect(host.querySelector('et-scrollable-masks')).toBeNull();
+    expect(driver.masks()).toBeNull();
   });
 });
 
@@ -125,8 +64,6 @@ describe('ScrollableComponent opt-in features', () => {
   class TestHostComponent {}
 
   it('stamps the buttons and carries the feature host classes', () => {
-    ensureObserverMocks();
-
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
 
