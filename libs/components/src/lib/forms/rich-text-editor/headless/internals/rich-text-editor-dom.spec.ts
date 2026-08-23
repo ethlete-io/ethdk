@@ -1,87 +1,29 @@
-import { DOCUMENT } from '@angular/common';
-import { TestBed } from '@angular/core/testing';
-import { injectRenderer } from '@ethlete/core';
 import '../../../../../test-helpers';
+import {
+  caretAtEndOf,
+  RichTextEditorDomHarness,
+  richTextEditorDomHarness,
+  selectRange,
+  selectText,
+} from '../../../testing/rich-text-editor-driver';
 import { provideRichTextEditorAutoformat } from '../../tools/rich-text-editor-autoformat.provider';
 import { provideRichTextEditorDefaultTools } from '../../tools/rich-text-editor-default-tools.provider';
-import { injectRichTextEditorDom, provideRichTextEditorDom, RichTextEditorDom } from './rich-text-editor-dom';
 
 describe('RichTextEditorDom', () => {
-  let renderer: NonNullable<ReturnType<typeof injectRenderer>>;
-  let doc: Document;
+  let setup: (html: string) => RichTextEditorDomHarness;
 
   beforeEach(() => {
     // Every optional DOM domain is provided here: this spec covers the DOM layer itself, and what
     // happens without a domain is covered by the directive spec.
-    TestBed.configureTestingModule({ providers: [provideRichTextEditorDom(), provideRichTextEditorDefaultTools()] });
-    renderer = TestBed.runInInjectionContext(() => injectRenderer());
-    doc = TestBed.inject(DOCUMENT);
+    setup = richTextEditorDomHarness([provideRichTextEditorDefaultTools()]).setup;
   });
-
-  afterEach(() => {
-    doc.body.innerHTML = '';
-    doc.getSelection()?.removeAllRanges();
-  });
-
-  const setup = (html: string): { root: HTMLElement; dom: RichTextEditorDom } => {
-    const root = renderer.createElement('div');
-    root.contentEditable = 'true';
-    root.innerHTML = html;
-    renderer.appendChild(doc.body, root);
-
-    const dom = TestBed.runInInjectionContext(() => injectRichTextEditorDom());
-    dom.root.set(root);
-
-    return { root, dom };
-  };
-
-  const select = (start: Node, startOffset: number, end: Node, endOffset: number) => {
-    const selection = doc.getSelection();
-    const range = doc.createRange();
-    range.setStart(start, startOffset);
-    range.setEnd(end, endOffset);
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-  };
-
-  // Selects by plain-text character offsets regardless of how many marks currently wrap the
-  // text - approximates a user re-dragging a selection over content that already has formatting.
-  const selectByTextOffsets = (root: HTMLElement, startOffset: number, endOffset: number) => {
-    const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    let pos = 0;
-    let startNode: Node | null = null;
-    let startNodeOffset = 0;
-    let endNode: Node | null = null;
-    let endNodeOffset = 0;
-    let node: Node | null;
-
-    while ((node = walker.nextNode())) {
-      const len = (node.textContent ?? '').length;
-
-      if (!startNode && pos + len >= startOffset) {
-        startNode = node;
-        startNodeOffset = startOffset - pos;
-      }
-
-      if (!endNode && pos + len >= endOffset) {
-        endNode = node;
-        endNodeOffset = endOffset - pos;
-      }
-
-      pos += len;
-    }
-
-    if (startNode && endNode) {
-      select(startNode, startNodeOffset, endNode, endNodeOffset);
-    }
-  };
 
   describe('insertInlineText (stored marks)', () => {
     it('breaks out of a mark at a collapsed caret so the inserted text is unformatted', () => {
       const { root, dom } = setup('<strong>abc</strong>');
       const strong = root.firstChild as HTMLElement;
       const text = strong.firstChild as Node;
-      select(text, 3, text, 3); // collapsed caret at the end, inside <strong>
+      selectRange(text, 3, text, 3); // collapsed caret at the end, inside <strong>
 
       dom.insertInlineText('x', []);
 
@@ -91,7 +33,7 @@ describe('RichTextEditorDom', () => {
     it('splits a mark and inserts unformatted text mid-word', () => {
       const { root, dom } = setup('<strong>abcd</strong>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 2, text, 2);
+      selectRange(text, 2, text, 2);
 
       dom.insertInlineText('X', []);
 
@@ -101,7 +43,7 @@ describe('RichTextEditorDom', () => {
     it('wraps inserted text in the given marks at a plain collapsed caret', () => {
       const { root, dom } = setup('hi');
       const text = root.firstChild as Node;
-      select(text, 2, text, 2);
+      selectRange(text, 2, text, 2);
 
       dom.insertInlineText('Q', ['strong']);
 
@@ -113,7 +55,7 @@ describe('RichTextEditorDom', () => {
       // keystroke, snapping the caret back inside the mark - the toggle-off would silently undo.
       const { root, dom } = setup('one <strong>two</strong>');
       const text = (root.querySelector('strong') as HTMLElement).firstChild as Node;
-      select(text, 3, text, 3); // collapsed caret at the end, inside <strong>
+      selectRange(text, 3, text, 3); // collapsed caret at the end, inside <strong>
 
       dom.insertInlineText(' ', []);
 
@@ -123,7 +65,7 @@ describe('RichTextEditorDom', () => {
     it('keeps a mid-line inserted space as a plain space', () => {
       const { root, dom } = setup('<strong>two</strong>rest');
       const text = (root.querySelector('strong') as HTMLElement).firstChild as Node;
-      select(text, 3, text, 3);
+      selectRange(text, 3, text, 3);
 
       dom.insertInlineText(' ', []);
 
@@ -133,7 +75,7 @@ describe('RichTextEditorDom', () => {
     it('prunes an underline shell emptied by the split, instead of leaking the tag', () => {
       const { root, dom } = setup('<u>abc</u>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 0, text, 0);
+      selectRange(text, 0, text, 0);
 
       dom.insertInlineText('X', []);
 
@@ -143,7 +85,7 @@ describe('RichTextEditorDom', () => {
     it('prunes an inline-code shell emptied by the split', () => {
       const { root, dom } = setup('<code>abc</code>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 0, text, 0);
+      selectRange(text, 0, text, 0);
 
       dom.insertInlineText('X', []);
 
@@ -153,7 +95,7 @@ describe('RichTextEditorDom', () => {
     it('leaves an emptied fenced code block alone - it is not a stranded mark shell', () => {
       const { root, dom } = setup('<pre><code></code></pre><p>ab</p>');
       const text = (root.querySelector('p') as HTMLElement).firstChild as Node;
-      select(text, 1, text, 1);
+      selectRange(text, 1, text, 1);
 
       dom.insertInlineText('X', []);
 
@@ -163,7 +105,7 @@ describe('RichTextEditorDom', () => {
     it('reports the inline marks wrapping the caret', () => {
       const { root, dom } = setup('<strong><em>x</em></strong>');
       const text = (root.querySelector('em') as HTMLElement).firstChild as Node;
-      select(text, 1, text, 1);
+      selectRange(text, 1, text, 1);
 
       expect(dom.activeInlineTags().sort()).toEqual(['em', 'strong']);
     });
@@ -172,7 +114,7 @@ describe('RichTextEditorDom', () => {
   describe('toggleInline', () => {
     it('wraps a plain selection in the tag', () => {
       const { root, dom } = setup('hello world');
-      select(root.firstChild as Node, 0, root.firstChild as Node, 5);
+      selectRange(root.firstChild as Node, 0, root.firstChild as Node, 5);
 
       dom.toggleInline('strong');
 
@@ -181,12 +123,12 @@ describe('RichTextEditorDom', () => {
 
     it('uses em and del for italic and strikethrough', () => {
       const italic = setup('hello');
-      select(italic.root.firstChild as Node, 0, italic.root.firstChild as Node, 5);
+      selectRange(italic.root.firstChild as Node, 0, italic.root.firstChild as Node, 5);
       italic.dom.toggleInline('em');
       expect(italic.root.innerHTML).toBe('<em>hello</em>');
 
       const strike = setup('bye');
-      select(strike.root.firstChild as Node, 0, strike.root.firstChild as Node, 3);
+      selectRange(strike.root.firstChild as Node, 0, strike.root.firstChild as Node, 3);
       strike.dom.toggleInline('del');
       expect(strike.root.innerHTML).toBe('<del>bye</del>');
     });
@@ -194,7 +136,7 @@ describe('RichTextEditorDom', () => {
     it('unwraps when the whole selection is already marked', () => {
       const { root, dom } = setup('<strong>hello</strong> world');
       const strong = root.firstChild as Node;
-      select(strong.firstChild as Node, 0, strong.firstChild as Node, 5);
+      selectRange(strong.firstChild as Node, 0, strong.firstChild as Node, 5);
 
       dom.toggleInline('strong');
 
@@ -205,7 +147,7 @@ describe('RichTextEditorDom', () => {
     it('unwraps only the selected portion of a marked element', () => {
       const { root, dom } = setup('<strong>hello</strong> world');
       const strong = root.firstChild as Node;
-      select(strong.firstChild as Node, 0, strong.firstChild as Node, 2);
+      selectRange(strong.firstChild as Node, 0, strong.firstChild as Node, 2);
 
       dom.toggleInline('strong');
 
@@ -214,7 +156,7 @@ describe('RichTextEditorDom', () => {
 
     it('is a no-op for a collapsed selection', () => {
       const { root, dom } = setup('hello');
-      select(root.firstChild as Node, 2, root.firstChild as Node, 2);
+      selectRange(root.firstChild as Node, 2, root.firstChild as Node, 2);
 
       dom.toggleInline('em');
 
@@ -226,7 +168,7 @@ describe('RichTextEditorDom', () => {
       const del = root.querySelector('del') as HTMLElement;
       const text = del.firstChild as Text;
 
-      select(text, 0, text, text.length);
+      selectRange(text, 0, text, text.length);
 
       dom.toggleInline('strong');
 
@@ -237,7 +179,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<strong><em>abc def</em></strong>');
       const text = (root.querySelector('em') as HTMLElement).firstChild as Node;
 
-      select(text, 4, text, 7);
+      selectRange(text, 4, text, 7);
 
       dom.toggleInline('strong');
 
@@ -252,7 +194,7 @@ describe('RichTextEditorDom', () => {
       const strongText = (root.querySelector('strong') as HTMLElement).firstChild as Node;
       const cd = root.lastChild as Node;
 
-      select(strongText, 0, cd, 1);
+      selectRange(strongText, 0, cd, 1);
 
       dom.toggleInline('em');
 
@@ -263,7 +205,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('A short intro');
 
       // Selects "A short " - including the space before "intro" as the last character.
-      select(root.firstChild as Node, 0, root.firstChild as Node, 8);
+      selectRange(root.firstChild as Node, 0, root.firstChild as Node, 8);
 
       dom.toggleInline('strong');
 
@@ -274,7 +216,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('intro A short');
 
       // Selects " A short" - including the space after "intro" as the first character.
-      select(root.firstChild as Node, 5, root.firstChild as Node, 13);
+      selectRange(root.firstChild as Node, 5, root.firstChild as Node, 13);
 
       dom.toggleInline('strong');
 
@@ -285,7 +227,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('A  short');
       const text = root.firstChild as Node;
 
-      select(text, 1, text, 3);
+      selectRange(text, 1, text, 3);
 
       dom.toggleInline('strong');
 
@@ -296,14 +238,14 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('A short intro');
 
       // Bold "A short " including the trailing space, exactly like a real drag selection would.
-      select(root.firstChild as Node, 0, root.firstChild as Node, 8);
+      selectRange(root.firstChild as Node, 0, root.firstChild as Node, 8);
       dom.toggleInline('strong');
       expect(root.innerHTML).toBe('<strong>A short</strong> intro');
 
       // Now select just "A short" (excluding the space, which was never marked to begin with -
       // trimming above already dropped it) and remove bold.
       const strongText = (root.querySelector('strong') as HTMLElement).firstChild as Node;
-      select(strongText, 0, strongText, 7);
+      selectRange(strongText, 0, strongText, 7);
       dom.toggleInline('strong');
 
       expect(root.innerHTML).toBe('A short intro');
@@ -316,7 +258,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<strong>A short </strong>intro');
       const text = (root.querySelector('strong') as HTMLElement).firstChild as Node;
 
-      select(text, 0, text, 7);
+      selectRange(text, 0, text, 7);
 
       dom.toggleInline('strong');
 
@@ -329,19 +271,19 @@ describe('RichTextEditorDom', () => {
       // Bold only "A shor", leaving the trailing "t" out - mimics a real, slightly-off drag
       // selection - then re-select the full word (now split across the <strong> boundary) for
       // each subsequent toggle, as a user re-dragging over the already-formatted text would.
-      selectByTextOffsets(root, 0, 6);
+      selectText(root, 0, 6);
       dom.toggleInline('strong');
 
-      selectByTextOffsets(root, 0, 7);
+      selectText(root, 0, 7);
       dom.toggleInline('em');
 
-      selectByTextOffsets(root, 0, 7);
+      selectText(root, 0, 7);
       dom.toggleInline('del');
 
       // The trailing "t" was never bolded above, so this selection is only partially marked -
       // toggling applies the mark to the whole selection rather than removing it, per existing
       // toggle semantics. What matters here is that no empty shells or duplicate marks survive.
-      selectByTextOffsets(root, 0, 7);
+      selectText(root, 0, 7);
       dom.toggleInline('strong');
 
       expect(root.innerHTML).toBe('<em><del><strong>A short</strong></del></em>');
@@ -353,7 +295,7 @@ describe('RichTextEditorDom', () => {
       const strongText = (root.lastChild as HTMLElement).firstChild as Node;
 
       // Selects "A shor", leaving the trailing "t" of the already-bold word outside the selection.
-      select(textA, 0, strongText, 4);
+      selectRange(textA, 0, strongText, 4);
 
       dom.toggleInline('strong');
 
@@ -365,7 +307,7 @@ describe('RichTextEditorDom', () => {
     it('wraps each list item slice separately when the selection spans items', () => {
       const { root, dom } = setup('<ul><li>one</li><li>two</li></ul>');
       const [li1, li2] = Array.from(root.querySelectorAll('li'));
-      select(li1?.firstChild as Node, 0, li2?.firstChild as Node, 3);
+      selectRange(li1?.firstChild as Node, 0, li2?.firstChild as Node, 3);
 
       dom.toggleInline('em');
 
@@ -375,7 +317,7 @@ describe('RichTextEditorDom', () => {
     it('does not create list items when the selection sweeps up an empty item', () => {
       const { root, dom } = setup('<ol><li><br></li><li>two</li><li>three</li></ol>');
       const [li1, li2] = Array.from(root.querySelectorAll('li'));
-      select(li1 as Node, 0, li2?.firstChild as Node, 3);
+      selectRange(li1 as Node, 0, li2?.firstChild as Node, 3);
 
       dom.toggleInline('em');
 
@@ -385,7 +327,7 @@ describe('RichTextEditorDom', () => {
     it('reports the mark as active right after wrapping across items', () => {
       const { root, dom } = setup('<ol><li><br></li><li>two</li><li>three</li></ol>');
       const [li1, li3] = [root.querySelectorAll('li')[0], root.querySelectorAll('li')[2]];
-      select(li1 as Node, 0, li3?.firstChild as Node, 5);
+      selectRange(li1 as Node, 0, li3?.firstChild as Node, 5);
 
       dom.toggleInline('em');
 
@@ -395,7 +337,7 @@ describe('RichTextEditorDom', () => {
     it('keeps reporting earlier marks after stacking a second mark across items', () => {
       const { root, dom } = setup('<ul><li>one</li><li>two</li></ul>');
       const [li1, li2] = Array.from(root.querySelectorAll('li'));
-      select(li1?.firstChild as Node, 0, li2?.firstChild as Node, 3);
+      selectRange(li1?.firstChild as Node, 0, li2?.firstChild as Node, 3);
 
       dom.toggleInline('strong');
       dom.toggleInline('em');
@@ -410,7 +352,7 @@ describe('RichTextEditorDom', () => {
     it('wraps each paragraph slice separately when the selection spans paragraphs', () => {
       const { root, dom } = setup('<p>one</p><p>two</p>');
       const [p1, p2] = Array.from(root.children);
-      select(p1?.firstChild as Node, 0, p2?.firstChild as Node, 3);
+      selectRange(p1?.firstChild as Node, 0, p2?.firstChild as Node, 3);
 
       dom.toggleInline('strong');
 
@@ -422,18 +364,18 @@ describe('RichTextEditorDom', () => {
     it('moves the caret out of inline code on ArrowRight at its end', () => {
       const { root, dom } = setup('<code>ab</code>');
       const text = root.querySelector('code')?.firstChild as Node;
-      select(text, 2, text, 2); // collapsed at end, inside <code>
+      selectRange(text, 2, text, 2); // collapsed at end, inside <code>
 
       expect(dom.codeExit('ArrowRight')).toBe(true);
       // caret now sits outside the code, in a following text node
-      const range = doc.getSelection()!.getRangeAt(0);
+      const range = document.getSelection()!.getRangeAt(0);
       expect(dom.closestWithin(range.startContainer, 'code')).toBeNull();
     });
 
     it('is a no-op when the caret is not at a code boundary', () => {
       const { root, dom } = setup('<code>abc</code>');
       const text = root.querySelector('code')?.firstChild as Node;
-      select(text, 1, text, 1); // middle of the code
+      selectRange(text, 1, text, 1); // middle of the code
 
       expect(dom.codeExit('ArrowRight')).toBe(false);
     });
@@ -442,7 +384,7 @@ describe('RichTextEditorDom', () => {
   describe('toggleInline across table cells', () => {
     it('wraps each cell within itself instead of tearing the table apart', () => {
       const { root, dom } = setup('<table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>');
-      selectByTextOffsets(root, 0, 2); // across both cells
+      selectText(root, 0, 2); // across both cells
 
       dom.toggleInline('strong');
 
@@ -458,7 +400,7 @@ describe('RichTextEditorDom', () => {
       // re-tagged into it (which dropped the mark), and the mark stays detectable so one toggle removes it
       const { root, dom } = setup('<strong>hello</strong>');
       const strong = root.firstChild as Node;
-      select(strong.firstChild as Node, 0, strong.firstChild as Node, 5);
+      selectRange(strong.firstChild as Node, 0, strong.firstChild as Node, 5);
 
       dom.headings!.toggleHeading('h2');
       expect(root.innerHTML).toBe('<h2><strong>hello</strong></h2>');
@@ -472,7 +414,7 @@ describe('RichTextEditorDom', () => {
     it('is a no-op when the caret is inside a table (never wraps the table in a heading)', () => {
       const { root, dom } = setup('<table><tbody><tr><td>x</td></tr></tbody></table>');
       const cellText = root.querySelector('td')?.firstChild as Node;
-      select(cellText, 0, cellText, 1);
+      selectRange(cellText, 0, cellText, 1);
 
       dom.headings!.toggleHeading('h2');
 
@@ -482,7 +424,7 @@ describe('RichTextEditorDom', () => {
     it('keeps the block alignment when re-tagging between paragraph and heading', () => {
       const { root, dom } = setup('<p style="text-align: center">middle</p>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 0, text, 0);
+      selectRange(text, 0, text, 0);
 
       dom.headings!.toggleHeading('h2');
       expect(root.innerHTML).toBe('<h2 style="text-align: center;">middle</h2>');
@@ -493,7 +435,7 @@ describe('RichTextEditorDom', () => {
 
     it('re-tags an existing paragraph in place, keeping its inline children', () => {
       const { root, dom } = setup('<p>a <strong>b</strong> c</p>');
-      selectByTextOffsets(root, 0, 5);
+      selectText(root, 0, 5);
 
       dom.headings!.toggleHeading('h2');
       expect(root.innerHTML).toBe('<h2>a <strong>b</strong> c</h2>');
@@ -504,7 +446,7 @@ describe('RichTextEditorDom', () => {
     it('wraps the covered paragraphs into a list', () => {
       const { root, dom } = setup('<p>one</p><p>two</p>');
       const [p1, p2] = Array.from(root.children);
-      select(p1?.firstChild as Node, 0, p2?.firstChild as Node, 3);
+      selectRange(p1?.firstChild as Node, 0, p2?.firstChild as Node, 3);
 
       dom.toggleList('ul');
 
@@ -514,7 +456,7 @@ describe('RichTextEditorDom', () => {
     it('unwraps a list back to paragraphs when toggled again', () => {
       const { root, dom } = setup('<ul><li>one</li></ul>');
       const li = (root.firstChild as Node).firstChild as Node;
-      select(li.firstChild as Node, 0, li.firstChild as Node, 3);
+      selectRange(li.firstChild as Node, 0, li.firstChild as Node, 3);
 
       dom.toggleList('ul');
 
@@ -524,7 +466,7 @@ describe('RichTextEditorDom', () => {
     it('creates an ordered list with ol', () => {
       const { root, dom } = setup('<p>one</p>');
       const p = root.firstChild as Node;
-      select(p.firstChild as Node, 0, p.firstChild as Node, 3);
+      selectRange(p.firstChild as Node, 0, p.firstChild as Node, 3);
 
       dom.toggleList('ol');
 
@@ -533,14 +475,14 @@ describe('RichTextEditorDom', () => {
 
     it('starts a list with one empty item when the editor is empty', () => {
       const { root, dom } = setup('');
-      select(root, 0, root, 0);
+      selectRange(root, 0, root, 0);
 
       dom.toggleList('ul');
 
       expect(root.innerHTML).toBe('<ul><li><br></li></ul>');
 
       const li = root.querySelector('li') as HTMLElement;
-      const range = doc.getSelection()?.getRangeAt(0);
+      const range = document.getSelection()?.getRangeAt(0);
       expect(range?.collapsed).toBe(true);
       expect(li.contains(range?.startContainer ?? null)).toBe(true);
     });
@@ -548,7 +490,7 @@ describe('RichTextEditorDom', () => {
     it('converts a list to the other type instead of nesting it', () => {
       const { root, dom } = setup('<ul><li>one</li><li>two</li></ul>');
       const li = root.querySelector('li') as HTMLElement;
-      select(li.firstChild as Node, 0, li.firstChild as Node, 3);
+      selectRange(li.firstChild as Node, 0, li.firstChild as Node, 3);
 
       dom.toggleList('ol');
 
@@ -557,7 +499,7 @@ describe('RichTextEditorDom', () => {
 
     it('toggles an empty-editor list back and forth without nesting items', () => {
       const { root, dom } = setup('');
-      select(root, 0, root, 0);
+      selectRange(root, 0, root, 0);
 
       dom.toggleList('ul');
       dom.toggleList('ol');
@@ -570,7 +512,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>one</p><ol><li>two</li></ol>');
       const p = root.querySelector('p') as HTMLElement;
       const li = root.querySelector('li') as HTMLElement;
-      select(p.firstChild as Node, 0, li.firstChild as Node, 3);
+      selectRange(p.firstChild as Node, 0, li.firstChild as Node, 3);
 
       dom.toggleList('ul');
 
@@ -581,7 +523,7 @@ describe('RichTextEditorDom', () => {
       const html = '<table><tbody><tr><td>cell</td></tr></tbody></table>';
       const { root, dom } = setup(html);
       const cellText = (root.querySelector('td') as HTMLElement).firstChild as Node;
-      select(cellText, 1, cellText, 1);
+      selectRange(cellText, 1, cellText, 1);
 
       dom.toggleList('ul');
 
@@ -590,7 +532,7 @@ describe('RichTextEditorDom', () => {
 
     it('marks the list state active after starting a list in an empty editor', () => {
       const { root, dom } = setup('');
-      select(root, 0, root, 0);
+      selectRange(root, 0, root, 0);
 
       dom.toggleList('ol');
 
@@ -602,7 +544,7 @@ describe('RichTextEditorDom', () => {
     it('quotes the covered paragraphs as one quote, a line each', () => {
       const { root, dom } = setup('<p>one</p><p>two</p>');
       const [p1, p2] = Array.from(root.children);
-      select(p1?.firstChild as Node, 0, p2?.firstChild as Node, 3);
+      selectRange(p1?.firstChild as Node, 0, p2?.firstChild as Node, 3);
 
       dom.blockquote!.toggleBlockquote();
 
@@ -612,7 +554,7 @@ describe('RichTextEditorDom', () => {
     it('lifts a quote back to paragraphs when toggled again, splitting on its line breaks', () => {
       const { root, dom } = setup('<blockquote>one<br>two</blockquote>');
       const quote = root.firstChild as HTMLElement;
-      select(quote.firstChild as Node, 0, quote.firstChild as Node, 3);
+      selectRange(quote.firstChild as Node, 0, quote.firstChild as Node, 3);
 
       dom.blockquote!.toggleBlockquote();
 
@@ -621,7 +563,7 @@ describe('RichTextEditorDom', () => {
 
     it('starts an empty quote with a line box when the editor is empty', () => {
       const { root, dom } = setup('');
-      select(root, 0, root, 0);
+      selectRange(root, 0, root, 0);
 
       dom.blockquote!.toggleBlockquote();
 
@@ -631,7 +573,7 @@ describe('RichTextEditorDom', () => {
     it('leaves a list or table alone', () => {
       const { root, dom } = setup('<ul><li>one</li></ul>');
       const li = root.querySelector('li') as HTMLElement;
-      select(li.firstChild as Node, 0, li.firstChild as Node, 3);
+      selectRange(li.firstChild as Node, 0, li.firstChild as Node, 3);
 
       dom.blockquote!.toggleBlockquote();
 
@@ -641,7 +583,7 @@ describe('RichTextEditorDom', () => {
     it('nests and un-nests a quote with indent/outdent', () => {
       const { root, dom } = setup('<blockquote>one</blockquote>');
       const quote = root.firstChild as HTMLElement;
-      select(quote.firstChild as Node, 1, quote.firstChild as Node, 1);
+      selectRange(quote.firstChild as Node, 1, quote.firstChild as Node, 1);
 
       expect(dom.blockquote!.indentBlockquote()).toBe(true);
       expect(root.innerHTML).toBe('<blockquote><blockquote>one</blockquote></blockquote>');
@@ -653,7 +595,7 @@ describe('RichTextEditorDom', () => {
     it('outdents out of the quote entirely at the top level', () => {
       const { root, dom } = setup('<blockquote>one</blockquote>');
       const quote = root.firstChild as HTMLElement;
-      select(quote.firstChild as Node, 1, quote.firstChild as Node, 1);
+      selectRange(quote.firstChild as Node, 1, quote.firstChild as Node, 1);
 
       expect(dom.blockquote!.outdentBlockquote()).toBe(true);
       expect(root.innerHTML).toBe('<p>one</p>');
@@ -662,7 +604,7 @@ describe('RichTextEditorDom', () => {
     it('keeps the lines above when lifting a nested quote', () => {
       const { root, dom } = setup('<blockquote>one<br><blockquote>two</blockquote></blockquote>');
       const inner = root.querySelector('blockquote blockquote') as HTMLElement;
-      select(inner.firstChild as Node, 1, inner.firstChild as Node, 1);
+      selectRange(inner.firstChild as Node, 1, inner.firstChild as Node, 1);
 
       expect(dom.blockquote!.outdentBlockquote()).toBe(true);
       expect(root.innerHTML).toBe('<blockquote>one<br>two</blockquote>');
@@ -671,7 +613,7 @@ describe('RichTextEditorDom', () => {
     it('breaks the line inside the quote on Enter instead of splitting it in two', () => {
       const { root, dom } = setup('<blockquote>one</blockquote>');
       const quote = root.firstChild as HTMLElement;
-      select(quote.firstChild as Node, 2, quote.firstChild as Node, 2);
+      selectRange(quote.firstChild as Node, 2, quote.firstChild as Node, 2);
 
       expect(dom.handleEnter()).toBe(true);
       expect(root.innerHTML).toBe('<blockquote>on<br>e</blockquote>');
@@ -681,7 +623,7 @@ describe('RichTextEditorDom', () => {
     it('leaves the quote on a second Enter, once the last line is empty', () => {
       const { root, dom } = setup('<blockquote>one</blockquote>');
       const quote = root.firstChild as HTMLElement;
-      select(quote.firstChild as Node, 3, quote.firstChild as Node, 3);
+      selectRange(quote.firstChild as Node, 3, quote.firstChild as Node, 3);
 
       // the first Enter opens an empty last line (with the trailing break that gives it a line box)
       expect(dom.handleEnter()).toBe(true);
@@ -694,7 +636,7 @@ describe('RichTextEditorDom', () => {
     it('takes an emptied quote with it when leaving', () => {
       const { root, dom } = setup('<blockquote><br></blockquote>');
       const quote = root.firstChild as HTMLElement;
-      select(quote, 0, quote, 0);
+      selectRange(quote, 0, quote, 0);
 
       expect(dom.handleEnter()).toBe(true);
       expect(root.innerHTML).toBe('<p><br></p>');
@@ -704,7 +646,7 @@ describe('RichTextEditorDom', () => {
       // what Chrome leaves behind when the whole content of a code block is selected and deleted
       const { root, dom } = setup('<pre><br></pre>');
       const pre = root.firstChild as HTMLElement;
-      select(pre, 0, pre, 0);
+      selectRange(pre, 0, pre, 0);
 
       expect(dom.codeBlock!.repairCodeBlock()).toBe(true);
       expect(root.innerHTML).toBe('<p><br></p>');
@@ -715,7 +657,7 @@ describe('RichTextEditorDom', () => {
     it('turns the covered blocks into one fenced block of plain text', () => {
       const { root, dom } = setup('<p>one</p><p><strong>two</strong></p>');
       const [p1, p2] = Array.from(root.children);
-      select(p1?.firstChild as Node, 0, p2?.firstChild as Node, 1);
+      selectRange(p1?.firstChild as Node, 0, p2?.firstChild as Node, 1);
 
       dom.codeBlock!.toggleCodeBlock();
 
@@ -725,7 +667,7 @@ describe('RichTextEditorDom', () => {
     it('turns a code block back into a paragraph per line', () => {
       const { root, dom } = setup('<pre><code>one\ntwo</code></pre>');
       const code = root.querySelector('code') as HTMLElement;
-      select(code.firstChild as Node, 0, code.firstChild as Node, 3);
+      selectRange(code.firstChild as Node, 0, code.firstChild as Node, 3);
 
       dom.codeBlock!.toggleCodeBlock();
 
@@ -734,7 +676,7 @@ describe('RichTextEditorDom', () => {
 
     it('starts an empty code block with a newline so the caret has a line', () => {
       const { root, dom } = setup('');
-      select(root, 0, root, 0);
+      selectRange(root, 0, root, 0);
 
       dom.codeBlock!.toggleCodeBlock();
 
@@ -744,7 +686,7 @@ describe('RichTextEditorDom', () => {
     it('inserts a newline on Enter instead of a new block', () => {
       const { root, dom } = setup('<pre><code>one</code></pre>');
       const code = root.querySelector('code') as HTMLElement;
-      select(code.firstChild as Node, 3, code.firstChild as Node, 3);
+      selectRange(code.firstChild as Node, 3, code.firstChild as Node, 3);
 
       expect(dom.handleEnter()).toBe(true);
       expect((root.querySelector('code') as HTMLElement).textContent).toBe('one\n\n');
@@ -754,7 +696,7 @@ describe('RichTextEditorDom', () => {
     it('leaves the code block on Enter when the last line is already empty', () => {
       const { root, dom } = setup('<pre><code>one\n\n</code></pre>');
       const code = root.querySelector('code') as HTMLElement;
-      select(code.firstChild as Node, 5, code.firstChild as Node, 5);
+      selectRange(code.firstChild as Node, 5, code.firstChild as Node, 5);
 
       expect(dom.handleEnter()).toBe(true);
       expect(root.innerHTML).toBe('<pre><code>one</code></pre><p><br></p>');
@@ -763,7 +705,7 @@ describe('RichTextEditorDom', () => {
     it('leaves the code block on a second Enter, from where the first one left the caret', () => {
       const { root, dom } = setup('<pre><code>one</code></pre>');
       const code = root.querySelector('code') as HTMLElement;
-      select(code.firstChild as Node, 3, code.firstChild as Node, 3);
+      selectRange(code.firstChild as Node, 3, code.firstChild as Node, 3);
 
       // the first Enter opens the empty last line; the caret sits *between* the two newlines, since
       // the trailing one is what gives that line a line box
@@ -776,7 +718,7 @@ describe('RichTextEditorDom', () => {
     it('creates a paragraph on ArrowDown off the last line of a trailing code block', () => {
       const { root, dom } = setup('<pre><code>one\ntwo</code></pre>');
       const code = root.querySelector('code') as HTMLElement;
-      select(code.firstChild as Node, 7, code.firstChild as Node, 7);
+      selectRange(code.firstChild as Node, 7, code.firstChild as Node, 7);
 
       expect(dom.codeBlock!.codeBlockArrowStep('ArrowDown')).toBe(true);
       expect(root.innerHTML).toBe('<pre><code>one\ntwo</code></pre><p><br></p>');
@@ -785,7 +727,7 @@ describe('RichTextEditorDom', () => {
     it('creates a paragraph on ArrowUp off the first line of a leading code block', () => {
       const { root, dom } = setup('<pre><code>one\ntwo</code></pre>');
       const code = root.querySelector('code') as HTMLElement;
-      select(code.firstChild as Node, 2, code.firstChild as Node, 2);
+      selectRange(code.firstChild as Node, 2, code.firstChild as Node, 2);
 
       expect(dom.codeBlock!.codeBlockArrowStep('ArrowUp')).toBe(true);
       expect(root.innerHTML).toBe('<p><br></p><pre><code>one\ntwo</code></pre>');
@@ -796,10 +738,10 @@ describe('RichTextEditorDom', () => {
       const code = root.querySelector('code') as HTMLElement;
 
       // on the first line: nothing below to reach for, and vice versa
-      select(code.firstChild as Node, 3, code.firstChild as Node, 3);
+      selectRange(code.firstChild as Node, 3, code.firstChild as Node, 3);
       expect(dom.codeBlock!.codeBlockArrowStep('ArrowDown')).toBe(false);
 
-      select(code.firstChild as Node, 7, code.firstChild as Node, 7);
+      selectRange(code.firstChild as Node, 7, code.firstChild as Node, 7);
       expect(dom.codeBlock!.codeBlockArrowStep('ArrowUp')).toBe(false);
 
       expect(root.querySelectorAll('p').length).toBe(0);
@@ -808,7 +750,7 @@ describe('RichTextEditorDom', () => {
     it('leaves the arrow keys alone with a block already on that side', () => {
       const { root, dom } = setup('<p>before</p><pre><code>one</code></pre><p>after</p>');
       const code = root.querySelector('code') as HTMLElement;
-      select(code.firstChild as Node, 3, code.firstChild as Node, 3);
+      selectRange(code.firstChild as Node, 3, code.firstChild as Node, 3);
 
       expect(dom.codeBlock!.codeBlockArrowStep('ArrowDown')).toBe(false);
       expect(dom.codeBlock!.codeBlockArrowStep('ArrowUp')).toBe(false);
@@ -818,7 +760,7 @@ describe('RichTextEditorDom', () => {
     it('removes an empty code block on Backspace', () => {
       const { root, dom } = setup('<pre><code>\n</code></pre>');
       const code = root.querySelector('code') as HTMLElement;
-      select(code.firstChild as Node, 0, code.firstChild as Node, 0);
+      selectRange(code.firstChild as Node, 0, code.firstChild as Node, 0);
 
       expect(dom.handleBackspace()).toBe(true);
       expect(root.innerHTML).toBe('<p><br></p>');
@@ -827,7 +769,7 @@ describe('RichTextEditorDom', () => {
     it('exits to a paragraph after the block', () => {
       const { root, dom } = setup('<pre><code>one</code></pre>');
       const code = root.querySelector('code') as HTMLElement;
-      select(code.firstChild as Node, 1, code.firstChild as Node, 1);
+      selectRange(code.firstChild as Node, 1, code.firstChild as Node, 1);
 
       expect(dom.codeBlock!.exitCodeBlock()).toBe(true);
       expect(root.innerHTML).toBe('<pre><code>one</code></pre><p><br></p>');
@@ -836,7 +778,7 @@ describe('RichTextEditorDom', () => {
     it('reports the code-block context without reporting inline code', () => {
       const { root, dom } = setup('<pre><code>one</code></pre>');
       const code = root.querySelector('code') as HTMLElement;
-      select(code.firstChild as Node, 1, code.firstChild as Node, 1);
+      selectRange(code.firstChild as Node, 1, code.firstChild as Node, 1);
 
       expect(dom.markStates()?.codeBlock).toBe(true);
       expect(dom.markStates()?.code).toBe(false);
@@ -847,7 +789,7 @@ describe('RichTextEditorDom', () => {
   describe('applyLink / removeLink', () => {
     it('wraps the selection in an anchor', () => {
       const { root, dom } = setup('hello');
-      select(root.firstChild as Node, 0, root.firstChild as Node, 5);
+      selectRange(root.firstChild as Node, 0, root.firstChild as Node, 5);
 
       dom.links!.applyLink('https://example.com');
 
@@ -861,7 +803,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('one two three');
       const text = root.firstChild as Node;
       // select "two"
-      select(text, 4, text, 7);
+      selectRange(text, 4, text, 7);
 
       dom.links!.applyLink('https://example.com');
 
@@ -872,7 +814,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('hello world');
       const text = root.firstChild as Node;
       // select "hello " - a word selection often includes the trailing space
-      select(text, 0, text, 6);
+      selectRange(text, 0, text, 6);
 
       dom.links!.applyLink('https://example.com');
 
@@ -882,7 +824,7 @@ describe('RichTextEditorDom', () => {
     it('keeps whitespace outside the anchor when the popover provides a trimmed label', () => {
       const { root, dom } = setup('hello world');
       const text = root.firstChild as Node;
-      select(text, 0, text, 6); // "hello " - the link editor trims the label it emits
+      selectRange(text, 0, text, 6); // "hello " - the link editor trims the label it emits
 
       dom.links!.applyLink('https://example.com', { text: 'hello' });
 
@@ -892,7 +834,7 @@ describe('RichTextEditorDom', () => {
     it('updates the href when the caret is already in a link', () => {
       const { root, dom } = setup('<a href="https://old.com">hello</a>');
       const anchor = root.firstChild as Node;
-      select(anchor.firstChild as Node, 1, anchor.firstChild as Node, 3);
+      selectRange(anchor.firstChild as Node, 1, anchor.firstChild as Node, 3);
 
       dom.links!.applyLink('https://new.com');
 
@@ -902,7 +844,7 @@ describe('RichTextEditorDom', () => {
     it('removes the link but keeps the text', () => {
       const { root, dom } = setup('<a href="https://example.com">hello</a>');
       const anchor = root.firstChild as Node;
-      select(anchor.firstChild as Node, 0, anchor.firstChild as Node, 5);
+      selectRange(anchor.firstChild as Node, 0, anchor.firstChild as Node, 5);
 
       dom.links!.removeLink();
 
@@ -918,7 +860,7 @@ describe('RichTextEditorDom', () => {
       const testText = root.firstChild as Node;
       const linkText = (root.querySelector('a') as HTMLElement).firstChild as Node;
 
-      select(testText, 0, linkText, (linkText.textContent ?? '').length);
+      selectRange(testText, 0, linkText, (linkText.textContent ?? '').length);
 
       dom.links!.applyLink('dddddd');
 
@@ -930,7 +872,7 @@ describe('RichTextEditorDom', () => {
     it('exits the list when the caret is in an empty trailing item', () => {
       const { root, dom } = setup('<ul><li>one</li><li></li></ul>');
       const emptyLi = root.firstChild?.lastChild as Node;
-      select(emptyLi, 0, emptyLi, 0);
+      selectRange(emptyLi, 0, emptyLi, 0);
 
       const handled = dom.handleBackspace();
 
@@ -944,7 +886,7 @@ describe('RichTextEditorDom', () => {
     it('removes the whole list when the only item is empty', () => {
       const { root, dom } = setup('<ul><li></li></ul>');
       const emptyLi = root.firstChild?.firstChild as Node;
-      select(emptyLi, 0, emptyLi, 0);
+      selectRange(emptyLi, 0, emptyLi, 0);
 
       const handled = dom.handleBackspace();
 
@@ -955,7 +897,7 @@ describe('RichTextEditorDom', () => {
     it('carries over an existing <br> instead of adding a second one', () => {
       const { root, dom } = setup('<ul><li>one</li><li><br></li></ul>');
       const emptyLi = root.firstChild?.lastChild as Node;
-      select(emptyLi, 0, emptyLi, 0);
+      selectRange(emptyLi, 0, emptyLi, 0);
 
       dom.handleBackspace();
 
@@ -965,7 +907,7 @@ describe('RichTextEditorDom', () => {
     it('splits the list when the empty item is in the middle', () => {
       const { root, dom } = setup('<ul><li>one</li><li></li><li>three</li></ul>');
       const emptyLi = root.firstChild?.childNodes[1] as Node;
-      select(emptyLi, 0, emptyLi, 0);
+      selectRange(emptyLi, 0, emptyLi, 0);
 
       dom.handleBackspace();
 
@@ -975,7 +917,7 @@ describe('RichTextEditorDom', () => {
     it('merges an empty paragraph into the previous list on the next backspace', () => {
       const { root, dom } = setup('<ul><li>one</li></ul><p></p>');
       const paragraph = root.lastChild as Node;
-      select(paragraph, 0, paragraph, 0);
+      selectRange(paragraph, 0, paragraph, 0);
 
       const handled = dom.handleBackspace();
 
@@ -986,7 +928,7 @@ describe('RichTextEditorDom', () => {
     it('does nothing for a non-empty list item', () => {
       const { root, dom } = setup('<ul><li>one</li></ul>');
       const li = root.firstChild?.firstChild as Node;
-      select(li.firstChild as Node, 0, li.firstChild as Node, 0);
+      selectRange(li.firstChild as Node, 0, li.firstChild as Node, 0);
 
       expect(dom.handleBackspace()).toBe(false);
       expect(root.innerHTML).toBe('<ul><li>one</li></ul>');
@@ -997,7 +939,7 @@ describe('RichTextEditorDom', () => {
     it('reflects the marks at the caret', () => {
       const { root, dom } = setup('<strong>hello</strong>');
       const strong = root.firstChild as Node;
-      select(strong.firstChild as Node, 1, strong.firstChild as Node, 1);
+      selectRange(strong.firstChild as Node, 1, strong.firstChild as Node, 1);
 
       expect(dom.markStates()?.bold).toBe(true);
       expect(dom.markStates()?.italic).toBe(false);
@@ -1007,12 +949,12 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>out</p><table><tbody><tr><td>in</td></tr></tbody></table>');
       const cellText = (root.querySelector('td') as HTMLElement).firstChild as Node;
 
-      select(cellText, 1, cellText, 1);
+      selectRange(cellText, 1, cellText, 1);
       expect(dom.markStates()?.tableCell).toBe(true);
 
       const paragraphText = (root.firstChild as HTMLElement).firstChild as Node;
 
-      select(paragraphText, 1, paragraphText, 1);
+      selectRange(paragraphText, 1, paragraphText, 1);
       expect(dom.markStates()?.tableCell).toBe(false);
     });
   });
@@ -1021,19 +963,19 @@ describe('RichTextEditorDom', () => {
     it('starts a paragraph after the heading when the caret is at its end', () => {
       const { root, dom } = setup('<h2>title</h2>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 5, text, 5);
+      selectRange(text, 5, text, 5);
 
       expect(dom.handleEnter()).toBe(true);
       expect(root.innerHTML).toBe('<h2>title</h2><p><br></p>');
 
-      const range = doc.getSelection()?.getRangeAt(0);
+      const range = document.getSelection()?.getRangeAt(0);
       expect(dom.closestWithin(range?.startContainer ?? null, 'p')).not.toBeNull();
     });
 
     it('inserts an empty paragraph above when the caret is at the heading start', () => {
       const { root, dom } = setup('<h2>title</h2>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 0, text, 0);
+      selectRange(text, 0, text, 0);
 
       expect(dom.handleEnter()).toBe(true);
       expect(root.innerHTML).toBe('<p><br></p><h2>title</h2>');
@@ -1042,7 +984,7 @@ describe('RichTextEditorDom', () => {
     it('lets the browser split the heading on a mid-heading Enter', () => {
       const { root, dom } = setup('<h2>title</h2>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 2, text, 2);
+      selectRange(text, 2, text, 2);
 
       expect(dom.handleEnter()).toBe(false);
       expect(root.innerHTML).toBe('<h2>title</h2>');
@@ -1051,7 +993,7 @@ describe('RichTextEditorDom', () => {
     it('treats the end of a marked run inside the heading as the heading end', () => {
       const { root, dom } = setup('<h2>a <strong>b</strong></h2>');
       const strongText = (root.querySelector('strong') as HTMLElement).firstChild as Node;
-      select(strongText, 1, strongText, 1);
+      selectRange(strongText, 1, strongText, 1);
 
       expect(dom.handleEnter()).toBe(true);
       expect(root.innerHTML).toBe('<h2>a <strong>b</strong></h2><p><br></p>');
@@ -1060,11 +1002,6 @@ describe('RichTextEditorDom', () => {
 
   describe('applyBlockAutoformat', () => {
     const noneReserved = () => false;
-
-    const caretAtEndOf = (node: Node) => {
-      const text = node.textContent ?? '';
-      select(node, text.length, node, text.length);
-    };
 
     it('converts "- " at a line start into a bulleted list', () => {
       const { root, dom } = setup('<p>-</p>');
@@ -1115,7 +1052,7 @@ describe('RichTextEditorDom', () => {
     it('keeps existing text after the prefix as the converted block content', () => {
       const { root, dom } = setup('<p>-hello</p>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 1, text, 1); // caret right after the '-'
+      selectRange(text, 1, text, 1); // caret right after the '-'
 
       expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(true);
       expect(root.innerHTML).toBe('<ul><li>hello</li></ul>');
@@ -1167,11 +1104,6 @@ describe('RichTextEditorDom', () => {
   describe('applyInlineAutoformat', () => {
     const noneReserved = () => false;
 
-    const caretAtEndOf = (node: Node) => {
-      const text = node.textContent ?? '';
-      select(node, text.length, node, text.length);
-    };
-
     it('converts **bold** when the closing star is typed', () => {
       const { root, dom } = setup('<p>see **bold*</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
@@ -1211,7 +1143,7 @@ describe('RichTextEditorDom', () => {
 
       dom.autoformat!.applyInlineAutoformat('*', noneReserved);
 
-      const range = doc.getSelection()?.getRangeAt(0);
+      const range = document.getSelection()?.getRangeAt(0);
 
       expect(range?.collapsed).toBe(true);
       expect(dom.closestWithin(range?.startContainer ?? null, 'em')).toBeNull();
@@ -1240,7 +1172,7 @@ describe('RichTextEditorDom', () => {
     it('splices a single paragraph inline into the caret block', () => {
       const { root, dom } = setup('<p>ab</p>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 1, text, 1);
+      selectRange(text, 1, text, 1);
 
       dom.insertNormalizedHtml('<p>X <strong>y</strong></p>');
 
@@ -1250,7 +1182,7 @@ describe('RichTextEditorDom', () => {
     it('replaces a non-collapsed selection with the pasted content', () => {
       const { root, dom } = setup('<p>hello</p>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 1, text, 4);
+      selectRange(text, 1, text, 4);
 
       dom.insertNormalizedHtml('<p>X</p>');
 
@@ -1260,7 +1192,7 @@ describe('RichTextEditorDom', () => {
     it('inserts multi-block content after the caret block instead of nesting it', () => {
       const { root, dom } = setup('<p>ab</p><p>cd</p>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 2, text, 2);
+      selectRange(text, 2, text, 2);
 
       dom.insertNormalizedHtml('<p>one</p><ul><li>two</li></ul>');
 
@@ -1269,7 +1201,7 @@ describe('RichTextEditorDom', () => {
 
     it('appends blocks to an empty editor', () => {
       const { root, dom } = setup('');
-      select(root, 0, root, 0);
+      selectRange(root, 0, root, 0);
 
       dom.insertNormalizedHtml('<h2>title</h2><p>body</p>');
 
@@ -1279,11 +1211,11 @@ describe('RichTextEditorDom', () => {
     it('places the caret at the end of the inserted content', () => {
       const { root, dom } = setup('<p>ab</p>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
-      select(text, 1, text, 1);
+      selectRange(text, 1, text, 1);
 
       dom.insertNormalizedHtml('<p>XY</p>');
 
-      const range = doc.getSelection()?.getRangeAt(0);
+      const range = document.getSelection()?.getRangeAt(0);
 
       expect(range?.collapsed).toBe(true);
       expect(range?.startContainer.textContent).toBe('aXYb');
@@ -1293,40 +1225,19 @@ describe('RichTextEditorDom', () => {
 });
 
 describe('RichTextEditorDom without the block domains', () => {
-  let renderer: NonNullable<ReturnType<typeof injectRenderer>>;
-  let doc: Document;
+  let setup: (html: string) => RichTextEditorDomHarness;
 
   beforeEach(() => {
     // Autoformat on, but no heading / quote / fenced-code domain to convert into.
-    TestBed.configureTestingModule({ providers: [provideRichTextEditorDom(), provideRichTextEditorAutoformat()] });
-    renderer = TestBed.runInInjectionContext(() => injectRenderer());
-    doc = TestBed.inject(DOCUMENT);
-  });
-
-  afterEach(() => {
-    doc.body.innerHTML = '';
-    doc.getSelection()?.removeAllRanges();
+    setup = richTextEditorDomHarness([provideRichTextEditorAutoformat()]).setup;
   });
 
   const setupWithCaretAtEnd = (html: string) => {
-    const root = renderer.createElement('div');
-    root.contentEditable = 'true';
-    root.innerHTML = html;
-    renderer.appendChild(doc.body, root);
+    const harness = setup(html);
 
-    const dom = TestBed.runInInjectionContext(() => injectRichTextEditorDom());
-    dom.root.set(root);
+    caretAtEndOf((harness.root.firstChild as HTMLElement).firstChild as Node);
 
-    const node = (root.firstChild as HTMLElement).firstChild as Node;
-    const text = node.textContent ?? '';
-    const range = doc.createRange();
-    range.setStart(node, text.length);
-    range.setEnd(node, text.length);
-    const selection = doc.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-
-    return { root, dom };
+    return harness;
   };
 
   const noneReserved = () => false;

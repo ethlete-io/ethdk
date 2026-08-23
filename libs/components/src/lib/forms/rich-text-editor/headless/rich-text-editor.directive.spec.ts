@@ -1,6 +1,11 @@
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
 import '../../../../test-helpers';
+import {
+  caretIn,
+  mountRichTextEditor,
+  RichTextEditorDriver,
+  selectContents,
+} from '../../testing/rich-text-editor-driver';
 import { FORM_FIELD_CONTROL_TYPES, FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
@@ -35,35 +40,29 @@ class MinimalEditorTestHost {}
 
 describe('RichTextEditorDirective', () => {
   describe('inside form field', () => {
-    let fixture: ComponentFixture<EditorInFormFieldTestHost>;
+    let formFieldDir: FormFieldDirective;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [EditorInFormFieldTestHost] });
-      fixture = TestBed.createComponent(EditorInFormFieldTestHost);
-      fixture.detectChanges();
+      formFieldDir = mountRichTextEditor(EditorInFormFieldTestHost, {
+        directiveSelector: '[etRichTextEditor]',
+      }).directive(FormFieldDirective);
     });
 
     it('should register with the parent form field', () => {
-      const formFieldDir = (fixture.debugElement.children[0] as DebugElement).injector.get(FormFieldDirective);
       expect(formFieldDir.registeredControl()).toBeTruthy();
     });
 
     it('should report the rich-text control type', () => {
-      const formFieldDir = (fixture.debugElement.children[0] as DebugElement).injector.get(FormFieldDirective);
       expect(formFieldDir.controlType()).toBe(FORM_FIELD_CONTROL_TYPES.RICH_TEXT);
       expect(formFieldDir.usesTextFieldShell()).toBe(true);
     });
   });
 
   describe('standalone', () => {
-    let fixture: ComponentFixture<StandaloneEditorTestHost>;
     let dir: RichTextEditorDirective;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [StandaloneEditorTestHost] });
-      fixture = TestBed.createComponent(StandaloneEditorTestHost);
-      fixture.detectChanges();
-      dir = (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
+      dir = mountRichTextEditor(StandaloneEditorTestHost).editor;
     });
 
     it('should have an empty markdown value by default', () => {
@@ -104,10 +103,7 @@ describe('RichTextEditorDirective', () => {
     let dir: RichTextEditorDirective;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [MinimalEditorTestHost] });
-      const fixture = TestBed.createComponent(MinimalEditorTestHost);
-      fixture.detectChanges();
-      dir = (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
+      dir = mountRichTextEditor(MinimalEditorTestHost).editor;
     });
 
     it('leaves the marks and lists working', () => {
@@ -133,32 +129,15 @@ describe('RichTextEditorDirective', () => {
   });
 
   describe('pasteHtml', () => {
-    let fixture: ComponentFixture<StandaloneEditorTestHost>;
+    let driver: RichTextEditorDriver<StandaloneEditorTestHost>;
     let dir: RichTextEditorDirective;
     let editable: HTMLElement;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [StandaloneEditorTestHost] });
-      fixture = TestBed.createComponent(StandaloneEditorTestHost);
-      fixture.detectChanges();
-      dir = (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
-
-      editable = document.createElement('div');
-      editable.contentEditable = 'true';
-      document.body.appendChild(editable);
-      dir.editorDom.root.set(editable);
-
-      const range = document.createRange();
-      range.setStart(editable, 0);
-      range.collapse(true);
-      const selection = document.getSelection();
-      selection?.removeAllRanges();
-      selection?.addRange(range);
-    });
-
-    afterEach(() => {
-      editable.remove();
-      document.getSelection()?.removeAllRanges();
+      driver = mountRichTextEditor(StandaloneEditorTestHost, { attachEditable: true });
+      dir = driver.editor;
+      editable = driver.editable();
+      driver.caretAtStart();
     });
 
     it('reduces foreign markup to the editor schema and syncs the value', () => {
@@ -190,72 +169,49 @@ describe('RichTextEditorDirective', () => {
     });
 
     it('locks the heading tool inside lists and table cells, but not in plain paragraphs', () => {
-      editable.innerHTML = '<p>plain</p><ul><li>item</li></ul><table><tbody><tr><td>cell</td></tr></tbody></table>';
+      driver.setHtml('<p>plain</p><ul><li>item</li></ul><table><tbody><tr><td>cell</td></tr></tbody></table>');
 
-      const caretIn = (selector: string) => {
+      const caretInside = (selector: string) => {
         const target = editable.querySelector(selector)?.firstChild;
 
         if (!target) throw new Error(`no text node for ${selector}`);
 
-        const range = document.createRange();
-        range.setStart(target, 1);
-        range.collapse(true);
-        const selection = document.getSelection();
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-        dir.refreshActiveMarks();
+        caretIn(target, 1);
+        driver.refreshMarks();
       };
 
-      caretIn('p');
+      caretInside('p');
       expect(dir.headingToolDisabled()).toBe(false);
 
-      caretIn('li');
+      caretInside('li');
       expect(dir.headingToolDisabled()).toBe(true);
 
-      caretIn('td');
+      caretInside('td');
       expect(dir.headingToolDisabled()).toBe(true);
     });
   });
 
   describe('history', () => {
-    let fixture: ComponentFixture<StandaloneEditorTestHost>;
+    let driver: RichTextEditorDriver<StandaloneEditorTestHost>;
     let dir: RichTextEditorDirective;
     let editable: HTMLElement;
 
     /** Stands in for typing: rewrite the content, park the caret in it, then commit like the
      *  editor's own `input` handler does. */
     const write = (html: string, opts: { boundary?: boolean; caretAt?: number } = {}) => {
-      editable.innerHTML = html;
+      driver.setHtml(html);
 
       const text = editable.querySelector('p')?.firstChild;
 
-      if (text) {
-        const range = document.createRange();
-        range.setStart(text, opts.caretAt ?? (text.textContent ?? '').length);
-        range.collapse(true);
-        const selection = document.getSelection();
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-      }
+      if (text) caretIn(text, opts.caretAt ?? (text.textContent ?? '').length);
 
       dir.syncFromDom(opts.boundary ? { boundary: true } : undefined);
     };
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [StandaloneEditorTestHost] });
-      fixture = TestBed.createComponent(StandaloneEditorTestHost);
-      fixture.detectChanges();
-      dir = (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
-
-      editable = document.createElement('div');
-      editable.contentEditable = 'true';
-      document.body.appendChild(editable);
-      dir.editorDom.root.set(editable);
-    });
-
-    afterEach(() => {
-      editable.remove();
-      document.getSelection()?.removeAllRanges();
+      driver = mountRichTextEditor(StandaloneEditorTestHost, { attachEditable: true });
+      dir = driver.editor;
+      editable = driver.editable();
     });
 
     it('has nothing to undo or redo before the first edit', () => {
@@ -298,11 +254,7 @@ describe('RichTextEditorDirective', () => {
     it('takes a command back in a single step', () => {
       write('<p>hello</p>');
 
-      const range = document.createRange();
-      range.selectNodeContents(editable.querySelector('p') as HTMLElement);
-      const selection = document.getSelection();
-      selection?.removeAllRanges();
-      selection?.addRange(range);
+      selectContents(editable.querySelector('p')!);
 
       dir.toggleBold();
 
@@ -359,37 +311,42 @@ describe('RichTextEditorDirective', () => {
   });
 
   describe('markdown value', () => {
-    let dir: RichTextEditorDirective;
-    let editable: HTMLElement;
+    let driver: RichTextEditorDriver<StandaloneEditorTestHost>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [StandaloneEditorTestHost] });
-      const fixture = TestBed.createComponent(StandaloneEditorTestHost);
-      fixture.detectChanges();
-      dir = (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
-
-      editable = document.createElement('div');
-      editable.contentEditable = 'true';
-      document.body.appendChild(editable);
-      dir.editorDom.root.set(editable);
-    });
-
-    afterEach(() => {
-      editable.remove();
-      document.getSelection()?.removeAllRanges();
+      driver = mountRichTextEditor(StandaloneEditorTestHost, { attachEditable: true });
     });
 
     it('drops an empty inline mark of any tag instead of leaking it as raw html', () => {
-      editable.innerHTML = '<p><strong></strong>a<em></em>b<del></del>c<u></u>d<code></code>e<a href="#"></a></p>';
+      driver.setHtml('<p><strong></strong>a<em></em>b<del></del>c<u></u>d<code></code>e<a href="#"></a></p>');
 
-      dir.syncFromDom();
+      driver.editor.syncFromDom();
 
-      expect(dir.value()).toBe('abcde');
+      expect(driver.value()).toBe('abcde');
+    });
+
+    it('serializes only the marked span when a selection is taken by text offsets', () => {
+      driver.setHtml('<p>alpha beta</p>');
+      driver.selectText(6, 10);
+
+      driver.editor.toggleBold();
+
+      expect(driver.value()).toBe('alpha **beta**');
+      expect(driver.html()).toContain('<strong>beta</strong>');
+    });
+
+    it('re-selects across an existing mark by text offsets and stacks the second mark', () => {
+      driver.setHtml('<p>alpha <strong>beta</strong></p>');
+      driver.selectText(6, 10);
+
+      driver.editor.toggleItalic();
+
+      expect(driver.value()).toBe('alpha ***beta***');
     });
   });
 
   describe('insertToken', () => {
-    let fixture: ComponentFixture<StandaloneEditorTestHost>;
+    let driver: RichTextEditorDriver<StandaloneEditorTestHost>;
     let dir: RichTextEditorDirective;
     let editable: HTMLElement;
 
@@ -406,31 +363,13 @@ describe('RichTextEditorDirective', () => {
       },
     ];
 
-    const placeCaretAtStart = () => {
-      const range = document.createRange();
-      range.setStart(editable, 0);
-      range.collapse(true);
-      const selection = document.getSelection();
-      selection?.removeAllRanges();
-      selection?.addRange(range);
-    };
+    const placeCaretAtStart = () => driver.caretAtStart();
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [StandaloneEditorTestHost] });
-      fixture = TestBed.createComponent(StandaloneEditorTestHost);
-      fixture.detectChanges();
-      dir = (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
-
-      editable = document.createElement('div');
-      editable.contentEditable = 'true';
-      document.body.appendChild(editable);
-      dir.editorDom.root.set(editable);
+      driver = mountRichTextEditor(StandaloneEditorTestHost, { attachEditable: true });
+      dir = driver.editor;
+      editable = driver.editable();
       dir.tokenCodec.set(createRichTextEditorTokenCodec(() => TRIGGERS));
-    });
-
-    afterEach(() => {
-      editable.remove();
-      document.getSelection()?.removeAllRanges();
     });
 
     it('inserts a chip at the caret and serializes it to token markdown', () => {
@@ -458,7 +397,7 @@ describe('RichTextEditorDirective', () => {
     });
 
     it('appends at the end when the editor is not focused (no selection inside it)', () => {
-      editable.innerHTML = '<p>Hello</p>';
+      driver.setHtml('<p>Hello</p>');
       document.getSelection()?.removeAllRanges();
 
       dir.insertToken('block', 'company');
