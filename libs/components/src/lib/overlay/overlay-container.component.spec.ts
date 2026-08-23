@@ -16,9 +16,7 @@ import {
   provideSurfaceThemesWithTailwind4,
 } from '@ethlete/core';
 import '../../test-helpers';
-import { OverlayConfig } from './overlay-config';
-import { injectOverlayManager } from './overlay-manager';
-import { OverlayRef } from './overlay-ref';
+import { createOverlayDriver } from '../testing/overlay-driver';
 import { anchoredDialogOverlayStrategy, dialogOverlayStrategy } from './strategies';
 
 const BRAND_THEME: ColorTheme = {
@@ -73,22 +71,23 @@ class ScopedOpenerComponent {
 class OverlayContentComponent {}
 
 describe('OverlayContainerComponent color context', () => {
-  let openedRef: OverlayRef<OverlayContentComponent, unknown> | null = null;
+  let driver: ReturnType<typeof createOverlayDriver>;
   let appRootRef: ComponentRef<ThemedAppRootComponent> | null = null;
   let appRootElement: HTMLElement | null = null;
 
   beforeEach(() => {
-    openedRef = null;
     appRootRef = null;
     appRootElement = null;
 
     TestBed.configureTestingModule({
       providers: [provideColorThemesWithTailwind4([BRAND_THEME, DANGER_THEME])],
     });
+
+    driver = createOverlayDriver(null, { config: { strategies: dialogOverlayStrategy() } });
   });
 
   afterEach(() => {
-    openedRef?.close();
+    driver.closeAll();
     appRootRef?.destroy();
     appRootElement?.remove();
   });
@@ -99,75 +98,63 @@ describe('OverlayContainerComponent color context', () => {
     document.body.appendChild(appRootElement);
 
     appRootRef = TestBed.inject(ApplicationRef).bootstrap(ThemedAppRootComponent, appRootElement);
-    TestBed.tick();
+    driver.tick();
 
     return appRootRef.instance;
   };
 
-  const openDialog = (config?: Partial<OverlayConfig>) => {
-    const overlayRef = TestBed.runInInjectionContext(() =>
-      injectOverlayManager().open<OverlayContentComponent, unknown>(OverlayContentComponent, {
-        strategies: dialogOverlayStrategy(),
-        ...config,
-      }),
-    );
-
-    openedRef = overlayRef;
-    TestBed.tick();
-
-    return overlayRef;
-  };
-
-  it('adopts a color forced on an app-root host-directive provider when opened outside any element injector', () => {
+  it('adopts a color forced on an app-root host-directive provider when opened outside any element injector', async () => {
     const appRoot = bootstrapAppRoot();
 
     appRoot.colorProvider.forceColor('brand');
-    TestBed.tick();
+    driver.tick();
 
-    const overlayRef = openDialog();
+    await driver.open(OverlayContentComponent);
 
-    expect(overlayRef.elements?.paneElement.classList.contains('et-color--brand')).toBe(true);
+    expect(driver.pane()?.classList.contains('et-color--brand')).toBe(true);
   });
 
-  it('keeps following the app-root provider while the overlay is open', () => {
+  it('keeps following the app-root provider while the overlay is open', async () => {
     const appRoot = bootstrapAppRoot();
 
     appRoot.colorProvider.forceColor('brand');
-    TestBed.tick();
+    driver.tick();
 
-    const overlayRef = openDialog();
+    await driver.open(OverlayContentComponent);
 
     appRoot.colorProvider.forceColor('danger');
-    TestBed.tick();
+    driver.tick();
 
-    expect(overlayRef.elements?.paneElement.classList.contains('et-color--danger')).toBe(true);
+    expect(driver.pane()?.classList.contains('et-color--danger')).toBe(true);
 
     appRoot.colorProvider.clearForcedColor();
-    TestBed.tick();
+    driver.tick();
 
-    expect(overlayRef.elements?.paneElement.classList.contains('et-color--inherited')).toBe(true);
+    expect(driver.pane()?.classList.contains('et-color--inherited')).toBe(true);
   });
 
-  it('prefers a provider reachable through the configured viewContainerRef over the app-root provider', () => {
+  it('prefers a provider reachable through the configured viewContainerRef over the app-root provider', async () => {
     const appRoot = bootstrapAppRoot();
 
     appRoot.colorProvider.forceColor('brand');
-    TestBed.tick();
+    driver.tick();
 
     const openerFixture = TestBed.createComponent(ScopedOpenerComponent);
     openerFixture.detectChanges();
     openerFixture.componentInstance.colorProvider.forceColor('danger');
     openerFixture.detectChanges();
 
-    const overlayRef = openDialog({ viewContainerRef: openerFixture.componentInstance.viewContainerRef });
+    await driver.open(OverlayContentComponent, {
+      viewContainerRef: openerFixture.componentInstance.viewContainerRef,
+    });
 
-    expect(overlayRef.elements?.paneElement.classList.contains('et-color--danger')).toBe(true);
+    expect(driver.pane()?.classList.contains('et-color--danger')).toBe(true);
   });
 
-  it('stays uncolored when no provider exists anywhere', () => {
-    const overlayRef = openDialog();
+  it('stays uncolored when no provider exists anywhere', async () => {
+    await driver.open(OverlayContentComponent);
 
-    expect(overlayRef.elements?.paneElement.classList.contains('et-color--inherited')).toBe(true);
+    expect(driver.pane()?.classList.contains('et-color--inherited')).toBe(true);
   });
 });
 
@@ -186,17 +173,17 @@ const surface = (name: string, elevation: number, isDefault?: boolean): SurfaceT
 const SURFACE_THEMES = [surface('night', 0, true), surface('night-1', 1), surface('night-2', 2)];
 
 describe('OverlayContainerComponent surface elevation', () => {
-  let openedRef: OverlayRef<OverlayContentComponent, unknown> | null = null;
+  let driver: ReturnType<typeof createOverlayDriver>;
   let origin: HTMLElement | null = null;
 
   beforeEach(() => {
-    openedRef = null;
-
     TestBed.configureTestingModule({ providers: [provideSurfaceThemesWithTailwind4(SURFACE_THEMES)] });
+
+    driver = createOverlayDriver();
   });
 
   afterEach(() => {
-    openedRef?.close();
+    driver.closeAll();
     origin?.closest('.et-surface--night-1')?.remove();
     origin = null;
   });
@@ -214,46 +201,35 @@ describe('OverlayContainerComponent surface elevation', () => {
     return trigger;
   };
 
-  const open = (config: Partial<OverlayConfig>) => {
-    const overlayRef = TestBed.runInInjectionContext(() =>
-      injectOverlayManager().open<OverlayContentComponent, unknown>(OverlayContentComponent, config),
-    );
+  const surfaceName = () =>
+    Array.from(driver.pane()?.classList ?? []).find((cls) => cls.startsWith('et-surface--')) ?? null;
 
-    openedRef = overlayRef;
-    TestBed.tick();
-
-    return overlayRef;
-  };
-
-  const surfaceNameOf = (overlayRef: OverlayRef<OverlayContentComponent, unknown>) =>
-    Array.from(overlayRef.elements?.paneElement.classList ?? []).find((cls) => cls.startsWith('et-surface--')) ?? null;
-
-  it('elevates above the trigger when the strategy renders no backdrop', () => {
-    const overlayRef = open({
+  it('elevates above the trigger when the strategy renders no backdrop', async () => {
+    await driver.open(OverlayContentComponent, {
       origin: createElevatedOrigin(),
       strategies: anchoredDialogOverlayStrategy(),
     });
 
-    expect(surfaceNameOf(overlayRef)).toBe('et-surface--night-2');
+    expect(surfaceName()).toBe('et-surface--night-2');
   });
 
-  it('resets to elevation 1 when the strategy renders a backdrop', () => {
-    const overlayRef = open({
+  it('resets to elevation 1 when the strategy renders a backdrop', async () => {
+    await driver.open(OverlayContentComponent, {
       origin: createElevatedOrigin(),
       strategies: dialogOverlayStrategy(),
     });
 
-    expect(surfaceNameOf(overlayRef)).toBe('et-surface--night-1');
+    expect(surfaceName()).toBe('et-surface--night-1');
   });
 
-  it('lets the overlay config override the strategy default', () => {
-    const overlayRef = open({
+  it('lets the overlay config override the strategy default', async () => {
+    await driver.open(OverlayContentComponent, {
       origin: createElevatedOrigin(),
       strategies: anchoredDialogOverlayStrategy(),
       hasBackdrop: true,
     });
 
-    expect(surfaceNameOf(overlayRef)).toBe('et-surface--night-1');
+    expect(surfaceName()).toBe('et-surface--night-1');
   });
 });
 
@@ -265,48 +241,45 @@ class ScopedContentComponent {
 }
 
 describe('OverlayContainerComponent provider context', () => {
-  let openedRef: OverlayRef<ScopedContentComponent, unknown> | null = null;
+  let driver: ReturnType<typeof createOverlayDriver>;
 
-  afterEach(() => {
-    openedRef?.close();
-    openedRef = null;
-  });
-
-  const openScoped = (config?: Partial<OverlayConfig>) => {
-    const overlayRef = TestBed.runInInjectionContext(() =>
-      injectOverlayManager().open<ScopedContentComponent, unknown>(ScopedContentComponent, {
+  beforeEach(() => {
+    driver = createOverlayDriver(null, {
+      config: {
         strategies: dialogOverlayStrategy(),
         providers: [{ provide: CONTENT_SCOPED_TOKEN, useValue: 'scoped value' }],
-        ...config,
-      }),
-    );
+      },
+    });
+  });
 
-    openedRef = overlayRef;
-    TestBed.tick();
+  afterEach(() => {
+    driver.closeAll();
+  });
 
-    return overlayRef;
-  };
-
-  it('resolves an overlay provider in the content component when opened without an injector', () => {
-    const overlayRef = openScoped();
+  it('resolves an overlay provider in the content component when opened without an injector', async () => {
+    const overlayRef = await driver.open(ScopedContentComponent);
 
     expect(overlayRef.componentInstance()?.scoped).toBe('scoped value');
   });
 
-  it('resolves an overlay provider in the content component when opened with an injector', () => {
+  it('resolves an overlay provider in the content component when opened with an injector', async () => {
     const openerFixture = TestBed.createComponent(ScopedOpenerComponent);
     openerFixture.detectChanges();
 
-    const overlayRef = openScoped({ injector: openerFixture.componentInstance.injector });
+    const overlayRef = await driver.open(ScopedContentComponent, {
+      injector: openerFixture.componentInstance.injector,
+    });
 
     expect(overlayRef.componentInstance()?.scoped).toBe('scoped value');
   });
 
-  it('resolves an overlay provider in the content component when opened from a viewContainerRef', () => {
-    const openerFixture = TestBed.createComponent(ScopedOpenerComponent);
-    openerFixture.detectChanges();
+  it('resolves an overlay provider in the content component when opened from a viewContainerRef', async () => {
+    const overlayFixture = TestBed.createComponent(ScopedOpenerComponent);
+    overlayFixture.detectChanges();
 
-    const overlayRef = openScoped({ viewContainerRef: openerFixture.componentInstance.viewContainerRef });
+    const overlayRef = await driver.open(ScopedContentComponent, {
+      viewContainerRef: overlayFixture.componentInstance.viewContainerRef,
+    });
 
     expect(overlayRef.componentInstance()?.scoped).toBe('scoped value');
   });
