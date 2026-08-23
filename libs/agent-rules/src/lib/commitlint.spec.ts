@@ -13,6 +13,6 @@ describe('commitMessageVars', () => {
     const vars = commitMessageVars(null);
 
     expect(Object.values(vars).join(' ')).not.toContain('commitlint');
-    expect(vars.commitRuleSource).toBe("this repo's **conventional-commit** convention");
+    expect(vars['commitRuleSource']).toBe("this repo's **conventional-commit** convention");
   });
 });

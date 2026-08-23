@@ -33,6 +33,12 @@
       "options": {
         "coverage.reportsDirectory": "../../../coverage/libs/agent-rules"
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/agent-rules/tsconfig.spec.json --noEmit"
+      }
     }
   }
 }

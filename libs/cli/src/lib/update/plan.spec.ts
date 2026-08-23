@@ -111,11 +111,21 @@ describe('chooseTarget', () => {
 
 describe('isDowngrade', () => {
   it('is true when the target is older than the installed version', () => {
-    expect(isDowngrade({ name: '@ethlete/core', from: '5.0.0', to: '4.9.0' })).toBe(true);
+    expect(
+      isDowngrade({
+        name: '@ethlete/core',
+        from: '5.0.0',
+        to: '4.9.0',
+        field: 'dependencies',
+        declaredRange: '^5.0.0',
+      }),
+    ).toBe(true);
   });
 
   it('is false without an installed version', () => {
-    expect(isDowngrade({ name: '@ethlete/core', to: '4.9.0' })).toBe(false);
+    expect(isDowngrade({ name: '@ethlete/core', to: '4.9.0', field: 'dependencies', declaredRange: '^4.9.0' })).toBe(
+      false,
+    );
   });
 });
 
