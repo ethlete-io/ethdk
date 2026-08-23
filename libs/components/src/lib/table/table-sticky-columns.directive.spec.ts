@@ -1,6 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { createTableDriver } from './testing/table-driver';
 import { TableStickyColumnsDirective } from './table-sticky-columns.directive';
 import { TableComponent } from './table.component';
 import { TABLE_IMPORTS, TABLE_SELECTION_IMPORTS, TABLE_STICKY_COLUMNS_IMPORTS } from './table.imports';
@@ -38,8 +39,7 @@ const create = () => {
   return fixture;
 };
 
-const headerOf = (fixture: ComponentFixture<HostComponent>, key: string) =>
-  (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(`.et-table-header-cell[data-col-key="${key}"]`);
+const headerOf = (fixture: ComponentFixture<HostComponent>, key: string) => createTableDriver(fixture).headerCell(key);
 
 describe('TableStickyColumnsDirective', () => {
   it('marks the declared columns pinned, at their own edge', () => {
@@ -109,9 +109,8 @@ describe('TableStickyColumnsDirective', () => {
 
     const fixture = TestBed.createComponent(DisabledHost);
     fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
 
-    expect(host.querySelectorAll('.et-table-sticky-start, .et-table-sticky-end')).toHaveLength(0);
+    expect(createTableDriver(fixture).queryAll('.et-table-sticky-start, .et-table-sticky-end')).toHaveLength(0);
   });
 
   it('pins a trailing utility column to the trailing edge', () => {
@@ -135,8 +134,8 @@ describe('TableStickyColumnsDirective', () => {
 
     const fixture = TestBed.createComponent(TrailingSelectionHost);
     fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
-    const selectCells = Array.from(host.querySelectorAll('.et-table-select-cell'));
+
+    const selectCells = createTableDriver(fixture).queryAll('.et-table-select-cell');
 
     // A trailing utility column does not wait for an end-pinned data column: pinning is live, so it is
     // pinned - the header cell and every body cell alike.

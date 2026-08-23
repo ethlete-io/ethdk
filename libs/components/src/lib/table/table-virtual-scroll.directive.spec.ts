@@ -1,6 +1,8 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { queryAll } from '../testing/driver-core';
+import { createTableDriver } from './testing/table-driver';
 import { TableComponent } from './table.component';
 import { TABLE_IMPORTS, TABLE_VIRTUAL_SCROLL_IMPORTS } from './table.imports';
 import { TableColumns } from './table.types';
@@ -75,8 +77,7 @@ const create = (virtual = true) => {
   return fixture;
 };
 
-const tableElement = (fixture: ComponentFixture<HostComponent>) =>
-  (fixture.nativeElement as HTMLElement).querySelector('et-table') as HTMLElement;
+const tableElement = (fixture: ComponentFixture<HostComponent>) => createTableDriver(fixture).host();
 
 describe('TableVirtualScrollDirective', () => {
   it('renders every row and keeps a zero index offset without the feature', () => {
@@ -85,7 +86,7 @@ describe('TableVirtualScrollDirective', () => {
 
     expect(table.renderedRows()).toHaveLength(100);
     expect(table.rowIndexOffset()).toBe(0);
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-spacer')).toHaveLength(0);
+    expect(queryAll(fixture, '.et-table-spacer')).toHaveLength(0);
   });
 
   it('renders only a window of rows, with spacers standing in for the rest', () => {
@@ -96,10 +97,10 @@ describe('TableVirtualScrollDirective', () => {
     expect(table.renderedRows().length).toBe(8);
     expect(table.rowIndexOffset()).toBe(0);
 
-    const spacers = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-spacer')];
+    const spacers = queryAll(fixture, '.et-table-spacer');
     expect(spacers).toHaveLength(2);
-    expect((spacers[0] as HTMLElement).style.blockSize).toBe('0px');
-    expect((spacers[1] as HTMLElement).style.blockSize).toBe(`${(100 - 8) * 40}px`);
+    expect(spacers[0]!.style.blockSize).toBe('0px');
+    expect(spacers[1]!.style.blockSize).toBe(`${(100 - 8) * 40}px`);
   });
 
   it('shifts the window and the index offset as the container scrolls', () => {

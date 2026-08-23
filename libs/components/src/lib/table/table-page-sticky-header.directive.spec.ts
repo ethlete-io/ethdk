@@ -1,7 +1,8 @@
 import { Component, signal, viewChild } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { expectAriaGrid, expectUniformCellsPerRow, resolveAriaOwner } from '../testing/aria-structure';
+import { createTableDriver } from './testing/table-driver';
 import { TablePageStickyHeaderDirective } from './table-page-sticky-header.directive';
 import { TableComponent } from './table.component';
 import { TABLE_DRAG_SCROLL_IMPORTS, TABLE_IMPORTS, TABLE_PAGE_STICKY_HEADER_IMPORTS } from './table.imports';
@@ -44,18 +45,16 @@ class HostComponent {
 
 const create = () => {
   const fixture = TestBed.createComponent(HostComponent);
+
   fixture.detectChanges();
 
-  return fixture;
+  return { driver: createTableDriver(fixture), fixture };
 };
-
-const hostOf = (fixture: ComponentFixture<HostComponent>) =>
-  (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.et-table-host')!;
 
 describe('TablePageStickyHeaderDirective', () => {
   it('uses the split header and body layout only while enabled', () => {
-    const fixture = create();
-    const host = hostOf(fixture);
+    const { driver, fixture } = create();
+    const host = driver.host();
 
     expect(host.classList.contains('et-table-host--page-sticky-header')).toBe(true);
     expect(host.getAttribute('role')).toBe('grid');
@@ -76,8 +75,8 @@ describe('TablePageStickyHeaderDirective', () => {
   });
 
   it('keeps the grid owning its row groups in both layouts', () => {
-    const fixture = create();
-    const host = hostOf(fixture);
+    const { driver, fixture } = create();
+    const host = driver.host();
     const rowgroups = () => Array.from(host.querySelectorAll('[role="rowgroup"]'));
 
     expectAriaGrid(host);
@@ -95,10 +94,9 @@ describe('TablePageStickyHeaderDirective', () => {
   });
 
   it('shares the body grid tracks with the separate header grid', () => {
-    const fixture = create();
-    const host = hostOf(fixture);
-    const header = host.querySelector<HTMLElement>('.et-table-header')!;
-    const body = host.querySelector<HTMLElement>('.et-table-scroller > .et-table')!;
+    const { driver, fixture } = create();
+    const header = driver.query('.et-table-header')!;
+    const body = driver.query('.et-table-scroller > .et-table')!;
 
     fixture.detectChanges();
 
@@ -106,52 +104,44 @@ describe('TablePageStickyHeaderDirective', () => {
   });
 
   it('publishes the horizontal scroll range when layout changes', () => {
-    const fixture = create();
-    const host = hostOf(fixture);
-    const scroller = host.querySelector<HTMLElement>('.et-table-scroller')!;
+    const { driver, fixture } = create();
 
-    Object.defineProperty(scroller, 'scrollWidth', { configurable: true, value: 680 });
-    Object.defineProperty(scroller, 'clientWidth', { configurable: true, value: 320 });
+    driver.fakeScrollExtent({ scrollWidth: 680, viewportWidth: 320 });
 
     fixture.componentInstance.cols.set(columns());
     fixture.detectChanges();
 
-    expect(host.style.getPropertyValue('--_et-table-inline-max-scroll')).toBe('360px');
+    expect(driver.host().style.getPropertyValue('--_et-table-inline-max-scroll')).toBe('360px');
   });
 
   it('writes a bound offset without replacing the CSS API when none is bound', () => {
-    const fixture = create();
-    const host = hostOf(fixture);
+    const { driver, fixture } = create();
 
-    expect(host.style.getPropertyValue('--et-table-sticky-header-offset')).toBe('');
+    expect(driver.host().style.getPropertyValue('--et-table-sticky-header-offset')).toBe('');
 
     fixture.componentInstance.offset.set(64);
     fixture.detectChanges();
 
-    expect(host.style.getPropertyValue('--et-table-sticky-header-offset')).toBe('64px');
+    expect(driver.host().style.getPropertyValue('--et-table-sticky-header-offset')).toBe('64px');
   });
 
   it('writes the header horizontal position onto the header grid in the same tick as the scroll', () => {
-    const fixture = create();
-    const host = hostOf(fixture);
-    const scroller = host.querySelector<HTMLElement>('.et-table-scroller')!;
-    const headerGrid = host.querySelector<HTMLElement>('.et-table-header')!;
+    const { driver } = create();
+    const scroller = driver.scroller();
+    const headerGrid = driver.query('.et-table-header')!;
 
     scroller.scrollLeft = 120;
     scroller.dispatchEvent(new Event('scroll'));
 
     expect(headerGrid.style.getPropertyValue('--_et-table-inline-scroll')).toBe('120px');
-    expect(host.style.getPropertyValue('--_et-table-inline-scroll')).toBe('');
+    expect(driver.host().style.getPropertyValue('--_et-table-inline-scroll')).toBe('');
   });
 
   it('lets drag scrolling pan the page-sticky body scroller', () => {
-    const fixture = create();
-    const host = hostOf(fixture);
-    const scroller = host.querySelector<HTMLElement>('.et-table-scroller')!;
-    const cell = host.querySelector<HTMLElement>('.et-table-cell[data-col-key="role"]')!;
+    const { driver, fixture } = create();
+    const cell = driver.cell(0, 'role')!;
 
-    Object.defineProperty(scroller, 'scrollWidth', { configurable: true, value: 680 });
-    Object.defineProperty(scroller, 'clientWidth', { configurable: true, value: 320 });
+    driver.fakeScrollExtent({ scrollWidth: 680, viewportWidth: 320 });
     fixture.componentInstance.dragScroll.set(true);
     fixture.componentInstance.cols.set(columns());
     fixture.detectChanges();
@@ -169,21 +159,20 @@ describe('TablePageStickyHeaderDirective', () => {
     document.dispatchEvent(new PointerEvent('pointermove', { clientX: 150, clientY: 100, pointerId: 1 }));
     document.dispatchEvent(new PointerEvent('pointerup', { clientX: 150, clientY: 100, pointerId: 1 }));
 
-    expect(scroller.scrollLeft).toBe(50);
+    expect(driver.scroller().scrollLeft).toBe(50);
   });
 
   it('autosizes from the wider of the header and body grids', () => {
-    const fixture = create();
-    const table = fixture.componentInstance.table();
-    const header = table.headerCellElements().find((cell) => cell.dataset['colKey'] === 'role')!;
-    const body = table.bodyCellElementsFor('role')[0]!;
+    const { driver, fixture } = create();
+    const header = driver.headerCell('role')!;
+    const body = driver.cell(0, 'role')!;
 
     Object.defineProperty(header, 'getBoundingClientRect', { configurable: true, value: () => ({ width: 260 }) });
     Object.defineProperty(body, 'getBoundingClientRect', { configurable: true, value: () => ({ width: 140 }) });
 
-    table.autosizeColumns(['role']);
+    fixture.componentInstance.table().autosizeColumns(['role']);
     fixture.detectChanges();
 
-    expect(table.columnWidths()['role']).toBe(260);
+    expect(fixture.componentInstance.table().columnWidths()['role']).toBe(260);
   });
 });

@@ -1,6 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { query, queryAll } from '../testing/driver-core';
 import { TableSelectionDirective } from './table-selection.directive';
 import { TableComponent } from './table.component';
 import { TABLE_IMPORTS, TABLE_SELECTION_IMPORTS } from './table.imports';
@@ -56,15 +57,14 @@ const featureOf = (fixture: ComponentFixture<HostComponent>) => fixture.componen
 describe('TableSelectionDirective', () => {
   it('renders a leading checkbox column: one header checkbox plus one per row', () => {
     const fixture = create();
-    const host = fixture.nativeElement as HTMLElement;
 
-    expect(host.querySelectorAll('.et-table-select-cell').length).toBe(1 + PEOPLE.length);
-    expect(host.querySelectorAll('.et-table-select-cell et-checkbox').length).toBe(1 + PEOPLE.length);
+    expect(queryAll(fixture, '.et-table-select-cell')).toHaveLength(1 + PEOPLE.length);
+    expect(queryAll(fixture, '.et-table-select-cell et-checkbox')).toHaveLength(1 + PEOPLE.length);
   });
 
   it('puts the checkbox column at the leading edge by default', () => {
     const fixture = create();
-    const row = (fixture.nativeElement as HTMLElement).querySelector('.et-table-row') as HTMLElement;
+    const row = query(fixture, '.et-table-row')!;
 
     expect(row.firstElementChild?.classList.contains('et-table-select-cell')).toBe(true);
   });
@@ -75,12 +75,11 @@ describe('TableSelectionDirective', () => {
     fixture.componentInstance.side.set('end');
     fixture.detectChanges();
 
-    const host = fixture.nativeElement as HTMLElement;
-    const row = host.querySelector('.et-table-row') as HTMLElement;
-    const headerRow = host.querySelector('.et-table-header-row') as HTMLElement;
+    const row = query(fixture, '.et-table-row')!;
+    const headerRow = query(fixture, '.et-table-header-row')!;
 
     // Still one column, now ending every row kind rather than starting it.
-    expect(host.querySelectorAll('.et-table-select-cell').length).toBe(1 + PEOPLE.length);
+    expect(queryAll(fixture, '.et-table-select-cell')).toHaveLength(1 + PEOPLE.length);
     expect(row.firstElementChild?.classList.contains('et-table-select-cell')).toBe(false);
     expect(row.lastElementChild?.classList.contains('et-table-select-cell')).toBe(true);
     expect(headerRow.lastElementChild?.classList.contains('et-table-select-cell')).toBe(true);
@@ -145,13 +144,13 @@ describe('TableSelectionDirective', () => {
     featureOf(fixture).setSelected(PEOPLE[0]!, true);
     fixture.detectChanges();
 
-    const rows = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-row')];
+    const rows = queryAll(fixture, '.et-table-row');
     expect(rows.filter((row) => row.classList.contains('et-table-row--selected'))).toHaveLength(1);
   });
 
   it('adds a track to the grid template, ahead of the data columns', () => {
     const fixture = create();
-    const grid = (fixture.nativeElement as HTMLElement).querySelector('.et-table') as HTMLElement;
+    const grid = query(fixture, '.et-table')!;
 
     expect(grid.style.gridTemplateColumns.startsWith('var(--et-table-select-width, 44px)')).toBe(true);
   });

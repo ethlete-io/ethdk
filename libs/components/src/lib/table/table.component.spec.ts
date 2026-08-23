@@ -4,6 +4,8 @@ import { provideRouter, Router } from '@angular/router';
 import { vi } from 'vitest';
 import { injectLocale, RuntimeError } from '@ethlete/core';
 import '../../test-helpers';
+import { queryAll } from '../testing/driver-core';
+import { createTableDriver } from './testing/table-driver';
 import { TABLE_ERROR_CODES } from './table-errors';
 import { filterRows } from './headless/table-filter';
 import { sortRows } from './headless/table-sort';
@@ -35,6 +37,8 @@ const columns = (roleHidden = false) =>
     name: { header: 'Name', value: (person) => person.name, width: '200px' },
     role: { header: 'Role', value: (person) => person.role, hidden: roleHidden },
   }) satisfies TableColumns<Person>;
+
+const hostOf = (fixture: ComponentFixture<unknown>) => createTableDriver(fixture).host();
 
 const create = (cols: TableColumns<Person>, data: Person[] = PEOPLE): ComponentFixture<TableComponent<Person>> => {
   const fixture = TestBed.createComponent<TableComponent<Person>>(TableComponent);
@@ -283,12 +287,17 @@ describe('TableComponent', () => {
     });
 
     it('client sort mode reorders the rendered rows when a header is toggled', () => {
-      const { componentInstance: table } = create(sortableColumns(), UNSORTED);
+      const fixture = create(sortableColumns(), UNSORTED);
+      const driver = createTableDriver(fixture);
+      const names = () => driver.rowTexts().map(([name]) => name);
 
-      expect(table.rows().map((r) => r.name)).toEqual(['Charlie', 'Ada', 'Bob']);
+      expect(names()).toEqual(['Charlie', 'Ada', 'Bob']);
+      expect(driver.ariaSort('name')).toBe('none');
 
-      table.toggleSort('name');
-      expect(table.rows().map((r) => r.name)).toEqual(['Ada', 'Bob', 'Charlie']);
+      driver.sortBy('name');
+
+      expect(names()).toEqual(['Ada', 'Bob', 'Charlie']);
+      expect(driver.ariaSort('name')).toBe('ascending');
     });
 
     it('toggleSort cycles a column asc → desc → off (single-sort replaces others)', () => {
@@ -390,7 +399,7 @@ describe('TableComponent', () => {
     it('renders no filter UI without the opt-in feature (the menu system stays out of the bundle)', () => {
       const fixture = create(filterableColumns(), UNSORTED);
 
-      expect((fixture.nativeElement as HTMLElement).querySelector('.et-table-filter-trigger')).toBeNull();
+      expect(hostOf(fixture).querySelector('.et-table-filter-trigger')).toBeNull();
     });
   });
 
@@ -622,10 +631,10 @@ describe('TableComponent', () => {
 
   describe('appearance & density', () => {
     it('defaults to the enclosed appearance and md density on the host', () => {
-      const { nativeElement } = create(columns());
+      const host = hostOf(create(columns()));
 
-      expect(nativeElement.getAttribute('data-appearance')).toBe('enclosed');
-      expect(nativeElement.getAttribute('data-density')).toBe('md');
+      expect(host.getAttribute('data-appearance')).toBe('enclosed');
+      expect(host.getAttribute('data-density')).toBe('md');
     });
 
     it('reflects the appearance and density inputs to host attributes', () => {
@@ -634,13 +643,13 @@ describe('TableComponent', () => {
       fixture.componentRef.setInput('density', 'sm');
       fixture.detectChanges();
 
-      expect(fixture.nativeElement.getAttribute('data-appearance')).toBe('zebra');
-      expect(fixture.nativeElement.getAttribute('data-density')).toBe('sm');
+      expect(hostOf(fixture).getAttribute('data-appearance')).toBe('zebra');
+      expect(hostOf(fixture).getAttribute('data-density')).toBe('sm');
     });
 
     it('marks odd-indexed rows with the stripe class (zebra styles it)', () => {
       const fixture = create(columns(), UNSORTED); // 3 rows
-      const rows = [...fixture.nativeElement.querySelectorAll('.et-table-row')] as HTMLElement[];
+      const rows = queryAll(fixture, '.et-table-row');
 
       expect(rows[0]!.classList.contains('et-table-row--stripe')).toBe(false);
       expect(rows[1]!.classList.contains('et-table-row--stripe')).toBe(true);
@@ -649,7 +658,7 @@ describe('TableComponent', () => {
 
     it('marks the row that ends the table (its divider would hang under it)', () => {
       const fixture = create(columns(), UNSORTED); // 3 rows
-      const rows = [...fixture.nativeElement.querySelectorAll('.et-table-row')] as HTMLElement[];
+      const rows = queryAll(fixture, '.et-table-row');
 
       expect(rows.map((row) => row.classList.contains('et-table-row--last'))).toEqual([false, false, true]);
     });
@@ -671,7 +680,7 @@ describe('TableComponent', () => {
       const fixture = TestBed.createComponent(FooterHostComponent);
       fixture.detectChanges();
 
-      expect((fixture.nativeElement as HTMLElement).querySelector('.et-table-row--last')).toBeNull();
+      expect(hostOf(fixture).querySelector('.et-table-row--last')).toBeNull();
     });
   });
 
@@ -681,7 +690,7 @@ describe('TableComponent', () => {
         name: { value: (p) => p.name, sticky: 'start' },
         role: { value: (p) => p.role },
       } satisfies TableColumns<Person>;
-      const host = create(cols).nativeElement as HTMLElement;
+      const host = hostOf(create(cols));
 
       // `sticky` is inert until etTableStickyColumns supplies the pinning - no class, no inline offset,
       // on the declared column or any other.
@@ -716,7 +725,7 @@ describe('TableComponent', () => {
       const fixture = TestBed.createComponent(HostComponent);
       fixture.detectChanges();
 
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
 
       expect(fixture.componentInstance.table().hasFooter()).toBe(true);
       expect(host.querySelector('.et-table-footer-row')?.textContent?.trim()).toBe('2 people');
@@ -766,7 +775,7 @@ describe('TableComponent', () => {
 
     it('marks the host busy and leaves the body blank while loading with no rows', () => {
       const fixture = create(columns(), []);
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
 
       setStates(fixture, { loading: true });
 
@@ -784,7 +793,7 @@ describe('TableComponent', () => {
 
     it('keeps the rows and shows the busy bar when loading over existing rows', async () => {
       const fixture = create(columns());
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
 
       setStates(fixture, { loading: true });
 
@@ -803,7 +812,7 @@ describe('TableComponent', () => {
 
     it('replaces the body with the error state for any non-nullish error, ahead of loading', () => {
       const fixture = create(columns());
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
 
       setStates(fixture, { error: 'boom', loading: true });
 
@@ -842,14 +851,14 @@ describe('TableComponent', () => {
       const fixture = TestBed.createComponent(HostComponent);
       fixture.detectChanges();
 
-      const cell = (fixture.nativeElement as HTMLElement).querySelector('.et-table-error-cell');
+      const cell = hostOf(fixture).querySelector('.et-table-error-cell');
       expect(cell?.querySelector('.retry')?.textContent).toBe('Retry');
       expect(cell?.textContent).not.toContain('Could not load data');
     });
 
     it('gives a single cell its own state without touching its neighbours', () => {
       const fixture = create(columns());
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
 
       setStates(fixture, {
         cellState: (person: Person, key: string) =>
@@ -880,7 +889,7 @@ describe('TableComponent', () => {
       TestBed.configureTestingModule({ providers: [provideTableLabels({ empty: 'Keine Daten' })] });
 
       const fixture = create(columns(), []);
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
 
       expect(host.querySelector('.et-table-empty-cell')?.textContent?.trim()).toBe('Keine Daten');
 
@@ -898,7 +907,7 @@ describe('TableComponent', () => {
       });
 
       const fixture = create(columns(), []);
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
       const locale = TestBed.runInInjectionContext(() => injectLocale());
 
       expect(host.querySelector('.et-table-empty-cell')?.textContent?.trim()).toBe('No data');
@@ -914,10 +923,7 @@ describe('TableComponent', () => {
         name: { header: 'Name', value: (person: Person) => person.name, sortable: true },
       } satisfies TableColumns<Person>);
       const table = fixture.componentInstance;
-      const label = () =>
-        (fixture.nativeElement as HTMLElement)
-          .querySelector('.et-table-header-label--sortable')
-          ?.getAttribute('aria-label');
+      const label = () => hostOf(fixture).querySelector('.et-table-header-label--sortable')?.getAttribute('aria-label');
 
       expect(label()).toBe('Sort Name ascending');
 
@@ -953,7 +959,7 @@ describe('TableComponent', () => {
       const fixture = TestBed.createComponent(HostComponent);
       fixture.detectChanges();
 
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
       expect(host.querySelector('.et-table-empty-cell')?.textContent?.trim()).toBe('none of 0');
 
       fixture.componentInstance.error.set({ message: 'nope' });
@@ -981,7 +987,7 @@ describe('TableComponent', () => {
     it('feeds data, loading and error, and defaults both modes to server', () => {
       const source = createSource();
       const fixture = create(columns());
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
       const table = fixture.componentInstance;
 
       fixture.componentRef.setInput('rowsSource', source);
@@ -1153,7 +1159,7 @@ describe('TableComponent', () => {
       const fixture = TestBed.createComponent(HostComponent);
       fixture.detectChanges();
 
-      const footer = (fixture.nativeElement as HTMLElement).querySelector('.et-table-footer');
+      const footer = hostOf(fixture).querySelector('.et-table-footer');
       expect(footer).not.toBeNull();
       expect(footer?.querySelector('.pager')?.textContent).toBe('pager here');
     });
@@ -1161,7 +1167,7 @@ describe('TableComponent', () => {
     it('omits the footer bar entirely when no [etTableFooter] is projected', () => {
       const fixture = create(columns());
 
-      expect((fixture.nativeElement as HTMLElement).querySelector('.et-table-footer')).toBeNull();
+      expect(hostOf(fixture).querySelector('.et-table-footer')).toBeNull();
     });
   });
 
@@ -1257,7 +1263,7 @@ describe('TableComponent', () => {
 
     it('emits rowClick with the row when a plain cell is clicked', () => {
       const fixture = build();
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
       const nameCell = host.querySelector('.et-table-row .et-table-cell[data-col-key="name"]') as HTMLElement;
 
       nameCell.click();
@@ -1268,7 +1274,7 @@ describe('TableComponent', () => {
 
     it('ignores clicks in the selection cell', () => {
       const fixture = build();
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
       const selectCell = host.querySelector('.et-table-row .et-table-select-cell') as HTMLElement;
 
       selectCell.click();
@@ -1279,7 +1285,7 @@ describe('TableComponent', () => {
 
     it('ignores clicks on an in-cell button', () => {
       const fixture = build();
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
       const button = host.querySelector('.et-table-row button.act') as HTMLElement;
 
       button.click();
@@ -1294,7 +1300,7 @@ describe('TableComponent', () => {
       let emitted = false;
       table.rowClick.subscribe(() => (emitted = true));
 
-      const cell = (fixture.nativeElement as HTMLElement).querySelector('.et-table-row .et-table-cell') as HTMLElement;
+      const cell = hostOf(fixture).querySelector('.et-table-row .et-table-cell') as HTMLElement;
       cell.click();
 
       expect(emitted).toBe(false);
@@ -1327,8 +1333,7 @@ describe('TableComponent', () => {
       return fixture;
     };
 
-    const links = (fixture: ComponentFixture<unknown>) =>
-      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('a.et-table-row-link'));
+    const links = (fixture: ComponentFixture<unknown>) => queryAll<HTMLAnchorElement>(fixture, 'a.et-table-row-link');
 
     it('renders one anchor per linked row, spanning the row and named by the identity cell', () => {
       const fixture = build();
@@ -1353,8 +1358,7 @@ describe('TableComponent', () => {
 
     it('gives the linked row a box, and leaves the row itself out of the tab order', () => {
       const fixture = build();
-      const rows = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-row'));
-      const [linked, unlinked] = rows as HTMLElement[];
+      const [linked, unlinked] = queryAll(fixture, '.et-table-row');
 
       expect(linked?.classList.contains('et-table-row--box')).toBe(true);
       expect(linked?.classList.contains('et-table-row--link')).toBe(true);
@@ -1368,7 +1372,7 @@ describe('TableComponent', () => {
 
     it('keeps a column marked interactive out of the link, and never hosts the link in it', () => {
       const fixture = build();
-      const host = fixture.nativeElement as HTMLElement;
+      const host = hostOf(fixture);
       const actCell = host.querySelector('.et-table-cell[data-col-key="act"]') as HTMLElement;
 
       expect(actCell.classList.contains('et-table-cell--interactive')).toBe(true);
@@ -1399,9 +1403,7 @@ describe('TableComponent', () => {
       fixture.componentRef.setInput('appearance', 'cards');
       fixture.detectChanges();
 
-      const rows = (fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-row--box');
-
-      expect(rows.length).toBe(PEOPLE.length);
+      expect(queryAll(fixture, '.et-table-row--box')).toHaveLength(PEOPLE.length);
     });
 
     it('throws when a link is router commands and nothing can resolve them', () => {
@@ -1488,40 +1490,33 @@ describe('TableComponent', () => {
       const fixture = TestBed.createComponent(HostComponent);
       fixture.detectChanges();
 
-      return fixture.nativeElement as HTMLElement;
+      return createTableDriver(fixture);
     };
 
-    const headerCell = (host: HTMLElement, key: string) =>
-      host.querySelector<HTMLElement>(`.et-table-header-cell[data-col-key="${key}"]`) as HTMLElement;
-
     it('marks a disabled column header cell, sortable or not', () => {
-      const host = build();
+      const driver = build();
 
-      expect(headerCell(host, 'name').dataset['disabled']).toBe('true');
-      expect(headerCell(host, 'role').dataset['disabled']).toBe('true');
-      expect(headerCell(host, 'id').dataset['disabled']).toBeUndefined();
+      expect(driver.headerCell('name')?.dataset['disabled']).toBe('true');
+      expect(driver.headerCell('role')?.dataset['disabled']).toBe('true');
+      expect(driver.headerCell('id')?.dataset['disabled']).toBeUndefined();
     });
 
     it("disables a disabled column's sort button and leaves an enabled one alone", () => {
-      const host = build();
-      const disabled = headerCell(host, 'name').querySelector('button') as HTMLButtonElement;
-      const enabled = headerCell(host, 'id').querySelector('button') as HTMLButtonElement;
+      const driver = build();
+      const disabled = driver.headerCell('name')!.querySelector('button');
+      const enabled = driver.headerCell('id')!.querySelector('button');
 
-      expect(disabled.disabled).toBe(true);
-      expect(enabled.disabled).toBe(false);
+      expect(disabled?.disabled).toBe(true);
+      expect(enabled?.disabled).toBe(false);
     });
 
     it("disables a disabled column's column-menu trigger", () => {
-      const host = build();
-      const trigger = headerCell(host, 'name').querySelector<HTMLButtonElement>(
-        '.et-table-column-menu-trigger',
-      ) as HTMLButtonElement;
-      const enabled = headerCell(host, 'id').querySelector<HTMLButtonElement>(
-        '.et-table-column-menu-trigger',
-      ) as HTMLButtonElement;
+      const driver = build();
+      const trigger = driver.headerCell('name')!.querySelector<HTMLButtonElement>('.et-table-column-menu-trigger');
+      const enabled = driver.headerCell('id')!.querySelector<HTMLButtonElement>('.et-table-column-menu-trigger');
 
-      expect(trigger.disabled).toBe(true);
-      expect(enabled.disabled).toBe(false);
+      expect(trigger?.disabled).toBe(true);
+      expect(enabled?.disabled).toBe(false);
     });
 
     it('still sorts a disabled column programmatically - only its controls are off', () => {

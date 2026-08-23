@@ -2,6 +2,7 @@ import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DragMoveEvent } from '@ethlete/core';
 import '../../test-helpers';
+import { queryAll } from '../testing/driver-core';
 import { TableResizeDirective } from './table-resize.directive';
 import { TableComponent } from './table.component';
 import { TABLE_IMPORTS, TABLE_RESIZE_IMPORTS } from './table.imports';
@@ -56,7 +57,7 @@ describe('TableResizeDirective', () => {
   it('renders a grip in every header cell while there is more than one column', () => {
     const fixture = create();
 
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-resize-grip').length).toBe(2);
+    expect(queryAll(fixture, '.et-table-resize-grip')).toHaveLength(2);
   });
 
   it('writes a width override while dragging', () => {

@@ -2,6 +2,7 @@ import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RuntimeError } from '@ethlete/core';
 import '../../test-helpers';
+import { query, queryAll } from '../testing/driver-core';
 import { TABLE_ERROR_CODES } from './table-errors';
 import { TableRowExpansionDirective } from './table-row-expansion.directive';
 import { TableComponent } from './table.component';
@@ -60,15 +61,14 @@ const featureOf = (fixture: ComponentFixture<HostComponent>) => fixture.componen
 describe('TableRowExpansionDirective', () => {
   it('renders a leading expander column with a button per row', () => {
     const fixture = create();
-    const host = fixture.nativeElement as HTMLElement;
 
     // one per body row; the header cell of a lead column has no component of its own
-    expect(host.querySelectorAll('.et-table-expander-cell .et-table-expander').length).toBe(PEOPLE.length);
+    expect(queryAll(fixture, '.et-table-expander-cell .et-table-expander')).toHaveLength(PEOPLE.length);
   });
 
   it('adds a track to the grid template, ahead of the data columns', () => {
     const fixture = create();
-    const grid = (fixture.nativeElement as HTMLElement).querySelector('.et-table') as HTMLElement;
+    const grid = query(fixture, '.et-table')!;
 
     expect(grid.style.gridTemplateColumns.startsWith('var(--et-table-expander-width, 32px)')).toBe(true);
   });
@@ -90,15 +90,14 @@ describe('TableRowExpansionDirective', () => {
 
   it('renders the detail row with the template only while the row is expanded', () => {
     const fixture = create();
-    const host = fixture.nativeElement as HTMLElement;
 
-    expect(host.querySelectorAll('.et-table-detail-row').length).toBe(0);
+    expect(queryAll(fixture, '.et-table-detail-row')).toHaveLength(0);
 
     featureOf(fixture).toggle(PEOPLE[0]!);
     fixture.detectChanges();
 
-    const details = host.querySelectorAll('.et-table-detail-row');
-    expect(details.length).toBe(1);
+    const details = queryAll(fixture, '.et-table-detail-row');
+    expect(details).toHaveLength(1);
     expect(details[0]!.textContent).toContain(PEOPLE[0]!.role);
   });
 
@@ -126,10 +125,8 @@ describe('TableRowExpansionDirective', () => {
     expansion.toggle(viewer);
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-detail-row').length).toBe(0);
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-expander').length).toBe(
-      PEOPLE.length - 1,
-    );
+    expect(queryAll(fixture, '.et-table-detail-row')).toHaveLength(0);
+    expect(queryAll(fixture, '.et-table-expander')).toHaveLength(PEOPLE.length - 1);
   });
 
   describe('state', () => {

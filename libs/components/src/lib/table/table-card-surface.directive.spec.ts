@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideSurfaceThemesWithTailwind4, ProvideSurfaceDirective, SurfaceTheme } from '@ethlete/core';
 import '../../test-helpers';
+import { createTableDriver } from './testing/table-driver';
 import { TABLE_IMPORTS } from './table.imports';
 import { TableColumns } from './table.types';
 
@@ -49,10 +50,9 @@ const rowOf = (themes: SurfaceTheme[] = THEMES) => {
   const fixture = TestBed.createComponent(HostComponent);
   fixture.detectChanges();
 
-  return {
-    fixture,
-    row: () => (fixture.nativeElement as HTMLElement).querySelector('.et-table-row') as HTMLElement,
-  };
+  const driver = createTableDriver(fixture);
+
+  return { fixture, row: () => driver.row(0)! };
 };
 
 describe('TableCardSurfaceDirective', () => {

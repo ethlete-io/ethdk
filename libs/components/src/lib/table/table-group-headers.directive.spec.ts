@@ -1,6 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { query, queryAll } from '../testing/driver-core';
 import { TableGroupHeadersDirective } from './table-group-headers.directive';
 import { TableComponent } from './table.component';
 import { TABLE_GROUP_HEADERS_IMPORTS, TABLE_IMPORTS } from './table.imports';
@@ -85,8 +86,7 @@ describe('TableGroupHeadersDirective', () => {
 
   it('renders one cell per run, spanning the run’s tracks, labelled only where there is a group', () => {
     const fixture = create();
-    const host = fixture.nativeElement as HTMLElement;
-    const cells = [...host.querySelectorAll('.et-table-group-cell')] as HTMLElement[];
+    const cells = queryAll(fixture, '.et-table-group-cell');
 
     expect(cells).toHaveLength(2);
     expect(cells[0]!.style.gridColumn).toBe('span 2');
@@ -102,7 +102,7 @@ describe('TableGroupHeadersDirective', () => {
 
   it('renders the row before the column headers, as one row of the same grid', () => {
     const fixture = create();
-    const grid = (fixture.nativeElement as HTMLElement).querySelector('.et-table') as HTMLElement;
+    const grid = query(fixture, '.et-table')!;
 
     expect(grid.firstElementChild?.tagName.toLowerCase()).toBe('et-table-group-header-row');
     expect(grid.firstElementChild?.getAttribute('role')).toBe('row');
@@ -121,6 +121,6 @@ describe('TableGroupHeadersDirective', () => {
     const fixture = TestBed.createComponent(DisabledHost);
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-group-cell')).toHaveLength(0);
+    expect(queryAll(fixture, '.et-table-group-cell')).toHaveLength(0);
   });
 });

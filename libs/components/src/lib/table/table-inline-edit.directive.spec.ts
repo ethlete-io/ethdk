@@ -1,6 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { query, queryAll } from '../testing/driver-core';
 import { TableInlineEditDirective } from './table-inline-edit.directive';
 import { TABLE_IMPORTS, TABLE_INLINE_EDIT_IMPORTS, TABLE_KEYBOARD_NAV_IMPORTS } from './table.imports';
 import { TableColumns } from './table.types';
@@ -85,11 +86,8 @@ const create = () => {
   return fixture;
 };
 
-const host = (fixture: ComponentFixture<HostComponent>) => fixture.nativeElement as HTMLElement;
-const cells = (fixture: ComponentFixture<HostComponent>) => [
-  ...host(fixture).querySelectorAll<HTMLElement>('.et-table-row > .et-table-cell'),
-];
-const editor = (fixture: ComponentFixture<HostComponent>) => host(fixture).querySelector<HTMLInputElement>('input');
+const cells = (fixture: ComponentFixture<HostComponent>) => queryAll(fixture, '.et-table-row > .et-table-cell');
+const editor = (fixture: ComponentFixture<HostComponent>) => query<HTMLInputElement>(fixture, 'input');
 
 /** Type into the open editor the way the bound control would. */
 const type = (fixture: ComponentFixture<HostComponent>, text: string) => {
@@ -131,7 +129,7 @@ describe('TableInlineEditDirective', () => {
     expect(editor(fixture)?.value).toBe('Ada');
     expect(cells(fixture)[0]?.classList).toContain('et-table-cell--editing');
     // Only one cell at a time.
-    expect(host(fixture).querySelectorAll('.et-table-cell--editing')).toHaveLength(1);
+    expect(queryAll(fixture, '.et-table-cell--editing')).toHaveLength(1);
   });
 
   it('refuses a column that has no editor template, so Enter can drill in instead', () => {
@@ -294,13 +292,13 @@ describe('TableInlineEditDirective', () => {
 
       fixture.detectChanges();
 
-      const cell = fixture.nativeElement.querySelector('.et-table-row > .et-table-cell') as HTMLElement;
+      const cell = query(fixture, '.et-table-row > .et-table-cell')!;
 
       cell.focus();
       cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
       fixture.detectChanges();
 
-      expect(fixture.nativeElement.querySelector('input')).not.toBeNull();
+      expect(query(fixture, 'input')).not.toBeNull();
       expect(fixture.componentInstance.commits).toEqual([]);
     });
   });

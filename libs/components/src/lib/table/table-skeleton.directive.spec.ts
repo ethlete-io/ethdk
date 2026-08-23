@@ -1,6 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { createTableDriver } from './testing/table-driver';
 import { TableSkeletonDirective } from './table-skeleton.directive';
 import { TableComponent } from './table.component';
 import { TABLE_IMPORTS, TABLE_SKELETON_IMPORTS } from './table.imports';
@@ -41,7 +42,7 @@ const create = () => {
   return fixture;
 };
 
-const hostOf = (fixture: ComponentFixture<HostComponent>) => fixture.nativeElement as HTMLElement;
+const hostOf = (fixture: ComponentFixture<unknown>) => createTableDriver(fixture).host();
 
 describe('TableSkeletonDirective', () => {
   it('draws placeholder rows while loading with no rows, in the table’s own tracks', () => {
@@ -101,7 +102,7 @@ describe('TableSkeletonDirective', () => {
 
     const fixture = TestBed.createComponent(DisabledHost);
     fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
+    const host = hostOf(fixture);
 
     expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(0);
     expect(host.querySelector('.et-table-empty-cell')).toBeNull();
@@ -126,7 +127,7 @@ describe('TableSkeletonDirective', () => {
     const fixture = TestBed.createComponent(TemplatedHost);
     fixture.detectChanges();
 
-    const host = fixture.nativeElement as HTMLElement;
+    const host = hostOf(fixture);
     const rows = host.querySelectorAll('.et-table-row--placeholder');
 
     // The templated column renders the consumer's bone; the other keeps the default one.
@@ -174,8 +175,7 @@ describe('TableSkeletonDirective', () => {
     const fixture = TestBed.createComponent(CellStateHost);
     fixture.detectChanges();
 
-    const host = fixture.nativeElement as HTMLElement;
-    const cell = host.querySelectorAll('.et-table-row')[0]?.querySelector('[data-col-key="name"]');
+    const cell = createTableDriver(fixture).cell(0, 'name');
 
     expect(cell?.getAttribute('data-state')).toBe('loading');
     expect(cell?.querySelector('et-skeleton-item')).not.toBeNull();

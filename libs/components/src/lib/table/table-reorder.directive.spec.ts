@@ -1,10 +1,8 @@
-import { Component, signal, viewChild } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { expectNothingRunsAfterDestroy } from '../testing/destroyed-mid-gesture';
-import { pointerEvent } from '../testing/driver-core';
-import { TableReorderDirective } from './table-reorder.directive';
-import { TableComponent } from './table.component';
+import { createTableDriver } from './testing/table-driver';
 import { TABLE_IMPORTS, TABLE_REORDER_IMPORTS } from './table.imports';
 import { TableColumns } from './table.types';
 
@@ -28,67 +26,117 @@ const columns = () =>
 class HostComponent {
   public cols = signal<TableColumns<Person>>(columns());
   public data = signal<Person[]>(PEOPLE);
-  public feature = viewChild.required(TableReorderDirective);
-  public table = viewChild.required<TableComponent<Person>>(TableComponent);
 }
-
-/**
- * jsdom performs no layout, so a scroller's `scrollLeft` never leaves 0 - and the auto-scroll loop
- * stops on its first frame precisely when the position it wrote did not take.
- */
-const makeScrollable = (element: HTMLElement) => {
-  let scrollLeft = 0;
-
-  Object.defineProperty(element, 'scrollLeft', {
-    configurable: true,
-    get: () => scrollLeft,
-    set: (value: number) => void (scrollLeft = value),
-  });
-};
 
 const create = () => {
   const fixture = TestBed.createComponent(HostComponent);
 
   fixture.detectChanges();
-  makeScrollable(fixture.componentInstance.feature().table.scrollElement());
 
-  return fixture;
-};
-
-/**
- * Grabs the first header cell and drags it far past the table's trailing edge - which, with jsdom
- * measuring the table as a zero-width box, is any position beyond the auto-scroll zone.
- */
-const dragToTrailingEdge = (fixture: ComponentFixture<HostComponent>) => {
-  const cell = fixture.componentInstance.feature().table.headerCellElements()[0]!;
-
-  pointerEvent(cell, 'pointerdown', { button: 0, clientX: 10, clientY: 10, pointerId: 1 });
-  pointerEvent(document, 'pointermove', { clientX: 200, clientY: 10, pointerId: 1 });
+  return { driver: createTableDriver(fixture), fixture };
 };
 
 describe('TableReorderDirective', () => {
   it('scrolls the table under a drag held past its trailing edge', async () => {
-    const fixture = create();
-    const scroller = fixture.componentInstance.feature().table.scrollElement();
+    const { driver } = create();
 
-    dragToTrailingEdge(fixture);
+    driver.makeScrollable();
+    driver.grabColumn('name').moveTo(400);
 
-    const firstFrame = scroller.scrollLeft;
+    const firstFrame = driver.scroller().scrollLeft;
 
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
     expect(firstFrame).toBeGreaterThan(0);
-    expect(scroller.scrollLeft).toBeGreaterThan(firstFrame);
+    expect(driver.scroller().scrollLeft).toBeGreaterThan(firstFrame);
   });
 
   it('stops the edge auto-scroll loop when the table is destroyed mid-drag', async () => {
-    const fixture = create();
+    const { driver, fixture } = create();
+
+    driver.makeScrollable();
 
     const activity = await expectNothingRunsAfterDestroy({
       fixture,
-      start: () => dragToTrailingEdge(fixture),
+      start: () => driver.grabColumn('name').moveTo(400),
     });
 
     expect(activity.framesRun).toBeGreaterThan(0);
+  });
+
+  it('commits the drop, so the table renders the landing order', () => {
+    const { driver } = create();
+
+    expect(driver.columnKeys()).toEqual(['name', 'role']);
+
+    const drag = driver.grabColumn('role');
+
+    drag.moveOver('name', 'before');
+    drag.drop();
+
+    expect(driver.columnKeys()).toEqual(['role', 'name']);
+    expect(driver.rowTexts()).toEqual([
+      ['Admin', 'Ada'],
+      ['Editor', 'Bob'],
+    ]);
+  });
+
+  it('drops a column on the trailing side of the one it is held over', () => {
+    const { driver } = create();
+    const drag = driver.grabColumn('name');
+
+    drag.moveOver('role', 'after');
+    drag.drop();
+
+    expect(driver.columnKeys()).toEqual(['role', 'name']);
+    expect(driver.rowTexts()).toEqual([
+      ['Admin', 'Ada'],
+      ['Editor', 'Bob'],
+    ]);
+  });
+
+  it('previews the landing order under the drag, and drops the preview once it has committed', () => {
+    const { driver } = create();
+    const drag = driver.grabColumn('role');
+
+    drag.moveOver('name', 'before');
+
+    const ghost = driver.query('.et-table-drag-ghost');
+
+    expect(ghost?.textContent?.trim()).toBe('Role');
+    expect(driver.headerCell('role')?.classList.contains('et-table-header-cell--dragging')).toBe(true);
+    expect(driver.headerCell('role')?.style.transform).toBe('translateX(-200px)');
+    expect(driver.headerCell('name')?.style.transform).toBe('translateX(200px)');
+    expect(driver.cell(0, 'name')?.style.transform).toBe('translateX(200px)');
+
+    drag.drop();
+
+    expect(driver.query('.et-table-drag-ghost')).toBeNull();
+    expect(driver.headerCell('role')?.classList.contains('et-table-header-cell--dragging')).toBe(false);
+    expect(driver.headerCell('role')?.style.transform).toBe('');
+    expect(driver.headerCell('name')?.style.transform).toBe('');
+    expect(driver.cell(0, 'name')?.style.transform).toBe('');
+  });
+
+  it('reverts a gesture the browser cancels, rather than dropping where the pointer stood', () => {
+    const { driver } = create();
+    const drag = driver.grabColumn('role');
+
+    drag.moveOver('name', 'before');
+    drag.cancel();
+
+    expect(driver.columnKeys()).toEqual(['name', 'role']);
+    expect(driver.headerCell('role')?.classList.contains('et-table-header-cell--dragging')).toBe(false);
+  });
+
+  it('leaves the order alone when the pointer is released before the drag threshold', () => {
+    const { driver } = create();
+    const drag = driver.grabColumn('role');
+
+    drag.moveTo(304);
+    drag.drop();
+
+    expect(driver.query('.et-table-drag-ghost')).toBeNull();
+    expect(driver.columnKeys()).toEqual(['name', 'role']);
   });
 });

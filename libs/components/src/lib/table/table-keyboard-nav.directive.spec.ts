@@ -1,6 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { queryAll } from '../testing/driver-core';
 import { TableKeyboardNavDirective } from './table-keyboard-nav.directive';
 import { TABLE_IMPORTS, TABLE_KEYBOARD_NAV_IMPORTS } from './table.imports';
 import { TableColumns } from './table.types';
@@ -46,10 +47,7 @@ const create = () => {
   return fixture;
 };
 
-const host = (fixture: ComponentFixture<HostComponent>) => fixture.nativeElement as HTMLElement;
-const cells = (fixture: ComponentFixture<HostComponent>) => [
-  ...host(fixture).querySelectorAll<HTMLElement>('.et-table-row > .et-table-cell'),
-];
+const cells = (fixture: ComponentFixture<HostComponent>) => queryAll(fixture, '.et-table-row > .et-table-cell');
 
 /** The focused cell as `row,column` text, so an expectation reads like the grid. */
 const focused = (fixture: ComponentFixture<HostComponent>) => {
@@ -233,7 +231,7 @@ describe('TableKeyboardNavDirective', () => {
   it('suppresses the row tab stop, so the body has only one', () => {
     const fixture = create();
 
-    expect(host(fixture).querySelectorAll('.et-table-row').length).toBeGreaterThan(0);
-    expect(host(fixture).querySelectorAll('.et-table-row[tabindex]')).toHaveLength(0);
+    expect(queryAll(fixture, '.et-table-row').length).toBeGreaterThan(0);
+    expect(queryAll(fixture, '.et-table-row[tabindex]')).toHaveLength(0);
   });
 });

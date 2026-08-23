@@ -2,6 +2,7 @@ import { Component, computed, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RuntimeError } from '@ethlete/core';
 import '../../test-helpers';
+import { createTableDriver } from './testing/table-driver';
 import { TABLE_ERROR_CODES } from './table-errors';
 import { TableColumnMeta } from './headless/table-features';
 import { TableFiltersDirective } from './table-filters.directive';
@@ -72,24 +73,23 @@ describe('TableFiltersDirective', () => {
       },
     } satisfies TableColumns<Person>);
 
-    const triggers = (fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-filter-trigger');
+    const triggers = createTableDriver(fixture).filterTriggers();
 
-    expect(triggers.length).toBe(1);
+    expect(triggers).toHaveLength(1);
     expect(triggers[0]?.getAttribute('aria-label')).toBe('Filter Role');
   });
 
   it('disables the trigger on a disabled column, so its menu cannot be opened', () => {
     const fixture = create(roleColumn({ filterOptions: [{ label: 'Admin', value: 'Admin' }], disabled: true }));
-    const trigger = (fixture.nativeElement as HTMLElement).querySelector(
-      '.et-table-filter-trigger',
-    ) as HTMLButtonElement;
+    const trigger = createTableDriver(fixture).filterTrigger();
 
-    expect(trigger.disabled).toBe(true);
+    expect(trigger?.disabled).toBe(true);
   });
 
   it('marks the trigger active while the column is filtered', () => {
     const fixture = create(roleColumn({ filterOptions: [{ label: 'Admin', value: 'Admin' }] }));
-    const trigger = () => (fixture.nativeElement as HTMLElement).querySelector('.et-table-filter-trigger');
+    const driver = createTableDriver(fixture);
+    const trigger = () => driver.filterTrigger('role');
 
     expect(trigger()?.getAttribute('data-active')).toBe('false');
 
