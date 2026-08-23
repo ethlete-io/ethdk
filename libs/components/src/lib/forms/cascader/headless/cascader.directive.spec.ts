@@ -1,13 +1,11 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
 import { flushFrames, tick } from '../../../testing/driver-core';
-import { createOverlayControlDriver, mountControl } from '../../../testing/overlay-control-driver';
 import { CascaderDriver, mountCascader } from '../../testing/cascader-driver';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { describeOverlayControlContract } from '../../testing/overlay-control-contract';
 import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
 import { CASCADER_IMPORTS } from '../cascader.imports';
-import { CascaderDirective } from './cascader.directive';
 import { CascaderDataSource, CascaderNode } from './internals/cascader-tree';
 
 // competition → stage → tournament, three levels, synchronous
@@ -1017,10 +1015,7 @@ describe('CascaderDirective (multiple, mixed contract)', () => {
 describe('CascaderDirective (in form field)', () => {
   describeOverlayControlContract(
     () => {
-      const driver = createOverlayControlDriver(mountControl(CascaderInFormFieldTestHost), CascaderDirective<string>, {
-        hide: (cascader) => cascader.hide(),
-        directiveSelector: 'et-cascader',
-      });
+      const driver = mountCascader(CascaderInFormFieldTestHost, [], { directiveSelector: 'et-cascader' });
 
       return {
         open: () => driver.open(),
