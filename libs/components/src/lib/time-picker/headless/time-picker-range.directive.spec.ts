@@ -1,6 +1,8 @@
-import { ApplicationRef, Component, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
+import { tick } from '../../testing/driver-core';
+import { column, columns, option, press } from '../testing/time-picker-driver';
 import { TimePickerColumnDirective } from './time-picker-column.directive';
 import { TimePickerOptionDirective } from './time-picker-option.directive';
 import {
@@ -48,20 +50,10 @@ describe('TimePickerDirective - range mode', () => {
   let fixture: ComponentFixture<TimePickerRangeTestHost>;
   let host: TimePickerRangeTestHost;
 
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  const hostElement = () => fixture.nativeElement as HTMLElement;
-
-  const column = (unit: string) => hostElement().querySelector<HTMLElement>(`[data-unit='${unit}']`);
-  const optionButton = (unit: string, value: number) =>
-    column(unit)?.querySelector<HTMLButtonElement>(`[data-value='${value}']`) ?? null;
   const labelsWith = (unit: string, attribute: string) =>
-    Array.from(column(unit)?.querySelectorAll<HTMLElement>(`[${attribute}]`) ?? []).map((option) =>
-      option.textContent?.trim(),
+    Array.from(column(fixture, unit)?.querySelectorAll<HTMLElement>(`[${attribute}]`) ?? []).map((el) =>
+      el.textContent?.trim(),
     );
-
-  const keydown = (unit: string, key: string) =>
-    column(unit)?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
 
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [TimePickerRangeTestHost] });
@@ -74,22 +66,22 @@ describe('TimePickerDirective - range mode', () => {
     host.rangeValue.set({ start: at(9, 0), end: at(17, 30) });
     tick();
 
-    expect(Array.from(fixture.nativeElement.querySelectorAll('[data-unit]')).length).toBe(2);
-    expect(column('hour')?.querySelector('[data-selected]')?.textContent?.trim()).toBe('09');
+    expect(columns(fixture)).toHaveLength(2);
+    expect(column(fixture, 'hour')?.querySelector('[data-selected]')?.textContent?.trim()).toBe('09');
 
     host.activeSide.set('end');
     tick();
 
-    expect(column('hour')?.querySelector('[data-selected]')?.textContent?.trim()).toBe('17');
-    expect(column('minute')?.querySelector('[data-selected]')?.textContent?.trim()).toBe('30');
+    expect(column(fixture, 'hour')?.querySelector('[data-selected]')?.textContent?.trim()).toBe('17');
+    expect(column(fixture, 'minute')?.querySelector('[data-selected]')?.textContent?.trim()).toBe('30');
   });
 
   it('writes only the active end and reports which one it was', () => {
     host.activeSide.set('end');
     tick();
 
-    optionButton('hour', 17)?.click();
-    optionButton('minute', 30)?.click();
+    option(fixture, 'hour', 17)?.click();
+    option(fixture, 'minute', 30)?.click();
     tick();
 
     expect(host.rangeValue().start).toBeNull();
@@ -100,8 +92,8 @@ describe('TimePickerDirective - range mode', () => {
     host.activeSide.set('start');
     tick();
 
-    optionButton('hour', 9)?.click();
-    optionButton('minute', 0)?.click();
+    option(fixture, 'hour', 9)?.click();
+    option(fixture, 'minute', 0)?.click();
     tick();
 
     expect(host.rangeValue().start?.getHours()).toBe(9);
@@ -111,21 +103,21 @@ describe('TimePickerDirective - range mode', () => {
   });
 
   it('hops to the end once the start is committed, and only once', () => {
-    optionButton('hour', 9)?.click();
+    option(fixture, 'hour', 9)?.click();
     tick();
 
     // a held part is not a committed start: the columns must not move away mid-pick
     expect(host.rangeValue().start).toBeNull();
     expect(host.activeSide()).toBe('start');
 
-    optionButton('minute', 0)?.click();
+    option(fixture, 'minute', 0)?.click();
     tick();
 
     expect(host.rangeValue().start?.getHours()).toBe(9);
     expect(host.activeSide()).toBe('end');
 
-    optionButton('hour', 17)?.click();
-    optionButton('minute', 0)?.click();
+    option(fixture, 'hour', 17)?.click();
+    option(fixture, 'minute', 0)?.click();
     tick();
 
     expect(host.rangeValue().end?.getHours()).toBe(17);
@@ -135,7 +127,7 @@ describe('TimePickerDirective - range mode', () => {
     host.activeSide.set('start');
     tick();
 
-    optionButton('hour', 10)?.click();
+    option(fixture, 'hour', 10)?.click();
     tick();
 
     expect(host.rangeValue().start?.getHours()).toBe(10);
@@ -143,8 +135,8 @@ describe('TimePickerDirective - range mode', () => {
   });
 
   it('does not hop while the keyboard browses a column', () => {
-    keydown('hour', 'ArrowDown');
-    keydown('minute', 'ArrowDown');
+    press(fixture, 'hour', 'ArrowDown');
+    press(fixture, 'minute', 'ArrowDown');
     tick();
 
     expect(host.rangeValue().start).not.toBeNull();

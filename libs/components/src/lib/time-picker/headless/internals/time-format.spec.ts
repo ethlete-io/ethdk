@@ -34,6 +34,11 @@ describe('generateSteppedValues', () => {
   it('does not duplicate an on-step selection', () => {
     expect(generateSteppedValues({ end: 60, step: 15, include: 30 })).toEqual([0, 15, 30, 45]);
   });
+
+  it('ignores an include outside the generated range', () => {
+    expect(generateSteppedValues({ end: 60, step: 15, include: -5 })).toEqual([0, 15, 30, 45]);
+    expect(generateSteppedValues({ end: 60, step: 15, include: 60 })).toEqual([0, 15, 30, 45]);
+  });
 });
 
 describe('getTimeParts', () => {

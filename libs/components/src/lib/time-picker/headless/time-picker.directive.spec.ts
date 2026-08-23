@@ -1,6 +1,8 @@
-import { ApplicationRef, Component, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
+import { tick } from '../../testing/driver-core';
+import { column, columns, option, press } from '../testing/time-picker-driver';
 import { TimePickerColumnDirective } from './time-picker-column.directive';
 import { TimePickerOptionDirective } from './time-picker-option.directive';
 import { TimePickerDirective } from './time-picker.directive';
@@ -41,18 +43,8 @@ describe('TimePickerDirective', () => {
   let fixture: ComponentFixture<TimePickerTestHost>;
   let host: TimePickerTestHost;
 
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  const hostElement = () => fixture.nativeElement as HTMLElement;
-
-  const column = (unit: string) => hostElement().querySelector<HTMLElement>(`[data-unit='${unit}']`);
-  const columns = () => Array.from(hostElement().querySelectorAll<HTMLElement>('[data-unit]'));
-  const optionButton = (unit: string, value: number) =>
-    column(unit)?.querySelector<HTMLButtonElement>(`[data-value='${value}']`) ?? null;
-  const selectedIn = (unit: string) => column(unit)?.querySelector<HTMLButtonElement>('[data-selected]') ?? null;
-
-  const keydown = (unit: string, key: string) =>
-    column(unit)?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  const selectedIn = (unit: string) =>
+    column(fixture, unit)?.querySelector<HTMLButtonElement>('[data-selected]') ?? null;
 
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [TimePickerTestHost] });
@@ -62,29 +54,29 @@ describe('TimePickerDirective', () => {
   });
 
   it('renders hour and minute columns for a 24-hour format without seconds', () => {
-    expect(columns().map((columnElement) => columnElement.dataset['unit'])).toEqual(['hour', 'minute']);
-    expect(column('hour')?.querySelectorAll('button').length).toBe(24);
-    expect(column('minute')?.querySelectorAll('button').length).toBe(12);
-    expect(column('hour')?.getAttribute('role')).toBe('listbox');
-    expect(column('hour')?.getAttribute('aria-label')).toBe('Hours');
+    expect(columns(fixture).map((columnElement) => columnElement.dataset['unit'])).toEqual(['hour', 'minute']);
+    expect(column(fixture, 'hour')?.querySelectorAll('button').length).toBe(24);
+    expect(column(fixture, 'minute')?.querySelectorAll('button').length).toBe(12);
+    expect(column(fixture, 'hour')?.getAttribute('role')).toBe('listbox');
+    expect(column(fixture, 'hour')?.getAttribute('aria-label')).toBe('Hours');
   });
 
   it('adds seconds and period columns per format', () => {
     host.format.set('h:mm:ss a');
     tick();
 
-    expect(columns().map((columnElement) => columnElement.dataset['unit'])).toEqual([
+    expect(columns(fixture).map((columnElement) => columnElement.dataset['unit'])).toEqual([
       'hour',
       'minute',
       'second',
       'period',
     ]);
-    expect(column('hour')?.querySelectorAll('button').length).toBe(12);
-    expect(optionButton('hour', 0)?.textContent?.trim()).toBe('12');
+    expect(column(fixture, 'hour')?.querySelectorAll('button').length).toBe(12);
+    expect(option(fixture, 'hour', 0)?.textContent?.trim()).toBe('12');
   });
 
   it('holds the picks made while empty and commits once every column has one', () => {
-    optionButton('minute', 30)?.click();
+    option(fixture, 'minute', 30)?.click();
     tick();
 
     // a minute alone is not a time; committing one would invent the hour
@@ -92,7 +84,7 @@ describe('TimePickerDirective', () => {
     expect(selectedIn('minute')?.dataset['value']).toBe('30');
     expect(selectedIn('hour')).toBeNull();
 
-    optionButton('hour', 9)?.click();
+    option(fixture, 'hour', 9)?.click();
     tick();
 
     expect(host.value()?.getHours()).toBe(9);
@@ -102,11 +94,11 @@ describe('TimePickerDirective', () => {
   });
 
   it('edits the value directly once it is whole', () => {
-    optionButton('minute', 30)?.click();
-    optionButton('hour', 9)?.click();
+    option(fixture, 'minute', 30)?.click();
+    option(fixture, 'hour', 9)?.click();
     tick();
 
-    optionButton('hour', 11)?.click();
+    option(fixture, 'hour', 11)?.click();
     tick();
 
     expect(host.value()?.getHours()).toBe(11);
@@ -120,7 +112,7 @@ describe('TimePickerDirective', () => {
 
     expect(selectedIn('minute')?.textContent?.trim()).toBe('32');
 
-    const values = Array.from(column('minute')?.querySelectorAll<HTMLElement>('button') ?? []).map(
+    const values = Array.from(column(fixture, 'minute')?.querySelectorAll<HTMLElement>('button') ?? []).map(
       (button) => button.dataset['value'],
     );
 
@@ -132,17 +124,17 @@ describe('TimePickerDirective', () => {
     host.minuteStep.set(0);
     tick();
 
-    expect(column('minute')?.querySelectorAll('button').length).toBe(60);
+    expect(column(fixture, 'minute')?.querySelectorAll('button').length).toBe(60);
 
     host.minuteStep.set(-5);
     tick();
 
-    expect(column('minute')?.querySelectorAll('button').length).toBe(60);
+    expect(column(fixture, 'minute')?.querySelectorAll('button').length).toBe(60);
 
     host.minuteStep.set(0.5);
     tick();
 
-    expect(column('minute')?.querySelectorAll('button').length).toBe(60);
+    expect(column(fixture, 'minute')?.querySelectorAll('button').length).toBe(60);
   });
 
   it('keeps a clamped step focusable by the keyboard', async () => {
@@ -150,7 +142,7 @@ describe('TimePickerDirective', () => {
     tick();
     await fixture.whenStable();
 
-    const options = Array.from(column('minute')?.querySelectorAll<HTMLButtonElement>('button') ?? []);
+    const options = Array.from(column(fixture, 'minute')?.querySelectorAll<HTMLButtonElement>('button') ?? []);
 
     expect(options.length).toBe(60);
     expect(options.some((option) => option.tabIndex === 0)).toBe(true);
@@ -165,12 +157,12 @@ describe('TimePickerDirective', () => {
     expect(selectedIn('hour')?.textContent?.trim()).toBe('2');
     expect(selectedIn('period')?.dataset['value']).toBe('1');
 
-    optionButton('hour', 9)?.click();
+    option(fixture, 'hour', 9)?.click();
     tick();
 
     expect(host.value()?.getHours()).toBe(21);
 
-    optionButton('period', 0)?.click();
+    option(fixture, 'period', 0)?.click();
     tick();
 
     expect(host.value()?.getHours()).toBe(9);
@@ -180,7 +172,7 @@ describe('TimePickerDirective', () => {
     host.format.set('h:mm a');
     tick();
 
-    optionButton('period', 1)?.click();
+    option(fixture, 'period', 1)?.click();
     tick();
 
     expect(host.value()).toBeNull();
@@ -194,8 +186,8 @@ describe('TimePickerDirective', () => {
     host.format.set('h:mm a');
     tick();
 
-    optionButton('hour', 9)?.click();
-    optionButton('minute', 30)?.click();
+    option(fixture, 'hour', 9)?.click();
+    option(fixture, 'minute', 30)?.click();
     tick();
 
     // an hour is always in some half-day, so an untouched AM/PM column holds nothing up
@@ -208,10 +200,10 @@ describe('TimePickerDirective', () => {
     host.format.set('h:mm a');
     tick();
 
-    optionButton('period', 1)?.click();
+    option(fixture, 'period', 1)?.click();
     tick();
 
-    optionButton('hour', 9)?.click();
+    option(fixture, 'hour', 9)?.click();
     tick();
 
     // an hour on top of a half-day is still not a time - the minute is nobody's pick yet
@@ -219,7 +211,7 @@ describe('TimePickerDirective', () => {
     expect(selectedIn('hour')?.dataset['value']).toBe('9');
     expect(selectedIn('minute')).toBeNull();
 
-    optionButton('minute', 30)?.click();
+    option(fixture, 'minute', 30)?.click();
     tick();
 
     expect(host.value()?.getHours()).toBe(21);
@@ -231,22 +223,22 @@ describe('TimePickerDirective', () => {
     tick();
     await fixture.whenStable();
 
-    keydown('hour', 'ArrowDown');
+    press(fixture, 'hour', 'ArrowDown');
     tick();
 
     expect(host.value()?.getHours()).toBe(0);
 
-    keydown('hour', 'ArrowUp');
+    press(fixture, 'hour', 'ArrowUp');
     tick();
 
     expect(host.value()?.getHours()).toBe(23);
 
-    keydown('minute', 'End');
+    press(fixture, 'minute', 'End');
     tick();
 
     expect(host.value()?.getMinutes()).toBe(55);
 
-    keydown('minute', 'Home');
+    press(fixture, 'minute', 'Home');
     tick();
 
     expect(host.value()?.getMinutes()).toBe(0);
@@ -257,8 +249,8 @@ describe('TimePickerDirective', () => {
     tick();
     await fixture.whenStable();
 
-    keydown('hour', '1');
-    keydown('hour', '7');
+    press(fixture, 'hour', '1');
+    press(fixture, 'hour', '7');
     tick();
 
     expect(host.value()?.getHours()).toBe(17);
@@ -266,7 +258,7 @@ describe('TimePickerDirective', () => {
 
   describe('bounds and filter', () => {
     const disabledIn = (unit: string) =>
-      Array.from(column(unit)?.querySelectorAll<HTMLElement>('[data-disabled]') ?? []).map(
+      Array.from(column(fixture, unit)?.querySelectorAll<HTMLElement>('[data-disabled]') ?? []).map(
         (button) => button.dataset['value'],
       );
 
@@ -279,7 +271,7 @@ describe('TimePickerDirective', () => {
     it('leaves every option selectable without bounds or a filter', () => {
       expect(disabledIn('hour')).toEqual([]);
       expect(disabledIn('minute')).toEqual([]);
-      expect(optionButton('hour', 3)?.hasAttribute('aria-disabled')).toBe(false);
+      expect(option(fixture, 'hour', 3)?.hasAttribute('aria-disabled')).toBe(false);
     });
 
     it('disables the hours and minutes outside min/max', () => {
@@ -304,7 +296,7 @@ describe('TimePickerDirective', () => {
         '22',
         '23',
       ]);
-      expect(optionButton('hour', 8)?.getAttribute('aria-disabled')).toBe('true');
+      expect(option(fixture, 'hour', 8)?.getAttribute('aria-disabled')).toBe('true');
 
       // the noon selection is inside the bounds, so every minute of it is open
       expect(disabledIn('minute')).toEqual([]);
@@ -342,7 +334,7 @@ describe('TimePickerDirective', () => {
       host.min.set(new Date(2026, 6, 17, 9));
       tick();
 
-      optionButton('hour', 4)!.click();
+      option(fixture, 'hour', 4)!.click();
       tick();
 
       expect(host.value()?.getHours()).toBe(12);
@@ -354,12 +346,12 @@ describe('TimePickerDirective', () => {
       tick();
 
       // 09:00 is out of bounds, so the hour pick lands on the first open minute
-      optionButton('hour', 9)?.click();
+      option(fixture, 'hour', 9)?.click();
       tick();
 
       expect([host.value()?.getHours(), host.value()?.getMinutes()]).toEqual([9, 40]);
 
-      optionButton('hour', 18)?.click();
+      option(fixture, 'hour', 18)?.click();
       tick();
 
       expect([host.value()?.getHours(), host.value()?.getMinutes()]).toEqual([18, 0]);
@@ -369,23 +361,23 @@ describe('TimePickerDirective', () => {
       host.timeFilter.set((date) => date.getHours() % 2 === 0);
       tick();
 
-      keydown('hour', 'ArrowDown');
+      press(fixture, 'hour', 'ArrowDown');
       tick();
 
       expect(host.value()?.getHours()).toBe(14);
 
-      keydown('hour', 'ArrowUp');
-      keydown('hour', 'ArrowUp');
+      press(fixture, 'hour', 'ArrowUp');
+      press(fixture, 'hour', 'ArrowUp');
       tick();
 
       expect(host.value()?.getHours()).toBe(10);
 
-      keydown('hour', 'Home');
+      press(fixture, 'hour', 'Home');
       tick();
 
       expect(host.value()?.getHours()).toBe(0);
 
-      keydown('hour', 'End');
+      press(fixture, 'hour', 'End');
       tick();
 
       expect(host.value()?.getHours()).toBe(22);
@@ -395,7 +387,7 @@ describe('TimePickerDirective', () => {
       host.min.set(new Date(2026, 6, 17, 10));
       tick();
 
-      keydown('hour', '1');
+      press(fixture, 'hour', '1');
       tick();
 
       // hour 1 is out of bounds, so the query falls through to the next match
@@ -407,7 +399,7 @@ describe('TimePickerDirective', () => {
       tick();
 
       // "4" matches hour 4 alone - 14 and 24 read as "14"/"24", not "4"
-      keydown('hour', '4');
+      press(fixture, 'hour', '4');
       tick();
 
       expect(host.value()?.getHours()).toBe(12);
@@ -421,12 +413,12 @@ describe('TimePickerDirective', () => {
       await fixture.whenStable();
 
       // 10 PM is closed, so the pick lands on the closest open PM hour instead of doing nothing
-      optionButton('period', 1)?.click();
+      option(fixture, 'period', 1)?.click();
       tick();
 
       expect([host.value()?.getHours(), host.value()?.getMinutes()]).toEqual([16, 0]);
 
-      optionButton('period', 0)?.click();
+      option(fixture, 'period', 0)?.click();
       tick();
 
       // 4 AM is closed too - back to the closest open AM hour
@@ -439,8 +431,8 @@ describe('TimePickerDirective', () => {
       tick();
       await fixture.whenStable();
 
-      expect(optionButton('period', 0)?.getAttribute('aria-disabled')).toBe('true');
-      expect(optionButton('period', 1)?.hasAttribute('aria-disabled')).toBe(false);
+      expect(option(fixture, 'period', 0)?.getAttribute('aria-disabled')).toBe('true');
+      expect(option(fixture, 'period', 1)?.hasAttribute('aria-disabled')).toBe(false);
     });
   });
 
@@ -449,13 +441,13 @@ describe('TimePickerDirective', () => {
     tick();
     await fixture.whenStable();
 
-    expect(optionButton('hour', 9)?.tabIndex).toBe(0);
-    expect(optionButton('hour', 10)?.tabIndex).toBe(-1);
+    expect(option(fixture, 'hour', 9)?.tabIndex).toBe(0);
+    expect(option(fixture, 'hour', 10)?.tabIndex).toBe(-1);
 
-    optionButton('hour', 10)?.click();
+    option(fixture, 'hour', 10)?.click();
     tick();
 
-    expect(optionButton('hour', 9)?.tabIndex).toBe(-1);
-    expect(optionButton('hour', 10)?.tabIndex).toBe(0);
+    expect(option(fixture, 'hour', 9)?.tabIndex).toBe(-1);
+    expect(option(fixture, 'hour', 10)?.tabIndex).toBe(0);
   });
 });

@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
+import { bandedCells, cell, cells, focusedCell, grid, press } from '../testing/calendar-driver';
 import { CalendarCellDirective } from './calendar-cell.directive';
 import { createFixedLengthRangeStrategy, createWeekRangeStrategy } from './calendar-range-strategy';
 import { CalendarGridDirective } from './calendar-grid.directive';
@@ -106,27 +107,6 @@ describe('CalendarDirective', () => {
   let host: HostComponent;
   let calendar: CalendarDirective;
 
-  const grid = () => fixture.nativeElement.querySelector('[role="grid"]') as HTMLElement;
-  const cells = () =>
-    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('[etcalendarcell]'));
-  const cellFor = (label: number, extraSelector = '') => {
-    const matches = cells().filter(
-      (cell) => cell.textContent?.trim() === `${label}` && (!extraSelector || cell.matches(extraSelector)),
-    );
-
-    return matches.find((cell) => !cell.hasAttribute('data-outside-month')) ?? matches[0] ?? null;
-  };
-  const focusedCell = () => cells().find((cell) => cell.tabIndex === 0) ?? null;
-  const bandedCells = () =>
-    cells()
-      .filter((cell) => cell.hasAttribute('data-band'))
-      .map((cell) => cell.textContent?.trim());
-
-  const keydown = (key: string, shiftKey = false) => {
-    grid().dispatchEvent(new KeyboardEvent('keydown', { key, shiftKey, bubbles: true, cancelable: true }));
-    fixture.detectChanges();
-  };
-
   beforeEach(async () => {
     TestBed.configureTestingModule({ imports: [HostComponent] });
     fixture = TestBed.createComponent(HostComponent);
@@ -138,42 +118,42 @@ describe('CalendarDirective', () => {
 
   it('renders the weeks covering the active month', () => {
     expect(calendar.weeks()).toHaveLength(5);
-    expect(cells()).toHaveLength(35);
+    expect(cells(fixture)).toHaveLength(35);
     // Monday-based July 2026 starts with June 29th from the outside month
-    expect(cells()[0]?.textContent?.trim()).toBe('29');
-    expect(cells()[0]?.hasAttribute('data-outside-month')).toBe(true);
+    expect(cells(fixture)[0]?.textContent?.trim()).toBe('29');
+    expect(cells(fixture)[0]?.hasAttribute('data-outside-month')).toBe(true);
   });
 
   it('selects a single date on click', () => {
-    cellFor(16)?.click();
+    cell(fixture, 16)?.click();
     fixture.detectChanges();
 
     expect(host.value()).toEqual(new Date(2026, 6, 16));
-    expect(cellFor(16)?.getAttribute('aria-selected')).toBe('true');
-    expect(cellFor(16)?.hasAttribute('data-selected')).toBe(true);
+    expect(cell(fixture, 16)?.getAttribute('aria-selected')).toBe('true');
+    expect(cell(fixture, 16)?.hasAttribute('data-selected')).toBe(true);
   });
 
   it('builds a range across two clicks and restarts on an earlier third click', () => {
     host.mode.set('range');
     fixture.detectChanges();
 
-    cellFor(10)?.click();
+    cell(fixture, 10)?.click();
     fixture.detectChanges();
 
     expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 10), end: null });
 
-    cellFor(14)?.click();
+    cell(fixture, 14)?.click();
     fixture.detectChanges();
 
     expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 10), end: new Date(2026, 6, 14) });
-    expect(cellFor(10)?.hasAttribute('data-range-start')).toBe(true);
-    expect(cellFor(14)?.hasAttribute('data-range-end')).toBe(true);
-    expect(cellFor(12)?.hasAttribute('data-in-range')).toBe(true);
-    expect(cellFor(10)?.getAttribute('data-band')).toBe('start');
-    expect(cellFor(12)?.getAttribute('data-band')).toBe('middle');
-    expect(cellFor(14)?.getAttribute('data-band')).toBe('end');
+    expect(cell(fixture, 10)?.hasAttribute('data-range-start')).toBe(true);
+    expect(cell(fixture, 14)?.hasAttribute('data-range-end')).toBe(true);
+    expect(cell(fixture, 12)?.hasAttribute('data-in-range')).toBe(true);
+    expect(cell(fixture, 10)?.getAttribute('data-band')).toBe('start');
+    expect(cell(fixture, 12)?.getAttribute('data-band')).toBe('middle');
+    expect(cell(fixture, 14)?.getAttribute('data-band')).toBe('end');
 
-    cellFor(5)?.click();
+    cell(fixture, 5)?.click();
     fixture.detectChanges();
 
     expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 5), end: null });
@@ -183,35 +163,35 @@ describe('CalendarDirective', () => {
     host.mode.set('range');
     fixture.detectChanges();
 
-    cellFor(10)?.click();
+    cell(fixture, 10)?.click();
     fixture.detectChanges();
 
-    cellFor(13)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
+    cell(fixture, 13)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
     fixture.detectChanges();
 
-    expect(cellFor(11)?.hasAttribute('data-preview')).toBe(true);
-    expect(cellFor(13)?.hasAttribute('data-preview')).toBe(true);
-    expect(cellFor(15)?.hasAttribute('data-preview')).toBe(false);
+    expect(cell(fixture, 11)?.hasAttribute('data-preview')).toBe(true);
+    expect(cell(fixture, 13)?.hasAttribute('data-preview')).toBe(true);
+    expect(cell(fixture, 15)?.hasAttribute('data-preview')).toBe(false);
 
-    grid().dispatchEvent(new PointerEvent('pointerleave', { bubbles: false }));
+    grid(fixture).dispatchEvent(new PointerEvent('pointerleave', { bubbles: false }));
     fixture.detectChanges();
 
-    expect(cellFor(11)?.hasAttribute('data-preview')).toBe(false);
+    expect(cell(fixture, 11)?.hasAttribute('data-preview')).toBe(false);
   });
 
   it('moves the roving focus with the keyboard', () => {
-    cellFor(16)?.focus();
+    cell(fixture, 16)?.focus();
     calendar.focusedDate.set(new Date(2026, 6, 16));
     fixture.detectChanges();
 
-    keydown('ArrowRight');
-    expect(focusedCell()?.textContent?.trim()).toBe('17');
+    press(fixture, 'ArrowRight');
+    expect(focusedCell(fixture)?.textContent?.trim()).toBe('17');
 
-    keydown('ArrowDown');
-    expect(focusedCell()?.textContent?.trim()).toBe('24');
+    press(fixture, 'ArrowDown');
+    expect(focusedCell(fixture)?.textContent?.trim()).toBe('24');
 
-    keydown('Home');
-    expect(focusedCell()?.textContent?.trim()).toBe('20');
+    press(fixture, 'Home');
+    expect(focusedCell(fixture)?.textContent?.trim()).toBe('20');
   });
 
   it('ignores keys that bubble out of a form field inside the grid', () => {
@@ -219,7 +199,7 @@ describe('CalendarDirective', () => {
     fixture.detectChanges();
 
     const input = document.createElement('input');
-    grid().appendChild(input);
+    grid(fixture).appendChild(input);
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
     fixture.detectChanges();
     input.remove();
@@ -231,7 +211,7 @@ describe('CalendarDirective', () => {
     calendar.focusedDate.set(new Date(2026, 6, 31));
     fixture.detectChanges();
 
-    keydown('ArrowRight');
+    press(fixture, 'ArrowRight');
 
     expect(host.activeMonth()).toEqual(new Date(2026, 7, 1));
     expect(calendar.focusedDate()).toEqual(new Date(2026, 7, 1));
@@ -241,10 +221,10 @@ describe('CalendarDirective', () => {
     calendar.focusedDate.set(new Date(2026, 6, 16));
     fixture.detectChanges();
 
-    keydown('PageDown');
+    press(fixture, 'PageDown');
     expect(host.activeMonth()).toEqual(new Date(2026, 7, 1));
 
-    keydown('PageUp', true);
+    press(fixture, 'PageUp', true);
     expect(host.activeMonth()).toEqual(new Date(2025, 7, 1));
   });
 
@@ -254,13 +234,13 @@ describe('CalendarDirective', () => {
     host.dateFilter.set((date) => date.getDay() !== 0);
     fixture.detectChanges();
 
-    expect(cellFor(9)?.hasAttribute('data-disabled')).toBe(true);
-    expect(cellFor(21)?.hasAttribute('data-disabled')).toBe(true);
+    expect(cell(fixture, 9)?.hasAttribute('data-disabled')).toBe(true);
+    expect(cell(fixture, 21)?.hasAttribute('data-disabled')).toBe(true);
     // July 12th 2026 is a Sunday inside min/max
-    expect(cellFor(12)?.hasAttribute('data-disabled')).toBe(true);
-    expect(cellFor(15)?.hasAttribute('data-disabled')).toBe(false);
+    expect(cell(fixture, 12)?.hasAttribute('data-disabled')).toBe(true);
+    expect(cell(fixture, 15)?.hasAttribute('data-disabled')).toBe(false);
 
-    cellFor(9)?.click();
+    cell(fixture, 9)?.click();
     fixture.detectChanges();
 
     expect(host.value()).toBeNull();
@@ -291,7 +271,7 @@ describe('CalendarDirective', () => {
     fixture.detectChanges();
 
     expect(calendar.visibleMonth()).toEqual(new Date(2027, 2, 1));
-    expect(focusedCell()?.textContent?.trim()).toBe('12');
+    expect(focusedCell(fixture)?.textContent?.trim()).toBe('12');
   });
 
   it('lets a value and an explicit activeMonth win over startAt', () => {
@@ -309,7 +289,7 @@ describe('CalendarDirective', () => {
   });
 
   describe('view drilling', () => {
-    const cellWithText = (text: string) => cells().find((cell) => cell.textContent?.trim() === text) ?? null;
+    const cellWithText = (text: string) => cells(fixture).find((cell) => cell.textContent?.trim() === text) ?? null;
 
     it('zooms out through the views and back to the day grid from the last', () => {
       expect(calendar.headerLabel()).toBe('July 2026');
@@ -321,7 +301,7 @@ describe('CalendarDirective', () => {
 
       expect(calendar.view()).toBe('year');
       expect(calendar.headerLabel()).toBe('2026');
-      expect(cells()).toHaveLength(12);
+      expect(cells(fixture)).toHaveLength(12);
       expect(calendar.navigationDirection()).toBe('zoomOut');
 
       calendar.zoomOut();
@@ -329,7 +309,7 @@ describe('CalendarDirective', () => {
 
       expect(calendar.view()).toBe('multiYear');
       expect(calendar.headerLabel()).toBe('2016 – 2039');
-      expect(cells()).toHaveLength(24);
+      expect(cells(fixture)).toHaveLength(24);
       expect(calendar.canZoomOut()).toBe(false);
 
       calendar.zoomOut();
@@ -344,7 +324,7 @@ describe('CalendarDirective', () => {
       fixture.detectChanges();
 
       expect(calendar.view()).toBe('multiYear');
-      expect(cells()).toHaveLength(24);
+      expect(cells(fixture)).toHaveLength(24);
     });
 
     it('drills from a year to its months, keeping the month the reader was on', () => {
@@ -421,36 +401,36 @@ describe('CalendarDirective', () => {
       host.startView.set('year');
       fixture.detectChanges();
 
-      keydown('ArrowRight');
-      expect(focusedCell()?.textContent?.trim()).toBe('Aug');
+      press(fixture, 'ArrowRight');
+      expect(focusedCell(fixture)?.textContent?.trim()).toBe('Aug');
 
-      keydown('ArrowDown');
-      expect(focusedCell()?.textContent?.trim()).toBe('Dec');
+      press(fixture, 'ArrowDown');
+      expect(focusedCell(fixture)?.textContent?.trim()).toBe('Dec');
 
       // out of the visible year, which follows along
-      keydown('ArrowRight');
+      press(fixture, 'ArrowRight');
       expect(calendar.visibleYear()).toEqual(new Date(2027, 0, 1));
-      expect(focusedCell()?.textContent?.trim()).toBe('Jan');
+      expect(focusedCell(fixture)?.textContent?.trim()).toBe('Jan');
 
-      keydown('Home');
-      expect(focusedCell()?.textContent?.trim()).toBe('Jan');
+      press(fixture, 'Home');
+      expect(focusedCell(fixture)?.textContent?.trim()).toBe('Jan');
     });
 
     it('pages the year grid with the keyboard, taking the visible page along', () => {
       host.startView.set('multiYear');
       fixture.detectChanges();
 
-      expect(focusedCell()?.textContent?.trim()).toBe('2026');
+      expect(focusedCell(fixture)?.textContent?.trim()).toBe('2026');
 
-      keydown('ArrowDown');
-      expect(focusedCell()?.textContent?.trim()).toBe('2030');
+      press(fixture, 'ArrowDown');
+      expect(focusedCell(fixture)?.textContent?.trim()).toBe('2030');
 
-      keydown('PageDown');
+      press(fixture, 'PageDown');
       expect(calendar.headerLabel()).toBe('2040 – 2063');
-      expect(focusedCell()?.textContent?.trim()).toBe('2054');
+      expect(focusedCell(fixture)?.textContent?.trim()).toBe('2054');
 
-      keydown('Home');
-      expect(focusedCell()?.textContent?.trim()).toBe('2040');
+      press(fixture, 'Home');
+      expect(focusedCell(fixture)?.textContent?.trim()).toBe('2040');
     });
 
     it('steps by the unit of the view on show and guards each step against the bounds', () => {
@@ -481,7 +461,7 @@ describe('CalendarDirective', () => {
       host.mode.set('range');
       fixture.detectChanges();
 
-      cellFor(10)!.click();
+      cell(fixture, 10)!.click();
       fixture.detectChanges();
 
       calendar.zoomOut();
@@ -504,17 +484,17 @@ describe('CalendarDirective', () => {
       host.rangeStrategy.set(createWeekRangeStrategy({ weekStartsOn: 1 }));
       fixture.detectChanges();
 
-      expect(bandedCells()).toEqual([]);
+      expect(bandedCells(fixture)).toEqual([]);
 
-      cellFor(16)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
+      cell(fixture, 16)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
       fixture.detectChanges();
 
       // the whole Monday-13th week bands before anything is picked at all
-      expect(cellFor(13)?.getAttribute('data-band')).toBe('start');
-      expect(cellFor(19)?.getAttribute('data-band')).toBe('end');
-      expect(cellFor(20)?.getAttribute('data-band')).toBeNull();
+      expect(cell(fixture, 13)?.getAttribute('data-band')).toBe('start');
+      expect(cell(fixture, 19)?.getAttribute('data-band')).toBe('end');
+      expect(cell(fixture, 20)?.getAttribute('data-band')).toBeNull();
 
-      cellFor(16)?.click();
+      cell(fixture, 16)?.click();
       fixture.detectChanges();
 
       expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 13), end: null });
@@ -524,20 +504,20 @@ describe('CalendarDirective', () => {
       host.rangeStrategy.set(createFixedLengthRangeStrategy({ days: 7 }));
       fixture.detectChanges();
 
-      expect(bandedCells()).toEqual([]);
-      expect(cells().some((cell) => cell.hasAttribute('data-preview'))).toBe(false);
+      expect(bandedCells(fixture)).toEqual([]);
+      expect(cells(fixture).some((cell) => cell.hasAttribute('data-preview'))).toBe(false);
 
-      grid().dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+      grid(fixture).dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
       fixture.detectChanges();
 
-      expect(bandedCells()).toEqual(['1', '2', '3', '4', '5', '6', '7']);
+      expect(bandedCells(fixture)).toEqual(['1', '2', '3', '4', '5', '6', '7']);
 
-      focusedCell()?.blur();
-      grid().dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+      focusedCell(fixture)?.blur();
+      grid(fixture).dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(bandedCells()).toEqual([]);
+      expect(bandedCells(fixture)).toEqual([]);
     });
 
     it('does not band a coarse grid from the roving cell either', () => {
@@ -547,37 +527,37 @@ describe('CalendarDirective', () => {
       calendar.zoomOut();
       fixture.detectChanges();
 
-      grid().dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+      grid(fixture).dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
       fixture.detectChanges();
 
-      expect(cells().length).toBeGreaterThan(0);
-      expect(bandedCells()).toEqual([]);
+      expect(cells(fixture).length).toBeGreaterThan(0);
+      expect(bandedCells(fixture)).toEqual([]);
     });
 
     it('closes on the second pick, at the end of its week', () => {
       host.rangeStrategy.set(createWeekRangeStrategy({ weekStartsOn: 1 }));
       fixture.detectChanges();
 
-      cellFor(16)?.click();
-      cellFor(22)?.click();
+      cell(fixture, 16)?.click();
+      cell(fixture, 22)?.click();
       fixture.detectChanges();
 
       expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 13), end: new Date(2026, 6, 26) });
-      expect(cellFor(13)?.hasAttribute('data-range-start')).toBe(true);
-      expect(cellFor(26)?.hasAttribute('data-range-end')).toBe(true);
+      expect(cell(fixture, 13)?.hasAttribute('data-range-start')).toBe(true);
+      expect(cell(fixture, 26)?.hasAttribute('data-range-end')).toBe(true);
     });
 
     it('takes a fixed span from wherever the pick lands, closing the range at once', () => {
       host.rangeStrategy.set(createFixedLengthRangeStrategy({ days: 7 }));
       fixture.detectChanges();
 
-      cellFor(10)?.click();
+      cell(fixture, 10)?.click();
       fixture.detectChanges();
 
       expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 10), end: new Date(2026, 6, 16) });
-      expect(cellFor(16)?.hasAttribute('data-range-end')).toBe(true);
+      expect(cell(fixture, 16)?.hasAttribute('data-range-end')).toBe(true);
 
-      cellFor(20)?.click();
+      cell(fixture, 20)?.click();
       fixture.detectChanges();
 
       expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 20), end: new Date(2026, 6, 26) });
@@ -588,7 +568,7 @@ describe('CalendarDirective', () => {
       host.rangeStrategy.set(createFixedLengthRangeStrategy({ days: 40 }));
       fixture.detectChanges();
 
-      const monthCell = (label: string) => cells().find((cell) => cell.textContent?.trim() === label) ?? null;
+      const monthCell = (label: string) => cells(fixture).find((cell) => cell.textContent?.trim() === label) ?? null;
 
       monthCell('Mar')?.click();
       fixture.detectChanges();
@@ -598,8 +578,8 @@ describe('CalendarDirective', () => {
     });
 
     it('keeps the built-in rule when no strategy is named', () => {
-      cellFor(10)?.click();
-      cellFor(14)?.click();
+      cell(fixture, 10)?.click();
+      cell(fixture, 14)?.click();
       fixture.detectChanges();
 
       expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 10), end: new Date(2026, 6, 14) });
@@ -613,19 +593,19 @@ describe('CalendarDirective', () => {
       host.comparisonEnd.set(new Date(2026, 6, 9));
       fixture.detectChanges();
 
-      expect(cellFor(3)?.getAttribute('data-comparison-band')).toBe('start');
-      expect(cellFor(6)?.getAttribute('data-comparison-band')).toBe('middle');
-      expect(cellFor(9)?.getAttribute('data-comparison-band')).toBe('end');
-      expect(cellFor(10)?.getAttribute('data-comparison-band')).toBeNull();
+      expect(cell(fixture, 3)?.getAttribute('data-comparison-band')).toBe('start');
+      expect(cell(fixture, 6)?.getAttribute('data-comparison-band')).toBe('middle');
+      expect(cell(fixture, 9)?.getAttribute('data-comparison-band')).toBe('end');
+      expect(cell(fixture, 10)?.getAttribute('data-comparison-band')).toBeNull();
 
       // and it is presentation only: the value is untouched and its cells still select
       expect(host.rangeValue()).toEqual({ start: null, end: null });
 
-      cellFor(6)?.click();
+      cell(fixture, 6)?.click();
       fixture.detectChanges();
 
       expect(host.rangeValue().start).toEqual(new Date(2026, 6, 6));
-      expect(cellFor(6)?.getAttribute('data-comparison-band')).toBe('middle');
+      expect(cell(fixture, 6)?.getAttribute('data-comparison-band')).toBe('middle');
     });
 
     it('reads the two ends as an interval either way round', () => {
@@ -633,8 +613,8 @@ describe('CalendarDirective', () => {
       host.comparisonEnd.set(new Date(2026, 6, 3));
       fixture.detectChanges();
 
-      expect(cellFor(3)?.getAttribute('data-comparison-band')).toBe('start');
-      expect(cellFor(9)?.getAttribute('data-comparison-band')).toBe('end');
+      expect(cell(fixture, 3)?.getAttribute('data-comparison-band')).toBe('start');
+      expect(cell(fixture, 9)?.getAttribute('data-comparison-band')).toBe('end');
     });
 
     it('bands a one-day comparison period as a single cell', () => {
@@ -642,15 +622,15 @@ describe('CalendarDirective', () => {
       host.comparisonEnd.set(new Date(2026, 6, 15));
       fixture.detectChanges();
 
-      expect(cellFor(15)?.getAttribute('data-comparison-band')).toBe('single');
-      expect(cellFor(14)?.getAttribute('data-comparison-band')).toBeNull();
+      expect(cell(fixture, 15)?.getAttribute('data-comparison-band')).toBe('single');
+      expect(cell(fixture, 14)?.getAttribute('data-comparison-band')).toBeNull();
     });
 
     it('needs both ends before it bands anything', () => {
       host.comparisonStart.set(new Date(2026, 6, 3));
       fixture.detectChanges();
 
-      expect(cellFor(3)?.getAttribute('data-comparison-band')).toBeNull();
+      expect(cell(fixture, 3)?.getAttribute('data-comparison-band')).toBeNull();
     });
 
     it('bands whole months at month precision', () => {
@@ -659,7 +639,7 @@ describe('CalendarDirective', () => {
       host.comparisonEnd.set(new Date(2026, 3, 2));
       fixture.detectChanges();
 
-      const monthCell = (label: string) => cells().find((cell) => cell.textContent?.trim() === label) ?? null;
+      const monthCell = (label: string) => cells(fixture).find((cell) => cell.textContent?.trim() === label) ?? null;
 
       expect(monthCell('Feb')?.getAttribute('data-comparison-band')).toBe('start');
       expect(monthCell('Mar')?.getAttribute('data-comparison-band')).toBe('middle');
@@ -675,48 +655,48 @@ describe('CalendarDirective', () => {
     });
 
     it('collects each pick, ascending, and marks the grid multiselectable', () => {
-      expect(grid().getAttribute('aria-multiselectable')).toBe('true');
+      expect(grid(fixture).getAttribute('aria-multiselectable')).toBe('true');
 
-      cellFor(16)?.click();
-      cellFor(3)?.click();
-      cellFor(21)?.click();
+      cell(fixture, 16)?.click();
+      cell(fixture, 3)?.click();
+      cell(fixture, 21)?.click();
       fixture.detectChanges();
 
       expect(host.multipleValue()).toEqual([new Date(2026, 6, 3), new Date(2026, 6, 16), new Date(2026, 6, 21)]);
-      expect(cellFor(16)?.getAttribute('aria-selected')).toBe('true');
-      expect(cellFor(3)?.hasAttribute('data-selected')).toBe(true);
-      expect(cellFor(4)?.hasAttribute('data-selected')).toBe(false);
+      expect(cell(fixture, 16)?.getAttribute('aria-selected')).toBe('true');
+      expect(cell(fixture, 3)?.hasAttribute('data-selected')).toBe(true);
+      expect(cell(fixture, 4)?.hasAttribute('data-selected')).toBe(false);
     });
 
     it('unpicks a date on a second pick', () => {
-      cellFor(16)?.click();
-      cellFor(21)?.click();
+      cell(fixture, 16)?.click();
+      cell(fixture, 21)?.click();
       fixture.detectChanges();
 
-      cellFor(16)?.click();
+      cell(fixture, 16)?.click();
       fixture.detectChanges();
 
       expect(host.multipleValue()).toEqual([new Date(2026, 6, 21)]);
-      expect(cellFor(16)?.hasAttribute('data-selected')).toBe(false);
+      expect(cell(fixture, 16)?.hasAttribute('data-selected')).toBe(false);
     });
 
     it('never bands or previews - the dates are unrelated', () => {
-      cellFor(10)?.click();
+      cell(fixture, 10)?.click();
       fixture.detectChanges();
 
-      cellFor(13)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
+      cell(fixture, 13)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
       fixture.detectChanges();
 
       expect(calendar.hoveredDate()).toBeNull();
-      expect(cellFor(12)?.hasAttribute('data-in-range')).toBe(false);
-      expect(cellFor(12)?.getAttribute('data-band')).toBeNull();
+      expect(cell(fixture, 12)?.hasAttribute('data-in-range')).toBe(false);
+      expect(cell(fixture, 12)?.getAttribute('data-band')).toBeNull();
     });
 
     it('refuses a disabled date and leaves the set alone', () => {
       host.min.set(new Date(2026, 6, 10));
       fixture.detectChanges();
 
-      cellFor(9)!.click();
+      cell(fixture, 9)!.click();
       fixture.detectChanges();
 
       expect(host.multipleValue()).toEqual([]);
@@ -726,7 +706,7 @@ describe('CalendarDirective', () => {
       host.precision.set('month');
       fixture.detectChanges();
 
-      const monthCell = (label: string) => cells().find((cell) => cell.textContent?.trim() === label) ?? null;
+      const monthCell = (label: string) => cells(fixture).find((cell) => cell.textContent?.trim() === label) ?? null;
 
       monthCell('Mar')?.click();
       monthCell('Sep')?.click();
@@ -763,7 +743,7 @@ describe('CalendarDirective', () => {
       expect(calendar.lastVisibleMonth()).toEqual(new Date(2026, 7, 1));
 
       // August 1st belongs to August's grid, and July's own trailing cell for it is not rendered
-      const first = cells().filter((cell) => cell.textContent?.trim() === '1');
+      const first = cells(fixture).filter((cell) => cell.textContent?.trim() === '1');
 
       expect(first).toHaveLength(2); // July 1st and August 1st, one each
       expect(calendar.weeks()).toEqual(calendar.monthPages()[0]?.weeks);
@@ -801,7 +781,7 @@ describe('CalendarDirective', () => {
       calendar.focusedDate.set(new Date(2026, 7, 12));
       fixture.detectChanges();
 
-      const focused = cells().filter((cell) => cell.tabIndex === 0);
+      const focused = cells(fixture).filter((cell) => cell.tabIndex === 0);
 
       expect(focused).toHaveLength(1);
       expect(focused[0]?.textContent?.trim()).toBe('12');
@@ -811,7 +791,7 @@ describe('CalendarDirective', () => {
       calendar.focusedDate.set(new Date(2026, 6, 31));
       fixture.detectChanges();
 
-      keydown('ArrowRight');
+      press(fixture, 'ArrowRight');
 
       // August 1st is already on show, so nothing moves
       expect(calendar.visibleMonth()).toEqual(new Date(2026, 6, 1));
@@ -820,7 +800,7 @@ describe('CalendarDirective', () => {
       calendar.focusedDate.set(new Date(2026, 7, 31));
       fixture.detectChanges();
 
-      keydown('ArrowRight');
+      press(fixture, 'ArrowRight');
 
       // September is not: the span slides by the one month it takes to cover it
       expect(calendar.visibleMonth()).toEqual(new Date(2026, 7, 1));
@@ -833,12 +813,13 @@ describe('CalendarDirective', () => {
       fixture.detectChanges();
 
       const julyCell = (label: string) =>
-        cells().find((cell) => cell.textContent?.trim() === label && !cell.hasAttribute('data-outside-month')) ?? null;
+        cells(fixture).find((cell) => cell.textContent?.trim() === label && !cell.hasAttribute('data-outside-month')) ??
+        null;
 
       julyCell('28')?.click();
       fixture.detectChanges();
 
-      const augustCells = cells().filter((cell) => cell.textContent?.trim() === '3');
+      const augustCells = cells(fixture).filter((cell) => cell.textContent?.trim() === '3');
 
       augustCells.at(-1)?.click();
       fixture.detectChanges();
@@ -847,7 +828,7 @@ describe('CalendarDirective', () => {
       // the band runs on through the end of July and into August
       expect(julyCell('30')?.hasAttribute('data-in-range')).toBe(true);
       expect(
-        cells()
+        cells(fixture)
           .filter((cell) => cell.textContent?.trim() === '1')
           .at(-1)
           ?.hasAttribute('data-in-range'),
@@ -858,7 +839,7 @@ describe('CalendarDirective', () => {
       calendar.zoomOut();
       fixture.detectChanges();
 
-      expect(cells()).toHaveLength(12);
+      expect(cells(fixture)).toHaveLength(12);
     });
   });
 
@@ -878,7 +859,7 @@ describe('CalendarDirective', () => {
   });
 
   describe('precision', () => {
-    const cellWithText = (text: string) => cells().find((cell) => cell.textContent?.trim() === text) ?? null;
+    const cellWithText = (text: string) => cells(fixture).find((cell) => cell.textContent?.trim() === text) ?? null;
 
     it('opens on the grid holding its unit and clamps a finer startView', () => {
       host.precision.set('month');
@@ -886,7 +867,7 @@ describe('CalendarDirective', () => {
 
       expect(calendar.view()).toBe('year');
       expect(calendar.selectionView()).toBe('year');
-      expect(cells()).toHaveLength(12);
+      expect(cells(fixture)).toHaveLength(12);
 
       host.startView.set('month');
       fixture.detectChanges();
@@ -1004,25 +985,25 @@ describe('CalendarDirective', () => {
       host.dateClass.set((date) => (date.getDate() === 16 ? ['busy', 'marked'] : null));
       fixture.detectChanges();
 
-      const cell = cellFor(16);
+      const dayCell = cell(fixture, 16);
 
-      expect(cell?.classList.contains('busy')).toBe(true);
-      expect(cell?.classList.contains('marked')).toBe(true);
-      expect(cell?.classList.contains('cell')).toBe(true);
-      expect(cellFor(17)?.classList.contains('busy')).toBe(false);
+      expect(dayCell?.classList.contains('busy')).toBe(true);
+      expect(dayCell?.classList.contains('marked')).toBe(true);
+      expect(dayCell?.classList.contains('cell')).toBe(true);
+      expect(cell(fixture, 17)?.classList.contains('busy')).toBe(false);
     });
 
     it('accepts a single class and takes it off again when the hook stops returning it', () => {
       host.dateClass.set((date) => (date.getDate() === 16 ? 'busy' : null));
       fixture.detectChanges();
 
-      expect(cellFor(16)?.classList.contains('busy')).toBe(true);
+      expect(cell(fixture, 16)?.classList.contains('busy')).toBe(true);
 
       host.dateClass.set(null);
       fixture.detectChanges();
 
-      expect(cellFor(16)?.classList.contains('busy')).toBe(false);
-      expect(cellFor(16)?.classList.contains('cell')).toBe(true);
+      expect(cell(fixture, 16)?.classList.contains('busy')).toBe(false);
+      expect(cell(fixture, 16)?.classList.contains('cell')).toBe(true);
     });
 
     it('says which view a cell was rendered by', () => {
@@ -1049,7 +1030,7 @@ describe('CalendarDirective', () => {
     host.value.set(null);
     fixture.detectChanges();
 
-    const today = cells().find((cell) => cell.getAttribute('aria-current') === 'date');
+    const today = cells(fixture).find((cell) => cell.getAttribute('aria-current') === 'date');
 
     expect(today?.textContent?.trim()).toBe(`${new Date().getDate()}`);
   });
