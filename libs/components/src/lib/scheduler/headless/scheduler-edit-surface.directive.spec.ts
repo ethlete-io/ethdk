@@ -1,137 +1,113 @@
-import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Appointment } from '../scheduler.types';
-import { SchedulerEditSurfaceDirective } from './scheduler-edit-surface.directive';
-
-@Component({
-  template: `
-    <div
-      #surface="etSchedulerEditSurface"
-      [appointment]="appointment()"
-      [appointments]="appointments()"
-      (save)="saved.set($event)"
-      (deleteAppointments)="deleted.set($event)"
-      etSchedulerEditSurface
-    ></div>
-  `,
-  imports: [SchedulerEditSurfaceDirective],
-})
-class SchedulerEditSurfaceTestHostComponent {
-  appointment = signal<Appointment>(appointment('a'));
-  appointments = signal<Appointment[]>([]);
-  saved = signal<Appointment | null>(null);
-  deleted = signal<readonly string[] | null>(null);
-}
-
-const appointment = (id: string, parentId: string | null = null): Appointment => ({
-  id,
-  parentId,
-  title: id,
-  start: new Date(2026, 6, 15, 9),
-  end: new Date(2026, 6, 15, 10),
-});
+import { schedulerEditSurfaceTestDriver, testAppointment } from '../testing/scheduler-driver';
 
 describe('SchedulerEditSurfaceDirective', () => {
-  let fixture: ComponentFixture<SchedulerEditSurfaceTestHostComponent>;
-  let host: SchedulerEditSurfaceTestHostComponent;
-  let directive: SchedulerEditSurfaceDirective;
+  let driver: ReturnType<typeof schedulerEditSurfaceTestDriver>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [SchedulerEditSurfaceTestHostComponent] });
-    fixture = TestBed.createComponent(SchedulerEditSurfaceTestHostComponent);
-    host = fixture.componentInstance;
-    fixture.detectChanges();
-    directive = fixture.debugElement.children[0]!.injector.get(SchedulerEditSurfaceDirective);
+    driver = schedulerEditSurfaceTestDriver();
   });
 
   it('drafts a copy of the opened appointment', () => {
-    expect(directive.draft()).toEqual(appointment('a'));
+    expect(driver.control.draft()).toEqual(testAppointment('a'));
   });
 
   it('has no ancestors or children for a standalone appointment', () => {
-    expect(directive.ancestors()).toEqual([]);
-    expect(directive.children()).toEqual([]);
+    expect(driver.control.ancestors()).toEqual([]);
+    expect(driver.control.children()).toEqual([]);
   });
 
   it('builds the ancestor chain root-first', () => {
-    host.appointments.set([appointment('a'), appointment('b', 'a'), appointment('c', 'b')]);
-    host.appointment.set(appointment('c', 'b'));
-    fixture.detectChanges();
+    driver.host.appointments.set([
+      testAppointment('a'),
+      testAppointment('b', { parentId: 'a' }),
+      testAppointment('c', { parentId: 'b' }),
+    ]);
+    driver.host.appointment.set(testAppointment('c', { parentId: 'b' }));
+    driver.detectChanges();
 
-    expect(directive.ancestors().map((candidate) => candidate.id)).toEqual(['a', 'b']);
+    expect(driver.control.ancestors().map((candidate) => candidate.id)).toEqual(['a', 'b']);
   });
 
   it('lists the current appointment direct children', () => {
-    host.appointments.set([appointment('a'), appointment('a1', 'a'), appointment('a2', 'a')]);
-    host.appointment.set(appointment('a'));
-    fixture.detectChanges();
+    driver.host.appointments.set([
+      testAppointment('a'),
+      testAppointment('a1', { parentId: 'a' }),
+      testAppointment('a2', { parentId: 'a' }),
+    ]);
+    driver.host.appointment.set(testAppointment('a'));
+    driver.detectChanges();
 
-    expect(directive.children().map((node) => node.appointment.id)).toEqual(['a1', 'a2']);
+    expect(driver.control.children().map((node) => node.appointment.id)).toEqual(['a1', 'a2']);
   });
 
   it('navigates to another known appointment and resets the draft, discarding unsaved edits', () => {
-    host.appointments.set([appointment('a'), appointment('b')]);
-    host.appointment.set(appointment('a'));
-    fixture.detectChanges();
+    driver.host.appointments.set([testAppointment('a'), testAppointment('b')]);
+    driver.host.appointment.set(testAppointment('a'));
+    driver.detectChanges();
 
-    directive.draft.update((draft) => ({ ...draft, title: 'edited' }));
-    directive.navigateTo('b');
-    fixture.detectChanges();
+    driver.control.draft.update((draft) => ({ ...draft, title: 'edited' }));
+    driver.control.navigateTo('b');
+    driver.detectChanges();
 
-    expect(directive.currentAppointmentId()).toBe('b');
-    expect(directive.draft().title).toBe('b');
+    expect(driver.control.currentAppointmentId()).toBe('b');
+    expect(driver.control.draft().title).toBe('b');
   });
 
   it('keeps unsaved draft edits when appointments is replaced with new object identities', () => {
-    host.appointments.set([appointment('a'), appointment('b')]);
-    host.appointment.set(appointment('a'));
-    fixture.detectChanges();
+    driver.host.appointments.set([testAppointment('a'), testAppointment('b')]);
+    driver.host.appointment.set(testAppointment('a'));
+    driver.detectChanges();
 
-    directive.draft.update((draft) => ({ ...draft, title: 'typed by the user' }));
+    driver.control.draft.update((draft) => ({ ...draft, title: 'typed by the user' }));
 
-    host.appointments.set([appointment('a'), appointment('b')]);
-    fixture.detectChanges();
+    driver.host.appointments.set([testAppointment('a'), testAppointment('b')]);
+    driver.detectChanges();
 
-    expect(directive.draft().title).toBe('typed by the user');
+    expect(driver.control.draft().title).toBe('typed by the user');
   });
 
   it('starts a blank child of the current appointment and navigates to it', () => {
-    host.appointments.set([appointment('a')]);
-    host.appointment.set(appointment('a'));
-    fixture.detectChanges();
+    driver.host.appointments.set([testAppointment('a')]);
+    driver.host.appointment.set(testAppointment('a'));
+    driver.detectChanges();
 
-    directive.startAddSubAppointment();
-    fixture.detectChanges();
+    driver.control.startAddSubAppointment();
+    driver.detectChanges();
 
-    const draft = directive.draft();
+    const draft = driver.control.draft();
     expect(draft.parentId).toBe('a');
     expect(draft.title).toBe('');
-    expect(directive.currentAppointmentId()).toBe(draft.id);
+    expect(driver.control.currentAppointmentId()).toBe(draft.id);
   });
 
   it('emits save with the current draft on commit', () => {
-    directive.draft.update((draft) => ({ ...draft, title: 'renamed' }));
-    directive.commit();
-    fixture.detectChanges();
+    driver.control.draft.update((draft) => ({ ...draft, title: 'renamed' }));
+    driver.control.commit();
+    driver.detectChanges();
 
-    expect(host.saved()).toEqual({ ...appointment('a'), title: 'renamed' });
+    expect(driver.host.saved()).toEqual({ ...testAppointment('a'), title: 'renamed' });
   });
 
   it('emits deleteAppointments with the appointment and every descendant', () => {
-    host.appointments.set([appointment('a'), appointment('a1', 'a'), appointment('a1a', 'a1'), appointment('a2', 'a')]);
-    host.appointment.set(appointment('a'));
-    fixture.detectChanges();
+    driver.host.appointments.set([
+      testAppointment('a'),
+      testAppointment('a1', { parentId: 'a' }),
+      testAppointment('a1a', { parentId: 'a1' }),
+      testAppointment('a2', { parentId: 'a' }),
+    ]);
+    driver.host.appointment.set(testAppointment('a'));
+    driver.detectChanges();
 
-    directive.requestDelete();
-    fixture.detectChanges();
+    driver.control.requestDelete();
+    driver.detectChanges();
 
-    expect(host.deleted()).toEqual(['a', 'a1', 'a1a', 'a2']);
+    expect(driver.host.deleted()).toEqual(['a', 'a1', 'a1a', 'a2']);
   });
 
   it('falls back to just the current id when it has no matching tree node', () => {
-    directive.requestDelete();
-    fixture.detectChanges();
+    driver.control.requestDelete();
+    driver.detectChanges();
 
-    expect(host.deleted()).toEqual(['a']);
+    expect(driver.host.deleted()).toEqual(['a']);
   });
 });

@@ -1,47 +1,14 @@
-import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { injectOverlayManager } from '../overlay';
 import { expectAriaGrid, expectUniformCellsPerRow } from '../testing/aria-structure';
-import { TEST_COLOR_THEMES } from '../testing/color-themes';
-import { SchedulerComponent } from './scheduler.component';
-import { Appointment, SchedulerView } from './scheduler.types';
-
-const appointment = (id: string): Appointment => ({
-  id,
-  parentId: null,
-  title: id,
-  start: new Date(2026, 6, 15, 9),
-  end: new Date(2026, 6, 15, 10),
-});
-
-@Component({
-  template: ` <et-scheduler [(selectedAppointmentId)]="selectedId" [appointments]="appointments()" [view]="view()" /> `,
-  imports: [SchedulerComponent],
-})
-class SchedulerTestHostComponent {
-  appointments = signal<Appointment[]>([appointment('a'), appointment('b')]);
-  selectedId = signal<string | null>(null);
-  view = signal<SchedulerView>('month');
-}
+import { schedulerTestDriver, testAppointment } from './testing/scheduler-driver';
 
 describe('SchedulerComponent', () => {
-  let fixture: ComponentFixture<SchedulerTestHostComponent>;
-  let host: SchedulerTestHostComponent;
-  let scheduler: SchedulerComponent;
-
-  const openSurfaces = () => document.querySelectorAll('et-scheduler-edit-surface').length;
+  let driver: ReturnType<typeof schedulerTestDriver>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [SchedulerTestHostComponent],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(SchedulerTestHostComponent);
-    host = fixture.componentInstance;
-    fixture.detectChanges();
-    scheduler = fixture.debugElement.children[0]!.componentInstance;
+    driver = schedulerTestDriver({ appointments: [testAppointment('a'), testAppointment('b')] });
   });
 
   afterEach(() => {
@@ -49,65 +16,84 @@ describe('SchedulerComponent', () => {
       overlay.close();
     }
 
-    fixture.destroy();
+    driver.fixture.destroy();
   });
 
   it('opens the edit surface once for a selected appointment', () => {
-    host.selectedId.set('a');
-    fixture.detectChanges();
+    driver.host.selectedAppointmentId.set('a');
+    driver.detectChanges();
 
-    expect(openSurfaces()).toBe(1);
+    expect(driver.editSurface()).toHaveLength(1);
   });
 
   it('does not stack a second surface when appointments is replaced with new object identities', () => {
-    host.selectedId.set('a');
-    fixture.detectChanges();
+    driver.host.selectedAppointmentId.set('a');
+    driver.detectChanges();
 
-    host.appointments.set([appointment('a'), appointment('b')]);
-    fixture.detectChanges();
+    driver.host.appointments.set([testAppointment('a'), testAppointment('b')]);
+    driver.detectChanges();
 
-    expect(openSurfaces()).toBe(1);
+    expect(driver.editSurface()).toHaveLength(1);
   });
 
   it('selects an appointment without opening the edit surface', () => {
-    scheduler.selectAppointment('a');
-    fixture.detectChanges();
+    driver.selectAppointment('a');
 
-    expect(host.selectedId()).toBe('a');
-    expect(openSurfaces()).toBe(0);
+    expect(driver.host.selectedAppointmentId()).toBe('a');
+    expect(driver.editSurface()).toHaveLength(0);
   });
 
   it('opens the edit surface for an appointment selected without one', () => {
-    scheduler.selectAppointment('a');
-    fixture.detectChanges();
+    driver.selectAppointment('a');
+    driver.openEditSurface('a');
 
-    scheduler.openEditSurface('a');
-    fixture.detectChanges();
-
-    expect(openSurfaces()).toBe(1);
+    expect(driver.editSurface()).toHaveLength(1);
   });
 
   it('exposes the month view as a grid that owns its rows', () => {
-    const view = fixture.nativeElement.querySelector('et-scheduler-month-view') as HTMLElement;
+    const view = driver.query('et-scheduler-month-view');
 
-    expectAriaGrid(view);
-    expectUniformCellsPerRow(view);
+    expect(view).not.toBeNull();
+    expectAriaGrid(view!);
+    expectUniformCellsPerRow(view!);
   });
 
   it('exposes the time grid as a grid whose day cells sit in a row', () => {
-    host.view.set('week');
-    fixture.detectChanges();
+    driver.host.view.set('week');
+    driver.detectChanges();
 
-    const view = fixture.nativeElement.querySelector('et-scheduler-time-grid-view') as HTMLElement;
+    const view = driver.query('et-scheduler-time-grid-view');
 
-    expectAriaGrid(view);
+    expect(view).not.toBeNull();
+    expectAriaGrid(view!);
   });
 
   it('ignores an open request for an appointment it does not know', () => {
-    scheduler.openEditSurface('nope');
-    fixture.detectChanges();
+    driver.openEditSurface('nope');
 
-    expect(host.selectedId()).toBeNull();
-    expect(openSurfaces()).toBe(0);
+    expect(driver.host.selectedAppointmentId()).toBeNull();
+    expect(driver.editSurface()).toHaveLength(0);
+  });
+
+  it('renders the default badge adornments for a visible appointment', () => {
+    const badge = driver.badges().find((candidate) => candidate.id === 'a');
+
+    expect(badge).toBeDefined();
+    expect(badge?.title).toBe('a');
+    expect(badge?.timeRange).toBe('09:00–10:00');
+  });
+
+  it('places a visible appointment inside its month cell', () => {
+    const cell = driver.cellFor(testAppointment('a').start);
+
+    expect(cell).not.toBeNull();
+    expect(cell?.querySelector('[title="a"]')).not.toBeNull();
+  });
+
+  it('opens the edit surface when a rendered appointment badge is clicked', () => {
+    const button = driver.clickAppointment('a');
+
+    expect(button).not.toBeNull();
+    expect(driver.editSurface()).toHaveLength(1);
   });
 });
