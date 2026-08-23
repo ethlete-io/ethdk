@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 import { expectAriaTablist } from '../../testing/aria-structure';
+import { fakeElementScroll, fakeIntersectionObserver, fakeResizeObserver } from '../../testing/fake-layout';
 import { TabBarDirective } from '../headless/tab-bar.directive';
 import { TabBarTriggerDirective } from '../headless/tab-bar-trigger.directive';
 import { TabGroupDirective } from './headless/tab-group.directive';
@@ -52,44 +53,9 @@ class RepeatedTabGroupsHostComponent {
   sizes = ['sm', 'md', 'lg'] as const;
 }
 
-class ResizeObserverMock {
-  observe() {
-    return;
-  }
-
-  unobserve() {
-    return;
-  }
-
-  disconnect() {
-    return;
-  }
-}
-
-class IntersectionObserverMock {
-  observe() {
-    return;
-  }
-
-  unobserve() {
-    return;
-  }
-
-  disconnect() {
-    return;
-  }
-
-  takeRecords() {
-    return [];
-  }
-}
-
 describe('TabGroupComponent', () => {
   let fixture: ComponentFixture<TestHostComponent>;
   let hostComponent: TestHostComponent;
-  let originalElementScrollDescriptor: PropertyDescriptor | undefined;
-  let originalIntersectionObserverDescriptor: PropertyDescriptor | undefined;
-  let originalResizeObserverDescriptor: PropertyDescriptor | undefined;
   let storageEntries: Map<string, string>;
   let sessionStorageMock: Storage;
   let originalSessionStorageDescriptor: PropertyDescriptor | undefined;
@@ -110,9 +76,9 @@ describe('TabGroupComponent', () => {
   };
 
   beforeEach(() => {
-    originalElementScrollDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scroll');
-    originalIntersectionObserverDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'IntersectionObserver');
-    originalResizeObserverDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'ResizeObserver');
+    fakeResizeObserver();
+    fakeIntersectionObserver();
+    fakeElementScroll();
     originalSessionStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage');
     storageEntries = new Map<string, string>();
     sessionStorageMock = {
@@ -137,45 +103,12 @@ describe('TabGroupComponent', () => {
       value: sessionStorageMock,
     });
 
-    Object.defineProperty(globalThis, 'ResizeObserver', {
-      configurable: true,
-      value: ResizeObserverMock,
-    });
-
-    Object.defineProperty(globalThis, 'IntersectionObserver', {
-      configurable: true,
-      value: IntersectionObserverMock,
-    });
-
-    Object.defineProperty(HTMLElement.prototype, 'scroll', {
-      configurable: true,
-      value: vi.fn(),
-    });
-
     TestBed.configureTestingModule({ imports: [RepeatedTabGroupsHostComponent, TestHostComponent] });
     fixture = TestBed.createComponent(TestHostComponent);
     hostComponent = fixture.componentInstance;
   });
 
   afterEach(() => {
-    if (originalElementScrollDescriptor) {
-      Object.defineProperty(HTMLElement.prototype, 'scroll', originalElementScrollDescriptor);
-    } else {
-      Reflect.deleteProperty(HTMLElement.prototype, 'scroll');
-    }
-
-    if (originalIntersectionObserverDescriptor) {
-      Object.defineProperty(globalThis, 'IntersectionObserver', originalIntersectionObserverDescriptor);
-    } else {
-      Reflect.deleteProperty(globalThis, 'IntersectionObserver');
-    }
-
-    if (originalResizeObserverDescriptor) {
-      Object.defineProperty(globalThis, 'ResizeObserver', originalResizeObserverDescriptor);
-    } else {
-      Reflect.deleteProperty(globalThis, 'ResizeObserver');
-    }
-
     if (originalSessionStorageDescriptor) {
       Object.defineProperty(globalThis, 'sessionStorage', originalSessionStorageDescriptor);
 

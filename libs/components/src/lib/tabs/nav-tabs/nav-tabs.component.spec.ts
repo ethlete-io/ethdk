@@ -4,41 +4,10 @@ import { By } from '@angular/platform-browser';
 import { Router, RouterOutlet, provideRouter } from '@angular/router';
 import '../../../test-helpers';
 import { expectAriaTablist } from '../../testing/aria-structure';
+import { fakeElementScroll, fakeIntersectionObserver, fakeResizeObserver } from '../../testing/fake-layout';
 import { NavTabLinkComponent } from './nav-tab-link.component';
 import { NavTabsOutletComponent } from './nav-tabs-outlet.component';
 import { NavTabsComponent } from './nav-tabs.component';
-
-class ResizeObserverMock {
-  observe() {
-    return undefined;
-  }
-
-  unobserve() {
-    return undefined;
-  }
-
-  disconnect() {
-    return undefined;
-  }
-}
-
-class IntersectionObserverMock {
-  observe() {
-    return undefined;
-  }
-
-  unobserve() {
-    return undefined;
-  }
-
-  disconnect() {
-    return undefined;
-  }
-
-  takeRecords() {
-    return [];
-  }
-}
 
 @Component({
   selector: 'et-test-nav-tabs-route-one',
@@ -88,9 +57,6 @@ class SiblingOutletTestHost {}
 describe('NavTabsComponent', () => {
   let fixture: ComponentFixture<NavTabsTestHost>;
   let router: Router;
-  let originalElementScrollDescriptor: PropertyDescriptor | undefined;
-  let originalIntersectionObserverDescriptor: PropertyDescriptor | undefined;
-  let originalResizeObserverDescriptor: PropertyDescriptor | undefined;
 
   const getLinks = () =>
     Array.from(fixture.nativeElement.querySelectorAll('.et-nav-tab-link') as NodeListOf<HTMLAnchorElement>);
@@ -106,24 +72,9 @@ describe('NavTabsComponent', () => {
   };
 
   beforeEach(() => {
-    originalElementScrollDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scroll');
-    originalIntersectionObserverDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'IntersectionObserver');
-    originalResizeObserverDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'ResizeObserver');
-
-    Object.defineProperty(globalThis, 'ResizeObserver', {
-      configurable: true,
-      value: ResizeObserverMock,
-    });
-
-    Object.defineProperty(globalThis, 'IntersectionObserver', {
-      configurable: true,
-      value: IntersectionObserverMock,
-    });
-
-    Object.defineProperty(HTMLElement.prototype, 'scroll', {
-      configurable: true,
-      value: vi.fn(),
-    });
+    fakeResizeObserver();
+    fakeIntersectionObserver();
+    fakeElementScroll();
 
     TestBed.configureTestingModule({
       imports: [NavTabsRouteOneComponent, NavTabsRouteTwoComponent, NavTabsTestHost, SiblingOutletTestHost],
@@ -137,26 +88,6 @@ describe('NavTabsComponent', () => {
 
     fixture = TestBed.createComponent(NavTabsTestHost);
     router = TestBed.inject(Router);
-  });
-
-  afterEach(() => {
-    if (originalElementScrollDescriptor) {
-      Object.defineProperty(HTMLElement.prototype, 'scroll', originalElementScrollDescriptor);
-    } else {
-      Reflect.deleteProperty(HTMLElement.prototype, 'scroll');
-    }
-
-    if (originalIntersectionObserverDescriptor) {
-      Object.defineProperty(globalThis, 'IntersectionObserver', originalIntersectionObserverDescriptor);
-    } else {
-      Reflect.deleteProperty(globalThis, 'IntersectionObserver');
-    }
-
-    if (originalResizeObserverDescriptor) {
-      Object.defineProperty(globalThis, 'ResizeObserver', originalResizeObserverDescriptor);
-    } else {
-      Reflect.deleteProperty(globalThis, 'ResizeObserver');
-    }
   });
 
   it('marks the active route link as selected and labels the outlet with it', async () => {
