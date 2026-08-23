@@ -4,8 +4,8 @@ import { FormField, form, required } from '@angular/forms/signals';
 import '../../../../test-helpers';
 import { flushFrames, focusEvent, textOf, tick } from '../../../testing/driver-core';
 import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
-import { describeExpandedStateContract } from '../../testing/expanded-contract';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
+import { describeOverlayControlContract } from '../../testing/overlay-control-contract';
 import { SelectDriver, mountSelect } from '../../testing/select-driver';
 import { SELECT_IMPORTS } from '../select.imports';
 
@@ -41,14 +41,16 @@ class SelectTestHost {
   template: `
     <et-form-field>
       <et-label>Fruit</et-label>
-      <et-select placeholder="Pick a fruit">
+      <et-select (touchedChange)="touched.set($event)" placeholder="Pick a fruit">
         <et-select-option value="apple">Apple</et-select-option>
       </et-select>
     </et-form-field>
   `,
   imports: [FORM_FIELD_IMPORTS, SELECT_IMPORTS],
 })
-class SelectInFormFieldTestHost {}
+class SelectInFormFieldTestHost {
+  touched = signal(false);
+}
 
 @Component({
   template: `
@@ -1645,7 +1647,7 @@ describe('SelectDirective (pickOnly, multiple)', () => {
 });
 
 describe('SelectDirective (in form field)', () => {
-  describeExpandedStateContract(() => {
+  describeOverlayControlContract(() => {
     const driver = mountSelect(SelectInFormFieldTestHost, [], { directiveSelector: 'et-select' });
 
     return {
@@ -1653,6 +1655,19 @@ describe('SelectDirective (in form field)', () => {
       close: () => driver.close(),
       trigger: () => driver.trigger(),
       field: () => driver.query('et-form-field')!,
+      isOpen: () => driver.select.open(),
+      touched: () => driver.host.touched(),
+      focusTrigger: () => {
+        driver.trigger().focus();
+        driver.tick();
+      },
+      blurTrigger: () => {
+        driver.trigger().blur();
+        driver.tick();
+      },
+      escape: () => driver.escape(),
+      pointerDownOutside: () => driver.pointerDownOutside(),
+      settle: () => driver.settle(),
     };
   });
 });

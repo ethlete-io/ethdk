@@ -1,9 +1,13 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
 import { flushFrames, tick } from '../../../testing/driver-core';
+import { createOverlayControlDriver, mountControl } from '../../../testing/overlay-control-driver';
 import { CascaderDriver, mountCascader } from '../../testing/cascader-driver';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
+import { describeOverlayControlContract } from '../../testing/overlay-control-contract';
+import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
 import { CASCADER_IMPORTS } from '../cascader.imports';
+import { CascaderDirective } from './cascader.directive';
 import { CascaderDataSource, CascaderNode } from './internals/cascader-tree';
 
 // competition → stage → tournament, three levels, synchronous
@@ -102,6 +106,20 @@ class CascaderTestHost {
   maxVisibleColumns = signal(3);
   selectableLevels = signal<'leaf' | 'any'>('leaf');
   dataSource = signal<CascaderDataSource<string>>(syncSource);
+}
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-label>Match</et-label>
+      <et-cascader [dataSource]="dataSource()" (touchedChange)="touched.set($event)" placeholder="Pick a match" />
+    </et-form-field>
+  `,
+  imports: [FORM_FIELD_IMPORTS, CASCADER_IMPORTS],
+})
+class CascaderInFormFieldTestHost {
+  dataSource = signal<CascaderDataSource<string>>(syncSource);
+  touched = signal(false);
 }
 
 describe('CascaderDirective', () => {
@@ -994,4 +1012,39 @@ describe('CascaderDirective (multiple, mixed contract)', () => {
       emptyValue: () => [],
     };
   });
+});
+
+describe('CascaderDirective (in form field)', () => {
+  describeOverlayControlContract(
+    () => {
+      const driver = createOverlayControlDriver(mountControl(CascaderInFormFieldTestHost), CascaderDirective<string>, {
+        hide: (cascader) => cascader.hide(),
+        directiveSelector: 'et-cascader',
+      });
+
+      return {
+        open: () => driver.open(),
+        close: () => driver.close(),
+        trigger: () => driver.trigger(),
+        field: () => driver.query('et-form-field')!,
+        isOpen: () => driver.control.open(),
+        touched: () => driver.host.touched(),
+        focusTrigger: () => {
+          driver.trigger().focus();
+          driver.tick();
+        },
+        blurTrigger: () => {
+          driver.trigger().blur();
+          driver.tick();
+        },
+        escape: () => driver.escape(),
+        pointerDownOutside: () => driver.pointerDownOutside(),
+        settle: () => driver.settle(),
+      };
+    },
+    // `CascaderTriggerDirective.handleBlur` sets `touched` on every blur, and the panel takes focus
+    // itself on open - so opening marks the field touched. Deliberately still open: triage entry 14
+    // ("Left open: … premature `touched` on open") in plans/components-lib-scan-triage.md.
+    { touchedOnOpenIsKnownBroken: true },
+  );
 });
