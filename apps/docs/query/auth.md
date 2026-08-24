@@ -288,6 +288,8 @@ withRefreshQuery('refresh', {
 
 It replaces the default entirely - a handler that never calls `logout()` keeps the session, which is what an app that shows its own "your session could not be renewed" prompt wants.
 
+The handler runs outside any reactive context, so it may create an `effect()` or a query - directly, or through whatever `logout()` sets off in the rest of the app.
+
 **A rejected cookie auto-login takes the same path.** `withPersistentAuth` spends the cookie's refresh token through the refresh query, so a `401` there is a refresh that failed for good, even though the execution reports as `type: 'autoLogin'` rather than `'tokenRefresh'`. It reaches `onRefreshFailure` too, and the default policy ends the session with `sessionEndCause()` `'expired'` - which is what lets a startup screen tell "this session is over" from "the restore did not run". A session that arrived from another tab while the request was out is left alone: it is not the restore's to end. An auto-login through some other query (a login query, a dedicated restore query) is not a refresh and does not reach the handler.
 
 ## Multi-tab sync

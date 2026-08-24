@@ -685,7 +685,10 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
 
       if (state.type !== 'tokenRefresh' && !isRejectedRestore) return;
 
-      onRefreshFailure({ error: state.error, logout: () => context.logout('expired') });
+      // `logout` tears down every secure cache entry and emits on `events$`, so a consumer that reacts
+      // to a session ending runs inside this effect. Angular refuses `effect()` from a reactive context,
+      // so a listener that creates a query would throw NG0602 instead of handling the logout.
+      untracked(() => onRefreshFailure({ error: state.error, logout: () => context.logout('expired') }));
     });
 
     // Auto-retry on 401: Listen to repository events and trigger refresh on 401 errors

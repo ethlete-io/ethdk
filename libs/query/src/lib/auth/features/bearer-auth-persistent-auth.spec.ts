@@ -1,4 +1,5 @@
 import { signal } from '@angular/core';
+import { getActiveConsumer } from '@angular/core/primitives/signals';
 import { TestBed } from '@angular/core/testing';
 import { deleteCookie, getCookie, injectRoute, setCookie } from '@ethlete/core';
 import {
@@ -221,6 +222,40 @@ describe('bearer-auth-persistent-auth', () => {
       expect(authSetup.auth.executionState()).toEqual({ type: 'logout', state: 'success' });
       expect(authSetup.auth.sessionEndCause()).toBe('expired');
       expect(authSetup.auth.sessionStatus()).toBe('anonymous');
+    });
+
+    it('runs onRefreshFailure outside a reactive context', () => {
+      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+
+      let activeConsumerDuringFailure: unknown = 'not called';
+
+      const authSetup = setupAuthTest({
+        querySetup: setup,
+        onRefreshFailure: ({ logout }) => {
+          activeConsumerDuringFailure = getActiveConsumer();
+          logout();
+        },
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth' },
+            defaultRememberMe: true,
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+            },
+          }),
+        ],
+      });
+
+      setup.httpTesting
+        .expectOne('https://api.test.com/auth/refresh')
+        .flush({ message: 'Invalid refresh token' }, { status: 401, statusText: 'Unauthorized' });
+
+      TestBed.tick();
+
+      expect(activeConsumerDuringFailure).toBeNull();
+      expect(authSetup.auth.sessionEndCause()).toBe('expired');
     });
 
     it('hands a rejected stored token to onRefreshFailure, which may keep the session state', () => {
