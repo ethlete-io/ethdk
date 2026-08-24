@@ -374,9 +374,11 @@ export const trackQueryDevtoolsAuthProvider = (registration: QueryDevtoolsAuthPr
     () => {
       const accessToken = handle.accessToken();
       const refreshToken = handle.refreshToken();
+      const endCause = handle.sessionEndCause();
 
       untracked(() => {
         if (accessToken && refreshToken) remember({ provider: name, accessToken, refreshToken });
+        else if (endCause === 'expired') forgetExpired(name);
         else forgetActive(name);
       });
     },
@@ -511,6 +513,29 @@ const remember = (options: { provider: string; accessToken: string; refreshToken
 const forgetActive = (provider: string) => {
   if (!active()[provider]) return;
 
+  setActive(provider, null);
+  persist();
+  syncPill();
+};
+
+/**
+ * Drops the session a provider was on because it expired, tokens and all - unlike every other way a
+ * session ends, this pair is spent. Keeping it offers a switch back that can only fail, and a tab-local
+ * seed would re-apply it on every reload, so the tab meets the same dead token until someone clears the
+ * storage by hand.
+ */
+const forgetExpired = (provider: string) => {
+  const sessionId = active()[provider] ?? null;
+  const { [provider]: _dropped, ...seeds } = readSeeds();
+
+  writeSeeds(seeds);
+
+  if (!sessionId) return;
+
+  store.update((current) => ({
+    ...current,
+    sessions: current.sessions.filter((session) => session.id !== sessionId),
+  }));
   setActive(provider, null);
   persist();
   syncPill();

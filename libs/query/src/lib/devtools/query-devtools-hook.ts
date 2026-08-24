@@ -488,6 +488,12 @@ export type QueryDevtoolsAuthProviderHandle = {
   logout: () => void;
 
   /**
+   * Why the live session last ended, as `BearerAuthProvider.sessionEndCause` reports it. Typed as a
+   * string so this contract stays clear of the auth module, which imports this file.
+   */
+  sessionEndCause: Signal<string | null>;
+
+  /**
    * The provider's auth queries, which is how the panel logs in as a declared account.
    *
    * Untyped for the reason `AnyBearerAuthProvider.queries` is: with unknown builders the registry

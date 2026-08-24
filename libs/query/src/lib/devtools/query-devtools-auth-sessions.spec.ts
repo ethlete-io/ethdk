@@ -48,6 +48,7 @@ type Fake = {
   handle: QueryDevtoolsAuthProviderHandle;
   accessToken: ReturnType<typeof signal<string | null>>;
   refreshToken: ReturnType<typeof signal<string | null>>;
+  sessionEndCause: ReturnType<typeof signal<string | null>>;
   isTabLocalSession: ReturnType<typeof signal<boolean>>;
   logins: unknown[];
   evictions: number;
@@ -58,6 +59,7 @@ type Fake = {
 const createProvider = (name: string): Fake => {
   const accessToken = signal<string | null>(null);
   const refreshToken = signal<string | null>(null);
+  const sessionEndCause = signal<string | null>(null);
   const isTabLocalSession = signal(false);
   const logins: unknown[] = [];
   const state = { evictions: 0, unbinds: 0 };
@@ -68,11 +70,14 @@ const createProvider = (name: string): Fake => {
     setTokens: (access, refresh) => {
       accessToken.set(access);
       refreshToken.set(refresh);
+      sessionEndCause.set(null);
     },
     logout: () => {
       accessToken.set(null);
       refreshToken.set(null);
+      sessionEndCause.set('user');
     },
+    sessionEndCause,
     queries: { login: { execute: (args: unknown) => logins.push(args) } },
   };
 
@@ -103,6 +108,7 @@ const createProvider = (name: string): Fake => {
     handle,
     accessToken,
     refreshToken,
+    sessionEndCause,
     isTabLocalSession,
     logins,
     get evictions() {
@@ -117,6 +123,14 @@ const createProvider = (name: string): Fake => {
 
 const flush = () => TestBed.tick();
 
+/** Ends a session the way a refresh that failed for good does. */
+const expire = (provider: Fake) => {
+  provider.accessToken.set(null);
+  provider.refreshToken.set(null);
+  provider.sessionEndCause.set('expired');
+  flush();
+};
+
 describe('query devtools auth sessions', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -126,6 +140,29 @@ describe('query devtools auth sessions', () => {
     setQueryDevtoolsApiEnvs([HUB]);
     clearQueryDevtoolsAuthSessions();
     initQueryDevtoolsAuthSessions([]);
+  });
+
+  it('should forget a session that expired, tokens and all', () => {
+    const provider = createProvider('hub-auth');
+
+    provider.handle.setTokens(ADMIN, 'refresh-1');
+    flush();
+
+    expire(provider);
+
+    expect(queryDevtoolsAuthSessionsFor('hub-auth')).toEqual([]);
+  });
+
+  it('should keep a session the user logged out of', () => {
+    const provider = createProvider('hub-auth');
+
+    provider.handle.setTokens(ADMIN, 'refresh-1');
+    flush();
+
+    provider.handle.logout();
+    flush();
+
+    expect(queryDevtoolsAuthSessionsFor('hub-auth').length).toBe(1);
   });
 
   it('should hold nothing until a provider has a session', () => {
@@ -609,6 +646,18 @@ describe('query devtools auth sessions', () => {
       flush();
       setQueryDevtoolsAuthTabLocal({ provider: 'hub-auth', tabLocal: true });
       setQueryDevtoolsAuthTabLocal({ provider: 'hub-auth', tabLocal: false });
+
+      expect(readQueryDevtoolsAuthSeedFor('hub-auth')).toBeNull();
+    });
+
+    it('should drop the seed of a session that expired, so a reload starts anonymous', () => {
+      const provider = createProvider('hub-auth');
+
+      provider.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+      setQueryDevtoolsAuthTabLocal({ provider: 'hub-auth', tabLocal: true });
+
+      expire(provider);
 
       expect(readQueryDevtoolsAuthSeedFor('hub-auth')).toBeNull();
     });

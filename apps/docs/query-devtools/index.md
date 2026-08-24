@@ -2013,6 +2013,13 @@ The access token in a stored session is usually expired, and the list says so. T
 to solve - it is what the refresh token is for, and the provider refreshes on the first request the
 switch makes.
 
+A session whose **refresh** token the server refuses is a different matter, and the vault drops it:
+[the provider ends such a session](/query/auth#when-a-refresh-fails-for-good) with cause `expired`,
+and the pair it held can only fail again. A tab that made that session
+[its own](#one-tab-one-user) loses its seed with it, so the next reload starts anonymous rather
+than presenting the same dead token. A session you log out of yourself stays in the list - that is
+what the list is for.
+
 A session is recognised again by four things, in this order: the token pair itself, the account it was
 logged in as, the `sub` claim, and the name the token claims. The last one is what a backend that
 issues no `sub` is recognised by, so it keeps one session per user rather than one per login. A login
