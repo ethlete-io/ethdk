@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 6.0.0-next.44
+
+### Patch Changes
+
+- [#3077](https://github.com/ethlete-io/ethdk/pull/3077) [`8c2cb3a`](https://github.com/ethlete-io/ethdk/commit/8c2cb3a7b8a311363255d66b0f3c07fcfc4f6bdb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Auth: `onRefreshFailure` and the `logout()` it triggers now run outside the reactive context of the effect that detects the failure. A consumer reacting to the session ending could otherwise throw `NG0602` instead of handling the logout.
+
+- [`f7d6bb1`](https://github.com/ethlete-io/ethdk/commit/f7d6bb12a799b680ce72c90cbdcfd96ae3ea2fc0) Thanks [@TomTomB](https://github.com/TomTomB)! - A secure query now waits for the token refresh instead of sending an access token that is already expired, so a session seeded by SSO no longer costs a `401` and a retry.
+
 ## 6.0.0-next.43
 
 ### Patch Changes
