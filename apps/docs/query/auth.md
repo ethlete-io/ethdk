@@ -219,7 +219,7 @@ The rule of thumb: **the snapshot drives the UI of the attempt that produced it;
 
 Only the most recently started token-issuing execution applies its tokens and writes `executionState()`. Everything else is ignored, however late it comes back.
 
-`logout()` is a terminal supersession too: a login, auto-login or refresh that was already in flight cannot restore the session when its response arrives later.
+`logout()` is a terminal supersession too: a login, auto-login or refresh that was already in flight cannot restore the session when its response arrives later. So is [`setTokens()`](#external-tokens): the seeded pair is here, so a cookie auto-login still out with an older refresh token neither applies what it comes back with nor reports its failure as the session's - which is what keeps an SSO callback that opens the app over a stale cookie from ending on that cookie's `401`.
 
 This holds **across registry keys**, not just within one. A `401`-driven token refresh that is still in flight when the user submits a login used to end with the refresh's tokens applied and the login's outcome on display, or the reverse - two writers, two different executions. Now the login supersedes the refresh, and the refresh's late response is dropped entirely.
 
@@ -235,7 +235,7 @@ const { accessToken, refreshToken } = parseCallbackFragment(location.hash);
 auth.setTokens(accessToken, refreshToken);
 ```
 
-It behaves exactly like a successful auth query: `bearerData` / `isAuthenticated` update, `afterTokenRefresh$` emits so waiting secure queries run, other tabs are synced, and `withPersistentAuth` picks the tokens up through the same signals it watches for query-issued ones.
+It behaves exactly like a successful auth query: `bearerData` / `isAuthenticated` update, `afterTokenRefresh$` emits so waiting secure queries run, other tabs are synced, and `withPersistentAuth` picks the tokens up through the same signals it watches for query-issued ones. It also [supersedes](#which-execution-wins) whatever was in flight.
 
 ## Token refresh
 
@@ -287,6 +287,8 @@ withRefreshQuery('refresh', {
 ```
 
 It replaces the default entirely - a handler that never calls `logout()` keeps the session, which is what an app that shows its own "your session could not be renewed" prompt wants.
+
+**A rejected cookie auto-login takes the same path.** `withPersistentAuth` spends the cookie's refresh token through the refresh query, so a `401` there is a refresh that failed for good, even though the execution reports as `type: 'autoLogin'` rather than `'tokenRefresh'`. It reaches `onRefreshFailure` too, and the default policy ends the session with `sessionEndCause()` `'expired'` - which is what lets a startup screen tell "this session is over" from "the restore did not run". A session that arrived from another tab while the request was out is left alone: it is not the restore's to end. An auto-login through some other query (a login query, a dedicated restore query) is not a refresh and does not reach the handler.
 
 ## Multi-tab sync
 
@@ -415,7 +417,7 @@ The cookie is host-only by default, so its origin-local encryption key and the c
 It is **deleted** only on the two events that actually end a session:
 
 - `logout()`, including a logout synced from another tab.
-- A refresh or auto-login the server was definite about rejecting - a `401` or `403`. Any other failure (offline, a `500`, a tab closed mid-attempt) leaves the cookie in place so the next load can try again.
+- A refresh or auto-login the server was definite about rejecting - a `401` or `403`. Any other failure (offline, a `500`, a tab closed mid-attempt) leaves the cookie in place so the next load can try again. An auto-login that goes through the refresh query also [ends the session](#when-a-refresh-fails-for-good), so the cookie and the session state go together.
 
 The absence of a token is deliberately **not** one of those events. It is absent on every startup - `tryLogin()` reads the cookie synchronously and the auto-login only resolves a tick later - so deleting on "there is no token right now" would throw away a 30-day refresh token before it was ever used.
 

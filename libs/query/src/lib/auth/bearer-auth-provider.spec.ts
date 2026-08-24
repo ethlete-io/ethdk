@@ -559,6 +559,41 @@ describe('createBearerAuthProvider', () => {
         expect(provider.isAuthenticated()).toBe(false);
       });
     });
+
+    it('should supersede an execution that was already in flight', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+          }),
+        ],
+      });
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        provider.queries.login.execute({ body: { username: 'test' } });
+        const req = httpTesting.expectOne('https://api.example.com/auth/login');
+
+        provider.setTokens('external-access', 'external-refresh');
+        TestBed.tick();
+
+        req.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+        TestBed.tick();
+
+        expect(provider.accessToken()).toBe('external-access');
+        expect(provider.executionState()).toEqual({ type: 'tokenSeed', state: 'success' });
+      });
+    });
   });
 
   describe('logout', () => {

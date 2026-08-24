@@ -414,6 +414,9 @@ export type BearerAuthProvider<
    * synced. Without it the only way in is to execute the refresh query with the refresh token and
    * throw the access token away.
    *
+   * Supersedes any token-issuing execution in flight, so a cookie auto-login still out with an older
+   * refresh token can neither apply its tokens over this pair nor report its failure as the session's.
+   *
    * Does **not** persist anything by itself - `withPersistentAuth` picks the tokens up through the
    * same signals it watches for query-issued ones.
    */
@@ -491,6 +494,9 @@ export type BearerAuthProviderQueryContext<
   /** Ends the session, exactly as the provider's own `logout()` does. */
   logout: (cause?: BearerAuthSessionEndCause) => void;
   queries: QueryRegistry<TBuilders>;
+
+  /** The query the current {@link executionState} belongs to, or `null` after a logout. */
+  latestExecutedQuery: Signal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>;
   executionState: Signal<BearerAuthExecutionState | null>;
 
   /** Whether any execution that can issue tokens is still running, across every registry key. */
@@ -787,6 +793,10 @@ const createBearerAuthProviderImpl = <
   // executionState (e.g. `{ type: 'login', state: 'success' }`) via setupBearerQueryRegistry's
   // execute(), so that internal path calls applyTokens directly to avoid stomping it with this.
   const setTokens = (access: string, refresh: string) => {
+    // A seed supersedes what is in flight, the way a logout does: the tokens are here, so a cookie
+    // auto-login or a refresh still out with an older token can only report a failure that no longer
+    // means anything - or apply the pair it comes back with over this one.
+    invalidateTokenIssuingExecutions();
     applyTokens(access, refresh);
     executionState.set({ type: 'tokenSeed', state: 'success' });
   };
@@ -857,6 +867,7 @@ const createBearerAuthProviderImpl = <
     logout,
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
+    latestExecutedQuery: latestExecutedQuery.asReadonly(),
     executionState: executionState.asReadonly(),
     hasTokenIssuingExecutionInFlight,
   };

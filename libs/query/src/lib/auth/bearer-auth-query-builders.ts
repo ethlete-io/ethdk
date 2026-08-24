@@ -1,4 +1,4 @@
-import { computed, DestroyRef, effect, inject, isDevMode, signal } from '@angular/core';
+import { computed, DestroyRef, effect, inject, isDevMode, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { concatMap, EMPTY, fromEvent, Observable, of, race, switchMap, take, timer } from 'rxjs';
 import { patchQueryDevtoolsTokenPayload } from '../devtools/query-devtools-hook';
@@ -135,6 +135,9 @@ export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<T
    * those are the failures that could still succeed later, everything else leaves the tab holding a
    * token the server will not renew. Without this the session would look valid while every secure
    * query 401s.
+   *
+   * Also runs for a `withPersistentAuth` cookie auto-login that goes through this query: the cookie
+   * holds a refresh token, so a rejected one is a refresh that failed for good.
    *
    * @example
    * withRefreshQuery('refresh', {
@@ -667,7 +670,20 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     effect(() => {
       const state = context.executionState();
 
-      if (state?.type !== 'tokenRefresh' || state.state !== 'error') return;
+      if (state?.state !== 'error') return;
+
+      // `withPersistentAuth` spends the cookie's refresh token through this very query, and that
+      // execution reports as `autoLogin` rather than as `tokenRefresh`. Judged by its type alone it
+      // would end nothing: the tab keeps a rejected cookie's error state for good, `sessionEndCause`
+      // never says `expired`, and an app gated on either never leaves its startup screen. The token
+      // check keeps a session another tab handed over mid-request out of it - that session is not
+      // this restore's to end.
+      const isRejectedRestore =
+        state.type === 'autoLogin' &&
+        untracked(context.latestExecutedQuery)?.key === key &&
+        !untracked(context.accessToken);
+
+      if (state.type !== 'tokenRefresh' && !isRejectedRestore) return;
 
       onRefreshFailure({ error: state.error, logout: () => context.logout('expired') });
     });

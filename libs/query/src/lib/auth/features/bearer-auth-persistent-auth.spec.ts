@@ -194,6 +194,98 @@ describe('bearer-auth-persistent-auth', () => {
       expect(deleteCookie).toHaveBeenCalledWith('testAuth', '/', null);
     });
 
+    it('ends the session as expired when the server rejects the stored token', () => {
+      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+
+      const authSetup = setupAuthTest({
+        querySetup: setup,
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth' },
+            defaultRememberMe: true,
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+            },
+          }),
+        ],
+      });
+
+      setup.httpTesting
+        .expectOne('https://api.test.com/auth/refresh')
+        .flush({ message: 'Invalid refresh token' }, { status: 401, statusText: 'Unauthorized' });
+
+      TestBed.tick();
+
+      expect(authSetup.auth.executionState()).toEqual({ type: 'logout', state: 'success' });
+      expect(authSetup.auth.sessionEndCause()).toBe('expired');
+      expect(authSetup.auth.sessionStatus()).toBe('anonymous');
+    });
+
+    it('hands a rejected stored token to onRefreshFailure, which may keep the session state', () => {
+      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+
+      const seen: number[] = [];
+      const authSetup = setupAuthTest({
+        querySetup: setup,
+        onRefreshFailure: ({ error }) => seen.push(error.code),
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth' },
+            defaultRememberMe: true,
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+            },
+          }),
+        ],
+      });
+
+      setup.httpTesting
+        .expectOne('https://api.test.com/auth/refresh')
+        .flush({ message: 'Invalid refresh token' }, { status: 401, statusText: 'Unauthorized' });
+
+      TestBed.tick();
+
+      expect(seen).toEqual([401]);
+      expect(authSetup.auth.sessionEndCause()).toBeNull();
+    });
+
+    it('keeps a session that arrived while the auto-login was in flight', () => {
+      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+
+      const authSetup = setupAuthTest({
+        querySetup: setup,
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth' },
+            defaultRememberMe: true,
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+            },
+          }),
+        ],
+      });
+
+      const request = setup.httpTesting.expectOne('https://api.test.com/auth/refresh');
+
+      authSetup.auth.setTokens('synced-access', 'synced-refresh');
+      TestBed.tick();
+
+      request.flush({ message: 'Invalid refresh token' }, { status: 401, statusText: 'Unauthorized' });
+
+      TestBed.tick();
+
+      expect(authSetup.auth.isAuthenticated()).toBe(true);
+      expect(authSetup.auth.accessToken()).toBe('synced-access');
+      expect(authSetup.auth.executionState()).toEqual({ type: 'tokenSeed', state: 'success' });
+      expect(authSetup.auth.sessionEndCause()).toBeNull();
+    });
+
     it('should keep the cookie when the auto-login fails without the server rejecting the token', () => {
       vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
 
