@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 2.0.0-next.8
+
+### Patch Changes
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`f9fbd3a`](https://github.com/ethlete-io/ethdk/commit/f9fbd3a6959a99af7c6de60d7ceaf2781e8a58d2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Re-export types explicitly with `export type` so the barrels type-check under `isolatedModules`.
+
 ## 2.0.0-next.7
 
 ### Patch Changes

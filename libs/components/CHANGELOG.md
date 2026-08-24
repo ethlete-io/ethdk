@@ -1,5 +1,158 @@
 # Changelog
 
+## 1.0.0-next.59
+
+### Patch Changes
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`cd38de5`](https://github.com/ethlete-io/ethdk/commit/cd38de52b2a3628db20b841cf5ec3b0d837a21f7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bracket: a pinned journey now survives a `source` change - it re-lights against the new cells, and a
+  pin the current source doesn't contain highlights nothing instead of dimming the whole bracket.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`70f2201`](https://github.com/ethlete-io/ethdk/commit/70f220163fa09e752d4579df31bc7db42ad84cfb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Swiss brackets: matches now group by the record their participants brought into the round, so a source with decided matches renders instead of throwing, empty groups are dropped, and `swissColors` can no longer inject SVG attributes.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`4c29480`](https://github.com/ethlete-io/ethdk/commit/4c29480cbb696d98cb9e5878dc35377c240b368d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Calendar: a range preview now needs a real hover or keyboard focus in the selecting grid, so a strategy like `createFixedLengthRangeStrategy` no longer bands an untouched calendar.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`84dd923`](https://github.com/ethlete-io/ethdk/commit/84dd923850e9a5e40e5e5c3bec649a9649d6c387) Thanks [@github-actions](https://github.com/apps/github-actions)! - Carousel: `playOnInit="false"` is honoured, a looping carousel that gets layout late is still moved off its clones, and the play/pause control's icon, label and `aria-pressed` all follow whether autoplay is actually running.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`3b55abd`](https://github.com/ethlete-io/ethdk/commit/3b55abd6a1e389c164012a94143996db891410cf) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix the cascader dropping already-loaded columns when a level resolves out of order,
+  swallowing Space on a focused node while a search input is registered, and keeping the
+  previous value's breadcrumb after the value is replaced from outside.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`00f318c`](https://github.com/ethlete-io/ethdk/commit/00f318ccca4b0a428c61a30a7b74a1bb717c8488) Thanks [@github-actions](https://github.com/apps/github-actions)! - Choice field: honour `prefers-reduced-motion` - its hint, warning and error region animated at full duration for users who asked for reduced motion.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`30a0db1`](https://github.com/ethlete-io/ethdk/commit/30a0db16e503f48134a986871d450a8e6413d483) Thanks [@github-actions](https://github.com/apps/github-actions)! - Clamp `minuteStep`/`secondStep` on the time picker and the date/time inputs, plus the
+  calendar's `monthsShown`, through one shared positive-integer transform. A step of `0` or
+  a negative no longer freezes the picker with a `RangeError`.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`7d4cc39`](https://github.com/ethlete-io/ethdk/commit/7d4cc395f7a79ac2162445e2208939265ee2ad11) Thanks [@github-actions](https://github.com/apps/github-actions)! - Keep the color field's open-popup styling while its picker is up, and pin the picker's area and tracks left to right so their thumbs, gradients and arrow keys agree in RTL.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1811474`](https://github.com/ethlete-io/ethdk/commit/18114741cc883e73017ec8e0eb5ea0096329fb7d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Every form control now takes `aria-label` / `aria-labelledby` and forwards it onto the element carrying its role, a required rich text editor announces `aria-required`, an option's `et-description` is announced, and a segmented button names itself.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`0f40018`](https://github.com/ethlete-io/ethdk/commit/0f40018381c3c48d9a13e981dd0972ac909c4b30) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix the date/time picker commit contract: an unedited blur no longer rewrites the
+  value, erasing unparseable text resets `parseError`, the clear button resets an
+  attached mask, and a readonly control commits nothing.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`41b3e81`](https://github.com/ethlete-io/ethdk/commit/41b3e81b00f81b39fdfbca203d5de2df4f49f98c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Dropzone: replacing the file in single mode now fires the configured `delete` for the value it drops, `clear()` respects `readonly`/`disabled`, and the live region uses `DROPZONE_LABELS.uploading`.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`5fb1dfd`](https://github.com/ethlete-io/ethdk/commit/5fb1dfdab606e3c58c1bc2b66c6880b5deae7be1) Thanks [@github-actions](https://github.com/apps/github-actions)! - `ET1604` now names `PIP_CHROME_REF_TOKEN` instead of an impossible `hostDirectives` entry, and the
+  split button and filter overlay controls report a misplaced control at construction rather than after
+  render.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1d38e7e`](https://github.com/ethlete-io/ethdk/commit/1d38e7e0a025769f065d8ca7d506cb75ad89139a) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et update` moves the `@ethlete/*` packages to a newer version, runs the codemods those versions
+  declare in their own `migrations.json`, and reports what needs a decision or an agent.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`277e287`](https://github.com/ethlete-io/ethdk/commit/277e287ec3ff654a6c9c471740080d8982a7d941) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix ARIA structures that did not hold: the calendar grid, both scheduler grid views, the
+  page-sticky table and both tab bars now own their rows, cells and tabs instead of losing them
+  behind role-less layout wrappers.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`ab4e174`](https://github.com/ethlete-io/ethdk/commit/ab4e174fcf90460155e09a34cf6b647cc0545cdd) Thanks [@github-actions](https://github.com/apps/github-actions)! - `etCopyButton` no longer emits `copySuccess` after its host is destroyed, the notification
+  manager floors `maxVisible` at a whole `1`, and the standings overlapping-zones dev guard
+  re-checks whenever `zones` changes instead of only at first render.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`bfda149`](https://github.com/ethlete-io/ethdk/commit/bfda149a22fae7004d60694aa084f4a3cd0d553e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix three table defects: a bound `etTableCsvExport` config making `export({ file })` throw
+  `ET3507`, a cancelled resize leaving a width override behind, and selection/expansion state
+  serializing `"[object Object]"` without a `rowKey`.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1bcf528`](https://github.com/ethlete-io/ethdk/commit/1bcf528669ee17d48a79e189211d520554eeca89) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix three teardown leaks: the table reorder auto-scroll loop, the scrollable
+  navigation scroll listener and the PiP window snap timers now stop on destroy.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`494dea1`](https://github.com/ethlete-io/ethdk/commit/494dea186b9fbf4c5966f356f23c354ae0fd4eb3) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid item shortcuts and the calendar keyboard model no longer claim keys typed
+  into a form field or contenteditable inside them, and Ctrl+Shift+Arrow on a grid
+  item now only moves.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`4d3d3b5`](https://github.com/ethlete-io/ethdk/commit/4d3d3b549ee00fd9ac70e64d9743ffdbd4e7a4ad) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid items draw a keyboard focus ring, and a standalone chip's remove button is a tab stop - `CHIP_REMOVE_TAB_STOP` keeps it out of the tab order inside widgets that manage chip focus themselves.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`f9fbd3a`](https://github.com/ethlete-io/ethdk/commit/f9fbd3a6959a99af7c6de60d7ceaf2781e8a58d2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Re-export types explicitly with `export type` so the barrels type-check under `isolatedModules`.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`8502e91`](https://github.com/ethlete-io/ethdk/commit/8502e91cc7ffc93b46706a4d2530e43f2d6bf7e1) Thanks [@github-actions](https://github.com/apps/github-actions)! - Masonry: items are `box-sizing: border-box` and settle even when their reported box cannot match the
+  assigned width, so a padded card no longer leaves the masonry invisible. Re-sorting the items now
+  re-packs them in the new reading order.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`027c07f`](https://github.com/ethlete-io/ethdk/commit/027c07ffa5d2dc2ce92548d91a4c36ee8c18c994) Thanks [@github-actions](https://github.com/apps/github-actions)! - Menu: a programmatically opened menu now honours `autoFocus` instead of opening with no keyboard entry point, and `show()` / `toggle()` / `openAt()` take `{ source, focus }` to override it per call.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`df580d8`](https://github.com/ethlete-io/ethdk/commit/df580d84ddb2cf228ecd155bbad0131711e4c8e6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Notification: the auto-dismiss timer now holds per reason, so a toast no longer dismisses itself when the pointer leaves while focus is still inside it, or re-arms on a click. `pauseTimer('hover')` / `resumeTimer('hover')`.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`6258432`](https://github.com/ethlete-io/ethdk/commit/62584326e6cc4f73646ea9a5809784a2b34420f4) Thanks [@github-actions](https://github.com/apps/github-actions)! - OTP input: a `charset` RegExp with the `g` or `y` flag no longer drops every other character, shrinking `length` (or narrowing `charset`) re-sanitizes the value already in the field, and `complete` now emits for a programmatic value too.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`4107d93`](https://github.com/ethlete-io/ethdk/commit/4107d93f4ab7a35fde439d5f151a43b3e6ebd45d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Elevate an overlay container against the backdrop it actually mounted with, so a
+  backdrop-less strategy elevates above its trigger; reference count `documentClass` /
+  `bodyClass` across open overlays; close an open overlay when its query-param opener is
+  destroyed.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`f19d4ae`](https://github.com/ethlete-io/ethdk/commit/f19d4ae835dc5171f328c660d44870aaf3bc8f77) Thanks [@github-actions](https://github.com/apps/github-actions)! - Let overlay content handle `Escape` first, so the command palette clears its query
+  before closing. A `strategies` array without a breakpoint-less entry now falls back
+  to its smallest one instead of throwing.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`4318169`](https://github.com/ethlete-io/ethdk/commit/43181692db7d3ee9b1c06d99202cffe7dbf7241d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Pagination: the compact pager now honors `hidePreviousNext`, the jump-to-page input gets a per-instance id (two paginators no longer share it), and coarse pointers get the documented 44px target on the default density and page-size select.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`71a3ba1`](https://github.com/ethlete-io/ethdk/commit/71a3ba1d42a6fb11d8acf986539e49497ba8bcfb) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et-phone-input` now applies a `defaultCountry` that changes after the first render, so a
+  locale or geo lookup that resolves late is no longer ignored.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1c1c606`](https://github.com/ethlete-io/ethdk/commit/1c1c60698bc0450b76fb314593c1bd082841f769) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `et-phone-input` corrupting an international number typed one character at a
+  time. The field no longer rewrites itself mid-entry, so each keystroke reads the
+  text the user actually typed.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`72ec563`](https://github.com/ethlete-io/ethdk/commit/72ec56376139458c75f38b6cd90e9a884c4aa0dc) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix the rich text editor leaking an emptied `<u>`/`<code>` tag into the Markdown value,
+  opening the trigger popup for a character the caret sits in front of, and merging a
+  table or alignment edit into the next keystroke's undo entry.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`851cb9f`](https://github.com/ethlete-io/ethdk/commit/851cb9f2963e3d6bd62cf7948736af00745c3157) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix an immutable `appointments` update stacking a second scheduler edit surface and wiping the
+  user's unsaved draft. Adds `openEditSurface(id)`, `closeEditSurface()` and `selectAppointment(id)`
+  on `<et-scheduler>`.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`afa1604`](https://github.com/ethlete-io/ethdk/commit/afa16045a1fae8e9c8e963720a0b1a41f98ae098) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scrollable: `[etScrollableActiveChild]` now actually opens the track on the marked child - it registered nothing before, so the initial scroll never happened.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`0cf4c21`](https://github.com/ethlete-io/ethdk/commit/0cf4c2179ff96b02e7e9f7201539b4486f11e4bf) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scrollable: the buttons, dots, footer and edge-mask CSS now ships with the chrome that draws it, so a
+  track imported without `SCROLLABLE_NAVIGATION_IMPORTS` no longer pays for it.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`94e4ce8`](https://github.com/ethlete-io/ethdk/commit/94e4ce81a39a00da5166616b4333ffb28a19de0d) Thanks [@github-actions](https://github.com/apps/github-actions)! - The menu, cascader, time picker and docked rich text editor toolbar now show `<et-scrollbar>` instead
+  of a native or hidden one, and pressing a scrollbar no longer moves focus.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`64bce20`](https://github.com/ethlete-io/ethdk/commit/64bce20f7e2273e559715946abb71fcfa6b23de1) Thanks [@github-actions](https://github.com/apps/github-actions)! - Clicking the label of a checkbox, radio, segmented button or selection list group
+  now only moves focus into the group instead of selecting the first option.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`a1a7757`](https://github.com/ethlete-io/ethdk/commit/a1a7757644ee5a30b2643939dc97ff9361d65795) Thanks [@github-actions](https://github.com/apps/github-actions)! - Collapse the support region (hint, warning and error) that eight form controls each copied into one shared stylesheet and template, and give the form field the shared presentation state machine. `FormFieldComponent.effectiveErrors` and `semanticSupportState` now live on `support`.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`9d4ac07`](https://github.com/ethlete-io/ethdk/commit/9d4ac074d0c4b5dda128db3b612963e1aa808be3) Thanks [@github-actions](https://github.com/apps/github-actions)! - Commit a slider tick press as the tick's exact value, even when the mark sits off the `step` grid.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`45e1f16`](https://github.com/ethlete-io/ethdk/commit/45e1f169a207577f4a0379664ef982ab5977d351) Thanks [@github-actions](https://github.com/apps/github-actions)! - A split button now throws `ET2304`/`ET2305` on a duplicated action or trigger segment, and
+  keeps the first one registered rather than ending up with none.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`9d6f5a9`](https://github.com/ethlete-io/ethdk/commit/9d6f5a9c70e409f3a03f2b2a245f999d82cd6232) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix leaving picture-in-picture without an exit animation stranding the player in the hidden
+  container, and accepting the consent gate after the slot's id changed registering the player
+  under the previous id.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`0c1e185`](https://github.com/ethlete-io/ethdk/commit/0c1e1856b0b89beef07cc93af7ac81b21d2a2961) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix five stuck states in the focus ring, nested toolbars, `etBreadcrumbSeo` on
+  the outlet, a sources-only `et-picture`, and the filter overlay submit button.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`edc5a2f`](https://github.com/ethlete-io/ethdk/commit/edc5a2fc3d11191cfda77f0ff16802d24d5073ca) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `aria-describedby` resolving to nothing on `et-slider`, `et-range-slider`,
+  `et-rating`, `et-otp-input`, `et-dropzone` and the three selection groups. Their
+  hint, warning and error are now announced.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`912be36`](https://github.com/ethlete-io/ethdk/commit/912be360cb44ac04fbd84e01838bb16379a24599) Thanks [@github-actions](https://github.com/apps/github-actions)! - A tab inserted anywhere but the end no longer desyncs `aria-selected`, the roving
+  tab stop and the visible panel - the tab bar now keys its triggers by DOM order.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`61e227c`](https://github.com/ethlete-io/ethdk/commit/61e227c6bd8a8aaf0f8a7bb430176c9a04eb41f6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: a `rowsSource` with `setSort`/`setFilters` but no `sort`/`filters` signal no
+  longer freezes the header, and a hand-edited stored state or link is ignored instead
+  of crashing `restoreState()`. A signal published without its setter now throws
+  `ET3510` in dev mode.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1639d08`](https://github.com/ethlete-io/ethdk/commit/1639d082ab4582ad404610634b43760fffca631e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Tag input: a no-op removal no longer writes into the form model, a paste keeps the text
+  already in the field, and a full field stays editable while it holds text.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`c78db15`](https://github.com/ethlete-io/ethdk/commit/c78db153d8c21a67b8c9bf64253cc1ffe0af3a27) Thanks [@github-actions](https://github.com/apps/github-actions)! - `[warnings]` no longer throws NG0303 on `et-number-input`, `et-password-input`,
+  `et-textarea` and `et-color-input`.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`d0a1826`](https://github.com/ethlete-io/ethdk/commit/d0a1826a00b2eea55e25fdd0b6a0241ee40522cc) Thanks [@github-actions](https://github.com/apps/github-actions)! - The textarea now autosizes through the browser's own `field-sizing` where that exists, which costs less per keystroke and renders the same size.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`78eda0a`](https://github.com/ethlete-io/ethdk/commit/78eda0a4b4d34088931c35171f121a4b4859867d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Tooltip, toggletip, menu, tabs and segmented buttons now take their colors from the derived surface and theme tokens, so an app's theme reaches the toggletip focus ring and the tab interaction fills.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`e6f411c`](https://github.com/ethlete-io/ethdk/commit/e6f411cf37d3ef8b7d74a2c0aa897339c7196bf4) Thanks [@github-actions](https://github.com/apps/github-actions)! - `[etTooltip]` appends to an existing `aria-describedby` instead of replacing it,
+  `etToggletipTrigger` no longer overwrites a consumer-bound `etToggletipDisabled`,
+  and both render content that changes while they are open.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`03ede7b`](https://github.com/ethlete-io/ethdk/commit/03ede7b687a84de936c4c15887b99137f5fd0bd9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Collapsing a tree branch that holds the focused row now moves focus and the tab stop to the
+  nearest surviving ancestor instead of dropping them on `<body>` and the first row.
+
 ## 1.0.0-next.58
 
 ### Minor Changes
