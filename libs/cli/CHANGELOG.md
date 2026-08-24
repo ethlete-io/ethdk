@@ -1,5 +1,14 @@
 # @ethlete/cli
 
+## 2.1.0-next.8
+
+### Minor Changes
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`004c32d`](https://github.com/ethlete-io/ethdk/commit/004c32d0ada3d7862947843dd6e8b204876160fe) Thanks [@github-actions](https://github.com/apps/github-actions)! - `doctorCommand` accepts an optional `composeTools` override for the container-engine check.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1d38e7e`](https://github.com/ethlete-io/ethdk/commit/1d38e7e0a025769f065d8ca7d506cb75ad89139a) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et update` moves the `@ethlete/*` packages to a newer version, runs the codemods those versions
+  declare in their own `migrations.json`, and reports what needs a decision or an agent.
+
 ## 2.1.0-next.7
 
 ### Patch Changes

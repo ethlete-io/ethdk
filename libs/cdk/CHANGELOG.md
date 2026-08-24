@@ -1,5 +1,12 @@
 # @ethlete/cdk
 
+## 5.0.0-next.31
+
+### Patch Changes
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1d38e7e`](https://github.com/ethlete-io/ethdk/commit/1d38e7e0a025769f065d8ca7d506cb75ad89139a) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et update` moves the `@ethlete/*` packages to a newer version, runs the codemods those versions
+  declare in their own `migrations.json`, and reports what needs a decision or an agent.
+
 ## 5.0.0-next.30
 
 ### Patch Changes

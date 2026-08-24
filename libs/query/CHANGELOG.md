@@ -1,5 +1,18 @@
 # @ethlete/query
 
+## 6.0.0-next.43
+
+### Patch Changes
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`48488fb`](https://github.com/ethlete-io/ethdk/commit/48488fbdc0d61bafe5e8117844e5efa2c31c330a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Auth: a rejected cookie auto-login now ends the session through `onRefreshFailure` with `sessionEndCause()` `'expired'`, and `setTokens()` supersedes an auto-login still in flight so its late `401` no longer overwrites the seeded session.
+
+- [`a533863`](https://github.com/ethlete-io/ethdk/commit/a533863ce73cbb9e3454b6016be39487aa965c7a) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: a session that ends as expired is dropped from the auth vault, so a tab seeded with it no longer meets the same dead token on every reload.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1d38e7e`](https://github.com/ethlete-io/ethdk/commit/1d38e7e0a025769f065d8ca7d506cb75ad89139a) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et update` moves the `@ethlete/*` packages to a newer version, runs the codemods those versions
+  declare in their own `migrations.json`, and reports what needs a decision or an agent.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`f9fbd3a`](https://github.com/ethlete-io/ethdk/commit/f9fbd3a6959a99af7c6de60d7ceaf2781e8a58d2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Re-export types explicitly with `export type` so the barrels type-check under `isolatedModules`.
+
 ## 6.0.0-next.42
 
 ### Minor Changes

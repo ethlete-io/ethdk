@@ -1,5 +1,16 @@
 # @ethlete/core
 
+## 5.0.0-next.56
+
+### Patch Changes
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1d38e7e`](https://github.com/ethlete-io/ethdk/commit/1d38e7e0a025769f065d8ca7d506cb75ad89139a) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et update` moves the `@ethlete/*` packages to a newer version, runs the codemods those versions
+  declare in their own `migrations.json`, and reports what needs a decision or an agent.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`f19d4ae`](https://github.com/ethlete-io/ethdk/commit/f19d4ae835dc5171f328c660d44870aaf3bc8f77) Thanks [@github-actions](https://github.com/apps/github-actions)! - Let overlay content handle `Escape` first, so the command palette clears its query
+  before closing. A `strategies` array without a breakpoint-less entry now falls back
+  to its smallest one instead of throwing.
+
 ## 5.0.0-next.55
 
 ### Patch Changes
