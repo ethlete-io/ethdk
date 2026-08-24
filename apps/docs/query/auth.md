@@ -56,6 +56,7 @@ export class LoginFormComponent {
 | `accessToken()` / `refreshToken()` | The current tokens (signals), or `null`.                                                                                                                                                              |
 | `bearerData()`                     | Decoded JWT payload - customize decoding with the `bearerDecryptFn` config option.                                                                                                                    |
 | `isAuthenticated()`                | `true` while an access token is present.                                                                                                                                                              |
+| `isAccessTokenExpired()`           | `true` while the access token this tab holds is past its expiry - see [Waiting for a token](#waiting-for-a-token). Not a signal: the answer changes with the clock.                                   |
 | `sessionStatus()`                  | `'unknown' \| 'restoring' \| 'authenticated' \| 'anonymous'` - see [Is there a session?](#is-there-a-session).                                                                                        |
 | `sessionEndCause()`                | Why the last session ended, or `null` - see [Why the session ended](#why-the-session-ended).                                                                                                          |
 | `executionState()`                 | Progress of the current auth operation (`autoLogin`, `tokenRefresh`, `logout`, …) as loading/success/error.                                                                                           |
@@ -70,6 +71,10 @@ export class LoginFormComponent {
 ## Waiting for a token
 
 A secure query executed before login does **not** fail - it parks until `accessToken()` is set and then runs. There is no need to gate secure queries on `isAuthenticated()`, or to park their args until a session exists.
+
+An access token that is **already expired** parks the query too. A token seed can hand one over - an SSO callback that arrives with the pair the identity provider issued minutes ago - and sending it can only earn a `401`. The refresh query's schedule fires on such a token at once, so the query waits for that refresh and then goes out with the new token: one request instead of a `401` and a retry. The wait ends after 5 seconds regardless, because nothing guarantees a refresh arrives; the request then goes out with the expired token and recovers the old way.
+
+Two cases keep the token as-is and send it immediately: a token whose expiry cannot be read (an opaque access token, or a claim the refresh query is not configured to read), and `refreshIfExpired: false`, which says an expired token is not to be refreshed at all. `isAccessTokenExpired()` reads `false` in both.
 
 `logout()` is the mirror image: it drops the tokens, tears down every secure cache entry, **and** resets the secure queries still bound to them. A component that stays mounted across a logout stops showing the previous user's data on its own. Any [persisted](/query/persistence#authenticated-responses) secure response is removed from disk at the same moment - and secure responses are not persisted at all unless the query opted in.
 

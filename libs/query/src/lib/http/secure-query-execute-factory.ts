@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { EMPTY, filter, map, merge, Subscription, switchMap, take, takeWhile, tap } from 'rxjs';
+import { EMPTY, filter, map, merge, NEVER, race, Subscription, switchMap, take, takeWhile, tap, timer } from 'rxjs';
 import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
@@ -10,6 +10,13 @@ import { circularQueryDependencyChecker, resetExecuteState, setupQueryExecuteSta
 import { QueryState } from './query-state';
 
 const AUTH_HEADER = 'Authorization';
+
+/**
+ * How long a request waits for the refresh of an expired access token before it sends the expired one
+ * anyway. Nothing guarantees the refresh arrives - the refresh token can be spent, and the request can
+ * fail or never come back - and a request that 401s and retries beats one that never goes out.
+ */
+const EXPIRED_TOKEN_WAIT_MS = 5000;
 
 export type SecureExecuteFactoryOptions<TArgs extends QueryArgs> = {
   authProvider: AnyBearerAuthProvider;
@@ -154,19 +161,32 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   // Calling `authAndExec` purely because the auth query is "done" therefore races
   // the token and can run while it is still null. Gate on the token signal instead:
   // execute immediately if it is already available, otherwise wait for it.
+  //
+  // A token that is present but already expired is no better than a missing one: it can only earn a
+  // 401, and the refresh that answers that 401 is the one already in flight (a token seed hands over
+  // an expired access token, and the refresh query's schedule fires on it at once). Waiting for it
+  // spends one round trip instead of two.
   const authAndExecWhenTokenReady = (executeArgs?: QueryExecuteArgs<TArgs>) => {
-    if (options.authProvider.accessToken()) {
+    const tokenAtWait = options.authProvider.accessToken();
+
+    if (tokenAtWait && !options.authProvider.isAccessTokenExpired()) {
       authAndExec(executeArgs);
 
       return;
     }
 
+    // The query is on its way out, not idle - without this a consumer renders an empty state for as
+    // long as the wait lasts.
+    options.state.loading.set({ executeTime: Date.now(), progress: null });
+
     tokenWaitSubscription.unsubscribe();
-    tokenWaitSubscription = toObservable(options.authProvider.accessToken, {
-      injector: options.deps.injector,
-    })
+    tokenWaitSubscription = race(
+      toObservable(options.authProvider.accessToken, {
+        injector: options.deps.injector,
+      }).pipe(filter((token) => !!token && token !== tokenAtWait)),
+      tokenAtWait ? timer(EXPIRED_TOKEN_WAIT_MS) : NEVER,
+    )
       .pipe(
-        filter(Boolean),
         take(1),
         tap(() => authAndExec(executeArgs)),
       )

@@ -597,6 +597,28 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     };
 
     /**
+     * Whether the access token this tab holds is already past its expiry, so sending it can only earn
+     * a 401. Unlike {@link isAccessTokenStale} this has no grace period: a token with seconds of life
+     * left is still worth sending.
+     */
+    const isAccessTokenExpired = () => {
+      const token = context.accessToken();
+
+      if (!token) return false;
+
+      const expiresAt = tokenExpiresAt(token);
+
+      return expiresAt !== null && expiresAt <= Date.now();
+    };
+
+    // Only reported when an expired token actually gets refreshed. With `refreshIfExpired: false` the
+    // application asked for the request to go out and fail, so a secure query must not wait for a
+    // refresh that never comes.
+    if (refreshIfExpired) {
+      context.reportAccessTokenExpiry(isAccessTokenExpired);
+    }
+
+    /**
      * The scheduled refresh, re-armed for as long as it keeps declining to spend the refresh token.
      * Without the re-arm a single declined attempt strands the session on a token nothing renews until
      * a request fails with a 401 - by which time the refresh token may be gone too.

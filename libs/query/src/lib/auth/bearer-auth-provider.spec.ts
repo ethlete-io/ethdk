@@ -24,6 +24,10 @@ vi.mock('@ethlete/core', async (importOriginal) => {
 });
 
 describe('createBearerAuthProvider', () => {
+  /** A token the provider's default `decryptBearer` reads an `exp` out of, in seconds. */
+  const tokenExpiringIn = (seconds: number) =>
+    `header.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + seconds }))}.signature`;
+
   let queryClientRef: QueryClientRef;
   let httpTesting: HttpTestingController;
   let originalWarn: typeof console.warn;
@@ -592,6 +596,172 @@ describe('createBearerAuthProvider', () => {
 
         expect(provider.accessToken()).toBe('external-access');
         expect(provider.executionState()).toEqual({ type: 'tokenSeed', state: 'success' });
+      });
+    });
+
+    /**
+     * An SSO callback can hand over a pair whose access token is already past its expiry. Sending it
+     * can only earn a 401, and the refresh it asks for is the one the seed already started - so a
+     * secure query has to wait for that refresh rather than spend a round trip on the dead token.
+     */
+    describe('seeded with an expired access token', () => {
+      const createProvider = (refreshIfExpired?: boolean) => {
+        const postQuery = createPostQuery(queryClientRef);
+        const login = postQuery<{
+          body: { username: string };
+          response: { token: string; refresh_token: string };
+        }>('/auth/login');
+        const refresh = postQuery<{
+          body: { token: string };
+          response: { token: string; refresh_token: string };
+        }>('/auth/refresh');
+
+        const extractTokens = (response: { token: string; refresh_token: string }) => ({
+          accessToken: response.token,
+          refreshToken: response.refresh_token,
+        });
+
+        return createBearerAuthProvider({
+          name: 'test-auth',
+          queryClientRef,
+          queries: [
+            withAuthenticationQuery('login', { queryCreator: login, extractTokens }),
+            withRefreshQuery('refresh', { queryCreator: refresh, extractTokens, refreshIfExpired }),
+          ],
+        });
+      };
+
+      const settle = async () => {
+        TestBed.tick();
+        await Promise.resolve();
+        TestBed.tick();
+      };
+
+      it('waits for the refresh when the query mounted before the seed', async () => {
+        const authProvider = createProvider();
+        const getUserMe = createSecureGetQuery(
+          queryClientRef,
+          authProvider,
+        )<{ response: { uuid: string } }>('/user/me');
+
+        const { provider, userQuery } = TestBed.runInInjectionContext(() => ({
+          provider: authProvider.inject(),
+          userQuery: getUserMe(),
+        }));
+
+        provider.setTokens(tokenExpiringIn(-60), 'seeded-refresh');
+        await settle();
+
+        httpTesting.expectNone('https://api.example.com/user/me');
+
+        const fresh = tokenExpiringIn(1000);
+        httpTesting
+          .expectOne('https://api.example.com/auth/refresh')
+          .flush({ token: fresh, refresh_token: 'refresh-2' });
+        await settle();
+
+        const request = httpTesting.expectOne('https://api.example.com/user/me');
+        expect(request.request.headers.get('Authorization')).toBe(`Bearer ${fresh}`);
+
+        request.flush({ uuid: 'user-1' });
+        TestBed.tick();
+        expect(userQuery.response()).toEqual({ uuid: 'user-1' });
+      });
+
+      it('waits for the refresh when the query mounted after the seed', async () => {
+        const authProvider = createProvider();
+        const getUserMe = createSecureGetQuery(
+          queryClientRef,
+          authProvider,
+        )<{ response: { uuid: string } }>('/user/me');
+
+        const provider = TestBed.runInInjectionContext(() => authProvider.inject());
+
+        provider.setTokens(tokenExpiringIn(-60), 'seeded-refresh');
+        await settle();
+
+        const userQuery = TestBed.runInInjectionContext(() => getUserMe());
+        await settle();
+
+        httpTesting.expectNone('https://api.example.com/user/me');
+
+        const fresh = tokenExpiringIn(1000);
+        httpTesting
+          .expectOne('https://api.example.com/auth/refresh')
+          .flush({ token: fresh, refresh_token: 'refresh-2' });
+        await settle();
+
+        const request = httpTesting.expectOne('https://api.example.com/user/me');
+        expect(request.request.headers.get('Authorization')).toBe(`Bearer ${fresh}`);
+
+        request.flush({ uuid: 'user-1' });
+        TestBed.tick();
+        expect(userQuery.response()).toEqual({ uuid: 'user-1' });
+      });
+
+      it('sends the expired token anyway once no refresh answers the wait', async () => {
+        vi.useFakeTimers();
+
+        try {
+          const authProvider = createProvider();
+          const getUserMe = createSecureGetQuery(
+            queryClientRef,
+            authProvider,
+          )<{ response: { uuid: string } }>('/user/me');
+
+          const { provider, userQuery } = TestBed.runInInjectionContext(() => ({
+            provider: authProvider.inject(),
+            userQuery: getUserMe(),
+          }));
+
+          // No refresh token to spend, so nothing will ever replace the expired access token.
+          const expired = tokenExpiringIn(-60);
+          provider.setTokens(expired, '');
+          await settle();
+
+          httpTesting.expectNone('https://api.example.com/user/me');
+          httpTesting.expectNone('https://api.example.com/auth/refresh');
+
+          vi.advanceTimersByTime(5000);
+          await settle();
+
+          const request = httpTesting.expectOne('https://api.example.com/user/me');
+          expect(request.request.headers.get('Authorization')).toBe(`Bearer ${expired}`);
+
+          request.flush(null, { status: 401, statusText: 'Unauthorized' });
+          TestBed.tick();
+          expect(userQuery.error()).toBeTruthy();
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+
+      it('does not wait when the refresh query is configured to leave an expired token alone', async () => {
+        const authProvider = createProvider(false);
+        const getUserMe = createSecureGetQuery(
+          queryClientRef,
+          authProvider,
+        )<{ response: { uuid: string } }>('/user/me');
+
+        const { provider } = TestBed.runInInjectionContext(() => ({
+          provider: authProvider.inject(),
+          userQuery: getUserMe(),
+        }));
+
+        const expired = tokenExpiringIn(-60);
+        provider.setTokens(expired, 'seeded-refresh');
+        await settle();
+
+        expect(provider.isAccessTokenExpired()).toBe(false);
+
+        const request = httpTesting.expectOne('https://api.example.com/user/me');
+        expect(request.request.headers.get('Authorization')).toBe(`Bearer ${expired}`);
+
+        request.flush(null, { status: 401, statusText: 'Unauthorized' });
+        TestBed.tick();
+
+        httpTesting.expectOne('https://api.example.com/auth/refresh').flush(null, { status: 401, statusText: 'no' });
+        TestBed.tick();
       });
     });
   });
@@ -2349,10 +2519,6 @@ describe('createBearerAuthProvider', () => {
   });
 
   describe('proactive token refresh', () => {
-    /** A token the provider's default `decryptBearer` reads an `exp` out of, in seconds. */
-    const tokenExpiringIn = (seconds: number) =>
-      `header.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + seconds }))}.signature`;
-
     const createProvider = (refreshStrategy?: number) => {
       const postQuery = createPostQuery(queryClientRef);
       const login = postQuery<{

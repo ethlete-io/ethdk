@@ -371,6 +371,16 @@ export type BearerAuthProvider<
   isAuthenticated: Signal<boolean>;
 
   /**
+   * Whether the access token this tab holds is already past its expiry, so a request carrying it can
+   * only be rejected. Answers `false` without a refresh query, for a token whose expiry cannot be
+   * read, and when the refresh query is configured not to refresh an expired token - in each of those
+   * cases waiting for a new token would wait forever.
+   *
+   * Not a signal: the answer changes with the clock, not with a dependency.
+   */
+  isAccessTokenExpired: () => boolean;
+
+  /**
    * The latest executed query (including internal triggers like auto-refresh)
    */
   latestExecutedQuery: Signal<{ key: ExtractQueryKey<TBuilders[number]>; snapshot: QuerySnapshot<QueryArgs> } | null>;
@@ -501,6 +511,13 @@ export type BearerAuthProviderQueryContext<
 
   /** Whether any execution that can issue tokens is still running, across every registry key. */
   hasTokenIssuingExecutionInFlight: Signal<boolean>;
+
+  /**
+   * Hands the provider the check behind {@link BearerAuthProvider.isAccessTokenExpired}. Only the
+   * refresh query knows which claim carries the expiry and whether an expired token is refreshed at
+   * all, so the provider cannot work it out on its own.
+   */
+  reportAccessTokenExpiry: (isExpired: () => boolean) => void;
 };
 
 const defaultExtractTokens = (response: unknown): BearerAuthProviderTokens => {
@@ -855,6 +872,8 @@ const createBearerAuthProviderImpl = <
     isTabLocalSession: isTabLocalSession.asReadonly(),
   });
 
+  let readAccessTokenExpiry: (() => boolean) | null = null;
+
   const querySetupContext: BearerAuthProviderQueryContext<TBearerData, TBuilders> = {
     name: config.name,
     accessToken,
@@ -870,6 +889,9 @@ const createBearerAuthProviderImpl = <
     latestExecutedQuery: latestExecutedQuery.asReadonly(),
     executionState: executionState.asReadonly(),
     hasTokenIssuingExecutionInFlight,
+    reportAccessTokenExpiry: (isExpired) => {
+      readAccessTokenExpiry = isExpired;
+    },
   };
 
   for (const builder of config.queries) {
@@ -924,6 +946,7 @@ const createBearerAuthProviderImpl = <
     refreshToken: refreshToken.asReadonly(),
     bearerData,
     isAuthenticated,
+    isAccessTokenExpired: () => readAccessTokenExpiry?.() ?? false,
     latestExecutedQuery: latestExecutedQuery.asReadonly(),
     latestNonInternalQuery: latestNonInternalQuery.asReadonly(),
     executionState: executionState.asReadonly(),

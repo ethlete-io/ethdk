@@ -38,6 +38,7 @@ describe('createSecureExecuteFactory', () => {
       latestExecutedQuery: mockLatestExecutedQuery,
       executionState: signal(null),
       afterTokenRefresh$: new Subject<void>(),
+      isAccessTokenExpired: () => false,
     } as unknown as AnyBearerAuthProvider;
 
     mockRepositoryEvents$ = new Subject<QueryRepositoryEvent>();
