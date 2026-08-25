@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.45
+
+### Patch Changes
+
+- [`cd8956e`](https://github.com/ethlete-io/ethdk/commit/cd8956ed2303074e4de564e6a2763e385acb17ee) Thanks [@TomTomB](https://github.com/TomTomB)! - Query: `withPersistentAuth` no longer leaves a second auth cookie behind on a subdomain, and logout removes the one it wrote.
+
 ## 6.0.0-next.44
 
 ### Patch Changes

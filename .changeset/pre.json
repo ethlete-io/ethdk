@@ -552,6 +552,7 @@
     "purple-sheep-know",
     "purple-streets-crash",
     "query-401-refresh-loop",
+    "query-auth-cookie-scope",
     "query-batch-devtools",
     "query-batch-eta",
     "query-batch",
