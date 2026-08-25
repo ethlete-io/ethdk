@@ -115,6 +115,53 @@ describe('bearer-auth-persistent-auth', () => {
       expect(setCookie).toHaveBeenCalledWith('customAuth', encryptToken('refresh'), 7, 'custom.com', '/app', 'strict');
     });
 
+    it('should delete a same name cookie on the registrable domain when the cookie is host only', () => {
+      const authSetup = setupAuthTest({
+        querySetup: setup,
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth' },
+            defaultRememberMe: true,
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+            },
+          }),
+        ],
+      });
+
+      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access', refreshToken: 'refresh' });
+
+      TestBed.tick();
+
+      expect(deleteCookie).toHaveBeenCalledWith('testAuth', '/', 'test.com');
+    });
+
+    it('should delete a same name host only cookie when a domain is configured', () => {
+      const authSetup = setupAuthTest({
+        querySetup: setup,
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth', domain: 'test.com' },
+            defaultRememberMe: true,
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+            },
+          }),
+        ],
+      });
+
+      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access', refreshToken: 'refresh' });
+
+      TestBed.tick();
+
+      expect(deleteCookie).toHaveBeenCalledWith('testAuth', '/', null);
+      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh'), 30, 'test.com', '/', 'lax');
+    });
+
     it('should delete cookie on logout', () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
@@ -165,7 +212,7 @@ describe('bearer-auth-persistent-auth', () => {
 
       TestBed.tick();
 
-      expect(deleteCookie).not.toHaveBeenCalled();
+      expect(deleteCookie).not.toHaveBeenCalledWith('testAuth', '/', null);
     });
 
     it('should delete the cookie when the server rejects the stored token', () => {
@@ -345,7 +392,7 @@ describe('bearer-auth-persistent-auth', () => {
 
       TestBed.tick();
 
-      expect(deleteCookie).not.toHaveBeenCalled();
+      expect(deleteCookie).not.toHaveBeenCalledWith('testAuth', '/', null);
     });
 
     it('should default to rememberMe=false when no config, preference, or cookie exists', () => {

@@ -421,6 +421,10 @@ apps want one or the other, not both.
 
 The cookie is host-only by default, so its origin-local encryption key and the cookie always have the same scope. Set `cookie.domain` explicitly only when sibling subdomains deliberately share the same storage and key setup. HTTPS cookies are marked `Secure`, and `sameSite: 'none'` always adds the attribute browsers require.
 
+A browser keeps one cookie per name **per scope**, and `document.cookie` reports only names and values. A host-only cookie on `app.example.com` and a domain cookie on `example.com` therefore both exist under the same name, the older one wins the read, and a delete that names the wrong scope misses. So the feature keeps one scope only: every write and every delete also clears the scope the current config does not use - the host-only one when `cookie.domain` is set, the registrable domain otherwise.
+
+An app that changes `cookie.domain` (or upgrades from a version with the other default) keeps its session. Before the first read, the feature takes the value of the cookie in the old scope, deletes that cookie, and writes the value back in the new scope. Nothing is left to shadow the cookie it writes from then on.
+
 It is **deleted** only on the two events that actually end a session:
 
 - `logout()`, including a logout synced from another tab.

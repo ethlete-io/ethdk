@@ -1,5 +1,5 @@
 import { Signal, effect, signal } from '@angular/core';
-import { deleteCookie as coreDeleteCookie, getCookie, injectRoute, setCookie } from '@ethlete/core';
+import { deleteCookie as coreDeleteCookie, getCookie, getDomain, injectRoute, setCookie } from '@ethlete/core';
 import { RequestArgs } from '../../http';
 import {
   AnyQueryBuilder,
@@ -30,7 +30,8 @@ export type PersistentAuthConfig<
      */
     name?: string;
     /**
-     * The domain of the cookie. If not set, the current origin will be used.
+     * The domain of the cookie. If not set, the cookie is host-only: it belongs to the exact host that
+     * wrote it and no subdomain of it. Set this only when sibling subdomains must share the session.
      */
     domain?: string;
     /**
@@ -158,8 +159,60 @@ export const createPersistentAuthFeature = <
 
   const cookieDomain = () => config.cookie?.domain ?? null;
   const cookiePath = () => config.cookie?.path ?? '/';
+  const cookieExpiry = (rememberMe: boolean) => (rememberMe ? (config.cookie?.expiresInDays ?? 30) : null);
 
-  const removeCookie = () => coreDeleteCookie(cookieName, cookiePath(), cookieDomain());
+  const writeCookie = (encryptedToken: string, expiresInDays: number | null) =>
+    setCookie(
+      cookieName,
+      encryptedToken,
+      expiresInDays,
+      cookieDomain(),
+      cookiePath(),
+      config.cookie?.sameSite ?? 'lax',
+    );
+
+  // A browser keeps one cookie per name and scope, and `document.cookie` names no scope: a host-only
+  // cookie and one on the registrable domain both show up, oldest first. Only this config's scope may
+  // survive, or a cookie written under the other domain default shadows ours on every read and
+  // outlives logout.
+  const removeOtherScopeCookie = () => {
+    const configuredDomain = cookieDomain();
+
+    if (configuredDomain) {
+      coreDeleteCookie(cookieName, cookiePath(), null);
+
+      return;
+    }
+
+    const registrableDomain = getDomain();
+
+    if (registrableDomain) {
+      coreDeleteCookie(cookieName, cookiePath(), registrableDomain);
+    }
+  };
+
+  const removeCookie = () => {
+    coreDeleteCookie(cookieName, cookiePath(), cookieDomain());
+    removeOtherScopeCookie();
+  };
+
+  // Runs before `tryLogin` reads the cookie, so the token an older version left in the other scope
+  // still starts a session instead of being dropped.
+  const adoptOtherScopeCookie = () => {
+    if (context.isTabLocalSession()) return;
+
+    const carriedToken = getCookie(cookieName);
+
+    if (!carriedToken) return;
+
+    removeOtherScopeCookie();
+
+    if (getCookie(cookieName)) return;
+
+    writeCookie(carriedToken, cookieExpiry(rememberMeSignal()));
+  };
+
+  adoptOtherScopeCookie();
 
   effect(() => {
     const token = refreshToken();
@@ -176,16 +229,8 @@ export const createPersistentAuthFeature = <
     // that actually end a session instead, below.
     if (!token) return;
 
-    const expiresInDays = rememberMe ? (config.cookie?.expiresInDays ?? 30) : null;
-
-    setCookie(
-      cookieName,
-      encryptToken(token),
-      expiresInDays,
-      cookieDomain(),
-      cookiePath(),
-      config.cookie?.sameSite ?? 'lax',
-    );
+    removeOtherScopeCookie();
+    writeCookie(encryptToken(token), cookieExpiry(rememberMe));
   });
 
   effect(() => {
