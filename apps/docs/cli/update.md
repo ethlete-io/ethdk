@@ -10,10 +10,10 @@ Never bump an `@ethlete/*` range by hand. The version that lands is what selects
 
 ## What one run does
 
-1. Reads every `@ethlete/*` dependency of the root `package.json`, in `dependencies`, `devDependencies` and `peerDependencies`.
-2. Asks the registry which version each dist tag points at, and picks a target per package.
+1. Reads every `@ethlete/*` dependency of every `package.json` in the repo, in `dependencies`, `devDependencies` and `peerDependencies`.
+2. Asks the registry which version each dist tag points at, and picks one target per package.
 3. Prints the plan, one line per package.
-4. Writes the new ranges into `package.json`, keeping the `^` or `~` each range was written with.
+4. Writes the new ranges into every manifest that declares the package, keeping the `^` or `~` each range was written with.
 5. Records the plan in `.ethlete/update/pending.json`, so an interrupted run can be continued.
 6. Runs the install with the package manager the repo already uses.
 7. Reads the migration manifest out of every **freshly installed** package, and selects the migrations the update crossed.
@@ -22,9 +22,17 @@ Never bump an `@ethlete/*` range by hand. The version that lands is what selects
 
 Step 7 is why the install comes first: the migrations of a version ship inside that version.
 
+## Every manifest, not only the root
+
+An Nx repo keeps a `package.json` per buildable library, and Nx syncs the `@ethlete/*` versions a library imports into it. Those manifests are part of the update: one target is picked per package, then written into every manifest and field that declares it. `node_modules`, `dist`, `coverage`, `tmp` and dot directories are skipped.
+
+The count of manifests that were read is printed above the plan, and the count that changed after they are written.
+
 ## Which version it picks
 
 The target follows the dist tag the installed version belongs to. A repo on `5.0.0-next.40` follows `next` and lands on the newest `next`; a repo on `4.9.0` follows `latest`. The tag is printed, so the choice is never silent.
+
+A dist tag can point backwards. If the tag this command picks by itself is older than the version the repo is on, the tag is stale and the package is reported instead of downgraded. An explicit `--tag` or `--to` is taken as asked, so `--tag latest` still moves a repo off the prerelease line.
 
 ```bash
 yarn et update --check                    # what would change, writes nothing, exits 1 while pending
@@ -108,7 +116,7 @@ Repos that use `@ethlete/agent-rules` also get the `sdk-update` skill, which tea
 
 ## Requirements
 
-- A `package.json` at the repo root that declares the `@ethlete/*` packages.
+- A `package.json` at the repo root. Library manifests deeper in the repo are found from there.
 - Network access to the registry, which is read from `npm_config_registry` when npm set it.
 - Nx, for the codemods. The migrations ship as Nx generators, so a repo without Nx gets each one reported as a command instead. Everything else works.
 

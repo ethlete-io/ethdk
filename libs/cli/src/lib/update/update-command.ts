@@ -4,7 +4,15 @@ import { AGENT_COMMAND_KEY, assistedTasks, runAgentTasks } from './ai';
 import { parseUpdateArgs } from './args';
 import { readPackageMigrations } from './migration-manifest';
 import { PackageManager, detectPackageManager } from './package-manager';
-import { DeclaredPackage, declaredEthletePackages, manifestPath, readManifest, writeRanges } from './packages';
+import {
+  DeclaredPackage,
+  ROOT_MANIFEST,
+  declaredEthletePackages,
+  findManifests,
+  manifestPath,
+  readManifest,
+  writeRanges,
+} from './packages';
 import {
   PackageUpdate,
   PendingMigration,
@@ -34,6 +42,9 @@ const usage = (invocation: string) =>
     'Moves the @ethlete/* packages this repo declares to a newer version, then runs the migrations',
     'those versions ship: the codemods by itself, and a report for everything that needs a decision.',
     '',
+    'Every package.json in the repo is rewritten, not only the root one, so a library manifest that',
+    'pins @ethlete/* moves with it.',
+    '',
     'A package may be named short (`core`) or in full (`@ethlete/core`). With no name, every',
     '@ethlete/* dependency is updated.',
     '',
@@ -62,13 +73,13 @@ const printUpdates = (updates: readonly PackageUpdate[]) => {
 };
 
 const problemsOf = (updates: readonly PackageUpdate[]) =>
-  updates
-    .filter((update) => update.nextRange === undefined)
-    .map(
-      (update) =>
-        `${update.name} is declared as "${update.declaredRange}", which no single version can be written into. ` +
-        `Change it to ${update.to} by hand.`,
-    );
+  updates.flatMap((update) =>
+    update.unwritable.map(
+      (site) =>
+        `${site.manifestPath} declares ${update.name} as "${site.range}", which no single version can be ` +
+        `written into. Change it to ${update.to} by hand.`,
+    ),
+  );
 
 type ResolveResult = {
   updates: PackageUpdate[];
@@ -309,7 +320,8 @@ export const updateCommand = async ({
 
   if (args.resume) return resume({ root, manager, argv: args });
 
-  const all = declaredEthletePackages({ root, manifest });
+  const manifests = findManifests(root);
+  const all = declaredEthletePackages({ root, manifests });
   const named = args.packages.filter((name) => !all.some((entry) => entry.name === name));
 
   if (named.length > 0) {
@@ -337,6 +349,9 @@ export const updateCommand = async ({
   }
 
   console.log('');
+
+  if (manifests.length > 1) console.log(`  ${manifests.length} package.json files scanned.\n`);
+
   printUpdates(resolved.updates);
 
   for (const update of resolved.updates.filter(isDowngrade)) {
@@ -347,7 +362,7 @@ export const updateCommand = async ({
 
   for (const problem of rangeProblems) console.error(`\n  ${problem}`);
 
-  const writable = resolved.updates.filter((update) => update.nextRange !== undefined);
+  const writable = resolved.updates.filter((update) => update.writes.length > 0);
 
   if (args.check) {
     console.log(`\nRun \`${invocation}\` to apply this.`);
@@ -378,10 +393,7 @@ export const updateCommand = async ({
     return 1;
   }
 
-  writeRanges({
-    root,
-    writes: writable.map((update) => ({ name: update.name, field: update.field, range: update.nextRange ?? '' })),
-  });
+  const changedManifests = writeRanges({ root, writes: writable.flatMap((update) => update.writes) });
 
   writePendingUpdate({
     root,
@@ -391,7 +403,12 @@ export const updateCommand = async ({
     },
   });
 
-  console.log(`\n  package.json updated. The migration plan is in ${PENDING_FILE}.`);
+  const manifestNote =
+    changedManifests.length === 1
+      ? (changedManifests[0] ?? ROOT_MANIFEST)
+      : `${changedManifests.length} package.json files`;
+
+  console.log(`\n  ${manifestNote} updated. The migration plan is in ${PENDING_FILE}.`);
 
   if (!args.install) {
     console.log(`\nInstall the new versions, then run \`${invocation} --continue\`.`);

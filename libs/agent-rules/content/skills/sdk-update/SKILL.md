@@ -40,7 +40,8 @@ Commit or stash first, then:
 yarn et update
 ```
 
-In order, it writes the new ranges into `package.json`, runs the install, reads the migrations out of
+In order, it writes the new ranges into every `package.json` in the repo that declares the package -
+an Nx library manifest included, not only the root one - runs the install, reads the migrations out of
 the freshly installed packages, runs every codemod, and writes what is left to `.ethlete/update`.
 
 If the install or a codemod fails, the run stops and leaves `.ethlete/update/pending.json` behind.

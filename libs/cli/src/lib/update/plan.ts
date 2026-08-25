@@ -1,4 +1,4 @@
-import { DeclaredPackage, DependencyField, rangeFor } from './packages';
+import { DeclaredPackage, DeclaredSite, RangeWrite, newestDeclaredVersion, rangeFor } from './packages';
 import { Migration, PackageMigrations } from './migration-manifest';
 import { RegistryPackage, tagForInstalled } from './registry';
 import { compareVersions, isInUpdateRange, isNewer, isValidVersion } from './semver';
@@ -28,13 +28,12 @@ export type UpdatedPackage = {
 };
 
 export type PackageUpdate = UpdatedPackage & {
-  field: DependencyField;
-  /** The range the manifest declares now. */
-  declaredRange: string;
   /** The dist tag the target came from, absent when the caller named a version. */
   tag?: string;
-  /** The range to write, or `undefined` when the declared one cannot be rewritten safely. */
-  nextRange?: string;
+  /** Every range to rewrite, one per manifest and field that declares the package. */
+  writes: RangeWrite[];
+  /** The sites whose declared range no single version can be written into. */
+  unwritable: DeclaredSite[];
 };
 
 export type TargetChoice = { update: PackageUpdate } | { problem: string } | { upToDate: true };
@@ -53,7 +52,7 @@ export const chooseTarget = (options: {
   request?: TargetRequest;
 }): TargetChoice => {
   const { declared, registry, request = {} } = options;
-  const current = declared.installedVersion ?? declared.declaredVersion;
+  const current = declared.installedVersion ?? newestDeclaredVersion(declared.sites);
 
   if (request.version !== undefined) {
     if (!isValidVersion(request.version)) return { problem: `"${request.version}" is not a version.` };
@@ -75,15 +74,37 @@ export const chooseTarget = (options: {
 
   if (current !== undefined && compareVersions(to, current) === 0) return { upToDate: true };
 
+  // A dist tag can point at an older version than the installed one - the release of a package that
+  // never had a stable version leaves `next` behind. Following the tag this command picks by itself
+  // would be a silent downgrade, so it takes `--to` or `--tag` to ask for one.
+  const inferredTag = request.version === undefined && request.tag === undefined;
+
+  if (inferredTag && current !== undefined && compareVersions(to, current) < 0) {
+    return {
+      problem:
+        `${declared.name}: the "${tag}" tag points at ${to}, which is older than the ${current} this repo is on. ` +
+        `The tag is stale. Pass \`--to ${to}\` to move back on purpose.`,
+    };
+  }
+
+  const writes: RangeWrite[] = [];
+  const unwritable: DeclaredSite[] = [];
+
+  for (const site of declared.sites) {
+    const range = rangeFor({ current: site.range, version: to });
+
+    if (range === undefined) unwritable.push(site);
+    else writes.push({ name: declared.name, manifestPath: site.manifestPath, field: site.field, range });
+  }
+
   return {
     update: {
       name: declared.name,
-      field: declared.field,
-      declaredRange: declared.range,
       from: declared.installedVersion,
       to,
       tag,
-      nextRange: rangeFor({ current: declared.range, version: to }),
+      writes,
+      unwritable,
     },
   };
 };

@@ -1,14 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { Migration, PackageMigrations } from './migration-manifest';
-import { DeclaredPackage } from './packages';
+import { DeclaredPackage, DeclaredSite } from './packages';
 import { chooseTarget, isDowngrade, orderMigrations, pendingMigrations } from './plan';
 import { RegistryPackage } from './registry';
 
-const declared = (overrides: Partial<DeclaredPackage> = {}): DeclaredPackage => ({
-  name: '@ethlete/core',
+const site = (overrides: Partial<DeclaredSite> = {}): DeclaredSite => ({
+  manifestPath: 'package.json',
   field: 'dependencies',
   range: '^5.0.0-next.40',
   declaredVersion: '5.0.0-next.40',
+  ...overrides,
+});
+
+const declared = (overrides: Partial<DeclaredPackage> = {}): DeclaredPackage => ({
+  name: '@ethlete/core',
+  sites: [site()],
   installedVersion: '5.0.0-next.40',
   ...overrides,
 });
@@ -35,19 +41,25 @@ describe('chooseTarget', () => {
     expect(choice).toEqual({
       update: {
         name: '@ethlete/core',
-        field: 'dependencies',
-        declaredRange: '^5.0.0-next.40',
         from: '5.0.0-next.40',
         to: '5.0.0-next.55',
         tag: 'next',
-        nextRange: '^5.0.0-next.55',
+        writes: [
+          {
+            name: '@ethlete/core',
+            manifestPath: 'package.json',
+            field: 'dependencies',
+            range: '^5.0.0-next.55',
+          },
+        ],
+        unwritable: [],
       },
     });
   });
 
   it('follows latest for an installed release', () => {
     const choice = chooseTarget({
-      declared: declared({ range: '^4.8.0', declaredVersion: '4.8.0', installedVersion: '4.8.0' }),
+      declared: declared({ sites: [site({ range: '^4.8.0', declaredVersion: '4.8.0' })], installedVersion: '4.8.0' }),
       registry: registry(),
     });
 
@@ -95,11 +107,55 @@ describe('chooseTarget', () => {
 
   it('writes no range for a range no single version fits into', () => {
     const choice = chooseTarget({
-      declared: declared({ range: '>=5 <6', declaredVersion: undefined }),
+      declared: declared({ sites: [site({ range: '>=5 <6', declaredVersion: undefined })] }),
       registry: registry(),
     });
 
-    expect(choice).toMatchObject({ update: { nextRange: undefined } });
+    expect(choice).toMatchObject({ update: { writes: [], unwritable: [{ range: '>=5 <6' }] } });
+  });
+
+  it('rewrites the range in every manifest that declares the package', () => {
+    const choice = chooseTarget({
+      declared: declared({
+        sites: [
+          site(),
+          site({ manifestPath: 'libs/domain/auth/package.json', field: 'peerDependencies', range: '5.0.0-next.40' }),
+        ],
+      }),
+      registry: registry(),
+    });
+
+    expect(choice).toMatchObject({
+      update: {
+        writes: [
+          { manifestPath: 'package.json', field: 'dependencies', range: '^5.0.0-next.55' },
+          { manifestPath: 'libs/domain/auth/package.json', field: 'peerDependencies', range: '5.0.0-next.55' },
+        ],
+      },
+    });
+  });
+
+  it('refuses a dist tag that points at an older version than the installed one', () => {
+    expect(
+      chooseTarget({
+        declared: declared({ installedVersion: '5.0.0-next.60' }),
+        registry: registry(),
+      }),
+    ).toEqual({
+      problem:
+        '@ethlete/core: the "next" tag points at 5.0.0-next.55, which is older than the 5.0.0-next.60 this repo is on. ' +
+        'The tag is stale. Pass `--to 5.0.0-next.55` to move back on purpose.',
+    });
+  });
+
+  it('takes a downgrade the caller names with a version', () => {
+    expect(
+      chooseTarget({
+        declared: declared({ installedVersion: '5.0.0-next.60' }),
+        registry: registry(),
+        request: { version: '5.0.0-next.40' },
+      }),
+    ).toMatchObject({ update: { to: '5.0.0-next.40' } });
   });
 
   it('falls back to the declared version when nothing is installed', () => {
@@ -107,25 +163,30 @@ describe('chooseTarget', () => {
       update: { from: undefined, tag: 'next' },
     });
   });
+
+  it('falls back to the newest declared version, not the one a lagging manifest holds', () => {
+    const choice = chooseTarget({
+      declared: declared({
+        installedVersion: undefined,
+        sites: [
+          site({ range: '^5.0.0-next.60', declaredVersion: '5.0.0-next.60' }),
+          site({ manifestPath: 'libs/a/package.json', range: '5.0.0-next.10', declaredVersion: '5.0.0-next.10' }),
+        ],
+      }),
+      registry: registry(),
+    });
+
+    expect(choice).toMatchObject({ problem: expect.stringContaining('older than the 5.0.0-next.60 this repo is on') });
+  });
 });
 
 describe('isDowngrade', () => {
   it('is true when the target is older than the installed version', () => {
-    expect(
-      isDowngrade({
-        name: '@ethlete/core',
-        from: '5.0.0',
-        to: '4.9.0',
-        field: 'dependencies',
-        declaredRange: '^5.0.0',
-      }),
-    ).toBe(true);
+    expect(isDowngrade({ name: '@ethlete/core', from: '5.0.0', to: '4.9.0', writes: [], unwritable: [] })).toBe(true);
   });
 
   it('is false without an installed version', () => {
-    expect(isDowngrade({ name: '@ethlete/core', to: '4.9.0', field: 'dependencies', declaredRange: '^4.9.0' })).toBe(
-      false,
-    );
+    expect(isDowngrade({ name: '@ethlete/core', to: '4.9.0', writes: [], unwritable: [] })).toBe(false);
   });
 });
 
