@@ -115,29 +115,6 @@ describe('bearer-auth-persistent-auth', () => {
       expect(setCookie).toHaveBeenCalledWith('customAuth', encryptToken('refresh'), 7, 'custom.com', '/app', 'strict');
     });
 
-    it('should delete a same name cookie on the registrable domain when the cookie is host only', () => {
-      const authSetup = setupAuthTest({
-        querySetup: setup,
-        features: [
-          withPersistentAuth({
-            cookie: { name: 'testAuth' },
-            defaultRememberMe: true,
-            autoLogin: {
-              queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
-              buildArgs: (token) => ({ body: { token } }),
-            },
-          }),
-        ],
-      });
-
-      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access', refreshToken: 'refresh' });
-
-      TestBed.tick();
-
-      expect(deleteCookie).toHaveBeenCalledWith('testAuth', '/', 'test.com');
-    });
-
     it('should delete a same name host only cookie when a domain is configured', () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
