@@ -4,6 +4,7 @@ import { ScrollableButtonsDirective } from '../../scrollable/headless/scrollable
 import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
 import { TabBarDirective } from '../headless/tab-bar.directive';
 import { mountTabScaleStyles } from '../tab-scale-styles.component';
+import { mountTabUnderlineStyles } from '../tab-underline-styles.component';
 import { TAB_SIZES, TabSize } from '../tab-sizes';
 import { NavTabsDirective } from './headless/nav-tabs.directive';
 
@@ -99,40 +100,12 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
         position: relative;
         gap: var(--et-nav-tabs-gap);
 
-        &::after {
-          content: '';
-          position: absolute;
-          background: var(--et-surface-border-solid, currentColor);
-          opacity: var(--et-tab-baseline-opacity);
-          pointer-events: none;
-        }
-
-        [data-divider='false'] &::after {
-          display: none;
-        }
-
-        [data-orientation='horizontal'] &::after {
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: var(--et-nav-tabs-underline-size);
-          border-radius: var(--et-nav-tabs-underline-radius);
-        }
-
         [data-orientation='vertical'] & {
           justify-items: start;
         }
 
         [data-orientation='vertical'][data-fit='fill'] & {
           justify-items: stretch;
-        }
-
-        [data-orientation='vertical'] &::after {
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: var(--et-nav-tabs-underline-size);
-          border-radius: var(--et-nav-tabs-underline-radius);
         }
       }
     }
@@ -145,5 +118,6 @@ export class NavTabsComponent {
 
   constructor() {
     mountTabScaleStyles();
+    mountTabUnderlineStyles();
   }
 }
