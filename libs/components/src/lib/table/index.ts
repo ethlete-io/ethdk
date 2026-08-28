@@ -1,5 +1,4 @@
 export * from './headless';
-export * from './table-card-row-styles.component';
 export * from './table-card-surface.directive';
 export * from './table-cell-error-mark.component';
 export * from './table-cell-error-tooltip.directive';
@@ -25,7 +24,7 @@ export * from './table-reorder-overlay.component';
 export * from './table-reorder.directive';
 export * from './table-row-detail.component';
 export * from './table-row-expansion.directive';
-export * from './table-row-link-styles.component';
+export * from './table-row-box-styles.component';
 export * from './table-row-router-link.directive';
 export * from './table-resize-grip.component';
 export * from './table-resize.directive';

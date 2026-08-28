@@ -1,8 +1,7 @@
 @layer components {
   /* A row with a box of its own, in place of the layout-transparent default. `subgrid` is what keeps the
      cells in the table's own column tracks, so every column still lines up across the header, the rows
-     and the footer — the same shape the detail row already uses inside this grid. Also carried by
-     `TableRowLinkStylesComponent`, since a row link needs this box even without card rows.
+     and the footer — the same shape the detail row already uses inside this grid.
 
      `z-index: 0` makes it a stacking context, so a cell that lifts itself over the row's link cannot
      also rise over the sticky header. */
@@ -189,5 +188,63 @@
         )
         0 100% / 100% var(--_et-table-card-radius) no-repeat,
       linear-gradient(var(--_et-table-card-edge), var(--_et-table-card-edge)) 100% 0 / 1px 100% no-repeat;
+  }
+
+  /* One real anchor per row, stretched over the row box: middle click, Ctrl/Cmd-click, "open in a new
+     tab" and "copy link address" are the browser's again, and the row stays one link in the
+     accessibility tree and one stop in the tab order. It holds no text — the identity cell names it —
+     so nothing about the row's own content changes.
+
+     Three layers inside the row's own stacking context (see `.et-table-row--box`): a pinned cell at 1,
+     so scrolled cells pass behind it; the link at 2, so the whole row takes the click and not just the
+     columns that happen to scroll; and a cell holding its own control at 3, so that control still gets
+     its own clicks. */
+  .et-table-row-link {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    cursor: pointer;
+    border-radius: var(--_et-table-row-corner);
+  }
+
+  /* The row's ring marks the whole row, which is what the link covers. It sits well inside the card so
+     it reads as a ring of its own rather than as a second, doubled card border.
+
+     Drawn on the row's box and not on the link, and that is load-bearing: the link is positioned with a
+     z-index, so it is its own stacking context and an `outline` on it - or any pseudo inside it - paints
+     at the link's own level, which is 2. The utility cells sit at 3 and are opaque where they are
+     pinned, so each one covered whichever end of the ring it held and the ring read as two loose lines
+     with no ends. Here it is a layer of the row box instead, above the cells and above the card's ring
+     at 4. */
+  .et-table-row-link:focus-visible {
+    outline: none;
+  }
+
+  .et-table-row--box:has(.et-table-row-link:focus-visible)::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    z-index: 5;
+    border: 2px solid var(--et-theme-color-primary-solid, currentColor);
+    border-radius: max(0px, calc(var(--_et-table-row-corner, 0px) - 4px));
+    pointer-events: none;
+  }
+
+  /* Cells that hold their own controls stay above the stretched link, so the control keeps the click: the
+     utility cells always, a column that says so with `interactive`, and the one cell in edit mode. */
+  .et-table-row--link
+    :where(.et-table-select-cell, .et-table-expander-cell, .et-table-cell--interactive, .et-table-cell--editing) {
+    z-index: 3;
+  }
+
+  /* `relative` only where the cell is not pinned: it has the same weight as the `sticky` above and comes
+     later, so applying it to a pinned cell unpins it. The utility cells then scroll away with the rows
+     and let scrolled content show through the strip they were holding at the pinned column's edge. */
+  .et-table-row--link
+    :where(.et-table-select-cell, .et-table-expander-cell, .et-table-cell--interactive, .et-table-cell--editing):not(
+      .et-table-sticky-start,
+      .et-table-sticky-end
+    ) {
+    position: relative;
   }
 }

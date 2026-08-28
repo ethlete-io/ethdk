@@ -44,9 +44,8 @@ import {
   reconcileHiddenColumns,
 } from './headless/table-column-state';
 import { TableCardSurfaceDirective } from './table-card-surface.directive';
-import { TableCardRowStylesComponent } from './table-card-row-styles.component';
 import { TABLE_ERROR_CODES } from './table-errors';
-import { TableRowLinkStylesComponent } from './table-row-link-styles.component';
+import { TableRowBoxStylesComponent } from './table-row-box-styles.component';
 import {
   TABLE_FEATURE_HOST,
   TableCellErrorMark,
@@ -1139,17 +1138,12 @@ export class TableComponent<T> {
   constructor() {
     const styleManager = injectStyleManager();
 
-    // The card row's surface, ring and corner chrome do nothing for a table that never renders cards,
-    // so they arrive only once `appearance` turns to `'cards'` - see TableDetailStylesComponent for the
-    // same pattern. Mounted once and left mounted: switching appearance away never needs to reclaim it.
+    // The row box layout, the card row's surface/ring/corner chrome and the row-link anchor do nothing
+    // for a table that renders neither cards nor a row link, so they arrive only once `rowBox` turns
+    // true - see TableDetailStylesComponent for the same pattern. Mounted once and left mounted:
+    // switching the feature off never needs to reclaim it.
     effect(() => {
-      if (this.cardRows()) styleManager.mount(TableCardRowStylesComponent);
-    });
-
-    // The row-link anchor, its focus ring and the box it stretches over do nothing for a table with no
-    // `[rowLink]`, so they arrive only once one is bound.
-    effect(() => {
-      if (this.rowLink()) styleManager.mount(TableRowLinkStylesComponent);
+      if (this.rowBox()) styleManager.mount(TableRowBoxStylesComponent);
     });
 
     // A detail template with nothing to render it looks like a broken template rather than a missing
