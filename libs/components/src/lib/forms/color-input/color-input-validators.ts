@@ -1,5 +1,6 @@
 import { FieldContext, LogicFn, validate } from '@angular/forms/signals';
 import { FieldWarning, warn } from '../form-field/headless';
+import { parseColorToRgb } from './headless/internals/color-convert';
 
 /** The path type `validate` accepts for a color field. Derived so we don't depend on a non-exported
  *  path type name from `@angular/forms/signals`. */
@@ -53,33 +54,23 @@ const HEX_PATTERNS = {
 // pattern that also enforced 0-255 would be unreadable.
 const RGB_PATTERN = /^rgba?\(\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/i;
 
-const HEX_CHANNEL_PATTERN = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
-
 const isBlank = (value: string | null): value is null => value === null || value.trim().length === 0;
 
 type RgbChannels = readonly [red: number, green: number, blue: number];
 
+// getColorContrastRatio's documented contract (below) covers hex and rgb()/rgba() only, so hsl()
+// is rejected explicitly rather than falling through to parseColorToRgb, which the picker itself
+// uses and which does read it.
 const parseColor = (value: string | null): RgbChannels | null => {
   if (isBlank(value)) return null;
 
   const raw = value.trim();
 
-  if (HEX_CHANNEL_PATTERN.test(raw)) {
-    const digits = raw.slice(1);
-    const expanded = digits.length < 6 ? digits.replace(/./g, (digit) => digit + digit) : digits;
-    const channelAt = (index: number) => parseInt(expanded.slice(index * 2, index * 2 + 2), 16);
+  if (raw.toLowerCase().startsWith('hsl')) return null;
 
-    return [channelAt(0), channelAt(1), channelAt(2)];
-  }
+  const rgb = parseColorToRgb(raw);
 
-  const match = RGB_PATTERN.exec(raw);
-
-  if (!match) return null;
-
-  const [, red, green, blue] = match;
-  const channels = [Number(red), Number(green), Number(blue)] as const;
-
-  return channels.every((channel) => channel <= 255) ? channels : null;
+  return rgb ? [rgb.red, rgb.green, rgb.blue] : null;
 };
 
 const linearize = (channel: number) => {

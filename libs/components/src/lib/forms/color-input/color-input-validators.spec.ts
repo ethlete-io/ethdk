@@ -161,6 +161,18 @@ describe('getColorContrastRatio', () => {
       expect(getColorContrastRatio('#ffffff', value)).toBeNull();
     },
   );
+
+  it.each(['#f00', '#f00c', '#ff0000', '#ff0000cc'])('reads the %s hex form', (value) => {
+    expect(getColorContrastRatio(value, '#000000')).not.toBeNull();
+  });
+
+  it.each(['hsl(0 100% 50%)', 'hsl(120deg, 100%, 25%)', 'hsla(0, 100%, 50%, 50%)'])(
+    'treats %s as unparseable, even though the picker itself reads it as a notation',
+    (value) => {
+      expect(getColorContrastRatio(value, '#ffffff')).toBeNull();
+      expect(getColorContrastRatio('#ffffff', value)).toBeNull();
+    },
+  );
 });
 
 describe('colorContrast', () => {
@@ -250,6 +262,10 @@ describe('colorContrast', () => {
   it('passes while either color is unparseable, leaving the format to hexColor', () => {
     expect(contrastErrors('not a color', '#ffffff')).toEqual([]);
     expect(contrastErrors('#ffffff', 'not a color')).toEqual([]);
+  });
+
+  it('passes for an hsl() value too, since colorContrast does not accept that notation', () => {
+    expect(contrastErrors('hsl(0 100% 50%)', '#ffffff')).toEqual([]);
   });
 
   it('uses a custom message when given one', () => {
