@@ -3,6 +3,7 @@ import { RuntimeError } from '@ethlete/core';
 import { resolveClosestOverlay } from './get-closest-overlay';
 import { OVERLAY_ERROR_CODES } from './overlay-errors';
 import { injectOverlayManager } from './overlay-manager';
+import { mountOverlayMainStyles } from './overlay-main-styles.component';
 import { OVERLAY_REF, OverlayRef } from './overlay-ref';
 
 export const OVERLAY_MAIN_TOKEN = new InjectionToken<OverlayMainDirective>('OVERLAY_MAIN_TOKEN');
@@ -27,6 +28,10 @@ export class OverlayMainDirective implements OnInit {
   private overlayManager = injectOverlayManager();
 
   public enabled = input(true, { alias: 'etOverlayMain', transform: booleanAttribute });
+
+  constructor() {
+    mountOverlayMainStyles();
+  }
 
   public ngOnInit() {
     this.overlayRef = resolveClosestOverlay({

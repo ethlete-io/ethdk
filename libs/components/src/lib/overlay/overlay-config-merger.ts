@@ -1,15 +1,8 @@
 import { Binding, StaticProvider } from '@angular/core';
+import { normalizeClassList } from './normalize-class-list';
 import { OverlayConfig } from './overlay-config';
 
 const CLASS_KEYS = ['hostClass', 'backdropClass', 'panelClass'] as const;
-
-const normalizeClassList = (value?: string | string[]) => {
-  if (!value) {
-    return [];
-  }
-
-  return Array.isArray(value) ? value : [value];
-};
 
 /**
  * Merges overlay configs from least to most specific (e.g. definition → opener → per-open).

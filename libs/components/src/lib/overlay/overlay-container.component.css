@@ -22,12 +22,6 @@
     --et-overlay-surface-border-width: 0.1rem;
     --et-overlay-radius: 1.6rem;
 
-    --_et-overlay-drag-handle-inline-size: 32px;
-    --_et-overlay-drag-handle-block-size: 4px;
-    --_et-overlay-drag-handle-block-margin: 22px;
-    --_et-overlay-drag-handle-color: #565656;
-    --_et-overlay-drag-handle-radius: 5px;
-
     position: relative;
     display: grid;
     grid-template-rows: minmax(0, 1fr);
@@ -36,7 +30,9 @@
     outline: none;
     box-sizing: border-box;
 
-    > :nth-child(2) {
+    /* the content root is whichever child isn't the (optional) drag handle or arrow, so this
+     still resolves correctly regardless of which of those are present */
+    > :not(.et-overlay-container-drag-handle):not(.et-overlay-arrow) {
       overflow: auto;
       border-radius: inherit;
 
@@ -59,15 +55,15 @@
       overflow: visible;
       background: transparent;
 
-      > :nth-child(2) {
+      > :not(.et-overlay-container-drag-handle):not(.et-overlay-arrow) {
         display: block;
         overflow: visible;
       }
     }
 
     /* Boxed overlays get a themed surface on the pane itself; content inherits the radius via the
-     `> :nth-child(2) { border-radius: inherit }` rule above, and the anchored-dialog arrow reads the
-     pane's real background/border so it matches. */
+     content-root rule above, and the anchored-dialog arrow reads the pane's real background/border
+     so it matches. */
     &.et-overlay--dialog,
     &.et-overlay--anchored-dialog,
     &.et-overlay--full-screen-dialog,
@@ -120,10 +116,6 @@
       border-end-start-radius: var(--et-overlay-radius);
     }
 
-    &:has(> .et-overlay-arrow) {
-      overflow: visible;
-    }
-
     &.et-overlay--bottom-sheet .et-overlay-container-drag-handle {
       grid-template-rows: auto minmax(0, 1fr);
       display: flex;
@@ -131,139 +123,6 @@
 
     &:has(.et-overlay-main) {
       overflow: visible;
-    }
-  }
-
-  .et-overlay-arrow {
-    /* The arrow is painted by rotating a square 45° (see `::before`), so what actually meets the pane
-     edge is that square's *diagonal* — the base of the triangle. The diagonal is the primary token
-     because it is also the size of this element's box, and floating-ui's arrow middleware measures the
-     box when it keeps `arrowPadding` clear of the pane's corners: sized to the square instead, every
-     consumer's padding would be ~3px optimistic and the base would ride into a rounded corner. The
-     square is derived from it (diagonal / √2), so the base and the arrow's height stay whole pixels. */
-    --_et-overlay-arrow-base: 20px;
-    --_et-overlay-arrow-size: calc(var(--_et-overlay-arrow-base) / 1.4142136);
-    /* Half the box hangs off the pane, so the rotated square's two widest corners land exactly on the
-     pane's edge — that is where its bordered sides have to end for the pane's own border line to carry
-     on from them. Any deeper and the sides stop short of that line, leaving an unbordered wedge at the
-     base of the arrow (which is what this used to do by adding the border width here). */
-    --_et-overlay-arrow-overlap: calc(var(--_et-overlay-arrow-base) / 2);
-    --_et-overlay-arrow-border-width: var(--_et-overlay-arrow-pane-border-width, 1px);
-    /* priority: explicit override → measured pane border → surface theme → static fallback,
-     so any anchored overlay (menu, tooltip, toggletip, or a bare arrow overlay) gets a
-     themed arrow border without repeating this per component */
-    --_et-overlay-arrow-border-color: var(
-      --et-overlay-arrow-border,
-      var(--_et-overlay-arrow-pane-border-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)))
-    );
-    /* Cut the arrow off at the *inner* edge of the pane's border: everything below the widest corners is
-     unbordered silhouette, and the only part of it worth keeping is the sliver that covers the pane's
-     border line where the arrow sits on it — without which that line draws straight through the base. */
-    --_et-overlay-arrow-clip: calc(var(--_et-overlay-arrow-base) / 2 - var(--_et-overlay-arrow-pane-border-width, 0px));
-
-    position: absolute;
-    z-index: 1;
-    inline-size: var(--_et-overlay-arrow-base);
-    block-size: var(--_et-overlay-arrow-base);
-    transform: var(--et-floating-arrow-translate, translate3d(0, 0, 0));
-    visibility: hidden;
-    /* priority mirrors the border chain: explicit override → measured pane background →
-     surface theme → static fallback, so the arrow paints whatever the pane actually
-     renders (custom panelClass, themed pane) instead of re-deriving a possibly-divergent color */
-    background-color: var(
-      --et-overlay-arrow-background,
-      var(--_et-overlay-arrow-pane-background, var(--et-surface-background-solid, rgb(32 32 32)))
-    );
-    pointer-events: none;
-
-    &::before {
-      content: '';
-      /* the square that becomes the arrow, centered in the diagonal-sized box above — via auto margins
-       rather than a translate, so it stays centered in both writing directions */
-      position: absolute;
-      inset: 0;
-      margin: auto;
-      inline-size: var(--_et-overlay-arrow-size);
-      block-size: var(--_et-overlay-arrow-size);
-      box-sizing: border-box;
-      visibility: visible;
-      border-radius: 2px;
-      border: 0 solid var(--_et-overlay-arrow-border-color);
-      background-color: inherit;
-      box-shadow: var(--et-overlay-arrow-shadow, none);
-      transform: rotate(45deg);
-    }
-  }
-
-  /* the always-visible ::before punches through an ancestor's visibility: hidden,
-   so it must be re-hidden explicitly while the pane waits for its enter animation */
-  .et-force-invisible .et-overlay-arrow::before {
-    visibility: hidden;
-  }
-
-  [data-overlay-placement^='top'] > .et-overlay-arrow {
-    bottom: calc(var(--_et-overlay-arrow-overlap) * -1);
-    left: 0;
-    clip-path: inset(var(--_et-overlay-arrow-clip) -100% -100% -100%);
-
-    &::before {
-      border-right-width: var(--_et-overlay-arrow-border-width);
-      border-bottom-width: var(--_et-overlay-arrow-border-width);
-    }
-  }
-
-  [data-overlay-placement^='right'] > .et-overlay-arrow {
-    left: calc(var(--_et-overlay-arrow-overlap) * -1);
-    top: 0;
-    clip-path: inset(-100% var(--_et-overlay-arrow-clip) -100% -100%);
-
-    &::before {
-      border-bottom-width: var(--_et-overlay-arrow-border-width);
-      border-left-width: var(--_et-overlay-arrow-border-width);
-    }
-  }
-
-  [data-overlay-placement^='bottom'] > .et-overlay-arrow {
-    top: calc(var(--_et-overlay-arrow-overlap) * -1);
-    left: 0;
-    clip-path: inset(-100% -100% var(--_et-overlay-arrow-clip) -100%);
-
-    &::before {
-      border-top-width: var(--_et-overlay-arrow-border-width);
-      border-left-width: var(--_et-overlay-arrow-border-width);
-    }
-  }
-
-  [data-overlay-placement^='left'] > .et-overlay-arrow {
-    right: calc(var(--_et-overlay-arrow-overlap) * -1);
-    top: 0;
-    clip-path: inset(-100% -100% -100% var(--_et-overlay-arrow-clip));
-
-    &::before {
-      border-top-width: var(--_et-overlay-arrow-border-width);
-      border-right-width: var(--_et-overlay-arrow-border-width);
-    }
-  }
-
-  .et-overlay-main {
-    display: grid;
-    grid-template-rows: minmax(0, 1fr);
-    overflow: auto;
-
-    &:has(.et-overlay-header):has(.et-overlay-body):has(.et-overlay-footer) {
-      grid-template-rows: auto minmax(var(--et-overlay-body-min-block-size), 1fr) auto;
-    }
-
-    &:has(.et-overlay-header):has(.et-overlay-body) {
-      grid-template-rows: auto minmax(var(--et-overlay-body-min-block-size), 1fr);
-    }
-
-    &:has(.et-overlay-body):has(.et-overlay-footer) {
-      grid-template-rows: minmax(var(--et-overlay-body-min-block-size), 1fr) auto;
-    }
-
-    &:not(:has(.et-overlay-footer)) {
-      grid-template-rows: minmax(var(--et-overlay-body-min-block-size), 1fr) auto;
     }
   }
 
@@ -281,87 +140,6 @@
       background-color: var(--_et-overlay-drag-handle-color);
       border-radius: var(--_et-overlay-drag-handle-radius);
     }
-  }
-
-  .et-overlay-body {
-    display: grid;
-    overflow: auto;
-
-    /* Scrolling to either end stays in the overlay: without this, the leftover momentum scrolls the
-     page behind the backdrop, and on a sheet it competes with the drag-to-dismiss gesture. */
-    overscroll-behavior: contain;
-    padding-inline: var(--et-overlay-padding-inline);
-    grid-template-columns: minmax(0, 1fr);
-    grid-auto-rows: minmax(0, 1fr);
-
-    &.et-overlay-body--enable-divider-animations {
-      transition: border-color 300ms var(--ease-1);
-    }
-
-    &.et-overlay-body--render-dividers {
-      .et-overlay-main:has(.et-overlay-header) & {
-        border-block-start: 1px solid var(--et-overlay-body-divider-color);
-      }
-
-      .et-overlay-main:has(.et-overlay-footer) & {
-        border-block-end: 1px solid var(--et-overlay-body-divider-color);
-      }
-
-      &.et-overlay-body--dynamic-dividers {
-        border-color: var(--et-overlay-body-divider-color);
-
-        &.et-scrollable-body--is-at-start {
-          border-block-start-color: transparent;
-        }
-
-        &.et-scrollable-body--is-at-end {
-          border-block-end-color: transparent;
-        }
-      }
-    }
-
-    .et-overlay-body-container {
-      position: relative;
-      min-block-size: min-content;
-
-      /* The body's block padding lives on this container, not on the scroll container itself. The body
-       lays the container out in a `minmax(0, 1fr)` row, so content taller than the overlay overflows
-       that row — and a scroll container's own padding-block-end does not extend the scrollable area
-       past an overflowing item, it just gets painted underneath it. Consumers setting
-       `--et-overlay-body-padding-block` would see the padding in devtools while scrolling still ended
-       flush on the last child, clipping its border and focus ring. The container's padding is part of
-       the box the scrollable overflow is measured from, so the space is really reachable. */
-      padding-block: var(--et-overlay-body-padding-block);
-
-      .et-overlay-body-start-element,
-      .et-overlay-body-end-element {
-        position: absolute;
-        block-size: 1px;
-        pointer-events: none;
-      }
-
-      .et-overlay-body-start-element {
-        inset-inline: 1px;
-        inset-block-start: 1px;
-      }
-
-      .et-overlay-body-end-element {
-        inset-inline: 1px;
-        inset-block-end: 1px;
-      }
-    }
-  }
-
-  .et-overlay-header {
-    padding-block-start: var(--et-overlay-padding-block);
-    padding-inline: var(--et-overlay-padding-inline);
-    padding-block-end: var(--et-overlay-header-padding-block-end);
-  }
-
-  .et-overlay-footer {
-    padding-block-end: var(--et-overlay-padding-block);
-    padding-inline: var(--et-overlay-padding-inline);
-    padding-block-start: var(--et-overlay-footer-padding-block-start);
   }
 
   .et-overlay-runtime-backdrop {
