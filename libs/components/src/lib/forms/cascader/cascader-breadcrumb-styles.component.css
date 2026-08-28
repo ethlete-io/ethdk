@@ -1,0 +1,107 @@
+@layer components {
+  .et-cascader-panel {
+    /* deep hierarchies: the levels collapsed out of the column window, as clickable crumbs.
+       Sits below the columns so mounting/unmounting never shifts them (the panel's animated
+       block size transitions the height change). The row follows the columns' width instead
+       of contributing its own to the panel's max-content measurement (a long path would
+       otherwise stretch the panel). */
+    .et-cascader-breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      box-sizing: border-box;
+      inline-size: 0;
+      min-inline-size: 100%;
+      padding: 6px;
+      border-block-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      overflow: hidden;
+    }
+
+    /* one crumb + its separator — enters from the right (where its column slid away toward)
+       and leaves the same way when the column returns */
+    .et-cascader-crumb {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      min-inline-size: 0;
+
+      &.et-cascader-crumb--enter {
+        animation: et-cascader-crumb-in 200ms ease;
+      }
+
+      &.et-cascader-crumb--leave {
+        animation: et-cascader-crumb-out 160ms ease forwards;
+      }
+    }
+
+    .et-cascader-breadcrumb {
+      display: block;
+      min-inline-size: 0;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      font: inherit;
+      font-size: 12px;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      text-align: start;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      appearance: none;
+      outline: none;
+      transition:
+        background 120ms ease,
+        color 120ms ease;
+
+      @media (hover: hover) {
+        &:hover {
+          background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
+          color: var(--et-surface-color-solid, currentColor);
+        }
+      }
+
+      &:focus-visible {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 16%, transparent);
+        color: var(--et-surface-color-solid, currentColor);
+      }
+
+      /* the crumbs whose columns are currently in the window read at full strength — the
+         muted rest are the levels a click would bring back */
+      &[data-current] {
+        color: var(--et-surface-color-solid, currentColor);
+      }
+    }
+
+    .et-cascader-breadcrumb-chevron {
+      flex: none;
+      inline-size: 10px;
+      block-size: 10px;
+      color: var(--et-surface-color-subtle-solid, currentColor);
+      /* chevron points up natively — rotate to read as a path separator */
+      rotate: 90deg;
+    }
+  }
+
+  /* a breadcrumb entering/leaving mirrors its column's travel on the track above */
+  @keyframes et-cascader-crumb-in {
+    from {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+  }
+
+  @keyframes et-cascader-crumb-out {
+    to {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-cascader-panel .et-cascader-crumb {
+      animation: none;
+    }
+  }
+}

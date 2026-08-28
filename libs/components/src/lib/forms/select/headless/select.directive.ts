@@ -19,11 +19,19 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { RuntimeError, createComponentId, injectHostElement, nextFrame, signalDeferredLoading } from '@ethlete/core';
+import {
+  RuntimeError,
+  createComponentId,
+  injectHostElement,
+  injectStyleManager,
+  nextFrame,
+  signalDeferredLoading,
+} from '@ethlete/core';
 import { EMPTY, fromEvent, switchMap, tap } from 'rxjs';
 import { sortByDomOrder } from '../../../internals/dom-order';
 import { createTypeahead } from '../../../internals/typeahead';
 import { createVirtualWindow } from '../../../internals/virtual-window';
+import { mountFloatingPanelStyles } from '../../../overlay/floating-panel-styles.component';
 import { anchoredOverlayStrategy } from '../../../overlay/strategies';
 import {
   AccessibleNameControlDirective,
@@ -39,6 +47,7 @@ import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectListboxDirective } from './select-listbox.directive';
 import { SelectOptionTemplateDirective } from './select-option-template.directive';
 import { SelectSearchDirective } from './select-search.directive';
+import { SelectExtrasStylesComponent } from '../select-extras-styles.component';
 import { SelectEmptyDirective, SelectErrorDirective, SelectLoadingDirective } from './select-state-templates.directive';
 import { SelectSurfaceContext, SelectSurfaceDirective } from './select-surface.directive';
 import { SelectTriggerDirective } from './select-trigger.directive';
@@ -311,6 +320,7 @@ export class SelectDirective
           containerClass: [
             'et-overlay--anchored',
             'et-overlay--select',
+            'et-floating-panel',
             // when the panel does not mirror the field width the pane is content-sized, so the
             // panel needs a max-inline-size guard; when it does mirror, the pane width already
             // pins the panel to the field and any cap would make wide fields stop matching
@@ -561,6 +571,31 @@ export class SelectDirective
     super();
 
     mountTextFieldShellStyles();
+    mountFloatingPanelStyles();
+
+    const styleManager = injectStyleManager();
+    let hasMountedExtrasStyles = false;
+
+    // every render branch of et-select's panel-extras template must be covered here, or its row
+    // paints unstyled - the empty row shows for any open select whose options are all filtered away
+    effect(() => {
+      if (
+        hasMountedExtrasStyles ||
+        !(
+          this.loading() ||
+          this.error() !== null ||
+          this.hasMoreItems() ||
+          this.allowAddNew() ||
+          this.asyncOptions() !== null ||
+          (this.open() && !this.visibleItems().length)
+        )
+      ) {
+        return;
+      }
+
+      hasMountedExtrasStyles = true;
+      styleManager.mount(SelectExtrasStylesComponent);
+    });
 
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));

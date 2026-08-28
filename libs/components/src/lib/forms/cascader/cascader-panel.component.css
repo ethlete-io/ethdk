@@ -20,57 +20,10 @@
     initial-value: 36px;
   }
 
-  .et-overlay.et-with-default-animation.et-overlay--cascader {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      opacity: 0;
-    }
-
-    &.et-animation-enter-active {
-      transition:
-        transform 140ms ease,
-        opacity 140ms ease;
-    }
-
-    &.et-animation-leave-active {
-      transition:
-        transform 100ms ease,
-        opacity 100ms ease;
-    }
-  }
-
-  .et-overlay--cascader[data-overlay-placement^='top'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateY(0.3rem) !important;
-    }
-  }
-
-  .et-overlay--cascader[data-overlay-placement^='bottom'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
-        translateY(-0.3rem) !important;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .et-overlay.et-with-default-animation.et-overlay--cascader {
-      &.et-animation-enter-active {
-        transition: opacity 140ms ease;
-      }
-
-      &.et-animation-leave-active {
-        transition: opacity 100ms ease;
-      }
-    }
-
-    .et-overlay--cascader[data-overlay-placement] {
-      &.et-animation-enter-from,
-      &.et-animation-leave-to {
-        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
-      }
-    }
+  .et-overlay--cascader {
+    --et-floating-panel-enter-duration: 140ms;
+    --et-floating-panel-leave-duration: 100ms;
+    --et-floating-panel-distance: 0.3rem;
   }
 
   .et-cascader-panel {
@@ -100,196 +53,6 @@
        follow the pane). */
     &:not([data-sheet]) > .et-cascader-panel-body {
       inline-size: max-content;
-    }
-
-    /* persistent nav bar: fixed height, always present — nothing here animates its layout, so
-       the column list never reflows. Matches the option rows (same height; the Back chevron —
-       text button has no padding — lines up with the option label inset). */
-    .et-cascader-sheet-header {
-      position: relative;
-      display: flex;
-      align-items: center;
-      flex: none;
-      box-sizing: border-box;
-      block-size: var(--et-cascader-node-height);
-      padding-block: 4px;
-      /* column padding (6px) + node padding-inline (14px) = the option label inset */
-      padding-inline: 20px;
-      border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    }
-
-    /* Back is an absolute overlay at the leading edge — it never affects the title's layout, so
-       the title's shift is a pure transform (below) instead of a flex reflow that jumps. It just
-       fades + slides in when there is a level to return to. */
-    .et-cascader-back {
-      position: absolute;
-      inset-block: 0;
-      inset-inline-start: 20px;
-      display: inline-flex;
-      align-items: center;
-      transition:
-        opacity 180ms ease,
-        transform 180ms ease;
-
-      &.et-cascader-back--hidden {
-        opacity: 0;
-        transform: translateX(-6px);
-        pointer-events: none;
-      }
-    }
-
-    .et-cascader-back-icon {
-      /* chevron points up natively — rotate counter-clockwise to point left ("back") */
-      rotate: -90deg;
-    }
-
-    .et-cascader-sheet-title-slot {
-      position: relative;
-      flex: 1;
-      min-inline-size: 0;
-      align-self: stretch;
-      overflow: hidden;
-      /* the slot spans the full width and paints over the absolute Back button; the title is
-         display-only, so let clicks pass through to Back underneath */
-      pointer-events: none;
-    }
-
-    /* the title shifts right to clear Back via transform (transitions reliably, unlike a flex
-       width change which jumps); at the root it sits flush-left, aligned with the option labels */
-    .et-cascader-sheet-title-shift {
-      position: absolute;
-      inset: 0;
-      transform: translateX(0);
-      transition: transform 180ms ease;
-    }
-
-    .et-cascader-sheet-header[data-back] .et-cascader-sheet-title-shift {
-      /* em (font-relative), not rem — the app root font can be tiny (10px here) */
-      transform: translateX(var(--et-cascader-back-slot, 4em));
-    }
-
-    .et-cascader-sheet-title {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      font-weight: 600;
-      color: var(--et-surface-color-solid, currentColor);
-    }
-
-    /* 'slide' (deeper level changes, Back bar stable): directional cross-slide. Direction comes
-       from the persistent slot, so the leaving title (kept mounted by animate.leave, still a
-       child of the slot) reads the current travel direction too. */
-    .et-cascader-sheet-title-slot[data-anim='slide'][data-nav='forward'] .et-cascader-sheet-title--enter {
-      animation: et-cascader-title-enter-forward 200ms ease;
-    }
-
-    .et-cascader-sheet-title-slot[data-anim='slide'][data-nav='backward'] .et-cascader-sheet-title--enter {
-      animation: et-cascader-title-enter-backward 200ms ease;
-    }
-
-    .et-cascader-sheet-title-slot[data-anim='slide'][data-nav='forward'] .et-cascader-sheet-title--leave {
-      animation: et-cascader-title-leave-forward 180ms ease forwards;
-    }
-
-    .et-cascader-sheet-title-slot[data-anim='slide'][data-nav='backward'] .et-cascader-sheet-title--leave {
-      animation: et-cascader-title-leave-backward 180ms ease forwards;
-    }
-
-    /* 'fade' (root boundary, Back bar appears/disappears): the title already shifts horizontally
-       as the Back bar's width animates, so just crossfade — no competing transform slide */
-    .et-cascader-sheet-title-slot[data-anim='fade'] .et-cascader-sheet-title--enter {
-      animation: et-cascader-title-fade-in 180ms ease;
-    }
-
-    .et-cascader-sheet-title-slot[data-anim='fade'] .et-cascader-sheet-title--leave {
-      animation: et-cascader-title-fade-out 180ms ease forwards;
-    }
-
-    /* deep hierarchies: the levels collapsed out of the column window, as clickable crumbs.
-       Sits below the columns so mounting/unmounting never shifts them (the panel's animated
-       block size transitions the height change). The row follows the columns' width instead
-       of contributing its own to the panel's max-content measurement (a long path would
-       otherwise stretch the panel). */
-    .et-cascader-breadcrumbs {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      box-sizing: border-box;
-      inline-size: 0;
-      min-inline-size: 100%;
-      padding: 6px;
-      border-block-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-      overflow: hidden;
-    }
-
-    /* one crumb + its separator — enters from the right (where its column slid away toward)
-       and leaves the same way when the column returns */
-    .et-cascader-crumb {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      min-inline-size: 0;
-
-      &.et-cascader-crumb--enter {
-        animation: et-cascader-crumb-in 200ms ease;
-      }
-
-      &.et-cascader-crumb--leave {
-        animation: et-cascader-crumb-out 160ms ease forwards;
-      }
-    }
-
-    .et-cascader-breadcrumb {
-      display: block;
-      min-inline-size: 0;
-      padding: 4px 8px;
-      border: none;
-      border-radius: 6px;
-      background: transparent;
-      font: inherit;
-      font-size: 12px;
-      color: var(--et-surface-color-muted-solid, currentColor);
-      text-align: start;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      cursor: pointer;
-      appearance: none;
-      outline: none;
-      transition:
-        background 120ms ease,
-        color 120ms ease;
-
-      @media (hover: hover) {
-        &:hover {
-          background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
-          color: var(--et-surface-color-solid, currentColor);
-        }
-      }
-
-      &:focus-visible {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 16%, transparent);
-        color: var(--et-surface-color-solid, currentColor);
-      }
-
-      /* the crumbs whose columns are currently in the window read at full strength — the
-         muted rest are the levels a click would bring back */
-      &[data-current] {
-        color: var(--et-surface-color-solid, currentColor);
-      }
-    }
-
-    .et-cascader-breadcrumb-chevron {
-      flex: none;
-      inline-size: 10px;
-      block-size: 10px;
-      color: var(--et-surface-color-subtle-solid, currentColor);
-      /* chevron points up natively — rotate to read as a path separator */
-      rotate: 90deg;
     }
 
     .et-cascader-columns {
@@ -363,14 +126,6 @@
       transition: transform 240ms ease;
     }
 
-    /* fixed-height sheet body: header + column area share it, so toggling the Back bar
-       redistributes space instead of resizing the panel */
-    .et-cascader-sheet-body {
-      display: flex;
-      flex-direction: column;
-      block-size: min(60vh, 480px);
-    }
-
     .et-cascader-search {
       padding: 6px;
       border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
@@ -419,32 +174,6 @@
       overflow-x: clip;
       overscroll-behavior: contain;
       padding: 6px;
-    }
-
-    /* sheet: the result list fills the fixed-height body like a drilled column */
-    .et-cascader-sheet-body .et-cascader-results-wrapper,
-    .et-cascader-sheet-columns-wrapper {
-      position: relative;
-      flex: 1;
-      min-block-size: 0;
-    }
-
-    .et-cascader-sheet-columns-wrapper {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .et-cascader-sheet-body .et-cascader-results {
-      flex: 1;
-      min-block-size: 0;
-      inline-size: 100%;
-      max-block-size: none;
-    }
-
-    /* a drilled sheet column does not scroll - the column area around it does - but its content
-       still overflows the fixed body, so its own scrollbar would read that as scrollable */
-    .et-cascader-columns[data-sheet] .et-cascader-column-wrapper > .et-scrollbar {
-      display: none;
     }
 
     /* the column's scrollbar has to hang outside its scrollport, so this wrapper - not the column -
@@ -653,50 +382,6 @@
     }
   }
 
-  /* header title cross-slide on a level change: new comes from the travel direction, old
-     leaves the opposite way (forward = advance left; backward = retreat right) */
-  @keyframes et-cascader-title-enter-forward {
-    from {
-      opacity: 0;
-      transform: translateX(12px);
-    }
-  }
-
-  @keyframes et-cascader-title-enter-backward {
-    from {
-      opacity: 0;
-      transform: translateX(-12px);
-    }
-  }
-
-  @keyframes et-cascader-title-leave-forward {
-    to {
-      opacity: 0;
-      transform: translateX(-12px);
-    }
-  }
-
-  @keyframes et-cascader-title-leave-backward {
-    to {
-      opacity: 0;
-      transform: translateX(12px);
-    }
-  }
-
-  /* root-boundary title change: crossfade only (the horizontal shift comes from the Back bar's
-     width animation, which slides the title's slot) */
-  @keyframes et-cascader-title-fade-in {
-    from {
-      opacity: 0;
-    }
-  }
-
-  @keyframes et-cascader-title-fade-out {
-    to {
-      opacity: 0;
-    }
-  }
-
   @keyframes et-cascader-column-in-forward {
     from {
       opacity: 0;
@@ -719,30 +404,11 @@
     }
   }
 
-  /* a breadcrumb entering/leaving mirrors its column's travel on the track above */
-  @keyframes et-cascader-crumb-in {
-    from {
-      opacity: 0;
-      transform: translateX(8px);
-    }
-  }
-
-  @keyframes et-cascader-crumb-out {
-    to {
-      opacity: 0;
-      transform: translateX(8px);
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .et-cascader-panel .et-cascader-column,
-    .et-cascader-panel .et-cascader-sheet-title,
-    .et-cascader-panel .et-cascader-crumb {
+    .et-cascader-panel .et-cascader-column {
       animation: none;
     }
 
-    .et-cascader-panel .et-cascader-back,
-    .et-cascader-panel .et-cascader-sheet-title-shift,
     .et-cascader-panel .et-cascader-columns-track {
       transition: none;
     }

@@ -11,57 +11,10 @@
     initial-value: 6px;
   }
 
-  .et-overlay.et-with-default-animation.et-overlay--select {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      opacity: 0;
-    }
-
-    &.et-animation-enter-active {
-      transition:
-        transform 140ms ease,
-        opacity 140ms ease;
-    }
-
-    &.et-animation-leave-active {
-      transition:
-        transform 100ms ease,
-        opacity 100ms ease;
-    }
-  }
-
-  .et-overlay--select[data-overlay-placement^='top'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateY(0.3rem) !important;
-    }
-  }
-
-  .et-overlay--select[data-overlay-placement^='bottom'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
-        translateY(-0.3rem) !important;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .et-overlay.et-with-default-animation.et-overlay--select {
-      &.et-animation-enter-active {
-        transition: opacity 140ms ease;
-      }
-
-      &.et-animation-leave-active {
-        transition: opacity 100ms ease;
-      }
-    }
-
-    .et-overlay--select[data-overlay-placement] {
-      &.et-animation-enter-from,
-      &.et-animation-leave-to {
-        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
-      }
-    }
+  .et-overlay--select {
+    --et-floating-panel-enter-duration: 140ms;
+    --et-floating-panel-leave-duration: 100ms;
+    --et-floating-panel-distance: 0.3rem;
   }
 
   .et-select-panel {
@@ -111,151 +64,6 @@
     .et-select-panel-extras {
       display: contents;
     }
-
-    /* A refetch over options already on screen: 2px of chrome at the panel's very top edge, clipped
-       by the panel's own radius. Out of flow, so the options neither move nor resize for it. Drawn
-       here rather than with `et-progress-bar` - the same call the table makes for its own bar: the
-       component costs ~1.9 kB gz in every app that has a select, for 2px of chrome. */
-    .et-select-busy-bar {
-      position: absolute;
-      inset-block-start: 0;
-      inset-inline: 0;
-      block-size: 2px;
-      overflow: hidden;
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 10%, transparent);
-    }
-
-    .et-select-busy-bar::after {
-      content: '';
-      display: block;
-      inline-size: 40%;
-      block-size: 100%;
-      border-radius: 999px;
-      background: var(--et-theme-color-primary-solid, currentColor);
-      animation: et-select-busy-sweep 1.1s ease-in-out infinite;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      /* still visible without motion: a static accent rule across the panel's top edge */
-      .et-select-busy-bar::after {
-        inline-size: 100%;
-        animation: none;
-      }
-    }
-
-    /* left-aligned like the options themselves; the error text mirrors the menu's
-       .et-menu-search-error styling */
-    .et-select-state {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-block-size: var(--et-select-option-height, 36px);
-      padding-inline: var(--et-select-option-padding-inline, 10px);
-      font-size: var(--et-select-option-font-size, 14px);
-      color: var(--et-surface-color-muted-solid, currentColor);
-
-      &.et-select-state--error {
-        font-size: 12px;
-        /* the element carries the error color theme via etProvideColor */
-        color: var(--et-theme-color-primary-solid, rgb(248 113 113));
-      }
-    }
-
-    /* the loading row's content is laid out with the row but only becomes visible once the wait is
-       worth reporting (see the template) - fading it in place keeps the row's height fixed */
-    .et-select-state-content {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      opacity: 0;
-      transition: opacity 120ms ease;
-
-      &.et-select-state-content--visible {
-        opacity: 1;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .et-select-state-content {
-        transition: none;
-      }
-    }
-
-    /* action rows (load more, add new): left-aligned with the options but visually
-       distinct — accent ink color, a leading icon and a full-bleed separator on top */
-    .et-select-load-more,
-    .et-select-add-new {
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: var(--et-select-option-gap, 8px);
-      inline-size: 100%;
-      min-block-size: var(--et-select-option-height, 36px);
-      margin-block-start: 7px;
-      padding-inline: var(--et-select-option-padding-inline, 10px);
-      border: none;
-      border-radius: var(--et-select-option-border-radius, 6px);
-      background: transparent;
-      font: inherit;
-      font-size: var(--et-select-option-font-size, 14px);
-      text-align: start;
-      color: var(--et-theme-color-ink-solid, currentColor);
-      cursor: pointer;
-      appearance: none;
-      transition: background 120ms ease;
-
-      &::before {
-        content: '';
-        position: absolute;
-        inset-inline: calc(var(--et-select-panel-padding, 6px) * -1);
-        inset-block-start: -4px;
-        block-size: 1px;
-        background: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-      }
-
-      @media (hover: hover) {
-        &:not(:disabled):hover {
-          background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
-        }
-      }
-
-      &:not(:disabled):active {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 20%, transparent);
-      }
-
-      /* the page it asked for is on its way - it takes no second click until that lands */
-      &:disabled {
-        color: var(--et-surface-color-muted-solid, currentColor);
-        cursor: default;
-      }
-
-      /* the same box reporting that wait instead of offering the click (see the template) */
-      &.et-select-load-more--loading {
-        color: var(--et-surface-color-muted-solid, currentColor);
-        cursor: default;
-        pointer-events: none;
-      }
-
-      .et-icon {
-        flex: none;
-        inline-size: 16px;
-        block-size: 16px;
-      }
-    }
-
-    /* adjacent action rows share the first row's separator */
-    .et-select-load-more + .et-select-add-new {
-      margin-block-start: 2px;
-
-      &::before {
-        content: none;
-      }
-    }
-
-    .et-select-load-more-icon {
-      /* the registered chevron icon points up natively — load-more points down */
-      rotate: 180deg;
-    }
   }
 
   /* compact triggers (`mirrorPanelWidth={false}`): the pane is content-sized rather than pinned
@@ -264,15 +72,5 @@
      it and no cap must apply — otherwise fields wider than 400px stop matching the panel. */
   .et-overlay--select-content-width .et-select-panel {
     max-inline-size: min(400px, calc(100vw - 24px));
-  }
-
-  @keyframes et-select-busy-sweep {
-    from {
-      transform: translateX(-100%);
-    }
-
-    to {
-      transform: translateX(250%);
-    }
   }
 }
