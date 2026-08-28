@@ -7,6 +7,7 @@ import {
   resolveSurfaceByElevation,
 } from '@ethlete/core';
 import { injectStreamLabels } from '../stream-labels';
+import { mountStreamOverlayCardStyles } from '../stream-overlay-card-styles.component';
 import { ButtonComponent } from '../../button';
 import { ARROW_OUT_UP_RIGHT_ICON, IconDirective, provideIcons } from '../../icon';
 import { injectPipManager } from '../pip-manager';
@@ -88,33 +89,16 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
       background: var(--et-surface-background-solid, inherit);
       color: var(--et-surface-color-solid, inherit);
       z-index: 20;
+    }
 
-      .et-pip-slot-placeholder-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--et-pip-slot-placeholder-gap);
-        padding: var(--et-pip-slot-placeholder-padding);
-        border-radius: var(--et-pip-slot-placeholder-border-radius);
-        max-width: 36rem;
-        text-align: center;
-        background: var(--et-surface-background-solid, inherit);
-      }
-
-      .et-pip-slot-placeholder-icon {
-        width: var(--et-pip-slot-placeholder-icon-size);
-        height: var(--et-pip-slot-placeholder-icon-size);
-        color: var(--et-surface-color-subtle-solid, currentColor);
-      }
-
-      .et-pip-slot-placeholder-message {
-        margin: 0;
-        font-size: var(--et-pip-slot-placeholder-message-size);
-        font-weight: var(--et-pip-slot-placeholder-message-weight);
-        line-height: var(--et-pip-slot-placeholder-message-line-height);
-        color: var(--et-surface-color-muted-solid, currentColor);
-        text-align: center;
-      }
+    .et-pip-slot-placeholder-card {
+      --et-stream-overlay-card-gap: var(--et-pip-slot-placeholder-gap);
+      --et-stream-overlay-card-padding: var(--et-pip-slot-placeholder-padding);
+      --et-stream-overlay-card-icon-size: var(--et-pip-slot-placeholder-icon-size);
+      --et-stream-overlay-card-border-radius: var(--et-pip-slot-placeholder-border-radius);
+      --et-stream-overlay-card-description-size: var(--et-pip-slot-placeholder-message-size);
+      --et-stream-overlay-card-description-weight: var(--et-pip-slot-placeholder-message-weight);
+      --et-stream-overlay-card-description-line-height: var(--et-pip-slot-placeholder-message-line-height);
     }
   `,
 })
@@ -149,6 +133,8 @@ export class PipSlotPlaceholderComponent {
   public backButtonColor = computed(() => this.config.backButtonColor);
 
   constructor() {
+    mountStreamOverlayCardStyles();
+
     effect(() => {
       this.pipManager.backPulseCounter();
       const dir = this.bringBackDir();

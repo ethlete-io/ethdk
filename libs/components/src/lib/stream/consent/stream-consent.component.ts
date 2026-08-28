@@ -7,6 +7,7 @@ import {
   resolveSurfaceByElevation,
 } from '@ethlete/core';
 import { injectStreamLabels } from '../stream-labels';
+import { mountStreamOverlayCardStyles } from '../stream-overlay-card-styles.component';
 import { ButtonComponent } from '../../button';
 import { IconDirective, LOCK_ICON, provideIcons } from '../../icon';
 import { StreamConsentAcceptDirective } from './headless/stream-consent-accept.directive';
@@ -111,43 +112,28 @@ let nextHeadingId = 0;
       height: 100%;
       background: var(--et-surface-background-solid, inherit);
       color: var(--et-surface-color-solid, inherit);
+    }
 
-      .et-stream-consent-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--et-stream-consent-gap);
-        padding: var(--et-stream-consent-padding);
-        border-radius: var(--et-stream-consent-border-radius);
-        max-width: 36rem;
-        text-align: center;
-        background: var(--et-surface-background-solid, inherit);
-      }
+    .et-stream-consent-card {
+      --et-stream-overlay-card-padding: var(--et-stream-consent-padding);
+      --et-stream-overlay-card-gap: var(--et-stream-consent-gap);
+      --et-stream-overlay-card-icon-size: var(--et-stream-consent-icon-size);
+      --et-stream-overlay-card-border-radius: var(--et-stream-consent-border-radius);
+      --et-stream-overlay-card-heading-size: var(--et-stream-consent-heading-size);
+      --et-stream-overlay-card-heading-weight: var(--et-stream-consent-heading-weight);
+      --et-stream-overlay-card-heading-line-height: var(--et-stream-consent-heading-line-height);
+      --et-stream-overlay-card-heading-letter-spacing: var(--et-stream-consent-heading-letter-spacing);
+      --et-stream-overlay-card-description-size: var(--et-stream-consent-description-size);
+      --et-stream-overlay-card-description-weight: var(--et-stream-consent-description-weight);
+      --et-stream-overlay-card-description-line-height: var(--et-stream-consent-description-line-height);
+    }
 
-      .et-stream-consent-icon {
-        width: var(--et-stream-consent-icon-size);
-        height: var(--et-stream-consent-icon-size);
-        color: var(--et-surface-color-subtle-solid, currentColor);
-        margin-block-end: 0.4rem;
-      }
+    .et-stream-consent-icon {
+      margin-block-end: 0.4rem;
+    }
 
-      .et-stream-consent-heading {
-        margin: 0;
-        font-size: var(--et-stream-consent-heading-size);
-        font-weight: var(--et-stream-consent-heading-weight);
-        line-height: var(--et-stream-consent-heading-line-height);
-        letter-spacing: var(--et-stream-consent-heading-letter-spacing);
-        color: var(--et-surface-color-solid, currentColor);
-      }
-
-      .et-stream-consent-description {
-        margin: 0;
-        font-size: var(--et-stream-consent-description-size);
-        font-weight: var(--et-stream-consent-description-weight);
-        line-height: var(--et-stream-consent-description-line-height);
-        color: var(--et-surface-color-muted-solid, currentColor);
-        margin-block-end: 0.8rem;
-      }
+    .et-stream-consent-description {
+      margin-block-end: 0.8rem;
     }
   `,
 })
@@ -173,4 +159,8 @@ export class StreamConsentComponent {
   public description = computed(() => this.labels().consentDescription);
   public acceptLabel = computed(() => this.labels().consentAccept);
   public acceptButtonColor = computed(() => this.config.acceptButtonColor);
+
+  constructor() {
+    mountStreamOverlayCardStyles();
+  }
 }
