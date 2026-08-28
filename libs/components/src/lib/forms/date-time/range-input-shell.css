@@ -1,4 +1,6 @@
 @layer components {
+  /* Must be listed before each control's own stylesheet in `styleUrls`: its `flex: 1` ties on
+     specificity with the `@container` override, so order decides - reversed, narrow silently un-stacks. */
   et-date-range-input,
   et-time-range-input,
   et-date-time-range-input {
