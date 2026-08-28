@@ -370,10 +370,14 @@ transitionDuration` mid-flight, and re-check under reduced motion. Injection pro
 
 ### W9 — One range-shell stylesheet for the date/time range inputs (item 6)
 
-- **Edits:** `forms/date-time/.../date-range-input.component.css`,
-  `time-range-input.component.css` (+ the two date-time range sheets repeating the shell) → one
-  shared range-shell sheet driven by `--et-range-input-stack-threshold` (the only real difference:
-  `13em` vs `11em`, scan :1887). ~120 duplicated lines across four files.
+- **LANDED** as `d64f32a9b` + `c5566e77f`. The plan said four files; only **three** carry the
+  shell (`date-range-input`, `time-range-input`, `date-time-range-input` — the tree was grepped for
+  the shell's signature properties). Thresholds are `13em` / `11em` / **`22em`**, not just the two
+  the plan named. Each `@container` block stayed per-file: a container-query condition cannot read a
+  custom property. `range-input-shell.css` must be listed **before** the control's own sheet in
+  `styleUrls` — the shell's `flex` shorthand ties on specificity with the `@container` override, so
+  source order decides, and reversing it un-stacks the narrow layout silently. jsdom has no
+  container queries, so no spec can guard that; it is recorded as a comment in the shell.
 - **Must NOT touch:** the picker-input directives (recent Fix-now #1 work), calendar (W6).
 - **Bytes:** ~0; `date-input`/`date-time-input` goldens (W0) within tolerance.
 - **Verify:** CSS parity on `components-forms-date-range-input--*`,
