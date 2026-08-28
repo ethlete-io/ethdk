@@ -25,6 +25,7 @@ import {
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { filter, fromEvent, map, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
+import { mountFloatingPanelStyles } from '../../overlay/floating-panel-styles.component';
 import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { TOOLTIP_ERROR_CODES } from '../tooltip-errors';
 import { TooltipComponent } from '../tooltip.component';
@@ -87,6 +88,8 @@ export class TooltipDirective {
   });
 
   constructor() {
+    mountFloatingPanelStyles();
+
     this.setupHoverBehavior();
     this.setupFocusBehavior();
 
@@ -162,7 +165,7 @@ export class TooltipDirective {
       closeOnOutsidePointer: false,
       panelClass: 'et-tooltip-panel',
       strategies: anchoredOverlayStrategy({
-        containerClass: 'et-overlay--tooltip',
+        containerClass: ['et-overlay--tooltip', 'et-floating-panel'],
         arrow: true,
         placement: this.placement(),
         fallbackPlacements: this.fallbackPlacements(),

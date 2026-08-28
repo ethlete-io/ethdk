@@ -133,73 +133,9 @@
     outline-offset: 2px;
   }
 
-  .et-overlay.et-with-default-animation.et-overlay--toggletip {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      opacity: 0;
-    }
-
-    &.et-animation-enter-active {
-      transition:
-        transform 200ms ease,
-        opacity 200ms ease;
-    }
-
-    &.et-animation-leave-active {
-      transition:
-        transform 140ms ease,
-        opacity 140ms ease;
-    }
-  }
-
-  .et-overlay--toggletip[data-overlay-placement^='top'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
-        translateY(0.45rem) !important;
-    }
-  }
-
-  .et-overlay--toggletip[data-overlay-placement^='right'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
-        translateX(-0.45rem) !important;
-    }
-  }
-
-  .et-overlay--toggletip[data-overlay-placement^='bottom'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
-        translateY(-0.45rem) !important;
-    }
-  }
-
-  .et-overlay--toggletip[data-overlay-placement^='left'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
-        translateX(0.45rem) !important;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .et-overlay.et-with-default-animation.et-overlay--toggletip {
-      &.et-animation-enter-active {
-        transition: opacity 200ms ease;
-      }
-
-      &.et-animation-leave-active {
-        transition: opacity 140ms ease;
-      }
-    }
-
-    .et-overlay--toggletip[data-overlay-placement] {
-      &.et-animation-enter-from,
-      &.et-animation-leave-to {
-        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
-      }
-    }
+  .et-overlay--toggletip {
+    --et-floating-panel-enter-duration: 200ms;
+    --et-floating-panel-leave-duration: 140ms;
+    --et-floating-panel-distance: 0.45rem;
   }
 }

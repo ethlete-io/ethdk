@@ -10,8 +10,9 @@ import {
   model,
   signal,
 } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { RuntimeError, injectStyleManager } from '@ethlete/core';
 import { MENU_ERROR_CODES } from '../menu-errors';
+import { MenuSearchStylesComponent } from '../menu-search-styles.component';
 import { MenuDirective } from './menu.directive';
 
 @Directive({
@@ -29,6 +30,7 @@ export class MenuSearchDirective {
   private menu = inject(MenuDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
+  private styleManager = injectStyleManager();
 
   public query = model('');
 
@@ -40,6 +42,8 @@ export class MenuSearchDirective {
   public errorElementId = signal<string | null>(null);
 
   constructor() {
+    this.styleManager.mount(MenuSearchStylesComponent);
+
     this.menu?.registeredSearch.set(this);
 
     this.destroyRef.onDestroy(() => {
