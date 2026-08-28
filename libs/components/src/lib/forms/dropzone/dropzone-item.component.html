@@ -1,0 +1,51 @@
+<div class="et-dropzone-item-thumbnail" aria-hidden="true">
+  @if (entry().previewUrl(); as previewUrl) {
+    <img [src]="previewUrl" class="et-dropzone-preview-image" alt="" />
+  } @else {
+    <i class="et-dropzone-file-icon" etIcon="et-file"></i>
+  }
+</div>
+
+<div class="et-dropzone-item-info">
+  <span class="et-dropzone-entry-name">{{ entry().name() }}</span>
+
+  @if (entry().size(); as size) {
+    <span class="et-dropzone-entry-size">{{ FORMAT_FILE_SIZE(size) }}</span>
+  }
+
+  @if (entry().source.type === 'file') {
+    <div [attr.data-active]="entry().status() === 'uploading' || null" class="et-dropzone-entry-progress">
+      <div class="et-dropzone-entry-progress-inner">
+        <et-progress-bar [value]="entry().progress() ?? 0" [indeterminate]="entry().progress() === null" />
+      </div>
+    </div>
+  }
+</div>
+
+@if (!readonly()) {
+  @if (entry().status() === 'error') {
+    <button
+      [disabled]="!interactive()"
+      [attr.aria-label]="retryLabel() + ' ' + entry().name()"
+      (click)="retry.emit()"
+      class="et-dropzone-retry-button"
+      type="button"
+      et-icon-button
+      size="sm"
+    >
+      <i etIcon="et-rotate-right"></i>
+    </button>
+  }
+
+  <button
+    [disabled]="!interactive()"
+    [attr.aria-label]="removeLabel() + ' ' + entry().name()"
+    (click)="remove.emit()"
+    class="et-dropzone-remove-button"
+    type="button"
+    et-icon-button
+    size="sm"
+  >
+    <i etIcon="et-times"></i>
+  </button>
+}

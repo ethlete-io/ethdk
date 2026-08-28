@@ -2,6 +2,7 @@ import {
   afterNextRender,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   Injector,
@@ -15,6 +16,7 @@ import {
   createFlipAnimationGroup,
   injectPrefersReducedMotion,
   injectRenderer,
+  injectStyleManager,
   ProvideColorDirective,
 } from '@ethlete/core';
 import { IconButtonComponent } from '../../button/icon-button.component';
@@ -30,6 +32,9 @@ import {
 import { ProgressBarComponent } from '../../loader/progress-bar/progress-bar.component';
 import { FormSupportComponent } from '../form-field/partials/form-support.component';
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
+import { DropzoneItemComponent } from './dropzone-item.component';
+import { DropzonePreviewStylesComponent } from './dropzone-preview-styles.component';
+import { DropzoneReadonlyStylesComponent } from './dropzone-readonly-styles.component';
 import { DropzoneEntry, DROPZONE_ENTRY_STATUSES, formatFileSize } from './headless/dropzone-entry';
 import { DropzoneDirective } from './headless/dropzone.directive';
 import { injectDropzoneLabels } from '../../forms/dropzone/dropzone-labels';
@@ -41,6 +46,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
   styleUrl: './dropzone.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
+    DropzoneItemComponent,
     FocusRingDirective,
     FormSupportComponent,
     IconButtonComponent,
@@ -112,7 +118,7 @@ export class DropzoneComponent {
 
   private fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
   private browseButton = viewChild<ElementRef<HTMLButtonElement>>('browseButton');
-  private entryElements = viewChildren<ElementRef<HTMLElement>>('entryEl');
+  private entryElements = viewChildren<unknown, ElementRef<HTMLElement>>('entryEl', { read: ElementRef });
 
   /** The string in effect: this instance's `retryLabel`, else the domain's label set. */
   protected resolvedRetryLabel = computed(() => this.retryLabel() ?? this.dropzoneLabels().retry);
@@ -156,6 +162,16 @@ export class DropzoneComponent {
   protected readonly FORMAT_FILE_SIZE = formatFileSize;
 
   constructor() {
+    const styleManager = injectStyleManager();
+
+    effect(() => {
+      if (this.dropzoneDir.readonly()) styleManager.mount(DropzoneReadonlyStylesComponent);
+    });
+
+    effect(() => {
+      if (this.singleEntry()) styleManager.mount(DropzonePreviewStylesComponent);
+    });
+
     afterNextRender(() => {
       this.dropzoneDir.focusTarget.set(this.browseButton()?.nativeElement ?? null);
     });

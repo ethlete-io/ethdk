@@ -1,0 +1,51 @@
+@layer components {
+  .et-dropzone-list {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .et-dropzone-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border: 1px solid var(--et-surface-border-solid, currentColor);
+    border-radius: calc(var(--et-dropzone-border-radius) / 1.5);
+    background-color: var(--et-surface-background-solid, transparent);
+
+    .et-dropzone-item-thumbnail {
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      inline-size: var(--et-dropzone-thumbnail-size);
+      block-size: var(--et-dropzone-thumbnail-size);
+      overflow: hidden;
+      border-radius: calc(var(--et-dropzone-border-radius) / 2);
+      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+
+      .et-dropzone-preview-image {
+        inline-size: 100%;
+        block-size: 100%;
+        object-fit: contain;
+      }
+
+      .et-dropzone-file-icon {
+        inline-size: 22px;
+        block-size: 22px;
+      }
+    }
+
+    .et-dropzone-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-inline-size: 0;
+      flex: 1;
+    }
+  }
+}
