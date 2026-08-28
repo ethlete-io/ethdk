@@ -170,17 +170,17 @@
 
       @media (hover: hover) {
         &:hover {
-          --et-theme-color-primary-opacity: 0.08;
+          --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
           --et-button-shadow: none;
         }
       }
 
       &:focus-visible {
-        --et-theme-color-primary-opacity: 0.12;
+        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-focus-delta);
       }
 
       &:active {
-        --et-theme-color-primary-opacity: 0.16;
+        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-active-delta);
         --et-button-shadow: none;
       }
 
@@ -199,17 +199,17 @@
 
       @media (hover: hover) {
         &:hover {
-          --et-theme-color-primary-opacity: 0.24;
+          --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
           --et-button-shadow: none;
         }
       }
 
       &:focus-visible {
-        --et-theme-color-primary-opacity: 0.28;
+        --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-focus-delta));
       }
 
       &:active {
-        --et-theme-color-primary-opacity: 0.32;
+        --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-active-delta));
         --et-button-shadow: none;
       }
 
@@ -228,17 +228,17 @@
 
       @media (hover: hover) {
         &:hover {
-          --et-theme-color-primary-opacity: 0.08;
+          --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
           --et-button-shadow: none;
         }
       }
 
       &:focus-visible {
-        --et-theme-color-primary-opacity: 0.12;
+        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-focus-delta);
       }
 
       &:active {
-        --et-theme-color-primary-opacity: 0.16;
+        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-active-delta);
         --et-button-shadow: none;
       }
 
