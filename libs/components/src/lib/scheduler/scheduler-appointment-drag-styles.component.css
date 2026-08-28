@@ -1,0 +1,55 @@
+@layer components {
+  .et-scheduler-time-grid-all-day-resize {
+    position: absolute;
+    inset-block: 0;
+    inline-size: min(8px, 25%);
+    cursor: ew-resize;
+
+    &:where([data-edge='start']) {
+      inset-inline-start: 0;
+    }
+
+    &:where([data-edge='end']) {
+      inset-inline-end: 0;
+    }
+
+    @media (any-pointer: coarse) {
+      inline-size: min(14px, 25%);
+    }
+  }
+
+  /* Bare attribute selector, not `:where()` - this sheet and the base rule's mount in different
+     order depending on which view renders first, so the tie has to be won on specificity. */
+  .et-scheduler-time-grid-block[data-draggable] {
+    cursor: grab;
+
+    /* a move arms on a long press, which is also what raises iOS' selection callout */
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  .et-scheduler-time-grid-block[data-dragging] {
+    z-index: 1;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+    cursor: grabbing;
+  }
+
+  .et-scheduler-time-grid-block-resize {
+    position: absolute;
+    inset-inline: 0;
+    block-size: min(8px, 25%);
+    cursor: ns-resize;
+
+    &:where([data-edge='start']) {
+      inset-block-start: 0;
+    }
+
+    &:where([data-edge='end']) {
+      inset-block-end: 0;
+    }
+
+    @media (any-pointer: coarse) {
+      block-size: min(14px, 25%);
+    }
+  }
+}

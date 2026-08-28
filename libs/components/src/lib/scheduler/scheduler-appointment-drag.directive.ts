@@ -1,6 +1,7 @@
-import { computed, Directive, ElementRef, inject, input } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { computed, Directive, effect, ElementRef, inject, input } from '@angular/core';
+import { injectStyleManager, RuntimeError } from '@ethlete/core';
 import { SchedulerDirective, SchedulerFeatureConfig, schedulerFeatureConfig } from './headless';
+import { SchedulerAppointmentDragStylesComponent } from './scheduler-appointment-drag-styles.component';
 import { SCHEDULER_ERROR_CODES } from './scheduler-errors';
 
 /** Options for {@link SchedulerAppointmentDragDirective}. */
@@ -24,6 +25,7 @@ export type SchedulerAppointmentDragConfig = SchedulerFeatureConfig;
 export class SchedulerAppointmentDragDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private scheduler = inject(SchedulerDirective, { optional: true });
+  private styleManager = injectStyleManager();
 
   /** See {@link SchedulerAppointmentDragConfig}. */
   public config = input({} as SchedulerAppointmentDragConfig, {
@@ -35,6 +37,12 @@ export class SchedulerAppointmentDragDirective {
   public isEnabled = computed(() => this.config().enabled ?? true);
 
   constructor() {
+    effect(() => {
+      if (this.isEnabled()) {
+        this.styleManager.mount(SchedulerAppointmentDragStylesComponent);
+      }
+    });
+
     if (!this.scheduler) {
       throw new RuntimeError(
         SCHEDULER_ERROR_CODES.APPOINTMENT_DRAG_OUTSIDE_SCHEDULER,
