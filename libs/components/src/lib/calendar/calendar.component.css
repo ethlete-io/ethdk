@@ -5,12 +5,6 @@
     initial-value: 40px;
   }
 
-  @property --et-calendar-week-number-size {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 28px;
-  }
-
   .et-calendar {
     display: inline-flex;
     flex-direction: column;
@@ -161,17 +155,6 @@
       grid-template-columns: repeat(7, var(--et-calendar-cell-size));
     }
 
-    /* a real extra column rather than a zero-width one in every calendar: a 0px track still counts,
-       so the days would land one column short of their own and the first of each row would collapse */
-    &:where([data-week-numbers]) {
-      --_et-calendar-week-column: var(--et-calendar-week-number-size);
-
-      & .et-calendar-weekdays,
-      & .et-calendar-week {
-        grid-template-columns: var(--et-calendar-week-number-size) repeat(7, var(--et-calendar-cell-size));
-      }
-    }
-
     /* the months on show, side by side, each its own column of weeks */
     .et-calendar-months {
       display: flex;
@@ -189,26 +172,6 @@
     /* holds a day the neighbouring month renders: it keeps the seven columns lined up and nothing else */
     .et-calendar-cell--empty {
       pointer-events: none;
-    }
-
-    /* the month and year grids span the same width as the day grid, so drilling never resizes the
-       calendar sideways */
-    .et-calendar-coarse-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      inline-size: calc(var(--et-calendar-cell-size) * 7 + var(--_et-calendar-week-column));
-    }
-
-    /* one day cell tall, like every other row in this component: the month grid is three of them
-       and the year grid six */
-    .et-calendar-coarse-row {
-      block-size: var(--et-calendar-cell-size);
-    }
-
-    /* both have a fixed row count, so where the picker reserves the day grid's taller box they sit
-       centred in it instead of leaving the whole remainder at the bottom */
-    &:where([data-view='year'], [data-view='multiYear']) .et-calendar-weeks-viewport {
-      align-content: center;
     }
 
     /* re-created per visible unit and view (keyed @for) — stepping slides the new rows in from the
@@ -244,22 +207,6 @@
       block-size: 32px;
       font-size: 12px;
       color: var(--et-surface-color-muted-solid);
-    }
-
-    /* quieter than the days it labels, and set apart by a rule rather than by weight so it cannot be
-       mistaken for a date */
-    .et-calendar-week-number {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-inline-end: 1px solid var(--et-surface-border-solid);
-      font-size: 11px;
-      font-variant-numeric: tabular-nums;
-      color: var(--et-surface-color-subtle-solid);
-    }
-
-    .et-calendar-week-number-heading {
-      border-inline-end: 1px solid var(--et-surface-border-solid);
     }
 
     .et-calendar-cell {
@@ -299,41 +246,6 @@
 
       &:where([data-band='end'])::before {
         inset-inline-end: 50%;
-      }
-
-      /* The comparison range: a bar under the cells rather than a second band behind them. A band
-         would have to compete with the selection's for the same space and colour, and the whole point
-         of the two is being read together — where they overlap, the bar simply runs under the band. */
-      &::after {
-        content: '';
-        position: absolute;
-        inset-block-end: 1px;
-        inset-inline: 0;
-        display: none;
-        block-size: 3px;
-        background: var(--et-surface-color-muted-solid);
-      }
-
-      &:where([data-comparison-band])::after {
-        display: block;
-      }
-
-      &:where([data-comparison-band='start'])::after {
-        inset-inline-start: 50%;
-        border-start-start-radius: 999px;
-        border-end-start-radius: 999px;
-      }
-
-      &:where([data-comparison-band='end'])::after {
-        inset-inline-end: 50%;
-        border-start-end-radius: 999px;
-        border-end-end-radius: 999px;
-      }
-
-      /* a one-cell comparison period is both ends at once: inset from both sides, rounded on both */
-      &:where([data-comparison-band='single'])::after {
-        inset-inline: 25%;
-        border-radius: 999px;
       }
 
       .et-calendar-cell-content {
@@ -413,27 +325,6 @@
           background: transparent;
           text-decoration: line-through;
         }
-      }
-    }
-
-    /* A month or a year cell. Every state above it applies unchanged — that is the point of the coarse
-       cells carrying the same flags — so this only resizes: the cell fills its column, and its label is
-       a word rather than a digit or two, which the day grid's circle cannot hold. After the base rules,
-       because it overrides them at the same weight. */
-    .et-calendar-cell--coarse {
-      block-size: 100%;
-
-      .et-calendar-cell-content {
-        inline-size: calc(100% - 6px);
-        block-size: calc(var(--et-calendar-cell-size) - 6px);
-        padding-inline: 4px;
-        border-radius: 999px;
-      }
-
-      /* the range band is a ribbon behind the pills, so it takes their height rather than the row's —
-         a month-precision range bands month cells the same way a day range bands days */
-      &::before {
-        inset-block: 3px;
       }
     }
   }

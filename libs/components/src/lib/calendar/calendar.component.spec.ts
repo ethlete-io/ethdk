@@ -27,6 +27,12 @@ class HostComponent {
   weekNumbers = signal(false);
 }
 
+@Component({
+  template: ` <et-calendar weekNumbers /> <et-calendar weekNumbers /> `,
+  imports: [CalendarComponent],
+})
+class TwoCalendarsHostComponent {}
+
 describe('CalendarComponent', () => {
   let fixture: ComponentFixture<HostComponent>;
   let host: HostComponent;
@@ -106,6 +112,13 @@ describe('CalendarComponent', () => {
 
     expectAriaGrid(query(fixture, '[role="grid"]')!);
     expectUniformCellsPerRow(query(fixture, '[role="grid"]')!);
+  });
+
+  it('mounts an on-demand stylesheet once, no matter how many calendars use it', () => {
+    const twoFixture = TestBed.createComponent(TwoCalendarsHostComponent);
+    twoFixture.detectChanges();
+
+    expect(document.querySelectorAll('et-calendar-week-numbers-styles')).toHaveLength(1);
   });
 
   it('exposes the headless directive for chrome of the consumer’s own', () => {
