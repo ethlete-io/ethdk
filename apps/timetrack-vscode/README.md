@@ -28,17 +28,46 @@ a post is refused — which is what makes the extension survive the app restarti
 
 The Sources view in the app names the exact path of the file, and says which reporters have posted.
 
-## Installing it from this repository
+## Installing it
 
-The extension is not published. Build it, then link the folder into your editor's extension
-directory:
+The extension is not on the Marketplace. Build a `.vsix` from this repository and install that:
 
 ```bash
+npx nx install timetrack-vscode
+```
+
+The target builds the bundle, packs it into `dist/apps/timetrack-vscode/timetrack-vscode-<version>.vsix`
+and installs it into every editor CLI it finds on the PATH (`code`, `code-insiders`, `codium`, `cursor`,
+`windsurf`). To install into one editor only, name its CLI:
+
+```bash
+TIMETRACK_VSCODE_CLI=cursor npx nx install timetrack-vscode
+```
+
+Restart the editor after that.
+
+To get the `.vsix` without installing it — to hand it to somebody else, for example — run
+`npx nx package timetrack-vscode`. The receiver installs it from the Extensions view, through the `...`
+menu and **Install from VSIX...**, or on the command line:
+
+```bash
+code --install-extension timetrack-vscode-0.1.0.vsix --force
+```
+
+`--force` is what lets a new build replace an installed one that carries the same version number.
+
+### While working on the extension itself
+
+An installed `.vsix` is a copy, so every change needs `npx nx install timetrack-vscode` again. Link the
+folder instead and a rebuild is enough:
+
+```bash
+code --uninstall-extension ethlete.timetrack-vscode
 npx nx build timetrack-vscode
 ln -s "$PWD/apps/timetrack-vscode" ~/.vscode/extensions/ethlete.timetrack-vscode-0.1.0
 ```
 
-Then restart VS Code. Rebuilding is enough after that — the link points at the same folder.
+Reload the window after each rebuild. Remove the link before you install a `.vsix` again.
 
 ## Turning it off
 

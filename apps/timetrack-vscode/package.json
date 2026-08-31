@@ -7,6 +7,17 @@
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "time tracking",
+    "jira",
+    "tempo",
+    "worklog"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethlete-io/ethdk.git",
+    "directory": "apps/timetrack-vscode"
+  },
   "license": "MIT",
   "publisher": "ethlete",
   "main": "./dist/extension.js",
@@ -27,5 +38,6 @@
   ],
   "engines": {
     "vscode": "^1.90.0"
-  }
+  },
+  "icon": "icon.png"
 }

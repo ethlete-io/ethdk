@@ -281,7 +281,7 @@ Cases worth checking separately:
 
 ## 15. Editor heartbeats
 
-This writes nothing outside this machine. It needs the VS Code extension built and linked — see
+This writes nothing outside this machine. It needs the VS Code extension installed — see
 `apps/timetrack-vscode/README.md`.
 
 1. Start the app, then open Sources and read the **Editor heartbeats** row.
@@ -289,7 +289,7 @@ This writes nothing outside this machine. It needs the VS Code extension built a
 **Pass:** the row says which port it is listening on and names the file a reporter finds it through.
 With no extension installed it says no reporter has connected yet.
 
-2. Build and link the extension, then restart VS Code and open a file in any git checkout.
+2. Run `npx nx install timetrack-vscode`, then restart VS Code and open a file in any git checkout.
 3. Wait a minute, then read the row again.
 
 **Pass:** the row names `vscode` and the time it last posted, and the stored count is above zero.

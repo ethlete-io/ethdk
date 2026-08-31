@@ -13,6 +13,21 @@
         "command": "node tools/scripts/build-vscode-extension.mjs"
       }
     },
+    "package": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "outputs": ["{workspaceRoot}/dist/apps/timetrack-vscode"],
+      "options": {
+        "command": "node tools/scripts/package-vscode-extension.mjs"
+      }
+    },
+    "install": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["package"],
+      "options": {
+        "command": "node tools/scripts/install-vscode-extension.mjs"
+      }
+    },
     "test": {
       "outputs": ["{workspaceRoot}/coverage/apps/timetrack-vscode"],
       "options": {
