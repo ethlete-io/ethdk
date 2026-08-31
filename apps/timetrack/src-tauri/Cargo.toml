@@ -15,6 +15,8 @@ tauri-build = { version = "2.6.3", features = ["codegen"] }
 [dependencies]
 base64 = "0.22.1"
 chrono = "0.4.45"
+# Not on crates.io - the Tauri team publishes it as a git repo, with no version tags to pin.
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "c4c45d503ea115a839aae718d02f79e7c7f0f673" }
 keyring = { version = "4.1.6", default-features = false, features = ["v1"] }
 notify = "8.2.0"
 rand = "0.10.2"

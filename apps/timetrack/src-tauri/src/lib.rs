@@ -35,6 +35,13 @@ mod window_wayland;
 use tauri::Manager;
 
 pub fn run() {
+    // A Finder/Dock launch gets launchd's bare PATH, not the login shell's, so `run_process` cannot
+    // find `claude`/`codex`/`git` outside /usr/bin. This reads the PATH from the user's shell; if
+    // that fails the app still runs, only PATH-dependent spawns stay degraded.
+    if let Err(error) = fix_path_env::fix() {
+        eprintln!("could not adopt the login shell's PATH: {error}");
+    }
+
     tauri::Builder::default()
         // Single-instance has to be the first plugin registered, and it is what makes running the
         // binary a second time - `timetrack open` - focus the window instead of starting a rival
