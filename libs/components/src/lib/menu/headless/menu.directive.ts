@@ -27,6 +27,7 @@ import {
 } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement, VirtualElement } from '@floating-ui/dom';
 import { fromEvent, take, tap } from 'rxjs';
+import { mountFloatingPanelStyles } from '../../overlay/floating-panel-styles.component';
 import { OverlayConfig } from '../../overlay/overlay-config';
 import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { OverlayRef } from '../../overlay/overlay-ref';
@@ -143,6 +144,8 @@ export class MenuDirective {
   private rootListenersCleanup: (() => void) | null = null;
 
   constructor() {
+    mountFloatingPanelStyles();
+
     effect(() => {
       const disabled = this.disabled();
       const shouldBeOpen = this.open();
@@ -795,7 +798,7 @@ export class MenuDirective {
 
   private buildStrategies(): () => OverlayStrategyBreakpoint[] {
     const point = this.anchorPoint();
-    const containerClass = ['et-overlay--anchored', 'et-overlay--menu'];
+    const containerClass = ['et-overlay--anchored', 'et-overlay--menu', 'et-floating-panel'];
     const positionOptions = {
       placement: this.resolvedPlacement(),
       fallbackPlacements: this.resolvedFallbackPlacements(),

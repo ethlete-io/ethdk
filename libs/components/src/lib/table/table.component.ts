@@ -27,6 +27,7 @@ import { filter, fromEvent, merge, Subscription, take, tap, timer } from 'rxjs';
 import {
   injectColorThemes,
   injectRenderer,
+  injectStyleManager,
   ProvideColorDirective,
   RuntimeError,
   signalDeferredLoading,
@@ -44,6 +45,7 @@ import {
 } from './headless/table-column-state';
 import { TableCardSurfaceDirective } from './table-card-surface.directive';
 import { TABLE_ERROR_CODES } from './table-errors';
+import { TableRowBoxStylesComponent } from './table-row-box-styles.component';
 import {
   TABLE_FEATURE_HOST,
   TableCellErrorMark,
@@ -1134,6 +1136,16 @@ export class TableComponent<T> {
   private pointerGestureClaims = new Map<number, string>();
 
   constructor() {
+    const styleManager = injectStyleManager();
+
+    // The row box layout, the card row's surface/ring/corner chrome and the row-link anchor do nothing
+    // for a table that renders neither cards nor a row link, so they arrive only once `rowBox` turns
+    // true - see TableDetailStylesComponent for the same pattern. Mounted once and left mounted:
+    // switching the feature off never needs to reclaim it.
+    effect(() => {
+      if (this.rowBox()) styleManager.mount(TableRowBoxStylesComponent);
+    });
+
     // A detail template with nothing to render it looks like a broken template rather than a missing
     // import, so name the mistake. Deferred to an effect because a feature registers from its own
     // constructor, which runs after the table's - and it asks whether one registered at all rather

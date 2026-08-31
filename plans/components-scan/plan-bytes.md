@@ -37,6 +37,35 @@ so a deferred component whose import chain is `@ethlete/components` lands in the
 
 ---
 
+## 0b. A styles-only split COSTS bytes (measured 2026-08-28, user accepted the trade)
+
+Every item below that promises "Bytes: ~0 by design" for a styles-only split is **wrong**. A new
+`@Component` costs **~40–150 B gz** in per-component metadata (`ɵfac`, `ɵcmp`, selector,
+encapsulation scaffolding), and that tax is larger than the duplicated CSS it removes (~30–40 B gz,
+because gzip already collapses near-identical CSS).
+
+Measured evidence:
+
+- W2 landed at **+683 B gz** on the `table` golden. Merging its two new components into one
+  recovered only **41–54 B**. Residual vs pre-W2: `table` **+642**, `table-group-headers` **+621**,
+  `table-sticky-columns` **+661**, `table-skeleton` **+467**, `table-row-expansion` **+301**.
+- Adding a _third_ component purely to de-duplicate the shared `.et-table-row--box` rule made the
+  golden **+37 B worse** — the clean proof that the cost is the component, not the CSS.
+- W4 and W6 show the same shape: `date-input` **+141**, `date-time-input` **+145**,
+  `query-devtools-panel` **+155**, `menu-anchored-deps` **+137**, all offset in the same
+  re-baseline by `rich-text-editor-full-tools` **−310**, a genuine dedupe win.
+
+**The rule.** A styles-only split buys **style injection and style recalculation**, never transfer
+bytes — unless the slice sits behind a separate imports barrel (W13's `OVERLAY_CONTENT_IMPORTS` is
+the one shape in this plan that does). Item-6 dedupes that add no component (W9, W12) and item-7
+import-graph work (W15, W16, W17, W11) are unaffected.
+
+**Decision (user, 2026-08-28): accept the trade.** W2 stays. W5, W7 and W18 ship as specced. Each
+commit body must state that the payoff is injection/recalc and name the measured golden delta —
+never claim a byte win. Update the golden when it moves; do not rescope to chase zero.
+
+---
+
 ## 1. How `tools/treeshake` goldens work (recipe for every agent)
 
 Read `tools/treeshake/README.md` in full before touching bytes. The essentials:
@@ -277,8 +306,9 @@ transitionDuration` mid-flight, and re-check under reduced motion. Injection pro
   structure).
 - **Must NOT touch:** tooltip/toggletip/menu (W4), phone-input (W15 — it consumes select but no
   shared files change there).
-- **Bytes:** ~0 for the animation dedupe; the sheet-chrome move is injection-only (the sheet styles
-  component is referenced statically). `select` golden within tolerance.
+- **Bytes:** the animation dedupe is ~0; the two styles-component mounts each cost ~40–150 B gz
+  (§0b). Expect the `select` golden to MOVE upward — measure it, re-baseline it under the lock, and
+  state the delta in the commit. The payoff is injection/recalc, not bytes.
 - **Verify:** CSS parity on `components-forms-select--default/--searchable/--multiple` and
   `components-forms-cascader--default/--async-levels/--multiple`; drive an async select story
   through loading→loaded and assert busy-bar styles arrive _before_ first paint of the busy bar
@@ -317,8 +347,8 @@ transitionDuration` mid-flight, and re-check under reduced motion. Injection pro
   no surface registered, **breaking**, `scheduler.md` update, ea-frontend grep
   (`et-scheduler|SCHEDULER_IMPORTS|SchedulerEditSurface|openEditSurface`).
 - **Bytes:** drag CSS is a real (small) win only if the drag directive is imported separately —
-  check `scheduler.imports.ts`; if it is inside the base barrel, it is injection-only. State which
-  in the commit.
+  check `scheduler.imports.ts`; if it is inside the base barrel, it is injection-only and the new
+  component costs ~40–150 B gz (§0b). State which, with the measured delta, in the commit.
 - **Verify:** CSS parity + a real drag on `components-date-time-scheduler--week`; the
   `--without-appointment-drag` story proves the injection split (rules absent).
 - **Docs:** none for the CSS move. Changeset: patch. **Order:** independent (after W0).
@@ -340,10 +370,14 @@ transitionDuration` mid-flight, and re-check under reduced motion. Injection pro
 
 ### W9 — One range-shell stylesheet for the date/time range inputs (item 6)
 
-- **Edits:** `forms/date-time/.../date-range-input.component.css`,
-  `time-range-input.component.css` (+ the two date-time range sheets repeating the shell) → one
-  shared range-shell sheet driven by `--et-range-input-stack-threshold` (the only real difference:
-  `13em` vs `11em`, scan :1887). ~120 duplicated lines across four files.
+- **LANDED** as `d64f32a9b` + `c5566e77f`. The plan said four files; only **three** carry the
+  shell (`date-range-input`, `time-range-input`, `date-time-range-input` — the tree was grepped for
+  the shell's signature properties). Thresholds are `13em` / `11em` / **`22em`**, not just the two
+  the plan named. Each `@container` block stayed per-file: a container-query condition cannot read a
+  custom property. `range-input-shell.css` must be listed **before** the control's own sheet in
+  `styleUrls` — the shell's `flex` shorthand ties on specificity with the `@container` override, so
+  source order decides, and reversing it un-stacks the narrow layout silently. jsdom has no
+  container queries, so no spec can guard that; it is recorded as a comment in the shell.
 - **Must NOT touch:** the picker-input directives (recent Fix-now #1 work), calendar (W6).
 - **Bytes:** ~0; `date-input`/`date-time-input` goldens (W0) within tolerance.
 - **Verify:** CSS parity on `components-forms-date-range-input--*`,
@@ -499,7 +533,8 @@ transitionDuration` mid-flight, and re-check under reduced motion. Injection pro
   child, the table-expander-cell precedent), single-file preview band (`:171-241`); move the four
   eager icons (`dropzone.component.ts:54`) onto the child components that render them (retry/remove
   buttons), per the `et-tree-marker` model.
-- **Bytes:** ~0–small; injection win (the three blocks are mutually exclusive per consumer).
+- **Bytes:** each new styles component costs ~40–150 B gz (§0b); the icon moves are a real win.
+  Measure the net on the `dropzone` golden and state it. The CSS payoff is injection, not bytes.
 - **Verify:** CSS parity on `components-forms-dropzone--default/--multiple/--readonly/
 --readonly-single/--existing-media/--failing-uploads`; icon proof: readonly story registers no
   `et-rotate-right`/`et-times`.

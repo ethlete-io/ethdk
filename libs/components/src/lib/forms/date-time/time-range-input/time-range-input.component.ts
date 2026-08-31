@@ -15,7 +15,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
 @Component({
   selector: 'et-time-range-input',
   templateUrl: './time-range-input.component.html',
-  styleUrl: './time-range-input.component.css',
+  styleUrls: ['../range-input-shell.css', './time-range-input.component.css'],
   encapsulation: ViewEncapsulation.None,
   imports: [
     ControlSuffixDirective,

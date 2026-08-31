@@ -14,7 +14,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
 @Component({
   selector: 'et-date-range-input',
   templateUrl: './date-range-input.component.html',
-  styleUrl: './date-range-input.component.css',
+  styleUrls: ['../range-input-shell.css', './date-range-input.component.css'],
   encapsulation: ViewEncapsulation.None,
   imports: [
     ControlSuffixDirective,

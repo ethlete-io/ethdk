@@ -7,6 +7,7 @@ import {
   resolveSurfaceByElevation,
 } from '@ethlete/core';
 import { injectStreamLabels } from '../stream-labels';
+import { mountStreamOverlayCardStyles } from '../stream-overlay-card-styles.component';
 import { ButtonComponent } from '../../button';
 import { IconDirective, TRIANGLE_EXCLAMATION_ICON, provideIcons } from '../../icon';
 import { STREAM_PLAYER_ERROR_TOKEN, StreamPlayerErrorDirective } from './headless/stream-player-error.directive';
@@ -108,43 +109,28 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
       background: var(--et-surface-background-solid, inherit);
       color: var(--et-surface-color-solid, inherit);
       z-index: 1;
+    }
 
-      .et-stream-player-error-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--et-stream-player-error-gap);
-        padding: var(--et-stream-player-error-padding);
-        border-radius: var(--et-stream-player-error-border-radius);
-        max-width: 36rem;
-        text-align: center;
-        background: var(--et-surface-background-solid, inherit);
-      }
+    .et-stream-player-error-card {
+      --et-stream-overlay-card-padding: var(--et-stream-player-error-padding);
+      --et-stream-overlay-card-gap: var(--et-stream-player-error-gap);
+      --et-stream-overlay-card-icon-size: var(--et-stream-player-error-icon-size);
+      --et-stream-overlay-card-border-radius: var(--et-stream-player-error-border-radius);
+      --et-stream-overlay-card-heading-size: var(--et-stream-player-error-heading-size);
+      --et-stream-overlay-card-heading-weight: var(--et-stream-player-error-heading-weight);
+      --et-stream-overlay-card-heading-line-height: var(--et-stream-player-error-heading-line-height);
+      --et-stream-overlay-card-heading-letter-spacing: var(--et-stream-player-error-heading-letter-spacing);
+      --et-stream-overlay-card-description-size: var(--et-stream-player-error-description-size);
+      --et-stream-overlay-card-description-weight: var(--et-stream-player-error-description-weight);
+      --et-stream-overlay-card-description-line-height: var(--et-stream-player-error-description-line-height);
+    }
 
-      .et-stream-player-error-icon {
-        width: var(--et-stream-player-error-icon-size);
-        height: var(--et-stream-player-error-icon-size);
-        color: var(--et-surface-color-subtle-solid, currentColor);
-        margin-block-end: 0.4rem;
-      }
+    .et-stream-player-error-icon {
+      margin-block-end: 0.4rem;
+    }
 
-      .et-stream-player-error-heading {
-        margin: 0;
-        font-size: var(--et-stream-player-error-heading-size);
-        font-weight: var(--et-stream-player-error-heading-weight);
-        line-height: var(--et-stream-player-error-heading-line-height);
-        letter-spacing: var(--et-stream-player-error-heading-letter-spacing);
-        color: var(--et-surface-color-solid, currentColor);
-      }
-
-      .et-stream-player-error-description {
-        margin: 0;
-        font-size: var(--et-stream-player-error-description-size);
-        font-weight: var(--et-stream-player-error-description-weight);
-        line-height: var(--et-stream-player-error-description-line-height);
-        color: var(--et-surface-color-muted-solid, currentColor);
-        margin-block-end: 0.8rem;
-      }
+    .et-stream-player-error-description {
+      margin-block-end: 0.8rem;
     }
   `,
 })
@@ -170,6 +156,10 @@ export class StreamPlayerErrorComponent {
   public description = computed(() => this.labels().errorDescription);
   public retryLabel = computed(() => this.labels().errorRetry);
   public retryButtonColor = computed(() => this.config.retryButtonColor);
+
+  constructor() {
+    mountStreamOverlayCardStyles();
+  }
 
   public retry() {
     this.errorDirective.context.retry();

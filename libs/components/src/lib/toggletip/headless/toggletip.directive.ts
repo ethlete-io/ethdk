@@ -18,6 +18,7 @@ import { COLOR_PROVIDER, RuntimeError } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { tap } from 'rxjs';
 import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
+import { mountFloatingPanelStyles } from '../../overlay/floating-panel-styles.component';
 import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { TOGGLETIP_ERROR_CODES } from '../toggletip-errors';
 import { ToggletipComponent } from '../toggletip.component';
@@ -95,6 +96,8 @@ export class ToggletipDirective {
   });
 
   constructor() {
+    mountFloatingPanelStyles();
+
     effect(() => {
       const content = this.content();
       const disabled = this.effectiveDisabled();
@@ -204,7 +207,7 @@ export class ToggletipDirective {
       closeOnOutsidePointer: true,
       panelClass: 'et-toggletip-panel',
       strategies: anchoredOverlayStrategy({
-        containerClass: 'et-overlay--toggletip',
+        containerClass: ['et-overlay--toggletip', 'et-floating-panel'],
         arrow: true,
         placement: this.placement(),
         fallbackPlacements: this.fallbackPlacements(),

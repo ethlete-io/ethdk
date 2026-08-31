@@ -118,59 +118,16 @@
 @if (dropzoneDir.multiple() && dropzoneDir.entries().length) {
   <ul class="et-dropzone-list" role="list">
     @for (entry of dropzoneDir.entries(); track entry.id) {
-      <li #entryEl [attr.data-status]="entry.status()" class="et-dropzone-item">
-        <div class="et-dropzone-item-thumbnail" aria-hidden="true">
-          @if (entry.previewUrl(); as previewUrl) {
-            <img [src]="previewUrl" class="et-dropzone-preview-image" alt="" />
-          } @else {
-            <i class="et-dropzone-file-icon" etIcon="et-file"></i>
-          }
-        </div>
-
-        <div class="et-dropzone-item-info">
-          <span class="et-dropzone-entry-name">{{ entry.name() }}</span>
-
-          @if (entry.size(); as size) {
-            <span class="et-dropzone-entry-size">{{ FORMAT_FILE_SIZE(size) }}</span>
-          }
-
-          @if (entry.source.type === 'file') {
-            <div [attr.data-active]="entry.status() === 'uploading' || null" class="et-dropzone-entry-progress">
-              <div class="et-dropzone-entry-progress-inner">
-                <et-progress-bar [value]="entry.progress() ?? 0" [indeterminate]="entry.progress() === null" />
-              </div>
-            </div>
-          }
-        </div>
-
-        @if (!dropzoneDir.readonly()) {
-          @if (entry.status() === 'error') {
-            <button
-              [disabled]="!dropzoneDir.interactive()"
-              [attr.aria-label]="resolvedRetryLabel() + ' ' + entry.name()"
-              (click)="dropzoneDir.retryEntry(entry.id)"
-              class="et-dropzone-retry-button"
-              type="button"
-              et-icon-button
-              size="sm"
-            >
-              <i etIcon="et-rotate-right"></i>
-            </button>
-          }
-
-          <button
-            [disabled]="!dropzoneDir.interactive()"
-            [attr.aria-label]="resolvedRemoveLabel() + ' ' + entry.name()"
-            (click)="removeEntryAnimated(entry, entryEl)"
-            class="et-dropzone-remove-button"
-            type="button"
-            et-icon-button
-            size="sm"
-          >
-            <i etIcon="et-times"></i>
-          </button>
-        }
-      </li>
+      <et-dropzone-item
+        #entryEl
+        [entry]="entry"
+        [readonly]="dropzoneDir.readonly()"
+        [interactive]="dropzoneDir.interactive()"
+        [retryLabel]="resolvedRetryLabel()"
+        [removeLabel]="resolvedRemoveLabel()"
+        (retry)="dropzoneDir.retryEntry(entry.id)"
+        (remove)="removeEntryAnimated(entry, entryEl.elementRef.nativeElement)"
+      />
     }
   </ul>
 }

@@ -1,0 +1,43 @@
+@layer components {
+  .et-stream-consent-card,
+  .et-stream-player-error-card,
+  .et-pip-slot-placeholder-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--et-stream-overlay-card-gap, 12px);
+    padding: var(--et-stream-overlay-card-padding, 32px);
+    border-radius: var(--et-stream-overlay-card-border-radius, 16px);
+    max-width: 36rem;
+    text-align: center;
+    background: var(--et-surface-background-solid, inherit);
+  }
+
+  .et-stream-consent-icon,
+  .et-stream-player-error-icon,
+  .et-pip-slot-placeholder-icon {
+    width: var(--et-stream-overlay-card-icon-size, 36px);
+    height: var(--et-stream-overlay-card-icon-size, 36px);
+    color: var(--et-surface-color-subtle-solid, currentColor);
+  }
+
+  .et-stream-consent-heading,
+  .et-stream-player-error-heading {
+    margin: 0;
+    font-size: var(--et-stream-overlay-card-heading-size, 16px);
+    font-weight: var(--et-stream-overlay-card-heading-weight, 600);
+    line-height: var(--et-stream-overlay-card-heading-line-height, 122%);
+    letter-spacing: var(--et-stream-overlay-card-heading-letter-spacing, 0.2px);
+    color: var(--et-surface-color-solid, currentColor);
+  }
+
+  .et-stream-consent-description,
+  .et-stream-player-error-description,
+  .et-pip-slot-placeholder-message {
+    margin: 0;
+    font-size: var(--et-stream-overlay-card-description-size, 14px);
+    font-weight: var(--et-stream-overlay-card-description-weight, 400);
+    line-height: var(--et-stream-overlay-card-description-line-height, 150%);
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+}

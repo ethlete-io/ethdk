@@ -23,10 +23,12 @@ import {
   nextFrame,
 } from '@ethlete/core';
 import { tap } from 'rxjs';
+import { normalizeClassList } from '../normalize-class-list';
 import { OverlayConfig } from '../overlay-config';
 import { OVERLAY_ERROR_CODES } from '../overlay-errors';
 import { resolveOverlayHasBackdrop } from '../overlay-has-backdrop';
 import { OverlayRef } from '../overlay-ref';
+import { OverlayArrowStylesComponent } from './overlay-arrow-styles.component';
 import { findNextRelevantHtmlElement } from './overlay-origin';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyContext } from './overlay-strategy.types';
 
@@ -36,6 +38,7 @@ export type OverlayStrategyControllerMountConfig = {
   hostClass: string[];
   animationDelegate: OverlayRuntimeAnimationDelegate;
   renderArrow: boolean;
+  renderDragHandle: boolean;
   hasBackdrop: boolean;
 };
 
@@ -45,12 +48,6 @@ export type OverlayStrategyController = {
 
   /** Wires strategy lifecycle hooks and breakpoint switching. Must be called right after mounting. */
   attach: (runtimeRef: OverlayRuntimeRef<object, unknown>, overlayRef: OverlayRef<object, unknown>) => void;
-};
-
-const normalizeClasses = (value?: string | string[]): string[] => {
-  if (!value) return [];
-
-  return Array.isArray(value) ? value : [value];
 };
 
 /** Set by the overlay container while the overlay is open - see `overlay-container.component.css`. */
@@ -81,6 +78,10 @@ export const createOverlayStrategyController = (
   const mountStrategyStyles = (strategyConfig: OverlayBreakpointConfig) => {
     if (strategyConfig.stylesComponent) {
       styleManager.mount(strategyConfig.stylesComponent);
+    }
+
+    if (strategyConfig.arrow) {
+      styleManager.mount(OverlayArrowStylesComponent);
     }
   };
 
@@ -220,11 +221,11 @@ export const createOverlayStrategyController = (
     if (equal(prev, curr)) return;
 
     if (prev) {
-      renderer.removeClass(element, ...normalizeClasses(prev));
+      renderer.removeClass(element, ...normalizeClassList(prev));
     }
 
     if (curr) {
-      renderer.addClass(element, ...normalizeClasses(curr));
+      renderer.addClass(element, ...normalizeClassList(curr));
     }
   };
 
@@ -277,8 +278,8 @@ export const createOverlayStrategyController = (
     if (equal(prev, curr)) return;
 
     // retained before the previous set is released, so a class both configs ask for is never dropped
-    retainSharedClasses(element, normalizeClasses(curr));
-    releaseSharedClasses(element, normalizeClasses(prev));
+    retainSharedClasses(element, normalizeClassList(curr));
+    releaseSharedClasses(element, normalizeClassList(prev));
   };
 
   const applyClasses = (options: {
@@ -304,8 +305,8 @@ export const createOverlayStrategyController = (
   };
 
   const releaseClassesFromDocumentAndBody = (strategyConfig: OverlayBreakpointConfig) => {
-    releaseSharedClasses(document.documentElement, normalizeClasses(strategyConfig.documentClass));
-    releaseSharedClasses(document.body, normalizeClasses(strategyConfig.bodyClass));
+    releaseSharedClasses(document.documentElement, normalizeClassList(strategyConfig.documentClass));
+    releaseSharedClasses(document.body, normalizeClassList(strategyConfig.bodyClass));
   };
 
   /**
@@ -392,8 +393,8 @@ export const createOverlayStrategyController = (
       applyClassChange(backdropElement, { curr: activeStrategy.config.backdropClass });
     }
 
-    retainSharedClasses(document.documentElement, normalizeClasses(activeStrategy.config.documentClass));
-    retainSharedClasses(document.body, normalizeClasses(activeStrategy.config.bodyClass));
+    retainSharedClasses(document.documentElement, normalizeClassList(activeStrategy.config.documentClass));
+    retainSharedClasses(document.body, normalizeClassList(activeStrategy.config.bodyClass));
 
     runtimeRef
       .afterOpened()
@@ -464,10 +465,11 @@ export const createOverlayStrategyController = (
   return {
     initialMountConfig: {
       positionStrategy: resolvePositionStrategy(activeStrategy.config),
-      paneClass: normalizeClasses(activeStrategy.config.containerClass),
-      hostClass: normalizeClasses(activeStrategy.config.hostClass),
+      paneClass: normalizeClassList(activeStrategy.config.containerClass),
+      hostClass: normalizeClassList(activeStrategy.config.hostClass),
       animationDelegate,
       renderArrow: activeStrategy.config.arrow ?? false,
+      renderDragHandle: !!activeStrategy.config.dragToDismiss,
       hasBackdrop: resolveOverlayHasBackdrop(config, activeStrategy.config),
     },
     attach,

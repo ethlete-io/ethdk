@@ -1,0 +1,71 @@
+@layer components {
+  .et-overlay.et-with-default-animation.et-floating-panel {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform var(--et-floating-panel-enter-duration, 200ms) ease,
+        opacity var(--et-floating-panel-enter-duration, 200ms) ease;
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform var(--et-floating-panel-leave-duration, 140ms) ease,
+        opacity var(--et-floating-panel-leave-duration, 140ms) ease;
+    }
+  }
+
+  .et-floating-panel[data-overlay-placement^='top'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateY(var(--et-floating-panel-distance, 0.4rem)) !important;
+    }
+  }
+
+  .et-floating-panel[data-overlay-placement^='right'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateX(calc(var(--et-floating-panel-distance, 0.4rem) * -1)) !important;
+    }
+  }
+
+  .et-floating-panel[data-overlay-placement^='bottom'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateY(calc(var(--et-floating-panel-distance, 0.4rem) * -1)) !important;
+    }
+  }
+
+  .et-floating-panel[data-overlay-placement^='left'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateX(var(--et-floating-panel-distance, 0.4rem)) !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-floating-panel {
+      &.et-animation-enter-active {
+        transition: opacity var(--et-floating-panel-enter-duration, 200ms) ease;
+      }
+
+      &.et-animation-leave-active {
+        transition: opacity var(--et-floating-panel-leave-duration, 140ms) ease;
+      }
+    }
+
+    .et-floating-panel[data-overlay-placement] {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
+      }
+    }
+  }
+}

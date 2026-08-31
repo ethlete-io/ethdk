@@ -1,4 +1,12 @@
 @layer components {
+  .et-overlay {
+    --_et-overlay-drag-handle-inline-size: 32px;
+    --_et-overlay-drag-handle-block-size: 4px;
+    --_et-overlay-drag-handle-block-margin: 22px;
+    --_et-overlay-drag-handle-color: #565656;
+    --_et-overlay-drag-handle-radius: 5px;
+  }
+
   .et-overlay.et-with-default-animation {
     /* Color of the overshoot filler painted past a sheet's docked edge (see the per-direction
      box-shadows below). Sourced from the surface token — which the container always forces onto

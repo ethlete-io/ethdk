@@ -8,6 +8,7 @@ import {
   toInjectFn,
   toProvideFn,
 } from '@ethlete/core';
+import { normalizeClassList } from './normalize-class-list';
 import { OverlayConfig } from './overlay-config';
 import { OverlayContainerComponent } from './overlay-container.component';
 import { OVERLAY_HAS_BACKDROP, resolveOverlayHasBackdrop } from './overlay-has-backdrop';
@@ -23,14 +24,6 @@ export type OverlayManager = {
 };
 
 let overlayId = 0;
-
-const normalizeClassList = (value?: string | string[]) => {
-  if (!value) {
-    return [];
-  }
-
-  return Array.isArray(value) ? value : [value];
-};
 
 const isValidOriginElement = (element: Element | null): element is HTMLElement => {
   if (!element) return false;
@@ -173,6 +166,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
           inputBinding('component', () => component),
           inputBinding('componentBindings', () => resolvedConfig.bindings),
           inputBinding('renderArrow', () => controller.initialMountConfig.renderArrow),
+          inputBinding('renderDragHandle', () => controller.initialMountConfig.renderDragHandle),
         ],
         role,
         positionStrategy: controller.initialMountConfig.positionStrategy,

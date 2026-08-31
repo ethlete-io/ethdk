@@ -9,6 +9,7 @@ import { TabBarTriggerDirective } from '../headless/tab-bar-trigger.directive';
 import { TabBarUnderlineDirective } from '../headless/tab-bar-underline.directive';
 import { TabBarDirective } from '../headless/tab-bar.directive';
 import { mountTabScaleStyles } from '../tab-scale-styles.component';
+import { mountTabUnderlineStyles } from '../tab-underline-styles.component';
 import { TAB_SIZES, TabSize } from '../tab-sizes';
 import { TabGroupDirective } from './headless/tab-group.directive';
 import { TabComponent } from './tab.component';
@@ -187,36 +188,8 @@ import { TabComponent } from './tab.component';
         position: relative;
         gap: var(--et-tab-group-header-gap);
 
-        &::after {
-          content: '';
-          position: absolute;
-          background: var(--et-surface-border-solid, currentColor);
-          opacity: var(--et-tab-baseline-opacity);
-          pointer-events: none;
-        }
-
-        [data-divider='false'] &::after {
-          display: none;
-        }
-
-        [data-orientation='horizontal'] &::after {
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: var(--et-tab-group-underline-size);
-          border-radius: var(--et-tab-group-underline-radius);
-        }
-
         [data-orientation='vertical'] & {
           justify-items: start;
-        }
-
-        [data-orientation='vertical'] &::after {
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: var(--et-tab-group-underline-size);
-          border-radius: var(--et-tab-group-underline-radius);
         }
       }
 
@@ -241,24 +214,6 @@ import { TabComponent } from './tab.component';
         outline: none;
         border-radius: 0.5rem;
 
-        &.et-tab-bar-trigger--no-initial-transition {
-          transition: none;
-        }
-
-        @media (hover: hover) {
-          &.et-tab-group__trigger--active:not(.et-tab-bar-trigger--just-activated):hover {
-            background: rgb(var(--et-theme-color-primary-rgb, 0 0 0) / 0.08);
-          }
-        }
-
-        &.et-tab-group__trigger--active:not(.et-tab-bar-trigger--just-activated):focus-visible {
-          background: rgb(var(--et-theme-color-primary-rgb, 0 0 0) / 0.12);
-        }
-
-        &.et-tab-group__trigger--active:not(.et-tab-bar-trigger--just-activated):active {
-          background: rgb(var(--et-theme-color-primary-rgb, 0 0 0) / 0.16);
-        }
-
         .et-tab-group__trigger-content {
           display: flex;
           align-items: center;
@@ -266,11 +221,6 @@ import { TabComponent } from './tab.component';
           border-radius: 0.5rem;
           padding: 4px 8px;
           margin: -4px -8px;
-        }
-
-        &:focus-visible .et-tab-group__trigger-content {
-          outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
-          outline-offset: 2px;
         }
 
         .et-tab-group__trigger-icon {
@@ -281,58 +231,6 @@ import { TabComponent } from './tab.component';
         [data-variant='primary'] & .et-tab-group__trigger-content {
           flex-direction: column;
           gap: 4px;
-        }
-
-        .et-tab-bar-underline {
-          position: absolute;
-          z-index: 1;
-          background: var(--et-theme-color-ink-solid, currentColor);
-          border-radius: var(--et-tab-group-underline-radius);
-          pointer-events: none;
-          opacity: 0;
-        }
-
-        .et-tab-bar-underline--active {
-          opacity: 1;
-        }
-
-        [data-orientation='horizontal'] & .et-tab-bar-underline {
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: var(--et-tab-group-underline-size);
-          transform-origin: left;
-        }
-
-        [data-variant='primary'][data-orientation='horizontal'] & .et-tab-bar-underline {
-          left: 25%;
-          right: 25%;
-          height: var(--et-tab-group-underline-size);
-          border-radius: var(--et-tab-group-underline-size) var(--et-tab-group-underline-size) 0 0;
-        }
-
-        [data-orientation='vertical'] & .et-tab-bar-underline {
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: var(--et-tab-group-underline-size);
-          transform-origin: top;
-        }
-
-        [data-variant='primary'][data-orientation='vertical'] & .et-tab-bar-underline {
-          top: 25%;
-          bottom: 25%;
-          width: var(--et-tab-group-underline-size);
-          border-radius: 0 var(--et-tab-group-underline-size) var(--et-tab-group-underline-size) 0;
-        }
-
-        &.et-tab-group__trigger--active {
-          color: var(--et-surface-color-solid, inherit);
-        }
-
-        &:disabled {
-          pointer-events: none;
-          cursor: default;
         }
       }
 
@@ -362,6 +260,7 @@ export class TabGroupComponent {
 
   constructor() {
     mountTabScaleStyles();
+    mountTabUnderlineStyles();
 
     // the component renders its panels inline instead of registering [etTabPanel] directives
     this.tabGroup.managesPanelsInternally.set(true);

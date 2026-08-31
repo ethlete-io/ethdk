@@ -1,0 +1,250 @@
+@layer components {
+  /* A row with a box of its own, in place of the layout-transparent default. `subgrid` is what keeps the
+     cells in the table's own column tracks, so every column still lines up across the header, the rows
+     and the footer — the same shape the detail row already uses inside this grid.
+
+     `z-index: 0` makes it a stacking context, so a cell that lifts itself over the row's link cannot
+     also rise over the sticky header. */
+  .et-table-row--box {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+    position: relative;
+    z-index: 0;
+  }
+
+  /* The row's box carries the surface, the border and the radius; its cells keep their padding and stay
+     transparent, so the card paints through them. The leading and trailing cell take the row's own
+     corner radii, so a cell background — hover, a selected row, a pinned column — cannot square off a
+     corner, whichever column happens to be first after a reorder or a hidden column. */
+  .et-table-row {
+    margin-block-end: var(--_et-table-row-gap-block);
+    background: var(--_et-table-row-paint);
+    border-radius: var(--_et-table-row-corner);
+  }
+
+  /* A card is a surface, not a tint: `etTableCardSurface` puts the theme one elevation above the table's
+     on the row, and the row paints that theme's background. Every knob naming the row's paint therefore
+     has to be declared here rather than in the appearance block - a `var()` in the block would resolve
+     against the host, which is the surface the card is meant to stand off. */
+  .et-table-row--card {
+    --_et-table-row-paint: var(--et-surface-background-solid, Canvas);
+    --_et-table-row-surface: var(--_et-table-row-paint);
+    --_et-table-stripe-solid: var(--_et-table-row-paint);
+    --_et-table-row-hover-solid: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 8%,
+      var(--_et-table-row-paint)
+    );
+    --_et-table-row-pressed-solid: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 16%,
+      var(--_et-table-row-paint)
+    );
+    --_et-table-inert-row-hover-solid: var(--_et-table-row-paint);
+    color: var(--et-surface-color-solid, CanvasText);
+  }
+
+  /* No surface a level above the table's to raise the card onto - a theme-less app, or a table already on
+     top of the ladder (see etTableCardSurface). Back to a tint, so the card is still marked off from the
+     table under it. Only the paint needs saying: every knob above reads it. */
+  .et-table-row--card:where(.et-table-row--card-tint) {
+    --_et-table-row-paint: var(--_et-table-band);
+  }
+
+  /* The card's 1px ring, drawn out of flow instead of as a border on the row, and that is load-bearing: a
+     border insets the row's content box, so its subgrid tracks land a pixel off the header's - and a
+     pinned cell, whose sticky offset is measured from the header, then stops a pixel short of the next
+     one and leaves a seam that scrolled text shows through.
+
+     Above the cells (which are opaque where they are pinned) but inside the row's own stacking context,
+     so it still passes under the sticky header. An outline would not do: Chrome paints it with the row's
+     own background, under the cells. */
+  .et-table-host:where([data-appearance='cards']) .et-table-row--box::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    border: 1px solid var(--et-table-row-border-color, var(--et-surface-border-solid, rgb(128 128 128 / 0.3)));
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  /* The edge mark is an outer `box-shadow`, so it reaches about 7px past the pinned cell on every side -
+     and on `cards` the sides above and below a cell are the gaps between the cards. Clipped to the cell's
+     block extent and let out sideways only, since a mark laid across a gap outlives the rounded card end.
+     Body cells only: header and footer cells compose a block-axis shadow in the same property, which is
+     meant to fall on the rows passing under them. */
+  .et-table-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
+    clip-path: var(--_et-table-sticky-clip);
+  }
+
+  /* The header is a label row over the cards, so its rule must not run into the first one's border.
+     A margin under the header cells rather than a grid `row-gap`, which would space out every row
+     kind - the same reason the cards themselves are spaced by a margin. */
+  .et-table-header-cell {
+    margin-block-end: var(--_et-table-header-gap-block);
+  }
+
+  /* A card that neither links nor takes clicks has nothing to react to, so it does not light up under
+     the pointer. Set as the tint rather than as a background, so a selected row keeps its accent. */
+  .et-table-row:not(.et-table-row--interactive, .et-table-row--link) {
+    --_et-table-row-hover: var(--_et-table-inert-row-hover);
+    --_et-table-row-hover-solid: var(--_et-table-inert-row-hover-solid);
+  }
+
+  .et-table-row > :first-child {
+    border-start-start-radius: inherit;
+    border-end-start-radius: inherit;
+  }
+
+  .et-table-row > .et-table-cell:nth-last-child(1 of .et-table-cell) {
+    border-start-end-radius: inherit;
+    border-end-end-radius: inherit;
+  }
+
+  /* A card's leading and trailing corners belong to whichever box is holding that edge, which stops
+     being the row's own end as soon as a column is pinned: the row's box - its radius and its ring -
+     scrolls away with the columns, and the pinned cell left at the edge squares the card off against the
+     table's surface. So this layer paints the corner standing at each edge: the surface outside the
+     radius, the ring's arc through it, and the edge line between the two arcs. At rest that is the
+     geometry the row's own corner already has, so a table that never scrolls looks unchanged.
+
+     A child of the row, not of a cell, and that is load-bearing: a pinned cell carries a `z-index`, so it
+     is a stacking context, and a corner drawn inside one can never rise over the row's ring - the ring
+     then runs its straight edge out past the arc. Here the corner competes with the ring directly.
+
+     The layer spans the row's whole scroll extent, so each corner can hold its place at a pinned edge
+     with `position: sticky` for the entire range - the same shape the scroll fades use. */
+  .et-table-card-corners {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  /* Physical positions: the corner box is placed logically, but a gradient cannot be. */
+  .et-table-host:where([data-appearance='cards']) .et-table-card-corners::before,
+  .et-table-host:where([data-appearance='cards']) .et-table-card-corners::after {
+    --_et-table-card-radius: var(--et-table-row-radius, 10px);
+    --_et-table-card-edge: var(--et-table-row-border-color, var(--et-surface-border-solid, rgb(128 128 128 / 0.3)));
+
+    content: '';
+    flex: 0 0 auto;
+    inline-size: var(--_et-table-card-radius);
+  }
+
+  /* Only an edge that actually pins a column needs a corner held at the viewport: everywhere else the
+     card's own end is the corner, and it is meant to scroll away with the columns. */
+  .et-table-row:has(.et-table-sticky-start) .et-table-card-corners::before {
+    position: sticky;
+    inset-inline-start: 0;
+  }
+
+  .et-table-row:has(.et-table-sticky-end) .et-table-card-corners::after {
+    position: sticky;
+    inset-inline-end: 0;
+  }
+
+  .et-table-host:where([data-appearance='cards']) .et-table-card-corners::before {
+    background:
+      radial-gradient(
+          circle at 100% 100%,
+          transparent calc(var(--_et-table-card-radius) - 1.2px),
+          var(--_et-table-card-edge) calc(var(--_et-table-card-radius) - 0.8px)
+            calc(var(--_et-table-card-radius) - 0.2px),
+          var(--_et-table-card-outside) calc(var(--_et-table-card-radius) + 0.2px)
+        )
+        0 0 / 100% var(--_et-table-card-radius) no-repeat,
+      radial-gradient(
+          circle at 100% 0,
+          transparent calc(var(--_et-table-card-radius) - 1.2px),
+          var(--_et-table-card-edge) calc(var(--_et-table-card-radius) - 0.8px)
+            calc(var(--_et-table-card-radius) - 0.2px),
+          var(--_et-table-card-outside) calc(var(--_et-table-card-radius) + 0.2px)
+        )
+        0 100% / 100% var(--_et-table-card-radius) no-repeat,
+      linear-gradient(var(--_et-table-card-edge), var(--_et-table-card-edge)) 0 0 / 1px 100% no-repeat;
+  }
+
+  .et-table-host:where([data-appearance='cards']) .et-table-card-corners::after {
+    background:
+      radial-gradient(
+          circle at 0 100%,
+          transparent calc(var(--_et-table-card-radius) - 1.2px),
+          var(--_et-table-card-edge) calc(var(--_et-table-card-radius) - 0.8px)
+            calc(var(--_et-table-card-radius) - 0.2px),
+          var(--_et-table-card-outside) calc(var(--_et-table-card-radius) + 0.2px)
+        )
+        0 0 / 100% var(--_et-table-card-radius) no-repeat,
+      radial-gradient(
+          circle at 0 0,
+          transparent calc(var(--_et-table-card-radius) - 1.2px),
+          var(--_et-table-card-edge) calc(var(--_et-table-card-radius) - 0.8px)
+            calc(var(--_et-table-card-radius) - 0.2px),
+          var(--_et-table-card-outside) calc(var(--_et-table-card-radius) + 0.2px)
+        )
+        0 100% / 100% var(--_et-table-card-radius) no-repeat,
+      linear-gradient(var(--_et-table-card-edge), var(--_et-table-card-edge)) 100% 0 / 1px 100% no-repeat;
+  }
+
+  /* One real anchor per row, stretched over the row box: middle click, Ctrl/Cmd-click, "open in a new
+     tab" and "copy link address" are the browser's again, and the row stays one link in the
+     accessibility tree and one stop in the tab order. It holds no text — the identity cell names it —
+     so nothing about the row's own content changes.
+
+     Three layers inside the row's own stacking context (see `.et-table-row--box`): a pinned cell at 1,
+     so scrolled cells pass behind it; the link at 2, so the whole row takes the click and not just the
+     columns that happen to scroll; and a cell holding its own control at 3, so that control still gets
+     its own clicks. */
+  .et-table-row-link {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    cursor: pointer;
+    border-radius: var(--_et-table-row-corner);
+  }
+
+  /* The row's ring marks the whole row, which is what the link covers. It sits well inside the card so
+     it reads as a ring of its own rather than as a second, doubled card border.
+
+     Drawn on the row's box and not on the link, and that is load-bearing: the link is positioned with a
+     z-index, so it is its own stacking context and an `outline` on it - or any pseudo inside it - paints
+     at the link's own level, which is 2. The utility cells sit at 3 and are opaque where they are
+     pinned, so each one covered whichever end of the ring it held and the ring read as two loose lines
+     with no ends. Here it is a layer of the row box instead, above the cells and above the card's ring
+     at 4. */
+  .et-table-row-link:focus-visible {
+    outline: none;
+  }
+
+  .et-table-row--box:has(.et-table-row-link:focus-visible)::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    z-index: 5;
+    border: 2px solid var(--et-theme-color-primary-solid, currentColor);
+    border-radius: max(0px, calc(var(--_et-table-row-corner, 0px) - 4px));
+    pointer-events: none;
+  }
+
+  /* Cells that hold their own controls stay above the stretched link, so the control keeps the click: the
+     utility cells always, a column that says so with `interactive`, and the one cell in edit mode. */
+  .et-table-row--link
+    :where(.et-table-select-cell, .et-table-expander-cell, .et-table-cell--interactive, .et-table-cell--editing) {
+    z-index: 3;
+  }
+
+  /* `relative` only where the cell is not pinned: it has the same weight as the `sticky` above and comes
+     later, so applying it to a pinned cell unpins it. The utility cells then scroll away with the rows
+     and let scrolled content show through the strip they were holding at the pinned column's edge. */
+  .et-table-row--link
+    :where(.et-table-select-cell, .et-table-expander-cell, .et-table-cell--interactive, .et-table-cell--editing):not(
+      .et-table-sticky-start,
+      .et-table-sticky-end
+    ) {
+    position: relative;
+  }
+}

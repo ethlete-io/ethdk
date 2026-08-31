@@ -1,51 +1,7 @@
 @layer components {
   et-time-range-input {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 2px 8px;
-    flex: 1 1 auto;
-    /* Two `p`-formatted times plus the separator and gaps, in `em` so it tracks the field's size
-       variant. Doubles as the width the control asks a shrink-to-fit parent for - `container-type`
-       leaves it no intrinsic width of its own - so it has to stay an `inline-size`, not a
-       `min-inline-size`, which would stop the fields shrinking below it. */
-    inline-size: 11em;
-    min-inline-size: 0;
+    --et-range-input-stack-threshold: 11em;
     container: et-time-range-input / inline-size;
-    color: inherit;
-
-    .et-time-range-input-field {
-      flex: 1;
-      min-inline-size: 0;
-      border: none;
-      outline: none;
-      background: transparent;
-      font: inherit;
-      color: inherit;
-      padding: 0;
-      caret-color: var(--et-theme-color-primary-solid, currentColor);
-      font-variant-numeric: tabular-nums;
-
-      &::placeholder {
-        color: color-mix(in srgb, currentColor 46%, transparent);
-      }
-
-      &:disabled {
-        cursor: not-allowed;
-      }
-    }
-
-    /* an unresolved bulk-edit range reads as provisional: both fields stay empty and the
-       mixed label shows through their placeholders — stronger than a regular hint (72% vs
-       46%). Consumers restyle via [data-mixed]. */
-    &[data-mixed] .et-time-range-input-field::placeholder {
-      font-style: italic;
-      color: color-mix(in srgb, currentColor 72%, transparent);
-    }
-
-    .et-time-range-input-separator {
-      color: var(--et-surface-color-muted-solid, currentColor);
-    }
 
     /* Too narrow to show both times: one per row, top to bottom, instead of clipping both. The
        separator reads as "between two things on a line" and goes with the line. */

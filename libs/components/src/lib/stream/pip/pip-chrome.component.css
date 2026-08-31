@@ -88,22 +88,6 @@
       var(--et-stream-pip-chrome-featured-ring-color, var(--et-theme-color-primary-solid, #3b82f6));
   }
 
-  et-pip-player {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    container-type: size;
-  }
-
-  et-pip-player > :not(.et-pip-player__thumb-wrapper) {
-    flex: none;
-    display: block !important;
-    width: min(100cqw, 100cqh * var(--et-pip-player-ratio, calc(16 / 9))) !important;
-    height: min(100cqh, 100cqw / var(--et-pip-player-ratio, calc(16 / 9))) !important;
-  }
-
   et-pip-player iframe {
     width: 100% !important;
     height: 100% !important;

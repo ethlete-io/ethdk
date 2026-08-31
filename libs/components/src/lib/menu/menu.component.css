@@ -77,12 +77,6 @@
     initial-value: 12px;
   }
 
-  @property --et-menu-search-height {
-    syntax: '<length>';
-    inherits: false;
-    initial-value: 36px;
-  }
-
   @property --et-menu-scroll-fade-size {
     syntax: '<length>';
     inherits: false;
@@ -178,53 +172,6 @@
 
       &:not(:has(input[etmenusearch])) {
         display: none;
-      }
-
-      .et-menu-search-field {
-        position: relative;
-
-        &:has(.et-menu-search-spinner) input[etmenusearch] {
-          padding-inline-end: calc(var(--et-menu-item-padding-inline) + 22px);
-        }
-      }
-
-      .et-menu-search-spinner {
-        position: absolute;
-        inset-block-start: 50%;
-        inset-inline-end: 10px;
-        translate: 0 -50%;
-        color: var(--_et-menu-muted-color);
-      }
-
-      .et-menu-search-error {
-        margin: 6px 2px 0;
-        font-size: 12px;
-        /* the element carries the error color theme via etProvideColor */
-        color: var(--et-theme-color-primary-solid, rgb(248 113 113));
-      }
-
-      input[etmenusearch] {
-        inline-size: 100%;
-        block-size: var(--et-menu-search-height);
-        padding-inline: var(--et-menu-item-padding-inline);
-        border-radius: var(--et-menu-item-border-radius);
-        border: 1px solid var(--_et-menu-border);
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 6%, transparent);
-        color: inherit;
-        font: inherit;
-        outline: none;
-        box-sizing: border-box;
-        transition:
-          border-color 120ms ease,
-          background 120ms ease;
-
-        &:focus-visible {
-          border-color: var(--et-theme-color-primary-solid, rgb(255 255 255 / 0.3));
-        }
-
-        &::placeholder {
-          color: var(--_et-menu-muted-color);
-        }
       }
     }
 
@@ -341,71 +288,9 @@
     }
   }
 
-  .et-overlay.et-with-default-animation.et-overlay--menu {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      opacity: 0;
-    }
-
-    &.et-animation-enter-active {
-      transition:
-        transform 140ms ease,
-        opacity 140ms ease;
-    }
-
-    &.et-animation-leave-active {
-      transition:
-        transform 100ms ease,
-        opacity 100ms ease;
-    }
-  }
-
-  .et-overlay--menu[data-overlay-placement^='top'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateY(0.3rem) !important;
-    }
-  }
-
-  .et-overlay--menu[data-overlay-placement^='bottom'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
-        translateY(-0.3rem) !important;
-    }
-  }
-
-  .et-overlay--menu[data-overlay-placement^='right'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
-        translateX(-0.3rem) !important;
-    }
-  }
-
-  .et-overlay--menu[data-overlay-placement^='left'] {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateX(0.3rem) !important;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .et-overlay.et-with-default-animation.et-overlay--menu {
-      &.et-animation-enter-active {
-        transition: opacity 140ms ease;
-      }
-
-      &.et-animation-leave-active {
-        transition: opacity 100ms ease;
-      }
-    }
-
-    .et-overlay--menu[data-overlay-placement] {
-      &.et-animation-enter-from,
-      &.et-animation-leave-to {
-        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
-      }
-    }
+  .et-overlay--menu {
+    --et-floating-panel-enter-duration: 140ms;
+    --et-floating-panel-leave-duration: 100ms;
+    --et-floating-panel-distance: 0.3rem;
   }
 }

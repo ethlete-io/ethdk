@@ -20,6 +20,7 @@ import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError, injectHostElement, nextFrame } from '@ethlete/core';
 import { EMPTY, Subscription, catchError, fromEvent, merge, switchMap, take, tap } from 'rxjs';
 import { createTypeahead } from '../../../internals/typeahead';
+import { mountFloatingPanelStyles } from '../../../overlay/floating-panel-styles.component';
 import { anchoredOverlayStrategy, injectBottomSheetStrategy } from '../../../overlay/strategies';
 import {
   AccessibleNameControlDirective,
@@ -333,7 +334,7 @@ export class CascaderDirective<T = unknown>
             strategy: this.bottomSheetStrategy.build({ hasBackdrop: true, containerClass: 'et-cascader-sheet' }),
           },
           ...anchoredOverlayStrategy({
-            containerClass: ['et-overlay--anchored', 'et-overlay--cascader'],
+            containerClass: ['et-overlay--anchored', 'et-overlay--cascader', 'et-floating-panel'],
             placement: 'bottom-start',
             offset: 4,
             viewportPadding: 8,
@@ -421,6 +422,7 @@ export class CascaderDirective<T = unknown>
     super();
 
     mountTextFieldShellStyles();
+    mountFloatingPanelStyles();
 
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));

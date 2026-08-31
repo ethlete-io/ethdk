@@ -1,0 +1,36 @@
+@layer components {
+  @property --et-calendar-week-number-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 28px;
+  }
+
+  .et-calendar {
+    /* a real extra column rather than a zero-width one in every calendar: a 0px track still counts,
+       so the days would land one column short of their own and the first of each row would collapse */
+    &:where([data-week-numbers]) {
+      --_et-calendar-week-column: var(--et-calendar-week-number-size);
+
+      & .et-calendar-weekdays,
+      & .et-calendar-week {
+        grid-template-columns: var(--et-calendar-week-number-size) repeat(7, var(--et-calendar-cell-size));
+      }
+    }
+
+    /* quieter than the days it labels, and set apart by a rule rather than by weight so it cannot be
+       mistaken for a date */
+    .et-calendar-week-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-inline-end: 1px solid var(--et-surface-border-solid);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      color: var(--et-surface-color-subtle-solid);
+    }
+
+    .et-calendar-week-number-heading {
+      border-inline-end: 1px solid var(--et-surface-border-solid);
+    }
+  }
+}

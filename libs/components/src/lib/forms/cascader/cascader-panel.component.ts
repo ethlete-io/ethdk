@@ -16,6 +16,7 @@ import {
   injectObserveBreakpoint,
   injectStyleManager,
 } from '@ethlete/core';
+import { CascaderBreadcrumbStylesComponent } from './cascader-breadcrumb-styles.component';
 import { CascaderSheetStylesComponent } from './cascader-sheet-styles.component';
 import { injectOverlaySurfaceContext } from '../form-field/headless';
 import { CascaderDirective } from './headless';
@@ -73,6 +74,15 @@ export class CascaderPanelComponent {
 
       hasMountedSheetStyles = true;
       this.styleManager.mount(CascaderSheetStylesComponent);
+    });
+
+    let hasMountedBreadcrumbStyles = false;
+
+    effect(() => {
+      if (hasMountedBreadcrumbStyles || !this.cascader?.breadcrumbPath().length) return;
+
+      hasMountedBreadcrumbStyles = true;
+      this.styleManager.mount(CascaderBreadcrumbStylesComponent);
     });
 
     // this panel IS the overlay's own surface - paint the overlay's registered elevation exactly,

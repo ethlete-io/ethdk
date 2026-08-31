@@ -75,6 +75,7 @@ export class OverlayContainerComponent {
   public componentBindings = input<Binding[] | undefined>(undefined);
 
   public renderArrow = input(false, { transform: booleanAttribute });
+  public renderDragHandle = input(false, { transform: booleanAttribute });
 
   private contentOutlet = viewChild.required('contentOutlet', { read: ViewContainerRef });
   public animatedLifecycle = signal(inject(ANIMATED_LIFECYCLE_TOKEN));

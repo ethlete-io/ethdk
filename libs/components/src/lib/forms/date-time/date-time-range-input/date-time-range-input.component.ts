@@ -23,7 +23,7 @@ const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
 @Component({
   selector: 'et-date-time-range-input',
   templateUrl: './date-time-range-input.component.html',
-  styleUrl: './date-time-range-input.component.css',
+  styleUrls: ['../range-input-shell.css', './date-time-range-input.component.css'],
   encapsulation: ViewEncapsulation.None,
   imports: [
     ControlSuffixDirective,

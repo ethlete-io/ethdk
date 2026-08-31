@@ -1,0 +1,40 @@
+@layer components {
+  .et-calendar {
+    /* the month and year grids span the same width as the day grid, so drilling never resizes the
+       calendar sideways; one day cell tall, like every other row in this component - the month grid
+       is three of them and the year grid six */
+    .et-calendar-coarse-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      inline-size: calc(var(--et-calendar-cell-size) * 7 + var(--_et-calendar-week-column));
+      block-size: var(--et-calendar-cell-size);
+    }
+
+    /* both have a fixed row count, so where the picker reserves the day grid's taller box they sit
+       centred in it instead of leaving the whole remainder at the bottom */
+    &:where([data-view='year'], [data-view='multiYear']) .et-calendar-weeks-viewport {
+      align-content: center;
+    }
+
+    /* A month or a year cell. Every state above it applies unchanged — that is the point of the coarse
+       cells carrying the same flags — so this only resizes: the cell fills its column, and its label is
+       a word rather than a digit or two, which the day grid's circle cannot hold. After the base rules,
+       because it overrides them at the same weight. */
+    .et-calendar-cell--coarse {
+      block-size: 100%;
+
+      .et-calendar-cell-content {
+        inline-size: calc(100% - 6px);
+        block-size: calc(var(--et-calendar-cell-size) - 6px);
+        padding-inline: 4px;
+        border-radius: 999px;
+      }
+
+      /* the range band is a ribbon behind the pills, so it takes their height rather than the row's —
+         a month-precision range bands month cells the same way a day range bands days */
+      &::before {
+        inset-block: 3px;
+      }
+    }
+  }
+}
