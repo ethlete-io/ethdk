@@ -2,7 +2,14 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
 import { ColorInteractiveDirective, injectLocale } from '@ethlete/core';
 import { IconDirective, TIMES_ICON, provideIcons } from '../../icon';
-import { SELECT_IMPORTS } from '../select';
+import {
+  SelectDirective,
+  SelectOptionComponent,
+  SelectPanelComponent,
+  SelectSearchDirective,
+  SelectSurfaceDirective,
+  SelectTriggerDirective,
+} from '../select';
 import {
   PHONE_COUNTRIES,
   PhoneInputDirective,
@@ -24,7 +31,12 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
   imports: [
     ControlSuffixDirective,
     FormFieldBarrierDirective,
-    ...SELECT_IMPORTS,
+    SelectDirective,
+    SelectTriggerDirective,
+    SelectSurfaceDirective,
+    SelectPanelComponent,
+    SelectOptionComponent,
+    SelectSearchDirective,
     PhoneInputFieldDirective,
     NgTemplateOutlet,
     IconDirective,
