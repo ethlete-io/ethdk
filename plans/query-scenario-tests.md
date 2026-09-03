@@ -1,0 +1,252 @@
+# Query scenario tests
+
+Status: in progress (started 2026-09-03). Delete this file when the harness and the first
+scenario suites are merged and the `query-scenario-tests` skill documents them.
+
+## Why
+
+The `libs/query` unit specs mock internals (`as unknown as AnyBearerAuthProvider`, hand-made
+signals, `HttpTestingController.expectOne`). They pass while the real system races, leaks or gets
+stuck. The scan in `plans/query-lib-scan.md` (2026-08-19) found 9 high bugs; none had a spec. Two
+themes recur: test doubles that mirror the bug, and "running" flags with no `finally`.
+
+A scenario test boots the **real** system through its **public API only** - the same imports a
+consumer app uses - against a stateful fake backend and a deterministic clock. Internals may be
+refactored freely; the scenario suite still tells the truth.
+
+## Layout
+
+```
+libs/query/src/scenarios/
+  harness/
+    fake-api.ts          # stateful HttpBackend replacement
+    fake-api.spec.ts     # the harness has its own small spec
+    tokens.ts            # unsigned JWT minting for auth scenarios
+    scenario.ts          # createScenario / useScenario, tick, flush, consumers
+    invariants.ts        # the checks scenario.destroy() runs
+    index.ts
+  queries.scenario.spec.ts
+  caching.scenario.spec.ts
+  features.scenario.spec.ts        # polling, auto refresh, response update, handlers
+  stacks.scenario.spec.ts          # stacks, paged stacks, batch, sequence
+  errors.scenario.spec.ts          # error parsing, retry policy, html/symfony/ethlete parsers
+  auth.scenario.spec.ts            # login, refresh, logout, races, secure queries
+  gql.scenario.spec.ts
+  persistence.scenario.spec.ts
+  multi-tab.scenario.spec.ts
+  ws.scenario.spec.ts
+  query-forms.scenario.spec.ts
+```
+
+`src/**/*.spec.ts` is already in `tsconfig.spec.json` and the vitest include; `tsconfig.lib.json`
+excludes it from the build. No config change is needed.
+
+Scenario specs import from `@ethlete/query` (and `@ethlete/query/testing` for the multi-tab,
+persistence and websocket fakes that already exist). They never import from `../lib/...`.
+
+## Harness contract
+
+### `createFakeApi(config)` - `harness/fake-api.ts`
+
+An Angular `HttpBackend` (provided with `{ provide: HttpBackend, useValue: api.backend }`) that
+behaves like a small server.
+
+```ts
+const api = createFakeApi({ baseUrl: 'https://api.test' });
+
+api.on('GET', '/users/:id', ({ params, query, headers, body }) => ({ body: { id: params.id } }));
+api.on('POST', '/users', () => ({ status: 201, body: { id: '9' } }));
+api.on('GET', '/slow', () => ({ body: [], delay: 500 }));
+api.on('GET', '/broken', () => ({ status: 500, body: { message: 'boom' } }));
+api.on('GET', '/flaky', sequence([{ status: 503 }, { status: 503 }, { body: 'ok' }]));
+api.once('GET', '/users/1', () => ({ status: 404 })); // consumed by the next matching request only
+api.protect('/secure/**'); // 401 unless a valid, unexpired bearer token is sent
+api.protect('/admin/**', (token) => token.claims.role === 'admin');
+
+api.requests; // ordered log: { method, url, path, params, query, headers, body, at, status, aborted }
+api.requestCount('GET', '/users/1');
+api.pending(); // in-flight requests (delivered on the next tick)
+api.reset(); // routes, log and one-shots
+```
+
+Rules:
+
+- A handler may return a response object `{ status?, body?, headers?, delay? }` or throw an
+  `HttpErrorResponse`. Status >= 400 becomes an `HttpErrorResponse`, like the real backend.
+- Every response is delivered asynchronously through a `setTimeout(delay ?? 0)` on the **bare
+  global** (never `window.setTimeout`, see `vitest-window-timers-not-faked` in memory). Under
+  fake timers nothing lands until the test ticks. This makes request ordering explicit.
+- Unsubscribing before delivery marks the log entry `aborted: true` and removes it from `pending()`.
+- An unmatched request fails the test immediately with the method, url and the list of routes.
+- Route patterns: `:param` segments, `*` one segment, `**` rest. Matching ignores `baseUrl`.
+- `protect()` reads `Authorization: Bearer <jwt>`, decodes the payload with `tokens.ts`, and
+  answers `401 { message: 'unauthorized' }` when the header is missing, the token is malformed,
+  `exp` is in the past (fake `Date.now()`), or the optional predicate returns false.
+- Optional: `api.on(...)` returning `{ progress: [25, 50, 100] }` emits upload/download progress
+  events before the response. Only implement when a scenario needs it.
+
+### `tokens.ts`
+
+`mintToken({ expiresInMs, claims? })` builds an unsigned JWT (`header.payload.` with base64url,
+empty signature) with `iat`/`exp` derived from `Date.now()`. `decodeToken(jwt)` returns the
+claims or `null`. The auth provider only reads the payload, so no signature is required.
+
+### `createScenario(config)` / `useScenario(config)` - `harness/scenario.ts`
+
+```ts
+const scenario = useScenario({
+  clientOptions: { keepUnusedFor: 0 }, // merged into createQueryClient({ name, baseUrl, ... })
+  clientFeatures: [withDefaultRetry()], // createQueryClient features
+  providers: [], // extra TestBed providers
+});
+
+it('dedupes identical requests', () => {
+  const s = scenario();
+  s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params.id } }));
+
+  const getUser = s.get<{ response: User; pathParams: { id: string } }>((p) => `/users/${p.id}`);
+
+  const a = s.consumer(); // a fake component: its own injector + DestroyRef
+  const b = s.consumer();
+  const q1 = a.run(() => getUser(withArgs(() => ({ pathParams: { id: '1' } }))));
+  const q2 = b.run(() => getUser(withArgs(() => ({ pathParams: { id: '1' } }))));
+
+  s.tick(); // deliver
+  expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+  expect(q1.response()).toEqual(q2.response());
+
+  a.destroy();
+  b.destroy();
+});
+```
+
+- `useScenario` registers `beforeEach` (fresh TestBed, fake timers, new client + api) and
+  `afterEach` (`scenario.destroy()`, which runs the invariants). It returns a getter.
+- `createScenario` is the same without hook registration, for tests that need two clients
+  (multi-tab) or a custom lifecycle. Those tests call `destroy()` themselves.
+- Fake timers: `vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] })`.
+  Do **not** fake `queueMicrotask` (the multi-tab fakes deliver on it).
+- `s.tick(ms = 0)`: advance timers by `ms`, then `TestBed.tick()` (effects run). Because RxJS
+  and the client schedule on microtasks between timers, `tick` must call
+  `vi.advanceTimersByTime(ms)`, then `await`-free microtask draining via `vi.runAllTicks()` when
+  available, then `TestBed.tick()`. Make `tick` synchronous if possible; if a scenario needs
+  promise resolution (persistence), provide `await s.settle(ms)` which also awaits
+  `Promise.resolve()` a few times.
+- `s.flush(maxMs = 60_000)`: tick in steps until `api.pending() === 0` and the timer count is
+  stable. Throws if it never settles.
+- `s.consumer()`: creates a child `EnvironmentInjector` (`createEnvironmentInjector([], s.injector)`)
+  and returns `{ injector, destroyRef, run(fn), destroy() }`. Queries created in `run` bind to
+  that consumer. `destroy()` destroys the child injector and marks the consumer destroyed so the
+  invariants can count it.
+- `s.run(fn)`: `TestBed.runInInjectionContext(fn)` on the root injector.
+- `s.errors`: every error the Angular `ErrorHandler` received, plus every `console.error` call.
+  `s.expectError(matcher)` removes the first matching entry so the invariant passes.
+- Auth helper `s.auth(config)`: builds a `createBearerAuthProvider` over the scenario client with
+  login + refresh queries pointing at `api` routes (`POST /auth/login`, `POST /auth/refresh`)
+  that issue tokens through `mintToken`. Accepts the same feature builders and refresh options a
+  consumer would pass. Returns the injected provider. Adapt the shape of
+  `libs/query/testing/auth-test-utils.ts`, but issue real (unsigned) tokens and go through `api`.
+
+### `invariants.ts`
+
+`scenario.destroy()` destroys every live consumer, destroys the TestBed injector, then asserts:
+
+1. `api.pending() === 0` - a destroyed client leaves no request in flight (or aborted them).
+2. `vi.getTimerCount() === 0` - no timer leaked (poll ticks, eviction timers, refresh timers).
+3. `client.repository.subtle.cacheEntries().length === 0` - the repository released every entry.
+4. `s.errors` is empty - no unexpected `ErrorHandler` or `console.error` call.
+
+Failures name the invariant and dump the relevant state (pending requests, remaining cache keys,
+error messages). A test can opt out of one invariant with a reason:
+`s.allow('timers', 'withPolling keeps the interval until the consumer is destroyed - tracked in #123')`.
+Every opt-out is a smell; the skill says so.
+
+## Phase B - the scenario suites
+
+One agent per file. Each agent writes 5-10 scenarios that read like a consumer story and
+assert observable behavior: signal values, request log, timing. Every high finding in
+`plans/query-lib-scan.md` that is still reproducible gets a scenario. When a scenario fails
+against the current code:
+
+- do **not** change `libs/query/src/lib`;
+- keep the scenario, wrap it in `it.fails(...)` with a one-line reason that names the scan
+  finding, and report it in the final summary.
+
+The coordinator decides whether the bug is fixed in this change or filed.
+
+## Running
+
+```bash
+npx vitest run --config vitest.projects.ts --project query libs/query/src/scenarios            # all scenarios
+npx vitest run --config vitest.projects.ts --project query libs/query/src/scenarios/auth       # one file
+```
+
+Agents scope their runs to their own file. The coordinator runs the full `query` project once.
+
+## Findings (from the suite agents, 2026-09-03)
+
+- `features`: 7 pass, 1 `it.fails`. `withPolling` schedules on `window.setInterval`
+  (`libs/query/src/lib/http/query-features.ts:230`); fake timers never fire it. Fix: bare `setInterval`.
+- `features`: scan finding http #2 (poll tick closure leak) was fixed in `56e301f6e`; no regression
+  scenario written yet - the `caching` suite's duplicate-unbind scenario should cover the neighbor.
+- `caching`: 10 pass, no `it.fails`, no opt-outs. Scan http #2/#3 (eviction timer, onDestroy) confirmed
+  fixed and now covered by regression scenarios 4 and 5. Note: a rebind inside `keepUnusedFor` shows
+  the cached response synchronously and then revalidates in the background (one request) - that is the
+  documented behavior, not "zero requests".
+- `stacks`: 9 pass, no `it.fails`, no opt-outs. Scan theme 2 (batch/sequence stuck running flags)
+  confirmed fixed in `56e301f6e`, now covered by regression scenarios 6 and 8. Harness gap: `s.tick`
+  is synchronous, so promise-based APIs (`querySequence.run()`) need an async settle loop; the suite
+  has a local `settleUntil()`. Consider promoting it into `harness/scenario.ts`.
+- `errors`: 10 pass, no `it.fails`, no opt-outs. Harness gaps: `fake-api` cannot answer a status-0
+  network error (error branch is `status >= 400`) - add a `networkError()` response helper;
+  `registerQueryErrorParser`/`setDefaultQueryRetryFn` are process-wide singletons that never reset
+  between tests, so suite order matters - consider a reset hook in `scenario.destroy()`; a timer
+  created exactly at an `advanceTimersByTime` boundary needs one more 1 ms tick.
+- `auth`: 8 pass, 1 `it.fails`. NEW BUG (not in the scan): after a 401 with `autoRetryOn401`, the
+  refresh succeeds and `afterTokenRefresh$` emits, but the secure query never re-fires; it stays
+  failed with the stale 401. Look at `tokenRefreshSubscription` in
+  `libs/query/src/lib/http/secure-query-execute-factory.ts`. Scan auth #1 (logout during in-flight
+  refresh) is fixed and now covered. `s.auth()` now also returns `ref` (the provider definition) for
+  `createSecure*Query`. Harness change by the coordinator: `destroy()` now resets the TestBed before
+  the invariants run, so root-provider timers and cache entries no longer count as leaks. TODO: remove
+  the `ROOT_PROVIDER_TEARDOWN_GAP` opt-outs from `auth.scenario.spec.ts`; they are not needed anymore.
+- `auth`: the `ROOT_PROVIDER_TEARDOWN_GAP` opt-outs are removed; 8 pass + 1 `it.fails` with no `allow`.
+- `gql`: 11 pass, no `it.fails`. All four scan findings (secure verb, shared args mutation,
+  `operationName` regex, divergent `transformResponse`) were fixed in `56e301f6e`; the suite now
+  guards them. A 200 response without `data` throws on `response()` read, per the docs.
+- `ws`: 8 pass, no `it.fails`. Both scan findings (destroy hook leaves the wrong room) were fixed in
+  `56e301f6e` and are covered. The docs name no client-side reconnect backoff, so the reconnect
+  scenario drives the test double directly. Local `createSocket(s)` helper builds a
+  `createWebSocketTestDouble` + `createWebSocketClient` pair per test.
+- `persistence`: 8 pass, 2 `it.fails`. (1) Scan finding "an existing cache entry ignores the second
+  consumer's configuration": `query-repository.ts:732` ANDs `isPersistEnabled` across consumers, so a
+  sibling that opted out turns persistence off for the one that opted in. (2) NEW BUG: the auth
+  provider's login/refresh mutations set `subtle.useQueryRepositoryCache`, which makes them eligible
+  for persistence; a plain `login()` lands in the store, against the docs ("Mutations are never
+  persisted"). The authenticated-responses scenario filters `/auth/*` to stay on topic. Harness note:
+  the persistence engine reads the adapter synchronously while the client is built, so the store is
+  created in a `beforeEach` registered before `useScenario`, and referenced lazily
+  (`adapter: () => store.adapter`).
+- `features`: correction. `withPolling` does fire under the fake clock (`window === globalThis` in the
+  vitest jsdom environment, so `window.setInterval` is faked too). The scenario is a plain `it` now; the
+  suite has 8 pass, no `it.fails`. A destroyed query leaves the 100 ms circular-dependency guard timer
+  from `query-execute-utils.ts` until it expires on its own; it is not a leak and no poll survives destroy.
+- `multi-tab`: 9 pass, no `it.fails`, no opt-outs. Second tab = `createQueryClient()` installed with
+  `ref.provide()` in a child injector of the scenario injector, `keepUnusedFor: 0`. Covers response
+  sharing, shared freshness, `multiTabSync: false` opt-out, mutation refresh of the other tab only,
+  `invalidateQueries` with and without `otherTabs`, a structured-clone failure on broadcast, one poller per
+  key, and channel/lock teardown.
+- `query-forms`: 12 pass, 2 `it.fails`. (1) NEW BUG: the documented filter-overlay flow
+  `qf.setValue(draft.value())` loses a child field. `resolveResets` in `query-form-signals.ts` resets every
+  `isResetBy` child of a changed parent, including a child the same commit set (`country: us, league: mls`
+  commits as `league: null`). `skipResets: true` keeps it. Either the reset should skip a child that
+  itself changed in the commit, or the docs must pass `skipResets`. The URL-navigation path is not
+  affected. (2) Harness artifact: `@ethlete/core` `equal()` compares Dates by constructor identity, and
+  under a faked `Date` an instance carries the native constructor while the global is the fake, so two
+  different Dates compare equal and a `Date` field never commits. Hardening `equal()` with
+  `Object.prototype.toString` would fix it. All earlier scan findings (`appendDefaultValueToUrl` on
+  observe, Sort normalization, `?ids=5`, destroy-time param wipe, lazy function defaults) are fixed and
+  covered. Harness change by the coordinator: `settle()` drains 20 microtask turns instead of 5; a
+  `router.navigate` queued from a microtask needs more than 5.
+- Not covered: the `createBranch` field-tree leak. The four invariants do not observe Angular effect or
+  injector retention, so no honest failing assertion exists yet.
