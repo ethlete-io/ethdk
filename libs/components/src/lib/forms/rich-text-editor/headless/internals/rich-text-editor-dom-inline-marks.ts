@@ -311,11 +311,6 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
     }
   };
 
-  // wrapInline's surroundContents fallback uses Range.extractContents(), which - per spec -
-  // leaves the original ancestor element in place (now empty) whenever the range's boundary
-  // fully consumes that ancestor's content, since only a clone of it travels into the extracted
-  // fragment. That empty shell can be of any of the inline tags, not just the one being
-  // toggled (e.g. italicizing text that starts inside a <strong> can strand an empty <strong>).
   const pruneEmptyInline = () => {
     const el = root();
 

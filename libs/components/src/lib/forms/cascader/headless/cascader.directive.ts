@@ -1303,8 +1303,6 @@ export class CascaderDirective<T = unknown>
     ]);
   }
 
-  // levels load concurrently and answer in whatever order the source gives, so a write must
-  // leave the tail alone - only a real navigation truncates, through `truncateColumns`
   private setColumn(columnIndex: number, state: CascaderColumnState<T>) {
     this.columns.update((columns) => {
       const next = [...columns];

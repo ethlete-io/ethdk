@@ -23,7 +23,6 @@ import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 })
 class TestControlComponent {}
 
-/** The phone input's shape: the control registers outside the barrier, the suffix template inside. */
 @Component({
   selector: 'et-test-barriered-control',
   template: `

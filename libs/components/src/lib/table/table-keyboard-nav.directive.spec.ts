@@ -175,10 +175,6 @@ describe('TableKeyboardNavDirective', () => {
     });
   });
 
-  // Enter itself resolves the cell's focusable content through `getFocusableElements`, which filters on
-  // `getClientRects()` - always empty in jsdom, so the drill-*in* step is verified in a real browser
-  // (`components-data-display-table--keyboard-navigation`). What is asserted here is the state it leads
-  // to: with focus inside a cell, the keys belong to the control and Escape is the way back out.
   describe('while drilled into a cell', () => {
     const drilledIn = () => {
       const fixture = create();
