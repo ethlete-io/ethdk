@@ -1,9 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component, Injector, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { form, FormField, required } from '@angular/forms/signals';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import '../../../test-helpers';
 import { CHECKBOX_IMPORTS } from '../checkbox/checkbox.imports';
 import { FORM_FIELD_CONTROL_TYPES } from '../form-field/headless';
+import { warn } from '../form-field/headless/field-warnings';
 import { SelectionCardControlPosition } from '../selection-card.types';
 import { mountChoiceField } from '../testing/choice-field-driver';
 import { ChoiceFieldVariant } from './choice-field.component';
@@ -44,6 +47,29 @@ class ChoiceFieldTestHost {
   variant = signal<ChoiceFieldVariant>('plain');
   controlPosition = signal<SelectionCardControlPosition>('end');
   size = signal<'sm' | 'md' | 'lg'>('md');
+}
+
+@Component({
+  template: `
+    <et-choice-field>
+      <et-checkbox [formField]="choiceForm.acceptTerms" />
+      <et-label>Accept terms</et-label>
+      <et-hint>Optional</et-hint>
+    </et-choice-field>
+  `,
+  imports: [...CHOICE_FIELD_IMPORTS, ...CHECKBOX_IMPORTS, FormField],
+})
+class ChoiceFieldSupportTestHost {
+  public model = signal({ acceptTerms: false });
+
+  public choiceForm = form(
+    this.model,
+    (schema) => {
+      required(schema.acceptTerms, { message: 'You must accept the terms' });
+      warn(schema.acceptTerms, ({ value }) => (value() ? null : 'Please review the terms'));
+    },
+    { injector: TestBed.inject(Injector) },
+  );
 }
 
 describe('ChoiceFieldComponent', () => {
@@ -94,5 +120,33 @@ describe('ChoiceFieldComponent', () => {
 
     expect(driver.controlSlot().querySelector('et-checkbox')).not.toBeNull();
     expect(driver.labelArea().textContent?.trim()).toBe('Accept terms');
+  });
+
+  it('renders support transitions in severity order', () => {
+    const driver = mountChoiceField(ChoiceFieldSupportTestHost);
+
+    const warning = () => driver.query('.et-choice-field-warnings');
+    const hint = () => driver.query('.et-choice-field-hint');
+    const error = () => driver.query('.et-choice-field-errors');
+
+    expect(warning()?.getAttribute('data-direction')).toBe('from-below');
+    expect(warning()?.getAttribute('data-state')).toBe('active');
+
+    driver.host.model.set({ acceptTerms: true });
+    driver.detectChanges();
+
+    expect(hint()?.getAttribute('data-direction')).toBe('from-above');
+    expect(hint()?.getAttribute('data-state')).toBe('active');
+    expect(warning()?.getAttribute('data-direction')).toBe('to-below');
+    expect(warning()?.getAttribute('data-state')).toBe('leaving');
+
+    driver.host.model.set({ acceptTerms: false });
+    driver.host.choiceForm.acceptTerms().markAsTouched();
+    driver.detectChanges();
+
+    expect(error()?.getAttribute('data-direction')).toBe('from-below');
+    expect(error()?.getAttribute('data-state')).toBe('active');
+    expect(hint()?.getAttribute('data-direction')).toBe('to-above');
+    expect(hint()?.getAttribute('data-state')).toBe('leaving');
   });
 });

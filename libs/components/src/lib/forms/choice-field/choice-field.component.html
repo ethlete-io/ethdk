@@ -29,6 +29,8 @@
           [attr.aria-hidden]="!support.errorActive() ? 'true' : null"
           [attr.aria-live]="support.errorActive() ? 'polite' : null"
           [attr.data-active]="support.errorActive() || null"
+          [attr.data-direction]="support.errorDirection()"
+          [attr.data-state]="support.errorState()"
           [etProvideColor]="support.errorColorTheme"
           class="et-choice-field-support-content et-choice-field-errors"
           etAnimatable
@@ -48,6 +50,8 @@
           [attr.aria-hidden]="!support.warningActive() ? 'true' : null"
           [attr.aria-live]="support.warningActive() ? 'polite' : null"
           [attr.data-active]="support.warningActive() || null"
+          [attr.data-direction]="support.warningDirection()"
+          [attr.data-state]="support.warningState()"
           [etProvideColor]="support.warningColorTheme()"
           class="et-choice-field-support-content et-choice-field-warnings"
           etAnimatable
@@ -65,6 +69,8 @@
           [id]="support.formFieldDir.hintId()"
           [attr.aria-hidden]="!support.hintActive() ? 'true' : null"
           [attr.data-active]="support.hintActive() || null"
+          [attr.data-direction]="support.hintDirection()"
+          [attr.data-state]="support.hintState()"
           class="et-choice-field-support-content et-choice-field-hint"
           etAnimatable
         >

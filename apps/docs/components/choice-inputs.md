@@ -57,6 +57,8 @@ Boolean controls pair with a label inside `et-choice-field` (instead of
   toggled - distinct from the dimmed `disabled` state.
 - `et-choice-field` accepts `size: 'sm' | 'md' | 'lg'` (default `'md'`), scaling
   the control and label together.
+- When validation changes between a hint, warning, and error, the support message
+  moves in severity order; reduced-motion preferences collapse that transition.
 
 ## Selection lists
 
@@ -317,7 +319,8 @@ an `aria-valuetext` like `3.5 of 5`.
 The default stars fill as **one continuous motion** - a single clipped overlay
 row sweeps across the icons with the theme's primary color. Custom icons via an
 `ng-template[etRatingIcon]` (context: the state `'full' | 'half' | 'empty'` and
-the 1-based `index`) render per-step instead and don't take part in the sweep.
+the 1-based `index`) render per-step instead and don't take part in the sweep. A rating accepts one
+custom icon template; a second throws [`ET5000`](/components/error-codes#rating-et50xx) in dev mode.
 Tokens: `--et-rating-icon-size` (`24px`), `--et-rating-gap` (`4px`).
 
 ## Bulk editing
