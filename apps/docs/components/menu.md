@@ -1,6 +1,6 @@
 # Menu
 
-Accessible dropdown, context and submenu system built on the [overlay system](/components/overlays). Full keyboard navigation, typeahead, hover-open submenus, radio/checkbox selection and built-in search - import `MENU_IMPORTS` and compose.
+Accessible dropdown, context and submenu system built on the [overlay system](/components/overlays). Full keyboard navigation, typeahead, hover-open submenus and radio/checkbox selection ship in `MENU_IMPORTS`; search is an opt-in `MENU_SEARCH_IMPORTS` add-on.
 
 ## Anatomy
 
@@ -32,7 +32,7 @@ Three structural pieces: an `[etMenu]` host, a trigger inside it, and an `ng-tem
 ```
 
 ```ts
-import { MENU_IMPORTS } from '@ethlete/components';
+import { MENU_IMPORTS, MENU_SEARCH_IMPORTS } from '@ethlete/components';
 ```
 
 ## Live demo
@@ -107,7 +107,7 @@ Groups and standalone items carry the usual signal-forms surface alongside `[(va
 
 ## Search
 
-`input[etMenuSearch]` placed as the first child of `<et-menu>` renders into the menu's header. It surfaces the query - filtering the items is your job:
+`input[etMenuSearch]` placed as the first child of `<et-menu>` renders into the menu's header. Add `MENU_SEARCH_IMPORTS` beside `MENU_IMPORTS`; it also supplies the search loading indicator and custom scrollbar. It surfaces the query - filtering the items is your job:
 
 ```html
 <et-menu>

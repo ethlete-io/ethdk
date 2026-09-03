@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../../button';
-import { MENU_IMPORTS } from '../../menu.imports';
+import { MENU_IMPORTS, MENU_SEARCH_IMPORTS } from '../../menu.imports';
 
 const PLAYERS = ['Alice Anderson', 'Bob Brown', 'Charlie Clark', 'Dana Davis', 'Erin Evans', 'Frank Fisher'];
 
@@ -31,7 +31,7 @@ const PLAYERS = ['Alice Anderson', 'Bob Brown', 'Charlie Clark', 'Dana Davis', '
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [...MENU_IMPORTS, ...BUTTON_IMPORTS],
+  imports: [...MENU_IMPORTS, ...MENU_SEARCH_IMPORTS, ...BUTTON_IMPORTS],
   styles: `
     .et-sb-menu-page {
       display: grid;

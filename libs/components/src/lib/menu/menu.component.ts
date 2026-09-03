@@ -1,4 +1,13 @@
-import { Component, ElementRef, ViewEncapsulation, computed, effect, inject, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  ViewContainerRef,
+  ViewEncapsulation,
+  computed,
+  effect,
+  inject,
+  viewChild,
+} from '@angular/core';
 import {
   AutoSurfaceDirective,
   COLOR_PROVIDER,
@@ -6,10 +15,7 @@ import {
   createComponentId,
   injectAnimatedBlockSize,
   injectErrorTheme,
-  signalDeferredLoading,
 } from '@ethlete/core';
-import { SpinnerComponent } from '../loader';
-import { ScrollbarComponent } from '../scrollbar';
 import { MenuDirective, MenuPanelDirective } from './headless';
 
 const RESIZE_ANIMATION_CLASS = 'et-menu--resizing';
@@ -19,7 +25,7 @@ const RESIZE_ANIMATION_CLASS = 'et-menu--resizing';
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [ProvideColorDirective, SpinnerComponent, ScrollbarComponent],
+  imports: [ProvideColorDirective],
   hostDirectives: [MenuPanelDirective, ProvideColorDirective, AutoSurfaceDirective],
   host: {
     class: 'et-menu',
@@ -34,16 +40,12 @@ export class MenuComponent {
   // both must stay content-sized: the host's used size is overridden by the resize animation and
   // the scroller is sized by the host, so observing either would feed the animation back in
   private headerElement = viewChild<ElementRef<HTMLElement>>('menuHeader');
+  private bodyElement = viewChild<ElementRef<HTMLElement>>('menuBody');
   private bodyContentElement = viewChild<ElementRef<HTMLElement>>('menuBodyContent');
+  private searchChrome = viewChild('menuSearchChrome', { read: ViewContainerRef });
+  private scrollbarChrome = viewChild('menuScrollbarChrome', { read: ViewContainerRef });
 
   public search = computed(() => this.menu?.registeredSearch() ?? null);
-  private searchLoading = computed(() => this.search()?.loading() ?? false);
-
-  /**
-   * The spinner (and the room the input gives it) follows the search late: a query that answers
-   * within a keystroke or two would otherwise flash it, and the input's text would shift for it.
-   */
-  protected showSearchSpinner = signalDeferredLoading(this.searchLoading);
   protected searchError = computed(() => this.search()?.error() ?? null);
   protected searchErrorId = createComponentId('et-menu-search-error');
 
@@ -64,6 +66,29 @@ export class MenuComponent {
     // lets the search input reference the error line rendered below it via aria-describedby
     effect(() => {
       this.search()?.errorElementId.set(this.searchErrorId);
+    });
+
+    effect((onCleanup) => {
+      const search = this.search();
+      const target = this.bodyElement()?.nativeElement;
+      const searchChrome = this.searchChrome();
+      const scrollbarChrome = this.scrollbarChrome();
+
+      if (!search || !target || !searchChrome || !scrollbarChrome) {
+        return;
+      }
+
+      const chrome = search.getChrome();
+      const spinner = searchChrome.createComponent(chrome.spinner);
+      spinner.setInput('search', search);
+
+      const scrollbar = scrollbarChrome.createComponent(chrome.scrollbar);
+      scrollbar.setInput('target', target);
+
+      onCleanup(() => {
+        spinner.destroy();
+        scrollbar.destroy();
+      });
     });
 
     // animate the menu's block size when its content changes while open

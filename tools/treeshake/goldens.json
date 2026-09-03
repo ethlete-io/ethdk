@@ -149,7 +149,7 @@
     },
     "menu-anchored-deps": {
       "entry": "import { MENU_IMPORTS } from '@ethlete/components';\nconsole.log(MENU_IMPORTS);",
-      "gzip": 47372,
+      "gzip": 41140,
       "thirdParty": true
     },
     "contentful-deps": {

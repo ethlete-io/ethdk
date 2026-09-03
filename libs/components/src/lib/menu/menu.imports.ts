@@ -3,12 +3,12 @@ import {
   MenuDirective,
   MenuItemDirective,
   MenuPanelDirective,
-  MenuSearchDirective,
   MenuSelectionGroupDirective,
   MenuSelectionItemDirective,
   MenuSurfaceDirective,
   MenuTriggerDirective,
 } from './headless';
+import { MenuSearchDirective } from './headless/menu-search.directive';
 import { MenuCheckboxGroupComponent } from './menu-checkbox-group.component';
 import { MenuCheckboxItemComponent } from './menu-checkbox-item.component';
 import { MenuGroupLabelComponent } from './menu-group-label.component';
@@ -26,7 +26,6 @@ export const MENU_IMPORTS = [
   MenuSurfaceDirective,
   MenuPanelDirective,
   MenuItemDirective,
-  MenuSearchDirective,
   MenuSelectionGroupDirective,
   MenuSelectionItemDirective,
   MenuComponent,
@@ -39,3 +38,6 @@ export const MENU_IMPORTS = [
   MenuCheckboxGroupComponent,
   MenuCheckboxItemComponent,
 ] as const;
+
+/** Search input, loading indicator and custom scrollbar chrome for a menu. */
+export const MENU_SEARCH_IMPORTS = [MenuSearchDirective] as const;

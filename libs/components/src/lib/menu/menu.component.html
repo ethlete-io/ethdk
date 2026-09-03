@@ -1,10 +1,7 @@
 <div #menuHeader class="et-menu-header">
   <div class="et-menu-search-field">
     <ng-content select="input[etMenuSearch]" />
-
-    @if (showSearchSpinner()) {
-      <et-spinner class="et-menu-search-spinner" diameter="16" />
-    }
+    <ng-container #menuSearchChrome />
   </div>
 
   @if (searchError(); as error) {
@@ -21,5 +18,5 @@
     </div>
   </div>
 
-  <et-scrollbar [for]="menuBody" autoHide />
+  <ng-container #menuScrollbarChrome />
 </div>

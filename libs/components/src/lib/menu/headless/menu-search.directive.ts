@@ -11,8 +11,11 @@ import {
   signal,
 } from '@angular/core';
 import { RuntimeError, injectStyleManager } from '@ethlete/core';
+import type { MenuSearchChrome } from '../menu-chrome';
 import { MENU_ERROR_CODES } from '../menu-errors';
 import { MenuSearchStylesComponent } from '../menu-search-styles.component';
+import { MenuSearchSpinnerComponent } from '../menu-search-spinner.component';
+import { MenuScrollbarComponent } from '../menu-scrollbar.component';
 import { MenuDirective } from './menu.directive';
 
 @Directive({
@@ -104,6 +107,14 @@ export class MenuSearchDirective {
 
     element.value = '';
     this.query.set('');
+  }
+
+  /** @internal */
+  public getChrome(): MenuSearchChrome {
+    return {
+      scrollbar: MenuScrollbarComponent,
+      spinner: MenuSearchSpinnerComponent,
+    };
   }
 
   protected handleInput() {

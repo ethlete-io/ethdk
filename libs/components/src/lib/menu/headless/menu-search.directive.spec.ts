@@ -1,12 +1,11 @@
 import { ApplicationRef, Component, computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideColorThemes } from '@ethlete/core';
 import '../../../test-helpers';
-import { MenuItemDirective } from './menu-item.directive';
-import { MenuPanelDirective } from './menu-panel.directive';
+import { MENU_IMPORTS, MENU_SEARCH_IMPORTS } from '../menu.imports';
+import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { MenuSearchDirective } from './menu-search.directive';
-import { MenuSurfaceDirective } from './menu-surface.directive';
-import { MenuTriggerDirective } from './menu-trigger.directive';
 import { MenuDirective } from './menu.directive';
 
 @Component({
@@ -15,24 +14,17 @@ import { MenuDirective } from './menu.directive';
       <button class="root-trigger" etMenuTrigger type="button">Open menu</button>
 
       <ng-template etMenuSurface>
-        <div class="root-panel" etMenuPanel>
+        <et-menu class="root-panel">
           <input [(query)]="query" [loading]="loading()" [error]="error()" class="search" etMenuSearch />
 
           @for (label of filteredLabels(); track label) {
             <button class="item" etMenuItem type="button">{{ label }}</button>
           }
-        </div>
+        </et-menu>
       </ng-template>
     </div>
   `,
-  imports: [
-    MenuDirective,
-    MenuTriggerDirective,
-    MenuSurfaceDirective,
-    MenuPanelDirective,
-    MenuItemDirective,
-    MenuSearchDirective,
-  ],
+  imports: [...MENU_IMPORTS, ...MENU_SEARCH_IMPORTS],
 })
 class MenuSearchTestHost {
   query = signal('');
@@ -76,11 +68,23 @@ describe('MenuSearchDirective', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [MenuSearchTestHost],
+      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
     });
 
     fixture = TestBed.createComponent(MenuSearchTestHost);
     fixture.detectChanges();
     menu = fixture.debugElement.query(By.directive(MenuDirective)).injector.get(MenuDirective);
+  });
+
+  it('keeps search chrome out of the base menu imports', () => {
+    expect(MENU_IMPORTS).not.toContain(MenuSearchDirective);
+  });
+
+  it('mounts the search spinner and scrollbar through the opt-in imports', async () => {
+    await openMenu();
+
+    expect(document.querySelector('et-menu-search-spinner')).not.toBeNull();
+    expect(document.querySelector('et-menu-scrollbar et-scrollbar')).not.toBeNull();
   });
 
   afterEach(() => {
