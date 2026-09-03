@@ -12,13 +12,11 @@ import { defineRootProvider, injectRenderer, RuntimeError, toInjectFn, toProvide
 import { injectPipManager } from './pip-manager';
 import { PIP_CHROME_REF_TOKEN } from './pip/headless/pip-chrome-ref.token';
 import { StreamPipChromeComponent } from './pip/pip-chrome.component';
-import { injectStreamConfig } from './stream-config';
 import { STREAM_ERROR_CODES } from './stream-errors';
 
 const PIP_CHROME_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const pipManager = injectPipManager();
-    const streamConfig = injectStreamConfig();
     const appRef = inject(ApplicationRef);
     const envInjector = inject(EnvironmentInjector);
     const destroyRef = inject(DestroyRef);
@@ -37,8 +35,7 @@ const PIP_CHROME_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
     effect(() => {
       const activePips = pipManager.pips();
       if (activePips.length > 0 && !pipChromeRef) {
-        const pipChromeComponent =
-          pipManager.pipChromeComponent() ?? streamConfig.pipChromeComponent ?? StreamPipChromeComponent;
+        const pipChromeComponent = pipManager.pipChromeComponent() ?? StreamPipChromeComponent;
 
         const ref = createComponent(pipChromeComponent, {
           environmentInjector: envInjector,

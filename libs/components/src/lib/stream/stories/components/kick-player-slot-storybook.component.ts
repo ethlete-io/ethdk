@@ -4,6 +4,7 @@ import { TextButtonComponent } from '../../../button/text-button.component';
 import { TAB_IMPORTS } from '../../../tabs/tabs.imports';
 import { PipSlotPlaceholderComponent } from '../../pip/pip-slot-placeholder.component';
 import { provideStreamConfig } from '../../stream-config';
+import { provideStreamPip } from '../../stream-pip.provider';
 import { STREAM_IMPORTS, STREAM_KICK_IMPORTS, STREAM_PIP_IMPORTS } from '../../stream.imports';
 import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 
@@ -72,8 +73,8 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   providers: [
     ...provideStreamConfig({
       pipSlotPlaceholderComponent: PipSlotPlaceholderComponent,
-      pipChrome: { controlsColor: 'neutral' },
     }),
+    ...provideStreamPip({ pipChrome: { controlsColor: 'neutral' } }),
   ],
   styles: [
     `

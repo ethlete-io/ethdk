@@ -15,6 +15,7 @@ Each platform ships a raw player (`et-youtube-player`) and a **slot** (`et-youtu
 ```ts
 // the shared parts, then one barrel per platform you actually embed
 import {
+  provideStreamPip,
   STREAM_IMPORTS,
   STREAM_TIKTOK_IMPORTS,
   STREAM_TWITCH_IMPORTS,
@@ -37,8 +38,8 @@ stay out of your bundle:
 | TikTok      | `STREAM_TIKTOK_IMPORTS`      |
 | SOOP        | `STREAM_SOOP_IMPORTS`        |
 
-Picture-in-picture is `STREAM_PIP_IMPORTS`, and `STREAM_ALL_IMPORTS` is everything at once - handy in a
-playground, wasteful in an app.
+Picture-in-picture needs both `STREAM_PIP_IMPORTS` and `provideStreamPip()`; `STREAM_ALL_IMPORTS` is
+everything at once - handy in a playground, wasteful in an app.
 
 Source inputs per platform:
 
@@ -90,7 +91,22 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 <button (click)="slot.slotDirective.slot.pipActivate(() => goBackToThisView())" et-button>Enter PiP</button>
 ```
 
-`pipActivate(onBack?)` / `pipDeactivate()` control it; the PiP window chrome (close, back, grid toggle for multiple simultaneous PiP players) and window sizing are configurable via `provideStreamConfig({ pipChromeComponent, pipChrome, pipWindow, pipSlotPlaceholderComponent })` - `pipChrome` tunes the appearance of the built-in chrome without replacing it. Picture-in-picture is opt-in: add `STREAM_PIP_IMPORTS` for the floating window, the PiP player and the controls. A custom chrome component composes the headless PiP directives from that barrel: `etPipClose`, `etPipBack`, `etPipBringBack` and `etPipGridToggle`. It must also implement `PipChromeRef` (a `state` and an `animations` member) and provide itself under `PIP_CHROME_REF_TOKEN`, which is how the manager reaches into it - a chrome without that provider throws `ET1604`:
+`pipActivate(onBack?)` / `pipDeactivate()` control it. Register `provideStreamPip()` where the slots are
+provided, alongside `STREAM_PIP_IMPORTS`; without it, slots still play normally but expose no PiP behavior.
+Configure the PiP chrome and window through that provider:
+
+```ts
+provideStreamPip({
+  pipChromeComponent: MyPipChromeComponent,
+  pipChrome: { controlsColor: 'neutral' },
+  pipWindow: { desiredSize: 480 },
+});
+```
+
+A custom chrome component composes the headless PiP directives from `STREAM_PIP_IMPORTS`: `etPipClose`,
+`etPipBack`, `etPipBringBack` and `etPipGridToggle`. It must also implement `PipChromeRef` (a `state` and
+an `animations` member) and provide itself under `PIP_CHROME_REF_TOKEN`, which is how the manager reaches
+into it - a chrome without that provider throws `ET1604`:
 
 ```ts
 @Component({

@@ -2,6 +2,7 @@ import { Component, ViewEncapsulation, input } from '@angular/core';
 import { StreamConsentComponent } from '../../consent/stream-consent.component';
 import { PipSlotPlaceholderComponent } from '../../pip/pip-slot-placeholder.component';
 import { provideStreamConfig } from '../../stream-config';
+import { provideStreamPip } from '../../stream-pip.provider';
 import { STREAM_IMPORTS, STREAM_PIP_IMPORTS, STREAM_YOUTUBE_IMPORTS } from '../../stream.imports';
 
 @Component({
@@ -13,8 +14,8 @@ import { STREAM_IMPORTS, STREAM_PIP_IMPORTS, STREAM_YOUTUBE_IMPORTS } from '../.
     ...provideStreamConfig({
       consentComponent: StreamConsentComponent,
       pipSlotPlaceholderComponent: PipSlotPlaceholderComponent,
-      pipChrome: { controlsColor: 'neutral' },
     }),
+    ...provideStreamPip({ pipChrome: { controlsColor: 'neutral' } }),
   ],
 })
 export class YoutubePlayerSlotConsentStorybookComponent {

@@ -21,8 +21,7 @@ import {
   STREAM_PLAYER_ERROR_CONTEXT_TOKEN,
   StreamPlayerErrorContext,
 } from './error/headless/stream-player-error.directive';
-import { injectPipChromeManager } from './pip-chrome-manager';
-import { injectPipManager } from './pip-manager';
+import { STREAM_PIP_TOKEN } from './stream-pip.token';
 import { injectStreamConfig } from './stream-config';
 import { STREAM_ERROR_CODES } from './stream-errors';
 import { injectStreamManager } from './stream-manager';
@@ -58,8 +57,7 @@ export type StreamPlayerSlotHandle = {
 
 export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): StreamPlayerSlotHandle => {
   const streamManager = injectStreamManager();
-  const pipManager = injectPipManager();
-  injectPipChromeManager();
+  const streamPip = inject(STREAM_PIP_TOKEN, { optional: true });
   const el = injectHostElement<HTMLElement>();
   const appRef = inject(ApplicationRef);
   const envInjector = inject(EnvironmentInjector);
@@ -340,18 +338,18 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
   };
 
   const pipActivate = (onBack?: () => void) =>
-    pipManager.pipActivate(el, {
+    streamPip?.manager.pipActivate(el, {
       onBack,
       aspectRatio: options.aspectRatio,
-      pipChromeComponent: streamConfig.pipChromeComponent ?? undefined,
-      pipChromeConfig: streamConfig.pipChrome,
+      pipChromeComponent: streamPip.options.pipChromeComponent ?? undefined,
+      pipChromeConfig: streamPip.options.pipChrome,
     });
 
   const pipDeactivate = () => {
     const id = currentPlayerIdSignal();
 
     if (id) {
-      pipManager.pipDeactivate(id);
+      streamPip?.manager.pipDeactivate(id);
     }
   };
 

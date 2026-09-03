@@ -19,6 +19,7 @@ export * from './stream-manager.types';
 export * from './stream-player';
 export * from './stream-player-slot';
 export * from './stream-player-slot.directive';
+export * from './stream-pip.provider';
 export * from './stream-script-loader';
 export * from './stream.imports';
 export * from './stream.types';

@@ -2,6 +2,16 @@ import '../../test-helpers';
 import { FakeStreamConsentComponent, createStreamSlotDriver } from './testing/stream-driver';
 
 describe('createStreamPlayerSlot', () => {
+  it('keeps picture-in-picture inactive without its provider', async () => {
+    const driver = createStreamSlotDriver({ consentGranted: true });
+    await driver.settle();
+
+    driver.slot().pipActivate();
+    await driver.settle();
+
+    expect(document.querySelector('et-stream-pip-chrome')).toBeNull();
+  });
+
   it('registers the live player id when consent arrives after an id change', async () => {
     const driver = createStreamSlotDriver();
     await driver.settle();
