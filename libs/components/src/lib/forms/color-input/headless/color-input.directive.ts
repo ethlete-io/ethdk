@@ -68,7 +68,7 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
   /** @internal Keeps the form field in its focused style while the picker overlay is open. */
   public expanded = computed(() => this.pickerOpen());
 
-  public hasValue = computed(() => this.mixed() || this.value() !== null);
+  public hasValue = computed(() => this.mixed() || !!this.value());
 
   /** Whether the control accepts a new color - the picker refuses to open while it does not. */
   public interactive = computed(() => !this.disabled() && !this.readonly());

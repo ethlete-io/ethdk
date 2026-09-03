@@ -113,11 +113,14 @@ export const pointerDownOutside = () => {
   tick();
 };
 
-/** jsdom has no `DataTransfer`, so the clipboard payload is faked onto the event. */
-export const pasteInto = (target: EventTarget, text: string) => {
-  const event = new Event('paste', { bubbles: true, cancelable: true });
+export type ClipboardPayload = Readonly<Record<string, string>>;
 
-  Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } });
+/** jsdom has no `DataTransfer`, so the clipboard payload is faked onto the event. */
+export const pasteInto = (target: EventTarget, payload: ClipboardPayload | string) => {
+  const event = new Event('paste', { bubbles: true, cancelable: true });
+  const data = typeof payload === 'string' ? { 'text/plain': payload } : payload;
+
+  Object.defineProperty(event, 'clipboardData', { value: { getData: (type: string) => data[type] ?? '' } });
   target.dispatchEvent(event);
   tick();
 };

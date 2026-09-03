@@ -35,6 +35,11 @@ export const createOverlayControlDriver = <T, D>(
     tick();
   };
 
+  const settleOpen = async () => {
+    await settle();
+    await settle();
+  };
+
   return {
     ...base,
     settle,
@@ -47,7 +52,7 @@ export const createOverlayControlDriver = <T, D>(
     open: async () => {
       trigger().click();
       tick();
-      await settle();
+      await settleOpen();
     },
     close: async () => {
       hide(base.control);

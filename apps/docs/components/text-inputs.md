@@ -187,7 +187,8 @@ A textarea is the usual home for an [`<et-counter />`](/components/forms#charact
 color picker. **There is no `<input type="color">` behind it any more** - the
 platform picker was replaced in full, so the panel looks and behaves the same on
 every browser and can be themed like the rest of the library. The form value is
-`'#rrggbb' | null` - `null` until something is picked (the swatch shows black).
+`'#rrggbb' | null` - `null` until something is picked (the swatch shows black). An empty
+string is also treated as empty, so it does not float the label or count as a selected color.
 
 ```html
 <et-form-field>

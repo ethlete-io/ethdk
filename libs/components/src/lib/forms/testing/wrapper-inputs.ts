@@ -45,3 +45,33 @@ export const expectWrapperExposesBaseInputs = (wrapper: WrapperUnderTest, base: 
 
   expect(thrown?.message ?? null, `<${wrapper.selector}> must expose every input of its base directive`).toBeNull();
 };
+
+/** Asserts that a wrapper component re-exposes every output of the base directive it wraps. */
+export const expectWrapperExposesBaseOutputs = (wrapper: WrapperUnderTest, base: readonly string[]) => {
+  expect(base.length, 'the base output list is empty - there is nothing to assert').toBeGreaterThan(0);
+
+  const bindings = base.map((name) => `(${name})="receive($event)"`).join(' ');
+
+  const Host = Component({
+    template: `<${wrapper.selector} ${bindings} />`,
+    imports: [wrapper.component],
+  })(
+    class {
+      receive = (value: unknown) => value;
+    },
+  );
+
+  TestBed.configureTestingModule({ imports: [Host], errorOnUnknownProperties: true });
+
+  const fixture = TestBed.createComponent(Host);
+
+  let thrown: Error | null = null;
+
+  try {
+    fixture.detectChanges();
+  } catch (error) {
+    thrown = error as Error;
+  }
+
+  expect(thrown?.message ?? null, `<${wrapper.selector}> must expose every output of its base directive`).toBeNull();
+};

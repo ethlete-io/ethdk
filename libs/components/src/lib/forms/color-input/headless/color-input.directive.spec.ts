@@ -133,6 +133,13 @@ describe('ColorInputDirective', () => {
       expect(driver.colorInput.resolvedColor()).toBe('#000000');
     });
 
+    it('does not treat an empty string as a selected color', () => {
+      driver.host.value.set('');
+      driver.tick();
+
+      expect(driver.colorInput.hasValue()).toBe(false);
+    });
+
     it('should not display error when not touched', () => {
       expect(driver.colorInput.shouldDisplayError()).toBe(false);
     });
