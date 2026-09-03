@@ -4130,7 +4130,7 @@ __metadata:
     jsonc-eslint-parser: "npm:2.4.1"
     ng-packagr: "npm:20.3.0"
     nx: "npm:21.6.5"
-    postcss: "npm:8.5.6"
+    postcss: "npm:8.5.28"
     postcss-import: "npm:16.1.1"
     postcss-preset-env: "npm:10.4.0"
     postcss-url: "npm:10.1.3"
@@ -16943,6 +16943,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"nanoid@npm:^3.3.18":
+  version: 3.3.18
+  resolution: "nanoid@npm:3.3.18"
+  bin:
+    nanoid: bin/nanoid.cjs
+  checksum: 10c0/b994b4e396730f8be2520923284e2040d61eaee55cc6d4935ef6d38d34bafdc46133eda4d3faea5073bda545aa6079d82b886caeac5c731cf9ac18bcc1301425
+  languageName: node
+  linkType: hard
+
 "napi-postinstall@npm:^0.3.4":
   version: 0.3.4
   resolution: "napi-postinstall@npm:0.3.4"
@@ -18971,6 +18980,17 @@ __metadata:
   version: 4.2.0
   resolution: "postcss-value-parser@npm:4.2.0"
   checksum: 10c0/f4142a4f56565f77c1831168e04e3effd9ffcc5aebaf0f538eee4b2d465adfd4b85a44257bb48418202a63806a7da7fe9f56c330aebb3cac898e46b4cbf49161
+  languageName: node
+  linkType: hard
+
+"postcss@npm:8.5.28":
+  version: 8.5.28
+  resolution: "postcss@npm:8.5.28"
+  dependencies:
+    nanoid: "npm:^3.3.18"
+    picocolors: "npm:^1.1.1"
+    source-map-js: "npm:^1.2.1"
+  checksum: 10c0/9fe44215a6628d89c8a75184b92f5b2f77e16f9e5b13b39b9009bb7e8e6eccddf82c8854bae922db1f17ace6ef3445073fe38abff513caeb03e5285b1b55620a
   languageName: node
   linkType: hard
 
