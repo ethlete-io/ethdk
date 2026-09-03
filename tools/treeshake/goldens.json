@@ -102,15 +102,15 @@
     },
     "rich-text-editor": {
       "entry": "import { RICH_TEXT_EDITOR_IMPORTS } from '@ethlete/components';\nconsole.log(RICH_TEXT_EDITOR_IMPORTS);",
-      "gzip": 37815
+      "gzip": 37734
     },
     "rich-text-editor-floating-toolbar": {
       "entry": "import { RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorFloatingToolbar } from '@ethlete/components';\nconsole.log(RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorFloatingToolbar());",
-      "gzip": 53467
+      "gzip": 53455
     },
     "rich-text-editor-full-tools": {
       "entry": "import { RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorDefaultTools } from '@ethlete/components';\nconsole.log(RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorDefaultTools());",
-      "gzip": 65742
+      "gzip": 65912
     },
     "query-client": {
       "entry": "import { createGetQuery, createQueryClient } from '@ethlete/query';\nconsole.log(createGetQuery, createQueryClient);",

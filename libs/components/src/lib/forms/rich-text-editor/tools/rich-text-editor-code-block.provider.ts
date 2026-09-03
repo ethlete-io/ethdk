@@ -1,4 +1,5 @@
 import { Provider } from '@angular/core';
+import { CODE_BLOCK_ICON } from '../../../icon';
 import { createRichTextEditorCodeBlock } from '../headless/internals/rich-text-editor-dom-code-block';
 import {
   RICH_TEXT_EDITOR_DOM_FEATURE,
@@ -6,6 +7,7 @@ import {
 } from '../headless/internals/rich-text-editor-dom-features';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
+import { RICH_TEXT_EDITOR_TOOL_ICON } from './rich-text-editor-tool-icons';
 
 /**
  * Registers the `'codeBlock'` tool: turning the selected blocks into a fenced code block and back,
@@ -27,6 +29,11 @@ export const provideRichTextEditorCodeBlockTool = (): Provider[] => [
       key: 'codeBlock',
       create: ({ core }) => createRichTextEditorCodeBlock(core),
     } satisfies RichTextEditorDomFeature,
+    multi: true,
+  },
+  {
+    provide: RICH_TEXT_EDITOR_TOOL_ICON,
+    useValue: CODE_BLOCK_ICON,
     multi: true,
   },
   {

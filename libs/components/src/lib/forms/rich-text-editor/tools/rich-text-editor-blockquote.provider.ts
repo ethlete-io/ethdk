@@ -1,4 +1,5 @@
 import { Provider } from '@angular/core';
+import { QUOTE_ICON } from '../../../icon';
 import { createRichTextEditorBlockquote } from '../headless/internals/rich-text-editor-dom-blockquote';
 import {
   RICH_TEXT_EDITOR_DOM_FEATURE,
@@ -6,6 +7,7 @@ import {
 } from '../headless/internals/rich-text-editor-dom-features';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
+import { RICH_TEXT_EDITOR_TOOL_ICON } from './rich-text-editor-tool-icons';
 
 /**
  * Registers the `'blockquote'` tool: quoting the selected blocks as `> ` lines, lifting a quote back
@@ -24,6 +26,11 @@ export const provideRichTextEditorBlockquoteTool = (): Provider[] => [
       key: 'blockquote',
       create: ({ core }) => createRichTextEditorBlockquote(core),
     } satisfies RichTextEditorDomFeature,
+    multi: true,
+  },
+  {
+    provide: RICH_TEXT_EDITOR_TOOL_ICON,
+    useValue: QUOTE_ICON,
     multi: true,
   },
   {

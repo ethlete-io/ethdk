@@ -1,4 +1,5 @@
 import { Provider } from '@angular/core';
+import { LINK_ICON } from '../../../icon';
 import {
   RICH_TEXT_EDITOR_DOM_FEATURE,
   RichTextEditorDomFeature,
@@ -6,6 +7,7 @@ import {
 import { createRichTextEditorLinks } from '../headless/internals/rich-text-editor-dom-links';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
+import { RICH_TEXT_EDITOR_TOOL_ICON } from './rich-text-editor-tool-icons';
 
 /**
  * Registers the `'link'` tool and the link DOM operations behind
@@ -26,6 +28,11 @@ export const provideRichTextEditorLinkTool = (): Provider[] => [
       key: 'links',
       create: ({ core }) => createRichTextEditorLinks(core),
     } satisfies RichTextEditorDomFeature,
+    multi: true,
+  },
+  {
+    provide: RICH_TEXT_EDITOR_TOOL_ICON,
+    useValue: LINK_ICON,
     multi: true,
   },
   {

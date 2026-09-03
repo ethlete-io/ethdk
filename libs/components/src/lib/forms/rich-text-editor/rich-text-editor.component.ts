@@ -20,15 +20,13 @@ import { ScrollbarComponent } from '../../scrollbar';
 import { ToolbarDirective } from '../../toolbar';
 import {
   BOLD_ICON,
-  CODE_BLOCK_ICON,
   CODE_ICON,
+  ICONS_TOKEN,
   IconDirective,
   ITALIC_ICON,
-  LINK_ICON,
   LIST_BULLETED_ICON,
   LIST_NUMBERED_ICON,
   provideIcons,
-  QUOTE_ICON,
   REDO_ICON,
   STRIKETHROUGH_ICON,
   UNDERLINE_ICON,
@@ -39,6 +37,7 @@ import { RICH_TEXT_EDITOR_FLOATING_TOOLBAR } from './rich-text-editor-floating-t
 import { richTextEditorToolLabel } from './rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_LINK_EDITOR } from './rich-text-editor-link-editor.token';
 import { RICH_TEXT_EDITOR_TOOL, RICH_TEXT_EDITOR_TOOLS, RichTextEditorToolDefinition } from './rich-text-editor-tools';
+import { RICH_TEXT_EDITOR_TOOL_ICON } from './tools/rich-text-editor-tool-icons';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
 /** How often the docked toolbar re-checks where the keyboard is, to recover a missed viewport event. */
@@ -59,6 +58,21 @@ const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
   'Backspace',
 ]);
 
+const RICH_TEXT_EDITOR_ICONS = [
+  BOLD_ICON,
+  ITALIC_ICON,
+  UNDERLINE_ICON,
+  STRIKETHROUGH_ICON,
+  CODE_ICON,
+  LIST_BULLETED_ICON,
+  LIST_NUMBERED_ICON,
+  UNDO_ICON,
+  REDO_ICON,
+];
+
+const provideRichTextEditorIcons = () =>
+  provideIcons(...RICH_TEXT_EDITOR_ICONS, ...(inject(RICH_TEXT_EDITOR_TOOL_ICON, { optional: true }) ?? [])).useValue;
+
 @Component({
   selector: 'et-rich-text-editor',
   templateUrl: './rich-text-editor.component.html',
@@ -72,22 +86,7 @@ const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
     ScrollbarComponent,
     ToolbarDirective,
   ],
-  providers: [
-    provideIcons(
-      BOLD_ICON,
-      ITALIC_ICON,
-      UNDERLINE_ICON,
-      STRIKETHROUGH_ICON,
-      CODE_ICON,
-      LIST_BULLETED_ICON,
-      LIST_NUMBERED_ICON,
-      LINK_ICON,
-      QUOTE_ICON,
-      CODE_BLOCK_ICON,
-      UNDO_ICON,
-      REDO_ICON,
-    ),
-  ],
+  providers: [{ provide: ICONS_TOKEN, useFactory: provideRichTextEditorIcons }],
   hostDirectives: [
     {
       directive: RichTextEditorDirective,
