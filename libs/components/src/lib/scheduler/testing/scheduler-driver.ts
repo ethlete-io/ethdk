@@ -4,6 +4,7 @@ import { createControlDriver, mountControl } from '../../testing/control-driver'
 import { hostDirective, query, queryAll, textOf, tick } from '../../testing/driver-core';
 import { SchedulerEditSurfaceDirective } from '../headless/scheduler-edit-surface.directive';
 import { SchedulerComponent } from '../scheduler.component';
+import { provideSchedulerEditSurface } from '../scheduler-edit-surface.provider';
 import { Appointment, AppointmentId, SchedulerView } from '../scheduler.types';
 
 /** An appointment whose `title` equals its `id`, so a DOM lookup keyed on either agrees with the other. */
@@ -21,6 +22,7 @@ export type SchedulerTestDriverOptions = {
   view?: SchedulerView;
   selectedAppointmentId?: AppointmentId | null;
   focusedDate?: Date;
+  editSurface?: boolean;
   providers?: Provider[];
 };
 
@@ -56,6 +58,7 @@ export const schedulerTestDriver = (options: SchedulerTestDriverOptions = {}) =>
   TestBed.resetTestingModule();
 
   const fixture = mountControl(SchedulerTestHost, [
+    ...(options.editSurface === false ? [] : [provideSchedulerEditSurface()]),
     ...(options.providers ?? []),
     { provide: SCHEDULER_TEST_OPTIONS, useValue: options },
   ]);

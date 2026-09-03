@@ -31,7 +31,6 @@ export const SCHEDULER_IMPORTS = [
   SchedulerAgendaDirective,
   SchedulerMonthDirective,
   SchedulerTimeGridDirective,
-  SchedulerEditSurfaceDirective,
   SchedulerComponent,
   SchedulerAgendaViewComponent,
   SchedulerMonthViewComponent,
@@ -41,6 +40,13 @@ export const SCHEDULER_IMPORTS = [
   SchedulerBadgeTimeRangeDirective,
   SchedulerBadgeLocationDirective,
   SchedulerBadgeChainCountDirective,
+  SchedulerActionAddAppointmentDirective,
+  SchedulerSwipeNavigationDirective,
+  SchedulerAppointmentDragDirective,
+] as const;
+
+export const SCHEDULER_EDIT_IMPORTS = [
+  SchedulerEditSurfaceDirective,
   SchedulerEditSurfaceComponent,
   SchedulerEditTitleDirective,
   SchedulerEditTimeRangeDirective,
@@ -49,7 +55,4 @@ export const SCHEDULER_IMPORTS = [
   SchedulerEditColorDirective,
   SchedulerActionAddSubAppointmentDirective,
   SchedulerActionDeleteDirective,
-  SchedulerActionAddAppointmentDirective,
-  SchedulerSwipeNavigationDirective,
-  SchedulerAppointmentDragDirective,
 ] as const;

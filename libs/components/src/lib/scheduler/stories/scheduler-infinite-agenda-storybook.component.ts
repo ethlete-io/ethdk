@@ -16,6 +16,7 @@ import { signalElementIntersection } from '@ethlete/core';
 import { startOfToday } from 'date-fns';
 import { tap, timer } from 'rxjs';
 import { SCHEDULER_IMPORTS } from '../scheduler.imports';
+import { provideSchedulerEditSurface } from '../scheduler-edit-surface.provider';
 import { PAGE_DAYS, TOTAL_DAYS, generateAgendaAppointments } from './scheduler-infinite-agenda-data';
 
 const PAGE_LATENCY = 400;
@@ -46,6 +47,7 @@ const PAGE_LATENCY = 400;
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [...SCHEDULER_IMPORTS],
+  providers: [provideSchedulerEditSurface()],
 })
 export class SchedulerInfiniteAgendaStorybookComponent {
   private destroyRef = inject(DestroyRef);

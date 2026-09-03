@@ -10,4 +10,6 @@ export const SCHEDULER_ERROR_CODES = {
   SWIPE_NAVIGATION_OUTSIDE_SCHEDULER: 4503,
   /** `[etSchedulerAppointmentDrag]` was placed on an element that is not an `[etScheduler]`. */
   APPOINTMENT_DRAG_OUTSIDE_SCHEDULER: 4504,
+  /** An interaction requires the default edit surface, but it was not registered. */
+  EDIT_SURFACE_NOT_REGISTERED: 4505,
 } as const;

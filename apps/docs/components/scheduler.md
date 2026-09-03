@@ -1,9 +1,16 @@
 # Scheduler
 
-`et-scheduler` is a composable appointment calendar, Google-Calendar-shaped: a month grid, a week/day hour-axis time grid, and an agenda list, all sharing one headless engine. Appointments can nest into arbitrarily deep "sub-appointment" chains (a project's Jira-esque sub-tasks), each with its own start/end. Import `SCHEDULER_IMPORTS`.
+`et-scheduler` is a composable appointment calendar, Google-Calendar-shaped: a month grid, a week/day hour-axis time grid, and an agenda list, all sharing one headless engine. Appointments can nest into arbitrarily deep "sub-appointment" chains (a project's Jira-esque sub-tasks), each with its own start/end. Import `SCHEDULER_IMPORTS`; register the edit surface only when users can edit appointments.
 
 ```ts
-import { SCHEDULER_IMPORTS } from '@ethlete/components';
+import { Component } from '@angular/core';
+import { provideSchedulerEditSurface, SCHEDULER_IMPORTS } from '@ethlete/components';
+
+@Component({
+  imports: [SCHEDULER_IMPORTS],
+  providers: [provideSchedulerEditSurface()],
+})
+export class CalendarComponent {}
 ```
 
 ```html
@@ -259,7 +266,9 @@ The state behind it lives on the headless directive, so a custom view can drive 
 
 ## Edit surface {#edit-surface}
 
-Clicking any appointment badge or block opens `<et-scheduler-edit-surface>`, built on the [overlay](/components/overlays) system, which `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when it does. This is the zero-config path: a plain `<et-scheduler>` with no feature directives applied already gets a full edit experience.
+Clicking any appointment badge or block opens `<et-scheduler-edit-surface>`, built on the [overlay](/components/overlays) system, which `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when it does. Register `provideSchedulerEditSurface()` in a parent injector to enable that behavior. Without it, the scheduler remains read-only and, in development, an edit interaction reports `ET4505`.
+
+`SCHEDULER_IMPORTS` no longer includes the editor. Add `SCHEDULER_EDIT_IMPORTS` when rendering `<et-scheduler-edit-surface>` directly in a custom composition.
 
 The auto-open is keyed on the **selected id**, not on the selected `Appointment` object, so replacing `appointments` with a fresh array while the surface is open - a poll, a websocket push, or merging an `appointmentSave` back in - never stacks a second surface on top of the first.
 

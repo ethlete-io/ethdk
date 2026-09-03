@@ -75,6 +75,14 @@ describe('SchedulerComponent', () => {
     expect(driver.editSurface()).toHaveLength(0);
   });
 
+  it('requires the default edit surface to be registered before opening an appointment', () => {
+    const readOnlyDriver = schedulerTestDriver({ appointments: [testAppointment('a')], editSurface: false });
+
+    expect(() => readOnlyDriver.openEditSurface('a')).toThrow('ET4505');
+
+    readOnlyDriver.fixture.destroy();
+  });
+
   it('renders the default badge adornments for a visible appointment', () => {
     const badge = driver.badges().find((candidate) => candidate.id === 'a');
 

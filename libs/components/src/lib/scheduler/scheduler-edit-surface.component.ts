@@ -41,11 +41,9 @@ import { SchedulerEditLocationDirective } from './scheduler-edit-location.direct
 import { SchedulerEditTimeRangeDirective } from './scheduler-edit-time-range.directive';
 import { SchedulerEditTitleDirective } from './scheduler-edit-title.directive';
 import { injectSchedulerLabels } from './scheduler-labels';
-import { Appointment, AppointmentId } from './scheduler.types';
+import { SchedulerEditSurfaceResult } from './scheduler-edit-surface.token';
 
-/** What `<et-scheduler-edit-surface>`'s overlay closes with. A dismiss without saving closes with `undefined`. */
-export type SchedulerEditSurfaceResult =
-  { kind: 'save'; appointment: Appointment } | { kind: 'delete'; ids: readonly AppointmentId[] };
+export type { SchedulerEditSurfaceResult } from './scheduler-edit-surface.token';
 
 /**
  * The default edit surface: a dialog for one appointment, its fields, its ancestor breadcrumb and

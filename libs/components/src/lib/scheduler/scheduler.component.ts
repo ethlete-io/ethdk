@@ -10,7 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { randomId, signalHostElementDimensions } from '@ethlete/core';
+import { RuntimeError, randomId, signalHostElementDimensions } from '@ethlete/core';
 import { addHours, format, isSameDay, isSameMonth, isSameYear, setHours, setMinutes, startOfDay } from 'date-fns';
 import { BUTTON_IMPORTS } from '../button';
 import { FLOATING_ACTION_IMPORTS } from '../floating-action';
@@ -32,12 +32,8 @@ import { SchedulerBadgeColorDotDirective } from './scheduler-badge-color-dot.dir
 import { SchedulerBadgeLocationDirective } from './scheduler-badge-location.directive';
 import { SchedulerBadgeTimeRangeDirective } from './scheduler-badge-time-range.directive';
 import { SchedulerBadgeTitleDirective } from './scheduler-badge-title.directive';
-import {
-  SCHEDULER_ADD_SURFACE_OVERLAY,
-  SCHEDULER_EDIT_SURFACE_OVERLAY,
-  SchedulerEditSurfaceComponent,
-  SchedulerEditSurfaceResult,
-} from './scheduler-edit-surface.component';
+import { SCHEDULER_EDIT_SURFACE, SchedulerEditSurfaceResult } from './scheduler-edit-surface.token';
+import { SCHEDULER_ERROR_CODES } from './scheduler-errors';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { SchedulerMonthViewComponent } from './scheduler-month-view.component';
 import { SchedulerSwipeNavigationDirective } from './scheduler-swipe-navigation.directive';
@@ -97,6 +93,7 @@ const NARROW_CONTAINER_WIDTH = 480;
 })
 export class SchedulerComponent implements SchedulerFeatureHost {
   private labels = injectSchedulerLabels();
+  private editSurface = inject(SCHEDULER_EDIT_SURFACE, { optional: true });
 
   /**
    * The headless directive behind this scheduler - everything `[etScheduler]` exposes, for chrome
@@ -177,7 +174,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   );
 
-  private editSurfaceRef: OverlayRef<SchedulerEditSurfaceComponent, SchedulerEditSurfaceResult> | null = null;
+  private editSurfaceRef: OverlayRef<object, SchedulerEditSurfaceResult> | null = null;
 
   /**
    * Opens `<et-scheduler-edit-surface>` for the selected appointment - covers the zero-config
@@ -185,12 +182,14 @@ export class SchedulerComponent implements SchedulerFeatureHost {
    * `appointmentsDelete`, and closing always clears `selectedAppointmentId` back to `null` so
    * clicking the same appointment again reopens a fresh surface.
    */
-  private editSurfaceOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, {
-    afterClosed: (result) => {
-      this.editSurfaceRef = null;
-      this.handleEditSurfaceResult(result);
-    },
-  });
+  private editSurfaceOpener = this.editSurface
+    ? createOverlayOpener(this.editSurface.editOverlay, {
+        afterClosed: (result) => {
+          this.editSurfaceRef = null;
+          this.handleEditSurfaceResult(result);
+        },
+      })
+    : null;
 
   // Which selection the edit surface has already acted on. Compared by id, not by appointment
   // identity: an immutable `appointments` replacement gives the selected appointment a new object
@@ -198,23 +197,27 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   private handledSelectionId: AppointmentId | null = null;
 
   /** The toolbar's add has no appointment to anchor to, so it opens a plain dialog instead. */
-  private addSurfaceOpener = createOverlayOpener(SCHEDULER_ADD_SURFACE_OVERLAY, {
-    afterClosed: (result) => this.handleEditSurfaceResult(result),
-  });
+  private addSurfaceOpener = this.editSurface
+    ? createOverlayOpener(this.editSurface.addOverlay, {
+        afterClosed: (result) => this.handleEditSurfaceResult(result),
+      })
+    : null;
 
   private openedDraftRange: SchedulerDraftRange | null = null;
 
   /** A range dragged out on a view opens over the range itself - see {@link SchedulerDraftRange}. */
-  private draftSurfaceOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, {
-    afterClosed: (result) => {
-      // the close is animated, so a range drawn while it plays out is already the next surface's
-      if (this.headless.draftRange() === this.openedDraftRange) {
-        this.headless.clearDraftRange();
-      }
+  private draftSurfaceOpener = this.editSurface
+    ? createOverlayOpener(this.editSurface.editOverlay, {
+        afterClosed: (result) => {
+          // the close is animated, so a range drawn while it plays out is already the next surface's
+          if (this.headless.draftRange() === this.openedDraftRange) {
+            this.headless.clearDraftRange();
+          }
 
-      this.handleEditSurfaceResult(result);
-    },
-  });
+          this.handleEditSurfaceResult(result);
+        },
+      })
+    : null;
 
   constructor() {
     effect(() => {
@@ -300,6 +303,17 @@ export class SchedulerComponent implements SchedulerFeatureHost {
       return;
     }
 
+    if (!this.editSurfaceOpener) {
+      if (ngDevMode) {
+        throw new RuntimeError(
+          SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
+          '[Scheduler] An appointment was selected without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
+        );
+      }
+
+      return;
+    }
+
     this.handledSelectionId = id;
     this.headless.selectedAppointmentId.set(id);
 
@@ -324,10 +338,32 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   }
 
   private openAddSurface(appointment: Appointment) {
+    if (!this.addSurfaceOpener) {
+      if (ngDevMode) {
+        throw new RuntimeError(
+          SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
+          '[Scheduler] An appointment was added without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
+        );
+      }
+
+      return;
+    }
+
     this.addSurfaceOpener.open({ bindings: this.editSurfaceBindings(appointment) });
   }
 
   private openDraftSurface(draft: SchedulerDraftRange) {
+    if (!this.editSurfaceOpener) {
+      if (ngDevMode) {
+        throw new RuntimeError(
+          SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
+          '[Scheduler] A draft range was committed without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
+        );
+      }
+
+      return;
+    }
+
     const appointment: Appointment = {
       id: randomId(),
       parentId: null,
@@ -339,7 +375,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
 
     this.openedDraftRange = draft;
 
-    this.draftSurfaceOpener.open({
+    this.draftSurfaceOpener?.open({
       origin: this.takeSurfaceAnchor(),
       bindings: this.editSurfaceBindings(appointment),
     });

@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, computed, input, linkedSignal, signal } from '@angular/core';
 import { addDays, addHours, startOfWeek } from 'date-fns';
 import { Appointment, AppointmentId, SchedulerView } from '../scheduler.types';
+import { provideSchedulerEditSurface } from '../scheduler-edit-surface.provider';
 import { SCHEDULER_IMPORTS } from '../scheduler.imports';
 
 const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
@@ -99,6 +100,7 @@ const DEMO_APPOINTMENTS: Appointment[] = [
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [...SCHEDULER_IMPORTS],
+  providers: [provideSchedulerEditSurface()],
 })
 export class SchedulerStorybookComponent {
   public initialView = input<SchedulerView>('month');
