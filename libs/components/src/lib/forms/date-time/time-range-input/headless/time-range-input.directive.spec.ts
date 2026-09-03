@@ -1,9 +1,11 @@
 import { Component, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
+import { TIME_RANGE_INPUT_ERROR_CODES } from '../time-range-input-errors';
 import { TimeRangeInputFieldDirective } from './time-range-input-field.directive';
 import { TimeRangeInputDirective, TimeRangeValue } from './time-range-input.directive';
 import { DatePickerDriver, mountDatePicker } from '../../../testing/date-picker-driver';
@@ -46,6 +48,17 @@ class TimeRangeInputTestHost {
   readonly = signal(false);
   pickTime = new Date(2026, 0, 1, 21, 45);
 }
+
+@Component({
+  template: `
+    <div etTimeRangeInput>
+      <input etTimeRangeInputField side="start" />
+      <input etTimeRangeInputField side="start" />
+    </div>
+  `,
+  imports: [TimeRangeInputDirective, TimeRangeInputFieldDirective],
+})
+class DuplicateTimeRangeInputFieldTestHost {}
 
 /** The wire values parse against today, so expectations about `Date`s have to be built on it too. */
 const today = (hours: number, minutes: number) => {
@@ -277,5 +290,16 @@ describe('TimeRangeInputDirective commit contract', () => {
         tick();
       },
     };
+  });
+});
+
+describe('TimeRangeInputDirective errors', () => {
+  it('rejects a second field for the same side', () => {
+    TestBed.configureTestingModule({ imports: [DuplicateTimeRangeInputFieldTestHost] });
+
+    expect(() => {
+      const fixture = TestBed.createComponent(DuplicateTimeRangeInputFieldTestHost);
+      fixture.detectChanges();
+    }).toThrow(`ET${TIME_RANGE_INPUT_ERROR_CODES.DUPLICATE_FIELD}`);
   });
 });

@@ -36,4 +36,13 @@ export class DateRangeInputFieldDirective extends DateRangePickerInputFieldDirec
       });
     }
   }
+
+  /** @internal */
+  public duplicateFieldError(side: 'start' | 'end') {
+    return new RuntimeError(
+      DATE_RANGE_INPUT_ERROR_CODES.DUPLICATE_FIELD,
+      `[DateRangeInputFieldDirective] An [etDateRangeInput] accepts only one etDateRangeInputField for its "${side}" side.`,
+      { element: this.elementRef.nativeElement },
+    );
+  }
 }

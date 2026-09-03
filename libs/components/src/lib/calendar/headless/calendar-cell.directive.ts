@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, computed, effect, inject, input } from '@angular/core';
+import { Directive, ElementRef, computed, effect, inject, input } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { CALENDAR_ERROR_CODES } from '../calendar-errors';
 import { CalendarGridDirective } from './calendar-grid.directive';
@@ -52,16 +52,12 @@ export class CalendarCellDirective {
   });
 
   constructor() {
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.calendar) {
-          throw new RuntimeError(
-            CALENDAR_ERROR_CODES.CELL_OUTSIDE_CALENDAR,
-            'An [etCalendarCell] must be placed inside an [etCalendar].',
-            { element: this.elementRef.nativeElement },
-          );
-        }
-      });
+    if (ngDevMode && !this.calendar) {
+      throw new RuntimeError(
+        CALENDAR_ERROR_CODES.CELL_OUTSIDE_CALENDAR,
+        'An [etCalendarCell] must be placed inside an [etCalendar].',
+        { element: this.elementRef.nativeElement },
+      );
     }
 
     // pull DOM focus along while the user keyboard-navigates the grid

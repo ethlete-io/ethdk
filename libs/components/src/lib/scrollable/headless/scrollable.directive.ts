@@ -266,7 +266,7 @@ export class ScrollableDirective {
           throw new RuntimeError(
             SCROLLABLE_ERROR_CODES.MISSING_SCROLL_CONTAINER,
             '[ScrollableDirective] No scroll container registered. ' +
-              'Use registerScrollContainer() from the Tier 3 template or provide a scroll container element.',
+              'Use the default <et-scrollable> component; headless [etScrollable] does not provide a scroll container.',
             { element: this.hostElement },
           );
         }

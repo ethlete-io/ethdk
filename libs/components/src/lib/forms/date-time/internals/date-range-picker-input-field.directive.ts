@@ -10,6 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { RuntimeError } from '@ethlete/core';
 import { InputMaskHost } from '../../masked-input/headless/input-mask-host';
 import { DateRangePickerInputDirective, DateRangeSide } from './date-range-picker-input.directive';
 
@@ -43,6 +44,7 @@ import { DateRangePickerInputDirective, DateRangeSide } from './date-range-picke
 })
 export abstract class DateRangePickerInputFieldDirective implements InputMaskHost {
   protected abstract rangeInput: DateRangePickerInputDirective | null;
+  protected abstract duplicateFieldError(side: DateRangeSide): RuntimeError<number>;
 
   public elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
 
@@ -89,7 +91,7 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
 
       const side = this.side();
 
-      rangeInput.registerField(side, this);
+      rangeInput.registerField({ side, field: this, duplicateFieldError: this.duplicateFieldError(side) });
       onCleanup(() => rangeInput.unregisterField(side, this));
     });
 

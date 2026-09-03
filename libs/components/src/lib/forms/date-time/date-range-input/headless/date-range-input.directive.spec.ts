@@ -11,6 +11,7 @@ import { describeMixedStateContract } from '../../../testing/mixed-state-contrac
 import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
+import { DATE_RANGE_INPUT_ERROR_CODES } from '../date-range-input-errors';
 import { DateRangeInputFieldDirective } from './date-range-input-field.directive';
 import { DateRangeInputDirective, DateRangeValue } from './date-range-input.directive';
 import { CalendarPrecision } from '../../../../calendar/headless';
@@ -65,6 +66,17 @@ class DateRangeInputTestHost {
   pickStart = new Date(2026, 6, 8);
   pickEnd = new Date(2026, 6, 23);
 }
+
+@Component({
+  template: `
+    <div etDateRangeInput>
+      <input etDateRangeInputField side="start" />
+      <input etDateRangeInputField side="start" />
+    </div>
+  `,
+  imports: [DateRangeInputDirective, DateRangeInputFieldDirective],
+})
+class DuplicateDateRangeInputFieldTestHost {}
 
 describe('DateRangeInputDirective', () => {
   let driver: DatePickerDriver<DateRangeInputTestHost, DateRangeInputDirective>;
@@ -592,5 +604,16 @@ describe('DateRangeInputDirective commit contract', () => {
         tick();
       },
     };
+  });
+});
+
+describe('DateRangeInputDirective errors', () => {
+  it('rejects a second field for the same side', () => {
+    TestBed.configureTestingModule({ imports: [DuplicateDateRangeInputFieldTestHost] });
+
+    expect(() => {
+      const fixture = TestBed.createComponent(DuplicateDateRangeInputFieldTestHost);
+      fixture.detectChanges();
+    }).toThrow(`ET${DATE_RANGE_INPUT_ERROR_CODES.DUPLICATE_FIELD}`);
   });
 });

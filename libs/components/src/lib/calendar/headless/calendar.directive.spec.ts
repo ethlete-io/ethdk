@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
+import { CALENDAR_ERROR_CODES } from '../calendar-errors';
 import { bandedCells, cell, cells, focusedCell, grid, press } from '../testing/calendar-driver';
 import { CalendarCellDirective } from './calendar-cell.directive';
 import { createFixedLengthRangeStrategy, createWeekRangeStrategy } from './calendar-range-strategy';
@@ -101,6 +102,12 @@ class HostComponent {
   monthSelect = signal<Date | null>(null);
   yearSelect = signal<Date | null>(null);
 }
+
+@Component({
+  template: `<button etCalendarCell type="button">Cell</button>`,
+  imports: [CalendarCellDirective],
+})
+class OrphanCalendarCellTestHost {}
 
 describe('CalendarDirective', () => {
   let fixture: ComponentFixture<HostComponent>;
@@ -1033,5 +1040,15 @@ describe('CalendarDirective', () => {
     const today = cells(fixture).find((cell) => cell.getAttribute('aria-current') === 'date');
 
     expect(today?.textContent?.trim()).toBe(`${new Date().getDate()}`);
+  });
+});
+
+describe('CalendarCellDirective errors', () => {
+  it('rejects a cell outside a calendar while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanCalendarCellTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanCalendarCellTestHost)).toThrow(
+      `ET${CALENDAR_ERROR_CODES.CELL_OUTSIDE_CALENDAR}`,
+    );
   });
 });

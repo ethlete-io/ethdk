@@ -35,4 +35,13 @@ export class TimeRangeInputFieldDirective extends DateRangePickerInputFieldDirec
       });
     }
   }
+
+  /** @internal */
+  public duplicateFieldError(side: 'start' | 'end') {
+    return new RuntimeError(
+      TIME_RANGE_INPUT_ERROR_CODES.DUPLICATE_FIELD,
+      `[TimeRangeInputFieldDirective] An [etTimeRangeInput] accepts only one etTimeRangeInputField for its "${side}" side.`,
+      { element: this.elementRef.nativeElement },
+    );
+  }
 }

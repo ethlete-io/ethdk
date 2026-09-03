@@ -12,6 +12,7 @@ import {
   model,
   signal,
 } from '@angular/core';
+import { RuntimeError } from '@ethlete/core';
 import { FORM_FIELD, FormValueControl, ValidationError } from '@angular/forms/signals';
 import { Locale } from 'date-fns';
 import {
@@ -47,6 +48,12 @@ type SideState = {
   inputText: WritableSignal<string>;
   parseError: WritableSignal<boolean>;
   field: WritableSignal<DatePickerInputFieldBase | null>;
+};
+
+type RegisterFieldOptions = {
+  side: DateRangeSide;
+  field: DatePickerInputFieldBase;
+  duplicateFieldError: RuntimeError<number>;
 };
 
 /**
@@ -451,7 +458,11 @@ export abstract class DateRangePickerInputDirective
   }
 
   /** @internal */
-  public registerField(side: DateRangeSide, field: DatePickerInputFieldBase) {
+  public registerField({ side, field, duplicateFieldError }: RegisterFieldOptions) {
+    if (ngDevMode && this.sides[side].field()) {
+      throw duplicateFieldError;
+    }
+
     this.sides[side].field.set(field);
   }
 

@@ -1,9 +1,13 @@
 import { Component, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
 import { LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { mountRating, RatingDriver } from '../../testing/rating-driver';
+import { RATING_ERROR_CODES } from '../rating-errors';
 import { RATING_IMPORTS } from '../rating.imports';
+import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
 @Component({
   template: `
@@ -31,6 +35,17 @@ class RatingTestHost {
   disabled = signal(false);
   readonly = signal(false);
 }
+
+@Component({
+  template: `
+    <et-rating>
+      <ng-template etRatingIcon></ng-template>
+      <ng-template etRatingIcon></ng-template>
+    </et-rating>
+  `,
+  imports: [RATING_IMPORTS],
+})
+class DuplicateRatingIconTestHost {}
 
 describe('RatingDirective', () => {
   let driver: RatingDriver<RatingTestHost>;
@@ -296,5 +311,18 @@ describe('RatingDirective (mixed contract)', () => {
       },
       emptyValue: () => null,
     };
+  });
+});
+
+describe('RatingDirective errors', () => {
+  it('rejects a second custom icon template', () => {
+    TestBed.configureTestingModule({
+      imports: [DuplicateRatingIconTestHost],
+      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+    });
+
+    expect(() => TestBed.createComponent(DuplicateRatingIconTestHost)).toThrow(
+      `ET${RATING_ERROR_CODES.DUPLICATE_ICON_TEMPLATE}`,
+    );
   });
 });
