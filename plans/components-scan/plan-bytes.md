@@ -24,16 +24,16 @@ so a deferred component whose import chain is `@ethlete/components` lands in the
 
 ### Verdicts on item 7's proposals
 
-| Proposal                                             | Verdict                                                                                                                                                                                                                                                                                                                                                                                            |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@defer` the color picker panel (scan :6793)         | **DEAD as stated.** Same entry point → no split. The only bundle-level fix is a secondary entry point (see design decision D4). An `@if`-gated lazy _instantiation_ saves runtime/injection cost only — do not claim bytes for it. Not scheduled.                                                                                                                                                  |
-| `@defer` the scheduler edit surface (scan :3040)     | **DEAD as a defer.** Real bytes are reachable via an _import-graph opt-in_ (RTE-tools-style registration seam: read-only apps never import the edit surface). That is **breaking** for the zero-config path → escalated as design decision D2, not dispatched until decided.                                                                                                                       |
-| Stream PiP opt-in **by import graph** (scan :2298)   | **Viable without entry points** — it is a registration seam, not a defer: remove the static imports in `stream-config.ts` / `stream-player-slot.ts`, register the chrome via a provider PiP users add. Breaking → design decision D3 + measurement gate.                                                                                                                                           |
-| Pack `PHONE_COUNTRIES`                               | **Do not schedule.** `tools/treeshake/README.md` § "Settled — do not re-open" lists `PHONE_COUNTRIES` as measured-and-rejected (gzip already collapses 220 similar literals).                                                                                                                                                                                                                      |
-| Name the six `SELECT_IMPORTS` the phone input uses   | **Viable, non-breaking, mechanical** → W15. (Distinct from the rejected `FORM_FIELD_IMPORTS` barrel split: this changes one internal call site, no public barrel.)                                                                                                                                                                                                                                 |
-| Gate floating-ui `size`/`arrow`/`hide` middleware    | **Viable, non-breaking** → W17. (Distinct from the rejected "floating-ui as optional peer".) The gate mechanism already exists: `enableAnchoredOverlayPositionExtras()` in `libs/core/src/lib/overlay/overlay-position-anchored-extras.ts` with a dev error in `overlay-position-anchored.ts:52`; `libs/components/src/lib/overlay/strategies/anchored.strategy.ts` just calls it unconditionally. |
-| RTE opt-in tool icons onto providers                 | **Viable, mechanical, precedented** (scan :1539 — the image/table/align/heading tools already do it) → W16.                                                                                                                                                                                                                                                                                        |
-| Goldens for date-time, table imports, stream barrels | Table goldens **already exist** (`table`, `table-row-expansion`, `table-group-headers`, `table-skeleton`, `table-sticky-columns` in `tools/treeshake/goldens.json`). Date-time and stream goldens are missing → W0.                                                                                                                                                                                |
+| Proposal                                             | Verdict                                                                                                                                                                                                                                                                      |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@defer` the color picker panel (scan :6793)         | **DEAD as stated.** Same entry point → no split. The only bundle-level fix is a secondary entry point (see design decision D4). An `@if`-gated lazy _instantiation_ saves runtime/injection cost only — do not claim bytes for it. Not scheduled.                            |
+| `@defer` the scheduler edit surface (scan :3040)     | **DEAD as a defer.** Real bytes are reachable via an _import-graph opt-in_ (RTE-tools-style registration seam: read-only apps never import the edit surface). That is **breaking** for the zero-config path → escalated as design decision D2, not dispatched until decided. |
+| Stream PiP opt-in **by import graph** (scan :2298)   | **Viable without entry points** — it is a registration seam, not a defer: remove the static imports in `stream-config.ts` / `stream-player-slot.ts`, register the chrome via a provider PiP users add. Breaking → design decision D3 + measurement gate.                     |
+| Pack `PHONE_COUNTRIES`                               | **Do not schedule.** `tools/treeshake/README.md` § "Settled — do not re-open" lists `PHONE_COUNTRIES` as measured-and-rejected (gzip already collapses 220 similar literals).                                                                                                |
+| Name the six `SELECT_IMPORTS` the phone input uses   | **Viable, non-breaking, mechanical** → W15. (Distinct from the rejected `FORM_FIELD_IMPORTS` barrel split: this changes one internal call site, no public barrel.)                                                                                                           |
+| Gate floating-ui `size`/`arrow`/`hide` middleware    | **MEASURED / REJECTED** → W17. A runtime predicate does not remove the static extras registrar or its floating-ui imports from the generic anchored strategy's bundle; `MENU_IMPORTS` also opts into `autoResize` and arrows already.                                        |
+| RTE opt-in tool icons onto providers                 | **Viable, mechanical, precedented** (scan :1539 — the image/table/align/heading tools already do it) → W16.                                                                                                                                                                  |
+| Goldens for date-time, table imports, stream barrels | Table goldens **already exist** (`table`, `table-row-expansion`, `table-group-headers`, `table-skeleton`, `table-sticky-columns` in `tools/treeshake/goldens.json`). Date-time and stream goldens are missing → W0.                                                          |
 
 ---
 
@@ -58,7 +58,7 @@ Measured evidence:
 **The rule.** A styles-only split buys **style injection and style recalculation**, never transfer
 bytes — unless the slice sits behind a separate imports barrel (W13's `OVERLAY_CONTENT_IMPORTS` is
 the one shape in this plan that does). Item-6 dedupes that add no component (W9, W12) and item-7
-import-graph work (W15, W16, W17, W11) are unaffected.
+import-graph work (W15, W16, W11) is unaffected.
 
 **Decision (user, 2026-08-28): accept the trade.** W2 stays. W5, W7 and W18 ship as specced. Each
 commit body must state that the payoff is injection/recalc and name the measured golden delta —
@@ -164,8 +164,8 @@ item, `goldens.json` unless the item explicitly says it updates it (then seriali
   - `phone-input` (baseline for W15).
   - `stream-youtube-slot` (the one-YouTube-slot entry that should shed PiP in W11) and
     `stream-all` (`STREAM_ALL_IMPORTS` — scan :2298 #4 asks whether it pins all eight platforms).
-  - `menu-anchored-deps` with `"thirdParty": true` (e.g. `MENU_IMPORTS`) — the only entry in which
-    W17's floating-ui delta is visible.
+  - `menu-anchored-deps` with `"thirdParty": true` (e.g. `MENU_IMPORTS`) — guards the menu's
+    floating-ui dependency surface. W17 later proved it cannot represent a plain anchored consumer.
   - `scrollable` (`SCROLLABLE_IMPORTS` base entry, baseline for W3).
 - **Must NOT touch:** anything under `libs/`.
 - **Bytes:** none — this is the measurement baseline. No changeset (tools-only).
@@ -450,7 +450,8 @@ transitionDuration` mid-flight, and re-check under reduced motion. Injection pro
   `sheet-styles.component.css`. Collapse the three normalizers (`overlay-manager.ts:26-32`,
   `overlay-config-merger.ts:6-12`, `strategies/overlay-strategy-controller.ts:47-51`) into one
   helper.
-- **Must NOT touch:** `strategies/anchored.strategy.ts` (W17), tooltip/menu (W4).
+- **Must NOT touch:** `strategies/anchored.strategy.ts` (the later W17 experiment, now rejected),
+  tooltip/menu (W4).
 - **Bytes:** small real win on `overlay-dialog` golden for apps not using content chrome — but the
   golden entry _does_ import `OVERLAY_IMPORTS`; measure with an ad-hoc minimal entry
   (`defineOverlay` + dialog strategy only) before/after; update `overlay-dialog` golden if it moves
@@ -459,7 +460,7 @@ transitionDuration` mid-flight, and re-check under reduced motion. Injection pro
   story (drag handle present + styled), a dialog (no drag-handle node in DOM at all now — assert
   absence), an anchored overlay with arrow on (menu story). Unit: normalizer helper spec.
 - **Docs:** `overlays.md` only if any config surface changes (target: none). Changeset: patch.
-  **Order:** after W0; **before W17** (same domain).
+  **Order:** after W0.
 
 ### W14 — Color-input parser collapse (item 6; the defer is dead, see §0)
 
@@ -504,27 +505,35 @@ transitionDuration` mid-flight, and re-check under reduced motion. Injection pro
 - **Docs:** none (behavior identical when the tool is provided). Changeset: patch.
   **Order:** independent.
 
-### W17 — Gate floating-ui `size`/`arrow`/`hide` middleware (item 7)
+### W17 — Gate floating-ui `size`/`arrow`/`hide` middleware — MEASURED / REJECTED
 
-- **Edits:** `overlay/strategies/anchored.strategy.ts` (the unconditional
-  `enableAnchoredOverlayPositionExtras()` at ~:69) → call it only when
-  `options.autoResize || options.autoHide || options.arrow || options.minAvailableSpace` (scan
-  :395). `libs/core` should need no change — the dev error for a feature used without extras
-  already exists (`overlay-position-anchored.ts:52`). If core _is_ touched, add a core changeset
-  and keep `core-floor` golden green.
-- **Not breaking:** with all three features off the middleware never ran; with a feature on, the
-  gate enables it exactly as before.
-- **Bytes:** invisible in `--external`; measured on the W0 `menu-anchored-deps`
-  (`thirdParty: true`) entry — expect the three middleware to shake out of a
-  plain-popover consumer. Wait: `MENU_IMPORTS` itself never sets those options, so the entry should
-  drop; add a second thirdParty entry for an arrow-using consumer if one exists, so the opted-in
-  cost is guarded. Update goldens (serialized).
-- **Verify:** menu stories (flip/shift positioning still correct at viewport edges — drag the
-  trigger near an edge via a custom harness story or assert placement classes), tooltip/toggletip
-  stories with arrows (arrow still positioned), select panel `autoResize` path (searchable select
-  near viewport bottom still sizes). Dev-error path: a story/spec turning `arrow` on must still
-  work (the strategy now enables extras for it).
-- **Docs:** none. Changeset: patch (+ core patch if touched). **Order:** after W13 (same domain).
+- **Decision (2026-09-03): do not ship the runtime gate.** Fresh uncached `core`, `query` and
+  `components` builds followed by `measure-bundle.mjs --third-party` measured the attempted
+  predicate `options.autoResize || options.autoHide || options.arrow || options.minAvailableSpace`:
+
+  | consumer                                   |   before | attempted gate | delta |
+  | ------------------------------------------ | -------: | -------------: | ----: |
+  | `MENU_IMPORTS` (`menu-anchored-deps`)      | 47,372 B |       47,393 B | +21 B |
+  | `anchoredOverlayStrategy()`                | 13,151 B |       13,166 B | +15 B |
+  | `anchoredOverlayStrategy({ arrow: true })` | 13,156 B |       13,171 B | +15 B |
+
+- **Why it cannot pay off:** the generic strategy still statically references
+  `enableAnchoredOverlayPositionExtras()`. A runtime branch does not remove that registrar or its
+  static `size` / `arrow` / `hide` imports, and esbuild does not specialize this exported function
+  per call site. `MENU_IMPORTS` is not a plain-popover baseline anyway: menus set `autoResize: true`
+  and root menus render arrows by default, so they genuinely require the extras.
+- **Correctness problems in the proposed predicate:** `arrow` is not part of the exported
+  `AnchoredPositionOptions`, so adding it solely for the test widens public API. More importantly,
+  the predicate omits `autoCloseIfReferenceHidden`, while core's anchored positioner uses the
+  optional `hide` middleware for that feature and documents it as requiring the extras. Shipping
+  the predicate as written could therefore emit the missing-middleware dev error and lose hidden
+  reference handling for a valid consumer.
+- **Verification of the discarded experiment:** the focused gate specs passed; Storybook kept the
+  edge-constrained menu inside the viewport (`top-start`), positioned tooltip and toggletip arrows,
+  and capped a searchable select near the viewport bottom to `167px`. Those checks prove behavior
+  for the opted-in examples, not a bundle win, so neither the code nor an arrow golden was retained.
+- A real byte split would require a separate import-graph seam or feature-specific strategy API,
+  with its own API and correctness design. It is not scheduled here.
 
 ### W18 — Dropzone shape split (item 4)
 
@@ -557,17 +566,17 @@ W0 (goldens baseline — alone, first)
 ├─ parallel batch 2 (each gated on its arrow):
 │    W4 → W5 (select/cascader panels)
 │    W1 → W18 (dropzone)
-│    W13 → W17 (overlay strategies)
+│    W13 (overlay strategies; W17 measured/rejected)
 │    W10 → [D3 decision + measurement] → W11 (stream PiP seam)
 │    [D2 decision] → scheduler edit-surface item (not yet specced for dispatch)
 │
-└─ serialization lock: goldens.json — only one of {W0, W3, W11, W13, W15, W16, W17}
+└─ serialization lock: goldens.json — only one of {W0, W3, W11, W13, W15, W16}
    may commit it at a time; each re-runs `:update` on a fresh rebase first.
 ```
 
 Domain-collision resolutions baked in: **slider/otp** CSS only in W1 (their residual opt-in slices
 are not scheduled); **menu** only in W4; **select/cascader panel animations** in W5 (after W4
-creates the base); **stream** serialized W10→W11; **overlay** serialized W13→W17; **scheduler**
+creates the base); **stream** serialized W10→W11; **overlay** ended at W13 after W17 was rejected; **scheduler**
 CSS now, edit surface later.
 
 ---
