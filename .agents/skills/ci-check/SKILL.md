@@ -1,6 +1,6 @@
 ---
 name: ci-check
-description: Run the same checks CI runs, locally, before pushing - format, agent-rules sync, changesets, lint, test, build, bundle-size goldens and the Storybook build. Use when the user says "run CI", "ci check", "lint format test build", or before pushing a change to a published lib.
+description: Run the same checks CI runs, locally, before pushing - format, agent-rules sync, changesets, lint, test, build, bundle-size goldens, the Storybook build and the component behavior tests. Use when the user says "run CI", "ci check", "lint format test build", or before pushing a change to a published lib.
 ---
 
 # Local CI check
@@ -36,10 +36,13 @@ yarn nx run-many -t test                  # 8. all unit tests
 yarn nx run-many -t build                 # 9. all libs + apps (docs build fails on dead links)
 yarn nx run treeshake:bundle-goldens      # 10. bundle-size goldens
 yarn nx run storybook:build-storybook:ci  # 11. Storybook production build
+yarn playwright test -c apps/storybook-e2e/playwright.config.ts  # 12. component behavior tests on that build
 ```
 
-Step 11 is the slowest by far. Skip it only when the change touches no component source
-and no story - and say so rather than reporting a clean run you didn't do.
+Step 11 is the slowest by far. Skip steps 11 and 12 only when the change touches no component
+source and no story - and say so rather than reporting a clean run you didn't do. Step 12 serves
+`dist/storybook` itself; to run it against the dev server instead, set
+`STORYBOOK_URL=http://localhost:4400` (see the **`component-behavior-tests`** skill).
 
 ## Reading the results
 

@@ -1,0 +1,18 @@
+{
+  "name": "storybook-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/storybook-e2e/src",
+  "tags": ["type:e2e", "scope:components"],
+  "implicitDependencies": ["storybook"],
+  "targets": {
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "outputs": ["{workspaceRoot}/dist/.playwright/apps/storybook-e2e"],
+      "options": {
+        "config": "apps/storybook-e2e/playwright.config.ts"
+      },
+      "dependsOn": [{ "projects": ["storybook"], "target": "build-storybook" }]
+    }
+  }
+}
