@@ -1,13 +1,15 @@
 import { Type } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
 import { BracketComponentOverrides } from './bracket-components';
-import { BRACKET_ERROR_CODES } from './bracket-errors';
 import { BracketLayoutSettings } from './bracket-grid';
 import { BracketLabels } from './bracket-labels';
 import { BracketDataLayout } from './core/layout';
 import { TournamentMode } from './core/tournament';
-import { BracketComponents } from './drawing/grid/core/types';
-import { ComputedBracketGrid, CreateBracketGridConfig } from './drawing/grid/types';
+import {
+  BracketComponents,
+  ComputedBracketGrid,
+  CreateBracketGridConfig,
+  resolveBracketLayout as resolveBracketLayoutCore,
+} from '@ethlete/bracket';
 import { Bracket, BracketRound } from './linked/bracket';
 import { BracketRoundMapWithSwissData, BracketSwissColors } from './linked/swiss';
 
@@ -107,12 +109,6 @@ export type BracketLayout<TRoundData = any, TMatchData = any> = {
   styles?: readonly Type<unknown>[];
 };
 
-const LAYOUT_FACTORY_SUGGESTION: Record<TournamentMode, string> = {
-  'single-elimination': 'singleEliminationBracketLayout()',
-  'double-elimination': 'doubleEliminationBracketLayout()',
-  'swiss-with-elimination': 'swissBracketLayout()',
-};
-
 /**
  * The layout drawing a source: the first registered layout whose `mode` matches. Throws `ET3413` when
  * none does - a bracket never silently renders a mode it was not given the code for.
@@ -123,14 +119,5 @@ export const resolveBracketLayout = <TRoundData, TMatchData>(
   layouts: readonly BracketLayout<TRoundData, TMatchData>[] | undefined,
   mode: TournamentMode,
 ): BracketLayout<TRoundData, TMatchData> => {
-  const layout = layouts?.find((candidate) => candidate.mode === mode);
-
-  if (!layout) {
-    throw new RuntimeError(
-      BRACKET_ERROR_CODES.LAYOUT_NOT_REGISTERED,
-      `No bracket layout registered for mode "${mode}". Add ${LAYOUT_FACTORY_SUGGESTION[mode] ?? 'a matching layout'} to provideBracketConfig({ layouts: [...] }) or to the layouts input.`,
-    );
-  }
-
-  return layout;
+  return resolveBracketLayoutCore(layouts, mode);
 };

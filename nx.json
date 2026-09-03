@@ -103,6 +103,7 @@
       "include": [
         "apps/timetrack-vscode/**/*",
         "libs/agent-rules/**/*",
+        "libs/bracket/**/*",
         "libs/cdk/**/*",
         "libs/cli/**/*",
         "libs/components/**/*",

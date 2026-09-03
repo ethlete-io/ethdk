@@ -39,6 +39,8 @@ type NormalizedMatch = {
   startTime: Date | null; // null = unscheduled
   home: NormalizedMatchParticipant | null; // null = a TBD slot
   away: NormalizedMatchParticipant | null;
+  homeState?: 'occupied' | 'predicted' | 'unresolvable' | 'unavailable';
+  awayState?: 'occupied' | 'predicted' | 'unresolvable' | 'unavailable';
   homeScore: number | string | null; // the headline value; null = none yet
   awayScore: number | string | null;
   resultKind: 'score' | 'points' | 'outcome'; // what those two values are, or ignored for 'outcome'
@@ -56,6 +58,11 @@ type NormalizedMatchParticipant = {
   seed: number | null;
 };
 ```
+
+`homeState` and `awayState` let prediction controls distinguish a real participant, one propagated
+from the viewer's earlier pick, a pick that has not resolved yet, and a slot no pick can affect. They
+are optional for compatibility: `resolveNormalizedMatchSideState()` defaults a present participant to
+`occupied` and an empty one to `unavailable`.
 
 `NormalizedMedia` is deliberately exactly [`et-picture`](/components/picture)'s two inputs, so an emblem is
 passed straight through - including a full `srcset` candidate set if your API has one.

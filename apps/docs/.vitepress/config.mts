@@ -16,6 +16,7 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Components', link: '/components/' },
+      { text: 'Bracket', link: '/bracket/' },
       { text: 'Query', link: '/query/' },
       { text: 'Query devtools', link: '/query-devtools/' },
       { text: 'Core', link: '/core/' },
@@ -28,6 +29,12 @@ export default defineConfig({
     ],
 
     sidebar: {
+      '/bracket/': [
+        {
+          text: 'Bracket',
+          items: [{ text: 'Compute core', link: '/bracket/' }],
+        },
+      ],
       '/eslint/': [
         {
           text: 'ESLint plugin',

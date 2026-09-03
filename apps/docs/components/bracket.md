@@ -168,8 +168,43 @@ type BracketDataSource<TRoundData, TMatchData> = {
 ```
 
 `home` / `away` are participant ids; the engine derives the participant graph (and each
-participant's journey) from them. `data` on rounds and matches is opaque to the engine and
-handed back to your cards as `bracketRound().data` / `bracketMatch().data`.
+participant's journey) from them. Prediction sources may additionally set `homeSource` and
+`awaySource` to preserve where an empty or filled slot came from:
+
+```ts
+{
+  id: 'final',
+  roundId: 'final',
+  home: null,
+  away: null,
+  homeSource: {
+    kind: 'match-outcome',
+    role: 'winner',
+    matchId: 'semi-final-1',
+    standingId: null,
+    rank: null,
+    label: null,
+  },
+  awaySource: {
+    kind: 'match-outcome',
+    role: 'winner',
+    matchId: 'semi-final-2',
+    standingId: null,
+    rank: null,
+    label: null,
+  },
+  winner: null,
+  status: 'pending',
+  data: null,
+}
+```
+
+The source kinds are `match-outcome`, `standing-rank`, `seed`, `swiss-bucket`, `bye`, and
+`external`. `label` is optional competition wording for the empty slot; the library never invents
+one. A `bye` is never selectable and automatically advances the other resolved side.
+
+`data` on rounds and matches is opaque to the engine and handed back to your cards as
+`bracketRound().data` / `bracketMatch().data`.
 
 The Ethlete API integration builds the source for you:
 
@@ -196,6 +231,8 @@ shipped default listed below. The resolved set is on the component as `settings(
 | `columnGap`               | `60`         | Horizontal gap between round columns.                                                |
 | `rowGap`                  | `30`         | Vertical gap between matches in a column.                                            |
 | `rowRoundGap`             | `20`         | Vertical gap between the upper/lower halves of a double-elimination round.           |
+| `rowSpanRoundId`          | `null`       | Round whose match count sets vertical spacing; the opening round is the default.     |
+| `focusRoundId`            | `null`       | Translates this round to the inline start without changing vertical density.         |
 | `finalColumnWidth`        | `360`        | Width of the final column - sized for the shipped final card.                        |
 | `finalMatchHeight`        | `200`        | Height of the final match card - likewise.                                           |
 | `roundHeaderHeight`       | `50`         | Height of the round-header row.                                                      |
@@ -333,6 +370,38 @@ export class MatchCardComponent {
 ```html
 <et-bracket [source]="source" [matchComponent]="MatchCardComponent" [finalMatchComponent]="FinalCardComponent" />
 ```
+
+## Prediction brackets
+
+`resolveBracketSlot({ bracket, picks, matchId, side })` follows slot provenance through the viewer's
+own choices. It resolves winners and losers, table positions, and byes; a malformed cycle or an
+incomplete chain returns `null`. It deliberately ignores a later real result when following a
+`match-outcome`, so scoring a prediction never rewrites what the viewer chose.
+
+Use `createBracket(source, options)` to link the source first. Slot provenance supplies the feeder
+graph by default; for a source whose slots do not carry it, pass `previousMatchIds(match)` explicitly.
+Both functions also ship from the framework-free `@ethlete/bracket` package, which has no Angular
+peer dependency.
+
+`<et-bracket-pick-card>` is the default operable cell to use from a custom `matchComponent`. Bind its
+linked `bracketMatch`, your `normalized` view, and `pickedSide`; write `(pick)` back to your prediction
+state. Both sides must be resolved before either becomes a control. Locked, disabled, unresolvable,
+unavailable, partial, and bye matchups are non-focusable content. The chosen side uses
+`aria-pressed`, and a `predicted` side carries a visible “Prediction” marker.
+
+```html
+<et-bracket-pick-card
+  [bracketMatch]="bracketMatch()"
+  [normalized]="normalized()"
+  [pickedSide]="pickedSide()"
+  [locked]="deadlinePassed()"
+  (pick)="savePick($event)"
+>
+  <app-points etBracketPickCardScore />
+</et-bracket-pick-card>
+```
+
+<StoryEmbed id="components-sports-bracket-prediction--interactive" height="420px" />
 
 ## Double elimination
 
@@ -476,10 +545,14 @@ inputs. `density="compact"` with `[columnWidth]="180"` is a compact bracket with
 
 ## Narrow screens
 
-A bracket is as wide as its rounds make it, and no amount of shrinking makes a 32-team grid
-readable on a phone. The answer is to swap representation:
-[`<et-bracket-rounds-list>`](/components/bracket-rounds-list) draws the same source as a vertical
-list of rounds, and `bracketFitsWidth(source, config, availableWidth)` decides when to use it.
+A bracket is as wide as its rounds make it. There are two supported responses. A results view can
+swap to [`<et-bracket-rounds-list>`](/components/bracket-rounds-list). A prediction view can retain
+the connectors, set `rowSpanRoundId` to squeeze the visible rounds vertically, and move between them
+with `focusRoundId`. The translation animates normally and becomes an instant jump under
+`prefers-reduced-motion`; vertical scrolling remains available for tall rounds.
+
+Use `bracketFitsWidth(source, config, availableWidth)` to make the choice from a measured container
+rather than a viewport breakpoint. Measure an ancestor that does not grow with the bracket content.
 
 The `config` you pass those helpers must include the **`layouts`**, because the width of a bracket is
 the layout's answer - a folded 32-team bracket is nearly twice as wide as the same source drawn left to

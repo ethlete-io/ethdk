@@ -1,0 +1,61 @@
+@layer components {
+  .et-bracket-pick-card {
+    display: grid;
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: hidden;
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    border-radius: var(--et-bracket-pick-card-border-radius, 10px);
+    background: var(--et-surface-background-solid, #fff);
+    color: var(--et-surface-color-solid, #111);
+  }
+
+  .et-bracket-pick-card-sides {
+    display: grid;
+    min-block-size: 0;
+  }
+
+  .et-bracket-pick-card-side {
+    display: flex;
+    min-inline-size: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--et-bracket-pick-card-gap, 8px);
+    box-sizing: border-box;
+    border: 0;
+    border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    padding: var(--et-bracket-pick-card-padding, 8px 10px);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+
+    &:where(button) {
+      cursor: pointer;
+    }
+
+    &:where(button):hover {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, #777) 12%, transparent);
+    }
+
+    &:where([aria-pressed='true'], [data-selected]) {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid, #555) 12%, transparent);
+      box-shadow: inset 3px 0 var(--et-theme-color-primary-solid, #555);
+    }
+
+    &:where([data-side-state='predicted']) {
+      color: var(--et-theme-color-ink-solid, currentColor);
+    }
+  }
+
+  .et-bracket-pick-card-side:last-child {
+    border-block-end: 0;
+  }
+
+  .et-bracket-pick-card-predicted,
+  .et-bracket-pick-card-empty {
+    color: var(--et-surface-color-muted-solid, #666);
+    font-size: 0.8em;
+  }
+}

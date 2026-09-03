@@ -1,0 +1,36 @@
+<div class="et-bracket-pick-card-sides">
+  @for (item of sides(); track item.side) {
+    @if (item.selectable) {
+      <button
+        [attr.aria-pressed]="item.selected"
+        [attr.data-side-state]="item.state"
+        (click)="pick.emit(item.side)"
+        class="et-bracket-pick-card-side"
+        etFocusRing
+        type="button"
+      >
+        <et-match-participant [participant]="item.participant" compact />
+        @if (item.state === 'predicted') {
+          <span class="et-bracket-pick-card-predicted">{{ predictedLabel() }}</span>
+        }
+      </button>
+    } @else {
+      <div
+        [attr.data-selected]="item.selected ? '' : null"
+        [attr.data-side-state]="item.state"
+        class="et-bracket-pick-card-side"
+      >
+        @if (item.participant) {
+          <et-match-participant [participant]="item.participant" compact />
+          @if (item.state === 'predicted') {
+            <span class="et-bracket-pick-card-predicted">{{ predictedLabel() }}</span>
+          }
+        } @else {
+          <span class="et-bracket-pick-card-empty">{{ item.emptyLabel }}</span>
+        }
+      </div>
+    }
+  }
+</div>
+
+<ng-content select="[etBracketPickCardScore]" />

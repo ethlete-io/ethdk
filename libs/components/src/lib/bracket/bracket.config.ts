@@ -2,11 +2,7 @@ import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core
 import { BracketMatchNormalizer } from './bracket-card-context';
 import { BracketDensity } from './bracket-density';
 import { BracketLayout } from './bracket-layout';
-import {
-  BracketContinueComponent,
-  BracketMatchComponent,
-  BracketRoundHeaderComponent,
-} from './drawing/grid/core/types';
+import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from '@ethlete/bracket';
 
 /**
  * Default values for the et-bracket component inputs. Inputs set on the component
@@ -33,6 +29,8 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
   columnGap?: number;
   rowGap?: number;
   rowRoundGap?: number;
+  /** The round whose density determines vertical spacing. `null` uses the opening round. */
+  rowSpanRoundId?: string | null;
   lineStartingCurveAmount?: number;
   lineEndingCurveAmount?: number;
   lineWidth?: number;
@@ -105,6 +103,7 @@ export const BRACKET_DEFAULTS: Required<BracketLayoutConfig> = {
   columnGap: 60,
   rowGap: 30,
   rowRoundGap: 20,
+  rowSpanRoundId: null,
   lineStartingCurveAmount: 10,
   lineEndingCurveAmount: 0,
   lineWidth: 2,

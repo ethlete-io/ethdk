@@ -7,7 +7,7 @@ import { BracketMatchNormalizer } from '../bracket-card-context';
 import { BracketRoundsListComponent } from '../bracket-rounds-list.component';
 import { BracketLayout } from '../bracket-layout';
 import { BracketComponent } from '../bracket.component';
-import { BracketMatchComponent } from '../drawing/grid/core/types';
+import { BracketMatchComponent } from '@ethlete/bracket';
 import { BracketDataSource } from '../integrations';
 import { doubleEliminationBracketLayout, singleEliminationBracketLayout } from '../layouts';
 
@@ -39,6 +39,8 @@ export type BracketTestDriverOptions = {
   focusedParticipantId?: string | null;
   disableJourneyHighlight?: boolean;
   selectedRoundId?: string | null;
+  rowSpanRoundId?: string | null;
+  focusRoundId?: string | null;
   matchComponent?: BracketMatchComponent<unknown, unknown>;
   providers?: Provider[];
 };
@@ -62,6 +64,8 @@ const BRACKET_TEST_OPTIONS = new InjectionToken<BracketTestDriverOptions>('BRACK
         [layouts]="layouts()"
         [matchNormalizer]="matchNormalizer"
         [disableJourneyHighlight]="disableJourneyHighlight"
+        [rowSpanRoundId]="rowSpanRoundId()"
+        [focusRoundId]="focusRoundId()"
       />
     }
   `,
@@ -75,6 +79,8 @@ class BracketTestHost {
   public readonly layouts = signal(this.options.layouts);
   public readonly focusedParticipantId = signal(this.options.focusedParticipantId ?? null);
   public readonly selectedRoundId = signal(this.options.selectedRoundId ?? null);
+  public readonly rowSpanRoundId = signal(this.options.rowSpanRoundId ?? null);
+  public readonly focusRoundId = signal(this.options.focusRoundId ?? null);
   public readonly matchComponent = signal(this.options.matchComponent);
   public readonly matchNormalizer = this.options.matchNormalizer ?? testBracketMatchNormalizer;
   public readonly disableJourneyHighlight = this.options.disableJourneyHighlight ?? false;

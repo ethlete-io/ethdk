@@ -17,6 +17,9 @@ features:
   - title: '@ethlete/components'
     details: The active Angular UI library - overlays, menus, buttons, forms and more, built signal-first.
     link: /components/
+  - title: '@ethlete/bracket'
+    details: Framework-free bracket graph and prediction resolution, usable without Angular.
+    link: /bracket/
   - title: '@ethlete/query'
     details: Declarative, typesafe HTTP query management with caching, polling, auth and GQL support.
     link: /query/

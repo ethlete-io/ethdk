@@ -3,8 +3,7 @@ import { BracketLabels } from '../bracket-labels';
 import { BRACKET_DATA_LAYOUT } from '../core/layout';
 import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../core/round';
 import { TOURNAMENT_MODE } from '../core/tournament';
-import { createDoubleEliminationGrid } from '../drawing/grid/double-elimination';
-import { createStackedDoubleEliminationGrid } from '../drawing/grid/double-elimination-stacked';
+import { createDoubleEliminationGrid, createStackedDoubleEliminationGrid } from '@ethlete/bracket';
 import { BracketRound } from '../linked/bracket';
 import { drawEliminationEdges } from './draw-elimination-edges';
 

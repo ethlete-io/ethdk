@@ -24,6 +24,7 @@ const MAX_BULLETS = 3;
 
 const PACKAGES = [
   '@ethlete/agent-rules',
+  '@ethlete/bracket',
   '@ethlete/cdk',
   '@ethlete/cli',
   '@ethlete/components',

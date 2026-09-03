@@ -1,0 +1,50 @@
+{
+  "name": "bracket",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/bracket/src",
+  "tags": ["scope:bracket"],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:package",
+      "outputs": ["{workspaceRoot}/dist/libs/bracket"],
+      "defaultConfiguration": "production",
+      "options": {
+        "project": "libs/bracket/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/bracket/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/bracket/tsconfig.lib.json"
+        }
+      }
+    },
+    "test": {
+      "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/bracket"],
+      "options": {
+        "coverage.reportsDirectory": "../../../coverage/libs/bracket"
+      }
+    },
+    "lint": {
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/bracket/tsconfig.spec.json --noEmit"
+      }
+    }
+  }
+}

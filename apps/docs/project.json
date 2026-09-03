@@ -4,7 +4,7 @@
   "projectType": "application",
   "sourceRoot": "apps/docs",
   "tags": ["type:app", "scope:docs"],
-  "implicitDependencies": ["query", "core", "cdk", "contentful", "types"],
+  "implicitDependencies": ["bracket", "query", "core", "cdk", "contentful", "types"],
   "targets": {
     "serve": {
       "executor": "nx:run-commands",

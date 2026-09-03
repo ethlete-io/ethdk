@@ -23,6 +23,30 @@ const reseededOpeningRound = (source: BracketDataSource<null, null>): BracketDat
   };
 };
 
+describe('BracketComponent focused rounds', () => {
+  it('keeps a tall final below its header when a later round sets the row span', () => {
+    const driver = bracketTestDriver({
+      source: generateSingleEliminationBracket(8),
+      layouts: testBracketLayouts,
+      rowSpanRoundId: 'se-r2',
+    });
+    const final = driver.cellFor('se-r2-m0');
+
+    expect(Number.parseFloat(final?.style.top ?? '0')).toBeGreaterThanOrEqual(70);
+  });
+
+  it('moves the focused round to the inline start', () => {
+    const driver = bracketTestDriver({
+      source: generateSingleEliminationBracket(8),
+      layouts: testBracketLayouts,
+      focusRoundId: 'se-r1',
+    });
+    const bracket = driver.element().querySelector<HTMLElement>('.et-bracket');
+
+    expect(bracket?.style.transform).toBe('translateX(-310px)');
+  });
+});
+
 describe('BracketComponent participant focus', () => {
   let driver: ReturnType<typeof bracketTestDriver>;
 

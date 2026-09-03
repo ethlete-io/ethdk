@@ -1,7 +1,7 @@
 import { BRACKET_DENSITY_PRESETS } from './bracket-density';
 import { BRACKET_DEFAULTS, BracketLayoutConfig } from './bracket.config';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout } from './core/layout';
-import { CreateBracketGridConfig } from './drawing/grid/types';
+import { CreateBracketGridConfig } from '@ethlete/bracket';
 
 /**
  * Every layout setting, resolved to a concrete value - no `undefined`, no "fall back to the config".
@@ -56,6 +56,7 @@ export const createBracketGridConfig = (
   matchHeight: settings.matchHeight,
   roundHeaderHeight: settings.hideRoundHeaders ? 0 : settings.roundHeaderHeight,
   rowGap: settings.rowGap,
+  rowSpanRoundId: settings.rowSpanRoundId,
   layout: dataLayout,
   finalMatchHeight: settings.finalMatchHeight,
   finalColumnWidth: settings.finalColumnWidth,

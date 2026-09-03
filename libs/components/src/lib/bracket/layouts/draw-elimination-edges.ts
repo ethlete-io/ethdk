@@ -1,5 +1,5 @@
 import { BracketDrawEdgesContext } from '../bracket-layout';
-import { drawMan } from '../drawing/draw-man';
+import { drawMan } from '@ethlete/bracket';
 
 /**
  * The connector drawing every elimination layout shares - single and double, folded or not - mapping

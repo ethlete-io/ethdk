@@ -1,11 +1,7 @@
 import { NgComponentOutlet } from '@angular/common';
 import { booleanAttribute, Component, computed, input, numberAttribute, Type, ViewEncapsulation } from '@angular/core';
 import { BRACKET_DATA_LAYOUT } from './core';
-import {
-  BracketContinueComponent,
-  BracketMatchComponent,
-  BracketRoundHeaderComponent,
-} from './drawing/grid/core/types';
+import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from '@ethlete/bracket';
 import { MATCH_CARD_SIZES, MatchCardSize } from '../match';
 import { BracketDataSource } from './integrations';
 import { BracketMatch, BracketRound, createBracket } from './linked/bracket';

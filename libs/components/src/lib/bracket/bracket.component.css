@@ -1,6 +1,13 @@
 @layer components {
   .et-bracket {
     position: relative;
+    transition: transform 0.2s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-bracket {
+      transition: none;
+    }
   }
 
   .et-bracket-round {

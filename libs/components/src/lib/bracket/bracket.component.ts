@@ -16,12 +16,12 @@ import {
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { createComponentId, injectRenderer, injectStyleManager } from '@ethlete/core';
-import { FinalizedBracketElement } from './drawing/grid/core/bracket-finalizer';
 import {
   BracketContinueComponent,
+  FinalizedBracketElement,
   BracketMatchComponent,
   BracketRoundHeaderComponent,
-} from './drawing/grid/core/types';
+} from '@ethlete/bracket';
 import { BracketDataSource } from './integrations';
 import { MATCH_CARD_SIZES, MatchCardSize } from '../match';
 import {
@@ -89,6 +89,10 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public rowRoundGap = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
+  public rowSpanRoundId = input<string | null | undefined>(undefined);
+
+  /** Move this round to the inline start without changing the bracket's vertical density. */
+  public focusRoundId = input<string | null>(null);
   public lineStartingCurveAmount = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
@@ -213,6 +217,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
       columnGap: this.columnGap() ?? this.config.columnGap,
       rowGap: this.rowGap() ?? this.config.rowGap,
       rowRoundGap: this.rowRoundGap() ?? this.config.rowRoundGap,
+      rowSpanRoundId: this.rowSpanRoundId() === undefined ? this.config.rowSpanRoundId : this.rowSpanRoundId(),
       lineStartingCurveAmount: this.lineStartingCurveAmount() ?? this.config.lineStartingCurveAmount,
       lineEndingCurveAmount: this.lineEndingCurveAmount() ?? this.config.lineEndingCurveAmount,
       lineWidth: this.lineWidth() ?? this.config.lineWidth,
@@ -278,6 +283,22 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   });
 
   public svgContent = computed(() => this.domSanitizer.bypassSecurityTrustHtml(this.drawManData()));
+
+  protected focusRoundOffset = computed(() => {
+    const focusRoundId = this.focusRoundId();
+
+    if (!focusRoundId) return 0;
+
+    const column = this.bracketGrid().columns.find((candidate) =>
+      candidate.elements.some(
+        (element) =>
+          'round' in element &&
+          (element.round.id === focusRoundId || element.round.id.startsWith(`${focusRoundId}--half-`)),
+      ),
+    );
+
+    return column?.dimensions.left ?? 0;
+  });
 
   constructor() {
     this.setupJourneyHighlight();

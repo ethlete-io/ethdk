@@ -4,7 +4,7 @@ import {
   BracketContinueComponent,
   BracketMatchComponent,
   BracketRoundHeaderComponent,
-} from './drawing/grid/core/types';
+} from '@ethlete/bracket';
 import { Bracket, BracketRound } from './linked/bracket';
 import { BracketDefaultContinueComponent } from './bracket-default-continue.component';
 import { BracketDefaultFinalMatchComponent } from './bracket-default-final-match.component';

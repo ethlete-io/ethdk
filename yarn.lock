@@ -4382,6 +4382,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ethlete/bracket@workspace:libs/bracket":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/bracket@workspace:libs/bracket"
+  languageName: unknown
+  linkType: soft
+
 "@ethlete/cdk@workspace:libs/cdk":
   version: 0.0.0-use.local
   resolution: "@ethlete/cdk@workspace:libs/cdk"
@@ -4436,6 +4442,7 @@ __metadata:
     "@angular/platform-browser": 22.0.7
     "@angular/router": 22.0.7
     "@date-fns/tz": 1.5.0
+    "@ethlete/bracket": ^1.0.0-beta.0
     "@ethlete/core": ^5.0.0-beta.11
     "@ethlete/query": ^6.0.0-beta.8
     "@ethlete/types": ^2.0.0-beta.4

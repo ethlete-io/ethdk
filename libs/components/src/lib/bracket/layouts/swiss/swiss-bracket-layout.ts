@@ -1,9 +1,7 @@
 import { BracketLayout } from '../../bracket-layout';
 import { BRACKET_DATA_LAYOUT } from '../../core/layout';
 import { TOURNAMENT_MODE } from '../../core/tournament';
-import { drawSwissMan } from '../../drawing/draw-man-swiss';
-import { createSwissGrid } from '../../drawing/grid/swiss';
-import { BracketMatchComponent, BracketRoundHeaderComponent } from '../../drawing/grid/core/types';
+import { BracketMatchComponent, BracketRoundHeaderComponent, createSwissGrid, drawSwissMan } from '@ethlete/bracket';
 import { BracketSwissColors, generateBracketRoundSwissGroupMaps } from '../../linked/swiss';
 import { BracketSwissStylesComponent } from './bracket-swiss-styles.component';
 

@@ -35,12 +35,12 @@ Today a side is a participant or nothing. Give it a source.
 
 ```ts
 export type BracketSlotSourceKind =
-  | 'match-outcome'   // the winner or the loser of another match
-  | 'standing-rank'   // a position in a group or league table
-  | 'seed'            // a seeding position
-  | 'swiss-bucket'    // drawn once the round is scheduled
-  | 'bye'             // nobody plays; the other side advances
-  | 'external';       // another competition fills it
+  | 'match-outcome' // the winner or the loser of another match
+  | 'standing-rank' // a position in a group or league table
+  | 'seed' // a seeding position
+  | 'swiss-bucket' // drawn once the round is scheduled
+  | 'bye' // nobody plays; the other side advances
+  | 'external'; // another competition fills it
 
 export type BracketSlotSource = {
   kind: BracketSlotSourceKind;
@@ -144,12 +144,12 @@ Three details that are easy to get wrong and belong in the library, not in each 
 
 A prediction bracket has a fourth cell state the model cannot express. Per side:
 
-| State | Meaning |
-| ----- | ------- |
-| occupied | somebody really stands here |
-| predicted | the viewer's own earlier pick puts somebody here |
-| unresolvable | a pick could name somebody, and the viewer has not made it |
-| unavailable | nothing a pick can change: a bye, an external slot, an undrawn bucket |
+| State        | Meaning                                                               |
+| ------------ | --------------------------------------------------------------------- |
+| occupied     | somebody really stands here                                           |
+| predicted    | the viewer's own earlier pick puts somebody here                      |
+| unresolvable | a pick could name somebody, and the viewer has not made it            |
+| unavailable  | nothing a pick can change: a bye, an external slot, an undrawn bucket |
 
 `home: null` collapses the last three into one. A card then cannot tell "predict the earlier
 round first" from "this slot belongs to another competition", and those two want different words.
@@ -235,10 +235,7 @@ Three requirements the consumer should not have to discover:
 The row-span block must be clamped to at least the height of the element it holds:
 
 ```ts
-const blockHeight = Math.max(
-  elementHeight,
-  matchFactor * settings.matchHeight + (matchFactor - 1) * settings.rowGap,
-);
+const blockHeight = Math.max(elementHeight, matchFactor * settings.matchHeight + (matchFactor - 1) * settings.rowGap);
 ```
 
 Without the clamp, a squeezed final centres a tall final card in a one-row block, and the card is

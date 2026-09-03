@@ -14,22 +14,25 @@ at the end of this file is generated - never edit it by hand.
 
 All under `libs/<name>`, published as `@ethlete/<name>`:
 
-| Lib              | What it is                                                                                                                                 | Depends on (`@ethlete/*`)     |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
-| `types`          | Shared TS types (API, pagination, violations). Framework-agnostic base.                                                                    | -                             |
-| `core`           | Framework primitives: directives, signals utils, overlay runtime, animations, theming, scrolling, drag/resize. Angular but component-less. | `types`                       |
-| `query`          | Data fetching / query client: http, gql, ws, auth, query-form.                                                                             | `core`, `types`               |
-| `components`     | **Active** Angular UI library: overlay, menu, button, forms, grid, tabs, tooltip, etc.                                                     | `core`, `query`, `types`      |
-| `query-devtools` | The `<et-query-devtools>` panel, in three entry points (`.`, `/lazy`, `/toggle`). See below.                                               | `components`, `core`, `query` |
-| `cdk`            | **Maintenance mode** - older UI toolkit. Predecessor of `components`.                                                                      | `core`, `query`, `types`      |
-| `contentful`     | Contentful integration (rich-text components, gql, types).                                                                                 | `components`, `core`, `query` |
-| `cli`            | CLI tooling (release helpers).                                                                                                             | -                             |
-| `eslint-plugin`  | Custom ESLint rules + shareable flat configs for the styleguide.                                                                           | -                             |
-| `agent-rules`    | Portable agent rules + skills, compiled for Claude Code / Codex / Cursor / Copilot. See below.                                             | -                             |
+| Lib              | What it is                                                                                                                                 | Depends on (`@ethlete/*`)           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| `types`          | Shared TS types (API, pagination, violations). Framework-agnostic base.                                                                    | -                                   |
+| `bracket`        | Framework-free bracket data model, relation graph, prediction resolver, and layout geometry.                                               | -                                   |
+| `core`           | Framework primitives: directives, signals utils, overlay runtime, animations, theming, scrolling, drag/resize. Angular but component-less. | `types`                             |
+| `query`          | Data fetching / query client: http, gql, ws, auth, query-form.                                                                             | `core`, `types`                     |
+| `components`     | **Active** Angular UI library: overlay, menu, button, forms, grid, tabs, tooltip, etc.                                                     | `bracket`, `core`, `query`, `types` |
+| `query-devtools` | The `<et-query-devtools>` panel, in three entry points (`.`, `/lazy`, `/toggle`). See below.                                               | `components`, `core`, `query`       |
+| `cdk`            | **Maintenance mode** - older UI toolkit. Predecessor of `components`.                                                                      | `core`, `query`, `types`            |
+| `contentful`     | Contentful integration (rich-text components, gql, types).                                                                                 | `components`, `core`, `query`       |
+| `cli`            | CLI tooling (release helpers).                                                                                                             | -                                   |
+| `eslint-plugin`  | Custom ESLint rules + shareable flat configs for the styleguide.                                                                           | -                                   |
+| `agent-rules`    | Portable agent rules + skills, compiled for Claude Code / Codex / Cursor / Copilot. See below.                                             | -                                   |
 
 Rough layering: `types` → `core` → `query` → `components` → `contentful` /
 `query-devtools`. Nothing depends on `cdk` any more - it is a leaf in the lib graph,
 reachable only through its own stories.
+
+`bracket` is a framework-free sibling of `core`; `components` adds the Angular renderer on top.
 
 ### query-devtools: why three entry points
 

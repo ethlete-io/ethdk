@@ -54,6 +54,9 @@ export type NormalizedGameScore = {
  */
 export type NormalizedMatchResultKind = 'score' | 'points' | 'outcome';
 
+/** What a match card knows about how one of its participant slots was filled. */
+export type NormalizedMatchSideState = 'occupied' | 'predicted' | 'unresolvable' | 'unavailable';
+
 /**
  * A match, in the shape this library's match components render. **Every backend maps into it** - the
  * `@ethlete/types` adapter in `integrations/` is the first-class example, not the model. Keep an
@@ -70,6 +73,10 @@ export type NormalizedMatch = {
   /** The two sides. `null` is a TBD slot: a bracket match whose feeder hasn't finished. */
   home: NormalizedMatchParticipant | null;
   away: NormalizedMatchParticipant | null;
+  /** Defaults to `occupied` when `home` is present and `unavailable` otherwise. */
+  homeState?: NormalizedMatchSideState;
+  /** Defaults to `occupied` when `away` is present and `unavailable` otherwise. */
+  awayState?: NormalizedMatchSideState;
   /**
    * The headline value each side shows, drawn as-is: goals, rounds, games won in a series, or table
    * points - say which in {@link resultKind}. A string is allowed for an API that reports something else
@@ -91,3 +98,8 @@ export type NormalizedMatch = {
   /** Free text naming this match - `'Match 3'`, `'Grand Final'`. */
   label: string | null;
 };
+
+export const resolveNormalizedMatchSideState = (
+  match: NormalizedMatch,
+  side: 'home' | 'away',
+): NormalizedMatchSideState => match[`${side}State`] ?? (match[side] ? 'occupied' : 'unavailable');
