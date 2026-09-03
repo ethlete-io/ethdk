@@ -1013,33 +1013,27 @@ describe('CascaderDirective (multiple, mixed contract)', () => {
 });
 
 describe('CascaderDirective (in form field)', () => {
-  describeOverlayControlContract(
-    () => {
-      const driver = mountCascader(CascaderInFormFieldTestHost, [], { directiveSelector: 'et-cascader' });
+  describeOverlayControlContract(() => {
+    const driver = mountCascader(CascaderInFormFieldTestHost, [], { directiveSelector: 'et-cascader' });
 
-      return {
-        open: () => driver.open(),
-        close: () => driver.close(),
-        trigger: () => driver.trigger(),
-        field: () => driver.query('et-form-field')!,
-        isOpen: () => driver.control.open(),
-        touched: () => driver.host.touched(),
-        focusTrigger: () => {
-          driver.trigger().focus();
-          driver.tick();
-        },
-        blurTrigger: () => {
-          driver.trigger().blur();
-          driver.tick();
-        },
-        escape: () => driver.escape(),
-        pointerDownOutside: () => driver.pointerDownOutside(),
-        settle: () => driver.settle(),
-      };
-    },
-    // `CascaderTriggerDirective.handleBlur` sets `touched` on every blur, and the panel takes focus
-    // itself on open - so opening marks the field touched. Deliberately still open: triage entry 14
-    // ("Left open: … premature `touched` on open") in plans/components-lib-scan-triage.md.
-    { touchedOnOpenIsKnownBroken: true },
-  );
+    return {
+      open: () => driver.open(),
+      close: () => driver.close(),
+      trigger: () => driver.trigger(),
+      field: () => driver.query('et-form-field')!,
+      isOpen: () => driver.control.open(),
+      touched: () => driver.host.touched(),
+      focusTrigger: () => {
+        driver.trigger().focus();
+        driver.tick();
+      },
+      blurTrigger: () => {
+        driver.trigger().blur();
+        driver.tick();
+      },
+      escape: () => driver.escape(),
+      pointerDownOutside: () => driver.pointerDownOutside(),
+      settle: () => driver.settle(),
+    };
+  });
 });

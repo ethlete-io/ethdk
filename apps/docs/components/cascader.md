@@ -222,7 +222,7 @@ For [flat search](#flat-search), place an `input[etCascaderSearch]` in the surfa
 ## Accessibility
 
 - The trigger is a `role="combobox"` with `aria-haspopup="tree"`, `aria-expanded`, and `aria-controls` pointing at the open tree panel; the panel is a `role="tree"` of `role="group"` columns and `role="treeitem"` nodes carrying `aria-level`, `aria-selected`, and `aria-expanded` on branches.
-- The panel takes focus on open. Roving tabindex keeps exactly one node tabbable.
+- The panel takes focus on open. Roving tabindex keeps exactly one node tabbable, and drilling in the mobile sheet moves focus into the new level; its hidden root-level Back control is disabled and skipped by keyboard navigation.
 - A cascader named by something other than a projected `et-label` - a shared caption over a filter row - takes `aria-label` / `aria-labelledby` on the control itself; both reach the trigger, and either satisfies the field's [`ET2201`](/components/error-codes) labelling guard.
 
 | Key             | Action                                                                                      |

@@ -101,14 +101,10 @@ describe('cascader bottom sheet', () => {
     expect(driver.sheetHeader()!.getAttribute('data-back')).toBeNull();
   });
 
-  // The template's `[attr.tabindex]="-1"` never reaches the DOM: `ButtonDirective` declares its own
-  // `[attr.tabindex]` host binding, which resolves to null on a <button> and wins on the same
-  // element. The hidden Back bar is only `opacity: 0` / `pointer-events: none`, so it stays
-  // keyboard-reachable at the root. Reported as a production finding; the fix is out of scope here.
-  it.fails('takes the hidden Back bar out of the tab order at the root level', async () => {
+  it('takes the hidden Back bar out of the tab order at the root level', async () => {
     await driver.open();
 
-    expect(driver.backButton()!.getAttribute('tabindex')).toBe('-1');
+    expect(driver.backButton()!.disabled).toBe(true);
   });
 
   it('reveals the Back bar once a level is drilled into', async () => {
@@ -121,7 +117,7 @@ describe('cascader bottom sheet', () => {
     expect(back).not.toBeNull();
     expect(back!.classList.contains('et-cascader-back--hidden')).toBe(false);
     expect(back!.getAttribute('aria-hidden')).toBeNull();
-    expect(back!.getAttribute('tabindex')).toBeNull();
+    expect(back!.disabled).toBe(false);
     expect(driver.backLabel()).toBe('Back');
     expect(driver.sheetHeader()!.getAttribute('data-back')).toBe('true');
   });
@@ -164,16 +160,12 @@ describe('cascader bottom sheet', () => {
     expect(document.activeElement).toBe(driver.nodeByLabel('Group stage'));
   });
 
-  // A sheet drill unmounts the node that was activated (only the deepest level is rendered) and
-  // nothing pulls roving focus into the new column, so focus falls back to <body>. The anchored
-  // presentation keeps the activated node mounted, which is why this never surfaced there.
-  // Reported as a production finding; the fix is out of scope here.
-  it.fails('keeps DOM focus inside the sheet after drilling into a level', async () => {
+  it('moves DOM focus into the drilled sheet level', async () => {
     await driver.open();
     driver.clickNode('Euro');
     await driver.settle();
 
-    expect(driver.panel()!.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement).toBe(driver.nodeByLabel('Group stage'));
   });
 
   it('titles the sheet with the drilled parent and the placeholder at the root', async () => {

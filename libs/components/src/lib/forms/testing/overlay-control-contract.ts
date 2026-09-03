@@ -33,19 +33,7 @@ export type OverlayControlContractHarness = ExpandedStateHarness & {
   settle: () => Promise<void>;
 };
 
-export type OverlayControlContractOptions = {
-  /**
-   * Declares clause 1's "not on open" half a known failure: the case runs as `it.fails`, so the
-   * suite stays green while the defect is open and turns red the moment it is fixed. Point at the
-   * defect from the call site.
-   */
-  touchedOnOpenIsKnownBroken?: boolean;
-};
-
-export const describeOverlayControlContract = (
-  setup: () => OverlayControlContractHarness,
-  { touchedOnOpenIsKnownBroken = false }: OverlayControlContractOptions = {},
-) => {
+export const describeOverlayControlContract = (setup: () => OverlayControlContractHarness) => {
   describe('overlay control contract', () => {
     describeExpandedStateContract(setup);
 
@@ -63,9 +51,7 @@ export const describeOverlayControlContract = (
       expect(harness.touched()).toBe(true);
     });
 
-    const touchedOnOpen = touchedOnOpenIsKnownBroken ? it.fails : it;
-
-    touchedOnOpen('does not mark touched while the panel is the thing taking focus', async () => {
+    it('does not mark touched while the panel is the thing taking focus', async () => {
       const harness = setup();
 
       harness.focusTrigger();

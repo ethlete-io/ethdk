@@ -74,7 +74,10 @@ export class CascaderTriggerDirective {
 
   protected handleBlur() {
     this.cascader?.triggerFocused.set(false);
-    this.cascader?.touched.set(true);
+
+    if (!this.cascader?.open()) {
+      this.cascader?.touched.set(true);
+    }
   }
 
   protected handleKeydown(event: KeyboardEvent) {

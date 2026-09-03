@@ -116,9 +116,9 @@
              unlike a flex width transition), and the title cross-slides on level changes -->
   <div [attr.data-back]="cascader.deepestColumnIndex() > 0 || null" class="et-cascader-sheet-header">
     <button
+      [disabled]="cascader.deepestColumnIndex() === 0"
       [class.et-cascader-back--hidden]="cascader.deepestColumnIndex() === 0"
       [attr.aria-hidden]="cascader.deepestColumnIndex() === 0 || null"
-      [attr.tabindex]="cascader.deepestColumnIndex() === 0 ? -1 : null"
       (click)="cascader.goBack()"
       class="et-cascader-back"
       et-text-button

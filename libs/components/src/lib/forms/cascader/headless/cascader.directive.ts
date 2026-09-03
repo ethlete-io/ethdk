@@ -882,8 +882,6 @@ export class CascaderDirective<T = unknown>
 
         if (canHaveChildren(node) && !node.disabled) {
           this.drillInto(node, columnIndex);
-          // focus the first node of the freshly opened column once it loads
-          this.focusFirstOfColumn(columnIndex + 1);
         }
 
         return;
@@ -1213,6 +1211,7 @@ export class CascaderDirective<T = unknown>
     this.truncateColumns(columnIndex + 1);
     this.loadColumn(columnIndex + 1, node);
     this.revealColumn(columnIndex + 1);
+    this.focusFirstOfColumn(columnIndex + 1);
   }
 
   /** Slides the browse window the minimal distance that brings `columnIndex` into view. */
