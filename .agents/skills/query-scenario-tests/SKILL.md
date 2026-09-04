@@ -75,7 +75,10 @@ it('dedupes identical requests', () => {
 3. Every bug fix in `libs/query` adds a scenario that failed before the fix.
 4. Time: use the bare `setTimeout` in anything you add to the harness. Do not fake
    `queueMicrotask`; the multi-tab fakes need it. A timer created exactly on an
-   `advanceTimersByTime` boundary needs one more `s.tick(1)`.
+   `advanceTimersByTime` boundary needs one more `s.tick(1)`. `settle()` advances fake time once and
+   then awaits microtasks; `flush()` advances repeatedly and never awaits. A cascade in which each
+   round arms its next timer one microtask later (401, refresh, retry, 401, ...) needs a loop of
+   `await Promise.resolve(); s.tick(50);` - see the streak-cap test in `auth-features.scenario.spec.ts`.
 5. The harness lives in `harness/` and changes only with a coordinator's say; suites work
    around a gap inside their own file and report it.
 
