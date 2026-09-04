@@ -238,5 +238,41 @@ at once or a file under `libs/` changes, and `openStory` then times out - rerun 
 a flake. Lint the e2e project without `--fix` (see wave 1). The `components` vitest project has no
 `--project` name; run single specs with `npx vitest run --config libs/components/vite.config.mts <file>`.
 
-Wave 3 candidates, not started: date/time inputs, scrollbar, grid, timeline, rich text editor,
-scheduler, filter overlay, notification, dropzone, rating, masked input, textarea.
+## Wave 3 (2026-09-04)
+
+13 new suites: `date-inputs` (date, date range, date-time, date-time range), `time-inputs` (time,
+time range, duration), `rich-text-editor`, `scheduler`, `grid`, `scrollbar`, `timeline`,
+`filter-overlay`, `notification`, `dropzone`, `rating`, `masked-input`, `textarea`. The project now
+holds 36 suites and 433 tests per browser project. The full run takes four minutes with three workers
+against the static build.
+
+No component defect this wave. The scheduler agent marked six tests `test.fail()` (open the edit
+surface with Enter, Space, a click, a tap; a quick swipe) and reported that the edit dialog hangs the
+tab. Against the static build all six pass: the dev server's reload loop (below) swallowed the clicks.
+Every other red test was a wrong assertion, not a bug:
+
+- Escape pressed before the overlay's enter transition (date pickers, scheduler). Wait for
+  `et-animation-enter-done` first, as the dialog and filter overlay suites do.
+- A 12-hour time picker lists `9`, not `09`.
+- The range picker's side buttons are named `Start time 11:00 AM` / `End time 5:30 PM`.
+- Typed `200` under `displayFormat: 'HHmm'` is 20:00. The strict `displayFormat` parse runs before
+  the lenient one, as the docs state.
+- The date picker sheet hides the runtime drag handle and paints its own as
+  `.et-date-picker-panel::before`.
+- Programmatic `focus()` after a mouse click is never `:focus-visible` in Chromium (the notification
+  dismiss button). Reach the element with Tab instead.
+
+`touchDrag` and `touchSwipe` moved from seven suites into `support/touch.ts`. `touchDrag` takes
+`{ holdMs, steps }` for long-press gestures. `expectRatingFocusVisible` stays file-local: the rating
+host has `outline: none`, and the ring sits on the nested `.et-rating-icons`.
+
+Harness notes: the reload loop on `:4400` had a root cause. `apps/storybook/src/styles/storybook.css`
+pointed Tailwind's `source()` at the repo root, so webpack watched the whole repo. Every Playwright
+failure wrote `error-context.md` under `apps/storybook-e2e/test-results/`, every `nx lint` wrote to
+`.nx/`, each write rebuilt the bundle, and a page that loaded mid-rebuild reloaded in full. With four
+agents the loop never ended. The source is now `libs` plus `apps/storybook/src`. When the dev server
+loops, run against the static build: `npx nx build-storybook storybook`, then run Playwright with
+`STORYBOOK_URL` unset, and the config serves `dist/storybook` on `:4401` itself. Concurrent runs
+delete each other's `test-results`; pass `--output=apps/storybook-e2e/test-results/<domain>` per
+run. Subagents must run Playwright in the foreground: a background run ends their turn and loses the
+report.
