@@ -1,13 +1,37 @@
+import {
+  buildQueryString as buildQueryStringInternal,
+  buildRoute as buildRouteInternal,
+  buildTimestampFromSeconds as buildTimestampFromSecondsInternal,
+  isEmptyString as isEmptyStringInternal,
+  isNaN as isNaNInternal,
+} from '../../http/internal/request-route';
 import { isSymfonyPagerfantaOutOfRangeError } from '../../http/query-error-response-utils';
 import { Method, RequestError, RequestHeaders, RequestRetryFn } from './request.types';
 
-export {
-  buildQueryString,
-  buildRoute,
-  buildTimestampFromSeconds,
-  isEmptyString,
-  isNaN,
-} from '../../http/internal/request-route';
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
+export const buildQueryString = buildQueryStringInternal;
+
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
+export const buildRoute = buildRouteInternal;
+
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
+export const buildTimestampFromSeconds = buildTimestampFromSecondsInternal;
+
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
+export const isEmptyString = isEmptyStringInternal;
+
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
+export const isNaN = isNaNInternal;
 
 /**
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.

@@ -121,6 +121,7 @@ export type QueryFormValue<T extends Record<string, QueryField<any>>> = {
   [Property in keyof T]: T[Property]['control']['value'];
 };
 
+/** @deprecated Use `defineQueryForm`. */
 export type QueryFormOf<T extends FormGroup> = {
   [K in keyof T['controls']]: QueryField<T['controls'][K]['value']>;
 };

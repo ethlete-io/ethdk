@@ -1,11 +1,25 @@
 import { RuntimeError } from '@ethlete/core';
+import {
+  invalidBaseRouteError as invalidBaseRouteErrorInternal,
+  invalidRouteError as invalidRouteErrorInternal,
+  pathParamsMissingInRouteFunctionError as pathParamsMissingInRouteFunctionErrorInternal,
+} from '../../http/internal/request-route';
 import { QueryRuntimeErrorCode } from '../../http/query-errors';
 
-export {
-  invalidBaseRouteError,
-  invalidRouteError,
-  pathParamsMissingInRouteFunctionError,
-} from '../../http/internal/request-route';
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
+export const invalidBaseRouteError = invalidBaseRouteErrorInternal;
+
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
+export const invalidRouteError = invalidRouteErrorInternal;
+
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
+export const pathParamsMissingInRouteFunctionError = pathParamsMissingInRouteFunctionErrorInternal;
 
 /**
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.

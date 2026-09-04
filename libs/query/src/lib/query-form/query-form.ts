@@ -170,6 +170,7 @@ export type QueryFormOptions = {
   queryParamPrefix?: string | (() => string);
 };
 
+/** @deprecated Use `defineQueryForm`. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyQueryForm = QueryForm<any>;
 
