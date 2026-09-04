@@ -263,3 +263,41 @@ Agents scope their runs to their own file. The coordinator runs the full `query`
   `bearer-auth-provider.ts` re-runs) - harmless for the `take(1)` retry, worth a look.
 - `persistence` (1) and (2): fixed. `isPersistEnabled` is an OR over the bound consumers, recomputed
   on bind/unbind; `queueWrite` rejects non-cacheable methods.
+
+## Scan wave 1 (2026-09-04)
+
+Six agents hunted `libs/query` and `libs/components` against the docs, red test first. The `libs/query`
+half landed as 8 commits on `next` (`a8090ca9e`..`9aec8b1e2`), 14 fixes with 14 changesets. New suites:
+`http-lifecycle.scenario.spec.ts`, `auth-token-lifecycle`, `auth-secure-query`, `auth-multi-tab`,
+`query-forms-url-sync`, `query-forms-branch`.
+
+Fixed, each with a scenario or unit test that failed first:
+
+- HTTP core: `reset()` left the query bound to its shared request; `max-age=0` was not stale in the
+  same millisecond; `withLongPolling` retained the `withArgs`-started first round; the `ET800` guard
+  measured its window with `performance.now()` against a `setTimeout` reset.
+- Auth: a refresh whose 2xx body yields no tokens kept the session - the default extractor's throw
+  reports as `code: 0`, which the retry list reads as a network failure. A custom `extractTokens`
+  result now runs through the default checks too.
+- Query form: URL coercion of `0`/`0.5`; the `skipResets` latch; `branch()` without debounce or reset
+  graph (now with `liveValue`, which the filter overlay submits); two same-tick URL writes dropping
+  each other; an emptied array counting as a filter.
+- GraphQL: secure queries cached by transport rather than operation kind; production minification
+  collapsing string literals and letting a `#` comment swallow the document.
+- Persistence: startup pruning dropped a response written before the store index finished loading.
+
+Open, left as `it.fails` with a reason in the spec:
+
+- `http-lifecycle`: the `ET800` guard throws on more than five executions per 100 ms whatever the
+  cause, so a slider bound to `withArgs` trips it. Raising the threshold or scoping the count to
+  executions caused by the previous flush is a product call.
+- `persistence`: a GraphQL query transported via POST is never persisted. The `request-success` event
+  carries no `isRefreshable`, so the engine can only tell a read from a mutation by HTTP method. The
+  fix is to add `isRefreshable` to that event (`query-repository.ts` ~L791,
+  `currentEntry?.isRefreshable ?? isRefreshable`) and have `queueWrite` read it instead of
+  `shouldCacheQuery(event.request.method)`.
+
+Not pursued (candidates seen in code, no test): a delegated `refresh-requested` that reaches the
+leader after it rotated the pair spends a second refresh token; `transformResponse` throwing;
+`execute()` on a destroyed query; a second consumer's `retryFn` on a shared key. Persistent-auth
+scenarios (cookie write/delete, inactivity logout across tabs, leadership hand-over) are still absent.

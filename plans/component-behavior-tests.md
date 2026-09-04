@@ -162,3 +162,41 @@ Agents scope their runs to their own suite. The coordinator runs the full projec
 - `cascader` sheet drill focus: fixed. The sheet re-creates the active column on a drill, so the
   removed node's `focusout` cleared `focusInside` before the new node mounted. A focus pulse now
   bypasses that gate, and drill/back bump the pulse on the next frame.
+
+## Scan wave 1 (2026-09-04)
+
+The `libs/components` half of the same scan landed as 8 commits on `next` (`c8b25c219`..`01700e1bd`),
+8 fixes with 8 changesets. Every fix is proven by a jsdom unit spec; the wave added no Playwright
+suite, so the e2e layer is unchanged.
+
+Fixed, each with a spec that failed first:
+
+- Command palette: the search field claimed `aria-expanded="true"` and an `aria-controls` target while
+  the query matched nothing; `etCommandPaletteShortcut` stacked a second palette over one opened
+  through `injectCommandPalette().open()` (it now toggles against `overlayManager.openOverlays()`).
+- Toggletip: `etToggletipOpen` lagged a dismissal by the leave animation, and a `show()` during that
+  animation was lost. The model syncs at `beforeClosed`, `overlayRef` clears at `afterClosed`.
+- Tooltip: Escape could not dismiss a hover-shown tooltip, and a shown tooltip blocked Escape for the
+  dialog beneath it. A document capture listener consumes it.
+- Overlay: a breakpoint strategy switch kept the arrow and drag handle the overlay mounted with.
+- Table: with `etTableKeyboardNav`, Enter on a cell holding a control both drilled in and emitted
+  `rowClick`. Enter now reaches the row only through the new `TableComponent.activateRowAt`.
+- Pagination: the readout printed "81-30 of 30" for a `page` past the end.
+- Grid: the default actions' remove button did not emit the item's `remove` output.
+
+Open, left as `it.fails` with a reason in the spec - both fixes belong in
+`libs/core/src/lib/overlay/overlay-runtime.ts`, outside the chunk that found them:
+
+- `tooltip.directive.spec.ts` "a backdrop press closes the dialog while a tooltip is shown inside it":
+  `isTopMost` counts the passive tooltip as the top layer, so the dialog's capture-phase pointerdown
+  listener ignores the press. A mount flag the tooltip sets and `isTopMost` skips would fix it.
+- `toggletip.directive.spec.ts` "leaves focus on the element an outside press moved it to":
+  `destroyMountedOverlay` restores focus to the opener unconditionally. The same defect hits
+  `[etOverlay]` non-modal popovers and backdrop-less anchored dialogs.
+
+Harness note: the full `components` vitest project now exhausts a worker on this machine
+("Worker exited unexpectedly", no test failure). Five spec files cause it - four under
+`libs/components/src/lib/forms/date-time/**`, one under `forms/form-field/**` - and `--maxWorkers=1`
+does not help, so it is not a concurrency artifact. Run the project in chunks of about 55 spec files
+with `--pool=forks --maxWorkers=3` and add the counts by hand; the chunk holding those five reports
+`50 passed (55)`.
