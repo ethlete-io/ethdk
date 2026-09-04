@@ -146,6 +146,9 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     const droppedKeys: QueryKey[] = [];
 
     for (const meta of storedIndex) {
+      // A write that landed while the index was loading is newer than the snapshot the store returned.
+      if (index.has(meta.key)) continue;
+
       if (meta.version !== version || isExpired(meta, now)) {
         droppedKeys.push(meta.key);
       } else {

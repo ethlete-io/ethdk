@@ -1,6 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createFakeQueryPersistenceStore, FakeQueryPersistenceStoreHandle } from '@ethlete/query/testing';
-import { createGetQuery, createQueryClient, createSecureGetQuery, withQueryPersistence } from '../index';
+import {
+  createGetQuery,
+  createGqlQueryViaPost,
+  createQueryClient,
+  createSecureGetQuery,
+  gql,
+  QueryPersistenceAdapter,
+  withQueryPersistence,
+} from '../index';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { sequence, useScenario } from './harness';
 
@@ -187,6 +195,35 @@ describe('persistence scenario', () => {
       }
     });
 
+    // The `request-success` event carries no `isRefreshable`, so the engine can only tell a read from a
+    // mutation by HTTP method and a GQL query via POST is dropped with the auth mutations.
+    it.fails('a GraphQL query transported via POST is a read and is persisted like a GET', async () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: '1', name: 'Ada' } } } }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: { user: { id: string; name: string } } }>(gql`
+        query GetUser {
+          user(id: "1") {
+            id
+            name
+          }
+        }
+      `);
+
+      const c = s.consumer();
+      const query = c.run(() => getUser());
+      s.tick();
+
+      expect(query.response()).toEqual({ user: { id: '1', name: 'Ada' } });
+
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+
+      expect(store.entries()).toEqual([expect.objectContaining({ method: 'POST', url: 'https://api.test/' })]);
+
+      c.destroy();
+    });
+
     it('a login mutation is never persisted', async () => {
       const s = scenario();
       const auth = s.auth();
@@ -301,6 +338,75 @@ describe('persistence scenario', () => {
 
       await secondClient.subtle.persistence?.flush();
       await s.settle();
+      second.destroy();
+    });
+  });
+
+  describe('a write that lands before the store index has loaded', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withQueryPersistence({ adapter: () => store.adapter, version: 1 })],
+    });
+
+    it('survives the startup pruning of a client with a bumped version', async () => {
+      const s = scenario();
+      s.api.on('GET', '/config', sequence([{ body: { schema: 'v1' } }, { body: { schema: 'v2' } }]));
+
+      const getConfig = s.get<{ response: { schema: string } }>('/config');
+
+      const first = s.consumer();
+      const firstQuery = first.run(() => getConfig());
+      s.tick();
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+
+      const key = firstQuery.id();
+      if (!key) throw new Error('expected a repository key');
+      expect(store.entry(key)?.version).toBe(1);
+      first.destroy();
+
+      const pendingIndexLoads: (() => void)[] = [];
+      const slowIndexAdapter: QueryPersistenceAdapter = {
+        ...store.adapter,
+        loadIndex: () => {
+          const snapshot = store.adapter.loadIndex();
+
+          return new Promise((resolve) => {
+            pendingIndexLoads.push(() => void snapshot.then(resolve));
+          });
+        },
+      };
+
+      const secondRef = createQueryClient({
+        name: 'persistence-early-write-reader',
+        baseUrl: 'https://api.test',
+        keepUnusedFor: 0,
+        features: [withQueryPersistence({ adapter: slowIndexAdapter, version: 2 })],
+      });
+      const secondClient = s.run(() => secondRef.inject());
+      if (!secondClient) throw new Error('expected the second client to be created');
+
+      const getConfigV2 = createGetQuery(secondRef)<{ response: { schema: string } }>('/config');
+      const second = s.consumer();
+      const query = second.run(() => getConfigV2());
+      s.tick();
+
+      expect(query.response()).toEqual({ schema: 'v2' });
+
+      s.tick(1000);
+      await s.settle();
+
+      expect(store.entry(key)).toMatchObject({ version: 2, body: { schema: 'v2' } });
+
+      const releaseIndex = pendingIndexLoads.shift();
+
+      if (!releaseIndex) throw new Error('expected the index load to be pending');
+      releaseIndex();
+      await secondClient.whenPersistenceReady;
+      await s.settle();
+
+      expect(store.entry(key)).toMatchObject({ version: 2, body: { schema: 'v2' } });
+
       second.destroy();
     });
   });
