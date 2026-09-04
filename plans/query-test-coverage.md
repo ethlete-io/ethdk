@@ -1,6 +1,6 @@
 # Query test coverage map
 
-Status: P1 and P2 shipped (2026-09-04). P3 and P4 are open. Delete this file when every open row has
+Status: P1, P2, P3 and the query edge rows of P4 shipped (2026-09-04). Four P4 rows are open. Delete this file when every open row has
 a scenario or the user drops it.
 
 ## Why
@@ -43,6 +43,16 @@ and a 503 is retried; a response override survives a refetch and `clearAll` reve
 switch writes storage only, scopes the vault, and production hides accounts; destroyed queries
 leave clearable tombstones.
 
+`signal-forms.scenario.spec.ts` (14): a 422 lands on fields as `etServerViolation` and clears on
+edit; an unmapped path falls back to a form-level error and `onUnmappedViolation` drops it;
+`rewritePath`; a 500 degrades to `etServerError`; `createQuerySubmission` sends the model, resolves
+on 2xx and maps a 422; `validateWithQuery` on 204, 422 and 500, the 300 ms debounce, and a stale
+in-flight response that must not land.
+
+`dependent-queries.scenario.spec.ts` (5 + 2 `it.fails`): a GET parks on a loading or failed
+dependency and re-runs when it changes; `querySequence` resolves a chain and aborts after a failed
+step; the first consumer's `retryFn` governs a shared key (undocumented, asserted as observed).
+
 Harness changes: `ScenarioConfig.providers` accepts a factory, because `provideQueryDevtools()`
 enables the bridge process-wide the moment it is called. A `status: 0` response now fails as a
 network error.
@@ -53,35 +63,37 @@ network error.
   response with a `null` body sets neither success nor error, so `executionState()` stays
   `loading` while `sessionStatus()` turns `anonymous`. Same shape as a cancelled restore, so the
   fix needs `isAlive()` or the response event, not a truthiness check. No scenario yet.
+- `execute()` on a query whose consumer is destroyed throws `NG0205` from the repository `bind()`.
+  The docs name no error code and no no-op. `it.fails` in `dependent-queries`.
+- A `transformResponse` that throws leaves `error()` null and throws out of `response()` on read
+  (`query-state.ts`, the `response` computed). Undocumented. `it.fails` in `dependent-queries`.
+- `validateWithQuery` keeps its cache entry after the owning consumer is destroyed. Its query is
+  created inside the async validator's `factory`, which signal forms calls lazily. Five tests in
+  `signal-forms` opt out of the cache invariant with this reason. Not yet confirmed as a leak in a
+  real app.
+- Doc gap: which `retryFn` governs a shared cache key when two creators disagree (`errors.md`,
+  "Retries").
 - `QueryDevtoolsMock` has no `headers`; the docs do not promise them either. Nothing to test.
 - The armed-mock scope cannot be checked across a reload from a test: the `init*` functions run
   only inside `provideQueryDevtools()`. The scenario asserts the storage key instead.
 
 ## Gaps by priority
 
-### P3 - forms bridge
-
-| Behavior                                        | Docs                                                      | Today     |
-| ----------------------------------------------- | --------------------------------------------------------- | --------- |
-| A 422 maps violations onto signal form fields   | errors.md#Mapping violations onto signal forms            | unit only |
-| Submitting a form through a mutation            | errors.md#Submitting a form through a mutation            | unit only |
-| Validating against the server as the user types | errors.md#Validating against the server as the user types | unit only |
-
 ### P4 - remaining
 
-| Behavior                                                                                                      | Today                   |
-| ------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Reactive dependent queries (GET feeding GET)                                                                  | unit smoke only         |
-| `execute()` on a destroyed query; `transformResponse` throwing; a second consumer's `retryFn` on a shared key | none                    |
-| Persistence `maxEntries` eviction and write failure; custom adapter                                           | unit only               |
-| Authoring custom features                                                                                     | unit only               |
-| `parseHttpErrorCode` pipes                                                                                    | none                    |
-| Legacy v2 interop                                                                                             | unit only (maintenance) |
+| Behavior                                                            | Today                   |
+| ------------------------------------------------------------------- | ----------------------- |
+| Persistence `maxEntries` eviction and write failure; custom adapter | unit only               |
+| Authoring custom features                                           | unit only               |
+| `parseHttpErrorCode` pipes                                          | none                    |
+| Legacy v2 interop                                                   | unit only (maintenance) |
 
 ### Known failing scenarios (`it.fails`, product calls)
 
 - `http-lifecycle`: the `ET800` guard trips on five legitimate executions per 100 ms.
 - `persistence`: a GraphQL query via POST is never persisted (`isRefreshable` missing on the event).
+- `dependent-queries`: `execute()` after destroy throws `NG0205`; a throwing `transformResponse`
+  escapes `response()` instead of landing in `error()`.
 
 ## Covered by scenarios today
 
