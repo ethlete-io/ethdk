@@ -30,11 +30,19 @@ When several agents share one dev server, pass `--workers=2`. A test that passes
 `--workers=1` and fails in parallel is a shared-server flake, not a component bug; rerun
 before you report it.
 
+When the dev server loops (`[HMR] Cannot find update ... Reloading page` on every load), run
+against the static build instead: `npx nx build-storybook storybook`, then run Playwright with
+`STORYBOOK_URL` unset. The config serves `dist/storybook` on `:4401` by itself. Tailwind's
+`source()` in `apps/storybook/src/styles/storybook.css` is limited to `libs` and
+`apps/storybook/src` for this reason: a wider scope makes webpack watch `test-results/` and
+`.nx/`, so every test failure and every lint run rebuilds Storybook. Concurrent runs delete each
+other's results; pass `--output=apps/storybook-e2e/test-results/<domain>` per run.
+
 ## Layout
 
 ```
 apps/storybook-e2e/src/
-  support/        openStory, expectFocusVisible, expectFieldFocusVisible, focusedDescriptor, tabSequence, pressKey, tap, expectTouchMode
+  support/        openStory, expectFocusVisible, expectFieldFocusVisible, focusedDescriptor, tabSequence, pressKey, tap, touchDrag, touchSwipe, expectTouchMode
   <domain>/<domain>.e2e.ts
 ```
 
@@ -69,7 +77,8 @@ test.describe('menu / touch', () => {
    assertion ("nothing happened"), and keep it small.
 5. When the component contradicts its docs, keep the test and mark it
    `test.fail()` with a one-line reason. Report it; do not bend the assertion.
-6. Format and lint: `npx prettier --write <files>`, `npx nx lint storybook-e2e --fix`.
+6. Format and lint: `npx prettier --write <files>`, then `npx nx lint storybook-e2e` without
+   `--fix` (the Playwright autofixer mangles code). Fix findings by hand.
 
 ## What belongs here, what does not
 
