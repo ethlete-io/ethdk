@@ -331,4 +331,71 @@ describe('gql scenario', () => {
       c.destroy();
     });
   });
+
+  describe('secure gql caching follows the operation kind, not the transport', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('two consumers of a secure query via POST with the same variables share one request', () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/');
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: 'me', name: 'Ada' } } } }));
+
+      const getSecureUser = createSecureGqlQueryViaPost(
+        s.clientRef,
+        auth.ref,
+      )<{ response: UserResponse; variables: UserVariables }>(getUserDoc);
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      const a = s.consumer();
+      const b = s.consumer();
+      const q1 = a.run(() => getSecureUser(withArgs(() => ({ variables: { userId: 'me' } }))));
+      const q2 = b.run(() => getSecureUser(withArgs(() => ({ variables: { userId: 'me' } }))));
+      s.tick();
+
+      expect(s.api.requestCount('POST', '/')).toBe(1);
+      expect(q1.response()).toEqual({ user: { id: 'me', name: 'Ada' } });
+      expect(q2.response()).toEqual(q1.response());
+
+      a.destroy();
+      b.destroy();
+      c.destroy();
+    });
+
+    it('a secure mutation via GET is not re-run by refreshQueriesInUse', () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/');
+      s.api.on('GET', '/', () => ({ body: { data: { deleteUser: true } } }));
+
+      const deleteUser = createSecureGqlMutationViaGet(
+        s.clientRef,
+        auth.ref,
+      )<{ response: { deleteUser: boolean }; variables: { id: string } }>(gql`
+        mutation DeleteUser($id: ID!) {
+          deleteUser(id: $id)
+        }
+      `);
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      const mutation = c.run(() => deleteUser());
+      mutation.execute({ args: { variables: { id: '9' } } });
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/')).toBe(1);
+
+      s.client.refreshQueriesInUse();
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/')).toBe(1);
+
+      c.destroy();
+    });
+  });
 });
