@@ -3,6 +3,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { setInputSignal } from '@ethlete/core';
 import '../../../test-helpers';
+import { flushFrames, pointerEvent } from '../../testing/driver-core';
+import { fakeLayout } from '../../testing/fake-layout';
+import { createOverlayDriver } from '../../testing/overlay-driver';
 import { ToggletipContent, ToggletipDirective } from './toggletip.directive';
 
 @Component({
@@ -18,6 +21,15 @@ import { ToggletipContent, ToggletipDirective } from './toggletip.directive';
 class ToggletipDirectiveTestHost {
   toggletipTemplate = viewChild.required<TemplateRef<unknown>>('toggletipTemplate');
 }
+
+@Component({
+  template: `
+    <button [etToggletip]="'More information'" class="toggletip-trigger" type="button">Trigger</button>
+    <input class="outside-input" type="text" />
+  `,
+  imports: [ToggletipDirective],
+})
+class ToggletipNeighbourTestHost {}
 
 describe('ToggletipDirective', () => {
   let fixture: ComponentFixture<ToggletipDirectiveTestHost>;
@@ -80,6 +92,65 @@ describe('ToggletipDirective', () => {
     expect(toggletipDirective.open()).toBe(false);
     expect(button.getAttribute('aria-expanded')).toBeNull();
     expect(button.getAttribute('aria-haspopup')).toBeNull();
+  });
+
+  it('reopens when shown again while its leave transition is still running', async () => {
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: 'button', rect: { x: 100, y: 100, width: 80, height: 32 } },
+    ]);
+
+    toggletipDirective.show();
+    fixture.detectChanges();
+    await flushFrames();
+
+    toggletipDirective.hide();
+    fixture.detectChanges();
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    await flushFrames();
+    fixture.detectChanges();
+    await flushFrames();
+
+    expect(toggletipDirective.open()).toBe(true);
+    expect(toggletipDirective.overlayRef()).not.toBeNull();
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  // the runtime's `destroyMountedOverlay` (libs/core overlay-runtime.ts) restores focus to the opener unconditionally,
+  // stealing it from the element the outside press focused - the fix belongs in @ethlete/core
+  it.fails('leaves focus on the element an outside press moved it to', async () => {
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: '.toggletip-trigger', rect: { x: 100, y: 100, width: 80, height: 32 } },
+    ]);
+
+    const neighbourFixture = TestBed.createComponent(ToggletipNeighbourTestHost);
+    neighbourFixture.detectChanges();
+
+    const driver = createOverlayDriver(neighbourFixture);
+    const directive = neighbourFixture.debugElement
+      .query(By.directive(ToggletipDirective))
+      .injector.get(ToggletipDirective);
+    const trigger = neighbourFixture.nativeElement.querySelector('.toggletip-trigger') as HTMLButtonElement;
+    const input = neighbourFixture.nativeElement.querySelector('.outside-input') as HTMLInputElement;
+
+    trigger.focus();
+    await driver.openVia(() => {
+      directive.show();
+      neighbourFixture.detectChanges();
+    });
+
+    expect(directive.open()).toBe(true);
+
+    pointerEvent(input, 'pointerdown');
+    input.focus();
+    await driver.settle();
+    await driver.settle();
+
+    expect(directive.open()).toBe(false);
+    expect(document.activeElement).toBe(input);
   });
 
   it('throws when template content is used without an accessible label', () => {

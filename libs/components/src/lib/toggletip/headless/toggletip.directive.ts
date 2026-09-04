@@ -226,18 +226,26 @@ export class ToggletipDirective {
     this.overlayRef.set(overlayRef);
 
     overlayRef
+      .beforeClosed()
+      .pipe(
+        tap(() => {
+          if (this.overlayRef() === overlayRef && this.open()) {
+            this.open.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
+    overlayRef
       .afterClosed()
       .pipe(
-        takeUntilDestroyed(this.destroyRef),
         tap(() => {
           if (this.overlayRef() === overlayRef) {
             this.overlayRef.set(null);
           }
-
-          if (this.open()) {
-            this.open.set(false);
-          }
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }
