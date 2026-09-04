@@ -250,3 +250,16 @@ Agents scope their runs to their own file. The coordinator runs the full `query`
   `router.navigate` queued from a microtask needs more than 5.
 - Not covered: the `createBranch` field-tree leak. The four invariants do not observe Angular effect or
   injector retention, so no honest failing assertion exists yet.
+
+## Resolution (2026-09-04)
+
+- `query-forms` (1): fixed. `resolveResets` never resets a key the same commit changed; the branch
+  now runs the same reset graph. (2): fixed in `@ethlete/core` - `equal()` detects Dates by tag.
+- `auth`: not a product bug. The refresh's `afterTokenRefresh$` emission is a microtask, and the
+  synchronous `s.tick()`/`s.flush()` never drain microtasks - the scenario needed `await s.settle()`.
+  The fake tokens also carried second-granularity `iat`/`exp` only, so login and refresh minted the
+  same string under the frozen clock; `mintToken` now adds a `jti`. Both are harness fixes.
+  Open: one refresh emits `afterTokenRefresh$` twice (the token-extraction effect in
+  `bearer-auth-provider.ts` re-runs) - harmless for the `take(1)` retry, worth a look.
+- `persistence` (1) and (2): fixed. `isPersistEnabled` is an OR over the bound consumers, recomputed
+  on bind/unbind; `queueWrite` rejects non-cacheable methods.

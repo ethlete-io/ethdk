@@ -156,3 +156,9 @@ Agents scope their runs to their own suite. The coordinator runs the full projec
   Warning: `nx lint storybook-e2e --fix` twice mangled a `getAttribute` + `toBeTruthy` pattern in
   `tooltip.e2e.ts` into broken syntax (eslint-plugin-playwright autofixer). Run lint without `--fix`
   on this project, or re-check the file after a fix.
+
+## Resolution (2026-09-04)
+
+- `cascader` sheet drill focus: fixed. The sheet re-creates the active column on a drill, so the
+  removed node's `focusout` cleared `focusInside` before the new node mounted. A focus pulse now
+  bypasses that gate, and drill/back bump the pulse on the next frame.
