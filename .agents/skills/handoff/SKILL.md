@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Save the current work state to a handoff file so a fresh session can continue seamlessly, or resume from one. Use when context is getting large (the context-warning hook recommends this), when a work chunk is done and the next one starts, or when the user says "handoff", "wrap up", or "continue in a new session". Run /handoff to save; /handoff resume [name] in the new session to pick up.
+description: Save the current work state to a handoff file so a fresh session can continue seamlessly, or resume from one. Use when context is getting large (the context-warning hook recommends this), when a work chunk is done and the next one starts, or when the user says "handoff", "wrap up", or "continue in a new session".
 ---
 
 # Session handoff
@@ -9,8 +9,12 @@ Long sessions degrade: context fills up, auto-compact loses detail, and cached
 tokens get expensive. The fix is to write the durable state to a file and
 continue in a fresh session. This skill has two modes:
 
-- **`/handoff`** (no args, or with a short slug) - **save**: write a handoff file.
-- **`/handoff resume [name]`** - **resume**: read a handoff file and continue the work.
+- **save** (`handoff`, optionally followed by a short slug) - write a handoff file.
+- **resume** (`handoff resume [name]`) - read a handoff file and continue the work.
+
+In Codex these are normal prompts, not slash commands: enter `handoff` or
+`handoff resume [name]` without a leading `/`. Under Claude Code this skill is
+available as `/handoff`.
 
 Handoff files live in `.claude/handoffs/` (gitignored - they are personal,
 ephemeral working state, not team docs).
@@ -19,7 +23,7 @@ ephemeral working state, not team docs).
 
 Write `.claude/handoffs/<slug>.md` where `<slug>` is a short kebab-case name for
 the task (use the user-provided slug if they gave one, e.g.
-`/handoff menu-focus-trap`). If the file exists, overwrite it - a handoff always
+`handoff menu-focus-trap`). If the file exists, overwrite it - a handoff always
 describes the *current* state.
 
 **Write for a reader with zero context.** The next session sees none of this
@@ -79,7 +83,8 @@ map, not a transcript.
 After writing, tell the user:
 
 > Handoff saved to `.claude/handoffs/<slug>.md`. Start a fresh session (`/clear`
-> or a new terminal) and run `/handoff resume <slug>` to continue.
+> or a new terminal). In Codex, enter `handoff resume <slug>` as a normal prompt;
+> in Claude Code, run `/handoff resume <slug>`.
 
 ## Resume mode
 

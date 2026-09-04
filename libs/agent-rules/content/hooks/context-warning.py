@@ -16,6 +16,10 @@ that matter here, all captured in AGENT_PROFILES:
     carry a TokenUsageInfo. Codex's rollout format is explicitly not a stable
     interface, so the parser searches each line for the usage object instead of
     walking a fixed path.
+  * Sub-agents. Codex gives each sub-agent its own rollout and thread id while
+    retaining the root session id. Warnings identify that thread explicitly and
+    tell it to report back to its parent instead of making the main agent hand
+    off its session.
   * Context budget. Claude's budget is capped at its 200k long-context pricing
     boundary. Codex uses the model-specific pricing boundary where OpenAI
     documents one, and the reported window otherwise. Crossing either boundary
@@ -234,7 +238,7 @@ def premium_boundary_for(profile, model):
 
 
 def claude_context_state(transcript_path):
-    """(tokens, model, window) from the last main-chain assistant message.
+    """(tokens, model, window, thread id, is sub-agent) from the main-chain assistant message.
 
     tokens ≈ its total input tokens (fresh + cache read + cache creation). Claude reports no
     window in the transcript, so it is resolved from the model id by the caller.
@@ -255,13 +259,13 @@ def claude_context_state(transcript_path):
                 last_usage = usage
                 last_model = message.get("model") or last_model
     if not last_usage:
-        return 0, last_model, None
+        return 0, last_model, None, None, False
     tokens = (
         last_usage.get("input_tokens", 0)
         + last_usage.get("cache_read_input_tokens", 0)
         + last_usage.get("cache_creation_input_tokens", 0)
     )
-    return tokens, last_model, None
+    return tokens, last_model, None, None, False
 
 
 def find_token_usage_info(node):
@@ -286,7 +290,7 @@ def find_token_usage_info(node):
 
 
 def codex_context_state(transcript_path):
-    """(tokens, model, window) from the last token_count event in a Codex rollout.
+    """(tokens, model, window, thread id, is sub-agent) from a Codex rollout.
 
     tokens is the last request's `total_tokens` — Codex's own `tokens_in_context_window()`
     is exactly that field, and `last_token_usage` is replaced per request while
@@ -294,12 +298,21 @@ def codex_context_state(transcript_path):
     """
     last_info = None
     last_model = None
+    thread_id = None
+    is_subagent = False
     with open(transcript_path, encoding="utf-8") as f:
         for line in f:
             try:
                 obj = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            if obj.get("type") == "session_meta":
+                payload = obj.get("payload") or {}
+                source = payload.get("source")
+                thread_id = payload.get("id") or thread_id
+                is_subagent = payload.get("thread_source") == "subagent" or (
+                    isinstance(source, dict) and isinstance(source.get("subagent"), dict)
+                )
             model = (obj.get("payload") or {}).get("model") if isinstance(obj.get("payload"), dict) else None
             if isinstance(model, str) and model:
                 last_model = model
@@ -307,10 +320,16 @@ def codex_context_state(transcript_path):
             if info:
                 last_info = info
     if not last_info:
-        return 0, last_model, None
+        return 0, last_model, None, thread_id, is_subagent
     usage = last_info.get("last_token_usage") or {}
     window = last_info.get("model_context_window")
-    return usage.get("total_tokens", 0), last_model, window if isinstance(window, int) else None
+    return (
+        usage.get("total_tokens", 0),
+        last_model,
+        window if isinstance(window, int) else None,
+        thread_id,
+        is_subagent,
+    )
 
 
 CONTEXT_READERS = {"claude": claude_context_state, "codex": codex_context_state}
@@ -373,6 +392,26 @@ def messages(profile, tier, tokens, budget, priced, auto_mode):
     )
 
 
+def subagent_message(tier, tokens, budget, priced):
+    k = f"~{tokens // 1000}k"
+    pct = round(tokens / budget * 100)
+    budget_k = f"{budget // 1000}k"
+    limit = "long-context pricing boundary" if priced else "context window"
+    next_step = (
+        "Finish only the immediate step, then send the parent agent detailed findings, "
+        "completed work, and remaining work, and stop."
+        if tier == 2
+        else "Keep working normally; at the next natural stopping point, send detailed progress "
+        "and any remaining work to the parent agent."
+    )
+    return (
+        f"[context-warning hook] This warning applies to a sub-agent thread, not the "
+        f"parent/main agent. This sub-agent is at {k} tokens — {pct}% of its {budget_k} "
+        f"{limit}. {next_step} Do not create a user-facing session handoff or claim that "
+        f"the main agent's context is full."
+    )
+
+
 def main():
     agent = agent_name(sys.argv[1:])
     profile = AGENT_PROFILES.get(agent)
@@ -393,7 +432,7 @@ def main():
     if not transcript_path or not os.path.isfile(transcript_path):
         return
 
-    tokens, model, reported_window = CONTEXT_READERS[agent](transcript_path)
+    tokens, model, reported_window, thread_id, is_subagent = CONTEXT_READERS[agent](transcript_path)
     window = reported_window or profile["default_window"] or window_for(model)
     boundary = premium_boundary_for(profile, model)
     budget = min(window, boundary) if boundary else window
@@ -401,9 +440,9 @@ def main():
     critical_tokens = int(budget * CRITICAL_FRACTION)
     tier = 2 if tokens >= critical_tokens else 1 if tokens >= warn_tokens else 0
 
-    state_file = os.path.join(
-        tempfile.gettempdir(), f"{agent}-context-warning-{session_id}"
-    )
+    state_id = thread_id or session_id
+    safe_state_id = "".join(char for char in str(state_id) if char.isalnum() or char in "-_")[:128]
+    state_file = os.path.join(tempfile.gettempdir(), f"{agent}-context-warning-{safe_state_id or 'unknown'}")
     prev_tier = 0
     try:
         with open(state_file, encoding="utf-8") as f:
@@ -421,11 +460,15 @@ def main():
     if tier <= prev_tier:
         return  # already warned at this tier (or context shrank — state re-armed above)
 
-    system_message, additional_context = messages(
-        profile, tier, tokens, budget, budget < window, auto_mode
-    )
+    if is_subagent:
+        system_message = None
+        additional_context = subagent_message(tier, tokens, budget, budget < window)
+    else:
+        system_message, additional_context = messages(
+            profile, tier, tokens, budget, budget < window, auto_mode
+        )
 
-    if not profile["emits_system_message"]:
+    if not profile["emits_system_message"] and system_message:
         additional_context = f"{additional_context}\n\nTell the user: {system_message}"
 
     payload = {
@@ -434,7 +477,7 @@ def main():
             "additionalContext": additional_context,
         }
     }
-    if profile["emits_system_message"]:
+    if profile["emits_system_message"] and system_message:
         payload["systemMessage"] = system_message
         payload["suppressOutput"] = True
 

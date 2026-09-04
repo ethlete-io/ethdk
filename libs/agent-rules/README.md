@@ -310,6 +310,10 @@ Available hooks:
   relay), and the auto-mode escalation that writes the handoff file unprompted - Codex's
   `permission_mode` values are undocumented, so no value enables it.
 
+  Codex sub-agents are tracked by their own thread ids even though they share the root
+  session id. A sub-agent warning tells that child to report its state to the parent; it
+  never tells the user or the main agent to hand off the root session.
+
 Hooks can be turned off per machine - see the local config below.
 
 ## Git hooks (opt-in)
