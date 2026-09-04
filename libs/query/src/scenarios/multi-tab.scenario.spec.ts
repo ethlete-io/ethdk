@@ -26,14 +26,24 @@ const CHANNEL = 'multi-tab-scenario';
 
 let tabCounter = 0;
 
+type TabConsumer = {
+  run: <T>(fn: () => T) => T;
+  destroy: () => void;
+};
+
 type Tab = {
   instance: QueryClient;
   get: ReturnType<typeof createGetQuery>;
   post: ReturnType<typeof createPostQuery>;
-  injector: EnvironmentInjector;
+  consumer: () => TabConsumer;
   destroy: () => void;
 };
 
+/**
+ * Consumers are created below the tab's own injector, not below the TestBed root: the client token is
+ * `providedIn: 'root'`, so a query created anywhere else would resolve a second, root-owned instance
+ * of the same client instead of this tab's.
+ */
 const createTab = (s: Scenario, config: false | QueryMultiTabSyncConfig = { channelName: CHANNEL }): Tab => {
   const ref: QueryClientRef = createQueryClient({
     name: `multi-tab-scenario-tab-${++tabCounter}`,
@@ -50,12 +60,33 @@ const createTab = (s: Scenario, config: false | QueryMultiTabSyncConfig = { chan
 
   if (!instance) throw new Error('multi-tab scenario: failed to create tab client');
 
+  const consumers = new Set<EnvironmentInjector>();
+
   return {
     instance,
     get: createGetQuery(ref),
     post: createPostQuery(ref),
-    injector,
-    destroy: () => injector.destroy(),
+    consumer: () => {
+      const consumerInjector = createEnvironmentInjector([], injector);
+
+      consumers.add(consumerInjector);
+
+      return {
+        run: (fn) => consumerInjector.runInContext(fn),
+        destroy: () => {
+          consumers.delete(consumerInjector);
+          consumerInjector.destroy();
+        },
+      };
+    },
+    destroy: () => {
+      for (const consumerInjector of Array.from(consumers)) {
+        consumers.delete(consumerInjector);
+        consumerInjector.destroy();
+      }
+
+      injector.destroy();
+    },
   };
 };
 
@@ -94,7 +125,7 @@ describe('multi-tab sync scenario', () => {
     );
 
     const a = s.consumer();
-    const b = s.consumer();
+    const b = tabB.consumer();
     const queryA = a.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '1' } }))));
     const queryB = b.run(() => getPlayerB(withArgs(() => ({ pathParams: { id: '1' } }))));
 
@@ -127,7 +158,7 @@ describe('multi-tab sync scenario', () => {
     const getReportB = tabB.get<{ response: { n: number } }>('/report');
 
     const a = s.consumer();
-    const b = s.consumer();
+    const b = tabB.consumer();
     const queryA = a.run(() => getReport());
     const queryB = b.run(() => getReportB());
 
@@ -160,7 +191,7 @@ describe('multi-tab sync scenario', () => {
     const getExportB = tabB.get<{ response: { rows: number } }>('/exports/full', { multiTabSync: false });
 
     const a = s.consumer();
-    const b = s.consumer();
+    const b = tabB.consumer();
     const queryA = a.run(() => getExport());
     const queryB = b.run(() => getExportB());
 
@@ -194,7 +225,7 @@ describe('multi-tab sync scenario', () => {
     const getPlayersB = tabB.get<{ response: { version: number } }>('/players');
 
     const a = s.consumer();
-    const b = s.consumer();
+    const b = tabB.consumer();
     const queryA = a.run(() => getPlayers());
     const queryB = b.run(() => getPlayersB());
 
@@ -233,7 +264,7 @@ describe('multi-tab sync scenario', () => {
     );
 
     const a = s.consumer();
-    const b = s.consumer();
+    const b = tabB.consumer();
     const queryA = a.run(() => getTeam(withArgs(() => ({ pathParams: { id: '9' } }))));
     const queryB = b.run(() => getTeamB(withArgs(() => ({ pathParams: { id: '9' } }))));
 
@@ -263,7 +294,7 @@ describe('multi-tab sync scenario', () => {
     const getPlayerB = tabB.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/players/${p.id}`);
 
     const a = s.consumer();
-    const b = s.consumer();
+    const b = tabB.consumer();
     a.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '3' } }))));
     const queryB = b.run(() => getPlayerB(withArgs(() => ({ pathParams: { id: '3' } }))));
 
@@ -292,7 +323,7 @@ describe('multi-tab sync scenario', () => {
     const getBrokenB = tabB.get<{ response: { fn?: () => void; v?: number } }>('/broken-body');
 
     const a = s.consumer();
-    const b = s.consumer();
+    const b = tabB.consumer();
     const queryA = a.run(() => getBroken());
     const queryB = b.run(() => getBrokenB());
 
@@ -326,7 +357,7 @@ describe('multi-tab sync scenario', () => {
     const getScoreboardB = tabB.get<{ response: { n: number } }>('/scoreboard');
 
     const a = s.consumer();
-    const b = s.consumer();
+    const b = tabB.consumer();
     const queryA = a.run(() => getScoreboard(withPolling({ interval: 10_000 })));
     const queryB = b.run(() => getScoreboardB(withPolling({ interval: 10_000 })));
 
@@ -357,7 +388,7 @@ describe('multi-tab sync scenario', () => {
     const getSolo = tab.get<{ response: { ok: boolean } }>('/solo');
 
     const postedBefore = bus.posted.length;
-    const c = s.consumer();
+    const c = tab.consumer();
     c.run(() => getSolo(withPolling({ interval: 10_000 })));
     await s.settle();
 
@@ -375,6 +406,18 @@ describe('multi-tab sync scenario', () => {
 
     const getCold = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/cold/${p.id}`);
     const tabB = createTab(s);
+    const getColdB = tabB.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/cold/${p.id}`);
+
+    const warm = tabB.consumer();
+    warm.run(() => getColdB(withArgs(() => ({ pathParams: { id: '2' } }))));
+    await s.settle();
+
+    expect(tabB.instance.repository.subtle.cacheEntries().length).toBe(1);
+
+    warm.destroy();
+    await s.settle();
+
+    expect(tabB.instance.repository.subtle.cacheEntries()).toEqual([]);
 
     const a = s.consumer();
     a.run(() => getCold(withArgs(() => ({ pathParams: { id: '1' } }))));
@@ -458,7 +501,7 @@ describe('multi-tab sync scenario', () => {
     const getPlayerB = tabB.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/players/${p.id}`);
 
     const a = s.consumer();
-    const b = s.consumer();
+    const b = tabB.consumer();
     a.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '5' } }))));
     b.run(() => getPlayerB(withArgs(() => ({ pathParams: { id: '5' } }))));
 
