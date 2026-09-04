@@ -1705,9 +1705,24 @@ export class TableComponent<T> {
    */
   protected activateRow(row: T, event: Event) {
     if (!this.rowInteractive() || this.originatesFromInteractive(event)) return;
+    if (event instanceof KeyboardEvent && event.key === 'Enter' && this.cellNavigation()) return;
 
     // Enter/Space on a focused row shouldn't also scroll the page.
     if (event instanceof KeyboardEvent) event.preventDefault();
+
+    this.rowClick.emit(row);
+  }
+
+  /**
+   * Emit `rowClick` for a `rowInteractive` table's row at an absolute index, the way Enter on a focused
+   * row does. Part of the feature contract: while cell navigation is on, Enter belongs to the cell first
+   * (an editor, a control to drill into) and the feature hands it here only when the cell has nothing of
+   * its own to open.
+   */
+  public activateRowAt(rowIndex: number) {
+    const row = this.rows()[rowIndex];
+
+    if (row === undefined || !this.rowInteractive()) return;
 
     this.rowClick.emit(row);
   }

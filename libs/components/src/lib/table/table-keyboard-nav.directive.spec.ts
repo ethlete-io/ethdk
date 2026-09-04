@@ -1,5 +1,6 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 import '../../test-helpers';
 import { queryAll } from '../testing/driver-core';
 import { TableKeyboardNavDirective } from './table-keyboard-nav.directive';
@@ -21,7 +22,14 @@ const COLUMNS = {
 
 @Component({
   template: `
-    <et-table [columns]="cols" [data]="data()" [rowKey]="rowKey" [etTableKeyboardNav]="{ enabled: enabled() }">
+    <et-table
+      [columns]="cols"
+      [data]="data()"
+      [rowKey]="rowKey"
+      [rowInteractive]="true"
+      [etTableKeyboardNav]="{ enabled: enabled() }"
+      (rowClick)="clicks.push($event)"
+    >
       <!-- A cell with something focusable in it, so Enter has somewhere to drill. -->
       <ng-template [etTableCell]="cols.role" let-value>
         <button type="button">{{ value }}</button>
@@ -35,6 +43,7 @@ class HostComponent {
   public data = signal<Person[]>(PEOPLE);
   public enabled = signal(true);
   public feature = viewChild.required(TableKeyboardNavDirective);
+  public clicks: Person[] = [];
 
   public rowKey = (row: Person) => row.id;
 }
@@ -210,6 +219,45 @@ describe('TableKeyboardNavDirective', () => {
 
       expect(tabbable).toHaveLength(1);
       expect(tabbable[0]).toBe(cells(fixture)[1]);
+    });
+  });
+
+  describe('on a rowInteractive table', () => {
+    // jsdom lays nothing out; `getFocusableElements` reads a client rect to tell a rendered control apart
+    // from a hidden one.
+    beforeEach(() => {
+      vi.spyOn(Element.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const focusedOn = (index: number) => {
+      const fixture = create();
+
+      cells(fixture)[index]?.focus();
+      fixture.detectChanges();
+
+      return fixture;
+    };
+
+    it('Enter on a cell holding a control drills into it without activating the row', () => {
+      const fixture = focusedOn(1);
+
+      press(fixture, 'Enter');
+
+      expect(document.activeElement?.tagName).toBe('BUTTON');
+      expect(fixture.componentInstance.clicks).toEqual([]);
+    });
+
+    it('Enter on a cell with nothing to open activates the row', () => {
+      const fixture = focusedOn(0);
+
+      press(fixture, 'Enter');
+
+      expect(fixture.componentInstance.clicks).toEqual([PEOPLE[0]]);
+      expect(focused(fixture)).toMatchObject({ row: 0, column: 0, onCell: true });
     });
   });
 

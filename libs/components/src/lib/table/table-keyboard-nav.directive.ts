@@ -176,10 +176,12 @@ export class TableKeyboardNavDirective {
 
     if (next === 'drill') {
       // Enter opens whatever the cell holds. Inline editing is offered it first - through the table, so
-      // neither feature references the other - and an editable cell becomes an editor instead. A cell
-      // with nothing focusable in it has nothing to open, so the event is left alone: a `rowInteractive`
-      // table's own row handler still sees it.
-      if (!this.table.editCell(hit.position.row, hit.position.column)) this.drillInto(hit.cell);
+      // neither feature references the other - then the first focusable thing in the cell. A cell with
+      // nothing to open hands Enter to the row, which is where a `rowInteractive` table acts on it.
+      if (this.table.editCell(hit.position.row, hit.position.column)) return;
+      if (this.drillInto(hit.cell)) return;
+
+      this.table.activateRowAt(hit.position.row);
 
       return;
     }
@@ -219,7 +221,11 @@ export class TableKeyboardNavDirective {
   }
 
   private drillInto(cell: HTMLElement) {
-    getFocusableElements(cell, this.document)[0]?.focus();
+    const target = getFocusableElements(cell, this.document)[0];
+
+    target?.focus();
+
+    return target !== undefined;
   }
 
   /**

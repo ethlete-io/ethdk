@@ -1597,7 +1597,9 @@ filter or page change of any table.
 Two things, both deliberate:
 
 - **`rowInteractive` rows stop being tab stops.** The grid body is one tab stop; a row that
-  was also one would make it two. The rows stay clickable, and their `rowClick` still fires.
+  was also one would make it two. The rows stay clickable, and their `rowClick` still fires -
+  from a click, or from `Enter` on a cell that has nothing of its own to open. `Enter` on a
+  cell holding a control drills into the control instead of activating the row.
 - **Leading utility cells are not in the arrow order.** The [selection](#selection) checkbox
   and the [expander](#row-expansion) are their own tab stops, reachable with Tab as before -
   the arrows walk the data columns.
