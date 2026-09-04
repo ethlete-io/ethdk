@@ -32,6 +32,7 @@ export const OUT_ROOT = join(os.tmpdir(), 'ethlete-treeshake');
 
 /** package specifier -> FESM path relative to `dist/libs` */
 export const PACKAGES = {
+  '@ethlete/bracket': 'bracket/fesm2022/ethlete-bracket.mjs',
   '@ethlete/cdk': 'cdk/fesm2022/ethlete-cdk.mjs',
   '@ethlete/components': 'components/fesm2022/ethlete-components.mjs',
   '@ethlete/contentful': 'contentful/fesm2022/ethlete-contentful.mjs',
