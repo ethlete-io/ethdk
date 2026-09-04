@@ -1,7 +1,7 @@
 import { DestroyRef, NgZone, assertInInjectionContext, inject, isDevMode } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup } from '@angular/forms';
-import { Router } from '@angular/router';
+import { NavigationExtras, Router, UrlTree } from '@angular/router';
 import {
   ET_PROPERTY_REMOVED,
   clone,
@@ -697,16 +697,14 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       }
     }
 
-    this.zone.run(() => {
-      queueMicrotask(() => {
-        this.router.navigate([], {
-          queryParams,
-          replaceUrl,
-          queryParamsHandling: 'merge',
-          info: { queryForm: this.urlNavigationMarker, version },
-        });
-      });
-    });
+    this.navigateWithParams(
+      queryParams,
+      {
+        replaceUrl,
+        info: { queryForm: this.urlNavigationMarker, version },
+      },
+      true,
+    );
   }
 
   private handleFormChange(forceOverwrite = false) {
@@ -756,14 +754,35 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       },
       {} as Record<string, unknown>,
     );
+    this.navigateWithParams(queryParams, { replaceUrl: true }, true);
+  }
+
+  private navigateWithParams(
+    params: Record<string, unknown>,
+    extras: Pick<NavigationExtras, 'replaceUrl' | 'info'>,
+    onlyOnCurrentRoute = false,
+  ) {
     this.zone.run(() => {
       queueMicrotask(() => {
-        this.router.navigate([], {
-          queryParams,
-          replaceUrl: true,
-          queryParamsHandling: 'merge',
-        });
+        const pending = this.router.getCurrentNavigation();
+        const base = pending?.finalUrl ?? pending?.extractedUrl ?? this.router.parseUrl(this.router.url);
+
+        // Writing onto a navigation that lands on another route would supersede it: the user's
+        // navigation resolves `false` and that route's own params (`page`, `search`) are lost.
+        if (onlyOnCurrentRoute && this.pathOf(base) !== this.pathOf(this.router.parseUrl(this.router.url))) return;
+
+        const queryParams: Record<string, unknown> = { ...base.queryParams, ...params };
+
+        for (const key of Object.keys(queryParams)) {
+          if (queryParams[key] === undefined) delete queryParams[key];
+        }
+
+        this.router.navigate([], { queryParams, ...extras });
       });
     });
+  }
+
+  private pathOf(tree: UrlTree) {
+    return this.router.serializeUrl(tree).split(/[?#]/)[0];
   }
 }
