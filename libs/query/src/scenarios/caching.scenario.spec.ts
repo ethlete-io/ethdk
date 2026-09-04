@@ -1,3 +1,4 @@
+import { HttpHeaders } from '@angular/common/http';
 import { DestroyRef, signal } from '@angular/core';
 import { MAX_UNUSED_ENTRIES, withArgs, withResponseUpdate } from '../index';
 import { describe, expect, it } from 'vitest';
@@ -27,6 +28,42 @@ describe('caching scenario', () => {
       expect(s.api.requestCount('GET', '/users/2')).toBe(1);
       expect(q1.response()).toEqual(q2.response());
       expect(q3.response()).toEqual({ id: '2' });
+
+      a.destroy();
+      b.destroy();
+      c.destroy();
+    });
+
+    it('excludes authorization from cache keys while keeping other per-execution headers', () => {
+      const s = scenario();
+      s.api.on('GET', '/header-key', ({ headers }) => ({
+        body: { authorization: headers.get('Authorization'), tenant: headers.get('X-Tenant') },
+      }));
+
+      const getHeaderKey = s.get<{
+        response: { authorization: string | null; tenant: string | null };
+        headers: HttpHeaders;
+      }>('/header-key');
+      const a = s.consumer();
+      const b = s.consumer();
+      const c = s.consumer();
+      const queryA = a.run(() =>
+        getHeaderKey(withArgs(() => ({ headers: new HttpHeaders({ Authorization: 'Bearer a', 'X-Tenant': 'one' }) }))),
+      );
+      const queryB = b.run(() =>
+        getHeaderKey(withArgs(() => ({ headers: new HttpHeaders({ Authorization: 'Bearer b', 'X-Tenant': 'one' }) }))),
+      );
+      const queryC = c.run(() =>
+        getHeaderKey(withArgs(() => ({ headers: new HttpHeaders({ Authorization: 'Bearer a', 'X-Tenant': 'two' }) }))),
+      );
+
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/header-key')).toBe(2);
+      expect(queryA.id()).toBe(queryB.id());
+      expect(queryC.id()).not.toBe(queryA.id());
+      expect(queryA.response()).toEqual(queryB.response());
+      expect(queryC.response()?.tenant).toBe('two');
 
       a.destroy();
       b.destroy();

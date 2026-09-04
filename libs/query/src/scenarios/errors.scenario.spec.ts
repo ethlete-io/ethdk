@@ -544,6 +544,35 @@ describe('connection failures are retried by the default policy', () => {
   });
 });
 
+describe('an unlimited default retry policy', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 0 },
+    clientFeatures: [withDefaultRetry({ jitter: 0, maxAttempts: 0 })],
+  });
+
+  it('keeps a retryable request loading beyond the normal attempt limit', () => {
+    const s = scenario();
+    s.api.on('GET', '/retry-forever', () => ({ status: 503, body: { message: 'down' } }));
+
+    const getRetryForever = s.get<{ response: unknown }>('/retry-forever');
+    const c = s.consumer();
+    const query = c.run(() => getRetryForever());
+
+    for (const delay of [0, 2_000, 4_000, 8_000, 16_000]) {
+      s.tick(delay);
+      s.tick(1);
+    }
+
+    expect(s.api.requestCount('GET', '/retry-forever')).toBe(5);
+    expect(query.loading()).not.toBeNull();
+    expect(query.error()).toBeNull();
+    expect(query.executionState()?.type).toBe('loading');
+
+    c.destroy();
+    s.tick(1);
+  });
+});
+
 describe('custom error parsers (registerQueryErrorParser)', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 

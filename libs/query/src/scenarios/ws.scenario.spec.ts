@@ -208,4 +208,19 @@ describe('ws scenario', () => {
       { event: 'leave-room', data: 'a' },
     ]);
   });
+
+  it('throws ET1000 when subtle.leaveRoom releases a room that was never joined', () => {
+    const s = scenario();
+    const { instance } = createSocket(s);
+
+    expect(() => instance.subtle.leaveRoom('ghost')).toThrow(/ET1000|not joined/);
+  });
+
+  it('throws ET1001 and reports the parse error for a malformed server frame', () => {
+    const s = scenario();
+    const { double } = createSocket(s);
+
+    expect(() => double.serverSendRaw('{')).toThrow(/ET1001|malformed/);
+    s.expectError((entry) => entry.error instanceof SyntaxError);
+  });
 });

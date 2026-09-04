@@ -113,4 +113,40 @@ describe('queries scenario', () => {
 
     c.destroy();
   });
+
+  it('never auto-executes a mutation and sends it only after execute()', () => {
+    const s = scenario();
+    s.api.on('POST', '/users', ({ body }) => ({ status: 201, body }));
+
+    const createUser = s.post<{ body: { name: string }; response: { name: string } }>('/users');
+    const c = s.consumer();
+    const mutation = c.run(() => createUser());
+
+    s.tick();
+    expect(s.api.requestCount('POST', '/users')).toBe(0);
+
+    mutation.execute({ args: { body: { name: 'Ada' } } });
+    s.tick();
+
+    expect(s.api.requestCount('POST', '/users')).toBe(1);
+    expect(mutation.response()).toEqual({ name: 'Ada' });
+
+    c.destroy();
+  });
+
+  it('rejects cache keys and allowCache on mutations', () => {
+    const s = scenario();
+    const createUser = s.post<{ body: { name: string }; response: unknown }>('/users');
+    const c = s.consumer();
+    const keyedMutation = c.run(() => createUser({ key: 'create-user' }));
+    const mutation = c.run(() => createUser());
+
+    expect(() => keyedMutation.execute({ args: { body: { name: 'Ada' } } })).toThrow(/ET300|cache key/);
+    expect(() => mutation.execute({ args: { body: { name: 'Grace' } }, options: { allowCache: true } })).toThrow(
+      /ET301|allowCache/,
+    );
+    expect(s.api.requestCount('POST', '/users')).toBe(0);
+
+    c.destroy();
+  });
 });

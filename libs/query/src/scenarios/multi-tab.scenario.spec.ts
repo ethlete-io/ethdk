@@ -14,6 +14,7 @@ import {
   QueryClient,
   QueryClientRef,
   QueryMultiTabSyncConfig,
+  QUERY_SYNC_PROTOCOL_VERSION,
   withArgs,
   withMultiTabSync,
   withPolling,
@@ -385,6 +386,67 @@ describe('multi-tab sync scenario', () => {
 
     a.destroy();
     tabB.destroy();
+  });
+
+  it('ignores a shared response while its own request is in flight', async () => {
+    const s = scenario();
+    let version = 0;
+    s.api.on('GET', '/in-flight', () => ({ body: { version: ++version }, delay: version === 1 ? 0 : 500 }));
+
+    const getInFlight = s.get<{ response: { version: number } }>('/in-flight');
+    const c = s.consumer();
+    const query = c.run(() => getInFlight());
+    await s.settle();
+
+    const key = query.id();
+    if (!key) throw new Error('expected a repository key');
+
+    query.execute();
+    const probe = new BroadcastChannel(CHANNEL);
+    probe.postMessage({
+      v: QUERY_SYNC_PROTOCOL_VERSION,
+      type: 'response',
+      key,
+      body: { version: 99 },
+      expiresAt: null,
+    });
+    await flushMultiTabSync();
+
+    expect(query.response()).toEqual({ version: 1 });
+
+    s.tick(500);
+    expect(query.response()).toEqual({ version: 2 });
+
+    probe.close();
+    c.destroy();
+  });
+
+  it('ignores messages from a different protocol version', async () => {
+    const s = scenario();
+    s.api.on('GET', '/versioned', () => ({ body: { version: 1 } }));
+
+    const getVersioned = s.get<{ response: { version: number } }>('/versioned');
+    const c = s.consumer();
+    const query = c.run(() => getVersioned());
+    await s.settle();
+
+    const key = query.id();
+    if (!key) throw new Error('expected a repository key');
+
+    const probe = new BroadcastChannel(CHANNEL);
+    probe.postMessage({
+      v: QUERY_SYNC_PROTOCOL_VERSION + 1,
+      type: 'response',
+      key,
+      body: { version: 99 },
+      expiresAt: null,
+    });
+    await flushMultiTabSync();
+
+    expect(query.response()).toEqual({ version: 1 });
+
+    probe.close();
+    c.destroy();
   });
 
   it('leaves no open channel port and no timer once both tabs are destroyed', async () => {

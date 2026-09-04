@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { Paginated } from '@ethlete/types';
 import {
   createPagedQueryStack,
@@ -53,6 +54,61 @@ describe('stacks scenario', () => {
     expect(s.api.requestCount('GET', '/items/1')).toBe(1);
     expect(s.api.requestCount('GET', '/items/2')).toBe(1);
     expect(s.api.requestCount('GET', '/items/3')).toBe(1);
+
+    c.destroy();
+  });
+
+  it.each([
+    { strategy: 'oldest' as const, expected: ['2', '3'] },
+    { strategy: 'newest' as const, expected: ['1', '2'] },
+  ])('caps an appended stack by removing the $strategy queries', ({ strategy, expected }) => {
+    const s = scenario();
+    s.api.on('GET', '/bounded/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getItem = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/bounded/${p.id}`);
+    const id = signal('1');
+    const c = s.consumer();
+    const stack = c.run(() =>
+      createQueryStack({
+        queryCreator: getItem,
+        args: () => ({ pathParams: { id: id() } }),
+        append: true,
+        maxQueries: 2,
+        removeStrategy: strategy,
+      }),
+    );
+
+    s.tick();
+    id.set('2');
+    s.tick();
+    id.set('3');
+    s.tick();
+
+    expect(stack.queries().map((query) => query.args()?.pathParams?.id)).toEqual(expected);
+    expect(stack.queries()).toHaveLength(2);
+
+    c.destroy();
+  });
+
+  it('deduplicates repeated args inside an appended batch', () => {
+    const s = scenario();
+    s.api.on('GET', '/deduplicated/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getItem = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/deduplicated/${p.id}`);
+    const c = s.consumer();
+    const stack = c.run(() =>
+      createQueryStack({
+        queryCreator: getItem,
+        args: () => [{ pathParams: { id: '1' } }, { pathParams: { id: '1' } }, { pathParams: { id: '2' } }],
+        append: true,
+      }),
+    );
+
+    s.tick();
+
+    expect(stack.queries()).toHaveLength(2);
+    expect(s.api.requestCount('GET', '/deduplicated/1')).toBe(1);
+    expect(s.api.requestCount('GET', '/deduplicated/2')).toBe(1);
 
     c.destroy();
   });
@@ -342,6 +398,26 @@ describe('stacks scenario', () => {
 
     expect(secondResult?.ok).toBe(true);
     expect(checkout.running()).toBe(false);
+
+    c.destroy();
+  });
+
+  it('rejects a second sequence run while the first one is in flight', async () => {
+    const s = scenario();
+    s.api.on('POST', '/slow-sequence', () => ({ body: { ok: true }, delay: 100 }));
+
+    const createStep = s.post<{ response: { ok: boolean } }>('/slow-sequence');
+    const c = s.consumer();
+    const sequence = c.run(() => querySequence(createStep(), () => ({ args: {} })));
+    let firstResult: Awaited<ReturnType<typeof sequence.run>> | undefined;
+
+    sequence.run().then((result) => (firstResult = result));
+
+    await expect(sequence.run()).rejects.toThrow(/ET900|already running/);
+    await settleUntil(s, () => firstResult !== undefined);
+
+    expect(firstResult?.ok).toBe(true);
+    expect(s.api.requestCount('POST', '/slow-sequence')).toBe(1);
 
     c.destroy();
   });
