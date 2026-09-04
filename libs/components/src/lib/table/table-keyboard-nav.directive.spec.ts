@@ -26,9 +26,9 @@ const COLUMNS = {
       [columns]="cols"
       [data]="data()"
       [rowKey]="rowKey"
-      [rowInteractive]="true"
       [etTableKeyboardNav]="{ enabled: enabled() }"
       (rowClick)="clicks.push($event)"
+      rowInteractive
     >
       <!-- A cell with something focusable in it, so Enter has somewhere to drill. -->
       <ng-template [etTableCell]="cols.role" let-value>

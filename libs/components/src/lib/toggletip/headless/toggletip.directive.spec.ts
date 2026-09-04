@@ -24,7 +24,7 @@ class ToggletipDirectiveTestHost {
 
 @Component({
   template: `
-    <button [etToggletip]="'More information'" class="toggletip-trigger" type="button">Trigger</button>
+    <button class="toggletip-trigger" etToggletip="More information" type="button">Trigger</button>
     <input class="outside-input" type="text" />
   `,
   imports: [ToggletipDirective],

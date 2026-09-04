@@ -130,7 +130,7 @@ describe('TooltipDirective', () => {
 });
 
 @Component({
-  template: `<button [etTooltip]="'Dialog tip'" [showDelay]="0" class="dialog-trigger" type="button">Inside</button>`,
+  template: `<button [showDelay]="0" class="dialog-trigger" etTooltip="Dialog tip" type="button">Inside</button>`,
   imports: [TooltipDirective],
 })
 class TooltipInsideDialogComponent {}
