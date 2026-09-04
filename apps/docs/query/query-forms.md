@@ -115,7 +115,7 @@ defineQueryForm({
 // changing `country` clears `league` and `team`
 ```
 
-The whole cascade settles before the value is committed, so it drives **one** query execution, not one per hop. A cyclic graph stops after ten passes with a dev-mode warning.
+The whole cascade settles before the value is committed, so it drives **one** query execution, not one per hop. A cyclic graph stops after ten passes with a dev-mode warning. A child whose value the same commit also changes keeps that value instead of resetting.
 
 ### `activeFilterCount`
 

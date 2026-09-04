@@ -98,11 +98,95 @@ const computeFilterCount = (fields: QueryFormFields, value: Dict, defaults: Dict
   return count;
 };
 
+const applyResets = (
+  fieldDefs: QueryFormFields,
+  live: Dict,
+  changedKeys: string[],
+  explicitKeys: ReadonlySet<string>,
+  resetDefaults: Map<string, unknown>,
+  defaultFor: (key: string) => unknown,
+): Dict => {
+  const next = { ...live };
+
+  for (const [key, def] of Object.entries(fieldDefs)) {
+    const resets = def.isResetBy;
+
+    if (!resets?.length || explicitKeys.has(key)) continue;
+
+    const triggered = resets.some((resetKey) => {
+      if (!(resetKey in fieldDefs)) {
+        if (isDevMode()) {
+          console.warn(`defineQueryForm: isResetBy references unknown field "${resetKey}". Is it a typo?`);
+        }
+
+        return false;
+      }
+
+      return changedKeys.includes(resetKey);
+    });
+
+    if (!triggered) continue;
+
+    let fieldDefault = resetDefaults.get(key);
+
+    if (!resetDefaults.has(key)) {
+      fieldDefault = defaultFor(key);
+      resetDefaults.set(key, fieldDefault);
+    }
+
+    if (!equal(next[key], fieldDefault)) {
+      next[key] = fieldDefault;
+    }
+  }
+
+  return next;
+};
+
+/**
+ * Resets are transitive: a field this pass reset counts as changed in the next one, so
+ * `country → league → team` clears `team` as well when only `country` moved. Passes repeat until
+ * nothing moves, which has to happen before the value commits - one query execution for the
+ * whole chain, not one per hop. The cap only guards a cyclic `isResetBy` graph; a field already at
+ * its default stops triggering, so a well-formed graph settles in as many passes as it is deep.
+ * A key the commit itself changed (`explicitKeys`) is never reset, in any pass.
+ */
+const resolveResets = (
+  fieldDefs: QueryFormFields,
+  prev: Dict,
+  live: Dict,
+  defaultFor: (key: string) => unknown,
+): Dict => {
+  const explicitKeys = new Set(changedKeysBetween(prev, live));
+  const resetDefaults = new Map<string, unknown>();
+  let next = live;
+
+  for (let pass = 0; pass < MAX_RESET_PASSES; pass++) {
+    const applied = applyResets(
+      fieldDefs,
+      next,
+      changedKeysBetween(prev, next),
+      explicitKeys,
+      resetDefaults,
+      defaultFor,
+    );
+
+    if (equal(applied, next)) return applied;
+
+    next = applied;
+  }
+
+  if (isDevMode()) {
+    console.warn(`defineQueryForm: isResetBy did not settle within ${MAX_RESET_PASSES} passes. Check for a cycle.`);
+  }
+
+  return next;
+};
+
 /**
  * A detached editor over the same fields - its own signal-forms form and value,
- * with no URL sync and no reset graph. Written back to the source form via
- * `source.setValue(branch.value())`. Powers the filter-overlay "edit then apply"
- * pattern (see `10-filter.md`).
+ * with no URL sync but the same `isResetBy` graph. Written back to the source
+ * form via `source.setValue(branch.value())`. Powers the filter-overlay
+ * "edit then apply" pattern (see `10-filter.md`).
  */
 export type QueryFormBranch<TFields extends QueryFormFields> = {
   /** The bindable signal-forms field tree (`branch.fields.search`). */
@@ -133,13 +217,16 @@ const createBranch = <TFields extends QueryFormFields>(
     return value;
   };
 
+  const commit = (next: Dict) =>
+    model.set(clone(resolveResets(fields, model() as Dict, next, defaultFor)) as QueryFormModel<TFields>);
+
   return {
     fields: tree,
     value: model.asReadonly(),
     activeFilterCount: computed(() => computeFilterCount(fields, model() as Dict, defaults)),
-    setValue: (value) => model.set(clone(value)),
-    patchValue: (value) => model.update((cur) => ({ ...cur, ...value })),
-    resetFieldToDefault: (key) => model.update((cur) => ({ ...cur, [key]: defaultFor(key as string) })),
+    setValue: (value) => commit(value as Dict),
+    patchValue: (value) => commit({ ...(model() as Dict), ...value }),
+    resetFieldToDefault: (key) => commit({ ...(model() as Dict), [key]: defaultFor(key as string) }),
     resetAllFieldsToDefault: () => {
       for (const key of Object.keys(fields)) defaultFor(key);
 
@@ -341,69 +428,6 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     });
   };
 
-  const applyResets = (live: Dict, changedKeys: string[], resetDefaults: Map<string, unknown>): Dict => {
-    const next = { ...live };
-
-    for (const [key, def] of Object.entries(fieldDefs)) {
-      const resets = def.isResetBy;
-
-      if (!resets?.length) continue;
-
-      const triggered = resets.some((resetKey) => {
-        if (!(resetKey in fieldDefs)) {
-          if (isDevMode()) {
-            console.warn(`defineQueryForm: isResetBy references unknown field "${resetKey}". Is it a typo?`);
-          }
-
-          return false;
-        }
-
-        return changedKeys.includes(resetKey);
-      });
-
-      if (!triggered) continue;
-
-      let fieldDefault = resetDefaults.get(key);
-
-      if (!resetDefaults.has(key)) {
-        fieldDefault = defaultFor(key);
-        resetDefaults.set(key, fieldDefault);
-      }
-
-      if (!equal(next[key], fieldDefault)) {
-        next[key] = fieldDefault;
-      }
-    }
-
-    return next;
-  };
-
-  /**
-   * Resets are transitive: a field this pass reset counts as changed in the next one, so
-   * `country → league → team` clears `team` as well when only `country` moved. Passes repeat until
-   * nothing moves, which has to happen before `committed` is written - one query execution for the
-   * whole chain, not one per hop. The cap only guards a cyclic `isResetBy` graph; a field already at
-   * its default stops triggering, so a well-formed graph settles in as many passes as it is deep.
-   */
-  const resolveResets = (prev: Dict, live: Dict): Dict => {
-    let next = live;
-    const resetDefaults = new Map<string, unknown>();
-
-    for (let pass = 0; pass < MAX_RESET_PASSES; pass++) {
-      const applied = applyResets(next, changedKeysBetween(prev, next), resetDefaults);
-
-      if (equal(applied, next)) return applied;
-
-      next = applied;
-    }
-
-    if (isDevMode()) {
-      console.warn(`defineQueryForm: isResetBy did not settle within ${MAX_RESET_PASSES} passes. Check for a cycle.`);
-    }
-
-    return next;
-  };
-
   const flush = () => {
     clearTimer();
 
@@ -434,7 +458,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       return;
     }
 
-    const next = skipNextResets ? { ...live } : resolveResets(prev, live);
+    const next = skipNextResets ? { ...live } : resolveResets(fieldDefs, prev, live, defaultFor);
 
     skipNextResets = false;
 

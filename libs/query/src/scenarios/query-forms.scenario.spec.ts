@@ -157,33 +157,30 @@ describe('query forms scenario', () => {
     expect(qf.value().region).toBe('eu');
   });
 
-  it.fails(
-    'applying a branch that changed a parent and its isResetBy child in one commit keeps the child - setValue resets every child of a changed parent, including one the same commit set; the documented overlay flow (qf.setValue(draft.value()) without skipResets) loses the picked league',
-    () => {
-      const s = scenario();
+  it('keeps a child that the same commit also changed, while still resetting an untouched child', () => {
+    const s = scenario();
 
-      const qf = s.run(() =>
-        defineQueryForm({
-          fields: { country: queryField<string>(), league: queryField<string>({ isResetBy: 'country' }) },
-        }).observe({ writeToQueryParams: false }),
-      );
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: { country: queryField<string>(), league: queryField<string>({ isResetBy: 'country' }) },
+      }).observe({ writeToQueryParams: false }),
+    );
 
-      qf.setValue({ country: 'de', league: 'bundesliga' });
-      s.tick();
+    qf.setValue({ country: 'de', league: 'bundesliga' });
+    s.tick();
 
-      const draft = qf.branch();
-      draft.patchValue({ country: 'us' });
-      s.tick();
-      expect(draft.value()).toEqual({ country: 'us', league: null });
+    const draft = qf.branch();
+    draft.patchValue({ country: 'us' });
+    s.tick();
+    expect(draft.value()).toEqual({ country: 'us', league: null });
 
-      draft.patchValue({ league: 'mls' });
-      s.tick();
+    draft.patchValue({ league: 'mls' });
+    s.tick();
 
-      qf.setValue(draft.value());
-      s.tick();
-      expect(qf.value()).toEqual({ country: 'us', league: 'mls' });
-    },
-  );
+    qf.setValue(draft.value());
+    s.tick();
+    expect(qf.value()).toEqual({ country: 'us', league: 'mls' });
+  });
 
   it('writes a field at its default to the URL when appendDefaultValueToUrl is set', async () => {
     const s = scenario();
@@ -226,23 +223,20 @@ describe('query forms scenario', () => {
     c.destroy();
   });
 
-  it.fails(
-    'a Date field commits away from its default - @ethlete/core equal() compares Dates by constructor identity, and under vi.useFakeTimers a Date instance carries the native constructor while the global Date is the fake, so two different Dates compare equal and the commit is dropped',
-    () => {
-      const s = scenario();
+  it('commits a Date field away from its default', () => {
+    const s = scenario();
 
-      const qf = s.run(() =>
-        defineQueryForm({ fields: { stamp: queryField<Date>({ defaultValue: () => new Date(0) }) } }).observe({
-          writeToQueryParams: false,
-        }),
-      );
+    const qf = s.run(() =>
+      defineQueryForm({ fields: { stamp: queryField<Date>({ defaultValue: () => new Date(0) }) } }).observe({
+        writeToQueryParams: false,
+      }),
+    );
 
-      qf.setValue({ stamp: new Date(999) });
-      s.tick();
+    qf.setValue({ stamp: new Date(999) });
+    s.tick();
 
-      expect(qf.value().stamp?.getTime()).toBe(999);
-    },
-  );
+    expect(qf.value().stamp?.getTime()).toBe(999);
+  });
 
   it('numberArrayQueryField deserializes a one-item URL selection instead of dropping it', async () => {
     const s = scenario();
