@@ -115,14 +115,7 @@ describe('auth scenario', () => {
     c.destroy();
   });
 
-  // Fails against current code: once the automatic refresh a 401 triggers actually succeeds (a new
-  // access token is applied), the secure query's own retry never fires - the request stays failed
-  // with the stale 401 forever. Confirmed the refresh itself completes (new token applied,
-  // `afterTokenRefresh$` observed to emit) and that advancing the fake clock arbitrarily far never
-  // produces a second GET - this is not a timing issue, `secure-query-execute-factory.ts`'s
-  // `tokenRefreshSubscription` (the `merge(afterTokenRefresh$, error$...)` listener) simply never
-  // re-executes. Not a previously catalogued scan finding - a new one for the coordinator, see report.
-  it.fails('a 401 on a secure query with autoRetryOn401 triggers exactly one refresh and one retry', () => {
+  it('a 401 on a secure query with autoRetryOn401 triggers exactly one refresh and one retry', async () => {
     const s = scenario();
     const auth = s.auth({ autoRetryOn401: true });
 
@@ -136,27 +129,22 @@ describe('auth scenario', () => {
     )<{ response: { id: string } }>('/secure/profile');
 
     const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    s.tick();
 
-    try {
-      c.run(() => auth.queries.login.execute({ body: {} }));
-      s.tick();
+    const secureQuery = c.run(() => getSecureProfile());
+    s.flush();
+    await s.settle();
+    s.flush();
 
-      const secureQuery = c.run(() => getSecureProfile());
-      s.flush();
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(2);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(secureQuery.error()).toBeNull();
+    expect(secureQuery.response()).toEqual({ id: 'me' });
 
-      expect(s.api.requestCount('GET', '/secure/profile')).toBe(2);
-      expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
-      expect(secureQuery.error()).toBeNull();
-      expect(secureQuery.response()).toEqual({ id: 'me' });
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 401);
 
-      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 401);
-    } finally {
-      c.destroy();
-      s.allow(
-        'errors',
-        'the never-retried request leaves its original 401 uncollected - see the it.fails reason above',
-      );
-    }
+    c.destroy();
   });
 
   it('a refresh failure runs onRefreshFailure, ends the session, and unbinds secure cache entries', () => {
