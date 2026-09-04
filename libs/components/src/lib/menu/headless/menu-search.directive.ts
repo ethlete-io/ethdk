@@ -11,7 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { RuntimeError, injectStyleManager } from '@ethlete/core';
-import type { MenuSearchChrome } from '../menu-chrome';
+import { MenuSearchChrome } from '../menu-chrome';
 import { MENU_ERROR_CODES } from '../menu-errors';
 import { MenuSearchStylesComponent } from '../menu-search-styles.component';
 import { MenuSearchSpinnerComponent } from '../menu-search-spinner.component';

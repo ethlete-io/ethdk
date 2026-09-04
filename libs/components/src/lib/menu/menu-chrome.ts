@@ -1,4 +1,4 @@
-import type { Type } from '@angular/core';
+import { Type } from '@angular/core';
 
 export type MenuSearchChrome = {
   scrollbar: Type<unknown>;
