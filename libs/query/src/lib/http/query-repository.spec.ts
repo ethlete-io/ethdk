@@ -228,6 +228,58 @@ describe('createQueryRepository', () => {
       expect(types).toEqual(['entry-created', 'request-error', 'request-success']);
     });
   });
+
+  describe('isPersistEnabled across shared consumers', () => {
+    const fakeDestroyRef = () =>
+      ({ destroyed: false, onDestroy: vi.fn(() => () => undefined) }) as unknown as DestroyRef;
+
+    it('persists once at least one bound consumer opted in, even if a sibling opted out', () => {
+      const httpTesting = TestBed.inject(HttpTestingController);
+      const events: QueryRepositoryEvent[] = [];
+      repo.events$.subscribe((e) => events.push(e));
+
+      repo.request({ consumerDestroyRef: fakeDestroyRef(), method: 'GET', route: '/shared' });
+      repo.request({
+        consumerDestroyRef: fakeDestroyRef(),
+        method: 'GET',
+        route: '/shared',
+        creatorOptions: { persistence: false },
+      });
+
+      httpTesting.expectOne((r) => r.url.includes('/shared')).flush({ ok: true });
+      TestBed.tick();
+
+      const successEvent = events.find((e) => e.type === 'request-success');
+      expect(successEvent).toMatchObject({ isPersistEnabled: true });
+    });
+
+    it('stops persisting once the opted-in consumer unbinds and only an opted-out one remains', () => {
+      const httpTesting = TestBed.inject(HttpTestingController);
+      const events: QueryRepositoryEvent[] = [];
+      repo.events$.subscribe((e) => events.push(e));
+
+      const persistingConsumer = fakeDestroyRef();
+
+      const first = repo.request({ consumerDestroyRef: persistingConsumer, method: 'GET', route: '/shared' });
+      const { request } = repo.request({
+        consumerDestroyRef: fakeDestroyRef(),
+        method: 'GET',
+        route: '/shared',
+        creatorOptions: { persistence: false },
+      });
+
+      httpTesting.expectOne((r) => r.url.includes('/shared')).flush({ ok: true });
+      TestBed.tick();
+
+      repo.unbind(first.key, persistingConsumer);
+      request.execute({ force: true });
+      httpTesting.expectOne((r) => r.url.includes('/shared')).flush({ ok: true });
+      TestBed.tick();
+
+      const successEvents = events.filter((e) => e.type === 'request-success');
+      expect(successEvents.at(-1)).toMatchObject({ isPersistEnabled: false });
+    });
+  });
 });
 
 describe('createQueryRepository - keepUnusedFor (unused entry retention)', () => {

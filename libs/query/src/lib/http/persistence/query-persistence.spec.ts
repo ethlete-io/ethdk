@@ -362,6 +362,23 @@ describe('query persistence', () => {
       expect(store.entries()).toEqual([]);
     });
 
+    it('does not persist a mutation that opted into the repository cache for state tracking', async () => {
+      const session = createSession();
+      const injector = createEnvironmentInjector([], parent);
+
+      client(session).repository.request({
+        consumerDestroyRef: injector.get(DestroyRef),
+        method: 'POST',
+        route: '/login',
+        creatorOptions: { subtle: { useQueryRepositoryCache: true } },
+      });
+
+      flushAll({ token: 'abc' });
+      await endSession(session);
+
+      expect(store.entries()).toEqual([]);
+    });
+
     it('does not persist a query that opted out', async () => {
       const session = createSession();
       const mounted = mountQuery(session, { persistence: false });

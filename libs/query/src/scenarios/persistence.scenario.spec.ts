@@ -161,61 +161,53 @@ describe('persistence scenario', () => {
       expect(store.calls().loadIndex).toBe(1);
     });
 
-    it.fails(
-      'an opted-out consumer of the same cache entry silently turns persistence off for a sibling that opted in - query-repository.ts:732 ANDs isPersistEnabled across every consumer of one key instead of deciding per query (scan finding: "An existing cache entry ignores the second consumer\'s configuration")',
-      async () => {
-        const s = scenario();
-        s.api.on('GET', '/shared', () => ({ body: { v: 1 } }));
+    it('persists a shared entry as long as one bound consumer opted in, even if a sibling opted out', async () => {
+      const s = scenario();
+      s.api.on('GET', '/shared', () => ({ body: { v: 1 } }));
 
-        const getPersisted = s.get<{ response: { v: number } }>('/shared');
-        const getOptedOut = s.get<{ response: { v: number } }>('/shared', { persistence: false });
+      const getPersisted = s.get<{ response: { v: number } }>('/shared');
+      const getOptedOut = s.get<{ response: { v: number } }>('/shared', { persistence: false });
 
-        const a = s.consumer();
-        const b = s.consumer();
+      const a = s.consumer();
+      const b = s.consumer();
 
-        try {
-          a.run(() => getPersisted());
-          b.run(() => getOptedOut());
-          s.tick();
-
-          await s.client.subtle.persistence?.flush();
-          await s.settle();
-
-          expect(s.api.requestCount('GET', '/shared')).toBe(1);
-          expect(store.entries()).toHaveLength(1);
-        } finally {
-          a.destroy();
-          b.destroy();
-        }
-      },
-    );
-
-    it.fails(
-      'a login mutation is never persisted - bearer-auth-query-builders.ts opts login/refresh into `subtle.useQueryRepositoryCache` for state tracking, which also makes them default-eligible for persistence as an unintended side effect (docs: "Only successful reads. Mutations are never persisted")',
-      async () => {
-        const s = scenario();
-        const auth = s.auth();
-
-        const c = s.consumer();
-        c.run(() => auth.queries.login.execute({ body: {} }));
+      try {
+        a.run(() => getPersisted());
+        b.run(() => getOptedOut());
         s.tick();
 
         await s.client.subtle.persistence?.flush();
         await s.settle();
 
-        expect(store.entries()).toEqual([]);
+        expect(s.api.requestCount('GET', '/shared')).toBe(1);
+        expect(store.entries()).toHaveLength(1);
+      } finally {
+        a.destroy();
+        b.destroy();
+      }
+    });
 
-        c.destroy();
-      },
-    );
+    it('a login mutation is never persisted', async () => {
+      const s = scenario();
+      const auth = s.auth();
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+
+      expect(store.entries()).toEqual([]);
+
+      c.destroy();
+    });
   });
 
   describe('authenticated responses', () => {
     const scenario = useScenario({
       clientOptions: { keepUnusedFor: 0 },
-      clientFeatures: [
-        withQueryPersistence({ adapter: () => store.adapter, filter: ({ url }) => !url.includes('/auth/') }),
-      ],
+      clientFeatures: [withQueryPersistence({ adapter: () => store.adapter })],
     });
 
     it('are not persisted by default, are persisted when a query opts in, and are purged on logout', async () => {

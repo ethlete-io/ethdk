@@ -1,4 +1,5 @@
 import { isDevMode } from '@angular/core';
+import { shouldCacheQuery } from '../query-cache-utils';
 import { QueryKey, QueryRepository, QueryRepositoryEvent } from '../query-repository';
 import { PersistedQueryBody, PersistedQueryEntry, PersistedQueryEntryMeta } from './persisted-query-entry';
 import { QueryPersistenceAdapter } from './query-persistence-adapter';
@@ -269,6 +270,10 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
 
   const queueWrite = (event: Extract<QueryRepositoryEvent, { type: 'request-success' }>) => {
     if (!adapter.isSupported || areWritesDisabled) return;
+
+    // `subtle.useQueryRepositoryCache` lets a mutation (the auth queries) reach the cache; only the
+    // method says whether it may reach the store.
+    if (!shouldCacheQuery(event.request.method)) return;
 
     const body = event.request.response();
 

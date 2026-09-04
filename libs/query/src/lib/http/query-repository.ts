@@ -341,13 +341,18 @@ export type QueryKey = string;
 /** Runs .unbind() if the DestroyRef.onDestroy() gets called */
 export type DestroyCleanupCallback = () => void;
 
+type ConsumerBinding = {
+  cleanup: DestroyCleanupCallback;
+  isPersistEnabled: boolean;
+};
+
 /**
  * Keeps track of all places where the request gets used. Once the last consumer is gone the entry is
  * either destroyed right away or kept for `keepUnusedFor` milliseconds so a consumer that comes back
  * (e.g. via browser back navigation) finds its data already there.
  */
 type DestroyListenerMapItem = {
-  consumers: Map<DestroyRef, DestroyCleanupCallback>;
+  consumers: Map<DestroyRef, ConsumerBinding>;
   request: HttpRequest<QueryArgs>;
   isSecure: boolean;
   eventSubscription?: { unsubscribe: () => void };
@@ -361,7 +366,11 @@ type DestroyListenerMapItem = {
   /** @see BaseQueryCreatorOptions.multiTabSync */
   isMultiTabSyncEnabled: boolean;
 
-  /** @see QueryRepositoryEvent.isPersistEnabled */
+  /**
+   * OR over the bound consumers, recomputed on every bind and unbind - unlike `isSecure`, it turns
+   * off again once the consumer that opted in is gone.
+   * @see QueryRepositoryEvent.isPersistEnabled
+   */
   isPersistEnabled: boolean;
 
   /** How long this entry survives without consumers. `0` destroys it immediately. */
@@ -572,8 +581,8 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     const { method, url } = cacheEntry.request;
 
     clearTimeout(cacheEntry.evictTimer);
-    for (const unregister of cacheEntry.consumers.values()) {
-      unregister();
+    for (const consumerBinding of cacheEntry.consumers.values()) {
+      consumerBinding.cleanup();
     }
     cacheEntry.consumers.clear();
     cacheEntry.request.destroy();
@@ -619,12 +628,14 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
     if (!cacheEntry) return false;
 
-    const unregister = cacheEntry.consumers.get(consumerDestroyRef);
+    const consumerBinding = cacheEntry.consumers.get(consumerDestroyRef);
 
-    if (!unregister) return false;
+    if (!consumerBinding) return false;
 
-    unregister();
+    consumerBinding.cleanup();
     cacheEntry.consumers.delete(consumerDestroyRef);
+
+    cacheEntry.isPersistEnabled = Array.from(cacheEntry.consumers.values()).some((binding) => binding.isPersistEnabled);
 
     if (cacheEntry.consumers.size === 0) {
       // Only data is worth keeping around: an entry that never produced a response has nothing to
@@ -729,22 +740,32 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       cacheEntry.isSecure ||= isSecure;
       cacheEntry.isRefreshable ||= isRefreshable;
       cacheEntry.isMultiTabSyncEnabled &&= isMultiTabSyncEnabled;
-      cacheEntry.isPersistEnabled &&= isPersistEnabled;
       cacheEntry.keepUnusedFor = Math.min(cacheEntry.keepUnusedFor, keepUnusedFor);
 
-      if (!cacheEntry.consumers.has(consumerDestroyRef)) {
-        cacheEntry.consumers.set(
-          consumerDestroyRef,
-          consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef)),
-        );
-      }
-    } else {
-      const consumers: Map<DestroyRef, DestroyCleanupCallback> = new Map([]);
+      const existingBinding = cacheEntry.consumers.get(consumerDestroyRef);
 
-      consumers.set(
-        consumerDestroyRef,
-        consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef)),
+      if (existingBinding) {
+        existingBinding.isPersistEnabled = isPersistEnabled;
+      } else {
+        cacheEntry.consumers.set(consumerDestroyRef, {
+          cleanup: consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef)),
+          isPersistEnabled,
+        });
+      }
+
+      cacheEntry.isPersistEnabled = Array.from(cacheEntry.consumers.values()).some(
+        (binding) => binding.isPersistEnabled,
       );
+    } else {
+      const consumers: Map<DestroyRef, ConsumerBinding> = new Map([
+        [
+          consumerDestroyRef,
+          {
+            cleanup: consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef)),
+            isPersistEnabled,
+          },
+        ],
+      ]);
 
       // Drive repository events off the request's discrete, terminal event stream rather than
       // recombining the `error` + `response` signals via combineLatest (which could observe stale
