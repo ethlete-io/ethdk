@@ -211,6 +211,20 @@ export const clearRestoredQueryDevtoolsOverrides = () => {
 };
 
 /**
+ * Forgets a destroyed query's recorder. Ops already persisted stay in the store on purpose - they are
+ * keyed by an id the next page load re-derives, which is what "Keep across reloads" replays them from.
+ * @internal
+ */
+export const releaseQueryDevtoolsOverridePersistence = (id: string) => {
+  armedRecorders.delete(id);
+
+  if (scope() !== 'none') return;
+
+  const { [id]: _dropped, ...rest } = ops;
+  ops = rest;
+};
+
+/**
  * Wraps a query's overrides recorder so its armed ops are stored and replayed. Replay happens here, at
  * registration, rather than in the panel - a query can run long before the panel is ever opened.
  *

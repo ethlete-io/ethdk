@@ -37,6 +37,7 @@ import { initQueryDevtoolsFaults, resolveQueryDevtoolsFaultForAttempt } from './
 import { createQueryDevtoolsFormLinks } from './query-devtools-form-links';
 import {
   initQueryDevtoolsOverridePersistence,
+  releaseQueryDevtoolsOverridePersistence,
   withQueryDevtoolsOverridePersistence,
 } from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
@@ -193,7 +194,9 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
   // A registration that brings its own id can repeat one a tombstone still holds; the live entry wins.
   entries.update((list) => [...list.filter((e) => !(e.id === id && e.destroyedAt)), fullEntry]);
 
-  return () =>
+  return () => {
+    if (fullEntry.overrides) releaseQueryDevtoolsOverridePersistence(fullEntry.id);
+
     entries.update((list) => {
       const index = list.findIndex((e) => e.id === fullEntry.id);
 
@@ -213,6 +216,7 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
 
       return capTombstones(next);
     });
+  };
 };
 
 /** The oldest `count` entries of a bucket, which is what a cap drops when the bucket is over it. */

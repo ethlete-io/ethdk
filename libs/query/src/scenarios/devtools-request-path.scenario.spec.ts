@@ -7,6 +7,7 @@ import {
   clearQueryDevtoolsAuthSessions,
   clearQueryDevtoolsFaults,
   clearQueryDevtoolsMockStore,
+  clearQueryDevtoolsOverrideStore,
   clearQueryDevtoolsTombstones,
   createBearerAuthProvider,
   createGetQuery,
@@ -28,6 +29,7 @@ import {
   setQueryDevtoolsApiEnv,
   setQueryDevtoolsArmedMocksScope,
   setQueryDevtoolsFault,
+  setQueryDevtoolsOverridePersistence,
   setQueryDevtoolsSettings,
   withArgs,
   withAuthenticationQuery,
@@ -39,6 +41,8 @@ import { mintToken, Scenario, useScenario } from './harness';
 const BASE_URL = 'https://api.test';
 
 const ARMED_MOCKS_STORAGE_KEY = 'ethlete:query:devtools:mocks:armed:v1';
+
+const OVERRIDES_STORAGE_KEY = 'ethlete:query:devtools:overrides:v1';
 
 const ENV_STORAGE_KEY = 'et-devtools-request-path-hub-env';
 const VAULT_PROVIDER_NAME = 'devtools-request-path-vault-provider';
@@ -453,6 +457,54 @@ describe('a response override survives a refetch and drops on disarm', () => {
     expect(query.response()).toEqual({ title: 'Original 2', count: 2 });
 
     c.destroy();
+  });
+});
+
+describe('an override recorder is released with the query that armed it', () => {
+  const CLIENT_NAME = 'devtools-request-path-override-release';
+  const scenario = useScenario({
+    name: CLIENT_NAME,
+    clientOptions: { keepUnusedFor: 0 },
+    providers: devtoolsProviders,
+  });
+
+  beforeEach(() => {
+    resetDevtoolsState();
+    setQueryDevtoolsOverridePersistence(false);
+    clearQueryDevtoolsOverrideStore();
+  });
+
+  it('keeps a destroyed query out of what "Keep across reloads" captures', async () => {
+    const s = scenario();
+    const path = '/override-release-test';
+
+    s.api.on('GET', path, () => ({ body: { title: 'Original' } }));
+
+    const getOverridden = s.get<{ response: { title: string } }>(path);
+    const c = s.consumer();
+    const query = c.run(() => getOverridden());
+    await s.settle();
+
+    const entry = queryDevtoolsEntries().find((candidate) => candidate.handle === query);
+
+    if (!entry?.overrides) {
+      throw new Error('devtools request-path scenario: the query registered no overrides recorder');
+    }
+
+    entry.overrides.arm({ type: 'set', path: ['title'], value: 'Overridden' });
+
+    expect(query.response()).toEqual({ title: 'Overridden' });
+
+    c.destroy();
+    await s.settle();
+
+    setQueryDevtoolsOverridePersistence(true);
+
+    const stored = JSON.parse(window.sessionStorage.getItem(OVERRIDES_STORAGE_KEY) ?? 'null') as {
+      ops: Record<string, unknown[]>;
+    } | null;
+
+    expect(stored?.ops[entry.id]).toBeUndefined();
   });
 });
 
