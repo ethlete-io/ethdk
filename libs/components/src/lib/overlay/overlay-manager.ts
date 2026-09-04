@@ -165,8 +165,8 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         bindings: [
           inputBinding('component', () => component),
           inputBinding('componentBindings', () => resolvedConfig.bindings),
-          inputBinding('renderArrow', () => controller.initialMountConfig.renderArrow),
-          inputBinding('renderDragHandle', () => controller.initialMountConfig.renderDragHandle),
+          inputBinding('renderArrow', () => controller.renderArrow()),
+          inputBinding('renderDragHandle', () => controller.renderDragHandle()),
         ],
         role,
         positionStrategy: controller.initialMountConfig.positionStrategy,

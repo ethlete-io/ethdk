@@ -1,6 +1,8 @@
 import {
   DOCUMENT,
   EnvironmentInjector,
+  Signal,
+  computed,
   createEnvironmentInjector,
   effect,
   linkedSignal,
@@ -45,6 +47,12 @@ export type OverlayStrategyControllerMountConfig = {
 export type OverlayStrategyController = {
   /** Values the overlay manager merges into the runtime mount config before mounting. */
   initialMountConfig: OverlayStrategyControllerMountConfig;
+
+  /** Whether the active strategy renders an arrow - follows breakpoint switches. */
+  renderArrow: Signal<boolean>;
+
+  /** Whether the active strategy renders a drag handle - follows breakpoint switches. */
+  renderDragHandle: Signal<boolean>;
 
   /** Wires strategy lifecycle hooks and breakpoint switching. Must be called right after mounting. */
   attach: (runtimeRef: OverlayRuntimeRef<object, unknown>, overlayRef: OverlayRef<object, unknown>) => void;
@@ -143,6 +151,7 @@ export const createOverlayStrategyController = (
       .reduce((prev, curr) => (prev.size > curr.size ? prev : curr), smallestEntry).strategy;
 
   let activeStrategy = untracked(() => getHighestMatchedStrategy());
+  const activeStrategyConfig = signal(activeStrategy.config);
 
   mountStrategyStyles(activeStrategy.config);
   let attachedRuntimeRef: OverlayRuntimeRef<object, unknown> | null = null;
@@ -340,6 +349,7 @@ export const createOverlayStrategyController = (
     }
 
     activeStrategy = currStrategy;
+    activeStrategyConfig.set(currStrategy.config);
 
     mountStrategyStyles(currStrategy.config);
     applyBackdrop(runtimeRef, currStrategy.config);
@@ -472,6 +482,8 @@ export const createOverlayStrategyController = (
       renderDragHandle: !!activeStrategy.config.dragToDismiss,
       hasBackdrop: resolveOverlayHasBackdrop(config, activeStrategy.config),
     },
+    renderArrow: computed(() => activeStrategyConfig().arrow ?? false),
+    renderDragHandle: computed(() => !!activeStrategyConfig().dragToDismiss),
     attach,
   };
 };

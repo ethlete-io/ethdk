@@ -275,7 +275,7 @@ this.overlayManager.open(ExampleOverlayComponent, {
 });
 ```
 
-A switch carries the strategy's own `hasBackdrop` over too: morphing a backdropped bottom sheet into a backdrop-less anchored pane removes the backdrop and lets pointers through the host again, and the reverse adds one and fades it in. `config.hasBackdrop` still wins over every strategy, so set it only when the backdrop must stay the same at every breakpoint.
+A switch carries the strategy's own `hasBackdrop`, `arrow` and `dragToDismiss` over too - the arrow and the drag handle come and go with the strategy - and for the backdrop: morphing a backdropped bottom sheet into a backdrop-less anchored pane removes the backdrop and lets pointers through the host again, and the reverse adds one and fades it in. `config.hasBackdrop` still wins over every strategy, so set it only when the backdrop must stay the same at every breakpoint.
 
 Also available: `transformingFullScreenDialogToDialogOverlayStrategy` and `transformingFullScreenDialogToRightSheetOverlayStrategy`. Custom combinations are just arrays - each strategy provider (e.g. `injectDialogStrategy()`) exposes `.build(config)`, and app-wide defaults can be tuned via `provideDialogStrategyDefaults` and friends.
 

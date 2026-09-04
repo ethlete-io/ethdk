@@ -189,6 +189,23 @@ describe('overlay strategy controller', () => {
     expect(document.documentElement.classList.contains('large-document')).toBe(false);
   });
 
+  it('renders the drag handle and arrow of the strategy switched to', () => {
+    smallStrategy.config.dragToDismiss = { direction: 'to-bottom' };
+    largeStrategy.config.arrow = true;
+
+    const overlayRef = openOverlay();
+    const pane = overlayRef.elements?.paneElement;
+
+    expect(pane?.querySelector('.et-overlay-container-drag-handle')).not.toBeNull();
+    expect(pane?.querySelector('.et-overlay-arrow')).toBeNull();
+
+    fakeBreakpoints.setMatches(MD_QUERY, true);
+    TestBed.tick();
+
+    expect(pane?.querySelector('.et-overlay-container-drag-handle')).toBeNull();
+    expect(pane?.querySelector('.et-overlay-arrow')).not.toBeNull();
+  });
+
   it('switches strategies when the viewport width crosses the breakpoint', () => {
     const overlayRef = openOverlay();
     const elements = overlayRef.elements;
