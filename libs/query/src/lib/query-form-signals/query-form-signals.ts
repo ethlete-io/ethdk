@@ -514,18 +514,14 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
    * navigation with the next one, so a second form (or a second commit) writing in the same tick would otherwise
    * drop the first one's params.
    */
-  const navigateWithParams = (
-    params: Dict,
-    extras: Pick<NavigationExtras, 'replaceUrl' | 'info'>,
-    onlyOnCurrentRoute = false,
-  ) => {
+  const navigateWithParams = (params: Dict, extras: Pick<NavigationExtras, 'replaceUrl' | 'info'>) => {
     queueMicrotask(() => {
       const pending = router.getCurrentNavigation();
       const base = pending?.finalUrl ?? pending?.extractedUrl ?? router.parseUrl(router.url);
 
-      // A wipe merged onto a navigation that lands on another route would strip that route's own
-      // same-named params (`page`, `search`) off the URL the user just landed on.
-      if (onlyOnCurrentRoute && pathOf(base) !== pathOf(router.parseUrl(router.url))) return;
+      // Writing onto a navigation that lands on another route would supersede it: the user's navigation
+      // resolves `false` and that route's own same-named params (`page`, `search`) are lost.
+      if (pathOf(base) !== pathOf(router.parseUrl(router.url))) return;
 
       const queryParams: Dict = { ...base.queryParams, ...params };
 
@@ -656,7 +652,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       queryParams[paramKey(key)] = undefined;
     }
 
-    navigateWithParams(queryParams, { replaceUrl: true }, true);
+    navigateWithParams(queryParams, { replaceUrl: true });
   };
 
   const setValue = (value: QueryFormModel<TFields>, options?: QueryFormSignalsWriteOptions) => {

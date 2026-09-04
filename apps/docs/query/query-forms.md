@@ -133,6 +133,11 @@ are always ignored, plus any field created with `skipInFilterCount`.
 | `syncOnNavigation`   | `true`  | Apply URL → form on navigation (back/forward, external links). |
 | `replaceUrl`         | `false` | Replace the history entry instead of pushing a new one.        |
 
+While a navigation to **another route** is in flight, the form skips its URL write
+entirely - superseding it would resolve that navigation `false` and drop the landing
+route's own params. A write during a navigation on the **same** route is merged onto the
+pending URL, so a foreign param set by that navigation survives.
+
 Serialization rules:
 
 - **Defaults are elided** - a field at its default is removed from the URL (unless

@@ -201,4 +201,54 @@ describe('query forms URL sync scenario', () => {
 
     c.destroy();
   });
+
+  it('a value committed while a route change is in flight does not cancel the navigation', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      defineQueryForm({
+        fields: { page: queryField<number>({ defaultValue: 1 }), search: queryField<string>() },
+      }).observe(),
+    );
+
+    qf.setValue({ page: 2, search: 'bar' });
+    await s.settle();
+
+    router.resetConfig([{ path: 'other', children: [] }]);
+
+    const navigation = router.navigateByUrl('/other?page=3&search=foo');
+    qf.setValue({ page: 5, search: 'baz' });
+    s.tick();
+    const didNavigate = await navigation;
+    await s.settle();
+
+    expect(didNavigate).toBe(true);
+    expect(router.url).toBe('/other?page=3&search=foo');
+
+    c.destroy();
+  });
+
+  it('a value committed while a same-route navigation is in flight is not lost', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      defineQueryForm({
+        fields: { page: queryField<number>({ defaultValue: 1 }), search: queryField<string>() },
+      }).observe(),
+    );
+
+    const navigation = router.navigateByUrl('/?other=1');
+    qf.setValue({ page: 2, search: 'bar' });
+    s.tick();
+    await navigation;
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ other: '1', page: '2', search: 'bar' });
+
+    c.destroy();
+  });
 });
