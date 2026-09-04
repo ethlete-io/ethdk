@@ -1,0 +1,432 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { createEnvironmentInjector, EnvironmentInjector, inject } from '@angular/core';
+import {
+  FakeBroadcastChannelHandle,
+  FakeWebLocksHandle,
+  flushMultiTabSync,
+  installFakeBroadcastChannel,
+  installFakeWebLocks,
+} from '@ethlete/query/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  createBearerAuthProvider,
+  createPostQuery,
+  createQueryClient,
+  createSecureGetQuery,
+  withAuthenticationQuery,
+  withBearerAuthMultiTabSync,
+  withInactivityLogout,
+  withRefreshQuery,
+} from '../index';
+import { mintToken, Scenario, useScenario } from './harness';
+
+const BASE_URL = 'https://api.test';
+const PROVIDER_NAME = 'auth-multi-tab-leadership-scenario';
+const INACTIVITY_TIMEOUT = 100_000;
+
+type TokenArgs = { body: Record<string, unknown>; response: { accessToken: string; refreshToken: string } };
+type Profile = { response: { id: string } };
+
+let tabCounter = 0;
+
+const is401 = (entry: { error: unknown }) => entry.error instanceof HttpErrorResponse && entry.error.status === 401;
+
+/** One browser tab: its own query client and auth provider, sharing the fake API and the sync channel. */
+const createAuthTab = (s: Scenario) => {
+  const clientRef = createQueryClient({ name: `auth-tab-client-${++tabCounter}`, baseUrl: BASE_URL, keepUnusedFor: 0 });
+  const authRef = createBearerAuthProvider({
+    name: PROVIDER_NAME,
+    queryClientRef: clientRef,
+    queries: [
+      withAuthenticationQuery('login', { queryCreator: createPostQuery(clientRef)<TokenArgs>('/auth/login') }),
+      withRefreshQuery('refresh', {
+        queryCreator: createPostQuery(clientRef)<TokenArgs>('/auth/refresh'),
+        refreshStrategy: 0.5,
+        autoRetryOn401: true,
+      }),
+    ],
+    features: [withBearerAuthMultiTabSync()],
+  });
+
+  const injector = createEnvironmentInjector(
+    [...clientRef.provide(), ...authRef.provide()],
+    s.run(() => inject(EnvironmentInjector)),
+  );
+  const auth = injector.runInContext(() => authRef.inject());
+
+  if (!auth) throw new Error('auth multi-tab leadership scenario: failed to create the tab auth provider');
+
+  const consumers: EnvironmentInjector[] = [];
+
+  return {
+    auth,
+    getSecure: createSecureGetQuery(clientRef, authRef),
+    consumer: () => {
+      const child = createEnvironmentInjector([], injector);
+      consumers.push(child);
+      return { run: <T>(fn: () => T) => child.runInContext(fn) };
+    },
+    destroy: () => {
+      for (const child of consumers) child.destroy();
+      injector.destroy();
+    },
+  };
+};
+
+/** Same as {@link createAuthTab}, with `withInactivityLogout` added so idleness can be measured. */
+const createInactivityTab = (s: Scenario, activityEvents: string[]) => {
+  const clientRef = createQueryClient({ name: `auth-tab-client-${++tabCounter}`, baseUrl: BASE_URL, keepUnusedFor: 0 });
+  const authRef = createBearerAuthProvider({
+    name: PROVIDER_NAME,
+    queryClientRef: clientRef,
+    queries: [
+      withAuthenticationQuery('login', { queryCreator: createPostQuery(clientRef)<TokenArgs>('/auth/login') }),
+      withRefreshQuery('refresh', {
+        queryCreator: createPostQuery(clientRef)<TokenArgs>('/auth/refresh'),
+        refreshStrategy: 0.5,
+      }),
+    ],
+    features: [
+      withBearerAuthMultiTabSync(),
+      withInactivityLogout({ inactivityTimeout: INACTIVITY_TIMEOUT, activityEvents }),
+    ],
+  });
+
+  const injector = createEnvironmentInjector(
+    [...clientRef.provide(), ...authRef.provide()],
+    s.run(() => inject(EnvironmentInjector)),
+  );
+  const auth = injector.runInContext(() => authRef.inject());
+
+  if (!auth) throw new Error('auth multi-tab leadership scenario: failed to create the tab auth provider');
+
+  return { auth, destroy: () => injector.destroy() };
+};
+
+/**
+ * Holds the leader lock and answers (or ignores) `claim` messages over the fake primitives without running
+ * library code. One shared clock and microtask queue cannot freeze one real tab while another ticks.
+ */
+const createFrozenLeaderTab = (name: string, options: { isVisible?: boolean; answersClaims?: boolean } = {}) => {
+  const isVisible = options.isVisible ?? false;
+  const answersClaims = options.answersClaims ?? false;
+
+  let isLeader = false;
+  let release = () => {
+    /* not granted yet */
+  };
+
+  const hold = () => {
+    void navigator.locks.request(`ethlete-auth:leader:${name}`, () => {
+      isLeader = true;
+
+      return new Promise<void>((resolve) => {
+        release = () => {
+          isLeader = false;
+          resolve();
+        };
+      });
+    });
+  };
+
+  hold();
+
+  const channel = new BroadcastChannel(`ethlete-auth-leader:${name}`);
+
+  channel.onmessage = (event: MessageEvent<unknown>) => {
+    const data = event.data as { type?: string } | null;
+
+    if (data?.type !== 'claim' || !answersClaims || !isLeader) return;
+
+    channel.postMessage({ type: 'leader-alive', isVisible });
+
+    if (!isVisible) {
+      release();
+      hold();
+    }
+  };
+
+  return {
+    isLeader: () => isLeader,
+    close: () => {
+      channel.close();
+      release();
+    },
+  };
+};
+
+const setVisibility = (state: 'visible' | 'hidden') => {
+  Object.defineProperty(document, 'visibilityState', { value: state, configurable: true });
+  document.dispatchEvent(new Event('visibilitychange'));
+};
+
+const issueTokens = (accessTokenExpiresInMs: number) => () => ({
+  body: {
+    accessToken: mintToken({ expiresInMs: accessTokenExpiresInMs }),
+    refreshToken: mintToken({ expiresInMs: 60 * 60 * 1000 }),
+  },
+});
+
+const sync = async (s: Scenario) => {
+  await s.settle();
+  await flushMultiTabSync();
+  await s.settle();
+  await flushMultiTabSync();
+  await s.settle();
+};
+
+describe('auth multi-tab leadership scenario', () => {
+  let bus: FakeBroadcastChannelHandle;
+  let locks: FakeWebLocksHandle;
+
+  beforeEach(() => {
+    bus = installFakeBroadcastChannel();
+    locks = installFakeWebLocks();
+  });
+
+  afterEach(() => {
+    setVisibility('visible');
+    bus.restore();
+    locks.restore();
+  });
+
+  const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
+
+  const refreshRequestedMessages = () =>
+    bus.posted.filter(
+      (m) =>
+        m.channel === `ethlete-auth-leader:${PROVIDER_NAME}` &&
+        (m.data as { type?: string })?.type === 'refresh-requested',
+    );
+
+  it('a follower re-asks the leader for a delegated refresh every 3 seconds, up to three times, and adopts the pair once the leader answers', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', () => ({ ...issueTokens(15 * 60 * 1000)(), delay: 7000 }));
+    s.api.protect('/secure/**');
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    const tokenAtLogin = b.auth.accessToken();
+    const queryB = b.consumer().run(() => b.getSecure<Profile>('/secure/profile')());
+    s.tick();
+    await sync(s);
+
+    s.tick(3000);
+    await sync(s);
+    s.tick(3000);
+    await sync(s);
+    s.tick(1500);
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+    expect(b.auth.accessToken()).not.toBe(tokenAtLogin);
+    expect(queryB.response()).toEqual({ id: 'me' });
+    expect(refreshRequestedMessages()).toHaveLength(3);
+
+    s.expectError(is401);
+    a.destroy();
+    b.destroy();
+  });
+
+  it('a follower spends the refresh token itself once the leader never answers at all, and the new pair reaches every tab', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+    s.api.protect('/secure/**');
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    // Both tabs must stay hidden: a visible tab claims the leadership itself before the takeover runs.
+    setVisibility('hidden');
+    const leader = createFrozenLeaderTab(PROVIDER_NAME);
+
+    const b = createAuthTab(s);
+    const c = createAuthTab(s);
+    await sync(s);
+
+    b.auth.queries.login.execute({ body: {} });
+    await sync(s);
+    expect(c.auth.accessToken()).toBe(b.auth.accessToken());
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    const tokenAtLogin = b.auth.accessToken();
+    const queryB = b.consumer().run(() => b.getSecure<Profile>('/secure/profile')());
+    s.tick();
+    await sync(s);
+
+    s.tick(3000);
+    await sync(s);
+    s.tick(3000);
+    await sync(s);
+    s.tick(3000);
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(b.auth.accessToken()).not.toBe(tokenAtLogin);
+    expect(c.auth.accessToken()).toBe(b.auth.accessToken());
+    expect(c.auth.refreshToken()).toBe(b.auth.refreshToken());
+    expect(queryB.response()).toEqual({ id: 'me' });
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    s.expectError(is401);
+    leader.close();
+    b.destroy();
+    c.destroy();
+  });
+
+  it('two tabs that go stale at the same instant refresh the token exactly once', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+    s.api.protect('/secure/**');
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    setVisibility('hidden');
+    const leader = createFrozenLeaderTab(PROVIDER_NAME);
+
+    const b = createAuthTab(s);
+    const c = createAuthTab(s);
+    await sync(s);
+
+    b.auth.queries.login.execute({ body: {} });
+    await sync(s);
+    const tokenAtLogin = b.auth.accessToken();
+    expect(c.auth.accessToken()).toBe(tokenAtLogin);
+
+    const queryB = b.consumer().run(() => b.getSecure<Profile>('/secure/profile')());
+    const queryC = c.consumer().run(() => c.getSecure<Profile>('/secure/profile')());
+    s.tick();
+    await sync(s);
+
+    s.tick(3000);
+    await sync(s);
+    s.tick(3000);
+    await sync(s);
+    s.tick(3000);
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(b.auth.accessToken()).not.toBe(tokenAtLogin);
+    expect(c.auth.accessToken()).toBe(b.auth.accessToken());
+    expect(c.auth.refreshToken()).toBe(b.auth.refreshToken());
+    expect(queryB.response()).toEqual({ id: 'me' });
+    expect(queryC.response()).toEqual({ id: 'me' });
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+    expect(c.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    s.expectError(is401);
+    s.expectError(is401);
+    leader.close();
+    b.destroy();
+    c.destroy();
+  });
+
+  it('a tab that becomes visible claims the leadership, and the hidden leader gives way', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    setVisibility('hidden');
+    const leader = createFrozenLeaderTab(PROVIDER_NAME, { isVisible: false, answersClaims: true });
+    await flushMultiTabSync();
+
+    const b = createAuthTab(s);
+    const c = createAuthTab(s);
+    await sync(s);
+
+    expect(leader.isLeader()).toBe(true);
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+    expect(c.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    setVisibility('visible');
+    await sync(s);
+
+    expect(leader.isLeader()).toBe(false);
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(c.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    leader.close();
+    b.destroy();
+    c.destroy();
+  });
+
+  it('activity in one tab resets the inactivity timer in another tab over the sync channel', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createInactivityTab(s, ['keydown']);
+    const b = createInactivityTab(s, ['mousedown']);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+    expect(b.auth.isAuthenticated()).toBe(true);
+
+    s.tick(90_000);
+    await sync(s);
+
+    // `b` listens for `mousedown` only, so a `keydown` can reach its timer through the broadcast alone.
+    document.dispatchEvent(new KeyboardEvent('keydown'));
+    await sync(s);
+
+    expect(a.auth.features.inactivityLogout.calculateTimeUntilLogout()).toBeGreaterThan(90_000);
+    expect(b.auth.features.inactivityLogout.calculateTimeUntilLogout()).toBeGreaterThan(90_000);
+
+    s.tick(90_000);
+    await sync(s);
+
+    expect(a.auth.isAuthenticated()).toBe(true);
+    expect(b.auth.isAuthenticated()).toBe(true);
+
+    s.tick(100_001);
+    await sync(s);
+
+    expect(a.auth.sessionEndCause()).toBe('inactivity');
+    expect(b.auth.sessionStatus()).toBe('anonymous');
+    expect(b.auth.sessionEndCause()).toBe('inactivity');
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('a proactive token refresh right before the idle window ends is not counted as activity', () => {
+    const s = scenario();
+    const auth = s.auth({
+      accessTokenExpiresInMs: 20_000,
+      refreshStrategy: 1000,
+      features: [withInactivityLogout({ inactivityTimeout: 20_000 })],
+    });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    s.tick();
+
+    expect(auth.isAuthenticated()).toBe(true);
+
+    s.tick(19_000);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(auth.sessionStatus()).toBe('authenticated');
+
+    s.tick(1001);
+
+    expect(auth.sessionStatus()).toBe('anonymous');
+    expect(auth.sessionEndCause()).toBe('inactivity');
+
+    c.destroy();
+  });
+});
