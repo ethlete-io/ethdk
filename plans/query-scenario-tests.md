@@ -327,3 +327,30 @@ Opus agents authored, Fable reviewed. Full `query` project: 132 files, 1778 test
   destroyed client injector (bounded); the leader does not `announceStart()` when it declines a
   delegated request as `busy`, so the follower re-asks after 3 s for nothing. The scan triage with the
   open findings is in `plans/query-lib-scan.md`.
+
+## Wave 4 (2026-09-05)
+
+Opus agents authored one finding each, Fable reviewed and committed. The scan triage in
+`plans/query-lib-scan.md` was the work list.
+
+- Fixed, with changesets: `unobserve()` mid-navigation stripped the landing route's same-named params
+  (`query-form-signals.ts`, the wipe now runs only when the pending navigation stays on the current
+  route; destroy already passed `cleanup(false)` and was safe); the ws client sent `join-room` twice on
+  the first connect and for a room joined during a drop (a `bufferedJoins` set tracks joins socket.io
+  still holds; the unit spec and the test-double JSDoc mirrored the bug); the devtools override
+  recorder map grew for the app lifetime (`releaseQueryDevtoolsOverridePersistence` runs from the
+  registry's unregister closure); the leader declined a delegated refresh as `busy` in silence, so the
+  follower took it over with the token the in-flight login replaced (`announceStart()` in the busy
+  branch too); the legacy `QueryStore` never removed its `blur`/`focus` listeners or its 15 s GC
+  (torn down on the owning `DestroyRef` when one exists).
+- Pinned as documented, no fix: a numeric `refreshStrategy` is unclamped by design (three scenarios);
+  the legacy `insertFrom` array case worked through the `select` overload, the redundant branch is
+  collapsed (six unit tests).
+- Already covered, no work: GraphQL over POST persistence (`persistence` suite), the `createBranch`
+  release with a shorter-lived and with the default injector (`query-forms-branch` suite).
+- New finding, not fixed: the legacy `QueryForm.unobserve()` during a navigation calls
+  `router.navigate([], { queryParamsHandling: 'merge' })` against the old URL and cancels the user's
+  navigation outright (`navigateByUrl` resolves `false`). Deprecated class; fix like the signals form.
+- Harness notes: `mintToken` floors `exp` to whole seconds, so proactive refresh instants need a 1 s
+  window (in the skill now); the harness router has no routes, suites that need a cross-route
+  navigation call `router.resetConfig([{ path: 'other', children: [] }])` inline.

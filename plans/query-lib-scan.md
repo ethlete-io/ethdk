@@ -226,3 +226,10 @@ Two fix waves closed 43 of the 57 findings above. No Medium finding is open in `
    `legacy/auth/auth-provider.utils.ts:25`, incl. `isNaN`). Add `@deprecated` tags.
 10. Cosmetic: `activeFilterCount$` vs `activeFilterCount`; unused `QueryFormOf`/`AnyQueryForm`.
 11. Accepted: the legacy `QueryForm` BehaviorSubjects (class is `@deprecated`).
+
+### Wave 4 (2026-09-05)
+
+Closed: 1 (as `unobserve()` mid-navigation; destroy was already safe), 3 (false positive, branch
+collapsed), 4, 5, plus the leader `busy` silence from the wave 3 notes and the legacy `QueryStore`
+teardown. Item 2 is by design and pinned by scenarios. Still open: 6, 7, 8, 9, 10, and the new legacy
+`QueryForm.unobserve()` navigation cancel (see `plans/query-scenario-tests.md`, "Wave 4").
