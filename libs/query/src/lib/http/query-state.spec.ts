@@ -42,6 +42,43 @@ describe('setupQueryState', () => {
     expect(state.response()).toBe('item-42');
   });
 
+  it('should keep the last good response when a later transformResponse throws', () => {
+    const state = TestBed.runInInjectionContext(() =>
+      setupQueryState<{ response: string; rawResponse: number }>({
+        transformResponse: (raw) => {
+          if (raw < 0) throw new Error('unmappable response');
+
+          return `item-${raw}`;
+        },
+      }),
+    );
+
+    state.rawResponse.set(42 as never);
+    expect(state.response()).toBe('item-42');
+
+    state.rawResponse.set(-1 as never);
+    expect(state.response()).toBe('item-42');
+    expect(state.error()?.code).toBe(0);
+
+    state.rawResponse.set(null);
+    expect(state.response()).toBeNull();
+  });
+
+  it('should leave the response null when the first transformResponse throws', () => {
+    const state = TestBed.runInInjectionContext(() =>
+      setupQueryState<{ response: string; rawResponse: number }>({
+        transformResponse: () => {
+          throw new Error('unmappable response');
+        },
+      }),
+    );
+
+    state.rawResponse.set(1 as never);
+
+    expect(state.response()).toBeNull();
+    expect(state.error()?.code).toBe(0);
+  });
+
   it('should return the raw response as-is when no transformResponse is provided', () => {
     const state = setup<string>();
     state.rawResponse.set('hello' as never);

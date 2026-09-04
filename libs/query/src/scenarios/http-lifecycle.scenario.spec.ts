@@ -11,7 +11,8 @@ import {
   withSuccessHandling,
 } from '../index';
 import { ObservedValueOf } from 'rxjs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { sequence } from './harness/fake-api';
 import { useScenario } from './harness';
 
 describe('http lifecycle scenario', () => {
@@ -438,5 +439,215 @@ describe('http lifecycle scenario: retention', () => {
 
     b.destroy();
     s.tick(300_000);
+  });
+});
+
+describe('http lifecycle scenario: a transformResponse that throws', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  type TransformArgs = { response: { name: string }; rawResponse: { data?: { name: string } } };
+
+  const createBrokenTransformQuery = (s: ReturnType<typeof scenario>) =>
+    s.get<TransformArgs>('/transform', {
+      transformResponse: (raw) => {
+        if (!raw.data) throw new Error('unmappable response');
+
+        return raw.data;
+      },
+      retryFn: () => ({ retry: true, delay: 10 }),
+    });
+
+  it('reports a failure with code 0 carrying the thrown value, never retries, and clears on the next clean execution', () => {
+    const s = scenario();
+    s.api.on('GET', '/transform', sequence([{ body: {} }, { body: { data: { name: 'ok' } } }]));
+
+    const getTransformed = createBrokenTransformQuery(s);
+
+    const c = s.consumer();
+    const query = c.run(() => getTransformed());
+
+    s.tick();
+
+    expect(query.executionState()?.type).toBe('failure');
+    expect(query.error()?.code).toBe(0);
+    expect((query.error()?.raw.error as Error).message).toBe('unmappable response');
+    expect(s.errors).toHaveLength(0);
+
+    s.tick(100);
+    expect(s.api.requestCount('GET', '/transform')).toBe(1);
+
+    query.execute();
+    s.tick();
+
+    expect(query.executionState()?.type).toBe('success');
+    expect(query.response()).toEqual({ name: 'ok' });
+    expect(query.error()).toBeNull();
+
+    c.destroy();
+    expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
+  });
+
+  it('keeps the last good response while a later execution fails to transform', () => {
+    const s = scenario();
+    s.api.on('GET', '/transform', sequence([{ body: { data: { name: 'first' } } }, { body: {} }]));
+
+    const getTransformed = createBrokenTransformQuery(s);
+
+    const c = s.consumer();
+    const query = c.run(() => getTransformed());
+
+    s.tick();
+    expect(query.response()).toEqual({ name: 'first' });
+
+    query.execute();
+    s.tick();
+
+    expect(query.error()?.code).toBe(0);
+    expect(query.response()).toEqual({ name: 'first' });
+
+    c.destroy();
+  });
+
+  it('clears the kept response on reset', () => {
+    const s = scenario();
+    s.api.on('GET', '/transform', sequence([{ body: { data: { name: 'first' } } }, { body: {} }]));
+
+    const getTransformed = createBrokenTransformQuery(s);
+
+    const c = s.consumer();
+    const query = c.run(() => getTransformed());
+
+    s.tick();
+    query.execute();
+    s.tick();
+
+    expect(query.response()).toEqual({ name: 'first' });
+
+    query.reset();
+
+    expect(query.response()).toBeNull();
+    expect(query.error()).toBeNull();
+    expect(query.executionState()).toBeNull();
+
+    c.destroy();
+  });
+});
+
+describe('http lifecycle scenario: execute() after the creating scope is destroyed', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('ignores the call, sends no request and leaves neither an entry nor a timer behind', () => {
+    const s = scenario();
+    s.api.on('GET', '/after-destroy', () => ({ body: { ok: true } }));
+
+    const getThing = s.get<{ response: { ok: boolean } }>('/after-destroy');
+
+    const c = s.consumer();
+    const query = c.run(() => getThing());
+
+    s.tick();
+    expect(s.api.requestCount('GET', '/after-destroy')).toBe(1);
+
+    c.destroy();
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    expect(() => query.execute()).not.toThrow();
+    s.tick(1);
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('/after-destroy'));
+    warn.mockRestore();
+
+    expect(s.api.requestCount('GET', '/after-destroy')).toBe(1);
+    expect(s.api.pending()).toHaveLength(0);
+    expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
+    expect(s.errors).toHaveLength(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe('http lifecycle scenario: two retry policies on one cache key', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  type SharedRetryArgs = { response: { ok: boolean } };
+
+  it("retries under the first consumer's policy and never consults the second one", () => {
+    const s = scenario();
+    s.api.on('GET', '/shared-retry', sequence([{ status: 503, body: { message: 'boom' } }, { body: { ok: true } }]));
+
+    const retryingAttempts: number[] = [];
+    const passiveAttempts: number[] = [];
+
+    const getRetrying = s.get<SharedRetryArgs>('/shared-retry', {
+      retryFn: ({ retryCount }) => {
+        retryingAttempts.push(retryCount);
+
+        return retryCount < 2 ? { retry: true, delay: 10 } : { retry: false };
+      },
+    });
+    const getPassive = s.get<SharedRetryArgs>('/shared-retry', {
+      retryFn: ({ retryCount }) => {
+        passiveAttempts.push(retryCount);
+
+        return { retry: false };
+      },
+    });
+
+    const a = s.consumer();
+    const qa = a.run(() => getRetrying());
+    const b = s.consumer();
+    const qb = b.run(() => getPassive());
+
+    expect(qa.id()).toBe(qb.id());
+
+    s.tick(50);
+
+    expect(passiveAttempts).toHaveLength(0);
+    expect(retryingAttempts.length).toBeGreaterThan(0);
+    expect(s.api.requestCount('GET', '/shared-retry')).toBe(2);
+    expect(qa.response()).toEqual({ ok: true });
+    expect(qb.response()).toEqual({ ok: true });
+    expect(qa.error()).toBeNull();
+    expect(qb.error()).toBeNull();
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('leaves a shared request unretried when the first consumer brought no retry policy', () => {
+    const s = scenario();
+    s.api.on('GET', '/shared-no-retry', sequence([{ status: 503, body: { message: 'boom' } }, { body: { ok: true } }]));
+
+    const retryingAttempts: number[] = [];
+
+    const getPassive = s.get<SharedRetryArgs>('/shared-no-retry');
+    const getRetrying = s.get<SharedRetryArgs>('/shared-no-retry', {
+      retryFn: ({ retryCount }) => {
+        retryingAttempts.push(retryCount);
+
+        return retryCount < 2 ? { retry: true, delay: 10 } : { retry: false };
+      },
+    });
+
+    const a = s.consumer();
+    const qa = a.run(() => getPassive());
+    const b = s.consumer();
+    const qb = b.run(() => getRetrying());
+
+    expect(qa.id()).toBe(qb.id());
+
+    s.tick(50);
+
+    expect(retryingAttempts).toHaveLength(0);
+    expect(s.api.requestCount('GET', '/shared-no-retry')).toBe(1);
+    expect(qa.error()?.code).toBe(503);
+    expect(qb.error()?.code).toBe(503);
+    expect(qa.response()).toBeNull();
+    expect(qb.response()).toBeNull();
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+
+    a.destroy();
+    b.destroy();
   });
 });

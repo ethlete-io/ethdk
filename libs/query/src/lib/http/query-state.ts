@@ -155,7 +155,13 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
       };
     }
   });
-  const response = computed(() => transformed().response);
+  const response = linkedSignal<
+    { response: ResponseType<TArgs> | null; error: QueryErrorResponse | null },
+    ResponseType<TArgs> | null
+  >({
+    source: transformed,
+    computation: (current, previous) => (current.error ? (previous?.value ?? null) : current.response),
+  });
   const loading = linkedSignal(() => request()?.loading() ?? null);
   const error = linkedSignal(() => request()?.error() ?? transformed().error);
   const latestHttpEvent = linkedSignal(() => request()?.currentEvent() ?? null);
