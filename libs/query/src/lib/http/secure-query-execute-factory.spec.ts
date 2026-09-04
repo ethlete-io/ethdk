@@ -57,6 +57,7 @@ describe('createSecureExecuteFactory', () => {
       latestHttpEvent: signal(null),
       lastTimeExecutedAt: signal(null),
       lastTriggeredBy: signal(null),
+      subtle: { request: signal(null), unbindRequestEvents: vi.fn(), defaultRunOptions: signal(null) },
     } as unknown as QueryState<QueryArgs>;
   });
 

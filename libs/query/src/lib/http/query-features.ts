@@ -331,6 +331,8 @@ export const withLongPolling = <TArgs extends QueryArgs>(options: WithLongPollin
       const maxErrorDelay = options.maxErrorDelay ?? DEFAULT_LONG_POLLING_MAX_ERROR_DELAY;
       const stopAfterErrors = options.stopAfterErrors ?? DEFAULT_LONG_POLLING_STOP_AFTER_ERRORS;
 
+      context.state.subtle.defaultRunOptions.set({ keepUnusedFor: 0 });
+
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
       let consecutiveErrors = 0;
 
@@ -344,7 +346,7 @@ export const withLongPolling = <TArgs extends QueryArgs>(options: WithLongPollin
 
         timeoutId = setTimeout(() => {
           timeoutId = null;
-          context.execute({ args, options: { keepUnusedFor: 0, triggeredBy: 'long-polling' } });
+          context.execute({ args, options: { triggeredBy: 'long-polling' } });
         }, wait);
       };
 

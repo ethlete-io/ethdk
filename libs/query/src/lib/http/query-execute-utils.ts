@@ -15,6 +15,8 @@ export const resetExecuteState = <TArgs extends QueryArgs>(options: ResetExecute
   opts.deps.client.repository.unbind(executeState.previousKey(), opts.deps.destroyRef);
   executeState.previousKey.set(null);
 
+  state.subtle.unbindRequestEvents();
+  state.subtle.request.set(null);
   state.args.set(null);
   state.error.set(null);
   state.latestHttpEvent.set(null);
@@ -59,8 +61,11 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
 };
 
 export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptions<TArgs>) => {
-  const { executeOptions, args, executeState, options: runQueryOptions, isSecure, isRefreshable } = options;
+  const { executeOptions, args, executeState, isSecure, isRefreshable } = options;
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
+  const defaultRunOptions = state.subtle.defaultRunOptions();
+  const runQueryOptions =
+    defaultRunOptions || options.options ? { ...defaultRunOptions, ...options.options } : undefined;
 
   const { key, request, executed } = deps.client.repository.request({
     route: creatorInternals.route,
@@ -94,7 +99,7 @@ export const circularQueryDependencyChecker = () => {
   let timeout: any = null;
 
   const check = () => {
-    const now = performance.now();
+    const now = Date.now();
 
     if (now - lastTriggerTs < 100) {
       illegalWrites++;

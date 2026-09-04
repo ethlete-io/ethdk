@@ -7,6 +7,7 @@ import { QueryDevtoolsStatsRecorder } from '../devtools/query-devtools-stats';
 import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
 import { QueryArgs, RawResponseType, RequestArgs, ResponseType } from './query';
 import { QueryErrorResponse } from './query-error-response';
+import { RunQueryExecuteOptions } from './query-execute-utils';
 
 export type SetupQueryStateOptions<TArgs extends QueryArgs> = {
   transformResponse?: (rawResponse: RawResponseType<TArgs>) => ResponseType<TArgs>;
@@ -41,6 +42,16 @@ export type QueryStateSubtle<TArgs extends QueryArgs> = {
    * Called by `queryExecute` whenever a request is (re-)executed.
    */
   bindRequestEvents: (request: HttpRequest<TArgs>) => void;
+
+  /** Stops forwarding the current request's events; `reset()` detaches the query from its request with it. */
+  unbindRequestEvents: () => void;
+
+  /**
+   * Run options every execution of this query starts from; the options passed to one `execute()` win
+   * per field. Set by a feature during creation so it also covers executions the feature does not
+   * trigger itself (`withLongPolling` turns retention off for the `withArgs` round too).
+   */
+  defaultRunOptions: WritableSignal<RunQueryExecuteOptions | null>;
 
   /**
    * Installs the reactive source that backs `state.args`. The `withArgs` feature uses this so that
@@ -153,6 +164,12 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
     requestEventsSubscription.unsubscribe();
     requestEventsSubscription = request.events$.subscribe((event) => requestEvents$.next(event));
   };
+  const unbindRequestEvents = () => {
+    requestEventsSubscription.unsubscribe();
+    requestEventsSubscription = Subscription.EMPTY;
+  };
+
+  const defaultRunOptions = signal<RunQueryExecuteOptions | null>(null);
 
   options.destroyRef?.onDestroy(() => {
     requestEventsSubscription.unsubscribe();
@@ -220,6 +237,8 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
       request,
       rawResponse,
       bindRequestEvents,
+      unbindRequestEvents,
+      defaultRunOptions,
       setArgsSource,
       devtoolsStats: options.devtoolsStats ?? null,
       devtoolsFormLinks: options.devtoolsFormLinks ?? null,
