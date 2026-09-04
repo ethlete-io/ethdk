@@ -11,7 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { FieldTree, form } from '@angular/forms/signals';
-import { ActivatedRoute, NavigationExtras, Router } from '@angular/router';
+import { ActivatedRoute, NavigationExtras, Router, UrlTree } from '@angular/router';
 import { ET_PROPERTY_REMOVED, clone, equal, injectQueryParamChanges } from '@ethlete/core';
 import { QueryDevtoolsFormField, QueryDevtoolsFormHandle } from '../devtools/query-devtools-form';
 import { isQueryDevtoolsEnabled, noteQueryFormRead, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
@@ -468,6 +468,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   let skipNextResets = false;
   let urlWriteVersion = 0;
   const urlNavigationMarker = {};
+  const pathOf = (tree: UrlTree) => router.serializeUrl(tree).split(/[?#]/)[0];
 
   const fields = form(model);
 
@@ -513,10 +514,19 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
    * navigation with the next one, so a second form (or a second commit) writing in the same tick would otherwise
    * drop the first one's params.
    */
-  const navigateWithParams = (params: Dict, extras: Pick<NavigationExtras, 'replaceUrl' | 'info'>) => {
+  const navigateWithParams = (
+    params: Dict,
+    extras: Pick<NavigationExtras, 'replaceUrl' | 'info'>,
+    onlyOnCurrentRoute = false,
+  ) => {
     queueMicrotask(() => {
       const pending = router.getCurrentNavigation();
       const base = pending?.finalUrl ?? pending?.extractedUrl ?? router.parseUrl(router.url);
+
+      // A wipe merged onto a navigation that lands on another route would strip that route's own
+      // same-named params (`page`, `search`) off the URL the user just landed on.
+      if (onlyOnCurrentRoute && pathOf(base) !== pathOf(router.parseUrl(router.url))) return;
+
       const queryParams: Dict = { ...base.queryParams, ...params };
 
       for (const key of Object.keys(queryParams)) {
@@ -646,7 +656,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       queryParams[paramKey(key)] = undefined;
     }
 
-    navigateWithParams(queryParams, { replaceUrl: true });
+    navigateWithParams(queryParams, { replaceUrl: true }, true);
   };
 
   const setValue = (value: QueryFormModel<TFields>, options?: QueryFormSignalsWriteOptions) => {

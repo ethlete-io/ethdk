@@ -127,4 +127,78 @@ describe('query forms URL sync scenario', () => {
     expect(router.parseUrl(router.url).queryParams).toEqual({});
     expect(qf.activeFilterCount()).toBe(0);
   });
+
+  it('unobserving while a route change is in flight leaves the landing URL its own params', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      defineQueryForm({
+        fields: { page: queryField<number>({ defaultValue: 1 }), search: queryField<string>() },
+      }).observe(),
+    );
+
+    qf.setValue({ page: 2, search: 'bar' });
+    await s.settle();
+    expect(router.parseUrl(router.url).queryParams).toEqual({ page: '2', search: 'bar' });
+
+    router.resetConfig([{ path: 'other', children: [] }]);
+
+    const navigation = router.navigateByUrl('/other?page=3&search=foo');
+    qf.unobserve();
+    await navigation;
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ page: '3', search: 'foo' });
+
+    c.destroy();
+  });
+
+  it('a form destroyed on a route change leaves the landing URL its own params', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      defineQueryForm({
+        fields: { page: queryField<number>({ defaultValue: 1 }), search: queryField<string>() },
+      }).observe(),
+    );
+
+    qf.setValue({ page: 2, search: 'bar' });
+    await s.settle();
+
+    router.resetConfig([{ path: 'other', children: [] }]);
+
+    const navigation = router.navigateByUrl('/other?page=3&search=foo');
+    c.destroy();
+    await navigation;
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ page: '3', search: 'foo' });
+  });
+
+  it('unobserving without a route change removes the form params from the URL', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      defineQueryForm({
+        fields: { page: queryField<number>({ defaultValue: 1 }), search: queryField<string>() },
+      }).observe(),
+    );
+
+    qf.setValue({ page: 2, search: 'bar' });
+    await s.settle();
+    expect(router.parseUrl(router.url).queryParams).toEqual({ page: '2', search: 'bar' });
+
+    qf.unobserve();
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({});
+
+    c.destroy();
+  });
 });

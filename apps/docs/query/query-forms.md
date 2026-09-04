@@ -83,22 +83,22 @@ Every creator accepts the same options:
 
 ## Form API
 
-| Member                                      | Description                                                                       |
-| ------------------------------------------- | --------------------------------------------------------------------------------- |
-| `fields`                                    | The bindable signal-forms field tree (`qf.fields.search`).                        |
-| `value: Signal`                             | The committed (debounced, reset-resolved) value.                                  |
-| `previousValue: Signal`                     | The committed value before the most recent change.                                |
-| `changes: Signal`                           | `{ previousValue, currentValue }` of the most recent change.                      |
-| `activeFilterCount: Signal<number>`         | Count of non-default fields, excluding the ignored keys and `skipInFilterCount`.  |
-| `defaultValue`                              | The default value of the whole form.                                              |
-| `setValue(value, { skipResets? })`          | Replace the whole value.                                                          |
-| `patchValue(partial, { skipResets? })`      | Merge a partial value.                                                            |
-| `resetFieldToDefault(key, { skipResets? })` | Reset one field.                                                                  |
-| `resetFieldsToDefault(keys, …)`             | Reset several fields.                                                             |
-| `resetAllFieldsToDefault({ skipFields? })`  | Reset everything (optionally skipping some fields).                               |
-| `branch()`                                  | A detached editor over the same fields - see [Filter overlays](#filter-overlays). |
-| `observe(options?)`                         | Start URL sync. Returns the form for chaining.                                    |
-| `unobserve()`                               | Stop syncing and remove this form's params from the URL.                          |
+| Member                                      | Description                                                                                                                                                  |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `fields`                                    | The bindable signal-forms field tree (`qf.fields.search`).                                                                                                   |
+| `value: Signal`                             | The committed (debounced, reset-resolved) value.                                                                                                             |
+| `previousValue: Signal`                     | The committed value before the most recent change.                                                                                                           |
+| `changes: Signal`                           | `{ previousValue, currentValue }` of the most recent change.                                                                                                 |
+| `activeFilterCount: Signal<number>`         | Count of non-default fields, excluding the ignored keys and `skipInFilterCount`.                                                                             |
+| `defaultValue`                              | The default value of the whole form.                                                                                                                         |
+| `setValue(value, { skipResets? })`          | Replace the whole value.                                                                                                                                     |
+| `patchValue(partial, { skipResets? })`      | Merge a partial value.                                                                                                                                       |
+| `resetFieldToDefault(key, { skipResets? })` | Reset one field.                                                                                                                                             |
+| `resetFieldsToDefault(keys, …)`             | Reset several fields.                                                                                                                                        |
+| `resetAllFieldsToDefault({ skipFields? })`  | Reset everything (optionally skipping some fields).                                                                                                          |
+| `branch()`                                  | A detached editor over the same fields - see [Filter overlays](#filter-overlays).                                                                            |
+| `observe(options?)`                         | Start URL sync. Returns the form for chaining.                                                                                                               |
+| `unobserve()`                               | Stop syncing and remove this form's params from the URL, unless a navigation to another route is already in flight - that route's own params are left alone. |
 
 ### `isResetBy` is transitive
 
