@@ -1,29 +1,8 @@
-import { CDPSession, Page, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey } from '../support';
+import { expect, test } from '@playwright/test';
+import { expectFocusVisible, openStory, pressKey, touchDrag } from '../support';
 
 const STORY_ID = 'components-forms-slider--default';
 const THUMB = '.et-slider-thumb[role="slider"]';
-
-async function touchDrag(
-  page: Page,
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-  steps = 12,
-): Promise<void> {
-  const client: CDPSession = await page.context().newCDPSession(page);
-
-  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: from.x, y: from.y }] });
-
-  for (let i = 1; i <= steps; i++) {
-    const x = from.x + ((to.x - from.x) * i) / steps;
-    const y = from.y + ((to.y - from.y) * i) / steps;
-
-    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] });
-    await page.waitForTimeout(16);
-  }
-
-  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-}
 
 test.describe('slider / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');

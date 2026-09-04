@@ -1,5 +1,5 @@
-import { CDPSession, Page, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, tap } from '../support';
+import { expect, test } from '@playwright/test';
+import { expectFocusVisible, openStory, pressKey, tap, touchSwipe } from '../support';
 
 const DEFAULT_STORY_ID = 'components-media-carousel--default';
 const LOOP_STORY_ID = 'components-media-carousel--loop';
@@ -7,27 +7,6 @@ const AUTOPLAY_STORY_ID = 'components-media-carousel--autoplay';
 
 const TRACK = '.et-carousel-track';
 const DOT = '.et-carousel-dot';
-
-async function touchSwipe(
-  page: Page,
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-  steps = 12,
-): Promise<void> {
-  const client: CDPSession = await page.context().newCDPSession(page);
-
-  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: from.x, y: from.y }] });
-
-  for (let i = 1; i <= steps; i++) {
-    const x = from.x + ((to.x - from.x) * i) / steps;
-    const y = from.y + ((to.y - from.y) * i) / steps;
-
-    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] });
-    await page.waitForTimeout(16);
-  }
-
-  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-}
 
 test.describe('carousel / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');

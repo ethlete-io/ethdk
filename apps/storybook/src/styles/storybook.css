@@ -1,4 +1,5 @@
-@import 'tailwindcss' source('../../../../');
+@import 'tailwindcss' source('../../../../libs');
+@source '../';
 
 @import './fonts/font-archivo.css';
 @import './fonts/font-stretch-pro.css';

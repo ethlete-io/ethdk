@@ -1,5 +1,5 @@
-import { CDPSession, Page, expect, test } from '@playwright/test';
-import { openStory, pressKey, tap } from '../support';
+import { Page, expect, test } from '@playwright/test';
+import { openStory, pressKey, tap, touchSwipe } from '../support';
 
 const STORY_ID = 'components-overlays-overlay--default';
 
@@ -9,27 +9,6 @@ const PANE = '.et-overlay';
 
 async function waitForEntered(page: Page): Promise<void> {
   await expect(page.locator(PANE)).toHaveClass(/et-animation-enter-done/);
-}
-
-async function touchSwipe(
-  page: Page,
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-  steps = 12,
-): Promise<void> {
-  const client: CDPSession = await page.context().newCDPSession(page);
-
-  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: from.x, y: from.y }] });
-
-  for (let i = 1; i <= steps; i++) {
-    const x = from.x + ((to.x - from.x) * i) / steps;
-    const y = from.y + ((to.y - from.y) * i) / steps;
-
-    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] });
-    await page.waitForTimeout(16);
-  }
-
-  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 }
 
 test.describe('dialog / focus', () => {
