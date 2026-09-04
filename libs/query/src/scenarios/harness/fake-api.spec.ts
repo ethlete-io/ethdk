@@ -1,6 +1,7 @@
 import { HttpErrorResponse, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFakeApi, FakeApi, sequence } from './fake-api';
+import { createFakeXhr } from './fake-xhr';
 import { mintToken } from './tokens';
 
 const BASE_URL = 'https://api.test';
@@ -154,5 +155,153 @@ describe('fake-api', () => {
       // consumed synchronously inside the Observable constructor and delivered as an error notification
       expect(getError()).toBeInstanceOf(Error);
     }).not.toThrow();
+  });
+
+  describe('createFakeXhr', () => {
+    const openXhr = (method: string, path: string, headers: Record<string, string> = {}) => {
+      const XhrClass = createFakeXhr(api);
+      const xhr = new XhrClass();
+
+      xhr.open(method, `${BASE_URL}${path}`);
+      for (const [name, value] of Object.entries(headers)) xhr.setRequestHeader(name, value);
+
+      return xhr;
+    };
+
+    const record = (xhr: XMLHttpRequest) => {
+      const events: string[] = [];
+
+      for (const type of ['load', 'error', 'abort', 'progress']) {
+        xhr.addEventListener(type, () => events.push(type));
+      }
+
+      return events;
+    };
+
+    it('routes a request through the fake api and reports it as loaded', () => {
+      api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+      const xhr = openXhr('GET', '/users/1');
+      const events = record(xhr);
+
+      xhr.responseType = 'text';
+      xhr.send(null);
+
+      expect(events).toEqual([]);
+      vi.advanceTimersByTime(0);
+
+      expect(events).toEqual(['load']);
+      expect(xhr.status).toBe(200);
+      expect(xhr.readyState).toBe(xhr.DONE);
+      expect(JSON.parse(xhr.responseText)).toEqual({ id: '1' });
+      expect(xhr.responseURL).toBe(`${BASE_URL}/users/1`);
+      expect(api.requestCount('GET', '/users/1')).toBe(1);
+    });
+
+    it('reports an error status as a load with that status', () => {
+      api.on('GET', '/broken', () => ({ status: 500, body: { message: 'boom' } }));
+
+      const xhr = openXhr('GET', '/broken');
+      const events = record(xhr);
+
+      xhr.send(null);
+      vi.advanceTimersByTime(0);
+
+      expect(events).toEqual(['load']);
+      expect(xhr.status).toBe(500);
+      expect(JSON.parse(xhr.responseText)).toEqual({ message: 'boom' });
+    });
+
+    it('reports a status 0 response as an error event', () => {
+      api.on('GET', '/offline', () => ({ status: 0 }));
+
+      const xhr = openXhr('GET', '/offline');
+      const events = record(xhr);
+
+      xhr.send(null);
+      vi.advanceTimersByTime(0);
+
+      expect(events).toEqual(['error']);
+      expect(xhr.status).toBe(0);
+    });
+
+    it('marks the request log entry aborted when abort() runs before the response', () => {
+      api.on('GET', '/slow', () => ({ body: [], delay: 500 }));
+
+      const xhr = openXhr('GET', '/slow');
+      const events = record(xhr);
+
+      xhr.send(null);
+      vi.advanceTimersByTime(100);
+      expect(api.pending().length).toBe(1);
+
+      xhr.abort();
+
+      expect(events).toEqual(['abort']);
+      expect(api.requests[0]?.aborted).toBe(true);
+      expect(api.pending().length).toBe(0);
+
+      vi.advanceTimersByTime(500);
+      expect(events).toEqual(['abort']);
+    });
+
+    it('round-trips request and response headers', () => {
+      api.on('GET', '/headers', ({ headers }) => ({
+        body: { seen: headers.get('X-Client') },
+        headers: { 'cache-control': 'max-age=60' },
+      }));
+
+      const xhr = openXhr('GET', '/headers', { 'X-Client': 'legacy' });
+
+      xhr.send(null);
+      vi.advanceTimersByTime(0);
+
+      expect(JSON.parse(xhr.responseText)).toEqual({ seen: 'legacy' });
+      expect(xhr.getResponseHeader('cache-control')).toBe('max-age=60');
+      expect(xhr.getAllResponseHeaders()).toContain('cache-control: max-age=60');
+    });
+
+    it('passes a json request body to the handler as an object', () => {
+      api.on('POST', '/users', ({ body }) => ({ status: 201, body }));
+
+      const xhr = openXhr('POST', '/users', { 'Content-Type': 'application/json' });
+
+      xhr.send(JSON.stringify({ name: 'Ada' }));
+      vi.advanceTimersByTime(0);
+
+      expect(api.requests[0]?.body).toEqual({ name: 'Ada' });
+      expect(JSON.parse(xhr.responseText)).toEqual({ name: 'Ada' });
+    });
+
+    it('emits progress events for a handler that reports progress', () => {
+      api.on('GET', '/download', () => ({ body: 'ok', progress: [25, 100] }));
+
+      const xhr = openXhr('GET', '/download');
+      const loaded: number[] = [];
+
+      xhr.addEventListener('progress', (event) => loaded.push((event as ProgressEvent).loaded));
+      xhr.send(null);
+      vi.advanceTimersByTime(0);
+
+      expect(loaded).toEqual([25, 100]);
+      expect(xhr.status).toBe(200);
+    });
+
+    it('can be reopened and resent after it is done', () => {
+      api.on('GET', '/retry', sequence([{ status: 503 }, { body: 'ok' }]));
+
+      const xhr = openXhr('GET', '/retry');
+
+      xhr.send(null);
+      vi.advanceTimersByTime(0);
+      expect(xhr.status).toBe(503);
+
+      xhr.open('GET', `${BASE_URL}/retry`);
+      xhr.send(null);
+      vi.advanceTimersByTime(0);
+
+      expect(xhr.status).toBe(200);
+      expect(api.requestCount('GET', '/retry')).toBe(2);
+    });
   });
 });

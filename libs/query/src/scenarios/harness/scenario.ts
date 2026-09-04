@@ -33,6 +33,7 @@ import {
 } from '../../index';
 import { afterEach, beforeEach, vi } from 'vitest';
 import { createFakeApi, FakeApi } from './fake-api';
+import { createFakeXhr } from './fake-xhr';
 import { checkInvariants, InvariantName, ScenarioErrorEntry } from './invariants';
 import { mintToken } from './tokens';
 
@@ -144,6 +145,9 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
   const errors: ScenarioErrorEntry[] = [];
   const allowed = new Set<InvariantName>();
   const consumers = new Set<EnvironmentInjector>();
+
+  const originalXhr = globalThis.XMLHttpRequest;
+  globalThis.XMLHttpRequest = createFakeXhr(api);
 
   const originalConsoleError = console.error;
   console.error = (...args: unknown[]) => {
@@ -341,6 +345,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
 
     TestBed.resetTestingModule();
     console.error = originalConsoleError;
+    globalThis.XMLHttpRequest = originalXhr;
 
     // Angular's change detection scheduler arms a zero-delay timer after the last signal write. Let it
     // fire, so the timer invariant reports real leaks only.
