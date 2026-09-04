@@ -1,5 +1,15 @@
-import { Subject, fromEvent, take, takeUntil, timer } from 'rxjs';
+import { DestroyRef, inject } from '@angular/core';
+import { Subject, Subscription, fromEvent, take, takeUntil, timer } from 'rxjs';
 import { AnyV2Query } from '../query';
+
+/** Angular exposes no `isInInjectionContext()`, and `inject()` throws NG0203 outside of one. */
+const injectDestroyRefIfAvailable = () => {
+  try {
+    return inject(DestroyRef);
+  } catch {
+    return null;
+  }
+};
 
 /**
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
@@ -13,6 +23,8 @@ export class QueryStore {
   private garbageCollector: number | null = null;
   private isInLowResourceMode = false;
   private lastBlurTimestamp = Date.now();
+  private isDestroyed = false;
+  private readonly subscriptions = new Subscription();
 
   private _storeChange$ = new Subject<string>();
   private _queryCreated$ = new Subject<AnyV2Query>();
@@ -29,6 +41,17 @@ export class QueryStore {
     },
   ) {
     this.initSmartQueryHandling();
+
+    injectDestroyRefIfAvailable()?.onDestroy(() => this._destroy());
+  }
+
+  /**
+   * @internal
+   */
+  _destroy() {
+    this.isDestroyed = true;
+    this.subscriptions.unsubscribe();
+    this.stopGarbageCollector();
   }
 
   add(id: string, query: AnyV2Query) {
@@ -88,54 +111,60 @@ export class QueryStore {
     const windowBlur$ = fromEvent<Event>(window, 'blur');
     const windowFocus$ = fromEvent<Event>(window, 'focus');
 
-    windowBlur$.subscribe(() => {
-      timer(5000)
-        .pipe(takeUntil(windowFocus$), take(1))
-        .subscribe(() => {
-          this.lastBlurTimestamp = Date.now();
-          this.isInLowResourceMode = true;
-          this.stopGarbageCollector();
+    this.subscriptions.add(
+      windowBlur$.subscribe(() => {
+        this.subscriptions.add(
+          timer(5000)
+            .pipe(takeUntil(windowFocus$), take(1))
+            .subscribe(() => {
+              this.lastBlurTimestamp = Date.now();
+              this.isInLowResourceMode = true;
+              this.stopGarbageCollector();
 
-          if (this._config?.enableSmartPolling) {
-            this.forEach((query) => {
-              if (!query.isPolling || !query._enableSmartPolling) {
-                return;
+              if (this._config?.enableSmartPolling) {
+                this.forEach((query) => {
+                  if (!query.isPolling || !query._enableSmartPolling) {
+                    return;
+                  }
+
+                  query.pausePolling();
+                });
               }
+            }),
+        );
+      }),
+    );
 
-              query.pausePolling();
-            });
-          }
-        });
-    });
+    this.subscriptions.add(
+      windowFocus$.subscribe(() => {
+        if (!this.isInLowResourceMode) {
+          return;
+        }
 
-    windowFocus$.subscribe(() => {
-      if (!this.isInLowResourceMode) {
-        return;
-      }
+        this.isInLowResourceMode = false;
 
-      this.isInLowResourceMode = false;
-
-      if (this._config?.enableSmartPolling || this._config?.autoRefreshQueriesOnWindowFocus) {
-        this.forEach((query) => {
-          if (this._config?.enableSmartPolling && query._isPollingPaused) {
-            query.resumePolling();
-          }
-
-          if (Date.now() - this.lastBlurTimestamp > 15000) {
-            if (
-              this._config?.autoRefreshQueriesOnWindowFocus &&
-              query.isExpired &&
-              query.isInUse &&
-              query.autoRefreshOnConfig.windowFocus
-            ) {
-              query.execute({ skipCache: true, _triggeredVia: 'auto' });
+        if (this._config?.enableSmartPolling || this._config?.autoRefreshQueriesOnWindowFocus) {
+          this.forEach((query) => {
+            if (this._config?.enableSmartPolling && query._isPollingPaused) {
+              query.resumePolling();
             }
-          }
-        });
-      }
 
-      this.initGarbageCollector();
-    });
+            if (Date.now() - this.lastBlurTimestamp > 15000) {
+              if (
+                this._config?.autoRefreshQueriesOnWindowFocus &&
+                query.isExpired &&
+                query.isInUse &&
+                query.autoRefreshOnConfig.windowFocus
+              ) {
+                query.execute({ skipCache: true, _triggeredVia: 'auto' });
+              }
+            }
+          });
+        }
+
+        this.initGarbageCollector();
+      }),
+    );
   }
 
   private logState(key: string | null, item: AnyV2Query | null, operation: string) {
@@ -154,7 +183,7 @@ export class QueryStore {
   }
 
   private initGarbageCollector() {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || this.isDestroyed) return;
 
     if (this.garbageCollector !== null) {
       return;

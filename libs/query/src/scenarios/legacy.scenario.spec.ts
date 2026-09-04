@@ -18,7 +18,7 @@ import {
   V2QueryClientConfig,
   V2QueryState,
 } from '../index';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mintToken, Scenario, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';
@@ -30,16 +30,13 @@ type Tokens = { token: string; refreshToken: string };
 type LegacyClientConfig = Omit<V2QueryClientConfig, 'baseRoute'>;
 type TrackFn = <T extends AnyV2Query>(query: T) => T;
 
-/**
- * The legacy `QueryStore` has no teardown for its 15s garbage collector, so every test empties the
- * store itself and lets the collector stop on its next tick.
- */
 const withLegacyClient = (
   s: Scenario,
   config: LegacyClientConfig,
   body: (client: V2QueryClient, track: TrackFn) => void,
 ) => {
-  const client = new V2QueryClient({ baseRoute: BASE_URL, ...config });
+  const owner = s.consumer();
+  const client = owner.run(() => new V2QueryClient({ baseRoute: BASE_URL, ...config }));
   const tracked: AnyV2Query[] = [];
 
   try {
@@ -61,7 +58,7 @@ const withLegacyClient = (
     });
 
     client.clearAuthProvider();
-    s.tick(GC_INTERVAL);
+    owner.destroy();
   }
 };
 
@@ -757,6 +754,43 @@ describe('legacy scenario', () => {
 
         expect(s.api.requests[0]?.headers.get('X-Api-Key')).toBe('secret');
       });
+    });
+  });
+
+  describe('teardown', () => {
+    it('stops the garbage collector and window focus handling when the owning injector is destroyed', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      const owner = s.consumer();
+      const client = owner.run(() => new V2QueryClient({ baseRoute: BASE_URL }));
+      const query = owner.run(() =>
+        createGetUser(client)
+          .prepare({ pathParams: { id: '1' } })
+          .execute(),
+      );
+      const recorded = recordStates(query);
+
+      s.tick();
+      expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+      expect(query.isInUse).toBe(true);
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+      owner.destroy();
+      s.tick();
+
+      expect(vi.getTimerCount()).toBe(0);
+
+      window.dispatchEvent(new Event('blur'));
+      s.tick(5_000);
+      s.tick(GC_INTERVAL + 1);
+      window.dispatchEvent(new Event('focus'));
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+
+      recorded.stop();
+      query.abort();
     });
   });
 });
