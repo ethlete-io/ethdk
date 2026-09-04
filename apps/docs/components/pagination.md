@@ -36,7 +36,8 @@ each edge (`1 … 45 46 47 … 200`):
 
 Pass `totalItems` **and** `pageSize` to show a "Showing X–Y of Z" readout, and set
 `showJumpTo` for a number field that jumps straight to a page - both handy for
-large result sets.
+large result sets. A `page` past the end (a filter just shrank the set) reads as the last
+page, the same way the page numbers clamp it.
 
 ```html
 <et-pagination [(page)]="page" [totalPages]="totalPages()" [totalItems]="total()" [pageSize]="20" showJumpTo />

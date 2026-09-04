@@ -11,7 +11,7 @@ import {
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
-import { createComponentId, signalHostElementDimensions } from '@ethlete/core';
+import { clamp, createComponentId, signalHostElementDimensions } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../button';
 import { PaginationDirective } from './headless/pagination.directive';
 import { PaginationRangeContext } from './pagination-labels';
@@ -128,8 +128,9 @@ export class PaginationComponent {
 
     if (size === null || total === null || size <= 0 || total < 0) return null;
 
-    const start = total === 0 ? 0 : (this.pagination.page() - 1) * size + 1;
-    const end = Math.min(this.pagination.page() * size, total);
+    const page = clamp(this.pagination.page(), 1, Math.max(1, Math.ceil(total / size)));
+    const start = total === 0 ? 0 : (page - 1) * size + 1;
+    const end = Math.min(page * size, total);
 
     return [start, end];
   });

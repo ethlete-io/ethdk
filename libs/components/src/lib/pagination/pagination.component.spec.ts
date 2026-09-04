@@ -91,6 +91,17 @@ describe('PaginationComponent', () => {
     expect(fixture.componentInstance.range()).toEqual([41, 45]);
   });
 
+  it('clamps the readout to the last page when the page runs past the total', () => {
+    const fixture = TestBed.createComponent(PaginationComponent);
+    fixture.componentRef.setInput('totalPages', 2);
+    fixture.componentRef.setInput('page', 5);
+    fixture.componentRef.setInput('totalItems', 30);
+    fixture.componentRef.setInput('pageSize', 20);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.range()).toEqual([21, 30]);
+  });
+
   it('omits the readout when totalItems or pageSize is missing', () => {
     const fixture = create();
     expect((fixture.nativeElement as HTMLElement).querySelector('.et-pagination-range')).toBeNull();
