@@ -1,7 +1,7 @@
 # Query test coverage map
 
-Status: in progress (started 2026-09-04). Delete this file when the P1 and P2 rows below have a
-scenario each and the `query-scenario-tests` skill lists the new suites.
+Status: P1 and P2 shipped (2026-09-04). P3 and P4 are open. Delete this file when every open row has
+a scenario or the user drops it.
 
 ## Why
 
@@ -24,36 +24,40 @@ a shared session is never seeded; "log in as" clears data only after the new tok
 that owns its session stands down the cookie auto-login and writes no cookie. Both fixes above
 turn the matching test red when reverted.
 
-Harness change: `ScenarioConfig.providers` accepts a factory, because `provideQueryDevtools()`
-enables the bridge process-wide the moment it is called.
+`auth-persistent.scenario.spec.ts` (8): a rejected cookie auto-login ends `expired` and deletes the
+cookie; logout deletes it; a 500 and a network error keep it and recover; `excludeRoutes` and
+`shouldAutoLogin` veto independently; `setRememberMe` switches session and persistent cookies.
+
+`auth-features.scenario.spec.ts` (7): the three-round refresh streak cap; `withTokenRevocation` on
+logout, also when the revocation request fails; `withTokenExpirationWarning` flips and resets;
+`createAuthGuard` redirects, passes, and waits for a pending restore; the devtools token TTL
+override refreshes early and `clear` restores the schedule.
+
+`auth-multi-tab-leadership.scenario.spec.ts` (6): a follower re-asks a slow leader three times; a
+follower takes the refresh over from a frozen leader; two stale tabs refresh once; a visible tab
+claims the leadership; idleness travels across tabs; a refresh is not activity.
+
+`devtools-request-path.scenario.spec.ts` (12): an armed mock answers without a request and disarm
+restores the API; a 401 fault refreshes once and retries once; a 500 fault fails without a request
+and a 503 is retried; a response override survives a refetch and `clearAll` reverts it; the env
+switch writes storage only, scopes the vault, and production hides accounts; destroyed queries
+leave clearable tombstones.
+
+Harness changes: `ScenarioConfig.providers` accepts a factory, because `provideQueryDevtools()`
+enables the bridge process-wide the moment it is called. A `status: 0` response now fails as a
+network error.
+
+## Follow-ups found
+
+- `bearer-auth-provider.ts` (the per-query effect, `else if (response)`): a 2xx login or refresh
+  response with a `null` body sets neither success nor error, so `executionState()` stays
+  `loading` while `sessionStatus()` turns `anonymous`. Same shape as a cancelled restore, so the
+  fix needs `isAlive()` or the response event, not a truthiness check. No scenario yet.
+- `QueryDevtoolsMock` has no `headers`; the docs do not promise them either. Nothing to test.
+- The armed-mock scope cannot be checked across a reload from a test: the `init*` functions run
+  only inside `provideQueryDevtools()`. The scenario asserts the storage key instead.
 
 ## Gaps by priority
-
-### P1 - auth (the bug class of the report)
-
-| Behavior                                                                                   | Docs                                                       | Today                |
-| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | -------------------- |
-| Rejected cookie auto-login ends the session `expired` and deletes the cookie (`48488fbdc`) | auth.md#When a refresh fails for good                      | unit only            |
-| Logout deletes the cookie; a 500 or offline keeps it                                       | auth.md#When the remember-me cookie is written and deleted | unit only            |
-| `excludeRoutes` and `shouldAutoLogin` are independent vetoes                               | auth.md#Where auto-login should not run                    | unit only            |
-| `setRememberMe` switches session cookie and persistent cookie                              | auth.md#Features                                           | unit only            |
-| Stale 401 (sent with a replaced token) triggers no second refresh; 3-streak cap            | auth.md#Token refresh                                      | unit only            |
-| Leadership hand-over when the leader stops answering (`a9bf39095`, `4c97b3e58`)            | auth.md#When the leader stops answering                    | unit only            |
-| Inactivity measured across tabs; a refresh is not activity                                 | auth.md#Idleness belongs to the session                    | unit only            |
-| `withTokenRevocation` calls the revocation query on logout                                 | auth.md#Features                                           | unit only            |
-| `withTokenExpirationWarning` signals                                                       | auth.md#Features                                           | unit only            |
-| Route guards against a real provider                                                       | auth.md#Route guards                                       | unit only            |
-| Devtools token TTL override refreshes early, `clear` restores                              | query-devtools#Overriding the token lifetime               | unit (real provider) |
-
-### P2 - devtools bridge in the request path
-
-| Behavior                                                                       | Today     |
-| ------------------------------------------------------------------------------ | --------- |
-| An armed mock answers without a request; disarming restores the API            | unit only |
-| An armed fault 401 on a secure query causes exactly one refresh and one retry  | unit only |
-| A response override survives a refetch and is dropped on disarm                | unit only |
-| API env switch scopes vault sessions and accounts; production refuses accounts | unit only |
-| Registry retains nothing after every client is destroyed (tombstones, stats)   | unit only |
 
 ### P3 - forms bridge
 
@@ -84,5 +88,5 @@ enables the bridge process-wide the moment it is called.
 Queries, args, caching, http lifecycle, errors and retry, features, stacks and batches, gql, ws,
 persistence core, multi-tab query sync, query forms (signals, URL sync, branch), and the auth core:
 login, secure header, proactive refresh, wait for refresh, 401 retry, refresh failure, external
-tokens, logout, multi-tab token adoption and logout, inactivity in one tab. Full inventory:
-the agent report of 2026-09-04 in the handoff `.claude/handoffs/query-test-coverage.md`.
+tokens, logout, multi-tab token adoption and logout, inactivity in one tab, and everything under
+"Shipped in this pass".

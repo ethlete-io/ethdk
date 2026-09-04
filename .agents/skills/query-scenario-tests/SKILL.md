@@ -81,6 +81,11 @@ it('dedupes identical requests', () => {
    `await Promise.resolve(); s.tick(50);` - see the streak-cap test in `auth-features.scenario.spec.ts`.
 5. The harness lives in `harness/` and changes only with a coordinator's say; suites work
    around a gap inside their own file and report it.
+6. Devtools: `provideQueryDevtools()` enables the bridge process-wide on its first call and it
+   stays on for the rest of the file. Put every describe without devtools first, pass the
+   providers as a factory (`providers: () => [provideQueryDevtools()]`), and assert
+   `isQueryDevtoolsEnabled()` in both halves. Mocks, faults, envs and the tab-local flag are
+   module state: clear them in `beforeEach` and give each test its own route and provider name.
 
 The plan and open items are in `plans/query-scenario-tests.md` while the layer is being
 built out.
