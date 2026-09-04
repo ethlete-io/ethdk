@@ -118,7 +118,7 @@ TestBed.tick();
 
 expect(socket.sent()).toEqual([{ event: 'join-room', data: 'lobby' }]);
 
-socket.serverConnect(); // → isConnected() is true, every known room is re-joined
+socket.serverConnect(); // → isConnected() is true; a later reconnect re-joins every known room
 socket.serverSend({ room: 'lobby', event: 'score', data: { home: 1 } });
 
 expect(room()?.latestMessage()).toEqual({ room: 'lobby', event: 'score', data: { home: 1 } });

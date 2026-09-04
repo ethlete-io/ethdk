@@ -36,10 +36,7 @@ describe('ws scenario', () => {
 
     double.serverConnect();
     expect(instance.isConnected()).toBe(true);
-    expect(double.sent()).toEqual([
-      { event: 'join-room', data: 'lobby' },
-      { event: 'join-room', data: 'lobby' },
-    ]);
+    expect(double.sent()).toEqual([{ event: 'join-room', data: 'lobby' }]);
 
     c.destroy();
   });
@@ -120,6 +117,66 @@ describe('ws scenario', () => {
     expect(double.sent()).toEqual([
       { event: 'join-room', data: 'lobby' },
       { event: 'join-room', data: 'lobby' },
+    ]);
+
+    c.destroy();
+  });
+
+  it('re-joins each room exactly once after a reconnect, and sends nothing while the connection is down', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    double.serverConnect();
+
+    const c = s.consumer();
+    c.run(() => instance.joinRoom('lobby'));
+    c.run(() => instance.joinRoom('match:1'));
+    s.tick();
+
+    const afterJoin = [
+      { event: 'join-room', data: 'lobby' },
+      { event: 'join-room', data: 'match:1' },
+    ];
+    expect(double.sent()).toEqual(afterJoin);
+
+    double.serverDisconnect();
+    expect(instance.isConnected()).toBe(false);
+    expect(double.sent()).toEqual(afterJoin);
+
+    double.serverConnect();
+    expect(instance.isConnected()).toBe(true);
+    expect(double.sent()).toEqual([
+      ...afterJoin,
+      { event: 'join-room', data: 'lobby' },
+      { event: 'join-room', data: 'match:1' },
+    ]);
+
+    c.destroy();
+  });
+
+  it('does not re-join a room that was joined while the connection was down, because that join is still buffered', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    double.serverConnect();
+
+    const c = s.consumer();
+    c.run(() => instance.joinRoom('lobby'));
+    s.tick();
+
+    double.serverDisconnect();
+    c.run(() => instance.joinRoom('late'));
+    s.tick();
+
+    expect(double.sent()).toEqual([
+      { event: 'join-room', data: 'lobby' },
+      { event: 'join-room', data: 'late' },
+    ]);
+
+    double.serverConnect();
+    expect(double.sent()).toEqual([
+      { event: 'join-room', data: 'lobby' },
+      { event: 'join-room', data: 'late' },
       { event: 'join-room', data: 'lobby' },
     ]);
 

@@ -162,6 +162,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       });
 
       const rooms = new Map<string, InternalWebSocketRoom<TMessageData>>();
+      const bufferedJoins = new Set<string>();
       const isConnected = signal(false);
 
       // Devtools instrumentation (no-op unless provideQueryDevtools() was called).
@@ -209,6 +210,8 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
           }
 
           emit({ event: 'join-room', data: name, room: name });
+
+          if (!isConnected()) bufferedJoins.add(name);
 
           const message = signal<TMessageData | null>(null);
 
@@ -275,6 +278,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         emit({ event: 'leave-room', data: room, room });
 
         rooms.delete(room);
+        bufferedJoins.delete(room);
         syncDevtoolsRooms();
       };
 
@@ -282,7 +286,10 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         socket.on('connect', () => {
           isConnected.set(true);
 
+          // socket.io delivers a join buffered while disconnected on this connect; re-emitting it would send it twice.
           for (const room of rooms.keys()) {
+            if (bufferedJoins.delete(room)) continue;
+
             emit({ event: 'join-room', data: room, room });
           }
         });

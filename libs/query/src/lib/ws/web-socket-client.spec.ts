@@ -73,7 +73,7 @@ describe('createWebSocketClient', () => {
     expect(instance.isConnected()).toBe(false);
   });
 
-  it('should re-join every room on connect', () => {
+  it('should re-join every room on a reconnect, but not on the first connect', () => {
     const { double, instance } = provided();
 
     TestBed.runInInjectionContext(() => instance.joinRoom('lobby'));
@@ -81,6 +81,11 @@ describe('createWebSocketClient', () => {
 
     expect(double.sent()).toEqual([{ event: 'join-room', data: 'lobby' }]);
 
+    double.serverConnect();
+
+    expect(double.sent()).toEqual([{ event: 'join-room', data: 'lobby' }]);
+
+    double.serverDisconnect();
     double.serverConnect();
 
     expect(double.sent()).toEqual([

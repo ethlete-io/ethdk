@@ -14,7 +14,7 @@ export type WebSocketTestDouble = {
   /** Whether the client asked the socket to connect, and whether it has since disconnected it. */
   state: () => { connectRequested: boolean; disconnected: boolean };
 
-  /** Complete the handshake, so the client's `isConnected` turns true and queued rooms re-join. */
+  /** Complete the handshake, so the client's `isConnected` turns true. A later one re-joins every held room. */
   serverConnect: () => void;
 
   /** Drop the connection, so `isConnected` turns false. */
@@ -33,8 +33,8 @@ export type WebSocketTestDouble = {
  *
  * Nothing here connects on its own: the client's own `connect()` only flips
  * {@link WebSocketTestDouble.state}, and it is {@link WebSocketTestDouble.serverConnect} that fires
- * the `connect` listener. That split is what makes "joined a room while disconnected, and the join
- * was re-sent on connect" testable.
+ * the `connect` listener. That split is what makes "joined a room while disconnected, and it was
+ * re-joined after a reconnect" testable.
  */
 export const createWebSocketTestDouble = (): WebSocketTestDouble => {
   const sent: { event: string; data: unknown }[] = [];
