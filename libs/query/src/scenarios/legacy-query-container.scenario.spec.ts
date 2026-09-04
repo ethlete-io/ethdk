@@ -1,12 +1,22 @@
 import { Injector, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { describe, expect, it } from 'vitest';
-import { AnyV2Query, def, queryComputed, QueryStateType, V2QueryClient, V2QueryClientConfig } from '../index';
+import {
+  AnyLegacyQuery,
+  AnyV2Query,
+  createLegacyQueryCreator,
+  def,
+  queryComputed,
+  QueryStateType,
+  V2QueryClient,
+  V2QueryClientConfig,
+} from '../index';
 import { Scenario, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';
 
 type User = { id: string; name: string };
+type GetUserArgs = { response: User; pathParams: { id: string } };
 
 type LegacyClientConfig = Omit<V2QueryClientConfig, 'baseRoute'>;
 type TrackFn = <T extends AnyV2Query>(query: T) => T;
@@ -52,7 +62,8 @@ const createGetUser = (client: V2QueryClient) =>
     },
   });
 
-const holdQuery = (injector: Injector, source: () => AnyV2Query | null) => queryComputed(source, { injector });
+const holdQuery = (injector: Injector, source: () => AnyV2Query | AnyLegacyQuery | null) =>
+  queryComputed(source, { injector });
 
 describe('legacy query container scenario', () => {
   const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
@@ -213,5 +224,78 @@ describe('legacy query container scenario', () => {
       switching.destroy();
       keeping.destroy();
     });
+  });
+  it('stops polling when the last container of a polling query is destroyed', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+    withLegacyClient(s, {}, (client, track) => {
+      const polled = track(
+        createGetUser(client)
+          .prepare({ pathParams: { id: '1' } })
+          .execute(),
+      );
+
+      const consumer = s.consumer();
+      holdQuery(consumer.injector, () => polled);
+      s.tick();
+
+      const stopPolling$ = new Subject<void>();
+      polled.poll({ interval: 1_000, takeUntil: stopPolling$ });
+      s.tick(2_000);
+
+      expect(polled.isPolling).toBe(true);
+
+      const polledCount = s.api.requestCount('GET', '/users/1');
+
+      consumer.destroy();
+      s.tick(3_000);
+
+      expect(polled.isPolling).toBe(false);
+      expect(s.api.requestCount('GET', '/users/1')).toBe(polledCount);
+    });
+  });
+
+  it('keeps a shared query alive when one of two containers switches away', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+    const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+    const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
+
+    const owner = s.consumer();
+    const shared = owner.run(() => legacyGetUser.prepare({ pathParams: { id: '1' } }).execute());
+    const other = owner.run(() => legacyGetUser.prepare({ pathParams: { id: '2' } }));
+    const switched = signal<AnyLegacyQuery | null>(shared);
+
+    const switching = s.consumer();
+    const keeping = s.consumer();
+    holdQuery(switching.injector, () => switched());
+    holdQuery(keeping.injector, () => shared);
+    s.tick();
+
+    const stopPolling$ = new Subject<void>();
+    shared.poll({ interval: 1_000, takeUntil: stopPolling$ });
+    s.tick(2_000);
+
+    switched.set(other);
+    s.tick(2_000);
+
+    expect(shared.isPolling).toBe(true);
+
+    const polledCount = s.api.requestCount('GET', '/users/1');
+
+    s.tick(2_000);
+
+    expect(s.api.requestCount('GET', '/users/1')).toBeGreaterThan(polledCount);
+
+    shared.stopPolling();
+    s.tick(1);
+
+    expect(shared.rawState.type).toBe(QueryStateType.Success);
+
+    switching.destroy();
+    keeping.destroy();
+    owner.destroy();
   });
 });

@@ -124,7 +124,9 @@ export const addQueryContainerHandling = (
             q?.stopPolling();
           }
 
-          (q as unknown as AnyLegacyQuery)?.destroy?.();
+          if (!q?._hasDependents()) {
+            (q as unknown as AnyLegacyQuery)?.destroy?.();
+          }
         };
 
         if ((isQuery(prevQuery) || prevQuery === null) && (isQuery(currQuery) || currQuery === null)) {
@@ -168,6 +170,14 @@ export const addQueryContainerHandling = (
 
     const handleQuery = (q: AnyV2Query | AnyLegacyQuery | null | undefined) => {
       q?._removeDependent(componentId);
+
+      if (
+        !q?._hasDependents() &&
+        ((stopPreviousPolling === undefined && q?.canBeCached) || stopPreviousPolling) &&
+        q?.isPolling
+      ) {
+        q?.stopPolling();
+      }
 
       if (!q?._hasDependents() && ((q?.canBeCached && abortOnDestroy === undefined) || abortOnDestroy)) {
         q?.abort();
