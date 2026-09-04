@@ -200,3 +200,29 @@ Clean: `interop/` itself is the best-tested part (33 specs, inert-query and `des
 4. **Config that shares a cache key is first-writer-wins.** Headers are absent from the key, and the second consumer's `isSecure`/persistence flags are ignored. Both deserve a decision: include in the key, or merge policies.
 5. **Missing `@deprecated` on the legacy `QueryForm` classes**, while the legacy folder itself is fully tagged. The docs already treat `defineQueryForm` as the successor.
 6. **Test doubles that mirror the bug.** The websocket test double and the GQL transformer specs encode the same wrong assumption as the source, so the suites pass. When one of these is fixed, fix the double in the same change.
+
+## Triage against `next` (2026-09-04)
+
+Two fix waves closed 43 of the 57 findings above. No Medium finding is open in `auth`, `http`, `gql`,
+`ws` or `legacy`. Open, ranked by user impact, each with a suggested fix:
+
+1. **Destroy-time query-param wipe hits the incoming URL** (`query-form/query-form.ts:759`,
+   `query-form-signals.ts:649` → `navigateWithParams`). Leaving a filtered list strips `page`/`search`
+   off the URL the user just landed on. Skip the wipe when `router.getCurrentNavigation()` is set, or
+   scope it with `relativeTo`. Needs a scenario in `query-forms-url-sync.scenario.spec.ts`.
+2. **Numeric `refreshStrategy` bypasses `minBufferMs`/`maxBufferMs`**
+   (`auth/bearer-auth-query-builders.ts:518-521`). Clamp the numeric branch like the object branch.
+3. **Legacy `insertFrom` array case never implemented** (`legacy/entity/entity.utils.ts:36-40`); the
+   FIXME is gone but both branches are identical. Implement or throw with a migration message.
+4. **Devtools override persistence grows for the app lifetime**
+   (`devtools/query-devtools-override-persistence.ts:52, 239`). Drop the recorder on query destroy.
+5. **WS re-emits `join-room` for every room on `connect`** (`ws/web-socket-client.ts:285-287`).
+   Re-emit only on a reconnect.
+6. **Legacy dependent tracking keys environment injectors as `-1`** (`legacy/utils/data.utils.ts:92`).
+   Use a per-injector `WeakMap` id.
+7. **`observable-signal` mutates the wrapped signal** (`http/observable-signal.ts:29`). Return a wrapper.
+8. **`fallbackInjector` module global** (`legacy/interop/legacy-prepare-fallback.ts:14`). Legacy only.
+9. **Legacy barrel exports undeprecated internals** (`legacy/request/request.util.ts:5-9`,
+   `legacy/auth/auth-provider.utils.ts:25`, incl. `isNaN`). Add `@deprecated` tags.
+10. Cosmetic: `activeFilterCount$` vs `activeFilterCount`; unused `QueryFormOf`/`AnyQueryForm`.
+11. Accepted: the legacy `QueryForm` BehaviorSubjects (class is `@deprecated`).
