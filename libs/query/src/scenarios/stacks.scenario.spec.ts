@@ -284,6 +284,49 @@ describe('stacks scenario', () => {
     c.destroy();
   });
 
+  it('selectively re-executes a matching page and its neighbors', () => {
+    const s = scenario();
+    s.api.on('GET', '/selective-pages', ({ query }) => ({
+      body: {
+        items: [{ id: Number(query['page']) }],
+        currentPage: Number(query['page']),
+        nextPage: Number(query['page']) < 4 ? Number(query['page']) + 1 : null,
+        totalPageCount: 4,
+        itemsPerPage: 1,
+        totalHits: 4,
+      },
+    }));
+
+    const getPages = s.get<{ response: Paginated<{ id: number }>; queryParams: { page: number } }>('/selective-pages');
+    const c = s.consumer();
+    const pages = c.run(() =>
+      createPagedQueryStack({
+        queryCreator: getPages,
+        responseNormalizer: ethletePaginationAdapter,
+        args: (page) => ({ queryParams: { page } }),
+      }),
+    );
+
+    s.tick();
+    pages.fetchNextPage();
+    s.tick();
+    pages.fetchNextPage();
+    s.tick();
+    pages.fetchNextPage();
+    s.tick();
+
+    pages.execute({ where: (item) => item.id === 3 });
+    s.tick();
+
+    const requestCount = (page: string) => s.api.requests.filter((request) => request.query['page'] === page).length;
+    expect(requestCount('1')).toBe(1);
+    expect(requestCount('2')).toBe(2);
+    expect(requestCount('3')).toBe(2);
+    expect(requestCount('4')).toBe(2);
+
+    c.destroy();
+  });
+
   it('a batch sends one request per unique arg', () => {
     const s = scenario();
     s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'], archived: true } }));
