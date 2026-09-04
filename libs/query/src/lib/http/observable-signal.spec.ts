@@ -1,4 +1,12 @@
-import { createEnvironmentInjector, EnvironmentInjector, signal } from '@angular/core';
+import {
+  computed,
+  createEnvironmentInjector,
+  effect,
+  EnvironmentInjector,
+  isSignal,
+  signal,
+  untracked,
+} from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { wrapAsObservableSignal } from './observable-signal';
 
@@ -16,12 +24,61 @@ describe('wrapAsObservableSignal', () => {
     }
   });
 
-  it('should return the same signal object with asObservable attached', () => {
+  it('should not mutate the wrapped signal', () => {
     const src = signal(1);
     const wrapped = wrapAsObservableSignal(src, defaultInjector);
 
-    expect(wrapped).toBe(src as unknown as typeof wrapped);
+    expect('asObservable' in src).toBe(false);
+    expect(wrapped).not.toBe(src as unknown as typeof wrapped);
     expect(typeof wrapped.asObservable).toBe('function');
+  });
+
+  it('should behave like a signal', () => {
+    const src = signal(1);
+    const wrapped = wrapAsObservableSignal(src, defaultInjector);
+
+    expect(isSignal(wrapped)).toBe(true);
+    expect(untracked(wrapped)).toBe(1);
+
+    const doubled = computed(() => wrapped() * 2);
+    expect(doubled()).toBe(2);
+
+    const seen: number[] = [];
+    effect(() => seen.push(wrapped()), { injector: defaultInjector });
+    TestBed.tick();
+
+    src.set(2);
+    TestBed.tick();
+
+    expect(doubled()).toBe(4);
+    expect(seen).toEqual([1, 2]);
+  });
+
+  it('should give each wrapper of the same source its own lifetime', () => {
+    const otherInjector = createEnvironmentInjector([], TestBed.inject(EnvironmentInjector));
+    const src = signal(0);
+    const first = wrapAsObservableSignal(src, defaultInjector);
+    const second = wrapAsObservableSignal(src, otherInjector);
+
+    let firstCompleted = false;
+    let secondCompleted = false;
+    const firstEmissions: number[] = [];
+    const secondEmissions: number[] = [];
+
+    first.asObservable().subscribe({ next: (v) => firstEmissions.push(v), complete: () => (firstCompleted = true) });
+    second.asObservable().subscribe({ next: (v) => secondEmissions.push(v), complete: () => (secondCompleted = true) });
+    TestBed.tick();
+
+    defaultInjector.destroy();
+    src.set(1);
+    TestBed.tick();
+
+    expect(firstCompleted).toBe(true);
+    expect(secondCompleted).toBe(false);
+    expect(firstEmissions).toEqual([0]);
+    expect(secondEmissions).toEqual([0, 1]);
+
+    otherInjector.destroy();
   });
 
   it('should still read the signal value via call', () => {
@@ -140,6 +197,18 @@ describe('wrapAsObservableSignal', () => {
       TestBed.tick();
 
       expect(emissions).toEqual([0]);
+    });
+
+    it('should reuse the observable created for an override injector', () => {
+      const overrideInjector = createEnvironmentInjector([], TestBed.inject(EnvironmentInjector));
+      const src = signal(0);
+      const wrapped = wrapAsObservableSignal(src, defaultInjector);
+
+      expect(wrapped.asObservable({ injector: overrideInjector })).toBe(
+        wrapped.asObservable({ injector: overrideInjector }),
+      );
+
+      overrideInjector.destroy();
     });
 
     it('should allow multiple independent subscriptions', () => {

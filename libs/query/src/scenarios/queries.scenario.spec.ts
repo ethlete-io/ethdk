@@ -149,4 +149,29 @@ describe('queries scenario', () => {
 
     c.destroy();
   });
+  it('gives a snapshot its own id signal instead of taking over the query one', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getUser = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/users/${p.id}`);
+
+    const c = s.consumer();
+    const query = c.run(() => getUser(withArgs(() => ({ pathParams: { id: '1' } }))));
+
+    s.tick();
+
+    const snapshot = c.run(() => query.createSnapshot());
+
+    expect(snapshot.id).not.toBe(query.id);
+
+    const ids: unknown[] = [];
+    const sub = query.id.asObservable().subscribe((id) => ids.push(id));
+
+    s.tick();
+
+    expect(ids).toEqual([query.id()]);
+
+    sub.unsubscribe();
+    c.destroy();
+  });
 });
