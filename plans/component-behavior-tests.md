@@ -200,3 +200,43 @@ Harness note: the full `components` vitest project now exhausts a worker on this
 does not help, so it is not a concurrency artifact. Run the project in chunks of about 55 spec files
 with `--pool=forks --maxWorkers=3` and add the counts by hand; the chunk holding those five reports
 `50 passed (55)`.
+
+## Wave 2 (2026-09-04)
+
+14 new suites, written by Sonnet subagents (four at a time against the one dev server,
+`--workers=2` each) and reviewed file by file by the coordinator: `accordion`, `choice-inputs`
+(checkbox, switch, radio group, checkbox group, segmented buttons), `tree`, `toggletip`,
+`command-palette`, `pagination`, `table`, `toolbar`, `calendar`, `time-picker`, `text-inputs` (OTP,
+tag input, number input, password), `chip`, `carousel`, `progress-steps`. The whole project now holds
+23 suites and 254 tests per browser project.
+
+Helpers stay file-local until a third suite needs them: `expectChildFocusVisible` (choice inputs),
+`expectOtpCaretOn` (text inputs), `expectCellFocusVisible` (calendar, the ring sits on the nested
+content span), and a copy of `touchSwipe` (carousel).
+
+Progress steps have no ARIA role, no `aria-current` and no keyboard model by design (the docs say so),
+so that suite asserts `data-state` and the link variant only. Pagination's touch viewport (412px) is
+under the compact threshold, so the touch test drives the previous/next pager, not the page buttons.
+
+Four defects the suites found, each fixed with a jsdom spec and a changeset (the `test.fail` lines
+are gone):
+
+- Table: the select cells bound `[attr.aria-label]` on `et-checkbox`, and the checkbox's own host
+  binding for its `ariaLabel` input wrote `null` over it. They bind the input now.
+- OTP input: the native `maxlength` truncated a raw paste (`123-456`) before the separator strip. The
+  attribute is gone; the directive's sanitize step already clamps the length. jsdom does not
+  enforce `maxlength`, so only the Playwright test proves the browser path.
+- Form field: a pointerdown on an icon inside a suffix button (the password reveal) activated the
+  field and pulled focus off the button. The interactive-element check now walks from the target up
+  to the frame, the same walk select and cascader already did.
+- Calendar: the `#weeks` template was declared outside the `etCalendarGrid` div, so `inject(CalendarGridDirective)`
+  in every cell resolved to `null` and arrow keys moved the roving tabindex but never DOM focus. The
+  template now sits inside the grid.
+
+Harness notes: the dev server on `:4400` enters an HMR reload loop when several Playwright runs hit it
+at once or a file under `libs/` changes, and `openStory` then times out - rerun before calling a test
+a flake. Lint the e2e project without `--fix` (see wave 1). The `components` vitest project has no
+`--project` name; run single specs with `npx vitest run --config libs/components/vite.config.mts <file>`.
+
+Wave 3 candidates, not started: date/time inputs, scrollbar, grid, timeline, rich text editor,
+scheduler, filter overlay, notification, dropzone, rating, masked input, textarea.
