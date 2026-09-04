@@ -2,6 +2,16 @@ import { isDevMode } from '@angular/core';
 
 const getOpName = /\b(?:query|mutation)\s+([\w-]+)(?:\s*\([^)]*\))?\s*\{/;
 
+const STRING_LITERAL = '"""[\\s\\S]*?"""|"(?:[^"\\\\\\n]|\\\\.)*"';
+const commentOutsideString = /* @__PURE__ */ new RegExp(`(${STRING_LITERAL})|#[^\\n\\r]*`, 'g');
+const whitespaceOutsideString = /* @__PURE__ */ new RegExp(`(${STRING_LITERAL})|\\s+`, 'g');
+
+const minifyGql = (document: string) =>
+  document
+    .replace(commentOutsideString, (_match, literal?: string) => literal ?? '')
+    .replace(whitespaceOutsideString, (_match, literal?: string) => literal ?? ' ')
+    .trim();
+
 export type TransformedGqlQuery = {
   query: string;
   variables?: string;
@@ -30,8 +40,7 @@ export const transformGql = (str: string | string[]): GqlTransformer => {
     }
 
     if (!isDevMode()) {
-      // minify the query
-      data.query = data.query.replace(/\s+/g, ' ').trim();
+      data.query = minifyGql(data.query);
     }
 
     return data;

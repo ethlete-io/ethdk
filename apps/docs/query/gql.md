@@ -31,7 +31,7 @@ userQuery = getUser(withArgs(() => ({ variables: { userId: this.userId() } })));
 user = computed(() => this.userQuery.response()?.user ?? null);
 ```
 
-The `gql` tag is a branded template literal - no parsing happens at runtime. The operation name is extracted for the request, and in production builds the document is minified (whitespace collapsed); in dev mode it stays pretty-printed for readable network tabs.
+The `gql` tag is a branded template literal - no parsing happens at runtime. The operation name is extracted for the request, and in production builds the document is minified (`#` comments dropped, whitespace outside string literals collapsed); in dev mode it stays pretty-printed for readable network tabs.
 
 ## Creator templates
 
@@ -64,7 +64,7 @@ GQL args extend the core `QueryArgs` with a `variables` bag:
 | `variables`   | GraphQL variables, passed via `withArgs` / `execute` and JSON-serialized into the request.    |
 | `rawResponse` | Defaults to `{ data: TResponse }`; declare it only when your endpoint returns something else. |
 
-**Response unwrapping:** by default the `{ data }` envelope is stripped automatically - a missing `data` property throws a dev-mode error. Supplying your own `transformResponse` replaces this default:
+**Response unwrapping:** by default the `{ data }` envelope is stripped automatically - a missing `data` property throws, in every build. Supplying your own `transformResponse` replaces this default:
 
 ```ts
 const getUserName = gqlQueryPost<GetUserNameQueryArgs>(gqlDocument, {

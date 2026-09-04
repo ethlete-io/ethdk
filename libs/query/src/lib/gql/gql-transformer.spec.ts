@@ -229,6 +229,33 @@ describe('transformGql', () => {
 
       expect(result.query).toBe('query GetUser { user { id } }');
     });
+
+    it('drops a # comment in production instead of letting it swallow the rest of the document', () => {
+      vi.mocked(isDevMode).mockReturnValue(false);
+
+      const query = `query GetUser {
+        # the signed-in user
+        user {
+          id
+        }
+      }`;
+      const result = transformGql(query)(null);
+
+      expect(result.query).toBe('query GetUser { user { id } }');
+    });
+
+    it('keeps the whitespace inside a string literal in production', () => {
+      vi.mocked(isDevMode).mockReturnValue(false);
+
+      const query = `query Search {
+        search(text: "Ada  Lovelace", tag: "#one") {
+          id
+        }
+      }`;
+      const result = transformGql(query)(null);
+
+      expect(result.query).toBe('query Search { search(text: "Ada  Lovelace", tag: "#one") { id } }');
+    });
   });
 
   describe('complete transformations', () => {
