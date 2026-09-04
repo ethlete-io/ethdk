@@ -11,15 +11,16 @@ import {
   provideEnvironmentInitializer,
 } from '@angular/core';
 
-let fallbackInjector: Injector | null = null;
+const fallbackInjectors = /* @__PURE__ */ new Set<Injector>();
 
 /**
  * The stashed root injector, or `null` when the fallback was never provided (or was provided on the
- * server, where stashing is refused).
+ * server, where stashing is refused). With several applications on one page it is the one that
+ * registered first, until that application is destroyed.
  *
  * @internal
  */
-export const legacyPrepareFallbackInjector = () => fallbackInjector;
+export const legacyPrepareFallbackInjector = (): Injector | null => fallbackInjectors.values().next().value ?? null;
 
 /**
  * Lets `prepare()` fall back to the application's root injector when it is called outside any injection
@@ -36,6 +37,10 @@ export const legacyPrepareFallbackInjector = () => fallbackInjector;
  * It refuses to stash anything on the server: a module-global injector would be shared across concurrent
  * requests, which is data bleed rather than a leak. Server-side renders keep throwing `ET950`, so a call
  * site that only works in the browser fails loudly where it matters.
+ *
+ * With several applications on one page it stays a single module-global slot: the application that
+ * provided it first answers every `prepare()` made outside an injection context, whichever application
+ * made the call, until that application is destroyed. Dev mode warns when a second one registers.
  *
  * Prefer passing `injector` at the call site - it keeps the query scoped to whatever created it. Reach for
  * this when a migration has too many call sites to thread by hand.
@@ -65,12 +70,18 @@ export const provideLegacyPrepareFallback = (): EnvironmentProviders =>
 
       const injector = inject(EnvironmentInjector);
 
-      fallbackInjector = injector;
+      fallbackInjectors.add(injector);
+
+      if (isDevMode() && fallbackInjectors.size > 1) {
+        console.warn(
+          'provideLegacyPrepareFallback() was provided by more than one application on this page. There is a ' +
+            'single module-global slot, so prepare() calls without an injection context resolve against the ' +
+            'application that provided it first - including calls made from the other applications.',
+        );
+      }
 
       inject(DestroyRef).onDestroy(() => {
-        if (fallbackInjector === injector) {
-          fallbackInjector = null;
-        }
+        fallbackInjectors.delete(injector);
       });
     }),
   ]);

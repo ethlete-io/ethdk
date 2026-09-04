@@ -189,6 +189,10 @@ It is **browser only** by design. A module-global injector shared across concurr
 would leak one request's data into another, so it refuses to stash anything on the server and `ET950` still
 throws there. Passing `injector` at the call site stays the better answer where you can.
 
+With several applications on one page, the first one that provided the fallback answers every `prepare()`
+made outside an injection context - whichever application made the call - until it is destroyed, and dev
+mode warns when a second application registers.
+
 ## Behavior worth knowing before you debug it
 
 - **Secure queries wait for a token.** A secure query executed before login does not fail - it parks until `accessToken()` is set, then runs. Don't gate them on `isAuthenticated()` by hand.

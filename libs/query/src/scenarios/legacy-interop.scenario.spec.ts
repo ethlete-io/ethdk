@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { createEnvironmentInjector, EnvironmentInjector, inject } from '@angular/core';
 import {
   AnyLegacyQuery,
   createLegacyQueryCreator,
@@ -142,6 +143,40 @@ describe('legacy interop scenario', () => {
       expect(query.rawState).toMatchObject({ type: QueryStateType.Success, response: { id: '1', name: 'Ada' } });
 
       query.destroy();
+    });
+  });
+  describe('provideLegacyPrepareFallback with two applications on one page', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('keeps the first application answering after a second one boots and is destroyed', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+      const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
+      const root = s.run(() => inject(EnvironmentInjector));
+
+      const appOne = createEnvironmentInjector([provideLegacyPrepareFallback()], root);
+      const appTwo = createEnvironmentInjector([provideLegacyPrepareFallback()], root);
+
+      const fromAppOne = legacyGetUser.prepare({ pathParams: { id: '1' } }).execute();
+      s.tick();
+
+      expect(fromAppOne.rawState).toMatchObject({ type: QueryStateType.Success, response: { id: '1', name: 'Ada' } });
+
+      appTwo.destroy();
+
+      const afterAppTwoIsGone = legacyGetUser.prepare({ pathParams: { id: '2' } }).execute();
+      s.tick();
+
+      expect(afterAppTwoIsGone.rawState).toMatchObject({
+        type: QueryStateType.Success,
+        response: { id: '2', name: 'Ada' },
+      });
+
+      fromAppOne.destroy();
+      afterAppTwoIsGone.destroy();
+      appOne.destroy();
     });
   });
 });
