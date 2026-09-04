@@ -268,6 +268,31 @@ describe('setupLeaderElection', () => {
     otherFollower.cleanup();
   });
 
+  it('should carry the access token the asking tab holds to the leader', async () => {
+    const leader = openTab();
+    const follower = openTab();
+
+    await settle();
+
+    const heard: (string | null)[] = [];
+
+    leader.refreshRequests$.subscribe((token) => heard.push(token));
+
+    follower.requestRefresh('access-1');
+    await settle();
+
+    // A tab running a version that sent no token still reaches the leader, which then refreshes as before.
+    const channel = new BroadcastChannel('ethlete-auth-leader:test-auth');
+    channel.postMessage({ type: 'refresh-requested' });
+    await settle();
+    channel.close();
+
+    expect(heard).toEqual(['access-1', null]);
+
+    leader.cleanup();
+    follower.cleanup();
+  });
+
   it('should not deliver a refresh request back to the tab that asked', async () => {
     const tab = openTab();
 

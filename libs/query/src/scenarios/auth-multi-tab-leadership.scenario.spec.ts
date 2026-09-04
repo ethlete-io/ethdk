@@ -337,6 +337,105 @@ describe('auth multi-tab leadership scenario', () => {
     c.destroy();
   });
 
+  it('a delegated refresh-requested that reaches the leader only after it already rotated the pair is answered with the pair it holds', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+    s.api.protect('/secure/**');
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+    const tokenAtLogin = b.auth.accessToken();
+
+    const queryA = a.consumer().run(() => a.getSecure<Profile>('/secure/profile')());
+    s.tick();
+    s.tick(1);
+    s.tick(1);
+
+    expect(a.auth.accessToken()).not.toBe(tokenAtLogin);
+    expect(b.auth.accessToken()).toBe(tokenAtLogin);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    const queryB = b.consumer().run(() => b.getSecure<Profile>('/secure/profile')());
+    s.tick();
+    s.tick(1);
+
+    expect(b.auth.accessToken()).toBe(tokenAtLogin);
+    expect(refreshRequestedMessages()).toHaveLength(1);
+
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+    expect(queryA.response()).toEqual({ id: 'me' });
+    expect(queryB.response()).toEqual({ id: 'me' });
+
+    s.expectError(is401);
+    s.expectError(is401);
+    a.destroy();
+    b.destroy();
+  });
+
+  it("a follower's delegated refresh-requested arriving while the leader's own refresh is still in flight does not spend a second refresh token", async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', () => ({ ...issueTokens(15 * 60 * 1000)(), delay: 5000 }));
+    s.api.protect('/secure/**');
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+    const tokenAtLogin = b.auth.accessToken();
+
+    const queryA = a.consumer().run(() => a.getSecure<Profile>('/secure/profile')());
+    s.tick();
+    s.tick(1);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(a.auth.accessToken()).toBe(tokenAtLogin);
+
+    const queryB = b.consumer().run(() => b.getSecure<Profile>('/secure/profile')());
+    s.tick();
+
+    expect(refreshRequestedMessages()).toHaveLength(1);
+
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(a.auth.accessToken()).toBe(tokenAtLogin);
+
+    s.tick(5000);
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(a.auth.accessToken()).not.toBe(tokenAtLogin);
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+    expect(queryA.response()).toEqual({ id: 'me' });
+    expect(queryB.response()).toEqual({ id: 'me' });
+
+    s.expectError(is401);
+    s.expectError(is401);
+    a.destroy();
+    b.destroy();
+  });
+
   it('a tab that becomes visible claims the leadership, and the hidden leader gives way', async () => {
     const s = scenario();
     s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));

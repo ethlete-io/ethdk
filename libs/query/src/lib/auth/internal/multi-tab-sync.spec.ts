@@ -592,6 +592,40 @@ describe('setupMultiTabSync', () => {
       });
     });
 
+    it('should send the current pair on demand, which is how a leader answers without refreshing', () => {
+      TestBed.runInInjectionContext(() => {
+        const sync = setup();
+
+        accessToken.set('access-token');
+        refreshToken.set('refresh-token');
+        TestBed.flushEffects();
+        mockChannel.postMessage.mockClear();
+
+        sync.broadcastCurrentTokens?.();
+
+        expect(mockChannel.postMessage).toHaveBeenCalledWith({
+          type: 'tokens-updated',
+          accessToken: encryptToken('access-token'),
+          refreshToken: encryptToken('refresh-token'),
+        });
+      });
+    });
+
+    it('should send nothing on demand when tokens are deliberately tab local', () => {
+      TestBed.runInInjectionContext(() => {
+        const sync = setup({ syncTokens: false });
+
+        accessToken.set('access-token');
+        refreshToken.set('refresh-token');
+        TestBed.flushEffects();
+        mockChannel.postMessage.mockClear();
+
+        sync.broadcastCurrentTokens?.();
+
+        expect(mockChannel.postMessage).not.toHaveBeenCalled();
+      });
+    });
+
     it('should stay silent as a follower, or with no session to hand over', () => {
       TestBed.runInInjectionContext(() => {
         isLeader = false;

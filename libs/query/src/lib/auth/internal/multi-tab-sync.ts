@@ -102,6 +102,12 @@ export type BearerAuthSessionAdoption = {
 export type InternalMultiTabSync = {
   cleanup: () => void;
 
+  /**
+   * Sends the token pair this tab currently holds to every other tab. Absent when there is nothing to
+   * send: no `BroadcastChannel`, or tokens are not synced.
+   */
+  broadcastCurrentTokens?: () => void;
+
   /** Absent when there is nothing to adopt: no `BroadcastChannel`, or tokens are not synced. */
   sessionAdoption?: BearerAuthSessionAdoption;
 
@@ -158,6 +164,21 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
 
   const remoteActivity = new Subject<void>();
 
+  const broadcastCurrentTokens = () => {
+    if (!syncTokens) return;
+
+    const access = context.accessToken();
+    const refresh = context.refreshToken();
+
+    if (!access || !refresh) return;
+
+    channel.postMessage({
+      type: 'tokens-updated',
+      accessToken: encryptToken(access),
+      refreshToken: encryptToken(refresh),
+    } satisfies SyncMessage);
+  };
+
   channel.onmessage = (event: MessageEvent<SyncMessage>) => {
     const message = event.data;
 
@@ -168,18 +189,9 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
     }
 
     if (message.type === 'state-request') {
-      if (!syncTokens || !context.isLeader()) return;
+      if (!context.isLeader()) return;
 
-      const access = context.accessToken();
-      const refresh = context.refreshToken();
-
-      if (!access || !refresh) return;
-
-      channel.postMessage({
-        type: 'tokens-updated',
-        accessToken: encryptToken(access),
-        refreshToken: encryptToken(refresh),
-      } satisfies SyncMessage);
+      broadcastCurrentTokens();
 
       return;
     }
@@ -341,5 +353,5 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
       }
     : undefined;
 
-  return { cleanup, sessionAdoption, activityCoordination };
+  return { cleanup, broadcastCurrentTokens, sessionAdoption, activityCoordination };
 };

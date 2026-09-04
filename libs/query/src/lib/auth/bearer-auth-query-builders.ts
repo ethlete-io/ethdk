@@ -343,7 +343,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
         // takes the refresh over.
         if (reason === 'scheduled' && !isAccessTokenStale()) return 'notLeader';
 
-        context.refreshCoordination?.request();
+        context.refreshCoordination?.request(context.accessToken());
         watchDelegatedRefresh(context.accessToken());
 
         return 'delegated';
@@ -677,7 +677,19 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       )
       .subscribe();
 
-    context.refreshCoordination?.requests$.pipe(takeUntilDestroyed()).subscribe(() => executeRefresh('unauthorized'));
+    context.refreshCoordination?.requests$.pipe(takeUntilDestroyed()).subscribe((requestedWith) => {
+      const current = context.accessToken();
+
+      // A request made with a token this tab already rotated past gets the current pair; a second
+      // refresh would spend the token the first one issued. No token means an older build asked.
+      if (requestedWith && current && requestedWith !== current) {
+        context.refreshCoordination?.answerWithCurrentTokens?.();
+
+        return;
+      }
+
+      executeRefresh('unauthorized');
+    });
 
     context.refreshCoordination?.starts$.pipe(takeUntilDestroyed()).subscribe(() => {
       hasLeaderAnsweredDelegation = true;

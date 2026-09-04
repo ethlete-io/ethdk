@@ -187,11 +187,21 @@ export type BearerAuthProviderEarlySetupContext = {
  * `withBearerAuthMultiTabSync`; absent when every tab refreshes for itself.
  */
 export type BearerAuthRefreshCoordination = {
-  /** Asks the leader tab to refresh the session's tokens now. */
-  request: () => void;
+  /**
+   * Asks the leader tab to refresh the session's tokens now, with the access token this tab holds. The
+   * leader answers a request made with a token it has already rotated past by sending its current pair
+   * instead of spending another refresh token.
+   */
+  request: (accessToken?: string | null) => void;
 
-  /** Emits in the leader tab whenever another tab asked for a refresh. */
-  requests$: Observable<void>;
+  /**
+   * Emits in the leader tab whenever another tab asked for a refresh, carrying the access token that
+   * tab asked with - `null` when it held none, or ran a version that did not send one.
+   */
+  requests$: Observable<string | null>;
+
+  /** Sends the token pair this tab holds to the others, which is how a request is answered without a refresh. */
+  answerWithCurrentTokens?: () => void;
 
   /**
    * Tells the other tabs that a refresh started here. It is what makes {@link request} more than a

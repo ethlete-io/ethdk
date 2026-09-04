@@ -1,6 +1,7 @@
 import { computed, DestroyRef, effect, inject, signal, Signal } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { createQueryKeyLockManager } from '../../http/sync/query-key-lock-manager';
+import { decryptToken, encryptToken } from '../utils';
 
 /**
  * Namespace and key of the one lock the whole election is: whoever holds it is the leader, and every
@@ -22,7 +23,7 @@ const presenceChannelName = (name: string) => `ethlete-auth-leader:${name}`;
 
 type LeaderChannelMessage =
   | { type: 'presence' }
-  | { type: 'refresh-requested' }
+  | { type: 'refresh-requested'; accessToken?: string }
   | { type: 'refresh-started' }
   | { type: 'claim' }
   | { type: 'leader-alive'; isVisible: boolean };
@@ -59,12 +60,18 @@ export type InternalLeaderElection = {
 
   /**
    * Asks the leader to refresh the session's tokens. What a tab that hit a 401 does instead of
-   * refreshing itself, which would spend a single-use refresh token the leader also holds.
+   * refreshing itself, which would spend a single-use refresh token the leader also holds. The access
+   * token the asking tab holds travels with it, so a leader that already rotated past it can answer
+   * with the pair it has instead of spending another refresh token.
    */
-  requestRefresh: () => void;
+  requestRefresh: (accessToken?: string | null) => void;
 
-  /** Emits in the leader tab whenever another tab called {@link requestRefresh}. */
-  refreshRequests$: Observable<void>;
+  /**
+   * Emits in the leader tab whenever another tab called {@link requestRefresh}, carrying the access
+   * token that tab asked with. `null` when the asking tab held none, or runs a version that did not
+   * send one yet.
+   */
+  refreshRequests$: Observable<string | null>;
 
   /**
    * Tells the other tabs that a refresh started here. The answer to {@link requestRefresh}, which is
@@ -119,7 +126,7 @@ export const setupLeaderElection = (options: { name: string }): InternalLeaderEl
   const lockName = leaderLockName(options.name);
   const lockManager = createQueryKeyLockManager(LEADER_LOCK_NAMESPACE);
   const instanceCount = signal(1);
-  const refreshRequests = new Subject<void>();
+  const refreshRequests = new Subject<string | null>();
   const refreshStarts = new Subject<void>();
 
   let isDestroyed = false;
@@ -172,7 +179,8 @@ export const setupLeaderElection = (options: { name: string }): InternalLeaderEl
 
   const announce = () => post({ type: 'presence' });
 
-  const requestRefresh = () => post({ type: 'refresh-requested' });
+  const requestRefresh = (accessToken?: string | null) =>
+    post({ type: 'refresh-requested', accessToken: accessToken ? encryptToken(accessToken) : undefined });
 
   const announceRefreshStart = () => post({ type: 'refresh-started' });
 
@@ -277,7 +285,7 @@ export const setupLeaderElection = (options: { name: string }): InternalLeaderEl
 
       // Every tab hears the request; only the one that may spend the refresh token acts on it.
       if (message?.type === 'refresh-requested' && isLeader()) {
-        refreshRequests.next();
+        refreshRequests.next(message.accessToken ? decryptToken(message.accessToken) : null);
       }
     };
   }

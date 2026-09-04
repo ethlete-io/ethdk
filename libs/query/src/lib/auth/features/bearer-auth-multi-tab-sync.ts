@@ -170,6 +170,7 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
       refreshCoordination: {
         request: election.requestRefresh,
         requests$: election.refreshRequests$,
+        answerWithCurrentTokens: () => sync.broadcastCurrentTokens?.(),
         announceStart: election.announceRefreshStart,
         starts$: election.refreshStarts$,
       },
