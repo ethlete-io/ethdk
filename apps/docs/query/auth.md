@@ -264,7 +264,7 @@ A proactive refresh that comes due while it cannot run - throttled, waiting on a
 
 In a tab that is not the elected leader, a `401` asks the leader to refresh over the leader channel rather than refreshing itself - a single-use refresh token must only be spent once, and the resulting tokens arrive back through [multi-tab sync](#multi-tab-sync). Without the feature every tab is its own leader and refreshes directly.
 
-Refresh failures retry on transient statuses (`0, 408, 425, 429, 500, 502, 503, 504` by default) with unlimited attempts (`retryConfig.maxAttempts: 0`) capped at 30s delay. By default the token extractor expects `{ accessToken, refreshToken }` in the response of both the authentication and refresh queries - override with `extractTokens`.
+Refresh failures retry on transient statuses (`0, 408, 425, 429, 500, 502, 503, 504` by default) with unlimited attempts (`retryConfig.maxAttempts: 0`) capped at 30s delay. By default the token extractor expects `{ accessToken, refreshToken }` in the response of both the authentication and refresh queries - override with `extractTokens`. A custom extractor's result is checked the same way: a pair without two token strings is an extraction failure, never a session.
 
 ### When the leader stops answering
 
@@ -292,6 +292,8 @@ withRefreshQuery('refresh', {
 ```
 
 It replaces the default entirely - a handler that never calls `logout()` keeps the session, which is what an app that shows its own "your session could not be renewed" prompt wants.
+
+A `2xx` whose body `extractTokens` rejects is a refresh that failed for good too. The server answered and the answer holds no session, so there is no status for the retry policy to wait out - the default policy ends the session, even though the error it is reported as carries code `0`. A custom handler sees the same error and decides for itself.
 
 The handler runs outside any reactive context, so it may create an `effect()` or a query - directly, or through whatever `logout()` sets off in the rest of the app.
 

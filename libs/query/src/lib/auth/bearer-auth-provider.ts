@@ -571,7 +571,10 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
     const querySnapshot = signal<QuerySnapshot<QueryArgs> | null>(null);
     querySnapshots.set(builder.key, querySnapshot);
 
-    const extractTokens = builder.config.extractTokens ?? defaultExtractTokens;
+    // The default checks are run over a custom extractor's result too: one that reads a property the
+    // response no longer has would otherwise apply `undefined` as the session's token pair.
+    const extractTokens = (response: unknown) =>
+      defaultExtractTokens(builder.config.extractTokens ? builder.config.extractTokens(response) : response);
 
     const currentExecution = signal<CurrentExecution | null>(null);
     currentExecutions.push(currentExecution);

@@ -683,16 +683,12 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       hasLeaderAnsweredDelegation = true;
     });
 
-    const onRefreshFailure =
-      config.onRefreshFailure ??
-      (({ error, logout }: RefreshFailure) => {
-        if (!retryableStatusCodes.includes(error.code)) logout();
-      });
-
     effect(() => {
       const state = context.executionState();
 
       if (state?.state !== 'error') return;
+
+      const latestQuery = untracked(context.latestExecutedQuery);
 
       // `withPersistentAuth` spends the cookie's refresh token through this very query, and that
       // execution reports as `autoLogin` rather than as `tokenRefresh`. Judged by its type alone it
@@ -701,16 +697,27 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       // check keeps a session another tab handed over mid-request out of it - that session is not
       // this restore's to end.
       const isRejectedRestore =
-        state.type === 'autoLogin' &&
-        untracked(context.latestExecutedQuery)?.key === key &&
-        !untracked(context.accessToken);
+        state.type === 'autoLogin' && latestQuery?.key === key && !untracked(context.accessToken);
 
       if (state.type !== 'tokenRefresh' && !isRejectedRestore) return;
+
+      // `retryableStatusCodes` judges the request's status. A 2xx whose body `extractTokens` rejected
+      // has none to judge - the server answered, and the answer holds no session - yet the error it is
+      // reported as carries status 0, which the list reads as a network failure worth waiting out.
+      const isExtractionFailure = latestQuery?.key === key && !latestQuery.snapshot.error();
+
+      const failure: RefreshFailure = { error: state.error, logout: () => context.logout('expired') };
 
       // `logout` tears down every secure cache entry and emits on `events$`, so a consumer that reacts
       // to a session ending runs inside this effect. Angular refuses `effect()` from a reactive context,
       // so a listener that creates a query would throw NG0602 instead of handling the logout.
-      untracked(() => onRefreshFailure({ error: state.error, logout: () => context.logout('expired') }));
+      untracked(() => {
+        if (config.onRefreshFailure) {
+          config.onRefreshFailure(failure);
+        } else if (isExtractionFailure || !retryableStatusCodes.includes(state.error.code)) {
+          failure.logout();
+        }
+      });
     });
 
     // Auto-retry on 401: Listen to repository events and trigger refresh on 401 errors
