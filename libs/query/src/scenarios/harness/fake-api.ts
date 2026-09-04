@@ -19,6 +19,7 @@ export type FakeApiRequestContext = {
 };
 
 export type FakeApiResponse = {
+  /** `0` is a network error: the request fails with an `HttpErrorResponse` of status 0 and no body. */
   status?: number;
   body?: unknown;
   headers?: Record<string, string>;
@@ -244,12 +245,12 @@ export const createFakeApi = (config: CreateFakeApiConfig): FakeApi => {
           });
         }
 
-        if (logEntry.status >= 400) {
+        if (logEntry.status >= 400 || logEntry.status === 0) {
           subscriber.error(
             thrown ??
               new HttpErrorResponse({
                 status: logEntry.status,
-                statusText: 'Fake API Error',
+                statusText: logEntry.status === 0 ? 'Unknown Error' : 'Fake API Error',
                 url: req.urlWithParams,
                 error: response.body,
                 headers: new HttpHeaders(response.headers),

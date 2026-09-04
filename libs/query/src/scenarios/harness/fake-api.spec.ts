@@ -64,6 +64,17 @@ describe('fake-api', () => {
     expect((error as HttpErrorResponse).status).toBe(500);
   });
 
+  it('turns a status 0 response into a network-error HttpErrorResponse', () => {
+    api.on('GET', '/offline', () => ({ status: 0 }));
+
+    const { getError } = send('GET', '/offline');
+    vi.advanceTimersByTime(0);
+
+    const error = getError();
+    expect(error).toBeInstanceOf(HttpErrorResponse);
+    expect((error as HttpErrorResponse).status).toBe(0);
+  });
+
   it('consumes a once() handler after a single match, falling back to on()', () => {
     api.on('GET', '/users/1', () => ({ body: { id: '1', from: 'default' } }));
     api.once('GET', '/users/1', () => ({ status: 404 }));
