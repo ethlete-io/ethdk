@@ -317,6 +317,32 @@ describe('caching scenario', () => {
       b.destroy();
       s.tick(5_001);
     });
+
+    it.each([
+      { name: 'refreshQueriesInUse', refresh: (s: ReturnType<typeof scenario>) => s.client.refreshQueriesInUse() },
+      {
+        name: 'invalidateQueries',
+        refresh: (s: ReturnType<typeof scenario>) => s.client.invalidateQueries({ url: '/restart' }),
+      },
+    ])('$name aborts and replaces an in-flight read', ({ refresh }) => {
+      const s = scenario();
+      s.api.on('GET', '/restart', sequence([{ body: { version: 1 }, delay: 500 }, { body: { version: 2 } }]));
+
+      const getRestart = s.get<{ response: { version: number } }>('/restart');
+      const c = s.consumer();
+      const query = c.run(() => getRestart());
+
+      expect(s.api.pending()).toHaveLength(1);
+      refresh(s);
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/restart')).toBe(2);
+      expect(s.api.requests[0]?.aborted).toBe(true);
+      expect(query.response()).toEqual({ version: 2 });
+
+      c.destroy();
+      s.tick(5_001);
+    });
   });
 
   describe('updating response() without a request', () => {

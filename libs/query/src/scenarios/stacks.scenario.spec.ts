@@ -113,6 +113,75 @@ describe('stacks scenario', () => {
     c.destroy();
   });
 
+  it('clears appended queries when a dependency changes', () => {
+    const s = scenario();
+    s.api.on('GET', '/feed/:group/:page', ({ params }) => ({
+      body: { group: params['group'], page: params['page'] },
+    }));
+
+    const getFeed = s.get<{
+      response: { group: string; page: string };
+      pathParams: { group: string; page: string };
+    }>((params) => `/feed/${params.group}/${params.page}`);
+    const group = signal('a');
+    const page = signal('1');
+    const c = s.consumer();
+    const stack = c.run(() =>
+      createQueryStack({
+        queryCreator: getFeed,
+        dependencies: () => ({ group: group() }),
+        args: ({ group: currentGroup }) => ({ pathParams: { group: currentGroup, page: page() } }),
+        append: true,
+      }),
+    );
+
+    s.tick();
+    page.set('2');
+    s.tick();
+    expect(stack.response()).toEqual([
+      { group: 'a', page: '1' },
+      { group: 'a', page: '2' },
+    ]);
+
+    group.set('b');
+    s.tick();
+
+    expect(stack.response()).toEqual([{ group: 'b', page: '2' }]);
+    expect(stack.queries()).toHaveLength(1);
+
+    c.destroy();
+  });
+
+  it('uses appendFn to prepend new queries and identify the latest query', () => {
+    const s = scenario();
+    s.api.on('GET', '/prepend/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getItem = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/prepend/${p.id}`);
+    const id = signal('1');
+    const c = s.consumer();
+    const stack = c.run(() =>
+      createQueryStack({
+        queryCreator: getItem,
+        args: () => ({ pathParams: { id: id() } }),
+        append: true,
+        appendFn: (oldQueries, newQueries) => ({
+          queries: [...newQueries, ...oldQueries],
+          lastQuery: newQueries[0] ?? null,
+        }),
+      }),
+    );
+
+    s.tick();
+    id.set('2');
+    s.tick();
+
+    expect(stack.response()).toEqual([{ id: '2' }, { id: '1' }]);
+    expect(stack.firstQuery()?.args()?.pathParams?.id).toBe('2');
+    expect(stack.lastQuery()?.args()?.pathParams?.id).toBe('2');
+
+    c.destroy();
+  });
+
   it('a paged stack appends the next page, resets to the initial page, and reads the page count from the response', () => {
     const s = scenario();
     s.api.on('GET', '/posts', ({ query }) => ({
