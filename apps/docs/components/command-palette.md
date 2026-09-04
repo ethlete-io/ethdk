@@ -117,9 +117,9 @@ otherwise in the order it was registered.
 
 ## The keyboard shortcut
 
-`etCommandPaletteShortcut` opens the palette on a key chord, and closes it again on the same chord. It
-listens on the document, so put it on the application's root component - not on the element a reader
-must focus first.
+`etCommandPaletteShortcut` opens the palette on a key chord, and closes it again on the same chord -
+including a palette that `injectCommandPalette().open()` opened. It listens on the document, so put it
+on the application's root component - not on the element a reader must focus first.
 
 ```html
 <div etCommandPaletteShortcut>…</div>
@@ -187,7 +187,8 @@ See [localization](/components/localization) for how the label systems fit toget
 
 The search field is the only focusable element. It is a `combobox` with `aria-autocomplete="list"`,
 pointed at the result list by `aria-controls`, and at the row that Enter would run by
-`aria-activedescendant`. The list is a `listbox`, each heading labels a `group`, and each row is an
+`aria-activedescendant`. While the query matches nothing there is no list, so `aria-expanded` reads
+`false` and `aria-controls` is dropped rather than pointing at an element that does not exist. The list is a `listbox`, each heading labels a `group`, and each row is an
 `option` carrying `aria-selected` and, when disabled, `aria-disabled`.
 
 Rows are deliberately **not** focusable. Focus stays in the field so a reader can keep typing, which

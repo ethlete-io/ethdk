@@ -19,8 +19,8 @@ import { CommandPaletteDirective } from './command-palette.directive';
     spellcheck: 'false',
     role: 'combobox',
     'aria-autocomplete': 'list',
-    'aria-expanded': 'true',
-    '[attr.aria-controls]': 'listboxId()',
+    '[attr.aria-expanded]': 'expanded()',
+    '[attr.aria-controls]': 'expanded() ? listboxId() : null',
     '[attr.aria-activedescendant]': 'activeDescendantId()',
     '(input)': 'handleInput()',
     '(keydown)': 'handleKeydown($event)',
@@ -69,6 +69,10 @@ export class CommandPaletteSearchDirective {
 
   protected listboxId() {
     return this.palette?.listboxId ?? null;
+  }
+
+  protected expanded() {
+    return (this.palette?.groups().length ?? 0) > 0;
   }
 
   protected handleInput() {

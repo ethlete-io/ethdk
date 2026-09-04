@@ -129,6 +129,20 @@ describe('CommandPaletteComponent', () => {
     expect(host.querySelector('.et-command-palette-empty')?.textContent?.trim()).toBe('No matching command');
   });
 
+  it('collapses the combobox while the query matches nothing', () => {
+    const { host, input, type } = create();
+
+    type('zzzz');
+
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+    expect(input.getAttribute('aria-controls')).toBeNull();
+
+    type('');
+
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+    expect(input.getAttribute('aria-controls')).toBe(host.querySelector('[role="listbox"]')?.id);
+  });
+
   it('marks the first result active without anyone choosing it', () => {
     const { activeLabel } = create();
 

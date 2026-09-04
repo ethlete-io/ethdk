@@ -1,9 +1,9 @@
-import { DOCUMENT, DestroyRef, Directive, afterNextRender, inject, input } from '@angular/core';
+import { DOCUMENT, Directive, afterNextRender, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RuntimeError } from '@ethlete/core';
-import { filter, fromEvent, take, tap } from 'rxjs';
+import { filter, fromEvent, tap } from 'rxjs';
 import { KBD_PLATFORM, matchesKbdChord, parseKbdKeys } from '../kbd';
-import { OverlayRef } from '../overlay';
+import { injectOverlayManager } from '../overlay';
 import { CommandPaletteComponent } from './command-palette.component';
 import { COMMAND_PALETTE_ERROR_CODES } from './command-palette-errors';
 import { injectCommandPalette } from './command-palette.overlay';
@@ -42,9 +42,9 @@ const DEFAULT_SHORTCUT = 'mod+k';
 })
 export class CommandPaletteShortcutDirective {
   private document = inject(DOCUMENT);
-  private destroyRef = inject(DestroyRef);
   private platform = inject(KBD_PLATFORM);
   private palette = injectCommandPalette();
+  private overlayManager = injectOverlayManager();
 
   /** The chord, in `et-kbd` syntax. */
   public shortcut = input(DEFAULT_SHORTCUT, {
@@ -53,8 +53,6 @@ export class CommandPaletteShortcutDirective {
     // this the documented no-value form would listen for a chord that can never fire.
     transform: (value: string) => value?.trim() || DEFAULT_SHORTCUT,
   });
-
-  private openRef: OverlayRef<CommandPaletteComponent> | null = null;
 
   constructor() {
     if (ngDevMode) {
@@ -84,23 +82,16 @@ export class CommandPaletteShortcutDirective {
   }
 
   public toggle() {
-    if (this.openRef) {
-      this.openRef.close();
+    const openPalette = this.overlayManager
+      .openOverlays()
+      .find((overlayRef) => overlayRef.componentInstance() instanceof CommandPaletteComponent);
+
+    if (openPalette) {
+      openPalette.close();
 
       return;
     }
 
-    const ref = this.palette.open();
-
-    this.openRef = ref;
-
-    ref
-      .afterClosed()
-      .pipe(
-        take(1),
-        tap(() => (this.openRef = null)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
+    this.palette.open();
   }
 }
