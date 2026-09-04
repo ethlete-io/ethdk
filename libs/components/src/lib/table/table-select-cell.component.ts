@@ -14,7 +14,7 @@ import { TableSelectionDirective } from './table-selection.directive';
     <et-checkbox
       [checked]="selection.isAllSelected()"
       [indeterminate]="selection.isPartiallySelected()"
-      [attr.aria-label]="selection.selectAllLabel()"
+      [aria-label]="selection.selectAllLabel()"
       (checkedChange)="selection.toggleAll()"
     />
   `,
@@ -38,7 +38,7 @@ export class TableSelectAllCellComponent {
     @if (selection.canSelect(row())) {
       <et-checkbox
         [checked]="selection.isSelected(row())"
-        [attr.aria-label]="selection.rowLabel()"
+        [aria-label]="selection.rowLabel()"
         (checkedChange)="selection.setSelected(row(), $event)"
       />
     }

@@ -201,6 +201,19 @@ describe('CalendarDirective', () => {
     expect(focusedCell(fixture)?.textContent?.trim()).toBe('20');
   });
 
+  it('moves DOM focus along with the roving tabindex', () => {
+    cell(fixture, 16)?.focus();
+    calendar.focusedDate.set(new Date(2026, 6, 16));
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(cell(fixture, 16));
+
+    press(fixture, 'ArrowRight');
+
+    expect(focusedCell(fixture)?.textContent?.trim()).toBe('17');
+    expect(document.activeElement).toBe(cell(fixture, 17));
+  });
+
   it('ignores keys that bubble out of a form field inside the grid', () => {
     calendar.focusedDate.set(new Date(2026, 6, 16));
     fixture.detectChanges();

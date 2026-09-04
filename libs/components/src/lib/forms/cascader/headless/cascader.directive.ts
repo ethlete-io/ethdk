@@ -29,7 +29,7 @@ import {
   FORM_FIELD_CONTROL_TYPES,
   FORM_FIELD_TOKEN,
   FormFieldControl,
-  isInteractiveElement,
+  hitsInteractiveElement,
 } from '../../form-field/headless';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
 import { CascaderColumnState, CascaderSearchState } from './cascader.tokens';
@@ -1408,10 +1408,8 @@ export class CascaderDirective<T = unknown>
       return;
     }
 
-    for (let element: HTMLElement | null = target; element && element !== frame; element = element.parentElement) {
-      if (isInteractiveElement(element)) {
-        return;
-      }
+    if (hitsInteractiveElement(target, frame)) {
+      return;
     }
 
     this.activate();

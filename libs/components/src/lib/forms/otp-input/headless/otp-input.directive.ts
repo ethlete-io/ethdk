@@ -108,9 +108,9 @@ export class OtpInputDirective
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
 
-    // the segments and the native `maxlength` follow `length`/`charset`, an already committed
-    // value does not - so re-sanitize it here, and emit `complete` from the value rather than
-    // from the `input` handler, which never sees a programmatic write
+    // the segments follow `length`/`charset`, an already committed value does not - so
+    // re-sanitize it here, and emit `complete` from the value rather than from the `input`
+    // handler, which never sees a programmatic write
     effect(() => {
       const sanitized = this.sanitize(this.value());
       const isComplete = sanitized.length === this.length();

@@ -9,3 +9,17 @@ export const INTERACTIVE_TAGS = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'];
  */
 export const isInteractiveElement = (element: HTMLElement) =>
   INTERACTIVE_TAGS.includes(element.tagName) || element.isContentEditable;
+
+/**
+ * Whether a pointer event on `target` belongs to an interactive element between it and `frame` -
+ * the element itself or an ancestor, such as an icon inside a suffix button.
+ */
+export const hitsInteractiveElement = (target: HTMLElement, frame: HTMLElement) => {
+  for (let element: HTMLElement | null = target; element && element !== frame; element = element.parentElement) {
+    if (isInteractiveElement(element)) {
+      return true;
+    }
+  }
+
+  return false;
+};

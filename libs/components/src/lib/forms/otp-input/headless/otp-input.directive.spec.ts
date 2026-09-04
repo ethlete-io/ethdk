@@ -39,7 +39,6 @@ describe('OtpInputDirective', () => {
     expect(driver.segmentCount()).toBe(4);
     expect(driver.attr('autocomplete')).toBe('one-time-code');
     expect(driver.attr('inputmode')).toBe('numeric');
-    expect(driver.attr('maxlength')).toBe('4');
   });
 
   it('builds the value from typed characters and fills the segments', () => {
@@ -54,6 +53,16 @@ describe('OtpInputDirective', () => {
 
     expect(driver.host.value()).toBe('1234');
     expect(driver.fieldValue()).toBe('1234');
+  });
+
+  it('keeps every digit from a paste with separators, even at exactly the configured length', () => {
+    driver.host.length.set(6);
+    driver.tick();
+
+    driver.type('123-456');
+
+    expect(driver.host.value()).toBe('123456');
+    expect(driver.host.completions).toEqual(['123456']);
   });
 
   it('truncates to the configured length', () => {

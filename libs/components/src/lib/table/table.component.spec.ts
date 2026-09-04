@@ -1283,6 +1283,18 @@ describe('TableComponent', () => {
       expect(fixture.componentInstance.clicked).toBeNull();
     });
 
+    it('gives the selection checkboxes an accessible name from the table label set', () => {
+      const fixture = build();
+      const host = hostOf(fixture);
+      const rowCheckbox = host.querySelector('.et-table-row .et-table-select-cell et-checkbox') as HTMLElement;
+      const selectAllCheckbox = host.querySelector(
+        '.et-table-header-row .et-table-select-cell et-checkbox',
+      ) as HTMLElement;
+
+      expect(rowCheckbox.getAttribute('aria-label')).toBe(DEFAULT_TABLE_LABELS.selectRow);
+      expect(selectAllCheckbox.getAttribute('aria-label')).toBe(DEFAULT_TABLE_LABELS.selectAllRows);
+    });
+
     it('ignores clicks on an in-cell button', () => {
       const fixture = build();
       const host = hostOf(fixture);

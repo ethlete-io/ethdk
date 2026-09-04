@@ -40,7 +40,7 @@ import {
 import {
   FormFieldDirective,
   injectFormSupport,
-  isInteractiveElement,
+  hitsInteractiveElement,
   provideFormSupport,
   wireFormSupport,
 } from './headless';
@@ -212,7 +212,7 @@ export class FormFieldComponent {
       return;
     }
 
-    if (isInteractiveElement(event.target as HTMLElement)) {
+    if (hitsInteractiveElement(event.target as HTMLElement, event.currentTarget as HTMLElement)) {
       return;
     }
 

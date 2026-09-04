@@ -4,6 +4,7 @@ import { provideColorThemes } from '@ethlete/core';
 import '../../../test-helpers';
 import { CheckboxComponent } from '../checkbox';
 import { InputDirective } from '../input/headless';
+import { PASSWORD_INPUT_IMPORTS } from '../input/input.imports';
 import { FormFieldComponent } from './form-field.component';
 import { LabelDirective } from './headless';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
@@ -110,5 +111,49 @@ describe('FormFieldComponent disabled state', () => {
     fixture.detectChanges();
 
     expect(field.hasAttribute('data-disabled')).toBe(true);
+  });
+});
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-label>Password</et-label>
+      <et-password-input />
+    </et-form-field>
+  `,
+  imports: [FormFieldComponent, LabelDirective, PASSWORD_INPUT_IMPORTS],
+})
+class PasswordFormFieldTestHost {}
+
+describe('FormFieldComponent control frame pointerdown', () => {
+  let fixture: ComponentFixture<PasswordFormFieldTestHost>;
+
+  beforeEach(() => {
+    ensureResizeObserverMock();
+
+    TestBed.configureTestingModule({
+      imports: [PasswordFormFieldTestHost],
+      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+    });
+    fixture = TestBed.createComponent(PasswordFormFieldTestHost);
+    fixture.detectChanges();
+  });
+
+  it('activates the field on a plain frame click', () => {
+    const frame = fixture.nativeElement.querySelector('.et-form-field-control-frame') as HTMLElement;
+    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+
+    frame.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('leaves a click on an icon inside the reveal button alone, so the button keeps focus', () => {
+    const icon = fixture.nativeElement.querySelector('.et-password-input-reveal i') as HTMLElement;
+    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+
+    icon.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
   });
 });

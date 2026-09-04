@@ -70,80 +70,83 @@
       <ng-container *ngTemplateOutlet="weeks" />
     }
   </div>
-</div>
 
-<ng-template #weeks>
-  <div
-    [attr.data-nav]="calendar.navigationDirection()"
-    class="et-calendar-weeks"
-    animate.leave="et-calendar-weeks--leave"
-    role="rowgroup"
-  >
-    @switch (calendar.view()) {
-      @case ('year') {
-        @for (row of calendar.monthCells(); track $index) {
-          <div class="et-calendar-coarse-row" role="row">
-            @for (cell of row; track cell.date.getTime()) {
-              <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
-                <span class="et-calendar-cell-content">{{ cell.label }}</span>
-              </button>
-            }
-          </div>
-        }
-      }
-      @case ('multiYear') {
-        @for (row of calendar.yearCells(); track $index) {
-          <div class="et-calendar-coarse-row" role="row">
-            @for (cell of row; track cell.date.getTime()) {
-              <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
-                <span class="et-calendar-cell-content">{{ cell.label }}</span>
-              </button>
-            }
-          </div>
-        }
-      }
-      @default {
-        <div class="et-calendar-months" role="presentation">
-          @for (page of calendar.monthPages(); track page.key) {
-            <div class="et-calendar-month" role="presentation">
-              @if (calendar.monthsShown() > 1) {
-                <!-- the span's own header cannot name each month, so each column says which it is -->
-                <div class="et-calendar-month-label">{{ page.label }}</div>
-
-                <ng-container *ngTemplateOutlet="weekdayRow" />
-              }
-
-              @for (week of page.weeks; track $index) {
-                <div class="et-calendar-week" role="row">
-                  @if (weekNumbers()) {
-                    <span
-                      [attr.aria-label]="weekLabel() + ' ' + page.weekNumbers[$index]"
-                      class="et-calendar-week-number"
-                      role="rowheader"
-                      >{{ page.weekNumbers[$index] }}</span
-                    >
-                  }
-
-                  @for (cell of week; track cell.date.getTime()) {
-                    @if (cell.outsideMonth && calendar.monthsShown() > 1) {
-                      <!-- the neighbouring month renders this day itself: two cells for one date would
-                           be two ways to pick it, and two claims on the roving focus -->
-                      <span class="et-calendar-cell et-calendar-cell--empty" aria-hidden="true"></span>
-                    } @else {
-                      <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
-                        <span class="et-calendar-cell-content">{{ cell.label }}</span>
-                      </button>
-                    }
-                  }
-                </div>
+  <!-- Declared inside the grid, not just outlet here: an [etCalendarCell]'s injected
+       CalendarGridDirective resolves through this template's declaration view, which
+       ngTemplateOutlet does not re-parent to wherever it renders. -->
+  <ng-template #weeks>
+    <div
+      [attr.data-nav]="calendar.navigationDirection()"
+      class="et-calendar-weeks"
+      animate.leave="et-calendar-weeks--leave"
+      role="rowgroup"
+    >
+      @switch (calendar.view()) {
+        @case ('year') {
+          @for (row of calendar.monthCells(); track $index) {
+            <div class="et-calendar-coarse-row" role="row">
+              @for (cell of row; track cell.date.getTime()) {
+                <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
+                  <span class="et-calendar-cell-content">{{ cell.label }}</span>
+                </button>
               }
             </div>
           }
-        </div>
+        }
+        @case ('multiYear') {
+          @for (row of calendar.yearCells(); track $index) {
+            <div class="et-calendar-coarse-row" role="row">
+              @for (cell of row; track cell.date.getTime()) {
+                <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
+                  <span class="et-calendar-cell-content">{{ cell.label }}</span>
+                </button>
+              }
+            </div>
+          }
+        }
+        @default {
+          <div class="et-calendar-months" role="presentation">
+            @for (page of calendar.monthPages(); track page.key) {
+              <div class="et-calendar-month" role="presentation">
+                @if (calendar.monthsShown() > 1) {
+                  <!-- the span's own header cannot name each month, so each column says which it is -->
+                  <div class="et-calendar-month-label">{{ page.label }}</div>
+
+                  <ng-container *ngTemplateOutlet="weekdayRow" />
+                }
+
+                @for (week of page.weeks; track $index) {
+                  <div class="et-calendar-week" role="row">
+                    @if (weekNumbers()) {
+                      <span
+                        [attr.aria-label]="weekLabel() + ' ' + page.weekNumbers[$index]"
+                        class="et-calendar-week-number"
+                        role="rowheader"
+                        >{{ page.weekNumbers[$index] }}</span
+                      >
+                    }
+
+                    @for (cell of week; track cell.date.getTime()) {
+                      @if (cell.outsideMonth && calendar.monthsShown() > 1) {
+                        <!-- the neighbouring month renders this day itself: two cells for one date would
+                             be two ways to pick it, and two claims on the roving focus -->
+                        <span class="et-calendar-cell et-calendar-cell--empty" aria-hidden="true"></span>
+                      } @else {
+                        <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
+                          <span class="et-calendar-cell-content">{{ cell.label }}</span>
+                        </button>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
       }
-    }
-  </div>
-</ng-template>
+    </div>
+  </ng-template>
+</div>
 
 <ng-template #headerValue>
   <span

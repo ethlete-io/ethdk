@@ -121,6 +121,24 @@ describe('CalendarComponent', () => {
     expect(document.querySelectorAll('et-calendar-week-numbers-styles')).toHaveLength(1);
   });
 
+  it('moves DOM focus along with the roving tabindex through the real template', () => {
+    const grid = query(fixture, '[role="grid"]')!;
+    const initial = query<HTMLElement>(fixture, '[etcalendarcell][tabindex="0"]')!;
+
+    initial.focus();
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(initial);
+
+    grid.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+
+    const next = query<HTMLElement>(fixture, '[etcalendarcell][tabindex="0"]')!;
+
+    expect(next).not.toBe(initial);
+    expect(document.activeElement).toBe(next);
+  });
+
   it('exposes the headless directive for chrome of the consumer’s own', () => {
     const calendar = fixture.debugElement.children[0]!.componentInstance as CalendarComponent;
 

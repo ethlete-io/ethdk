@@ -40,7 +40,7 @@ import {
   FORM_FIELD_CONTROL_TYPES,
   FORM_FIELD_TOKEN,
   FormFieldControl,
-  isInteractiveElement,
+  hitsInteractiveElement,
 } from '../../form-field/headless';
 import { createSelectionState } from '../../selection-list/headless/internals/selection-state';
 import { SELECT_ERROR_CODES } from '../select-errors';
@@ -1320,10 +1320,8 @@ export class SelectDirective
       return;
     }
 
-    for (let element: HTMLElement | null = target; element && element !== frame; element = element.parentElement) {
-      if (isInteractiveElement(element)) {
-        return;
-      }
+    if (hitsInteractiveElement(target, frame)) {
+      return;
     }
 
     const search = this.registeredSearch();
