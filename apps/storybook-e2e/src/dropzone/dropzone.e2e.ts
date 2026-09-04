@@ -118,7 +118,7 @@ test.describe('dropzone / keyboard', () => {
   test('a readonly dropzone with entries offers no add or remove control', async ({ page }) => {
     const root = await openStory(page, READONLY_ID);
 
-    await expect(root.locator(TRIGGER)).not.toBeVisible();
+    await expect(root.locator(TRIGGER)).toBeHidden();
     await expect(root.locator('.et-dropzone-remove-button')).toHaveCount(0);
     await expect(root.locator('.et-dropzone-item')).toHaveCount(2);
   });
