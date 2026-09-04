@@ -74,9 +74,9 @@ export class V2Query<
 
   /**
    * @internal
-   * Used to track which components depend on this query.
-   * The key is the component's _tNode index.
-   * The value is the number of times the component has subscribed to this query.
+   * Used to track which query containers depend on this query.
+   * The key identifies the injector owning the container.
+   * The value is the number of times that injector has subscribed to this query.
    * The value might increase since we cant distinguish between a component and a host directive applied to it.
    */
   readonly _dependents: Record<number, number> = {};

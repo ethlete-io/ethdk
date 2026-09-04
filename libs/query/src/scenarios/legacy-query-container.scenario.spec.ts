@@ -1,0 +1,217 @@
+import { Injector, signal } from '@angular/core';
+import { Subject } from 'rxjs';
+import { describe, expect, it } from 'vitest';
+import { AnyV2Query, def, queryComputed, QueryStateType, V2QueryClient, V2QueryClientConfig } from '../index';
+import { Scenario, useScenario } from './harness';
+
+const BASE_URL = 'https://api.test';
+
+type User = { id: string; name: string };
+
+type LegacyClientConfig = Omit<V2QueryClientConfig, 'baseRoute'>;
+type TrackFn = <T extends AnyV2Query>(query: T) => T;
+
+const withLegacyClient = (
+  s: Scenario,
+  config: LegacyClientConfig,
+  body: (client: V2QueryClient, track: TrackFn) => void,
+) => {
+  const owner = s.consumer();
+  const client = owner.run(() => new V2QueryClient({ baseRoute: BASE_URL, ...config }));
+  const tracked: AnyV2Query[] = [];
+
+  try {
+    body(client, (query) => {
+      tracked.push(query);
+
+      return query;
+    });
+  } finally {
+    for (const query of tracked) {
+      query.stopPolling();
+      query.abort();
+    }
+
+    client._store.forEach((query, key) => {
+      query.stopPolling();
+      query.abort();
+      client._store.remove(key);
+    });
+
+    client.clearAuthProvider();
+    owner.destroy();
+  }
+};
+
+const createGetUser = (client: V2QueryClient) =>
+  client.get({
+    route: (p) => `/users/${p.id}`,
+    types: {
+      args: def<{ pathParams: { id: string } }>(),
+      response: def<User>(),
+    },
+  });
+
+const holdQuery = (injector: Injector, source: () => AnyV2Query | null) => queryComputed(source, { injector });
+
+describe('legacy query container scenario', () => {
+  const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
+
+  it('aborts the in-flight request when its only container is destroyed', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
+
+    withLegacyClient(s, {}, (client, track) => {
+      const query = track(
+        createGetUser(client)
+          .prepare({ pathParams: { id: '1' } })
+          .execute(),
+      );
+
+      const consumer = s.consumer();
+      holdQuery(consumer.injector, () => query);
+      s.tick(100);
+
+      expect(s.api.pending()).toHaveLength(1);
+
+      consumer.destroy();
+      s.tick();
+
+      expect(s.api.requests[0]?.aborted).toBe(true);
+      expect(query.rawState.type).toBe(QueryStateType.Cancelled);
+    });
+  });
+
+  it('aborts the shared query only once both containers let go', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
+
+    withLegacyClient(s, {}, (client, track) => {
+      const query = track(
+        createGetUser(client)
+          .prepare({ pathParams: { id: '1' } })
+          .execute(),
+      );
+
+      const first = s.consumer();
+      const second = s.consumer();
+      holdQuery(first.injector, () => query);
+      holdQuery(second.injector, () => query);
+      s.tick(100);
+
+      first.destroy();
+      s.tick();
+
+      expect(s.api.requests[0]?.aborted).toBe(false);
+      expect(query.rawState.type).toBe(QueryStateType.Loading);
+
+      second.destroy();
+      s.tick();
+
+      expect(s.api.requests[0]?.aborted).toBe(true);
+      expect(query.rawState.type).toBe(QueryStateType.Cancelled);
+    });
+  });
+
+  it('keeps the shared query in flight when a container is destroyed before its first emission', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
+
+    withLegacyClient(s, {}, (client, track) => {
+      const query = track(
+        createGetUser(client)
+          .prepare({ pathParams: { id: '1' } })
+          .execute(),
+      );
+
+      const holder = s.consumer();
+      holdQuery(holder.injector, () => query);
+      s.tick(100);
+
+      const shortLived = s.consumer();
+      holdQuery(shortLived.injector, () => query);
+      shortLived.destroy();
+      s.tick();
+
+      expect(s.api.requests[0]?.aborted).toBe(false);
+      expect(query.rawState.type).toBe(QueryStateType.Loading);
+
+      s.tick(1_000);
+
+      expect(query.rawState.type).toBe(QueryStateType.Success);
+
+      holder.destroy();
+    });
+  });
+
+  it('stops polling the previous query when its only container switches away', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+    withLegacyClient(s, {}, (client, track) => {
+      const getUser = createGetUser(client);
+      const polled = track(getUser.prepare({ pathParams: { id: '1' } }).execute());
+      const next = track(getUser.prepare({ pathParams: { id: '2' } }));
+      const selected = signal<AnyV2Query | null>(polled);
+
+      const consumer = s.consumer();
+      holdQuery(consumer.injector, () => selected());
+      s.tick();
+
+      const stopPolling$ = new Subject<void>();
+      polled.poll({ interval: 1_000, takeUntil: stopPolling$ });
+      s.tick(2_000);
+
+      expect(polled.isPolling).toBe(true);
+
+      const polledCount = s.api.requestCount('GET', '/users/1');
+
+      selected.set(next);
+      s.tick(5_000);
+
+      expect(polled.isPolling).toBe(false);
+      expect(s.api.requestCount('GET', '/users/1')).toBe(polledCount);
+
+      consumer.destroy();
+    });
+  });
+
+  it('keeps polling the shared query when only one of two containers switches away', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+    withLegacyClient(s, {}, (client, track) => {
+      const getUser = createGetUser(client);
+      const polled = track(getUser.prepare({ pathParams: { id: '1' } }).execute());
+      const next = track(getUser.prepare({ pathParams: { id: '2' } }));
+      const switched = signal<AnyV2Query | null>(polled);
+      const kept = signal<AnyV2Query | null>(polled);
+
+      const switching = s.consumer();
+      const keeping = s.consumer();
+      holdQuery(switching.injector, () => switched());
+      holdQuery(keeping.injector, () => kept());
+      s.tick();
+
+      const stopPolling$ = new Subject<void>();
+      polled.poll({ interval: 1_000, takeUntil: stopPolling$ });
+      s.tick(2_000);
+
+      switched.set(next);
+      s.tick(2_000);
+
+      expect(polled.isPolling).toBe(true);
+
+      const polledCount = s.api.requestCount('GET', '/users/1');
+
+      kept.set(next);
+      s.tick(5_000);
+
+      expect(polled.isPolling).toBe(false);
+      expect(s.api.requestCount('GET', '/users/1')).toBe(polledCount);
+
+      switching.destroy();
+      keeping.destroy();
+    });
+  });
+});

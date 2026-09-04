@@ -70,6 +70,22 @@ export type QueryFilterConfig = {
   cacheResponse?: boolean;
 };
 
+let nextQueryContainerOwnerId = 0;
+const queryContainerOwnerIds = /* @__PURE__ */ new WeakMap<Injector, number>();
+
+const queryContainerOwnerId = (injector: Injector) => {
+  const existing = queryContainerOwnerIds.get(injector);
+
+  if (existing !== undefined) {
+    return existing;
+  }
+
+  const id = nextQueryContainerOwnerId++;
+  queryContainerOwnerIds.set(injector, id);
+
+  return id;
+};
+
 /**
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
@@ -87,9 +103,7 @@ export const addQueryContainerHandling = (
   const injector = config?.injector ?? inject(Injector);
   const destroy$ = runInInjectionContext(injector, () => createDestroy());
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tNode = (injector as any)._tNode;
-  const componentId = tNode?.index ?? -1;
+  const componentId = queryContainerOwnerId(injector);
 
   obs
     .pipe(
