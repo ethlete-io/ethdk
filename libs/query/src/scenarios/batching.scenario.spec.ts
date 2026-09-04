@@ -1,6 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { createQueryBatch, QueryBatchItemResult, querySequence, withArgs, withDefaultRetry } from '../index';
-import { ObservedValueOf } from 'rxjs';
+import {
+  createQueryBatch,
+  QueryArgsOf,
+  QueryBatchItemResult,
+  querySequence,
+  withArgs,
+  withDefaultRetry,
+} from '../index';
+import { Observable } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { Scenario, sequence, useScenario } from './harness';
 
@@ -15,9 +22,9 @@ const patchPosts = (s: Scenario) =>
     (p) => `/posts/${p.id}`,
   );
 
-const capture = <T>(source: {
-  subscribe: (observer: { next: (v: T) => void; error: (e: unknown) => void }) => unknown;
-}) => {
+type PatchPostArgs = QueryArgsOf<ReturnType<typeof patchPosts>>;
+
+const capture = <T>(source: Observable<T>) => {
   const holder: { value?: T; error?: unknown } = {};
   source.subscribe({ next: (v) => (holder.value = v), error: (e) => (holder.error = e) });
 
@@ -403,7 +410,7 @@ describe('batching scenario', () => {
 
     const settledBeforeEmit: string[] = [];
     let emitted = false;
-    const onItemSettled = vi.fn((result: QueryBatchItemResult<Post, never>) => {
+    const onItemSettled = vi.fn((result: QueryBatchItemResult<Post, PatchPostArgs>) => {
       settledBeforeEmit.push(`${result.item.id}:${result.status}:${emitted}`);
     });
 
