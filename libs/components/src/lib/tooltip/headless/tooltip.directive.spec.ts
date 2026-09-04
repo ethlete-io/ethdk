@@ -3,6 +3,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { setInputSignal } from '@ethlete/core';
 import '../../../test-helpers';
+import { dialogOverlayStrategy } from '../../overlay/strategies';
+import { pointerEnter, pressKey } from '../../testing/driver-core';
+import { fakeLayout } from '../../testing/fake-layout';
+import { createOverlayDriver } from '../../testing/overlay-driver';
 import { TooltipContent, TooltipDirective } from './tooltip.directive';
 
 @Component({
@@ -122,5 +126,78 @@ describe('TooltipDirective', () => {
     fixture.detectChanges();
 
     expect(() => tooltipDirective.show()).toThrow(/Template tooltips require etTooltipAriaDescription/);
+  });
+});
+
+@Component({
+  template: `<button [etTooltip]="'Dialog tip'" [showDelay]="0" class="dialog-trigger" type="button">Inside</button>`,
+  imports: [TooltipDirective],
+})
+class TooltipInsideDialogComponent {}
+
+describe('TooltipDirective inside a modal overlay', () => {
+  let driver: ReturnType<typeof createOverlayDriver>;
+
+  const tooltipCount = () => document.querySelectorAll('[role="tooltip"]').length;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    // floating-ui reads the trigger as clipped out of a zero-sized viewport otherwise, and
+    // `autoCloseIfReferenceHidden` then closes the tooltip on its first positioning frame
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: '.dialog-trigger', rect: { x: 100, y: 100, width: 80, height: 32 } },
+    ]);
+    driver = createOverlayDriver();
+  });
+
+  afterEach(() => {
+    driver.closeAll();
+  });
+
+  const openDialogWithHoveredTooltip = async () => {
+    const dialogRef = await driver.open(TooltipInsideDialogComponent, { strategies: dialogOverlayStrategy() });
+    let closedVia: string | null = null;
+
+    dialogRef.afterClosedEvent().subscribe((event) => (closedVia = event.source));
+
+    const trigger = driver.paneEl<HTMLButtonElement>('.dialog-trigger');
+
+    if (!trigger) throw new Error('the dialog did not render its tooltip trigger');
+
+    pointerEnter(trigger);
+    await new Promise<void>((resolve) => setTimeout(resolve));
+    driver.tick();
+    await driver.settle();
+
+    expect(tooltipCount()).toBe(1);
+
+    return { closedVia: () => closedVia };
+  };
+
+  it('Escape dismisses a hover-shown tooltip and leaves the dialog beneath it open', async () => {
+    const { closedVia } = await openDialogWithHoveredTooltip();
+
+    pressKey(document, 'Escape');
+    await driver.settle();
+
+    expect(tooltipCount()).toBe(0);
+    expect(closedVia()).toBeNull();
+
+    pressKey(document, 'Escape');
+    await driver.settle();
+    await driver.settle();
+
+    expect(closedVia()).toBe('escape');
+  });
+
+  // the runtime's `isTopMost` (libs/core overlay-runtime.ts) counts the passive tooltip as the top layer, so the
+  // dialog's capture-phase pointerdown listener ignores the press - the fix belongs in @ethlete/core
+  it.fails('a backdrop press closes the dialog while a tooltip is shown inside it', async () => {
+    const { closedVia } = await openDialogWithHoveredTooltip();
+
+    await driver.clickBackdrop();
+
+    expect(closedVia()).toBe('outside-pointer');
   });
 });

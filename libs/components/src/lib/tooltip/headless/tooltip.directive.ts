@@ -38,9 +38,6 @@ const DEFAULT_TOOLTIP_DELAY = 300;
 @Directive({
   selector: '[etTooltip]',
   exportAs: 'etTooltip',
-  host: {
-    '(keydown.escape)': 'hide()',
-  },
 })
 export class TooltipDirective {
   private document = inject(DOCUMENT);
@@ -184,6 +181,7 @@ export class TooltipDirective {
     this.overlayRef.set(overlayRef);
     this.syncHostDescription(tooltipId);
     this.dismissOnOutsidePointer(overlayRef);
+    this.dismissOnEscape(overlayRef);
 
     overlayRef
       .afterClosed()
@@ -262,6 +260,25 @@ export class TooltipDirective {
           this.hasFocus.set(false);
           this.hide();
         }),
+      )
+      .subscribe();
+  }
+
+  /**
+   * Escape is consumed here rather than left to the runtime: a shown tooltip counts as the topmost
+   * overlay, so a dialog beneath it would otherwise ignore the key - and a hover-shown tooltip has no
+   * focused host for a host listener to catch it on.
+   */
+  private dismissOnEscape(overlayRef: OverlayRef<TooltipComponent, unknown>) {
+    fromEvent<KeyboardEvent>(this.document, 'keydown', { capture: true })
+      .pipe(
+        takeUntil(overlayRef.afterClosed()),
+        filter((event) => event.key === 'Escape' && !event.defaultPrevented),
+        tap((event) => {
+          event.preventDefault();
+          this.hide();
+        }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }
