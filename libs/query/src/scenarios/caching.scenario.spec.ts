@@ -1,7 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
-import { DestroyRef, signal } from '@angular/core';
+import { DestroyRef, PLATFORM_ID, signal } from '@angular/core';
 import { MAX_UNUSED_ENTRIES, withArgs, withResponseUpdate } from '../index';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { sequence } from './harness/fake-api';
 import { useScenario } from './harness';
 
@@ -396,6 +396,98 @@ describe('caching scenario', () => {
       expect(query.response()).toEqual({ v: 2 });
 
       c.destroy();
+    });
+  });
+  describe('server platform', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 60_000 },
+      providers: [{ provide: PLATFORM_ID, useValue: 'server' }],
+    });
+
+    it('releases an entry as soon as its last consumer unbinds, without arming an eviction timer', () => {
+      const s = scenario();
+      s.api.on('GET', '/ssr-report', () => ({ body: { rows: [1, 2] } }));
+
+      const getReport = s.get<{ response: { rows: number[] } }>('/ssr-report');
+
+      const c = s.consumer();
+      const query = c.run(() => getReport());
+      s.tick();
+      expect(query.response()).toEqual({ rows: [1, 2] });
+
+      c.destroy();
+
+      expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
+
+      s.tick(1);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('aborts a request that is still in flight when its consumer unbinds', () => {
+      const s = scenario();
+      s.api.on('GET', '/ssr-slow', () => ({ body: { ok: true }, delay: 500 }));
+
+      const getSlow = s.get<{ response: { ok: boolean } }>('/ssr-slow');
+
+      const c = s.consumer();
+      c.run(() => getSlow());
+
+      expect(s.api.pending()).toHaveLength(1);
+
+      c.destroy();
+
+      expect(s.api.requests[0]?.aborted).toBe(true);
+      expect(s.api.pending()).toHaveLength(0);
+      expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
+    });
+
+    it('re-requests on a rebind because nothing was retained to render', () => {
+      const s = scenario();
+      s.api.on('GET', '/ssr-data', sequence([{ body: { n: 1 } }, { body: { n: 2 } }]));
+
+      const getData = s.get<{ response: { n: number } }>('/ssr-data');
+
+      const a = s.consumer();
+      const qa = a.run(() => getData());
+      s.tick();
+      expect(qa.response()).toEqual({ n: 1 });
+
+      a.destroy();
+
+      const b = s.consumer();
+      const qb = b.run(() => getData());
+
+      expect(qb.response()).toBeNull();
+
+      s.tick();
+      expect(s.api.requestCount('GET', '/ssr-data')).toBe(2);
+      expect(qb.response()).toEqual({ n: 2 });
+
+      b.destroy();
+    });
+  });
+
+  describe('browser platform contrast', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 60_000 } });
+
+    it('keeps the entry for the retention window instead of releasing it at once', () => {
+      const s = scenario();
+      s.api.on('GET', '/ssr-report', () => ({ body: { rows: [1, 2] } }));
+
+      const getReport = s.get<{ response: { rows: number[] } }>('/ssr-report');
+
+      const c = s.consumer();
+      c.run(() => getReport());
+      s.tick();
+
+      c.destroy();
+
+      expect(s.client.repository.subtle.cacheEntries()).toEqual([
+        expect.objectContaining({ isUnused: true, consumerCount: 0 }),
+      ]);
+
+      s.tick(60_001);
+      expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
     });
   });
 });
