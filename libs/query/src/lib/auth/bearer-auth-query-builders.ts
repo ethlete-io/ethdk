@@ -352,7 +352,12 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       // Any token-issuing execution, not just another refresh: a login already in flight is about to
       // issue a token pair of its own, and the refresh token this would spend belongs to the session
       // that login is replacing.
-      if (context.hasTokenIssuingExecutionInFlight()) return 'busy';
+      if (context.hasTokenIssuingExecutionInFlight()) {
+        // A follower left in silence takes the refresh over with the token the in-flight pair replaces.
+        context.refreshCoordination?.announceStart();
+
+        return 'busy';
+      }
 
       const now = Date.now();
 

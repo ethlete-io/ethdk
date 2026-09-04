@@ -436,6 +436,59 @@ describe('auth multi-tab leadership scenario', () => {
     b.destroy();
   });
 
+  it("a follower's delegated refresh waits out the leader's in-flight login instead of taking it over", async () => {
+    const s = scenario();
+    s.api.once('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/login', () => ({ ...issueTokens(15 * 60 * 1000)(), delay: 12_000 }));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+    s.api.protect('/secure/**');
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+    const tokenAtLogin = b.auth.accessToken();
+
+    a.auth.queries.login.execute({ body: {} });
+    s.tick();
+    await sync(s);
+
+    const queryB = b.consumer().run(() => b.getSecure<Profile>('/secure/profile')());
+    s.tick();
+    await sync(s);
+
+    expect(refreshRequestedMessages()).toHaveLength(1);
+
+    s.tick(3000);
+    await sync(s);
+    s.tick(3000);
+    await sync(s);
+    s.tick(3000);
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+    expect(b.auth.accessToken()).toBe(tokenAtLogin);
+
+    s.tick(3000);
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+    expect(s.api.requestCount('POST', '/auth/login')).toBe(2);
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+    expect(b.auth.accessToken()).not.toBe(tokenAtLogin);
+    expect(queryB.response()).toEqual({ id: 'me' });
+
+    s.expectError(is401);
+    a.destroy();
+    b.destroy();
+  });
+
   it('a tab that becomes visible claims the leadership, and the hidden leader gives way', async () => {
     const s = scenario();
     s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
