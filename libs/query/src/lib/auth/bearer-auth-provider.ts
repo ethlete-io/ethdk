@@ -551,6 +551,7 @@ type BearerQueryRegistryContext = {
 };
 
 /** An execution in progress. `id` is `null` for the ones that cannot issue tokens (a revocation). */
+/** `id` is `null` for an execution that issues no tokens (a revocation): its success applies nothing. */
 type CurrentExecution = { id: number | null; type: string; snapshot: QuerySnapshot<QueryArgs> };
 
 const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
@@ -586,15 +587,17 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       if (!execution) return;
 
       const { type, snapshot } = execution;
-      const response = snapshot.response();
-      const loading = snapshot.loading();
-      const error = snapshot.error();
+      const outcome = snapshot.executionState();
 
-      if (loading || isSuperseded(execution)) return;
+      if (outcome?.type === 'loading' || isSuperseded(execution)) return;
 
-      if (error) {
-        executionState.set({ type, state: 'error', error });
-      } else if (response) {
+      if (outcome?.type === 'failure') {
+        executionState.set({ type, state: 'error', error: outcome.error });
+      } else if (outcome?.type === 'success' && execution.id === null) {
+        executionState.set({ type, state: 'success', response: outcome.response });
+      } else if (outcome?.type === 'success') {
+        const response = outcome.response;
+
         try {
           const tokens = extractTokens(response);
           applyTokens(tokens.accessToken, tokens.refreshToken);

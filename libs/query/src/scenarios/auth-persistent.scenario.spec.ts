@@ -11,7 +11,7 @@ import {
   withPersistentAuth,
   withRefreshQuery,
 } from '../index';
-import { mintToken, Scenario, useScenario } from './harness';
+import { mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';
 const PROVIDER_NAME = 'auth-persistent-scenario';
@@ -91,7 +91,7 @@ const login = async (s: Scenario, tab: Tab) => {
 };
 
 const persistentAuth = (overrides: { excludeRoutes?: string[]; shouldAutoLogin?: (url: string) => boolean } = {}) =>
-  withPersistentAuth({
+  withPersistentAuth<ScenarioAuthBuilders>({
     autoLogin: {
       queryKey: 'refresh',
       buildArgs: (token: string) => ({ body: { token } }),

@@ -194,12 +194,12 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   };
 
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
-    circularChecker.check();
-
     const execArgsWithDefaults: QueryExecuteArgs<TArgs> = {
       args: executeArgs?.args ?? options.state.args(),
       options: executeArgs?.options,
     };
+
+    circularChecker.check(execArgsWithDefaults.args);
 
     hasExecuted = true;
     lastExecuteArgs = execArgsWithDefaults;

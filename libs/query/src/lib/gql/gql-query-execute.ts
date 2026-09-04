@@ -34,9 +34,9 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
   const reset = () => resetExecuteState({ executeState, executeOptions });
 
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
-    circularChecker.check();
-
     const { args = executeOptions.state.args(), options } = executeArgs ?? {};
+
+    circularChecker.check(args);
 
     const query = transformGql(executeOptions.creatorInternals.query);
     let gqlParams = query(args?.variables);

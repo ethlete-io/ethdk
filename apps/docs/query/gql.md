@@ -64,7 +64,7 @@ GQL args extend the core `QueryArgs` with a `variables` bag:
 | `variables`   | GraphQL variables, passed via `withArgs` / `execute` and JSON-serialized into the request.    |
 | `rawResponse` | Defaults to `{ data: TResponse }`; declare it only when your endpoint returns something else. |
 
-**Response unwrapping:** by default the `{ data }` envelope is stripped automatically - a missing `data` property throws, in every build. Supplying your own `transformResponse` replaces this default:
+**Response unwrapping:** by default the `{ data }` envelope is stripped automatically. A `200` without a `data` property (a GraphQL errors payload) is a `failure`: `error()` carries the `ET600` error with code `0`, in every build - see [a `transformResponse` that throws](/query/errors#a-transformresponse-that-throws). Supplying your own `transformResponse` replaces this default:
 
 ```ts
 const getUserName = gqlQueryPost<GetUserNameQueryArgs>(gqlDocument, {

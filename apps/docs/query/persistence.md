@@ -193,7 +193,8 @@ write as a full disk.
 ## Safety and limits
 
 - **Only successful reads.** Mutations are never persisted, and neither are errors or loading states.
-  A cold start after a failure looks exactly like a cold start.
+  A cold start after a failure looks exactly like a cold start. A GraphQL query sent via `POST` is a
+  read and is persisted like a `GET`; a GraphQL mutation is not.
 - **Only the tab that fetched writes.** A response adopted from another tab over
   [multi-tab sync](/query/multi-tab#response-sharing) is applied silently, so it produces no write -
   tabs sharing one store do not duplicate each other's work.

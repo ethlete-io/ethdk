@@ -331,11 +331,9 @@ describe('the default retry policy (withDefaultRetry)', () => {
 
     c.destroy();
 
-    // `withArgs` isn't in play here, but every `execute()` still arms the self-clearing 100ms
-    // `circularQueryDependencyChecker` timer (query-execute-utils.ts) regardless - the same one
-    // `scenario.destroy()` lets lapse before checking invariants. Do the same here so this assertion
-    // is about the retry timer specifically, not that unrelated one.
-    s.tick(150);
+    // Angular's change detection scheduler arms a zero-delay timer after the last signal write; only
+    // the retry timer is under test here.
+    s.tick(1);
 
     expect(vi.getTimerCount()).toBe(0);
     expect(s.api.pending().length).toBe(0);

@@ -85,7 +85,7 @@ export const applyQueryFeatures = <TArgs extends QueryArgs>(
   features: QueryFeature<TArgs>[],
   context: QueryFeatureContext<TArgs>,
 ) => {
-  const featureTypes = new Set<QueryFeatureType>();
+  const featureTypes = new Set<string>();
 
   for (const feature of features) {
     if (featureTypes.has(feature.type)) {

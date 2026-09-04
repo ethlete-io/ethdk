@@ -6,8 +6,9 @@ import { QueryDevtoolsOverridesRecorder } from '../devtools/query-devtools-overr
 import { QueryDevtoolsStatsRecorder } from '../devtools/query-devtools-stats';
 import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
 import { QueryArgs, RawResponseType, RequestArgs, ResponseType } from './query';
-import { QueryErrorResponse } from './query-error-response';
+import { createQueryErrorResponse, QueryErrorResponse } from './query-error-response';
 import { RunQueryExecuteOptions } from './query-execute-utils';
+import { ShouldRetryRequestFn } from './query-retry-utils';
 
 export type SetupQueryStateOptions<TArgs extends QueryArgs> = {
   transformResponse?: (rawResponse: RawResponseType<TArgs>) => ResponseType<TArgs>;
@@ -131,6 +132,8 @@ export type QueryExecutionStateLoading<TArgs extends QueryArgs> =
 export type QueryExecutionState<TArgs extends QueryArgs> =
   QueryExecutionStateSuccess<TArgs> | QueryExecutionStateFailure<TArgs> | QueryExecutionStateLoading<TArgs>;
 
+const neverRetry: ShouldRetryRequestFn = () => ({ retry: false });
+
 export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStateOptions<TArgs>) => {
   const request = signal<HttpRequest<TArgs> | null>(null);
 
@@ -138,13 +141,23 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
     const raw = request()?.response() ?? null;
     return options.devtoolsOverrides ? (options.devtoolsOverrides.apply(raw) as typeof raw) : raw;
   });
-  const response = computed(() => {
+  const transformed = computed<{ response: ResponseType<TArgs> | null; error: QueryErrorResponse | null }>(() => {
     const raw = rawResponse();
-    if (raw === null) return null;
-    return options.transformResponse ? options.transformResponse(raw) : (raw as ResponseType<TArgs>);
+    if (raw === null) return { response: null, error: null };
+    if (!options.transformResponse) return { response: raw as ResponseType<TArgs>, error: null };
+
+    try {
+      return { response: options.transformResponse(raw), error: null };
+    } catch (transformError) {
+      return {
+        response: null,
+        error: createQueryErrorResponse(transformError, { retryCount: 0, retryFn: neverRetry }),
+      };
+    }
   });
+  const response = computed(() => transformed().response);
   const loading = linkedSignal(() => request()?.loading() ?? null);
-  const error = linkedSignal(() => request()?.error() ?? null);
+  const error = linkedSignal(() => request()?.error() ?? transformed().error);
   const latestHttpEvent = linkedSignal(() => request()?.currentEvent() ?? null);
 
   // `args` is reactively sourced: reads always reflect the latest value from the installed source

@@ -166,6 +166,10 @@ protected form = form(signal({ email: '' }), this.emailSchema);
 - **On the legacy `V2QueryClient`?** Use **`validateWithV2Query`** - same
   signature and behavior, for `V2Query` creators (`hubApiClient.post(...)`).
 
+## A `transformResponse` that throws
+
+The wire response arrived, but the creator's `transformResponse` could not map it. The query does not stay in `loading()` and `response()` does not throw on read: it reports a `failure` whose `error()` carries the thrown value as `raw.error` with code `0`, and `response()` stays at whatever the last good response was. It is never retried - the server did answer - and the next execution that transforms cleanly clears it. Side-effect features (`withErrorHandling`, `withSuccessHandling`, `events$`) see the HTTP response the request received, not the transform failure.
+
 ## Retries
 
 Retrying is opt-in: add `withDefaultRetry()` (or `withEthleteApiErrors()`) to the client's `features`, or bring your own `retryFn`. Without either, a failed request is not retried.
@@ -206,6 +210,8 @@ const getFlakyReport = myApiGet<GetReportArgs>('/report').clone({
 });
 ```
 
+A `retryFn` belongs to the request, and a request is shared by every query with the same [cache key](/query/caching). When two creators for the same URL disagree, the `retryFn` of whichever consumer created the entry first governs it - a consumer binding to the existing entry later cannot change it.
+
 ### A retry nobody is waiting for is dropped
 
 A request retries only while something is bound to it. When the last consumer of a query goes away mid-retry, the cache entry keeps whatever response it already had - so a consumer coming back still renders instantly - but the request itself is cancelled rather than left retrying into an empty room. A returning consumer re-executes as usual.
@@ -216,7 +222,8 @@ Misuse throws dev-mode `RuntimeError`s with numeric codes, grouped by area:
 
 | Range     | Area                                                                                                                                                                                                                      |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0–199     | Query core - e.g. a feature used twice, `withPolling` on a `POST`, a function route without `withArgs`, circular query dependencies.                                                                                      |
+| 0–199     | Query core - e.g. a feature used twice, `withPolling` on a `POST`, a function route without `withArgs`.                                                                                                                   |
+| 800       | A circular query dependency: the same query ran with identical args more than five times in a row, each run less than 100 ms after the last. Fast runs with _different_ args (a search box, a slider) never count.        |
 | 200–299   | [Auth](/query/auth#error-codes) - missing token properties, an auth feature used twice.                                                                                                                                   |
 | 400–499   | [Paged query stacks](/query/stacks#paged-queries) - e.g. fetching past the last page.                                                                                                                                     |
 | 500–599   | [Query stacks](/query/stacks#query-stacks) - e.g. `withArgs` passed as a stack feature.                                                                                                                                   |

@@ -78,7 +78,8 @@ export type QueryFeatureContext<TArgs extends QueryArgs> = {
 export type QueryFeatureFn<TArgs extends QueryArgs> = (context: QueryFeatureContext<TArgs>) => void;
 
 export type QueryFeature<TArgs extends QueryArgs> = {
-  type: QueryFeatureType;
+  /** One of {@link QueryFeatureType} for the built-in features, or any name for a custom one. Used twice on one query, it throws. */
+  type: QueryFeatureType | (string & {});
   fn: (context: QueryFeatureContext<TArgs>) => void;
 
   /** How the feature was configured, for the devtools. Only called while devtools are enabled. */
@@ -86,7 +87,7 @@ export type QueryFeature<TArgs extends QueryArgs> = {
 };
 
 export const createQueryFeature = <TArgs extends QueryArgs>(config: {
-  type: QueryFeatureType;
+  type: QueryFeatureType | (string & {});
   fn: QueryFeatureFn<TArgs>;
   devtools?: QueryDevtoolsFeatureDescriber;
 }) => {

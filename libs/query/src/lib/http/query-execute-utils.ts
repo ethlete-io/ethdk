@@ -1,6 +1,7 @@
-import { signal, WritableSignal } from '@angular/core';
+import { isDevMode, signal, WritableSignal } from '@angular/core';
 import { QueryArgs, RequestArgs } from './query';
-import { circularQueryDependency } from './query-errors';
+import { buildQueryCacheKey } from './query-cache-utils';
+import { circularQueryDependency, queryExecutedAfterDestroyMessage } from './query-errors';
 import { CreateQueryExecuteOptions } from './query-execute';
 
 export type ResetExecuteStateOptions<TArgs extends QueryArgs> = {
@@ -63,6 +64,13 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
 export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptions<TArgs>) => {
   const { executeOptions, args, executeState, isSecure, isRefreshable } = options;
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
+
+  if (deps.destroyRef.destroyed) {
+    if (isDevMode()) console.warn(queryExecutedAfterDestroyMessage(creatorInternals.route));
+
+    return;
+  }
+
   const defaultRunOptions = state.subtle.defaultRunOptions();
   const runQueryOptions =
     defaultRunOptions || options.options ? { ...defaultRunOptions, ...options.options } : undefined;
@@ -90,32 +98,37 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   state.subtle.devtoolsStats?.recordExecution({ didRequest: executed, body: args?.body, url: request.url });
 };
 
+const CIRCULAR_DEPENDENCY_WINDOW_MS = 100;
+const CIRCULAR_DEPENDENCY_MAX_REPEATS = 5;
+
+/**
+ * Throws `ET800` once the same query runs with identical args more than five times in a row, each run
+ * less than 100 ms after the previous one. Executions with different args (a search term typed fast,
+ * a slider bound to `withArgs`) never count against each other.
+ */
 export const circularQueryDependencyChecker = () => {
-  let lastTriggerTs = 0;
-  let illegalWrites = 0;
+  const recent = new Map<string, { lastTs: number; repeats: number }>();
 
-  // Typing this as number will throw an type error during testing since it is of type Timeout in a node env.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let timeout: any = null;
-
-  const check = () => {
+  const check = (args: RequestArgs<QueryArgs> | null | undefined) => {
     const now = Date.now();
+    const signature = buildQueryCacheKey(
+      JSON.stringify([args?.pathParams ?? null, args?.queryParams ?? null]),
+      args ?? undefined,
+    );
 
-    if (now - lastTriggerTs < 100) {
-      illegalWrites++;
-
-      if (illegalWrites > 5) {
-        throw circularQueryDependency();
-      }
+    for (const [key, entry] of recent) {
+      if (now - entry.lastTs >= CIRCULAR_DEPENDENCY_WINDOW_MS) recent.delete(key);
     }
 
-    lastTriggerTs = now;
+    const entry = recent.get(signature);
+    const repeats = entry ? entry.repeats + 1 : 1;
 
-    if (timeout) clearTimeout(timeout);
+    if (repeats > CIRCULAR_DEPENDENCY_MAX_REPEATS) {
+      recent.delete(signature);
+      throw circularQueryDependency();
+    }
 
-    timeout = setTimeout(() => {
-      illegalWrites = 0;
-    }, 100);
+    recent.set(signature, { lastTs: now, repeats });
   };
 
   return {

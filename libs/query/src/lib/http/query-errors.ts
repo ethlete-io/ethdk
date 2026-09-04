@@ -1,5 +1,4 @@
 import { RuntimeError } from '@ethlete/core';
-import { QueryFeatureType } from './query-features';
 
 // codes 0-999
 export const QueryRuntimeErrorCode = {
@@ -65,7 +64,7 @@ export const QueryRuntimeErrorCode = {
 
 export type QueryRuntimeErrorCode = (typeof QueryRuntimeErrorCode)[keyof typeof QueryRuntimeErrorCode];
 
-export const queryFeatureUsedMultipleTimes = (type: QueryFeatureType) => {
+export const queryFeatureUsedMultipleTimes = (type: string) => {
   return new RuntimeError(
     QueryRuntimeErrorCode.QUERY_FEATURE_USED_MULTIPLE_TIMES,
     `The query feature "${type}()" was used multiple times.`,
@@ -238,8 +237,14 @@ export const invalidStateInsideSecureExecuteFactory = () => {
 export const circularQueryDependency = () => {
   return new RuntimeError(
     QueryRuntimeErrorCode.CIRCULAR_QUERY_DEPENDENCY,
-    `Query was executed more than 5 times in less than 100ms. This is usually a sign of a circular dependency.`,
+    `The same query was executed with identical args more than 5 times in a row, less than 100ms apart. This is usually a sign of a circular dependency.`,
   );
+};
+
+export const queryExecutedAfterDestroyMessage = (route: unknown) => {
+  const target = typeof route === 'string' ? `The query for "${route}"` : 'A query with a function route';
+
+  return `${target} was executed after the scope that created it was destroyed. The call was ignored - drop the reference to the query when its component or injector goes away.`;
 };
 
 export const legacyPrepareWithoutInjectionContext = (

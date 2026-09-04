@@ -82,15 +82,15 @@ const getUser = getQuery<GetUserQueryArgs>((p) => `/users/${p.userId}`, {
 
 The second argument of a creator factory (required only when `rawResponse` differs from `response`):
 
-| Option              | Default  | Description                                                                                                                             |
-| ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `transformResponse` | identity | Maps `rawResponse` → `response`.                                                                                                        |
-| `reportProgress`    | `false`  | Emit upload/download progress into `query.loading()`. Not supported with the fetch backend (`withFetch()`) - upload progress needs XHR. |
-| `responseType`      | `'json'` | `'json' \| 'text' \| 'blob' \| 'arraybuffer'`.                                                                                          |
-| `withCredentials`   | `false`  | Send cookies on cross-origin requests.                                                                                                  |
-| `transferCache`     | -        | Angular SSR transfer-cache config.                                                                                                      |
-| `retryFn`           | client's | Per-endpoint retry override.                                                                                                            |
-| `keepUnusedFor`     | client's | Per-endpoint override for how long an unused cache entry is kept - see [Caching](/query/caching#keeping-unused-entries-around).         |
+| Option              | Default  | Description                                                                                                                                           |
+| ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transformResponse` | identity | Maps `rawResponse` → `response`. A throw lands in `error()` as a failure with code `0` - see [Errors](/query/errors#a-transformresponse-that-throws). |
+| `reportProgress`    | `false`  | Emit upload/download progress into `query.loading()`. Not supported with the fetch backend (`withFetch()`) - upload progress needs XHR.               |
+| `responseType`      | `'json'` | `'json' \| 'text' \| 'blob' \| 'arraybuffer'`.                                                                                                        |
+| `withCredentials`   | `false`  | Send cookies on cross-origin requests.                                                                                                                |
+| `transferCache`     | -        | Angular SSR transfer-cache config.                                                                                                                    |
+| `retryFn`           | client's | Per-endpoint retry override.                                                                                                                          |
+| `keepUnusedFor`     | client's | Per-endpoint override for how long an unused cache entry is kept - see [Caching](/query/caching#keeping-unused-entries-around).                       |
 
 ## Secure queries
 

@@ -18,7 +18,7 @@ import {
   withInactivityLogout,
   withRefreshQuery,
 } from '../index';
-import { mintToken, Scenario, useScenario } from './harness';
+import { mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';
 const PROVIDER_NAME = 'auth-multi-tab-leadership-scenario';
@@ -409,7 +409,7 @@ describe('auth multi-tab leadership scenario', () => {
     const auth = s.auth({
       accessTokenExpiresInMs: 20_000,
       refreshStrategy: 1000,
-      features: [withInactivityLogout({ inactivityTimeout: 20_000 })],
+      features: [withInactivityLogout<ScenarioAuthBuilders>({ inactivityTimeout: 20_000 })],
     });
 
     const c = s.consumer();

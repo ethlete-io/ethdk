@@ -147,4 +147,4 @@ Both the `loading` and `failure` variants of `executionState()` report `hasCache
 carry `cachedResponse` when a previous response is still available. This lets a screen keep rendering
 known data while showing that its refresh is in progress or failed.
 
-Queries live in a child injector parented to the component (or `queryConfig.injector`) that created them - when that scope is destroyed, the query is torn down and its cache reference released.
+Queries live in a child injector parented to the component (or `queryConfig.injector`) that created them - when that scope is destroyed, the query is torn down and its cache reference released. Calling `execute()` on a query after that is a no-op: nothing is requested, and in dev mode a `console.warn` names the route so the stale reference can be found.

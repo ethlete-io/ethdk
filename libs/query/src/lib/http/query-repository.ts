@@ -63,6 +63,9 @@ export type QueryRepositoryEvent =
       /** @see BaseQueryCreatorOptions.multiTabSync */
       isMultiTabSyncEnabled: boolean;
 
+      /** @see QueryRepositoryRequestOptions.isRefreshable */
+      isRefreshable: boolean;
+
       /**
        * Whether this response may be written to the client's persisted store. Already accounts for
        * secure requests needing an explicit opt-in.
@@ -774,6 +777,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         const currentEntry = cache.get(key);
         const currentIsSecure = currentEntry?.isSecure ?? isSecure;
         const currentIsMultiTabSyncEnabled = currentEntry?.isMultiTabSyncEnabled ?? isMultiTabSyncEnabled;
+        const currentIsRefreshable = currentEntry?.isRefreshable ?? isRefreshable;
         const currentIsPersistEnabled = currentEntry?.isPersistEnabled ?? isPersistEnabled;
 
         if (event.type === 'error') {
@@ -794,6 +798,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
             request,
             isCached,
             isMultiTabSyncEnabled: currentIsMultiTabSyncEnabled,
+            isRefreshable: currentIsRefreshable,
             isPersistEnabled: currentIsPersistEnabled,
           });
         }

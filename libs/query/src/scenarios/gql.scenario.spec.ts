@@ -171,7 +171,7 @@ describe('gql scenario', () => {
       c.destroy();
     });
 
-    it('a 200 response with no data property (e.g. a GraphQL errors payload) throws on read instead of silently unwrapping', () => {
+    it('a 200 response with no data property (e.g. a GraphQL errors payload) is a failure instead of a silent unwrap', () => {
       const s = scenario();
       s.api.on('POST', '/', () => ({ body: { errors: [{ message: 'boom' }] } }));
 
@@ -181,7 +181,10 @@ describe('gql scenario', () => {
       const query = c.run(() => getUser());
       s.tick();
 
-      expect(() => query.response()).toThrow(/missing the required "data" property/);
+      expect(query.response()).toBeNull();
+      expect(query.error()?.code).toBe(0);
+      expect(String(query.error()?.raw.error)).toMatch(/missing the required "data" property/);
+      expect(query.executionState()).toMatchObject({ type: 'failure', hasCachedResponse: false });
 
       c.destroy();
     });

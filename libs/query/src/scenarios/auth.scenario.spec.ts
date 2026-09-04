@@ -181,6 +181,25 @@ describe('auth scenario', () => {
     c.destroy();
   });
 
+  it('a 2xx login whose body carries no tokens ends in an error instead of staying in the loading state', () => {
+    const s = scenario();
+    const auth = s.auth();
+    s.api.once('POST', '/auth/login', () => ({ status: 200, body: null }));
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    s.tick();
+
+    expect(auth.executionState()).toMatchObject({ type: 'login', state: 'error' });
+    expect(auth.isAuthenticated()).toBe(false);
+    expect(auth.accessToken()).toBeNull();
+    expect(auth.sessionStatus()).toBe('anonymous');
+
+    s.expectError(/Failed to extract tokens from login response/);
+
+    c.destroy();
+  });
+
   it('logout while a refresh is in flight leaves the tokens null when the late response lands', () => {
     const s = scenario();
     const auth = s.auth();

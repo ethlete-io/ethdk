@@ -1,6 +1,8 @@
 import { EffectRef, effect, untracked } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import {
+  defer,
+  distinctUntilChanged,
   filter,
   interval,
   map,
@@ -9,6 +11,7 @@ import {
   ReplaySubject,
   shareReplay,
   skip,
+  startWith,
   Subscription,
   switchMap,
   takeUntil,
@@ -206,7 +209,14 @@ export class LegacyQuery<
       return;
     }
 
-    this.state$ = toObservable(this.newQuery.executionState, { injector: this.newQuery.subtle.injector }).pipe(
+    // `toObservable` first emits from an effect, so a subscriber that attaches and calls `execute()` in the
+    // same turn would otherwise never see the Prepared state `legacy.md` promises. The source is created
+    // here, not inside the `defer`: its effect has to be registered before `storeSyncEffect` and the
+    // `destroyOnResponse` teardown below, or a self-destroying query dies before its Success is published.
+    const executionState$ = toObservable(this.newQuery.executionState, { injector: this.newQuery.subtle.injector });
+
+    this.state$ = defer(() => executionState$.pipe(startWith(untracked(this.newQuery.executionState)))).pipe(
+      distinctUntilChanged(),
       map((execState) => transformExecStateToQueryState(execState)),
       switchMap((s) => this._transformState(s)),
       shareReplay({ bufferSize: 1, refCount: true }),

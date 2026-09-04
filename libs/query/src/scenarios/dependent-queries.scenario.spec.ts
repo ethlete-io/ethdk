@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createDefaultRetryFn, querySequence, withArgs } from '../index';
 import { sequence, useScenario } from './harness';
 
@@ -224,14 +224,14 @@ describe('dependent queries scenario', () => {
   describe('execute() on a destroyed query', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
-    it.fails(
-      'the docs say nothing about execute() after destroy; it currently throws NG0205 (injector already destroyed) instead of a documented error code or a silent no-op',
-      () => {
-        const s = scenario();
-        s.api.on('GET', '/after-destroy', () => ({ body: { ok: true } }));
+    it('execute() after the owning scope is destroyed is a no-op that warns once per call in dev mode', () => {
+      const s = scenario();
+      s.api.on('GET', '/after-destroy', () => ({ body: { ok: true } }));
 
-        const getAfterDestroy = s.get<{ response: { ok: boolean } }>('/after-destroy');
+      const getAfterDestroy = s.get<{ response: { ok: boolean } }>('/after-destroy');
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
+      try {
         const c = s.consumer();
         const query = c.run(() => getAfterDestroy());
         s.tick();
@@ -245,52 +245,57 @@ describe('dependent queries scenario', () => {
 
         expect(s.api.requestCount('GET', '/after-destroy')).toBe(1);
         expect(s.api.pending().length).toBe(0);
-      },
-    );
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(String(warn.mock.calls[0]?.[0])).toContain('/after-destroy');
+      } finally {
+        warn.mockRestore();
+      }
+    });
   });
 
   describe('transformResponse throwing', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
-    it.fails(
-      'a transformResponse that throws is not a documented failure mode - it leaves error() null and throws out of response() itself on read, instead of surfacing a normalized QueryErrorResponse',
-      () => {
-        const s = scenario();
-        s.api.on('GET', '/transform-throws', sequence([{ body: { bad: true } }, { body: { bad: false, value: 42 } }]));
+    it('a transformResponse that throws lands in error() as a failure and the next good response clears it', () => {
+      const s = scenario();
+      s.api.on('GET', '/transform-throws', sequence([{ body: { bad: true } }, { body: { bad: false, value: 42 } }]));
 
-        const getTransformed = s.get<{ response: number; rawResponse: { bad: boolean; value?: number } }>(
-          '/transform-throws',
-          {
-            transformResponse: (raw) => {
-              if (raw.bad) throw new Error('cannot transform this response');
-              return raw.value as number;
-            },
+      const getTransformed = s.get<{ response: number; rawResponse: { bad: boolean; value?: number } }>(
+        '/transform-throws',
+        {
+          transformResponse: (raw) => {
+            if (raw.bad) throw new Error('cannot transform this response');
+            return raw.value as number;
           },
-        );
+        },
+      );
 
-        const c = s.consumer();
-        const query = c.run(() => getTransformed());
-        s.tick();
+      const c = s.consumer();
+      const query = c.run(() => getTransformed());
+      s.tick();
 
-        expect(query.error()?.code).toBeDefined();
-        expect(() => query.response()).not.toThrow();
-        expect(query.response()).toBeNull();
-        expect(query.loading()).toBeNull();
+      expect(query.error()?.code).toBe(0);
+      expect(query.error()?.raw.error).toBeInstanceOf(Error);
+      expect(query.error()?.retryState.retry).toBe(false);
+      expect(() => query.response()).not.toThrow();
+      expect(query.response()).toBeNull();
+      expect(query.loading()).toBeNull();
+      expect(query.executionState()).toMatchObject({ type: 'failure', hasCachedResponse: false });
 
-        query.execute();
-        s.tick();
-        expect(query.response()).toBe(42);
-        expect(query.error()).toBeNull();
+      query.execute();
+      s.tick();
+      expect(query.response()).toBe(42);
+      expect(query.error()).toBeNull();
+      expect(query.executionState()).toMatchObject({ type: 'success', response: 42 });
 
-        c.destroy();
-      },
-    );
+      c.destroy();
+    });
   });
 
   describe('shared-key retryFn', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
-    it('the retryFn of whichever consumer first creates the shared cache entry governs it - a later consumer bound to the same key cannot change it (undocumented)', () => {
+    it('the retryFn of whichever consumer first creates the shared cache entry governs it - a later consumer bound to the same key cannot change it', () => {
       const s = scenario();
       s.api.on('GET', '/shared-flaky', sequence([{ status: 503 }, { body: { ok: true } }]));
 

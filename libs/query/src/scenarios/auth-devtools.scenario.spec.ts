@@ -22,7 +22,7 @@ import {
   withPersistentAuth,
   withRefreshQuery,
 } from '../index';
-import { decodeToken, mintToken, Scenario, useScenario } from './harness';
+import { decodeToken, mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';
 const PROVIDER_NAME = 'auth-devtools-scenario';
@@ -140,7 +140,9 @@ const login = async (s: Scenario, tab: Tab, email = 'a@test') => {
 };
 
 const persistentAuth = () =>
-  withPersistentAuth({ autoLogin: { queryKey: 'refresh', buildArgs: (token: string) => ({ body: { token } }) } });
+  withPersistentAuth<ScenarioAuthBuilders>({
+    autoLogin: { queryKey: 'refresh', buildArgs: (token: string) => ({ body: { token } }) },
+  });
 
 const sync = async (s: Scenario) => {
   await s.settle();

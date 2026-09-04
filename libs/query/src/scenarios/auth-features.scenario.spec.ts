@@ -19,7 +19,7 @@ import {
   withTokenRevocation,
 } from '../index';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mintToken, Scenario, useScenario } from './harness';
+import { mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';
 
@@ -262,7 +262,9 @@ describe('auth features without the devtools', () => {
     expect(isQueryDevtoolsEnabled()).toBe(false);
 
     const persistentAuthFeature = () =>
-      withPersistentAuth({ autoLogin: { queryKey: 'refresh', buildArgs: (token: string) => ({ body: { token } }) } });
+      withPersistentAuth<ScenarioAuthBuilders>({
+        autoLogin: { queryKey: 'refresh', buildArgs: (token: string) => ({ body: { token } }) },
+      });
 
     const seed = s.auth({ features: [persistentAuthFeature()] });
     const c = s.consumer();

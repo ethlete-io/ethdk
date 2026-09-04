@@ -61,10 +61,7 @@ type AnyAuthFeatureBuilder = (
   context: BearerAuthProviderFeatureContext<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any,
-    readonly [
-      AuthQueryBuilder<'login', ScenarioAuthTokenArgs>,
-      TokenRefreshQueryBuilder<'refresh', ScenarioAuthTokenArgs>,
-    ]
+    ScenarioAuthBuilders
   >,
 ) => {
   type: string;
@@ -75,6 +72,15 @@ type ScenarioAuthTokenArgs = {
   body: Record<string, unknown>;
   response: { accessToken: string; refreshToken: string };
 };
+
+/**
+ * The login and refresh builders `auth()` registers. Pass it as the explicit generic of an auth
+ * feature that is built outside of the `features` array, where nothing else supplies it.
+ */
+export type ScenarioAuthBuilders = readonly [
+  AuthQueryBuilder<'login', ScenarioAuthTokenArgs>,
+  TokenRefreshQueryBuilder<'refresh', ScenarioAuthTokenArgs>,
+];
 
 export type ScenarioAuthConfig<
   TFeatures extends readonly AnyAuthFeatureBuilder[] = readonly AnyAuthFeatureBuilder[],
@@ -118,14 +124,7 @@ export type Scenario = {
   allow: (name: InvariantName, reason: string) => void;
   auth: <TFeatures extends readonly AnyAuthFeatureBuilder[] = [], TBearerData = unknown>(
     config?: ScenarioAuthConfig<TFeatures, TBearerData>,
-  ) => BearerAuthProvider<
-    readonly [
-      AuthQueryBuilder<'login', ScenarioAuthTokenArgs>,
-      TokenRefreshQueryBuilder<'refresh', ScenarioAuthTokenArgs>,
-    ],
-    TFeatures,
-    TBearerData
-  > & {
+  ) => BearerAuthProvider<ScenarioAuthBuilders, TFeatures, TBearerData> & {
     /**
      * The provider's own root-provider definition - what `createSecureGetQuery` and friends need as
      * their second argument. `auth()` already resolves and returns the injected instance, which is
@@ -322,10 +321,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
           expiresInPropertyName,
           onRefreshFailure,
         }),
-      ] as [
-        AuthQueryBuilder<'login', ScenarioAuthTokenArgs>,
-        TokenRefreshQueryBuilder<'refresh', ScenarioAuthTokenArgs>,
-      ],
+      ] as unknown as ScenarioAuthBuilders,
       features: (features ?? ([] as const)) as unknown as TFeatures,
       bearerDecryptFn,
     });
@@ -346,9 +342,9 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
     TestBed.resetTestingModule();
     console.error = originalConsoleError;
 
-    // Lets the self-clearing 100ms guard timer of `circularQueryDependencyChecker`
-    // (query-execute-utils.ts) lapse, so the timer invariant reports real leaks only.
-    vi.advanceTimersByTime(150);
+    // Angular's change detection scheduler arms a zero-delay timer after the last signal write. Let it
+    // fire, so the timer invariant reports real leaks only.
+    vi.advanceTimersByTime(1);
 
     checkInvariants({ api, client, errors, allowed });
   };

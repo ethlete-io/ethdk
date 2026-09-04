@@ -60,9 +60,7 @@ describe('http lifecycle scenario', () => {
     b.destroy();
   });
 
-  // The ET800 guard counts executions per 100 ms of wall-clock time, so six legitimate args changes in
-  // that window (a slider bound to `withArgs`) throw as if the query depended on itself.
-  it.fails('rapid legitimate args changes re-execute without tripping the circular-dependency guard', () => {
+  it('rapid legitimate args changes re-execute without tripping the circular-dependency guard', () => {
     const s = scenario();
     s.api.on('GET', '/search', ({ query }) => ({ body: { q: query['q'] } }));
 
@@ -80,6 +78,26 @@ describe('http lifecycle scenario', () => {
     }
 
     expect(query.response()).toEqual({ q: 'abcdefgh' });
+
+    c.destroy();
+  });
+
+  it('the same query executed with identical args six times in a row within 100 ms throws ET800', () => {
+    const s = scenario();
+    s.api.on('GET', '/loop', () => ({ body: { ok: true } }));
+
+    const getLoop = s.get<{ response: { ok: boolean } }>('/loop');
+
+    const c = s.consumer();
+    const query = c.run(() => getLoop());
+
+    expect(() => {
+      for (let i = 0; i < 4; i++) query.execute();
+    }).not.toThrow();
+    expect(() => query.execute()).toThrow(/circular dependency/);
+
+    s.tick();
+    expect(query.response()).toEqual({ ok: true });
 
     c.destroy();
   });

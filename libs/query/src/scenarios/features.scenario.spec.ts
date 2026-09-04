@@ -1,6 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { signal } from '@angular/core';
+import { signal, untracked } from '@angular/core';
 import {
+  createQueryFeature,
+  nestedEffect,
+  QueryArgs,
+  QueryFeatureFlags,
+  RequestArgs,
   withArgs,
   withAutoRefresh,
   withErrorHandling,
@@ -12,6 +17,8 @@ import {
 } from '../index';
 import { describe, expect, it, vi } from 'vitest';
 import { sequence, useScenario } from './harness';
+
+const CUSTOM_FEATURE_TYPE = 'withCustomScenarioFeature';
 
 describe('features scenario', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
@@ -226,5 +233,131 @@ describe('features scenario', () => {
     expect(query.response()).toEqual({ items: [] });
 
     c.destroy();
+  });
+
+  describe('authoring custom features', () => {
+    const withArgsLog = <TArgs extends QueryArgs>(log: unknown[], calls: { fn: number; flags: QueryFeatureFlags[] }) =>
+      createQueryFeature<TArgs>({
+        type: CUSTOM_FEATURE_TYPE,
+        fn: ({ state, flags }) => {
+          calls.fn++;
+          calls.flags.push(flags);
+          nestedEffect(() => log.push(state.args()));
+        },
+      });
+
+    it('runs fn once at creation with the state, the flags and a nestedEffect that tracks the args', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+      const getUser = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/users/${p.id}`);
+      const id = signal('1');
+      const log: unknown[] = [];
+      const calls = { fn: 0, flags: [] as QueryFeatureFlags[] };
+
+      const c = s.consumer();
+      const query = c.run(() =>
+        getUser(
+          withArgs(() => ({ pathParams: { id: id() } })),
+          withArgsLog(log, calls),
+        ),
+      );
+      s.tick();
+
+      expect(calls.fn).toBe(1);
+      expect(calls.flags[0]).toMatchObject({ hasWithArgsFeature: true, shouldAutoExecute: true });
+      expect(log).toEqual([{ pathParams: { id: '1' } }]);
+      expect(query.response()).toEqual({ id: '1' });
+
+      id.set('2');
+      s.tick();
+
+      expect(calls.fn).toBe(1);
+      expect(log).toEqual([{ pathParams: { id: '1' } }, { pathParams: { id: '2' } }]);
+      expect(query.response()).toEqual({ id: '2' });
+
+      c.destroy();
+    });
+
+    it('lets a feature execute the query through the internal execute', () => {
+      const s = scenario();
+      s.api.on('POST', '/users/lookup', ({ body }) => ({ body: { id: (body as { id: string }).id } }));
+
+      const lookupUser = s.post<{ response: { id: string }; body: { id: string } }>('/users/lookup');
+      const trigger = signal<string | null>(null);
+
+      const withExecuteOn = <TArgs extends QueryArgs>() =>
+        createQueryFeature<TArgs>({
+          type: CUSTOM_FEATURE_TYPE,
+          fn: ({ execute, deps }) => {
+            nestedEffect(
+              () => {
+                const id = trigger();
+
+                if (id === null) return;
+
+                untracked(() => execute({ args: { body: { id } } as RequestArgs<TArgs> }));
+              },
+              { injector: deps.injector },
+            );
+          },
+        });
+
+      const c = s.consumer();
+      const query = c.run(() => lookupUser(withExecuteOn()));
+      s.tick();
+
+      expect(s.api.requests.length).toBe(0);
+
+      trigger.set('7');
+      s.tick();
+
+      expect(s.api.requestCount('POST', '/users/lookup')).toBe(1);
+      expect(query.response()).toEqual({ id: '7' });
+
+      c.destroy();
+    });
+
+    it('never calls the devtools describer without provideQueryDevtools()', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+      const getUser = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/users/${p.id}`);
+      const describer = vi.fn(() => [{ label: 'prefix', value: 'x' }]);
+
+      const withDescribed = <TArgs extends QueryArgs>() =>
+        createQueryFeature<TArgs>({ type: CUSTOM_FEATURE_TYPE, devtools: describer, fn: () => undefined });
+
+      const c = s.consumer();
+      const query = c.run(() =>
+        getUser(
+          withArgs(() => ({ pathParams: { id: '1' } })),
+          withDescribed(),
+        ),
+      );
+      s.tick();
+
+      expect(query.response()).toEqual({ id: '1' });
+      expect(describer).not.toHaveBeenCalled();
+
+      c.destroy();
+    });
+
+    it('throws when the same feature type is passed twice', () => {
+      const s = scenario();
+      s.api.on('GET', '/users', () => ({ body: [] }));
+
+      const getUsers = s.get<{ response: unknown[] }>('/users');
+      const log: unknown[] = [];
+      const calls = { fn: 0, flags: [] as QueryFeatureFlags[] };
+
+      const c = s.consumer();
+
+      expect(() => c.run(() => getUsers(withArgsLog(log, calls), withArgsLog(log, calls)))).toThrow(
+        /multiple times|twice|more than once/i,
+      );
+
+      c.destroy();
+    });
   });
 });
