@@ -301,3 +301,29 @@ Not pursued (candidates seen in code, no test): a delegated `refresh-requested` 
 leader after it rotated the pair spends a second refresh token; `transformResponse` throwing;
 `execute()` on a destroyed query; a second consumer's `retryFn` on a shared key. Persistent-auth
 scenarios (cookie write/delete, inactivity logout across tabs, leadership hand-over) are still absent.
+
+## Wave 3 (2026-09-04)
+
+Opus agents authored, Fable reviewed. Full `query` project: 132 files, 1778 tests, no `it.fails`.
+
+- Harness: `harness/fake-xhr.ts` routes the legacy client's `XMLHttpRequest` through the fake API;
+  `createScenario` installs it per scenario and restores the original in `destroy()`.
+- New suites: `legacy.scenario.spec.ts` (27: states incl. `Cancelled`, operators, caching, 15 s GC,
+  window-focus refresh, smart polling, legacy auth providers), `multi-tab-config.scenario.spec.ts` (13:
+  option variants, retained-entry update, quiet side effects, three-tab FIFO, hidden-tab hand-over,
+  server no-op, degradation without the APIs).
+- Extended: `caching` (server platform releases entries at once), `http-lifecycle` (`transformResponse`
+  throw, `execute()` after destroy, first consumer's `retryFn` governs a shared key),
+  `auth-multi-tab-leadership` (delegated refresh after rotation), `multi-tab` (consumers now run below
+  the tab injector; the old shape resolved a bystander root client).
+- Fixed, with changesets: `response()` reset to null on a `transformResponse` throw (`query-state.ts`,
+  now a `linkedSignal` that keeps the previous value); a delegated `refresh-requested` after the leader
+  rotated the pair spent a second refresh token (`refresh-requested` now carries the requester's
+  encrypted token; the leader answers with its current pair).
+- Docs: `legacy.md` migration row reads `poll({ interval, takeUntil })`; `auth.md` states one refresh
+  per rotation across tabs.
+- Findings not fixed: the legacy `QueryStore` never unsubscribes its `blur`/`focus` listeners and has no
+  teardown for its 15 s GC (app-lifetime in production); a retained entry's evict timer outlives a
+  destroyed client injector (bounded); the leader does not `announceStart()` when it declines a
+  delegated request as `busy`, so the follower re-asks after 3 s for nothing. The scan triage with the
+  open findings is in `plans/query-lib-scan.md`.
