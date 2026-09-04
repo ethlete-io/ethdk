@@ -348,6 +348,45 @@ describe('multi-tab sync scenario', () => {
     tabB.destroy();
   });
 
+  it('does not open a channel or request a lock without the feature', async () => {
+    const s = scenario();
+    s.api.on('GET', '/solo', () => ({ body: { ok: true } }));
+
+    const tab = createTab(s, false);
+    const getSolo = tab.get<{ response: { ok: boolean } }>('/solo');
+
+    const postedBefore = bus.posted.length;
+    const c = s.consumer();
+    c.run(() => getSolo(withPolling({ interval: 10_000 })));
+    await s.settle();
+
+    expect(bus.posted.length).toBe(postedBefore);
+    expect(locks.heldNames()).toEqual([]);
+    expect(locks.pendingNames()).toEqual([]);
+
+    c.destroy();
+    tab.destroy();
+  });
+
+  it('never seeds a cold key: a tab that never mounted the query gets no cache entry from the broadcast', async () => {
+    const s = scenario();
+    s.api.on('GET', '/cold/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getCold = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/cold/${p.id}`);
+    const tabB = createTab(s);
+
+    const a = s.consumer();
+    a.run(() => getCold(withArgs(() => ({ pathParams: { id: '1' } }))));
+
+    await s.settle();
+    await flushMultiTabSync();
+
+    expect(tabB.instance.repository.subtle.cacheEntries()).toEqual([]);
+
+    a.destroy();
+    tabB.destroy();
+  });
+
   it('leaves no open channel port and no timer once both tabs are destroyed', async () => {
     const s = scenario();
     s.api.on('GET', '/players/:id', ({ params }) => ({ body: { id: params['id'] } }));
