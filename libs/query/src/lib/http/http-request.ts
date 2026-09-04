@@ -350,7 +350,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   const isStale = () => {
     const expiresInTs = expiresIn();
 
-    return expiresInTs === null || expiresInTs < Date.now();
+    return expiresInTs === null || expiresInTs <= Date.now();
   };
 
   // Resolved per execution rather than once at creation, so a client whose headers are a function
