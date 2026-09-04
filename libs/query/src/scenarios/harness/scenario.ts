@@ -36,12 +36,18 @@ import { createFakeApi, FakeApi } from './fake-api';
 import { checkInvariants, InvariantName, ScenarioErrorEntry } from './invariants';
 import { mintToken } from './tokens';
 
+export type ScenarioProviders = (EnvironmentProviders | Provider)[];
+
 export type ScenarioConfig = {
   name?: string;
   baseUrl?: string;
   clientOptions?: Omit<Partial<CreateQueryClientConfigOptions>, 'name' | 'baseUrl' | 'features'>;
   clientFeatures?: readonly QueryClientFeatureFn[];
-  providers?: (EnvironmentProviders | Provider)[];
+  /**
+   * Extra TestBed providers. A function runs once per scenario, inside `beforeEach`, for a provider
+   * whose creation has a side effect that must not happen while the file is still being collected.
+   */
+  providers?: ScenarioProviders | (() => ScenarioProviders);
 };
 
 export type ScenarioConsumer = {
@@ -156,7 +162,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
           handleError: (error: unknown) => errors.push({ source: 'ErrorHandler', error }),
         },
       },
-      ...(config.providers ?? []),
+      ...(typeof config.providers === 'function' ? config.providers() : (config.providers ?? [])),
     ],
   });
 
