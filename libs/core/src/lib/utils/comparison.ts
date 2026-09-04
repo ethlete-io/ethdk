@@ -117,11 +117,16 @@ function find(iter: any, tar: any, key?: any) {
   }
 }
 
+/** A constructor check misses a Date from another realm, or one created under a faked global `Date`. */
+const isDate = (value: any): value is Date => Object.prototype.toString.call(value) === '[object Date]';
+
 export const equal = (foo: any, bar: any) => {
   var ctor: any;
   var len: any;
   var tmp: any;
   if (foo === bar) return true;
+
+  if (isDate(foo) || isDate(bar)) return isDate(foo) && isDate(bar) && foo.getTime() === bar.getTime();
 
   if (
     foo &&
@@ -131,7 +136,6 @@ export const equal = (foo: any, bar: any) => {
       (ctor === Object && !bar.constructor))
   ) {
     ctor ??= bar.constructor;
-    if (ctor === Date) return foo.getTime() === bar.getTime();
     if (ctor === RegExp) return foo.toString() === bar.toString();
 
     if (ctor === Array) {

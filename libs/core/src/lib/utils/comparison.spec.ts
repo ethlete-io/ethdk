@@ -17,4 +17,18 @@ describe('comparison utilities', () => {
     expect(cloned).not.toBe(value);
     expect(cloned.self).toBe(cloned);
   });
+
+  it('compares Dates by time rather than constructor identity', () => {
+    expect(equal(new Date(0), new Date(999))).toBe(false);
+    expect(equal(new Date(999), new Date(999))).toBe(true);
+  });
+
+  it('compares Dates by time under a faked global Date constructor', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+
+    expect(equal(new Date(0), new Date(999))).toBe(false);
+    expect(equal(new Date(999), new Date(999))).toBe(true);
+
+    vi.useRealTimers();
+  });
 });
