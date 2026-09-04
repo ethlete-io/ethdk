@@ -51,8 +51,10 @@ export type FilterOverlayConfig<TFields extends QueryFormFields> = {
 export type FilterOverlayDraft<TValue> = {
   /** The bindable signal-forms field tree: `draft.fields.search`. */
   readonly fields: FieldTree<TValue>;
-  /** The draft's live value. */
+  /** The draft's committed value - debounced and reset-resolved like the page's query form. */
   readonly value: Signal<TValue>;
+  /** What the draft's controls hold right now, ahead of any pending debounce. */
+  readonly liveValue: Signal<TValue>;
   /** How many of the draft's *filters* are set - search, sort and pagination excluded. */
   readonly activeFilterCount: Signal<number>;
   setValue(value: TValue): void;
@@ -67,7 +69,8 @@ export type FilterOverlayValueOf<TForm> = TForm extends { value: Signal<infer TV
 export type FilterOverlay<TValue = unknown> = {
   /**
    * The draft being edited - bind its `fields` to your controls. A detached clone of the page's query form: its
-   * own value, no URL writes, no reset graph, so nothing the reader does here affects the page until they submit.
+   * own value, the same debounce and reset graph, no URL writes, so nothing the reader does here affects the page
+   * until they submit.
    */
   draft: FilterOverlayDraft<TValue>;
   /** The live count, if the overlay was configured with one. */
@@ -135,11 +138,11 @@ const createFilterOverlay = <TFields extends QueryFormFields>(
     submitButton,
     labels,
     activeFilterCount: draft.activeFilterCount,
-    hasChanges: computed(() => !equal(draft.value(), config.queryForm.value())),
-    isPristine: computed(() => equal(draft.value(), config.queryForm.defaultValue)),
+    hasChanges: computed(() => !equal(draft.liveValue(), config.queryForm.value())),
+    isPristine: computed(() => equal(draft.liveValue(), config.queryForm.defaultValue)),
 
     submit: () => {
-      const value = draft.value();
+      const value = draft.liveValue();
 
       // Through `setValue` rather than by mutating fields: that is what fires the query form's reset graph (a new
       // search resetting the page number) and its URL sync, so the page's filters and the address bar agree.

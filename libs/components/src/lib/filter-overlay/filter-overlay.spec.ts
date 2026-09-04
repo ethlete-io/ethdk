@@ -22,11 +22,23 @@ const createPreview = (overrides: Partial<Record<'loading' | 'hasError' | 'total
   return { preview: { loading, hasError, totalHits } as FilterOverlayPreview, loading, hasError, totalHits };
 };
 
-const setup = (config: { preview?: (v: never) => FilterOverlayPreview; maxCountedHits?: number } = {}) =>
+const DEBOUNCED_FIELDS = {
+  search: queryField<string>({ defaultValue: '', debounce: 300 }),
+  region: queryField<string>({ defaultValue: 'all' }),
+  page: queryField<number>({ defaultValue: 1, isResetBy: ['search', 'region'] }),
+};
+
+const setup = (
+  config: {
+    fields?: typeof FIELDS;
+    preview?: (v: never) => FilterOverlayPreview;
+    maxCountedHits?: number;
+  } = {},
+) =>
   TestBed.runInInjectionContext(() => {
     // Observed, because `value()` is the *committed* value and nothing commits on an unobserved form. URL sync
     // is off: these assertions are about the draft/apply contract, not the address bar.
-    const queryForm = defineQueryForm({ fields: FIELDS }).observe({
+    const queryForm = defineQueryForm({ fields: config.fields ?? FIELDS }).observe({
       writeToQueryParams: false,
       syncOnNavigation: false,
     });
@@ -50,6 +62,8 @@ describe('provideFilterOverlay', () => {
     TestBed.configureTestingModule({ providers: [provideLocale(), provideRouter([{ path: '**', children: [] }])] }),
   );
 
+  afterEach(() => vi.useRealTimers());
+
   it('starts as a copy of the page filters', () => {
     const { queryForm, filterOverlay } = setup();
 
@@ -61,6 +75,7 @@ describe('provideFilterOverlay', () => {
     const { queryForm, filterOverlay } = setup();
 
     filterOverlay.draft.patchValue({ search: 'chemie' });
+    TestBed.tick();
 
     expect(filterOverlay.draft.value().search).toBe('chemie');
     expect(queryForm.value().search).toBe('');
@@ -91,6 +106,37 @@ describe('provideFilterOverlay', () => {
     expect(queryForm.value().page).toBe(1);
   });
 
+  it('applies what the controls hold on submit, even while a debounce is still pending', () => {
+    vi.useFakeTimers();
+
+    const { queryForm, filterOverlay } = setup({ fields: DEBOUNCED_FIELDS });
+
+    filterOverlay.draft.fields.search().value.set('che');
+    TestBed.tick();
+
+    expect(filterOverlay.draft.value().search).toBe('');
+    expect(filterOverlay.hasChanges()).toBe(true);
+
+    filterOverlay.submit();
+    vi.advanceTimersByTime(300);
+    TestBed.tick();
+
+    expect(queryForm.value().search).toBe('che');
+  });
+
+  it('runs the reset graph inside the draft, so the preview never asks for a stale page', () => {
+    const { filterOverlay } = setup();
+
+    filterOverlay.draft.patchValue({ page: 5 });
+    TestBed.tick();
+    expect(filterOverlay.draft.value().page).toBe(5);
+
+    filterOverlay.draft.fields.search().value.set('chemie');
+    TestBed.tick();
+
+    expect(filterOverlay.draft.value()).toMatchObject({ search: 'chemie', page: 1 });
+  });
+
   it('resets the draft to defaults without touching the page filters', () => {
     const { queryForm, filterOverlay } = setup();
 
@@ -98,6 +144,7 @@ describe('provideFilterOverlay', () => {
     TestBed.tick();
     filterOverlay.draft.patchValue({ search: 'draft', region: 'eu' });
     filterOverlay.reset();
+    TestBed.tick();
 
     expect(filterOverlay.draft.value()).toMatchObject({ search: '', region: 'all' });
     expect(queryForm.value().search).toBe('applied');
@@ -111,10 +158,12 @@ describe('provideFilterOverlay', () => {
     // `search` and `page` are navigation state rather than filters, so the query form leaves them out of the
     // count by design - which is what makes this the right number for a badge.
     filterOverlay.draft.patchValue({ search: 'chemie', page: 3 });
+    TestBed.tick();
 
     expect(filterOverlay.activeFilterCount()).toBe(0);
 
     filterOverlay.draft.patchValue({ region: 'eu' });
+    TestBed.tick();
 
     expect(filterOverlay.activeFilterCount()).toBe(1);
   });
@@ -211,6 +260,7 @@ describe('filter overlay pristine state', () => {
 
     // `search` is excluded from the filter count but is still something a reset has to clear.
     filterOverlay.draft.patchValue({ search: 'chemie' });
+    TestBed.tick();
 
     expect(filterOverlay.activeFilterCount()).toBe(0);
     expect(filterOverlay.isPristine()).toBe(false);

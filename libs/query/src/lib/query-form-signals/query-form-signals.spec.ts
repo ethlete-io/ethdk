@@ -207,6 +207,7 @@ describe('defineQueryForm', () => {
     expect(branch.value()).toEqual({ region: 'eu' });
 
     branch.setValue({ region: 'us' });
+    TestBed.tick();
     expect(branch.value()).toEqual({ region: 'us' });
     expect(qf.value()).toEqual({ region: 'eu' }); // source untouched
 

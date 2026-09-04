@@ -136,7 +136,8 @@ are always ignored, plus any field created with `skipInFilterCount`.
 Serialization rules:
 
 - **Defaults are elided** - a field at its default is removed from the URL (unless
-  `appendDefaultValueToUrl` is set), keeping URLs clean.
+  `appendDefaultValueToUrl` is set), keeping URLs clean. A cleared text (`''`) or an
+  emptied list (`[]`) on a field whose default is `null` commits as `null`.
 - **`null`** is written as the `ET_NULL__` sentinel (only when it isn't the default).
 - **Sort** is `active:direction` (`name:asc`). This matches the table system's URL
   adapter, so the two interoperate.
@@ -196,8 +197,12 @@ apply() {
 }
 ```
 
-The branch exposes `fields`, `value`, `activeFilterCount`, `setValue`,
-`patchValue`, `resetFieldToDefault` and `resetAllFieldsToDefault`.
+The branch exposes `fields`, `value`, `liveValue`, `activeFilterCount`, `setValue`,
+`patchValue`, `resetFieldToDefault` and `resetAllFieldsToDefault`. Its `value` is
+committed the way the source form's is - debounced per field and with the
+`isResetBy` graph applied - so a preview query bound to it does not fire per
+keystroke. `liveValue` is what the controls hold right now; apply that on an
+explicit submit, or a click inside the debounce window would lose the last keystrokes.
 
 By default it shares the source form's injector lifetime. Code that creates a branch in a shorter-lived injection context can pass that context's `Injector` to `branch(inject(Injector))`; the filter overlay does this so every draft is released when its overlay closes.
 

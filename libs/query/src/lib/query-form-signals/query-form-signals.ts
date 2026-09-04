@@ -11,7 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { FieldTree, form } from '@angular/forms/signals';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationExtras, Router } from '@angular/router';
 import { ET_PROPERTY_REMOVED, clone, equal, injectQueryParamChanges } from '@ethlete/core';
 import { QueryDevtoolsFormField, QueryDevtoolsFormHandle } from '../devtools/query-devtools-form';
 import { isQueryDevtoolsEnabled, noteQueryFormRead, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
@@ -74,7 +74,7 @@ const autoCoerce = (raw: unknown, defaultValue: unknown): unknown => {
   if (typeof raw !== 'string') return raw;
 
   const defaultIsNumber = typeof defaultValue === 'number';
-  const looksNumeric = raw.trim() === raw && !raw.startsWith('0') && !raw.endsWith('.') && !isNaN(Number(raw));
+  const looksNumeric = raw.trim() === raw && !/^-?0\d/.test(raw) && !raw.endsWith('.') && !isNaN(Number(raw));
 
   if (defaultIsNumber || (looksNumeric && raw !== '')) {
     return transformToNumber(raw);
@@ -85,6 +85,50 @@ const autoCoerce = (raw: unknown, defaultValue: unknown): unknown => {
   }
 
   return raw;
+};
+
+/** Shortest-debounce-wins; `null` means commit immediately. */
+const resolveDebounce = (fieldDefs: QueryFormFields, changedKeys: string[], live: Dict): number | null => {
+  if (!changedKeys.length) return null;
+
+  const times: number[] = [];
+
+  for (const key of changedKeys) {
+    const def = fieldDefs[key];
+
+    if (!def) return null;
+    if (def.disableDebounceIfFalsy && !live[key]) return null;
+    if (def.debounce === undefined) return null;
+
+    times.push(def.debounce);
+  }
+
+  return Math.min(...times);
+};
+
+/**
+ * A value that cannot be told apart from the default once serialized - a cleared text (`''`), an emptied list
+ * (`[]`) or one whose `valueToQueryParam` yields nothing - commits as the default, so the URL reproduces the
+ * committed state and the filter count does not report it.
+ */
+const normalizeLive = (fieldDefs: QueryFormFields, rawLive: Dict, defaults: Dict): Dict => {
+  const live = { ...rawLive };
+
+  for (const [key, def] of Object.entries(fieldDefs)) {
+    const value = live[key];
+
+    if (equal(value, defaults[key])) continue;
+
+    const serialized = def.valueToQueryParam?.(value);
+    const serializedToNothing = !!def.valueToQueryParam && (serialized === null || serialized === undefined);
+    const clearedNullable = defaults[key] === null && (value === '' || (Array.isArray(value) && value.length === 0));
+
+    if (serializedToNothing || clearedNullable) {
+      live[key] = defaults[key];
+    }
+  }
+
+  return live;
 };
 
 const computeFilterCount = (fields: QueryFormFields, value: Dict, defaults: Dict) => {
@@ -184,15 +228,17 @@ const resolveResets = (
 
 /**
  * A detached editor over the same fields - its own signal-forms form and value,
- * with no URL sync but the same `isResetBy` graph. Written back to the source
- * form via `source.setValue(branch.value())`. Powers the filter-overlay
- * "edit then apply" pattern (see `10-filter.md`).
+ * with no URL sync but the same debounce and `isResetBy` graph. Written back to
+ * the source form via `source.setValue(branch.liveValue())`. Powers the
+ * filter-overlay "edit then apply" pattern.
  */
 export type QueryFormBranch<TFields extends QueryFormFields> = {
   /** The bindable signal-forms field tree (`branch.fields.search`). */
   readonly fields: FieldTree<QueryFormModel<TFields>>;
-  /** The live (undebounced) value of the branch. */
+  /** The committed value of the branch - debounced and reset-resolved like the source form's `value`. */
   readonly value: Signal<QueryFormModel<TFields>>;
+  /** What the bound controls hold right now, ahead of any pending debounce. Apply this on an explicit submit. */
+  readonly liveValue: Signal<QueryFormModel<TFields>>;
   /** The number of active (non-default) filters in the branch. */
   readonly activeFilterCount: Signal<number>;
   setValue(value: QueryFormModel<TFields>): void;
@@ -208,7 +254,10 @@ const createBranch = <TFields extends QueryFormFields>(
 ): QueryFormBranch<TFields> => {
   const defaults = buildDefaults(fields);
   const model = signal<QueryFormModel<TFields>>(clone(initial));
+  const committed = signal<QueryFormModel<TFields>>(clone(initial));
   const tree = form(model, { injector });
+  let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+
   const defaultFor = (key: string) => {
     const value = resolveDefault(fields[key] as QueryFieldDef<unknown>);
 
@@ -217,16 +266,65 @@ const createBranch = <TFields extends QueryFormFields>(
     return value;
   };
 
-  const commit = (next: Dict) =>
-    model.set(clone(resolveResets(fields, model() as Dict, next, defaultFor)) as QueryFormModel<TFields>);
+  const liveValue = computed(() => normalizeLive(fields, model() as Dict, defaults) as QueryFormModel<TFields>);
+
+  const clearTimer = () => {
+    if (pendingTimer !== null) {
+      clearTimeout(pendingTimer);
+      pendingTimer = null;
+    }
+  };
+
+  const flush = () => {
+    clearTimer();
+
+    const live = liveValue() as Dict;
+    const prev = committed() as Dict;
+
+    if (equal(live, prev)) return;
+
+    const next = resolveResets(fields, prev, live, defaultFor);
+
+    committed.set(clone(next) as QueryFormModel<TFields>);
+
+    if (!equal(next, model())) {
+      model.set(clone(next) as QueryFormModel<TFields>);
+    }
+  };
+
+  effect(
+    () => {
+      const live = liveValue() as Dict;
+
+      untracked(() => {
+        const prev = committed() as Dict;
+
+        if (equal(live, prev)) return;
+
+        const debounceMs = resolveDebounce(fields, changedKeysBetween(prev, live), live);
+
+        clearTimer();
+
+        if (debounceMs === null) {
+          flush();
+        } else {
+          pendingTimer = setTimeout(flush, debounceMs);
+        }
+      });
+    },
+    { injector },
+  );
+
+  injector.get(DestroyRef).onDestroy(clearTimer);
 
   return {
     fields: tree,
-    value: model.asReadonly(),
-    activeFilterCount: computed(() => computeFilterCount(fields, model() as Dict, defaults)),
-    setValue: (value) => commit(value as Dict),
-    patchValue: (value) => commit({ ...(model() as Dict), ...value }),
-    resetFieldToDefault: (key) => commit({ ...(model() as Dict), [key]: defaultFor(key as string) }),
+    value: committed.asReadonly(),
+    liveValue,
+    activeFilterCount: computed(() => computeFilterCount(fields, committed() as Dict, defaults)),
+    setValue: (value) => model.set(clone(value)),
+    patchValue: (value) => model.update((cur) => ({ ...cur, ...value })),
+    resetFieldToDefault: (key) => model.update((cur) => ({ ...cur, [key]: defaultFor(key as string) })),
     resetAllFieldsToDefault: () => {
       for (const key of Object.keys(fields)) defaultFor(key);
 
@@ -410,6 +508,25 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     commitPending.set(false);
   };
 
+  /**
+   * Merged onto the navigation still in flight, not onto the committed URL: the router supersedes an unfinished
+   * navigation with the next one, so a second form (or a second commit) writing in the same tick would otherwise
+   * drop the first one's params.
+   */
+  const navigateWithParams = (params: Dict, extras: Pick<NavigationExtras, 'replaceUrl' | 'info'>) => {
+    queueMicrotask(() => {
+      const pending = router.getCurrentNavigation();
+      const base = pending?.finalUrl ?? pending?.extractedUrl ?? router.parseUrl(router.url);
+      const queryParams: Dict = { ...base.queryParams, ...params };
+
+      for (const key of Object.keys(queryParams)) {
+        if (queryParams[key] === undefined) delete queryParams[key];
+      }
+
+      router.navigate([], { queryParams, ...extras });
+    });
+  };
+
   const writeToUrl = (value: Dict) => {
     const queryParams: Dict = {};
     const version = ++urlWriteVersion;
@@ -418,13 +535,9 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       queryParams[paramKey(key)] = queryParamFor(key, def, value[key]);
     }
 
-    queueMicrotask(() => {
-      router.navigate([], {
-        queryParams,
-        queryParamsHandling: 'merge',
-        replaceUrl: observeOptions?.replaceUrl,
-        info: { queryForm: urlNavigationMarker, version },
-      });
+    navigateWithParams(queryParams, {
+      replaceUrl: observeOptions?.replaceUrl,
+      info: { queryForm: urlNavigationMarker, version },
     });
   };
 
@@ -432,20 +545,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     clearTimer();
 
     const rawLive = model() as Dict;
-    const live = { ...rawLive };
-
-    for (const [key, def] of Object.entries(fieldDefs)) {
-      if (equal(live[key], defaults[key])) continue;
-
-      const serialized = def.valueToQueryParam?.(live[key]);
-      const serializedToNothing = !!def.valueToQueryParam && (serialized === null || serialized === undefined);
-      const clearedNullableText = live[key] === '' && defaults[key] === null;
-
-      if (serializedToNothing || clearedNullableText) {
-        live[key] = defaults[key];
-      }
-    }
-
+    const live = normalizeLive(fieldDefs, rawLive, defaults);
     const prev = committed() as Dict;
 
     if (equal(live, prev)) {
@@ -476,31 +576,17 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     }
   };
 
-  /** Shortest-debounce-wins; `null` means commit immediately. */
-  const resolveDebounce = (changedKeys: string[], live: Dict): number | null => {
-    if (!changedKeys.length) return null;
-
-    const times: number[] = [];
-
-    for (const key of changedKeys) {
-      const def = fieldDefs[key];
-
-      if (!def) return null;
-      if (def.disableDebounceIfFalsy && !live[key]) return null;
-      if (def.debounce === undefined) return null;
-
-      times.push(def.debounce);
-    }
-
-    return Math.min(...times);
-  };
-
   const onLiveChange = (live: Dict) => {
     if (!observing()) return;
-    if (equal(live, committed())) return;
+
+    if (equal(live, committed())) {
+      skipNextResets = false;
+
+      return;
+    }
 
     const changedKeys = changedKeysBetween(committed() as Dict, live);
-    const debounceMs = resolveDebounce(changedKeys, live);
+    const debounceMs = resolveDebounce(fieldDefs, changedKeys, live);
 
     clearTimer();
 
@@ -517,6 +603,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
   const commitFromUrl = (next: Dict) => {
     clearTimer();
+    skipNextResets = false;
     previous.set(clone(committed()) as QueryFormModel<TFields>);
     committed.set(clone(next) as QueryFormModel<TFields>);
     // Feed the URL value into the live model & bound controls; the effect no-ops (model === committed).
@@ -559,9 +646,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       queryParams[paramKey(key)] = undefined;
     }
 
-    queueMicrotask(() => {
-      router.navigate([], { queryParams, queryParamsHandling: 'merge', replaceUrl: true });
-    });
+    navigateWithParams(queryParams, { replaceUrl: true });
   };
 
   const setValue = (value: QueryFormModel<TFields>, options?: QueryFormSignalsWriteOptions) => {

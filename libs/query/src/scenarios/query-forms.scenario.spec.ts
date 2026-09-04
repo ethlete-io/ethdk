@@ -283,4 +283,56 @@ describe('query forms scenario', () => {
     expect(qf.value().ordering).toBeNull();
     expect(qf.activeFilterCount()).toBe(0);
   });
+
+  it('a no-op write with skipResets does not skip the resets of the next real change', () => {
+    const s = scenario();
+
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: { search: queryField<string>(), page: queryField<number>({ defaultValue: 1, isResetBy: 'search' }) },
+      }).observe({ writeToQueryParams: false }),
+    );
+
+    qf.setValue({ search: null, page: 4 });
+    s.tick();
+
+    qf.resetFieldToDefault('search', { skipResets: true });
+    s.tick();
+    expect(qf.value()).toEqual({ search: null, page: 4 });
+
+    qf.patchValue({ search: 'shoes' });
+    s.tick();
+
+    expect(qf.value()).toEqual({ search: 'shoes', page: 1 });
+  });
+
+  it('a navigation that lands during a skipResets write does not carry the skip over to the next change', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: {
+          search: searchQueryField(),
+          page: queryField<number>({ defaultValue: 1, isResetBy: 'search' }),
+        },
+      }).observe(),
+    );
+
+    qf.setValue({ search: null, page: 4 });
+    await s.settle();
+
+    qf.patchValue({ search: 'a' }, { skipResets: true });
+    s.tick(50);
+    expect(qf.value()).toEqual({ search: null, page: 4 });
+
+    await router.navigate([], { queryParams: { search: 'from-url' }, queryParamsHandling: 'merge' });
+    await s.settle();
+    expect(qf.value()).toEqual({ search: 'from-url', page: 4 });
+
+    qf.patchValue({ search: 'next' });
+    await s.settle(300);
+
+    expect(qf.value()).toEqual({ search: 'next', page: 1 });
+  });
 });

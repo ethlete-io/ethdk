@@ -50,14 +50,14 @@ export class TeamFiltersOverlayComponent {
 ## Edit a copy, then commit
 
 `provideFilterOverlay` takes your page's query form and calls `branch()` on it - a detached clone with its own
-value, no URL writes and no reset graph. Every control in the overlay binds to the **branch**, so:
+value, the same debounce and reset graph, and no URL writes. Every control in the overlay binds to the **branch**, so:
 
 - nothing the reader does affects the page until they submit;
 - dismissing the panel (Escape, backdrop, the back button) discards, which is what makes a filter panel safe to
   close;
-- `submit()` writes the draft back through `queryForm.setValue()`, so the reset graph fires (a new search
-  resetting the page number) and the URL updates. It then closes with
-  `{ didUpdate: true, value }` - `{ didUpdate: false }` on a discard.
+- `submit()` writes the draft's `liveValue()` - what the controls hold, ahead of any pending debounce - back
+  through `queryForm.setValue()`, so the reset graph fires (a new search resetting the page number) and the URL
+  updates. It then closes with `{ didUpdate: true, value }` - `{ didUpdate: false }` on a discard.
 
 `reset()` puts the draft back to the query form's defaults without closing. Unlike cdk's version it needs no
 configured `defaults`, because the query form already knows them.
@@ -177,18 +177,18 @@ use `isPristine()` for that, which is what `etFilterOverlayReset` does.
 
 ### `injectFilterOverlay<TValue>()`
 
-| Member                | Type                                | Purpose                                            |
-| --------------------- | ----------------------------------- | -------------------------------------------------- |
-| `draft`               | `FilterOverlayDraft<TValue>`        | The branch: `fields`, `value()`, `patchValue()`, … |
-| `preview`             | `FilterOverlayPreview \| null`      | The live count, if configured.                     |
-| `submitButton()`      | `Signal<FilterOverlaySubmitButton>` | `{ label, disabled }`.                             |
-| `labels()`            | `Signal<FilterOverlayLabels>`       | Strings after locale + overrides.                  |
-| `activeFilterCount()` | `Signal<number>`                    | Draft filters that are set - for a badge.          |
-| `hasChanges()`        | `Signal<boolean>`                   | Draft differs from what is applied.                |
-| `isPristine()`        | `Signal<boolean>`                   | Every field is at its default - nothing to reset.  |
-| `submit()`            | `() => void`                        | Apply and close.                                   |
-| `reset()`             | `() => void`                        | Draft back to defaults, panel stays open.          |
-| `discard()`           | `() => void`                        | Close without applying.                            |
+| Member                | Type                                | Purpose                                           |
+| --------------------- | ----------------------------------- | ------------------------------------------------- |
+| `draft`               | `FilterOverlayDraft<TValue>`        | The branch: `fields`, `value()`, `liveValue()`, … |
+| `preview`             | `FilterOverlayPreview \| null`      | The live count, if configured.                    |
+| `submitButton()`      | `Signal<FilterOverlaySubmitButton>` | `{ label, disabled }`.                            |
+| `labels()`            | `Signal<FilterOverlayLabels>`       | Strings after locale + overrides.                 |
+| `activeFilterCount()` | `Signal<number>`                    | Draft filters that are set - for a badge.         |
+| `hasChanges()`        | `Signal<boolean>`                   | Draft differs from what is applied.               |
+| `isPristine()`        | `Signal<boolean>`                   | Every field is at its default - nothing to reset. |
+| `submit()`            | `() => void`                        | Apply and close.                                  |
+| `reset()`             | `() => void`                        | Draft back to defaults, panel stays open.         |
+| `discard()`           | `() => void`                        | Close without applying.                           |
 
 `TValue` is the filters' **value** shape, not the field map:
 
