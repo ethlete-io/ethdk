@@ -64,6 +64,8 @@ export class CascaderNodeDirective<T = unknown> {
     // pull DOM focus along with roving focus, but only while the user is navigating inside
     // the panel - otherwise an unrelated render would steal focus back into the tree. The
     // focus pulse re-runs this after the panel settles (the opening click re-focuses the trigger).
+    // A pulse also bypasses `focusInside`: the sheet re-creates its column on a drill, and the
+    // removed node's focusout has already cleared `focusInside` before the new node mounts.
     // While the search input holds DOM focus, only an explicit pulse (ArrowDown from the
     // input) may take it - a mere re-render, like the columns returning after the query was
     // deleted, must not pull focus out of the input mid-typing.
@@ -75,11 +77,15 @@ export class CascaderNodeDirective<T = unknown> {
 
       lastPulse = pulse;
 
-      if (!this.focused() || !this.cascader?.focusInside()) {
+      if (!this.focused()) {
         return;
       }
 
-      if (!pulsed && this.cascader.registeredSearch()?.isFocused()) {
+      if (!pulsed && !this.cascader?.focusInside()) {
+        return;
+      }
+
+      if (!pulsed && this.cascader?.registeredSearch()?.isFocused()) {
         return;
       }
 

@@ -947,6 +947,7 @@ export class CascaderDirective<T = unknown>
     this.openPath.update((current) => current.slice(0, -1));
     this.truncateColumns(this.openPath().length + 1);
     this.focusNode(parent, this.openPath().length);
+    this.pullFocusAfterSettle();
   }
 
   /** @internal Reloads a column that errored - wired to the panel's retry control. */
@@ -1164,6 +1165,7 @@ export class CascaderDirective<T = unknown>
 
       if (nodes[0]) {
         this.focusNode(nodes[0], columnIndex);
+        this.pullFocusAfterSettle();
 
         return;
       }
@@ -1174,6 +1176,18 @@ export class CascaderDirective<T = unknown>
     };
 
     attempt(20);
+  }
+
+  /**
+   * The sheet re-creates the active column on a drill or back navigation, which removes the node
+   * that holds DOM focus; the pulse makes the new node take it once it has mounted.
+   */
+  private pullFocusAfterSettle() {
+    nextFrame(() => {
+      if (this.isMounted()) {
+        this.focusPulse.update((pulse) => pulse + 1);
+      }
+    });
   }
 
   /** Re-roots the browse state onto `path`, loading every column along it (its children get focus). */

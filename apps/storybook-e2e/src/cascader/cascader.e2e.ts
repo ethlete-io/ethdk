@@ -117,11 +117,6 @@ test.describe('cascader / touch', () => {
   });
 
   test('tapping a parent node navigates into the next level and keeps focus inside the sheet', async ({ page }) => {
-    test.fail(
-      true,
-      'docs: "drilling in the mobile sheet moves focus into the new level" - the child gets [data-focused] but document.activeElement falls back to <body>',
-    );
-
     const root = await openStory(page, DEFAULT_STORY_ID);
     const trigger = root.getByRole('combobox');
     const sheet = page.locator('.et-cascader-panel[data-sheet]');
