@@ -227,6 +227,73 @@ describe('auth features without the devtools', () => {
     c.destroy();
   });
 
+  it('a fractional refreshStrategy uses that fraction of the token lifetime, without the object form clamps', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth({ accessTokenExpiresInMs: 20000, refreshStrategy: 0.5 });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    // mintToken's `exp` has second granularity, so the schedule lands anywhere in t=9000..10000.
+    await s.settle(9000);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+
+    await s.settle(1000);
+    s.tick(1);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('a refreshStrategy above 1 is a fixed buffer in milliseconds before expiry', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth({ accessTokenExpiresInMs: 20000, refreshStrategy: 5000 });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    await s.settle(14000);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+
+    await s.settle(1000);
+    s.tick(1);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('the object form of refreshStrategy clamps the percentage buffer to minBufferMs', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth({ accessTokenExpiresInMs: 20000, refreshStrategy: { percentage: 0.5, minBufferMs: 15000 } });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    await s.settle(4000);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+
+    await s.settle(1000);
+    s.tick(1);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+
+    c.destroy();
+  });
+
   it('an anonymous visitor is redirected to the login URL with a return param, and an authenticated one passes through', async () => {
     const s = scenario();
 

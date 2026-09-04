@@ -78,7 +78,7 @@ it('dedupes identical requests', () => {
    `advanceTimersByTime` boundary needs one more `s.tick(1)`. `settle()` advances fake time once and
    then awaits microtasks; `flush()` advances repeatedly and never awaits. A cascade in which each
    round arms its next timer one microtask later (401, refresh, retry, 401, ...) needs a loop of
-   `await Promise.resolve(); s.tick(50);` - see the streak-cap test in `auth-features.scenario.spec.ts`.
+   `await Promise.resolve(); s.tick(50);` - see the streak-cap test in `auth-features.scenario.spec.ts`. `mintToken` floors `exp` to whole seconds, so a proactive refresh lands up to 999 ms early: assert around a 1 s window, not at an exact instant.
 5. The harness lives in `harness/` and changes only with a coordinator's say; suites work
    around a gap inside their own file and report it.
 6. Devtools: `provideQueryDevtools()` enables the bridge process-wide on its first call and it
