@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { query } from '../testing/driver-core';
+import { GridItemDefaultActionsComponent } from './grid-item-default-actions.component';
 import { GridItemComponent } from './grid-item.component';
 import { GridItemDirective } from './headless/grid-item.directive';
 import { GridDirective } from './headless/grid.directive';
@@ -20,11 +21,12 @@ const TEST_ITEM: GridItemConfig = {
 };
 
 @Component({
-  imports: [GridDirective, GridItemComponent],
+  imports: [GridDirective, GridItemComponent, GridItemDefaultActionsComponent],
   template: `
     <div [items]="items" [readOnly]="readOnly" etGrid>
       <et-grid-item [ariaLabel]="ariaLabel" (remove)="removed = true" itemId="test-item">
         <input type="text" />
+        <et-grid-item-default-actions etGridItemAction itemId="test-item" />
       </et-grid-item>
     </div>
   `,
@@ -100,6 +102,16 @@ describe('GridItemComponent', () => {
     fixture.detectChanges();
     const pos = getItemDirective().currentPosition();
     expect(pos).toEqual({ col: 0, row: 0, colSpan: 1, rowSpan: 1 });
+  });
+
+  it('emits remove when the default actions remove the item', () => {
+    fixture.detectChanges();
+
+    query(fixture, '.et-grid-item-default-actions__remove')!.click();
+    fixture.detectChanges();
+
+    expect(getGridDirective().currentItems()).toEqual([]);
+    expect(fixture.componentInstance.removed).toBe(true);
   });
 
   describe('keyboard navigation', () => {

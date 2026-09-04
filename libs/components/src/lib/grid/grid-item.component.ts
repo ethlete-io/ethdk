@@ -258,6 +258,12 @@ export class GridItemComponent {
     });
   }
 
+  /** Remove this item from the grid and emit `remove` - the path the keyboard shortcut and the default actions take. */
+  public removeItem() {
+    this.grid?.removeItem(this.gridItem.itemId());
+    this.remove.emit();
+  }
+
   protected blockPointerDownWhenReadOnly(event: PointerEvent) {
     if (this.isReadOnly()) {
       event.stopPropagation();
@@ -326,8 +332,7 @@ export class GridItemComponent {
 
     if (event.key === 'Delete' || event.key === 'Backspace') {
       if (event.ctrlKey || event.metaKey) {
-        grid.removeItem(this.gridItem.itemId());
-        this.remove.emit();
+        this.removeItem();
         event.preventDefault();
       }
     }

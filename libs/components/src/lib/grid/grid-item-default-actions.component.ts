@@ -3,6 +3,7 @@ import { injectGridLabels } from './grid-labels';
 import { IconButtonComponent } from '../button/icon-button.component';
 import { ICON_IMPORTS, TIMES_ICON, provideIcons } from '../icon';
 import { GridItemToolbarComponent } from './grid-item-toolbar.component';
+import { GridItemComponent } from './grid-item.component';
 import { GRID_TOKEN } from './headless/grid.tokens';
 
 @Component({
@@ -38,6 +39,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 })
 export class GridItemDefaultActionsComponent {
   private grid = inject(GRID_TOKEN);
+  private item = inject(GridItemComponent, { optional: true });
   private labels = injectGridLabels();
 
   public itemId = input.required<string>();
@@ -46,6 +48,10 @@ export class GridItemDefaultActionsComponent {
   protected removeAriaLabel = computed(() => this.labels().removeItem);
 
   protected remove() {
-    this.grid.removeItem(this.itemId());
+    if (this.item) {
+      this.item.removeItem();
+    } else {
+      this.grid.removeItem(this.itemId());
+    }
   }
 }
