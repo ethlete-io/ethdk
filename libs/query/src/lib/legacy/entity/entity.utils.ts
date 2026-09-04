@@ -34,11 +34,7 @@ export const insertFrom = <
 
     const ids = id(value);
 
-    if (Array.isArray(ids)) {
-      return store.select(ids).pipe(map((data) => ({ ...value, [key]: data }) as ComputedEntityType));
-    } else {
-      return store.select(ids).pipe(map((data) => ({ ...value, [key]: data }) as ComputedEntityType));
-    }
+    return store.select(ids as EntityKey).pipe(map((data) => ({ ...value, [key]: data }) as ComputedEntityType));
   });
 
 /**
