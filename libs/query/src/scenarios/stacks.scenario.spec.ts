@@ -272,9 +272,7 @@ describe('stacks scenario', () => {
     c.destroy();
   });
 
-  it.fails('runs a stack feature once per response, like a standalone query', () => {
-    // stacks.md:22 "an array (one query each)" - a stack without `append` builds a second, discarded
-    // query per arg, so every feature side effect runs twice for the one response (features.md:96).
+  it('runs a stack feature once per response, like a standalone query', () => {
     const s = scenario();
     s.api.on('GET', '/once-per-response/:id', ({ params }) => ({ body: { id: params['id'] } }));
 

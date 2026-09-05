@@ -265,19 +265,19 @@ export const createQueryStack = <
         });
       }
 
-      const newQueries = runInInjectionContext(injector, () =>
-        filteredArgs.map(
-          (newArgsEntry) =>
-            queryCreator(
-              withArgs(() => newArgsEntry),
-              ...features,
-            ) as QueryType,
-        ),
-      );
-
       const oldQueries = queries();
 
       if (append) {
+        const newQueries = runInInjectionContext(injector, () =>
+          filteredArgs.map(
+            (newArgsEntry) =>
+              queryCreator(
+                withArgs(() => newArgsEntry),
+                ...features,
+              ) as QueryType,
+          ),
+        );
+
         const { queries: appendedQueries, lastQuery: lastAppendedQuery } = appendFn(oldQueries, newQueries);
 
         let finalQueries = appendedQueries;
