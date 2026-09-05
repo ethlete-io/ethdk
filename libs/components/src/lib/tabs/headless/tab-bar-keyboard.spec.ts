@@ -145,6 +145,25 @@ describe('TabBarDirective keyboard model', () => {
     expect(driver.selectedIndex()).toBe(0);
   });
 
+  // A nav tab bar renders anchors: swallowing the key would cancel the browser's own activation
+  // and put nothing in its place.
+  it('leaves that Enter to the element it happened on', () => {
+    const driver = mount();
+
+    driver.focusTabbable();
+
+    expect(driver.press('Enter').defaultPrevented).toBe(false);
+  });
+
+  it('prevents the default of an Enter that activates a trigger', () => {
+    const driver = mount();
+
+    driver.focusTabbable();
+    driver.press('ArrowRight');
+
+    expect(driver.press('Enter').defaultPrevented).toBe(true);
+  });
+
   it('returns the roving tab stop to the selected trigger once focus leaves the bar', () => {
     const driver = mount();
 

@@ -129,6 +129,20 @@ describe('NavTabsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Route two');
   });
 
+  it('does not navigate on Space from a disabled link', async () => {
+    fixture.componentInstance.secondDisabled = true;
+    fixture.detectChanges();
+    await navigateTo('/one');
+
+    const [, secondLink] = getLinks();
+
+    secondLink?.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(router.url).toBe('/one');
+  });
+
   it('labels an outlet placed as a sibling of the nav tabs with the active link', async () => {
     fixture.destroy();
 

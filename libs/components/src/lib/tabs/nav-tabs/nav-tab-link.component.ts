@@ -54,6 +54,11 @@ export class NavTabLinkComponent {
 
   protected handleSpace(event: Event) {
     event.preventDefault();
+
+    if (this.navTabLink.trigger.disabled()) {
+      return;
+    }
+
     this.elementRef.nativeElement.click();
   }
 }

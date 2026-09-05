@@ -122,7 +122,7 @@ export class TabBarDirective {
     } else if (event.key === 'End') {
       event.preventDefault();
       this.focusLast();
-    } else if (event.key === 'Enter') {
+    } else if (event.key === 'Enter' && this.focusedIndex() !== -1) {
       event.preventDefault();
       this.activateFocused();
     }
