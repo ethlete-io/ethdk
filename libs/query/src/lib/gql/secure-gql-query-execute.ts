@@ -12,7 +12,7 @@ import {
 import { createSecureExecuteFactory } from '../http/secure-query-execute-factory';
 import { GqlQueryArgs } from './gql-query';
 import { AnyCreateGqlQueryCreatorOptions } from './gql-query-creator';
-import { transformGql } from './gql-transformer';
+import { gqlTransformerFor } from './gql-transformer';
 import { InternalSecureCreateGqlQueryCreatorOptions } from './secure-gql-query-creator';
 
 export type CreateSecureGqlQueryExecuteOptions<TArgs extends GqlQueryArgs> = {
@@ -38,8 +38,7 @@ export const createSecureGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     transformAuthAndExec: (executeArgs, executeState) => {
       const { args, options: runOptions } = executeArgs ?? {};
 
-      const query = transformGql(executeOptions.creatorInternals.query);
-      let gqlParams = query(args?.variables);
+      let gqlParams = gqlTransformerFor(executeOptions.creatorInternals)(args?.variables);
 
       if (args?.queryParams && executeOptions.creatorInternals.transport === 'GET') {
         gqlParams = { ...gqlParams, ...args.queryParams };

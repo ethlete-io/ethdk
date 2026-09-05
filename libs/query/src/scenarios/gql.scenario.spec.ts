@@ -57,6 +57,30 @@ const inProductionMode = <T>(fn: () => T): T => {
   }
 };
 
+/**
+ * Counts how often the gql document is parsed for its operation name. `getOpName` is the only
+ * regex in the library whose source names both operation kinds, so a call through it is one
+ * document preparation.
+ */
+const countingDocumentParses = <T>(fn: () => T): { result: T; parses: number } => {
+  const originalExec = RegExp.prototype.exec;
+  let parses = 0;
+
+  RegExp.prototype.exec = function (this: RegExp, input: string) {
+    if (this.source.includes('(?:query|mutation)')) {
+      parses++;
+    }
+
+    return originalExec.call(this, input);
+  };
+
+  try {
+    return { result: fn(), parses };
+  } finally {
+    RegExp.prototype.exec = originalExec;
+  }
+};
+
 describe('gql scenario', () => {
   describe('GET transport', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
@@ -832,6 +856,60 @@ describe('gql scenario', () => {
       c.destroy();
       s.tick(30_000 * 2);
       expect(s.api.requestCount('GET', '/')).toBe(3);
+    });
+  });
+  describe('document preparation', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('prepares the document once per creator instead of once per execution', () => {
+      const s = scenario();
+      s.api.on('GET', '/', () => ({ body: { data: { user: { id: '1', name: 'Ada' } } } }));
+
+      const getUser = createGqlQueryViaGet(s.clientRef)<{ response: UserResponse; variables: UserVariables }>(
+        getUserDoc,
+      );
+
+      const c = s.consumer();
+
+      const { parses } = countingDocumentParses(() => {
+        c.run(() =>
+          getUser(
+            withArgs(() => ({ variables: { userId: '1' } })),
+            withPolling({ interval: 30_000 }),
+          ),
+        );
+
+        s.tick();
+        s.tick(30_000 * 3);
+      });
+
+      expect(s.api.requestCount('GET', '/')).toBe(4);
+      expect(parses).toBe(1);
+
+      c.destroy();
+    });
+
+    it('prepares the document once for two queries built from the same creator', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: '1', name: 'Ada' } } } }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: UserResponse; variables: UserVariables }>(
+        getUserDoc,
+      );
+
+      const c = s.consumer();
+
+      const { parses } = countingDocumentParses(() => {
+        c.run(() => getUser(withArgs(() => ({ variables: { userId: '1' } }))));
+        c.run(() => getUser(withArgs(() => ({ variables: { userId: '2' } }))));
+
+        s.tick();
+      });
+
+      expect(s.api.requestCount('POST', '/')).toBe(2);
+      expect(parses).toBe(1);
+
+      c.destroy();
     });
   });
 });

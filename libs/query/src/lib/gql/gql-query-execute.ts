@@ -15,7 +15,7 @@ import {
 } from '../http';
 import { GqlQueryArgs } from './gql-query';
 import { AnyCreateGqlQueryCreatorOptions, InternalCreateGqlQueryCreatorOptions } from './gql-query-creator';
-import { transformGql } from './gql-transformer';
+import { gqlTransformerFor } from './gql-transformer';
 
 export type CreateGqlQueryExecuteOptions<TArgs extends QueryArgs> = {
   deps: QueryDependencies;
@@ -38,8 +38,7 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
 
     circularChecker.check(args);
 
-    const query = transformGql(executeOptions.creatorInternals.query);
-    let gqlParams = query(args?.variables);
+    let gqlParams = gqlTransformerFor(executeOptions.creatorInternals)(args?.variables);
 
     if (args?.queryParams && executeOptions.creatorInternals.transport === 'GET') {
       gqlParams = { ...gqlParams, ...args.queryParams };
