@@ -194,7 +194,7 @@ The attempted URL is captured when the guard runs, including its query params an
 | `'revocation'`   | [`withTokenRevocation`](#features).                                |
 | `'tokenSeed'`    | `setTokens(...)`. Always `state: 'success'`.                       |
 
-This is what replaces watching a v2 query collection. A failed session restore, for instance, is `{ type: 'autoLogin', state: 'error', error }` - the signal to send the user to the login screen rather than to show a broken app.
+This is what replaces watching a v2 query collection. A session restore, for instance, starts as `{ type: 'autoLogin', state: 'loading' }` and, when the cookie is still good, ends as `{ type: 'autoLogin', state: 'success' }`. A **rejected** restore does not end as `{ type: 'autoLogin', state: 'error' }`. The cookie is spent through the refresh query, so the default policy [ends the session](#when-a-refresh-fails-for-good) in the same pass, and what a consumer observes is `autoLogin` `loading` followed straight by `{ type: 'logout', state: 'success' }` with [`sessionEndCause()`](#why-the-session-ended) `'expired'`. `autoLogin` `error` is observable only where nothing ends the session: a restore run through a query that is not the refresh query, or a custom `onRefreshFailure` that keeps the session. To send the user to the login screen rather than show a broken app, watch [`sessionStatus()`](#is-there-a-session).
 
 ### Don't drive a form off `executionState()`
 

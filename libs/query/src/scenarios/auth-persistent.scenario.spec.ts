@@ -512,10 +512,7 @@ describe('withPersistentAuth', () => {
     restored.destroy();
   });
 
-  // auth.md:197 - the default refresh policy logs out inside the same effect pass, so the documented
-  // `{ type: 'autoLogin', state: 'error' }` is overwritten by `{ type: 'logout' }` before any consumer
-  // can read it. Only a custom `onRefreshFailure` that keeps the session leaves it observable.
-  it.fails('reports a rejected session restore as an autoLogin error', async () => {
+  it('moves a rejected session restore straight from autoLogin loading to logout', async () => {
     const s = scenario();
 
     serve(s, 20000);
@@ -541,7 +538,9 @@ describe('withPersistentAuth', () => {
     s.flush();
     s.expectError(is401);
 
-    expect(states).toContain('autoLogin:error');
+    expect(states).toEqual(['autoLogin:loading', 'logout:success']);
+    expect(rejected.auth.executionState()).toEqual({ type: 'logout', state: 'success' });
+    expect(rejected.auth.sessionEndCause()).toBe('expired');
 
     rejected.destroy();
   });
@@ -632,6 +631,7 @@ describe('withPersistentAuth', () => {
 
     expect(s.api.requestCount('POST', '/auth/login')).toBe(2);
     expect(failures).toEqual([]);
+    expect(second.auth.executionState()).toMatchObject({ type: 'autoLogin', state: 'error' });
     expect(second.auth.sessionStatus()).toBe('anonymous');
     expect(second.auth.sessionEndCause()).toBeNull();
 
