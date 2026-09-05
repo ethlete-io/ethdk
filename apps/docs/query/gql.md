@@ -88,3 +88,15 @@ const getUser = gqlQueryPost<GetUserQueryArgs>(gqlDocument, {
 Creator options are otherwise the [HTTP creator options](/query/http#creator-options); `route` is optional (the client's `baseUrl` usually is the GraphQL endpoint already).
 
 Everything else works exactly as described in the core guides, since GQL queries are regular queries underneath - [features](/query/features) like `withPolling`, [query stacks](/query/stacks) and [error handling](/query/errors).
+
+## Types
+
+A GQL creator's `TArgs` is a `GqlQueryArgs` - the core [`QueryArgs`](/query/queries#types) plus
+`variables` - and `GqlVariablesType<TArgs>` extracts that bag the way `ResponseType` extracts the
+response. `GqlRawResponseType<TArgs>` is what `transformResponse` receives: the declared
+`rawResponse`, or `{ data: TResponse }` when none was declared.
+
+The document a creator takes is a `GQL`, the branded string the `gql` tag returns, and the second
+argument is a `CreateGqlQueryCreatorOptions` - the [HTTP creator options](/query/http#creator-options)
+with `route` made optional. `GqlQueryMethod` (`'QUERY' | 'MUTATE'`) and `GqlQueryTransport`
+(`'GET' | 'POST'`) are the two axes of the [template table](#creator-templates).

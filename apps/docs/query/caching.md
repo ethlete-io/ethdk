@@ -1,6 +1,6 @@
 # Caching & deduplication
 
-All [queries](/query/queries) of a client share one **query repository** - an in-memory cache that deduplicates identical requests and tracks response freshness. Successful reads can also be kept on disk so a reload does not start from nothing - see [persisted responses](/query/persistence).
+All [queries](/query/queries) of a client share one **query repository** - an in-memory cache that deduplicates identical requests and tracks response freshness. It is reachable as `client.repository`, typed `QueryRepository`, though nothing in normal use needs it: the client's own `invalidateQueries()` / `refreshQueriesInUse()` are the supported surface. Successful reads can also be kept on disk so a reload does not start from nothing - see [persisted responses](/query/persistence).
 
 ## What is cached
 
@@ -27,6 +27,8 @@ export const client = createQueryClient({
 export const getHugeReport = createGetQuery(client)<ReportQueryArgs>('/report', { keepUnusedFor: 0 });
 ```
 
+The default is exported as `DEFAULT_KEEP_UNUSED_FOR` and the per-client cap as `MAX_UNUSED_ENTRIES`.
+
 Unlike the freshness TTL below, this is independent of `cache-control` - so it also applies to private/authenticated responses, where the header-derived TTL does nothing.
 
 The returning query is in a loading state that carries the old data, so render it via `executionState`:
@@ -50,7 +52,7 @@ Details worth knowing:
 
 ## Freshness
 
-The client's `cacheAdapter` derives a TTL from response headers. The default (`extractExpiresInSeconds`) reads `cache-control` (`no-cache`, `no-store`, `max-age`, `s-maxage`), `age` and `expires`; a `max-age` without an `age` header is halved as a safety margin, while `max-age=0` expires immediately.
+The client's `cacheAdapter` - a `CacheAdapterFn`, `(headers: HttpHeaders) => number | null` - derives a TTL from response headers. The default (`extractExpiresInSeconds`) reads `cache-control` (`no-cache`, `no-store`, `max-age`, `s-maxage`), `age` and `expires`; a `max-age` without an `age` header is halved as a safety margin, while `max-age=0` expires immediately.
 
 The window is opt-in per execution. `execute({ options: { allowCache: true } })` reuses a fresh entry's response without hitting the server and re-fetches a stale one - as does the same option on a [stack](/query/stacks) or a [batch](/query/batching), which forwards it to each query it runs. Nothing else consults the window: an auto-execution never passes `allowCache`, so a query always sends a request when it mounts, including one binding again to a [retained entry](#keeping-unused-entries-around) that is still fresh - it renders that entry's response while the request is in flight. There is no interval-based revalidation - combine with [`withPolling`](/query/features#withpolling) when you need periodic refreshes.
 
@@ -88,6 +90,8 @@ It refreshes the same set as `refreshQueriesInUse()` - reads with at least one c
 | `otherTabs` | `true`  | Whether the user's other tabs invalidate too. Needs the [multi-tab sync](/query/multi-tab) feature; ignored without it. |
 
 `url` matching is boundary aware rather than a plain prefix test, so `/players` covers `/players`, `/players/1` and `/players?page=2` - but not `/players-archive`. Passing nothing invalidates everything in use.
+
+The options bag is a `QueryInvalidationOptions`, and `filter` a `QueryInvalidationFilterFn` - it is handed a `QueryInvalidationCandidate` (`{ method, url }`, the URL fully built) and returns whether that query should be re-run.
 
 Entries sitting out their `keepUnusedFor` window are deliberately left alone. They revalidate on their own when a consumer binds again, and refreshing what nobody is looking at is how an invalidation turns into a request storm.
 

@@ -37,17 +37,17 @@ save() {
 
 ## Method templates
 
-| Template             | Method    | Auto-executes | Cached |
-| -------------------- | --------- | ------------- | ------ |
-| `createGetQuery`     | `GET`     | yes           | yes    |
-| `createHeadQuery`    | `HEAD`    | yes           | yes    |
-| `createOptionsQuery` | `OPTIONS` | yes           | yes    |
-| `createPostQuery`    | `POST`    | no            | no     |
-| `createPutQuery`     | `PUT`     | no            | no     |
-| `createPatchQuery`   | `PATCH`   | no            | no     |
-| `createDeleteQuery`  | `DELETE`  | no            | no     |
+| Template             | Secure twin                | Method    | Auto-executes | Cached |
+| -------------------- | -------------------------- | --------- | ------------- | ------ |
+| `createGetQuery`     | `createSecureGetQuery`     | `GET`     | yes           | yes    |
+| `createHeadQuery`    | `createSecureHeadQuery`    | `HEAD`    | yes           | yes    |
+| `createOptionsQuery` | `createSecureOptionsQuery` | `OPTIONS` | yes           | yes    |
+| `createPostQuery`    | `createSecurePostQuery`    | `POST`    | no            | no     |
+| `createPutQuery`     | `createSecurePutQuery`     | `PUT`     | no            | no     |
+| `createPatchQuery`   | `createSecurePatchQuery`   | `PATCH`   | no            | no     |
+| `createDeleteQuery`  | `createSecureDeleteQuery`  | `DELETE`  | no            | no     |
 
-Each has a `createSecure…Query(client, authProviderRef)` twin. Auto-execution and caching semantics are the core rules - see [auto-execution](/query/queries#auto-execution) and [caching](/query/caching).
+A template takes the client, a secure twin takes `(client, authProviderRef)`; both then return the same creator factory. Auto-execution and caching semantics are the core rules - see [auto-execution](/query/queries#auto-execution) and [caching](/query/caching).
 
 The request method is part of the [cache key](/query/caching), so a `HEAD` and an `OPTIONS` query on the same route get their own entry and never read each other's response.
 
@@ -84,7 +84,7 @@ const getUser = getQuery<GetUserQueryArgs>((p) => `/users/${p.userId}`, {
 
 ## Creator options
 
-The second argument of a creator factory (required only when `rawResponse` differs from `response`):
+The second argument of a creator factory - a `BaseQueryCreatorOptions`, required only when `rawResponse` differs from `response`:
 
 | Option              | Default  | Description                                                                                                                                           |
 | ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -102,7 +102,9 @@ Every template has a `createSecure…Query(client, authProviderRef)` twin that t
 
 ## Upload & download progress
 
-With `reportProgress: true`, `query.loading()` carries a `progress` object (`percentage`, `loaded`, `total`, plus `speed` and `remainingTime` once ~2s of samples exist) for both directions - useful for file upload UIs.
+With `reportProgress: true`, `query.loading()` - an `HttpRequestLoadingState` - carries a `progress` object (an `HttpRequestLoadingProgressState`: `percentage`, `loaded`, `total`, plus `speed` and `remainingTime` once ~2s of samples exist) for both directions - useful for file upload UIs.
+
+In the creator options above, `responseType` is an `HttpRequestResponseType` and `transferCache` an `HttpRequestTransferCacheConfig`.
 
 ## Error codes
 

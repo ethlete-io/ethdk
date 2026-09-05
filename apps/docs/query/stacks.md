@@ -63,6 +63,16 @@ The loading gate on those two signals is unconditional; `blockExecutionDuringLoa
 - `reset({ initialPage? })`
 - `execute({ where?, allowCache? })` - `where: (item) => boolean` selectively re-executes the pages containing matching items (plus their neighbors), e.g. after editing one row.
 
+## Types
+
+`createQueryStack` takes a `CreateQueryStackOptions` and returns a
+`QueryStack<TQuery, TCreator, TTransform>`; `createPagedQueryStack` takes a
+`CreatePagedQueryStackOptions` and returns a `PagedQueryStack<TQuery, TNormPagination>`.
+`AnyQueryStack` and `AnyPagedQueryStack` erase those generics for a signature that takes any stack.
+The paged stack's own argument types are `PagedQueryStackResetOptions` (`{ initialPage }`),
+`PagedQueryStackExecuteOptions` (`{ where, allowCache }`) and `PagedQueryStackDirection`
+(`'next' | 'previous'`).
+
 ## Live demo
 
 The demo starts at page 4 of 8, so both fetch directions are available:

@@ -81,6 +81,22 @@ Every creator accepts the same options:
 | `queryParamToValue`       | -                                | Custom URL → value transform.                                                                                           |
 | `valueToQueryParam`       | -                                | Custom value → URL transform.                                                                                           |
 
+### The transforms the typed creators use
+
+Every creator above is `queryField()` with a `queryParamToValue` (and, for sort, a
+`valueToQueryParam`) already set. Those functions are exported, so a custom field can reuse one
+instead of re-deriving it - a `queryField<Date | null>()` inside a wrapper, or a transform that runs
+one of them and then narrows further:
+
+`transformToString`, `transformToStringArray`, `transformToNumber`, `transformToNumberArray`,
+`transformToBoolean`, `transformToBooleanArray`, `transformToDate`, `transformToDateArray`,
+`transformToSort` and `transformToSortQueryParam`.
+
+Each takes an `unknown` and returns `null` when the raw value is not something it can read - a
+non-numeric string, an unparseable date - rather than throwing, so a hand-edited URL degrades to the
+field's default instead of breaking the page. The array ones also accept a single value and wrap it,
+which is what makes `?tag=a` and `?tag=a&tag=b` both work.
+
 ## Form API
 
 | Member                                      | Description                                                                                                                                                  |
@@ -121,7 +137,9 @@ The whole cascade settles before the value is committed, so it drives **one** qu
 
 Counts fields that differ from their default, excluding navigation state:
 `page`, `skip`, `take`, `limit`, `sort`, `sortBy`, `sortOrder`, `query`, `search`
-are always ignored, plus any field created with `skipInFilterCount`.
+are always ignored, plus any field created with `skipInFilterCount`. That list is
+exported as `IGNORED_FILTER_COUNT_FIELDS`, so a UI that explains the count can read
+it rather than repeat it.
 
 ## URL sync
 
@@ -212,6 +230,21 @@ the debounce window would otherwise lose the last keystrokes.
 
 By default it shares the source form's injector lifetime. Code that creates a branch in a shorter-lived injection context can pass that context's `Injector` to `branch(inject(Injector))`; the filter overlay does this so every draft is released when its overlay closes.
 
+## Types
+
+| Type                             | What it is                                                                                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `QueryFormSignals<TFields>`      | What `defineQueryForm` returns.                                                                                                                        |
+| `QueryFormFields`                | The constraint on a `fields` map - `Record<string, QueryFieldDef<unknown>>`. `TFields` throughout is one of these.                                     |
+| `QueryFieldDef<T>`               | One field definition, as a creator returns it. `QueryFieldConfig<T>` is what a creator _accepts_ (everything optional, `isResetBy` also a single key). |
+| `QueryFieldValue<F>`             | The value type of a field definition.                                                                                                                  |
+| `QueryFormModel<TFields>`        | The form's value object - what `value()`, `previousValue()` and `setValue()` deal in.                                                                  |
+| `QueryFormChange<TFields>`       | `{ previousValue, currentValue }` - what `changes()` holds.                                                                                            |
+| `QueryFormBranch<TFields>`       | What [`branch()`](#filter-overlays) returns.                                                                                                           |
+| `DefineQueryFormConfig<TFields>` | The argument of `defineQueryForm`.                                                                                                                     |
+| `QueryFormSignalsObserveOptions` | The argument of [`observe()`](#url-sync); `QueryFormSignalsWriteOptions` is the `{ skipResets }` bag the write methods take.                           |
+| `Sort`, `SortDirection`          | The sort field's value (`{ active, direction }`) and its `'asc' \| 'desc' \| ''` direction.                                                            |
+
 ## Legacy `QueryForm`
 
 The original `QueryForm` class (with `QueryField`, `SearchQueryField`,
@@ -240,6 +273,14 @@ are the same on both, with two exceptions:
   `null` and writes no param, while the legacy class commits `''` and writes `?field=`.
 - `isResetBy`: the legacy class also resets a field the _same_ commit set, while
   `defineQueryForm` never resets a field that commit changed itself.
+
+Its types are exported under their own names, none of which the signals form uses:
+`QueryFormOptions` (the constructor argument), `AnyQueryForm` (`QueryForm<any>`),
+`QueryFormValue<T>` and `QueryFormValueEvent<T>`, `QueryFormGroup` and
+`QueryFormGroupControls<T>` for the underlying `FormGroup`, `QueryFormOf<T>` to derive a field
+map from an existing `FormGroup`, `QueryFieldOptions<T>` / `OptionalQueryFieldOptions<T>` for a
+field, and `QueryFormObserveOptions` / `QueryFormWriteOptions` for `observe()` and the write
+methods.
 
 For the filter panel this used to sit behind, see
 [filter overlay](/components/filter-overlay) in `@ethlete/components`.

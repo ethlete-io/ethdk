@@ -112,15 +112,20 @@ withQueryPersistence({
 });
 ```
 
-| Option        | Default                        | Description                                                                                             |
-| ------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| `storageName` | `et-query-persistence-${name}` | The IndexedDB database name. One per client, so two clients never overwrite each other.                 |
-| `version`     | `1`                            | The version of your response shapes. Entries written under a different one are dropped.                 |
-| `maxAge`      | `86400000` (24h)               | How old a response may be and still be shown. Older ones are dropped at startup.                        |
-| `maxEntries`  | `50`                           | How many responses are kept. The least recently written go first, and the cap is re-applied at startup. |
-| `writeDelay`  | `1000`                         | How long writes are collected before one batched flush. Always flushed when the tab hides.              |
-| `adapter`     | IndexedDB                      | Where to store responses. See [custom storage](#custom-storage).                                        |
-| `filter`      | -                              | `(candidate) => boolean` over `{ key, url, method, isSecure }`; `false` keeps a response out.           |
+| Option        | Default                        | Description                                                                                                              |
+| ------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `storageName` | `et-query-persistence-${name}` | The IndexedDB database name. One per client, so two clients never overwrite each other.                                  |
+| `version`     | `1`                            | The version of your response shapes. Entries written under a different one are dropped.                                  |
+| `maxAge`      | `86400000` (24h)               | How old a response may be and still be shown. Older ones are dropped at startup.                                         |
+| `maxEntries`  | `50`                           | How many responses are kept. The least recently written go first, and the cap is re-applied at startup.                  |
+| `writeDelay`  | `1000`                         | How long writes are collected before one batched flush. Always flushed when the tab hides.                               |
+| `adapter`     | IndexedDB                      | Where to store responses, or a function returning one - only called in a browser. See [custom storage](#custom-storage). |
+| `filter`      | -                              | `(candidate: QueryPersistenceCandidate) => boolean` over `{ key, url, method, isSecure }`; `false` keeps a response out. |
+
+The bag is a `QueryPersistenceConfig`, and its defaults are exported as
+`DEFAULT_QUERY_PERSISTENCE_VERSION`, `DEFAULT_QUERY_PERSISTENCE_MAX_AGE`,
+`DEFAULT_QUERY_PERSISTENCE_MAX_ENTRIES` and `DEFAULT_QUERY_PERSISTENCE_WRITE_DELAY`, so a config
+that only changes one of them can still name the rest.
 
 ### Bump `version` when a response shape changes
 
@@ -175,21 +180,34 @@ IndexedDB is the default because it stores
 no serialization pass, and the same constraint on bodies that [multi-tab sync](/query/multi-tab)
 already has - and because response bodies are far too large for `localStorage`'s few megabytes.
 
-Supply an adapter to store them somewhere else: `localStorage`, the origin private file system, a
-native store behind a Capacitor plugin.
+Supply an adapter - a `QueryPersistenceAdapter` - to store them somewhere else: `localStorage`, the
+origin private file system, a native store behind a Capacitor plugin.
 
 ```ts
 withQueryPersistence({
   adapter: {
     loadIndex: () => Promise<PersistedQueryEntryMeta[]>, // metadata only, once at startup
     read: (key) => Promise<{ body: unknown } | null>, // one body, on a cold mount
-    write: (entries) => Promise<void>, // a coalesced batch
+    write: (entries: PersistedQueryEntry[]) => Promise<void>, // a coalesced batch
     remove: (keys) => Promise<void>,
     clear: () => Promise<void>,
     isSupported: true,
   },
 });
 ```
+
+The two built-in ones are exported, for an adapter that wraps rather than replaces them:
+`createIndexedDbQueryPersistenceAdapter` is the default - it takes a
+`CreateIndexedDbQueryPersistenceAdapterOptions`, i.e. `{ storageName }` - and
+`createNoopQueryPersistenceAdapter()` stores nothing and reports `isSupported: false` - what the
+default falls back to where `indexedDB` is missing, so there is only ever one code path.
+
+An adapter is handed `PersistedQueryEntry` objects - a `PersistedQueryEntryMeta` (`key`, `persistedAt`,
+`expiresAt`, `isSecure`, and the `version` the entry was written under) plus the raw `body` - and
+returns a `PersistedQueryBody` (`{ body }`, wrapped so a stored `null` is not a miss) from `read`.
+The separate `QUERY_PERSISTENCE_STORE_VERSION` is the SDK's own schema version for that record shape:
+the IndexedDB adapter wipes its database when it changes, and a custom adapter that stores records
+verbatim should do the same. It is not the `version` an app bumps when its responses change.
 
 Adapters are deliberately dumb: they store what they are handed. `maxAge`, `maxEntries`, the `version`
 check and the logout purge are all decided before a call reaches one, so a custom adapter cannot get

@@ -145,6 +145,11 @@ withMultiTabSync({
 | `dedupePolling`     | `true`                  | Poll a given cache key in one tab only. Inert without `syncResponses`.                                      |
 | `refreshOnMutation` | `true`                  | Refresh other tabs' in-use queries after a mutation. Pass `{ filter }` to narrow it.                        |
 
+The bag is a `QueryMultiTabSyncConfig`. `refreshOnMutation` is either a boolean or a
+`QuerySyncRefreshOnMutationConfig` (`{ filter }`), whose `filter` is a `QuerySyncMutationFilterFn`:
+it is handed the other tab's `QuerySyncMutation` and this tab's `QuerySyncRefreshCandidate` - both
+`{ method, url }` with fully built URLs - and returns whether that query should refresh.
+
 Those defaults are what you get from a bare `withMultiTabSync()`. Leaving the feature out turns all of
 it off, and each part can be switched off on its own - `dedupePolling: false` keeps shared responses but lets every
 tab poll, for instance.
@@ -175,8 +180,8 @@ is better left alone.
   effect must run on data from anywhere, drive it from the response signal rather than the event.
 - **Bodies must be structured-cloneable.** JSON is fine. `blob` / `arraybuffer` response types clone
   too but are heavy. A body the algorithm cannot handle is logged in dev mode and simply not shared.
-- **Version skew is handled, shape skew is not.** Messages carry a protocol version, and a tab ignores
-  versions it does not know - the realistic case being a user with the previous deploy still open next
+- **Version skew is handled, shape skew is not.** Messages carry a protocol version
+  (`QUERY_SYNC_PROTOCOL_VERSION`), and a tab ignores versions it does not know - the realistic case being a user with the previous deploy still open next
   to a freshly loaded one. Two deploys whose _response shapes_ differ under the same protocol version
   is accepted risk, exactly as it is for the auth token sync.
 - **Server-side rendering.** Always a no-op: no channel is opened and no lock is requested.

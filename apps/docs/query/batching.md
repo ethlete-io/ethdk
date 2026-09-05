@@ -163,6 +163,16 @@ retry() {
 - **One run at a time.** Subscribing to a second `run()` (or `retryFailed()`) while one is in flight errors with `ET910`.
 - **Order is input order**, even though execution interleaves. `results()` and every list on the result are sorted by the item's original index.
 
+## Types
+
+`createQueryBatch` takes a `CreateQueryBatchOptions<TCreator, TItem>` and returns a
+`QueryBatch<TItem, TArgs>`; `AnyQueryBatch` erases both. `status()` is a `QueryBatchStatus`
+(`'idle' | 'running' | 'success' | 'partial' | 'error' | 'cancelled'`), `run()` resolves with a
+`QueryBatchResult<TItem, TArgs>`, and each entry in it is a `QueryBatchItemResult<TItem, TArgs>` -
+the union of `QueryBatchItemSuccess`, `QueryBatchItemError`, `QueryBatchItemSkipped` and
+`QueryBatchItemCancelled`, discriminated on `status`. `AnyQueryBatchItemResult` is that union with
+the generics erased, for a helper that formats a row.
+
 ## Inspecting a run in the devtools
 
 With [`provideQueryDevtools()`](/query-devtools/) installed, every `createQueryBatch` registers itself and the panel gets a **Batches** tab: the run's status and progress bar, the measured throughput and time remaining, the concurrency it was configured with, and one row per item with its resolved route, the args it was sent and the response or error it came back with. Failures are listed first, so a cap never drops the items you opened the tab for.

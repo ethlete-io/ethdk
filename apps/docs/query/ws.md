@@ -53,6 +53,22 @@ export class MatchComponent {
 
 The underlying socket always connects with `withCredentials: true` and disconnects automatically when the providing scope is destroyed.
 
+### Typing the messages
+
+`createWebSocketClient` is generic over the whole message envelope, constrained to `SocketMessageView`
+(`{ room: string; event: string; data: TMessageData }`). Parameterizing it types `latestMessage()`
+everywhere downstream:
+
+```ts
+type MatchMessage = SocketMessageView<{ homeScore: number; awayScore: number }>;
+
+const MATCH_SOCKET = createWebSocketClient<MatchMessage>({ name: 'match-events', url, io });
+```
+
+Pass a union of `SocketMessageView`s when the server sends several shapes and discriminate on
+`event` at the call site. Without a type argument every message is a `SocketMessageView` with
+`data: unknown`.
+
 ## Rooms
 
 `joinRoom(room)` accepts a static room name or a reactive function and returns a `Signal<WebSocketRoom | null>`:
@@ -140,6 +156,16 @@ that asked can be provoked without adding a temporary button to the UI.
 
 Without the provider none of it is recorded: the client checks once whether devtools are
 installed, and every capture call is a no-op after that.
+
+## Types
+
+| Type                                 | What it is                                                                                                                                                                                                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SocketMessageView<TData>`           | The message envelope - `{ room, event, data }` - and the constraint on the client's type argument.                                                                                                                                                           |
+| `WebSocketClient<TMessageData>`      | The injected client (`joinRoom`, `isConnected`, `subtle`). `WebSocketClientResult` is the provider definition `createWebSocketClient` returns, and `AnyWebSocketClient` an alias of it. `WebSocketClientSubtle` is the escape-hatch namespace on the client. |
+| `WebSocketRoom<TMessageData>`        | What the `joinRoom` signal holds - just `latestMessage()`.                                                                                                                                                                                                   |
+| `CreateWebSocketClientConfigOptions` | The options bag above; `CreateWebSocketClientTransport` is the `'polling' \| 'websocket' \| 'webtransport'` union of `transports`.                                                                                                                           |
+| `WebSocketClientIo`                  | The `io` factory as this client calls it - `(url, options: WebSocketClientIoOptions) => WebSocketClientSocket`. socket.io's own `io` satisfies it, and so does a test double.                                                                                |
 
 ## Error codes
 

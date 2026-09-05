@@ -2,7 +2,7 @@
 
 ## The error object
 
-Failed requests resolve to a **`QueryErrorResponse`** on [`query.error()`](/query/queries#the-query-object): `{ raw: HttpErrorResponse, code: number, retryState }` plus a normalized message - either a single message (`isList: false`, `error.message`) or a violation list (`isList: true`, `errors[].message`).
+Failed requests resolve to a **`QueryErrorResponse`** on [`query.error()`](/query/queries#the-query-object): `{ raw: HttpErrorResponse, code: number, retryState }` plus a normalized message - either a single message (a `QueryErrorResponseSingle`: `isList: false`, `error.message`) or a violation list (a `QueryErrorResponseList`: `isList: true`, `errors[].message`). Both halves hold `QueryErrorResponseItem`s, which are just `{ message }`.
 
 Out of the box the normalizer reads the shapes every API has: `{ message }`, `{ detail }`, plain strings and string arrays - so templates can render error messages without caring about the backend flavor.
 
@@ -33,6 +33,13 @@ registerQueryErrorParser((detail) =>
 );
 ```
 
+A parser is a `QueryErrorParser`: `(detail: unknown, response: HttpErrorResponse) => string[] | null`.
+Returning `null` means "not my shape" and passes the body to the next one; returning an **empty
+array** means "my shape, nothing readable in it" - no further parser runs and the
+`HttpErrorResponse`'s own message stands. The two built-in ones are exported as
+`htmlQueryErrorParser` and `symfonyQueryErrorParser`, for an app that wants one of them without the
+client feature that installs it.
+
 ### HTML error pages
 
 With `withHtmlErrorParsing()` (or `withEthleteApiErrors()`) installed: not every failure answers with JSON - a proxy's `502`, a load balancer's maintenance page or a platform's "service temporarily unavailable" arrive as a full HTML document. Rendering that as the message would dump markup into the UI, so the normalizer picks the readable text out of it instead:
@@ -56,7 +63,9 @@ The single/list split exists because that is how APIs answer; UI almost never wa
 }
 ```
 
-Keep the `QueryErrorResponse` itself for anything that needs the status code (`code`), the retry state, or the raw `HttpErrorResponse`.
+Keep the `QueryErrorResponse` itself for anything that needs the status code (`code`), the retry state, or the raw `HttpErrorResponse`. `isQueryErrorResponse(value)` narrows an `unknown` to one - an error caught in a `catch`, or one handed to you untyped - and `createQueryErrorResponse(response)` builds one from an `HttpErrorResponse`, running the same parser pipeline a query does.
+
+The shape guards behind `withSymfonyErrors()` are exported too, for code that branches on the body itself: `isSymfonyError` (a `SymfonyError`, with its `SymfonyErrorTrace` entries), `isSymfonyPagerfantaOutOfRangeError` (the dev-mode out-of-range `500`, also what [`withPageResetOnError`](/query/features#withpageresetonerror) matches), `isSymfonyFormViolationListError` (`{ violations: [...] }`), `isSymfonyListError` (a bare violation array) and `isClassValidatorError` (a `ClassValidatorError`, `{ message: string[] }`).
 
 ## Submitting a form through a mutation
 
@@ -94,7 +103,7 @@ Submitting executes the query, waits for it to settle, and only then resolves - 
 | `rewritePath`   | Rewrites a violation's property path before it is resolved against the field tree.                                            |
 | `mapViolations` | Replaces the default violation → error mapping entirely.                                                                      |
 
-It returns `{ query, action }`: hand `action` to the form and keep `query` for an error banner - never execute it yourself, or the form's submitting state stops matching what the query is doing.
+It returns `{ query, action }` - a `QuerySubmissionRef` - from a `CreateQuerySubmissionConfig`: hand `action` to the form and keep `query` for an error banner - never execute it yourself, or the form's submitting state stops matching what the query is doing.
 
 ## Mapping violations onto signal forms
 
@@ -126,6 +135,8 @@ protected async save() {
   - **Unresolved** (no matching field, or a `null` path) → a form-level error on the submitted field by default; pass `onUnmappedViolation` to replace it (return `null` to drop the violation).
   - **Path mismatch between API payload and form model?** `rewritePath: (path, violation) => string | null` rewrites paths before resolution.
 - A failure **without** violations (e.g. a plain 500) degrades to form-level errors with `kind: 'etServerError'` built from the normalized message - so a failed submit is never silently treated as success.
+
+Both `kind`s are exported as `SERVER_VIOLATION_ERROR_KIND` and `SERVER_ERROR_KIND`, so a resolver that switches on them does not repeat the string, and the errors themselves are typed as `ServerViolationValidationError` (it carries the `violation` it was built from) and `ServerValidationError`. `MapViolationsToFormErrorsOptions` is the argument type of `mapViolationsToFormErrors`, and `ValidateWithQueryConfig` that of `validateWithQuery`.
 
 The [forms guide](/components/forms#server-side-violations) shows the rendering side, including the `provideFormErrorMessageResolver` hook for centralizing/localizing error texts by `kind`.
 
@@ -198,6 +209,8 @@ features: [withDefaultRetry({ maxAttempts: 5, maxDelayMs: 10_000 })];
 | `jitter`               | `0.25`                           | How far the delay is spread around its computed value. `0` makes it exact. |
 | `retryableStatusCodes` | `0`, `408`, `425`, `429`, `501`+ | Replaces the retryable statuses rather than adding to them.                |
 
+That option bag is a `DefaultRetryOptions`. A hand-written policy is a `ShouldRetryRequestFn`: it takes `ShouldRetryRequestOptions` (`{ retryCount, error }`) and returns a `ShouldRetryRequestResult` - either `{ retry: false }` or `{ retry: true }` with the delay to wait.
+
 ::: warning `maxAttempts: 0` never surfaces an error
 A query that retries forever never resolves to a `failure`: it stays `loading()` for as long as the server stays down, so a screen gated on `executionState()` shows a spinner and nothing else - no error, no retry button. Only ever right for a request nothing renders, which is why the [token refresh](/query/auth#token-refresh) uses it and the default policy does not.
 :::
@@ -230,4 +243,4 @@ Misuse throws dev-mode `RuntimeError`s with numeric codes, grouped by area:
 | 900–999   | [Query sequences and batches](/query/batching) plus [legacy interop](/query/migrating-from-v2#prepare-needs-an-injector) - e.g. a second `run()` while one is in flight, or `prepare()` called with no injection context. |
 | 1000–1999 | [WebSockets](/query/ws#error-codes) - leaving a room that was never joined, malformed messages.                                                                                                                           |
 
-The error message names the problem and the fix; the codes exist so you can grep for them.
+The error message names the problem and the fix; the codes exist so you can grep for them. Every code is also a member of the exported `QueryRuntimeErrorCode` object (and of the union type of the same name), so a spec can assert on one by name rather than by number.

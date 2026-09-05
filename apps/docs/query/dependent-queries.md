@@ -86,6 +86,8 @@ type QuerySequenceResult<T extends unknown[]> =
   | { ok: false; failedAt: number; error: QueryErrorResponse; snapshots: QuerySnapshot[] };
 ```
 
+The chain object itself is a `QuerySequence<TResponses>`, `status()` a `QuerySequenceStatus`, and the seed/step args a `QuerySequenceStepArgs<TArgs>` - the same `{ args }` shape `query.execute()` takes.
+
 On success `responses` is the typed tuple of every step's response. On failure the waterfall stops at the first error - later steps never run - and you get the failing step's index and normalized error. `snapshots` always holds the settled, frozen [snapshots](/query/queries#the-query-object) of every step that ran, so a later re-run can't mutate the results you read.
 
 ### Reactive progress
