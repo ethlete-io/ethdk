@@ -312,6 +312,31 @@ describe('ws scenario', () => {
     s.expectError((entry) => entry.error instanceof SyntaxError);
   });
 
+  it('throws a clear error when joinRoom is called outside an injection context', () => {
+    const s = scenario();
+    const { instance } = createSocket(s);
+
+    expect(() => instance.joinRoom('lobby')).toThrow(/NG0203|injection context/);
+  });
+
+  it('reports a frame that parses as JSON but carries no room', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    const c = s.consumer();
+    const room = c.run(() => instance.joinRoom('lobby'));
+    s.tick();
+
+    expect(() => double.serverSendRaw('"hello"')).toThrow(/ET1001|malformed/);
+    expect(() => double.serverSendRaw('{"nope":1}')).toThrow(/ET1001|malformed/);
+    expect(room()?.latestMessage()).toBeNull();
+
+    s.expectError((entry) => String(entry.error).includes('ET1001'));
+    s.expectError((entry) => String(entry.error).includes('ET1001'));
+
+    c.destroy();
+  });
+
   it('hands the configured transport list to the io factory in order, and none when the option is omitted', () => {
     const s = scenario();
 
@@ -438,8 +463,6 @@ describe('ws scenario', () => {
     double.serverSend({ room: 'lobby', event: 'score', data: { goals: 1 } });
     expect(room()?.latestMessage()).toEqual({ room: 'lobby', event: 'score', data: { goals: 1 } });
 
-    s.expectError((entry) => entry.error instanceof SyntaxError);
-
     c.destroy();
   });
 
@@ -451,20 +474,18 @@ describe('ws scenario', () => {
     expect(double.sent()).toEqual([]);
   });
 
-  it.fails(
-    'logs nothing for a malformed frame outside dev mode - ws.md:75 calls it silently dropped, but the client always console.errors it',
-    () => {
-      const s = scenario();
-      const { double } = createSocket(s);
+  it('logs nothing for a malformed frame outside dev mode', () => {
+    const s = scenario();
+    const { double } = createSocket(s);
 
-      inProductionMode(() => double.serverSendRaw('{'));
+    inProductionMode(() => double.serverSendRaw('{'));
+    inProductionMode(() => double.serverSendRaw('{"nope":1}'));
 
-      const logged = s.errors.length;
-      while (s.errors.length) s.expectError(() => true);
+    const logged = s.errors.length;
+    while (s.errors.length) s.expectError(() => true);
 
-      expect(logged).toBe(0);
-    },
-  );
+    expect(logged).toBe(0);
+  });
 
   it('records nothing when devtools are not installed', () => {
     const s = scenario();

@@ -114,7 +114,8 @@ export type WebSocketClientSubtle = {
 
 export type WebSocketClient<TMessageData extends SocketMessageView> = {
   /**
-   * Join a socket io room
+   * Join a socket io room. Must be called in an injection context, because the room is released when
+   * that context is destroyed.
    * If a function is passed, it will be evaluated in a reactive signal context.
    * If the function returns null, no room will be joined.
    * If the function returns a string, the previous room will be left and the new room will be joined.
@@ -303,7 +304,17 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
             if (typeof data !== 'string') throw messageMalformed();
 
-            const json = JSON.parse(data) as TMessageData;
+            const parsed: unknown = JSON.parse(data);
+
+            if (
+              typeof parsed !== 'object' ||
+              parsed === null ||
+              typeof (parsed as SocketMessageView).room !== 'string'
+            ) {
+              throw messageMalformed();
+            }
+
+            const json = parsed as TMessageData;
 
             recordDevtoolsMessage({ room: json.room, event: json.event, data: json.data, direction: 'in' });
 
@@ -311,8 +322,10 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
             if (room) room.latestMessage.set(json);
           } catch (error) {
+            if (!isDevMode()) return;
+
             console.error(error);
-            if (isDevMode()) throw messageMalformed();
+            throw messageMalformed();
           }
         });
       };

@@ -19,6 +19,6 @@ export const roomNotJoined = (room: string) => {
 export const messageMalformed = () => {
   return new RuntimeError(
     WebSocketRuntimeErrorCode.MESSAGE_MALFORMED,
-    'A message has been received but it is malformed (cannot be parsed as JSON).',
+    'A message has been received but it is malformed. Expected a JSON string shaped like { room: string; event: string; data: unknown }.',
   );
 };
