@@ -7,6 +7,7 @@ import {
   InjectionToken,
   Injector,
   Input,
+  OnInit,
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
@@ -68,7 +69,7 @@ type DirectiveQueryCreator = AnyV2QueryCreator | AnyLegacyQueryCreator;
 })
 export class InfinityQueryDirective<
   Q extends InfinityQueryConfig<DirectiveQueryCreator, BaseArguments | undefined, any, unknown[]>,
-> {
+> implements OnInit {
   private readonly queryConfigChanged$ = new Subject<boolean>();
   private readonly viewContext: InfinityQueryContext<Q> = {
     $implicit: null,
@@ -137,7 +138,9 @@ export class InfinityQueryDirective<
     return true;
   }
 
-  constructor() {
+  ngOnInit() {
+    // Not in the constructor: a child of the template that injects INFINITY_QUERY_TOKEN (the trigger
+    // directive) would then resolve this half-built instance - a cyclic node injector lookup, NG0200.
     this.viewContainerRef.createEmbeddedView(this.mainTemplateRef, this.viewContext);
   }
 
