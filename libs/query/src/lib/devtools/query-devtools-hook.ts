@@ -219,9 +219,12 @@ export const setQueryDevtoolsRegistrar = (fn: QueryDevtoolsRegistrar) => {
 };
 
 /**
- * Whether {@link provideQueryDevtools} has been called. When `false`, every `register*` call is a
- * no-op so the devtools instrumentation retains no references and adds no overhead in production.
- * @internal
+ * Whether `provideQueryDevtools()` has been called on this page. When `false` every instrumentation
+ * site is a no-op, which is what a devtools UI gates itself on so a build that omits the provider
+ * renders nothing.
+ *
+ * It is answered by the `provideQueryDevtools()` call itself, which runs while the providers array is
+ * built - so it is already settled by the time an application bootstraps and needs no signal.
  */
 export const isQueryDevtoolsEnabled = () => registrar !== null;
 

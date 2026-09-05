@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { Component, computed, DestroyRef, inject, signal, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  isQueryDevtoolsEnabled,
   queryDevtoolsArmedMocks,
   queryDevtoolsEntries,
   queryDevtoolsFaults,
@@ -17,6 +18,9 @@ import { QueryDevtoolsToggleComponent, wasQueryDevtoolsOpen } from '@ethlete/que
  * first asked for, then downloads `<et-query-devtools>` as its own chunk and hands over. Use it instead
  * of `<et-query-devtools>` to keep the panel out of the bundle an application ships to its users.
  *
+ * Without `provideQueryDevtools()` it renders nothing at all - no toggle, no shortcut, and the panel
+ * chunk is never requested - so it can be left mounted in a production build.
+ *
  * Everything else is identical - the same toggle, the same `Ctrl/Cmd + Alt + Q` shortcut, and a panel
  * that was open when the tab last stored its state comes back open without a click.
  *
@@ -28,12 +32,14 @@ import { QueryDevtoolsToggleComponent, wasQueryDevtoolsOpen } from '@ethlete/que
 @Component({
   selector: 'et-query-devtools-lazy',
   template: `
-    @defer (when load()) {
-      <et-query-devtools [startOpen]="openOnLoad()" />
-    } @placeholder {
-      <et-query-devtools-toggle [tampered]="tampered()" (openChange)="open()" />
-    } @loading {
-      <et-query-devtools-toggle [tampered]="tampered()" />
+    @if (enabled) {
+      @defer (when load()) {
+        <et-query-devtools [startOpen]="openOnLoad()" />
+      } @placeholder {
+        <et-query-devtools-toggle [tampered]="tampered()" (openChange)="open()" />
+      } @loading {
+        <et-query-devtools-toggle [tampered]="tampered()" />
+      }
     }
   `,
   encapsulation: ViewEncapsulation.None,
@@ -43,12 +49,17 @@ export class QueryDevtoolsLazyComponent {
   private document = inject(DOCUMENT);
 
   /**
-   * Whether the panel was already open in this tab. It has to be answered before the panel exists, which
-   * is why the stored view state is read here rather than asked of the panel.
+   * Whether `provideQueryDevtools()` is in the application. Everything else here is gated on it - the
+   * stored view state read, the shortcut listener and the template - so a build that ships the shell
+   * without the provider renders nothing and can never load the panel.
    */
-  private restoredOpen = wasQueryDevtoolsOpen();
+  protected enabled = isQueryDevtoolsEnabled();
 
-  protected load = signal(this.restoredOpen);
+  /**
+   * Whether the panel is wanted. Whether it was already open has to be answered before the panel exists,
+   * which is why the stored view state is read here rather than asked of the panel.
+   */
+  protected load = signal(this.enabled && wasQueryDevtoolsOpen());
 
   /** A restored panel opens because it was open; one that was clicked open has to be told to. */
   protected openOnLoad = signal(false);
@@ -68,6 +79,8 @@ export class QueryDevtoolsLazyComponent {
   );
 
   constructor() {
+    if (!this.enabled) return;
+
     setQueryDevtoolsUiMounted(true);
     inject(DestroyRef).onDestroy(() => setQueryDevtoolsUiMounted(false));
 

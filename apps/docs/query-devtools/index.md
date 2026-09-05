@@ -44,8 +44,8 @@ import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';
 export class AppComponent {}
 ```
 
-`<et-query-devtools-lazy>` renders only the floating toggle button and downloads the
-panel the first time it is opened - see
+With the provider in place, `<et-query-devtools-lazy>` renders only the floating
+toggle button and downloads the panel the first time it is opened - see
 [Keeping it out of your bundle](#keeping-it-out-of-your-bundle). `<et-query-devtools>`
 from `@ethlete/query-devtools` is the same panel loaded eagerly, if you would rather
 not have a chunk boundary there.
@@ -62,11 +62,17 @@ them in the first one: the second call keeps what the first declared, warns in t
 options it declared itself, and takes part in the pills the same way. Every other call has no options
 to lose and warns about nothing.
 
-Without `provideQueryDevtools()` the registry stays empty and the panel shows
-nothing. Instrumentation is a no-op until you call it - it retains no references
-and adds no runtime overhead - so leaving the panel mounted while omitting the
-provider in production builds is safe, and with the lazy shell it is never
-downloaded either.
+Without `provideQueryDevtools()` there is nothing to inspect, so
+`<et-query-devtools-lazy>` renders nothing at all: no floating button, no
+`Ctrl/Cmd + Alt + Q`, and the panel chunk is never requested. Instrumentation is a
+no-op until you call it - it retains no references and adds no runtime overhead - so
+a production build can leave the shell mounted and just omit the provider.
+
+What that does not take back is the shell itself, which is in the bundle either way
+(see [Keeping it out of your bundle](#keeping-it-out-of-your-bundle)); put an `@if`
+on your environment flag around `<et-query-devtools-lazy>` to drop those bytes too.
+`<et-query-devtools>` mounted eagerly is the one to keep out of a production build -
+it is the whole panel in your bundle, provider or not.
 
 ## Keeping it out of your bundle
 
