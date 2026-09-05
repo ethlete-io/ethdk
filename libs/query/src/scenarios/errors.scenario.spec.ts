@@ -1,11 +1,15 @@
-import { HttpBackend, HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { HttpBackend, HttpErrorResponse, HttpEventType, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createDefaultRetryFn,
+  isHtmlErrorPayload,
   registerQueryErrorParser,
   withDefaultRetry,
   withEthleteApiErrors,
+  withErrorHandling,
   withHtmlErrorParsing,
+  withPolling,
   withSymfonyErrors,
   withSuccessHandling,
 } from '../index';
@@ -61,6 +65,86 @@ describe('baseline error normalization (no client features)', () => {
     expect(query.error()).toBeNull();
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 500);
+    c.destroy();
+  });
+
+  it('normalizes a { detail } body without any client feature', () => {
+    const s = scenario();
+    s.api.on('GET', '/detail-body', () => ({ status: 400, body: { detail: 'The report is no longer available.' } }));
+
+    const getDetailBody = s.get<{ response: unknown }>('/detail-body');
+    const c = s.consumer();
+    const query = c.run(() => getDetailBody());
+
+    s.tick();
+
+    const error = query.error();
+    expect(error?.isList).toBe(false);
+    expect(error && !error.isList ? error.error.message : null).toBe('The report is no longer available.');
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('normalizes a plain string error body into a single message', () => {
+    const s = scenario();
+    s.api.on('GET', '/string-body', () => ({ status: 400, body: 'The report is no longer available.' }));
+
+    const getStringBody = s.get<{ response: unknown }>('/string-body');
+    const c = s.consumer();
+    const query = c.run(() => getStringBody());
+
+    s.tick();
+
+    const error = query.error();
+    expect(error?.isList).toBe(false);
+    expect(error && !error.isList ? error.error.message : null).toBe('The report is no longer available.');
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('normalizes a string array error body into the documented violation list', () => {
+    const s = scenario();
+    s.api.on('GET', '/string-array-body', () => ({
+      status: 400,
+      body: ['Email is required.', 'Name is too short.'],
+    }));
+
+    const getStringArrayBody = s.get<{ response: unknown }>('/string-array-body');
+    const c = s.consumer();
+    const query = c.run(() => getStringArrayBody());
+
+    s.tick();
+
+    const error = query.error();
+    expect(error?.isList).toBe(true);
+    expect(error && error.isList ? error.errors.map((item) => item.message) : null).toEqual([
+      'Email is required.',
+      'Name is too short.',
+    ]);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('sends a retryable 503 exactly once without the default retry feature', () => {
+    const s = scenario();
+    s.api.on('GET', '/unretried-503', () => ({ status: 503, body: { message: 'down' } }));
+
+    const getUnretried = s.get<{ response: unknown }>('/unretried-503');
+    const c = s.consumer();
+    const query = c.run(() => getUnretried());
+
+    s.tick();
+
+    expect(query.error()?.retryState).toEqual({ retry: false });
+    expect(s.api.requestCount('GET', '/unretried-503')).toBe(1);
+
+    s.tick(30_000);
+    expect(s.api.requestCount('GET', '/unretried-503')).toBe(1);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
     c.destroy();
   });
 });
@@ -181,6 +265,59 @@ describe('Symfony violations (withSymfonyErrors)', () => {
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
     c.destroy();
   });
+
+  it('turns a bare violation array into the documented violation list', () => {
+    const s = scenario();
+    s.api.on('POST', '/bare-violations', () => ({
+      status: 422,
+      body: [
+        { message: 'This value should not be blank.', propertyPath: 'email', invalidValue: null },
+        { message: 'This value is too short.', propertyPath: 'name', invalidValue: 'Al' },
+      ],
+    }));
+
+    const createBare = s.post<{ response: unknown; body: Record<string, never> }>('/bare-violations');
+    const c = s.consumer();
+    const query = c.run(() => createBare());
+    c.run(() => query.execute({ args: { body: {} } }));
+
+    s.tick();
+
+    const error = query.error();
+    expect(error?.isList).toBe(true);
+    expect(error && error.isList ? error.errors.map((item) => item.message) : null).toEqual([
+      'This value should not be blank.',
+      'This value is too short.',
+    ]);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
+    c.destroy();
+  });
+
+  it('turns a class-validator { message: [] } body into a violation list', () => {
+    const s = scenario();
+    s.api.on('POST', '/class-validator', () => ({
+      status: 400,
+      body: { statusCode: 400, error: 'Bad Request', message: ['email must be an email', 'name should not be empty'] },
+    }));
+
+    const createClassValidated = s.post<{ response: unknown; body: Record<string, never> }>('/class-validator');
+    const c = s.consumer();
+    const query = c.run(() => createClassValidated());
+    c.run(() => query.execute({ args: { body: {} } }));
+
+    s.tick();
+
+    const error = query.error();
+    expect(error?.isList).toBe(true);
+    expect(error && error.isList ? error.errors.map((item) => item.message) : null).toEqual([
+      'email must be an email',
+      'name should not be empty',
+    ]);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
 });
 
 describe('withEthleteApiErrors (html + symfony + retry in one feature)', () => {
@@ -221,6 +358,62 @@ describe('withEthleteApiErrors (html + symfony + retry in one feature)', () => {
 
     a.destroy();
     b.destroy();
+  });
+
+  it('parses an HTML error page from the single withEthleteApiErrors feature', () => {
+    const s = scenario();
+    s.api.on('GET', '/gateway', () => ({
+      status: 400,
+      body: '<h1>Bad Gateway</h1><p>The upstream did not answer.</p>',
+    }));
+
+    const getGateway = s.get<{ response: unknown }>('/gateway');
+    const c = s.consumer();
+    const query = c.run(() => getGateway());
+
+    s.tick();
+
+    const error = query.error();
+    expect(error && !error.isList ? error.error.message : null).toBe('Bad Gateway: The upstream did not answer.');
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+});
+
+// Placed after the blocks whose clients install the symfony and html parsers: this client declares no
+// error feature at all, so anything it parses beyond the baseline ladder came from another client.
+describe('error parsers are installed process-wide, not per client', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('lets a second client see the parser the first client installed', () => {
+    const s = scenario();
+    s.api.on('POST', '/other-client-violations', () => ({
+      status: 422,
+      body: {
+        violations: [
+          { message: 'This value should not be blank.', propertyPath: 'email' },
+          { message: 'This value is too short.', propertyPath: 'name' },
+        ],
+      },
+    }));
+
+    const createOnOtherClient = s.post<{ response: unknown; body: Record<string, never> }>('/other-client-violations');
+    const c = s.consumer();
+    const query = c.run(() => createOnOtherClient());
+    c.run(() => query.execute({ args: { body: {} } }));
+
+    s.tick();
+
+    const error = query.error();
+    expect(error?.isList).toBe(true);
+    expect(error && error.isList ? error.errors.map((item) => item.message) : null).toEqual([
+      'This value should not be blank.',
+      'This value is too short.',
+    ]);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
+    c.destroy();
   });
 });
 
@@ -709,6 +902,111 @@ describe('HTML error parsing edge cases (withHtmlErrorParsing)', () => {
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
     c.destroy();
   });
+
+  it('does not repeat the heading when the first paragraph only restates it', () => {
+    const s = scenario();
+    s.api.on('GET', '/html-restated', () => ({
+      status: 400,
+      body:
+        '<h1>Service Temporarily Unavailable</h1><p>Service Temporarily Unavailable</p>' +
+        '<p>The server is currently restarting.</p>',
+    }));
+
+    const getPage = s.get<{ response: unknown }>('/html-restated');
+    const c = s.consumer();
+    const query = c.run(() => getPage());
+
+    s.tick();
+
+    const error = query.error();
+    expect(error && !error.isList ? error.error.message : null).toBe(
+      'Service Temporarily Unavailable: The server is currently restarting.',
+    );
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('falls back to the flattened page text for a page with neither heading nor paragraph', () => {
+    const s = scenario();
+    s.api.on('GET', '/html-unstructured', () => ({
+      status: 400,
+      body: '<div><span>The gateway</span> is having a bad day.</div>',
+    }));
+
+    const getPage = s.get<{ response: unknown }>('/html-unstructured');
+    const c = s.consumer();
+    const query = c.run(() => getPage());
+
+    s.tick();
+
+    const error = query.error();
+    expect(error && !error.isList ? error.error.message : null).toBe('The gateway is having a bad day.');
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('decodes entities and drops tags from the extracted message', () => {
+    const s = scenario();
+    s.api.on('GET', '/html-entities', () => ({
+      status: 400,
+      body: '<h1>Ops &amp; Support</h1><p>The &lt;b&gt;server&lt;/b&gt; is down &mdash; try later.</p>',
+    }));
+
+    const getPage = s.get<{ response: unknown }>('/html-entities');
+    const c = s.consumer();
+    const query = c.run(() => getPage());
+
+    s.tick();
+
+    const error = query.error();
+    expect(error && !error.isList ? error.error.message : null).toBe(
+      'Ops & Support: The <b>server</b> is down - try later.',
+    );
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('keeps the HttpErrorResponse message when the page has no readable text', () => {
+    const s = scenario();
+    s.api.on('GET', '/html-blank', () => ({ status: 400, body: '<div>   </div>' }));
+
+    const getPage = s.get<{ response: unknown }>('/html-blank');
+    const c = s.consumer();
+    const query = c.run(() => getPage());
+
+    s.tick();
+
+    const error = query.error();
+    const message = error && !error.isList ? error.error.message : null;
+    expect(message).toBe(error?.raw.message);
+    expect(message).toContain('Http failure response');
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('leaves a plain message containing a stray < untouched', () => {
+    const s = scenario();
+    s.api.on('GET', '/stray-angle-bracket', () => ({ status: 400, body: 'Quantity must be < 100 and > 0.' }));
+
+    expect(isHtmlErrorPayload('Quantity must be < 100 and > 0.')).toBe(false);
+    expect(isHtmlErrorPayload('Line one<br>line two')).toBe(false);
+
+    const getPage = s.get<{ response: unknown }>('/stray-angle-bracket');
+    const c = s.consumer();
+    const query = c.run(() => getPage());
+
+    s.tick();
+
+    const error = query.error();
+    expect(error && !error.isList ? error.error.message : null).toBe('Quantity must be < 100 and > 0.');
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
 });
 
 describe('a transformResponse that throws', () => {
@@ -741,6 +1039,365 @@ describe('a transformResponse that throws', () => {
     expect(query.executionState()?.type).toBe('failure');
     expect(query.error()?.code).toBe(0);
     expect(handled).toEqual([{ name: 'ok' }]);
+
+    c.destroy();
+  });
+
+  it('reports the wire response to withErrorHandling and latestHttpEvent, not the transform failure', () => {
+    const s = scenario();
+    s.api.on('GET', '/transform-events', () => ({ body: { unmappable: true } }));
+
+    const getTransformed = s.get<TransformArgs>('/transform-events', {
+      transformResponse: (raw) => {
+        if (!raw.data) throw new Error('unmappable response');
+
+        return raw.data;
+      },
+    });
+
+    const handledErrors: unknown[] = [];
+    const c = s.consumer();
+    const query = c.run(() =>
+      getTransformed(withErrorHandling<TransformArgs>({ handler: (error) => handledErrors.push(error) })),
+    );
+
+    s.tick();
+
+    expect(query.executionState()?.type).toBe('failure');
+    expect(query.error()?.code).toBe(0);
+    expect(handledErrors).toEqual([]);
+
+    const event = query.latestHttpEvent();
+    expect(event?.type).toBe(HttpEventType.Response);
+    expect((event as HttpResponse<unknown>).body).toEqual({ unmappable: true });
+
+    c.destroy();
+  });
+});
+
+describe('configuring the default retry policy', () => {
+  describe('maxAttempts', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withDefaultRetry({ jitter: 0, maxAttempts: 5 })],
+    });
+
+    it('retries five times with maxAttempts: 5 before surfacing the error', () => {
+      const s = scenario();
+      s.api.on('GET', '/always-503-five', () => ({ status: 503, body: { message: 'down' } }));
+
+      const getAlways503 = s.get<{ response: unknown }>('/always-503-five');
+      const c = s.consumer();
+      const query = c.run(() => getAlways503());
+
+      // The last delay is the exponential 32000 clamped to the 30000 default `maxDelayMs`.
+      for (const delay of [0, 2_000, 4_000, 8_000, 16_000, 30_000]) {
+        s.tick(delay);
+        s.tick(1);
+      }
+
+      expect(s.api.requestCount('GET', '/always-503-five')).toBe(6);
+      expect(query.error()?.code).toBe(503);
+      expect(query.error()?.retryState).toEqual({ retry: false });
+
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+      c.destroy();
+    });
+  });
+
+  describe('baseDelayMs', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withDefaultRetry({ jitter: 0, baseDelayMs: 250 })],
+    });
+
+    it('starts the backoff at twice the configured baseDelayMs', () => {
+      const s = scenario();
+      s.api.on('GET', '/base-delay', sequence([{ status: 503 }, { body: { ok: true } }]));
+
+      const getBaseDelay = s.get<{ response: { ok: boolean } }>('/base-delay');
+      const c = s.consumer();
+      const query = c.run(() => getBaseDelay());
+
+      s.tick();
+      s.tick(1);
+      expect(s.api.requestCount('GET', '/base-delay')).toBe(1);
+
+      s.tick(400);
+      expect(s.api.requestCount('GET', '/base-delay')).toBe(1);
+
+      s.tick(100);
+      s.tick(1);
+      expect(s.api.requestCount('GET', '/base-delay')).toBe(2);
+      expect(query.response()).toEqual({ ok: true });
+
+      c.destroy();
+    });
+  });
+
+  describe('maxDelayMs', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withDefaultRetry({ jitter: 0, maxDelayMs: 3_000 })],
+    });
+
+    it('caps the exponential backoff at maxDelayMs', () => {
+      const s = scenario();
+      s.api.on('GET', '/capped-backoff', sequence([{ status: 503 }, { status: 503 }, { body: { ok: true } }]));
+
+      const getCapped = s.get<{ response: { ok: boolean } }>('/capped-backoff');
+      const c = s.consumer();
+      const query = c.run(() => getCapped());
+
+      s.tick();
+      s.tick(1);
+      s.tick(2_000);
+      s.tick(1);
+      expect(s.api.requestCount('GET', '/capped-backoff')).toBe(2);
+
+      // Uncapped the second delay would be 4000.
+      s.tick(2_900);
+      expect(s.api.requestCount('GET', '/capped-backoff')).toBe(2);
+
+      s.tick(100);
+      s.tick(1);
+      expect(s.api.requestCount('GET', '/capped-backoff')).toBe(3);
+      expect(query.response()).toEqual({ ok: true });
+
+      c.destroy();
+    });
+  });
+
+  describe('retryableStatusCodes', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withDefaultRetry({ jitter: 0, retryableStatusCodes: [418] })],
+    });
+
+    it('retries only the statuses retryableStatusCodes names, and no longer the defaults', () => {
+      const s = scenario();
+      s.api.on('GET', '/teapot', sequence([{ status: 418 }, { body: { ok: true } }]));
+      s.api.on('GET', '/no-longer-retried', () => ({ status: 503, body: { message: 'down' } }));
+
+      const getTeapot = s.get<{ response: { ok: boolean } }>('/teapot');
+      const getNoLongerRetried = s.get<{ response: unknown }>('/no-longer-retried');
+
+      const a = s.consumer();
+      const b = s.consumer();
+      const teapotQuery = a.run(() => getTeapot());
+      const droppedQuery = b.run(() => getNoLongerRetried());
+
+      s.tick();
+      s.tick(1);
+      expect(droppedQuery.error()?.retryState).toEqual({ retry: false });
+
+      s.tick(2_000);
+      s.tick(1);
+
+      expect(s.api.requestCount('GET', '/teapot')).toBe(2);
+      expect(teapotQuery.response()).toEqual({ ok: true });
+      expect(s.api.requestCount('GET', '/no-longer-retried')).toBe(1);
+
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+      a.destroy();
+      b.destroy();
+    });
+  });
+
+  describe('jitter', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withDefaultRetry()],
+    });
+
+    it('spreads the default backoff over ±25% of its computed delay', () => {
+      const s = scenario();
+      s.api.on('GET', '/jitter-low', sequence([{ status: 503 }, { body: { ok: true } }]));
+      s.api.on('GET', '/jitter-high', sequence([{ status: 503 }, { body: { ok: true } }]));
+
+      const random = vi.spyOn(Math, 'random').mockReturnValue(0);
+
+      const getLow = s.get<{ response: { ok: boolean } }>('/jitter-low');
+      const a = s.consumer();
+      a.run(() => getLow());
+
+      s.tick();
+      s.tick(1);
+
+      // 0.75x of the 2000ms first delay.
+      s.tick(1_400);
+      expect(s.api.requestCount('GET', '/jitter-low')).toBe(1);
+      s.tick(100);
+      s.tick(1);
+      expect(s.api.requestCount('GET', '/jitter-low')).toBe(2);
+
+      random.mockReturnValue(1);
+
+      const getHigh = s.get<{ response: { ok: boolean } }>('/jitter-high');
+      const b = s.consumer();
+      b.run(() => getHigh());
+
+      s.tick();
+      s.tick(1);
+
+      // 1.25x of the same delay.
+      s.tick(2_400);
+      expect(s.api.requestCount('GET', '/jitter-high')).toBe(1);
+      s.tick(100);
+      s.tick(1);
+      expect(s.api.requestCount('GET', '/jitter-high')).toBe(2);
+
+      random.mockRestore();
+      a.destroy();
+      b.destroy();
+    });
+  });
+
+  describe('a Symfony Pagerfanta out-of-range error', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withDefaultRetry({ jitter: 0 })],
+    });
+
+    it('does not retry a 5xx carrying a Pagerfanta out-of-range detail', () => {
+      const s = scenario();
+      s.api.on('GET', '/page-past-the-end', () => ({
+        status: 503,
+        body: {
+          class: 'Pagerfanta\\Exception\\OutOfRangeCurrentPageException',
+          detail: 'Page "99" does not exist. The currentPage must be inferior to "3".',
+          status: 503,
+          title: 'An error occurred',
+          trace: [],
+          type: 'https://tools.ietf.org/html/rfc2616#section-10',
+        },
+      }));
+
+      const getPastTheEnd = s.get<{ response: unknown }>('/page-past-the-end');
+      const c = s.consumer();
+      const query = c.run(() => getPastTheEnd());
+
+      s.tick();
+
+      expect(query.error()?.retryState).toEqual({ retry: false });
+      expect(s.api.requestCount('GET', '/page-past-the-end')).toBe(1);
+
+      s.tick(30_000);
+      expect(s.api.requestCount('GET', '/page-past-the-end')).toBe(1);
+
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+      c.destroy();
+    });
+  });
+});
+
+describe('overriding the retry policy per client and per creator', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 0, retryFn: createDefaultRetryFn({ jitter: 0, retryableStatusCodes: [400] }) },
+  });
+
+  it('honors a retryFn given as a client option and one given through clone()', () => {
+    const s = scenario();
+    s.api.on('GET', '/client-retry-fn', sequence([{ status: 400 }, { body: { ok: true } }]));
+    s.api.on('GET', '/creator-retry-fn', () => ({ status: 400, body: { message: 'no retry here' } }));
+
+    const getClientRetry = s.get<{ response: { ok: boolean } }>('/client-retry-fn');
+    const getCreatorRetry = s
+      .get<{ response: unknown }>('/creator-retry-fn')
+      .clone({ retryFn: () => ({ retry: false }) });
+
+    const a = s.consumer();
+    const b = s.consumer();
+    const clientRetryQuery = a.run(() => getClientRetry());
+    const creatorRetryQuery = b.run(() => getCreatorRetry());
+
+    s.tick();
+    s.tick(1);
+    expect(creatorRetryQuery.error()?.retryState).toEqual({ retry: false });
+
+    s.tick(2_000);
+    s.tick(1);
+
+    expect(s.api.requestCount('GET', '/client-retry-fn')).toBe(2);
+    expect(clientRetryQuery.response()).toEqual({ ok: true });
+    expect(s.api.requestCount('GET', '/creator-retry-fn')).toBe(1);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    a.destroy();
+    b.destroy();
+  });
+});
+
+describe('a retry nobody is waiting for is dropped', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 10_000 },
+    clientFeatures: [withDefaultRetry({ jitter: 0 })],
+  });
+
+  it('keeps the last good response when a retrying consumer leaves, and re-executes for the next one', () => {
+    const s = scenario();
+    let failing = false;
+    let version = 1;
+    s.api.on('GET', '/report', () => (failing ? { status: 503, body: { message: 'down' } } : { body: { version } }));
+
+    const getReport = s.get<{ response: { version: number } }>('/report');
+
+    const a = s.consumer();
+    const first = a.run(() => getReport());
+
+    s.tick();
+    s.tick(1);
+    expect(first.response()).toEqual({ version: 1 });
+
+    failing = true;
+    a.run(() => first.execute());
+    s.tick();
+    s.tick(1);
+    expect(s.api.requestCount('GET', '/report')).toBe(2);
+
+    a.destroy();
+    s.tick(1);
+    s.tick(5_000);
+    expect(s.api.requestCount('GET', '/report')).toBe(2);
+    expect(s.api.pending().length).toBe(0);
+
+    failing = false;
+    version = 2;
+
+    const b = s.consumer();
+    const second = b.run(() => getReport());
+
+    expect(second.response()).toEqual({ version: 1 });
+
+    s.tick();
+    s.tick(1);
+    expect(s.api.requestCount('GET', '/report')).toBe(3);
+    expect(second.response()).toEqual({ version: 2 });
+
+    b.destroy();
+    s.tick(10_001);
+  });
+});
+
+describe('dev-mode misuse errors', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('throws when withPolling is used on a POST query', () => {
+    const s = scenario();
+    const createThing = s.post<{ response: unknown; body: Record<string, never> }>('/things');
+    const c = s.consumer();
+
+    expect(() => c.run(() => createThing(withPolling({ interval: 1_000 })))).toThrow(/withPolling/);
+
+    c.destroy();
+  });
+
+  it('throws when a function route is created without a withArgs feature', () => {
+    const s = scenario();
+    const getThing = s.get<{ response: unknown; pathParams: { id: string } }>((p) => `/things/${p.id}`);
+    const c = s.consumer();
+
+    expect(() => c.run(() => getThing())).toThrow(/withArgs/);
 
     c.destroy();
   });

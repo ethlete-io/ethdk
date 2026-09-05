@@ -1,14 +1,18 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
-import { form, schema, submit } from '@angular/forms/signals';
+import { form, required, schema, submit } from '@angular/forms/signals';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createQuerySubmission,
+  def,
   executeUntilSettled,
+  extractFormViolations,
   mapViolationsToFormErrors,
   SERVER_ERROR_KIND,
   SERVER_VIOLATION_ERROR_KIND,
+  V2QueryClient,
   validateWithQuery,
+  validateWithV2Query,
 } from '../index';
 import { useScenario } from './harness';
 
@@ -191,6 +195,90 @@ describe('mapping violations onto signal forms (manual submit path)', () => {
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
     c.destroy();
   });
+
+  it('maps violations handed in as a raw HttpErrorResponse and as a bare violation array', async () => {
+    const s = scenario();
+    s.api.on('POST', '/users', () => ({
+      status: 422,
+      body: { violations: [{ message: 'This value should not be blank.', propertyPath: 'email' }] },
+    }));
+
+    const createUser = s.post<CreateUserArgs>('/users');
+    const c = s.consumer();
+    const testForm = c.run(() => form(signal(baseModel())));
+    const query = c.run(() => createUser());
+
+    let extracted: unknown;
+    const submitted = submit(testForm, async (field) => {
+      const snapshot = await executeUntilSettled(query, { args: { body: field().value() } });
+      const raw = snapshot.error()?.raw;
+
+      extracted = extractFormViolations(raw);
+
+      return mapViolationsToFormErrors({ fieldTree: field, error: raw });
+    });
+
+    await s.settle();
+    await submitted;
+
+    expect(extracted).toEqual([{ message: 'This value should not be blank.', propertyPath: 'email' }]);
+    expect(testForm.email().errors()).toEqual([
+      expect.objectContaining({ kind: SERVER_VIOLATION_ERROR_KIND, message: 'This value should not be blank.' }),
+    ]);
+
+    const bareArray = [{ message: 'Name is required.', propertyPath: 'items[0].name', invalidValue: null }];
+    const bareForm = c.run(() => form(signal(baseModel())));
+    const bareSubmitted = submit(bareForm, async (field) =>
+      mapViolationsToFormErrors({ fieldTree: field, error: bareArray }),
+    );
+
+    await s.settle();
+    await bareSubmitted;
+    await s.settle();
+
+    expect(extractFormViolations(bareArray)).toEqual(bareArray);
+    expect(bareForm.items[0]!.name().errors()).toEqual([
+      expect.objectContaining({ kind: SERVER_VIOLATION_ERROR_KIND, message: 'Name is required.' }),
+    ]);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
+    c.destroy();
+  });
+
+  it('resolves a bracket-notation propertyPath onto the nested field', async () => {
+    const s = scenario();
+    s.api.on('POST', '/users', () => ({
+      status: 422,
+      body: { violations: [{ message: 'Name is required.', propertyPath: 'items[2].name' }] },
+    }));
+
+    const createUser = s.post<CreateUserArgs>('/users');
+    const c = s.consumer();
+    const testForm = c.run(() =>
+      form(signal<UserModel>({ email: '', items: [{ name: 'a' }, { name: 'b' }, { name: '' }] })),
+    );
+    const query = c.run(() => createUser());
+
+    const submitted = submit(testForm, async (field) => {
+      const snapshot = await executeUntilSettled(query, { args: { body: field().value() } });
+      const error = snapshot.error();
+
+      if (!error) return;
+
+      return mapViolationsToFormErrors({ fieldTree: field, error });
+    });
+
+    await s.settle();
+    await submitted;
+
+    expect(testForm.items[2]!.name().errors()).toEqual([
+      expect.objectContaining({ kind: SERVER_VIOLATION_ERROR_KIND, message: 'Name is required.' }),
+    ]);
+    expect(testForm().errors()).toEqual([]);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
+    c.destroy();
+  });
 });
 
 describe('a failed submit without violations degrades to etServerError', () => {
@@ -328,6 +416,91 @@ describe('createQuerySubmission', () => {
     expect(testForm.email().errors()).toEqual([
       expect.objectContaining({ kind: SERVER_VIOLATION_ERROR_KIND, message: 'Bad email format.' }),
     ]);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
+    c.destroy();
+  });
+
+  it('keeps the form submitting for the whole request round trip', async () => {
+    const s = scenario();
+    s.api.on('POST', '/users', () => ({ status: 201, body: { id: 1, email: 'ada@example.com' }, delay: 500 }));
+
+    const createUser = s.post<CreateUserArgs>('/users');
+    const c = s.consumer();
+    const submission = c.run(() =>
+      createQuerySubmission({ queryCreator: createUser, args: (value: UserModel) => ({ body: value }) }),
+    );
+    const testForm = c.run(() => form(signal(baseModel()), { submission: { action: submission.action } }));
+
+    expect(testForm().submitting()).toBe(false);
+
+    const submitted = submit(testForm);
+
+    await s.settle();
+
+    expect(testForm().submitting()).toBe(true);
+    expect(submission.query.loading()).not.toBeNull();
+    expect(s.api.pending().length).toBe(1);
+
+    await s.settle(500);
+    await submitted;
+
+    expect(testForm().submitting()).toBe(false);
+    expect(submission.query.response()).toEqual({ id: 1, email: 'ada@example.com' });
+
+    c.destroy();
+  });
+
+  it('sends no request and resolves the action when args returns null', async () => {
+    const s = scenario();
+    s.api.on('POST', '/users', () => ({ status: 201, body: { id: 1, email: 'ada@example.com' } }));
+
+    const createUser = s.post<CreateUserArgs>('/users');
+    const onSuccess = vi.fn();
+    const c = s.consumer();
+    const submission = c.run(() => createQuerySubmission({ queryCreator: createUser, args: () => null, onSuccess }));
+    const testForm = c.run(() => form(signal(baseModel()), { submission: { action: submission.action } }));
+
+    const submitted = submit(testForm);
+
+    await s.settle();
+    const success = await submitted;
+
+    expect(s.api.requestCount('POST', '/users')).toBe(0);
+    expect(success).toBe(true);
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(testForm().errors()).toEqual([]);
+
+    c.destroy();
+  });
+
+  it('replaces the default violation mapping with config.mapViolations', async () => {
+    const s = scenario();
+    s.api.on('POST', '/users', () => ({
+      status: 422,
+      body: { violations: [{ message: 'This value should not be blank.', propertyPath: 'email' }] },
+    }));
+
+    const createUser = s.post<CreateUserArgs>('/users');
+    const c = s.consumer();
+    const submission = c.run(() =>
+      createQuerySubmission({
+        queryCreator: createUser,
+        args: (value: UserModel) => ({ body: value }),
+        mapViolations: () => [{ kind: 'appSubmissionError', message: 'mapped by the app' }],
+      }),
+    );
+    const testForm = c.run(() => form(signal(baseModel()), { submission: { action: submission.action } }));
+
+    const submitted = submit(testForm);
+
+    await s.settle();
+    await submitted;
+
+    expect(testForm().errors()).toEqual([
+      expect.objectContaining({ kind: 'appSubmissionError', message: 'mapped by the app' }),
+    ]);
+    expect(testForm.email().errors()).toEqual([]);
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
     c.destroy();
@@ -490,6 +663,161 @@ describe('validateWithQuery', () => {
     await s.settle(700);
     expect(testForm.email().errors()).toEqual([]);
 
+    c.destroy();
+  });
+
+  it('sends no validation request while a synchronous validator still fails', async () => {
+    const s = scenario();
+    s.api.on('POST', '/validate', () => ({ status: 204 }));
+
+    const validateEmail = s.post<{ body: { email: string }; response: void }>('/validate');
+    const c = s.consumer();
+    const testForm = c.run(() => {
+      const emailSchema = schema<{ email: string }>((p) => {
+        required(p.email);
+        validateWithQuery(p.email, {
+          queryCreator: validateEmail,
+          args: (ctx) => ({ body: { email: ctx.value() } }),
+          debounce: 0,
+        });
+      });
+
+      return form(signal({ email: '' }), emailSchema);
+    });
+
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/validate')).toBe(0);
+
+    testForm.email().value.set('ada@example.com');
+
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/validate')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('sends no request while the when gate is closed, and one once it opens', async () => {
+    const s = scenario();
+    s.api.on('POST', '/validate', () => ({ status: 204 }));
+
+    const validateEmail = s.post<{ body: { email: string }; response: void }>('/validate');
+    const gateOpen = signal(false);
+    const c = s.consumer();
+    const testForm = c.run(() => {
+      const emailSchema = schema<{ email: string }>((p) => {
+        validateWithQuery(p.email, {
+          queryCreator: validateEmail,
+          args: (ctx) => ({ body: { email: ctx.value() } }),
+          debounce: 0,
+          when: () => gateOpen(),
+        });
+      });
+
+      return form(signal({ email: 'ada@example.com' }), emailSchema);
+    });
+
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/validate')).toBe(0);
+    expect(testForm.email().errors()).toEqual([]);
+
+    gateOpen.set(true);
+
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/validate')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('uses mapViolations instead of the default field mapping', async () => {
+    const s = scenario();
+    s.api.on('POST', '/validate', () => ({
+      status: 422,
+      body: { violations: [{ message: 'Email already taken.', propertyPath: 'email' }] },
+    }));
+
+    const validateEmail = s.post<{ body: { email: string }; response: void }>('/validate');
+    const c = s.consumer();
+    const testForm = c.run(() => {
+      const emailSchema = schema<{ email: string }>((p) => {
+        validateWithQuery(p.email, {
+          queryCreator: validateEmail,
+          args: (ctx) => ({ body: { email: ctx.value() } }),
+          debounce: 0,
+          mapViolations: (violations) =>
+            violations.map((violation) => ({ kind: 'appEmailViolation', message: `taken: ${violation.message}` })),
+        });
+      });
+
+      return form(signal({ email: 'ada@example.com' }), emailSchema);
+    });
+
+    await s.settle();
+
+    expect(testForm.email().errors()).toEqual([
+      expect.objectContaining({ kind: 'appEmailViolation', message: 'taken: Email already taken.' }),
+    ]);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
+    c.destroy();
+  });
+});
+
+describe('validateWithV2Query', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('validates a field through a legacy V2Query creator the same way', async () => {
+    const s = scenario();
+    s.api.on('POST', '/validate', () => ({
+      status: 422,
+      body: { violations: [{ message: 'Email already taken.', propertyPath: 'email' }] },
+    }));
+
+    const expectedErrors = [
+      expect.objectContaining({ kind: SERVER_VIOLATION_ERROR_KIND, message: 'Email already taken.' }),
+    ];
+
+    const validateEmail = s.post<{ body: { email: string }; response: void }>('/validate');
+    const c = s.consumer();
+    const legacyClient = c.run(() => new V2QueryClient({ baseRoute: 'https://api.test' }));
+    const legacyValidateEmail = legacyClient.post({
+      route: '/validate',
+      types: { args: def<{ body: { email: string } }>(), response: def<void>() },
+    });
+
+    const currentForm = c.run(() => {
+      const emailSchema = schema<{ email: string }>((p) => {
+        validateWithQuery(p, {
+          queryCreator: validateEmail,
+          args: (ctx) => ({ body: { email: ctx.value().email } }),
+          debounce: 0,
+        });
+      });
+
+      return form(signal({ email: 'ada@example.com' }), emailSchema);
+    });
+
+    const legacyForm = c.run(() => {
+      const emailSchema = schema<{ email: string }>((p) => {
+        validateWithV2Query(p, {
+          queryCreator: legacyValidateEmail,
+          args: (ctx) => ({ body: { email: ctx.value().email } }),
+          debounce: 0,
+        });
+      });
+
+      return form(signal({ email: 'ada@example.com' }), emailSchema);
+    });
+
+    await s.settle();
+
+    expect(currentForm.email().errors()).toEqual(expectedErrors);
+    expect(legacyForm.email().errors()).toEqual(expectedErrors);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
     c.destroy();
   });
 });

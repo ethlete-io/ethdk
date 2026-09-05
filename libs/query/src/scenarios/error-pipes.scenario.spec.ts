@@ -2,6 +2,8 @@ import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
+  queryErrorMessage,
+  queryErrorMessages,
   ParseHttpErrorCodeToMessageDePipe,
   ParseHttpErrorCodeToMessageEnPipe,
   ParseHttpErrorCodeToTitleDePipe,
@@ -124,5 +126,40 @@ describe('http error pipes scenario', () => {
     rendered.destroy();
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 0);
     c.destroy();
+  });
+
+  it('flattens a single message and a violation list into the same string[]', () => {
+    const s = scenario();
+    s.api.on('GET', '/single-message', () => ({ status: 400, body: { message: 'The report is gone.' } }));
+    s.api.on('GET', '/several-messages', () => ({
+      status: 400,
+      body: ['Email is required.', 'Name is too short.'],
+    }));
+
+    const getSingle = s.get<{ response: unknown }>('/single-message');
+    const getSeveral = s.get<{ response: unknown }>('/several-messages');
+
+    const a = s.consumer();
+    const b = s.consumer();
+    const singleQuery = a.run(() => getSingle());
+    const severalQuery = b.run(() => getSeveral());
+
+    s.flush();
+
+    expect(singleQuery.error()?.isList).toBe(false);
+    expect(severalQuery.error()?.isList).toBe(true);
+
+    expect(queryErrorMessages(singleQuery.error())).toEqual(['The report is gone.']);
+    expect(queryErrorMessages(severalQuery.error())).toEqual(['Email is required.', 'Name is too short.']);
+    expect(queryErrorMessages(null)).toEqual([]);
+
+    expect(queryErrorMessage(singleQuery.error())).toBe('The report is gone.');
+    expect(queryErrorMessage(severalQuery.error())).toBe('Email is required.');
+    expect(queryErrorMessage(null)).toBeNull();
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    a.destroy();
+    b.destroy();
   });
 });
