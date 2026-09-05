@@ -628,7 +628,9 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
   };
 
   /**
-   * Merges the policies of the currently bound consumers onto the entry, the strictest one winning.
+   * Merges the policies of the currently bound consumers onto the entry, the strictest one winning -
+   * except `isPersistEnabled`, where one opted-in consumer is enough, because the entry holds one
+   * response and the creator that wants it on disk is the one asking for it.
    * An entry that just lost its last consumer keeps what it had: dropping `isSecure` there would hide
    * a retained response body of a logged in session from the logout that has to clear it.
    */

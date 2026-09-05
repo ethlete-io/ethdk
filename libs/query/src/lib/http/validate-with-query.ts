@@ -84,6 +84,7 @@ export const validateWithQuery = <TCreator extends AnyQueryCreator, TValue, TPat
       const abortInFlightRound = () => query.subtle.request()?.subtle.abort();
 
       const validationResource = resource<TResult | undefined, TParams | undefined>({
+        injector,
         params: () => params(),
         loader: async ({ params: requestArgs, abortSignal }) => {
           abortSignal.addEventListener('abort', abortInFlightRound, { once: true });
