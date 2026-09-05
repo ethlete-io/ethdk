@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 import { createQueryClient } from './query-client';
 import { createPostQuery } from './query-creator-templates';
 import { querySequence } from './query-sequence';
@@ -14,6 +14,11 @@ type CreateOrderArgs = {
 type CreatePaymentArgs = {
   body: { orderId: number };
   response: { id: number; paid: boolean };
+};
+
+type ArchiveArgs = {
+  body: { item: string };
+  response: { id: number } | null;
 };
 
 type ConfirmArgs = {
@@ -69,6 +74,36 @@ describe('querySequence', () => {
     expect(seq.currentStep()).toBe(0);
     expect(seq.total).toBe(2);
     expect(seq.error()).toBeNull();
+  });
+
+  it('reports the fully-built step count from every link', () => {
+    const { createOrder, createPayment, confirm } = makeQueries();
+
+    const seed = querySequence(createOrder, () => ({ args: { body: { item: 'book' } } }));
+    const chain = seed
+      .then(createPayment, (order) => ({ args: { body: { orderId: order.id } } }))
+      .then(confirm, (payment, [order]) => ({ args: { body: { orderId: order.id, paymentId: payment.id } } }));
+
+    expect(seed.total).toBe(3);
+    expect(chain.total).toBe(3);
+    expect(seed.progress()).toBe(0);
+  });
+
+  it('types the next mapArgs from the previous step declared response, null included', () => {
+    const { createOrder, createPayment } = makeQueries();
+    const archive = TestBed.runInInjectionContext(() => createPostQuery(client)<ArchiveArgs>('/archive')());
+
+    querySequence(createOrder, () => ({ args: { body: { item: 'book' } } })).then(createPayment, (order) => {
+      expectTypeOf(order).toEqualTypeOf<{ id: number; item: string }>();
+
+      return { args: { body: { orderId: order.id } } };
+    });
+
+    querySequence(archive, () => ({ args: { body: { item: 'book' } } })).then(createPayment, (archived) => {
+      expectTypeOf(archived).toEqualTypeOf<{ id: number } | null>();
+
+      return { args: { body: { orderId: archived?.id ?? 0 } } };
+    });
   });
 
   it('can run again after an args mapper throws', async () => {

@@ -446,6 +446,67 @@ describe('dependent queries scenario', () => {
       c.destroy();
     });
 
+    it('reports at most 100% progress from an intermediate sequence link', async () => {
+      const s = scenario();
+      s.api.on('POST', '/orders-i', () => ({ body: { id: 'order-1' } }));
+      s.api.on('POST', '/payments-i', () => ({ body: { id: 'payment-1' } }));
+      s.api.on('POST', '/confirm-i', () => ({ body: { confirmed: true } }));
+
+      const createOrder = s.post<{ response: { id: string }; body: { total: number } }>('/orders-i');
+      const createPayment = s.post<{ response: { id: string }; body: { orderId: string } }>('/payments-i');
+      const confirmOrder = s.post<{ response: { confirmed: boolean }; body: { paymentId: string } }>('/confirm-i');
+
+      const c = s.consumer();
+      const { seed, chain } = c.run(() => {
+        const seed = querySequence(createOrder(), () => ({ args: { body: { total: 1 } } }));
+        const chain = seed
+          .then(createPayment(), (order) => ({ args: { body: { orderId: order.id } } }))
+          .then(confirmOrder(), (payment) => ({ args: { body: { paymentId: payment.id } } }));
+
+        return { seed, chain };
+      });
+
+      expect(seed.total).toBe(3);
+      expect(seed.progress()).toBe(0);
+
+      const result = await driveSequence(s, chain.run());
+
+      expect(result?.ok).toBe(true);
+      expect(seed.completed()).toBe(3);
+      expect(seed.progress()).toBe(100);
+      expect(chain.progress()).toBe(100);
+
+      c.destroy();
+    });
+
+    it('hands the next mapArgs a null response when the previous step answers 204', async () => {
+      const s = scenario();
+      s.api.on('DELETE', '/carts/cart-1', () => ({ status: 204 }));
+      s.api.on('POST', '/orders-j', () => ({ body: { id: 'order-1' } }));
+
+      const clearCart = s.delete<{ response: { id: string } | null }>('/carts/cart-1');
+      const createOrder = s.post<{ response: { id: string }; body: { cart: string | null } }>('/orders-j');
+
+      const seen: unknown[] = [];
+
+      const c = s.consumer();
+      const chain = c.run(() =>
+        querySequence(clearCart(), () => ({ args: {} })).then(createOrder(), (cleared) => {
+          seen.push(cleared);
+
+          return { args: { body: { cart: cleared?.id ?? null } } };
+        }),
+      );
+
+      const result = await driveSequence(s, chain.run());
+
+      expect(seen).toEqual([null]);
+      expect(result?.ok).toBe(true);
+      expect(chain.responses()).toEqual([null, { id: 'order-1' }]);
+
+      c.destroy();
+    });
+
     it('settles the run promise as a cancelled step when the host is destroyed mid-waterfall', async () => {
       const s = scenario();
       s.api.on('POST', '/orders-h', () => ({ body: { id: 'order-1' }, delay: 100 }));

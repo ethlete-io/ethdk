@@ -30,11 +30,12 @@ export type QueryFieldOptions<T = unknown> = {
   /**
    * Append the field's value to the url.
    *
-   * The field wont be appended to the url if one of the following is true:
-   * - It is the default value and `appendDefaultValueToUrl` is `false`
-   * - It is an empty string
-   * - It is `null`
-   * - It is `undefined`
+   * The field is removed from the url while it holds its default value, unless
+   * `appendDefaultValueToUrl` is `true`. Any other value is written - a `null` as the `ET_NULL__`
+   * sentinel it reads back from, an empty string as an empty param.
+   *
+   * `false` means the field mirrors a param another owner writes: the form neither writes nor
+   * removes that param, and a foreign write to it still reaches the field.
    *
    * @default true
    */

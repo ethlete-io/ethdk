@@ -62,10 +62,16 @@ export class CheckoutComponent {
 
 `querySequence(query, seedArgs)` starts the waterfall with its first step; `.then(query, mapArgs)` appends each dependent step. Both arg producers are **functions evaluated at `run()` time** - so the sequence can safely live as a component field while still reading current signal values on each run.
 
-`mapArgs` receives the previous step's response (unwrapped - it's non-null on success) and the fully-typed tuple of all responses so far, so a later step can still reach an earlier step's data:
+`mapArgs` receives the previous step's response (unwrapped) and the fully-typed tuple of all responses so far, so a later step can still reach an earlier step's data:
 
 ```ts
 .then(this.confirmOrder, (payment, [order, _payment]) => ({ args: { /* uses order + payment */ } }))
+```
+
+A step that settles with no body - a `204 No Content` `PUT`/`DELETE` - passes `null` to the next `mapArgs`. Declare that step's `response` as nullable (`response: Receipt | null`) and the parameter type follows, so the null-check is the compiler's job:
+
+```ts
+.then(this.createOrder, (cleared) => ({ args: { body: { cartRef: cleared?.id ?? null } } }))
 ```
 
 Steps take **query instances**, not creators - consistent with `executeUntilSettled`, and with how you already create a mutation query to call `.execute()` on it.
@@ -91,7 +97,7 @@ The sequence also exposes signals mirroring [`createQueryStack`](/query/stacks),
 | `status`        | `Signal<'idle' \| 'running' \| 'success' \| 'error'>` | Lifecycle phase.                                    |
 | `running`       | `Signal<boolean>`                                     | `true` while a run is in flight.                    |
 | `currentStep`   | `Signal<number>`                                      | 1-based index of the in-flight step; `0` when idle. |
-| `total`         | `number`                                              | Static step count.                                  |
+| `total`         | `number`                                              | Step count of the fully-built chain.                |
 | `error`         | `Signal<QueryErrorResponse \| null>`                  | The failing step's error.                           |
 | `failedAt`      | `Signal<number \| null>`                              | Zero-based index of the failing step.               |
 | `snapshots`     | `Signal<QuerySnapshot[]>`                             | Settled snapshots so far.                           |
@@ -110,6 +116,8 @@ The sequence also exposes signals mirroring [`createQueryStack`](/query/stacks),
 ```html
 <button [loading]="checkout.running()" [progress]="checkout.progress()" et-button type="button">Place order</button>
 ```
+
+Every `.then()` returns a new object, but all of them read the same run - so a reference you kept to an earlier link reports the same `total`, `completed()` and `progress()` as the fully-chained one.
 
 ### Notes
 

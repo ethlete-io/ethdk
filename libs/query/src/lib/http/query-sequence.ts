@@ -42,8 +42,9 @@ export type QuerySequenceResult<TResponses extends unknown[]> =
 export type QuerySequence<TResponses extends unknown[]> = {
   /**
    * Appends a dependent step. `mapArgs` runs at {@link run} time and receives the previous step's
-   * (unwrapped, non-null on success) response plus the typed tuple of all responses so far, so a
-   * later step can still reach an earlier one's data.
+   * unwrapped response plus the typed tuple of all responses so far, so a later step can still reach
+   * an earlier one's data. A step that settles with no body (`204`) passes `null`, so declare such a
+   * step's `response` as nullable and the type follows.
    */
   then: <TArgs extends QueryArgs>(
     query: Query<TArgs>,
@@ -68,7 +69,7 @@ export type QuerySequence<TResponses extends unknown[]> = {
    */
   progress: Signal<number>;
 
-  /** The static number of steps in the sequence. */
+  /** The number of steps of the fully-built chain - every link built from the same seed reports it. */
   total: number;
 
   /** The query objects backing each step, in order. Useful for devtools / advanced introspection. */
@@ -121,6 +122,7 @@ type SequenceState = {
   snapshots: WritableSignal<AnyQuerySnapshot[]>;
   stepArgs: WritableSignal<unknown[]>;
   responses: WritableSignal<unknown[]>;
+  totalSteps: number;
 };
 
 const createSequenceState = (): SequenceState => ({
@@ -132,6 +134,7 @@ const createSequenceState = (): SequenceState => ({
   snapshots: signal<AnyQuerySnapshot[]>([]),
   stepArgs: signal<unknown[]>([]),
   responses: signal<unknown[]>([]),
+  totalSteps: 0,
 });
 
 /**
@@ -147,6 +150,10 @@ const buildSequence = <TResponses extends unknown[]>(
   state: SequenceState,
   devtoolsHandle?: QuerySequenceDevtoolsHandle,
 ): QuerySequence<TResponses> => {
+  // Shared, not local to this link: `.then()` returns a new object over the same state, and a link
+  // the consumer kept must not report a total below the chain whose `completed` it reads.
+  state.totalSteps = Math.max(state.totalSteps, steps.length);
+
   const run = async (): Promise<QuerySequenceResult<TResponses>> => {
     if (state.running()) throw querySequenceAlreadyRunning();
 
@@ -217,8 +224,10 @@ const buildSequence = <TResponses extends unknown[]>(
     running: state.running.asReadonly(),
     currentStep: state.currentStep.asReadonly(),
     completed,
-    progress: computed(() => (steps.length === 0 ? 0 : (completed() / steps.length) * 100)),
-    total: steps.length,
+    progress: computed(() => (state.totalSteps === 0 ? 0 : Math.min(100, (completed() / state.totalSteps) * 100))),
+    get total() {
+      return state.totalSteps;
+    },
     queries: steps.map((s) => s.query),
     error: state.error.asReadonly(),
     failedAt: state.failedAt.asReadonly(),
