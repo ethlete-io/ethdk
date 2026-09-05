@@ -307,11 +307,16 @@ puts focus back on the body.
 `empty-state` (19), `floating-action` (32), `query-error` (24), `counter` (20), `nav-tabs` (22),
 `phone-input` (24), `split-button` (13), `card` (15), `masonry` (14), `match` (58), `standings` (36),
 `avatar` (25), `badge` (21), `description-list` (15), `divider` (15), `icon` (10), `kbd` (13),
-`skeleton` (20), `loader` (38), `picture` (23).
+`skeleton` (20), `loader` (38), `picture` (23), `stream` (39).
 
-Every domain in `libs/components` that ships a story now has a suite. The project holds 61 suites
-and 940 tests per browser project; the full run takes 8.0 minutes with three workers against the
-static build (1050 executed, 830 skipped by the project guards, 0 failed).
+Every domain in `libs/components` that ships a story now has a suite. The project holds 62 suites
+and 979 tests per browser project; a full run takes about eight minutes with three workers against
+the static build, and it is green.
+
+The `stream` suite intercepts every request that leaves the Storybook origin, so it never depends on
+YouTube or Twitch being reachable: `blockThirdParty` aborts them all, and a second helper answers
+the four SDK URLs with a recording stub, which is what makes the per-provider option assertions
+possible.
 
 `card` and `standings` carry no keyboard model at all, so those two suites assert structure, ARIA,
 surface theming and the touch presentation, and drop the keyboard block.
@@ -385,4 +390,5 @@ stepper - it has no buttons and no value of its own.
   `--maxWorkers=1`, and on `next` without this wave's changes, so it is not a regression from the
   overlay or button fixes. Five chunks of 55 spec files give: 699 / 876+4 skipped / 804+8 skipped /
   417 / 537 passed, no failure, 146 tests unrun in the six crashing files (135 of them the five
-  date-time and form-field files, 11 the scheduler one).
+  date-time and form-field files, 11 the scheduler one). The last run after the tab bar fixes gives
+  699 / 876+4 skipped / 804+8 skipped / 417 / 540 - 3336 passed, 12 skipped, no failure.
