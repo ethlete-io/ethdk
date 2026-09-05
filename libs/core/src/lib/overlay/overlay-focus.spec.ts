@@ -1,4 +1,4 @@
-import { applyInitialFocus, setupFocusTrap } from './overlay-focus';
+import { applyInitialFocus, isHTMLElement, setupFocusTrap } from './overlay-focus';
 import { OverlayRuntimeRef } from './overlay-runtime-ref';
 
 describe('overlay focus utilities', () => {
@@ -35,5 +35,30 @@ describe('overlay focus utilities', () => {
     expect(document.activeElement).toBe(pane);
 
     pane.remove();
+  });
+});
+
+describe('isHTMLElement', () => {
+  it('recognises an element from another document', () => {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+
+    const foreignDocument = frame.contentDocument!;
+    const foreignElement = foreignDocument.createElement('button');
+    foreignDocument.body.appendChild(foreignElement);
+
+    expect(foreignElement instanceof HTMLElement).toBe(false);
+    expect(isHTMLElement(foreignElement)).toBe(true);
+
+    frame.remove();
+  });
+
+  it('is false for anything that is not an element', () => {
+    expect(isHTMLElement(null)).toBe(false);
+    expect(isHTMLElement(undefined)).toBe(false);
+    expect(isHTMLElement('button')).toBe(false);
+    expect(isHTMLElement(document)).toBe(false);
+    expect(isHTMLElement(window)).toBe(false);
+    expect(isHTMLElement(document.createTextNode('text'))).toBe(false);
   });
 });

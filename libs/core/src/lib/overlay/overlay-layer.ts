@@ -47,9 +47,13 @@ export const resolveOverlayLayer = (element: Element | null | undefined) => {
  * menu opened from the devtools panel counts as part of the panel's level too.
  */
 export const isOnHigherOverlayLayer = (target: EventTarget | null | undefined, layer: number) => {
-  if (!(target instanceof Element)) {
+  const element = target as Element | null | undefined;
+
+  // Duck-typed rather than `instanceof Element`, which is realm-bound and would report every press
+  // inside a same-origin pop-up as being on no layer at all.
+  if (typeof element?.closest !== 'function') {
     return false;
   }
 
-  return resolveOverlayLayer(target) > layer;
+  return resolveOverlayLayer(element) > layer;
 };

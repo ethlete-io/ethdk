@@ -1,4 +1,5 @@
 import {
+  ApplicationRef,
   EnvironmentInjector,
   Signal,
   WritableSignal,
@@ -138,7 +139,10 @@ export const memoizeSignal = <T>(factory: () => Signal<T>) => {
   const cache = new WeakMap<EnvironmentInjector, Signal<T>>();
 
   return () => {
-    const envInjector = inject(EnvironmentInjector);
+    // The application's root injector, not the nearest one: an overlay runs its content in an
+    // environment injector of its own, and keying on that would build a second observer - plus, for
+    // the scrollbar ruler, a second element in `<body>` - for every open overlay.
+    const envInjector = inject(ApplicationRef).injector;
 
     let cached = cache.get(envInjector);
     if (!cached) {

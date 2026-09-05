@@ -1,4 +1,4 @@
-import { combineLatest, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { matchesReducedMotion } from './animation-utils';
 
 type FlipAnimationGroupConfig = {
@@ -40,16 +40,62 @@ export const createFlipAnimationGroup = (config: FlipAnimationGroupConfig) => {
     return createFlipAnimation({ element, originElement, duration, easing, ignoreReducedMotion });
   });
 
-  const onStart$ = combineLatest(flips.map((animation) => animation.onStart$));
-  const onFinish$ = combineLatest(flips.map((animation) => animation.onFinish$));
-  const onCancel$ = combineLatest(flips.map((animation) => animation.onCancel$));
+  const onStart$ = new Subject<void>();
+  const onFinish$ = new Subject<void>();
+  const onCancel$ = new Subject<void>();
+
+  let startedCount = 0;
+  let settledCount = 0;
+  let cancelledCount = 0;
+
+  const settle = (wasCancelled: boolean) => {
+    settledCount++;
+
+    if (wasCancelled) {
+      cancelledCount++;
+    }
+
+    if (settledCount !== flips.length) {
+      return;
+    }
+
+    if (cancelledCount) {
+      onCancel$.next();
+    } else {
+      onFinish$.next();
+    }
+  };
+
+  flips.forEach((animation) => {
+    animation.onStart$.subscribe(() => {
+      startedCount++;
+
+      if (startedCount === flips.length) {
+        onStart$.next();
+      }
+    });
+    animation.onFinish$.subscribe(() => settle(false));
+    animation.onCancel$.subscribe(() => settle(true));
+  });
 
   const updateInit = () => {
     flips.forEach((animation) => animation.updateInit());
   };
 
   const play = () => {
+    startedCount = 0;
+
     flips.forEach((animation) => animation.play());
+
+    // Reset after the loop: replaying a flip that is still running makes it report a cancel, and that
+    // cancel settles the play being replaced, not this one.
+    settledCount = 0;
+    cancelledCount = 0;
+
+    if (!flips.length) {
+      onStart$.next();
+      onFinish$.next();
+    }
   };
 
   const cancel = () => {
@@ -60,9 +106,9 @@ export const createFlipAnimationGroup = (config: FlipAnimationGroupConfig) => {
     updateInit,
     play,
     cancel,
-    onStart$,
-    onFinish$,
-    onCancel$,
+    onStart$: onStart$.asObservable(),
+    onFinish$: onFinish$.asObservable(),
+    onCancel$: onCancel$.asObservable(),
   };
 };
 

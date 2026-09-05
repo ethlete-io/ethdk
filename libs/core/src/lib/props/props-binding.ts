@@ -7,6 +7,8 @@ export type BindPropsOptions = {
   handlers: PropHandlers;
 };
 
+const teardownsByProps = /* @__PURE__ */ new WeakMap<object, Map<string, () => void>>();
+
 export const bindProps = (config: BindPropsOptions) => {
   const props = config.props as PropsInternal;
   const {
@@ -48,44 +50,79 @@ export const bindProps = (config: BindPropsOptions) => {
 
   attachedElements.push(id, el);
 
+  const teardowns: Array<() => void> = [];
+
   if (bindId) {
     el.id = id;
   }
 
   if (classBindings) {
+    const tokens = Object.keys(classBindings);
+
     classes.pushMany(classBindings);
+    teardowns.push(() => classes.removeMany(tokens));
   }
 
   if (attributeBindings) {
+    const tokens = Object.keys(attributeBindings);
+
     attributes.pushMany(attributeBindings);
+    teardowns.push(() => attributes.removeMany(tokens));
   }
 
   if (styleBindings) {
+    const tokens = Object.keys(styleBindings);
+
     styles.pushMany(styleBindings);
+    teardowns.push(() => styles.removeMany(tokens));
   }
 
   if (staticAttributeBindings) {
-    for (const key in staticAttributeBindings) {
+    const keys = Object.keys(staticAttributeBindings);
+
+    for (const key of keys) {
       el.setAttribute(key, `${staticAttributeBindings[key]}`);
     }
+
+    teardowns.push(() => keys.forEach((key) => el.removeAttribute(key)));
   }
 
   if (staticClassBindings) {
     el.classList.add(...staticClassBindings);
+    teardowns.push(() => el.classList.remove(...staticClassBindings));
   }
 
   if (staticStyleBindings) {
-    for (const key in staticStyleBindings) {
+    const keys = Object.keys(staticStyleBindings);
+
+    for (const key of keys) {
       el.style.setProperty(key, `${staticStyleBindings[key]}`);
     }
+
+    teardowns.push(() => keys.forEach((key) => el.style.removeProperty(key)));
   }
 
   if (attachEventListeners) {
-    attachEventListeners({
-      on: el.addEventListener.bind(el),
-      element: el,
-    });
+    const on = ((
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions,
+    ) => {
+      el.addEventListener(type, listener, options);
+      teardowns.push(() => el.removeEventListener(type, listener, options));
+    }) as HTMLElement['addEventListener'];
+
+    attachEventListeners({ on, element: el });
   }
+
+  let teardownsById = teardownsByProps.get(config.props);
+
+  if (!teardownsById) {
+    teardownsById = new Map();
+    teardownsByProps.set(config.props, teardownsById);
+  }
+
+  teardownsById.set(id, () => teardowns.forEach((teardown) => teardown()));
 };
 
 export type UnbindPropsOptions = {
@@ -95,6 +132,11 @@ export type UnbindPropsOptions = {
 
 export const unbindProps = (config: UnbindPropsOptions) => {
   const props = config.props as PropsInternal;
+  const { id } = config.handlers;
+  const teardownsById = teardownsByProps.get(config.props);
 
-  props.attachedElements.remove(config.handlers.id);
+  teardownsById?.get(id)?.();
+  teardownsById?.delete(id);
+
+  props.attachedElements.remove(id);
 };

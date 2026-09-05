@@ -73,6 +73,10 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
 
   const canScroll = suppliedCanScroll ?? measuredCanScroll;
 
+  // A host destroyed mid-drag never re-runs the styling effect, so the grabbing cursor it wrote on
+  // `<html>` would outlive the page it was dragged on.
+  destroyRef.onDestroy(() => renderer.removeStyle(document.documentElement, 'cursor'));
+
   // Cleanup if the element the cursor drag scroll is bound to gets changed
   effect(() => {
     const { previousElement } = element();

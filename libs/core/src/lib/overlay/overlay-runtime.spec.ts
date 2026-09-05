@@ -479,6 +479,59 @@ describe('overlay runtime', () => {
     });
   });
 
+  describe('an overlay in another document', () => {
+    it('closes on an outside press in that document', async () => {
+      const frame = document.createElement('iframe');
+      document.body.appendChild(frame);
+
+      const foreignDocument = frame.contentDocument!;
+      const outside = foreignDocument.createElement('button');
+      foreignDocument.body.appendChild(outside);
+
+      const ref = mount({ document: foreignDocument, modal: false, hasBackdrop: false, autoFocus: false });
+
+      await flushFrames();
+
+      expect(ref.state()).toBe('mounted');
+
+      outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+
+      expect(ref.state()).toBe('closed');
+
+      frame.remove();
+    });
+
+    it('captures the focused element of that document so it can be restored', async () => {
+      const frame = document.createElement('iframe');
+      document.body.appendChild(frame);
+
+      const foreignDocument = frame.contentDocument!;
+      const trigger = foreignDocument.createElement('button');
+      foreignDocument.body.appendChild(trigger);
+      trigger.focus();
+
+      expect(foreignDocument.activeElement).toBe(trigger);
+
+      const ref = mount(
+        { document: foreignDocument, modal: false, hasBackdrop: false, autoFocus: false },
+        FocusableOverlayComponent,
+      );
+
+      await flushFrames();
+
+      const content = ref.elements.paneElement.querySelector('button')!;
+      content.focus();
+
+      expect(foreignDocument.activeElement).toBe(content);
+
+      ref.close();
+
+      expect(foreignDocument.activeElement).toBe(trigger);
+
+      frame.remove();
+    });
+  });
+
   it('destroys the injector holding the overlay providers on close', () => {
     const onProviderDestroy = vi.fn();
     const ref = mount(

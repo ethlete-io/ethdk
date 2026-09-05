@@ -79,7 +79,7 @@ its transitions on that reading.
 
 ## FLIP animations
 
-`createFlipAnimation({ element, originElement?, duration?, easing?, ignoreReducedMotion? })` animates an element from a measured previous position/size to its current one using the Web Animations API - the tab bar underline is built on it. Defaults: `duration: 250`, `easing: 'cubic-bezier(0.4, 0, 0.2, 1)'`, `originElement` = the element itself, and reduced motion respected. Returns `{ updateInit, play, cancel, onStart$, onFinish$, onCancel$ }`. `createFlipAnimationGroup` runs several in lockstep. `matchesReducedMotion(element)` is available when a custom animation needs the same check.
+`createFlipAnimation({ element, originElement?, duration?, easing?, ignoreReducedMotion? })` animates an element from a measured previous position/size to its current one using the Web Animations API - the tab bar underline is built on it. Defaults: `duration: 250`, `easing: 'cubic-bezier(0.4, 0, 0.2, 1)'`, `originElement` = the element itself, and reduced motion respected. Returns `{ updateInit, play, cancel, onStart$, onFinish$, onCancel$ }`. `createFlipAnimationGroup` runs several in lockstep and exposes the same three outputs for the group as a whole: `onStart$` once every element has started, then exactly one of `onFinish$` (all finished) or `onCancel$` (at least one was cancelled) per `play()`. `matchesReducedMotion(element)` is available when a custom animation needs the same check.
 
 ## Frame utilities
 

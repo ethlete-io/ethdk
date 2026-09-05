@@ -77,4 +77,20 @@ describe('isOnHigherOverlayLayer', () => {
     expect(isOnHigherOverlayLayer(undefined, DEFAULT_OVERLAY_LAYER)).toBe(false);
     expect(isOnHigherOverlayLayer(document.createTextNode('text'), DEFAULT_OVERLAY_LAYER)).toBe(false);
   });
+
+  it('reads the level of a target from another document', () => {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+
+    const foreignDocument = frame.contentDocument!;
+    const declaring = foreignDocument.createElement('div');
+    declaring.setAttribute(OVERLAY_LAYER_ATTRIBUTE, `${DEFAULT_OVERLAY_LAYER + 10}`);
+    const target = foreignDocument.createElement('button');
+    declaring.append(target);
+    foreignDocument.body.append(declaring);
+
+    expect(isOnHigherOverlayLayer(target, DEFAULT_OVERLAY_LAYER)).toBe(true);
+
+    frame.remove();
+  });
 });

@@ -4,7 +4,7 @@ Inject-style signal helpers for media queries, router state, form controls and a
 
 ## Media queries & breakpoints
 
-Sugar on top of the [breakpoint observer](/core/providers#breakpoint-observer). The `inject*` helpers are **memoized per environment injector** - calling them repeatedly returns the same signal instance, so they're cheap to use everywhere:
+Sugar on top of the [breakpoint observer](/core/providers#breakpoint-observer). The `inject*` helpers are **memoized per application** - calling them repeatedly returns the same signal instance, wherever you call them from, so they're cheap to use everywhere:
 
 | Helper                                                                      | Returns                                                |
 | --------------------------------------------------------------------------- | ------------------------------------------------------ |
@@ -138,7 +138,7 @@ the [table](/components/table#loading-error-states)'s busy bar.
 | `previousSignalValue(signal)`                              | Signal of the source's previous value (initially `undefined`).                                                                                |
 | `computedTillTruthy(source)` / `computedTillFalsy(source)` | Track the source only until it first becomes truthy/falsy, then freeze.                                                                       |
 | `deferredSignal(valueFn)`                                  | `null` until after the next render, then `valueFn()` - for values that need inputs to be set.                                                 |
-| `memoizeSignal(factory)`                                   | Cache a signal factory per environment injector (how the `inject*` helpers above are built).                                                  |
+| `memoizeSignal(factory)`                                   | Cache a signal factory once per application, against the root environment injector (how the `inject*` helpers above are built).               |
 | `MaybeSignal<T>` / `maybeSignalValue(v)`                   | The "value or signal" input type used across the SDK, and its unwrapper.                                                                      |
 
 ## Recipes

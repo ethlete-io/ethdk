@@ -14,7 +14,11 @@ export const FOCUSABLE_SELECTOR = /* @__PURE__ */ [
 ].join(',');
 
 export const isHTMLElement = (value: unknown): value is HTMLElement => {
-  return value instanceof HTMLElement;
+  // `instanceof` is realm-bound: an element adopted by a same-origin pop-up (the `document` mount
+  // option) belongs to that window's `HTMLElement`, not to this one's.
+  const view = (value as Node | null | undefined)?.ownerDocument?.defaultView;
+
+  return view ? value instanceof view.HTMLElement : value instanceof HTMLElement;
 };
 
 /**
