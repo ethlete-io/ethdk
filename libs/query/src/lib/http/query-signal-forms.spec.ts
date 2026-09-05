@@ -60,6 +60,15 @@ describe('extractFormViolations', () => {
     expect(extractFormViolations(httpError({ message: 'boom' }, 500))).toEqual([]);
     expect(extractFormViolations([])).toEqual([]);
   });
+
+  it('should return an empty array when violations is not a list of violations', () => {
+    expect(extractFormViolations({ violations: null })).toEqual([]);
+    expect(extractFormViolations({ violations: undefined })).toEqual([]);
+    expect(extractFormViolations({ violations: 'This value is not valid.' })).toEqual([]);
+    expect(extractFormViolations({ violations: { email: 'This value is not valid.' } })).toEqual([]);
+    expect(extractFormViolations({ violations: [null] })).toEqual([]);
+    expect(extractFormViolations(httpError({ violations: null }))).toEqual([]);
+  });
 });
 
 describe('mapViolationsToFormErrors', () => {
@@ -182,6 +191,50 @@ describe('mapViolationsToFormErrors', () => {
       { kind: SERVER_ERROR_KIND, message: 'first' },
       { kind: SERVER_ERROR_KIND, message: 'second' },
     ]);
+  });
+
+  it('should degrade a body whose violations field is not a list to a form-level server error', () => {
+    const testForm = createTestForm();
+    const queryError = createQueryErrorResponse(httpError({ violations: null, detail: 'Validation failed' }));
+
+    expect(mapViolationsToFormErrors({ fieldTree: testForm, error: queryError })).toEqual([
+      { kind: SERVER_ERROR_KIND, message: 'Validation failed' },
+    ]);
+  });
+
+  it('should accept a raw body whose violations field is not a list', () => {
+    const testForm = createTestForm();
+
+    for (const violations of [null, undefined, 'nope', { email: 'nope' }, [null]]) {
+      const errors = mapViolationsToFormErrors({ fieldTree: testForm, error: { violations } });
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0]!.kind).toBe(SERVER_ERROR_KIND);
+    }
+  });
+
+  it('should not throw for any error shape', () => {
+    const testForm = createTestForm();
+    const shapes: unknown[] = [
+      0,
+      '',
+      false,
+      'boom',
+      new Error('boom'),
+      new Date(0),
+      () => undefined,
+      [1, 2, 3],
+      [null],
+      { violations: [{ message: 42 }] },
+      { violations: [{ message: 'Invalid', propertyPath: 42 }] },
+      { statusCode: 400, message: 'Bad Request', error: 'Bad Request' },
+      httpError({ violations: 'nope' }),
+      httpError([null]),
+    ];
+
+    for (const shape of shapes) {
+      expect(() => mapViolationsToFormErrors({ fieldTree: testForm, error: shape })).not.toThrow();
+    }
   });
 
   it('should return no errors for a missing error or an explicitly empty violation array', () => {

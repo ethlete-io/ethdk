@@ -65,7 +65,7 @@ The single/list split exists because that is how APIs answer; UI almost never wa
 
 Keep the `QueryErrorResponse` itself for anything that needs the status code (`code`), the retry state, or the raw `HttpErrorResponse`. `isQueryErrorResponse(value)` narrows an `unknown` to one - an error caught in a `catch`, or one handed to you untyped - and `createQueryErrorResponse(response)` builds one from an `HttpErrorResponse`, running the same parser pipeline a query does.
 
-The shape guards behind `withSymfonyErrors()` are exported too, for code that branches on the body itself: `isSymfonyError` (a `SymfonyError`, with its `SymfonyErrorTrace` entries), `isSymfonyPagerfantaOutOfRangeError` (the dev-mode out-of-range `500`, also what [`withPageResetOnError`](/query/features#withpageresetonerror) matches), `isSymfonyFormViolationListError` (`{ violations: [...] }`), `isSymfonyListError` (a bare violation array) and `isClassValidatorError` (a `ClassValidatorError`, `{ message: string[] }`).
+The shape guards behind `withSymfonyErrors()` are exported too, for code that branches on the body itself: `isSymfonyError` (a `SymfonyError`, with its `SymfonyErrorTrace` entries), `isSymfonyPagerfantaOutOfRangeError` (the dev-mode out-of-range `500`, also what [`withPageResetOnError`](/query/features#withpageresetonerror) matches), `isSymfonyFormViolationListError` (`{ violations: [...] }`), `isSymfonyListError` (a bare violation array) and `isClassValidatorError` (a `ClassValidatorError`, `{ message: string[] }`). Each one checks the payload it narrows to all the way down, so a body that only looks the part - `{ violations: null }`, `{ message: 'Bad Request' }` - is rejected and falls through to the built-in message ladder instead.
 
 ## Submitting a form through a mutation
 
@@ -134,7 +134,7 @@ protected async save() {
   - **Resolved** → an error with `kind: 'etServerViolation'`, the violation's `message`, and the matched field. Signal forms shows it on that field and clears it when the field is edited.
   - **Unresolved** (no matching field, or a `null` path) → a form-level error on the submitted field by default; pass `onUnmappedViolation` to replace it (return `null` to drop the violation).
   - **Path mismatch between API payload and form model?** `rewritePath: (path, violation) => string | null` rewrites paths before resolution.
-- A failure **without** violations (e.g. a plain 500) degrades to form-level errors with `kind: 'etServerError'` built from the normalized message - so a failed submit is never silently treated as success.
+- A failure **without** usable violations - a plain 500, or a body whose `violations` field is not a list of violations (`{ violations: null }`) - degrades to form-level errors with `kind: 'etServerError'` built from the normalized message - so a failed submit is never silently treated as success, and no error shape can make the mapping throw.
 
 Both `kind`s are exported as `SERVER_VIOLATION_ERROR_KIND` and `SERVER_ERROR_KIND`, so a resolver that switches on them does not repeat the string, and the errors themselves are typed as `ServerViolationValidationError` (it carries the `violation` it was built from) and `ServerValidationError`. `MapViolationsToFormErrorsOptions` is the argument type of `mapViolationsToFormErrors`, and `ValidateWithQueryConfig` that of `validateWithQuery`.
 

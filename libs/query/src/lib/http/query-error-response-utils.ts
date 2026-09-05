@@ -7,7 +7,14 @@ export type ClassValidatorError = {
 };
 
 export const isClassValidatorError = (error: unknown): error is ClassValidatorError => {
-  return typeof error === 'object' && error !== null && 'statusCode' in error && 'message' in error && 'error' in error;
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'statusCode' in error &&
+    'error' in error &&
+    'message' in error &&
+    Array.isArray(error.message)
+  );
 };
 
 export type SymfonyErrorTrace = {
@@ -35,14 +42,14 @@ export const isSymfonyError = (error: unknown): error is SymfonyError => {
     return false;
   }
 
-  const symfonyError = error as SymfonyError;
+  const symfonyError = error as Partial<SymfonyError>;
 
   return (
-    symfonyError.class !== undefined &&
+    typeof symfonyError.class === 'string' &&
     symfonyError.detail !== undefined &&
     symfonyError.status !== undefined &&
     symfonyError.title !== undefined &&
-    symfonyError.trace !== undefined &&
+    Array.isArray(symfonyError.trace) &&
     symfonyError.type !== undefined
   );
 };
@@ -55,19 +62,30 @@ export const isSymfonyPagerfantaOutOfRangeError = (error: unknown): error is Sym
   return error.class.startsWith('Pagerfanta') && error.class.endsWith('OutOfRangeCurrentPageException');
 };
 
+const isFormViolationView = (value: unknown): value is FormViolationView => {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'message' in value &&
+    typeof value.message === 'string' &&
+    (!('propertyPath' in value) || value.propertyPath === null || typeof value.propertyPath === 'string')
+  );
+};
+
 export const isSymfonyFormViolationListError = (error: unknown): error is FormViolationListView => {
-  return typeof error === 'object' && error !== null && 'violations' in error;
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'violations' in error &&
+    Array.isArray(error.violations) &&
+    error.violations.every(isFormViolationView)
+  );
 };
 
 export const isSymfonyListError = (error: unknown): error is FormViolationView[] => {
   return (
-    !!error &&
-    typeof error === 'object' &&
     Array.isArray(error) &&
     !!error.length &&
-    typeof error[0] === 'object' &&
-    'message' in error[0] &&
-    'propertyPath' in error[0] &&
-    'invalidValue' in error[0]
+    error.every((item) => isFormViolationView(item) && 'propertyPath' in item && 'invalidValue' in item)
   );
 };

@@ -28,7 +28,7 @@ export type ServerValidationError = ValidationError.WithOptionalFieldTree & {
  * Extracts the violation list from a failed request in any of the shapes it may reach you:
  * a `QueryErrorResponse` (from `query.error()` or a settled snapshot), a raw `HttpErrorResponse`,
  * an already-unwrapped error body, or a plain violation array. Returns `[]` when the error
- * carries no violations.
+ * carries no violations, including when its `violations` field is not a list of violations.
  */
 export const extractFormViolations = (error: unknown): FormViolationView[] => {
   if (!error) return [];
@@ -82,9 +82,10 @@ export type MapViolationsToFormErrorsOptions<TModel> = {
  * Each violation's `propertyPath` (e.g. `items[2].name`) is resolved against `fieldTree`; a
  * resolved violation becomes a `ServerViolationValidationError` bound to that field, an
  * unresolved one becomes a form-level error (customizable via `onUnmappedViolation`). A failed
- * request that carries no violations at all degrades to form-level `ServerValidationError`s
- * built from the normalized error message - so returning this function's result from a
- * `submit()` action never silently succeeds on failure.
+ * request that carries no usable violations - none at all, or a malformed violation payload -
+ * degrades to form-level `ServerValidationError`s built from the normalized error message, so
+ * returning this function's result from a `submit()` action never silently succeeds on failure
+ * and never throws on an unexpected error shape.
  *
  * ```ts
  * await submit(this.form, async (field) => {

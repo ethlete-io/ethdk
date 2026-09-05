@@ -1,10 +1,15 @@
 import { HttpBackend, HttpErrorResponse, HttpEventType, HttpResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
+import { form, submit } from '@angular/forms/signals';
 import { Observable } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createDefaultRetryFn,
+  executeUntilSettled,
   isHtmlErrorPayload,
+  mapViolationsToFormErrors,
   registerQueryErrorParser,
+  SERVER_ERROR_KIND,
   setDefaultQueryRetryFn,
   withDefaultRetry,
   withEthleteApiErrors,
@@ -317,6 +322,43 @@ describe('Symfony violations (withSymfonyErrors)', () => {
     ]);
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+});
+
+describe('a violations field that is not a list (withSymfonyErrors)', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 0 },
+    clientFeatures: [withSymfonyErrors()],
+  });
+
+  it('degrades a { violations: null } body to a form-level server error instead of throwing', async () => {
+    const s = scenario();
+    s.api.on('POST', '/profile', () => ({ status: 422, body: { violations: null, detail: 'Validation failed' } }));
+
+    const saveProfile = s.post<{ response: unknown; body: { email: string } }>('/profile');
+    const c = s.consumer();
+    const profileForm = c.run(() => form(signal({ email: '' })));
+    const query = c.run(() => saveProfile());
+
+    const submitted = submit(profileForm, async (field) => {
+      const snapshot = await executeUntilSettled(query, { args: { body: field().value() } });
+      const error = snapshot.error();
+
+      if (!error) return;
+
+      return mapViolationsToFormErrors({ fieldTree: field, error });
+    });
+
+    await s.settle();
+    await submitted;
+
+    expect(query.error()?.code).toBe(422);
+    expect(profileForm().errors()).toEqual([
+      expect.objectContaining({ kind: SERVER_ERROR_KIND, message: 'Validation failed' }),
+    ]);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
     c.destroy();
   });
 });
