@@ -1,7 +1,8 @@
+import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { dateQueryField, defineQueryForm, queryField, stringArrayQueryField } from '../index';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useScenario } from './harness';
 
 describe('query forms URL sync scenario', () => {
@@ -228,6 +229,126 @@ describe('query forms URL sync scenario', () => {
     expect(router.url).toBe('/other?page=3&search=foo');
 
     c.destroy();
+  });
+
+  it('a form observed with writeToQueryParams false commits without touching the URL', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: { region: queryField<string>(), page: queryField<number>({ defaultValue: 1 }) },
+      }).observe({ writeToQueryParams: false }),
+    );
+
+    qf.setValue({ region: 'eu', page: 3 });
+    await s.settle();
+
+    expect(qf.value()).toEqual({ region: 'eu', page: 3 });
+    expect(router.parseUrl(router.url).queryParams).toEqual({});
+  });
+
+  it('a form observed with syncOnNavigation false ignores a navigation-driven URL change', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const qf = s.run(() =>
+      defineQueryForm({ fields: { region: queryField<string>() } }).observe({
+        syncOnNavigation: false,
+        writeToQueryParams: false,
+      }),
+    );
+
+    await router.navigate([], { queryParams: { region: 'from-url' }, queryParamsHandling: 'merge' });
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ region: 'from-url' });
+    expect(qf.value().region).toBeNull();
+  });
+
+  it('replaceUrl replaces the history entry instead of pushing a new one', async () => {
+    const s = scenario();
+    const location = TestBed.inject(Location);
+    const go = vi.spyOn(location, 'go');
+    const replaceState = vi.spyOn(location, 'replaceState');
+
+    const replacing = s.consumer();
+    const replacingForm = replacing.run(() =>
+      defineQueryForm({
+        fields: { page: queryField<number>({ defaultValue: 1 }) },
+        queryParamPrefix: 'replacing',
+      }).observe({ replaceUrl: true }),
+    );
+
+    replacingForm.setValue({ page: 2 });
+    await s.settle();
+
+    expect(replaceState).toHaveBeenCalled();
+    expect(go).not.toHaveBeenCalled();
+
+    replacing.destroy();
+    go.mockClear();
+    replaceState.mockClear();
+
+    const pushing = s.consumer();
+    const pushingForm = pushing.run(() =>
+      defineQueryForm({
+        fields: { page: queryField<number>({ defaultValue: 1 }) },
+        queryParamPrefix: 'pushing',
+      }).observe(),
+    );
+
+    pushingForm.setValue({ page: 2 });
+    await s.settle();
+
+    expect(go).toHaveBeenCalled();
+
+    pushing.destroy();
+    go.mockRestore();
+    replaceState.mockRestore();
+  });
+
+  it('a cleared text field commits as null and leaves the URL clean', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const qf = s.run(() => defineQueryForm({ fields: { label: queryField<string>() } }).observe());
+
+    qf.setValue({ label: 'shoes' });
+    await s.settle();
+    expect(router.parseUrl(router.url).queryParams).toEqual({ label: 'shoes' });
+
+    qf.setValue({ label: '' });
+    await s.settle();
+
+    expect(qf.value().label).toBeNull();
+    expect(router.parseUrl(router.url).queryParams).toEqual({});
+  });
+
+  it('writes an explicit null as the ET_NULL__ sentinel and reads it back as null', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const fields = { status: queryField<string>({ defaultValue: 'all' }), region: queryField<string>() };
+
+    const c = s.consumer();
+    const qf = c.run(() => defineQueryForm({ fields }).observe());
+
+    qf.setValue({ status: null, region: null });
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ status: 'ET_NULL__' });
+
+    const url = router.url;
+    c.destroy();
+
+    await router.navigateByUrl(url);
+    s.tick();
+
+    const restored = s.run(() => defineQueryForm({ fields }).observe());
+    s.tick();
+
+    expect(restored.value()).toEqual({ status: null, region: null });
   });
 
   it('a value committed while a same-route navigation is in flight is not lost', async () => {

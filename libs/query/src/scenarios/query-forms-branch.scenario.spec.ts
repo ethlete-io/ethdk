@@ -1,4 +1,6 @@
 import { DestroyRef } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { defineQueryForm, queryField, searchQueryField, withArgs } from '../index';
 import { describe, expect, it, vi } from 'vitest';
 import { useScenario } from './harness';
@@ -89,5 +91,80 @@ describe('query form branch scenario', () => {
 
     expect(draft.value()).toEqual({ country: 'us', league: null, team: null });
     expect(qf.value()).toEqual({ country: 'de', league: 'bundesliga', team: 'fcb' });
+  });
+
+  it('editing a branch never writes to the URL', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: { region: queryField<string>(), page: queryField<number>({ defaultValue: 1 }) },
+      }).observe(),
+    );
+
+    qf.setValue({ region: 'eu', page: 2 });
+    await s.settle();
+    expect(router.parseUrl(router.url).queryParams).toEqual({ region: 'eu', page: '2' });
+
+    const draft = qf.branch();
+
+    draft.setValue({ region: 'us', page: 5 });
+    await s.settle();
+    expect(draft.value()).toEqual({ region: 'us', page: 5 });
+
+    draft.resetAllFieldsToDefault();
+    await s.settle();
+    expect(draft.value()).toEqual({ region: null, page: 1 });
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ region: 'eu', page: '2' });
+  });
+
+  it('a branch counts its own active filters independently of the source form', () => {
+    const s = scenario();
+
+    const qf = s.run(() =>
+      defineQueryForm({ fields: { region: queryField<string>(), tier: queryField<string>() } }).observe({
+        writeToQueryParams: false,
+      }),
+    );
+
+    qf.setValue({ region: 'eu', tier: null });
+    s.tick();
+    expect(qf.activeFilterCount()).toBe(1);
+
+    const draft = qf.branch();
+    expect(draft.activeFilterCount()).toBe(1);
+
+    draft.patchValue({ tier: 'gold' });
+    s.tick();
+    expect(draft.activeFilterCount()).toBe(2);
+    expect(qf.activeFilterCount()).toBe(1);
+
+    draft.resetAllFieldsToDefault();
+    s.tick();
+    expect(draft.activeFilterCount()).toBe(0);
+    expect(qf.activeFilterCount()).toBe(1);
+  });
+
+  it('liveValue carries the keystrokes still inside the debounce window that value has not committed', () => {
+    const s = scenario();
+
+    const qf = s.run(() =>
+      defineQueryForm({ fields: { search: searchQueryField() } }).observe({ writeToQueryParams: false }),
+    );
+
+    const draft = qf.branch();
+
+    draft.fields.search().value.set('che');
+    s.tick(50);
+
+    expect(draft.liveValue().search).toBe('che');
+    expect(draft.value().search).toBeNull();
+
+    qf.setValue(draft.liveValue());
+    s.tick(400);
+
+    expect(qf.value().search).toBe('che');
   });
 });
