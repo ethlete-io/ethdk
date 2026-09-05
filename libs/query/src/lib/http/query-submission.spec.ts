@@ -14,6 +14,11 @@ type CreateUserArgs = {
   response: { id: number; name: string };
 };
 
+type CreateUserOrNothingArgs = {
+  body: UserModel;
+  response: { id: number; name: string } | null;
+};
+
 describe('createQuerySubmission', () => {
   const client = createQueryClient({ baseUrl: 'https://example.com', name: 'submission-test' });
 
@@ -123,6 +128,40 @@ describe('createQuerySubmission', () => {
 
     httpTesting.expectNone('https://example.com/users');
     expect(userForm().submitting()).toBe(false);
+  });
+
+  it('should hand onSuccess a null response for a 204', async () => {
+    const createUser = createPostQuery(client)<CreateUserOrNothingArgs>('/users');
+    const seen: unknown[] = [];
+
+    const { userForm } = TestBed.runInInjectionContext(() => {
+      const model = signal<UserModel>({ name: 'Ada' });
+      const submission = createQuerySubmission({
+        queryCreator: createUser,
+        args: (value: UserModel) => ({ body: value }),
+        onSuccess: (response) => {
+          expectTypeOf(response).toEqualTypeOf<{ id: number; name: string } | null>();
+          seen.push(response);
+        },
+      });
+
+      return {
+        userForm: form(model, (path) => required(path.name), { submission: { action: submission.action } }),
+      };
+    });
+
+    const submitted = submit(userForm);
+
+    TestBed.tick();
+
+    httpTesting.expectOne('https://example.com/users').flush(null, { status: 204, statusText: 'No Content' });
+
+    TestBed.tick();
+    await flushMicrotasks();
+    TestBed.tick();
+    await submitted;
+
+    expect(seen).toEqual([null]);
   });
 
   it('should not run the action at all while the form is invalid', async () => {

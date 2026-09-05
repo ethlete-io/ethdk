@@ -1,5 +1,5 @@
 import { isDevMode } from '@angular/core';
-import { gql, transformGql } from './gql-transformer';
+import { gql, gqlTransformerFor, transformGql } from './gql-transformer';
 
 vi.mock('@angular/core', async () => {
   const actual = await vi.importActual('@angular/core');
@@ -432,5 +432,30 @@ describe('gql', () => {
 
     expect(result).toContain('query');
     expect(result).toContain('GetUser');
+  });
+});
+
+describe('gqlTransformerFor', () => {
+  it('reuses one transformer per creator and minifies the document once', () => {
+    vi.mocked(isDevMode).mockReturnValue(false);
+
+    const creatorInternals = { query: 'query GetUser {\n  user {\n    id\n  }\n}' };
+    const transformer = gqlTransformerFor(creatorInternals);
+
+    expect(gqlTransformerFor(creatorInternals)).toBe(transformer);
+
+    const replace = vi.spyOn(String.prototype, 'replace');
+
+    const first = transformer(null);
+    const replacesAfterFirst = replace.mock.calls.length;
+    const second = transformer(null);
+    const replacesAfterSecond = replace.mock.calls.length;
+
+    replace.mockRestore();
+
+    expect(first.query).toBe('query GetUser { user { id } }');
+    expect(second.query).toBe(first.query);
+    expect(replacesAfterFirst).toBeGreaterThan(0);
+    expect(replacesAfterSecond).toBe(replacesAfterFirst);
   });
 });
