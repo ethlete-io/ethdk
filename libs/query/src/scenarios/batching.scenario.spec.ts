@@ -1,15 +1,23 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
+  AnyQueryBatch,
+  clearQueryDevtoolsTombstones,
   createQueryBatch,
+  isQueryDevtoolsEnabled,
+  MAX_QUERY_BATCH_TOMBSTONES,
+  provideQueryDevtools,
   QueryArgsOf,
+  QueryBatchDevtoolsHandle,
   QueryBatchItemResult,
+  QueryBatchResult,
+  queryDevtoolsEntries,
   queryErrorMessage,
   querySequence,
   withArgs,
   withDefaultRetry,
 } from '../index';
 import { Observable } from 'rxjs';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Scenario, sequence, useScenario } from './harness';
 
 type Post = { id: string };
@@ -34,6 +42,8 @@ const capture = <T>(source: Observable<T>) => {
 
 const httpStatusError = (status: number) => (entry: { error: unknown }) =>
   entry.error instanceof HttpErrorResponse && entry.error.status === status;
+
+const numbered = (count: number): Post[] => posts(...Array.from({ length: count }, (_, i) => String(i + 1)));
 
 describe('batching scenario', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
@@ -608,6 +618,230 @@ describe('batching scenario', () => {
 
     c.destroy();
   });
+
+  it('sends nothing until the run observable is subscribed to', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 100 }));
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({ queryCreator: patchPosts(s), args: (post: Post) => ({ pathParams: { id: post.id } }) }),
+    );
+
+    const run$ = batch.run(posts('1', '2'));
+    s.tick(1000);
+
+    expect(s.api.requests.length).toBe(0);
+    expect(batch.status()).toBe('idle');
+    expect(batch.running()).toBe(false);
+    expect(batch.total()).toBe(0);
+
+    const result = capture(run$);
+    s.tick();
+
+    expect(batch.running()).toBe(true);
+    expect(s.api.requests.map((r) => r.path)).toEqual(['/posts/1', '/posts/2']);
+
+    s.tick(100);
+
+    expect(result.value?.ok).toBe(true);
+
+    c.destroy();
+  });
+
+  it('emits one result and completes when the run settles', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 100 }));
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({ queryCreator: patchPosts(s), args: (post: Post) => ({ pathParams: { id: post.id } }) }),
+    );
+
+    const emissions: QueryBatchResult<Post, PatchPostArgs>[] = [];
+    let completed = false;
+
+    batch
+      .run(posts('1', '2'))
+      .subscribe({ next: (value) => emissions.push(value), complete: () => (completed = true) });
+    s.tick();
+
+    expect(emissions).toEqual([]);
+    expect(completed).toBe(false);
+
+    s.tick(100);
+
+    expect(emissions.length).toBe(1);
+    expect(emissions[0]?.ok).toBe(true);
+    expect(completed).toBe(true);
+
+    s.tick(1000);
+
+    expect(emissions.length).toBe(1);
+
+    c.destroy();
+  });
+
+  it('carries the resolved args on every succeeded and failed entry', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/2', () => ({ status: 400, body: { message: 'invalid' } }));
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({
+        queryCreator: patchPosts(s),
+        args: (post: Post, index: number) => ({ pathParams: { id: post.id }, body: { archived: index % 2 === 0 } }),
+        concurrency: 1,
+      }),
+    );
+
+    const result = capture(batch.run(posts('1', '2', '3')));
+    s.flush();
+
+    expect(result.value?.succeeded.map((entry) => entry.args)).toEqual([
+      { pathParams: { id: '1' }, body: { archived: true } },
+      { pathParams: { id: '3' }, body: { archived: true } },
+    ]);
+    expect(result.value?.failed.map((entry) => entry.args)).toEqual([
+      { pathParams: { id: '2' }, body: { archived: false } },
+    ]);
+    expect(batch.results().map((entry) => ('args' in entry ? entry.args : null))).toEqual([
+      { pathParams: { id: '1' }, body: { archived: true } },
+      { pathParams: { id: '2' }, body: { archived: false } },
+      { pathParams: { id: '3' }, body: { archived: true } },
+    ]);
+
+    s.expectError(httpStatusError(400));
+    c.destroy();
+  });
+
+  it('grows results() wave by wave while the run is still in flight', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 100 }));
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({
+        queryCreator: patchPosts(s),
+        args: (post: Post) => ({ pathParams: { id: post.id } }),
+        concurrency: 2,
+      }),
+    );
+
+    const result = capture(batch.run(posts('1', '2', '3', '4', '5', '6')));
+    s.tick();
+
+    expect(batch.results()).toEqual([]);
+    expect(batch.running()).toBe(true);
+
+    s.tick(100);
+
+    expect(batch.results().map((r) => r.index)).toEqual([0, 1]);
+    expect(batch.results()[0]).toEqual({
+      status: 'success',
+      index: 0,
+      item: { id: '1' },
+      args: { pathParams: { id: '1' } },
+      response: { id: '1' },
+    });
+
+    s.tick(100);
+
+    expect(batch.results().map((r) => r.index)).toEqual([0, 1, 2, 3]);
+    expect(batch.running()).toBe(true);
+
+    s.tick(100);
+
+    expect(batch.results().map((r) => r.index)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(result.value?.results.length).toBe(6);
+
+    c.destroy();
+  });
+
+  it('holds remainingTime() steady between two settled items instead of counting down', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 1000 }));
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({
+        queryCreator: patchPosts(s),
+        args: (post: Post) => ({ pathParams: { id: post.id } }),
+        concurrency: 2,
+      }),
+    );
+
+    const result = capture(batch.run(posts('1', '2', '3', '4', '5', '6')));
+    s.tick();
+    s.tick(1000);
+    s.tick(1000);
+
+    expect(batch.completed()).toBe(4);
+    expect(batch.itemsPerSecond()).toBe(2);
+    expect(batch.remainingTime()).toBe(1000);
+
+    s.tick(500);
+
+    expect(batch.completed()).toBe(4);
+    expect(batch.itemsPerSecond()).toBe(2);
+    expect(batch.remainingTime()).toBe(1000);
+
+    s.tick(400);
+
+    expect(batch.completed()).toBe(4);
+    expect(batch.remainingTime()).toBe(1000);
+
+    s.tick(100);
+
+    expect(result.value?.ok).toBe(true);
+    expect(batch.remainingTime()).toBeNull();
+
+    c.destroy();
+  });
+
+  it('counts a skipped item as settled in the throughput estimate', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 2500 }));
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({
+        queryCreator: patchPosts(s),
+        args: (post: Post) => (post.id.startsWith('skip') ? null : { pathParams: { id: post.id } }),
+        concurrency: 2,
+      }),
+    );
+
+    const result = capture(batch.run(posts('skip-1', 'skip-2', 'skip-3', 'skip-4', '1', '2', '3', '4')));
+    s.tick();
+
+    expect(batch.skipped()).toBe(4);
+    expect(batch.completed()).toBe(4);
+    expect(batch.inFlight()).toBe(2);
+
+    s.tick(2400);
+
+    expect(batch.completed()).toBe(4);
+    expect(s.api.pending().length).toBe(2);
+
+    s.tick(100);
+
+    expect(batch.completed()).toBe(6);
+    expect(batch.itemsPerSecond()).toBeCloseTo(2.4);
+    expect(batch.remainingTime()).toBe(833);
+    expect(s.api.pending().length).toBe(2);
+
+    s.tick(2500);
+
+    expect(result.value?.ok).toBe(true);
+    expect(batch.skipped()).toBe(4);
+    expect(batch.succeeded()).toBe(4);
+
+    c.destroy();
+  });
 });
 
 describe('batching scenario with the default retry policy', () => {
@@ -640,6 +874,205 @@ describe('batching scenario with the default retry policy', () => {
     expect(result.value?.ok).toBe(true);
     expect(batch.failed()).toBe(0);
     expect(s.api.requestCount('PATCH', '/posts/2')).toBe(2);
+
+    c.destroy();
+  });
+});
+
+describe('batching scenario with the devtools attached', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 }, providers: () => [provideQueryDevtools()] });
+
+  beforeEach(() => clearQueryDevtoolsTombstones());
+
+  const batchEntry = (batch: AnyQueryBatch) =>
+    queryDevtoolsEntries().find(
+      (entry) => entry.kind === 'query-batch' && (entry.handle as QueryBatchDevtoolsHandle).current === batch,
+    );
+
+  const itemEntries = (batch: AnyQueryBatch) =>
+    queryDevtoolsEntries().filter((entry) => entry.meta.batch?.current === batch);
+
+  const liveItemEntries = (batch: AnyQueryBatch) => itemEntries(batch).filter((entry) => !entry.destroyedAt);
+
+  it('holds only concurrency item queries alive at a time across a long run', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 100 }));
+
+    expect(isQueryDevtoolsEnabled()).toBe(true);
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({
+        queryCreator: patchPosts(s),
+        args: (post: Post) => ({ pathParams: { id: post.id } }),
+        concurrency: 3,
+      }),
+    );
+
+    const created = new Set<string>();
+    const result = capture(batch.run(numbered(12)));
+
+    for (let wave = 0; wave < 4; wave++) {
+      s.tick();
+
+      const live = liveItemEntries(batch);
+
+      expect(live.length).toBe(3);
+      expect(batch.inFlight()).toBe(3);
+
+      for (const entry of live) created.add(entry.id);
+
+      s.tick(100);
+    }
+
+    expect(result.value?.ok).toBe(true);
+    expect(created.size).toBe(12);
+    expect(liveItemEntries(batch).length).toBe(0);
+    expect(itemEntries(batch).length).toBe(12);
+    expect(itemEntries(batch).map((entry) => entry.meta.batchItemIndex)).toEqual([
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+    ]);
+    expect(itemEntries(batch).every((entry) => entry.kind === 'query')).toBe(true);
+
+    c.destroy();
+  });
+
+  it('registers a batch with its concurrency, progress and throughput, and one recorded row per item', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/4', () => ({ status: 400, body: { message: 'invalid' }, delay: 1000 }));
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 1000 }));
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({
+        queryCreator: patchPosts(s),
+        args: (post: Post) => ({ pathParams: { id: post.id }, body: { archived: true } }),
+        concurrency: 2,
+      }),
+    );
+
+    const entry = batchEntry(batch);
+
+    expect(entry?.meta).toMatchObject({ method: 'PATCH', route: '/posts/:id', concurrency: 2, stopOnError: false });
+
+    const handle = entry?.handle as QueryBatchDevtoolsHandle;
+
+    expect(handle.current).toBe(batch);
+    expect(handle.current.status()).toBe('idle');
+
+    const result = capture(batch.run(posts('1', '2', '3', '4', '5', '6')));
+    s.tick();
+
+    expect(handle.current.status()).toBe('running');
+    expect(handle.current.total()).toBe(6);
+
+    s.tick(1000);
+    s.tick(1000);
+
+    expect(handle.current.progress()).toBeCloseTo((4 / 6) * 100);
+    expect(handle.current.itemsPerSecond()).toBe(2);
+    expect(handle.current.remainingTime()).toBe(1000);
+
+    s.tick(1000);
+
+    expect(result.value?.ok).toBe(false);
+    expect(handle.current.status()).toBe('partial');
+    expect(handle.current.progress()).toBe(100);
+    expect(handle.current.remainingTime()).toBeNull();
+    expect(handle.current.results().map((r: QueryBatchItemResult<Post, PatchPostArgs>) => r.status)).toEqual([
+      'success',
+      'success',
+      'success',
+      'error',
+      'success',
+      'success',
+    ]);
+    expect(handle.current.results()[3]).toMatchObject({
+      index: 3,
+      item: { id: '4' },
+      args: { pathParams: { id: '4' }, body: { archived: true } },
+    });
+    expect(handle.current.errors().map((e: { code: number | null }) => e.code)).toEqual([400]);
+
+    s.expectError(httpStatusError(400));
+    c.destroy();
+  });
+
+  it('keeps the batch-recorded args and outcome for an item whose query tail has rolled off', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const count = MAX_QUERY_BATCH_TOMBSTONES + 5;
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({
+        queryCreator: patchPosts(s),
+        args: (post: Post) => ({ pathParams: { id: post.id } }),
+        concurrency: 1,
+      }),
+    );
+
+    const result = capture(batch.run(numbered(count)));
+    s.flush();
+
+    expect(result.value?.ok).toBe(true);
+
+    const kept = itemEntries(batch);
+
+    expect(kept.length).toBe(MAX_QUERY_BATCH_TOMBSTONES);
+    expect(kept.every((e) => !!e.destroyedAt)).toBe(true);
+    expect(kept.map((e) => e.meta.batchItemIndex)).toEqual(
+      Array.from({ length: MAX_QUERY_BATCH_TOMBSTONES }, (_, i) => i + (count - MAX_QUERY_BATCH_TOMBSTONES)),
+    );
+
+    expect(batch.results().length).toBe(count);
+    expect(batch.results()[0]).toEqual({
+      status: 'success',
+      index: 0,
+      item: { id: '1' },
+      args: { pathParams: { id: '1' } },
+      response: { id: '1' },
+    });
+
+    c.destroy();
+  });
+
+  it('folds a run into one Queries row and caps its tombstones per batch', () => {
+    const s = scenario();
+    s.api.on('GET', '/bystander', () => ({ body: { ok: true } }));
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const bystanderHost = s.consumer();
+    const bystander = bystanderHost.run(() => s.get<{ response: { ok: boolean } }>('/bystander')(withArgs(() => ({}))));
+    s.flush();
+
+    expect(bystander.response()).toEqual({ ok: true });
+
+    bystanderHost.destroy();
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({
+        queryCreator: patchPosts(s),
+        args: (post: Post) => ({ pathParams: { id: post.id } }),
+        concurrency: 1,
+      }),
+    );
+
+    const result = capture(batch.run(numbered(MAX_QUERY_BATCH_TOMBSTONES + 5)));
+    s.flush();
+
+    expect(result.value?.ok).toBe(true);
+
+    const entry = batchEntry(batch);
+    const items = itemEntries(batch);
+
+    expect(items.length).toBe(MAX_QUERY_BATCH_TOMBSTONES);
+    expect(items.every((e) => e.meta.batch === (entry?.handle as QueryBatchDevtoolsHandle))).toBe(true);
+    expect(new Set(items.map((e) => e.meta.batchItemIndex)).size).toBe(items.length);
+    expect(queryDevtoolsEntries().filter((e) => e.kind === 'query-batch').length).toBe(1);
+    expect(queryDevtoolsEntries().some((e) => e.meta.route === '/bystander' && !!e.destroyedAt)).toBe(true);
 
     c.destroy();
   });
