@@ -460,7 +460,9 @@ export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSucces
     fn: (context) => {
       context.state.events$
         .pipe(
-          filter((event) => event.type === HttpEventType.Response),
+          // A `transformResponse` that throws still emits a Response event while `response()` keeps
+          // the last good value. Only an error present on a Response event comes from the transform.
+          filter((event) => event.type === HttpEventType.Response && context.state.error() === null),
           takeUntilDestroyed(context.deps.destroyRef),
         )
         .subscribe(() => {

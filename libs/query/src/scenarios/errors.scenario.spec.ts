@@ -7,6 +7,7 @@ import {
   withEthleteApiErrors,
   withHtmlErrorParsing,
   withSymfonyErrors,
+  withSuccessHandling,
 } from '../index';
 import { createScenario, sequence, useScenario } from './harness';
 
@@ -712,6 +713,41 @@ describe('HTML error parsing edge cases (withHtmlErrorParsing)', () => {
     expect(error && !error.isList ? error.error.message : null).toBe('Bad Gateway: Try later.');
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+});
+
+describe('a transformResponse that throws', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  type TransformArgs = { response: { name: string }; rawResponse: { data?: { name: string } } };
+
+  it('a throwing transformResponse fails the query and does not run success handlers', () => {
+    const s = scenario();
+    s.api.on('GET', '/transform', sequence([{ body: { data: { name: 'ok' } } }, { body: {} }]));
+
+    const getTransformed = s.get<TransformArgs>('/transform', {
+      transformResponse: (raw) => {
+        if (!raw.data) throw new Error('unmappable response');
+
+        return raw.data;
+      },
+    });
+
+    const handled: unknown[] = [];
+    const c = s.consumer();
+    const query = c.run(() => getTransformed(withSuccessHandling<TransformArgs>({ handler: (r) => handled.push(r) })));
+
+    s.tick();
+    expect(handled).toEqual([{ name: 'ok' }]);
+
+    query.execute();
+    s.tick();
+
+    expect(query.executionState()?.type).toBe('failure');
+    expect(query.error()?.code).toBe(0);
+    expect(handled).toEqual([{ name: 'ok' }]);
+
     c.destroy();
   });
 });

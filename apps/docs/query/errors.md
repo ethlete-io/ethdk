@@ -25,7 +25,7 @@ export const MY_CLIENT = createQueryClient({
 });
 ```
 
-The features are installed process-wide rather than per client: which body shapes an app understands is a property of the app, not of one of its APIs. For a shape the SDK does not know, register your own parser - it runs ahead of the built-in ladder, and returning `null` passes the body on to the next one:
+The parsers are installed process-wide rather than per client: which body shapes an app understands is a property of the app, not of one of its APIs. The retry policy is not. It stays on the client whose `features` name it, so a second client keeps its own policy, or none at all. For a shape the SDK does not know, register your own parser - it runs ahead of the built-in ladder, and returning `null` passes the body on to the next one:
 
 ```ts
 registerQueryErrorParser((detail) =>
@@ -168,11 +168,11 @@ protected form = form(signal({ email: '' }), this.emailSchema);
 
 ## A `transformResponse` that throws
 
-The wire response arrived, but the creator's `transformResponse` could not map it. The query does not stay in `loading()` and `response()` does not throw on read: it reports a `failure` whose `error()` carries the thrown value as `raw.error` with code `0`, and `response()` stays at whatever the last good response was. It is never retried - the server did answer - and the next execution that transforms cleanly clears it. Side-effect features (`withErrorHandling`, `withSuccessHandling`, `events$`) see the HTTP response the request received, not the transform failure.
+The wire response arrived, but the creator's `transformResponse` could not map it. The query does not stay in `loading()` and `response()` does not throw on read: it reports a `failure` whose `error()` carries the thrown value as `raw.error` with code `0`, and `response()` stays at whatever the last good response was. It is never retried - the server did answer - and the next execution that transforms cleanly clears it. `withSuccessHandling` does not run for such a response - it would otherwise repeat the last good one. `withErrorHandling` and `events$` see the HTTP events the request received, so they report the response, not the transform failure.
 
 ## Retries
 
-Retrying is opt-in: add `withDefaultRetry()` (or `withEthleteApiErrors()`) to the client's `features`, or bring your own `retryFn`. Without either, a failed request is not retried.
+Retrying is opt-in: add `withDefaultRetry()` (or `withEthleteApiErrors()`) to the client's `features`, or bring your own `retryFn`. Without either, a failed request is not retried. The policy applies to that client only, and a `retryFn` on the client or on a creator wins over it.
 
 The default policy (`shouldRetryRequest`) retries up to **3 times**, doubling the delay each time (2s, 4s, 8s) and spreading each one randomly over ±25% so the tabs that failed together do not retry together:
 
