@@ -100,8 +100,9 @@ export type QuerySequence<TResponses extends unknown[]> = {
    * succeed. Re-runnable (e.g. behind a retry button); throws {@link querySequenceAlreadyRunning}
    * if a run is already in flight.
    *
-   * Cancellation caveat (inherited from `executeUntilSettled`): if the host scope is destroyed
-   * mid-flight the in-flight query is torn down and this promise never settles.
+   * Cancellation (inherited from `executeUntilSettled`): a step whose request is cancelled - a
+   * destroyed host scope, an evicted cache entry - stops the waterfall like any other failure, with
+   * an error that says the request was cancelled.
    */
   run: () => Promise<QuerySequenceResult<TResponses>>;
 };

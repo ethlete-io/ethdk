@@ -505,6 +505,71 @@ describe('createQuerySubmission', () => {
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
     c.destroy();
   });
+
+  it('resolves the submit action when the mutation is cancelled mid-flight, instead of leaving the form submitting', async () => {
+    const s = scenario();
+    s.api.on('POST', '/users', () => ({ status: 201, body: { id: 1, email: 'ada@example.com' }, delay: 500 }));
+
+    const createUser = s.post<CreateUserArgs>('/users');
+    const onSuccess = vi.fn();
+    const c = s.consumer();
+    const submission = c.run(() =>
+      createQuerySubmission({ queryCreator: createUser, args: (value: UserModel) => ({ body: value }), onSuccess }),
+    );
+    const testForm = c.run(() => form(signal(baseModel()), { submission: { action: submission.action } }));
+
+    const submitted = submit(testForm);
+
+    await s.settle();
+
+    expect(testForm().submitting()).toBe(true);
+
+    for (const entry of s.client.repository.subtle.cacheEntries()) {
+      s.client.repository.subtle.evict(entry.key);
+    }
+
+    await s.settle();
+    await submitted;
+
+    expect(testForm().submitting()).toBe(false);
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(testForm().errors()).toEqual([
+      expect.objectContaining({ kind: SERVER_ERROR_KIND, message: 'The request was cancelled.' }),
+    ]);
+    expect(s.api.pending()).toHaveLength(0);
+
+    c.destroy();
+  });
+
+  it('does not reject the submit action when the component is destroyed mid-request', async () => {
+    const s = scenario();
+    s.api.on('POST', '/users', () => ({ status: 201, body: { id: 1, email: 'ada@example.com' }, delay: 500 }));
+
+    const createUser = s.post<CreateUserArgs>('/users');
+    const onSuccess = vi.fn();
+    const c = s.consumer();
+    const submission = c.run(() =>
+      createQuerySubmission({ queryCreator: createUser, args: (value: UserModel) => ({ body: value }), onSuccess }),
+    );
+    const testForm = c.run(() => form(signal(baseModel()), { submission: { action: submission.action } }));
+
+    let rejection: unknown = null;
+    const submitted = submit(testForm).catch((error: unknown) => {
+      rejection = error;
+    });
+
+    await s.settle();
+
+    expect(testForm().submitting()).toBe(true);
+
+    c.destroy();
+
+    await s.settle();
+    await submitted;
+
+    expect(rejection).toBeNull();
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
 });
 
 describe('validateWithQuery', () => {
@@ -728,6 +793,40 @@ describe('validateWithQuery', () => {
     await s.settle();
 
     expect(s.api.requestCount('POST', '/validate')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('stops the in-flight validate request when the when gate closes', async () => {
+    const s = scenario();
+    s.api.on('POST', '/validate', () => ({ status: 204, delay: 500 }));
+
+    const validateEmail = s.post<{ body: { email: string }; response: void }>('/validate');
+    const gateOpen = signal(true);
+    const c = s.consumer();
+    const testForm = c.run(() => {
+      const emailSchema = schema<{ email: string }>((p) => {
+        validateWithQuery(p.email, {
+          queryCreator: validateEmail,
+          args: (ctx) => ({ body: { email: ctx.value() } }),
+          debounce: 0,
+          when: () => gateOpen(),
+        });
+      });
+
+      return form(signal({ email: 'ada@example.com' }), emailSchema);
+    });
+
+    await s.settle();
+
+    expect(s.api.pending()).toHaveLength(1);
+
+    gateOpen.set(false);
+
+    await s.settle();
+
+    expect(s.api.pending()).toHaveLength(0);
+    expect(testForm.email().errors()).toEqual([]);
 
     c.destroy();
   });

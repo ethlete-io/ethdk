@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { describe, expect, it, vi } from 'vitest';
-import { createDefaultRetryFn, querySequence, withArgs } from '../index';
+import { createDefaultRetryFn, queryErrorMessage, querySequence, withArgs } from '../index';
 import { Scenario, sequence, useScenario } from './harness';
 
 /**
@@ -446,9 +446,7 @@ describe('dependent queries scenario', () => {
       c.destroy();
     });
 
-    // apps/docs/query/dependent-queries.md line 119 claims the run() promise never settles when the
-    // host scope is destroyed mid-flight; it rejects with an RxJS EmptyError instead.
-    it.fails('never settles the run promise when the host is destroyed mid-waterfall', async () => {
+    it('settles the run promise as a cancelled step when the host is destroyed mid-waterfall', async () => {
       const s = scenario();
       s.api.on('POST', '/orders-h', () => ({ body: { id: 'order-1' }, delay: 100 }));
       s.api.on('POST', '/payments-h', () => ({ body: { id: 'payment-1' }, delay: 100 }));
@@ -463,10 +461,11 @@ describe('dependent queries scenario', () => {
         })),
       );
 
-      let settled = false;
+      let result: Awaited<ReturnType<typeof chain.run>> | undefined;
+      let rejection: unknown = null;
       chain.run().then(
-        () => (settled = true),
-        () => (settled = true),
+        (value) => (result = value),
+        (error: unknown) => (rejection = error),
       );
 
       await s.settle(100);
@@ -482,7 +481,10 @@ describe('dependent queries scenario', () => {
       }
 
       expect(s.api.pending()).toHaveLength(0);
-      expect(settled).toBe(false);
+      expect(rejection).toBeNull();
+      expect(result?.ok).toBe(false);
+      expect(result?.ok === false && result.failedAt).toBe(1);
+      expect(result?.ok === false && queryErrorMessage(result.error)).toBe('The request was cancelled.');
     });
   });
 

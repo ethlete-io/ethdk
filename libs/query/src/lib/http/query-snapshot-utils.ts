@@ -10,8 +10,9 @@ import { QueryExecuteArgs } from './query-execute';
  * Designed for imperative flows that need a mutation's outcome in place - e.g. a signal-forms
  * `submit()` action mapping server violations onto the form via `mapViolationsToFormErrors`.
  *
- * The promise stays pending if the execution is cancelled (e.g. `reset()`) and the query is never
- * executed again - the snapshot settles with whichever execution completes next.
+ * A cancelled execution settles too - the entry was evicted, unbound by a logout, or the scope that
+ * owns the query was destroyed. The snapshot then reports the execution as a failure whose error
+ * says the request was cancelled, and its `latestHttpEvent()` is `{ type: 'cancel' }`.
  */
 export const executeUntilSettled = async <TArgs extends QueryArgs>(
   query: Query<TArgs>,
@@ -21,7 +22,9 @@ export const executeUntilSettled = async <TArgs extends QueryArgs>(
 
   const snapshot = query.createSnapshot();
 
-  await firstValueFrom(snapshot.isAlive.asObservable().pipe(filter((isAlive) => !isAlive)));
+  // The stream completes without emitting when the query's injector is torn down mid-execution;
+  // without a default `firstValueFrom` rejects with an rxjs `EmptyError` nobody catches.
+  await firstValueFrom(snapshot.isAlive.asObservable().pipe(filter((isAlive) => !isAlive)), { defaultValue: false });
 
   return snapshot;
 };

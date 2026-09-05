@@ -317,7 +317,17 @@ export type HttpErrorEvent = {
   faulted?: boolean;
 };
 
-export type RequestHttpEvent<TArgs extends QueryArgs> = HttpEvent<ResponseType<TArgs>> | HttpErrorEvent;
+/**
+ * A custom event marking an execution that was cancelled before it produced a response or an error -
+ * the entry was evicted, unbound by a logout, or retained without consumers. Terminal for that
+ * execution: everything the request already held is kept and a later `execute()` runs as usual.
+ */
+export type HttpCancelEvent = {
+  type: 'cancel';
+};
+
+export type RequestHttpEvent<TArgs extends QueryArgs> =
+  HttpEvent<ResponseType<TArgs>> | HttpErrorEvent | HttpCancelEvent;
 
 export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRequestOptions<TArgs>) => {
   let currentStreamSubscription = Subscription.EMPTY;
@@ -545,6 +555,11 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     retryState.set(null);
     // Nothing is on its way any more, and `execute()` refuses to run while this is set.
     loading.set(null);
+
+    // Terminal for the execution that was in flight, so a snapshot frozen to it settles. `currentEvent`
+    // stays as it is: `executionState` reads it to tell an empty `204` from a query that never ran, so
+    // a cancelled revalidation must not erase the response event of the round before it.
+    if (wasActive) event$.next({ type: 'cancel' });
 
     return wasActive;
   };

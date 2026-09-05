@@ -1,4 +1,4 @@
-import { inject, Injector, Resource, resource } from '@angular/core';
+import { effect, inject, Injector, Resource, resource, untracked } from '@angular/core';
 import { FieldContext, PathKind, SchemaPath, SchemaPathRules, TreeValidationResult } from '@angular/forms/signals';
 import { FormViolationView } from '@ethlete/types';
 import { AnyQueryCreator, QueryArgsOf } from './query-creator';
@@ -81,10 +81,13 @@ export const validateWithQuery = <TCreator extends AnyQueryCreator, TValue, TPat
       // reach the query through `execute()`, never `withArgs()`, so a function route has to be told
       // the missing feature is intentional or creating the query throws ET100.
       const query = config.queryCreator({ silenceMissingWithArgsFeatureError: true, injector });
+      const abortInFlightRound = () => query.subtle.request()?.subtle.abort();
 
-      return resource<TResult | undefined, TParams | undefined>({
+      const validationResource = resource<TResult | undefined, TParams | undefined>({
         params: () => params(),
-        loader: async ({ params: requestArgs }) => {
+        loader: async ({ params: requestArgs, abortSignal }) => {
+          abortSignal.addEventListener('abort', abortInFlightRound, { once: true });
+
           const snapshot = await executeUntilSettled(query, { args: requestArgs as TParams });
           const error = snapshot.error();
 
@@ -96,7 +99,21 @@ export const validateWithQuery = <TCreator extends AnyQueryCreator, TValue, TPat
 
           return snapshot.response() ?? undefined;
         },
-      }) as Resource<TResult | undefined>;
+      });
+
+      // Angular's `resource` leaves an in-flight load alone once its params go `undefined` - the load
+      // effect returns before it reaches the abort - and only the *next* round would unbind the
+      // request, which a closed `when` gate or a failing sync validator never brings.
+      effect(
+        () => {
+          if (validationResource.status() !== 'idle') return;
+
+          untracked(abortInFlightRound);
+        },
+        { injector },
+      );
+
+      return validationResource as Resource<TResult | undefined>;
     },
   });
 };

@@ -84,7 +84,7 @@ protected form = form(this.model, createUserSchema(), {
 <et-query-error [error]="createUser.query.error()" [query]="createUser.query" />
 ```
 
-Submitting executes the query, waits for it to settle, and only then resolves - so `form().submitting()` covers the whole round trip, and `[etForm]` keeps a second submit out while it does. The request's args come from the submitted value rather than a `withArgs()` feature, which means no derivation runs per keystroke and the query no longer reads the form it belongs to (declare it above the form, not below).
+Submitting executes the query, waits for it to settle, and only then resolves - so `form().submitting()` covers the whole round trip, and `[etForm]` keeps a second submit out while it does. A submit whose request is cancelled - a logout, an evicted cache entry, a destroyed component - settles as well, as a form-level error saying the request was cancelled, so the form never stays stuck submitting. The request's args come from the submitted value rather than a `withArgs()` feature, which means no derivation runs per keystroke and the query no longer reads the form it belongs to (declare it above the form, not below).
 
 | Option          | What it does                                                                                                                  |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -120,7 +120,7 @@ protected async save() {
 }
 ```
 
-- **`executeUntilSettled(query, executeArgs?)`** executes the query and resolves with a settled [snapshot](/query/queries#the-query-object) once the execution completes - the snapshot is frozen to that execution, so a later one can't swap the `response()` / `error()` you read.
+- **`executeUntilSettled(query, executeArgs?)`** executes the query and resolves with a settled [snapshot](/query/queries#the-query-object) once the execution completes - the snapshot is frozen to that execution, so a later one can't swap the `response()` / `error()` you read. A cancelled execution settles too, reporting an `error()` that says the request was cancelled.
 - **`mapViolationsToFormErrors({ fieldTree, error, rewritePath?, onUnmappedViolation? })`** accepts the error in any shape it may reach you: a `QueryErrorResponse`, a raw `HttpErrorResponse`, an error body, or a plain violation array (there's also a standalone `extractFormViolations(error)` if you only need the list). Each violation's `propertyPath` - dot and bracket notation, e.g. `items[2].name` - is resolved against `fieldTree`:
   - **Resolved** → an error with `kind: 'etServerViolation'`, the violation's `message`, and the matched field. Signal forms shows it on that field and clears it when the field is edited.
   - **Unresolved** (no matching field, or a `null` path) → a form-level error on the submitted field by default; pass `onUnmappedViolation` to replace it (return `null` to drop the violation).
