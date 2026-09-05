@@ -379,11 +379,14 @@ describe('client-scoped default retry', () => {
       features,
     });
 
-    const injector = createEnvironmentInjector(ref.provide(), s.run(() => inject(EnvironmentInjector)));
+    const injector = createEnvironmentInjector(
+      ref.provide(),
+      s.run(() => inject(EnvironmentInjector)),
+    );
 
     return {
       get: createGetQuery(ref),
-      run: <T,>(fn: () => T) => injector.runInContext(fn),
+      run: <T>(fn: () => T) => injector.runInContext(fn),
       destroy: () => injector.destroy(),
     };
   };
