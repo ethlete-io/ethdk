@@ -1,5 +1,15 @@
-import { signal } from '@angular/core';
-import { createWebSocketClient, SocketMessageView, withArgs, withResponseUpdate } from '../index';
+import { EnvironmentInjector, createEnvironmentInjector, signal } from '@angular/core';
+import {
+  SocketMessageView,
+  WebSocketClientIoOptions,
+  WebSocketDevtoolsHandle,
+  createWebSocketClient,
+  isQueryDevtoolsEnabled,
+  provideQueryDevtools,
+  queryDevtoolsEntries,
+  withArgs,
+  withResponseUpdate,
+} from '../index';
 import { createWebSocketTestDouble } from '@ethlete/query/testing';
 import { describe, expect, it } from 'vitest';
 import { Scenario, useScenario } from './harness';
@@ -8,15 +18,36 @@ let socketCounter = 0;
 
 const createSocket = <TMessageData extends SocketMessageView = SocketMessageView>(s: Scenario) => {
   const double = createWebSocketTestDouble();
+  const name = `ws-scenario-${socketCounter++}`;
   const client = createWebSocketClient<TMessageData>({
-    name: `ws-scenario-${socketCounter++}`,
+    name,
     url: 'ws://localhost',
     io: double.io,
   });
 
   const instance = s.run(() => client.inject());
 
-  return { double, instance };
+  return { double, instance, name };
+};
+
+const wsDevtoolsHandle = (name: string) => {
+  const entry = queryDevtoolsEntries().find((e) => e.kind === 'ws-client' && e.meta.name === name);
+
+  return (entry?.handle ?? null) as WebSocketDevtoolsHandle | null;
+};
+
+/** `isDevMode()` reads this global, so clearing it is what puts the client on its production path. */
+const inProductionMode = <T>(fn: () => T): T => {
+  const globals = globalThis as unknown as { ngDevMode?: unknown };
+  const previous = globals.ngDevMode;
+
+  globals.ngDevMode = false;
+
+  try {
+    return fn();
+  } finally {
+    globals.ngDevMode = previous;
+  }
 };
 
 describe('ws scenario', () => {
@@ -279,5 +310,227 @@ describe('ws scenario', () => {
 
     expect(() => double.serverSendRaw('{')).toThrow(/ET1001|malformed/);
     s.expectError((entry) => entry.error instanceof SyntaxError);
+  });
+
+  it('hands the configured transport list to the io factory in order, and none when the option is omitted', () => {
+    const s = scenario();
+
+    const ordered = createWebSocketTestDouble();
+    const orderedClient = createWebSocketClient({
+      name: `ws-scenario-${socketCounter++}`,
+      url: 'ws://localhost',
+      io: ordered.io,
+      transports: ['websocket', 'polling'],
+    });
+    s.run(() => orderedClient.inject());
+
+    expect(ordered.connection()).toEqual({ url: 'ws://localhost', transports: ['websocket', 'polling'] });
+
+    const { double } = createSocket(s);
+    expect(double.connection()).toEqual({ url: 'ws://localhost', transports: undefined });
+  });
+
+  it('always connects with withCredentials: true', () => {
+    const s = scenario();
+    const double = createWebSocketTestDouble();
+    const seen: WebSocketClientIoOptions[] = [];
+
+    const client = createWebSocketClient({
+      name: `ws-scenario-${socketCounter++}`,
+      url: 'ws://localhost',
+      io: (url, options) => {
+        seen.push(options);
+
+        return double.io(url, options);
+      },
+    });
+    s.run(() => client.inject());
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.withCredentials).toBe(true);
+  });
+
+  it('disconnects the socket when the providing injector is destroyed', () => {
+    const s = scenario();
+    const double = createWebSocketTestDouble();
+    const client = createWebSocketClient({
+      name: `ws-scenario-${socketCounter++}`,
+      url: 'ws://localhost',
+      io: double.io,
+    });
+
+    const scope = createEnvironmentInjector([client.provide()], s.injector.get(EnvironmentInjector));
+    const instance = scope.runInContext(() => client.inject());
+    s.tick();
+
+    expect(instance.isConnected()).toBe(false);
+    expect(double.state()).toEqual({ connectRequested: true, disconnected: false });
+
+    scope.destroy();
+
+    expect(double.state()).toEqual({ connectRequested: true, disconnected: true });
+  });
+
+  it('leaves the previous room, joins the new one and routes messages to the new room when the room function returns a new name', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    const matchId = signal('1');
+    const c = s.consumer();
+    const room = c.run(() => instance.joinRoom(() => `match:${matchId()}`));
+    s.tick();
+
+    expect(double.sent()).toEqual([{ event: 'join-room', data: 'match:1' }]);
+
+    matchId.set('2');
+    s.tick();
+
+    expect(double.sent()).toEqual([
+      { event: 'join-room', data: 'match:1' },
+      { event: 'leave-room', data: 'match:1' },
+      { event: 'join-room', data: 'match:2' },
+    ]);
+
+    double.serverSend({ room: 'match:1', event: 'goal', data: { goals: 1 } });
+    expect(room()?.latestMessage()).toBeNull();
+
+    double.serverSend({ room: 'match:2', event: 'goal', data: { goals: 2 } });
+    expect(room()?.latestMessage()).toEqual({ room: 'match:2', event: 'goal', data: { goals: 2 } });
+
+    c.destroy();
+  });
+
+  it('joins nothing while the room function returns null, and joins once it returns a name', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    const roomName = signal<string | null>(null);
+    const c = s.consumer();
+    const room = c.run(() => instance.joinRoom(() => roomName()));
+    s.tick();
+
+    expect(double.sent()).toEqual([]);
+    expect(room()).toBeNull();
+
+    roomName.set('lobby');
+    s.tick();
+
+    expect(double.sent()).toEqual([{ event: 'join-room', data: 'lobby' }]);
+    expect(room()).not.toBeNull();
+
+    double.serverSend({ room: 'lobby', event: 'score', data: { goals: 1 } });
+    expect(room()?.latestMessage()).toEqual({ room: 'lobby', event: 'score', data: { goals: 1 } });
+
+    c.destroy();
+  });
+
+  it('drops a malformed frame without throwing outside dev mode, and keeps delivering to the joined room', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    const c = s.consumer();
+    const room = c.run(() => instance.joinRoom('lobby'));
+    s.tick();
+
+    expect(() => inProductionMode(() => double.serverSendRaw('{'))).not.toThrow();
+    expect(room()?.latestMessage()).toBeNull();
+
+    double.serverSend({ room: 'lobby', event: 'score', data: { goals: 1 } });
+    expect(room()?.latestMessage()).toEqual({ room: 'lobby', event: 'score', data: { goals: 1 } });
+
+    s.expectError((entry) => entry.error instanceof SyntaxError);
+
+    c.destroy();
+  });
+
+  it('leaves a room that was never joined without throwing outside dev mode', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    expect(() => inProductionMode(() => instance.subtle.leaveRoom('ghost'))).not.toThrow();
+    expect(double.sent()).toEqual([]);
+  });
+
+  it.fails(
+    'logs nothing for a malformed frame outside dev mode - ws.md:75 calls it silently dropped, but the client always console.errors it',
+    () => {
+      const s = scenario();
+      const { double } = createSocket(s);
+
+      inProductionMode(() => double.serverSendRaw('{'));
+
+      const logged = s.errors.length;
+      while (s.errors.length) s.expectError(() => true);
+
+      expect(logged).toBe(0);
+    },
+  );
+
+  it('records nothing when devtools are not installed', () => {
+    const s = scenario();
+    const { double, instance, name } = createSocket(s);
+
+    const c = s.consumer();
+    c.run(() => instance.joinRoom('lobby'));
+    s.tick();
+    double.serverSend({ room: 'lobby', event: 'score', data: { goals: 1 } });
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+    expect(wsDevtoolsHandle(name)).toBeNull();
+
+    c.destroy();
+  });
+});
+
+describe('ws devtools scenario', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 }, providers: () => [provideQueryDevtools()] });
+
+  it('records both the room joins it sent and the messages that came back, and emits as the app would', () => {
+    const s = scenario();
+    const { double, instance, name } = createSocket(s);
+
+    expect(isQueryDevtoolsEnabled()).toBe(true);
+
+    const handle = wsDevtoolsHandle(name);
+    if (!handle) throw new Error('the socket registered no devtools entry');
+
+    expect(handle.connected()).toBe(false);
+
+    const roomName = signal<string | null>('lobby');
+    const c = s.consumer();
+    c.run(() => instance.joinRoom(roomName));
+    s.tick();
+    double.serverConnect();
+
+    expect(handle.connected()).toBe(true);
+    expect(handle.rooms()).toEqual(['lobby']);
+    expect(handle.messages()[0]).toMatchObject({ direction: 'out', event: 'join-room', room: 'lobby' });
+
+    double.serverSend({ room: 'lobby', event: 'score', data: { goals: 1 } });
+
+    expect(handle.messages()[0]).toMatchObject({
+      direction: 'in',
+      event: 'score',
+      room: 'lobby',
+      data: { goals: 1 },
+    });
+
+    handle.emit({ event: 'ping', data: { id: 7 } });
+
+    expect(double.sent()).toContainEqual({ event: 'ping', data: { id: 7 } });
+    expect(handle.messages()[0]).toMatchObject({ direction: 'out', event: 'ping', data: { id: 7 }, room: '' });
+
+    roomName.set(null);
+    s.tick();
+
+    expect(handle.rooms()).toEqual([]);
+    expect(handle.messages()[0]).toMatchObject({ direction: 'out', event: 'leave-room', room: 'lobby' });
+
+    c.destroy();
+
+    // provideQueryDevtools() arms a 500 ms grace timer after the first render. Let it fire, so the
+    // timer invariant reports real leaks only.
+    s.tick();
+    s.tick(600);
   });
 });
