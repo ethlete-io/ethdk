@@ -44,10 +44,7 @@ const NO_RETRY: ShouldRetryRequestResult = { retry: false };
 
 let defaultRetryFn: ShouldRetryRequestFn | null = null;
 
-/**
- * Installs the retry policy used by every request whose client resolved none of its own - neither a
- * `retryFn` nor a {@link withDefaultRetry} feature. Nothing is retried automatically without one.
- */
+/** @internal */
 export const setDefaultQueryRetryFn = (fn: ShouldRetryRequestFn) => {
   defaultRetryFn = fn;
 };

@@ -1,10 +1,11 @@
 import { HttpBackend, HttpErrorResponse, HttpEventType, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createDefaultRetryFn,
   isHtmlErrorPayload,
   registerQueryErrorParser,
+  setDefaultQueryRetryFn,
   withDefaultRetry,
   withEthleteApiErrors,
   withErrorHandling,
@@ -1399,6 +1400,59 @@ describe('dev-mode misuse errors', () => {
 
     expect(() => c.run(() => getThing())).toThrow(/withArgs/);
 
+    c.destroy();
+  });
+});
+
+describe('a client that asked for no retry policy', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('does not retry a 503 and leaves retryState at { retry: false }', () => {
+    const s = scenario();
+    s.api.on('GET', '/unstable', () => ({ status: 503, body: { message: 'down' } }));
+
+    const getUnstable = s.get<{ response: unknown }>('/unstable');
+    const c = s.consumer();
+    const query = c.run(() => getUnstable());
+
+    s.tick();
+    s.tick(30_000);
+
+    expect(s.api.requestCount('GET', '/unstable')).toBe(1);
+    expect(query.error()?.code).toBe(503);
+    expect(query.error()?.retryState).toEqual({ retry: false });
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+    c.destroy();
+  });
+});
+
+// `setDefaultQueryRetryFn` writes a process-global with no way back to "no policy at all", so this
+// describe must stay last in the file - the no-op it restores is not the same as never having called it.
+describe('the process-global default retry policy (@internal escape hatch)', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  afterEach(() => setDefaultQueryRetryFn(() => ({ retry: false })));
+
+  it('retries for a client that declared none of its own', () => {
+    const s = scenario();
+    setDefaultQueryRetryFn(({ retryCount }) => (retryCount <= 2 ? { retry: true, delay: 10 } : { retry: false }));
+
+    s.api.on('GET', '/globally-retried', () => ({ status: 503, body: { message: 'down' } }));
+
+    const getIt = s.get<{ response: unknown }>('/globally-retried');
+    const c = s.consumer();
+    const query = c.run(() => getIt());
+
+    s.tick();
+    s.tick(10);
+    s.tick(10);
+    s.tick(10);
+
+    expect(s.api.requestCount('GET', '/globally-retried')).toBe(3);
+    expect(query.error()?.code).toBe(503);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
     c.destroy();
   });
 });
