@@ -1,4 +1,5 @@
 import { HttpHeaders } from '@angular/common/http';
+import { Injector } from '@angular/core';
 import { registerQueryDevtoolsEntry } from './query-devtools-hook';
 import { clearQueryDevtoolsTombstones, provideQueryDevtools, queryDevtoolsEntries } from './query-devtools-registry';
 import { MAX_QUERY_DEVTOOLS_TOMBSTONES, snapshotQueryDevtoolsHandle } from './query-devtools-tombstone';
@@ -43,6 +44,14 @@ const fakeQuery = (overrides: { response?: unknown; error?: unknown; url?: strin
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const asAny = (value: unknown) => value as any;
+
+const nestedValues = (value: unknown, seen = new Set<unknown>()): unknown[] => {
+  if (!value || typeof value !== 'object' || seen.has(value)) return [];
+
+  seen.add(value);
+
+  return Object.values(value).flatMap((entry) => [entry, ...nestedValues(entry, seen)]);
+};
 
 const registerQuery = (route: string, handle: unknown) =>
   registerQueryDevtoolsEntry({
@@ -135,6 +144,31 @@ describe('query devtools tombstones', () => {
       unregister();
 
       expect(queryDevtoolsEntries().find((e) => e.meta.route === '/post/2')?.meta.element).toBeUndefined();
+    });
+
+    it('should drop the creating injector, which reaches the destroyed view the element strip protects', () => {
+      const injector = { get: () => null } as unknown as Injector;
+      const unregister = registerQueryDevtoolsEntry({
+        kind: 'query',
+        handle: fakeQuery(),
+        meta: { method: 'PUT', element: document.createElement('div'), queryConfig: { key: 'k', injector } },
+        route: '/post/3',
+      });
+      unregister();
+
+      const queryConfig = queryDevtoolsEntries().find((e) => e.meta.route === '/post/3')?.meta.queryConfig;
+
+      expect(queryConfig).toEqual({ key: 'k' });
+      expect(queryConfig && 'injector' in queryConfig).toBe(false);
+      expect(nestedValues(queryConfig).some((v) => typeof v === 'function' || v instanceof Node)).toBe(false);
+    });
+
+    it('should leave a query without a config without one', () => {
+      registerQuery('/post/4', fakeQuery())();
+
+      const entry = queryDevtoolsEntries().find((e) => e.meta.route === '/post/4');
+
+      expect(entry?.meta.queryConfig).toBeUndefined();
     });
 
     it('should not tombstone anything but a query', () => {

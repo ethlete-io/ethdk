@@ -132,14 +132,22 @@ export const snapshotQueryDevtoolsHandle = (handle: unknown): unknown => {
 
 /**
  * The entry a destroyed query leaves behind: the same id, kind and metadata, a frozen
- * {@link snapshotQueryDevtoolsHandle} in place of the live query, and no `element` - a DOM node whose
- * component is gone must not be kept alive by the panel.
+ * {@link snapshotQueryDevtoolsHandle} in place of the live query, and neither `element` nor
+ * `queryConfig.injector` - a DOM node whose component is gone, and the `NodeInjector` that reaches the
+ * same view through its `LView`, must not be kept alive by the panel.
  *
  * `stats` is carried over as-is. The recorder closes over its own signals rather than over the query,
  * so the run history that makes a failed request readable survives without retaining anything.
  */
 export const tombstoneOf = (entry: QueryDevtoolsEntry, destroyedAt: number): QueryDevtoolsEntry => {
-  const { element: _element, ...meta } = entry.meta;
+  const { element: _element, queryConfig, ...rest } = entry.meta;
+  const meta = rest as QueryDevtoolsEntry['meta'];
+
+  if (queryConfig) {
+    const { injector: _injector, ...safeQueryConfig } = queryConfig;
+
+    meta.queryConfig = safeQueryConfig;
+  }
 
   return {
     id: entry.id,
