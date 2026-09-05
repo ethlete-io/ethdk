@@ -193,15 +193,17 @@ const applyResets = (
  * nothing moves, which has to happen before the value commits - one query execution for the
  * whole chain, not one per hop. The cap only guards a cyclic `isResetBy` graph; a field already at
  * its default stops triggering, so a well-formed graph settles in as many passes as it is deep.
- * A key the commit itself changed (`explicitKeys`) is never reset, in any pass.
+ * A key the commit itself changed (`explicitKeys`) is never reset, in any pass, and so is a key
+ * `protectedKeys` names - the fields a caller asked to skip.
  */
 const resolveResets = (
   fieldDefs: QueryFormFields,
   prev: Dict,
   live: Dict,
   defaultFor: (key: string) => unknown,
+  protectedKeys?: ReadonlySet<string>,
 ): Dict => {
-  const explicitKeys = new Set(changedKeysBetween(prev, live));
+  const explicitKeys = new Set([...changedKeysBetween(prev, live), ...(protectedKeys ?? [])]);
   const resetDefaults = new Map<string, unknown>();
   let next = live;
 
@@ -467,6 +469,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   let observeOptions: QueryFormSignalsObserveOptions | undefined;
   let pendingTimer: ReturnType<typeof setTimeout> | null = null;
   let skipNextResets = false;
+  let skipNextResetsFor: ReadonlySet<string> | undefined;
   let urlWriteVersion = 0;
   const urlNavigationMarker = {};
   const pathOf = (tree: UrlTree) => router.serializeUrl(tree).split(/[?#]/)[0];
@@ -539,6 +542,10 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     const version = ++urlWriteVersion;
 
     for (const [key, def] of Object.entries(fieldDefs)) {
+      // Not `undefined`: `navigateWithParams` deletes an undefined key, which would strip a param of
+      // that name the form never owned.
+      if (def.appendToUrl === false) continue;
+
       queryParams[paramKey(key)] = queryParamFor(key, def, value[key]);
     }
 
@@ -557,6 +564,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
     if (equal(live, prev)) {
       skipNextResets = false;
+      skipNextResetsFor = undefined;
 
       if (!equal(live, rawLive)) {
         model.set(clone(live) as QueryFormModel<TFields>);
@@ -565,9 +573,10 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       return;
     }
 
-    const next = skipNextResets ? { ...live } : resolveResets(fieldDefs, prev, live, defaultFor);
+    const next = skipNextResets ? { ...live } : resolveResets(fieldDefs, prev, live, defaultFor, skipNextResetsFor);
 
     skipNextResets = false;
+    skipNextResetsFor = undefined;
 
     previous.set(clone(prev) as QueryFormModel<TFields>);
     committed.set(clone(next) as QueryFormModel<TFields>);
@@ -584,10 +593,9 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   };
 
   const onLiveChange = (live: Dict) => {
-    if (!observing()) return;
-
     if (equal(live, committed())) {
       skipNextResets = false;
+      skipNextResetsFor = undefined;
 
       return;
     }
@@ -611,6 +619,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   const commitFromUrl = (next: Dict) => {
     clearTimer();
     skipNextResets = false;
+    skipNextResetsFor = undefined;
     previous.set(clone(committed()) as QueryFormModel<TFields>);
     committed.set(clone(next) as QueryFormModel<TFields>);
     // Feed the URL value into the live model & bound controls; the effect no-ops (model === committed).
@@ -640,16 +649,19 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   };
 
   const cleanup = (removeQueryParams = true) => {
+    clearTimer();
+
     if (!observing()) return;
 
     observing.set(false);
-    clearTimer();
 
     if (!removeQueryParams || observeOptions?.writeToQueryParams === false) return;
 
     const queryParams: Dict = {};
 
-    for (const key of Object.keys(fieldDefs)) {
+    for (const [key, def] of Object.entries(fieldDefs)) {
+      if (def.appendToUrl === false) continue;
+
       queryParams[paramKey(key)] = undefined;
     }
 
@@ -739,6 +751,8 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       const skip = new Set((options?.skipFields ?? []).map((key) => key as string));
       const keys = Object.keys(fieldDefs).filter((key) => !skip.has(key)) as (keyof QueryFormModel<TFields>)[];
 
+      if (skip.size) skipNextResetsFor = skip;
+
       resetFieldsToDefault(keys, options);
     },
 
@@ -761,7 +775,9 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
       const info = router.lastSuccessfulNavigation()?.extras.info as
         { queryForm?: object; version?: number } | undefined;
-      if (info?.queryForm === urlNavigationMarker && (info.version ?? 0) < urlWriteVersion) return;
+      // Including the newest write: re-parsing the form's own output would coerce a committed
+      // string back to a number and drop the milliseconds of a committed Date.
+      if (info?.queryForm === urlNavigationMarker && (info.version ?? 0) <= urlWriteVersion) return;
 
       applyFromUrl(changes as Dict);
     });

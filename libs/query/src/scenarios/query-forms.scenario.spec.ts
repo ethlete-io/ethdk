@@ -448,6 +448,28 @@ describe('query forms scenario', () => {
     expect(qf.value()).toEqual({ region: null, tier: null, page: 1 });
   });
 
+  it('keeps a skipFields field even when a reset field triggers its isResetBy', () => {
+    const s = scenario();
+
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: {
+          region: queryField<string>(),
+          tier: queryField<string>({ isResetBy: 'region' }),
+          page: queryField<number>({ defaultValue: 1 }),
+        },
+      }).observe({ writeToQueryParams: false }),
+    );
+
+    qf.setValue({ region: 'eu', tier: 'gold', page: 3 });
+    s.tick();
+
+    qf.resetAllFieldsToDefault({ skipFields: ['tier'] });
+    s.tick();
+
+    expect(qf.value()).toEqual({ region: null, tier: 'gold', page: 1 });
+  });
+
   it('a three-hop isResetBy cascade drives exactly one query execution', () => {
     const s = scenario();
     s.api.on('GET', '/items', () => ({ body: { items: [] } }));
@@ -679,6 +701,46 @@ describe('query forms scenario', () => {
     expect(router.parseUrl(router.url).queryParams).toEqual(legacyParams);
 
     signals.destroy();
+  });
+
+  it('commits control edits on a form that never calls observe', () => {
+    const s = scenario();
+
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: { region: queryField<string>(), page: queryField<number>({ defaultValue: 1 }) },
+      }),
+    );
+
+    qf.setValue({ region: 'eu', page: 2 });
+    s.tick();
+
+    expect(qf.value()).toEqual({ region: 'eu', page: 2 });
+    expect(qf.activeFilterCount()).toBe(1);
+    expect(qf.branch().value()).toEqual({ region: 'eu', page: 2 });
+  });
+
+  it('keeps committing control edits after unobserve', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const c = s.consumer();
+    const qf = c.run(() => defineQueryForm({ fields: { region: queryField<string>() } }).observe());
+
+    qf.setValue({ region: 'eu' });
+    await s.settle();
+    expect(qf.value().region).toBe('eu');
+
+    qf.unobserve();
+    await s.settle();
+
+    qf.setValue({ region: 'us' });
+    await s.settle();
+
+    expect(qf.value().region).toBe('us');
+    expect(router.parseUrl(router.url).queryParams).toEqual({});
+
+    c.destroy();
   });
 });
 
