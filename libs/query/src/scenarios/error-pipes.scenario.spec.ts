@@ -101,6 +101,56 @@ describe('http error pipes scenario', () => {
     c.destroy();
   });
 
+  it('names the 416 out-of-range page in both languages', () => {
+    const s = scenario();
+    s.api.on('GET', '/items', () => ({ status: 416, body: { message: 'page out of range' } }));
+
+    const getItems = s.get<{ response: unknown }>('/items');
+
+    const c = s.consumer();
+    const query = c.run(() => getItems());
+    s.flush();
+
+    expect(query.error()?.raw.status).toBe(416);
+
+    const rendered = renderStatus(query.error()?.raw.status ?? 0);
+
+    expect(rendered).toMatchObject({
+      titleEn: 'Page out of range',
+      messageEn: 'The requested page does not exist. Go back to the first page and try again.',
+      titleDe: 'Seite nicht vorhanden',
+      messageDe:
+        'Die angeforderte Seite existiert nicht. Gehen Sie zurück zur ersten Seite und versuchen Sie es erneut.',
+    });
+
+    rendered.destroy();
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 416);
+    c.destroy();
+  });
+
+  it('translates the request timeout, the gone resource and the early-data refusal faithfully', () => {
+    scenario();
+
+    const timeout = renderStatus(HttpStatusCode.RequestTimeout);
+    expect(timeout).toMatchObject({
+      messageEn: 'The server timed out waiting for the request.',
+      messageDe: 'Der Server hat zu lange auf die Anforderung gewartet.',
+    });
+    timeout.destroy();
+
+    const gone = renderStatus(HttpStatusCode.Gone);
+    expect(gone).toMatchObject({ titleEn: 'Gone', titleDe: 'Nicht mehr verfügbar' });
+    gone.destroy();
+
+    const tooEarly = renderStatus(HttpStatusCode.TooEarly);
+    expect(tooEarly).toMatchObject({
+      messageEn: 'The server refuses to process a request that could be a replay. Please try again.',
+      messageDe:
+        'Der Server verarbeitet die Anforderung nicht, weil sie eine Wiederholung sein könnte. Bitte versuchen Sie es erneut.',
+    });
+    tooEarly.destroy();
+  });
+
   it('falls back to a generic text for a status without a translation, such as a network error', () => {
     const s = scenario();
     s.api.on('GET', '/offline', () => ({ status: 0 }));

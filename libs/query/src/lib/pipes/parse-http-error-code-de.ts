@@ -23,7 +23,7 @@ export const parseHttpErrorCodeToTitleDe = (statusCode: HttpStatusCode) => {
     case HttpStatusCode.Conflict:
       return 'Konflikt';
     case HttpStatusCode.Gone:
-      return 'Weg';
+      return 'Nicht mehr verfügbar';
     case HttpStatusCode.LengthRequired:
       return 'Länge erforderlich';
     case HttpStatusCode.PreconditionFailed:
@@ -35,7 +35,7 @@ export const parseHttpErrorCodeToTitleDe = (statusCode: HttpStatusCode) => {
     case HttpStatusCode.UnsupportedMediaType:
       return 'Nicht unterstützter Medientyp';
     case HttpStatusCode.RangeNotSatisfiable:
-      return 'Bereich nicht zufriedenstellend';
+      return 'Seite nicht vorhanden';
     case HttpStatusCode.ExpectationFailed:
       return 'Erwartung fehlgeschlagen';
     case HttpStatusCode.ImATeapot:
@@ -106,7 +106,7 @@ export const parseHttpErrorCodeToMessageDe = (statusCode: HttpStatusCode) => {
     case HttpStatusCode.ProxyAuthenticationRequired:
       return 'Zur Ausführung dieser Aktion ist eine Proxy-Authentifizierung erforderlich.';
     case HttpStatusCode.RequestTimeout:
-      return 'Der Server hat auf die Anforderung gewartet.';
+      return 'Der Server hat zu lange auf die Anforderung gewartet.';
     case HttpStatusCode.Conflict:
       return 'Die Anforderung steht im Widerspruch zum aktuellen Zustand der Ressource.';
     case HttpStatusCode.Gone:
@@ -122,7 +122,7 @@ export const parseHttpErrorCodeToMessageDe = (statusCode: HttpStatusCode) => {
     case HttpStatusCode.UnsupportedMediaType:
       return 'Die Anforderungseinheit hat einen Medientyp, den der Server oder die Ressource nicht unterstützt.';
     case HttpStatusCode.RangeNotSatisfiable:
-      return 'Der Client hat einen Teil der Datei angefordert, aber der Server kann diesen Teil nicht liefern.';
+      return 'Die angeforderte Seite existiert nicht. Gehen Sie zurück zur ersten Seite und versuchen Sie es erneut.';
     case HttpStatusCode.ExpectationFailed:
       return 'Der Server kann die Anforderungen des Erwartung-Anforderungskopffelds nicht erfüllen.';
     case HttpStatusCode.ImATeapot:
@@ -136,7 +136,7 @@ export const parseHttpErrorCodeToMessageDe = (statusCode: HttpStatusCode) => {
     case HttpStatusCode.FailedDependency:
       return 'Die Anforderung ist aufgrund eines Fehlers einer vorherigen Anforderung fehlgeschlagen.';
     case HttpStatusCode.TooEarly:
-      return 'Der Server ist nicht bereit, die Anforderung zu verarbeiten, weil der Benutzer nicht authentifiziert wurde.';
+      return 'Der Server verarbeitet die Anforderung nicht, weil sie eine Wiederholung sein könnte. Bitte versuchen Sie es erneut.';
     case HttpStatusCode.UpgradeRequired:
       return 'Der Client sollte zu einem anderen Protokoll wie TLS/1.0 wechseln, das im Upgrade-Anforderungskopffeld angegeben ist.';
     case HttpStatusCode.PreconditionRequired:

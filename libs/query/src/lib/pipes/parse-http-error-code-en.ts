@@ -35,7 +35,7 @@ export const parseHttpErrorCodeToTitleEn = (statusCode: HttpStatusCode) => {
     case HttpStatusCode.UnsupportedMediaType:
       return 'Unsupported media type';
     case HttpStatusCode.RangeNotSatisfiable:
-      return 'Range not satisfiable';
+      return 'Page out of range';
     case HttpStatusCode.ExpectationFailed:
       return 'Expectation failed';
     case HttpStatusCode.ImATeapot:
@@ -122,7 +122,7 @@ export const parseHttpErrorCodeToMessageEn = (statusCode: HttpStatusCode) => {
     case HttpStatusCode.UnsupportedMediaType:
       return 'The request entity has a media type which the server or resource does not support.';
     case HttpStatusCode.RangeNotSatisfiable:
-      return 'The client has asked for a portion of the file, but the server cannot supply that portion.';
+      return 'The requested page does not exist. Go back to the first page and try again.';
     case HttpStatusCode.ExpectationFailed:
       return 'The server cannot meet the requirements of the Expect request-header field.';
     case HttpStatusCode.ImATeapot:
@@ -136,7 +136,7 @@ export const parseHttpErrorCodeToMessageEn = (statusCode: HttpStatusCode) => {
     case HttpStatusCode.FailedDependency:
       return 'The request failed due to failure of a previous request.';
     case HttpStatusCode.TooEarly:
-      return 'The server is unwilling to process the request because the user has not been authenticated.';
+      return 'The server refuses to process a request that could be a replay. Please try again.';
     case HttpStatusCode.UpgradeRequired:
       return 'The client should switch to a different protocol such as TLS/1.0, given in the Upgrade header field.';
     case HttpStatusCode.PreconditionRequired:
