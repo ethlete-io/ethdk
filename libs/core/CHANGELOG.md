@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.57
+
+### Patch Changes
+
+- [`ae96d23`](https://github.com/ethlete-io/ethdk/commit/ae96d237faec74d01fef4141e3000482673a4e6f) Core: overlays close and restore focus in a pop-up window, `unbindProps` undoes everything `bindProps` applied, cookie helpers no-op on the server, `equal()` compares `Date`s by tag, and `memoizeSignal` caches per application.
+
 ## 5.0.0-next.56
 
 ### Patch Changes

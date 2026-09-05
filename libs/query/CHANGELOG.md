@@ -1,5 +1,45 @@
 # @ethlete/query
 
+## 6.0.0-next.46
+
+### Minor Changes
+
+- [`03f0285`](https://github.com/ethlete-io/ethdk/commit/03f0285b028cd5b740075eabe400858973d45533) `<et-query-devtools-lazy>` renders nothing without `provideQueryDevtools()` - no floating button, no
+  shortcut, no panel download - and the now-public `isQueryDevtoolsEnabled()` is what it gates on.
+- [`2d3107d`](https://github.com/ethlete-io/ethdk/commit/2d3107d040ae16ea1af35b4cf780df78dcb9a388) GQL over POST sends `variables` as a JSON object, as the spec requires, instead of a JSON string. A server that relied on the string must accept the map. GET is unchanged.
+- [`6704678`](https://github.com/ethlete-io/ethdk/commit/6704678029c66e202a8211bd1552be6cae6b4f3e) `withDefaultRetry()` and `withEthleteApiErrors()` now retry only the client they are on. Before, the first call installed the policy process-wide. Migration: add the feature to every client that should retry - a second client without it no longer retries.
+- [`6c744bb`](https://github.com/ethlete-io/ethdk/commit/6c744bb88ed65244ffd875eabd69a45e7a1bef7a) `defineQueryForm`: `branch()` now debounces and runs the reset graph like the source form and exposes `liveValue`; the filter overlay applies `liveValue` on submit.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) HTTP queries gain `createHeadQuery` and `createOptionsQuery` with their secure twins, and `createFakeQueryPersistenceStore()` can fail a removal with `failNextRemoves(count)`.
+- [`ececb72`](https://github.com/ethlete-io/ethdk/commit/ececb724eb7dea6e106fbeeac3f094d079cc9e62) Auth: `withTokenExpirationWarning` reads the expiry claim named by its new `expiresInPropertyName` option, so a token that carries the expiry under another name no longer reports no expiry at all.
+
+### Patch Changes
+
+- [`0dbb0fd`](https://github.com/ethlete-io/ethdk/commit/0dbb0fd7629ed2c3b88cb9528dd30a383466729a) The panel drops a client's Cache, Faults and Events entries once that client's injector is destroyed,
+  instead of keeping them alive for as long as one of its queries has a tombstone.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Legacy interop: `abort()` publishes `Cancelled`, a second `execute()` while loading is a no-op again, a poll reports `refreshing`, `triggerImmediately` runs at once, and `state$` replays `Prepared`.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Legacy query containers: teardown destroys an uncacheable query, stops the poll of the last container, tracks dependents per injector, tears down the store's listeners, and leaves a superseded mutation to settle.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Legacy `QueryForm`: values track control writes without `observe()`, a commit no longer cancels an in-flight route change, and a committed value keeps its type through the form's own URL write.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Legacy: `[etInfinityQueryTrigger]` no longer throws NG0200, `v2BuildQueryCacheKey` takes the method, `setAuthProvider` keeps the refresh cookie, the prepare fallback survives several applications, and the barrel's re-exports carry `@deprecated`.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Multi-tab auth: a follower waits for the leader's in-flight refresh and spends one token per rotation, a cached login is no longer broadcast, and `withTracking` honors `trackInternalEvents`.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Bearer auth: a login that races the cookie restore, an empty `2xx` body and a refresh that yields no tokens now settle the session instead of stranding it, and the cookie clears in every reachable scope.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Caching: the key covers the request method and case-folds header names, and an entry's secure, refreshable and retention flags follow the queries still bound to it rather than the one that made it.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Query: the `ET800` circular-dependency guard counts only executions with identical args and measures its window with its own clock, so a fast-typed search no longer trips it.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Query devtools: a tombstone drops the destroyed view, override recorders and host elements are released, the floating pills settle after first paint, and the Forms tab links every reader of a form.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Error handling: a malformed `violations` body degrades to a form-level `etServerError` instead of throwing, and the `416`, `408`, `410` and `425` status texts are corrected.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Query: `execute()` after destroy warns instead of throwing NG0205, `executeUntilSettled` settles on cancel, `reset()` detaches the request, a batch records a throwing item, and snapshots keep their own signals.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) `defineQueryForm`: an emptied array commits as its `null` default, `skipResets` and `skipFields` no longer leak into the next change, a value written before `observe()` survives, and `liveValue` reports the controls.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) `defineQueryForm`: two forms writing in one tick keep each other's params, `appendToUrl: false` leaves a foreign param alone, `0` reads back as a number, and a commit no longer cancels a route change.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) GraphQL: a document is parsed once and minified without breaking on comments or string literals, `rawResponse` can declare its own envelope, and secure queries over POST cache like the rest.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Query persistence: mutations are never stored, one opted-in consumer is enough, GraphQL over POST persists, a failed IndexedDB open is retried, and a purge always beats a hydration or index load in flight.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Query types: `QueryContext` and `setDefaultQueryRetryFn` leave the published types, `createQueryFeature()` takes any `type` string, and `createQuerySubmission`'s `onSuccess` allows the `null` a `204` hands it.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Query stacks and sequences: `deduplicateArgs` applies without `append`, each response runs its features once, `fetchPreviousPage()` returns the page it made, and every link reports the built `total`.
+- [`c962f78`](https://github.com/ethlete-io/ethdk/commit/c962f78e7c64c88f360edaa48f45ff72fc504ec2) Testing entry point: `setupQueryTest` now installs one console filter instead of nesting a
+  new one per call, and exposes `restoreConsole`. `installFakeWebLocks` removes the `abort`
+  listeners it adds. The websocket double reports `withCredentials()`.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Query: a `transformResponse` that throws lands in `error()` with code `0`, keeps the last good `response()`, and no longer re-runs `withSuccessHandling`.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) `validateWithQuery`: the in-flight request stops when the field goes idle, and the internal query's cache entry and resource are released with the form that owns them.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) WebSockets: a room joined before the socket connects sends one `join-room`, and a frame carrying no `room` string is reported as malformed without flooding production logs.
+
 ## 6.0.0-next.45
 
 ### Patch Changes

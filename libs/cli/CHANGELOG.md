@@ -1,5 +1,11 @@
 # @ethlete/cli
 
+## 2.1.0-next.9
+
+### Minor Changes
+
+- [`f7ce2eb`](https://github.com/ethlete-io/ethdk/commit/f7ce2ebb55501709efce105aec1044bcdde44d9e) `et update` now writes the new range into every `package.json` in the repo, not only the root one, and refuses a dist tag that points at an older version than the repo is on.
+
 ## 2.1.0-next.8
 
 ### Minor Changes
