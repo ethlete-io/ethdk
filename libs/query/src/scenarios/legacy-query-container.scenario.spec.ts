@@ -17,6 +17,7 @@ const BASE_URL = 'https://api.test';
 
 type User = { id: string; name: string };
 type GetUserArgs = { response: User; pathParams: { id: string } };
+type CreateUserArgs = { response: User; body: { name: string } };
 
 type LegacyClientConfig = Omit<V2QueryClientConfig, 'baseRoute'>;
 type TrackFn = <T extends AnyV2Query>(query: T) => T;
@@ -64,6 +65,9 @@ const createGetUser = (client: V2QueryClient) =>
 
 const holdQuery = (injector: Injector, source: () => AnyV2Query | AnyLegacyQuery | null) =>
   queryComputed(source, { injector });
+
+const isUnderlyingQueryDestroyed = (query: AnyLegacyQuery) =>
+  (query.newQuery.subtle.injector as unknown as { destroyed: boolean }).destroyed;
 
 describe('legacy query container scenario', () => {
   const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
@@ -296,6 +300,38 @@ describe('legacy query container scenario', () => {
 
     switching.destroy();
     keeping.destroy();
+    owner.destroy();
+  });
+
+  it('destroys an interop POST query when its container is torn down', () => {
+    const s = scenario();
+    s.api.on('POST', '/users', () => ({ body: { id: '1', name: 'Ada' } }));
+
+    const createUser = s.post<CreateUserArgs>('/users');
+    const legacyCreateUser = createLegacyQueryCreator({ creator: createUser, name: 'legacyCreateUser' });
+
+    const owner = s.consumer();
+    const query = owner.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute());
+
+    const container = s.consumer();
+    container.run(() => legacyCreateUser.createSignal(query));
+    s.tick();
+
+    const stopPolling$ = new Subject<void>();
+    query.poll({ interval: 1_000, takeUntil: stopPolling$ });
+    s.tick(2_000);
+
+    expect(query.isPolling).toBe(true);
+
+    const polledCount = s.api.requestCount('POST', '/users');
+
+    container.destroy();
+    s.tick(3_000);
+
+    expect(query.isPolling).toBe(false);
+    expect(s.api.requestCount('POST', '/users')).toBe(polledCount);
+    expect(isUnderlyingQueryDestroyed(query)).toBe(true);
+
     owner.destroy();
   });
 });

@@ -10,7 +10,6 @@ import {
   of,
   ReplaySubject,
   shareReplay,
-  skip,
   Subject,
   Subscription,
   switchMap,
@@ -338,9 +337,7 @@ export class V2Query<
 
     this.currentPollConfig = config;
 
-    const interval$ = interval(config.interval);
-    const poll$ = interval$.pipe(
-      skip(config.triggerImmediately ? 0 : 1),
+    const poll$ = timer(config.triggerImmediately ? 0 : config.interval, config.interval).pipe(
       takeUntil(config.takeUntil),
       takeWhile(() => !this._isPollingPaused),
       filter(() => !isQueryStateLoading(this._state$.value)),

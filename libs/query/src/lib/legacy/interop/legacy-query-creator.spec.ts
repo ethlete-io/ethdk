@@ -321,7 +321,7 @@ describe('LegacyQueryCreator.prepare', () => {
       // `cleanQuery` gates both branches on `canBeCached`, so with the old hardcoded `false` a superseded
       // cacheable query kept polling and was never aborted.
       expect(first.isPolling).toBe(false);
-      expect(first.rawState.type).toBe(QueryStateType.Prepared);
+      expect(first.rawState.type).toBe(QueryStateType.Cancelled);
     });
   });
 

@@ -558,6 +558,31 @@ describe('legacy scenario', () => {
       });
     });
 
+    it('does not re-execute on a focus that follows a short blur', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      withLegacyClient(s, {}, (client, track) => {
+        const query = track(
+          createGetUser(client)
+            .prepare({ pathParams: { id: '1' } })
+            .execute(),
+        );
+
+        s.tick();
+
+        expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+
+        window.dispatchEvent(new Event('blur'));
+        s.tick(3_000);
+        window.dispatchEvent(new Event('focus'));
+        s.tick();
+
+        expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+        expect(query.rawState.meta.triggeredVia).toBe('program');
+      });
+    });
+
     it('does not re-execute when the client disables autoRefreshQueriesOnWindowFocus', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
@@ -643,16 +668,45 @@ describe('legacy scenario', () => {
         query.poll({ interval: 1_000, takeUntil: stopPolling$ });
 
         s.tick(2_000);
-        expect(s.api.requestCount('GET', '/users/1')).toBe(2);
+        expect(s.api.requestCount('GET', '/users/1')).toBe(3);
 
         s.tick(1_000);
-        expect(s.api.requestCount('GET', '/users/1')).toBe(3);
+        expect(s.api.requestCount('GET', '/users/1')).toBe(4);
 
         query.stopPolling();
         s.tick(5_000);
 
         expect(query.isPolling).toBe(false);
+        expect(s.api.requestCount('GET', '/users/1')).toBe(4);
+      });
+    });
+
+    it('executes a polled query immediately when triggerImmediately is set', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      withLegacyClient(s, {}, (client, track) => {
+        const stopPolling$ = new Subject<void>();
+        const query = track(
+          createGetUser(client)
+            .prepare({ pathParams: { id: '1' } })
+            .execute(),
+        );
+
+        s.tick();
+
+        expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+
+        query.poll({ interval: 1_000, triggerImmediately: true, takeUntil: stopPolling$ });
+        s.tick(1);
+
+        expect(s.api.requestCount('GET', '/users/1')).toBe(2);
+
+        s.tick(1_000);
+
         expect(s.api.requestCount('GET', '/users/1')).toBe(3);
+
+        query.stopPolling();
       });
     });
 
@@ -671,7 +725,7 @@ describe('legacy scenario', () => {
         s.tick();
         query.poll({ interval: 1_000, takeUntil: stopPolling$ });
         s.tick(2_000);
-        expect(s.api.requestCount('GET', '/users/1')).toBe(2);
+        expect(s.api.requestCount('GET', '/users/1')).toBe(3);
 
         window.dispatchEvent(new Event('blur'));
         s.tick(5_000);
@@ -684,10 +738,14 @@ describe('legacy scenario', () => {
         expect(s.api.requestCount('GET', '/users/1')).toBe(whilePaused);
 
         window.dispatchEvent(new Event('focus'));
-        s.tick(1_000);
+        s.tick(1);
 
         expect(query.isPolling).toBe(true);
         expect(s.api.requestCount('GET', '/users/1')).toBe(whilePaused + 1);
+
+        s.tick(1_000);
+
+        expect(s.api.requestCount('GET', '/users/1')).toBe(whilePaused + 2);
 
         query.stopPolling();
       });
@@ -712,7 +770,7 @@ describe('legacy scenario', () => {
         s.tick(6_000);
 
         expect(query.isPolling).toBe(true);
-        expect(s.api.requestCount('GET', '/users/1')).toBe(6);
+        expect(s.api.requestCount('GET', '/users/1')).toBe(7);
 
         query.stopPolling();
       });

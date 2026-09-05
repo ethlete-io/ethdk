@@ -10,9 +10,11 @@ import {
   InfinityQueryDirective,
   InfinityQueryTriggerDirective,
   provideLegacyPrepareFallback,
+  QueryDirective,
   QueryStateType,
   V2QueryState,
 } from '../index';
+import { Subject } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { useScenario } from './harness';
 
@@ -43,6 +45,19 @@ class InteropInfinityQueryHost {
   config = input.required<AnyInfinityQueryConfig>();
 
   ids = (items: { id: string }[] | null) => (items ?? []).map((item) => item.id).join(',');
+}
+
+@Component({
+  imports: [QueryDirective],
+  template: `
+    <div *etQuery="query(); let loading = loading; let refreshing = refreshing">
+      <span data-slot="loading">{{ loading }}</span>
+      <span data-slot="refreshing">{{ refreshing }}</span>
+    </div>
+  `,
+})
+class InteropQueryHost {
+  query = input.required<AnyLegacyQuery | null>();
 }
 
 const slotText = (fixture: { nativeElement: HTMLElement }, slot: string) =>
@@ -147,6 +162,101 @@ describe('legacy interop scenario', () => {
       s.tick(1000);
       expect(query.rawState).toMatchObject({ type: QueryStateType.Success });
 
+      c.destroy();
+    });
+
+    it('marks a polled interop query as refreshing rather than loading', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
+
+      const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+      const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
+
+      const c = s.consumer();
+      const query = c.run(() => legacyGetUser.prepare({ pathParams: { id: '1' } }).execute());
+
+      const fixture = TestBed.createComponent(InteropQueryHost);
+
+      fixture.componentRef.setInput('query', query);
+      fixture.detectChanges();
+      s.flush();
+      fixture.detectChanges();
+
+      expect(slotText(fixture, 'loading')).toBe('false');
+      expect(slotText(fixture, 'refreshing')).toBe('false');
+
+      const stopPolling$ = new Subject<void>();
+      query.poll({ interval: 1_000, takeUntil: stopPolling$ });
+
+      for (let step = 0; step < 40 && query.rawState.type !== QueryStateType.Loading; step++) {
+        s.tick(100);
+      }
+
+      fixture.detectChanges();
+
+      expect(query.rawState.type).toBe(QueryStateType.Loading);
+      expect(slotText(fixture, 'refreshing')).toBe('true');
+      expect(slotText(fixture, 'loading')).toBe('false');
+
+      query.stopPolling();
+      s.flush();
+      fixture.destroy();
+      c.destroy();
+    });
+
+    it('executes a polled interop query immediately when triggerImmediately is set', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+      const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
+
+      const c = s.consumer();
+      const query = c.run(() => legacyGetUser.prepare({ pathParams: { id: '1' } }).execute());
+
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+
+      const stopPolling$ = new Subject<void>();
+      query.poll({ interval: 1_000, triggerImmediately: true, takeUntil: stopPolling$ });
+      s.tick(1);
+
+      expect(s.api.requestCount('GET', '/users/1')).toBe(2);
+
+      s.tick(1_000);
+
+      expect(s.api.requestCount('GET', '/users/1')).toBe(3);
+
+      query.stopPolling();
+      c.destroy();
+    });
+
+    it('reports Cancelled after abort() on an interop query', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
+
+      const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+      const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
+
+      const c = s.consumer();
+      const query = c.run(() => legacyGetUser.prepare({ pathParams: { id: '1' } }).execute());
+      const recorded = recordStates(query);
+
+      s.tick(100);
+      query.abort();
+      s.tick();
+
+      expect(query.rawState.type).toBe(QueryStateType.Cancelled);
+      expect(recorded.states.map((state) => state.type)).toEqual([QueryStateType.Loading, QueryStateType.Cancelled]);
+      expect(s.api.requests[0]?.aborted).toBe(true);
+
+      query.execute();
+      s.tick(1_000);
+
+      expect(query.rawState).toMatchObject({ type: QueryStateType.Success, response: { id: '1', name: 'Ada' } });
+
+      recorded.stop();
       c.destroy();
     });
 

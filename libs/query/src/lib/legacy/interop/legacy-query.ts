@@ -4,18 +4,17 @@ import {
   defer,
   distinctUntilChanged,
   filter,
-  interval,
   map,
   Observable,
   of,
   ReplaySubject,
   shareReplay,
-  skip,
   startWith,
   Subscription,
   switchMap,
   takeUntil,
   takeWhile,
+  timer,
 } from 'rxjs';
 import { AnyNewQuery, Query, QueryArgs, QueryArgsOf, QueryExecutionState, RequestArgs, ResponseType } from '../../http';
 import { EntityStore } from '../entity';
@@ -34,6 +33,7 @@ import {
   QueryEntityConfig,
   QueryStateMeta,
   QueryStateType,
+  QueryTrigger,
   Success,
   takeUntilResponse,
   V2QueryState,
@@ -53,8 +53,9 @@ export type CreateLegacyQueryOptions<TArgs extends QueryArgs> = {
  */
 export const transformExecStateToQueryState = <TArgs extends QueryArgs>(
   execState: QueryExecutionState<TArgs> | null,
+  triggeredVia: QueryTrigger = 'program',
 ): V2QueryState<ResponseType<TArgs>> => {
-  const meta: QueryStateMeta = { id: -1, triggeredVia: 'program' };
+  const meta: QueryStateMeta = { id: -1, triggeredVia };
 
   switch (execState?.type) {
     case 'loading': {
@@ -179,6 +180,10 @@ export class LegacyQuery<
 
   private isDestroyed = false;
 
+  private _triggeredVia: QueryTrigger = 'program';
+
+  private _wasAborted = false;
+
   state$: Observable<V2QueryState<Data>>;
 
   constructor(
@@ -217,7 +222,7 @@ export class LegacyQuery<
 
     this.state$ = defer(() => executionState$.pipe(startWith(untracked(this.newQuery.executionState)))).pipe(
       distinctUntilChanged(),
-      map((execState) => transformExecStateToQueryState(execState)),
+      map((execState) => this.toQueryState(execState)),
       switchMap((s) => this._transformState(s)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
@@ -251,7 +256,21 @@ export class LegacyQuery<
   }
 
   get rawState() {
-    return transformExecStateToQueryState(this.newQuery.executionState());
+    return this.toQueryState(this.newQuery.executionState());
+  }
+
+  /**
+   * `abort()` resets the underlying query, so it holds no execution state - the shape of a query that has
+   * never run. The abort flag is the only thing that tells the two apart.
+   */
+  private toQueryState(execState: QueryExecutionState<QueryArgsOf<TNewQuery>> | null) {
+    const state = transformExecStateToQueryState(execState, this._triggeredVia);
+
+    if (execState || !this._wasAborted) {
+      return state;
+    }
+
+    return { type: QueryStateType.Cancelled, meta: state.meta };
   }
 
   get isExpired() {
@@ -321,6 +340,9 @@ export class LegacyQuery<
       this.abort();
     }
 
+    this._triggeredVia = options._triggeredVia ?? 'program';
+    this._wasAborted = false;
+
     untracked(() =>
       // v2 had a single `skipCache` for every method, so this cannot tell whether the underlying request is
       // cacheable. The creator is built with `silenceUncacheableAllowCacheError`, which makes `allowCache` inert
@@ -336,6 +358,7 @@ export class LegacyQuery<
       return this;
     }
 
+    this._wasAborted = true;
     this.newQuery.reset();
 
     return this;
@@ -349,9 +372,7 @@ export class LegacyQuery<
 
     this._currentPollConfig = config;
 
-    const interval$ = interval(config.interval);
-    const poll$ = interval$.pipe(
-      skip(config.triggerImmediately ? 0 : 1),
+    const poll$ = timer(config.triggerImmediately ? 0 : config.interval, config.interval).pipe(
       takeUntil(config.takeUntil),
       takeWhile(() => !this._isPollingPaused),
       filter(() => !isQueryStateLoading(this.rawState)),

@@ -171,18 +171,19 @@ export const addQueryContainerHandling = (
     const handleQuery = (q: AnyV2Query | AnyLegacyQuery | null | undefined) => {
       q?._removeDependent(componentId);
 
-      if (
-        !q?._hasDependents() &&
-        ((stopPreviousPolling === undefined && q?.canBeCached) || stopPreviousPolling) &&
-        q?.isPolling
-      ) {
+      if (q?._hasDependents()) {
+        return;
+      }
+
+      if (((stopPreviousPolling === undefined && q?.canBeCached) || stopPreviousPolling) && q?.isPolling) {
         q?.stopPolling();
       }
 
-      if (!q?._hasDependents() && ((q?.canBeCached && abortOnDestroy === undefined) || abortOnDestroy)) {
+      if ((q?.canBeCached && abortOnDestroy === undefined) || abortOnDestroy) {
         q?.abort();
-        (q as unknown as AnyLegacyQuery)?.destroy?.();
       }
+
+      (q as unknown as AnyLegacyQuery)?.destroy?.();
     };
 
     if (isQuery(query)) {
