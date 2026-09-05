@@ -9,6 +9,15 @@ export type ScenarioErrorEntry = {
   error: unknown;
 };
 
+/**
+ * A `console.warn` the scenario captured. Warnings are kept out of the invariants - advice is not a
+ * leak - so one never fails a scenario on its own.
+ */
+export type ScenarioWarningEntry = {
+  source: 'console.warn';
+  warning: unknown;
+};
+
 export type InvariantCheckContext = {
   api: FakeApi;
   client: AnyQueryClient;

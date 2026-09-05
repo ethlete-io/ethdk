@@ -14,7 +14,7 @@ import {
   withPolling,
 } from '../index';
 import { describe, expect, it } from 'vitest';
-import { useScenario } from './harness';
+import { inProductionMode, useScenario } from './harness';
 
 type UserResponse = { user: { id: string; name: string } };
 type UserVariables = { userId: string };
@@ -38,24 +38,6 @@ const commentedDoc = gql`
 `;
 
 const is401 = (entry: { error: unknown }) => entry.error instanceof HttpErrorResponse && entry.error.status === 401;
-
-/**
- * Runs `fn` with Angular in production mode. `isDevMode()` reads the `ngDevMode` global, and
- * `enableProdMode()` sets it without a way back - every later test in the file would run in
- * production mode too - so the previous value is restored here.
- */
-const inProductionMode = <T>(fn: () => T): T => {
-  const globals = globalThis as { ngDevMode?: unknown };
-  const previous = globals.ngDevMode;
-
-  globals.ngDevMode = false;
-
-  try {
-    return fn();
-  } finally {
-    globals.ngDevMode = previous;
-  }
-};
 
 /**
  * Counts how often the gql document is parsed for its operation name. `getOpName` is the only
