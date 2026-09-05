@@ -70,6 +70,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
   let isDestroyed = false;
   let areWritesDisabled = false;
   let isSecurePurgeDeferred = false;
+  let storeGeneration = 0;
   let markReady!: () => void;
 
   const whenReady = new Promise<void>((resolve) => (markReady = resolve));
@@ -142,18 +143,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     });
   };
 
-  const start = async () => {
-    if (!adapter.isSupported) {
-      isReady = true;
-      markReady();
-
-      return;
-    }
-
-    // An unreadable store is treated as an empty one rather than as a reason to give up on writing: the
-    // write path has its own failure handling, and whatever broke here may not affect it.
-    const storedIndex = await adapter.loadIndex().catch((): PersistedQueryEntryMeta[] => []);
-
+  const adoptStoredIndex = async (storedIndex: PersistedQueryEntryMeta[]) => {
     const now = Date.now();
     const droppedKeys: QueryKey[] = [];
 
@@ -186,6 +176,25 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
       // Pruning is opportunistic: `maxAge` is re-checked before every hydration, so a failure here
       // costs disk space, never correctness.
     }
+  };
+
+  const start = async () => {
+    if (!adapter.isSupported) {
+      isReady = true;
+      markReady();
+
+      return;
+    }
+
+    const generation = storeGeneration;
+
+    // An unreadable store is treated as an empty one rather than as a reason to give up on writing: the
+    // write path has its own failure handling, and whatever broke here may not affect it.
+    const storedIndex = await adapter.loadIndex().catch((): PersistedQueryEntryMeta[] => []);
+
+    // A `clear()` that ran while the load was open already emptied the store, so this snapshot lists
+    // bodies that no longer exist - adopting it would leave the index reporting entries forever.
+    if (storeGeneration === generation) await adoptStoredIndex(storedIndex);
 
     isReady = true;
     markReady();
@@ -356,6 +365,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     clearTimeout(writeTimer);
     writeTimer = undefined;
     pendingWrites.clear();
+    storeGeneration++;
 
     return enqueue(async () => {
       index.clear();

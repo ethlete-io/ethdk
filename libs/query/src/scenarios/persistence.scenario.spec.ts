@@ -1635,6 +1635,38 @@ describe('persistence scenario', () => {
     });
   });
 
+  describe('a clearPersistedQueries that lands while the store index is loading', () => {
+    beforeEach(() => {
+      const now = Date.now();
+
+      store.seed([
+        persistedEntry({ key: 'first', url: 'https://api.test/1', persistedAt: now - 1000 }),
+        persistedEntry({ key: 'second', url: 'https://api.test/2', persistedAt: now - 1000 }),
+      ]);
+      store.deferLoadIndex();
+    });
+
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withQueryPersistence({ adapter: () => store.adapter })],
+    });
+
+    it('reports no persisted entries when a clear beats the index load', async () => {
+      const s = scenario();
+
+      await s.client.clearPersistedQueries();
+
+      expect(store.entries()).toEqual([]);
+
+      await store.flushLoadIndex();
+      await s.client.whenPersistenceReady;
+      await s.settle();
+
+      expect(s.client.subtle.persistence?.indexEntries()).toEqual([]);
+      expect(store.entries()).toEqual([]);
+    });
+  });
+
   describe('a store that stopped taking writes and was then cleared', () => {
     const scenario = useScenario({
       clientOptions: { keepUnusedFor: 0 },

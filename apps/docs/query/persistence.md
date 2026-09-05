@@ -214,7 +214,8 @@ and is tried again on the next removal.
 - **Removing beats writing.** Writes are batched and therefore in flight for a moment. A logout purge
   or a `clearPersistedQueries()` that starts in that window runs _after_ the write lands, never
   alongside it, so a response cannot survive the removal that was meant to take it. A body being read
-  loses the same race: one that arrives after the removal is dropped rather than shown.
+  loses the same race: one that arrives after the removal is dropped rather than shown, as does a store
+  index still being read when a `clearPersistedQueries()` finishes.
 - **Server-side rendering.** Always a no-op - no store is opened. Angular's `transferCache` already
   covers the SSR hand-off, in memory and per request.
 - **Browsers without IndexedDB**, or with storage denied, degrade to in-memory caching rather than
@@ -255,4 +256,5 @@ const second = createQueryClient({
 
 `store.entries()` is what is on disk, `store.calls()` counts adapter calls, and `deferReads()` /
 `flushReads()` hold a read pending so a spec can decide whether the disk or the network wins the race.
+`deferLoadIndex()` / `flushLoadIndex()` do the same for a client's startup index load.
 `failNextWrites()` and `failNextLoadIndex()` cover the quota and unreadable-store paths.

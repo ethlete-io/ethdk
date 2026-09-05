@@ -44,6 +44,16 @@ export type FakeQueryPersistenceStoreHandle = {
 
   /** Settles the reads held by {@link deferReads} and stops deferring. */
   flushReads: () => Promise<void>;
+
+  /**
+   * Holds every subsequent `loadIndex` pending until {@link flushLoadIndex} is called, for testing
+   * what happens to the store while a client's startup is still reading its index (a real disk takes
+   * milliseconds). The snapshot each held load returns is the one it would have read when it started.
+   */
+  deferLoadIndex: () => void;
+
+  /** Settles the index loads held by {@link deferLoadIndex} and stops deferring. */
+  flushLoadIndex: () => Promise<void>;
 };
 
 const quotaError = () => new DOMException('The quota has been exceeded.', 'QuotaExceededError');
@@ -52,6 +62,7 @@ export const createFakeQueryPersistenceStore = (): FakeQueryPersistenceStoreHand
   const store = new Map<string, PersistedQueryEntry>();
   const calls = { loadIndex: 0, read: 0, write: 0, remove: 0, clear: 0 };
   const deferredReads: Array<() => void> = [];
+  const deferredLoadIndexes: Array<() => void> = [];
 
   let failingWrites = 0;
   let writeError: unknown = null;
@@ -59,6 +70,7 @@ export const createFakeQueryPersistenceStore = (): FakeQueryPersistenceStoreHand
   let removeError: unknown = null;
   let loadIndexError: unknown = null;
   let isDeferringReads = false;
+  let isDeferringLoadIndex = false;
 
   // Cloning on the way in and on the way out is not pedantry: a real store hands back a copy, so a
   // spec (or the engine) mutating a hydrated body must not be able to change what is "on disk".
@@ -74,7 +86,17 @@ export const createFakeQueryPersistenceStore = (): FakeQueryPersistenceStoreHand
       throw error;
     }
 
-    return Array.from(store.values()).map(({ body: _body, ...meta }) => clone(meta) satisfies PersistedQueryEntryMeta);
+    // Taken before the gate, not after: a real store answers with what it held when the read started,
+    // so anything that empties it while a deferred load is held must not change what that load returns.
+    const snapshot = Array.from(store.values()).map(
+      ({ body: _body, ...meta }) => clone(meta) satisfies PersistedQueryEntryMeta,
+    );
+
+    if (isDeferringLoadIndex) {
+      await new Promise<void>((resolve) => deferredLoadIndexes.push(resolve));
+    }
+
+    return snapshot;
   };
 
   const read = async (key: string) => {
@@ -154,6 +176,20 @@ export const createFakeQueryPersistenceStore = (): FakeQueryPersistenceStoreHand
       isDeferringReads = false;
 
       const pending = deferredReads.splice(0, deferredReads.length);
+
+      for (const resolve of pending) {
+        resolve();
+      }
+
+      await Promise.resolve();
+    },
+    deferLoadIndex: () => {
+      isDeferringLoadIndex = true;
+    },
+    flushLoadIndex: async () => {
+      isDeferringLoadIndex = false;
+
+      const pending = deferredLoadIndexes.splice(0, deferredLoadIndexes.length);
 
       for (const resolve of pending) {
         resolve();
