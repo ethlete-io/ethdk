@@ -288,6 +288,15 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
       const destroyMountedOverlay = (closeEvent: OverlayRuntimeCloseEvent<TResult>) => {
         animationDebugLog(`runtime ${config.id}`, `destroy (source "${closeEvent.source}")`);
+
+        // Read before the teardown below detaches the host element, which resets the active element
+        // to the body and would make every close look like a restorable one.
+        const focusedElement = targetDocument.activeElement;
+        const focusMovedElsewhere =
+          isHTMLElement(focusedElement) &&
+          focusedElement !== targetDocument.body &&
+          !hostElement.contains(focusedElement);
+
         cleanupFns.forEach((cleanup) => cleanup());
         appRef.detachView(componentRef.hostView);
         componentRef.destroy();
@@ -307,7 +316,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         openEntriesState.update((entries) => entries.filter((entry) => entry !== overlayRef));
         maybeDestroyRootElements(targetDocument);
 
-        if (config.restoreFocus !== false && previousFocusedElement?.isConnected) {
+        if (config.restoreFocus !== false && !focusMovedElsewhere && previousFocusedElement?.isConnected) {
           previousFocusedElement.focus({ preventScroll: true });
         }
 

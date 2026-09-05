@@ -69,6 +69,36 @@ test.describe('toggletip / focus', () => {
     await expect(dialog).toBeHidden();
   });
 
+  test('a focus move during the close keeps focus off the trigger', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Text toggletip' });
+    const otherTrigger = root.getByRole('button', { name: 'Interactive toggletip' });
+    const dialog = page.getByRole('dialog');
+
+    await trigger.click();
+    await waitForPanelEntered(dialog);
+
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await otherTrigger.evaluate((element: HTMLElement) => element.focus());
+
+    await expect(dialog).toBeHidden();
+    await expect(otherTrigger).toBeFocused();
+  });
+
+  test('an outside press on a non-focusable element restores focus to the trigger', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Text toggletip' });
+    const dialog = page.getByRole('dialog');
+
+    await trigger.click();
+    await waitForPanelEntered(dialog);
+
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+  });
+
   test('the toggletip overlay renders outside the story root', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
     const trigger = root.getByRole('button', { name: 'Text toggletip' });
