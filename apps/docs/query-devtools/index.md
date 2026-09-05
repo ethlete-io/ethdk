@@ -1722,15 +1722,27 @@ curl 'https://api.example.com/posts?page=2' \
 
 It describes the same request the [Insomnia export](#export-to-insomnia) does: the URL
 the query actually requested, the headers as the request resolved them (the client's
-merged with the per-request ones) and the JSON body. `GET` is left implicit because it
+merged with the per-request ones) and the body. `GET` is left implicit because it
 is curl's default, and a GraphQL query is sent as `{ query, variables }` the way the
-transport does.
+transport does. `Content-Type: application/json` is spelled out only for a body that was
+serialized as JSON - Angular sends a string body as text and lets the browser label a
+`FormData` or a `Blob`, so a command claiming JSON for those would send a different
+request than the app did.
+
+A body the panel holds no bytes for - `FormData`, a `Blob`, an `ArrayBuffer`, a
+`URLSearchParams` - and a body that will not serialize at all (a cycle, a throwing
+`toJSON`) are not guessed at. The command is emitted with no `--data-raw` and a `#`
+comment above it naming which of the two happened, rather than sending an empty `{}`
+that reads like the real body.
 
 The command is quoted for a POSIX shell, so a body containing quotes stays one argument,
 and `--data-raw` is used rather than `-d` - the latter strips newlines, which would
 mangle a GraphQL document. Headers the panel could not resolve are left out rather than
 guessed: a secure query whose provider has no access token exports without its
-`Authorization`, and the token is the one thing worth pasting by hand.
+`Authorization`, and the token is the one thing worth pasting by hand. A token the panel
+_could_ resolve goes into the command as it is - the
+[Insomnia export](#secure-queries-get-a-self-refreshing-token) is the one that chains or
+drops it, so a curl command pasted into a ticket carries the live bearer token with it.
 
 ## Attaching a whole session to a bug report
 
@@ -1748,18 +1760,26 @@ header downloads the whole panel as one JSON file:
 | `about`   | [Which build produced the session](#about-which-build-is-running) - the loaded `@ethlete/*` versions, the Angular version and the app's own build info.                                                                                                                              |
 
 Bodies are slimmed the way **Copy report** slims them - long strings truncated, long
-arrays sampled down to `… (N more)` - so the file stays small enough to attach and a
-4 MB response does not become the report. It also records the URL the session was
-captured on, so a report says which environment it came from.
+arrays sampled down to `… (N more)`, anything nested more than six levels deep replaced
+by `…` - so the file stays small enough to attach and a 4 MB response does not become
+the report. Values that plain `JSON.stringify` would flatten stay legible through it: a
+`Date` is written as its ISO string, a `Map` and a `Set` as their entries, an `Error` as
+its name, message and stack, and a `bigint` as its digits - `JSON.stringify` throws on
+that last one, which would otherwise take the whole export down with it. The file also
+records the URL the session was captured on, so a report says which environment it came
+from.
 
 ::: warning
 Access and refresh tokens are **never** exported. An auth provider is described by whether
 it holds each token and how long the access token has left, its own login and token-refresh
-queries are listed without what they sent or received, and any value under a
+queries are listed without what they sent or received, and any string or object under a
 credential-named key - `password`, `accessToken`, `Authorization`, `set-cookie`,
-`apiKey` and the like - is replaced by `[redacted: credential]` wherever it sits in an args
-or response body. The Insomnia export is the deliberate exception - it carries a refresh
-token because that is what makes its chain work, and
+`apiKey` and the like - is replaced by `[redacted: credential]` wherever it sits in an
+entry's args, response, error or detail. A boolean or a number under such a key survives:
+`hasAccessToken: true` and `expiresIn: 900` are what the report is for, and neither can
+carry the credential itself. The Insomnia export drops a header by that same key-name
+rule, and is the deliberate exception in one place only - it carries a refresh token in
+the token-refresh request's body, because that is what makes its chain work, and
 [it says so](#secure-queries-get-a-self-refreshing-token).
 
 That rule is a key-name rule, so it is a floor and not a guarantee: a credential the API
@@ -1827,10 +1847,17 @@ replayed, tweaked and shared outside the app:
   ([every filter applies](#finding-a-query-in-a-long-list)) as one collection, with
   a folder per query client.
 
-Both export what the query actually sent: the resolved URL, the JSON body, and the
+Both export what the query actually sent: the resolved URL, the body, and the
 headers as the request resolved them - the query client's headers with the
 per-request ones merged on top. A GraphQL query is exported as an Insomnia GraphQL
-request holding its document and variables.
+request holding its document and variables. `Content-Type: application/json` is added
+only for a body that was serialized as JSON, since Angular sends a string body as text
+and lets the browser label a `FormData` or a `Blob` itself.
+
+A body the panel holds no bytes for - `FormData`, a `Blob`, an `ArrayBuffer`, a
+`URLSearchParams` - or one that will not serialize at all is not guessed at either: the
+request is exported with no body and its **description** names which of the two happened,
+rather than carrying an empty `{}` that reads like the real thing.
 
 Queries that have not run yet still export, from their current args and the route
 template - Insomnia reads a leftover `:postId` as one of its own path params.
@@ -1860,8 +1887,18 @@ chained to the one it authenticates with.
 What the export still holds literally is the **refresh token** in that request's
 body - the one the app had at export time. It is what makes the chain start, so the
 file is as sensitive as that token, and an API that rotates refresh tokens will
-eventually invalidate it: re-export when the refresh starts failing. A provider that
-is not logged in exports no refresh request at all.
+eventually invalidate it: re-export when the refresh starts failing.
+
+A provider that is not logged in exports no refresh request at all - and a secure query
+with no refresh to chain to is exported **without its credentials** rather than with the
+token the app happened to hold. Every header whose name reads like a credential is left
+out (`Authorization`, `Cookie`, `X-Api-Key`, … - the same key-name rule the
+[session export](#attaching-a-whole-session-to-a-bug-report) redacts by), and the
+request's description says why. A frozen bearer token is stale within the hour anyway,
+so it is worth less than the leak it would be in a file that travels to a ticket - fill
+it in by hand, or log in and export again. That is a key-name rule, so it is a floor and
+not a guarantee: a credential the app sends under a name that does not read like one, or
+one in the URL's query string, still travels in the collection.
 
 ## Beyond a read-only view
 
