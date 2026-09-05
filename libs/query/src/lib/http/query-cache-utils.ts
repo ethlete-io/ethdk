@@ -53,9 +53,10 @@ export const buildQueryCacheKey = (route: string, args: RequestArgs<QueryArgs> |
   const headers = typeof args?.headers === 'function' ? args.headers() : args?.headers;
   const serializedHeaders = headers
     ?.keys()
-    .filter((name) => name.toLowerCase() !== 'authorization')
+    .map((name) => name.toLowerCase())
+    .filter((name) => name !== 'authorization')
     .sort()
-    .map((name) => [name.toLowerCase(), headers.getAll(name)]);
+    .map((name) => [name, headers.getAll(name)]);
 
   // We need to hash the body in case it's a gql query and the query get's transported in the body
   const body = JSON.stringify(args?.body || {})

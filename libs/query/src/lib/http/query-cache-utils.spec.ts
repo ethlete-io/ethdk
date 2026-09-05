@@ -51,6 +51,17 @@ describe('query cache utils', () => {
       expect(english).toBe(rotatedToken);
     });
 
+    it('should derive the same key regardless of header name casing', () => {
+      const mixed = buildQueryCacheKey('/api/test', {
+        headers: new HttpHeaders({ 'X-Tenant': 'one', 'accept-language': 'en' }),
+      });
+      const lower = buildQueryCacheKey('/api/test', {
+        headers: new HttpHeaders({ 'x-tenant': 'one', 'Accept-Language': 'en' }),
+      });
+
+      expect(mixed).toBe(lower);
+    });
+
     it('should return a numeric string', () => {
       const key = buildQueryCacheKey('/api/test', undefined);
       expect(Number.isNaN(Number(key))).toBe(false);
