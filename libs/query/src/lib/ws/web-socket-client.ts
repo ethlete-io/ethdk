@@ -197,6 +197,9 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
       const joinRoom = (room: string | (() => string | null)) => {
         const roomFn = typeof room === 'function' ? room : () => room;
+        // Must stay above the effect below: `previousSignalValue` registers a `toObservable` effect that has to run
+        // first in the same flush. Registered later, it leaves `pre()` on the room from the flush before, and the
+        // effect joins the new room without ever leaving the old one.
         const pre = previousSignalValue(computed(() => roomFn()));
         const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(null);
         let joinedRoomName: string | null = null;
