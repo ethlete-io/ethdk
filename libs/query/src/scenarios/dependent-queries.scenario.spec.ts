@@ -2,7 +2,25 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { describe, expect, it, vi } from 'vitest';
 import { createDefaultRetryFn, querySequence, withArgs } from '../index';
-import { sequence, useScenario } from './harness';
+import { Scenario, sequence, useScenario } from './harness';
+
+/**
+ * Drives a `querySequence` run to completion. Each step arms the next one's request a microtask
+ * after the previous step settles, so a multi-step chain needs a loop that alternates microtasks
+ * and fake time across the whole run.
+ */
+const driveSequence = async <T>(s: Scenario, run: Promise<T>): Promise<T | undefined> => {
+  let settled: { value: T } | undefined;
+
+  run.then((value) => (settled = { value }));
+
+  for (let i = 0; i < 20 && settled === undefined; i++) {
+    await Promise.resolve();
+    s.tick(50);
+  }
+
+  return settled?.value;
+};
 
 describe('dependent queries scenario', () => {
   describe('reactive GET feeding GET', () => {
@@ -218,6 +236,253 @@ describe('dependent queries scenario', () => {
 
       s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 402);
       c.destroy();
+    });
+
+    it('reads the seed signal again on a second run instead of the value it was built with', async () => {
+      const s = scenario();
+      s.api.on('POST', '/orders-c', ({ body }) => ({ body: { id: `order-${(body as { total: number }).total}` } }));
+      s.api.on('POST', '/payments-c', ({ body }) => ({
+        body: { id: 'payment-1', orderId: (body as { orderId: string }).orderId },
+      }));
+
+      const createOrder = s.post<{ response: { id: string }; body: { total: number } }>('/orders-c');
+      const createPayment = s.post<{
+        response: { id: string; orderId: string };
+        body: { orderId: string; note: string };
+      }>('/payments-c');
+
+      const total = signal(1);
+      const note = signal('first');
+
+      const c = s.consumer();
+      const chain = c.run(() =>
+        querySequence(createOrder(), () => ({ args: { body: { total: total() } } })).then(createPayment(), (order) => ({
+          args: { body: { orderId: order.id, note: note() } },
+        })),
+      );
+
+      const first = await driveSequence(s, chain.run());
+
+      expect(first?.ok).toBe(true);
+      expect(s.api.requests.map((r) => r.body)).toEqual([{ total: 1 }, { orderId: 'order-1', note: 'first' }]);
+
+      total.set(2);
+      note.set('second');
+
+      const second = await driveSequence(s, chain.run());
+
+      expect(second?.ok).toBe(true);
+      expect(s.api.requests.map((r) => r.body)).toEqual([
+        { total: 1 },
+        { orderId: 'order-1', note: 'first' },
+        { total: 2 },
+        { orderId: 'order-2', note: 'second' },
+      ]);
+
+      c.destroy();
+    });
+
+    it('leaves the first run snapshots untouched when the chain is run again', async () => {
+      const s = scenario();
+      s.api.on('POST', '/orders-d', sequence([{ body: { id: 'order-1' } }, { body: { id: 'order-2' } }]));
+
+      const createOrder = s.post<{ response: { id: string }; body: { total: number } }>('/orders-d');
+
+      const c = s.consumer();
+      const chain = c.run(() => querySequence(createOrder(), () => ({ args: { body: { total: 1 } } })));
+
+      const first = await driveSequence(s, chain.run());
+
+      expect(first?.ok).toBe(true);
+
+      const resultSnapshots = first?.ok ? first.snapshots : [];
+      const signalSnapshots = chain.snapshots();
+
+      expect(resultSnapshots[0]?.response()).toEqual({ id: 'order-1' });
+      expect(signalSnapshots[0]?.response()).toEqual({ id: 'order-1' });
+
+      const second = await driveSequence(s, chain.run());
+
+      expect(second?.ok).toBe(true);
+      if (second?.ok) expect(second.responses).toEqual([{ id: 'order-2' }]);
+
+      expect(resultSnapshots[0]?.response()).toEqual({ id: 'order-1' });
+      expect(signalSnapshots[0]?.response()).toEqual({ id: 'order-1' });
+
+      c.destroy();
+    });
+
+    it('walks currentStep from 0 to one per step as the waterfall advances', async () => {
+      const s = scenario();
+      s.api.on('POST', '/orders-e', () => ({ body: { id: 'order-1' }, delay: 100 }));
+      s.api.on('POST', '/payments-e', () => ({ body: { id: 'payment-1' }, delay: 100 }));
+      s.api.on('POST', '/confirm-e', () => ({ body: { confirmed: true }, delay: 100 }));
+
+      const createOrder = s.post<{ response: { id: string }; body: { total: number } }>('/orders-e');
+      const createPayment = s.post<{ response: { id: string }; body: { orderId: string } }>('/payments-e');
+      const confirmOrder = s.post<{ response: { confirmed: boolean }; body: { paymentId: string } }>('/confirm-e');
+
+      const c = s.consumer();
+      const chain = c.run(() =>
+        querySequence(createOrder(), () => ({ args: { body: { total: 1 } } }))
+          .then(createPayment(), (order) => ({ args: { body: { orderId: order.id } } }))
+          .then(confirmOrder(), (payment) => ({ args: { body: { paymentId: payment.id } } })),
+      );
+
+      expect(chain.currentStep()).toBe(0);
+      expect(chain.status()).toBe('idle');
+      expect(chain.running()).toBe(false);
+      expect(chain.completed()).toBe(0);
+      expect(chain.progress()).toBe(0);
+
+      let result: Awaited<ReturnType<typeof chain.run>> | undefined;
+      chain.run().then((r) => (result = r));
+
+      expect(chain.currentStep()).toBe(1);
+      expect(chain.status()).toBe('running');
+      expect(chain.running()).toBe(true);
+
+      await s.settle(100);
+      expect(chain.currentStep()).toBe(2);
+      expect(chain.completed()).toBe(1);
+
+      await s.settle(100);
+      expect(chain.currentStep()).toBe(3);
+      expect(chain.completed()).toBe(2);
+
+      await s.settle(100);
+      expect(result?.ok).toBe(true);
+      expect(chain.currentStep()).toBe(3);
+      expect(chain.completed()).toBe(3);
+      expect(chain.progress()).toBe(100);
+      expect(chain.running()).toBe(false);
+
+      c.destroy();
+    });
+
+    it('exposes each settled snapshot on the snapshots signal as the chain advances', async () => {
+      const s = scenario();
+      s.api.on('POST', '/orders-f', () => ({ body: { id: 'order-1' }, delay: 100 }));
+      s.api.on('POST', '/payments-f', () => ({ body: { id: 'payment-1' }, delay: 100 }));
+
+      const createOrder = s.post<{ response: { id: string }; body: { total: number } }>('/orders-f');
+      const createPayment = s.post<{ response: { id: string }; body: { orderId: string } }>('/payments-f');
+
+      const c = s.consumer();
+      const chain = c.run(() =>
+        querySequence(createOrder(), () => ({ args: { body: { total: 1 } } })).then(createPayment(), (order) => ({
+          args: { body: { orderId: order.id } },
+        })),
+      );
+
+      expect(chain.snapshots()).toEqual([]);
+
+      let result: Awaited<ReturnType<typeof chain.run>> | undefined;
+      chain.run().then((r) => (result = r));
+
+      expect(chain.snapshots()).toEqual([]);
+
+      await s.settle(100);
+      expect(chain.snapshots()).toHaveLength(1);
+      expect(chain.snapshots()[0]?.response()).toEqual({ id: 'order-1' });
+
+      await s.settle(100);
+      expect(result?.ok).toBe(true);
+      expect(chain.snapshots()).toHaveLength(2);
+      expect(chain.snapshots()[1]?.response()).toEqual({ id: 'payment-1' });
+
+      c.destroy();
+    });
+
+    it('clears status, currentStep, error and failedAt when the sequence is run again', async () => {
+      const s = scenario();
+      s.api.on('POST', '/orders-g', () => ({ body: { id: 'order-1' } }));
+      s.api.on(
+        'POST',
+        '/payments-g',
+        sequence([{ status: 402, body: { message: 'card declined' } }, { body: { id: 'payment-1' } }]),
+      );
+
+      const createOrder = s.post<{ response: { id: string }; body: { total: number } }>('/orders-g');
+      const createPayment = s.post<{ response: { id: string }; body: { orderId: string } }>('/payments-g');
+
+      const c = s.consumer();
+      const chain = c.run(() =>
+        querySequence(createOrder(), () => ({ args: { body: { total: 1 } } })).then(createPayment(), (order) => ({
+          args: { body: { orderId: order.id } },
+        })),
+      );
+
+      const first = await driveSequence(s, chain.run());
+
+      expect(first?.ok).toBe(false);
+      expect(chain.status()).toBe('error');
+      expect(chain.failedAt()).toBe(1);
+      expect(chain.error()?.code).toBe(402);
+      expect(chain.snapshots()).toHaveLength(2);
+      expect(chain.responses()).toEqual([{ id: 'order-1' }]);
+
+      const secondRun = chain.run();
+
+      expect(chain.status()).toBe('running');
+      expect(chain.running()).toBe(true);
+      expect(chain.currentStep()).toBe(1);
+      expect(chain.error()).toBeNull();
+      expect(chain.failedAt()).toBeNull();
+      expect(chain.snapshots()).toEqual([]);
+      expect(chain.responses()).toEqual([]);
+      expect(chain.completed()).toBe(0);
+      expect(chain.progress()).toBe(0);
+
+      const second = await driveSequence(s, secondRun);
+
+      expect(second?.ok).toBe(true);
+      expect(chain.status()).toBe('success');
+      expect(chain.error()).toBeNull();
+      expect(chain.failedAt()).toBeNull();
+      expect(chain.responses()).toEqual([{ id: 'order-1' }, { id: 'payment-1' }]);
+
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 402);
+      c.destroy();
+    });
+
+    // apps/docs/query/dependent-queries.md line 119 claims the run() promise never settles when the
+    // host scope is destroyed mid-flight; it rejects with an RxJS EmptyError instead.
+    it.fails('never settles the run promise when the host is destroyed mid-waterfall', async () => {
+      const s = scenario();
+      s.api.on('POST', '/orders-h', () => ({ body: { id: 'order-1' }, delay: 100 }));
+      s.api.on('POST', '/payments-h', () => ({ body: { id: 'payment-1' }, delay: 100 }));
+
+      const createOrder = s.post<{ response: { id: string }; body: { total: number } }>('/orders-h');
+      const createPayment = s.post<{ response: { id: string }; body: { orderId: string } }>('/payments-h');
+
+      const c = s.consumer();
+      const chain = c.run(() =>
+        querySequence(createOrder(), () => ({ args: { body: { total: 1 } } })).then(createPayment(), (order) => ({
+          args: { body: { orderId: order.id } },
+        })),
+      );
+
+      let settled = false;
+      chain.run().then(
+        () => (settled = true),
+        () => (settled = true),
+      );
+
+      await s.settle(100);
+      expect(chain.currentStep()).toBe(2);
+      expect(s.api.requestCount('POST', '/payments-h')).toBe(1);
+      expect(s.api.pending()).toHaveLength(1);
+
+      c.destroy();
+
+      for (let i = 0; i < 10; i++) {
+        await Promise.resolve();
+        s.tick(100);
+      }
+
+      expect(s.api.pending()).toHaveLength(0);
+      expect(settled).toBe(false);
     });
   });
 
