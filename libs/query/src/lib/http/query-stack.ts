@@ -250,11 +250,14 @@ export const createQueryStack = <
     return untracked(() => {
       const newArgsArray = Array.isArray(args) ? args : [args];
 
+      const keyFn = argsKeyFn ?? ((a: RequestArgs<QueryArgsOf<TCreator>> | null) => JSON.stringify(a));
+
       let filteredArgs = newArgsArray;
-      if (deduplicateArgs !== false && append) {
-        const keyFn = argsKeyFn ?? ((a) => JSON.stringify(a));
+      if (deduplicateArgs !== false) {
+        // Replace mode must not seed the existing keys: a query whose args repeat is preserved
+        // below, so skipping those args here would destroy it instead.
         const existingKeys = new Set(
-          queries().map((q) => keyFn(q.args() as RequestArgs<QueryArgsOf<TCreator>> | null)),
+          append ? queries().map((q) => keyFn(q.args() as RequestArgs<QueryArgsOf<TCreator>> | null)) : [],
         );
 
         filteredArgs = newArgsArray.filter((a) => {
@@ -306,8 +309,7 @@ export const createQueryStack = <
 
         return last;
       } else {
-        const keyFn = argsKeyFn ?? ((a) => JSON.stringify(a));
-        const newArgsKeys = new Set(newArgsArray.map((a) => keyFn(a)));
+        const newArgsKeys = new Set(filteredArgs.map((a) => keyFn(a)));
 
         const preservedQueries = oldQueries.filter((oldQuery) => {
           const oldKey = keyFn(oldQuery.args() as RequestArgs<QueryArgsOf<TCreator>> | null);
@@ -318,11 +320,15 @@ export const createQueryStack = <
           preservedQueries.map((q) => [keyFn(q.args() as RequestArgs<QueryArgsOf<TCreator>> | null), q]),
         );
 
-        const finalQueries = newArgsArray.map((newArgsEntry) => {
+        const finalQueries = filteredArgs.map((newArgsEntry) => {
           const key = keyFn(newArgsEntry);
           const preserved = preservedMap.get(key);
 
           if (preserved) {
+            // Consume it: with `deduplicateArgs: false` the same key can appear twice, and the
+            // stack must never hold the same query instance in two slots.
+            preservedMap.delete(key);
+
             return preserved;
           }
 

@@ -148,6 +148,37 @@ describe('stacks scenario', () => {
     c.destroy();
   });
 
+  it('deduplicates repeated args in the default replace mode', () => {
+    const s = scenario();
+    s.api.on('GET', '/posts/:postId', ({ params }) => ({ body: [{ id: params['postId'] }] }));
+
+    const getPost = s.get<{ response: { id: string }[]; pathParams: { postId: string } }>((p) => `/posts/${p.postId}`);
+    const postIds = signal(['1', '1']);
+    const c = s.consumer();
+    const stack = c.run(() =>
+      createQueryStack({
+        queryCreator: getPost,
+        args: () => postIds().map((postId) => ({ pathParams: { postId } })),
+        transform: transformArrayResponse,
+      }),
+    );
+
+    s.tick();
+
+    expect(stack.queries()).toHaveLength(1);
+    expect(s.api.requestCount('GET', '/posts/1')).toBe(1);
+    expect(stack.response()).toEqual([{ id: '1' }]);
+
+    postIds.set(['1', '1', '2']);
+    s.tick();
+
+    expect(stack.queries()).toHaveLength(2);
+    expect(new Set(stack.queries()).size).toBe(2);
+    expect(stack.response()).toEqual([{ id: '1' }, { id: '2' }]);
+
+    c.destroy();
+  });
+
   it('clears appended queries when a dependency changes', () => {
     const s = scenario();
     s.api.on('GET', '/feed/:group/:page', ({ params }) => ({
@@ -396,6 +427,34 @@ describe('stacks scenario', () => {
 
     expect(stack.queries()).toHaveLength(3);
     expect(stack.response()).toEqual([{ id: '1' }, { id: '1' }, { id: '2' }]);
+
+    c.destroy();
+  });
+
+  it('never holds one query in two slots when duplicate args re-run with deduplicateArgs: false', () => {
+    const s = scenario();
+    s.api.on('GET', '/twin/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getItem = s.get<ItemQueryArgs>((p) => `/twin/${p.id}`);
+    const ids = signal(['1', '1']);
+    const c = s.consumer();
+    const stack = c.run(() =>
+      createQueryStack({
+        queryCreator: getItem,
+        args: () => ids().map((id) => ({ pathParams: { id } })),
+        deduplicateArgs: false,
+      }),
+    );
+
+    s.tick();
+
+    expect(new Set(stack.queries()).size).toBe(2);
+
+    ids.set(['1', '1', '2']);
+    s.tick();
+
+    expect(stack.queries()).toHaveLength(3);
+    expect(new Set(stack.queries()).size).toBe(3);
 
     c.destroy();
   });
