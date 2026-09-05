@@ -1,9 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createEnvironmentInjector, EnvironmentInjector, inject } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
+import { isObservable, Observable } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   BearerAuthProviderFeatureContext,
+  createAuthGuard,
   createBearerAuthProvider,
   createPostQuery,
   createQueryClient,
@@ -79,6 +81,8 @@ const boot = (s: Scenario, options: BootOptions = {}) => {
 
   return {
     auth,
+    authRef,
+    injector,
     destroy: () => injector.destroy(),
   };
 };
@@ -335,5 +339,80 @@ describe('withPersistentAuth', () => {
 
     expect(write).toBeDefined();
     expect(write).toMatch(/expires=/i);
+  });
+  it('a login that fails while the cookie restore is still out leaves the session anonymous, not restoring', async () => {
+    const s = scenario();
+
+    serve(s, 20000);
+
+    const first = boot(s, { features: [persistentAuth()] });
+    await login(s, first);
+    first.destroy();
+
+    s.api.once('POST', '/auth/refresh', () => ({ status: 401, body: { message: 'expired' }, delay: 1000 }));
+    s.api.once('POST', '/auth/login', () => ({ status: 401, body: { message: 'rejected' }, delay: 200 }));
+
+    const second = boot(s, { features: [persistentAuth()] });
+    await s.settle();
+
+    expect(second.auth.sessionStatus()).toBe('restoring');
+
+    second.auth.queries.login.execute({ body: {} });
+    await s.settle();
+    await s.settle(2000);
+    s.flush();
+    s.expectError(is401);
+    s.expectError(is401);
+
+    const guard = createAuthGuard(second.authRef, { loginUrl: '/login' });
+    const decision = second.injector.runInContext(() => (guard.canMatch as () => unknown)());
+    let settled = !isObservable(decision);
+
+    if (isObservable(decision)) {
+      (decision as Observable<unknown>).subscribe(() => (settled = true));
+      s.flush();
+    }
+
+    expect(second.auth.sessionStatus()).toBe('anonymous');
+    expect(second.auth.executionState()?.state).not.toBe('loading');
+    expect(settled).toBe(true);
+
+    second.destroy();
+  });
+
+  it('a login that succeeds while the cookie restore is still out leaves the session authenticated', async () => {
+    const s = scenario();
+
+    serve(s, 20000);
+
+    const first = boot(s, { features: [persistentAuth()] });
+    await login(s, first);
+    first.destroy();
+
+    s.api.once('POST', '/auth/refresh', () => ({ status: 401, body: { message: 'expired' }, delay: 1000 }));
+    s.api.once('POST', '/auth/login', () => ({
+      body: {
+        accessToken: mintToken({ expiresInMs: 20000 }),
+        refreshToken: mintToken({ expiresInMs: 60 * 60 * 1000 }),
+      },
+      delay: 200,
+    }));
+
+    const second = boot(s, { features: [persistentAuth()] });
+    await s.settle();
+
+    expect(second.auth.sessionStatus()).toBe('restoring');
+
+    second.auth.queries.login.execute({ body: {} });
+    await s.settle();
+    await s.settle(2000);
+    s.flush();
+    s.expectError(is401);
+
+    expect(second.auth.sessionStatus()).toBe('authenticated');
+    expect(second.auth.sessionEndCause()).toBeNull();
+    expect(second.auth.executionState()).toEqual(expect.objectContaining({ type: 'login', state: 'success' }));
+
+    second.destroy();
   });
 });

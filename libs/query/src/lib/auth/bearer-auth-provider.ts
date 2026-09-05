@@ -560,7 +560,6 @@ type BearerQueryRegistryContext = {
   isAuthenticated: Signal<boolean>;
 };
 
-/** An execution in progress. `id` is `null` for the ones that cannot issue tokens (a revocation). */
 /** `id` is `null` for an execution that issues no tokens (a revocation): its success applies nothing. */
 type CurrentExecution = { id: number | null; type: string; snapshot: QuerySnapshot<QueryArgs> };
 
@@ -599,30 +598,33 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       const { type, snapshot } = execution;
       const outcome = snapshot.executionState();
 
-      if (outcome?.type === 'loading' || isSuperseded(execution)) return;
+      if (outcome?.type === 'loading') return;
 
-      if (outcome?.type === 'failure') {
-        executionState.set({ type, state: 'error', error: outcome.error });
-      } else if (outcome?.type === 'success' && execution.id === null) {
-        executionState.set({ type, state: 'success', response: outcome.response });
-      } else if (outcome?.type === 'success') {
-        const response = outcome.response;
+      if (!isSuperseded(execution)) {
+        if (outcome?.type === 'failure') {
+          executionState.set({ type, state: 'error', error: outcome.error });
+        } else if (outcome?.type === 'success' && execution.id === null) {
+          executionState.set({ type, state: 'success', response: outcome.response });
+        } else if (outcome?.type === 'success') {
+          const response = outcome.response;
 
-        try {
-          const tokens = extractTokens(response);
-          applyTokens(tokens.accessToken, tokens.refreshToken);
-          executionState.set({ type, state: 'success', response });
-        } catch (extractError) {
-          executionState.set({ type, state: 'error', error: createQueryErrorResponse(extractError) });
+          try {
+            const tokens = extractTokens(response);
+            applyTokens(tokens.accessToken, tokens.refreshToken);
+            executionState.set({ type, state: 'success', response });
+          } catch (extractError) {
+            executionState.set({ type, state: 'error', error: createQueryErrorResponse(extractError) });
 
-          if (isDevMode()) {
-            console.error(`Failed to extract tokens from ${builder.key} response:`, extractError);
+            if (isDevMode()) {
+              console.error(`Failed to extract tokens from ${builder.key} response:`, extractError);
+            }
           }
         }
       }
 
-      // Keyed on `isAlive` rather than on the branches above: a cancelled restore produces neither a
-      // response nor an error, and would otherwise leave `sessionStatus` at `restoring` forever.
+      // Runs for a superseded execution too, and is keyed on `isAlive` rather than on the branches
+      // above: a cancelled restore produces neither a response nor an error, and a restore that a
+      // login raced would otherwise leave `sessionStatus` at `restoring` forever.
       if (type === 'autoLogin' && !snapshot.isAlive() && !untracked(context.isAuthenticated)) {
         sessionStatus.set('anonymous');
       }
