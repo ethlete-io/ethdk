@@ -393,18 +393,49 @@ in-flight navigation and the `ObservableSignal` mutation landed first; then, fro
 - **Added**: `createHeadQuery` / `createOptionsQuery` and their secure twins - the repository already
   treated both as cacheable reads, but no creator existed.
 
-Coverage: `gql.md` (13 gaps), `ws.md` (8), `dependent-queries.md` (6) and `legacy.md` (12) are closed,
-plus a new `queries-http-methods.scenario.spec.ts`. Two claims are parked as `it.fails`: the
-`run()` promise of a destroyed sequence rejects with an RxJS `EmptyError` rather than never settling
-(`dependent-queries.md:119`), and a malformed websocket frame is logged rather than silently dropped
-in production (`ws.md:75`). Both need a decision: fix the code or correct the sentence.
+Coverage: **the pass is complete.** All 16 docs pages under `apps/docs/query/` are covered against the
+scenario layer - 305 gaps closed - and three suites are new: `queries-http-methods`,
+`migrating-from-v2` and `query-forms-fields`. The `validateWithQuery` cache leak behind the five
+`s.allow('cache')` opt-outs is fixed, so **no invariant opt-out remains anywhere in the layer**.
 
-Open, in `.claude/handoffs/wave5-coverage-gaps.md`: `auth.md` (46), `errors.md` (34), `queries.md` (20),
-`stacks.md` (20), `query-forms.md` (31), `features.md` (28), `caching.md` (18), `persistence.md` (16),
-`migrating-from-v2.md` (19), `http.md` (13), `multi-tab.md` (11), `batching.md` (10).
+Two bugs the coverage pass itself found and fixed: a query stack without `append` built two query
+objects per arg (the cache hid the second request, but every feature side effect ran twice and the
+shadow queries lived for the stack's life), and `validateWithQuery` bound its internal query to
+Angular's `FieldNodeStructure` injector, which signal forms never destroys for a root field.
+
+Nine documented claims are parked as `it.fails`, each with a one-line reason naming its doc line.
+They need a decision - fix the code or correct the sentence:
+
+- `dependent-queries.md:119` - the `run()` promise of a destroyed sequence rejects with an RxJS
+  `EmptyError` rather than never settling. The same caveat is in the `QuerySequence.run` and
+  `executeUntilSettled` JSDoc.
+- `ws.md:75` / `:145` - a malformed frame is `console.error`ed; only the `throw` is dev-mode gated.
+- `caching.md:55` - an auto-execution never passes `allowCache`, so a consumer rebinding to a
+  retained, still-fresh entry does send a request.
+- `query-forms.md:118` - a cyclic `isResetBy` graph converges after two passes, so the ten-pass cap
+  and its dev-mode warning are never reached.
+- `auth.md:197` (also parked in `migrating-from-v2.scenario.spec.ts`) - a rejected session restore is
+  never observable as `autoLogin`/`error` under the default policy: the logout happens in the same
+  effect pass. `auth.md:281` documents the `logout` outcome, so the two lines are in tension.
+- `migrating-from-v2.md:43` - Angular 22 provides `HttpClient` in root, so a client without
+  `provideHttpClient()` does not throw. The page and its `withXhr()` advice predate that.
+- `migrating-from-v2.md:201` - a re-execution whose refresh fails loses its last response.
+- `migrating-from-v2.md:202` - `cleanQuery` destroys every superseded query, so it cancels an
+  in-flight `POST` the page says it leaves alone.
 
 New findings, not fixed: `GqlQueryArgs` constrains `rawResponse` to `{ data: TResponse }`, so
 `gql.md:66` ("declare it only when your endpoint returns something else") cannot be satisfied without
-a cast; the legacy cache key ignores the HTTP method, so a legacy `OPTIONS` and `HEAD` on one route
-collide; `[etInfinityQueryTrigger]` throws NG0200 unless it sits behind an `@if`; a legacy `QueryForm`
-that does not `observe()` never updates `value`/`changes$`.
+a cast; the cache key is built from route, body and headers but not the method, so a `HEAD` and an
+`OPTIONS` on one route share an entry (both in the current system and in the legacy client);
+`[etInfinityQueryTrigger]` throws NG0200 unless it sits behind an `@if`; a legacy `QueryForm` that
+does not `observe()` never updates `value`/`changes$`; `TrackingEventDataMap` resolves
+`'tokenRefreshSuccess'` through its `` `${string}Success` `` branch, so the handler is mistyped;
+`silenceMissingWithArgsFeatureError` together with `withArgs` throws, which no page mentions.
+
+Harness gaps the pass reported, none fixed: `fake-api` logs no outgoing `HttpRequest` and emits
+download progress only, all in the tick the response lands in (`http-lifecycle` carries a local
+`HttpHandler` stand-in for both); `s.auth()` is hard-wired to the scenario's own client ref, so a
+second authenticated tab is not expressible; `Scenario` cannot observe live query instances
+(`batching` uses the devtools registry); the ws test double exposes no `withCredentials`;
+`s.consumer()` takes no providers; there is no supported way to run a block in production mode; the
+harness captures `console.error` but not `console.warn`.
