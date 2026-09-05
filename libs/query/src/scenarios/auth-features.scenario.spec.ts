@@ -17,6 +17,7 @@ import {
   withRefreshQuery,
   withTokenExpirationWarning,
   withTokenRevocation,
+  withTracking,
 } from '../index';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
@@ -268,6 +269,87 @@ describe('auth features without the devtools', () => {
     expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
 
     c.destroy();
+  });
+
+  it('withTracking reports the cookie auto-login when trackInternalEvents is on', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const persistentAuthFeature = () =>
+      withPersistentAuth<ScenarioAuthBuilders>({
+        autoLogin: { queryKey: 'refresh', buildArgs: (token: string) => ({ body: { token } }) },
+      });
+
+    const seed = s.auth({ features: [persistentAuthFeature()] });
+    const c = s.consumer();
+    c.run(() => seed.queries.login.execute({ body: {} }));
+    await s.settle();
+    c.destroy();
+
+    const events: string[] = [];
+    const auth = s.auth({
+      features: [
+        persistentAuthFeature(),
+        withTracking<ScenarioAuthBuilders>({
+          trackInternalEvents: true,
+          on: {
+            refreshExecute: () => events.push('refreshExecute'),
+            refreshSuccess: () => events.push('refreshSuccess'),
+          },
+        }),
+      ],
+    });
+
+    await s.settle();
+
+    expect(auth.isAuthenticated()).toBe(true);
+    expect(events).toEqual(['refreshExecute', 'refreshSuccess']);
+  });
+
+  it('withTracking skips internal executions when trackInternalEvents is off', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const persistentAuthFeature = () =>
+      withPersistentAuth<ScenarioAuthBuilders>({
+        autoLogin: { queryKey: 'refresh', buildArgs: (token: string) => ({ body: { token } }) },
+      });
+
+    const seed = s.auth({ features: [persistentAuthFeature()] });
+    const c = s.consumer();
+    c.run(() => seed.queries.login.execute({ body: {} }));
+    await s.settle();
+    c.destroy();
+
+    const events: string[] = [];
+    const auth = s.auth({
+      features: [
+        persistentAuthFeature(),
+        withTracking<ScenarioAuthBuilders>({
+          trackInternalEvents: false,
+          on: {
+            refreshExecute: () => events.push('refreshExecute'),
+            refreshSuccess: () => events.push('refreshSuccess'),
+            loginSuccess: () => events.push('loginSuccess'),
+          },
+        }),
+      ],
+    });
+
+    await s.settle();
+
+    expect(auth.isAuthenticated()).toBe(true);
+    expect(events).toEqual([]);
+
+    const c2 = s.consumer();
+    c2.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(events).toEqual(['loginSuccess']);
+
+    c2.destroy();
   });
 
   it('a fractional refreshStrategy uses that fraction of the token lifetime, without the object form clamps', async () => {

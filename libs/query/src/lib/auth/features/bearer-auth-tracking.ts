@@ -81,7 +81,9 @@ export type TrackingEventHandler<TData> = (data: TData) => void;
 
 export type TrackingConfig<TBuilders extends readonly AnyQueryBuilder[] = readonly AnyQueryBuilder[]> = {
   /**
-   * Whether to track internal events (auto token refresh, etc.)
+   * Whether executions the provider starts itself - the persistent auto-login, the proactive token
+   * refresh, the token revocation - also raise their `<key>Execute` / `<key>Success` / `<key>Failure`
+   * events.
    * @default true
    */
   trackInternalEvents?: boolean;
@@ -134,6 +136,7 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
   config?: TrackingConfig<TBuilders>,
 ): TrackingFeature<TBuilders> => {
   const handlers = new Map<string, Set<TrackingEventHandler<any>>>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const trackInternalEvents = config?.trackInternalEvents !== false;
 
   const on = <TEvent extends TrackingEventName<TBuilders>>(
     event: TEvent,
@@ -264,7 +267,7 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
       if (!snapshot) return;
 
       const triggeredBy = snapshot.triggeredBy();
-      if (triggeredBy) return;
+      if (triggeredBy && !trackInternalEvents) return;
 
       const loading = snapshot.loading();
       const error = snapshot.error();
