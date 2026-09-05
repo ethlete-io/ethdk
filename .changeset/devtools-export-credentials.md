@@ -2,4 +2,4 @@
 '@ethlete/query-devtools': patch
 ---
 
-Query devtools: exports stop carrying live credentials - a copied report slims its args, and a secure request the collection cannot chain a token refresh for drops its `Authorization`.
+Query devtools exports stop carrying live credentials: a copied report slims its args, a session export omits auth-provider bodies and redacts credential-named keys, and an unchainable secure request drops its `Authorization`.
