@@ -90,7 +90,7 @@ Submitting executes the query, waits for it to settle, and only then resolves - 
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `queryCreator`  | The mutation. Created once, here - a function route needs no `silenceMissingWithArgsFeatureError` of your own.                |
 | `args`          | Builds the request args from the submitted value. Return `null` to abort without a request; omit for a route that takes none. |
-| `onSuccess`     | Runs after the request succeeded, before the action resolves - notify, close the overlay, navigate.                           |
+| `onSuccess`     | Runs after the request succeeded, before the action resolves - notify, close the overlay, navigate. A `204` hands it `null`.  |
 | `rewritePath`   | Rewrites a violation's property path before it is resolved against the field tree.                                            |
 | `mapViolations` | Replaces the default violation → error mapping entirely.                                                                      |
 

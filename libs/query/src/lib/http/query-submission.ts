@@ -21,7 +21,7 @@ export type CreateQuerySubmissionConfig<TCreator extends AnyQueryCreator, TModel
    * Runs after the request succeeded, before the action resolves and the form leaves its submitting
    * state - notify, close the overlay, navigate.
    */
-  onSuccess?: (response: NonNullable<ResponseType<QueryArgsOf<TCreator>>>, field: FieldTree<TModel>) => void;
+  onSuccess?: (response: ResponseType<QueryArgsOf<TCreator>>, field: FieldTree<TModel>) => void;
   /**
    * Rewrites a violation's property path before it is resolved against the field tree - use it when
    * the API's payload shape differs from the form model. Return `null` to leave the violation
@@ -94,7 +94,7 @@ export const createQuerySubmission = <TCreator extends AnyQueryCreator, TModel>(
       );
     }
 
-    config.onSuccess?.(snapshot.response() as NonNullable<ResponseType<TArgs>>, field);
+    config.onSuccess?.(snapshot.response() as ResponseType<TArgs>, field);
 
     return undefined;
   };

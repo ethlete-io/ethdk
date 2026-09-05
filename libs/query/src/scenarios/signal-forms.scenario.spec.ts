@@ -353,6 +353,32 @@ describe('createQuerySubmission', () => {
     c.destroy();
   });
 
+  it('hands onSuccess the null response of a 204', async () => {
+    const s = scenario();
+    s.api.on('POST', '/users', () => ({ status: 204 }));
+
+    const createUser = s.post<{ body: UserModel; response: { id: number } | null }>('/users');
+    const seen: unknown[] = [];
+    const c = s.consumer();
+    const submission = c.run(() =>
+      createQuerySubmission({
+        queryCreator: createUser,
+        args: (value: UserModel) => ({ body: value }),
+        onSuccess: (response) => seen.push(response),
+      }),
+    );
+    const testForm = c.run(() => form(signal(baseModel()), { submission: { action: submission.action } }));
+
+    const submitted = submit(testForm);
+
+    await s.settle();
+    await submitted;
+
+    expect(seen).toEqual([null]);
+
+    c.destroy();
+  });
+
   it('maps a 422 onto fields exactly like the manual mapViolationsToFormErrors path', async () => {
     const s = scenario();
     s.api.on('POST', '/users', () => ({
@@ -629,6 +655,35 @@ describe('validateWithQuery', () => {
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
     c.destroy();
+  });
+
+  it('stops validating once the injector the form was created in is destroyed', async () => {
+    const s = scenario();
+    s.api.on('POST', '/validate', () => ({ status: 204 }));
+
+    const validateEmail = s.post<{ body: { email: string }; response: void }>('/validate');
+    const c = s.consumer();
+    const testForm = c.run(() => {
+      const emailSchema = schema<{ email: string }>((p) => {
+        validateWithQuery(p, {
+          queryCreator: validateEmail,
+          args: (ctx) => ({ body: { email: ctx.value().email } }),
+          debounce: 0,
+        });
+      });
+
+      return form(signal({ email: 'ada@example.com' }), emailSchema);
+    });
+
+    await s.settle();
+    expect(s.api.requestCount('POST', '/validate')).toBe(1);
+
+    c.destroy();
+
+    testForm.email().value.set('grace@example.com');
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/validate')).toBe(1);
   });
 
   it('degrades a network / other error to a non-swallowed form-level error', async () => {
