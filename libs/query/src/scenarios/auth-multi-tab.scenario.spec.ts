@@ -1,5 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { createEnvironmentInjector, EnvironmentInjector, inject } from '@angular/core';
+import { createEnvironmentInjector, EnvironmentInjector, inject, signal } from '@angular/core';
+import {
+  createUnsavedChangesTracker,
+  injectUnsavedChangesCoordinator,
+  provideUnsavedChangesCoordinator,
+} from '@ethlete/core';
 import {
   FakeBroadcastChannelHandle,
   FakeWebLocksHandle,
@@ -50,8 +55,10 @@ const createAuthTab = (s: Scenario, options: TabOptions = {}) => {
     features: [withBearerAuthMultiTabSync(options.syncConfig)],
   });
 
+  // Its own coordinator rather than the shared root one, or a guard in one tab is the same object as
+  // a guard in another and a cross-tab abandon proves nothing.
   const injector = createEnvironmentInjector(
-    [...clientRef.provide(), ...authRef.provide()],
+    [...clientRef.provide(), ...authRef.provide(), ...provideUnsavedChangesCoordinator()],
     s.run(() => inject(EnvironmentInjector)),
   );
   const auth = injector.runInContext(() => authRef.inject());
@@ -62,6 +69,7 @@ const createAuthTab = (s: Scenario, options: TabOptions = {}) => {
 
   return {
     auth,
+    unsavedChanges: injector.runInContext(() => injectUnsavedChangesCoordinator()),
     getSecure: createSecureGetQuery(clientRef, authRef),
     consumer: () => {
       const child = createEnvironmentInjector([], injector);
@@ -625,6 +633,41 @@ describe('auth multi-tab scenario', () => {
     expect(b.auth.accessToken()).toBe(accessToken);
     expect(b.auth.refreshToken()).toBe(refreshToken);
     expect(b.auth.sessionStatus()).toBe('authenticated');
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it("an incoming logout abandons the receiving tab's own unsaved-changes guards", async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    await sync(s);
+    s.tick(251);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+
+    const draft = signal('edited');
+    b.consumer().run(() =>
+      createUnsavedChangesTracker({ source: draft, defaultValue: '', confirm: () => true, tab: false }),
+    );
+    s.tick();
+
+    expect(b.unsavedChanges.hasUnsavedChanges()).toBe(true);
+    expect(a.unsavedChanges.hasUnsavedChanges()).toBe(false);
+
+    a.auth.logout();
+    await sync(s);
+
+    expect(b.auth.executionState()).toEqual({ type: 'logout', state: 'success' });
+    expect(b.auth.sessionEndCause()).toBe('otherTab');
+    expect(b.unsavedChanges.hasUnsavedChanges()).toBe(false);
 
     a.destroy();
     b.destroy();

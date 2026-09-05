@@ -110,9 +110,13 @@ const createInactivityTab = (s: Scenario, activityEvents: string[], options: Tab
  * Holds the leader lock and answers (or ignores) `claim` messages over the fake primitives without running
  * library code. One shared clock and microtask queue cannot freeze one real tab while another ticks.
  */
-const createFrozenLeaderTab = (name: string, options: { isVisible?: boolean; answersClaims?: boolean } = {}) => {
+const createFrozenLeaderTab = (
+  name: string,
+  options: { isVisible?: boolean; answersClaims?: boolean; answersRefreshRequests?: boolean } = {},
+) => {
   const isVisible = options.isVisible ?? false;
   const answersClaims = options.answersClaims ?? false;
+  const answersRefreshRequests = options.answersRefreshRequests ?? false;
 
   let isLeader = false;
   let release = () => {
@@ -143,6 +147,12 @@ const createFrozenLeaderTab = (name: string, options: { isVisible?: boolean; ans
   channel.onmessage = (event: MessageEvent<unknown>) => {
     const data = event.data as { type?: string } | null;
 
+    if (data?.type === 'refresh-requested') {
+      if (answersRefreshRequests && isLeader) channel.postMessage({ type: 'refresh-started' });
+
+      return;
+    }
+
     if (data?.type !== 'claim' || !answersClaims || !isLeader) return;
 
     channel.postMessage({ type: 'leader-alive', isVisible });
@@ -160,6 +170,20 @@ const createFrozenLeaderTab = (name: string, options: { isVisible?: boolean; ans
       release();
     },
   };
+};
+
+/** Holds the takeover's refresh lock, so a follower that runs out of patience stands down instead. */
+const holdRefreshLock = (name: string) => {
+  let release = () => {
+    /* not granted yet */
+  };
+
+  void navigator.locks.request(
+    `ethlete-auth:refresh:${name}`,
+    () => new Promise<void>((resolve) => (release = resolve)),
+  );
+
+  return { release: () => release() };
 };
 
 const setVisibility = (state: 'visible' | 'hidden') => {
@@ -297,6 +321,105 @@ describe('auth multi-tab leadership scenario', () => {
     leader.close();
     b.destroy();
     c.destroy();
+  });
+
+  it('gives a leader that answers with a refresh-started six windows before the follower takes over', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+    s.api.protect('/secure/**');
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    setVisibility('hidden');
+    const leader = createFrozenLeaderTab(PROVIDER_NAME, { answersRefreshRequests: true });
+
+    const b = createAuthTab(s);
+    await sync(s);
+
+    b.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    const tokenAtLogin = b.auth.accessToken();
+    const queryB = b.consumer().run(() => b.getSecure<Profile>('/secure/profile')());
+    s.tick();
+    await sync(s);
+
+    // The three windows a silent leader gets. This one answered, so nothing is taken off it yet.
+    for (let window = 0; window < 3; window++) {
+      s.tick(3000);
+      await sync(s);
+    }
+
+    expect(refreshRequestedMessages()).toHaveLength(4);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+    expect(b.auth.accessToken()).toBe(tokenAtLogin);
+
+    // Windows four to six, and then the takeover: answering says a refresh started, not that it lands.
+    for (let window = 0; window < 3; window++) {
+      s.tick(3000);
+      await sync(s);
+    }
+
+    expect(refreshRequestedMessages()).toHaveLength(6);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(b.auth.accessToken()).not.toBe(tokenAtLogin);
+    expect(queryB.response()).toEqual({ id: 'me' });
+
+    s.expectError(is401);
+    leader.close();
+    b.destroy();
+  });
+
+  it('starts the ladder over when the takeover itself could not run yet', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(60000));
+    s.api.on('POST', '/auth/refresh', issueTokens(60000));
+
+    setVisibility('hidden');
+    const leader = createFrozenLeaderTab(PROVIDER_NAME);
+
+    const b = createAuthTab(s);
+    await sync(s);
+
+    b.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    // A login of this tab's own, in flight until t=51s and rejected there. The ladder the tab's own
+    // proactive tick starts reaches its takeover while it runs, so that takeover spends nothing.
+    s.api.once('POST', '/auth/login', () => ({ status: 401, body: { message: 'rejected' }, delay: 50_000 }));
+    b.auth.queries.login.execute({ body: { attempt: 2 } });
+    s.tick(1000);
+    await sync(s);
+
+    const advanceTo = async (ms: number) => {
+      for (let elapsed = 0; elapsed < ms; elapsed += 1000) {
+        s.tick(1000);
+        await sync(s);
+      }
+    };
+
+    // Through the tick due at half the 60 second lifetime, its ladder, and the takeover at its end.
+    await advanceTo(54_000);
+
+    expect(refreshRequestedMessages().length).toBeGreaterThan(0);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+    expect(b.auth.isAuthenticated()).toBe(true);
+
+    // The next delegated tick, 30 seconds on, runs a full ladder again rather than finding the budget
+    // spent - and this time nothing stops the takeover at its end.
+    await advanceTo(30_000);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(b.auth.isAuthenticated()).toBe(true);
+
+    s.expectError(is401);
+    leader.close();
+    b.destroy();
   });
 
   it('two tabs that go stale at the same instant refresh the token exactly once', async () => {
@@ -877,6 +1000,49 @@ describe('auth multi-tab leadership scenario', () => {
     expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
     expect(b.auth.isAuthenticated()).toBe(true);
 
+    leader.close();
+    b.destroy();
+  });
+
+  it('keeps a delegated proactive tick coming back long past the five re-arms a declined one spends', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(60000));
+    s.api.on('POST', '/auth/refresh', issueTokens(60000));
+
+    setVisibility('hidden');
+    const leader = createFrozenLeaderTab(PROVIDER_NAME);
+    // Every takeover the ladder reaches finds the lock taken and stands down, so the tick keeps
+    // being one that waits on another tab for as long as the test runs.
+    const refreshLock = holdRefreshLock(PROVIDER_NAME);
+
+    const b = createAuthTab(s);
+    await sync(s);
+
+    b.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    const advanceRounds = async (rounds: number) => {
+      for (let round = 0; round < rounds; round++) {
+        s.tick(30000);
+        await sync(s);
+      }
+    };
+
+    // The tick due at half the 60 second lifetime, plus the five re-arms a budgeted attempt spends.
+    await advanceRounds(7);
+    const asksWithinTheBudget = refreshRequestedMessages().length;
+
+    expect(asksWithinTheBudget).toBeGreaterThan(0);
+
+    await advanceRounds(7);
+
+    expect(refreshRequestedMessages().length).toBeGreaterThan(asksWithinTheBudget);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+    expect(b.auth.isAuthenticated()).toBe(true);
+
+    refreshLock.release();
     leader.close();
     b.destroy();
   });
