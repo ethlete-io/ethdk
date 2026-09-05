@@ -21,6 +21,7 @@ import {
   setQueryDevtoolsSettings,
 } from '@ethlete/query';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
+import { queryDevtoolsEventClients } from './query-devtools-types';
 
 type ScopeKey = 'viewState' | 'pins' | 'overrides' | 'mocks' | 'armedMocks' | 'armedFaults' | 'authSessions';
 
@@ -162,6 +163,9 @@ export class QueryDevtoolsSettingsComponent {
   protected sessionCount = computed(() => queryDevtoolsAuthSessions().length);
   protected armedMockCount = computed(() => queryDevtoolsArmedMocks().size);
   protected armedFaultCount = computed(() => this.host.faultClients().filter((client) => client.armed).length);
+
+  /** The same keys the Events tab's own picker offers - see {@link queryDevtoolsEventClients}. */
+  protected eventClients = computed(() => queryDevtoolsEventClients(this.host.eventLog(), this.host.eventClient()));
 
   protected resetConfirming = signal(false);
 

@@ -179,7 +179,7 @@ export class QueryDevtoolsQueriesTabComponent {
     return this.queryGroups().find((group) => group.key === key)?.head.entry.id === this.host.selectedQueryId();
   });
 
-  /** How many queries the list would hold with the search box empty, which is what the count compares to. */
+  /** How many queries are in scope before the search box and the status chips narrow them, tombstones as the `gone` chip decides. */
   protected scopedQueryCount = computed(() => {
     const facets = this.host.queryFacets();
 

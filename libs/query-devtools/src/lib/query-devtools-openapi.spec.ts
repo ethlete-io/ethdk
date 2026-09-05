@@ -97,6 +97,35 @@ describe('buildQueryDevtoolsOpenApiDocument', () => {
     expect(Object.keys(document.paths)).toEqual(['/matches/{matchId}']);
   });
 
+  it('should collect refs from a cyclic example without recursing forever', () => {
+    const body: Record<string, unknown> = { id: 'a' };
+    body['self'] = body;
+
+    expect(() => buildQueryDevtoolsOpenApiDocument({ mocks: [mock({ body })], now: NOW })).not.toThrow();
+  });
+
+  it('should collect refs from a cyclic named schema without recursing forever', () => {
+    const schema: Record<string, unknown> = { type: 'object' };
+    schema['properties'] = { self: schema };
+
+    expect(() =>
+      buildQueryDevtoolsOpenApiDocument({
+        mocks: [mock({ schemaName: 'MatchView' })],
+        schemas: { MatchView: schema },
+        now: NOW,
+      }),
+    ).not.toThrow();
+  });
+
+  it('should only brace a colon that starts a segment', () => {
+    const { document } = buildQueryDevtoolsOpenApiDocument({
+      mocks: [mock({ pattern: '/users/:id/reports:export' })],
+      now: NOW,
+    });
+
+    expect(Object.keys(document.paths)).toEqual(['/users/{id}/reports:export']);
+  });
+
   it('should say in the document that the schemas were inferred from one example', () => {
     const { document } = buildQueryDevtoolsOpenApiDocument({ mocks: [mock()], now: NOW });
 

@@ -73,6 +73,28 @@ describe('buildQueryDefinitionSnippet', () => {
     expect(snippet).toContain('  queryParams: { page: number; search: string; draft: boolean };');
   });
 
+  it('should quote and dedupe query-param keys', () => {
+    const snippet = buildQueryDefinitionSnippet({
+      method: 'GET',
+      pattern: '/posts',
+      query: 'tag=a&tag=b&filter[status]=x&order-by=name',
+      body: {},
+    });
+
+    expect(snippet).toContain("  queryParams: { tag: string; 'filter[status]': string; 'order-by': string };");
+  });
+
+  it('should quote a path param a type literal cannot spell bare', () => {
+    const snippet = buildQueryDefinitionSnippet({
+      method: 'GET',
+      pattern: '/posts/:post-id',
+      query: '',
+      body: {},
+    });
+
+    expect(snippet).toContain("  pathParams: { 'post-id': string };");
+  });
+
   it('should name the factory of the method it is for', () => {
     const snippet = buildQueryDefinitionSnippet({ method: 'POST', pattern: '/posts', query: '', body: { id: 1 } });
 

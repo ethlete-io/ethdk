@@ -9,6 +9,9 @@ const INDENT = '  ';
 /** A key that can be written bare in a type literal; anything else is quoted. */
 const isSafeKey = (key: string) => /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key);
 
+/** The key as a type literal spells it: bare where it can be, single-quoted where it cannot. */
+const typeKey = (key: string) => (isSafeKey(key) ? key : `'${key.replace(/(['\\])/g, '\\$1')}'`);
+
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
@@ -87,7 +90,13 @@ const routeOf = (pattern: string, params: string[]) => {
 
   const interpolated = pattern
     .split('/')
-    .map((segment) => (segment.startsWith(':') ? `\${p.${segment.slice(1)}}` : segment))
+    .map((segment) => {
+      if (!segment.startsWith(':')) return segment;
+
+      const param = segment.slice(1);
+
+      return isSafeKey(param) ? `\${p.${param}}` : `\${p[${typeKey(param)}]}`;
+    })
     .join('/');
 
   return `(p) => \`${interpolated}\``;
@@ -128,11 +137,14 @@ export const buildQueryDefinitionSnippet = (options: QueryDefinitionSnippetOptio
   const argFields = [`${INDENT}response: ${typeName}Response;`];
 
   if (params.length) {
-    argFields.push(`${INDENT}pathParams: { ${params.map((param) => `${param}: string`).join('; ')} };`);
+    argFields.push(`${INDENT}pathParams: { ${params.map((param) => `${typeKey(param)}: string`).join('; ')} };`);
   }
 
   if (queryParams.length) {
-    const fields = queryParams.map(([key, value]) => `${key}: ${queryParamType(value)}`).join('; ');
+    // A repeated key is one field, not two: `?tag=a&tag=b` is a duplicate identifier in a type literal.
+    const byKey = new Map(queryParams.map(([key, value]) => [key, value]));
+    const fields = Array.from(byKey, ([key, value]) => `${typeKey(key)}: ${queryParamType(value)}`).join('; ');
+
     argFields.push(`${INDENT}queryParams: { ${fields} };`);
   }
 

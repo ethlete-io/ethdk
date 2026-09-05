@@ -70,7 +70,11 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
 /** `/matches/:id` is how a mock writes a route; a document writes it `/matches/{id}`. */
-const toBracePattern = (pattern: string) => pattern.replace(/:([^/]+)/g, '{$1}');
+const toBracePattern = (pattern: string) =>
+  pattern
+    .split('/')
+    .map((segment) => (segment.startsWith(':') ? `{${segment.slice(1)}}` : segment))
+    .join('/');
 
 const pathParamsOf = (pattern: string) =>
   pattern
@@ -419,9 +423,25 @@ const referencedSchemas = (paths: unknown, schemas: Record<string, unknown>) => 
 
 const REF_PREFIX = '#/components/schemas/';
 
-const collectRefNames = (value: unknown, into = new Set<string>()) => {
+type RefScan = { into: Set<string>; seen: WeakSet<object>; depth: number };
+
+const newRefScan = (): RefScan => ({ into: new Set(), seen: new WeakSet(), depth: 0 });
+
+const collectRefNames = (value: unknown, scan: RefScan = newRefScan()) => {
+  const { into, seen, depth } = scan;
+
+  if (depth >= MAX_DEPTH || !value || typeof value !== 'object') return into;
+
+  // A dereferenced description is a graph, not a tree: without this, a schema that holds itself recurses
+  // until the stack goes.
+  if (seen.has(value)) return into;
+
+  seen.add(value);
+
+  const next = { ...scan, depth: depth + 1 };
+
   if (Array.isArray(value)) {
-    for (const entry of value) collectRefNames(entry, into);
+    for (const entry of value) collectRefNames(entry, next);
 
     return into;
   }
@@ -435,7 +455,7 @@ const collectRefNames = (value: unknown, into = new Set<string>()) => {
       continue;
     }
 
-    collectRefNames(entry, into);
+    collectRefNames(entry, next);
   }
 
   return into;

@@ -235,6 +235,22 @@ export type EventLogItem = {
   isEstimatedBytes: boolean;
 };
 
+/** How long a copy button stays ticked after a successful write. */
+export const QUERY_DEVTOOLS_COPIED_RESET_MS = 1200;
+
+/**
+ * The clients the event log has rows from, as both its own picker and the Settings mirror of it offer
+ * them. Derived from the log rather than from the registry, because a row is keyed by `baseUrl || name`
+ * and a picked key the log cannot match narrows the tab to nothing.
+ */
+export const queryDevtoolsEventClients = (events: EventLogItem[], picked: string | null): string[] => {
+  const clients = new Set(events.map((event) => event.client));
+
+  if (picked) clients.add(picked);
+
+  return Array.from(clients).sort();
+};
+
 /**
  * A cache entry that is gone, as the Cache tab still lists it. Deliberately not a {@link CacheRow}: a
  * destroyed entry has no consumers, no size, no freshness and nothing to act on, so a full row would be

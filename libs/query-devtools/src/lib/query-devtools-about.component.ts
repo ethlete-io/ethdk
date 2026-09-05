@@ -1,7 +1,9 @@
 import { Component, ViewEncapsulation, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { copyToClipboard } from '@ethlete/core';
 import { queryDevtoolsAbout } from '@ethlete/query';
-import { tap } from 'rxjs';
+import { Subject, switchMap, tap, timer } from 'rxjs';
+import { QUERY_DEVTOOLS_COPIED_RESET_MS } from './query-devtools-types';
 
 type AboutRow = { label: string; value: string };
 type AboutGroup = { title: string; rows: AboutRow[] };
@@ -41,6 +43,18 @@ export class QueryDevtoolsAboutComponent {
   protected readonly groups = groupsOf();
 
   protected copied = signal(false);
+  private copiedReset$ = new Subject<void>();
+
+  constructor() {
+    // Each copy restarts the tick countdown; switchMap drops the pending reset of the previous one.
+    this.copiedReset$
+      .pipe(
+        switchMap(() => timer(QUERY_DEVTOOLS_COPIED_RESET_MS)),
+        tap(() => this.copied.set(false)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
 
   protected copy() {
     const text = this.groups
@@ -48,7 +62,12 @@ export class QueryDevtoolsAboutComponent {
       .join('\n\n');
 
     copyToClipboard(text)
-      .pipe(tap((ok) => this.copied.set(ok)))
+      .pipe(
+        tap((ok) => {
+          this.copied.set(ok);
+          this.copiedReset$.next();
+        }),
+      )
       .subscribe();
   }
 }

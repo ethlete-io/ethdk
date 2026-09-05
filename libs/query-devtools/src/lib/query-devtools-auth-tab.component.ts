@@ -213,8 +213,9 @@ export class QueryDevtoolsAuthTabComponent {
   }
 
   /**
-   * Arms an access-token lifetime from the input's raw value, or disarms on an empty one. Clamped here
-   * rather than left to the input's `min`/`max`, which a typed-in (or pasted) value ignores.
+   * Arms an access-token lifetime from the input's raw value, or disarms on an empty one. The value is
+   * clamped by {@link setQueryDevtoolsTokenTtl}, not by the input's `min`/`max` - a typed-in (or pasted)
+   * value ignores those.
    */
   protected armTokenTtl(options: { entry: QueryDevtoolsEntry; value: string }) {
     const { entry, value } = options;

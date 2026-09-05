@@ -262,16 +262,16 @@
           >
             failures only
           </button>
+          @let pickedClient = host.eventClient();
           <select
             #eventClientSelect
-            [value]="host.eventClient() ?? ''"
             (change)="host.eventClient.set(eventClientSelect.value || null)"
             class="et-query-devtools-select"
             aria-label="Event log client"
           >
-            <option value="">All clients</option>
-            @for (name of host.clientNames(); track name) {
-              <option [value]="name">{{ name }}</option>
+            <option [selected]="!pickedClient" value="">All clients</option>
+            @for (name of eventClients(); track name) {
+              <option [value]="name" [selected]="name === pickedClient">{{ name }}</option>
             }
           </select>
         </div>

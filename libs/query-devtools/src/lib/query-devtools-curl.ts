@@ -30,17 +30,43 @@ const jsonBody = (body: unknown) => {
  */
 const shellQuote = (value: string) => `'${value.replace(/'/g, `'\\''`)}'`;
 
-const bodyOf = (request: CurlRequestInput) => {
+/**
+ * What a body is sent as, which is what decides both the `--data-raw` and the `Content-Type`. `binary`
+ * is a body `HttpClient` hands to the browser as it is (`FormData`, a `Blob`, an `ArrayBuffer`) - the
+ * panel holds no bytes to write into a command, so it says so instead of writing `{}`.
+ */
+const bodyOf = (request: CurlRequestInput): { data: string | null; json: boolean; binary: string | null } => {
   if (request.gqlQuery) {
     const variables = (request.body as { variables?: unknown } | null)?.variables ?? {};
 
-    return jsonBody({ query: request.gqlQuery, variables });
+    return asJson(jsonBody({ query: request.gqlQuery, variables }));
   }
 
-  if (request.body === null || request.body === undefined) return null;
-  if (typeof request.body === 'string') return request.body;
+  const body = request.body;
 
-  return jsonBody(request.body);
+  if (body === null || body === undefined) return { data: null, json: false, binary: null };
+
+  // Angular sends a string as `text/plain` and lets the browser label the rest, so only the shapes
+  // `HttpClient` itself serializes as JSON may be labelled that way here.
+  if (typeof body === 'string') return { data: body, json: false, binary: null };
+
+  const binary = binaryLabelOf(body);
+
+  if (binary) return { data: null, json: false, binary };
+
+  return asJson(jsonBody(body));
+};
+
+/** A body written as JSON, or - where it could not be written at all - one that is labelled as nothing. */
+const asJson = (data: string | null) => ({ data, json: data !== null, binary: null });
+
+const binaryLabelOf = (body: unknown) => {
+  if (typeof FormData !== 'undefined' && body instanceof FormData) return 'FormData';
+  if (typeof Blob !== 'undefined' && body instanceof Blob) return 'Blob';
+  if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) return 'binary';
+  if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) return 'URLSearchParams';
+
+  return null;
 };
 
 /**
@@ -57,9 +83,11 @@ export const buildCurlCommand = (request: CurlRequestInput) => {
   const headers = request.headers.filter((header) => header.value !== '');
   const hasContentType = headers.some((header) => header.name.toLowerCase() === 'content-type');
   const withContentType =
-    body === null || hasContentType ? headers : [...headers, { name: 'Content-Type', value: 'application/json' }];
+    !body.json || hasContentType ? headers : [...headers, { name: 'Content-Type', value: 'application/json' }];
 
-  const lines = [`curl ${shellQuote(request.url)}`];
+  const lines = body.binary
+    ? [`# The panel cannot replay a ${body.binary} body - this command sends none.\ncurl ${shellQuote(request.url)}`]
+    : [`curl ${shellQuote(request.url)}`];
 
   // GET is curl's default, so spelling it out only adds noise to the common case.
   if (request.method.toUpperCase() !== 'GET') lines.push(`-X ${request.method.toUpperCase()}`);
@@ -68,7 +96,7 @@ export const buildCurlCommand = (request: CurlRequestInput) => {
 
   // `--data-raw`, not `-d`: the latter strips newlines and would mangle a GraphQL document, and it also
   // rewrites the method to POST behind your back.
-  if (body !== null) lines.push(`--data-raw ${shellQuote(body)}`);
+  if (body.data !== null) lines.push(`--data-raw ${shellQuote(body.data)}`);
 
   return lines.join(' \\\n  ');
 };

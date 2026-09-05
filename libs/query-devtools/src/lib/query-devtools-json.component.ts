@@ -8,6 +8,7 @@ import { formatJsonPath } from './query-devtools-diff';
 import { exoticOf } from './query-devtools-exotic';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
 import { QueryDevtoolsOverrideMenuComponent } from './query-devtools-override-menu.component';
+import { QUERY_DEVTOOLS_COPIED_RESET_MS } from './query-devtools-types';
 
 /** A JSON value's kind as the value explorer (and its per-node override menu) categorizes it. */
 export type JsonKind = 'string' | 'number' | 'boolean' | 'null' | 'undefined' | 'array' | 'object';
@@ -16,9 +17,6 @@ type JsonEntry = { k: string; v: unknown };
 
 /** A folded slice of a container's entries, rendered as its own collapsible row. */
 type JsonChunk = { start: number; end: number; label: string };
-
-/** How long the copy button stays ticked after a successful write. */
-const COPIED_RESET_MS = 1200;
 
 /**
  * Containers with more entries than this are not rendered directly - their children are grouped into
@@ -97,13 +95,15 @@ const chunkSizeFor = (count: number) => {
           @if (addressable()) {
             <et-query-devtools-copy-menu [parentKind]="parentKind()" (pick)="copy($event)" />
           }
-          @if (overrides(); as overrides) {
-            <et-query-devtools-override-menu
-              [value]="value()"
-              [path]="jsonPath()"
-              [parentKind]="parentKind()"
-              [overrides]="overrides"
-            />
+          @if (!chunk()) {
+            @if (overrides(); as overrides) {
+              <et-query-devtools-override-menu
+                [value]="value()"
+                [path]="jsonPath()"
+                [parentKind]="parentKind()"
+                [overrides]="overrides"
+              />
+            }
           }
         </div>
 
@@ -367,7 +367,7 @@ export class QueryDevtoolsJsonComponent {
     // Each copy restarts the tick countdown; switchMap drops the pending reset of the previous one.
     this.copiedReset$
       .pipe(
-        switchMap(() => timer(COPIED_RESET_MS)),
+        switchMap(() => timer(QUERY_DEVTOOLS_COPIED_RESET_MS)),
         tap(() => this.copied.set(null)),
         takeUntilDestroyed(),
       )

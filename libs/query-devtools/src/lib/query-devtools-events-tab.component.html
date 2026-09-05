@@ -5,15 +5,15 @@
         @if (eventClients().length > 1) {
           <label class="et-query-devtools-field">
             <span>Client</span>
+            @let pickedClient = host.eventClient();
             <select
               #eventClientSelect
-              [value]="host.eventClient() ?? ''"
               (change)="host.eventClient.set(eventClientSelect.value || null)"
               class="et-query-devtools-select"
             >
-              <option value="">All clients</option>
+              <option [selected]="!pickedClient" value="">All clients</option>
               @for (name of eventClients(); track name) {
-                <option [value]="name">{{ name }}</option>
+                <option [value]="name" [selected]="name === pickedClient">{{ name }}</option>
               }
             </select>
           </label>

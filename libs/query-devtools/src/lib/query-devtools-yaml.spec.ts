@@ -87,4 +87,19 @@ describe('toQueryDevtoolsYaml', () => {
 
     expect(() => toQueryDevtoolsYaml(cyclic)).not.toThrow();
   });
+
+  it('should not expand a cycle reachable through two keys', () => {
+    const cyclic: Record<string, unknown> = {};
+    cyclic['x'] = cyclic;
+    cyclic['y'] = cyclic;
+
+    const start = Date.now();
+
+    expect(() => toQueryDevtoolsYaml(cyclic)).not.toThrow();
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
+
+  it('should write a Date the way the JSON export does', () => {
+    expect(toQueryDevtoolsYaml({ at: new Date('2020-01-02T03:04:05.000Z') })).toBe('at: "2020-01-02T03:04:05.000Z"\n');
+  });
 });

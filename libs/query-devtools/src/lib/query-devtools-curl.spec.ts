@@ -74,6 +74,21 @@ describe('buildCurlCommand', () => {
     expect(command).toContain(`--data-raw '{"title":"it'\\''s"}'`);
   });
 
+  it('should not claim application/json for a string body', () => {
+    const command = buildCurlCommand(request({ method: 'POST', body: 'plain text' }));
+
+    expect(command).not.toContain('Content-Type');
+    expect(command).toContain(`--data-raw 'plain text'`);
+  });
+
+  it('should not export a FormData body as an empty JSON object', () => {
+    const command = buildCurlCommand(request({ method: 'POST', body: new FormData() }));
+
+    expect(command).not.toContain('--data-raw');
+    expect(command).not.toContain('application/json');
+    expect(command).toContain('FormData');
+  });
+
   it('should skip a body it cannot serialize', () => {
     const circular: Record<string, unknown> = {};
     circular['self'] = circular;

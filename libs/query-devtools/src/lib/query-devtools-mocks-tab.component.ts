@@ -1,4 +1,5 @@
-import { Component, computed, effect, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, effect, signal, ViewEncapsulation, WritableSignal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SelectComponent, SelectOptionData, SelectSearchDirective } from '@ethlete/components';
 import { copyToClipboard } from '@ethlete/core';
 import {
@@ -23,12 +24,12 @@ import {
   seedQueryDevtoolsSchemaBody,
   seedQueryDevtoolsSchemaRoute,
 } from '@ethlete/query';
-import { tap } from 'rxjs';
+import { Subject, switchMap, tap, timer } from 'rxjs';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsMockDesignerComponent } from './query-devtools-mock-designer.component';
 import { buildQueryDevtoolsOpenApiDocument, buildQueryDevtoolsOpenApiPathItem } from './query-devtools-openapi';
 import { buildQueryDefinitionSnippet } from './query-devtools-typescript';
-import { AnyQuery } from './query-devtools-types';
+import { AnyQuery, QUERY_DEVTOOLS_COPIED_RESET_MS } from './query-devtools-types';
 import { toQueryDevtoolsYaml } from './query-devtools-yaml';
 
 /** A designed mock as the list renders it: the stored mock plus what only the live registry knows. */
@@ -214,6 +215,8 @@ export class QueryDevtoolsMocksTabComponent {
   /** The mock whose path item was last copied - a second button needs its own confirmation. */
   protected copiedSpecId = signal<string | null>(null);
 
+  private copiedReset$ = new Subject<void>();
+
   /** Which spelling the OpenAPI export is written in. YAML is what a specification repository takes. */
   protected specFormat = signal<SpecFormat>('yaml');
 
@@ -228,7 +231,7 @@ export class QueryDevtoolsMocksTabComponent {
       mock,
       armed: armed.has(mock.id),
       bytes: measureQueryDevtoolsPayload({ body: mock.body }).bytes,
-      isSecure: entries.some((entry) => !!entry.meta.isSecure && this.idOf(entry) === mock.id),
+      isSecure: entries.some((entry) => !!entry.meta.isSecure && this.idOf(entry, mock.query) === mock.id),
     }));
   });
 
@@ -292,6 +295,18 @@ export class QueryDevtoolsMocksTabComponent {
   });
 
   constructor() {
+    // Each copy restarts the tick countdown; switchMap drops the pending reset of the previous one.
+    this.copiedReset$
+      .pipe(
+        switchMap(() => timer(QUERY_DEVTOOLS_COPIED_RESET_MS)),
+        tap(() => {
+          this.copiedId.set(null);
+          this.copiedSpecId.set(null);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     // A description is only worth fetching once someone is designing a mock against that client, so an
     // application that hands several in still ships each as its own lazy chunk, loaded one at a time.
     effect(() => {
@@ -476,7 +491,7 @@ export class QueryDevtoolsMocksTabComponent {
     });
 
     copyToClipboard(snippet)
-      .pipe(tap((ok) => this.copiedId.set(ok ? row.mock.id : null)))
+      .pipe(tap((ok) => this.confirmCopy(this.copiedId, ok ? row.mock.id : null)))
       .subscribe();
   }
 
@@ -492,7 +507,7 @@ export class QueryDevtoolsMocksTabComponent {
     this.specNotes.set([...schemas.notes, ...built.notes]);
 
     copyToClipboard(this.write(built.document))
-      .pipe(tap((ok) => this.copiedSpecId.set(ok ? row.mock.id : null)))
+      .pipe(tap((ok) => this.confirmCopy(this.copiedSpecId, ok ? row.mock.id : null)))
       .subscribe();
   }
 
@@ -624,11 +639,21 @@ export class QueryDevtoolsMocksTabComponent {
     return Number.isFinite(count) ? count : fallback;
   }
 
-  private idOf(entry: QueryDevtoolsEntry) {
+  /**
+   * The mock id a live query would carry. `query` has to be the declared query of the mock being matched
+   * against: it is part of the id, and a registered query carries no declaration of its own.
+   */
+  private confirmCopy(target: WritableSignal<string | null>, id: string | null) {
+    target.set(id);
+    this.copiedReset$.next();
+  }
+
+  private idOf(entry: QueryDevtoolsEntry, query = '') {
     return queryDevtoolsMockId({
       clientName: entry.meta.clientName ?? '',
       method: entry.meta.method ?? 'GET',
       pattern: entry.meta.route ?? '',
+      query,
     });
   }
 }

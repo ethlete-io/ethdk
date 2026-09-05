@@ -1,7 +1,7 @@
 import { Component, computed, ViewEncapsulation } from '@angular/core';
 import { QueryDevtoolsDrawerComponent } from './query-devtools-drawer.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
-import { DESTROY_CAUSE_LABELS, EventLogItem } from './query-devtools-types';
+import { DESTROY_CAUSE_LABELS, EventLogItem, queryDevtoolsEventClients } from './query-devtools-types';
 
 /** The Events tab: the rolling log of repository traffic, refreshes and secure unbinds. */
 @Component({
@@ -30,11 +30,7 @@ export class QueryDevtoolsEventsTabComponent {
   });
 
   /** The clients the event log has rows from, as its picker offers them. */
-  protected eventClients = computed(() => {
-    const names = new Set(this.host.repositories().map(({ name, baseUrl }) => baseUrl || name));
-
-    return Array.from(names).sort();
-  });
+  protected eventClients = computed(() => queryDevtoolsEventClients(this.host.eventLog(), this.host.eventClient()));
 
   protected isEventLogNarrowed = computed(() => !!this.host.eventClient() || this.host.eventErrorsOnly());
 

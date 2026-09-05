@@ -6,7 +6,7 @@
 
 const INDENT = '  ';
 
-/** How deep the tree is written before a branch is given up on, so a cyclic body cannot spin forever. */
+/** How deep the tree is written before a branch is given up on, so no document can overflow the stack. */
 const MAX_DEPTH = 64;
 
 /**
@@ -47,6 +47,15 @@ const blockScalar = (value: string, indent: string) =>
     .map((line) => (line ? `${indent}${line}` : ''))
     .join('\n')}`;
 
+/** What `JSON.stringify` would serialise in this value's place - a `Date` writes as its ISO string. */
+const jsonValueOf = (value: unknown): unknown => {
+  if (!value || typeof value !== 'object') return value;
+
+  const toJson = (value as { toJSON?: unknown }).toJSON;
+
+  return typeof toJson === 'function' ? (toJson as () => unknown).call(value) : value;
+};
+
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
@@ -74,45 +83,65 @@ const scalarOf = (value: unknown, indent: string): string | null => {
   return 'null';
 };
 
-const write = (value: unknown, depth: number): string => {
+type WriteState = { depth: number; ancestors: Set<object> };
+
+const write = (input: unknown, state: WriteState): string => {
+  const { depth, ancestors } = state;
   const indent = INDENT.repeat(depth);
+  const value = jsonValueOf(input);
   const scalar = scalarOf(value, indent);
 
   if (scalar !== null) return scalar;
 
   if (depth >= MAX_DEPTH) return 'null';
 
+  // Depth alone does not bound a cycle reachable through two keys: that branches, so 64 levels are 2^64
+  // nodes rather than 64. Only refusing to re-enter an ancestor stops it.
+  if (ancestors.has(value as object)) return 'null';
+
+  ancestors.add(value as object);
+
+  const child = { depth: depth + 1, ancestors };
+
+  let written: string;
+
   if (Array.isArray(value)) {
-    if (!value.length) return '[]';
+    written = value.length
+      ? `\n${value
+          .map((entry) => {
+            const item = write(entry, child);
 
-    return `\n${value
-      .map((entry) => {
-        const written = write(entry, depth + 1);
+            // A container under a `-` continues on the dash line: the `- ` occupies the first two columns
+            // of its child's own indentation, so the child's first line has to shed exactly that much.
+            return `${indent}- ${item.startsWith('\n') ? item.slice(depth * 2 + INDENT.length + 1) : item}`;
+          })
+          .join('\n')}`
+      : '[]';
+  } else {
+    const entries = Object.entries(value as Record<string, unknown>).filter(([, entry]) => entry !== undefined);
 
-        // A container under a `-` continues on the dash line: the `- ` occupies the first two columns of
-        // its child's own indentation, so the child's first line has to shed exactly that much.
-        return `${indent}- ${written.startsWith('\n') ? written.slice(depth * 2 + INDENT.length + 1) : written}`;
-      })
-      .join('\n')}`;
+    written = entries.length
+      ? `\n${entries
+          .map(([key, entry]) => {
+            const item = write(entry, child);
+            // A block already leads with its own newline; only a scalar needs the space after the colon.
+            const rendered = item.startsWith('\n') ? item : ` ${item}`;
+
+            return `${indent}${isPlainSafe(key) ? key : JSON.stringify(key)}:${rendered}`;
+          })
+          .join('\n')}`
+      : '{}';
   }
 
-  const entries = Object.entries(value as Record<string, unknown>).filter(([, entry]) => entry !== undefined);
+  ancestors.delete(value as object);
 
-  if (!entries.length) return '{}';
-
-  return `\n${entries
-    .map(([key, entry]) => {
-      const written = write(entry, depth + 1);
-      // A block already leads with its own newline; only a scalar needs the space after the colon.
-      const rendered = written.startsWith('\n') ? written : ` ${written}`;
-
-      return `${indent}${isPlainSafe(key) ? key : JSON.stringify(key)}:${rendered}`;
-    })
-    .join('\n')}`;
+  return written;
 };
 
 /**
- * Writes a JSON-shaped tree as YAML. `undefined` members are dropped the way `JSON.stringify` drops
- * them; anything that is not a plain object, array or primitive is written as `null`.
+ * Writes a JSON-shaped tree as YAML. `undefined` members are dropped and a `toJSON()` carrier is written
+ * through it, both the way `JSON.stringify` does; anything else that is not a plain object, array or
+ * primitive is written as `null`, and a node that re-enters one of its own ancestors as `null` too.
  */
-export const toQueryDevtoolsYaml = (value: unknown) => `${write(value, 0).replace(/^\n/, '')}\n`;
+export const toQueryDevtoolsYaml = (value: unknown) =>
+  `${write(value, { depth: 0, ancestors: new Set() }).replace(/^\n/, '')}\n`;
