@@ -3,6 +3,7 @@ import {
   createQueryBatch,
   QueryArgsOf,
   QueryBatchItemResult,
+  queryErrorMessage,
   querySequence,
   withArgs,
   withDefaultRetry,
@@ -571,6 +572,40 @@ describe('batching scenario', () => {
     expect(s.api.requestCount('POST', '/confirm')).toBe(0);
 
     s.expectError(httpStatusError(402));
+    c.destroy();
+  });
+
+  it('keeps inFlight balanced when a batch item throws on execute', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const patchPost = s.patch<{ response: { id: string }; pathParams: { id: string } }>((p) => {
+      if (p.id === '2') throw new Error('no route for this item');
+
+      return `/posts/${p.id}`;
+    });
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({ queryCreator: patchPost, args: (post: Post) => ({ pathParams: { id: post.id } }) }),
+    );
+
+    const result = capture(batch.run(posts('1', '2', '3')));
+    s.flush();
+
+    expect(batch.inFlight()).toBe(0);
+    expect(result.error).toBeUndefined();
+    expect(result.value?.ok).toBe(false);
+    expect(result.value?.failed.length).toBe(1);
+    expect(result.value?.failed[0]).toMatchObject({ status: 'error', index: 1, item: { id: '2' } });
+    expect(queryErrorMessage(result.value?.failed[0]?.error)).toBe('no route for this item');
+    expect(ids(result.value?.succeeded ?? [])).toEqual(['1', '3']);
+    expect(batch.status()).toBe('partial');
+    expect(batch.running()).toBe(false);
+    expect(batch.inFlight()).toBe(0);
+    expect(batch.completed()).toBe(3);
+    expect(s.api.requestCount('PATCH', '/posts/2')).toBe(0);
+
     c.destroy();
   });
 });

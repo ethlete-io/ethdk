@@ -25,7 +25,7 @@ import { SPEED_BUFFER_TIME_IN_MS } from './http-request';
 import { Query, QueryArgs, RequestArgs, ResponseType } from './query';
 import { AnyCreateQueryClientResult } from './query-client';
 import { AnyQueryCreator, QueryArgsOf, QueryMethod } from './query-creator';
-import { QueryErrorResponse } from './query-error-response';
+import { createQueryErrorResponse, QueryErrorResponse } from './query-error-response';
 import { queryBatchAlreadyRunning, queryBatchWithArgsUsed } from './query-errors';
 import { QueryFeature, QueryFeatureType } from './query-features';
 
@@ -369,12 +369,31 @@ export const createQueryBatch = <TCreator extends AnyQueryCreator, TItem>(
       // be told the missing feature is intentional or creating the query throws ET100.
       const create = () => queryCreator({ silenceMissingWithArgsFeatureError: true }, ...features);
 
-      const query = runInInjectionContext(injector, () =>
-        devtoolsHandle ? runInQueryDevtoolsBatch({ batch: devtoolsHandle, index: entry.index }, create) : create(),
-      ) as Query<TArgs>;
+      let query: Query<TArgs> | undefined;
 
-      inFlight.update((count) => count + 1);
-      query.execute({ args, options: { allowCache } });
+      try {
+        query = runInInjectionContext(injector, () =>
+          devtoolsHandle ? runInQueryDevtoolsBatch({ batch: devtoolsHandle, index: entry.index }, create) : create(),
+        ) as Query<TArgs>;
+
+        // Count the item only once `execute()` has returned: it can throw (a route function of the
+        // consumer, ET800), and the `finalize` that decrements again belongs to the observable below.
+        query.execute({ args, options: { allowCache } });
+        inFlight.update((count) => count + 1);
+      } catch (error) {
+        query?.subtle.destroy();
+        record({
+          status: 'error',
+          index: entry.index,
+          item: entry.item,
+          args,
+          error: createQueryErrorResponse(error),
+        });
+
+        if (stopOnError) cancelRequested = true;
+
+        return EMPTY;
+      }
 
       const snapshot = query.createSnapshot();
 
