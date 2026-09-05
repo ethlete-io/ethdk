@@ -269,7 +269,7 @@ const createBranch = <TFields extends QueryFormFields>(
     return value;
   };
 
-  const liveValue = computed(() => normalizeLive(fields, model() as Dict, defaults) as QueryFormModel<TFields>);
+  const normalizedLive = computed(() => normalizeLive(fields, model() as Dict, defaults) as QueryFormModel<TFields>);
 
   const clearTimer = () => {
     if (pendingTimer !== null) {
@@ -281,7 +281,7 @@ const createBranch = <TFields extends QueryFormFields>(
   const flush = () => {
     clearTimer();
 
-    const live = liveValue() as Dict;
+    const live = normalizedLive() as Dict;
     const prev = committed() as Dict;
 
     if (equal(live, prev)) return;
@@ -297,7 +297,7 @@ const createBranch = <TFields extends QueryFormFields>(
 
   effect(
     () => {
-      const live = liveValue() as Dict;
+      const live = normalizedLive() as Dict;
 
       untracked(() => {
         const prev = committed() as Dict;
@@ -323,7 +323,7 @@ const createBranch = <TFields extends QueryFormFields>(
   return {
     fields: tree,
     value: committed.asReadonly(),
-    liveValue,
+    liveValue: model.asReadonly(),
     activeFilterCount: computed(() => computeFilterCount(fields, committed() as Dict, defaults)),
     setValue: (value) => model.set(clone(value)),
     patchValue: (value) => model.update((cur) => ({ ...cur, ...value })),
@@ -389,7 +389,11 @@ export type QueryFormSignals<TFields extends QueryFormFields> = {
   /** Start syncing with the URL. Returns the form, so it can be chained onto the definition. */
   observe(options?: QueryFormSignalsObserveOptions): QueryFormSignals<TFields>;
 
-  /** Stop syncing and strip the form's params from the URL. Runs on destroy anyway. */
+  /**
+   * Stop syncing and strip the form's params from the URL. Only an explicit call strips them - the
+   * form stops syncing when it is destroyed, but leaves the URL alone, because the route it lands on
+   * owns the params by then.
+   */
   unobserve(): void;
 
   setValue(value: QueryFormModel<TFields>, options?: QueryFormSignalsWriteOptions): void;

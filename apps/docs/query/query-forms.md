@@ -198,7 +198,7 @@ let the user edit freely, then write it back on "apply" - or drop it on "cancel"
 draft = this.qf.branch();
 
 apply() {
-  this.qf.setValue(this.draft.value());
+  this.qf.setValue(this.draft.liveValue());
 }
 ```
 
@@ -206,8 +206,9 @@ The branch exposes `fields`, `value`, `liveValue`, `activeFilterCount`, `setValu
 `patchValue`, `resetFieldToDefault` and `resetAllFieldsToDefault`. Its `value` is
 committed the way the source form's is - debounced per field and with the
 `isResetBy` graph applied - so a preview query bound to it does not fire per
-keystroke. `liveValue` is what the controls hold right now; apply that on an
-explicit submit, or a click inside the debounce window would lose the last keystrokes.
+keystroke. `liveValue` is the raw value of the bound controls right now - including a
+text field the user has just cleared to `''` - so apply that on an explicit submit; a click inside
+the debounce window would otherwise lose the last keystrokes.
 
 By default it shares the source form's injector lifetime. Code that creates a branch in a shorter-lived injection context can pass that context's `Injector` to `branch(inject(Injector))`; the filter overlay does this so every draft is released when its overlay closes.
 

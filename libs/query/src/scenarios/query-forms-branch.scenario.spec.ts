@@ -167,4 +167,25 @@ describe('query form branch scenario', () => {
 
     expect(qf.value().search).toBe('che');
   });
+
+  it('liveValue reports the raw control value of a cleared text field', () => {
+    const s = scenario();
+
+    const qf = s.run(() =>
+      defineQueryForm({ fields: { note: queryField<string>({ debounce: 300 }) } }).observe({
+        writeToQueryParams: false,
+      }),
+    );
+
+    qf.setValue({ note: 'shoes' });
+    s.tick(400);
+
+    const draft = qf.branch();
+
+    draft.fields.note().value.set('');
+    s.tick(50);
+
+    expect(draft.liveValue().note).toBe('');
+    expect(draft.value().note).toBe('shoes');
+  });
 });
