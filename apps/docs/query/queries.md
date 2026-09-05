@@ -105,12 +105,12 @@ const query = getPost(
 );
 ```
 
-| `QueryConfig` option                 | Default | Description                                                                                    |
-| ------------------------------------ | ------- | ---------------------------------------------------------------------------------------------- |
-| `key`                                | -       | Custom cache key. Only allowed on cacheable queries (throws otherwise).                        |
-| `onlyManualExecution`                | `false` | Skip auto-execution - the query only runs when you call `.execute()`.                          |
-| `silenceMissingWithArgsFeatureError` | `false` | Allow a function route without a `withArgs` feature (you must then pass args to `.execute()`). |
-| `injector`                           | -       | Create the query in a specific injector instead of the current injection context.              |
+| `QueryConfig` option                 | Default | Description                                                                                                                              |
+| ------------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`                                | -       | Custom cache key. Only allowed on cacheable queries (throws otherwise).                                                                  |
+| `onlyManualExecution`                | `false` | Skip auto-execution - the query only runs when you call `.execute()`.                                                                    |
+| `silenceMissingWithArgsFeatureError` | `false` | Allow a function route without a `withArgs` feature (you must then pass args to `.execute()`); throws if you combine it with `withArgs`. |
+| `injector`                           | -       | Create the query in a specific injector instead of the current injection context.                                                        |
 
 Creators expose `.clone(additionalOptions)` to derive a variant with merged options (e.g. a custom `retryFn`).
 

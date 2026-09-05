@@ -9,8 +9,10 @@ import {
 } from '@ethlete/query/testing';
 import {
   createGetQuery,
+  createQueryBatch,
   createQueryClient,
   createQueryFeature,
+  createQuerySubmission,
   isPageOutOfRangeError,
   isQueryDevtoolsEnabled,
   nestedEffect,
@@ -31,7 +33,9 @@ import {
   withPolling,
   withResponseUpdate,
   withSuccessHandling,
+  validateWithQuery,
 } from '../index';
+import { form, schema, submit } from '@angular/forms/signals';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Scenario, sequence, useScenario } from './harness';
 
@@ -1341,6 +1345,109 @@ describe('long polling across tabs', () => {
 
     a.destroy();
     tabB.destroy();
+  });
+});
+
+describe('the silenceMissingWithArgsFeatureError guard', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('throws when a consumer sets silenceMissingWithArgsFeatureError next to a withArgs feature', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getUser = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/users/${p.id}`);
+
+    const c = s.consumer();
+
+    expect(() =>
+      c.run(() =>
+        getUser(
+          { silenceMissingWithArgsFeatureError: true },
+          withArgs(() => ({ pathParams: { id: '1' } })),
+        ),
+      ),
+    ).toThrow(/silenceMissingWithArgsFeatureError/);
+
+    c.destroy();
+  });
+
+  it('applies a batch feature to every silenced query without raising the guard', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const patchPost = s.patch<{ response: { id: string }; pathParams: { id: string } }>((p) => `/posts/${p.id}`);
+    const successes: unknown[] = [];
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({
+        queryCreator: patchPost,
+        args: (post: { id: string }) => ({ pathParams: { id: post.id } }),
+        features: [withSuccessHandling({ handler: (response) => successes.push(response) })],
+      }),
+    );
+
+    batch.run([{ id: '1' }, { id: '2' }]).subscribe();
+    s.flush();
+
+    expect(successes).toEqual([{ id: '1' }, { id: '2' }]);
+
+    c.destroy();
+  });
+
+  it('creates a submission over a function-route creator without raising the guard', async () => {
+    const s = scenario();
+    s.api.on('POST', '/users/:org', ({ params }) => ({ status: 201, body: { id: params['org'] } }));
+
+    const createUser = s.post<{ response: { id: string }; pathParams: { org: string }; body: { name: string } }>(
+      (p) => `/users/${p.org}`,
+    );
+
+    const c = s.consumer();
+    const submission = c.run(() =>
+      createQuerySubmission({
+        queryCreator: createUser,
+        args: (value: { name: string }) => ({ pathParams: { org: 'acme' }, body: value }),
+      }),
+    );
+    const testForm = c.run(() => form(signal({ name: 'ada' }), { submission: { action: submission.action } }));
+
+    const submitted = submit(testForm);
+    await s.settle();
+    await submitted;
+
+    expect(submission.query.response()).toEqual({ id: 'acme' });
+
+    c.destroy();
+  });
+
+  it('creates a validateWithQuery validator over a function-route creator without raising the guard', async () => {
+    const s = scenario();
+    s.api.on('POST', '/validate/:org', () => ({ status: 204 }));
+
+    const validate = s.post<{ response: null; pathParams: { org: string }; body: { name: string } }>(
+      (p) => `/validate/${p.org}`,
+    );
+
+    const c = s.consumer();
+    const testForm = c.run(() =>
+      form(
+        signal({ name: 'ada' }),
+        schema<{ name: string }>((p) => {
+          validateWithQuery(p, {
+            queryCreator: validate,
+            args: (ctx) => ({ pathParams: { org: 'acme' }, body: ctx.value() }),
+          });
+        }),
+      ),
+    );
+
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/validate/acme')).toBe(1);
+    expect(testForm().errors()).toEqual([]);
+
+    c.destroy();
   });
 });
 
