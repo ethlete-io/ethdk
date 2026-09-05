@@ -686,6 +686,45 @@ describe('validateWithQuery', () => {
     expect(s.api.requestCount('POST', '/validate')).toBe(1);
   });
 
+  it('unbinds the internal query and tears the validation resource down with the form injector', async () => {
+    const s = scenario();
+    s.api.on('POST', '/validate', () => ({ status: 204 }));
+
+    const validateEmail = s.post<{ body: { email: string }; response: void }>('/validate');
+    const c = s.consumer();
+    const testForm = c.run(() => {
+      const emailSchema = schema<{ email: string }>((p) => {
+        validateWithQuery(p, {
+          queryCreator: validateEmail,
+          args: (ctx) => ({ body: { email: ctx.value().email } }),
+          debounce: 0,
+        });
+      });
+
+      return form(signal({ email: 'ada@example.com' }), emailSchema);
+    });
+
+    await s.settle();
+
+    expect(s.liveQueries()).toHaveLength(1);
+    expect(s.client.repository.subtle.cacheEntries()).toHaveLength(1);
+
+    c.destroy();
+    await s.settle();
+
+    expect(s.liveQueries()).toEqual([]);
+    expect(s.client.repository.subtle.cacheEntries()).toEqual([]);
+    expect(vi.getTimerCount()).toBe(0);
+
+    testForm.email().value.set('grace@example.com');
+    await s.settle(1000);
+
+    // Signal forms never destroys the field node's injector, so a resource bound to it would outlive
+    // the form and reach the destroyed query on this edit - which warns instead of requesting.
+    expect(s.warnings.map((entry) => String(entry.warning))).toEqual([]);
+    expect(s.api.requestCount('POST', '/validate')).toBe(1);
+  });
+
   it('degrades a network / other error to a non-swallowed form-level error', async () => {
     const s = scenario();
     s.api.on('POST', '/validate', () => ({ status: 500, body: { message: 'Service unavailable.' } }));
