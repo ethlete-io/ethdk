@@ -106,6 +106,42 @@ export type ScenarioAuthConfig<
   expiresInPropertyName?: string;
   onRefreshFailure?: TokenRefreshQueryConfig<ScenarioAuthTokenArgs>['onRefreshFailure'];
   bearerDecryptFn?: (token: string) => TBearerData;
+  /**
+   * The query client the login and refresh queries run on, and the one the provider reads its
+   * repository from.
+   * @default the scenario's own client
+   */
+  clientRef?: QueryClientRef;
+  /**
+   * The provider's name. Two tabs of the same app share one, so that anything the provider namespaces
+   * with it - its default sync channel, its storage keys - lines up between them.
+   * @default a name of its own, `scenario-auth-<n>`
+   */
+  name?: string;
+  /**
+   * The injector the provider is created below, as a tab's own client injector is. The provider gets an
+   * instance of its own there rather than the root one every other `s.auth()` shares, which is what
+   * makes a second authenticated tab expressible. The caller owns the returned
+   * {@link ScenarioAuthResult.injector} and destroys it.
+   * @default the scenario's root injector
+   */
+  injector?: EnvironmentInjector;
+};
+
+/** What `auth()` adds to the provider it returns. */
+export type ScenarioAuthResult = {
+  /**
+   * The provider's own root-provider definition - what `createSecureGetQuery` and friends need as
+   * their second argument. `auth()` already resolves and returns the injected instance, which is
+   * all a secure creator template cannot be built from.
+   */
+  ref: AnyCreateBearerAuthProviderResult;
+  /**
+   * The injector this provider instance lives in: the scenario's root injector, or the layer `auth()`
+   * created below the `injector` it was given. Create the tab's consumers below it -
+   * `s.consumer([], auth.injector)` - since one created anywhere else resolves the root instance instead.
+   */
+  injector: EnvironmentInjector;
 };
 
 export type Scenario = {
@@ -123,9 +159,10 @@ export type Scenario = {
   run: <T>(fn: () => T) => T;
   /**
    * Creates a fake component with its own child injector and `DestroyRef`; `providers` are the ones
-   * that component brings along, visible to everything created inside its `run`.
+   * that component brings along, visible to everything created inside its `run`. `parent` puts the
+   * component below another tab's injector instead of the scenario's root one.
    */
-  consumer: (providers?: ScenarioProviders) => ScenarioConsumer;
+  consumer: (providers?: ScenarioProviders, parent?: EnvironmentInjector) => ScenarioConsumer;
   tick: (ms?: number) => void;
   settle: (ms?: number) => Promise<void>;
   flush: (maxMs?: number) => void;
@@ -146,14 +183,7 @@ export type Scenario = {
   allow: (name: InvariantName, reason: string) => void;
   auth: <TFeatures extends readonly AnyAuthFeatureBuilder[] = [], TBearerData = unknown>(
     config?: ScenarioAuthConfig<TFeatures, TBearerData>,
-  ) => BearerAuthProvider<ScenarioAuthBuilders, TFeatures, TBearerData> & {
-    /**
-     * The provider's own root-provider definition - what `createSecureGetQuery` and friends need as
-     * their second argument. `auth()` already resolves and returns the injected instance, which is
-     * all a secure creator template cannot be built from.
-     */
-    ref: AnyCreateBearerAuthProviderResult;
-  };
+  ) => BearerAuthProvider<ScenarioAuthBuilders, TFeatures, TBearerData> & ScenarioAuthResult;
   destroy: () => void;
 };
 
@@ -319,8 +349,8 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
       throw new Error(`Scenario: flush() did not settle within ${maxMs}ms`);
     };
 
-    const consumer = (providers: ScenarioProviders = []): ScenarioConsumer => {
-      const childInjector = createEnvironmentInjector(providers, injector);
+    const consumer = (providers: ScenarioProviders = [], parent: EnvironmentInjector = injector): ScenarioConsumer => {
+      const childInjector = createEnvironmentInjector(providers, parent);
 
       consumers.add(childInjector);
 
@@ -403,6 +433,9 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
         expiresInPropertyName,
         onRefreshFailure,
         bearerDecryptFn,
+        clientRef: authClientRef = clientRef,
+        name: providerName = `scenario-auth-${authProviderCounter++}`,
+        injector: parentInjector,
       } = authConfig;
 
       api.on('POST', loginPath, () => ({
@@ -419,16 +452,16 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
         },
       }));
 
-      const login = createPostQuery(clientRef)<ScenarioAuthTokenArgs>(loginPath);
-      const refresh = createPostQuery(clientRef)<ScenarioAuthTokenArgs>(refreshPath);
+      const login = createPostQuery(authClientRef)<ScenarioAuthTokenArgs>(loginPath);
+      const refresh = createPostQuery(authClientRef)<ScenarioAuthTokenArgs>(refreshPath);
       const extractTokens = (response: ScenarioAuthTokenArgs['response']) => ({
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
       });
 
       const authProviderRef = createBearerAuthProvider({
-        name: `scenario-auth-${authProviderCounter++}`,
-        queryClientRef: clientRef,
+        name: providerName,
+        queryClientRef: authClientRef,
         queries: [
           withAuthenticationQuery('login', { queryCreator: login, extractTokens }),
           withRefreshQuery('refresh', {
@@ -446,11 +479,17 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
         bearerDecryptFn,
       });
 
-      const provider = run(() => authProviderRef.inject());
+      const providerInjector = parentInjector
+        ? createEnvironmentInjector(authProviderRef.provide(), parentInjector)
+        : null;
+
+      const provider = providerInjector
+        ? providerInjector.runInContext(() => authProviderRef.inject())
+        : run(() => authProviderRef.inject());
 
       if (!provider) throw new Error('Scenario: failed to create auth provider');
 
-      return Object.assign(provider, { ref: authProviderRef });
+      return Object.assign(provider, { ref: authProviderRef, injector: providerInjector ?? injector });
     };
 
     const destroy = () => {

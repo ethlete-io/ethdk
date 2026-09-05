@@ -1,4 +1,4 @@
-import { inject, InjectionToken, isDevMode } from '@angular/core';
+import { createEnvironmentInjector, EnvironmentInjector, inject, InjectionToken, isDevMode } from '@angular/core';
 import { createQueryBatch, withArgs } from '../../index';
 import { describe, expect, it } from 'vitest';
 import { createScenario, inProductionMode, useScenario } from './scenario';
@@ -42,6 +42,43 @@ describe('scenario controls', () => {
     expect(s.injector.get(token, null)).toBeNull();
 
     c.destroy();
+  });
+
+  it('creates a consumer below the parent injector it was given', () => {
+    const s = scenario();
+    const token = new InjectionToken<string>('scenario-parent-token');
+    const parent = createEnvironmentInjector(
+      [{ provide: token, useValue: 'from the tab' }],
+      s.run(() => inject(EnvironmentInjector)),
+    );
+
+    const c = s.consumer([], parent);
+
+    expect(c.run(() => inject(token))).toBe('from the tab');
+    expect(s.consumer().run(() => inject(token, { optional: true }))).toBeNull();
+
+    c.destroy();
+    parent.destroy();
+  });
+
+  it('gives an auth provider created below a tab injector an instance that only that tab resolves', () => {
+    const s = scenario();
+    const tabInjector = createEnvironmentInjector(
+      [],
+      s.run(() => inject(EnvironmentInjector)),
+    );
+
+    const auth = s.auth({ injector: tabInjector });
+    const inTab = s.consumer([], auth.injector);
+    const inRoot = s.consumer();
+
+    expect(inTab.run(() => auth.ref.inject())).toBe(auth);
+    expect(inRoot.run(() => auth.ref.inject())).not.toBe(auth);
+
+    inTab.destroy();
+    inRoot.destroy();
+    auth.injector.destroy();
+    tabInjector.destroy();
   });
 
   it('captures a warning without adding to the errors', () => {

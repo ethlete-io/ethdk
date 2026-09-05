@@ -61,7 +61,10 @@ it('dedupes identical requests', () => {
   s.settle(ms)` also awaits promises (persistence, a `router.navigate` from a query form).
 - `s.consumer()` is a fake component: its own injector and `DestroyRef`. Create queries inside
   `consumer.run(...)`; `consumer.destroy()` ends its lifetime.
-- `s.auth({...})` builds a bearer auth provider with login and refresh routes on the fake API.
+- `s.auth({...})` builds a bearer auth provider with login and refresh routes on the fake API. A second
+  authenticated tab passes `clientRef` (that tab's client), `injector` (that tab's client injector) and a
+  `name` both tabs share, then hangs its consumers off `s.consumer([], auth.injector)` - see
+  `auth-second-tab.scenario.spec.ts`.
 - Expected errors: `s.expectError(/unauthorized/)` consumes one entry so the `errors`
   invariant passes. Never silence `console.error` yourself.
 - `s.allow('timers', 'reason')` opts out of one invariant. Every opt-out is a smell: name the
