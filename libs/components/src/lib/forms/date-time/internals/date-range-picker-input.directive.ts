@@ -11,6 +11,7 @@ import {
   input,
   model,
   signal,
+  untracked,
 } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { FORM_FIELD, FormValueControl, ValidationError } from '@angular/forms/signals';
@@ -457,18 +458,21 @@ export abstract class DateRangePickerInputDirective
     }
   }
 
-  /** @internal */
+  /**
+   * @internal Both reads are untracked: a field registers from an effect, so a tracked read of the
+   * signal the same call writes re-runs that effect forever.
+   */
   public registerField({ side, field, duplicateFieldError }: RegisterFieldOptions) {
-    if (ngDevMode && this.sides[side].field()) {
+    if (ngDevMode && untracked(() => this.sides[side].field())) {
       throw duplicateFieldError;
     }
 
     this.sides[side].field.set(field);
   }
 
-  /** @internal */
+  /** @internal See {@link registerField} for why the read is untracked. */
   public unregisterField(side: DateRangeSide, field: DatePickerInputFieldBase) {
-    if (this.sides[side].field() === field) {
+    if (untracked(() => this.sides[side].field()) === field) {
       this.sides[side].field.set(null);
     }
   }
