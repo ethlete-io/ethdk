@@ -25,7 +25,9 @@ const eventRow = (client: string, id: number): EventLogItem => ({
 });
 
 const clientOptions = (fixture: ComponentFixture<QueryDevtoolsSettingsComponent>) => {
-  const select = fixture.nativeElement.querySelector<HTMLSelectElement>('select[aria-label="Event log client"]');
+  const select = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+    'select[aria-label="Event log client"]',
+  );
 
   return Array.from(select?.options ?? []).map((option) => option.value);
 };
@@ -65,7 +67,9 @@ describe('QueryDevtoolsSettingsComponent', () => {
     const fixture = TestBed.createComponent(QueryDevtoolsSettingsComponent);
     await fixture.whenStable();
 
-    const select = fixture.nativeElement.querySelector<HTMLSelectElement>('select[aria-label="Event log client"]');
+    const select = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+      'select[aria-label="Event log client"]',
+    );
 
     expect(select?.value).toBe('https://cms.example.com');
   });

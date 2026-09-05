@@ -25,7 +25,7 @@ describe('QueryDevtoolsAboutComponent', () => {
     const fixture = TestBed.createComponent(QueryDevtoolsAboutComponent);
     await fixture.whenStable();
 
-    const button = fixture.nativeElement.querySelector<HTMLButtonElement>('button');
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button');
 
     button?.click();
     await fixture.whenStable();

@@ -58,7 +58,7 @@ const render = async () => {
 };
 
 const noAuthChips = (fixture: { nativeElement: HTMLElement }) =>
-  Array.from(fixture.nativeElement.querySelectorAll('.et-query-devtools-chip')).filter(
+  Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.et-query-devtools-chip')).filter(
     (chip) => chip.textContent?.trim() === 'no auth',
   );
 
@@ -88,9 +88,9 @@ describe('QueryDevtoolsMocksTabComponent', () => {
     saveQueryDevtoolsMock(mock());
 
     const fixture = await render();
-    const button = Array.from(fixture.nativeElement.querySelectorAll<HTMLButtonElement>('button')).find(
-      (candidate) => candidate.textContent?.includes('TS') === true,
-    );
+    const button = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
+    ).find((candidate) => candidate.textContent?.includes('TS') === true);
 
     button?.click();
     await fixture.whenStable();
