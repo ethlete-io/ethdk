@@ -212,6 +212,42 @@ describe('multi-tab sync scenario', () => {
     tabB.destroy();
   });
 
+  it('does not broadcast a cached POST response to the other tab', async () => {
+    const s = scenario();
+    let issued = 0;
+    s.api.on('POST', '/auth/login', () => ({ body: { accessToken: `token-${++issued}` } }));
+
+    type Login = { body: { user: string }; response: { accessToken: string } };
+    const cachedPost = { subtle: { useQueryRepositoryCache: true } };
+
+    const login = s.post<Login>('/auth/login', cachedPost);
+    const tabB = createTab(s);
+    const loginB = tabB.post<Login>('/auth/login', cachedPost);
+
+    const a = s.consumer();
+    const b = tabB.consumer();
+    const queryA = a.run(() => login());
+    const queryB = b.run(() => loginB());
+
+    queryB.execute({ args: { body: { user: 'alice' } } });
+    await s.settle();
+    await flushMultiTabSync();
+
+    expect(queryB.response()).toEqual({ accessToken: 'token-1' });
+
+    queryA.execute({ args: { body: { user: 'alice' } } });
+    await s.settle();
+    await flushMultiTabSync();
+
+    expect(queryA.response()).toEqual({ accessToken: 'token-2' });
+    expect(queryB.response()).toEqual({ accessToken: 'token-1' });
+    expect(bus.posted).toEqual([]);
+
+    a.destroy();
+    b.destroy();
+    tabB.destroy();
+  });
+
   it('refreshes the other tab after a mutation, but leaves the mutating tab alone', async () => {
     const s = scenario();
     let version = 1;

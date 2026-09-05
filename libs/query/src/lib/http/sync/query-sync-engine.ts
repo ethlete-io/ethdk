@@ -58,7 +58,10 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
     if (event.type !== 'request-success' || !event.isMultiTabSyncEnabled) return;
 
     if (event.isCached) {
-      if (!syncResponses) return;
+      // `subtle.useQueryRepositoryCache` lets a mutation (the auth queries) reach the cache; only a
+      // refreshable read (a GET, or a GraphQL query sent via POST) may leave this tab. Returning
+      // instead of falling through also keeps a token refresh from refreshing every other tab.
+      if (!event.isRefreshable || !syncResponses) return;
 
       transport.post({
         type: 'response',
