@@ -14,9 +14,11 @@ import {
   loginQueryDevtoolsAuthAccount,
   provideQueryDevtools,
   queryDevtoolsAuthAccountsFor,
+  queryDevtoolsAuthActive,
   queryDevtoolsAuthSessionsFor,
   setQueryDevtoolsAuthCredentials,
   setQueryDevtoolsAuthTabLocal,
+  switchQueryDevtoolsAuthSession,
   withAuthenticationQuery,
   withBearerAuthMultiTabSync,
   withPersistentAuth,
@@ -625,5 +627,52 @@ describe('devtools session vault', () => {
     expect(document.cookie).toBe(cookieBefore);
 
     second.destroy();
+  });
+
+  it('should forget a devtools login that failed instead of claiming the next refresh', async () => {
+    const s = scenario();
+
+    serve(s, 20000);
+
+    const tab = boot(s, { name: ACCOUNT_PROVIDER_NAME, accessTokenExpiresInMs: 20000, refreshStrategy: 0.5 });
+    await login(s, tab, 'a@test');
+
+    const [own] = queryDevtoolsAuthSessionsFor(ACCOUNT_PROVIDER_NAME);
+    const [account] = queryDevtoolsAuthAccountsFor(ACCOUNT_PROVIDER_NAME);
+
+    if (!own || !account) throw new Error('auth devtools scenario: the vault holds no session or no account');
+
+    setQueryDevtoolsAuthCredentials({ accountId: account.id, values: { email: 'b@test', password: 'secret' } });
+    loginQueryDevtoolsAuthAccount(account.id);
+    await s.settle();
+
+    const tokenOfAccount = tab.auth.accessToken();
+
+    switchQueryDevtoolsAuthSession({ sessionId: own.id, reload: false });
+    await s.settle();
+
+    expect(tab.auth.accessToken()).toBe(own.accessToken);
+
+    // The password was typed in wrong, which is the common way a login ends.
+    s.api.once('POST', '/auth/login', () => ({ status: 401, body: { message: 'wrong password' } }));
+    loginQueryDevtoolsAuthAccount(account.id);
+    await s.settle();
+    s.expectError(is401);
+
+    const refreshesBefore = s.api.requestCount('POST', '/auth/refresh');
+
+    s.tick(11000);
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(refreshesBefore + 1);
+
+    const sessions = queryDevtoolsAuthSessionsFor(ACCOUNT_PROVIDER_NAME);
+
+    expect(sessions).toHaveLength(2);
+    expect(sessions.find((entry) => entry.account === account.id)?.accessToken).toBe(tokenOfAccount);
+    expect(sessions.find((entry) => entry.id === own.id)?.accessToken).toBe(tab.auth.accessToken());
+    expect(queryDevtoolsAuthActive()[ACCOUNT_PROVIDER_NAME]).toBe(own.id);
+
+    tab.destroy();
   });
 });

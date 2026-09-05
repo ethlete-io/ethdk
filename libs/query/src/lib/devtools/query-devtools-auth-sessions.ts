@@ -1,4 +1,4 @@
-import { computed, effect, Signal, signal, untracked } from '@angular/core';
+import { computed, effect, EffectRef, Injector, Signal, signal, untracked } from '@angular/core';
 import { decryptBearer } from '../http/internal/request-route';
 import {
   queryDevtoolsApiEnvIds,
@@ -177,14 +177,32 @@ const declared = /* @__PURE__ */ signal<QueryDevtoolsAuthAccount[]>([]);
 const providers = /* @__PURE__ */ signal<string[]>([]);
 const tabLocal = /* @__PURE__ */ signal<Record<string, boolean>>({});
 
-const live = /* @__PURE__ */ new Map<string, LiveProvider>();
+const live = /* @__PURE__ */ new Set<LiveProvider>();
+
+/**
+ * The provider a name stands for, which is the newest registration still live under it. Two
+ * applications on one page, or a provider rebuilt before the old one is torn down, both put two
+ * registrations under one name, and only the one that is still live may be acted on.
+ */
+const liveProvider = (name: string): LiveProvider | undefined => {
+  let match: LiveProvider | undefined;
+
+  for (const entry of live) if (entry.name === name) match = entry;
+
+  return match;
+};
+
+/** `previous` is the session that was in force before, which the logout on the way out would otherwise take out of reach. */
+type PendingLogin = { id: string; label: string; previous: string | null };
 
 /**
  * The account each provider's next captured token pair was logged in as, set by
- * `loginQueryDevtoolsAuthAccount` and consumed by the capture it causes. `previous` is the session that
- * was in force before, which the logout on the way out would otherwise take out of reach.
+ * `loginQueryDevtoolsAuthAccount` and consumed by the capture it causes.
  */
-const pendingLogins = /* @__PURE__ */ new Map<string, { id: string; label: string; previous: string | null }>();
+const pendingLogins = /* @__PURE__ */ new Map<string, PendingLogin>();
+
+/** What the vault reads of the snapshot an auth query's `execute` hands back. */
+type LoginExecution = { isAlive: Signal<boolean>; error: Signal<unknown> };
 
 let idCounter = 0;
 
@@ -366,7 +384,7 @@ export const readQueryDevtoolsAuthSeedFor = (providerName: string): QueryDevtool
 export const trackQueryDevtoolsAuthProvider = (registration: QueryDevtoolsAuthProviderRegistration) => {
   const { name, handle, injector, isTabLocalSession } = registration;
 
-  live.set(name, registration);
+  live.add(registration);
   providers.update((current) => (current.includes(name) ? current : [...current, name]));
   isTabLocalSession.set(tabLocal()[name] === true);
 
@@ -389,8 +407,10 @@ export const trackQueryDevtoolsAuthProvider = (registration: QueryDevtoolsAuthPr
 
   return () => {
     stop.destroy();
-    live.delete(name);
-    providers.update((current) => current.filter((entry) => entry !== name));
+    live.delete(registration);
+
+    if (!liveProvider(name)) providers.update((current) => current.filter((entry) => entry !== name));
+
     syncPill();
   };
 };
@@ -500,10 +520,9 @@ const remember = (options: { provider: string; accessToken: string; refreshToken
   persist();
   syncPill();
 
-  // Another session than this tab was on. A rotation of the same one is not a change of user, and a
-  // login that never landed leaves its pending entry behind for the next rotation to find.
+  // Another session than this tab was on. A rotation of the same one is not a change of user.
   if (account && session.id !== account.previous) {
-    const entry = live.get(provider);
+    const entry = liveProvider(provider);
 
     if (entry) clearClientData(entry);
   }
@@ -753,7 +772,7 @@ export const switchQueryDevtoolsAuthSession = (options: { sessionId: string; rel
 
   if (!session) return;
 
-  const entry = live.get(session.provider);
+  const entry = liveProvider(session.provider);
 
   if (!entry || session.scope !== scopeOf()) return;
 
@@ -780,6 +799,37 @@ export const switchQueryDevtoolsAuthSession = (options: { sessionId: string; rel
 };
 
 /**
+ * A pending login is otherwise let go of only when a token pair arrives, so a login that failed - a
+ * password typed in wrong - would sit there until the next rotation of whatever session this tab holds
+ * was taken for it, and written into the account's slot.
+ */
+const forgetPendingLoginOnFailure = (options: {
+  provider: string;
+  pending: PendingLogin;
+  execution: LoginExecution;
+  injector: Injector;
+}) => {
+  const { provider, pending, execution, injector } = options;
+
+  let watch: EffectRef | null = null;
+
+  watch = effect(
+    () => {
+      if (execution.isAlive()) return;
+
+      const failed = !!execution.error();
+
+      untracked(() => {
+        if (failed && pendingLogins.get(provider) === pending) pendingLogins.delete(provider);
+
+        watch?.destroy();
+      });
+    },
+    { injector },
+  );
+};
+
+/**
  * Logs in as one account, through the provider's own login query - so the tokens are issued the way the
  * application issues them, and the vault picks the session up like any other login.
  */
@@ -790,23 +840,26 @@ export const loginQueryDevtoolsAuthAccount = (accountId: string) => {
 
   if (!account?.ready) return;
 
-  const entry = live.get(account.provider);
+  const entry = liveProvider(account.provider);
   const query = entry?.handle.queries?.[account.loginQuery];
 
   if (!entry || !query) return;
 
   const previous = active()[account.provider] ?? null;
+  const pending: PendingLogin = { id: account.id, label: account.label, previous };
 
   setActive(account.provider, null);
-  pendingLogins.set(account.provider, { id: account.id, label: account.label, previous });
+  pendingLogins.set(account.provider, pending);
   persist();
 
-  query.execute(account.buildArgs?.(account.values) ?? { body: account.values });
+  const execution: LoginExecution = query.execute(account.buildArgs?.(account.values) ?? { body: account.values });
+
+  forgetPendingLoginOnFailure({ provider: account.provider, pending, execution, injector: entry.injector });
 };
 
 /** Ends the live session without forgetting it, so it can be switched back to. */
 export const logoutQueryDevtoolsAuthSession = (provider: string) => {
-  live.get(provider)?.handle.logout();
+  liveProvider(provider)?.handle.logout();
 };
 
 /**
@@ -827,7 +880,7 @@ export const setQueryDevtoolsAuthTabLocal = (options: { provider: string; tabLoc
     return;
   }
 
-  const entry = live.get(provider);
+  const entry = liveProvider(provider);
   const accessToken = entry?.handle.accessToken();
   const refreshToken = entry?.handle.refreshToken();
 
@@ -865,7 +918,7 @@ const syncPill = () => {
 
       return {
         name: provider,
-        current: current?.label ?? (live.get(provider)?.handle.accessToken() ? 'unnamed session' : 'anonymous'),
+        current: current?.label ?? (liveProvider(provider)?.handle.accessToken() ? 'unnamed session' : 'anonymous'),
         tabLocal: tabLocal()[provider] === true,
         options: [
           ...sessions.map((session) => ({

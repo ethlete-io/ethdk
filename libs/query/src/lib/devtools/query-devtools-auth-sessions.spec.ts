@@ -11,6 +11,7 @@ import {
   loginQueryDevtoolsAuthAccount,
   queryDevtoolsAuthAccountsFor,
   queryDevtoolsAuthOtherScopeCount,
+  queryDevtoolsAuthProviders,
   queryDevtoolsAuthSessionsFor,
   queryDevtoolsAuthTabLocal,
   readQueryDevtoolsAuthSeedFor,
@@ -78,7 +79,16 @@ const createProvider = (name: string): Fake => {
       sessionEndCause.set('user');
     },
     sessionEndCause,
-    queries: { login: { execute: (args: unknown) => logins.push(args) } },
+    queries: {
+      login: {
+        execute: (args: unknown) => {
+          logins.push(args);
+
+          // The vault reads the snapshot `execute` hands back, to let go of a login that failed.
+          return { isAlive: signal(false), error: signal(null) };
+        },
+      },
+    },
   };
 
   const client = {
@@ -277,6 +287,27 @@ describe('query devtools auth sessions', () => {
     expect(provider.refreshToken()).toBe('refresh-1');
     expect(provider.evictions).toBe(2);
     expect(provider.unbinds).toBe(1);
+  });
+
+  it('should keep the live provider when a same-named one is torn down', () => {
+    const first = createProvider('hub-auth');
+    const second = createProvider('hub-auth');
+
+    first.stop();
+
+    second.handle.setTokens(ADMIN, 'refresh-1');
+    flush();
+    second.handle.logout();
+    flush();
+
+    const session = queryDevtoolsAuthSessionsFor('hub-auth')[0]!;
+
+    switchQueryDevtoolsAuthSession({ sessionId: session.id, reload: false });
+    flush();
+
+    expect(queryDevtoolsAuthProviders()).toContain('hub-auth');
+    expect(second.accessToken()).toBe(ADMIN);
+    expect(second.unbinds).toBe(1);
   });
 
   it('should offer a session only on the backend that issued it', () => {
