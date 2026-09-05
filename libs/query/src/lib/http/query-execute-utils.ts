@@ -42,8 +42,9 @@ export type RunQueryExecuteOptions = {
   triggeredBy?: string;
 
   /**
-   * Overrides the creator's (and the client's) `keepUnusedFor` for this execution. Only read while the
-   * cache entry is being created: an entry that already exists keeps the retention it was created with.
+   * Overrides the creator's (and the client's) `keepUnusedFor` for this execution. A cache entry shared
+   * by several queries keeps the shortest retention of the queries currently bound to it, so a query
+   * that asks for a shorter one only shortens the entry until it releases the entry again.
    */
   keepUnusedFor?: number;
 };

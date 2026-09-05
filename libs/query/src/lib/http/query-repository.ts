@@ -346,13 +346,20 @@ export type DestroyCleanupCallback = () => void;
 
 type ConsumerBinding = {
   cleanup: DestroyCleanupCallback;
+  isSecure: boolean;
+  isRefreshable: boolean;
+  isMultiTabSyncEnabled: boolean;
   isPersistEnabled: boolean;
+  keepUnusedFor: number;
 };
 
 /**
  * Keeps track of all places where the request gets used. Once the last consumer is gone the entry is
  * either destroyed right away or kept for `keepUnusedFor` milliseconds so a consumer that comes back
  * (e.g. via browser back navigation) finds its data already there.
+ *
+ * The five policy fields below are the merge of the bound consumers, recomputed on every bind and
+ * unbind by {@link mergeConsumerPolicies}.
  */
 type DestroyListenerMapItem = {
   consumers: Map<DestroyRef, ConsumerBinding>;
@@ -369,11 +376,7 @@ type DestroyListenerMapItem = {
   /** @see BaseQueryCreatorOptions.multiTabSync */
   isMultiTabSyncEnabled: boolean;
 
-  /**
-   * OR over the bound consumers, recomputed on every bind and unbind - unlike `isSecure`, it turns
-   * off again once the consumer that opted in is gone.
-   * @see QueryRepositoryEvent.isPersistEnabled
-   */
+  /** @see QueryRepositoryEvent.isPersistEnabled */
   isPersistEnabled: boolean;
 
   /** How long this entry survives without consumers. `0` destroys it immediately. */
@@ -624,6 +627,23 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     enforceUnusedEntryLimit();
   };
 
+  /**
+   * Merges the policies of the currently bound consumers onto the entry, the strictest one winning.
+   * An entry that just lost its last consumer keeps what it had: dropping `isSecure` there would hide
+   * a retained response body of a logged in session from the logout that has to clear it.
+   */
+  const mergeConsumerPolicies = (cacheEntry: DestroyListenerMapItem) => {
+    const bindings = Array.from(cacheEntry.consumers.values());
+
+    if (!bindings.length) return;
+
+    cacheEntry.isSecure = bindings.some((binding) => binding.isSecure);
+    cacheEntry.isRefreshable = bindings.some((binding) => binding.isRefreshable);
+    cacheEntry.isPersistEnabled = bindings.some((binding) => binding.isPersistEnabled);
+    cacheEntry.isMultiTabSyncEnabled = bindings.every((binding) => binding.isMultiTabSyncEnabled);
+    cacheEntry.keepUnusedFor = Math.min(...bindings.map((binding) => binding.keepUnusedFor));
+  };
+
   const unbind = (key: QueryKey | null, consumerDestroyRef: DestroyRef) => {
     if (key === null) return false;
 
@@ -638,7 +658,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     consumerBinding.cleanup();
     cacheEntry.consumers.delete(consumerDestroyRef);
 
-    cacheEntry.isPersistEnabled = Array.from(cacheEntry.consumers.values()).some((binding) => binding.isPersistEnabled);
+    mergeConsumerPolicies(cacheEntry);
 
     if (cacheEntry.consumers.size === 0) {
       // Only data is worth keeping around: an entry that never produced a response has nothing to
@@ -740,32 +760,37 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     const cacheEntry = cache.get(key);
 
     if (cacheEntry && isCached) {
-      cacheEntry.isSecure ||= isSecure;
-      cacheEntry.isRefreshable ||= isRefreshable;
-      cacheEntry.isMultiTabSyncEnabled &&= isMultiTabSyncEnabled;
-      cacheEntry.keepUnusedFor = Math.min(cacheEntry.keepUnusedFor, keepUnusedFor);
-
       const existingBinding = cacheEntry.consumers.get(consumerDestroyRef);
 
       if (existingBinding) {
+        existingBinding.isSecure = isSecure;
+        existingBinding.isRefreshable = isRefreshable;
+        existingBinding.isMultiTabSyncEnabled = isMultiTabSyncEnabled;
         existingBinding.isPersistEnabled = isPersistEnabled;
+        existingBinding.keepUnusedFor = keepUnusedFor;
       } else {
         cacheEntry.consumers.set(consumerDestroyRef, {
           cleanup: consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef)),
+          isSecure,
+          isRefreshable,
+          isMultiTabSyncEnabled,
           isPersistEnabled,
+          keepUnusedFor,
         });
       }
 
-      cacheEntry.isPersistEnabled = Array.from(cacheEntry.consumers.values()).some(
-        (binding) => binding.isPersistEnabled,
-      );
+      mergeConsumerPolicies(cacheEntry);
     } else {
       const consumers: Map<DestroyRef, ConsumerBinding> = new Map([
         [
           consumerDestroyRef,
           {
             cleanup: consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef)),
+            isSecure,
+            isRefreshable,
+            isMultiTabSyncEnabled,
             isPersistEnabled,
+            keepUnusedFor,
           },
         ],
       ]);

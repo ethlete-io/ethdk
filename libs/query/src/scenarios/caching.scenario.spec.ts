@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { DestroyRef, PLATFORM_ID, signal } from '@angular/core';
-import { MAX_UNUSED_ENTRIES, withArgs, withResponseUpdate } from '../index';
+import { createSecureGetQuery, MAX_UNUSED_ENTRIES, withArgs, withResponseUpdate } from '../index';
 import { describe, expect, it, vi } from 'vitest';
 import { sequence } from './harness/fake-api';
 import { useScenario } from './harness';
@@ -211,6 +211,75 @@ describe('caching scenario', () => {
 
       s.tick(1);
       expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
+    });
+
+    it('restores the longer keepUnusedFor when the short-retention consumer unbinds', () => {
+      const s = scenario();
+      s.api.on('GET', '/retention-merge', () => ({ body: { n: 1 } }));
+
+      const getEntry = s.get<{ response: { n: number } }>('/retention-merge');
+
+      const a = s.consumer();
+      a.run(() => getEntry());
+      s.tick();
+
+      const b = s.consumer();
+      const polling = b.run(() => getEntry());
+      polling.execute({ options: { keepUnusedFor: 0 } });
+      s.tick();
+
+      b.destroy();
+      a.destroy();
+
+      // The consumer that asked for no retention is gone, so the entry falls back to the 5_000ms
+      // window the remaining consumer created it with.
+      expect(s.client.repository.subtle.cacheEntries()).toHaveLength(1);
+
+      s.tick(4_999);
+      expect(s.client.repository.subtle.cacheEntries()).toHaveLength(1);
+
+      s.tick(2);
+      expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
+    });
+  });
+
+  describe('merged policies across consumers', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('stops treating a shared entry as secure once the secure consumer unbinds', async () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.on('GET', '/shared-entry', () => ({ body: { id: 'me' } }));
+
+      const getShared = s.get<{ response: { id: string } }>('/shared-entry');
+      const getSharedSecure = createSecureGetQuery(
+        s.clientRef,
+        auth.ref,
+      )<{ response: { id: string } }>('/shared-entry');
+
+      const publicConsumer = s.consumer();
+      publicConsumer.run(() => auth.queries.login.execute({ body: {} }));
+      await s.settle();
+
+      const publicQuery = publicConsumer.run(() => getShared());
+      const secureConsumer = s.consumer();
+      const secureQuery = secureConsumer.run(() => getSharedSecure());
+      await s.settle();
+
+      const key = publicQuery.id();
+      expect(key).toBe(secureQuery.id());
+      expect(publicQuery.response()).toEqual({ id: 'me' });
+
+      secureConsumer.destroy();
+
+      s.run(() => auth.logout());
+      await s.settle();
+
+      // The entry belongs to the public consumer alone again, so the logout must leave it alone.
+      expect(s.client.repository.subtle.cacheEntries().map((entry) => entry.key)).toContain(key);
+      expect(publicQuery.response()).toEqual({ id: 'me' });
+
+      publicConsumer.destroy();
     });
   });
 
