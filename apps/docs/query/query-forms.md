@@ -234,6 +234,13 @@ the signals-first form documented above. The concepts map one to one:
 | Cloning the `FormGroup` for a filter overlay draft                                                                                                                      | [`branch()`](#filter-overlays)                                                                           |
 
 `observe()` / `unobserve()`, the per-field options and the URL serialization rules
-are the same on both. For the filter panel this used to sit behind, see
+are the same on both, with two exceptions:
+
+- An empty string in a field whose default is `null`: `defineQueryForm` commits it as
+  `null` and writes no param, while the legacy class commits `''` and writes `?field=`.
+- `isResetBy`: the legacy class also resets a field the _same_ commit set, while
+  `defineQueryForm` never resets a field that commit changed itself.
+
+For the filter panel this used to sit behind, see
 [filter overlay](/components/filter-overlay) in `@ethlete/components`.
 :::

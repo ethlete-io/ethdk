@@ -168,3 +168,81 @@ describe('legacy QueryForm without observe()', () => {
     c.destroy();
   });
 });
+
+describe('legacy QueryForm url write', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('does not re-parse its own url write, so a committed string stays a string', async () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() => createForm().observe());
+
+    qf.setValue({ page: 1, search: '2024' });
+    await s.settle();
+    await s.settle();
+
+    expect(typeof qf.value.search).toBe('string');
+    expect(qf.value.search).toBe('2024');
+
+    c.destroy();
+  });
+
+  it('leaves a param it mirrors with appendToUrl:false alone', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await router.navigate([], { queryParams: { page: '7' } });
+    s.tick();
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({
+        page: new QueryField({ control: new FormControl<number | null>(1), defaultValue: 1, appendToUrl: false }),
+        search: new QueryField({ control: new FormControl<string | null>(null) }),
+      }).observe(),
+    );
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ page: '7' });
+
+    qf.patchValue({ search: 'shoes' });
+    await s.settle();
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ page: '7', search: 'shoes' });
+
+    qf.unobserve();
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ page: '7' });
+
+    c.destroy();
+  });
+
+  it('keeps a skipped field even when it is isResetBy one of the reset fields', async () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({
+        region: new QueryField({ control: new FormControl<string | null>(null) }),
+        tier: new QueryField({ control: new FormControl<string | null>(null), isResetBy: 'region' }),
+      }).observe(),
+    );
+
+    qf.patchValue({ region: 'eu' });
+    await s.settle();
+
+    qf.patchValue({ tier: 'gold' });
+    await s.settle();
+
+    qf.resetAllFieldsToDefault({ skipFields: ['tier'] });
+    await s.settle();
+
+    expect(qf.controls.tier.value).toBe('gold');
+    expect(qf.value).toEqual({ region: null, tier: 'gold' });
+
+    c.destroy();
+  });
+});

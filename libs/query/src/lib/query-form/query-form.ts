@@ -188,6 +188,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   private isObserving = false;
   private removeQueryParamsOnCleanup = true;
   private skipNextResets = false;
+  private skipNextResetsFor: ReadonlySet<string> | undefined;
   private urlWriteVersion = 0;
   private readonly urlNavigationMarker = {};
 
@@ -339,6 +340,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
             : this._handleQueryFormResets(previousValue ?? null, currentValue);
 
           this.skipNextResets = false;
+          this.skipNextResetsFor = undefined;
 
           const changedFields = Object.keys(currentValue).filter(
             (key) => !equal(previousValue?.[key], currentValue[key]),
@@ -402,9 +404,17 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           tap((changes) => {
             const info = this.router.lastSuccessfulNavigation()?.extras.info as
               { queryForm?: object; version?: number } | undefined;
-            if (info?.queryForm === this.urlNavigationMarker && (info.version ?? 0) < this.urlWriteVersion) return;
+            // Including the newest write: re-parsing the form's own output would coerce a committed
+            // string back to a number and drop the milliseconds of a committed Date. A field with
+            // `appendToUrl: false` mirrors a param another owner writes, so this is the only place a
+            // foreign write to that param can still reach the form.
+            const ownWrite =
+              info?.queryForm === this.urlNavigationMarker && (info.version ?? 0) <= this.urlWriteVersion;
 
-            const didValueChanges = this.setFormValueFromUrlQueryParams({ queryParams: changes });
+            const didValueChanges = this.setFormValueFromUrlQueryParams({
+              queryParams: changes,
+              onlyFieldsTheFormNeverWrites: ownWrite,
+            });
 
             if (didValueChanges) {
               this.didValueChanges$.next(true);
@@ -422,10 +432,15 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     this.cleanup();
   }
 
-  setFormValueFromUrlQueryParams(options: { queryParams: Record<string, unknown> }) {
+  setFormValueFromUrlQueryParams(options: {
+    queryParams: Record<string, unknown>;
+    onlyFieldsTheFormNeverWrites?: boolean;
+  }) {
     let didValueChanges = false;
 
     for (const [key, field] of Object.entries(this._fields)) {
+      if (options.onlyFieldsTheFormNeverWrites && field.data.appendToUrl !== false) continue;
+
       const value = options.queryParams[this.transformKeyToQueryParam(key)];
 
       const valueDoesNotExist = value === undefined;
@@ -530,7 +545,9 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   resetAllFieldsToDefault(options?: QueryFormWriteOptions & { skipFields?: (keyof QueryFormValue<T>)[] }) {
     const keys = Object.keys(this._fields) as (keyof QueryFormValue<T>)[];
 
-    if (options?.skipFields) {
+    if (options?.skipFields?.length) {
+      const skip = new Set(options.skipFields.map((key) => key as string));
+
       for (const key of options.skipFields) {
         const index = keys.indexOf(key);
 
@@ -538,6 +555,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           keys.splice(index, 1);
         }
       }
+
+      this.skipNextResetsFor = skip;
     }
 
     this.resetFieldsToDefault(keys, options);
@@ -561,7 +580,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
       const resets = field.data.isResetBy;
 
-      if (!resets) continue;
+      if (!resets || this.skipNextResetsFor?.has(formFieldKey)) continue;
 
       const resetConditionKeys = Array.isArray(resets) ? resets : [resets];
 
@@ -691,11 +710,16 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
         continue;
       }
 
+      // Not `undefined`: `navigateWithParams` deletes an undefined key, which would strip a param of
+      // that name the form never owned.
+      if (field.data.appendToUrl === false) {
+        continue;
+      }
+
       const isDefault = this.isDefaultValue(key, value);
       const writeDefaultToUrl = field.data.appendDefaultValueToUrl === true;
-      const writeToUrl = field.data.appendToUrl !== false;
 
-      if (!writeToUrl || (isDefault && !writeDefaultToUrl)) {
+      if (isDefault && !writeDefaultToUrl) {
         queryParams[queryParamKey] = undefined;
       } else {
         queryParams[queryParamKey] = field.data.valueToQueryParamTransformFn
@@ -735,6 +759,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
     if (equal(currentVal, newVal)) {
       this.skipNextResets = false;
+      this.skipNextResetsFor = undefined;
 
       return;
     }
@@ -759,14 +784,14 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
     if (!removeQueryParams) return;
 
-    const queryParamKeys = Object.keys(this._fields);
-    const queryParams = queryParamKeys.reduce(
-      (acc, key) => {
-        acc[this.transformKeyToQueryParam(key)] = undefined;
-        return acc;
-      },
-      {} as Record<string, unknown>,
-    );
+    const queryParams: Record<string, unknown> = {};
+
+    for (const [key, field] of Object.entries(this._fields)) {
+      if (field.data.appendToUrl === false) continue;
+
+      queryParams[this.transformKeyToQueryParam(key)] = undefined;
+    }
+
     this.navigateWithParams(queryParams, { replaceUrl: true }, true);
   }
 
