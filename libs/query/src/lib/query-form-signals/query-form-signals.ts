@@ -14,7 +14,8 @@ import { FieldTree, form } from '@angular/forms/signals';
 import { ActivatedRoute, NavigationExtras, Router, UrlTree } from '@angular/router';
 import { ET_PROPERTY_REMOVED, clone, equal, injectQueryParamChanges } from '@ethlete/core';
 import { QueryDevtoolsFormField, QueryDevtoolsFormHandle } from '../devtools/query-devtools-form';
-import { isQueryDevtoolsEnabled, noteQueryFormRead, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
+import { noteQueryFormReads } from '../devtools/query-devtools-form-links';
+import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import { transformToBoolean, transformToNumber } from '../query-form/query-form.utils';
 import {
   QueryFieldDef,
@@ -689,13 +690,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
     // Reading `value` is how a query's args pick the form up, so the devtools learn which query a form
     // drives by noting the read - see `QueryDevtoolsFormLinksHandle`.
-    value: devtoolsId
-      ? computed(() => {
-          noteQueryFormRead(devtoolsId);
-
-          return committed();
-        })
-      : committed.asReadonly(),
+    value: devtoolsId ? noteQueryFormReads(devtoolsId, committed) : committed.asReadonly(),
 
     previousValue: previous.asReadonly(),
     changes: computed(() => ({ previousValue: previous(), currentValue: committed() })),

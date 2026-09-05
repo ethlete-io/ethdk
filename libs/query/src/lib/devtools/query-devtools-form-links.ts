@@ -1,5 +1,6 @@
-import { Signal, signal, untracked } from '@angular/core';
-import { collectQueryFormLinks } from './query-devtools-hook';
+import { Signal, computed, signal, untracked } from '@angular/core';
+import { SIGNAL } from '@angular/core/primitives/signals';
+import { collectQueryFormLinks, noteQueryFormRead } from './query-devtools-hook';
 
 /** Which query forms a query reads while it builds its args. */
 export type QueryDevtoolsFormLinksHandle = {
@@ -7,10 +8,8 @@ export type QueryDevtoolsFormLinksHandle = {
    * The devtools ids of the query forms this query's args have read. Empty for a query whose args read
    * none.
    *
-   * Accumulates rather than being rebuilt per evaluation: a form's `value` is a memoized signal, so an
-   * args build that re-runs for an unrelated reason reads the cached value without going through the
-   * form again. Dropping the id there would make the link flicker; a form that a conditional branch
-   * stops reading keeps its link until the query is recreated instead.
+   * Accumulates rather than being rebuilt per evaluation, so a form that a conditional branch stops
+   * reading keeps its link until the query is recreated instead of making the panel flicker.
    */
   ids: Signal<readonly string[]>;
 };
@@ -19,6 +18,26 @@ export type QueryDevtoolsFormLinksHandle = {
 export type QueryDevtoolsFormLinksRecorder = QueryDevtoolsFormLinksHandle & {
   /** Runs `build`, recording every query form whose value it reads. */
   track: <T>(build: () => T) => T;
+};
+
+/**
+ * Wraps the committed value of the query form `formId` in a signal that reports every read to the
+ * devtools.
+ * @internal
+ */
+export const noteQueryFormReads = <T>(formId: string, source: Signal<T>): Signal<T> => {
+  const memoized = computed(() => source());
+
+  // The read must be noted per read, not per recomputation of the value: the second query to build
+  // args reads a memoized value, and a note that only fires on a recomputation never reaches its
+  // collection window. Carrying the memo's signal node over keeps this function a real `Signal`.
+  const read = () => {
+    noteQueryFormRead(formId);
+
+    return memoized();
+  };
+
+  return Object.assign(read, { [SIGNAL]: memoized[SIGNAL] });
 };
 
 /**

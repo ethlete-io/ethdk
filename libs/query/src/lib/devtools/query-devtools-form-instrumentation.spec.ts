@@ -150,6 +150,39 @@ describe('query form devtools instrumentation', { timeout: 30_000 }, () => {
     expect(entry?.formLinks?.ids()).toEqual([handleOf(mod, 'users').entry.id]);
   });
 
+  it('should link a form to every query whose args read its value', async () => {
+    const { mod, injector, client, httpTesting } = await setup();
+
+    const form = makeForm(mod, injector, 'users');
+
+    const queryOf = (route: `/${string}`) =>
+      runInInjectionContext(injector, () =>
+        mod.createQuery({
+          creatorInternals: { client, method: 'GET', route },
+          features: [mod.withArgs(() => ({ queryParams: { page: form.value().page ?? 1 } }))],
+          queryConfig: {},
+        }),
+      );
+
+    const users = queryOf('/users');
+    const teams = queryOf('/teams');
+
+    TestBed.tick();
+    httpTesting.expectOne('https://api.example.com/users?page=1').flush([]);
+    httpTesting.expectOne('https://api.example.com/teams?page=1').flush([]);
+
+    const linksOf = (query: unknown) =>
+      mod
+        .queryDevtoolsEntries()
+        .find((candidate) => candidate.handle === query)
+        ?.formLinks?.ids();
+
+    const formId = handleOf(mod, 'users').entry.id;
+
+    expect(linksOf(users)).toEqual([formId]);
+    expect(linksOf(teams)).toEqual([formId]);
+  });
+
   it('should leave a query whose args read no form unlinked', async () => {
     const { mod, injector, client, httpTesting } = await setup();
 
