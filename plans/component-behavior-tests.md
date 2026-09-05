@@ -301,13 +301,17 @@ still runs, so the test focuses the neighbour right after the outside press. A `
 listener that focuses instead does **not** work - the browser's own mousedown default action then
 puts focus back on the body.
 
-### Sixteen new suites
+### Twenty-five new suites
 
 `banner` (19 tests), `breadcrumb` (52), `copy-button` (11), `scrollable` (16), `color-input` (30),
 `empty-state` (19), `floating-action` (32), `query-error` (24), `counter` (20), `nav-tabs` (22),
-`phone-input` (24), `split-button` (13), `card` (15), `masonry` (14), `match` (58), `standings` (36).
-The project holds 52 suites and 760 tests per browser project; the full run takes 6.6 minutes with
-three workers against the static build (810 executed, 710 skipped by the project guards, 0 failed).
+`phone-input` (24), `split-button` (13), `card` (15), `masonry` (14), `match` (58), `standings` (36),
+`avatar` (25), `badge` (21), `description-list` (15), `divider` (15), `icon` (10), `kbd` (13),
+`skeleton` (20), `loader` (38), `picture` (23).
+
+Every domain in `libs/components` that ships a story now has a suite. The project holds 61 suites
+and 940 tests per browser project; the full run takes 8.0 minutes with three workers against the
+static build (1050 executed, 830 skipped by the project guards, 0 failed).
 
 `card` and `standings` carry no keyboard model at all, so those two suites assert structure, ARIA,
 surface theming and the touch presentation, and drop the keyboard block.
@@ -350,6 +354,11 @@ stepper - it has no buttons and no value of its own.
   as a match has a result, the drawn kick-off is announced by nobody. The fix has to decide which
   fields belong in the name of a live card and of a finished one, so it is a decision for the label
   owner, not a mechanical change.
+- `loader`: `--et-spinner-duration` is registered as an `@property` and listed in the docs, but no
+  rule reads it - the three keyframe animations hardcode their timings. A real consumer already
+  pays for it: `button-properties-styles.component.css` sets `700ms` for the button's loading
+  spinner and gets nothing. Wiring one token into three related durations is a design decision, not
+  a mechanical fix.
 - `phone-input`: the country trigger has no accessible name. The template binds
   `[attr.aria-label]="resolvedCountryLabel()"`, and `SelectTriggerDirective`'s own host binding
   writes `null` over it whenever the panel has a search. The `hasSearch()` condition looks
