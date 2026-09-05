@@ -431,7 +431,10 @@ export const generateRoundRelationsNew = <TRoundData, TMatchData>(
 ): BracketRoundRelation<TRoundData, TMatchData>[] => {
   const relations: BracketRoundRelation<TRoundData, TMatchData>[] = [];
 
-  const allRounds = [...bracketData.rounds.values()];
+  // A relation may never name a round with no matches: every position in it comes from a ratio of match
+  // counts, so a zero puts each neighbour's match at a position nothing occupies. A round whose matches
+  // are not drawn yet is treated as absent instead, and its neighbours wired to each other.
+  const allRounds = [...bracketData.rounds.values()].filter((round) => round.matchCount > 0);
   const upperRounds = allRounds.filter((r) => r.type !== DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET);
   const lowerRounds = allRounds.filter((r) => r.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET);
 
@@ -450,6 +453,9 @@ export const generateRoundRelationsNew = <TRoundData, TMatchData>(
   const firstUpperRound = upperRounds[0];
   const firstLowerRound = lowerFlow[0] || null;
   const lastLowerRound = lowerFlow[lowerFlow.length - 1] || null;
+
+  // Nothing is drawn yet, so there is nothing to relate - not a malformed structure.
+  if (allRounds.length === 0) return relations;
 
   if (!firstUpperRound)
     throw new BracketRuntimeError(BRACKET_ERROR_CODES.ROUND_RELATION_INVALID, 'No upper rounds found');
@@ -491,6 +497,13 @@ export const generateRoundRelationsNew = <TRoundData, TMatchData>(
         lowerRounds: lowerFlow,
         currentUpperRoundIndex,
       });
+    } else if (nav.nextUpperRound && !nav.previousUpperRound) {
+      relations.push(
+        createNothingToOneRelation({
+          currentRound: nav.currentUpperRound,
+          nextRound: nav.nextUpperRound,
+        }),
+      );
     } else if (nav.previousUpperRound && nav.nextUpperRound) {
       handleRegularRound({
         relations,

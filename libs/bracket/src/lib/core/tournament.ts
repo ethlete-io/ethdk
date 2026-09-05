@@ -5,3 +5,9 @@ export const TOURNAMENT_MODE = {
 } as const;
 
 export type TournamentMode = (typeof TOURNAMENT_MODE)[keyof typeof TOURNAMENT_MODE];
+
+/** Wins that advance a participant out of a swiss stage. */
+export const SWISS_ADVANCE_WINS = 3;
+
+/** Losses that eliminate a participant from a swiss stage. */
+export const SWISS_ELIMINATE_LOSSES = 3;

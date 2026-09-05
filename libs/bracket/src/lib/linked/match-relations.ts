@@ -443,9 +443,22 @@ const generateDeclaredMatchRelations = <TRoundData, TMatchData>(options: {
   const previousByMatchId = new Map(sourceMatches.map((match) => [match.id, previousMatchIds(match)]));
   const nextByMatchId = new Map<string, string>();
 
+  // A match can feed two: a semi final feeds the final with its winner and the third place match with
+  // its loser. The winner is where the match leads, so it wins over whatever the source happens to list
+  // first - without this, `nextMatch` answers "where does this winner go" from array order.
+  const winnerConsumerByFeederId = new Map<string, string>();
+
+  for (const match of sourceMatches) {
+    for (const slot of [match.homeSource, match.awaySource]) {
+      if (slot?.kind !== 'match-outcome' || slot.role !== 'winner' || !slot.matchId) continue;
+      if (!winnerConsumerByFeederId.has(slot.matchId)) winnerConsumerByFeederId.set(slot.matchId, match.id);
+    }
+  }
+
   for (const [matchId, feederIds] of previousByMatchId) {
     for (const feederId of feederIds) {
-      if (!nextByMatchId.has(feederId)) nextByMatchId.set(feederId, matchId);
+      if (winnerConsumerByFeederId.get(feederId) === matchId) nextByMatchId.set(feederId, matchId);
+      else if (!nextByMatchId.has(feederId)) nextByMatchId.set(feederId, matchId);
     }
   }
 

@@ -56,6 +56,9 @@ export const createBracket = <TRoundData, TMatchData>(
   source: BracketDataSource<TRoundData, TMatchData>,
   options: CreateBracketOptions<TMatchData>,
 ) => {
+  if (!source.rounds.length)
+    throw new BracketRuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'The bracket source has no rounds to render');
+
   const bracketNewBase = createBracketBase(source, options);
 
   const rounds = new BracketMap<BracketRoundId, BracketRound<TRoundData, TMatchData>>();
@@ -119,31 +122,6 @@ export const createBracket = <TRoundData, TMatchData>(
 
     matches.set(matchBase.id, newMatch);
     round.matches.set(matchBase.id, newMatch);
-
-    if (homeParticipant) {
-      const participant = participants.getOrThrow(homeParticipant.id);
-      participant.matches.set(matchBase.id, {
-        ...newMatch,
-        me: homeParticipant,
-        opponent: awayParticipant,
-      });
-    }
-    if (awayParticipant) {
-      const participant = participants.getOrThrow(awayParticipant.id);
-      participant.matches.set(matchBase.id, {
-        ...newMatch,
-        me: awayParticipant,
-        opponent: homeParticipant,
-      });
-    }
-  }
-
-  for (const participant of participants.values()) {
-    for (const match of participant.matches.values()) {
-      if (match.home?.id === participant.id) match.home.matches = participant.matches;
-      if (match.away?.id === participant.id) match.away.matches = participant.matches;
-      if (match.winner?.id === participant.id) match.winner.matches = participant.matches;
-    }
   }
 
   const newBracket: Bracket<TRoundData, TMatchData> = {
@@ -167,6 +145,25 @@ export const createBracket = <TRoundData, TMatchData>(
 
   for (const matchRelation of matchRelations) {
     matchRelation.currentMatch.relation = matchRelation;
+  }
+
+  // After the relations, never before: a participant's view of a match is a copy of it, so building it
+  // any earlier would freeze the placeholder relation into every copy.
+  for (const match of matches.values()) {
+    if (match.home) {
+      participants.getOrThrow(match.home.id).matches.set(match.id, { ...match, me: match.home, opponent: match.away });
+    }
+    if (match.away) {
+      participants.getOrThrow(match.away.id).matches.set(match.id, { ...match, me: match.away, opponent: match.home });
+    }
+  }
+
+  for (const participant of participants.values()) {
+    for (const match of participant.matches.values()) {
+      if (match.home?.id === participant.id) match.home.matches = participant.matches;
+      if (match.away?.id === participant.id) match.away.matches = participant.matches;
+      if (match.winner?.id === participant.id) match.winner.matches = participant.matches;
+    }
   }
 
   return newBracket;

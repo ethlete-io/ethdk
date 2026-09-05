@@ -1,4 +1,12 @@
-import { BracketMap, BracketMatchId, BracketMatchParticipantBase, BracketRoundId, TOURNAMENT_MODE } from '../core';
+import {
+  BracketMap,
+  BracketMatchId,
+  BracketMatchParticipantBase,
+  BracketRoundId,
+  SWISS_ADVANCE_WINS,
+  SWISS_ELIMINATE_LOSSES,
+  TOURNAMENT_MODE,
+} from '../core';
 import { Bracket, BracketMatch } from './bracket';
 import { BracketRuntimeError } from '../bracket-runtime-error';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
@@ -25,9 +33,6 @@ export type BracketRoundMapWithSwissData<TRoundData, TMatchData> = Map<
   BracketRoundId,
   BracketRoundSwissData<TRoundData, TMatchData>
 >;
-
-export const SWISS_ADVANCE_WINS = 3;
-export const SWISS_ELIMINATE_LOSSES = 3;
 
 export const BRACKET_SWISS_GROUP_COLOR_TYPE = {
   /** The starting group (0-0) */
@@ -153,38 +158,52 @@ export const generateBracketRoundSwissGroupMaps = <TRoundData, TMatchData>(
       }
 
       const { wins, losses } = getRecordBeforeMatch(anyParticipant);
+      const groupId = `${wins}-${losses}` as BracketRoundSwissGroupId;
 
-      const group = roundSwissData.groups.get(`${wins}-${losses}` as BracketRoundSwissGroupId);
+      // The table above enumerates the records of somebody who played every round. A bye, a walkover or
+      // an uneven field leaves a participant with fewer games than the round index, so their group is
+      // real but not in the table - create it rather than losing the whole bracket over one match.
+      let group = roundSwissData.groups.get(groupId);
 
-      if (!group)
-        throw new BracketRuntimeError(
-          BRACKET_ERROR_CODES.SWISS_GROUPING_FAILED,
-          'Group not found for match: ' + match.id,
-        );
+      if (!group) {
+        group = { id: groupId, name: `${wins}-${losses}`, matches: new BracketMap(), allowedMatchCount: 0 };
+        roundSwissData.groups.set(groupId, group);
+      }
 
       group.matches.set(match.id, match);
     }
 
     for (const emptyMatchId of emptyMatchIds) {
       const match = bracketRound.matches.getOrThrow(emptyMatchId);
+      const groups = [...roundSwissData.groups.values()];
+      const group =
+        groups.find((candidate) => candidate.matches.size < candidate.allowedMatchCount) ??
+        groups.reduce<BracketRoundSwissGroup<TRoundData, TMatchData> | null>(
+          (fewest, candidate) => (!fewest || candidate.matches.size < fewest.matches.size ? candidate : fewest),
+          null,
+        );
 
-      let groupFound = false;
-      for (const group of roundSwissData.groups.values()) {
-        if (group.matches.size < group.allowedMatchCount) {
-          group.matches.set(match.id, match);
-          groupFound = true;
-          break;
-        }
-      }
-
-      if (!groupFound) {
+      if (!group) {
         throw new BracketRuntimeError(BRACKET_ERROR_CODES.SWISS_GROUPING_FAILED, 'No group found for empty match');
       }
+
+      group.matches.set(match.id, match);
     }
 
     for (const [groupId, group] of roundSwissData.groups) {
       if (!group.matches.size) roundSwissData.groups.delete(groupId);
     }
+
+    // The map is drawn top to bottom in insertion order, so a group created on demand has to be sorted
+    // back into the best-record-first order the table was built in.
+    const orderedGroups = [...roundSwissData.groups.entries()].sort(([a], [b]) => {
+      const [aWins = 0, aLosses = 0] = a.split('-').map(Number);
+      const [bWins = 0, bLosses = 0] = b.split('-').map(Number);
+
+      return bWins - aWins || aLosses - bLosses;
+    });
+
+    roundSwissData.groups = new Map(orderedGroups);
 
     roundsWithSwissGroups.set(bracketRound.id, roundSwissData);
 

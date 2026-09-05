@@ -93,6 +93,11 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
   let currentUpperBracketIndex = 0;
   let currentLowerBracketIndex = 0;
 
+  // A fold converges once, on the first round it cannot halve, and every later round stays whole -
+  // otherwise a bye (`[6, 3, 2, 1]`) reopens the fold past its middle and draws a round on both sides
+  // of one that has no side. Tracked per bracket half, because the two converge separately.
+  const foldClosed = { upper: false, lower: false };
+
   const splitRoundsRest: BracketRoundWithRelationsBase<TRoundData>[] = [];
 
   const terminalRoundSortPriority: Partial<Record<string, number>> = {
@@ -112,10 +117,12 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
 
     const matches = source.matches.filter((m) => m.roundId === round.id);
     const roundId = round.id as BracketRoundId;
-    // An odd match count cannot be halved, so the round stays whole and lands in the middle of the fold.
-    // That is why a mirrored bracket converges on its late rounds without anything having to say so:
-    // those are the rounds down to one match.
-    const shouldSplitRound = shouldSplitRoundsInTwo && matches.length % 2 === 0;
+    const foldSide = isLowerBracket || isCommonDoubleEliminationRound ? 'lower' : 'upper';
+    const canHalveRound = matches.length >= 2 && matches.length % 2 === 0;
+    const shouldSplitRound = shouldSplitRoundsInTwo && canHalveRound && !foldClosed[foldSide];
+
+    if (!canHalveRound) foldClosed[foldSide] = true;
+
     const isFirstRound = roundIndex === 0;
     const isLastRound = roundIndex === orderedRounds.length - 1;
 

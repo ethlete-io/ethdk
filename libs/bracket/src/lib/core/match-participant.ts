@@ -8,7 +8,7 @@ import {
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
   BracketRoundWithRelationsBase,
 } from './round';
-import { TOURNAMENT_MODE } from './tournament';
+import { SWISS_ELIMINATE_LOSSES, TOURNAMENT_MODE } from './tournament';
 import { BracketRuntimeError } from '../bracket-runtime-error';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
 
@@ -140,8 +140,11 @@ export const createNewMatchParticipantBase = <TRoundData, TMatchData>(
         break;
       }
       case TOURNAMENT_MODE.SWISS_WITH_ELIMINATION: {
-        // In swiss you are eliminated after 3 losses, so we need to track the loss count
-        isEliminationMatch = lossesTilNow >= 2;
+        // `lossesTilNow` counts this match too, so the losses carried *into* it are one fewer for a
+        // loser - it is those that decide whether losing here is what puts the participant out.
+        const priorLosses = lossesTilNow - (isLooser ? 1 : 0);
+
+        isEliminationMatch = priorLosses >= SWISS_ELIMINATE_LOSSES - 1;
 
         isEliminated = (isEliminationMatch && isLooser) ?? false;
       }
