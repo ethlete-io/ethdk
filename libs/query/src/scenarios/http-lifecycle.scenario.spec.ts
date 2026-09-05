@@ -1,8 +1,20 @@
-import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { signal } from '@angular/core';
+import {
+  HttpBackend,
+  HttpErrorResponse,
+  HttpEvent,
+  HttpEventType,
+  HttpHandler,
+  HttpHeaders,
+  HttpRequest,
+  HttpResponse,
+} from '@angular/common/http';
+import { inject, signal } from '@angular/core';
 import {
   createPagedQueryStack,
   createQueryBatch,
+  createSecureDeleteQuery,
+  createSecurePatchQuery,
+  createSecurePutQuery,
   executeUntilSettled,
   withArgs,
   withLogging,
@@ -10,8 +22,8 @@ import {
   withPolling,
   withSuccessHandling,
 } from '../index';
-import { ObservedValueOf } from 'rxjs';
-import { describe, expect, it, vi } from 'vitest';
+import { Observable, ObservedValueOf } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sequence } from './harness/fake-api';
 import { useScenario } from './harness';
 
@@ -649,5 +661,513 @@ describe('http lifecycle scenario: two retry policies on one cache key', () => {
 
     a.destroy();
     b.destroy();
+  });
+});
+
+describe('http lifecycle scenario: mutating method templates', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('sends PUT, PATCH and DELETE only after execute(), never on creation', () => {
+    const s = scenario();
+    s.api.on('PUT', '/items/1', ({ body }) => ({ body: { verb: 'PUT', got: body } }));
+    s.api.on('PATCH', '/items/1', ({ body }) => ({ body: { verb: 'PATCH', got: body } }));
+    s.api.on('DELETE', '/items/1', () => ({ body: { verb: 'DELETE' } }));
+
+    type WriteArgs = { response: { verb: string; got?: unknown }; body: { name: string } };
+
+    const putItem = s.put<WriteArgs>('/items/1');
+    const patchItem = s.patch<WriteArgs>('/items/1');
+    const deleteItem = s.delete<{ response: { verb: string } }>('/items/1');
+
+    const c = s.consumer();
+    const put = c.run(() => putItem());
+    const patch = c.run(() => patchItem());
+    const remove = c.run(() => deleteItem());
+
+    s.tick();
+
+    expect(s.api.requests).toHaveLength(0);
+    expect(put.executionState()).toBeNull();
+    expect(patch.executionState()).toBeNull();
+    expect(remove.executionState()).toBeNull();
+
+    put.execute({ args: { body: { name: 'a' } } });
+    patch.execute({ args: { body: { name: 'b' } } });
+    remove.execute();
+    s.tick();
+
+    expect(put.response()).toEqual({ verb: 'PUT', got: { name: 'a' } });
+    expect(patch.response()).toEqual({ verb: 'PATCH', got: { name: 'b' } });
+    expect(remove.response()).toEqual({ verb: 'DELETE' });
+
+    expect(s.api.requestCount('PUT', '/items/1')).toBe(1);
+    expect(s.api.requestCount('PATCH', '/items/1')).toBe(1);
+    expect(s.api.requestCount('DELETE', '/items/1')).toBe(1);
+
+    put.execute({ args: { body: { name: 'a' } } });
+    s.tick();
+
+    expect(s.api.requestCount('PUT', '/items/1')).toBe(2);
+
+    c.destroy();
+  });
+});
+
+describe('http lifecycle scenario: secure mutation templates', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('the PUT, PATCH and DELETE twins attach the bearer header to their mutations', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    s.api.protect('/secure/**');
+    s.api.on('PUT', '/secure/item', () => ({ body: { ok: true } }));
+    s.api.on('PATCH', '/secure/item', () => ({ body: { ok: true } }));
+    s.api.on('DELETE', '/secure/item', () => ({ body: { ok: true } }));
+
+    type Ok = { response: { ok: boolean } };
+    type OkWithBody = Ok & { body: { n: number } };
+
+    const putSecureItem = createSecurePutQuery(s.clientRef, auth.ref)<OkWithBody>('/secure/item');
+    const patchSecureItem = createSecurePatchQuery(s.clientRef, auth.ref)<OkWithBody>('/secure/item');
+    const deleteSecureItem = createSecureDeleteQuery(s.clientRef, auth.ref)<Ok>('/secure/item');
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    const put = c.run(() => putSecureItem());
+    const patch = c.run(() => patchSecureItem());
+    const remove = c.run(() => deleteSecureItem());
+
+    put.execute({ args: { body: { n: 1 } } });
+    patch.execute({ args: { body: { n: 2 } } });
+    remove.execute();
+    await s.settle();
+
+    const expectedHeader = `Bearer ${auth.accessToken()}`;
+
+    for (const method of ['PUT', 'PATCH', 'DELETE'] as const) {
+      const request = s.api.requests.find((r) => r.method === method && r.path === '/secure/item');
+
+      expect(request?.headers.get('Authorization')).toBe(expectedHeader);
+    }
+
+    expect(put.response()).toEqual({ ok: true });
+    expect(patch.response()).toEqual({ ok: true });
+    expect(remove.response()).toEqual({ ok: true });
+
+    c.destroy();
+  });
+});
+
+describe('http lifecycle scenario: query string config', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 0, queryString: { objectNotation: 'dot', writeArrayIndexes: true } },
+  });
+
+  it('serializes array and nested query params through the client queryString config', () => {
+    const s = scenario();
+    s.api.on('GET', '/search', () => ({ body: { ok: true } }));
+
+    const search = s.get<{
+      response: { ok: boolean };
+      queryParams: { tags: string[]; filter: { from: number } };
+    }>('/search');
+
+    const c = s.consumer();
+    const query = c.run(() => search(withArgs(() => ({ queryParams: { tags: ['a', 'b'], filter: { from: 1 } } }))));
+
+    s.tick();
+
+    expect(query.response()).toEqual({ ok: true });
+    expect(s.api.requests.at(-1)?.url.split('?')[1]).toBe('tags%5B0%5D=a&tags%5B1%5D=b&filter.from=1');
+
+    c.destroy();
+  });
+});
+
+describe('http lifecycle scenario: per-execution headers', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('re-reads an args-level headers function on every execution', () => {
+    const s = scenario();
+    s.api.on('GET', '/traced', ({ headers }) => ({ body: { trace: headers.get('X-Trace') } }));
+
+    const getTraced = s.get<{ response: { trace: string | null }; headers: () => HttpHeaders }>('/traced');
+    const trace = signal('1');
+
+    const c = s.consumer();
+    const query = c.run(() => getTraced(withArgs(() => ({ headers: () => new HttpHeaders({ 'X-Trace': trace() }) }))));
+
+    s.tick();
+    expect(query.response()).toEqual({ trace: '1' });
+
+    trace.set('2');
+    s.tick();
+    expect(s.api.requestCount('GET', '/traced')).toBe(1);
+
+    query.execute();
+    s.tick();
+
+    expect(query.response()).toEqual({ trace: '2' });
+    expect(s.api.requestCount('GET', '/traced')).toBe(2);
+
+    c.destroy();
+  });
+});
+
+describe('http lifecycle scenario: function routes without withArgs', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  type UserArgs = { response: { id: string }; pathParams: { id: string } };
+
+  it('throws when a function route is created without a withArgs feature', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getUser = s.get<UserArgs>((p) => `/users/${p.id}`);
+
+    const c = s.consumer();
+
+    expect(() => c.run(() => getUser())).toThrow(/withArgs/);
+
+    c.destroy();
+  });
+
+  it('creates a function-route query without withArgs when the error is silenced', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getUser = s.get<UserArgs>((p) => `/users/${p.id}`);
+
+    const c = s.consumer();
+    const query = c.run(() => getUser({ silenceMissingWithArgsFeatureError: true }));
+
+    s.tick();
+    expect(s.api.requests).toHaveLength(0);
+
+    query.execute({ args: { pathParams: { id: '7' } } });
+    s.tick();
+
+    expect(query.response()).toEqual({ id: '7' });
+    expect(s.api.requestCount('GET', '/users/7')).toBe(1);
+
+    c.destroy();
+  });
+});
+
+describe('http lifecycle scenario: creator level overrides', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 300_000, retryFn: ({ retryCount }) => ({ retry: retryCount < 2, delay: 10 }) },
+  });
+
+  it('lets a creator keepUnusedFor: 0 evict immediately under a client that retains', () => {
+    const s = scenario();
+    s.api.on('GET', '/retained', () => ({ body: { ok: true } }));
+    s.api.on('GET', '/volatile', () => ({ body: { ok: true } }));
+
+    const getRetained = s.get<{ response: { ok: boolean } }>('/retained');
+    const getVolatile = s.get<{ response: { ok: boolean } }>('/volatile', { keepUnusedFor: 0 });
+
+    const c = s.consumer();
+    const retained = c.run(() => getRetained());
+    const volatileQuery = c.run(() => getVolatile());
+
+    s.tick();
+    expect(retained.response()).toEqual({ ok: true });
+    expect(volatileQuery.response()).toEqual({ ok: true });
+    expect(s.client.repository.subtle.cacheEntries()).toHaveLength(2);
+
+    const retainedKey = retained.id();
+
+    c.destroy();
+    s.tick(1);
+
+    expect(s.client.repository.subtle.cacheEntries().map((entry) => entry.key)).toEqual([retainedKey]);
+
+    s.tick(300_000);
+    expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
+  });
+
+  it('lets a creator retryFn replace the client retryFn for that endpoint only', () => {
+    const s = scenario();
+    s.api.on('GET', '/creator-policy', sequence([{ status: 400, body: { message: 'nope' } }, { body: { ok: true } }]));
+    s.api.on('GET', '/client-policy', sequence([{ status: 400, body: { message: 'nope' } }, { body: { ok: true } }]));
+
+    const getCreatorPolicy = s.get<{ response: { ok: boolean } }>('/creator-policy', {
+      retryFn: () => ({ retry: false }),
+    });
+    const getClientPolicy = s.get<{ response: { ok: boolean } }>('/client-policy');
+
+    const c = s.consumer();
+    const creatorPolicy = c.run(() => getCreatorPolicy());
+    const clientPolicy = c.run(() => getClientPolicy());
+
+    s.tick(50);
+
+    expect(s.api.requestCount('GET', '/creator-policy')).toBe(1);
+    expect(creatorPolicy.error()?.code).toBe(400);
+    expect(creatorPolicy.response()).toBeNull();
+
+    expect(s.api.requestCount('GET', '/client-policy')).toBe(2);
+    expect(clientPolicy.error()).toBeNull();
+    expect(clientPolicy.response()).toEqual({ ok: true });
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+
+    c.destroy();
+    s.tick(300_001);
+  });
+});
+
+type ScriptedProgressStep = { at: number; direction: 'upload' | 'download'; loaded: number; total: number };
+type ScriptedRoute = { steps: ScriptedProgressStep[]; respondAt: number; body: unknown };
+
+/**
+ * A stand-in transport for the creator options that only ever show up on the outgoing request, plus the
+ * timed progress events the harness fake API cannot produce - it emits download progress only, and all of
+ * it in the single tick the response lands in. Requests without a script go on to the fake API.
+ */
+const transport = {
+  requests: [] as HttpRequest<unknown>[],
+  routes: new Map<string, ScriptedRoute>(),
+};
+
+const playScript = (request: HttpRequest<unknown>, route: ScriptedRoute): Observable<HttpEvent<unknown>> =>
+  new Observable<HttpEvent<unknown>>((subscriber) => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    // A real backend emits progress events only when the request asked for them, which is the whole of
+    // what `reportProgress` does - the query system reads every progress event it is handed.
+    if (request.reportProgress) {
+      for (const step of route.steps) {
+        timers.push(
+          setTimeout(() => {
+            subscriber.next({
+              type: step.direction === 'upload' ? HttpEventType.UploadProgress : HttpEventType.DownloadProgress,
+              loaded: step.loaded,
+              total: step.total,
+            });
+          }, step.at),
+        );
+      }
+    }
+
+    timers.push(
+      setTimeout(() => {
+        subscriber.next(new HttpResponse({ status: 200, url: request.url, body: route.body }));
+        subscriber.complete();
+      }, route.respondAt),
+    );
+
+    return () => {
+      for (const timer of timers) clearTimeout(timer);
+    };
+  });
+
+const pathOf = (url: string) => url.split('?')[0] as string;
+
+describe('http lifecycle scenario: creator options on the wire', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 0 },
+    providers: () => [
+      {
+        provide: HttpHandler,
+        useFactory: (): HttpHandler => {
+          const backend = inject(HttpBackend);
+
+          return {
+            handle: (request: HttpRequest<unknown>) => {
+              transport.requests.push(request);
+
+              const route = transport.routes.get(pathOf(request.url).replace('https://api.test', ''));
+
+              return route ? playScript(request, route) : backend.handle(request);
+            },
+          } as HttpHandler;
+        },
+      },
+    ],
+  });
+
+  beforeEach(() => {
+    transport.requests.length = 0;
+    transport.routes.clear();
+  });
+
+  const requestFor = (path: string) => transport.requests.find((r) => pathOf(r.url).endsWith(path));
+
+  type Ok = { response: { ok: boolean } };
+
+  it('sets withCredentials on the request only when the creator asks for it', () => {
+    const s = scenario();
+    s.api.on('GET', '/plain', () => ({ body: { ok: true } }));
+    s.api.on('GET', '/creds', () => ({ body: { ok: true } }));
+
+    const getPlain = s.get<Ok>('/plain');
+    const getWithCredentials = s.get<Ok>('/creds', { withCredentials: true });
+
+    const c = s.consumer();
+    const plain = c.run(() => getPlain());
+    const withCreds = c.run(() => getWithCredentials());
+
+    s.tick();
+
+    expect(plain.response()).toEqual({ ok: true });
+    expect(withCreds.response()).toEqual({ ok: true });
+    expect(requestFor('/plain')?.withCredentials).toBe(false);
+    expect(requestFor('/creds')?.withCredentials).toBe(true);
+
+    c.destroy();
+  });
+
+  it('passes the transferCache config onto the outgoing request', () => {
+    const s = scenario();
+    s.api.on('GET', '/plain', () => ({ body: { ok: true } }));
+    s.api.on('GET', '/transfer', () => ({ body: { ok: true } }));
+
+    const getPlain = s.get<Ok>('/plain');
+    const getTransferred = s.get<Ok>('/transfer', { transferCache: { includeHeaders: ['x-tenant'] } });
+
+    const c = s.consumer();
+    c.run(() => getPlain());
+    c.run(() => getTransferred());
+
+    s.tick();
+
+    expect(requestFor('/plain')?.transferCache).toBeUndefined();
+    expect(requestFor('/transfer')?.transferCache).toEqual({ includeHeaders: ['x-tenant'] });
+
+    c.destroy();
+  });
+
+  it('delivers a text responseType body verbatim into response()', () => {
+    const s = scenario();
+    s.api.on('GET', '/plain', () => ({ body: { ok: true } }));
+    s.api.on('GET', '/plain-text', () => ({ body: 'hello world' }));
+    s.api.on('GET', '/binary', () => ({ body: { ok: true } }));
+    s.api.on('GET', '/buffer', () => ({ body: { ok: true } }));
+
+    const getPlain = s.get<Ok>('/plain');
+    const getText = s.get<{ response: string }>('/plain-text', { responseType: 'text' });
+    const getBinary = s.get<{ response: Blob }>('/binary', { responseType: 'blob' });
+    const getBuffer = s.get<{ response: ArrayBuffer }>('/buffer', { responseType: 'arraybuffer' });
+
+    const c = s.consumer();
+    c.run(() => getPlain());
+    const text = c.run(() => getText());
+    c.run(() => getBinary());
+    c.run(() => getBuffer());
+
+    s.tick();
+
+    expect(requestFor('/plain')?.responseType).toBe('json');
+    expect(requestFor('/plain-text')?.responseType).toBe('text');
+    expect(requestFor('/binary')?.responseType).toBe('blob');
+    expect(requestFor('/buffer')?.responseType).toBe('arraybuffer');
+    expect(text.response()).toBe('hello world');
+
+    c.destroy();
+  });
+
+  it('reports no progress object on loading() without reportProgress', () => {
+    const s = scenario();
+    transport.routes.set('/silent', {
+      steps: [
+        { at: 10, direction: 'download', loaded: 50, total: 100 },
+        { at: 20, direction: 'download', loaded: 100, total: 100 },
+      ],
+      respondAt: 30,
+      body: { ok: true },
+    });
+
+    const getSilent = s.get<Ok>('/silent');
+
+    const c = s.consumer();
+    const query = c.run(() => getSilent());
+
+    s.tick();
+    expect(requestFor('/silent')?.reportProgress).toBe(false);
+
+    s.tick(11);
+    expect(query.loading()).not.toBeNull();
+    expect(query.loading()?.progress ?? null).toBeNull();
+
+    s.tick(10);
+    expect(query.loading()?.progress ?? null).toBeNull();
+
+    s.tick(10);
+    expect(query.response()).toEqual({ ok: true });
+
+    c.destroy();
+  });
+
+  it('surfaces upload progress on loading() for a POST body', () => {
+    const s = scenario();
+    transport.routes.set('/upload', {
+      steps: [
+        { at: 10, direction: 'upload', loaded: 50, total: 100 },
+        { at: 20, direction: 'upload', loaded: 100, total: 100 },
+      ],
+      respondAt: 30,
+      body: { ok: true },
+    });
+
+    const upload = s.post<Ok & { body: { name: string } }>('/upload', { reportProgress: true });
+
+    const c = s.consumer();
+    const query = c.run(() => upload());
+
+    query.execute({ args: { body: { name: 'report.pdf' } } });
+    s.tick();
+
+    expect(requestFor('/upload')?.reportProgress).toBe(true);
+
+    s.tick(11);
+    expect(query.loading()?.progress).toMatchObject({ loaded: 50, total: 100, percentage: 50 });
+
+    s.tick(10);
+    expect(query.loading()?.progress).toMatchObject({ loaded: 100, total: 100, percentage: 100 });
+
+    s.tick(10);
+    expect(query.response()).toEqual({ ok: true });
+    expect(query.loading()).toBeNull();
+
+    c.destroy();
+  });
+
+  it('adds speed and remainingTime to the progress object after two seconds of samples', () => {
+    const s = scenario();
+    transport.routes.set('/big-file', {
+      steps: [
+        { at: 1000, direction: 'download', loaded: 100, total: 1000 },
+        { at: 2500, direction: 'download', loaded: 500, total: 1000 },
+      ],
+      respondAt: 3000,
+      body: { ok: true },
+    });
+
+    const getBigFile = s.get<Ok>('/big-file', { reportProgress: true });
+
+    const c = s.consumer();
+    const query = c.run(() => getBigFile());
+
+    s.tick();
+
+    s.tick(1001);
+    expect(query.loading()?.progress).toMatchObject({ loaded: 100, total: 1000, percentage: 10 });
+    expect(query.loading()?.progress?.speed).toBeNull();
+    expect(query.loading()?.progress?.remainingTime).toBeNull();
+
+    s.tick(1500);
+    expect(query.loading()?.progress).toMatchObject({ loaded: 500, total: 1000, percentage: 50 });
+    expect(query.loading()?.progress?.speed).toBeCloseTo((400 / 1500) * 1000, 5);
+    expect(query.loading()?.progress?.remainingTime).toBe(1875);
+
+    s.tick(600);
+    expect(query.response()).toEqual({ ok: true });
+
+    c.destroy();
   });
 });
