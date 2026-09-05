@@ -37,13 +37,15 @@ save() {
 
 ## Method templates
 
-| Template            | Method   | Auto-executes | Cached |
-| ------------------- | -------- | ------------- | ------ |
-| `createGetQuery`    | `GET`    | yes           | yes    |
-| `createPostQuery`   | `POST`   | no            | no     |
-| `createPutQuery`    | `PUT`    | no            | no     |
-| `createPatchQuery`  | `PATCH`  | no            | no     |
-| `createDeleteQuery` | `DELETE` | no            | no     |
+| Template             | Method    | Auto-executes | Cached |
+| -------------------- | --------- | ------------- | ------ |
+| `createGetQuery`     | `GET`     | yes           | yes    |
+| `createHeadQuery`    | `HEAD`    | yes           | yes    |
+| `createOptionsQuery` | `OPTIONS` | yes           | yes    |
+| `createPostQuery`    | `POST`    | no            | no     |
+| `createPutQuery`     | `PUT`     | no            | no     |
+| `createPatchQuery`   | `PATCH`   | no            | no     |
+| `createDeleteQuery`  | `DELETE`  | no            | no     |
 
 Each has a `createSecure…Query(client, authProviderRef)` twin. Auto-execution and caching semantics are the core rules - see [auto-execution](/query/queries#auto-execution) and [caching](/query/caching).
 

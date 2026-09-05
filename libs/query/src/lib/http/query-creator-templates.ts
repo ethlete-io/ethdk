@@ -35,6 +35,18 @@ export const createGetQuery = /* @__PURE__ */ createQueryTemplate('GET');
 /** A query creator that creates a secure GET query (requires authentication) */
 export const createSecureGetQuery = /* @__PURE__ */ createSecureQueryTemplate('GET');
 
+/** A query creator that creates a HEAD query */
+export const createHeadQuery = /* @__PURE__ */ createQueryTemplate('HEAD');
+
+/** A query creator that creates a secure HEAD query (requires authentication) */
+export const createSecureHeadQuery = /* @__PURE__ */ createSecureQueryTemplate('HEAD');
+
+/** A query creator that creates an OPTIONS query */
+export const createOptionsQuery = /* @__PURE__ */ createQueryTemplate('OPTIONS');
+
+/** A query creator that creates a secure OPTIONS query (requires authentication) */
+export const createSecureOptionsQuery = /* @__PURE__ */ createSecureQueryTemplate('OPTIONS');
+
 /** A query creator that creates a POST query */
 export const createPostQuery = /* @__PURE__ */ createQueryTemplate('POST');
 

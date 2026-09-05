@@ -19,6 +19,8 @@ import {
   createBearerAuthProvider,
   createDeleteQuery,
   createGetQuery,
+  createHeadQuery,
+  createOptionsQuery,
   createPatchQuery,
   createPostQuery,
   createPutQuery,
@@ -111,6 +113,8 @@ export type Scenario = {
   clientRef: QueryClientRef;
   injector: Injector;
   get: ReturnType<typeof createGetQuery>;
+  head: ReturnType<typeof createHeadQuery>;
+  options: ReturnType<typeof createOptionsQuery>;
   post: ReturnType<typeof createPostQuery>;
   put: ReturnType<typeof createPutQuery>;
   patch: ReturnType<typeof createPatchQuery>;
@@ -360,6 +364,8 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
     clientRef,
     injector,
     get: createGetQuery(clientRef),
+    head: createHeadQuery(clientRef),
+    options: createOptionsQuery(clientRef),
     post: createPostQuery(clientRef),
     put: createPutQuery(clientRef),
     patch: createPatchQuery(clientRef),
