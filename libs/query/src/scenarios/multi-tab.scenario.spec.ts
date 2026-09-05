@@ -11,6 +11,7 @@ import {
   createGetQuery,
   createPostQuery,
   createQueryClient,
+  createSecureGetQuery,
   QueryClient,
   QueryClientRef,
   QueryMultiTabSyncConfig,
@@ -526,6 +527,199 @@ describe('multi-tab sync scenario', () => {
 
     probe.close();
     c.destroy();
+  });
+
+  it('sends one request per cache key when a mutation refreshes several consumers of the same query', async () => {
+    const s = scenario();
+    let version = 1;
+    s.api.on('GET', '/players', () => ({ body: { version } }));
+    s.api.on('POST', '/players', () => ({ status: 201, body: { created: true } }));
+
+    const createPlayer = s.post<{ body: { name: string }; response: { created: boolean } }>('/players');
+
+    const tabB = createTab(s);
+    const getPlayersB = tabB.get<{ response: { version: number } }>('/players');
+
+    const a = s.consumer();
+    const b1 = tabB.consumer();
+    const b2 = tabB.consumer();
+    const queryB1 = b1.run(() => getPlayersB());
+    const queryB2 = b2.run(() => getPlayersB());
+
+    await s.settle();
+    await flushMultiTabSync();
+
+    const requestsAfterMount = s.api.requestCount('GET', '/players');
+
+    version = 2;
+    const mutation = a.run(() => createPlayer());
+    mutation.execute({ args: { body: { name: 'Alice' } } });
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    expect(s.api.requestCount('GET', '/players')).toBe(requestsAfterMount + 1);
+    expect(queryB1.response()).toEqual({ version: 2 });
+    expect(queryB2.response()).toEqual({ version: 2 });
+
+    a.destroy();
+    b1.destroy();
+    b2.destroy();
+    tabB.destroy();
+  });
+
+  it('sends only the resolved url over the channel, so the other tab invalidates a superset of a filtered invalidation', async () => {
+    const s = scenario();
+    s.api.on('GET', '/players/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getPlayer = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/players/${p.id}`);
+    const tabB = createTab(s);
+    const getPlayerB = tabB.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/players/${p.id}`);
+
+    const a = s.consumer();
+    const b = tabB.consumer();
+    a.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '1' } }))));
+    a.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '2' } }))));
+    b.run(() => getPlayerB(withArgs(() => ({ pathParams: { id: '1' } }))));
+    b.run(() => getPlayerB(withArgs(() => ({ pathParams: { id: '2' } }))));
+
+    await s.settle();
+    await flushMultiTabSync();
+
+    const firstBefore = s.api.requestCount('GET', '/players/1');
+    const secondBefore = s.api.requestCount('GET', '/players/2');
+    const postedBefore = bus.posted.length;
+
+    s.client.invalidateQueries({ url: '/players', filter: (query) => query.url.endsWith('/1') });
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    const invalidations = bus.posted
+      .slice(postedBefore)
+      .map((message) => message.data)
+      .filter((data) => (data as { type: string }).type === 'invalidate');
+
+    expect(invalidations).toEqual([{ v: QUERY_SYNC_PROTOCOL_VERSION, type: 'invalidate', url: `${BASE_URL}/players` }]);
+    expect(s.api.requestCount('GET', '/players/1')).toBe(firstBefore + 2);
+    expect(s.api.requestCount('GET', '/players/2')).toBe(secondBefore + 1);
+
+    a.destroy();
+    b.destroy();
+    tabB.destroy();
+  });
+
+  it('drops a shared response that arrives after a logout tore the secure entry down', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    s.api.protect('/secure/**');
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const getSecureProfile = createSecureGetQuery(
+      s.clientRef,
+      auth.ref,
+    )<{ response: { id: string } }>('/secure/profile');
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    const query = c.run(() => getSecureProfile());
+    await s.settle();
+    await flushMultiTabSync();
+
+    const key = query.id();
+    if (!key) throw new Error('expected a repository key');
+
+    expect(query.response()).toEqual({ id: 'me' });
+
+    s.run(() => auth.logout());
+    await s.settle();
+
+    expect(query.response()).toBeNull();
+    expect(s.client.repository.subtle.cacheEntries().filter((entry) => entry.isSecure)).toEqual([]);
+
+    const probe = new BroadcastChannel(CHANNEL);
+    probe.postMessage({
+      v: QUERY_SYNC_PROTOCOL_VERSION,
+      type: 'response',
+      key,
+      body: { id: 'from-the-other-tab' },
+      expiresAt: null,
+    });
+    await flushMultiTabSync();
+    await s.settle();
+
+    expect(query.response()).toBeNull();
+    expect(s.client.repository.subtle.cacheEntries().filter((entry) => entry.key === key)).toEqual([]);
+
+    probe.close();
+    c.destroy();
+  });
+
+  it('logs a dev-mode warning for a response body it cannot structured-clone', async () => {
+    const s = scenario();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    s.api.on('GET', '/unshareable', () => ({ body: { fn: (() => undefined) as any } }));
+
+    const getUnshareable = s.get<{ response: { fn: () => void } }>('/unshareable');
+    const tabB = createTab(s);
+    const getUnshareableB = tabB.get<{ response: { fn: () => void } }>('/unshareable');
+
+    const a = s.consumer();
+    const b = tabB.consumer();
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (...args: unknown[]) => {
+      warnings.push(args.map((arg) => String(arg)).join(' '));
+    };
+
+    try {
+      a.run(() => getUnshareable());
+      b.run(() => getUnshareableB());
+
+      await s.settle();
+      await flushMultiTabSync();
+    } finally {
+      console.warn = originalWarn;
+    }
+
+    expect(warnings.filter((warning) => warning.includes(CHANNEL)).length).toBeGreaterThan(0);
+    expect(bus.posted).toEqual([]);
+    expect(s.errors).toEqual([]);
+
+    a.destroy();
+    b.destroy();
+    tabB.destroy();
+  });
+
+  it('never delivers a broadcast back to the tab that posted it, and never delivers synchronously', async () => {
+    const sender = new BroadcastChannel(`${CHANNEL}-delivery`);
+    const receiver = new BroadcastChannel(`${CHANNEL}-delivery`);
+    const bystander = new BroadcastChannel(`${CHANNEL}-delivery-other`);
+
+    const senderSaw: unknown[] = [];
+    const receiverSaw: unknown[] = [];
+    const bystanderSaw: unknown[] = [];
+
+    sender.onmessage = (event) => senderSaw.push(event.data);
+    receiver.onmessage = (event) => receiverSaw.push(event.data);
+    bystander.onmessage = (event) => bystanderSaw.push(event.data);
+
+    sender.postMessage({ hello: 'world' });
+
+    expect(receiverSaw).toEqual([]);
+
+    await flushMultiTabSync();
+
+    expect(receiverSaw).toEqual([{ hello: 'world' }]);
+    expect(senderSaw).toEqual([]);
+    expect(bystanderSaw).toEqual([]);
+
+    sender.close();
+    receiver.close();
+    bystander.close();
   });
 
   it('leaves no open channel port and no timer once both tabs are destroyed', async () => {

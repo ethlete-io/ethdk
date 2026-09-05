@@ -37,6 +37,7 @@ type TabConsumer = {
 };
 
 type Tab = {
+  name: string;
   instance: QueryClient;
   get: ReturnType<typeof createGetQuery>;
   post: ReturnType<typeof createPostQuery>;
@@ -62,8 +63,10 @@ type TabOptions = {
 const createTab = (s: Scenario, options: TabOptions = {}): Tab => {
   const syncConfig = options.sync === undefined ? { channelName: CHANNEL } : options.sync;
 
+  const name = `multi-tab-config-tab-${++tabCounter}`;
+
   const ref: QueryClientRef = createQueryClient({
-    name: `multi-tab-config-tab-${++tabCounter}`,
+    name,
     baseUrl: BASE_URL,
     keepUnusedFor: options.keepUnusedFor ?? 0,
     features: [
@@ -83,6 +86,7 @@ const createTab = (s: Scenario, options: TabOptions = {}): Tab => {
   const consumers = new Set<EnvironmentInjector>();
 
   return {
+    name,
     instance,
     get: createGetQuery(ref),
     post: createPostQuery(ref),
@@ -659,6 +663,291 @@ describe('multi-tab sync configuration scenario', () => {
     }
 
     expect(s.api.requestCount('GET', '/rate')).toBe(requestsAfterMount + 4);
+
+    a.destroy();
+    b.destroy();
+    tabA.destroy();
+    tabB.destroy();
+  });
+
+  it('keeps the standby tab polling interval running while it skips every tick', async () => {
+    const s = scenario();
+    let n = 0;
+    s.api.on('GET', '/standby', () => ({ body: { n: ++n } }));
+
+    const tabA = createTab(s);
+    const tabB = createTab(s);
+    const getA = tabA.get<{ response: { n: number } }>('/standby');
+    const getB = tabB.get<{ response: { n: number } }>('/standby');
+
+    const a = tabA.consumer();
+    const b = tabB.consumer();
+    const queryA = a.run(() => getA(withPolling({ interval: 10_000 })));
+    b.run(() => getB(withPolling({ interval: 10_000 })));
+
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    const key = queryA.id();
+    if (!key) throw new Error('expected a repository key');
+
+    expect(lockStateOf(tabA, key)).toBe('holder');
+    expect(lockStateOf(tabB, key)).toBe('standby');
+
+    const requestsAfterMount = s.api.requestCount('GET', '/standby');
+
+    await pollTick(s, 10_000);
+
+    expect(s.api.requestCount('GET', '/standby')).toBe(requestsAfterMount + 1);
+
+    await pollTick(s, 5_000);
+
+    expect(s.api.requestCount('GET', '/standby')).toBe(requestsAfterMount + 1);
+
+    a.destroy();
+    tabA.destroy();
+    await flushMultiTabSync();
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    expect(lockStateOf(tabB, key)).toBe('holder');
+
+    const requestsBeforeHandover = s.api.requestCount('GET', '/standby');
+
+    // Half an interval after the handover, so the tick that lands here can only be the one the standby
+    // tab kept running: an interval restarted on becoming holder would fire five seconds later.
+    await pollTick(s, 5_000);
+
+    expect(s.api.requestCount('GET', '/standby')).toBe(requestsBeforeHandover + 1);
+
+    b.destroy();
+    tabB.destroy();
+  });
+
+  it('elects a holder per cache key, so two tabs each poll a different key', async () => {
+    const s = scenario();
+    let alpha = 0;
+    let beta = 0;
+    s.api.on('GET', '/alpha', () => ({ body: { n: ++alpha } }));
+    s.api.on('GET', '/beta', () => ({ body: { n: ++beta } }));
+
+    const tabA = createTab(s);
+    const tabB = createTab(s);
+    const getAlphaA = tabA.get<{ response: { n: number } }>('/alpha');
+    const getBetaA = tabA.get<{ response: { n: number } }>('/beta');
+    const getAlphaB = tabB.get<{ response: { n: number } }>('/alpha');
+    const getBetaB = tabB.get<{ response: { n: number } }>('/beta');
+
+    const a = tabA.consumer();
+    const b = tabB.consumer();
+
+    const alphaA = a.run(() => getAlphaA(withPolling({ interval: 10_000 })));
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    const betaB = b.run(() => getBetaB(withPolling({ interval: 10_000 })));
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    a.run(() => getBetaA(withPolling({ interval: 10_000 })));
+    b.run(() => getAlphaB(withPolling({ interval: 10_000 })));
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    const alphaKey = alphaA.id();
+    const betaKey = betaB.id();
+    if (!alphaKey || !betaKey) throw new Error('expected a repository key');
+
+    expect(lockStateOf(tabA, alphaKey)).toBe('holder');
+    expect(lockStateOf(tabB, alphaKey)).toBe('standby');
+    expect(lockStateOf(tabB, betaKey)).toBe('holder');
+    expect(lockStateOf(tabA, betaKey)).toBe('standby');
+
+    const alphaBefore = s.api.requestCount('GET', '/alpha');
+    const betaBefore = s.api.requestCount('GET', '/beta');
+
+    await pollTick(s, 10_000);
+
+    expect(s.api.requestCount('GET', '/alpha')).toBe(alphaBefore + 1);
+    expect(s.api.requestCount('GET', '/beta')).toBe(betaBefore + 1);
+
+    a.destroy();
+    b.destroy();
+    tabA.destroy();
+    tabB.destroy();
+  });
+
+  it('hands the lock straight back to a hidden tab when no other tab wants the key', async () => {
+    const s = scenario();
+    let n = 0;
+    s.api.on('GET', '/lonely-poll', () => ({ body: { n: ++n } }));
+
+    const tabA = createTab(s);
+    const tabB = createTab(s);
+    const getA = tabA.get<{ response: { n: number } }>('/lonely-poll');
+
+    const a = tabA.consumer();
+    const queryA = a.run(() => getA(withPolling({ interval: 10_000 })));
+
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    const key = queryA.id();
+    if (!key) throw new Error('expected a repository key');
+
+    expect(lockStateOf(tabA, key)).toBe('holder');
+
+    const hiddenDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'hidden');
+    const visibilityDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState');
+
+    Object.defineProperty(document, 'hidden', { get: () => true, configurable: true });
+    Object.defineProperty(document, 'visibilityState', { get: () => 'hidden', configurable: true });
+
+    try {
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      expect(lockStateOf(tabA, key)).toBe('standby');
+
+      await flushMultiTabSync();
+      await s.settle();
+      await flushMultiTabSync();
+      await s.settle();
+
+      expect(lockStateOf(tabA, key)).toBe('holder');
+      expect(locks.pendingNames()).toEqual([]);
+
+      const requestsBeforePoll = s.api.requestCount('GET', '/lonely-poll');
+
+      await pollTick(s, 10_000);
+
+      expect(s.api.requestCount('GET', '/lonely-poll')).toBe(requestsBeforePoll + 1);
+    } finally {
+      delete (document as unknown as Record<string, unknown>)['hidden'];
+      delete (document as unknown as Record<string, unknown>)['visibilityState'];
+
+      if (hiddenDescriptor) Object.defineProperty(Document.prototype, 'hidden', hiddenDescriptor);
+      if (visibilityDescriptor) Object.defineProperty(Document.prototype, 'visibilityState', visibilityDescriptor);
+    }
+
+    a.destroy();
+    tabA.destroy();
+    tabB.destroy();
+  });
+
+  it('refreshes only the other tab in-use entries after a mutation, leaving a consumer-less cache entry alone', async () => {
+    const s = scenario();
+    s.api.on('GET', '/players', () => ({ body: { ok: true } }));
+    s.api.on('GET', '/teams', () => ({ body: { ok: true } }));
+    s.api.on('POST', '/players', () => ({ status: 201, body: { ok: true } }));
+
+    const tabA = createTab(s);
+    const tabB = createTab(s, { keepUnusedFor: 60_000 });
+    const getPlayersB = tabB.get<{ response: { ok: boolean } }>('/players');
+    const getTeamsB = tabB.get<{ response: { ok: boolean } }>('/teams');
+    const createPlayer = tabA.post<{ body: { name: string }; response: { ok: boolean } }>('/players');
+
+    const a = tabA.consumer();
+    const watched = tabB.consumer();
+    const abandoned = tabB.consumer();
+    watched.run(() => getPlayersB());
+    abandoned.run(() => getTeamsB());
+
+    await s.settle();
+    await flushMultiTabSync();
+
+    expect(s.api.requestCount('GET', '/players')).toBe(1);
+    expect(s.api.requestCount('GET', '/teams')).toBe(1);
+
+    abandoned.destroy();
+    await s.settle();
+
+    expect(tabB.instance.repository.subtle.cacheEntries().filter((entry) => entry.isUnused).length).toBe(1);
+
+    a.run(() => createPlayer()).execute({ args: { body: { name: 'Alice' } } });
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    expect(s.api.requestCount('GET', '/players')).toBe(2);
+    expect(s.api.requestCount('GET', '/teams')).toBe(1);
+
+    a.destroy();
+    watched.destroy();
+
+    s.tick(60_000);
+    s.tick(1);
+
+    tabA.destroy();
+    tabB.destroy();
+  });
+
+  it('derives the channel name from the client name, so two default-configured clients never cross-talk', async () => {
+    const s = scenario();
+    let version = 0;
+    s.api.on('GET', '/default-channel', () => ({ body: { v: ++version } }));
+
+    const tabA = createTab(s, { sync: {} });
+    const tabB = createTab(s, { sync: {} });
+    const getA = tabA.get<{ response: { v: number } }>('/default-channel');
+    const getB = tabB.get<{ response: { v: number } }>('/default-channel');
+
+    const a = tabA.consumer();
+    const b = tabB.consumer();
+    const queryA = a.run(() => getA());
+    const queryB = b.run(() => getB());
+
+    await s.settle();
+    await flushMultiTabSync();
+
+    const responseBAfterMount = queryB.response();
+    const postedBefore = bus.posted.length;
+
+    queryA.execute();
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    expect(bus.posted.slice(postedBefore).map((message) => message.channel)).toEqual([`et-query-sync-${tabA.name}`]);
+    expect(queryA.response()).not.toEqual(responseBAfterMount);
+    expect(queryB.response()).toEqual(responseBAfterMount);
+
+    a.destroy();
+    b.destroy();
+    tabA.destroy();
+    tabB.destroy();
+  });
+
+  it('lets every tab poll a query that opted out with multiTabSync: false', async () => {
+    const s = scenario();
+    let n = 0;
+    s.api.on('GET', '/exports/full', () => ({ body: { n: ++n } }));
+
+    const tabA = createTab(s);
+    const tabB = createTab(s);
+    const getA = tabA.get<{ response: { n: number } }>('/exports/full', { multiTabSync: false });
+    const getB = tabB.get<{ response: { n: number } }>('/exports/full', { multiTabSync: false });
+
+    const a = tabA.consumer();
+    const b = tabB.consumer();
+    a.run(() => getA(withPolling({ interval: 10_000 })));
+    b.run(() => getB(withPolling({ interval: 10_000 })));
+
+    await s.settle();
+    await flushMultiTabSync();
+
+    const requestsAfterMount = s.api.requestCount('GET', '/exports/full');
+
+    await pollTick(s, 10_000);
+
+    expect(s.api.requestCount('GET', '/exports/full')).toBe(requestsAfterMount + 2);
+    expect(locks.heldNames()).toEqual([]);
+    expect(locks.pendingNames()).toEqual([]);
 
     a.destroy();
     b.destroy();
