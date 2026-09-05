@@ -227,6 +227,49 @@ describe('auth features without the devtools', () => {
     c.destroy();
   });
 
+  it('reports the expiry from a custom expiration claim', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const eatToken = (expiresInMs: number) =>
+      mintToken({ expiresInMs, claims: { exp: undefined, eat: Math.floor((Date.now() + expiresInMs) / 1000) } });
+
+    s.api.on('POST', '/auth/login', () => ({
+      body: { accessToken: eatToken(20000), refreshToken: mintToken({ expiresInMs: 3600000 }) },
+    }));
+
+    const warning = withTokenExpirationWarning({
+      warningThreshold: 12000,
+      checkInterval: 1000,
+      expiresInPropertyName: 'eat',
+    });
+    const auth = s.auth({
+      accessTokenExpiresInMs: 20000,
+      refreshStrategy: 0.5,
+      expiresInPropertyName: 'eat',
+      features: [warning],
+    });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(auth.features.tokenExpirationWarning.expiresAt()).not.toBeNull();
+
+    await s.settle(1000);
+
+    expect(auth.features.tokenExpirationWarning.expiresIn()).toBeGreaterThan(18000);
+    expect(auth.features.tokenExpirationWarning.expiresIn()).toBeLessThanOrEqual(19000);
+    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
+
+    await s.settle(7000);
+
+    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
+
+    c.destroy();
+  });
+
   it('a fractional refreshStrategy uses that fraction of the token lifetime, without the object form clamps', async () => {
     const s = scenario();
 
