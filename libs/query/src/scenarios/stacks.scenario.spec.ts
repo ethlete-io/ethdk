@@ -323,6 +323,51 @@ describe('stacks scenario', () => {
     c.destroy();
   });
 
+  it('blockExecutionDuringLoading blocks a backward fetch while a page loads', () => {
+    const s = scenario();
+    s.api.on('GET', '/blocked-pages', ({ query }) => ({
+      body: {
+        items: [{ id: Number(query['page']) }],
+        currentPage: Number(query['page']),
+        nextPage: Number(query['page']) + 1,
+        totalPageCount: 5,
+        itemsPerPage: 1,
+        totalHits: 5,
+      },
+      delay: 20,
+    }));
+
+    const getPosts = s.get<{ response: Paginated<{ id: number }>; queryParams: { page: number } }>('/blocked-pages');
+
+    const c = s.consumer();
+    const pages = c.run(() =>
+      createPagedQueryStack({
+        queryCreator: getPosts,
+        responseNormalizer: ethletePaginationAdapter,
+        args: (page) => ({ queryParams: { page } }),
+        initialPage: 3,
+        blockExecutionDuringLoading: true,
+      }),
+    );
+
+    s.tick();
+    expect(pages.loading()).toBe(true);
+
+    expect(pages.fetchPreviousPage()).toBe(null);
+    expect(s.api.requests.filter((r) => r.query['page'] === '2').length).toBe(0);
+    expect(pages.queries().length).toBe(1);
+
+    s.tick(20);
+
+    const previous = pages.fetchPreviousPage();
+    s.tick(20);
+
+    expect(previous?.args()).toEqual({ queryParams: { page: 2 } });
+    expect(pages.items()).toEqual([{ id: 2 }, { id: 3 }]);
+
+    c.destroy();
+  });
+
   it('selectively re-executes a matching page and its neighbors', () => {
     const s = scenario();
     s.api.on('GET', '/selective-pages', ({ query }) => ({

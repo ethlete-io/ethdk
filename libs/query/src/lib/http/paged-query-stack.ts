@@ -450,6 +450,10 @@ export const createPagedQueryStack = <
     const currentMaxPagination = maxPagination();
     const currentMinPagination = minPagination();
 
+    if (options.blockExecutionDuringLoading && stack.anyLoading()) {
+      return false;
+    }
+
     if (!currentMaxPagination || !currentMinPagination) {
       return true;
     }
@@ -468,10 +472,6 @@ export const createPagedQueryStack = <
       }
 
       return true;
-    }
-
-    if (stack.anyLoading()) {
-      return false;
     }
 
     return isOneMinusMinPagination || isOnePlusMaxPagination;
