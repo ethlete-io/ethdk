@@ -1,6 +1,25 @@
-import { parseQueryRoute, stringifyQueryRouteParts } from './query-devtools-registry';
+import { EnvironmentProviders } from '@angular/core';
+import { parseQueryRoute, provideQueryDevtools, stringifyQueryRouteParts } from './query-devtools-registry';
+
+/** What `makeEnvironmentProviders()` wraps, so a spec can tell an empty set from a populated one. */
+const providersIn = (providers: EnvironmentProviders) => (providers as unknown as { ɵproviders: unknown[] }).ɵproviders;
 
 describe('query devtools registry', () => {
+  describe('provideQueryDevtools', () => {
+    it('should warn instead of dropping the options of a second provideQueryDevtools call', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      provideQueryDevtools({ responseHistory: 5 });
+
+      const second = provideQueryDevtools({ apiEnvs: [{ name: 'Hub API', storageKey: 'hubApiEnv', envs: [] }] });
+
+      expect(warn.mock.calls.flat().join(' ')).toContain('apiEnvs');
+      expect(providersIn(second).length).toBeGreaterThan(0);
+
+      warn.mockRestore();
+    });
+  });
+
   describe('parseQueryRoute', () => {
     it('should return a single static part for a literal route', () => {
       expect(parseQueryRoute('/posts')).toEqual([{ text: '/posts', param: null }]);

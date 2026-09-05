@@ -458,6 +458,22 @@ type AuthPillState = { rows: QueryDevtoolsAuthPillRow[] };
 let envState: EnvPillState | null = null;
 let authState: AuthPillState | null = null;
 
+/** What the pill on the page renders, or `null` while there is none. */
+let renderedKey: string | null = null;
+
+/**
+ * Everything the pill renders, as one string. Every access-token rotation syncs the session pill
+ * again, and a rebuild would close an open dropdown under whoever opened it - so a sync that renders
+ * the same thing must leave the DOM alone. Whatever `render()` reads has to be in here. The callbacks
+ * are not: they are new objects on every sync, and they read their own state when they run.
+ */
+const keyOf = (switches: [QueryDevtoolsApiEnvSwitch, string][], rows: QueryDevtoolsAuthPillRow[], collapsed: boolean) =>
+  JSON.stringify([
+    switches,
+    rows.map(({ name, current, tabLocal, options }) => [name, current, tabLocal, options]),
+    collapsed,
+  ]);
+
 const buildAuthRow = (doc: Document, row: QueryDevtoolsAuthPillRow) => {
   const pill = doc.createElement('div');
   pill.className = 'pill';
@@ -547,13 +563,30 @@ const buildChip = (doc: Document, values: string[], collapsed: boolean, toggle: 
 };
 
 const render = (doc: Document) => {
-  doc.getElementById(HOST_ID)?.remove();
-
   const switches = envState?.switches ?? [];
   const rows = authState?.rows ?? [];
+  const storedOf = (apiSwitch: QueryDevtoolsApiEnvSwitch) => envState?.read(apiSwitch.storageKey) ?? DEFAULT_VALUE;
+  const production = switches.some((apiSwitch) => resolvedEnvOf(apiSwitch, storedOf(apiSwitch))?.production === true);
 
-  if (!switches.length && !rows.length) return;
-  if (!queryDevtoolsPillsAllowed()) return;
+  // A production pick unfolds the pills whatever is stored: the warning is the point of the pill.
+  const collapsed = !production && readCollapsed();
+
+  const paints = (switches.length > 0 || rows.length > 0) && queryDevtoolsPillsAllowed();
+  const key = paints
+    ? keyOf(
+        switches.map((apiSwitch) => [apiSwitch, storedOf(apiSwitch)]),
+        rows,
+        collapsed,
+      )
+    : null;
+  const painted = doc.getElementById(HOST_ID);
+
+  if (painted && key !== null && key === renderedKey) return;
+
+  painted?.remove();
+  renderedKey = key;
+
+  if (key === null) return;
 
   const host = doc.createElement('div');
   host.id = HOST_ID;
@@ -564,12 +597,6 @@ const render = (doc: Document) => {
   const style = doc.createElement('style');
   style.textContent = STYLE;
   shadow.append(style);
-
-  const storedOf = (apiSwitch: QueryDevtoolsApiEnvSwitch) => envState?.read(apiSwitch.storageKey) ?? DEFAULT_VALUE;
-  const production = switches.some((apiSwitch) => resolvedEnvOf(apiSwitch, storedOf(apiSwitch))?.production === true);
-
-  // A production pick unfolds the pills whatever is stored: the warning is the point of the pill.
-  const collapsed = !production && readCollapsed();
 
   if (collapsed) host.setAttribute('data-collapsed', '');
 

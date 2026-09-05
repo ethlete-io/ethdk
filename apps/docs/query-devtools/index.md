@@ -57,6 +57,11 @@ not have a chunk boundary there.
 can be pointed at, for [switching the API environment](#switching-the-api-environment)) and
 `authAccounts` (the users the panel may log in as, for [switching the user](#switching-the-user)).
 
+These options are read once, on the first call. A page that bootstraps a second application declares
+them in the first one: the second call keeps what the first declared, warns in the console about the
+options it declared itself, and takes part in the pills the same way. Every other call has no options
+to lose and warns about nothing.
+
 Without `provideQueryDevtools()` the registry stays empty and the panel shows
 nothing. Instrumentation is a no-op until you call it - it retains no references
 and adds no runtime overhead - so leaving the panel mounted while omitting the
@@ -1945,7 +1950,9 @@ when somebody needs to pick a different backend. The picker is on the page befor
 The pills follow the devtools trigger: an application that renders neither
 `<et-query-devtools-lazy>` nor `<et-query-devtools>` - a production build, or a `@if (isDev())` that
 is false - gets no pills either. They still paint before the application has rendered anything, which
-is the case above; once it has settled with no devtools UI on the page they take themselves off it.
+is the case above; half a second after it has rendered for the first time with no devtools UI on the
+page they take themselves off it. The pills wait for that first paint, not for a quiet application:
+an app that polls or holds a session always has a timer pending, and would otherwise keep them forever.
 An application that mounts the bare `<et-query-devtools-toggle>` and nothing else declares no UI, and
 calls `setQueryDevtoolsUiMounted(true)` itself to keep them.
 

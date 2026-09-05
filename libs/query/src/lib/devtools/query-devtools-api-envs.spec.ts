@@ -1,3 +1,5 @@
+import { ApplicationRef, Component } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import {
   QueryDevtoolsApiEnvSwitch,
   queryDevtoolsApiEnvs,
@@ -26,9 +28,23 @@ const HUB_WITH_PRODUCTION: QueryDevtoolsApiEnvSwitch = {
   ],
 };
 
-import { markQueryDevtoolsAppSettled, setQueryDevtoolsUiMounted } from './query-devtools-ui';
+import { QueryDevtoolsAuthPillRow, setQueryDevtoolsAuthPill } from './query-devtools-pills';
+import { provideQueryDevtools } from './query-devtools-registry';
+import { setQueryDevtoolsUiMounted } from './query-devtools-ui';
 
 const pill = () => document.getElementById('et-query-devtools-pill')?.shadowRoot;
+
+const authRow = (): QueryDevtoolsAuthPillRow => ({
+  name: 'Hub',
+  current: 'admin',
+  tabLocal: false,
+  options: [{ value: 'session:1', label: 'admin', title: 'Switch to admin', selected: true, disabled: false }],
+  pick: () => undefined,
+  toggleTabLocal: () => undefined,
+});
+
+@Component({ template: '' })
+class BlankComponent {}
 
 describe('query devtools api envs', () => {
   beforeEach(() => {
@@ -186,16 +202,40 @@ describe('query devtools api envs', () => {
     expect(queryDevtoolsApiEnvValues()).toEqual({ hubApiEnv: 'local', itemsApiEnv: null });
   });
 
-  // Keep last: a settled application is module state nothing here can unsettle, so every test after this
-  // one would find no pills at all.
-  it('should paint no pills once the application settled with no devtools UI on the page', () => {
+  it('should not rebuild the pill when a rotation changes nothing it renders', () => {
     setQueryDevtoolsApiEnvs([HUB]);
+    setQueryDevtoolsAuthPill({ rows: [authRow()] });
+
+    const host = document.getElementById('et-query-devtools-pill');
+    const select = pill()?.querySelector('select[aria-label="Hub session"]');
+
+    setQueryDevtoolsAuthPill({ rows: [authRow()] });
+
+    expect(document.getElementById('et-query-devtools-pill')).toBe(host);
+    expect(pill()?.querySelector('select[aria-label="Hub session"]')).toBe(select);
+
+    setQueryDevtoolsAuthPill({ rows: [{ ...authRow(), tabLocal: true }] });
+
+    expect(document.getElementById('et-query-devtools-pill')).not.toBe(host);
+
+    setQueryDevtoolsAuthPill({ rows: [] });
+  });
+
+  // Keep last: a rendered application is module state nothing here can take back, so every test after
+  // this one would find no pills at all.
+  it('should stop painting the pills once the app has rendered without a devtools UI', async () => {
+    // An application that polls or holds a session keeps a repeating timer, so under zone.js it never
+    // becomes stable. The pills must not wait for that.
+    vi.spyOn(ApplicationRef.prototype, 'whenStable').mockReturnValue(new Promise<void>(() => undefined));
+
+    TestBed.configureTestingModule({ providers: [provideQueryDevtools({ apiEnvs: [HUB] })] });
 
     expect(document.getElementById('et-query-devtools-pill')).not.toBeNull();
 
-    markQueryDevtoolsAppSettled();
+    TestBed.createComponent(BlankComponent);
+    TestBed.tick();
 
-    expect(document.getElementById('et-query-devtools-pill')).toBeNull();
+    await vi.waitFor(() => expect(document.getElementById('et-query-devtools-pill')).toBeNull());
 
     setQueryDevtoolsUiMounted(true);
 

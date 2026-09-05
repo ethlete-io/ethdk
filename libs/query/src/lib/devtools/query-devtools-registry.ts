@@ -1,5 +1,6 @@
 import {
-  ApplicationRef,
+  afterNextRender,
+  DestroyRef,
   EnvironmentProviders,
   inject,
   isDevMode,
@@ -319,6 +320,37 @@ export type QueryDevtoolsOptions = {
 
 let queryDevtoolsInitialized = false;
 
+/** How long after the first paint the pills wait for a devtools UI that a lazy route mounts. */
+const PILL_SETTLE_GRACE_MS = 500;
+
+const ONE_TIME_OPTIONS = ['about', 'apiEnvs', 'authAccounts', 'responseHistory', 'schema'] as const;
+
+// The floating pills paint before this - before `bootstrapApplication`, so a boot that hangs on the
+// backend it was just pointed at can still be pointed somewhere else. Once the application has painted
+// they follow the devtools trigger instead, and an app that renders none shows no pills. Never wait for
+// `ApplicationRef.whenStable()` here: under zone.js an application that polls or holds a session keeps a
+// repeating timer, so it is never stable and the pills would never go.
+const settleThePillsOnFirstRender = () =>
+  provideEnvironmentInitializer(() => {
+    const destroyRef = inject(DestroyRef);
+
+    afterNextRender(() => {
+      const settle = setTimeout(markQueryDevtoolsAppSettled, PILL_SETTLE_GRACE_MS);
+
+      destroyRef.onDestroy(() => clearTimeout(settle));
+    });
+  });
+
+const warnAboutIgnoredOptions = (options: QueryDevtoolsOptions | undefined) => {
+  const ignored = ONE_TIME_OPTIONS.filter((option) => options?.[option] !== undefined);
+
+  if (!ignored.length) return;
+
+  console.warn(
+    `provideQueryDevtools() ran before on this page, so ${ignored.join(', ')} of this call ${ignored.length === 1 ? 'is' : 'are'} ignored. The devtools read these options once, from the first call. Declare them there.`,
+  );
+};
+
 /**
  * Enables the `@ethlete/query` devtools. Add this to your application providers (e.g. in
  * `bootstrapApplication`) to make query clients, queries, stacks, sequences and auth providers
@@ -326,6 +358,9 @@ let queryDevtoolsInitialized = false;
  *
  * When omitted, all devtools instrumentation is a no-op: the registry is never installed, so nothing
  * is retained at runtime and the registry itself is dropped from the bundle.
+ *
+ * The options are read once, on the first call. A second application on the same page keeps the
+ * options of the first one, and this call warns about the ones it declared itself.
  *
  * @example
  * ```ts
@@ -335,7 +370,11 @@ let queryDevtoolsInitialized = false;
  * ```
  */
 export const provideQueryDevtools = (options?: QueryDevtoolsOptions): EnvironmentProviders => {
-  if (queryDevtoolsInitialized) return makeEnvironmentProviders([]);
+  if (queryDevtoolsInitialized) {
+    warnAboutIgnoredOptions(options);
+
+    return makeEnvironmentProviders([settleThePillsOnFirstRender()]);
+  }
 
   queryDevtoolsInitialized = true;
 
@@ -368,14 +407,5 @@ export const provideQueryDevtools = (options?: QueryDevtoolsOptions): Environmen
     );
   }
 
-  return makeEnvironmentProviders([
-    // The floating pills paint before this - before `bootstrapApplication`, so a boot that hangs on the
-    // backend it was just pointed at can still be pointed somewhere else. Once the application has
-    // settled they follow the devtools trigger instead, and an app that renders none shows no pills.
-    provideEnvironmentInitializer(() => {
-      void inject(ApplicationRef)
-        .whenStable()
-        .then(() => markQueryDevtoolsAppSettled());
-    }),
-  ]);
+  return makeEnvironmentProviders([settleThePillsOnFirstRender()]);
 };
