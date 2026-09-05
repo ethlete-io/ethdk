@@ -63,6 +63,18 @@ export const createIndexedDbQueryPersistenceAdapter = (
     new Promise<IDBDatabase>((resolve, reject) => {
       const openRequest = indexedDB.open(options.storageName, QUERY_PERSISTENCE_STORE_VERSION);
 
+      let hasFailed = false;
+
+      // Forgetting the promise is what makes a transient failure - storage denied while a prompt was
+      // up, another tab mid-upgrade - recoverable: without it one bad open disables persistence for
+      // the rest of the session.
+      const fail = (error: unknown) => {
+        hasFailed = true;
+        databasePromise = null;
+
+        reject(error);
+      };
+
       openRequest.onupgradeneeded = () => {
         const database = openRequest.result;
 
@@ -79,6 +91,14 @@ export const createIndexedDbQueryPersistenceAdapter = (
       openRequest.onsuccess = () => {
         const database = openRequest.result;
 
+        // The open was already rejected, so nobody holds this connection - and an open connection with
+        // no `onversionchange` handler blocks every future upgrade from every tab until the page goes.
+        if (hasFailed) {
+          database.close();
+
+          return;
+        }
+
         // A tab running a newer deploy needs every older connection to go away before it can upgrade
         // the schema. Closing on demand - and forgetting the connection, so the next call reopens -
         // keeps this tab from blocking it indefinitely.
@@ -90,12 +110,12 @@ export const createIndexedDbQueryPersistenceAdapter = (
         resolve(database);
       };
 
-      openRequest.onerror = () => reject(openRequest.error);
+      openRequest.onerror = () => fail(openRequest.error);
 
       // The mirror image of the above: another tab is holding a connection open and not letting go, so
       // this upgrade would hang. Failing fast degrades to "no persistence in this tab" instead.
       openRequest.onblocked = () =>
-        reject(new Error(`[@ethlete/query] Opening "${options.storageName}" was blocked by another tab.`));
+        fail(new Error(`[@ethlete/query] Opening "${options.storageName}" was blocked by another tab.`));
     });
 
   const database = () => (databasePromise ??= openDatabase());
