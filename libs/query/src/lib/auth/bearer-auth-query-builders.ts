@@ -170,9 +170,10 @@ type RefreshAttempt = 'executed' | 'noToken' | 'delegated' | 'notLeader' | 'busy
 
 /**
  * Why a refresh is being attempted. `takeover` is a follower spending the refresh token because the
- * leader did not, so it is the one reason that ignores the leadership.
+ * leader did not, so it is the one reason that ignores the leadership. `delegation` is the leader
+ * serving another tab's 401 rather than one of its own.
  */
-type RefreshReason = 'scheduled' | 'unauthorized' | 'takeover';
+type RefreshReason = 'scheduled' | 'unauthorized' | 'takeover' | 'delegation';
 
 /** How long a scheduled refresh waits before retrying an attempt that could not run yet. */
 const rescheduleDelayMs = 5000;
@@ -229,6 +230,10 @@ const maxRescheduleAttempts = 5;
  * How many 401-driven refreshes may run back to back before they fall back to `minRefreshInterval`.
  * Every refresh in such a streak means the token the previous one issued was rejected too, so an
  * unbounded streak is a refresh loop, not recovery. A secure request succeeding ends the streak.
+ *
+ * The tab whose own request was rejected counts the streak, whether it refreshes itself or delegates
+ * to the leader. A leader refreshing for another tab must spend no budget of its own: it never sees
+ * that tab's retry succeed, so it would read a row of recoveries as a loop and stop answering.
  */
 const maxUnauthorizedRefreshStreak = 3;
 
@@ -324,12 +329,30 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     let lastRefreshTime = 0;
     let lastUnauthorizedRefreshTime = 0;
     let unauthorizedRefreshStreak = 0;
+    let lastCountedUnauthorizedToken: string | null = null;
     let delegatedRefreshAttempts = 0;
     let isWatchingDelegatedRefresh = false;
     let hasLeaderAnsweredDelegation = false;
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const refreshQuery = () => context.queries[key]!;
+
+    const isUnauthorizedStreakSpent = () =>
+      unauthorizedRefreshStreak >= maxUnauthorizedRefreshStreak &&
+      Date.now() - lastUnauthorizedRefreshTime < minRefreshInterval;
+
+    // One count per rotation, not per call: a delegated refresh that goes unanswered is re-asked for
+    // several times, and a takeover follows those. All of them chase the one rejected token, so
+    // counting each would spend the whole budget on a single 401.
+    const countUnauthorizedRefresh = () => {
+      const token = context.accessToken();
+
+      if (token !== null && token === lastCountedUnauthorizedToken) return;
+
+      lastCountedUnauthorizedToken = token;
+      unauthorizedRefreshStreak++;
+      lastUnauthorizedRefreshTime = Date.now();
+    };
 
     const executeRefresh = (reason: RefreshReason): RefreshAttempt => {
       const currentRefreshToken = context.refreshToken();
@@ -342,6 +365,12 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
         // the leader had its moment and let it pass - so the tab delegates and, if that goes unanswered,
         // takes the refresh over.
         if (reason === 'scheduled' && !isAccessTokenStale()) return 'notLeader';
+
+        if (reason === 'unauthorized') {
+          if (isUnauthorizedStreakSpent()) return 'throttled';
+
+          countUnauthorizedRefresh();
+        }
 
         context.refreshCoordination?.request(context.accessToken());
         watchDelegatedRefresh(context.accessToken());
@@ -363,16 +392,10 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
 
       if (reason === 'scheduled') {
         if (now - lastRefreshTime < minRefreshInterval) return 'throttled';
-      } else {
-        if (
-          unauthorizedRefreshStreak >= maxUnauthorizedRefreshStreak &&
-          now - lastUnauthorizedRefreshTime < minRefreshInterval
-        ) {
-          return 'throttled';
-        }
+      } else if (reason !== 'delegation') {
+        if (isUnauthorizedStreakSpent()) return 'throttled';
 
-        unauthorizedRefreshStreak++;
-        lastUnauthorizedRefreshTime = now;
+        countUnauthorizedRefresh();
       }
 
       // Stamped whatever the reason, so the scheduled floor covers a 401-driven rotation too - a
@@ -693,7 +716,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
         return;
       }
 
-      executeRefresh('unauthorized');
+      executeRefresh('delegation');
     });
 
     context.refreshCoordination?.starts$.pipe(takeUntilDestroyed()).subscribe(() => {

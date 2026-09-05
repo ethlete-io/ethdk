@@ -489,6 +489,50 @@ describe('auth multi-tab leadership scenario', () => {
     b.destroy();
   });
 
+  it('a leader that runs no secure queries keeps answering delegated refreshes', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+    s.api.protect('/secure/**');
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    const rotations: (string | null)[] = [];
+
+    for (let round = 1; round <= 4; round++) {
+      const route: `/${string}` = `/secure/round-${round}`;
+      s.api.once('GET', route, () => ({ status: 401, body: { message: 'revoked' } }));
+      s.api.on('GET', route, () => ({ body: { id: 'me' } }));
+
+      const queryB = b.consumer().run(() => b.getSecure<Profile>(route)());
+      s.tick();
+      await sync(s);
+      s.flush();
+      await sync(s);
+
+      expect([round, queryB.response()]).toEqual([round, { id: 'me' }]);
+      rotations.push(a.auth.accessToken());
+    }
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(4);
+    expect(new Set(rotations).size).toBe(4);
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+    expect(a.auth.isAuthenticated()).toBe(true);
+
+    for (let i = 0; i < 4; i++) s.expectError(is401);
+
+    a.destroy();
+    b.destroy();
+  });
+
   it('a tab that becomes visible claims the leadership, and the hidden leader gives way', async () => {
     const s = scenario();
     s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
