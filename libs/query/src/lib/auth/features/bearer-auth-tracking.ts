@@ -60,20 +60,20 @@ export type LeaderInstanceCountChangeEventData = {
 };
 
 export type TrackingEventDataMap<TBuilders extends readonly AnyQueryBuilder[]> = {
-  [K in TrackingEventName<TBuilders>]: K extends `${string}Execute`
-    ? QueryExecuteEventData<ExtractArgsForEvent<TBuilders, K>>
-    : K extends `${string}Success`
-      ? QuerySuccessEventData<ExtractArgsForEvent<TBuilders, K>>
-      : K extends `${string}Failure`
-        ? QueryFailureEventData
-        : K extends 'tokenRefreshSuccess'
-          ? TokenRefreshEventData
-          : K extends 'logout'
-            ? LogoutEventData
-            : K extends 'leaderStatusChange'
-              ? LeaderStatusChangeEventData
-              : K extends 'leaderInstanceCountChange'
-                ? LeaderInstanceCountChangeEventData
+  [K in TrackingEventName<TBuilders>]: K extends 'tokenRefreshSuccess'
+    ? TokenRefreshEventData
+    : K extends 'logout'
+      ? LogoutEventData
+      : K extends 'leaderStatusChange'
+        ? LeaderStatusChangeEventData
+        : K extends 'leaderInstanceCountChange'
+          ? LeaderInstanceCountChangeEventData
+          : K extends `${string}Execute`
+            ? QueryExecuteEventData<ExtractArgsForEvent<TBuilders, K>>
+            : K extends `${string}Success`
+              ? QuerySuccessEventData<ExtractArgsForEvent<TBuilders, K>>
+              : K extends `${string}Failure`
+                ? QueryFailureEventData
                 : never;
 };
 

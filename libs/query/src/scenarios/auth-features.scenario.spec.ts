@@ -868,8 +868,7 @@ describe('auth features without the devtools', () => {
             loginExecute: () => events.push('loginExecute'),
             loginSuccess: () => events.push('loginSuccess'),
             loginFailure: () => events.push('loginFailure'),
-            tokenRefreshSuccess: (data) =>
-              events.push(`tokenRefreshSuccess:${(data as unknown as { automatic: boolean }).automatic}`),
+            tokenRefreshSuccess: ({ automatic }) => events.push(`tokenRefreshSuccess:${automatic}`),
             logout: ({ cause }) => events.push(`logout:${cause}`),
           },
         }),

@@ -9,9 +9,27 @@ import {
   setupAuthTest,
   setupQueryTest,
 } from '@ethlete/query/testing';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { AuthQueryBuilder, TokenRefreshQueryBuilder } from '../bearer-auth-query-builders';
 import { withBearerAuthMultiTabSync } from './bearer-auth-multi-tab-sync';
-import { withTracking } from './bearer-auth-tracking';
+import {
+  LeaderInstanceCountChangeEventData,
+  LeaderStatusChangeEventData,
+  LogoutEventData,
+  QueryExecuteEventData,
+  QueryFailureEventData,
+  QuerySuccessEventData,
+  TokenRefreshEventData,
+  TrackingEventDataMap,
+  withTracking,
+} from './bearer-auth-tracking';
+
+type LoginArgs = { body: { email: string; password: string }; response: { accessToken: string; refreshToken: string } };
+type RefreshArgs = { body: { refreshToken: string }; response: { accessToken: string; refreshToken: string } };
+
+type TestBuilders = readonly [AuthQueryBuilder<'login', LoginArgs>, TokenRefreshQueryBuilder<'refresh', RefreshArgs>];
+
+type EventData<TEvent extends keyof TrackingEventDataMap<TestBuilders>> = TrackingEventDataMap<TestBuilders>[TEvent];
 
 describe('bearer-auth-tracking', () => {
   let setup: QueryTestSetup;
@@ -345,6 +363,24 @@ describe('bearer-auth-tracking', () => {
 
         leader.close();
       });
+    });
+  });
+
+  describe('TrackingEventDataMap', () => {
+    it('should resolve a reserved event name before the query event patterns', () => {
+      expectTypeOf<EventData<'tokenRefreshSuccess'>>().toEqualTypeOf<TokenRefreshEventData>();
+      expectTypeOf<EventData<'logout'>>().toEqualTypeOf<LogoutEventData>();
+      expectTypeOf<EventData<'leaderStatusChange'>>().toEqualTypeOf<LeaderStatusChangeEventData>();
+      expectTypeOf<EventData<'leaderInstanceCountChange'>>().toEqualTypeOf<LeaderInstanceCountChangeEventData>();
+    });
+
+    it('should still resolve the query events to their query payload', () => {
+      expectTypeOf<EventData<'loginExecute'>>().toEqualTypeOf<QueryExecuteEventData<LoginArgs>>();
+      expectTypeOf<EventData<'loginSuccess'>>().toEqualTypeOf<QuerySuccessEventData<LoginArgs>>();
+      expectTypeOf<EventData<'loginFailure'>>().toEqualTypeOf<QueryFailureEventData>();
+      expectTypeOf<EventData<'refreshExecute'>>().toEqualTypeOf<QueryExecuteEventData<RefreshArgs>>();
+      expectTypeOf<EventData<'refreshSuccess'>>().toEqualTypeOf<QuerySuccessEventData<RefreshArgs>>();
+      expectTypeOf<EventData<'refreshFailure'>>().toEqualTypeOf<QueryFailureEventData>();
     });
   });
 });
