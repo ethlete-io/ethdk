@@ -42,7 +42,7 @@ export type QueryDependencies = {
   /**
    * The DOM element of the component/directive that created the query, when it was created in an
    * element (node) injection context. `null` for queries created in a root/environment context.
-   * Used only by the devtools "inspect" tool.
+   * Used only by the devtools "inspect" tool, and resolved from the host injector on each read.
    */
   hostElement: HTMLElement | null;
 };
@@ -61,7 +61,9 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
     injector: undefined as unknown as EnvironmentInjector, // Will be set after injector creation
     ngErrorHandler: hostInjector.get(ErrorHandler),
     httpClient: hostInjector.get(HttpClient),
-    hostElement: hostInjector.get(ElementRef, null, { optional: true })?.nativeElement ?? null,
+    get hostElement() {
+      return hostInjector.get(ElementRef, null, { optional: true })?.nativeElement ?? null;
+    },
   };
 
   const queryContext: QueryContext = {
