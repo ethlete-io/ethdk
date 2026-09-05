@@ -354,3 +354,57 @@ Opus agents authored one finding each, Fable reviewed and committed. The scan tr
 - Harness notes: `mintToken` floors `exp` to whole seconds, so proactive refresh instants need a 1 s
   window (in the skill now); the harness router has no routes, suites that need a cross-route
   navigation call `router.resetConfig([{ path: 'other', children: [] }])` inline.
+
+## Wave 5 (2026-09-05)
+
+Two scheduled sessions. The first read every `apps/docs/query/*.md` page against the 33 scenario
+suites (305 gaps, `.claude/handoffs/wave5-coverage-gaps.md`) and scanned the auth, http and devtools
+trees for behavior the docs contradict (`.claude/handoffs/wave5-scan-*.md`). The second reviewed the
+work its 19 agents left in the tree, split it per fix, and closed the rest. Opus agents authored one
+item each; the coordinator reviewed, ran the scoped suites and committed. 32 commits.
+
+Scan items 6-10 of `plans/query-lib-scan.md` are closed. The three legacy fixes, the signals form
+in-flight navigation and the `ObservableSignal` mutation landed first; then, from the wave 5 scans:
+
+- **auth**: a login that superseded the cookie restore stranded `sessionStatus()` on `'restoring'`,
+  so every guard pended for the life of the tab; `withTracking` never read `trackInternalEvents`, so
+  the provider's own executions raised nothing; `withTokenExpirationWarning` hardcoded the `exp`
+  claim and now reads `expiresInPropertyName`; a leader that ran no secure queries burned its 401
+  streak serving delegated refreshes and then throttled them all - the streak now counts one per
+  rotation, in the tab whose own request loops.
+- **http**: `state.error.set()` was wiped by any later `state.rawResponse.set()`, so a secure query
+  that already held data reported no error at all and a snapshot of a failed query reported success
+  (the two writes are ordered now); `withDefaultRetry` was a process-wide global and now resolves per
+  client; a `transformResponse` throw ran `withSuccessHandling` with the previous response;
+  `fetchPreviousPage()` returned the stack's last query instead of the page it fetched, and
+  `blockExecutionDuringLoading` did not block the first backward fetch; a cached mutation - the auth
+  tokens - was broadcast to every tab; an entry's merged policies (`isSecure`, `isRefreshable`,
+  `isMultiTabSyncEnabled`, `keepUnusedFor`) stayed stuck after a consumer unbound; a synchronous
+  throw from `execute()` inside a batch leaked `inFlight`; `buildQueryCacheKey` sorted header names
+  before lowercasing them.
+- **devtools**: a tombstone kept the destroyed component's injector through `meta.queryConfig`; only
+  the first query that read a form was ever linked to it (the form's `value` noted the read on
+  recomputation, not on read); the pills never came off a page that polls or holds a session, because
+  `whenStable()` never resolves under zone.js - they settle half a second after the first render now;
+  a second `provideQueryDevtools()` call warns instead of dropping its options in silence; a folded
+  pill is no longer rebuilt on every token rotation; a failed devtools login no longer claims the next
+  rotation's tokens, and the session vault is keyed per registration rather than by provider name;
+  the host `ElementRef` is resolved only when the devtools read it.
+- **Added**: `createHeadQuery` / `createOptionsQuery` and their secure twins - the repository already
+  treated both as cacheable reads, but no creator existed.
+
+Coverage: `gql.md` (13 gaps), `ws.md` (8), `dependent-queries.md` (6) and `legacy.md` (12) are closed,
+plus a new `queries-http-methods.scenario.spec.ts`. Two claims are parked as `it.fails`: the
+`run()` promise of a destroyed sequence rejects with an RxJS `EmptyError` rather than never settling
+(`dependent-queries.md:119`), and a malformed websocket frame is logged rather than silently dropped
+in production (`ws.md:75`). Both need a decision: fix the code or correct the sentence.
+
+Open, in `.claude/handoffs/wave5-coverage-gaps.md`: `auth.md` (46), `errors.md` (34), `queries.md` (20),
+`stacks.md` (20), `query-forms.md` (31), `features.md` (28), `caching.md` (18), `persistence.md` (16),
+`migrating-from-v2.md` (19), `http.md` (13), `multi-tab.md` (11), `batching.md` (10).
+
+New findings, not fixed: `GqlQueryArgs` constrains `rawResponse` to `{ data: TResponse }`, so
+`gql.md:66` ("declare it only when your endpoint returns something else") cannot be satisfied without
+a cast; the legacy cache key ignores the HTTP method, so a legacy `OPTIONS` and `HEAD` on one route
+collide; `[etInfinityQueryTrigger]` throws NG0200 unless it sits behind an `@if`; a legacy `QueryForm`
+that does not `observe()` never updates `value`/`changes$`.
