@@ -24,9 +24,9 @@ export const singleEliminationBracketLayout = <TRoundData = any, TMatchData = an
 });
 
 /**
- * The mirrored variant of {@link singleEliminationBracketLayout}: the bracket folds in half, each round
- * that can be halved drawn once on each side, converging on the final in the middle - half the height,
- * roughly double the width, the shape a poster or a broadcast graphic wants.
+ * The mirrored variant of {@link singleEliminationBracketLayout}: the bracket folds in half up to the
+ * first round it cannot halve, which - with every round after it - is drawn whole in the middle. Half
+ * the height, roughly double the width, the shape a poster or a broadcast graphic wants.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const mirroredSingleEliminationBracketLayout = <TRoundData = any, TMatchData = any>(): BracketLayout<

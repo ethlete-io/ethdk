@@ -132,7 +132,7 @@ export const DoubleEliminationWithContinue = {
   },
 };
 
-/** Folded in half: each round that can be halved is drawn on both sides of the final. */
+/** Folded in half: rounds are drawn on both sides up to the first one that cannot be halved. */
 export const MirroredSingleElimination = {
   render: Template,
   args: {

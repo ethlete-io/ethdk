@@ -60,7 +60,8 @@ export type BracketLayout<TRoundData = any, TMatchData = any> = {
 
   /**
    * How the engine orders and splits the rounds before this layout ever sees them - `'mirrored'` halves
-   * every round that can be halved. An engine detail carried by the layout, not a consumer knob.
+   * each round up to the first one it cannot halve. An engine detail carried by the layout, not a
+   * consumer knob.
    *
    * @internal
    */

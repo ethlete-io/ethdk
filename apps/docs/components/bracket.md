@@ -203,6 +203,9 @@ The source kinds are `match-outcome`, `standing-rank`, `seed`, `swiss-bucket`, `
 `external`. `label` is optional competition wording for the empty slot; the library never invents
 one. A `bye` is never selectable and automatically advances the other resolved side.
 
+A round whose matches are not drawn yet is not an error: it renders as an empty column and the rounds
+either side of it relate to each other, so a stage can be published before its later rounds are seeded.
+
 `data` on rounds and matches is opaque to the engine and handed back to your cards as
 `bracketRound().data` / `bracketMatch().data`.
 
@@ -419,7 +422,11 @@ front-truncated winners bracket whose opening round is played elsewhere. It also
 record their participants brought into the round (a decided round-1 match still sits in `0-0`) and
 each group is wrapped in a border box; connectors run group-to-group (winners advance to the `w+1`
 group, losers to the `l+1` group) and fade between group colors. A group a round could hold but has
-no match for is not drawn. Everything swiss-only is an option of the factory:
+no match for is not drawn. A participant who sat a round out - a bye, a walkover, an uneven field -
+reaches the next round with fewer games than the round number implies; that record gets a group of its
+own, sorted in with the rest, best record first.
+
+Everything swiss-only is an option of the factory:
 
 ```ts
 providers: [
@@ -469,9 +476,10 @@ ignored by the [mirrored layouts](#mirrored-layouts), which have no trailing edg
 ## Mirrored layouts
 
 `mirroredSingleEliminationBracketLayout()` and `mirroredDoubleEliminationBracketLayout()` fold the
-bracket in half. Every round that can be halved - one with an even number of matches - is drawn twice,
-once on each side, and the two sides converge on the rounds too small to halve, with the final in the
-middle.
+bracket in half. Rounds are drawn twice, once on each side, up to the first one that cannot be halved -
+one with an odd number of matches, a single match, or none drawn yet. That round and every round after
+it is drawn whole in the middle, so a field that is not a power of two converges early instead of
+splitting past its own centre, and the final always sits in the middle.
 
 Folding is a [layout](#layouts) of its own rather than a mode on a layout, so you pick it by
 registering it (or passing it to the `layouts` input) instead of by binding an input:
