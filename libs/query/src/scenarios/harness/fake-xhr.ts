@@ -140,7 +140,10 @@ export const createFakeXhr = (api: FakeApi): typeof XMLHttpRequest => {
     send(body: unknown = null) {
       if (this.readyState !== OPENED) throw new Error('FakeXhr: send() was called before open()');
 
-      const request = new HttpRequest(this.method, this.url, this.parseBody(body), { headers: this.requestHeaders });
+      const request = new HttpRequest(this.method, this.url, this.parseBody(body), {
+        headers: this.requestHeaders,
+        reportProgress: true,
+      });
 
       this.subscription = api.backend.handle(request).subscribe({
         next: (event) => this.onBackendEvent(event),

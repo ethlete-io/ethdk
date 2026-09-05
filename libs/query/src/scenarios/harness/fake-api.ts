@@ -4,6 +4,7 @@ import {
   HttpEvent,
   HttpEventType,
   HttpHeaders,
+  HttpRequest,
   HttpResponse,
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -18,13 +19,30 @@ export type FakeApiRequestContext = {
   body: unknown;
 };
 
+export type FakeApiProgressEvent = {
+  /** Milliseconds after the request went out, independent of the response `delay`. @default 0 */
+  at?: number;
+  /** @default 'download' */
+  direction?: 'upload' | 'download';
+  loaded: number;
+  /** @default 100 */
+  total?: number;
+};
+
 export type FakeApiResponse = {
   /** `0` is a network error: the request fails with an `HttpErrorResponse` of status 0 and no body. */
   status?: number;
   body?: unknown;
   headers?: Record<string, string>;
   delay?: number;
+  /** Download progress percentages, all delivered in the tick the response lands in. */
   progress?: number[];
+  /**
+   * Progress events spread over time, upload or download, each at its own offset from the request.
+   * Like a real backend, they are delivered only to a request that asked for progress
+   * (`reportProgress`).
+   */
+  progressEvents?: FakeApiProgressEvent[];
 };
 
 export type FakeApiHandlerFn = (ctx: FakeApiRequestContext) => FakeApiResponse;
@@ -34,6 +52,8 @@ export type FakeApiGuardFn = (token: { claims: Record<string, unknown> }) => boo
 export type FakeApiRequestLogEntry = {
   method: string;
   url: string;
+  /** The outgoing request, as the query system built it. */
+  request: HttpRequest<unknown>;
   path: string;
   params: Record<string, string>;
   query: Record<string, string>;
@@ -54,6 +74,12 @@ export type FakeApi = {
   once: (method: FakeApiMethod, pattern: string, handler: FakeApiHandlerFn) => void;
   protect: (pattern: string, guard?: FakeApiGuardFn) => void;
   requests: FakeApiRequestLogEntry[];
+  /**
+   * The outgoing `HttpRequest` objects recorded for a method and path, in order - the only place the
+   * wire-only creator options (`withCredentials`, `responseType`, `transferCache`, `reportProgress`)
+   * can be observed.
+   */
+  httpRequests: (method: FakeApiMethod, path: string) => HttpRequest<unknown>[];
   requestCount: (method: FakeApiMethod, path: string) => number;
   pending: () => FakeApiRequestLogEntry[];
   reset: () => void;
@@ -138,11 +164,7 @@ export const createFakeApi = (config: CreateFakeApiConfig): FakeApi => {
 
       const params = matchSegments(route.segments, pathSegments);
 
-      if (params) {
-        onceRoutes.splice(i, 1);
-
-        return { route, params };
-      }
+      if (params) return { route, params, consume: () => onceRoutes.splice(onceRoutes.indexOf(route), 1) };
     }
 
     for (const route of routes) {
@@ -150,7 +172,7 @@ export const createFakeApi = (config: CreateFakeApiConfig): FakeApi => {
 
       const params = matchSegments(route.segments, pathSegments);
 
-      if (params) return { route, params };
+      if (params) return { route, params, consume: () => undefined };
     }
 
     return null;
@@ -189,6 +211,7 @@ export const createFakeApi = (config: CreateFakeApiConfig): FakeApi => {
       const logEntry: FakeApiRequestLogEntry = {
         method,
         url: req.urlWithParams,
+        request: req,
         path,
         params: {},
         query,
@@ -204,6 +227,9 @@ export const createFakeApi = (config: CreateFakeApiConfig): FakeApi => {
       const match = findMatch(method, pathSegments);
 
       if (!match) {
+        logEntry.status = 0;
+        logEntry.aborted = true;
+
         throw new Error(
           `FakeApi: no route matches ${method} ${path}. Registered routes:\n${describeRoutes([...routes, ...onceRoutes])}`,
         );
@@ -218,6 +244,8 @@ export const createFakeApi = (config: CreateFakeApiConfig): FakeApi => {
       if (protection) {
         response = protection;
       } else {
+        match.consume();
+
         try {
           response = match.route.handler({ params: match.params, query, headers: req.headers, body: req.body });
         } catch (e) {
@@ -232,6 +260,21 @@ export const createFakeApi = (config: CreateFakeApiConfig): FakeApi => {
 
       const delay = response.delay ?? 0;
       let settled = false;
+      const progressTimers: ReturnType<typeof setTimeout>[] = [];
+
+      if (req.reportProgress) {
+        for (const event of response.progressEvents ?? []) {
+          progressTimers.push(
+            setTimeout(() => {
+              subscriber.next({
+                type: event.direction === 'upload' ? HttpEventType.UploadProgress : HttpEventType.DownloadProgress,
+                loaded: event.loaded,
+                total: event.total ?? 100,
+              });
+            }, event.at ?? 0),
+          );
+        }
+      }
 
       const timer = setTimeout(() => {
         settled = true;
@@ -274,6 +317,7 @@ export const createFakeApi = (config: CreateFakeApiConfig): FakeApi => {
 
       return () => {
         clearTimeout(timer);
+        for (const progressTimer of progressTimers) clearTimeout(progressTimer);
         if (!settled) logEntry.aborted = true;
       };
     });
@@ -290,6 +334,8 @@ export const createFakeApi = (config: CreateFakeApiConfig): FakeApi => {
       protectRules.push({ segments: segmentsOf(pattern), guard });
     },
     requests,
+    httpRequests: (method, path) =>
+      requests.filter((r) => r.method === method && r.path === path).map((r) => r.request),
     requestCount: (method, path) => requests.filter((r) => r.method === method && r.path === path).length,
     pending: () => requests.filter((r) => r.status === null && !r.aborted),
     reset: () => {

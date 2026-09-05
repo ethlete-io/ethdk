@@ -1,14 +1,5 @@
-import {
-  HttpBackend,
-  HttpErrorResponse,
-  HttpEvent,
-  HttpEventType,
-  HttpHandler,
-  HttpHeaders,
-  HttpRequest,
-  HttpResponse,
-} from '@angular/common/http';
-import { inject, signal } from '@angular/core';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { signal } from '@angular/core';
 import {
   createPagedQueryStack,
   createQueryBatch,
@@ -22,8 +13,8 @@ import {
   withPolling,
   withSuccessHandling,
 } from '../index';
-import { Observable, ObservedValueOf } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ObservedValueOf } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 import { sequence } from './harness/fake-api';
 import { useScenario } from './harness';
 
@@ -921,82 +912,8 @@ describe('http lifecycle scenario: creator level overrides', () => {
   });
 });
 
-type ScriptedProgressStep = { at: number; direction: 'upload' | 'download'; loaded: number; total: number };
-type ScriptedRoute = { steps: ScriptedProgressStep[]; respondAt: number; body: unknown };
-
-/**
- * A stand-in transport for the creator options that only ever show up on the outgoing request, plus the
- * timed progress events the harness fake API cannot produce - it emits download progress only, and all of
- * it in the single tick the response lands in. Requests without a script go on to the fake API.
- */
-const transport = {
-  requests: [] as HttpRequest<unknown>[],
-  routes: new Map<string, ScriptedRoute>(),
-};
-
-const playScript = (request: HttpRequest<unknown>, route: ScriptedRoute): Observable<HttpEvent<unknown>> =>
-  new Observable<HttpEvent<unknown>>((subscriber) => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    // A real backend emits progress events only when the request asked for them, which is the whole of
-    // what `reportProgress` does - the query system reads every progress event it is handed.
-    if (request.reportProgress) {
-      for (const step of route.steps) {
-        timers.push(
-          setTimeout(() => {
-            subscriber.next({
-              type: step.direction === 'upload' ? HttpEventType.UploadProgress : HttpEventType.DownloadProgress,
-              loaded: step.loaded,
-              total: step.total,
-            });
-          }, step.at),
-        );
-      }
-    }
-
-    timers.push(
-      setTimeout(() => {
-        subscriber.next(new HttpResponse({ status: 200, url: request.url, body: route.body }));
-        subscriber.complete();
-      }, route.respondAt),
-    );
-
-    return () => {
-      for (const timer of timers) clearTimeout(timer);
-    };
-  });
-
-const pathOf = (url: string) => url.split('?')[0] as string;
-
 describe('http lifecycle scenario: creator options on the wire', () => {
-  const scenario = useScenario({
-    clientOptions: { keepUnusedFor: 0 },
-    providers: () => [
-      {
-        provide: HttpHandler,
-        useFactory: (): HttpHandler => {
-          const backend = inject(HttpBackend);
-
-          return {
-            handle: (request: HttpRequest<unknown>) => {
-              transport.requests.push(request);
-
-              const route = transport.routes.get(pathOf(request.url).replace('https://api.test', ''));
-
-              return route ? playScript(request, route) : backend.handle(request);
-            },
-          } as HttpHandler;
-        },
-      },
-    ],
-  });
-
-  beforeEach(() => {
-    transport.requests.length = 0;
-    transport.routes.clear();
-  });
-
-  const requestFor = (path: string) => transport.requests.find((r) => pathOf(r.url).endsWith(path));
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
   type Ok = { response: { ok: boolean } };
 
@@ -1016,8 +933,8 @@ describe('http lifecycle scenario: creator options on the wire', () => {
 
     expect(plain.response()).toEqual({ ok: true });
     expect(withCreds.response()).toEqual({ ok: true });
-    expect(requestFor('/plain')?.withCredentials).toBe(false);
-    expect(requestFor('/creds')?.withCredentials).toBe(true);
+    expect(s.api.httpRequests('GET', '/plain')[0]?.withCredentials).toBe(false);
+    expect(s.api.httpRequests('GET', '/creds')[0]?.withCredentials).toBe(true);
 
     c.destroy();
   });
@@ -1036,8 +953,8 @@ describe('http lifecycle scenario: creator options on the wire', () => {
 
     s.tick();
 
-    expect(requestFor('/plain')?.transferCache).toBeUndefined();
-    expect(requestFor('/transfer')?.transferCache).toEqual({ includeHeaders: ['x-tenant'] });
+    expect(s.api.httpRequests('GET', '/plain')[0]?.transferCache).toBeUndefined();
+    expect(s.api.httpRequests('GET', '/transfer')[0]?.transferCache).toEqual({ includeHeaders: ['x-tenant'] });
 
     c.destroy();
   });
@@ -1062,10 +979,10 @@ describe('http lifecycle scenario: creator options on the wire', () => {
 
     s.tick();
 
-    expect(requestFor('/plain')?.responseType).toBe('json');
-    expect(requestFor('/plain-text')?.responseType).toBe('text');
-    expect(requestFor('/binary')?.responseType).toBe('blob');
-    expect(requestFor('/buffer')?.responseType).toBe('arraybuffer');
+    expect(s.api.httpRequests('GET', '/plain')[0]?.responseType).toBe('json');
+    expect(s.api.httpRequests('GET', '/plain-text')[0]?.responseType).toBe('text');
+    expect(s.api.httpRequests('GET', '/binary')[0]?.responseType).toBe('blob');
+    expect(s.api.httpRequests('GET', '/buffer')[0]?.responseType).toBe('arraybuffer');
     expect(text.response()).toBe('hello world');
 
     c.destroy();
@@ -1073,14 +990,14 @@ describe('http lifecycle scenario: creator options on the wire', () => {
 
   it('reports no progress object on loading() without reportProgress', () => {
     const s = scenario();
-    transport.routes.set('/silent', {
-      steps: [
-        { at: 10, direction: 'download', loaded: 50, total: 100 },
-        { at: 20, direction: 'download', loaded: 100, total: 100 },
-      ],
-      respondAt: 30,
+    s.api.on('GET', '/silent', () => ({
       body: { ok: true },
-    });
+      delay: 30,
+      progressEvents: [
+        { at: 10, loaded: 50, total: 100 },
+        { at: 20, loaded: 100, total: 100 },
+      ],
+    }));
 
     const getSilent = s.get<Ok>('/silent');
 
@@ -1088,7 +1005,7 @@ describe('http lifecycle scenario: creator options on the wire', () => {
     const query = c.run(() => getSilent());
 
     s.tick();
-    expect(requestFor('/silent')?.reportProgress).toBe(false);
+    expect(s.api.httpRequests('GET', '/silent')[0]?.reportProgress).toBe(false);
 
     s.tick(11);
     expect(query.loading()).not.toBeNull();
@@ -1105,14 +1022,14 @@ describe('http lifecycle scenario: creator options on the wire', () => {
 
   it('surfaces upload progress on loading() for a POST body', () => {
     const s = scenario();
-    transport.routes.set('/upload', {
-      steps: [
+    s.api.on('POST', '/upload', () => ({
+      body: { ok: true },
+      delay: 30,
+      progressEvents: [
         { at: 10, direction: 'upload', loaded: 50, total: 100 },
         { at: 20, direction: 'upload', loaded: 100, total: 100 },
       ],
-      respondAt: 30,
-      body: { ok: true },
-    });
+    }));
 
     const upload = s.post<Ok & { body: { name: string } }>('/upload', { reportProgress: true });
 
@@ -1122,7 +1039,7 @@ describe('http lifecycle scenario: creator options on the wire', () => {
     query.execute({ args: { body: { name: 'report.pdf' } } });
     s.tick();
 
-    expect(requestFor('/upload')?.reportProgress).toBe(true);
+    expect(s.api.httpRequests('POST', '/upload')[0]?.reportProgress).toBe(true);
 
     s.tick(11);
     expect(query.loading()?.progress).toMatchObject({ loaded: 50, total: 100, percentage: 50 });
@@ -1139,14 +1056,14 @@ describe('http lifecycle scenario: creator options on the wire', () => {
 
   it('adds speed and remainingTime to the progress object after two seconds of samples', () => {
     const s = scenario();
-    transport.routes.set('/big-file', {
-      steps: [
-        { at: 1000, direction: 'download', loaded: 100, total: 1000 },
-        { at: 2500, direction: 'download', loaded: 500, total: 1000 },
-      ],
-      respondAt: 3000,
+    s.api.on('GET', '/big-file', () => ({
       body: { ok: true },
-    });
+      delay: 3000,
+      progressEvents: [
+        { at: 1000, loaded: 100, total: 1000 },
+        { at: 2500, loaded: 500, total: 1000 },
+      ],
+    }));
 
     const getBigFile = s.get<Ok>('/big-file', { reportProgress: true });
 

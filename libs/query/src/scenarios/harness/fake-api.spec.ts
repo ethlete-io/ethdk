@@ -1,4 +1,4 @@
-import { HttpErrorResponse, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpEventType, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFakeApi, FakeApi, sequence } from './fake-api';
 import { createFakeXhr } from './fake-xhr';
@@ -14,8 +14,14 @@ describe('fake-api', () => {
     api = createFakeApi({ baseUrl: BASE_URL });
   });
 
-  const send = (method: string, url: string, body: unknown = null, headers: Record<string, string> = {}) => {
-    const req = new HttpRequest(method, `${BASE_URL}${url}`, body, { headers: new HttpHeaders(headers) });
+  const send = (
+    method: string,
+    url: string,
+    body: unknown = null,
+    headers: Record<string, string> = {},
+    init: { withCredentials?: boolean; reportProgress?: boolean; responseType?: 'json' | 'text' } = {},
+  ) => {
+    const req = new HttpRequest(method, `${BASE_URL}${url}`, body, { headers: new HttpHeaders(headers), ...init });
     const events: unknown[] = [];
     let error: unknown = null;
     let completed = false;
@@ -123,6 +129,28 @@ describe('fake-api', () => {
     expect(admin.isCompleted()).toBe(true);
   });
 
+  it('does not consume a once route for a request the protect guard rejects', () => {
+    api.protect('/secret');
+    api.once('GET', '/secret', () => ({ body: { v: 'once' } }));
+    api.on('GET', '/secret', () => ({ body: { v: 'fallback' } }));
+
+    const unauthenticated = send('GET', '/secret');
+    vi.advanceTimersByTime(0);
+    expect((unauthenticated.getError() as HttpErrorResponse).status).toBe(401);
+
+    const authenticated = send('GET', '/secret', null, { Authorization: `Bearer ${mintToken()}` });
+    vi.advanceTimersByTime(0);
+
+    expect((authenticated.events[0] as HttpResponse<unknown>).body).toEqual({ v: 'once' });
+  });
+
+  it('does not leave a request without a matching route counted as in flight', () => {
+    const { getError } = send('GET', '/typo');
+
+    expect(getError()).toBeInstanceOf(Error);
+    expect(api.pending()).toHaveLength(0);
+  });
+
   it('cycles through a sequence() handler and holds on the last response', () => {
     api.on('GET', '/flaky', sequence([{ status: 503 }, { status: 503 }, { body: 'ok' }]));
 
@@ -139,6 +167,75 @@ describe('fake-api', () => {
     const fourth = send('GET', '/flaky');
     vi.advanceTimersByTime(0);
     expect((fourth.events[0] as HttpResponse<unknown>).body).toBe('ok');
+  });
+
+  it('records the outgoing request, including the options that only exist on the wire', () => {
+    api.on('GET', '/wire', () => ({ body: { ok: true } }));
+
+    send('GET', '/wire', null, {}, { withCredentials: true, responseType: 'text', reportProgress: true });
+    vi.advanceTimersByTime(0);
+
+    const [request] = api.httpRequests('GET', '/wire');
+
+    expect(request).toBeInstanceOf(HttpRequest);
+    expect(request?.withCredentials).toBe(true);
+    expect(request?.responseType).toBe('text');
+    expect(request?.reportProgress).toBe(true);
+    expect(api.requests[0]?.request).toBe(request);
+  });
+
+  it('delivers scripted progress events over time, in both directions', () => {
+    api.on('POST', '/upload', () => ({
+      body: { ok: true },
+      delay: 30,
+      progressEvents: [
+        { at: 10, direction: 'upload', loaded: 50, total: 100 },
+        { at: 20, direction: 'download', loaded: 500, total: 1000 },
+      ],
+    }));
+
+    const { events, isCompleted } = send('POST', '/upload', { name: 'a' }, {}, { reportProgress: true });
+
+    vi.advanceTimersByTime(10);
+    expect(events).toEqual([{ type: HttpEventType.UploadProgress, loaded: 50, total: 100 }]);
+
+    vi.advanceTimersByTime(10);
+    expect(events[1]).toEqual({ type: HttpEventType.DownloadProgress, loaded: 500, total: 1000 });
+    expect(isCompleted()).toBe(false);
+
+    vi.advanceTimersByTime(10);
+    expect(isCompleted()).toBe(true);
+    expect((events[2] as HttpResponse<unknown>).body).toEqual({ ok: true });
+  });
+
+  it('withholds scripted progress events from a request that did not ask for progress', () => {
+    api.on('GET', '/quiet', () => ({
+      body: { ok: true },
+      delay: 30,
+      progressEvents: [{ at: 10, loaded: 50 }],
+    }));
+
+    const { events } = send('GET', '/quiet');
+
+    vi.advanceTimersByTime(30);
+
+    expect(events).toHaveLength(1);
+    expect((events[0] as HttpResponse<unknown>).body).toEqual({ ok: true });
+  });
+
+  it('still emits the progress percentages in the tick the response lands in', () => {
+    api.on('GET', '/download', () => ({ body: 'ok', delay: 100, progress: [25, 100] }));
+
+    const { events } = send('GET', '/download');
+
+    vi.advanceTimersByTime(99);
+    expect(events).toEqual([]);
+
+    vi.advanceTimersByTime(1);
+    expect(events.slice(0, 2)).toEqual([
+      { type: HttpEventType.DownloadProgress, loaded: 25, total: 100 },
+      { type: HttpEventType.DownloadProgress, loaded: 100, total: 100 },
+    ]);
   });
 
   it('resets routes, one-shots and the request log', () => {
