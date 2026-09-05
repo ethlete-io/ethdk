@@ -191,8 +191,9 @@ const applyResets = (
  * Resets are transitive: a field this pass reset counts as changed in the next one, so
  * `country → league → team` clears `team` as well when only `country` moved. Passes repeat until
  * nothing moves, which has to happen before the value commits - one query execution for the
- * whole chain, not one per hop. The cap only guards a cyclic `isResetBy` graph; a field already at
- * its default stops triggering, so a well-formed graph settles in as many passes as it is deep.
+ * whole chain, not one per hop. Each pass clears one hop, and a field already at its default stops
+ * triggering, so a cycle converges instead of reaching the cap - only a chain deeper than
+ * `MAX_RESET_PASSES` hops does, and it commits with the fields below that hop left untouched.
  * A key the commit itself changed (`explicitKeys`) is never reset, in any pass, and so is a key
  * `protectedKeys` names - the fields a caller asked to skip.
  */

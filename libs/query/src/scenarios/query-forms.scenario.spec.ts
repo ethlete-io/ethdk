@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import {
   QueryDevtoolsFormHandle,
   QueryField,
+  QueryFieldDef,
   QueryForm,
   SortQueryField,
   clearQueryDevtoolsTombstones,
@@ -507,9 +508,7 @@ describe('query forms scenario', () => {
     c.destroy();
   });
 
-  it.fails('a cyclic isResetBy graph stops after ten passes and warns once in dev mode', () => {
-    // query-forms.md:118 - a cycle converges once both fields sit at their default, so the ten-pass
-    // cap is never reached and no warning is logged.
+  it('a cyclic isResetBy graph converges without reaching the pass cap', () => {
     const s = scenario();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
@@ -528,11 +527,52 @@ describe('query forms scenario', () => {
     qf.patchValue({ region: 'us' });
     s.tick();
 
-    try {
-      expect(warn.mock.calls.filter(([message]) => String(message).includes('isResetBy')).length).toBe(1);
-    } finally {
-      warn.mockRestore();
-    }
+    const warnings = warn.mock.calls.map(([message]) => String(message));
+    warn.mockRestore();
+
+    expect(qf.value()).toEqual({ region: 'us', tier: null });
+    expect(warnings).toEqual([]);
+  });
+
+  it('an isResetBy chain deeper than the pass cap stops at the cap and warns in dev mode', () => {
+    const s = scenario();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const keys = Array.from({ length: 13 }, (_, index) => `f${index}`);
+    const fields: Record<string, QueryFieldDef<string | null>> = Object.fromEntries(
+      keys.map((key, index) => [
+        key,
+        index === 0 ? queryField<string>() : queryField<string>({ isResetBy: keys[index - 1] }),
+      ]),
+    );
+
+    const qf = s.run(() => defineQueryForm({ fields }).observe({ writeToQueryParams: false }));
+
+    qf.setValue(Object.fromEntries(keys.map((key) => [key, 'set'])));
+    s.tick();
+
+    qf.patchValue({ f0: 'changed' });
+    s.tick();
+
+    const warnings = warn.mock.calls.map(([message]) => String(message));
+    warn.mockRestore();
+
+    expect(qf.value()).toEqual({
+      f0: 'changed',
+      f1: null,
+      f2: null,
+      f3: null,
+      f4: null,
+      f5: null,
+      f6: null,
+      f7: null,
+      f8: null,
+      f9: null,
+      f10: null,
+      f11: 'set',
+      f12: 'set',
+    });
+    expect(warnings).toEqual(['defineQueryForm: isResetBy did not settle within 10 passes. Check for a cycle.']);
   });
 
   it('activeFilterCount ignores every documented navigation key, not just page and sort', () => {

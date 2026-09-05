@@ -115,7 +115,7 @@ defineQueryForm({
 // changing `country` clears `league` and `team`
 ```
 
-The whole cascade settles before the value is committed, so it drives **one** query execution, not one per hop. A cyclic graph stops after ten passes with a dev-mode warning. A child whose value the same commit also changes keeps that value instead of resetting.
+The whole cascade settles before the value is committed, so it drives **one** query execution, not one per hop. Each pass clears one hop and passes repeat until nothing moves, so a cyclic graph simply converges once the fields it names sit at their default. Only a chain deeper than ten hops runs out of passes: it stops at the tenth, every field below it keeps its value, and dev mode warns `defineQueryForm: isResetBy did not settle within 10 passes`. A child whose value the same commit also changes keeps that value instead of resetting.
 
 ### `activeFilterCount`
 
