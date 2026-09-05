@@ -215,6 +215,9 @@ The Ethlete API integration builds the source for you:
 | ----------- | --------------------------------------- | -------------------------------------------------------------- |
 | Ethlete API | `generateBracketDataForEthlete(rounds)` | `RoundStageStructureWithMatchesView[]` (from `@ethlete/types`) |
 
+It infers the tournament mode from the first round that has matches, so a stage whose opening
+rounds are drawn but still empty maps fine.
+
 For any other backend, construct a `BracketDataSource` by hand (or write a small adapter in
 your app).
 

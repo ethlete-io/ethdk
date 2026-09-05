@@ -91,7 +91,7 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
 
       const side = this.side();
 
-      rangeInput.registerField({ side, field: this, duplicateFieldError: this.duplicateFieldError(side) });
+      rangeInput.registerField({ side, field: this, duplicateFieldError: () => this.duplicateFieldError(side) });
       onCleanup(() => rangeInput.unregisterField(side, this));
     });
 

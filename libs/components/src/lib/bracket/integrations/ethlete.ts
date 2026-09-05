@@ -59,11 +59,11 @@ export const generateRoundTypeFromEthleteRoundType = (
 export const generateTournamentModeFormEthleteRounds = (
   source: RoundStageStructureWithMatchesView[],
 ): TournamentMode => {
-  const firstRound = source[0];
-  const firstMatch = firstRound?.matches[0];
+  const firstDrawnRound = source.find((round) => round.matches.length > 0);
+  const firstMatch = firstDrawnRound?.matches[0];
 
-  if (!firstRound) throw new RuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'No rounds found');
-  if (!firstMatch) throw new RuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'No matches found');
+  if (!source.length) throw new RuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'No rounds found');
+  if (!firstDrawnRound || !firstMatch) throw new RuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'No matches found');
 
   switch (firstMatch.matchType) {
     case 'fifa_swiss': {
@@ -71,7 +71,7 @@ export const generateTournamentModeFormEthleteRounds = (
 
       if (!lastRound) throw new RuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'No last round found');
 
-      if (lastRound.matches.length !== firstRound.matches.length) {
+      if (lastRound.matches.length !== firstDrawnRound.matches.length) {
         return TOURNAMENT_MODE.SWISS_WITH_ELIMINATION;
       } else {
         throw new RuntimeError(

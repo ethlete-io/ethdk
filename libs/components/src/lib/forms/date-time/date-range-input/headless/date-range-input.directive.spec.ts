@@ -78,6 +78,17 @@ class DateRangeInputTestHost {
 })
 class DuplicateDateRangeInputFieldTestHost {}
 
+@Component({
+  template: `
+    <div etDateRangeInput>
+      <input etDateRangeInputField side="start" />
+      <input etDateRangeInputField side="end" />
+    </div>
+  `,
+  imports: [DateRangeInputDirective, DateRangeInputFieldDirective],
+})
+class DateRangeInputFieldPairTestHost {}
+
 describe('DateRangeInputDirective', () => {
   let driver: DatePickerDriver<DateRangeInputTestHost, DateRangeInputDirective>;
 
@@ -615,5 +626,16 @@ describe('DateRangeInputDirective errors', () => {
       const fixture = TestBed.createComponent(DuplicateDateRangeInputFieldTestHost);
       fixture.detectChanges();
     }).toThrow(`ET${DATE_RANGE_INPUT_ERROR_CODES.DUPLICATE_FIELD}`);
+  });
+
+  it('builds the duplicate-field message only for a registration that throws', () => {
+    const buildDuplicateFieldError = vi.spyOn(DateRangeInputFieldDirective.prototype, 'duplicateFieldError');
+
+    TestBed.configureTestingModule({ imports: [DateRangeInputFieldPairTestHost] });
+
+    const fixture = TestBed.createComponent(DateRangeInputFieldPairTestHost);
+    fixture.detectChanges();
+
+    expect(buildDuplicateFieldError).not.toHaveBeenCalled();
   });
 });

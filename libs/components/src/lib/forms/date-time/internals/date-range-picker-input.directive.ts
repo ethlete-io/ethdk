@@ -54,7 +54,7 @@ type SideState = {
 type RegisterFieldOptions = {
   side: DateRangeSide;
   field: DatePickerInputFieldBase;
-  duplicateFieldError: RuntimeError<number>;
+  duplicateFieldError: () => RuntimeError<number>;
 };
 
 /**
@@ -464,7 +464,7 @@ export abstract class DateRangePickerInputDirective
    */
   public registerField({ side, field, duplicateFieldError }: RegisterFieldOptions) {
     if (ngDevMode && untracked(() => this.sides[side].field())) {
-      throw duplicateFieldError;
+      throw duplicateFieldError();
     }
 
     this.sides[side].field.set(field);
