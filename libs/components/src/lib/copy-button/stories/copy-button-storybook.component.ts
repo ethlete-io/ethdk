@@ -7,7 +7,14 @@ import { COPY_BUTTON_IMPORTS } from '../copy-button.imports';
   selector: 'et-sb-copy-button',
   template: `
     <div class="flex flex-wrap items-center gap-16 p-8 font-sans">
-      <button #iconCopy="etCopyButton" [text]="text()" et-icon-button etCopyButton type="button">
+      <button
+        #iconCopy="etCopyButton"
+        [text]="text()"
+        aria-label="Copy the install command"
+        et-icon-button
+        etCopyButton
+        type="button"
+      >
         @if (iconCopy.copied()) {
           <i etIcon="et-check"></i>
         } @else {

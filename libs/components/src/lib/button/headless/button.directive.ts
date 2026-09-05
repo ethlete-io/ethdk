@@ -21,7 +21,7 @@ type ButtonType = (typeof BUTTON_TYPES)[keyof typeof BUTTON_TYPES];
     '[attr.aria-disabled]': 'isInactive() ? true : null',
     '[attr.aria-pressed]': 'emitAriaPressed() && pressed() ? true : null',
     '[attr.type]': 'IS_BUTTON ? type() : null',
-    '[attr.tabindex]': 'IS_ANCHOR && disabled() ? -1 : null',
+    '[attr.tabindex]': 'IS_ANCHOR && disabled() ? -1 : ownTabIndex',
     '(click)': 'blockInactiveClick($event)',
   },
 })
@@ -41,6 +41,10 @@ export class ButtonDirective {
   public progress = input<number | null, number | string | null | undefined>(null, {
     transform: (value) => (value === null || value === undefined || value === '' ? null : numberAttribute(value)),
   });
+
+  // Without this the host binding would write `null` over a `tabindex` the consumer put on the
+  // element, silently pulling an opted-out control back into the tab order.
+  protected readonly ownTabIndex = this.elementRef.nativeElement.getAttribute('tabindex');
 
   public readonly IS_BUTTON = this.elementRef.nativeElement.tagName === 'BUTTON';
   public readonly IS_ANCHOR = this.elementRef.nativeElement.tagName === 'A';
