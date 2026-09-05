@@ -1,9 +1,88 @@
-import { HttpHeaders } from '@angular/common/http';
-import { DestroyRef, PLATFORM_ID, signal } from '@angular/core';
-import { createSecureGetQuery, MAX_UNUSED_ENTRIES, withArgs, withResponseUpdate } from '../index';
-import { describe, expect, it, vi } from 'vitest';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { createEnvironmentInjector, DestroyRef, EnvironmentInjector, inject, PLATFORM_ID, signal } from '@angular/core';
+import {
+  FakeBroadcastChannelHandle,
+  FakeWebLocksHandle,
+  flushMultiTabSync,
+  installFakeBroadcastChannel,
+  installFakeWebLocks,
+} from '@ethlete/query/testing';
+import {
+  createGetQuery,
+  createQueryClient,
+  createSecureGetQuery,
+  MAX_UNUSED_ENTRIES,
+  QueryClientRef,
+  QueryInvalidationCandidate,
+  QueryRepositoryEvent,
+  withArgs,
+  withMultiTabSync,
+  withResponseUpdate,
+} from '../index';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sequence } from './harness/fake-api';
-import { useScenario } from './harness';
+import { Scenario, useScenario } from './harness';
+
+const BASE_URL = 'https://api.test';
+const FILTER_CHANNEL = 'caching-scenario-filter';
+
+let secondTabCounter = 0;
+
+type SecondTab = {
+  get: ReturnType<typeof createGetQuery>;
+  consumer: () => { run: <T>(fn: () => T) => T; destroy: () => void };
+  destroy: () => void;
+};
+
+/**
+ * A second query client on the same channel, standing in for another browser tab. Its consumers live
+ * below the tab's own injector, not below the TestBed root: the client token is `providedIn: 'root'`,
+ * so a query created anywhere else would resolve a second, root-owned instance of the same client.
+ */
+const createSecondTab = (s: Scenario): SecondTab => {
+  const ref: QueryClientRef = createQueryClient({
+    name: `caching-scenario-tab-${++secondTabCounter}`,
+    baseUrl: BASE_URL,
+    keepUnusedFor: 0,
+    features: [withMultiTabSync({ channelName: FILTER_CHANNEL })],
+  });
+
+  const injector = createEnvironmentInjector(
+    ref.provide(),
+    s.run(() => inject(EnvironmentInjector)),
+  );
+
+  if (!injector.runInContext(() => ref.inject())) {
+    throw new Error('caching scenario: failed to create the second tab client');
+  }
+
+  const consumers = new Set<EnvironmentInjector>();
+
+  return {
+    get: createGetQuery(ref),
+    consumer: () => {
+      const consumerInjector = createEnvironmentInjector([], injector);
+
+      consumers.add(consumerInjector);
+
+      return {
+        run: (fn) => consumerInjector.runInContext(fn),
+        destroy: () => {
+          consumers.delete(consumerInjector);
+          consumerInjector.destroy();
+        },
+      };
+    },
+    destroy: () => {
+      for (const consumerInjector of Array.from(consumers)) {
+        consumers.delete(consumerInjector);
+        consumerInjector.destroy();
+      }
+
+      injector.destroy();
+    },
+  };
+};
 
 describe('caching scenario', () => {
   describe('deduplication', () => {
@@ -557,6 +636,609 @@ describe('caching scenario', () => {
 
       s.tick(60_001);
       expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
+    });
+  });
+
+  describe('what is cached', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('caches an OPTIONS and a HEAD request the way it caches a GET', () => {
+      const s = scenario();
+      s.api.on('HEAD', '/probe-head', () => ({ body: { ok: true } }));
+      s.api.on('OPTIONS', '/probe-options', () => ({ body: { allow: 'GET' } }));
+
+      const headProbe = s.head<{ response: { ok: boolean } }>('/probe-head');
+      const optionsProbe = s.options<{ response: { allow: string } }>('/probe-options');
+
+      const a = s.consumer();
+      const b = s.consumer();
+      const headA = a.run(() => headProbe());
+      const headB = b.run(() => headProbe());
+      const optionsA = a.run(() => optionsProbe());
+      const optionsB = b.run(() => optionsProbe());
+
+      s.tick();
+
+      expect(s.api.requestCount('HEAD', '/probe-head')).toBe(1);
+      expect(s.api.requestCount('OPTIONS', '/probe-options')).toBe(1);
+      expect(headA.id()).toBe(headB.id());
+      expect(optionsA.id()).toBe(optionsB.id());
+      expect(headA.response()).toEqual({ ok: true });
+      expect(optionsB.response()).toEqual({ allow: 'GET' });
+
+      a.destroy();
+      b.destroy();
+    });
+
+    it('gives two same-route requests with different bodies two cache entries', () => {
+      const s = scenario();
+      s.api.on('GET', '/search', ({ body }) => ({ body: { echo: body } }));
+
+      const search = s.get<{ response: { echo: unknown }; body: { term: string } }>('/search');
+
+      const a = s.consumer();
+      const b = s.consumer();
+      const c = s.consumer();
+      const ada = a.run(() => search(withArgs(() => ({ body: { term: 'ada' } }))));
+      const adaAgain = b.run(() => search(withArgs(() => ({ body: { term: 'ada' } }))));
+      const bob = c.run(() => search(withArgs(() => ({ body: { term: 'bob' } }))));
+
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/search')).toBe(2);
+      expect(ada.id()).toBe(adaAgain.id());
+      expect(bob.id()).not.toBe(ada.id());
+      expect(bob.response()).toEqual({ echo: { term: 'bob' } });
+
+      a.destroy();
+      b.destroy();
+      c.destroy();
+    });
+  });
+
+  describe('keepUnusedFor default', () => {
+    const scenario = useScenario();
+
+    it('retains an orphaned entry for five minutes with no keepUnusedFor configured', () => {
+      const s = scenario();
+      s.api.on('GET', '/default-retention', () => ({ body: { n: 1 } }));
+
+      const getEntry = s.get<{ response: { n: number } }>('/default-retention');
+
+      const c = s.consumer();
+      c.run(() => getEntry());
+      s.tick();
+
+      c.destroy();
+
+      s.tick(299_999);
+      expect(s.client.repository.subtle.cacheEntries()).toHaveLength(1);
+
+      s.tick(2);
+      expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
+    });
+  });
+
+  describe('what retention covers', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 5_000 } });
+
+    it('lets a creator opt one query out of retention while the client retains the rest', () => {
+      const s = scenario();
+      s.api.on('GET', '/huge-report', () => ({ body: { n: 1 } }));
+      s.api.on('GET', '/small-report', () => ({ body: { n: 2 } }));
+
+      const getHugeReport = s.get<{ response: { n: number } }>('/huge-report', { keepUnusedFor: 0 });
+      const getSmallReport = s.get<{ response: { n: number } }>('/small-report');
+
+      const a = s.consumer();
+      const b = s.consumer();
+      const huge = a.run(() => getHugeReport());
+      const small = b.run(() => getSmallReport());
+      s.tick();
+
+      const hugeKey = huge.id();
+      const smallKey = small.id();
+
+      a.destroy();
+      b.destroy();
+
+      expect(hugeKey).not.toBe(smallKey);
+      expect(s.client.repository.subtle.cacheEntries().map((entry) => entry.key)).toEqual([smallKey]);
+
+      s.tick(5_001);
+      expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
+    });
+
+    it('retains an authenticated response that carries no freshness header at all', async () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/secure/**');
+      s.api.on('GET', '/secure/me', () => ({
+        body: { id: 'me' },
+        headers: { 'cache-control': 'no-store, private' },
+      }));
+
+      const getMe = createSecureGetQuery(s.clientRef, auth.ref)<{ response: { id: string } }>('/secure/me');
+
+      const a = s.consumer();
+      a.run(() => auth.queries.login.execute({ body: {} }));
+      await s.settle();
+
+      const first = a.run(() => getMe());
+      await s.settle();
+      expect(first.response()).toEqual({ id: 'me' });
+
+      a.destroy();
+
+      expect(s.client.repository.subtle.cacheEntries()).toContainEqual(
+        expect.objectContaining({ isSecure: true, isUnused: true }),
+      );
+
+      s.tick(2_000);
+
+      const b = s.consumer();
+      const second = b.run(() => getMe());
+
+      // `no-store` makes the header-derived TTL null, so this response can only come from retention.
+      expect(second.response()).toEqual({ id: 'me' });
+
+      await s.settle();
+      b.destroy();
+      s.tick(5_001);
+    });
+
+    it('destroys an entry that only ever errored instead of retaining it', () => {
+      const s = scenario();
+      s.api.on('GET', '/broken', () => ({ status: 500, body: { message: 'boom' } }));
+
+      const getBroken = s.get<{ response: { n: number } }>('/broken');
+
+      const c = s.consumer();
+      const query = c.run(() => getBroken());
+      s.tick();
+
+      expect(query.error()).not.toBeNull();
+      expect(s.client.repository.subtle.cacheEntries()).toHaveLength(1);
+
+      c.destroy();
+
+      expect(s.client.repository.subtle.cacheEntries()).toHaveLength(0);
+
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 500);
+    });
+
+    it('drops a retained secure entry on logout instead of letting it sit out its window', async () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/secure/**');
+      s.api.on('GET', '/secure/me', () => ({ body: { id: 'me' } }));
+
+      const getMe = createSecureGetQuery(s.clientRef, auth.ref)<{ response: { id: string } }>('/secure/me');
+
+      const a = s.consumer();
+      a.run(() => auth.queries.login.execute({ body: {} }));
+      await s.settle();
+
+      const secure = a.run(() => getMe());
+      await s.settle();
+      const secureKey = secure.id();
+
+      a.destroy();
+
+      expect(s.client.repository.subtle.cacheEntries().map((entry) => entry.key)).toContain(secureKey);
+
+      s.run(() => auth.logout());
+      await s.settle();
+
+      expect(s.client.repository.subtle.cacheEntries().map((entry) => entry.key)).not.toContain(secureKey);
+    });
+
+    it.fails('serves a remounting query from a still-fresh entry without a request', () => {
+      // caching.md:55 - an auto-execution never passes `allowCache`, so a rebind always re-requests.
+      const s = scenario();
+      s.api.on('GET', '/still-fresh', () => ({ body: { n: 1 }, headers: { 'cache-control': 'max-age=20' } }));
+
+      const getStillFresh = s.get<{ response: { n: number } }>('/still-fresh');
+
+      const a = s.consumer();
+      a.run(() => getStillFresh());
+      s.tick();
+      a.destroy();
+
+      s.tick(1_000);
+
+      const b = s.consumer();
+      b.run(() => getStillFresh());
+      s.tick();
+
+      const requestsAfterRemount = s.api.requestCount('GET', '/still-fresh');
+
+      b.destroy();
+      s.tick(5_001);
+
+      expect(requestsAfterRemount).toBe(1);
+    });
+  });
+
+  describe('freshness derived from response headers', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it.each<{ name: string; headers: Record<string, string>; freshAt: number | null; staleAt: number }>([
+      { name: 'no-store', headers: { 'cache-control': 'no-store' }, freshAt: null, staleAt: 0 },
+      { name: 'no-cache', headers: { 'cache-control': 'no-cache' }, freshAt: null, staleAt: 0 },
+      { name: 'max-age=0', headers: { 'cache-control': 'max-age=0' }, freshAt: null, staleAt: 0 },
+      { name: 's-maxage=20', headers: { 'cache-control': 's-maxage=20' }, freshAt: 9_000, staleAt: 10_001 },
+      {
+        name: 'max-age=20 with age=5',
+        headers: { 'cache-control': 'max-age=20', age: '5' },
+        freshAt: 14_000,
+        staleAt: 15_001,
+      },
+    ])('derives the freshness window from $name', ({ headers, freshAt, staleAt }) => {
+      const s = scenario();
+      s.api.on(
+        'GET',
+        '/ttl',
+        sequence([
+          { body: { n: 1 }, headers },
+          { body: { n: 2 }, headers },
+        ]),
+      );
+
+      const getTtl = s.get<{ response: { n: number } }>('/ttl');
+
+      const c = s.consumer();
+      const query = c.run(() => getTtl());
+      s.tick();
+      expect(s.api.requestCount('GET', '/ttl')).toBe(1);
+
+      let elapsed = 0;
+
+      if (freshAt !== null) {
+        s.tick(freshAt);
+        elapsed = freshAt;
+        query.execute({ options: { allowCache: true } });
+        s.tick();
+        expect(s.api.requestCount('GET', '/ttl')).toBe(1);
+      }
+
+      s.tick(staleAt - elapsed);
+      query.execute({ options: { allowCache: true } });
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/ttl')).toBe(2);
+      expect(query.response()).toEqual({ n: 2 });
+
+      c.destroy();
+    });
+
+    it('derives the freshness window from an expires header', () => {
+      const s = scenario();
+      s.api.on('GET', '/expires', () => ({
+        body: { n: 1 },
+        headers: { expires: new Date(Date.now() + 30_000).toUTCString() },
+      }));
+
+      const getExpires = s.get<{ response: { n: number } }>('/expires');
+
+      const c = s.consumer();
+      const query = c.run(() => getExpires());
+      s.tick();
+      expect(s.api.requestCount('GET', '/expires')).toBe(1);
+
+      // `expires` is second precision, so the window ends within a second of 30s either way.
+      s.tick(25_000);
+      query.execute({ options: { allowCache: true } });
+      s.tick();
+      expect(s.api.requestCount('GET', '/expires')).toBe(1);
+
+      s.tick(6_000);
+      query.execute({ options: { allowCache: true } });
+      s.tick();
+      expect(s.api.requestCount('GET', '/expires')).toBe(2);
+
+      c.destroy();
+    });
+  });
+
+  describe('what refreshQueriesInUse covers', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('refreshQueriesInUse re-requests an entry that is still inside its freshness window', () => {
+      const s = scenario();
+      s.api.on(
+        'GET',
+        '/tenant-data',
+        sequence([
+          { body: { n: 1 }, headers: { 'cache-control': 'max-age=20' } },
+          { body: { n: 2 }, headers: { 'cache-control': 'max-age=20' } },
+        ]),
+      );
+
+      const getTenantData = s.get<{ response: { n: number } }>('/tenant-data');
+
+      const c = s.consumer();
+      const query = c.run(() => getTenantData());
+      s.tick();
+      expect(s.api.requestCount('GET', '/tenant-data')).toBe(1);
+
+      // Well inside the 10s window an `allowCache` execute would be served from the cache.
+      s.tick(1_000);
+      s.client.refreshQueriesInUse();
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/tenant-data')).toBe(2);
+      expect(query.response()).toEqual({ n: 2 });
+
+      c.destroy();
+    });
+
+    it('refreshes a HEAD and an OPTIONS read alongside the GETs', () => {
+      const s = scenario();
+      s.api.on('GET', '/mixed-get', () => ({ body: { n: 1 } }));
+      s.api.on('HEAD', '/mixed-head', () => ({ body: { n: 1 } }));
+      s.api.on('OPTIONS', '/mixed-options', () => ({ body: { n: 1 } }));
+
+      const getMixed = s.get<{ response: { n: number } }>('/mixed-get');
+      const headMixed = s.head<{ response: { n: number } }>('/mixed-head');
+      const optionsMixed = s.options<{ response: { n: number } }>('/mixed-options');
+
+      const c = s.consumer();
+      c.run(() => getMixed());
+      c.run(() => headMixed());
+      c.run(() => optionsMixed());
+      s.tick();
+
+      s.client.refreshQueriesInUse();
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/mixed-get')).toBe(2);
+      expect(s.api.requestCount('HEAD', '/mixed-head')).toBe(2);
+      expect(s.api.requestCount('OPTIONS', '/mixed-options')).toBe(2);
+
+      c.destroy();
+    });
+
+    it('never replays a cached login POST when refreshQueriesInUse runs', async () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.on('GET', '/dashboard', () => ({ body: { n: 1 } }));
+
+      const getDashboard = s.get<{ response: { n: number } }>('/dashboard');
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      await s.settle();
+
+      c.run(() => getDashboard());
+      await s.settle();
+
+      expect(s.client.repository.subtle.cacheEntries().some((entry) => entry.request.method === 'POST')).toBe(true);
+
+      s.client.refreshQueriesInUse();
+      await s.settle();
+
+      expect(s.api.requestCount('POST', '/auth/login')).toBe(1);
+      expect(s.api.requestCount('GET', '/dashboard')).toBe(2);
+
+      c.destroy();
+    });
+  });
+
+  describe('invalidateQueries narrowing', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('applies the invalidation filter after url and only to the queries it accepts', () => {
+      const s = scenario();
+      s.api.on('GET', '/players/:id', ({ params }) => ({ body: { id: params['id'] } }));
+      s.api.on('GET', '/teams/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+      const getPlayer = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/players/${p.id}`);
+      const getTeam = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/teams/${p.id}`);
+
+      const c = s.consumer();
+      c.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '1' } }))));
+      c.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '2' } }))));
+      c.run(() => getTeam(withArgs(() => ({ pathParams: { id: '9' } }))));
+      s.tick();
+
+      const seen: QueryInvalidationCandidate[] = [];
+
+      s.client.invalidateQueries({
+        url: '/players',
+        filter: (query) => {
+          seen.push(query);
+
+          return query.url.endsWith('/1');
+        },
+      });
+      s.tick();
+
+      expect(seen.map((query) => query.url).sort()).toEqual([
+        'https://api.test/players/1',
+        'https://api.test/players/2',
+      ]);
+      expect(seen.every((query) => query.method === 'GET')).toBe(true);
+      expect(s.api.requestCount('GET', '/players/1')).toBe(2);
+      expect(s.api.requestCount('GET', '/players/2')).toBe(1);
+      expect(s.api.requestCount('GET', '/teams/9')).toBe(1);
+
+      c.destroy();
+    });
+
+    it('ignores otherTabs and invalidates locally when the multi-tab feature is absent', () => {
+      const s = scenario();
+      s.api.on('GET', '/players/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+      const getPlayer = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/players/${p.id}`);
+
+      const c = s.consumer();
+      c.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '1' } }))));
+      s.tick();
+
+      s.client.invalidateQueries({ url: '/players', otherTabs: true });
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/players/1')).toBe(2);
+      expect(s.errors).toEqual([]);
+
+      c.destroy();
+    });
+
+    it('matches /players against /players?page=2 but not /players-archive', () => {
+      const s = scenario();
+      s.api.on('GET', '/players', ({ query }) => ({ body: { page: query['page'] ?? null } }));
+      s.api.on('GET', '/players/:id', ({ params }) => ({ body: { page: params['id'] } }));
+      s.api.on('GET', '/players-archive', () => ({ body: { page: 'archive' } }));
+
+      const getPlayers = s.get<{ response: { page: string | null } }>('/players');
+      const getPlayersPage = s.get<{ response: { page: string | null }; queryParams: { page: number } }>('/players');
+      const getPlayer = s.get<{ response: { page: string }; pathParams: { id: string } }>((p) => `/players/${p.id}`);
+      const getArchive = s.get<{ response: { page: string } }>('/players-archive');
+
+      const listRequests = () => s.api.requests.filter((r) => r.path === '/players' && !r.query['page']).length;
+      const pagedRequests = () => s.api.requests.filter((r) => r.path === '/players' && r.query['page'] === '2').length;
+
+      const c = s.consumer();
+      c.run(() => getPlayers());
+      c.run(() => getPlayersPage(withArgs(() => ({ queryParams: { page: 2 } }))));
+      c.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '1' } }))));
+      c.run(() => getArchive());
+      s.tick();
+
+      const listBefore = listRequests();
+      const pagedBefore = pagedRequests();
+
+      s.client.invalidateQueries({ url: '/players' });
+      s.tick();
+
+      expect(listRequests()).toBe(listBefore + 1);
+      expect(pagedRequests()).toBe(pagedBefore + 1);
+      expect(s.api.requestCount('GET', '/players/1')).toBe(2);
+      expect(s.api.requestCount('GET', '/players-archive')).toBe(1);
+
+      c.destroy();
+    });
+
+    it('invalidateQueries() with no options re-runs every read in use', () => {
+      const s = scenario();
+      s.api.on('GET', '/players/:id', ({ params }) => ({ body: { id: params['id'] } }));
+      s.api.on('GET', '/teams/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+      const getPlayer = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/players/${p.id}`);
+      const getTeam = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/teams/${p.id}`);
+
+      const c = s.consumer();
+      c.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '1' } }))));
+      c.run(() => getTeam(withArgs(() => ({ pathParams: { id: '9' } }))));
+
+      const orphan = s.consumer();
+      orphan.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '2' } }))));
+
+      s.tick();
+      orphan.destroy();
+
+      s.client.invalidateQueries();
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/players/1')).toBe(2);
+      expect(s.api.requestCount('GET', '/teams/9')).toBe(2);
+      expect(s.api.requestCount('GET', '/players/2')).toBe(1);
+
+      c.destroy();
+    });
+
+    it('records one invalidation event naming every cache entry it re-executed', () => {
+      const s = scenario();
+      s.api.on('GET', '/players/:id', ({ params }) => ({ body: { id: params['id'] } }));
+      s.api.on('GET', '/teams/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+      const getPlayer = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/players/${p.id}`);
+      const getTeam = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/teams/${p.id}`);
+
+      const c = s.consumer();
+      c.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '1' } }))));
+      c.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '2' } }))));
+      c.run(() => getTeam(withArgs(() => ({ pathParams: { id: '9' } }))));
+      s.tick();
+
+      const refreshEvents: Extract<QueryRepositoryEvent, { type: 'queries-refreshed' }>[] = [];
+      const subscription = s.client.repository.events$.subscribe((event) => {
+        if (event.type === 'queries-refreshed') refreshEvents.push(event);
+      });
+
+      s.client.invalidateQueries({ url: '/players' });
+      s.tick();
+
+      expect(refreshEvents).toHaveLength(1);
+      expect(refreshEvents[0]?.cause).toEqual({
+        type: 'invalidation',
+        url: 'https://api.test/players',
+        otherTab: false,
+      });
+      expect(refreshEvents[0]?.requests.map((request) => request.url).sort()).toEqual([
+        'https://api.test/players/1',
+        'https://api.test/players/2',
+      ]);
+
+      subscription.unsubscribe();
+      c.destroy();
+    });
+  });
+
+  describe('a filter never crosses the channel', () => {
+    let bus: FakeBroadcastChannelHandle;
+    let locks: FakeWebLocksHandle;
+
+    beforeEach(() => {
+      bus = installFakeBroadcastChannel();
+      locks = installFakeWebLocks();
+    });
+
+    afterEach(() => {
+      bus.restore();
+      locks.restore();
+    });
+
+    const scenario = useScenario({
+      baseUrl: BASE_URL,
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withMultiTabSync({ channelName: FILTER_CHANNEL })],
+    });
+
+    it('invalidates a superset in the other tab because the filter stays local', async () => {
+      const s = scenario();
+      s.api.on('GET', '/players/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+      const tabB = createSecondTab(s);
+      const getPlayer = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/players/${p.id}`);
+      const getPlayerB = tabB.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/players/${p.id}`);
+
+      const a = s.consumer();
+      const b = tabB.consumer();
+      a.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '1' } }))));
+      a.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '2' } }))));
+      b.run(() => getPlayerB(withArgs(() => ({ pathParams: { id: '1' } }))));
+      b.run(() => getPlayerB(withArgs(() => ({ pathParams: { id: '2' } }))));
+
+      await s.settle();
+      await flushMultiTabSync();
+
+      const acceptedBefore = s.api.requestCount('GET', '/players/1');
+      const rejectedBefore = s.api.requestCount('GET', '/players/2');
+
+      s.client.invalidateQueries({ url: '/players', filter: (query) => query.url.endsWith('/1') });
+      await s.settle();
+      await flushMultiTabSync();
+      await s.settle();
+
+      // This tab honours the filter; the other tab receives the url alone and refreshes both entries.
+      expect(s.api.requestCount('GET', '/players/1')).toBe(acceptedBefore + 2);
+      expect(s.api.requestCount('GET', '/players/2')).toBe(rejectedBefore + 1);
+
+      a.destroy();
+      b.destroy();
+      tabB.destroy();
     });
   });
 });
