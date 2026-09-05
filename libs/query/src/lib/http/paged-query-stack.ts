@@ -392,7 +392,14 @@ export const createPagedQueryStack = <
 
     const args = options.args(page, allResponses);
     pageDirection.set('previous');
-    const query = stack.subtle.runWithArgs(args);
+
+    const firstQueryBefore = stack.firstQuery();
+    stack.subtle.runWithArgs(args);
+
+    // `runWithArgs` returns the stack's last query, which stays the highest page here: the query
+    // created for a backward fetch is prepended, so it is the stack's first query.
+    const firstQueryAfter = stack.firstQuery();
+    const query = firstQueryAfter === firstQueryBefore ? null : firstQueryAfter;
 
     if (query) {
       currentPageArgs.set(args);

@@ -284,6 +284,45 @@ describe('stacks scenario', () => {
     c.destroy();
   });
 
+  it('fetchPreviousPage returns the query for the page it fetched', () => {
+    const s = scenario();
+    s.api.on('GET', '/backward-pages', ({ query }) => ({
+      body: {
+        items: [{ id: Number(query['page']) }],
+        currentPage: Number(query['page']),
+        nextPage: Number(query['page']) + 1,
+        totalPageCount: 5,
+        itemsPerPage: 1,
+        totalHits: 5,
+      },
+      delay: 10,
+    }));
+
+    const getPosts = s.get<{ response: Paginated<{ id: number }>; queryParams: { page: number } }>('/backward-pages');
+
+    const c = s.consumer();
+    const pages = c.run(() =>
+      createPagedQueryStack({
+        queryCreator: getPosts,
+        responseNormalizer: ethletePaginationAdapter,
+        args: (page) => ({ queryParams: { page } }),
+        initialPage: 3,
+      }),
+    );
+
+    s.tick(10);
+    expect(pages.items()).toEqual([{ id: 3 }]);
+
+    const previous = pages.fetchPreviousPage();
+    s.tick(10);
+
+    expect(previous?.args()).toEqual({ queryParams: { page: 2 } });
+    expect(previous?.response()?.currentPage).toBe(2);
+    expect(pages.lastQuery()?.args()).toEqual({ queryParams: { page: 3 } });
+
+    c.destroy();
+  });
+
   it('selectively re-executes a matching page and its neighbors', () => {
     const s = scenario();
     s.api.on('GET', '/selective-pages', ({ query }) => ({
