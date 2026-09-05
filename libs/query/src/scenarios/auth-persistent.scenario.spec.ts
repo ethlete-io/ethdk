@@ -415,4 +415,36 @@ describe('withPersistentAuth', () => {
 
     second.destroy();
   });
+  it('a logout during the cookie restore leaves no execution stuck on loading', async () => {
+    const s = scenario();
+
+    serve(s, 20000);
+
+    const first = boot(s, { features: [persistentAuth()] });
+    await login(s, first);
+    first.destroy();
+
+    s.api.once('POST', '/auth/refresh', () => ({
+      body: {
+        accessToken: mintToken({ expiresInMs: 20000 }),
+        refreshToken: mintToken({ expiresInMs: 60 * 60 * 1000 }),
+      },
+      delay: 1000,
+    }));
+
+    const second = boot(s, { features: [persistentAuth()] });
+    await s.settle();
+
+    expect(second.auth.sessionStatus()).toBe('restoring');
+    expect(second.auth.executionState()).toEqual(expect.objectContaining({ type: 'autoLogin', state: 'loading' }));
+
+    second.auth.logout();
+    await s.settle(2000);
+
+    expect(second.auth.sessionStatus()).toBe('anonymous');
+    expect(second.auth.isAuthenticated()).toBe(false);
+    expect(second.auth.executionState()?.state).not.toBe('loading');
+
+    second.destroy();
+  });
 });
