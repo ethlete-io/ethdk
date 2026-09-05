@@ -49,7 +49,13 @@ export const shouldCacheQuery = (method: QueryMethod) => {
   return method === 'GET' || method === 'OPTIONS' || method === 'HEAD';
 };
 
-export const buildQueryCacheKey = (route: string, args: RequestArgs<QueryArgs> | undefined) => {
+/**
+ * Builds the repository cache key for a request. `method` keeps two cacheable methods on one route
+ * (a `HEAD` and an `OPTIONS`, a GraphQL query over POST and a plain `GET`) in separate entries.
+ * Omitting it - or passing `GET` - yields the key a `GET` has always had, which is what persisted
+ * entries written by an older version are stored under.
+ */
+export const buildQueryCacheKey = (route: string, args: RequestArgs<QueryArgs> | undefined, method?: QueryMethod) => {
   const headers = typeof args?.headers === 'function' ? args.headers() : args?.headers;
   const serializedHeaders = headers
     ?.keys()
@@ -66,7 +72,8 @@ export const buildQueryCacheKey = (route: string, args: RequestArgs<QueryArgs> |
     .replace(/\s/g, '');
 
   const headerInput = serializedHeaders?.length ? `_${JSON.stringify(serializedHeaders)}` : '';
-  const seed = `${route}_${body}${headerInput}`;
+  const methodInput = method && method !== 'GET' ? `_${method}` : '';
+  const seed = `${route}_${body}${headerInput}${methodInput}`;
 
   let hash = 0;
   let secondaryHash = 5381;

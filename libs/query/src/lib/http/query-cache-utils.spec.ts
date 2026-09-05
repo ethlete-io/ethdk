@@ -62,6 +62,26 @@ describe('query cache utils', () => {
       expect(mixed).toBe(lower);
     });
 
+    it('should give every cacheable method on one route its own key', () => {
+      const args = { body: { page: 1 } };
+
+      const get = buildQueryCacheKey('/api/status', args, 'GET');
+      const head = buildQueryCacheKey('/api/status', args, 'HEAD');
+      const options = buildQueryCacheKey('/api/status', args, 'OPTIONS');
+      const post = buildQueryCacheKey('/api/status', args, 'POST');
+
+      expect(new Set([get, head, options, post]).size).toBe(4);
+    });
+
+    it('should keep the key a GET already has, so persisted entries survive an upgrade', () => {
+      expect(buildQueryCacheKey('/api/status', undefined)).toBe('06330470810770548246');
+      expect(buildQueryCacheKey('/api/status', undefined, 'GET')).toBe('06330470810770548246');
+      expect(buildQueryCacheKey('/api/status', { body: { page: 1 } }, 'GET')).toBe('40377494252018032206');
+      expect(buildQueryCacheKey('/api/status', { headers: new HttpHeaders({ 'Accept-Language': 'en' }) }, 'GET')).toBe(
+        '10877690302814443351',
+      );
+    });
+
     it('should return a numeric string', () => {
       const key = buildQueryCacheKey('/api/test', undefined);
       expect(Number.isNaN(Number(key))).toBe(false);

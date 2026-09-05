@@ -49,6 +49,8 @@ save() {
 
 Each has a `createSecure…Query(client, authProviderRef)` twin. Auto-execution and caching semantics are the core rules - see [auto-execution](/query/queries#auto-execution) and [caching](/query/caching).
 
+The request method is part of the [cache key](/query/caching), so a `HEAD` and an `OPTIONS` query on the same route get their own entry and never read each other's response.
+
 ## Typing requests
 
 The generic `TArgs` type passed to a creator describes the whole request/response contract:

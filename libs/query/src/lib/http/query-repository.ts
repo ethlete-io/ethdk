@@ -490,12 +490,16 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     });
 
     const cacheKey = shouldCache
-      ? buildQueryCacheKey(`${options.key ? options.key + '_' : ''}${route}`, {
-          body: args?.body,
-          queryParams: args?.queryParams,
-          pathParams: args?.pathParams,
-          headers: args?.headers,
-        })
+      ? buildQueryCacheKey(
+          `${options.key ? options.key + '_' : ''}${route}`,
+          {
+            body: args?.body,
+            queryParams: args?.queryParams,
+            pathParams: args?.pathParams,
+            headers: args?.headers,
+          },
+          options.method,
+        )
       : false;
 
     const trackingKey = cacheKey || generateUuid();

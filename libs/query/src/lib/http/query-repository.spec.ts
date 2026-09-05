@@ -47,11 +47,8 @@ describe('createQueryRepository', () => {
 
     expect(req).toBeTruthy();
 
-    const expectedKey = '25888864122865389909';
-
-    expect(req.key).toBe(expectedKey);
-    expect(req2.key).toBe(expectedKey);
-    expect(req3.key).toBe(expectedKey);
+    expect(req.key).toBe('25888864122865389909');
+    expect(new Set([req.key, req2.key, req3.key]).size).toBe(3);
 
     let headers = new HttpHeaders();
     headers = headers.append('Authorization ', 'Bearer token');

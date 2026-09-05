@@ -4,7 +4,7 @@ All [queries](/query/queries) of a client share one **query repository** - an in
 
 ## What is cached
 
-`GET`, `OPTIONS` and `HEAD` requests, plus [GraphQL queries](/query/gql) regardless of transport. Cache keys hash the resolved route, request body and per-execution headers (except `Authorization`), so requests for different languages or tenants do not share a response. Mutating methods are never cached - passing `key` or `allowCache` to an uncacheable query throws in dev mode.
+`GET`, `OPTIONS` and `HEAD` requests, plus [GraphQL queries](/query/gql) regardless of transport. Cache keys hash the resolved route, the request method, the request body and the per-execution headers (except `Authorization`), so requests for different languages or tenants do not share a response, and neither do a `HEAD` and an `OPTIONS` on one route. Mutating methods are never cached - passing `key` or `allowCache` to an uncacheable query throws in dev mode.
 
 ## Deduplication
 
