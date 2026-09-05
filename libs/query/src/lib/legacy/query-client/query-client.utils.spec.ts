@@ -16,6 +16,34 @@ describe('buildQueryCacheKey', () => {
 
     expect(cacheKey).toBe(expectedCacheKey);
   });
+
+  it('should keep the key a GET has always had', () => {
+    const route = '/posts';
+    const args: BaseArguments = {
+      variables: {
+        id: 123,
+      },
+    };
+
+    expect(v2BuildQueryCacheKey(route, args, 'GET')).toBe('1769813287');
+    expect(v2BuildQueryCacheKey(route, args)).toBe('1769813287');
+  });
+
+  it('should give two cacheable methods on one route different keys', () => {
+    const route = '/posts';
+    const args: BaseArguments = {
+      variables: {
+        id: 123,
+      },
+    };
+
+    const headKey = v2BuildQueryCacheKey(route, args, 'HEAD');
+    const optionsKey = v2BuildQueryCacheKey(route, args, 'OPTIONS');
+    const gqlKey = v2BuildQueryCacheKey(route, args, 'GQL_QUERY');
+    const getKey = v2BuildQueryCacheKey(route, args, 'GET');
+
+    expect(new Set([headKey, optionsKey, gqlKey, getKey]).size).toBe(4);
+  });
 });
 
 describe('shouldCacheQuery', () => {

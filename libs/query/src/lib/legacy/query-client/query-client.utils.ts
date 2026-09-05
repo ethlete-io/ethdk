@@ -9,16 +9,21 @@ export const v2ShouldCacheQuery = (method: Method) => {
 };
 
 /**
+ * Builds the query store key for a request. `method` keeps two cacheable methods on one route
+ * (a `HEAD` and an `OPTIONS`, a `GQL_QUERY` over POST and a plain `GET`) in separate entries.
+ * Omitting it - or passing `GET` - yields the key a `GET` has always had.
+ *
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
-export const v2BuildQueryCacheKey = (route: string, args: BaseArguments | undefined) => {
+export const v2BuildQueryCacheKey = (route: string, args: BaseArguments | undefined, method?: Method) => {
   const variables = JSON.stringify(args?.variables || {})
     // replace all curly braces with empty string
     .replace(/{|}/g, '')
     // replace new lines and whitespaces with empty string
     .replace(/\s/g, '');
 
-  const seed = `${route}...${variables}`;
+  const methodInput = method && method !== 'GET' ? `...${method}` : '';
+  const seed = `${route}...${variables}${methodInput}`;
 
   let hash = 0;
 

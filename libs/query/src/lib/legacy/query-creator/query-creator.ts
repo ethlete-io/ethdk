@@ -43,7 +43,8 @@ export class V2QueryCreator<
       queryParamConfig: this._client.config.request?.queryParams,
     }) as Route;
 
-    const cacheKey = (args?.config?.queryStoreCacheKey ?? '') + v2BuildQueryCacheKey(route as string, args);
+    const cacheKey =
+      (args?.config?.queryStoreCacheKey ?? '') + v2BuildQueryCacheKey(route as string, args, this._queryConfig.method);
 
     if (v2ShouldCacheQuery(this._queryConfig.method) && !args?.config?.skipQueryStore) {
       const existingQuery = this._store.get<V2Query<Response, Arguments, Route, Store, Data, Id>>(cacheKey);
