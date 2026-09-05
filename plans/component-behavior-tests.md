@@ -301,12 +301,16 @@ still runs, so the test focuses the neighbour right after the outside press. A `
 listener that focuses instead does **not** work - the browser's own mousedown default action then
 puts focus back on the body.
 
-### Eight new suites
+### Twelve new suites
 
 `banner` (19 tests), `breadcrumb` (52), `copy-button` (11), `scrollable` (16), `color-input` (30),
-`empty-state` (19), `floating-action` (32), `query-error` (24). The project now holds 44 suites and
-599 tests per browser project; the full run takes 5.1 minutes with three workers against the static
-build (615 executed, 583 skipped by the project guards, 0 failed).
+`empty-state` (19), `floating-action` (32), `query-error` (24), `counter` (20), `nav-tabs` (22),
+`phone-input` (24), `split-button` (13). The project holds 48 suites. After the first eight it held
+44 suites and 599 tests per browser project, and the full run took 5.1 minutes with three workers
+against the static build (615 executed, 583 skipped by the project guards, 0 failed).
+
+`Components/Forms/Counter` is the **character counter** in a form field's support row, not a numeric
+stepper - it has no buttons and no value of its own.
 
 ### Defects found and fixed
 
@@ -323,11 +327,25 @@ build (615 executed, 583 skipped by the project guards, 0 failed).
   the docs page around those embeds claims. The story installs `symfonyQueryErrorParser` and passes
   `shouldRetryRequest` now.
 
+- **Nav tabs, two keyboard defects.** `TabBarDirective.handleKeydown` called `preventDefault()` on
+  every Enter and then bailed when no arrow key had moved its focused index, so a nav tab link a
+  user reached with Tab never activated - the bar cancelled the browser's own anchor activation and
+  put nothing in its place. It leaves that key alone now. `NavTabLinkComponent.handleSpace` clicked
+  the host without consulting `disabled`, so Space followed a disabled link. Both have a jsdom spec
+  that fails without the fix, plus the two e2e tests that found them.
+
 ### Defects recorded, still `test.fail()`
 
 - `color-input`: the docs say a Tab past the panel's last control closes the picker. When the field
   is the last tab stop on the page, Tab leaves focus on `document.body` and the panel stays open.
   Closing on focus-leave works whenever focus lands on a real element outside.
+- `nav-tabs`: a bar whose links are all disabled keeps a tab stop. `disabled` on an `<a>` is inert
+  and the roving tab index still gives the selected trigger `tabindex="0"`. Content tabs are skipped
+  because a native `button[disabled]` cannot take focus.
+- `phone-input`: the country trigger has no accessible name. The template binds
+  `[attr.aria-label]="resolvedCountryLabel()"`, and `SelectTriggerDirective`'s own host binding
+  writes `null` over it whenever the panel has a search. The `hasSearch()` condition looks
+  deliberate, so the fix belongs with whoever owns that decision - the trigger reads "+49" today.
 
 ### Harness notes
 
@@ -337,6 +355,11 @@ build (615 executed, 583 skipped by the project guards, 0 failed).
   flips to `right` in the story and covers the second trigger, so a test that needs a second control
   must pick a story whose panel drops away from it.
 - `nx lint storybook-e2e` still runs without `--fix`.
+- Never verify a fix with `git checkout HEAD -- <file>` while the fix is uncommitted: `HEAD` is the
+  state without it, so the "restore" throws the work away. Copy the file aside instead.
+- A select panel with a search claims focus only after its enter transition. A test that types into
+  the search right after opening loses the first characters and commits the wrong option. Wait for
+  the search input to be focused, then type, then wait for the filtered option count.
 - The `components` vitest project has a **sixth** file that exhausts a worker:
   `libs/components/src/lib/scheduler/scheduler.component.spec.ts` (11 tests). It crashes alone, with
   `--maxWorkers=1`, and on `next` without this wave's changes, so it is not a regression from the
