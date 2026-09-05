@@ -1,17 +1,36 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { createFakeQueryPersistenceStore, FakeQueryPersistenceStoreHandle } from '@ethlete/query/testing';
+import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
+import { createEnvironmentInjector, EnvironmentInjector, inject, PLATFORM_ID } from '@angular/core';
 import {
+  createFakeQueryPersistenceStore,
+  FakeBroadcastChannelHandle,
+  FakeQueryPersistenceStoreHandle,
+  FakeWebLocksHandle,
+  flushMultiTabSync,
+  installFakeBroadcastChannel,
+  installFakeWebLocks,
+} from '@ethlete/query/testing';
+import {
+  createBearerAuthProvider,
   createGetQuery,
+  createGqlMutationViaPost,
   createGqlQueryViaPost,
+  createPostQuery,
   createQueryClient,
   createSecureGetQuery,
   gql,
   PersistedQueryEntry,
   QueryPersistenceAdapter,
+  QueryPersistenceCandidate,
+  withAuthenticationQuery,
+  withBearerAuthMultiTabSync,
+  withDefaultRetry,
+  withLogging,
   withQueryPersistence,
+  withRefreshQuery,
+  withSuccessHandling,
 } from '../index';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { sequence, useScenario } from './harness';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mintToken, Scenario, sequence, useScenario } from './harness';
 
 /**
  * Registered before `useScenario`'s `beforeEach` on purpose: the persistence engine reads the store
@@ -27,6 +46,70 @@ const persistedEntry = (entry: Pick<PersistedQueryEntry, 'key' | 'url' | 'persis
   method: 'GET',
   body: { key: entry.key },
 });
+
+const TAB_AUTH_PROVIDER_NAME = 'persistence-tab-auth';
+
+type TabTokenArgs = { body: Record<string, unknown>; response: { accessToken: string; refreshToken: string } };
+
+let tabCounter = 0;
+
+/** One browser tab: its own persisted query client and auth provider, over the shared store and channel. */
+const createPersistedTab = (s: Scenario) => {
+  const clientRef = createQueryClient({
+    name: `persistence-tab-client-${++tabCounter}`,
+    baseUrl: 'https://api.test',
+    keepUnusedFor: 0,
+    features: [withQueryPersistence({ adapter: store.adapter })],
+  });
+  const authRef = createBearerAuthProvider({
+    name: TAB_AUTH_PROVIDER_NAME,
+    queryClientRef: clientRef,
+    queries: [
+      withAuthenticationQuery('login', { queryCreator: createPostQuery(clientRef)<TabTokenArgs>('/auth/login') }),
+      withRefreshQuery('refresh', {
+        queryCreator: createPostQuery(clientRef)<TabTokenArgs>('/auth/refresh'),
+        refreshStrategy: 0.5,
+      }),
+    ],
+    features: [withBearerAuthMultiTabSync()],
+  });
+
+  const injector = createEnvironmentInjector(
+    [...clientRef.provide(), ...authRef.provide()],
+    s.run(() => inject(EnvironmentInjector)),
+  );
+  const auth = injector.runInContext(() => authRef.inject());
+  const client = injector.runInContext(() => clientRef.inject());
+
+  if (!auth || !client) throw new Error('persistence scenario: failed to create the tab');
+
+  const consumers: EnvironmentInjector[] = [];
+
+  return {
+    auth,
+    client,
+    get: createGetQuery(clientRef),
+    getSecure: createSecureGetQuery(clientRef, authRef),
+    consumer: () => {
+      const child = createEnvironmentInjector([], injector);
+      consumers.push(child);
+
+      return { run: <T>(fn: () => T) => child.runInContext(fn) };
+    },
+    destroy: () => {
+      for (const child of consumers) child.destroy();
+      injector.destroy();
+    },
+  };
+};
+
+const syncTabs = async (s: Scenario) => {
+  await s.settle();
+  await flushMultiTabSync();
+  await s.settle();
+  await flushMultiTabSync();
+  await s.settle();
+};
 
 describe('persistence scenario', () => {
   beforeEach(() => {
@@ -246,6 +329,232 @@ describe('persistence scenario', () => {
       expect(store.entries()).toEqual([]);
 
       c.destroy();
+    });
+
+    it('never persists a GraphQL mutation sent over POST', async () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { renameUser: { ok: true } } } }));
+
+      const renameUser = createGqlMutationViaPost(s.clientRef)<{
+        response: { renameUser: { ok: boolean } };
+        variables: { name: string };
+      }>(gql`
+        mutation RenameUser($name: String!) {
+          renameUser(name: $name) {
+            ok
+          }
+        }
+      `);
+
+      const c = s.consumer();
+      const mutation = c.run(() => renameUser());
+      mutation.execute({ args: { variables: { name: 'Ada' } } });
+      s.tick();
+
+      expect(mutation.response()).toEqual({ renameUser: { ok: true } });
+
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+
+      expect(store.entries()).toEqual([]);
+
+      c.destroy();
+    });
+
+    it('reports failure with the persisted body still in hasCachedResponse and cachedResponse', async () => {
+      const s = scenario();
+      s.api.on('GET', '/orders', sequence([{ body: { orders: 2 } }, { status: 500, body: { message: 'nope' } }]));
+
+      const getOrders = s.get<{ response: { orders: number } }>('/orders');
+
+      const first = s.consumer();
+      first.run(() => getOrders());
+      s.tick();
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+      first.destroy();
+
+      const second = s.consumer();
+      const query = second.run(() => getOrders());
+
+      await s.settle(0);
+      s.tick();
+
+      expect(query.executionState()).toEqual({
+        type: 'failure',
+        error: expect.objectContaining({ code: 500 }),
+        hasCachedResponse: true,
+        cachedResponse: { orders: 2 },
+      });
+
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 500);
+      second.destroy();
+    });
+
+    it('restores a persisted freshness window verbatim, so an allowCache execute on a hydrated entry skips the network', async () => {
+      const s = scenario();
+      s.api.on(
+        'GET',
+        '/prices',
+        sequence([
+          { body: { price: 1 }, headers: { 'cache-control': 'max-age=20' } },
+          { status: 500, body: { message: 'down' } },
+          { body: { price: 2 } },
+        ]),
+      );
+
+      const getPrices = s.get<{ response: { price: number } }>('/prices');
+
+      const first = s.consumer();
+      const firstQuery = first.run(() => getPrices());
+      s.tick();
+
+      // max-age=20 halves to a 10s freshness window, stored as the instant that window ends.
+      const expiresAt = Date.now() + 10_000;
+      const key = firstQuery.id();
+      if (!key) throw new Error('expected a repository key');
+
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+
+      expect(store.entry(key)?.expiresAt).toBe(expiresAt);
+      first.destroy();
+
+      const second = s.consumer();
+      const query = second.run(() => getPrices());
+
+      await s.settle(0);
+      s.tick();
+
+      expect(query.response()).toEqual({ price: 1 });
+      expect(s.api.requestCount('GET', '/prices')).toBe(2);
+
+      query.execute({ options: { allowCache: true } });
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/prices')).toBe(2);
+
+      s.tick(10_000);
+      query.execute({ options: { allowCache: true } });
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/prices')).toBe(3);
+      expect(query.response()).toEqual({ price: 2 });
+
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 500);
+      second.destroy();
+    });
+
+    it('still leaves the first tick empty after whenPersistenceReady resolved', async () => {
+      const s = scenario();
+      s.api.on('GET', '/profile', sequence([{ body: { name: 'ada' } }, { body: { name: 'ada' }, delay: 50 }]));
+
+      const getProfile = s.get<{ response: { name: string } }>('/profile');
+
+      const first = s.consumer();
+      first.run(() => getProfile());
+      s.tick();
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+      first.destroy();
+
+      await s.client.whenPersistenceReady;
+
+      const second = s.consumer();
+      const query = second.run(() => getProfile());
+
+      expect(query.response()).toBeNull();
+      expect(query.executionState()).toMatchObject({ type: 'loading', hasCachedResponse: false });
+
+      await s.settle(0);
+
+      expect(query.response()).toEqual({ name: 'ada' });
+
+      s.tick(50);
+      second.destroy();
+    });
+
+    it('writes nothing for a failed request, so the next cold start has nothing on disk', async () => {
+      const s = scenario();
+      s.api.on(
+        'GET',
+        '/reports/nightly',
+        sequence([
+          { status: 500, body: { message: 'down' } },
+          { body: { rows: 3 }, delay: 50 },
+        ]),
+      );
+
+      const getNightly = s.get<{ response: { rows: number } }>('/reports/nightly');
+
+      const first = s.consumer();
+      first.run(() => getNightly());
+      s.tick();
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+
+      expect(store.entries()).toEqual([]);
+      expect(store.calls().write).toBe(0);
+      first.destroy();
+
+      const second = s.consumer();
+      const query = second.run(() => getNightly());
+
+      await s.settle(0);
+
+      expect(query.response()).toBeNull();
+      expect(query.executionState()).toMatchObject({ type: 'loading', hasCachedResponse: false });
+      expect(store.calls().read).toBe(0);
+
+      s.tick(50);
+
+      expect(query.response()).toEqual({ rows: 3 });
+
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 500);
+      second.destroy();
+    });
+
+    it('keeps side-effect features and the event stream quiet when an entry is hydrated from disk', async () => {
+      const s = scenario();
+      s.api.on('GET', '/inbox', sequence([{ body: { unread: 1 } }, { body: { unread: 2 }, delay: 50 }]));
+
+      const getInbox = s.get<{ response: { unread: number } }>('/inbox');
+
+      const first = s.consumer();
+      first.run(() => getInbox());
+      s.tick();
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+      first.destroy();
+
+      const successes: unknown[] = [];
+      let loggedResponses = 0;
+
+      const second = s.consumer();
+      const query = second.run(() =>
+        getInbox(
+          withSuccessHandling({ handler: (r) => successes.push(r) }),
+          withLogging({
+            logFn: (event) => {
+              if (event?.type === HttpEventType.Response) loggedResponses++;
+            },
+          }),
+        ),
+      );
+
+      await s.settle(0);
+
+      expect(query.response()).toEqual({ unread: 1 });
+      expect(successes).toEqual([]);
+      expect(loggedResponses).toBe(0);
+
+      s.tick(50);
+
+      expect(query.response()).toEqual({ unread: 2 });
+      expect(successes).toEqual([{ unread: 2 }]);
+      expect(loggedResponses).toBe(1);
+
+      second.destroy();
     });
   });
 
@@ -780,6 +1089,436 @@ describe('persistence scenario', () => {
       expect(query.error()).toBeNull();
 
       second.destroy();
+    });
+  });
+  describe('an offline revalidation with the default retry policy', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withQueryPersistence({ adapter: () => store.adapter }), withDefaultRetry({ jitter: 0 })],
+    });
+
+    it('stays loading with the persisted response on screen for the whole retry window, then fails', async () => {
+      const s = scenario();
+      s.api.on('GET', '/feed', sequence([{ body: { items: 1 } }, { status: 0 }]));
+
+      const getFeed = s.get<{ response: { items: number } }>('/feed');
+
+      const first = s.consumer();
+      first.run(() => getFeed());
+      s.tick();
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+      first.destroy();
+
+      const second = s.consumer();
+      const query = second.run(() => getFeed());
+
+      await s.settle(0);
+
+      expect(query.executionState()).toMatchObject({
+        type: 'loading',
+        hasCachedResponse: true,
+        cachedResponse: { items: 1 },
+      });
+
+      // The retry policy backs off by 2s, 4s and 8s. Each stage needs the extra 1ms tick that lets the
+      // attempt sent on the boundary answer through its own zero-delay response timer.
+      for (const backoff of [2_000, 4_000]) {
+        s.tick(backoff);
+        s.tick(1);
+
+        expect(query.response()).toEqual({ items: 1 });
+        expect(query.executionState()).toMatchObject({
+          type: 'loading',
+          hasCachedResponse: true,
+          cachedResponse: { items: 1 },
+        });
+      }
+
+      s.tick(8_000);
+      s.tick(1);
+
+      expect(s.api.requestCount('GET', '/feed')).toBe(5);
+      expect(query.executionState()).toMatchObject({
+        type: 'failure',
+        hasCachedResponse: true,
+        cachedResponse: { items: 1 },
+      });
+
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 0);
+      second.destroy();
+    });
+  });
+
+  describe('the default maxAge', () => {
+    beforeEach(() => {
+      const now = Date.now();
+
+      store.seed([
+        persistedEntry({ key: 'just-inside', url: 'https://api.test/inside', persistedAt: now - 86_399_000 }),
+        persistedEntry({ key: 'just-outside', url: 'https://api.test/outside', persistedAt: now - 86_400_001 }),
+      ]);
+    });
+
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withQueryPersistence({ adapter: () => store.adapter })],
+    });
+
+    it('drops an entry older than the default 24h maxAge at startup', async () => {
+      const s = scenario();
+
+      await s.client.whenPersistenceReady;
+      await s.settle();
+
+      expect(store.entries().map((e) => e.key)).toEqual(['just-inside']);
+    });
+  });
+
+  describe('the filter candidate', () => {
+    let candidates: QueryPersistenceCandidate[] = [];
+
+    beforeEach(() => {
+      candidates = [];
+    });
+
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [
+        withQueryPersistence({
+          adapter: () => store.adapter,
+          filter: (candidate) => {
+            candidates.push(candidate);
+
+            return true;
+          },
+        }),
+      ],
+    });
+
+    it('hands the filter the key, url, method and isSecure of each candidate', async () => {
+      const s = scenario();
+      const auth = s.auth();
+
+      s.api.protect('/secure/**');
+      s.api.on('GET', '/secure/me', () => ({ body: { id: 'me' } }));
+      s.api.on('GET', '/public/info', () => ({ body: { version: 1 } }));
+
+      const getMe = createSecureGetQuery(s.clientRef, auth.ref)<{ response: { id: string } }>('/secure/me', {
+        persistence: true,
+      });
+      const getInfo = s.get<{ response: { version: number } }>('/public/info');
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      const me = c.run(() => getMe());
+      const info = c.run(() => getInfo());
+      s.tick();
+      await s.settle();
+
+      expect(candidates).toHaveLength(2);
+      expect(candidates.find((candidate) => candidate.isSecure)).toEqual({
+        key: me.id(),
+        url: 'https://api.test/secure/me',
+        method: 'GET',
+        isSecure: true,
+      });
+      expect(candidates.find((candidate) => !candidate.isSecure)).toEqual({
+        key: info.id(),
+        url: 'https://api.test/public/info',
+        method: 'GET',
+        isSecure: false,
+      });
+
+      c.destroy();
+    });
+  });
+
+  describe('a client without the persistence feature', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('resolves whenPersistenceReady immediately for a client without the persistence feature', async () => {
+      const s = scenario();
+      let isReady = false;
+
+      void s.client.whenPersistenceReady.then(() => (isReady = true));
+      await Promise.resolve();
+
+      expect(isReady).toBe(true);
+      expect(s.client.subtle.persistence).toBeNull();
+      expect(store.calls()).toEqual({ loadIndex: 0, read: 0, write: 0, remove: 0, clear: 0 });
+    });
+  });
+
+  describe('server-side rendering', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withQueryPersistence({ adapter: () => store.adapter })],
+      providers: () => [{ provide: PLATFORM_ID, useValue: 'server' }],
+    });
+
+    it('opens no store and calls no adapter method on the server', async () => {
+      const s = scenario();
+      s.api.on('GET', '/page', () => ({ body: { title: 'home' } }));
+
+      const getPage = s.get<{ response: { title: string } }>('/page');
+
+      const c = s.consumer();
+      const query = c.run(() => getPage());
+      s.tick();
+
+      expect(query.response()).toEqual({ title: 'home' });
+
+      await s.client.whenPersistenceReady;
+      await s.settle();
+
+      expect(s.client.subtle.persistence).toBeNull();
+      expect(store.calls()).toEqual({ loadIndex: 0, read: 0, write: 0, remove: 0, clear: 0 });
+
+      c.destroy();
+    });
+  });
+
+  describe('storage the browser does not support', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withQueryPersistence({ adapter: () => ({ ...store.adapter, isSupported: false }) })],
+    });
+
+    it('degrades to in-memory caching when the adapter reports isSupported: false', async () => {
+      const s = scenario();
+      s.api.on('GET', '/teams', () => ({ body: { teams: ['a'] } }));
+
+      const getTeams = s.get<{ response: { teams: string[] } }>('/teams');
+
+      await s.client.whenPersistenceReady;
+
+      const a = s.consumer();
+      const b = s.consumer();
+      const queryA = a.run(() => getTeams());
+      const queryB = b.run(() => getTeams());
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/teams')).toBe(1);
+      expect(queryA.response()).toEqual({ teams: ['a'] });
+      expect(queryB.response()).toEqual(queryA.response());
+
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+
+      expect(store.calls()).toEqual({ loadIndex: 0, read: 0, write: 0, remove: 0, clear: 0 });
+
+      a.destroy();
+      b.destroy();
+    });
+  });
+
+  describe('an index that fails to load', () => {
+    beforeEach(() => {
+      store.seed([persistedEntry({ key: 'left-over', url: 'https://api.test/left-over', persistedAt: Date.now() })]);
+      store.failNextLoadIndex();
+    });
+
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withQueryPersistence({ adapter: () => store.adapter })],
+    });
+
+    it('treats an index that fails to load as an empty store and leaves queries unaffected', async () => {
+      const s = scenario();
+      s.api.on('GET', '/standings', () => ({ body: { rows: 4 } }));
+
+      await s.client.whenPersistenceReady;
+
+      const getStandings = s.get<{ response: { rows: number } }>('/standings');
+
+      const c = s.consumer();
+      const query = c.run(() => getStandings());
+      s.tick();
+      await s.settle();
+
+      expect(query.response()).toEqual({ rows: 4 });
+      expect(store.calls().read).toBe(0);
+
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+
+      expect(store.entries().map((e) => e.url)).toEqual(['https://api.test/left-over', 'https://api.test/standings']);
+
+      c.destroy();
+    });
+  });
+
+  describe('the default storage name', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('keeps two clients persisted entries apart under their default storage names', async () => {
+      const s = scenario();
+      const opened: string[] = [];
+      const indexedDbDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'indexedDB');
+
+      // The database is opened on the engine's first index read, and the open request is never answered:
+      // the name it asked for is the whole observation.
+      Object.defineProperty(globalThis, 'indexedDB', {
+        configurable: true,
+        value: {
+          open: (name: string) => {
+            opened.push(name);
+
+            return {} as IDBOpenDBRequest;
+          },
+        },
+      });
+
+      try {
+        const defaultNameRef = createQueryClient({
+          name: 'persistence-store-name-default',
+          baseUrl: 'https://api.test',
+          keepUnusedFor: 0,
+          features: [withQueryPersistence()],
+        });
+        const customNameRef = createQueryClient({
+          name: 'persistence-store-name-custom',
+          baseUrl: 'https://api.test',
+          keepUnusedFor: 0,
+          features: [withQueryPersistence({ storageName: 'et-query-persistence-somewhere-else' })],
+        });
+
+        s.run(() => defaultNameRef.inject());
+        s.run(() => customNameRef.inject());
+        await s.settle();
+
+        expect(opened).toEqual([
+          'et-query-persistence-persistence-store-name-default',
+          'et-query-persistence-somewhere-else',
+        ]);
+      } finally {
+        Reflect.deleteProperty(globalThis, 'indexedDB');
+        if (indexedDbDescriptor) Object.defineProperty(globalThis, 'indexedDB', indexedDbDescriptor);
+      }
+    });
+  });
+
+  describe('a removal that starts while a write is in flight', () => {
+    let releaseWrite: (() => void) | null = null;
+
+    beforeEach(() => {
+      releaseWrite = null;
+    });
+
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [
+        withQueryPersistence({
+          adapter: () => ({
+            ...store.adapter,
+            write: async (entries) => {
+              await new Promise<void>((resolve) => (releaseWrite = resolve));
+              await store.adapter.write(entries);
+            },
+          }),
+        }),
+      ],
+    });
+
+    it('runs a clearPersistedQueries that starts mid-write after the write lands, so nothing survives it', async () => {
+      const s = scenario();
+      s.api.on('GET', '/notes', () => ({ body: { notes: ['one'] } }));
+
+      const getNotes = s.get<{ response: { notes: string[] } }>('/notes');
+
+      const c = s.consumer();
+      c.run(() => getNotes());
+      s.tick();
+
+      s.tick(1000);
+      await s.settle();
+
+      expect(releaseWrite).not.toBeNull();
+
+      const cleared = s.client.clearPersistedQueries();
+
+      releaseWrite?.();
+      await cleared;
+      await s.settle();
+
+      expect(store.calls().write).toBe(1);
+      expect(store.calls().clear).toBe(1);
+      expect(store.entries()).toEqual([]);
+
+      c.destroy();
+    });
+  });
+
+  describe('a logout in another tab', () => {
+    let bus: FakeBroadcastChannelHandle;
+    let locks: FakeWebLocksHandle;
+
+    beforeEach(() => {
+      bus = installFakeBroadcastChannel();
+      locks = installFakeWebLocks();
+    });
+
+    afterEach(() => {
+      bus.restore();
+      locks.restore();
+    });
+
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('purges the secure persisted entries of both tabs when one of them logs out', async () => {
+      const s = scenario();
+      s.api.on('POST', '/auth/login', () => ({
+        body: {
+          accessToken: mintToken({ expiresInMs: 15 * 60 * 1000 }),
+          refreshToken: mintToken({ expiresInMs: 60 * 60 * 1000 }),
+        },
+      }));
+      s.api.protect('/secure/**');
+      s.api.on('GET', '/secure/a', () => ({ body: { id: 'a' } }));
+      s.api.on('GET', '/secure/b', () => ({ body: { id: 'b' } }));
+      s.api.on('GET', '/public/info', () => ({ body: { version: 1 } }));
+
+      const a = createPersistedTab(s);
+      const b = createPersistedTab(s);
+      await syncTabs(s);
+
+      s.tick(251);
+      await syncTabs(s);
+
+      a.auth.queries.login.execute({ body: {} });
+      await syncTabs(s);
+
+      a.consumer().run(() => a.getSecure<{ response: { id: string } }>('/secure/a', { persistence: true })());
+      b.consumer().run(() => b.getSecure<{ response: { id: string } }>('/secure/b', { persistence: true })());
+      b.consumer().run(() => b.get<{ response: { version: number } }>('/public/info')());
+      await syncTabs(s);
+
+      await a.client.subtle.persistence?.flush();
+      await b.client.subtle.persistence?.flush();
+      await syncTabs(s);
+
+      expect(
+        store
+          .entries()
+          .map((e) => e.url)
+          .sort(),
+      ).toEqual(['https://api.test/public/info', 'https://api.test/secure/a', 'https://api.test/secure/b']);
+
+      const removeCallsBeforeLogout = store.calls().remove;
+
+      a.auth.logout();
+      await syncTabs(s);
+
+      expect(store.entries().map((e) => e.url)).toEqual(['https://api.test/public/info']);
+
+      // One removal per tab: each engine only ever knows the keys it wrote itself.
+      expect(store.calls().remove - removeCallsBeforeLogout).toBe(2);
+
+      a.destroy();
+      b.destroy();
     });
   });
 });
