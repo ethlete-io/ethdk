@@ -1,4 +1,4 @@
-import { Resource, resource } from '@angular/core';
+import { inject, Injector, Resource, resource } from '@angular/core';
 import { FieldContext, PathKind, SchemaPath, SchemaPathRules, TreeValidationResult } from '@angular/forms/signals';
 import { FormViolationView } from '@ethlete/types';
 import { AnyQueryCreator, QueryArgsOf } from './query-creator';
@@ -65,6 +65,11 @@ export const validateWithQuery = <TCreator extends AnyQueryCreator, TValue, TPat
   type TParams = RequestArgs<TArgs>;
   type TResult = ResponseType<TArgs>;
 
+  // Captured here, in the schema definition, because the factory below runs inside the field node's
+  // own injector - which signal forms never destroys. Binding the query to it would keep its cache
+  // entry alive for the rest of the process; this injector dies with the form.
+  const injector = inject(Injector);
+
   applyQueryAsyncValidator<TValue, TParams, TResult, TPathKind>(path, {
     params: config.args,
     debounce: config.debounce,
@@ -75,7 +80,7 @@ export const validateWithQuery = <TCreator extends AnyQueryCreator, TValue, TPat
       // the resource loader drives it - each params change re-executes with the new args. Those args
       // reach the query through `execute()`, never `withArgs()`, so a function route has to be told
       // the missing feature is intentional or creating the query throws ET100.
-      const query = config.queryCreator({ silenceMissingWithArgsFeatureError: true });
+      const query = config.queryCreator({ silenceMissingWithArgsFeatureError: true, injector });
 
       return resource<TResult | undefined, TParams | undefined>({
         params: () => params(),

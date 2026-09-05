@@ -337,9 +337,6 @@ describe('createQuerySubmission', () => {
 describe('validateWithQuery', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
-  const CACHE_LEAK_REASON =
-    "validateWithQuery's internal query never unbinds from the cache repository when the owning form's injector is destroyed (see report)";
-
   it('reports no errors on a 204 success', async () => {
     const s = scenario();
     s.api.on('POST', '/validate', () => ({ status: 204 }));
@@ -362,7 +359,6 @@ describe('validateWithQuery', () => {
 
     expect(testForm().errors()).toEqual([]);
 
-    s.allow('cache', CACHE_LEAK_REASON);
     c.destroy();
   });
 
@@ -394,7 +390,6 @@ describe('validateWithQuery', () => {
     ]);
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
-    s.allow('cache', CACHE_LEAK_REASON);
     c.destroy();
   });
 
@@ -423,7 +418,6 @@ describe('validateWithQuery', () => {
     ]);
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 500);
-    s.allow('cache', CACHE_LEAK_REASON);
     c.destroy();
   });
 
@@ -453,7 +447,6 @@ describe('validateWithQuery', () => {
     expect(s.api.requestCount('POST', '/validate')).toBe(requestsBeforeEdit + 1);
 
     await s.settle();
-    s.allow('cache', CACHE_LEAK_REASON);
     c.destroy();
   });
 
@@ -497,7 +490,6 @@ describe('validateWithQuery', () => {
     await s.settle(700);
     expect(testForm.email().errors()).toEqual([]);
 
-    s.allow('cache', CACHE_LEAK_REASON);
     c.destroy();
   });
 });
