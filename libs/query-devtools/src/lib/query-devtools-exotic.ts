@@ -112,3 +112,29 @@ export const headerEntries = (headers: { keys: () => string[]; getAll: (name: st
     return [];
   }
 };
+
+/** Past this a description stops fitting the diff cell and the form-field row it is written for. */
+const MAX_INLINE_LENGTH = 80;
+
+/**
+ * A one-line description of a value {@link exoticOf} knows, for a place with no room to expand it - a
+ * diff cell, a form field's value column. `null` for anything the caller should render itself.
+ */
+export const inlineExoticOf = (value: unknown): string | null => {
+  const exotic = exoticOf(value);
+
+  if (!exotic) return null;
+
+  const inner = exotic.display ?? exotic.entries.map(({ k, v }) => `${k}: ${safeJson(v)}`).join(', ');
+  const rendered = `${exotic.typeName}(${inner})`;
+
+  return rendered.length > MAX_INLINE_LENGTH ? `${rendered.slice(0, MAX_INLINE_LENGTH)}…` : rendered;
+};
+
+const safeJson = (value: unknown) => {
+  try {
+    return JSON.stringify(value) ?? 'undefined';
+  } catch {
+    return '[unserializable]';
+  }
+};

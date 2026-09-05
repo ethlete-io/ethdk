@@ -107,6 +107,50 @@ describe('diffQueryDevtoolsResponses', () => {
     expect(diff.truncated).toBe(true);
   });
 
+  it('should report a changed Blob body rather than reading it as identical', () => {
+    const diff = diffQueryDevtoolsResponses(
+      new Blob(['a'.repeat(10)], { type: 'text/plain' }),
+      new Blob(['b'.repeat(4000)], { type: 'application/pdf' }),
+    );
+
+    expect(diff.entries.map((entry) => entry.path)).toEqual(['$']);
+    expect(diff.entries[0]?.kind).toBe('changed');
+  });
+
+  it('should read two Blobs of the same size and type as identical', () => {
+    const diff = diffQueryDevtoolsResponses(
+      new Blob(['ab'], { type: 'text/plain' }),
+      new Blob(['cd'], { type: 'text/plain' }),
+    );
+
+    expect(diff.entries).toEqual([]);
+  });
+
+  it('should report a changed ArrayBuffer body', () => {
+    const diff = diffQueryDevtoolsResponses(new ArrayBuffer(8), new ArrayBuffer(4096));
+
+    expect(diff.entries.map((entry) => entry.path)).toEqual(['$']);
+  });
+
+  it('should report a changed Date, Map and Set nested in a response', () => {
+    const diff = diffQueryDevtoolsResponses(
+      { at: new Date(0), by: new Map([['a', 1]]), tags: new Set(['x']) },
+      { at: new Date(1_000), by: new Map([['a', 2]]), tags: new Set(['y']) },
+    );
+
+    expect(diff.entries.map((entry) => entry.path).sort()).toEqual(['$.at', '$.by', '$.tags']);
+  });
+
+  it('should read two equal Dates as identical', () => {
+    expect(diffQueryDevtoolsResponses({ at: new Date(5) }, { at: new Date(5) }).entries).toEqual([]);
+  });
+
+  it('should report a value that stopped being a Date', () => {
+    const diff = diffQueryDevtoolsResponses({ at: new Date(0) }, { at: { year: 1970 } });
+
+    expect(diff.entries.map((entry) => entry.path)).toEqual(['$.at']);
+  });
+
   it('should compare two non-object responses directly', () => {
     expect(diffQueryDevtoolsResponses(null, 5).entries).toEqual([
       { path: '$', kind: 'changed', before: null, after: 5 },

@@ -1,5 +1,5 @@
 import { HttpHeaders } from '@angular/common/http';
-import { exoticOf, headerEntries, isHeadersValue } from './query-devtools-exotic';
+import { exoticOf, headerEntries, inlineExoticOf, isHeadersValue } from './query-devtools-exotic';
 
 describe('exoticOf', () => {
   it('should read the headers an HttpHeaders holds, not its private fields', () => {
@@ -123,5 +123,33 @@ describe('isHeadersValue', () => {
     expect(isHeadersValue({ keys: () => [], getAll: () => null })).toBe(false);
     expect(isHeadersValue({ a: 1 })).toBe(false);
     expect(isHeadersValue(null)).toBe(false);
+  });
+});
+
+describe('inlineExoticOf', () => {
+  it('should describe a Blob a JSON.stringify would flatten to {}', () => {
+    expect(inlineExoticOf(new Blob(['abcd'], { type: 'application/pdf' }))).toBe(
+      'Blob(size: 4, type: "application/pdf")',
+    );
+  });
+
+  it('should describe a Date, a Map and a Set', () => {
+    expect(inlineExoticOf(new Date(0))).toBe('Date(1970-01-01T00:00:00.000Z)');
+    expect(inlineExoticOf(new Map([['a', 1]]))).toBe('Map(a: 1)');
+    expect(inlineExoticOf(new Set(['x']))).toBe('Set(0: "x")');
+  });
+
+  it('should cap a long description', () => {
+    const rendered = inlineExoticOf(new Map(Array.from({ length: 40 }, (_, i) => [`key${i}`, i])));
+
+    expect(rendered?.length).toBeLessThanOrEqual(81);
+    expect(rendered?.endsWith('\u2026')).toBe(true);
+  });
+
+  it('should return null for a value the explorer renders itself', () => {
+    expect(inlineExoticOf({ a: 1 })).toBeNull();
+    expect(inlineExoticOf([1, 2])).toBeNull();
+    expect(inlineExoticOf('text')).toBeNull();
+    expect(inlineExoticOf(null)).toBeNull();
   });
 });

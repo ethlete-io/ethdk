@@ -1778,9 +1778,12 @@ credential-named key - `password`, `accessToken`, `Authorization`, `set-cookie`,
 entry's args, response, error or detail. A boolean or a number under such a key survives:
 `hasAccessToken: true` and `expiresIn: 900` are what the report is for, and neither can
 carry the credential itself. The Insomnia export drops a header by that same key-name
-rule, and is the deliberate exception in one place only - it carries a refresh token in
-the token-refresh request's body, because that is what makes its chain work, and
-[it says so](#secure-queries-get-a-self-refreshing-token).
+rule, with one deliberate exception - it carries a refresh token in the token-refresh
+request's body, because that is what makes its chain work, and
+[it says so](#secure-queries-get-a-self-refreshing-token). **[Copy as cURL](#copy-as-curl)
+redacts nothing.** It writes the `Authorization` header the request resolved straight into
+the command, which is what makes the command runnable - so a command pasted into a ticket
+carries the live token with it, and its menu item says so.
 
 That rule is a key-name rule, so it is a floor and not a guarantee: a credential the API
 returns under a name that does not read like one, or one carried in a URL's query string,

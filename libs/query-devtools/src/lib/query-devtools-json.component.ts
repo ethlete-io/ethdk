@@ -495,14 +495,31 @@ const buildChunks = (entries: JsonEntry[], window: { offset: number; isArray: bo
   return chunks;
 };
 
-/** Whether a search term appears anywhere in a subtree - used to keep non-matching slices folded. */
-const matchesDeep = (entry: JsonEntry, term: string): boolean => {
-  const { k, v } = entry;
-  const exotic = exoticOf(v, k);
+/**
+ * Whether a search term appears anywhere in a subtree - used to keep non-matching slices folded. The
+ * values a query holds are the app's own, so a self-referential one has to terminate here.
+ *
+ * `seen` is shared across the whole walk rather than being a per-path set: the search stops at the
+ * first match, so anything already in it was walked to the end and did not match.
+ */
+const matchesDeep = (entry: JsonEntry, term: string) => {
+  const seen = new Set<object>();
 
-  if (exotic ? !exotic.entries : !v || typeof v !== 'object') {
-    return displayOf(v, k).toLowerCase().includes(term);
-  }
+  const walk = ({ k, v }: JsonEntry): boolean => {
+    const exotic = exoticOf(v, k);
 
-  return entriesOf(v, k).some((child) => child.k.toLowerCase().includes(term) || matchesDeep(child, term));
+    if (exotic ? !exotic.entries : !v || typeof v !== 'object') {
+      return displayOf(v, k).toLowerCase().includes(term);
+    }
+
+    if (typeof v === 'object' && v !== null) {
+      if (seen.has(v)) return false;
+
+      seen.add(v);
+    }
+
+    return entriesOf(v, k).some((child) => child.k.toLowerCase().includes(term) || walk(child));
+  };
+
+  return walk(entry);
 };

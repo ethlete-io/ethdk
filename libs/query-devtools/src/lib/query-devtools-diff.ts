@@ -39,6 +39,34 @@ type DiffAccumulator = { entries: QueryDevtoolsDiffEntry[]; truncated: boolean }
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+/**
+ * How to compare a built-in whose own keys are `[]` or private fields - descending into one by key
+ * reports every pair of them as identical. `null` for anything the walk should keep descending into.
+ *
+ * A `Blob` and an `ArrayBuffer` are compared by size and type, not by their bytes: reading a `Blob` is
+ * asynchronous, so two payloads of the same size and type read as identical here.
+ */
+const exoticSignature = (value: object): string | null => {
+  if (value instanceof Date) return `Date:${value.getTime()}`;
+  if (typeof File !== 'undefined' && value instanceof File) {
+    return `File:${value.name}:${value.size}:${value.type}:${value.lastModified}`;
+  }
+  if (typeof Blob !== 'undefined' && value instanceof Blob) return `Blob:${value.size}:${value.type}`;
+  if (value instanceof ArrayBuffer) return `ArrayBuffer:${value.byteLength}`;
+  if (ArrayBuffer.isView(value)) return `${value.constructor.name}:${value.byteLength}`;
+  if (value instanceof Map) return `Map:${JSON.stringify([...value])}`;
+  if (value instanceof Set) return `Set:${JSON.stringify([...value])}`;
+  if (typeof FormData !== 'undefined' && value instanceof FormData) return `FormData:${JSON.stringify([...value])}`;
+
+  return null;
+};
+
+const signatureOf = (value: unknown) => (isRecord(value) ? exoticSignature(value) : null);
+
+/** A record the walk descends into by key, which the built-ins above are not. */
+const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
+  isRecord(value) && exoticSignature(value) === null;
+
 const valueAt = (record: Record<string, unknown>, key: string): unknown => (key in record ? record[key] : ABSENT);
 
 /**
@@ -67,6 +95,12 @@ const recordIds = (items: unknown[]) => {
  */
 const isSameValue = (before: unknown, after: unknown) => {
   if (Object.is(before, after)) return true;
+
+  const beforeSignature = signatureOf(before);
+  const afterSignature = signatureOf(after);
+
+  if (beforeSignature !== null || afterSignature !== null) return beforeSignature === afterSignature;
+
   if (!isRecord(before) && !Array.isArray(before)) return false;
   if (!isRecord(after) && !Array.isArray(after)) return false;
 
@@ -122,7 +156,7 @@ const walk = ({ before, after, path, depth }: WalkStep, acc: DiffAccumulator) =>
   }
 
   if (depth < MAX_DEPTH) {
-    if (isRecord(before) && isRecord(after)) {
+    if (isPlainRecord(before) && isPlainRecord(after)) {
       for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
         walk(
           {

@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { headerEntries, isHeadersValue } from './query-devtools-exotic';
+import { headerEntries, inlineExoticOf, isHeadersValue } from './query-devtools-exotic';
 import { DOCUMENT } from '@angular/common';
 import {
   booleanAttribute,
@@ -2288,6 +2288,10 @@ export class QueryDevtoolsComponent implements OnInit {
   public inlineValue(value: unknown) {
     if (typeof value === 'string') return value.length > 80 ? `"${value.slice(0, 80)}…"` : `"${value}"`;
     if (value === undefined) return 'undefined';
+
+    const exotic = inlineExoticOf(value);
+
+    if (exotic) return exotic;
 
     try {
       const json = JSON.stringify(value) ?? 'undefined';
