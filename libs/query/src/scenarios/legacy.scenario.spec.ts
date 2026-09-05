@@ -84,6 +84,15 @@ const withLegacyClient = (
 
 const distinct = <T>(values: T[]) => values.filter((value, index, all) => value !== all[index - 1]);
 
+const COOKIE_NAME = 'legacy-refresh-token';
+
+const readCookie = (name: string) =>
+  document.cookie
+    .split(';')
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(`${name}=`))
+    ?.slice(name.length + 1) ?? null;
+
 /**
  * The request emits its `start` event after `execute()` already published `Loading`, so the raw stream
  * repeats `Loading`. `types()` collapses repeats down to the documented state sequence.
@@ -887,6 +896,61 @@ describe('legacy scenario', () => {
         s.tick();
 
         expect(s.api.requests[0]?.headers.get('X-Api-Key')).toBe('secret');
+      });
+    });
+
+    it('keeps the refresh cookie when setAuthProvider replaces the provider', () => {
+      const s = scenario();
+
+      withLegacyClient(s, {}, (client) => {
+        client.setAuthProvider(
+          new V2BearerAuthProvider({
+            token: mintToken(),
+            refreshConfig: {
+              queryCreator: createRefreshQuery(client),
+              token: mintToken(),
+              cookieName: COOKIE_NAME,
+            },
+          }),
+        );
+
+        expect(readCookie(COOKIE_NAME)).not.toBeNull();
+
+        client.setAuthProvider(
+          new V2BearerAuthProvider({
+            token: mintToken(),
+            refreshConfig: {
+              queryCreator: createRefreshQuery(client),
+              token: mintToken(),
+              cookieName: COOKIE_NAME,
+            },
+          }),
+        );
+
+        expect(readCookie(COOKIE_NAME)).not.toBeNull();
+      });
+    });
+
+    it('deletes the refresh cookie when clearAuthProvider ends the session', () => {
+      const s = scenario();
+
+      withLegacyClient(s, {}, (client) => {
+        client.setAuthProvider(
+          new V2BearerAuthProvider({
+            token: mintToken(),
+            refreshConfig: {
+              queryCreator: createRefreshQuery(client),
+              token: mintToken(),
+              cookieName: COOKIE_NAME,
+            },
+          }),
+        );
+
+        expect(readCookie(COOKIE_NAME)).not.toBeNull();
+
+        client.clearAuthProvider();
+
+        expect(readCookie(COOKIE_NAME)).toBeNull();
       });
     });
   });

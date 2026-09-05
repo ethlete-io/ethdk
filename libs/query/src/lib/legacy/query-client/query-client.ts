@@ -144,7 +144,7 @@ export class V2QueryClient {
 
   setAuthProvider = (authProvider: AuthProvider) => {
     if (this.authProvider) {
-      this.authProvider?.cleanUp();
+      this.authProvider?.cleanUp({ endSession: false });
     }
 
     this._authProvider$.next(authProvider);

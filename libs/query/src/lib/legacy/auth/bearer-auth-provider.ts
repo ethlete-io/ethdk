@@ -89,13 +89,13 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
     );
   }
 
-  cleanUp() {
+  cleanUp(options?: { endSession?: boolean }) {
     this.destroy$.next();
     this.destroy$.complete();
     this.destroy$ = new Subject<void>();
     this._currentRefreshQuery$.next(null);
 
-    if (this._config.refreshConfig?.cookieName) {
+    if (options?.endSession !== false && this._config.refreshConfig?.cookieName) {
       this.deleteCookie();
     }
   }

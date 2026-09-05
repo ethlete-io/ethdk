@@ -12,9 +12,11 @@ export type AuthProvider = {
 
   /**
    * Cleanup function that gets called once the auth provider gets destroyed.
+   * Pass `{ endSession: false }` to tear the provider down without ending the session, so a
+   * persisted refresh token survives for the provider replacing it.
    * @internal
    */
-  cleanUp(): void;
+  cleanUp(options?: { endSession?: boolean }): void;
 };
 
 /**
