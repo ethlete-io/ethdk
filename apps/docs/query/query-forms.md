@@ -68,18 +68,18 @@ export class UsersComponent {
 
 Every creator accepts the same options:
 
-| Option                    | Default                          | Description                                                                                                     |
-| ------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `defaultValue`            | `null`                           | Value the field starts at. Elided from the URL and ignored by the filter count. A function is evaluated lazily. |
-| `debounce`                | - (`300` for `searchQueryField`) | Milliseconds to wait before committing a change.                                                                |
-| `disableDebounceIfFalsy`  | `false` (`true` for search)      | Commit immediately when the new value is falsy (e.g. clearing a search).                                        |
-| `appendToUrl`             | `true`                           | Write the field to the URL.                                                                                     |
-| `appendDefaultValueToUrl` | `false`                          | Write the field even when it holds its default.                                                                 |
-| `isResetBy`               | -                                | Sibling field(s) whose change resets this field to its default (single key or list). Transitive - see below.    |
-| `skipInFilterCount`       | `false`                          | Exclude from `activeFilterCount`.                                                                               |
-| `skipAutoTransform`       | `false`                          | Skip the URL string → number/boolean coercion.                                                                  |
-| `queryParamToValue`       | -                                | Custom URL → value transform.                                                                                   |
-| `valueToQueryParam`       | -                                | Custom value → URL transform.                                                                                   |
+| Option                    | Default                          | Description                                                                                                             |
+| ------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `defaultValue`            | `null`                           | Value the field starts at. Elided from the URL and ignored by the filter count. A function is evaluated lazily.         |
+| `debounce`                | - (`300` for `searchQueryField`) | Milliseconds to wait before committing a change.                                                                        |
+| `disableDebounceIfFalsy`  | `false` (`true` for search)      | Commit immediately when the new value is falsy (e.g. clearing a search).                                                |
+| `appendToUrl`             | `true`                           | Write the field to the URL. `false` makes the field a read-only mirror: it still tracks the param another owner writes. |
+| `appendDefaultValueToUrl` | `false`                          | Write the field even when it holds its default.                                                                         |
+| `isResetBy`               | -                                | Sibling field(s) whose change resets this field to its default (single key or list). Transitive - see below.            |
+| `skipInFilterCount`       | `false`                          | Exclude from `activeFilterCount`.                                                                                       |
+| `skipAutoTransform`       | `false`                          | Skip the URL string → number/boolean coercion.                                                                          |
+| `queryParamToValue`       | -                                | Custom URL → value transform.                                                                                           |
+| `valueToQueryParam`       | -                                | Custom value → URL transform.                                                                                           |
 
 ## Form API
 

@@ -460,4 +460,31 @@ describe('query forms URL sync scenario', () => {
 
     c.destroy();
   });
+  it('applies a foreign change to an appendToUrl false field that lands in its own navigation', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      defineQueryForm({
+        fields: {
+          search: queryField<string>(),
+          page: queryField<number>({ defaultValue: 1, appendToUrl: false }),
+        },
+      }).observe(),
+    );
+    await s.settle();
+
+    const navigation = router.navigateByUrl('/?page=7');
+    qf.patchValue({ search: 'shoes' });
+    s.tick();
+    await navigation;
+    await s.settle();
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ page: '7', search: 'shoes' });
+    expect(qf.value()).toEqual({ search: 'shoes', page: 7 });
+
+    c.destroy();
+  });
 });

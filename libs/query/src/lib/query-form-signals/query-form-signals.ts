@@ -630,11 +630,13 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     model.set(clone(next) as QueryFormModel<TFields>);
   };
 
-  const applyFromUrl = (params: Dict, base: Dict = committed() as Dict) => {
-    const current = { ...base };
+  const applyFromUrl = (params: Dict, options?: { base?: Dict; onlyFieldsTheFormNeverWrites?: boolean }) => {
+    const current = { ...(options?.base ?? (committed() as Dict)) };
     let changed = false;
 
     for (const [key, def] of Object.entries(fieldDefs)) {
+      if (options?.onlyFieldsTheFormNeverWrites && def.appendToUrl !== false) continue;
+
       const raw = params[paramKey(key)];
 
       if (raw === undefined) continue;
@@ -728,7 +730,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       if (options?.syncOnNavigation !== false) {
         // A value written before `observe()` sits in the model only, so the URL merges onto the model
         // here. Against `committed()` any single URL param would drop that value.
-        applyFromUrl(route.snapshot.queryParams as Dict, model() as Dict);
+        applyFromUrl(route.snapshot.queryParams as Dict, { base: model() as Dict });
       }
 
       // Commit whatever the model holds now (URL-restored or programmatic defaults).
@@ -781,7 +783,14 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
         { queryForm?: object; version?: number } | undefined;
       // Including the newest write: re-parsing the form's own output would coerce a committed
       // string back to a number and drop the milliseconds of a committed Date.
-      if (info?.queryForm === urlNavigationMarker && (info.version ?? 0) <= urlWriteVersion) return;
+      if (info?.queryForm === urlNavigationMarker && (info.version ?? 0) <= urlWriteVersion) {
+        // A field with `appendToUrl: false` mirrors a param another owner writes, and the commit
+        // merges onto the navigation in flight - so this is the only place a foreign write to that
+        // param can still reach the form.
+        applyFromUrl(changes as Dict, { onlyFieldsTheFormNeverWrites: true });
+
+        return;
+      }
 
       applyFromUrl(changes as Dict);
     });
