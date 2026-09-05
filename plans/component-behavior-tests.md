@@ -301,13 +301,16 @@ still runs, so the test focuses the neighbour right after the outside press. A `
 listener that focuses instead does **not** work - the browser's own mousedown default action then
 puts focus back on the body.
 
-### Twelve new suites
+### Sixteen new suites
 
 `banner` (19 tests), `breadcrumb` (52), `copy-button` (11), `scrollable` (16), `color-input` (30),
 `empty-state` (19), `floating-action` (32), `query-error` (24), `counter` (20), `nav-tabs` (22),
-`phone-input` (24), `split-button` (13). The project holds 48 suites. After the first eight it held
-44 suites and 599 tests per browser project, and the full run took 5.1 minutes with three workers
-against the static build (615 executed, 583 skipped by the project guards, 0 failed).
+`phone-input` (24), `split-button` (13), `card` (15), `masonry` (14), `match` (58), `standings` (36).
+The project holds 52 suites and 760 tests per browser project; the full run takes 6.6 minutes with
+three workers against the static build (810 executed, 710 skipped by the project guards, 0 failed).
+
+`card` and `standings` carry no keyboard model at all, so those two suites assert structure, ARIA,
+surface theming and the touch presentation, and drop the keyboard block.
 
 `Components/Forms/Counter` is the **character counter** in a form field's support row, not a numeric
 stepper - it has no buttons and no value of its own.
@@ -342,6 +345,11 @@ stepper - it has no buttons and no value of its own.
 - `nav-tabs`: a bar whose links are all disabled keeps a tab stop. `disabled` on an `<a>` is inert
   and the roving tab index still gives the selected trigger `tabindex="0"`. Content tabs are skipped
   because a native `button[disabled]` cannot take focus.
+- `match`: the meta row is `aria-hidden` because "the label, live badge and kick-off are all in the
+  card's name already", but `DEFAULT_MATCH_LABELS.matchName` composes `result ?? startTime`. As soon
+  as a match has a result, the drawn kick-off is announced by nobody. The fix has to decide which
+  fields belong in the name of a live card and of a finished one, so it is a decision for the label
+  owner, not a mechanical change.
 - `phone-input`: the country trigger has no accessible name. The template binds
   `[attr.aria-label]="resolvedCountryLabel()"`, and `SelectTriggerDirective`'s own host binding
   writes `null` over it whenever the panel has a search. The `hasSearch()` condition looks
@@ -357,6 +365,9 @@ stepper - it has no buttons and no value of its own.
 - `nx lint storybook-e2e` still runs without `--fix`.
 - Never verify a fix with `git checkout HEAD -- <file>` while the fix is uncommitted: `HEAD` is the
   state without it, so the "restore" throws the work away. Copy the file aside instead.
+- `test.use({ reducedMotion: 'reduce' })` at describe level does not reach the page in this config.
+  Call `page.emulateMedia({ reducedMotion: 'reduce' })` inside the test instead, as `floating-action`
+  and `match` do.
 - A select panel with a search claims focus only after its enter transition. A test that types into
   the search right after opening loses the first characters and commits the wrong option. Wait for
   the search input to be focused, then type, then wait for the filtered option count.
