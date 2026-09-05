@@ -77,6 +77,52 @@ describe('legacy interop scenario', () => {
       c.destroy();
     });
 
+    it('ignores a second execute() on an in-flight interop mutation unless cancelPrevious is set', () => {
+      const s = scenario();
+      s.api.on('POST', '/users', () => ({ body: { id: '1', name: 'Ada' }, delay: 1000 }));
+
+      const createUser = s.post<{ response: User; body: { name: string } }>('/users');
+      const legacyCreateUser = createLegacyQueryCreator({ creator: createUser, name: 'legacyCreateUser' });
+
+      const c = s.consumer();
+      const query = c.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute());
+
+      s.tick(100);
+      query.execute();
+      s.tick(100);
+
+      expect(s.api.requestCount('POST', '/users')).toBe(1);
+      expect(s.api.requests[0]?.aborted).toBe(false);
+
+      s.tick(1000);
+      expect(query.rawState).toMatchObject({ type: QueryStateType.Success });
+
+      c.destroy();
+    });
+
+    it('cancels the in-flight interop mutation and re-sends it when cancelPrevious is set', () => {
+      const s = scenario();
+      s.api.on('POST', '/users-cancel', () => ({ body: { id: '1', name: 'Ada' }, delay: 1000 }));
+
+      const createUser = s.post<{ response: User; body: { name: string } }>('/users-cancel');
+      const legacyCreateUser = createLegacyQueryCreator({ creator: createUser, name: 'legacyCreateUser' });
+
+      const c = s.consumer();
+      const query = c.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute());
+
+      s.tick(100);
+      query.execute({ cancelPrevious: true });
+      s.tick(100);
+
+      expect(s.api.requestCount('POST', '/users-cancel')).toBe(2);
+      expect(s.api.requests[0]?.aborted).toBe(true);
+
+      s.tick(1000);
+      expect(query.rawState).toMatchObject({ type: QueryStateType.Success });
+
+      c.destroy();
+    });
+
     it('prepare() outside an injection context throws ET950 and names the creator', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', () => ({ body: { id: '1', name: 'Ada' } }));

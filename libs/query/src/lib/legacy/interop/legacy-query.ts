@@ -313,6 +313,14 @@ export class LegacyQuery<
   }
 
   execute(options: ExecuteQueryOptions = {}) {
+    if (isQueryStateLoading(this.rawState)) {
+      if (options.cancelPrevious !== true) {
+        return this;
+      }
+
+      this.abort();
+    }
+
     untracked(() =>
       // v2 had a single `skipCache` for every method, so this cannot tell whether the underlying request is
       // cacheable. The creator is built with `silenceUncacheableAllowCacheError`, which makes `allowCache` inert
