@@ -18,7 +18,7 @@ describe('transformGql', () => {
     it('should transform a simple query string', () => {
       const query = 'query GetUser { user { id name } }';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.query).toBe(query);
     });
@@ -26,7 +26,7 @@ describe('transformGql', () => {
     it('should transform an array of strings', () => {
       const queryParts = ['query GetUser { ', 'user { id name } ', '}'];
       const transformer = transformGql(queryParts);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.query).toBe(queryParts.join(''));
     });
@@ -43,10 +43,10 @@ describe('transformGql', () => {
       const query = 'query GetUser($id: ID!) { user(id: $id) { name } }';
       const transformer = transformGql(query);
       const variables = { id: '123' };
-      const result = transformer(variables);
 
-      expect(result.variables).toBe(JSON.stringify(variables));
-      expect(result.query).toBe(query);
+      expect(transformer(variables, 'GET').variables).toBe(JSON.stringify(variables));
+      expect(transformer(variables, 'POST').variables).toEqual(variables);
+      expect(transformer(variables, 'GET').query).toBe(query);
     });
 
     it('should handle complex variables', () => {
@@ -59,15 +59,15 @@ describe('transformGql', () => {
           tags: ['active', 'premium'],
         },
       };
-      const result = transformer(variables);
 
-      expect(result.variables).toBe(JSON.stringify(variables));
+      expect(transformer(variables, 'GET').variables).toBe(JSON.stringify(variables));
+      expect(transformer(variables, 'POST').variables).toEqual(variables);
     });
 
     it('should not add variables when null', () => {
       const query = 'query GetUsers { users { id } }';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.variables).toBeUndefined();
     });
@@ -75,7 +75,7 @@ describe('transformGql', () => {
     it('should not add variables when undefined', () => {
       const query = 'query GetUsers { users { id } }';
       const transformer = transformGql(query);
-      const result = transformer(undefined);
+      const result = transformer(undefined, 'GET');
 
       expect(result.variables).toBeUndefined();
     });
@@ -83,9 +83,8 @@ describe('transformGql', () => {
     it('should handle empty object variables', () => {
       const query = 'query GetUsers { users { id } }';
       const transformer = transformGql(query);
-      const result = transformer({});
-
-      expect(result.variables).toBe('{}');
+      expect(transformer({}, 'GET').variables).toBe('{}');
+      expect(transformer({}, 'POST').variables).toEqual({});
     });
   });
 
@@ -93,7 +92,7 @@ describe('transformGql', () => {
     it('should extract operation name from named query', () => {
       const query = 'query GetUser { user { id } }';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.operationName).toBe('GetUser');
     });
@@ -101,7 +100,7 @@ describe('transformGql', () => {
     it('should extract operation name from named mutation', () => {
       const query = 'mutation CreateUser() { createUser { id } }';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.operationName).toBe('CreateUser');
     });
@@ -109,7 +108,7 @@ describe('transformGql', () => {
     it('should extract operation name from query with parameters', () => {
       const query = 'query GetUser($id: ID!) { user(id: $id) { name } }';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.operationName).toBe('GetUser');
     });
@@ -117,7 +116,7 @@ describe('transformGql', () => {
     it('should extract operation name with hyphens and underscores', () => {
       const query = 'query Get_User-Name() { user { id } }';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.operationName).toBe('Get_User-Name');
     });
@@ -125,7 +124,7 @@ describe('transformGql', () => {
     it('should extract operation name with numbers', () => {
       const query = 'query GetUser123() { user { id } }';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.operationName).toBe('GetUser123');
     });
@@ -133,7 +132,7 @@ describe('transformGql', () => {
     it('should not add operation name for anonymous query', () => {
       const query = 'query { user { id } }';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.operationName).toBeUndefined();
     });
@@ -141,7 +140,7 @@ describe('transformGql', () => {
     it('should not add operation name for anonymous mutation', () => {
       const query = 'mutation { createUser { id } }';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.operationName).toBeUndefined();
     });
@@ -149,7 +148,7 @@ describe('transformGql', () => {
     it('should handle query with extra whitespace', () => {
       const query = 'query GetUser (  $id:  ID!  ) { user { id } }';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.operationName).toBe('GetUser');
     });
@@ -162,7 +161,7 @@ describe('transformGql', () => {
         }
       }`;
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.operationName).toBe('GetUser');
     });
@@ -174,7 +173,7 @@ describe('transformGql', () => {
         user(id: $id) { id }
       }`;
 
-      expect(transformGql(query)(null).operationName).toBe('GetUser');
+      expect(transformGql(query)(null, 'GET').operationName).toBe('GetUser');
     });
   });
 
@@ -190,7 +189,7 @@ describe('transformGql', () => {
         }
       }`;
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.query).toBe('query GetUser { user { id name email } }');
     });
@@ -205,7 +204,7 @@ describe('transformGql', () => {
         }
       }`;
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.query).toBe(query);
     });
@@ -215,7 +214,7 @@ describe('transformGql', () => {
 
       const query = 'query    GetUser    {    user    {    id    }    }';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.query).toBe('query GetUser { user { id } }');
     });
@@ -225,7 +224,7 @@ describe('transformGql', () => {
 
       const query = '  query GetUser { user { id } }  ';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.query).toBe('query GetUser { user { id } }');
     });
@@ -239,7 +238,7 @@ describe('transformGql', () => {
           id
         }
       }`;
-      const result = transformGql(query)(null);
+      const result = transformGql(query)(null, 'GET');
 
       expect(result.query).toBe('query GetUser { user { id } }');
     });
@@ -252,7 +251,7 @@ describe('transformGql', () => {
           id
         }
       }`;
-      const result = transformGql(query)(null);
+      const result = transformGql(query)(null, 'GET');
 
       expect(result.query).toBe('query Search { search(text: "Ada  Lovelace", tag: "#one") { id } }');
     });
@@ -269,7 +268,7 @@ describe('transformGql', () => {
       }`;
       const transformer = transformGql(query);
       const variables = { id: '123' };
-      const result = transformer(variables);
+      const result = transformer(variables, 'GET');
 
       expect(result.query).toBe(query); // dev mode
       expect(result.variables).toBe(JSON.stringify(variables));
@@ -280,10 +279,10 @@ describe('transformGql', () => {
       const query = 'mutation CreateUser($input: UserInput!) { createUser(input: $input) { id } }';
       const transformer = transformGql(query);
       const variables = { input: { name: 'John', email: 'john@example.com' } };
-      const result = transformer(variables);
+      const result = transformer(variables, 'POST');
 
       expect(result.query).toBe(query);
-      expect(result.variables).toBe(JSON.stringify(variables));
+      expect(result.variables).toEqual(variables);
       expect(result.operationName).toBe('CreateUser');
     });
 
@@ -300,7 +299,7 @@ describe('transformGql', () => {
         }
       `;
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.query).toContain('fragment UserFields');
       expect(result.operationName).toBe('GetUser');
@@ -310,7 +309,7 @@ describe('transformGql', () => {
   describe('edge cases', () => {
     it('should handle empty string', () => {
       const transformer = transformGql('');
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.query).toBe('');
       expect(result.operationName).toBeUndefined();
@@ -318,7 +317,7 @@ describe('transformGql', () => {
 
     it('should handle empty array', () => {
       const transformer = transformGql([]);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.query).toBe('');
     });
@@ -326,7 +325,7 @@ describe('transformGql', () => {
     it('should handle query without braces', () => {
       const query = 'query GetUser';
       const transformer = transformGql(query);
-      const result = transformer(null);
+      const result = transformer(null, 'GET');
 
       expect(result.query).toBe(query);
       expect(result.operationName).toBeUndefined();
@@ -446,9 +445,9 @@ describe('gqlTransformerFor', () => {
 
     const replace = vi.spyOn(String.prototype, 'replace');
 
-    const first = transformer(null);
+    const first = transformer(null, 'GET');
     const replacesAfterFirst = replace.mock.calls.length;
-    const second = transformer(null);
+    const second = transformer(null, 'GET');
     const replacesAfterSecond = replace.mock.calls.length;
 
     replace.mockRestore();

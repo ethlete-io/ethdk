@@ -38,7 +38,10 @@ export const createSecureGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     transformAuthAndExec: (executeArgs, executeState) => {
       const { args, options: runOptions } = executeArgs ?? {};
 
-      let gqlParams = gqlTransformerFor(executeOptions.creatorInternals)(args?.variables);
+      let gqlParams = gqlTransformerFor(executeOptions.creatorInternals)(
+        args?.variables,
+        executeOptions.creatorInternals.transport,
+      );
 
       if (args?.queryParams && executeOptions.creatorInternals.transport === 'GET') {
         gqlParams = { ...gqlParams, ...args.queryParams };

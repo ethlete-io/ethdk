@@ -105,7 +105,7 @@ describe('gql scenario', () => {
       expect(req.body).toBeNull();
       expect(req.query['query']).toContain('query GetUser');
       expect(req.query['operationName']).toBe('GetUser');
-      expect(JSON.parse(req.query['variables'] ?? '')).toEqual({ userId: '1' });
+      expect(req.query['variables']).toBe(JSON.stringify({ userId: '1' }));
       expect(query.response()).toEqual({ user: { id: '1', name: 'Ada' } });
 
       c.destroy();
@@ -133,10 +133,10 @@ describe('gql scenario', () => {
 
       expect(req.method).toBe('POST');
       expect(Object.keys(req.query)).toHaveLength(0);
-      const body = req.body as { query: string; variables: string; operationName: string };
+      const body = req.body as { query: string; variables: unknown; operationName: string };
       expect(body.query).toContain('query GetUser');
       expect(body.operationName).toBe('GetUser');
-      expect(JSON.parse(body.variables)).toEqual({ userId: '2' });
+      expect(body.variables).toEqual({ userId: '2' });
       expect(query.response()).toEqual({ user: { id: '2', name: 'Grace' } });
 
       c.destroy();
@@ -171,9 +171,9 @@ describe('gql scenario', () => {
       if (!req) throw new Error('expected a request');
 
       expect(req.method).toBe('POST');
-      const body = req.body as { query: string; variables: string; operationName: string };
+      const body = req.body as { query: string; variables: unknown; operationName: string };
       expect(body.operationName).toBe('RenameUser');
-      expect(JSON.parse(body.variables)).toEqual({ name: 'Ada' });
+      expect(body.variables).toEqual({ name: 'Ada' });
       expect(mutation.response()).toEqual({ renameUser: { ok: true } });
 
       c.destroy();
@@ -333,8 +333,8 @@ describe('gql scenario', () => {
       const [first, second] = s.api.requests;
       if (!first || !second) throw new Error('expected two requests');
 
-      expect(JSON.parse((first.body as { variables: string }).variables)).toEqual({ userId: '1' });
-      expect(JSON.parse((second.body as { variables: string }).variables)).toEqual({ userId: '2' });
+      expect((first.body as { variables: unknown }).variables).toEqual({ userId: '1' });
+      expect((second.body as { variables: unknown }).variables).toEqual({ userId: '2' });
 
       c.destroy();
     });
@@ -563,7 +563,7 @@ describe('gql scenario', () => {
 
       expect(request.headers.get('Authorization')).toBe(`Bearer ${auth.accessToken()}`);
       expect((request.body as { operationName: string }).operationName).toBe('RenameUser');
-      expect(JSON.parse((request.body as { variables: string }).variables)).toEqual({ name: 'Ada' });
+      expect((request.body as { variables: unknown }).variables).toEqual({ name: 'Ada' });
       expect(mutation.response()).toEqual({ renameUser: { ok: true } });
 
       c.destroy();
@@ -576,7 +576,7 @@ describe('gql scenario', () => {
     it('shares one request for identical variables via POST and fires a second one for different variables', () => {
       const s = scenario();
       s.api.on('POST', '/', ({ body }) => {
-        const variables = JSON.parse((body as { variables: string }).variables) as UserVariables;
+        const variables = (body as { variables: UserVariables }).variables;
 
         return { body: { data: { user: { id: variables.userId, name: `user ${variables.userId}` } } } };
       });
@@ -734,7 +734,7 @@ describe('gql scenario', () => {
       s.tick();
 
       expect(s.api.requestCount('POST', '/')).toBe(1);
-      expect(JSON.parse((s.api.requests[0]?.body as { variables: string }).variables)).toEqual({ userId: '7' });
+      expect((s.api.requests[0]?.body as { variables: unknown }).variables).toEqual({ userId: '7' });
       expect(query.response()).toEqual({ user: { id: '7', name: 'Ada' } });
 
       c.destroy();

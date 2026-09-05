@@ -1071,12 +1071,12 @@ describe('legacy scenario', () => {
         expect(s.api.requests.map((r) => `${r.method} ${r.path}`)).toEqual(['POST /graphql', 'POST /graphql']);
         expect(s.api.requests[0]?.body).toEqual({
           query: GET_POSTS,
-          variables: JSON.stringify({ limit: 2 }),
+          variables: { limit: 2 },
           operationName: 'GetPosts',
         });
         expect(s.api.requests[1]?.body).toEqual({
           query: CREATE_POST,
-          variables: JSON.stringify({ title: 'Hello' }),
+          variables: { title: 'Hello' },
           operationName: 'CreatePost',
         });
       });

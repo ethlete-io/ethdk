@@ -1,4 +1,5 @@
 import { isDevMode } from '@angular/core';
+import { GqlQueryTransport } from './gql-query-creator';
 
 const getOpName = /\b(?:query|mutation)\s+([\w-]+)(?:\s*\([^)]*\))?\s*\{/;
 
@@ -14,23 +15,31 @@ const minifyGql = (document: string) =>
 
 export type TransformedGqlQuery = {
   query: string;
-  variables?: string;
+  variables?: string | Record<string, unknown>;
   operationName?: string;
 };
 
-export type GqlTransformer = (variables: Record<string, unknown> | null | undefined) => TransformedGqlQuery;
+export type GqlTransformer = (
+  variables: Record<string, unknown> | null | undefined,
+  transport: GqlQueryTransport,
+) => TransformedGqlQuery;
 
+/**
+ * Builds the GraphQL-over-HTTP payload of a document. `variables` comes back as a JSON string for
+ * the `GET` transport, where the payload travels as query parameters, and as the map itself for
+ * `POST`, where it travels as a JSON body.
+ */
 export const transformGql = (str: string | string[]): GqlTransformer => {
   const normalizedStr = Array.isArray(str) ? str.join('') : str;
 
   const operationName = getOpName.exec(normalizedStr)?.[1];
   let minified: string | undefined;
 
-  return (variables: Record<string, unknown> | null | undefined): TransformedGqlQuery => {
+  return (variables: Record<string, unknown> | null | undefined, transport: GqlQueryTransport): TransformedGqlQuery => {
     const data: TransformedGqlQuery = { query: isDevMode() ? normalizedStr : (minified ??= minifyGql(normalizedStr)) };
 
     if (variables) {
-      data['variables'] = JSON.stringify(variables);
+      data['variables'] = transport === 'GET' ? JSON.stringify(variables) : variables;
     }
 
     if (operationName) {

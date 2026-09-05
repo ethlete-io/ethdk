@@ -425,7 +425,7 @@ export const computeQueryBody = (config: {
     const queryTemplate = config.config.query;
     const query = transformGql(queryTemplate);
 
-    body = query(config.args?.variables);
+    body = query(config.args?.variables, 'POST');
   } else {
     body = config.args?.body;
   }
@@ -489,7 +489,7 @@ export const computeQueryQueryParams = (config: {
     const queryTemplate = config.config.query;
     const query = transformGql(queryTemplate);
 
-    let params = query(config.args?.variables);
+    let params = query(config.args?.variables, 'GET');
 
     if (config.args?.queryParams) {
       params = { ...params, ...config.args?.queryParams };

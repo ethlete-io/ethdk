@@ -49,7 +49,7 @@ Two orthogonal axes: the **operation kind** (`Query` vs `Mutation`) and the **HT
 | `createSecureGqlMutationViaPost` | mutation | POST      | no                |
 
 ::: info Kind ≠ transport
-The operation kind controls **caching**: queries are cached/deduplicated in the repository, mutations are not - even a query sent via POST is cached (its cache key hashes the body). The transport only controls **how the payload travels**: via GET it's serialized into URL query params (CDN/proxy-cache friendly), via POST it goes in the request body.
+The operation kind controls **caching**: queries are cached/deduplicated in the repository, mutations are not - even a query sent via POST is cached (its cache key hashes the body). The transport only controls **how the payload travels**: via GET the `query`, `variables` and `operationName` become URL query params (CDN/proxy-cache friendly), with `variables` as a JSON string because a query param is always a string; via POST the same three go into the JSON request body, with `variables` as an object - what the GraphQL-over-HTTP specification requires.
 :::
 
 The `Secure…` variants take `(client, authProviderRef)` and behave like [secure HTTP queries](/query/auth) (token gating, `Authorization` header, refresh-and-retry on 401). Their transport suffix controls the HTTP method exactly like the non-secure variants.
@@ -58,11 +58,11 @@ The `Secure…` variants take `(client, authProviderRef)` and behave like [secur
 
 GQL args extend the core `QueryArgs` with a `variables` bag:
 
-| Field         | Description                                                                                   |
-| ------------- | --------------------------------------------------------------------------------------------- |
-| `response`    | The unwrapped data type - what `query.response()` returns.                                    |
-| `variables`   | GraphQL variables, passed via `withArgs` / `execute` and JSON-serialized into the request.    |
-| `rawResponse` | Defaults to `{ data: TResponse }`; declare it only when your endpoint returns something else. |
+| Field         | Description                                                                                                                   |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `response`    | The unwrapped data type - what `query.response()` returns.                                                                    |
+| `variables`   | GraphQL variables, passed via `withArgs` / `execute` - a JSON string query param via GET, a JSON object in the body via POST. |
+| `rawResponse` | Defaults to `{ data: TResponse }`; declare it only when your endpoint returns something else.                                 |
 
 **Response unwrapping:** by default the `{ data }` envelope is stripped automatically. A `200` without a `data` property (a GraphQL errors payload) is a `failure`: `error()` carries the `ET600` error with code `0`, in every build - see [a `transformResponse` that throws](/query/errors#a-transformresponse-that-throws). Supplying your own `transformResponse` replaces this default:
 

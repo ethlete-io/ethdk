@@ -38,7 +38,10 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
 
     circularChecker.check(args);
 
-    let gqlParams = gqlTransformerFor(executeOptions.creatorInternals)(args?.variables);
+    let gqlParams = gqlTransformerFor(executeOptions.creatorInternals)(
+      args?.variables,
+      executeOptions.creatorInternals.transport,
+    );
 
     if (args?.queryParams && executeOptions.creatorInternals.transport === 'GET') {
       gqlParams = { ...gqlParams, ...args.queryParams };
