@@ -17,6 +17,16 @@ export const isHTMLElement = (value: unknown): value is HTMLElement => {
   return value instanceof HTMLElement;
 };
 
+/**
+ * Whether the overlay rooted at `hostElement` is still the owner of DOM focus - focus is inside it, or
+ * nothing is focused. False once the user has moved focus somewhere else.
+ */
+export const ownsActiveElement = (hostElement: HTMLElement, document: Document) => {
+  const activeElement = document.activeElement;
+
+  return !activeElement || activeElement === document.body || hostElement.contains(activeElement);
+};
+
 export const isFocusable = (element: HTMLElement, document: Document) => {
   const view = document.defaultView;
   const style = view?.getComputedStyle(element);

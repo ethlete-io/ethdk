@@ -31,7 +31,7 @@ ref.afterClosed().subscribe(({ result, source }) => {
 | `modal`                                                    | `true`               | Modal overlays get a focus trap and `aria-modal`.                                                                  |
 | `hasBackdrop`                                              | `true`               | Render a backdrop element.                                                                                         |
 | `autoFocus`                                                | `'first-tabbable'`   | `'container' \| 'first-heading' \| 'first-tabbable'`, a CSS selector, or `false`.                                  |
-| `restoreFocus`                                             | `true`               | Restore focus to the previously focused element on close.                                                          |
+| `restoreFocus`                                             | `true`               | Restore focus to the previously focused element on close, unless focus has since moved outside the overlay.        |
 | `closeOnEscape`                                            | `true`               | Escape closes the top-most overlay.                                                                                |
 | `closeOnOutsidePointer`                                    | `!modal`             | Pointer down outside the pane closes it.                                                                           |
 | `role`                                                     | `null`               | `'dialog' \| 'alertdialog'`.                                                                                       |
@@ -159,6 +159,6 @@ For debugging, the runtime shares the [`et-overlay-debug` localStorage flag](/co
 
 The building blocks behind the runtime are exported for custom floating UI:
 
-- **Focus** - `getFocusableElements(container, document)` / `isFocusable(element, document)` (based on the exported `FOCUSABLE_SELECTOR`), `focusElement(el)`, `applyInitialFocus(…)` and `setupFocusTrap(…)` (returns a cleanup function).
+- **Focus** - `getFocusableElements(container, document)` / `isFocusable(element, document)` (based on the exported `FOCUSABLE_SELECTOR`), `focusElement(el)`, `ownsActiveElement(host, document)`, `applyInitialFocus(…)` and `setupFocusTrap(…)` (returns a cleanup function).
 - **Positioning** - `setupPositioning(…)` plus the lower-level `applyCenteredPosition`, `applyGlobalPosition` and `createAnchoredPositionCleanup` used by the [position strategies](#position-strategies).
 - **Misc** - `getHeadingElement(container)` (finds the first heading for `aria-labelledby`) and the `isHTMLElement` guard.

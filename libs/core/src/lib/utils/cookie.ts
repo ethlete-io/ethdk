@@ -48,7 +48,7 @@ export const setCookie = (
 
   cookieString += `; SameSite=${sameSiteUpper}`;
 
-  if (sameSite === 'none' || window.location.protocol === 'https:') {
+  if (sameSite === 'none' || (typeof window !== 'undefined' && window.location.protocol === 'https:')) {
     cookieString += '; Secure';
   }
 
@@ -68,7 +68,7 @@ export const deleteCookie = (name: string, path = '/', domain: string | null = g
 };
 
 export const getDomain = () => {
-  if (typeof navigator === 'undefined') {
+  if (typeof window === 'undefined') {
     return null;
   }
 

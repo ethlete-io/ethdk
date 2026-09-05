@@ -118,9 +118,7 @@ describe('ToggletipDirective', () => {
     expect(button.getAttribute('aria-expanded')).toBe('true');
   });
 
-  // the runtime's `destroyMountedOverlay` (libs/core overlay-runtime.ts) restores focus to the opener unconditionally,
-  // stealing it from the element the outside press focused - the fix belongs in @ethlete/core
-  it.fails('leaves focus on the element an outside press moved it to', async () => {
+  it('leaves focus on the element an outside press moved it to', async () => {
     fakeLayout([
       { match: 'html', clientWidth: 1024, clientHeight: 768 },
       { match: '.toggletip-trigger', rect: { x: 100, y: 100, width: 80, height: 32 } },

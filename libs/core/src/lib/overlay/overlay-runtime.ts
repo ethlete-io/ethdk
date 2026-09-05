@@ -14,7 +14,7 @@ import { filter, take } from 'rxjs';
 import { ANIMATED_LIFECYCLE_TOKEN, animationDebugLog, nextFrame } from '../animations';
 import { injectRenderer } from '../providers';
 import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
-import { applyInitialFocus, isHTMLElement, setupFocusTrap } from './overlay-focus';
+import { applyInitialFocus, isHTMLElement, ownsActiveElement, setupFocusTrap } from './overlay-focus';
 import { DEFAULT_OVERLAY_LAYER, OVERLAY_LAYER_ATTRIBUTE, isOnHigherOverlayLayer } from './overlay-layer';
 import { resetPositioningStyles, setBackdropStyles, setBaseElementStyles, setupPositioning } from './overlay-position';
 import { OverlayRuntimeRef, createOverlayRuntimeRef } from './overlay-runtime-ref';
@@ -288,6 +288,11 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
       const destroyMountedOverlay = (closeEvent: OverlayRuntimeCloseEvent<TResult>) => {
         animationDebugLog(`runtime ${config.id}`, `destroy (source "${closeEvent.source}")`);
+
+        // Read before teardown: removing the host element moves focus to the body, which would make
+        // every close look like the overlay still owned it.
+        const overlayStillOwnsFocus = ownsActiveElement(hostElement, targetDocument);
+
         cleanupFns.forEach((cleanup) => cleanup());
         appRef.detachView(componentRef.hostView);
         componentRef.destroy();
@@ -307,7 +312,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         openEntriesState.update((entries) => entries.filter((entry) => entry !== overlayRef));
         maybeDestroyRootElements(targetDocument);
 
-        if (config.restoreFocus !== false && previousFocusedElement?.isConnected) {
+        if (config.restoreFocus !== false && overlayStillOwnsFocus && previousFocusedElement?.isConnected) {
           previousFocusedElement.focus({ preventScroll: true });
         }
 

@@ -25,6 +25,11 @@ class PlainOverlayComponent {}
 @Component({ template: '<button type="button">focusable content</button>' })
 class FocusableOverlayComponent {}
 
+@Component({ template: '<button type="button">focusable animated content</button>' })
+class AnimatedFocusableOverlayComponent {
+  animatedLifecycle = signal(fakeLifecycle);
+}
+
 const OVERLAY_SCOPED_TOKEN = new InjectionToken<boolean>('OVERLAY_SCOPED_TOKEN');
 
 @Component({ template: 'overlay with a scoped provider' })
@@ -195,6 +200,73 @@ describe('overlay runtime', () => {
 
     expect(fakeLifecycle.leave).toHaveBeenCalledOnce();
     expect(ref.state()).toBe('closed');
+  });
+
+  describe('restoreFocus', () => {
+    const mountAndAwaitLeave = async () => {
+      const trigger = document.createElement('button');
+      document.body.appendChild(trigger);
+      trigger.focus();
+
+      const ref = mount(
+        {
+          modal: false,
+          hasBackdrop: false,
+          autoFocus: false,
+          animationDelegate: { enter: () => fakeLifecycle.state$.next('entered'), leave: () => undefined },
+        },
+        AnimatedFocusableOverlayComponent,
+      );
+
+      await flushFrames();
+
+      ref.elements.paneElement.querySelector('button')?.focus();
+      ref.close();
+
+      return { ref, trigger };
+    };
+
+    it('does not restore focus when the user has already focused something else', async () => {
+      const outside = document.createElement('input');
+      document.body.appendChild(outside);
+
+      const { ref, trigger } = await mountAndAwaitLeave();
+
+      outside.focus();
+      fakeLifecycle.state$.next('left');
+
+      expect(ref.state()).toBe('closed');
+      expect(document.activeElement).toBe(outside);
+
+      trigger.remove();
+      outside.remove();
+    });
+
+    it('restores focus when focus is still inside the closing overlay', async () => {
+      const { ref, trigger } = await mountAndAwaitLeave();
+
+      expect(ref.elements.paneElement.contains(document.activeElement)).toBe(true);
+
+      fakeLifecycle.state$.next('left');
+
+      expect(document.activeElement).toBe(trigger);
+
+      trigger.remove();
+    });
+
+    it('restores focus when the closing overlay left focus on the body', async () => {
+      const { ref, trigger } = await mountAndAwaitLeave();
+
+      (document.activeElement as HTMLElement | null)?.blur();
+      expect(document.activeElement).toBe(document.body);
+
+      fakeLifecycle.state$.next('left');
+
+      expect(ref.state()).toBe('closed');
+      expect(document.activeElement).toBe(trigger);
+
+      trigger.remove();
+    });
   });
 
   it('keeps DOM focus on the trigger across open and close with autoFocus and restoreFocus off', async () => {

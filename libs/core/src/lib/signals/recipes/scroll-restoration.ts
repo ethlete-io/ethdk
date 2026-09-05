@@ -195,6 +195,23 @@ const serializeQueryParams = (queryParams: Params) =>
     .map((key) => `${key}=${queryParams[key]}`)
     .join('&');
 
+// Two navigations that matched the same route definition get the same object back, which is what
+// tells `/detail/1` -> `/detail/2` apart from `/list` -> `/detail/1`.
+const getDeepestRouteConfig = (router: Router) => {
+  let route = router.routerState.snapshot.root;
+
+  while (route.firstChild) {
+    route = route.firstChild;
+  }
+
+  return route.routeConfig;
+};
+
+const didPathParamsChange = (prevParams: Params, currParams: Params) =>
+  [...new Set(Object.keys(prevParams).concat(Object.keys(currParams)))].some(
+    (key) => prevParams[key] !== currParams[key],
+  );
+
 export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}) => {
   if (!isPlatformBrowser(inject(PLATFORM_ID))) {
     return;
@@ -234,7 +251,11 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
   let isPopstate = false;
   let wantsRestore = false;
 
-  let prev = { state: createRouterState(router), route: createRoute(router) };
+  let prev = {
+    state: createRouterState(router),
+    route: createRoute(router),
+    routeConfig: getDeepestRouteConfig(router),
+  };
 
   let pendingRestore: (() => void) | null = null;
 
@@ -380,10 +401,15 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
   };
 
   const onNavigationEnd = (event: NavigationEnd | NavigationSkipped) => {
-    const curr = { state: createRouterState(router), route: createRoute(router) };
+    const curr = {
+      state: createRouterState(router),
+      route: createRoute(router),
+      routeConfig: getDeepestRouteConfig(router),
+    };
 
     const prevState = prev.state;
     const currState = curr.state;
+    const sameRouteConfig = prev.routeConfig !== null && prev.routeConfig === curr.routeConfig;
     const sameUrlNavigation = prev.route === curr.route;
     const didFragmentChange = prevState.fragment !== currState.fragment;
 
@@ -452,7 +478,10 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       const viaReturnRoute =
         currState.data[ET_DISABLE_SCROLL_TOP_AS_RETURN_ROUTE] && prevState.data[ET_DISABLE_SCROLL_TOP];
       const explicitly = currState.data[ET_DISABLE_SCROLL_TOP];
-      const pathParamsChange = currState.data[ET_DISABLE_SCROLL_TOP_ON_PATH_PARAM_CHANGE];
+      const pathParamsChange =
+        currState.data[ET_DISABLE_SCROLL_TOP_ON_PATH_PARAM_CHANGE] &&
+        sameRouteConfig &&
+        didPathParamsChange(prevState.pathParams, currState.pathParams);
 
       if (viaReturnRoute || explicitly || pathParamsChange) {
         return;

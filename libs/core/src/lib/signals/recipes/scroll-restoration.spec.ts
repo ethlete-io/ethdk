@@ -393,6 +393,43 @@ describe('setupScrollRestoration - existing behavior', () => {
     expect(scroller.scrollTop).toBe(800);
   });
 
+  describe('routerDisableScrollTop with onPathParamChange', () => {
+    const PATH_PARAM_ROUTES: Routes = [
+      { path: 'list', component: ListPage },
+      {
+        path: 'detail/:id',
+        component: DetailPage,
+        data: routerDisableScrollTop({ asReturnRoute: true, onPathParamChange: true }),
+      },
+    ];
+
+    it('scrolls to top when arriving from a different route', async () => {
+      const scroller = createScrollElement();
+      const harness = await setup({ scrollElement: () => scroller.el }, PATH_PARAM_ROUTES);
+
+      await harness.navigateByUrl('/list', ListPage);
+      scroller.setContentHeight(4000);
+      scroller.scrollTop = 300;
+
+      await harness.navigateByUrl('/detail/1', DetailPage);
+
+      expect(scroller.scrollTop).toBe(0);
+    });
+
+    it('keeps the offset when only the path param changed', async () => {
+      const scroller = createScrollElement();
+      const harness = await setup({ scrollElement: () => scroller.el }, PATH_PARAM_ROUTES);
+
+      await harness.navigateByUrl('/detail/1', DetailPage);
+      scroller.setContentHeight(4000);
+      scroller.scrollTop = 300;
+
+      await harness.navigateByUrl('/detail/2', DetailPage);
+
+      expect(scroller.scrollTop).toBe(300);
+    });
+  });
+
   it('honors routerDisableScrollTop on the target route', async () => {
     const scroller = createScrollElement();
     const harness = await setup({ scrollElement: () => scroller.el }, [
