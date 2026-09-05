@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import {
   createGqlMutationViaGet,
@@ -5,9 +6,12 @@ import {
   createGqlQueryViaGet,
   createGqlQueryViaPost,
   createSecureGqlMutationViaGet,
+  createSecureGqlMutationViaPost,
+  createSecureGqlQueryViaGet,
   createSecureGqlQueryViaPost,
   gql,
   withArgs,
+  withPolling,
 } from '../index';
 import { describe, expect, it } from 'vitest';
 import { useScenario } from './harness';
@@ -23,6 +27,35 @@ const getUserDoc = gql`
     }
   }
 `;
+
+const commentedDoc = gql`
+  # the signed in user
+  query Me {
+    me {
+      id
+    }
+  }
+`;
+
+const is401 = (entry: { error: unknown }) => entry.error instanceof HttpErrorResponse && entry.error.status === 401;
+
+/**
+ * Runs `fn` with Angular in production mode. `isDevMode()` reads the `ngDevMode` global, and
+ * `enableProdMode()` sets it without a way back - every later test in the file would run in
+ * production mode too - so the previous value is restored here.
+ */
+const inProductionMode = <T>(fn: () => T): T => {
+  const globals = globalThis as { ngDevMode?: unknown };
+  const previous = globals.ngDevMode;
+
+  globals.ngDevMode = false;
+
+  try {
+    return fn();
+  } finally {
+    globals.ngDevMode = previous;
+  }
+};
 
 describe('gql scenario', () => {
   describe('GET transport', () => {
@@ -399,6 +432,406 @@ describe('gql scenario', () => {
       expect(s.api.requestCount('GET', '/')).toBe(1);
 
       c.destroy();
+    });
+  });
+
+  describe('document serialization', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('sends the pretty-printed document in dev mode', () => {
+      const s = scenario();
+      s.api.on('GET', '/', () => ({ body: { data: { me: { id: '1' } } } }));
+
+      const me = createGqlQueryViaGet(s.clientRef)<{ response: { me: { id: string } } }>(commentedDoc);
+
+      const c = s.consumer();
+      c.run(() => me());
+      s.tick();
+
+      const document = s.api.requests[0]?.query['query'];
+      expect(document).toContain('# the signed in user');
+      expect(document).toContain('\n');
+
+      c.destroy();
+    });
+
+    it('drops the comments and collapses the whitespace of the document in a production build', () => {
+      const s = scenario();
+      s.api.on('GET', '/', () => ({ body: { data: { me: { id: '1' } } } }));
+
+      const c = s.consumer();
+
+      inProductionMode(() => {
+        const me = createGqlQueryViaGet(s.clientRef)<{ response: { me: { id: string } } }>(commentedDoc);
+        c.run(() => me());
+        s.tick();
+      });
+
+      expect(s.api.requests[0]?.query['query']).toBe('query Me { me { id } }');
+
+      c.destroy();
+    });
+  });
+
+  describe('secure gql transports', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('createSecureGqlQueryViaGet sends the documented verb (GET) with the bearer header', () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/');
+      s.api.on('GET', '/', () => ({ body: { data: { user: { id: 'me', name: 'Ada' } } } }));
+
+      const getSecureUser = createSecureGqlQueryViaGet(
+        s.clientRef,
+        auth.ref,
+      )<{ response: UserResponse; variables: UserVariables }>(getUserDoc);
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      const query = c.run(() => getSecureUser(withArgs(() => ({ variables: { userId: 'me' } }))));
+      s.tick();
+
+      const request = s.api.requests.find((r) => r.method === 'GET' && r.path === '/');
+      if (!request) throw new Error('expected the gql request');
+
+      expect(request.headers.get('Authorization')).toBe(`Bearer ${auth.accessToken()}`);
+      expect(request.body).toBeNull();
+      expect(request.query['operationName']).toBe('GetUser');
+      expect(JSON.parse(request.query['variables'] ?? '')).toEqual({ userId: 'me' });
+      expect(query.response()).toEqual({ user: { id: 'me', name: 'Ada' } });
+
+      c.destroy();
+    });
+
+    it('createSecureGqlMutationViaPost sends the documented verb (POST) with the bearer header', () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/');
+      s.api.on('POST', '/', () => ({ body: { data: { renameUser: { ok: true } } } }));
+
+      const renameUser = createSecureGqlMutationViaPost(
+        s.clientRef,
+        auth.ref,
+      )<{
+        response: { renameUser: { ok: boolean } };
+        variables: { name: string };
+      }>(gql`
+        mutation RenameUser($name: String!) {
+          renameUser(name: $name) {
+            ok
+          }
+        }
+      `);
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      const mutation = c.run(() => renameUser());
+      mutation.execute({ args: { variables: { name: 'Ada' } } });
+      s.tick();
+
+      const request = s.api.requests.find((r) => r.method === 'POST' && r.path === '/');
+      if (!request) throw new Error('expected the gql request');
+
+      expect(request.headers.get('Authorization')).toBe(`Bearer ${auth.accessToken()}`);
+      expect((request.body as { operationName: string }).operationName).toBe('RenameUser');
+      expect(JSON.parse((request.body as { variables: string }).variables)).toEqual({ name: 'Ada' });
+      expect(mutation.response()).toEqual({ renameUser: { ok: true } });
+
+      c.destroy();
+    });
+  });
+
+  describe('caching follows the operation kind', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('shares one request for identical variables via POST and fires a second one for different variables', () => {
+      const s = scenario();
+      s.api.on('POST', '/', ({ body }) => {
+        const variables = JSON.parse((body as { variables: string }).variables) as UserVariables;
+
+        return { body: { data: { user: { id: variables.userId, name: `user ${variables.userId}` } } } };
+      });
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: UserResponse; variables: UserVariables }>(
+        getUserDoc,
+      );
+
+      const a = s.consumer();
+      const b = s.consumer();
+      const q1 = a.run(() => getUser(withArgs(() => ({ variables: { userId: '1' } }))));
+      const q2 = b.run(() => getUser(withArgs(() => ({ variables: { userId: '1' } }))));
+      s.tick();
+
+      expect(s.api.requestCount('POST', '/')).toBe(1);
+      expect(q1.response()).toEqual({ user: { id: '1', name: 'user 1' } });
+      expect(q2.response()).toEqual(q1.response());
+
+      const d = s.consumer();
+      const q3 = d.run(() => getUser(withArgs(() => ({ variables: { userId: '2' } }))));
+      s.tick();
+
+      expect(s.api.requestCount('POST', '/')).toBe(2);
+      expect(q3.response()).toEqual({ user: { id: '2', name: 'user 2' } });
+
+      a.destroy();
+      b.destroy();
+      d.destroy();
+    });
+
+    it('never dedupes a gql mutation, even with identical variables', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { renameUser: { ok: true } } } }));
+
+      const renameUser = createGqlMutationViaPost(s.clientRef)<{
+        response: { renameUser: { ok: boolean } };
+        variables: { name: string };
+      }>(gql`
+        mutation RenameUser($name: String!) {
+          renameUser(name: $name) {
+            ok
+          }
+        }
+      `);
+
+      const c = s.consumer();
+      const mutation = c.run(() => renameUser());
+
+      mutation.execute({ args: { variables: { name: 'Ada' } } });
+      s.tick();
+      mutation.execute({ args: { variables: { name: 'Ada' } } });
+      s.tick();
+
+      const other = s.consumer();
+      const otherMutation = other.run(() => renameUser());
+      otherMutation.execute({ args: { variables: { name: 'Ada' } } });
+      s.tick();
+
+      expect(s.api.requestCount('POST', '/')).toBe(3);
+
+      c.destroy();
+      other.destroy();
+    });
+  });
+
+  describe('secure gql token gating', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('holds a secure gql query until a valid access token exists', () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/');
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: 'me', name: 'Ada' } } } }));
+
+      const getSecureUser = createSecureGqlQueryViaPost(
+        s.clientRef,
+        auth.ref,
+      )<{ response: UserResponse; variables: UserVariables }>(getUserDoc);
+
+      const c = s.consumer();
+      const query = c.run(() => getSecureUser(withArgs(() => ({ variables: { userId: 'me' } }))));
+      s.tick();
+
+      expect(s.api.requestCount('POST', '/')).toBe(0);
+      expect(query.response()).toBeNull();
+      expect(query.error()).toBeNull();
+
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.flush();
+
+      expect(s.api.requestCount('POST', '/')).toBe(1);
+      expect(s.api.requests.find((r) => r.path === '/')?.headers.get('Authorization')).toBe(
+        `Bearer ${auth.accessToken()}`,
+      );
+      expect(query.response()).toEqual({ user: { id: 'me', name: 'Ada' } });
+
+      c.destroy();
+    });
+
+    it('refreshes once and retries a secure gql query that answered 401', async () => {
+      const s = scenario();
+      const auth = s.auth({ autoRetryOn401: true });
+
+      s.api.protect('/');
+      s.api.once('POST', '/', () => ({ status: 401, body: { message: 'revoked' } }));
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: 'me', name: 'Ada' } } } }));
+
+      const getSecureUser = createSecureGqlQueryViaPost(
+        s.clientRef,
+        auth.ref,
+      )<{ response: UserResponse; variables: UserVariables }>(getUserDoc);
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      await s.settle();
+
+      const tokenAtLogin = auth.accessToken();
+      const query = c.run(() => getSecureUser(withArgs(() => ({ variables: { userId: 'me' } }))));
+      s.flush();
+      await s.settle();
+      s.flush();
+      await s.settle();
+
+      expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+      expect(auth.accessToken()).not.toBe(tokenAtLogin);
+      expect(s.api.requestCount('POST', '/')).toBe(2);
+      expect(query.response()).toEqual({ user: { id: 'me', name: 'Ada' } });
+
+      const retried = s.api.requests.filter((r) => r.path === '/')[1];
+      expect(retried?.headers.get('Authorization')).toBe(`Bearer ${auth.accessToken()}`);
+
+      s.expectError(is401);
+      c.destroy();
+    });
+  });
+
+  describe('variables and response typing', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('sends the variables handed to execute() rather than a withArgs feature', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: '7', name: 'Ada' } } } }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: UserResponse; variables: UserVariables }>(
+        getUserDoc,
+      );
+
+      const c = s.consumer();
+      const query = c.run(() => getUser({ onlyManualExecution: true }));
+      s.tick();
+
+      expect(s.api.requests).toHaveLength(0);
+
+      query.execute({ args: { variables: { userId: '7' } } });
+      s.tick();
+
+      expect(s.api.requestCount('POST', '/')).toBe(1);
+      expect(JSON.parse((s.api.requests[0]?.body as { variables: string }).variables)).toEqual({ userId: '7' });
+      expect(query.response()).toEqual({ user: { id: '7', name: 'Ada' } });
+
+      c.destroy();
+    });
+
+    it('unwraps an envelope other than { data } through a custom transformResponse', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { payload: { user: { id: '3', name: 'Grace' } } } }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: UserResponse }>(getUserDoc, {
+        // `GqlQueryArgs` pins `rawResponse` to `{ data: TResponse }`, so the envelope of this endpoint
+        // cannot be declared the way apps/docs/query/gql.md:66 describes. The cast stands in for it.
+        transformResponse: (raw) => (raw as unknown as { payload: UserResponse }).payload,
+      });
+
+      const c = s.consumer();
+      const query = c.run(() => getUser());
+      s.tick();
+
+      expect(query.response()).toEqual({ user: { id: '3', name: 'Grace' } });
+      expect(query.error()).toBeNull();
+
+      c.destroy();
+    });
+
+    it('lets a custom transformResponse replace the default { data } unwrapping', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: '4', name: 'Ada' } } } }));
+
+      const getUserName = createGqlQueryViaPost(s.clientRef)<{
+        response: string;
+        rawResponse: { data: UserResponse };
+      }>(getUserDoc, { transformResponse: (raw) => raw.data.user.name });
+
+      const c = s.consumer();
+      const query = c.run(() => getUserName());
+      s.tick();
+
+      expect(query.response()).toBe('Ada');
+
+      c.destroy();
+    });
+
+    it('fails a data-less 200 with ET600 outside dev mode too', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { errors: [{ message: 'boom' }] } }));
+
+      const c = s.consumer();
+
+      const query = inProductionMode(() => {
+        const getUser = createGqlQueryViaPost(s.clientRef)<{ response: unknown }>(getUserDoc);
+        const created = c.run(() => getUser());
+        s.tick();
+
+        return created;
+      });
+
+      expect(query.response()).toBeNull();
+      expect(query.error()?.code).toBe(0);
+      expect(String(query.error()?.raw.error)).toContain('ET600');
+      expect(query.executionState()).toMatchObject({ type: 'failure', hasCachedResponse: false });
+
+      c.destroy();
+    });
+  });
+
+  describe('creator options', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('sends a gql creator with an explicit route to that route', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: 'default', name: 'Ada' } } } }));
+      s.api.on('POST', '/graphql/admin', () => ({ body: { data: { user: { id: 'admin', name: 'Grace' } } } }));
+
+      const gqlPost = createGqlQueryViaPost(s.clientRef);
+      const getUser = gqlPost<{ response: UserResponse }>(getUserDoc);
+      const getAdminUser = gqlPost<{ response: UserResponse }>(getUserDoc, { route: '/graphql/admin' });
+
+      const c = s.consumer();
+      const base = c.run(() => getUser());
+      const admin = c.run(() => getAdminUser());
+      s.tick();
+
+      expect(s.api.requestCount('POST', '/')).toBe(1);
+      expect(s.api.requestCount('POST', '/graphql/admin')).toBe(1);
+      expect(base.response()).toEqual({ user: { id: 'default', name: 'Ada' } });
+      expect(admin.response()).toEqual({ user: { id: 'admin', name: 'Grace' } });
+
+      c.destroy();
+    });
+  });
+
+  describe('a gql query is a regular query', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('polls a gql query on the documented interval', () => {
+      const s = scenario();
+      s.api.on('GET', '/', () => ({ body: { data: { user: { id: '1', name: 'Ada' } } } }));
+
+      const getUser = createGqlQueryViaGet(s.clientRef)<{ response: UserResponse; variables: UserVariables }>(
+        getUserDoc,
+      );
+
+      const c = s.consumer();
+      const query = c.run(() =>
+        getUser(
+          withArgs(() => ({ variables: { userId: '1' } })),
+          withPolling({ interval: 30_000 }),
+        ),
+      );
+
+      s.tick();
+      expect(s.api.requestCount('GET', '/')).toBe(1);
+      expect(query.response()).toEqual({ user: { id: '1', name: 'Ada' } });
+
+      s.tick(30_000 * 2);
+      expect(s.api.requestCount('GET', '/')).toBe(3);
+
+      c.destroy();
+      s.tick(30_000 * 2);
+      expect(s.api.requestCount('GET', '/')).toBe(3);
     });
   });
 });
