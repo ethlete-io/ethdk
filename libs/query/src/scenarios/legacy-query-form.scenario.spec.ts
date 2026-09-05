@@ -103,3 +103,68 @@ describe('legacy QueryForm scenario', () => {
     c.destroy();
   });
 });
+
+describe('legacy QueryForm without observe()', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('reports a control write on value', () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() => createForm());
+
+    qf.controls.search.setValue('bar');
+    s.tick();
+
+    expect(qf.value).toEqual({ page: 1, search: 'bar' });
+
+    c.destroy();
+  });
+
+  it('reports a setValue on value', () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() => createForm());
+
+    qf.setValue({ page: 2, search: 'bar' });
+    s.tick();
+
+    expect(qf.value).toEqual({ page: 2, search: 'bar' });
+
+    c.destroy();
+  });
+
+  it('emits a control write on changes$', () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() => createForm());
+
+    const seen: (string | null)[] = [];
+    const sub = qf.changes$.subscribe(({ currentValue }) => seen.push(currentValue.search));
+
+    qf.controls.search.setValue('bar');
+    s.tick();
+
+    expect(seen).toEqual([null, 'bar']);
+
+    sub.unsubscribe();
+    c.destroy();
+  });
+
+  it('leaves the URL alone', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const c = s.consumer();
+    const qf = c.run(() => createForm());
+
+    qf.setValue({ page: 2, search: 'bar' });
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({});
+
+    c.destroy();
+  });
+});

@@ -10,7 +10,7 @@ import {
   injectQueryParamChanges,
   injectQueryParams,
 } from '@ethlete/core';
-import { BehaviorSubject, Subject, debounceTime, map, merge, of, switchMap, takeUntil, tap, timer } from 'rxjs';
+import { BehaviorSubject, Subject, debounceTime, filter, map, merge, of, switchMap, takeUntil, tap, timer } from 'rxjs';
 import {
   OptionalQueryFieldOptions,
   QueryFieldOptions,
@@ -258,6 +258,15 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     assertInInjectionContext(QueryForm);
 
     inject(DestroyRef).onDestroy(() => this.cleanup(false));
+
+    merge(...Object.values(this._fields).map((field) => field.control.valueChanges))
+      .pipe(
+        filter(() => !this.isObserving),
+        debounceTime(0),
+        tap(() => this.handleFormChange()),
+        takeUntil(this.destroy$),
+      )
+      .subscribe();
   }
 
   get controls() {
@@ -737,6 +746,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     }
 
     this.currentFormValue$.next(newVal);
+
+    if (!this.isObserving) {
+      this._changes$.next({ previousValue: currentVal, currentValue: newVal });
+    }
   }
 
   private cleanup(removeQueryParams = this.removeQueryParamsOnCleanup) {
