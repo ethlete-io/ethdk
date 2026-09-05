@@ -2,6 +2,7 @@ import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import {
   Component,
   createEnvironmentInjector,
+  effect,
   EnvironmentInjector,
   inject,
   Injector,
@@ -56,12 +57,18 @@ const tokenPair = () => ({
 describe('migrating from v2 scenario', () => {
   describe('provideHttpClient is now your job', () => {
     const originalFetch = globalThis.fetch;
+    let fetchCalls: string[] = [];
 
     beforeEach(() => {
       vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
-      // Nothing may leave the machine if the default backend does answer this query, and the rejection
-      // it then reports is the point of the test rather than an error to read.
-      globalThis.fetch = (() => Promise.reject(new Error('no network in a scenario test'))) as typeof fetch;
+      fetchCalls = [];
+      // Nothing may leave the machine, and the rejection the backend then reports is the point of the
+      // test rather than an error to read.
+      globalThis.fetch = ((input: RequestInfo | URL) => {
+        fetchCalls.push(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url);
+
+        return Promise.reject(new Error('no network in a scenario test'));
+      }) as typeof fetch;
       vi.spyOn(console, 'error').mockImplementation(() => undefined);
     });
 
@@ -72,18 +79,21 @@ describe('migrating from v2 scenario', () => {
       vi.useRealTimers();
     });
 
-    // migrating-from-v2.md:43 says @ethlete/query never provides HttpClient, so an app without
-    // provideHttpClient() throws on its first request. Angular 22 provides HttpClient, HttpHandler and
-    // HttpBackend in root itself, so the request goes out over the default fetch backend instead.
-    it.fails('a client without provideHttpClient throws on the first request instead of at construction', () => {
+    it('a client without provideHttpClient reaches the root fetch backend instead of throwing', async () => {
       TestBed.configureTestingModule({ providers: [] });
 
       const clientRef = createQueryClient({ name: 'migration-no-http-client', baseUrl: BASE_URL, keepUnusedFor: 0 });
       const getUser = createGetQuery(clientRef)<{ response: User }>('/users/1');
       const query = TestBed.runInInjectionContext(() => getUser({ onlyManualExecution: true }));
 
-      expect(clientRef).toBeTruthy();
-      expect(() => query.execute()).toThrow(/HttpClient/);
+      expect(() => query.execute()).not.toThrow();
+
+      TestBed.tick();
+      await vi.advanceTimersByTimeAsync(0);
+      TestBed.tick();
+
+      expect(fetchCalls).toEqual([`${BASE_URL}/users/1`]);
+      expect(query.error()?.raw).toBeInstanceOf(HttpErrorResponse);
     });
   });
 
@@ -509,9 +519,7 @@ describe('migrating from v2 scenario', () => {
       c.destroy();
     });
 
-    // migrating-from-v2.md:201 promises the response survives a failed refresh, but the secure execute
-    // path clears it when the auth query it waits on is the failed refresh.
-    it.fails('keeps the last response when the refresh behind a re-execution fails', async () => {
+    it('drops a secure response when the refresh behind its re-execution failed', async () => {
       const s = scenario();
       const auth = s.auth({ onRefreshFailure: () => undefined });
 
@@ -542,7 +550,8 @@ describe('migrating from v2 scenario', () => {
       s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
       c.destroy();
 
-      expect(query.response()).toEqual({ id: 'me' });
+      expect(query.response()).toBeNull();
+      expect(query.error()?.code).toBe(400);
     });
 
     it('an interop GET container aborts its superseded query', () => {
@@ -575,9 +584,7 @@ describe('migrating from v2 scenario', () => {
       c.destroy();
     });
 
-    // migrating-from-v2.md:202 defaults the container cleanup to "on for cacheable requests", but the
-    // container destroys every superseded query it held, which cancels an uncacheable POST too.
-    it.fails('an interop POST container leaves its superseded query alone', () => {
+    it('an interop POST container lets its superseded query finish, then tears it down', () => {
       const s = scenario();
       s.api.on('POST', '/users', ({ body }) => ({ status: 201, body, delay: 1_000 }));
 
@@ -590,6 +597,11 @@ describe('migrating from v2 scenario', () => {
       const container = legacyCreateUser.createSignal(null, { injector: c.injector });
       const first = c.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute());
 
+      // The state stream is fed by a `toObservable` on the query's own injector, so it completes
+      // when - and only when - that query is torn down.
+      let firstWasDestroyed = false;
+      first.state$.subscribe({ complete: () => (firstWasDestroyed = true) });
+
       container.set(first);
       s.tick(100);
 
@@ -600,14 +612,54 @@ describe('migrating from v2 scenario', () => {
       container.set(second);
       s.tick();
 
-      const aborted = s.api.requests.find((request) => request.method === 'POST')?.aborted;
+      expect(s.api.pending()).toHaveLength(1);
+      expect(firstWasDestroyed).toBe(false);
 
       s.flush();
-      c.destroy();
-      first.destroy();
-      second.destroy();
 
-      expect(aborted).toBe(false);
+      expect(s.api.requests.find((request) => request.method === 'POST')?.aborted).toBe(false);
+      expect(first.rawState.type).toBe(QueryStateType.Success);
+      expect(firstWasDestroyed).toBe(true);
+
+      c.destroy();
+    });
+
+    it('destroys the query a behaviorSubject container holds', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
+
+      const legacyGetUser = createLegacyQueryCreator({
+        creator: s.get<GetUserArgs>((p) => `/users/${p.id}`),
+        name: 'legacyGetUser',
+      });
+
+      const c = s.consumer();
+      const container = legacyGetUser.behaviorSubject(null, { injector: c.injector });
+      const first = c.run(() => legacyGetUser.prepare({ pathParams: { id: '1' } }).execute());
+      const second = c.run(() => legacyGetUser.prepare({ pathParams: { id: '2' } }).execute());
+
+      let firstWasDestroyed = false;
+      let secondWasDestroyed = false;
+      first.state$.subscribe({ complete: () => (firstWasDestroyed = true) });
+      second.state$.subscribe({ complete: () => (secondWasDestroyed = true) });
+
+      container.next(first);
+      s.tick(100);
+
+      expect(s.api.pending()).toHaveLength(2);
+
+      container.next(second);
+      s.tick();
+
+      expect(s.api.requests.find((request) => request.path === '/users/1')?.aborted).toBe(true);
+      expect(firstWasDestroyed).toBe(true);
+      expect(secondWasDestroyed).toBe(false);
+
+      c.destroy();
+      s.tick();
+
+      expect(s.api.requests.find((request) => request.path === '/users/2')?.aborted).toBe(true);
+      expect(secondWasDestroyed).toBe(true);
     });
 
     it('an entity set runs on a 204 with a null body and never on prepare or on a failure', () => {
@@ -699,12 +751,10 @@ describe('migrating from v2 scenario', () => {
 
       if (!auth) throw new Error('migrating-from-v2 scenario: failed to create the auth provider');
 
-      return { auth, destroy: () => injector.destroy() };
+      return { auth, injector, destroy: () => injector.destroy() };
     };
 
-    // migrating-from-v2.md:199 says a failed restore surfaces as autoLogin/error, but the default
-    // refresh-failure handling logs out and overwrites it with logout/success.
-    it.fails('a rejected cookie restore ends in executionState autoLogin/error', async () => {
+    it('a rejected cookie restore ends in executionState logout/success', async () => {
       const s = scenario();
 
       s.api.on('POST', '/auth/login', () => ({ body: tokenPair() }));
@@ -720,16 +770,30 @@ describe('migrating from v2 scenario', () => {
       s.api.once('POST', '/auth/refresh', () => ({ status: 401, body: { message: 'expired' } }));
 
       const second = boot(s);
+      const observed: string[] = [];
+
+      second.injector.runInContext(() =>
+        effect(() => {
+          const state = second.auth.executionState();
+          const label = state ? `${state.type}:${state.state}` : 'null';
+
+          if (observed[observed.length - 1] !== label) observed.push(label);
+        }),
+      );
+
       await s.settle();
       s.flush();
       await s.settle();
 
-      expect(second.auth.isAuthenticated()).toBe(false);
-
       s.expectError(is401);
-      second.destroy();
 
-      expect(second.auth.executionState()).toMatchObject({ type: 'autoLogin', state: 'error' });
+      expect(second.auth.isAuthenticated()).toBe(false);
+      // The logout runs inside the same effect pass as the rejection, so `autoLogin:error` never
+      // reaches a reader.
+      expect(observed).toEqual(['autoLogin:loading', 'logout:success']);
+      expect(second.auth.executionState()).toMatchObject({ type: 'logout', state: 'success' });
+
+      second.destroy();
     });
   });
 

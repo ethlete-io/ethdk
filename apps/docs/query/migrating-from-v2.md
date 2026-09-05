@@ -40,7 +40,7 @@ Three things are the difference between "it compiles" and "it works".
 
 ### `provideHttpClient()` is now your job
 
-The legacy client shipped its own transport. The current one does `inject(HttpClient)`, and `@ethlete/query` never provides it - an app that never needed `provideHttpClient()` will build cleanly and then throw on its first request.
+The legacy client shipped its own transport. The current one does `inject(HttpClient)`, and `@ethlete/query` never provides it. Angular does: `HttpClient`, `HttpHandler` and `HttpBackend` are all `providedIn: 'root'`, so an app that never called `provideHttpClient()` builds and its requests go out anyway - over the default `fetch` backend, and unconfigured. Nothing that call configures is in place: no interceptors, and no XSRF header - the XSRF interceptor comes from `provideHttpClient()` itself, not from the root providers. Add it:
 
 ```ts
 export const appConfig: ApplicationConfig = {
@@ -196,10 +196,10 @@ mode warns when a second application registers.
 ## Behavior worth knowing before you debug it
 
 - **Secure queries wait for a token.** A secure query executed before login does not fail - it parks until `accessToken()` is set, then runs. Don't gate them on `isAuthenticated()` by hand.
-- **`withPersistentAuth` calls `tryLogin()` during setup.** The cookie-backed session restore happens on its own; you do not need a `tryLoginViaCookie()` call in an app initializer. A failed restore surfaces as `executionState()` with `type: 'autoLogin'`, `state: 'error'`.
+- **`withPersistentAuth` calls `tryLogin()` during setup.** The cookie-backed session restore happens on its own; you do not need a `tryLoginViaCookie()` call in an app initializer. A **failed** restore does not settle on `type: 'autoLogin'`, `state: 'error'`: the cookie is spent through the refresh query, so the default policy ends the session in the same effect pass and a consumer sees `autoLogin` `loading` followed straight by `{ type: 'logout', state: 'success' }`. Gate a startup screen on [`sessionStatus()`](/query/auth#is-there-a-session) rather than on that error state.
 - **`logout()` clears the queries bound to it.** It drops the tokens, tears down every secure cache entry, and resets the secure queries still holding a response - a component mounted across the logout stops showing the previous user's data without a manual `reset()`.
-- **Responses survive a re-execution and a failed refresh.** `response()` is kept while a query re-runs and remains available if that run fails.
-- **Interop containers follow the request method again.** `createSignal` / `createSubject` default their cleanup (`abortPrevious`, `stopPreviousPolling`, `abortOnDestroy`) to "on for cacheable requests", and an interop query now answers that question from its creator. A superseded `GET` is aborted and stops polling, and a container's teardown destroys the query it holds - so a one-shot query stored in a container does not also need `destroyOnResponse`.
+- **Responses survive a re-execution and a failed re-run.** `response()` is kept while a query re-runs and remains available if that run fails - v2 swapped the whole state, so its `Failure` carried no response at all. The exception is a **secure** query re-executed while the refresh it waits on has failed: that one reports the refresh error and clears `response()`, because the session the response belonged to is over.
+- **Interop containers follow the request method again.** `createSignal` / `createSubject` - and `behaviorSubject`, which is `createSubject` now rather than the bare `BehaviorSubject` v2 handed back - default their cleanup (`abortPrevious`, `stopPreviousPolling`, `abortOnDestroy`) to "on for cacheable requests", and an interop query now answers that question from its creator. A superseded `GET` is aborted and stops polling; a superseded `POST` that is still in flight is left alone, reaches the server, and is torn down once it has settled. A container's teardown destroys the query it holds - so a one-shot query stored in a container does not also need `destroyOnResponse`, and a `behaviorSubject` ends its query's life where v2 left it running.
 - **An `entity` config only sees real responses.** `set` runs on success - including a 204, whose body is legitimately `null` - and never on `prepare()` or on a failure that left a previous response in place.
 
 ## The `Any*` types

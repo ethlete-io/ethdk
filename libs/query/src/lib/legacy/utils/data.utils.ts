@@ -27,6 +27,7 @@ import {
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
+  takeUntilResponse,
 } from '../query';
 import { QueryDataOf } from '../query-creator';
 
@@ -87,6 +88,15 @@ const queryContainerOwnerId = (injector: Injector) => {
 };
 
 /**
+ * Destroying a legacy query tears down the underlying query's injector, which cancels its request - so
+ * a superseded query that was not aborted (a mutation the server may already have accepted) is torn
+ * down only once it has settled. `state$` completes with the query, so this ends either way.
+ */
+const destroyOnceSettled = (query: AnyLegacyQuery) => {
+  query.state$.pipe(takeUntilResponse()).subscribe({ complete: () => query.destroy() });
+};
+
+/**
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export const addQueryContainerHandling = (
@@ -124,9 +134,19 @@ export const addQueryContainerHandling = (
             q?.stopPolling();
           }
 
-          if (!q?._hasDependents()) {
-            (q as unknown as AnyLegacyQuery)?.destroy?.();
+          if (q?._hasDependents()) return;
+
+          const legacyQuery = q as unknown as AnyLegacyQuery | null | undefined;
+
+          if (!legacyQuery?.destroy) return;
+
+          if (isQueryStateLoading(q?.rawState)) {
+            destroyOnceSettled(legacyQuery);
+
+            return;
           }
+
+          legacyQuery.destroy();
         };
 
         if ((isQuery(prevQuery) || prevQuery === null) && (isQuery(currQuery) || currQuery === null)) {
