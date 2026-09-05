@@ -160,6 +160,7 @@ export class TooltipDirective {
       origin: hostElement,
       closeOnEscape: false,
       closeOnOutsidePointer: false,
+      passive: true,
       panelClass: 'et-tooltip-panel',
       strategies: anchoredOverlayStrategy({
         containerClass: ['et-overlay--tooltip', 'et-floating-panel'],

@@ -51,6 +51,15 @@ export type OverlayConfig = {
   closeOnEscape?: boolean;
 
   /**
+   * Marks an overlay that never owns the interaction - a tooltip, a hover card, a drag preview.
+   * The overlay below a passive one keeps answering Escape, an outside press and the focus trap
+   * while it is shown.
+   *
+   * @default false
+   */
+  passive?: boolean;
+
+  /**
    * Breakpoint-driven overlay strategies (dialog, sheets, full-screen, …).
    * When set, position, sizing and classes are controlled by the active strategy.
    * Include one entry without a `breakpoint` as the base strategy - an array without one falls back

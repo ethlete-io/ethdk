@@ -116,7 +116,9 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       for (let index = entries.length - 1; index >= 0; index--) {
         const entry = entries[index];
 
-        if (entry && entry.state() !== 'closing' && entry.state() !== 'closed') return entry === overlayRef;
+        if (!entry || entry.config.passive || entry.state() === 'closing' || entry.state() === 'closed') continue;
+
+        return entry === overlayRef;
       }
 
       return false;

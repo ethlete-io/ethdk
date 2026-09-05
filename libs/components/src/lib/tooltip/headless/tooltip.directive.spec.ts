@@ -191,12 +191,11 @@ describe('TooltipDirective inside a modal overlay', () => {
     expect(closedVia()).toBe('escape');
   });
 
-  // the runtime's `isTopMost` (libs/core overlay-runtime.ts) counts the passive tooltip as the top layer, so the
-  // dialog's capture-phase pointerdown listener ignores the press - the fix belongs in @ethlete/core
-  it.fails('a backdrop press closes the dialog while a tooltip is shown inside it', async () => {
+  it('a backdrop press closes the dialog while a tooltip is shown inside it', async () => {
     const { closedVia } = await openDialogWithHoveredTooltip();
 
     await driver.clickBackdrop();
+    await driver.settle();
 
     expect(closedVia()).toBe('outside-pointer');
   });
