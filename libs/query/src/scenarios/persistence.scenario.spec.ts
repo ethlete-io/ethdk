@@ -1680,4 +1680,51 @@ describe('persistence scenario', () => {
       }
     });
   });
+
+  describe('a secure consumer that unbinds while its request is in flight', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withQueryPersistence({ adapter: () => store.adapter })],
+    });
+
+    it('keeps a body secure when the secure consumer unbinds before the response', async () => {
+      const s = scenario();
+      const auth = s.auth();
+
+      s.api.on('GET', '/shared', () => ({ body: { id: 'ada' }, delay: 100 }));
+
+      const getSharedSecure = createSecureGetQuery(s.clientRef, auth.ref)<{ response: { id: string } }>('/shared', {
+        persistence: true,
+      });
+      const getSharedPublic = s.get<{ response: { id: string } }>('/shared', { persistence: true });
+
+      const secureConsumer = s.consumer();
+      secureConsumer.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      secureConsumer.run(() => getSharedSecure());
+      const publicConsumer = s.consumer();
+      publicConsumer.run(() => getSharedPublic());
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/shared')).toBe(1);
+
+      secureConsumer.destroy();
+      s.tick(100);
+
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+
+      expect(store.entries().map((e) => ({ url: e.url, isSecure: e.isSecure }))).toEqual([
+        { url: 'https://api.test/shared', isSecure: true },
+      ]);
+
+      s.run(() => auth.logout());
+      await s.settle();
+
+      expect(store.entries()).toEqual([]);
+
+      publicConsumer.destroy();
+    });
+  });
 });

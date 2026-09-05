@@ -78,6 +78,9 @@ A logged-in user's data is on the other side of the default:
   device is a decision per endpoint, not a blanket one.
 - **A logout removes them.** The auth provider tears down secure entries in every tab, and the
   persisted copies go with them, at the same moment.
+- **A cache entry a secure query ever touched stays secure for its whole life.** A public query on
+  the same route shares that entry, so the logout takes the shared copy too. The alternative is a body
+  that was fetched with a bearer token sitting on disk marked public.
 
 ```ts
 const getQuery = createGetQuery(client);

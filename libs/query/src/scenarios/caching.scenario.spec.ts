@@ -325,7 +325,7 @@ describe('caching scenario', () => {
   describe('merged policies across consumers', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
-    it('stops treating a shared entry as secure once the secure consumer unbinds', async () => {
+    it('keeps a shared entry secure after the secure consumer unbinds, so the logout still takes it', async () => {
       const s = scenario();
       const auth = s.auth();
       s.api.on('GET', '/shared-entry', () => ({ body: { id: 'me' } }));
@@ -354,9 +354,9 @@ describe('caching scenario', () => {
       s.run(() => auth.logout());
       await s.settle();
 
-      // The entry belongs to the public consumer alone again, so the logout must leave it alone.
-      expect(s.client.repository.subtle.cacheEntries().map((entry) => entry.key)).toContain(key);
-      expect(publicQuery.response()).toEqual({ id: 'me' });
+      // The body was fetched with a bearer token, so the entry stays secure even though only the
+      // public consumer is left, and the logout takes it.
+      expect(s.client.repository.subtle.cacheEntries().map((entry) => entry.key)).not.toContain(key);
 
       publicConsumer.destroy();
     });

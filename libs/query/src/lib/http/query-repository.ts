@@ -631,15 +631,17 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
    * Merges the policies of the currently bound consumers onto the entry, the strictest one winning -
    * except `isPersistEnabled`, where one opted-in consumer is enough, because the entry holds one
    * response and the creator that wants it on disk is the one asking for it.
-   * An entry that just lost its last consumer keeps what it had: dropping `isSecure` there would hide
-   * a retained response body of a logged in session from the logout that has to clear it.
+   * `isSecure` never drops back to `false` while the entry lives, and an entry that just lost its
+   * last consumer keeps what it had. A secure consumer that leaves while its request is still out
+   * would otherwise stamp the authenticated body public, which hides it from the logout that has to
+   * clear it. Only the destruction of the entry clears the flag.
    */
   const mergeConsumerPolicies = (cacheEntry: DestroyListenerMapItem) => {
     const bindings = Array.from(cacheEntry.consumers.values());
 
     if (!bindings.length) return;
 
-    cacheEntry.isSecure = bindings.some((binding) => binding.isSecure);
+    cacheEntry.isSecure = cacheEntry.isSecure || bindings.some((binding) => binding.isSecure);
     cacheEntry.isRefreshable = bindings.some((binding) => binding.isRefreshable);
     cacheEntry.isPersistEnabled = bindings.some((binding) => binding.isPersistEnabled);
     cacheEntry.isMultiTabSyncEnabled = bindings.every((binding) => binding.isMultiTabSyncEnabled);
