@@ -1521,4 +1521,163 @@ describe('persistence scenario', () => {
       b.destroy();
     });
   });
+
+  describe('a logout purge the store refuses', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withQueryPersistence({ adapter: () => store.adapter })],
+    });
+
+    it('never hydrates a secure entry whose logout removal failed', async () => {
+      const s = scenario();
+      const auth = s.auth();
+
+      s.api.protect('/secure/**');
+      s.api.on('GET', '/secure/profile', sequence([{ body: { id: 'ada' } }, { body: { id: 'grace' }, delay: 50 }]));
+
+      const getSecureProfile = createSecureGetQuery(s.clientRef, auth.ref)<{ response: { id: string } }>(
+        '/secure/profile',
+        { persistence: true },
+      );
+
+      const first = s.consumer();
+      first.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+      first.run(() => getSecureProfile());
+      s.tick();
+
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+
+      expect(store.entries().map((e) => e.url)).toEqual(['https://api.test/secure/profile']);
+
+      store.failNextRemoves(1);
+      s.run(() => auth.logout());
+      await s.settle();
+      first.destroy();
+
+      const second = s.consumer();
+      second.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      const query = second.run(() => getSecureProfile());
+      await s.settle(0);
+
+      expect(query.response()).toBeNull();
+
+      s.tick(50);
+
+      expect(query.response()).toEqual({ id: 'grace' });
+
+      second.destroy();
+    });
+  });
+
+  describe('a clearPersistedQueries that lands while a body is being read', () => {
+    let releaseRead: (() => void) | null = null;
+
+    beforeEach(() => {
+      releaseRead = null;
+    });
+
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [
+        withQueryPersistence({
+          adapter: () => ({
+            ...store.adapter,
+            // A real disk read takes the body first and answers a moment later, which is the window
+            // this test needs. The fake store would re-check the store after the delay instead.
+            read: async (key) => {
+              const body = await store.adapter.read(key);
+
+              await new Promise<void>((resolve) => (releaseRead = resolve));
+
+              return body;
+            },
+          }),
+        }),
+      ],
+    });
+
+    it('drops a hydration whose body was read before a clearPersistedQueries that finished first', async () => {
+      const s = scenario();
+      s.api.on('GET', '/notes', sequence([{ body: { notes: 1 } }, { body: { notes: 2 }, delay: 50 }]));
+
+      const getNotes = s.get<{ response: { notes: number } }>('/notes');
+
+      const first = s.consumer();
+      first.run(() => getNotes());
+      s.tick();
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+      first.destroy();
+
+      const second = s.consumer();
+      const query = second.run(() => getNotes());
+      await s.settle(0);
+
+      expect(releaseRead).not.toBeNull();
+
+      await s.client.clearPersistedQueries();
+
+      releaseRead?.();
+      await s.settle(0);
+
+      expect(query.response()).toBeNull();
+      expect(query.executionState()).toMatchObject({ type: 'loading', hasCachedResponse: false });
+
+      s.tick(50);
+
+      expect(query.response()).toEqual({ notes: 2 });
+
+      second.destroy();
+    });
+  });
+
+  describe('a store that stopped taking writes and was then cleared', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withQueryPersistence({ adapter: () => store.adapter })],
+    });
+
+    it('starts persisting again after clearPersistedQueries frees the store', async () => {
+      const s = scenario();
+      s.api.on('GET', '/first', () => ({ body: { n: 1 } }));
+      s.api.on('GET', '/later', () => ({ body: { n: 2 } }));
+
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      try {
+        await s.client.whenPersistenceReady;
+
+        const getFirst = s.get<{ response: { n: number } }>('/first');
+        const getLater = s.get<{ response: { n: number } }>('/later');
+
+        const c = s.consumer();
+        c.run(() => getFirst());
+        s.tick();
+
+        store.failNextWrites(2);
+        await s.client.subtle.persistence?.flush();
+        await s.settle();
+
+        expect(store.calls().write).toBe(2);
+        expect(store.entries()).toEqual([]);
+
+        await s.client.clearPersistedQueries();
+
+        c.run(() => getLater());
+        s.tick();
+        await s.client.subtle.persistence?.flush();
+        await s.settle();
+
+        expect(store.entries().map((e) => e.url)).toEqual(['https://api.test/later']);
+
+        c.destroy();
+      } finally {
+        warn.mockRestore();
+      }
+    });
+  });
 });

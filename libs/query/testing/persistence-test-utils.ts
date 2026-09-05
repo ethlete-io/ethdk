@@ -29,6 +29,9 @@ export type FakeQueryPersistenceStoreHandle = {
   /** Makes the next `count` writes reject - a full disk, by default. */
   failNextWrites: (count: number, error?: unknown) => void;
 
+  /** Makes the next `count` removals reject. */
+  failNextRemoves: (count: number, error?: unknown) => void;
+
   /** Makes the next `loadIndex` reject. */
   failNextLoadIndex: (error?: unknown) => void;
 
@@ -52,6 +55,8 @@ export const createFakeQueryPersistenceStore = (): FakeQueryPersistenceStoreHand
 
   let failingWrites = 0;
   let writeError: unknown = null;
+  let failingRemoves = 0;
+  let removeError: unknown = null;
   let loadIndexError: unknown = null;
   let isDeferringReads = false;
 
@@ -101,6 +106,12 @@ export const createFakeQueryPersistenceStore = (): FakeQueryPersistenceStoreHand
   const remove = async (keys: string[]) => {
     calls.remove++;
 
+    if (failingRemoves > 0) {
+      failingRemoves--;
+
+      throw removeError ?? new Error('The removal failed.');
+    }
+
     for (const key of keys) {
       store.delete(key);
     }
@@ -128,6 +139,10 @@ export const createFakeQueryPersistenceStore = (): FakeQueryPersistenceStoreHand
     failNextWrites: (count, error) => {
       failingWrites = count;
       writeError = error ?? null;
+    },
+    failNextRemoves: (count, error) => {
+      failingRemoves = count;
+      removeError = error ?? null;
     },
     failNextLoadIndex: (error) => {
       loadIndexError = error ?? quotaError();

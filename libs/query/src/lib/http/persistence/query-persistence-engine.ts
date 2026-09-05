@@ -62,6 +62,9 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
   /** Cache entries that were created before the index finished loading. */
   const pendingHydrations = new Set<QueryKey>();
 
+  /** Keys the store refused to remove. Retried by the next removal and by the next flush. */
+  const pendingRemovals = new Set<QueryKey>();
+
   let writeTimer: ReturnType<typeof setTimeout> | undefined;
   let isReady = false;
   let isDestroyed = false;
@@ -91,15 +94,25 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
   const metaOf = ({ body: _body, ...meta }: PersistedQueryEntry): PersistedQueryEntryMeta => meta;
 
   const removeKeys = async (keys: QueryKey[]) => {
-    if (!keys.length) return;
-
-    // Disk first, index second: an entry dropped from the index but still on disk would be invisible
-    // forever - never hydrated, never counted against the cap, never cleaned up. Leaving it indexed
-    // after a failed removal just means the next flush tries again.
-    await adapter.remove(keys);
-
     for (const key of keys) {
+      pendingRemovals.add(key);
+    }
+
+    if (!pendingRemovals.size) return;
+
+    const batch = Array.from(pendingRemovals);
+
+    // The index drops the keys whether or not the store obliges: a body that could not be removed must
+    // never be hydrated again, and `pendingRemovals` is what keeps it reachable for the next attempt
+    // rather than invisible on disk forever.
+    for (const key of batch) {
       index.delete(key);
+    }
+
+    await adapter.remove(batch);
+
+    for (const key of batch) {
+      pendingRemovals.delete(key);
     }
   };
 
@@ -211,6 +224,10 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
       return;
     }
 
+    // Removing beats writing on the read path too: a logout purge or a `clearPersistedQueries()` that
+    // finished while this body was on its way up must not be undone by it.
+    if (!index.has(key)) return;
+
     // Whether this still makes sense is the repository's call: it applies the body only while the
     // entry exists and has no response of its own yet, so a network response that won the race, a
     // sibling tab that got there first, and a destroyed query all end here harmlessly.
@@ -220,6 +237,8 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
   const runFlush = async () => {
     clearTimeout(writeTimer);
     writeTimer = undefined;
+
+    await removeKeys([]).catch(() => undefined);
 
     if (!pendingWrites.size) return;
 
@@ -342,6 +361,10 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
       index.clear();
 
       await adapter.clear();
+
+      // An empty store is the one thing that reliably answers the quota failure that stopped writing,
+      // so the session gets its persistence back rather than waiting for a reload.
+      areWritesDisabled = false;
     });
   };
 

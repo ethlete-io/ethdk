@@ -142,6 +142,9 @@ export const getHugeExport = getQuery<ExportArgs>('/exports/full', { persistence
 Three reasons to reach for this: a payload too large to be worth the disk, data that must never be
 shown stale even for the moment a revalidation takes, and anything you would rather not store at all.
 
+Two creators that share a cache key share one persisted entry, and it is written as long as one of the
+bound consumers opted in. Opt every creator of that key out to keep the response off the disk.
+
 ### Clearing the store
 
 ```ts
@@ -187,8 +190,9 @@ withQueryPersistence({
 
 Adapters are deliberately dumb: they store what they are handed. `maxAge`, `maxEntries`, the `version`
 check and the logout purge are all decided before a call reaches one, so a custom adapter cannot get
-any of that subtly wrong. Every method may reject - a failing read is treated as a miss, and a failing
-write as a full disk.
+any of that subtly wrong. Every method may reject - a failing read is treated as a miss, a failing
+write as a full disk, and a failing removal drops the entry all the same, so it is never handed back,
+and is tried again on the next removal.
 
 ## Safety and limits
 
@@ -202,11 +206,12 @@ write as a full disk.
   `withSuccessHandling`, `withLogging` and the query's `events$` fire for what _this_ request received
   over HTTP. Hydration updates the signals and emits nothing.
 - **A full disk gives up quietly.** A write that fails frees the oldest half of the store and retries
-  once; a second failure stops writing for the session with one dev-mode warning. Queries are
-  unaffected either way.
+  once; a second failure stops writing for the session with one dev-mode warning, until a
+  `clearPersistedQueries()` frees the store again. Queries are unaffected either way.
 - **Removing beats writing.** Writes are batched and therefore in flight for a moment. A logout purge
   or a `clearPersistedQueries()` that starts in that window runs _after_ the write lands, never
-  alongside it, so a response cannot survive the removal that was meant to take it.
+  alongside it, so a response cannot survive the removal that was meant to take it. A body being read
+  loses the same race: one that arrives after the removal is dropped rather than shown.
 - **Server-side rendering.** Always a no-op - no store is opened. Angular's `transferCache` already
   covers the SSR hand-off, in memory and per request.
 - **Browsers without IndexedDB**, or with storage denied, degrade to in-memory caching rather than
