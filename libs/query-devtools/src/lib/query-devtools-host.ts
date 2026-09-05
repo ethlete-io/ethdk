@@ -379,6 +379,13 @@ export type QueryDevtoolsHost = {
   timelineSelectedQueryId: WritableSignal<string | null>;
   timelineSelectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
 
+  /**
+   * The type annotations of each seeded mock body, by mock id. A mock only stores the *name* it was
+   * seeded from, and a body seeded from an inline schema has none, so this is the only thing that can
+   * label such a body - and it has to outlive the Mocks tab being switched away from.
+   */
+  seededTypes: WritableSignal<Record<string, ReadonlyMap<string, string>>>;
+
   // --- Two-pane tab sizing (the divider between a tab's list and its drawer) ---
 
   paneAxis: Signal<PaneAxis>;

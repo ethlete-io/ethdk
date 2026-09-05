@@ -36,7 +36,11 @@ const SECRET_KEY_FRAGMENTS = [
   'token',
 ];
 
-const isSecretKey = (key: string) => {
+/**
+ * Whether a key names a credential. The one rule both the session report and the Insomnia export
+ * redact by, so a value the report would blank out cannot travel in a collection instead.
+ */
+export const isSecretKey = (key: string) => {
   const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
 
   return SECRET_KEY_FRAGMENTS.some((fragment) => normalized.includes(fragment));
@@ -52,13 +56,25 @@ const holdsSecret = (value: unknown) =>
 /**
  * Slims a value for a shareable report: long strings are truncated and long arrays keep only the first
  * couple of entries, replacing the repetitive tail with a `… (N more)` marker, so a big response
- * collapses to a representative sample. Anything under a credential-named key is replaced by
+ * collapses to a representative sample. A `Date`, `Map`, `Set`, `Error` or `bigint` is written as
+ * something a reader can still read. Anything under a credential-named key is replaced by
  * {@link REDACTED_SECRET} instead - a report travels to a ticket, so a password or a bearer token must
  * not be in it however deep in a body it sits.
  */
 export const slimForReport = (value: unknown, depth = 0): unknown => {
   if (typeof value === 'string') return value.length > MAX_STRING ? `${value.slice(0, MAX_STRING)}…` : value;
+  // `JSON.stringify` throws on a bigint, which would take the whole export down with it.
+  if (typeof value === 'bigint') return `${value}`;
   if (depth > MAX_DEPTH) return '…';
+
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? 'Invalid Date' : value.toISOString();
+  if (value instanceof Error) {
+    return { name: value.name, message: value.message, stack: slimForReport(value.stack, depth + 1) };
+  }
+  // `Object.entries` on a `Map`, a `Set` or an `Error` is `[]`, so the branch below would write the one
+  // field a report exists for as `{}`.
+  if (value instanceof Map) return slimForReport([...value], depth);
+  if (value instanceof Set) return slimForReport([...value], depth);
 
   if (Array.isArray(value)) {
     if (value.length > MAX_ARRAY_ITEMS + 1) {

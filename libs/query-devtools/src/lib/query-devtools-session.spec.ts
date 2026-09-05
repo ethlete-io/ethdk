@@ -39,6 +39,23 @@ describe('slimForReport', () => {
     expect(slimForReport(deep)).toEqual({ a: { b: { c: { d: { e: { f: { g: '…' } } } } } } });
   });
 
+  it('should keep a Date, a Map, a Set, an Error and a bigint legible', () => {
+    const slimmed = slimForReport({
+      at: new Date(NOW),
+      counts: new Map([['a', 1]]),
+      tags: new Set(['x', 'y']),
+      total: 10n,
+      failure: new Error('boom'),
+    }) as Record<string, unknown>;
+
+    expect(slimmed['at']).toBe(new Date(NOW).toISOString());
+    expect(slimmed['counts']).toEqual([['a', 1]]);
+    expect(slimmed['tags']).toEqual(['x', 'y']);
+    expect(slimmed['total']).toBe('10');
+    expect(slimmed['failure']).toMatchObject({ name: 'Error', message: 'boom' });
+    expect(() => JSON.stringify(slimmed)).not.toThrow();
+  });
+
   it('should survive a circular reference', () => {
     const circular: Record<string, unknown> = { name: 'root' };
     circular['self'] = circular;

@@ -1,21 +1,21 @@
 /* eslint-disable @typescript-eslint/naming-convention -- the `__export_*` keys are Insomnia's file format */
+import {
+  QueryDevtoolsBodyInput,
+  QueryDevtoolsRequestBody,
+  queryDevtoolsRequestBody,
+} from './query-devtools-request-body';
+import { isSecretKey } from './query-devtools-session';
 
 /**
  * One request to export. Values are what the query actually sent (or would send), already resolved -
  * no `:param` placeholders unless the query has no args yet, in which case Insomnia picks them up as
  * its own path params.
  */
-export type InsomniaRequestInput = {
+export type InsomniaRequestInput = QueryDevtoolsBodyInput & {
   name: string;
   method: string;
   url: string;
   headers: { name: string; value: string }[];
-
-  /** The request body, or `null` for a request that sends none. */
-  body: unknown;
-
-  /** The GraphQL document, for a GraphQL query - switches Insomnia's body editor to GraphQL. */
-  gqlQuery?: string | null;
 
   /** Name of the folder to file the request under, usually the query client's. */
   group?: string | null;
@@ -32,7 +32,7 @@ export type InsomniaRequestInput = {
  * The token refresh of a bearer auth provider, exported as a request of its own so the collection can
  * mint its own access tokens instead of shipping one that expires within the hour.
  */
-export type InsomniaTokenRefreshInput = {
+export type InsomniaTokenRefreshInput = QueryDevtoolsBodyInput & {
   /** What a request's {@link InsomniaRequestInput.secureBy} points at, usually the provider's name. */
   id: string;
 
@@ -40,9 +40,6 @@ export type InsomniaTokenRefreshInput = {
   method: string;
   url: string;
   headers: { name: string; value: string }[];
-
-  /** The body that carries the refresh token, e.g. `{ token: '…' }`. */
-  body: unknown;
 
   group?: string | null;
 
@@ -81,50 +78,44 @@ export type InsomniaExport = {
 
 const WORKSPACE_ID = 'wrk_ethlete_query_devtools';
 
-const jsonBody = (body: unknown) => {
-  try {
-    return JSON.stringify(body, null, 2);
-  } catch {
-    // A body holding a circular reference or a throwing `toJSON` cannot be exported.
-    return null;
-  }
-};
+const bodyOf = (request: QueryDevtoolsBodyInput, body: QueryDevtoolsRequestBody) => {
+  if (body.data === null) return {};
+  // Insomnia's GraphQL body editor stores `{ query, variables }` as its text, so a GraphQL request
+  // carries the document and its variables rather than the serialized POST body.
+  if (request.gqlQuery) return { mimeType: 'graphql', text: body.data };
 
-/**
- * Insomnia's GraphQL body editor stores `{ query, variables }` as its text, so a GraphQL request is
- * exported with the document and its variables rather than the serialized POST body.
- */
-const graphqlBody = (gqlQuery: string, body: unknown) => {
-  const variables = (body as { variables?: unknown } | null)?.variables ?? {};
-
-  return jsonBody({ query: gqlQuery, variables });
-};
-
-const bodyOf = (request: Pick<InsomniaRequestInput, 'body' | 'gqlQuery'>) => {
-  if (request.gqlQuery) {
-    const text = graphqlBody(request.gqlQuery, request.body);
-
-    return text === null ? {} : { mimeType: 'graphql', text };
-  }
-
-  if (request.body === null || request.body === undefined) return {};
-
-  const text = jsonBody(request.body);
-
-  return text === null ? {} : { mimeType: 'application/json', text };
+  return body.json ? { mimeType: 'application/json', text: body.data } : { text: body.data };
 };
 
 /**
  * Angular's `HttpClient` labels an object body `application/json` on its own, so a replay outside the
- * app needs the header spelled out to reach the same endpoint the same way.
+ * app needs the header spelled out to reach the same endpoint the same way. Only a body that was
+ * serialized as JSON gets it: Angular sends a string as `text/plain` and lets the browser label the
+ * rest.
  */
-const headersOf = (input: { headers: { name: string; value: string }[] }, hasBody: boolean) => {
+const headersOf = (input: { headers: { name: string; value: string }[] }, isJson: boolean) => {
   const headers = input.headers.filter((header) => header.value !== '');
   const hasContentType = headers.some((header) => header.name.toLowerCase() === 'content-type');
 
-  if (!hasBody || hasContentType) return headers;
+  if (!isJson || hasContentType) return headers;
 
   return [...headers, { name: 'Content-Type', value: 'application/json' }];
+};
+
+/** What a request says about itself when what it sends is not what the app sent. */
+const notesOf = (body: QueryDevtoolsRequestBody, droppedAuth: boolean) => {
+  const notes: string[] = [];
+
+  if (body.binary) notes.push(`The panel cannot replay a ${body.binary} body - this request sends none.`);
+  if (body.unserializable) notes.push('The panel could not serialize this body - this request sends none.');
+  if (droppedAuth) {
+    notes.push(
+      'The Authorization this request was sent with is left out: no token refresh could be exported for its ' +
+        'auth provider, and a token frozen at export time is stale within the hour.',
+    );
+  }
+
+  return notes.join(' ');
 };
 
 const AUTH_HEADER = 'Authorization';
@@ -135,7 +126,10 @@ const AUTH_HEADER = 'Authorization';
  * `maxAgeSeconds`, sending a request that reads from it re-sends the refresh first.
  */
 const responseTag = (requestId: string, refresh: InsomniaTokenRefreshInput) =>
-  `{% response 'body', '${requestId}', '${refresh.accessTokenPath}', 'when-expired', ${refresh.maxAgeSeconds} %}`;
+  `{% response 'body', '${requestId}', '${escapeTag(refresh.accessTokenPath)}', 'when-expired', ${refresh.maxAgeSeconds} %}`;
+
+/** A value going inside single quotes - a template tag argument or a bracket-quoted JSONPath key. */
+const escapeTag = (value: string) => value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
 /** Replaces whatever `Authorization` the export resolved with the token the refresh chain yields. */
 const withChainedAuth = (headers: { name: string; value: string }[], value: string) => [
@@ -143,11 +137,40 @@ const withChainedAuth = (headers: { name: string; value: string }[], value: stri
   ...headers.filter((header) => header.name.toLowerCase() !== AUTH_HEADER.toLowerCase()),
 ];
 
+const IDENTIFIER_KEY = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
+const valuePath = (value: string, node: { value: unknown; path: string; depth: number }): string | null => {
+  if (node.value === value) return node.path;
+  if (node.depth > 5 || !node.value || typeof node.value !== 'object') return null;
+
+  for (const [key, entry] of Object.entries(node.value)) {
+    const path = Array.isArray(node.value)
+      ? `${node.path}[${key}]`
+      : IDENTIFIER_KEY.test(key)
+        ? `${node.path}.${key}`
+        : `${node.path}['${escapeTag(key)}']`;
+    const found = valuePath(value, { value: entry, path, depth: node.depth + 1 });
+
+    if (found) return found;
+  }
+
+  return null;
+};
+
+/**
+ * The JSONPath of a string value inside a response, or `null`. Used to locate the access token in an
+ * auth response whose shape only the provider's `extractTokens` knows. A key JSONPath cannot name
+ * after a dot is bracket-quoted, since `$.access-token` resolves as a subtraction rather than a member.
+ */
+export const findInsomniaValuePath = (value: string, response: unknown) =>
+  valuePath(value, { value: response, path: '$', depth: 0 });
+
 /**
  * Builds an Insomnia v4 collection from a set of requests, ready to be imported via Insomnia's
  * `Import > From File / Clipboard`. Requests are filed into a folder per query client, and a request
  * naming a token refresh gets its bearer token from that refresh's response rather than from a
- * literal token frozen at export time.
+ * literal token frozen at export time. A secure request whose refresh is not in the collection is
+ * exported without its credentials, and says so in its description.
  */
 export const buildInsomniaExport = (options: BuildInsomniaExportOptions): InsomniaExport => {
   const groups = new Map<string, string>();
@@ -212,7 +235,7 @@ export const buildInsomniaExport = (options: BuildInsomniaExportOptions): Insomn
   // Emitted first so every chained `Authorization` below already has a request id to point at.
   options.tokenRefreshes?.forEach((refresh, index) => {
     const id = `req_refresh_${index}`;
-    const body = bodyOf(refresh);
+    const resolved = queryDevtoolsRequestBody(refresh, 2);
 
     chainedAuth.set(refresh.id, `Bearer ${responseTag(id, refresh)}`);
 
@@ -226,25 +249,30 @@ export const buildInsomniaExport = (options: BuildInsomniaExportOptions): Insomn
         'the body is the one the app held at export time - re-export once it is spent.',
       method: refresh.method,
       url: refresh.url,
-      body,
-      headers: headersOf(refresh, 'text' in body),
+      body: bodyOf(refresh, resolved),
+      headers: headersOf(refresh, resolved.json),
       // Insomnia sorts ascending and the exported requests start at 0, so the refresh stays on top.
       metaSortKey: index - (options.tokenRefreshes?.length ?? 0),
     });
   });
 
   options.requests.forEach((request, index) => {
-    const body = bodyOf(request);
-    const headers = headersOf(request, 'text' in body);
+    const resolved = queryDevtoolsRequestBody(request, 2);
     const auth = request.secureBy ? chainedAuth.get(request.secureBy) : undefined;
+    // A secure request the collection cannot mint a token for keeps none of the credentials the panel
+    // resolved for it: a live bearer token in a file bound for a ticket is the leak the chaining exists
+    // to avoid, and it is stale within the hour anyway.
+    const dropCredentials = !!request.secureBy && !auth;
+    const headers = headersOf(request, resolved.json).filter((header) => !dropCredentials || !isSecretKey(header.name));
 
     requestResource({
       _id: `req_${index}`,
       parentId: groupIdFor(request.group),
       name: request.name,
+      description: notesOf(resolved, dropCredentials),
       method: request.method,
       url: request.url,
-      body,
+      body: bodyOf(request, resolved),
       headers: auth ? withChainedAuth(headers, auth) : headers,
       metaSortKey: index,
     });

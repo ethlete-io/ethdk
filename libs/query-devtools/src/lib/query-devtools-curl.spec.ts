@@ -89,12 +89,14 @@ describe('buildCurlCommand', () => {
     expect(command).toContain('FormData');
   });
 
-  it('should skip a body it cannot serialize', () => {
+  it('should skip a body it cannot serialize, and say so', () => {
     const circular: Record<string, unknown> = {};
     circular['self'] = circular;
 
     const command = buildCurlCommand(request({ method: 'POST', body: circular }));
 
-    expect(command).toBe(`curl 'https://api.example.com/posts' \\\n  -X POST`);
+    expect(command).toBe(
+      `# The panel could not serialize this body - this command sends none.\ncurl 'https://api.example.com/posts' \\\n  -X POST`,
+    );
   });
 });

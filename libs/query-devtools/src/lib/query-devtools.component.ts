@@ -137,6 +137,7 @@ import { QueryDevtoolsMocksTabComponent } from './query-devtools-mocks-tab.compo
 import { QueryDevtoolsSettingsComponent } from './query-devtools-settings.component';
 import { QueryDevtoolsFaultsTabComponent } from './query-devtools-faults-tab.component';
 import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
+import { writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
 import { QueryDevtoolsLocksTabComponent } from './query-devtools-locks-tab.component';
 import {
@@ -148,7 +149,12 @@ import {
   summarizeLocks,
 } from './query-devtools-locks';
 import { QUERY_DEVTOOLS_VERSION } from './version';
-import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
+import {
+  buildInsomniaExport,
+  findInsomniaValuePath,
+  InsomniaRequestInput,
+  InsomniaTokenRefreshInput,
+} from './query-devtools-insomnia';
 import { QueryDevtoolsCopyMenuStylesComponent } from './query-devtools-copy-menu-styles.component';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
 import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';
@@ -336,8 +342,6 @@ const DOCK_PADDING = {
  * of the space a docked panel covers; the panel's own overlays paint a level above it and may use it.
  */
 const PANEL_LAYER = 2147483010;
-
-const noop = () => undefined;
 
 /**
  * A devtools entry id as a person reads it. Ids are the registry's descriptor plus a per-descriptor
@@ -638,24 +642,6 @@ const executableValue = (draft: unknown, source: unknown): unknown => {
   return draft;
 };
 
-/**
- * The JSONPath of a string value inside a response, or `null`. Used to locate the access token in an
- * auth response whose shape only the provider's `extractTokens` knows.
- */
-const findValuePath = (value: string, node: { value: unknown; path: string; depth: number }): string | null => {
-  if (node.value === value) return node.path;
-  if (node.depth > 5 || !node.value || typeof node.value !== 'object') return null;
-
-  for (const [key, entry] of Object.entries(node.value)) {
-    const path = Array.isArray(node.value) ? `${node.path}[${key}]` : `${node.path}.${key}`;
-    const found = findValuePath(value, { value: entry, path, depth: node.depth + 1 });
-
-    if (found) return found;
-  }
-
-  return null;
-};
-
 /** A countdown to an `exp` claim in seconds-since-epoch, or `null` when there is nothing to count to. */
 const expiryCountdown = (exp: number | null): string | null => {
   if (exp === null) return null;
@@ -949,6 +935,13 @@ export class QueryDevtoolsComponent implements OnInit {
 
   /** The form whose detail the Forms tab has expanded. */
   public selectedFormId = signal<string | null>(this.persisted.selectedFormId ?? null);
+
+  /**
+   * The type annotations of each seeded mock body, by mock id. It lives here rather than on the Mocks
+   * tab because a tab is destroyed the moment another one is selected, and a body seeded from an inline
+   * schema has no `schemaName` to recover its labels from.
+   */
+  public seededTypes = signal<Record<string, ReadonlyMap<string, string>>>({});
 
   // Independent per-drawer selection so no drawer shares the Queries tab's selection - or another
   // drawer's: opening a query from the Timeline must not also change what the Forms drawer shows. Each
@@ -1654,6 +1647,9 @@ export class QueryDevtoolsComponent implements OnInit {
 
     // A pop-out holds the panel element; leaving its window open would leave a dead panel on screen.
     this.destroyRef.onDestroy(() => this.closePopup());
+    // The poll above ends on `takeUntilDestroyed`, which unsubscribes without a final `false`, so
+    // without this the probe lock stays held for the life of the page.
+    this.destroyRef.onDestroy(() => this.holdProbeLock(false));
 
     const doc = this.document;
 
@@ -2371,7 +2367,7 @@ export class QueryDevtoolsComponent implements OnInit {
     const gqlDoc = entry.meta.gqlQuery ? this.gqlDocument(entry.meta.gqlQuery) : null;
     const args = this.queryArgs(query);
     const argsLabel = gqlDoc ? 'Variables' : 'Args';
-    const argsJson = args !== null && args !== undefined ? JSON.stringify(args, null, 2) : null;
+    const argsJson = args !== null && args !== undefined ? JSON.stringify(slimForReport(args), null, 2) : null;
     const bodyLabel = error ? `Error (${error.raw.status})` : 'Response';
     const bodyContent = error
       ? error.isList
@@ -3530,7 +3526,7 @@ export class QueryDevtoolsComponent implements OnInit {
     const token = provider.accessToken();
     const response = provider.latestExecutedQuery()?.snapshot.response();
 
-    const path = token && response ? findValuePath(token, { value: response, path: '$', depth: 0 }) : null;
+    const path = token && response ? findInsomniaValuePath(token, response) : null;
 
     return path ?? '$.accessToken';
   }
@@ -3936,30 +3932,12 @@ export class QueryDevtoolsComponent implements OnInit {
 
   /** Writes to the clipboard and ticks `copied` on success. `html` is omitted for plain-text payloads. */
   private writeToClipboard(payload: { text: string; html?: string }, copied: WritableSignal<boolean>) {
-    const clipboard = navigator.clipboard;
-    const { text, html } = payload;
-    if (!clipboard) return;
+    writeQueryDevtoolsClipboard(payload).then((result) => {
+      if (!result.ok) return;
 
-    const flag = () => {
       copied.set(true);
       this.copiedReset$.next();
-    };
-
-    // Prefer rich HTML (Slack keeps the formatting on paste); fall back to plain text.
-    if (html !== undefined && 'write' in clipboard && typeof ClipboardItem !== 'undefined') {
-      const item = new ClipboardItem({
-        'text/html': new Blob([html], { type: 'text/html' }),
-        'text/plain': new Blob([text], { type: 'text/plain' }),
-      });
-      clipboard
-        .write([item])
-        .then(flag)
-        .catch(() => clipboard.writeText(text).then(flag).catch(noop));
-
-      return;
-    }
-
-    clipboard.writeText(text).then(flag).catch(noop);
+    });
   }
 
   private responseStatus(query: AnyQuery): number | null {

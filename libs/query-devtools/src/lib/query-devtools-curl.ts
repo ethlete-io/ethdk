@@ -1,26 +1,17 @@
+import {
+  QueryDevtoolsBodyInput,
+  QueryDevtoolsRequestBody,
+  queryDevtoolsRequestBody,
+} from './query-devtools-request-body';
+
 /**
  * One request to render as a `curl` command. The same shape the Insomnia export takes its requests in,
  * so both exports describe a request the one way the panel resolves it.
  */
-export type CurlRequestInput = {
+export type CurlRequestInput = QueryDevtoolsBodyInput & {
   method: string;
   url: string;
   headers: { name: string; value: string }[];
-
-  /** The request body, or `null` for a request that sends none. */
-  body: unknown;
-
-  /** The GraphQL document, for a GraphQL query - sent as `{ query, variables }` the way the client does. */
-  gqlQuery?: string | null;
-};
-
-const jsonBody = (body: unknown) => {
-  try {
-    return JSON.stringify(body);
-  } catch {
-    // A body holding a circular reference or a throwing `toJSON` cannot be written out.
-    return null;
-  }
 };
 
 /**
@@ -30,41 +21,10 @@ const jsonBody = (body: unknown) => {
  */
 const shellQuote = (value: string) => `'${value.replace(/'/g, `'\\''`)}'`;
 
-/**
- * What a body is sent as, which is what decides both the `--data-raw` and the `Content-Type`. `binary`
- * is a body `HttpClient` hands to the browser as it is (`FormData`, a `Blob`, an `ArrayBuffer`) - the
- * panel holds no bytes to write into a command, so it says so instead of writing `{}`.
- */
-const bodyOf = (request: CurlRequestInput): { data: string | null; json: boolean; binary: string | null } => {
-  if (request.gqlQuery) {
-    const variables = (request.body as { variables?: unknown } | null)?.variables ?? {};
-
-    return asJson(jsonBody({ query: request.gqlQuery, variables }));
-  }
-
-  const body = request.body;
-
-  if (body === null || body === undefined) return { data: null, json: false, binary: null };
-
-  // Angular sends a string as `text/plain` and lets the browser label the rest, so only the shapes
-  // `HttpClient` itself serializes as JSON may be labelled that way here.
-  if (typeof body === 'string') return { data: body, json: false, binary: null };
-
-  const binary = binaryLabelOf(body);
-
-  if (binary) return { data: null, json: false, binary };
-
-  return asJson(jsonBody(body));
-};
-
-/** A body written as JSON, or - where it could not be written at all - one that is labelled as nothing. */
-const asJson = (data: string | null) => ({ data, json: data !== null, binary: null });
-
-const binaryLabelOf = (body: unknown) => {
-  if (typeof FormData !== 'undefined' && body instanceof FormData) return 'FormData';
-  if (typeof Blob !== 'undefined' && body instanceof Blob) return 'Blob';
-  if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) return 'binary';
-  if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) return 'URLSearchParams';
+/** Why a command sends no body, as a shell comment above it - or `null` when it sends the real one. */
+const bodyNote = (body: QueryDevtoolsRequestBody) => {
+  if (body.binary) return `# The panel cannot replay a ${body.binary} body - this command sends none.\n`;
+  if (body.unserializable) return '# The panel could not serialize this body - this command sends none.\n';
 
   return null;
 };
@@ -79,15 +39,13 @@ const binaryLabelOf = (body: unknown) => {
  * without an access token) are left out, so what is emitted is only what was known.
  */
 export const buildCurlCommand = (request: CurlRequestInput) => {
-  const body = bodyOf(request);
+  const body = queryDevtoolsRequestBody(request);
   const headers = request.headers.filter((header) => header.value !== '');
   const hasContentType = headers.some((header) => header.name.toLowerCase() === 'content-type');
   const withContentType =
     !body.json || hasContentType ? headers : [...headers, { name: 'Content-Type', value: 'application/json' }];
 
-  const lines = body.binary
-    ? [`# The panel cannot replay a ${body.binary} body - this command sends none.\ncurl ${shellQuote(request.url)}`]
-    : [`curl ${shellQuote(request.url)}`];
+  const lines = [`${bodyNote(body) ?? ''}curl ${shellQuote(request.url)}`];
 
   // GET is curl's default, so spelling it out only adds noise to the common case.
   if (request.method.toUpperCase() !== 'GET') lines.push(`-X ${request.method.toUpperCase()}`);

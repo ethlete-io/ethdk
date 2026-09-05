@@ -1,4 +1,9 @@
-import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
+import {
+  buildInsomniaExport,
+  findInsomniaValuePath,
+  InsomniaRequestInput,
+  InsomniaTokenRefreshInput,
+} from './query-devtools-insomnia';
 
 const NOW = 1_700_000_000_000;
 
@@ -106,13 +111,27 @@ describe('buildInsomniaExport', () => {
     expect(exported?.['headers']).toEqual([{ name: 'x-b', value: 'b' }]);
   });
 
-  it('should export an unserializable body as no body at all', () => {
+  it('should export an unserializable body as no body at all, and say so', () => {
     const circular: Record<string, unknown> = {};
     circular['self'] = circular;
 
     const [exported] = resourcesOfType('request', [request({ method: 'POST', body: circular })]);
 
     expect(exported?.['body']).toEqual({});
+    expect(exported?.['description']).toContain('could not serialize');
+  });
+
+  it('should not claim application/json for a string, FormData or Blob body', () => {
+    const [text] = resourcesOfType('request', [request({ method: 'POST', body: 'plain text' })]);
+
+    expect(text?.['body']).toEqual({ text: 'plain text' });
+    expect(text?.['headers']).toEqual([]);
+
+    const [form] = resourcesOfType('request', [request({ method: 'POST', body: new FormData() })]);
+
+    expect(form?.['body']).toEqual({});
+    expect(form?.['headers']).toEqual([]);
+    expect(form?.['description']).toContain('FormData');
   });
 
   describe('token refresh', () => {
@@ -193,13 +212,45 @@ describe('buildInsomniaExport', () => {
       ]);
     });
 
-    it('should leave a request naming an unknown refresh untouched', () => {
+    it('should drop the Authorization of a secure request it cannot chain', () => {
       const [secured] = requestsOf(
-        [request({ secureBy: 'gone', headers: [{ name: 'Authorization', value: 'a' }] })],
+        [
+          request({
+            secureBy: 'gone',
+            headers: [
+              { name: 'Authorization', value: 'Bearer LIVE.ACCESS.TOKEN' },
+              { name: 'Cookie', value: 'sid=secret' },
+              { name: 'x-tenant', value: 'demo' },
+            ],
+          }),
+        ],
         [],
       );
 
-      expect(secured?.['headers']).toEqual([{ name: 'Authorization', value: 'a' }]);
+      expect(secured?.['headers']).toEqual([{ name: 'x-tenant', value: 'demo' }]);
+      expect(JSON.stringify(secured)).not.toContain('LIVE.ACCESS.TOKEN');
+      expect(JSON.stringify(secured)).not.toContain('sid=secret');
+      expect(secured?.['description']).toContain('Authorization');
     });
+
+    it('should escape a quote in the access token path', () => {
+      const [, secured] = requestsOf(
+        [request({ secureBy: 'api-auth' })],
+        [tokenRefresh({ accessTokenPath: "$['a'b'].token" })],
+      );
+
+      const value = (secured?.['headers'] as { name: string; value: string }[])[0]?.value ?? '';
+
+      expect(value).toContain("$[\\'a\\'b\\'].token");
+    });
+  });
+});
+
+describe('findInsomniaValuePath', () => {
+  it('should bracket-quote a key that is not an identifier', () => {
+    expect(findInsomniaValuePath('t', { 'access-token': 't' })).toBe(`$['access-token']`);
+    expect(findInsomniaValuePath('t', { data: { accessToken: 't' } })).toBe('$.data.accessToken');
+    expect(findInsomniaValuePath('t', { list: [{ token: 't' }] })).toBe('$.list[0].token');
+    expect(findInsomniaValuePath('t', { other: 'x' })).toBe(null);
   });
 });

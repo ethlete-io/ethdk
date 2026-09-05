@@ -1,6 +1,8 @@
 import { provideZonelessChangeDetection, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { QueryDevtoolsEntry } from '@ethlete/query';
 import { QueryDevtoolsComponent } from './query-devtools.component';
+import { AnyQuery } from './query-devtools-types';
 
 class ResizeObserverMock {
   observe() {
@@ -86,5 +88,45 @@ describe('QueryDevtoolsComponent', () => {
     expect(vi.getTimerCount()).toBeLessThan(whileOpen);
 
     fixture.destroy();
+  });
+
+  it('should slim the args a copied report carries, not only its response', () => {
+    const fixture = mount(true);
+    const written: { text: string }[] = [];
+
+    vi.spyOn(
+      fixture.componentInstance as unknown as { writeToClipboard: (payload: { text: string }) => void },
+      'writeToClipboard',
+    ).mockImplementation((payload) => void written.push(payload));
+
+    const entry = { id: 'login', kind: 'query', meta: { method: 'POST', route: '/auth/login' } } as QueryDevtoolsEntry;
+    const query = {
+      error: () => null,
+      latestHttpEvent: () => null,
+      executionState: () => null,
+      lastTimeExecutedAt: () => null,
+      args: () => ({ body: { email: 'dev@example.com', password: 'hunter2' } }),
+      response: () => ({ ok: true }),
+      subtle: { request: () => null },
+    } as unknown as AnyQuery;
+
+    fixture.componentInstance.copyReport(entry, query);
+
+    expect(written[0]?.text).toContain('dev@example.com');
+    expect(written[0]?.text).not.toContain('hunter2');
+
+    fixture.destroy();
+  });
+
+  it('should release the probe lock when the panel is destroyed', () => {
+    const fixture = mount(true);
+    const release = vi.fn();
+    const instance = fixture.componentInstance as unknown as { probeHold: { release: () => void } | null };
+    instance.probeHold = { release };
+
+    fixture.destroy();
+
+    expect(release).toHaveBeenCalled();
+    expect(instance.probeHold).toBe(null);
   });
 });

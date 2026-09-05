@@ -1,4 +1,4 @@
-import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { provideZonelessChangeDetection, Signal, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   clearQueryDevtoolsMockStore,
@@ -8,7 +8,7 @@ import {
   saveQueryDevtoolsMock,
 } from '@ethlete/query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
+import { QUERY_DEVTOOLS_HOST, QueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsMocksTabComponent } from './query-devtools-mocks-tab.component';
 import { createQueryDevtoolsTestHost } from './testing/query-devtools-test-host';
 import { QUERY_DEVTOOLS_COPIED_RESET_MS } from './query-devtools-types';
@@ -35,7 +35,7 @@ const secureEntry = (): QueryDevtoolsEntry =>
     handle: { response: () => null },
   }) as unknown as QueryDevtoolsEntry;
 
-const render = async () => {
+const render = async (overrides: Partial<QueryDevtoolsHost> = {}) => {
   TestBed.configureTestingModule({
     imports: [QueryDevtoolsMocksTabComponent],
     providers: [
@@ -46,6 +46,7 @@ const render = async () => {
           clientNames: signal(['main']),
           queryEntries: signal([secureEntry()]),
           formatBytes: (bytes: number) => `${bytes} B`,
+          ...overrides,
         }),
       },
     ],
@@ -102,5 +103,55 @@ describe('QueryDevtoolsMocksTabComponent', () => {
 
     expect(button?.textContent).not.toContain('Copied');
     expect(button?.textContent).toContain('TS');
+  });
+
+  it("should keep a seeded mock's type labels across a tab switch", async () => {
+    const id = queryDevtoolsMockId({ clientName: 'main', method: 'GET', pattern: '/posts', query: '' });
+    const seededTypes = signal<Record<string, ReadonlyMap<string, string>>>({ [id]: new Map([['items', 'Post[]']]) });
+    saveQueryDevtoolsMock(mock({ schemaName: null }));
+
+    const annotationsOf = async () => {
+      const fixture = await render({ seededTypes });
+      const tab = fixture.componentInstance as unknown as {
+        editingId: WritableSignal<string | null>;
+        editingAnnotations: Signal<ReadonlyMap<string, string> | null>;
+      };
+
+      tab.editingId.set(id);
+
+      return tab.editingAnnotations();
+    };
+
+    expect((await annotationsOf())?.get('items')).toBe('Post[]');
+
+    TestBed.resetTestingModule();
+
+    expect((await annotationsOf())?.get('items')).toBe('Post[]');
+  });
+
+  it('should not re-measure the mock library when a query registers', async () => {
+    let reads = 0;
+    saveQueryDevtoolsMock(
+      mock({
+        body: {
+          get items() {
+            reads++;
+
+            return [];
+          },
+        },
+      }),
+    );
+
+    const queryEntries = signal<QueryDevtoolsEntry[]>([secureEntry()]);
+    const fixture = await render({ queryEntries });
+    const measured = reads;
+
+    expect(measured).toBeGreaterThan(0);
+
+    queryEntries.set([secureEntry(), secureEntry()]);
+    fixture.detectChanges();
+
+    expect(reads).toBe(measured);
   });
 });

@@ -200,12 +200,6 @@ export class QueryDevtoolsMocksTabComponent {
   /** The named schema picked in the form, which is not the same thing as the one a body came from. */
   protected pickedSchema = signal('');
 
-  /**
-   * The type annotations of each seeded body, by mock id. A mock only stores the *name* it was seeded
-   * from, so this is what labels a body the description could not name - for as long as the panel is open.
-   */
-  private seededTypes = signal<Record<string, ReadonlyMap<string, string>>>({});
-
   /** The mock whose body is open in the designer. */
   protected editingId = signal<string | null>(null);
 
@@ -223,14 +217,23 @@ export class QueryDevtoolsMocksTabComponent {
   /** What the last export had to guess or could not resolve, shown under the library it came from. */
   protected specNotes = signal<readonly string[]>([]);
 
+  /**
+   * The library with every designed body measured. Measuring serializes the body, so it is kept out of
+   * {@link rows} - which reads the registry, and would otherwise re-serialize every mock whenever a
+   * query anywhere in the application registers or is destroyed.
+   */
+  private measuredMocks = computed(() =>
+    queryDevtoolsMocks().map((mock) => ({ mock, bytes: measureQueryDevtoolsPayload({ body: mock.body }).bytes })),
+  );
+
   protected rows = computed<MockRow[]>(() => {
     const armed = queryDevtoolsArmedMocks();
     const entries = this.host.queryEntries();
 
-    return queryDevtoolsMocks().map((mock) => ({
+    return this.measuredMocks().map(({ mock, bytes }) => ({
       mock,
+      bytes,
       armed: armed.has(mock.id),
-      bytes: measureQueryDevtoolsPayload({ body: mock.body }).bytes,
       isSecure: entries.some((entry) => !!entry.meta.isSecure && this.idOf(entry, mock.query) === mock.id),
     }));
   });
@@ -248,7 +251,7 @@ export class QueryDevtoolsMocksTabComponent {
 
     if (!row) return null;
 
-    const seeded = this.seededTypes()[row.mock.id];
+    const seeded = this.host.seededTypes()[row.mock.id];
 
     if (seeded) return seeded;
 
@@ -434,7 +437,7 @@ export class QueryDevtoolsMocksTabComponent {
       schemaName: seed?.schemaName ?? null,
     });
 
-    if (seed) this.seededTypes.update((current) => ({ ...current, [id]: seed.types }));
+    if (seed) this.host.seededTypes.update((current) => ({ ...current, [id]: seed.types }));
 
     this.closeDraft();
     this.editingId.set(id);

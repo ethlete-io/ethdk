@@ -9,7 +9,11 @@ import {
 } from '@ethlete/query';
 import { MenuComponent, MenuDirective, MenuItemComponent, MenuItemShortcutComponent } from '@ethlete/components';
 import { MenuSearchDirective, MenuSurfaceDirective, MenuTriggerDirective } from '@ethlete/components';
-import { readQueryDevtoolsClipboard, textFromQueryDevtoolsPaste } from './query-devtools-clipboard';
+import {
+  readQueryDevtoolsClipboard,
+  textFromQueryDevtoolsPaste,
+  writeQueryDevtoolsClipboard,
+} from './query-devtools-clipboard';
 import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';
 
 /**
@@ -63,10 +67,19 @@ export class QueryDevtoolsOverrideSetMenuComponent {
   protected copySet() {
     const text = serializeQueryDevtoolsOverrideTransfer(this.overrides().list(), this.source());
 
-    navigator.clipboard?.writeText(text).then(
-      () => this.copied.set(true),
-      () => this.error.set('The clipboard write was blocked'),
-    );
+    writeQueryDevtoolsClipboard({ text }).then((result) => {
+      if (result.ok) {
+        this.copied.set(true);
+
+        return;
+      }
+
+      this.error.set(
+        result.reason === 'unavailable'
+          ? 'This browser will not hand over the clipboard'
+          : 'The clipboard write was blocked',
+      );
+    });
   }
 
   protected pasteSet() {

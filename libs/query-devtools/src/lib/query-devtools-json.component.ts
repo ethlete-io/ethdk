@@ -3,6 +3,7 @@ import { Component, computed, input, linkedSignal, numberAttribute, signal, View
 import { injectStyleManager } from '@ethlete/core';
 import { JsonPath, QueryDevtoolsOverridesRecorder } from '@ethlete/query';
 import { Subject, switchMap, tap, timer } from 'rxjs';
+import { writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
 import { QueryDevtoolsCopyMenuComponent, QueryDevtoolsCopyPayload } from './query-devtools-copy-menu.component';
 import { formatJsonPath } from './query-devtools-diff';
 import { exoticOf } from './query-devtools-exotic';
@@ -405,10 +406,9 @@ export class QueryDevtoolsJsonComponent {
 
     if (text === null) return;
 
-    navigator.clipboard
-      ?.writeText(text)
-      .then(() => this.flagCopied(payload))
-      .catch(() => undefined);
+    writeQueryDevtoolsClipboard({ text }).then((result) => {
+      if (result.ok) this.flagCopied(payload);
+    });
   }
 
   /**
