@@ -63,17 +63,16 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
   for (const [matchIndex, match] of matches.entries()) {
     const isLastMatch = matchIndex === matches.length - 1;
 
+    // One row per match this one is fed by. A fractional factor has no whole feeder row to align to,
+    // so floor it and let the block padding below absorb the remainder - rounding up instead emits a
+    // row the block height cannot pay for, and the padding turns negative to compensate.
+    const fedMatchCount = Math.floor(matchFactor);
     const matchRows: number[] = [];
-    for (let factorIndex = 0; factorIndex < matchFactor; factorIndex++) {
-      const isLastFactor = factorIndex === matchFactor - 1;
 
-      // Add the match height
+    for (let factorIndex = 0; factorIndex < fedMatchCount; factorIndex++) {
       matchRows.push(options.matchHeight);
 
-      if (isLastFactor) continue;
-
-      // Add gap between match factors (except after the last one)
-      matchRows.push(options.rowGap);
+      if (factorIndex < fedMatchCount - 1) matchRows.push(options.rowGap);
     }
 
     const isFinalMatch = hasReverseFinal

@@ -8,8 +8,6 @@ import {
   TOURNAMENT_MODE,
 } from '../core';
 import { Bracket, BracketMatch } from './bracket';
-import { BracketRuntimeError } from '../bracket-runtime-error';
-import { BRACKET_ERROR_CODES } from '../bracket-errors';
 
 export type BracketRoundSwissGroupId = string & { _brand: 'BracketRoundSwissGroupId' };
 
@@ -114,6 +112,9 @@ export const getAvailableSwissGroupsForRound = (roundNumber: number, totalMatche
   }));
 };
 
+/** The group an undrawn match falls into when its round has no win/loss record to group by. */
+const UNDRAWN_SWISS_GROUP_ID = 'undrawn' as BracketRoundSwissGroupId;
+
 const getRecordBeforeMatch = (participant: BracketMatchParticipantBase) => ({
   wins: participant.winCount - (participant.result === 'win' ? 1 : 0),
   losses: participant.lossCount - (participant.result === 'loss' ? 1 : 0),
@@ -176,15 +177,19 @@ export const generateBracketRoundSwissGroupMaps = <TRoundData, TMatchData>(
     for (const emptyMatchId of emptyMatchIds) {
       const match = bracketRound.matches.getOrThrow(emptyMatchId);
       const groups = [...roundSwissData.groups.values()];
-      const group =
+      let group =
         groups.find((candidate) => candidate.matches.size < candidate.allowedMatchCount) ??
         groups.reduce<BracketRoundSwissGroup<TRoundData, TMatchData> | null>(
           (fewest, candidate) => (!fewest || candidate.matches.size < fewest.matches.size ? candidate : fewest),
           null,
         );
 
+      // A round past the last one a 3-3 swiss can reach - the elimination rounds of a
+      // swiss-with-elimination stage - has no record groups, and an undrawn match carries no record to
+      // build one from. A nameless group keeps the round drawn instead of losing the whole bracket.
       if (!group) {
-        throw new BracketRuntimeError(BRACKET_ERROR_CODES.SWISS_GROUPING_FAILED, 'No group found for empty match');
+        group = { id: UNDRAWN_SWISS_GROUP_ID, name: '', matches: new BracketMap(), allowedMatchCount: 0 };
+        roundSwissData.groups.set(group.id, group);
       }
 
       group.matches.set(match.id, match);

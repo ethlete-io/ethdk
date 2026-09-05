@@ -24,13 +24,19 @@ const sourceFor = (match: BracketMatch<unknown, unknown>, side: MatchParticipant
 
 const participantIdFor = (match: BracketMatch<unknown, unknown>, side: MatchParticipantSide) => match[side]?.id ?? null;
 
+type ResolveState = {
+  visited: Set<string>;
+  resolved: Map<string, string | null>;
+  cycleHits: number;
+};
+
 const resolveMatchOutcome = (options: {
   bracket: Bracket<unknown, unknown>;
   picks: BracketPickSet;
   source: BracketSlotSource;
-  visited: Set<string>;
+  state: ResolveState;
 }): string | null => {
-  const { bracket, picks, source, visited } = options;
+  const { bracket, picks, source, state } = options;
   if (!source.matchId || !source.role) return null;
 
   const feeder = bracket.matches.get(source.matchId as BracketMatchId);
@@ -39,8 +45,8 @@ const resolveMatchOutcome = (options: {
 
   const homeSource = sourceFor(feeder, 'home');
   const awaySource = sourceFor(feeder, 'away');
-  const home = resolveSlot({ bracket, picks, match: feeder, side: 'home', visited });
-  const away = resolveSlot({ bracket, picks, match: feeder, side: 'away', visited });
+  const home = resolveSlot({ bracket, picks, match: feeder, side: 'home', state });
+  const away = resolveSlot({ bracket, picks, match: feeder, side: 'away', state });
 
   if (homeSource?.kind === 'bye' && awaySource?.kind !== 'bye') {
     return source.role === 'winner' ? away : null;
@@ -65,13 +71,13 @@ const resolveSource = (options: {
   match: BracketMatch<unknown, unknown>;
   side: MatchParticipantSide;
   source: BracketSlotSource;
-  visited: Set<string>;
+  state: ResolveState;
 }): string | null => {
-  const { bracket, picks, match, side, source, visited } = options;
+  const { bracket, picks, match, side, source, state } = options;
 
   switch (source.kind) {
     case 'match-outcome':
-      return resolveMatchOutcome({ bracket, picks, source, visited });
+      return resolveMatchOutcome({ bracket, picks, source, state });
     case 'standing-rank':
       return source.standingId && source.rank !== null
         ? picks.standingRank({ standingId: source.standingId, rank: source.rank })
@@ -91,21 +97,39 @@ const resolveSlot = (options: {
   picks: BracketPickSet;
   match: BracketMatch<unknown, unknown>;
   side: MatchParticipantSide;
-  visited: Set<string>;
+  state: ResolveState;
 }): string | null => {
-  const { bracket, picks, match, side, visited } = options;
+  const { bracket, picks, match, side, state } = options;
   const visitKey = `${match.id}:${side}`;
 
-  if (visited.has(visitKey)) return null;
+  if (state.visited.has(visitKey)) {
+    state.cycleHits++;
 
-  visited.add(visitKey);
+    return null;
+  }
+
+  const resolved = state.resolved.get(visitKey);
+
+  if (resolved !== undefined) return resolved;
+
+  state.visited.add(visitKey);
+
+  const cycleHitsBefore = state.cycleHits;
 
   try {
     const source = sourceFor(match, side);
+    const result = source
+      ? resolveSource({ bracket, picks, match, side, source, state })
+      : participantIdFor(match, side);
 
-    return source ? resolveSource({ bracket, picks, match, side, source, visited }) : participantIdFor(match, side);
+    // Only a result the visit guard never interfered with is a function of the slot alone. One that
+    // did hit the guard depends on the path that reached it, so caching it would answer a later path
+    // with a cycle's `null`.
+    if (state.cycleHits === cycleHitsBefore) state.resolved.set(visitKey, result);
+
+    return result;
   } finally {
-    visited.delete(visitKey);
+    state.visited.delete(visitKey);
   }
 };
 
@@ -119,7 +143,7 @@ export const resolveBracketSlot = (options: ResolveBracketSlotOptions): string |
         picks: options.picks,
         match,
         side: options.side,
-        visited: new Set(),
+        state: { visited: new Set(), resolved: new Map(), cycleHits: 0 },
       })
     : null;
 };

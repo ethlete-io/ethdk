@@ -3,7 +3,7 @@ import { BracketDataSource } from '../integrations';
 import { createBracket } from './bracket';
 import { generateBracketRoundSwissGroupMaps } from './swiss';
 
-type SwissMatchInput = [id: string, home: string, away: string, winner: MatchParticipantSide | null];
+type SwissMatchInput = [id: string, home: string | null, away: string | null, winner: MatchParticipantSide | null];
 
 const swissSource = (rounds: SwissMatchInput[][]): BracketDataSource<null, null> => ({
   mode: TOURNAMENT_MODE.SWISS_WITH_ELIMINATION,
@@ -83,5 +83,20 @@ describe('generateBracketRoundSwissGroupMaps', () => {
       { '1-0': ['r1-m0'], '0-1': ['r1-m1'] },
       { '1-1': ['r2-m0'] },
     ]);
+  });
+
+  it('keeps a round past the last one a swiss table can hold while its matches are undrawn', () => {
+    const groups = groupMaps(
+      swissSource([
+        [['r0-m0', 'a', 'b', 'home']],
+        [['r1-m0', 'a', 'c', 'home']],
+        [['r2-m0', 'a', 'd', 'home']],
+        [['r3-m0', 'a', 'e', 'home']],
+        [['r4-m0', 'a', 'f', 'home']],
+        [['r5-m0', null, null, null]],
+      ]),
+    );
+
+    expect(groups[5]).toEqual({ undrawn: ['r5-m0'] });
   });
 });

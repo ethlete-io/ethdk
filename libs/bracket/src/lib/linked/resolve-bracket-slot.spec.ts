@@ -110,3 +110,45 @@ describe('declared match graph', () => {
     expect(final.relation.previousLowerMatch.id).toBe('m2');
   });
 });
+
+/** A legal, acyclic chain in which every match is fed by both outcomes of the one before it. */
+const rematchChain = (length: number): BracketDataSource<null, null> => ({
+  mode: 'single-elimination',
+  rounds: Array.from({ length }, (_, index) => ({
+    id: `r${index}`,
+    name: `Round ${index}`,
+    type: SINGLE_ELIMINATION_BRACKET_ROUND_TYPE.SINGLE_ELIMINATION_BRACKET,
+    data: null,
+  })),
+  matches: Array.from({ length }, (_, index) => ({
+    id: `m${index}`,
+    roundId: `r${index}`,
+    home: index === 0 ? 'a' : null,
+    away: index === 0 ? 'b' : null,
+    homeSource: index === 0 ? undefined : matchOutcome(`m${index - 1}`, 'winner'),
+    awaySource: index === 0 ? undefined : matchOutcome(`m${index - 1}`, 'loser'),
+    winner: null,
+    status: 'pending' as const,
+    data: null,
+  })),
+});
+
+describe('resolveBracketSlot, shared feeders', () => {
+  it('walks a chain of rematches once per slot rather than once per path', () => {
+    const length = 20;
+    const bracket = createBracket(rematchChain(length), { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
+
+    let matchWinnerCalls = 0;
+    const countingPicks: BracketPickSet = {
+      matchWinner: (matchId) => {
+        matchWinnerCalls++;
+        return matchId === 'm0' ? 'a' : null;
+      },
+      standingRank: () => null,
+    };
+
+    resolveBracketSlot({ bracket, picks: countingPicks, matchId: `m${length - 1}`, side: 'home' });
+
+    expect(matchWinnerCalls).toBeLessThan(length * 4);
+  });
+});

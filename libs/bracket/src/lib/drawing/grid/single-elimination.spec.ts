@@ -90,3 +90,46 @@ describe('createSingleEliminationGrid, mirrored', () => {
     expect(matchColumns([2, 0])).toEqual({ r0m0: 0, r0m1: 2 });
   });
 });
+
+/** Every part height of every element, keyed by the element's area. */
+const partHeights = (matchCounts: number[]) => {
+  const grid = createSingleEliminationGrid(
+    createBracket(singleElimination(matchCounts), { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT }),
+    { ...CONFIG, layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT },
+    COMPONENTS,
+  );
+
+  const rows: { area: string; heights: number[]; container: number }[] = [];
+
+  for (const masterColumn of grid.raw.grid.masterColumns) {
+    for (const section of masterColumn.sections) {
+      for (const subColumn of section.subColumns) {
+        for (const element of subColumn.elements) {
+          rows.push({
+            area: element.area,
+            heights: element.parts.map((part) => part.dimensions.height),
+            container: element.containerDimensions.height,
+          });
+        }
+      }
+    }
+  }
+
+  return rows;
+};
+
+describe('createSingleEliminationGrid, element parts', () => {
+  it('fills a round that does not divide the first round evenly with positive parts only', () => {
+    for (const row of partHeights([3, 2, 1])) {
+      expect(row.heights.filter((height) => height < 0)).toEqual([]);
+      expect(row.heights.reduce((total, height) => total + height, 0)).toBe(row.container);
+    }
+  });
+
+  it('leaves a round that divides the first round evenly subdivided per fed match', () => {
+    const rows = partHeights([4, 2, 1]);
+
+    expect(rows.find((row) => row.area === 'm1-0')?.heights).toEqual([80, 10, 80]);
+    expect(rows.find((row) => row.area === 'm2-0')?.heights).toEqual([80, 10, 80, 10, 80, 10, 80]);
+  });
+});

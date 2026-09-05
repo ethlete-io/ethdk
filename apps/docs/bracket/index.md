@@ -33,7 +33,9 @@ Sources without either form keep the legacy positional relation behavior.
 A round whose matches are not drawn yet is linked over: its neighbours relate to each other, and the
 round still renders as an empty column. A `'mirrored'` layout folds up to the first round it cannot
 halve and draws every round after that one whole, so a field that is not a power of two (a bye, an
-odd round) converges early instead of splitting past its own middle.
+odd round) converges early instead of splitting past its own middle. A swiss round past the last one
+a 3-3 table can hold - an elimination round appended to a swiss stage - collects its undrawn matches
+in one group whose `name` is empty, so a round header draws no group label for it.
 
 Grid builders return a `ComputedBracketGrid`; use `bracketGridNaturalWidth(grid)` before rendering to
 size or scroll a framework-specific host. `resolveBracketLayout(layouts, mode)` provides the same
