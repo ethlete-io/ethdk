@@ -110,9 +110,11 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   const error = (query: AnyQuerySnapshot) => {
     const state = options.state;
 
+    // `state.error` is derived from `state.rawResponse`, so a write to the response resets an
+    // error set before it. Clear the response first.
+    state.rawResponse.set(null);
     state.error.set(query.error());
     state.loading.set(null);
-    state.rawResponse.set(null);
     state.latestHttpEvent.set(null);
     state.args.set(null);
   };

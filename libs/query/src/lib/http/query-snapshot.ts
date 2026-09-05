@@ -33,12 +33,14 @@ export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQu
 
         untracked(() => {
           snapshotState.args.set(currentArgs);
-          snapshotState.error.set(currentError);
           snapshotState.lastTimeExecutedAt.set(currentLastTimeExecutedAt);
           snapshotState.lastTriggeredBy.set(currentLastTriggeredBy);
           snapshotState.latestHttpEvent.set(currentLatestHttpEvent);
           snapshotState.loading.set(currentLoading);
+          // `snapshotState.error` is derived from `snapshotState.rawResponse`, so a write to the
+          // response resets an error set before it. Copy the response first.
           snapshotState.rawResponse.set(currentResponse);
+          snapshotState.error.set(currentError);
 
           if (currentLoading) return;
 

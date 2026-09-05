@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { withArgs } from '../index';
 import { describe, expect, it } from 'vitest';
-import { useScenario } from './harness';
+import { sequence, useScenario } from './harness';
 
 describe('queries scenario', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
@@ -172,6 +172,38 @@ describe('queries scenario', () => {
     expect(ids).toEqual([query.id()]);
 
     sub.unsubscribe();
+    c.destroy();
+  });
+  it('a snapshot of a failed query with a cached response reports the failure', () => {
+    const s = scenario();
+    s.api.on('GET', '/flaky', sequence([{ body: { data: { id: '1' } } }, { body: {} }]));
+
+    const getFlaky = s.get<{ response: { id: string }; rawResponse: { data?: { id: string } } }>('/flaky', {
+      transformResponse: (raw) => {
+        if (!raw.data) throw new Error('unmappable response');
+
+        return raw.data;
+      },
+    });
+
+    const c = s.consumer();
+    const query = c.run(() => getFlaky());
+
+    s.tick();
+    expect(query.response()).toEqual({ id: '1' });
+
+    query.execute();
+    s.tick();
+
+    expect(query.error()?.code).toBe(0);
+    expect(query.response()).toEqual({ id: '1' });
+
+    const snapshot = c.run(() => query.createSnapshot());
+    s.tick();
+
+    expect(snapshot.error()?.code).toBe(0);
+    expect(snapshot.executionState()?.type).toBe('failure');
+
     c.destroy();
   });
 });

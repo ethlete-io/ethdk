@@ -216,4 +216,40 @@ describe('auth secure query scenario', () => {
 
     c.destroy();
   });
+
+  it('a secure query that already has data reports the auth failure as its error', async () => {
+    const s = scenario();
+    const auth = s.auth({ onRefreshFailure: () => undefined });
+
+    s.api.protect('/secure/**');
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const getSecureProfile = createSecureGetQuery(s.clientRef, auth.ref)<Profile>('/secure/profile');
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    const query = c.run(() => getSecureProfile());
+    s.flush();
+    await s.settle();
+
+    expect(query.response()).toEqual({ id: 'me' });
+
+    s.api.once('POST', '/auth/refresh', () => ({ status: 400, body: { message: 'refresh token rejected' } }));
+    s.run(() => auth.queries.refresh.execute({ body: { token: auth.refreshToken()! } }));
+    s.flush();
+    await s.settle();
+
+    query.execute();
+    s.flush();
+    await s.settle();
+
+    expect(query.error()?.code).toBe(400);
+    expect(query.executionState()?.type).toBe('failure');
+    expect(query.response()).toBeNull();
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
 });
