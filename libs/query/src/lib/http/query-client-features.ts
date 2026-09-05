@@ -5,8 +5,13 @@ import {
   queryDevtoolsFnDetail,
 } from '../devtools/query-devtools-features';
 import { htmlQueryErrorParser, symfonyQueryErrorParser } from './query-error-parsers';
-import { registerQueryErrorParser, setDefaultQueryRetryFn } from './query-error-parsing';
-import { createDefaultRetryFn, DefaultRetryOptions, shouldRetryRequest } from './query-retry-utils';
+import { registerQueryErrorParser } from './query-error-parsing';
+import {
+  createDefaultRetryFn,
+  DefaultRetryOptions,
+  ShouldRetryRequestFn,
+  shouldRetryRequest,
+} from './query-retry-utils';
 import { createIndexedDbQueryPersistenceAdapter } from './persistence/query-persistence-indexed-db';
 import { QueryPersistenceConfig } from './persistence/query-persistence-config';
 import { createQueryPersistenceEngine, QueryPersistenceEngine } from './persistence/query-persistence-engine';
@@ -59,9 +64,9 @@ export type QueryClientPersistenceFeature = {
 };
 
 /**
- * A feature that only installs error-pipeline behavior. It has no per-client instance: how an error
- * body is read, and whether a failed request is retried, is a property of the app rather than of one
- * client.
+ * A feature that only installs error-pipeline behavior. Which body shapes are understood is a
+ * property of the app and is registered process-wide; the retry policy belongs to the client that
+ * asked for it and travels on `retryFn`.
  */
 export type QueryClientErrorPipelineFeature = {
   type:
@@ -70,6 +75,9 @@ export type QueryClientErrorPipelineFeature = {
     | typeof QueryClientFeatureType.DEFAULT_RETRY
     | typeof QueryClientFeatureType.ETHLETE_API_ERRORS;
   instance: null;
+
+  /** The retry policy the client adopts unless it brings its own `retryFn`. */
+  retryFn?: ShouldRetryRequestFn;
 };
 
 export type QueryClientFeature =
@@ -256,12 +264,13 @@ export const withSymfonyErrors = (): QueryClientFeatureFn => () => {
 };
 
 /**
- * Installs the SDK's default retry policy for every request that does not bring its own `retryFn`: a
+ * Gives this client the SDK's default retry policy for every request that does not bring its own `retryFn`: a
  * connection failure, a 5xx above 500, a 408/425 and a 429 (honouring `retry-after`) are retried three
  * times with an exponentially backing off, jittered delay - and a Pagerfanta out-of-range page never is.
  *
- * Without it nothing is retried automatically and `error.retryState` always reads `{ retry: false }`.
- * A per-client or per-creator `retryFn` keeps working either way.
+ * The policy belongs to the client the feature is on, so another client of the same app is not
+ * affected. Without it nothing is retried automatically and `error.retryState` always reads
+ * `{ retry: false }`. A per-client or per-creator `retryFn` wins over it.
  *
  * @example
  * const MY_CLIENT = createQueryClient({
@@ -272,11 +281,11 @@ export const withSymfonyErrors = (): QueryClientFeatureFn => () => {
  */
 export const withDefaultRetry =
   (options?: DefaultRetryOptions): QueryClientFeatureFn =>
-  () => {
-    setDefaultQueryRetryFn(options ? createDefaultRetryFn(options) : shouldRetryRequest);
-
-    return { type: QueryClientFeatureType.DEFAULT_RETRY, instance: null };
-  };
+  () => ({
+    type: QueryClientFeatureType.DEFAULT_RETRY,
+    instance: null,
+    retryFn: options ? createDefaultRetryFn(options) : shouldRetryRequest,
+  });
 
 /**
  * Everything the error pipeline used to do before it became opt-in: {@link withHtmlErrorParsing},
@@ -298,7 +307,10 @@ export const withEthleteApiErrors =
   () => {
     registerQueryErrorParser(htmlQueryErrorParser);
     registerQueryErrorParser(symfonyQueryErrorParser);
-    setDefaultQueryRetryFn(options?.retry ? createDefaultRetryFn(options.retry) : shouldRetryRequest);
 
-    return { type: QueryClientFeatureType.ETHLETE_API_ERRORS, instance: null };
+    return {
+      type: QueryClientFeatureType.ETHLETE_API_ERRORS,
+      instance: null,
+      retryFn: options?.retry ? createDefaultRetryFn(options.retry) : shouldRetryRequest,
+    };
   };

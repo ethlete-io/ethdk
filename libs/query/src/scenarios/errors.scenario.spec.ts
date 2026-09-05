@@ -11,11 +11,10 @@ import {
 } from '../index';
 import { createScenario, sequence, useScenario } from './harness';
 
-// Error parsers and the default retry policy are installed process-wide (see apps/docs/query/errors.md), not
-// per client - `registerQueryErrorParser` / `setDefaultQueryRetryFn` are module-level singletons that are
-// never reset between tests in this file. Describe blocks below are ordered so that the one asserting the
-// unparsed / no-retry baseline runs first, before any later block opts a client into a feature that would
-// otherwise leak into it.
+// Error parsers are installed process-wide (see apps/docs/query/errors.md), not per client -
+// `registerQueryErrorParser` is a module-level singleton that is never reset between tests in this file.
+// Describe blocks below are ordered so that the one asserting the unparsed baseline runs first, before any
+// later block opts a client into a parser that would otherwise leak into it.
 
 describe('baseline error normalization (no client features)', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
@@ -75,11 +74,6 @@ describe('connection failures (status 0)', () => {
     // `fake-api.ts` `handle()`), so a status of `0` - a real connection failure - can never be produced
     // through it. Worked around here with a dedicated `HttpBackend` that fails the way a dropped
     // connection does, bypassing the fake API for this one scenario. Reported as a harness gap.
-    //
-    // Also runs before every other describe in this file: `withDefaultRetry`'s retry function is a
-    // process-wide singleton (see the file header), and status 0 is retryable by default - a scenario
-    // built after `the default retry policy` block below would inherit its leftover retry function and
-    // retry this failure instead of surfacing it once.
     const failingBackend: HttpBackend = {
       handle: () =>
         new Observable((subscriber) => {

@@ -13,8 +13,10 @@ import {
   QueryClientFeatureType,
   QueryClientPersistenceFeature,
   QueryClientMultiTabSyncFeature,
+  QueryClientErrorPipelineFeature,
 } from './query-client-features';
 import { queryClientFeatureUsedMultipleTimes } from './query-errors';
+import { runDefaultQueryRetry } from './query-error-parsing';
 import { createQueryRepository, QueryRepository } from './query-repository';
 import { ShouldRetryRequestFn } from './query-retry-utils';
 import { QuerySyncEngine } from './sync/query-sync-engine';
@@ -76,6 +78,8 @@ export type CreateQueryClientConfigOptions = {
    * The retry function to use for the client.
    * It determines if a request should be retried after it failed.
    *
+   * Wins over a {@link withDefaultRetry} feature on the same client.
+   *
    * @default the `withDefaultRetry()` policy, or no retry at all without that client feature
    */
   retryFn?: ShouldRetryRequestFn;
@@ -110,8 +114,9 @@ export type CreateQueryClientConfigOptions = {
    * - {@link withDefaultRetry} retries connection failures, 5xx, 408/425 and 429,
    * - {@link withEthleteApiErrors} is the three error features above in one.
    *
-   * Each feature may be used at most once. The error-pipeline features are installed process-wide
-   * rather than per client - which body shapes an app understands is a property of the app.
+   * Each feature may be used at most once. The error **parsers** are installed process-wide rather
+   * than per client - which body shapes an app understands is a property of the app - while the retry
+   * policy stays on the client that asked for it.
    *
    * @example
    * const MY_CLIENT = createQueryClient({
@@ -233,11 +238,16 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
       const injector = inject(Injector);
       const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
+      // The features below run after the repository exists, so the policy is read per request instead
+      // of being captured here.
+      let clientRetryFn = options.retryFn ?? null;
+
       const repository = createQueryRepository({
         ...options,
         // Retaining unused entries on the server would pin response bodies (and a pending timer) inside
         // a per-request injector for the whole window, so retention is browser only.
         retentionEnabled: isBrowser,
+        retryFn: (retryOptions) => clientRetryFn?.(retryOptions) ?? runDefaultQueryRetry(retryOptions),
         dependencies: { httpClient, ngErrorHandler, injector },
       });
 
@@ -261,6 +271,8 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
             sync = (feature as QueryClientMultiTabSyncFeature).instance;
           } else if (feature.type === QueryClientFeatureType.PERSISTENCE) {
             persistenceEngine = (feature as QueryClientPersistenceFeature).instance;
+          } else if (!clientRetryFn) {
+            clientRetryFn = (feature as QueryClientErrorPipelineFeature).retryFn ?? null;
           }
         }
       }

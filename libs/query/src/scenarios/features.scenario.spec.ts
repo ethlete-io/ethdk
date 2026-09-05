@@ -1,13 +1,17 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { signal, untracked } from '@angular/core';
+import { createEnvironmentInjector, EnvironmentInjector, inject, signal, untracked } from '@angular/core';
 import {
+  createGetQuery,
+  createQueryClient,
   createQueryFeature,
   nestedEffect,
   QueryArgs,
+  QueryClientFeatureFn,
   QueryFeatureFlags,
   RequestArgs,
   withArgs,
   withAutoRefresh,
+  withDefaultRetry,
   withErrorHandling,
   withLogging,
   withLongPolling,
@@ -16,7 +20,7 @@ import {
   withSuccessHandling,
 } from '../index';
 import { describe, expect, it, vi } from 'vitest';
-import { sequence, useScenario } from './harness';
+import { Scenario, sequence, useScenario } from './harness';
 
 const CUSTOM_FEATURE_TYPE = 'withCustomScenarioFeature';
 
@@ -359,5 +363,82 @@ describe('features scenario', () => {
 
       c.destroy();
     });
+  });
+});
+
+describe('client-scoped default retry', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  let clientCounter = 0;
+
+  const createClient = (s: Scenario, features: QueryClientFeatureFn[]) => {
+    const ref = createQueryClient({
+      name: `retry-scope-client-${++clientCounter}`,
+      baseUrl: 'https://api.test',
+      keepUnusedFor: 0,
+      features,
+    });
+
+    const injector = createEnvironmentInjector(ref.provide(), s.run(() => inject(EnvironmentInjector)));
+
+    return {
+      get: createGetQuery(ref),
+      run: <T,>(fn: () => T) => injector.runInContext(fn),
+      destroy: () => injector.destroy(),
+    };
+  };
+
+  it('a client without withDefaultRetry does not retry while another client has it', () => {
+    const s = scenario();
+    s.api.on('GET', '/retrying', () => ({ status: 503, body: { message: 'down' } }));
+    s.api.on('GET', '/plain', () => ({ status: 503, body: { message: 'down' } }));
+
+    const retrying = createClient(s, [withDefaultRetry({ maxAttempts: 2, baseDelayMs: 10, jitter: 0 })]);
+    const plain = createClient(s, []);
+
+    const getRetrying = retrying.get<{ response: unknown }>('/retrying');
+    const getPlain = plain.get<{ response: unknown }>('/plain');
+
+    const retryingQuery = retrying.run(() => getRetrying());
+    const plainQuery = plain.run(() => getPlain());
+
+    s.flush();
+
+    expect(s.api.requestCount('GET', '/retrying')).toBe(3);
+    expect(s.api.requestCount('GET', '/plain')).toBe(1);
+    expect(plainQuery.error()?.retryState).toEqual({ retry: false });
+    expect(retryingQuery.error()?.code).toBe(503);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+
+    retrying.destroy();
+    plain.destroy();
+  });
+
+  it('two clients keep their own retry configs', () => {
+    const s = scenario();
+    s.api.on('GET', '/three', () => ({ status: 503, body: { message: 'down' } }));
+    s.api.on('GET', '/one', () => ({ status: 503, body: { message: 'down' } }));
+
+    const three = createClient(s, [withDefaultRetry({ maxAttempts: 3, baseDelayMs: 10, jitter: 0 })]);
+    const one = createClient(s, [withDefaultRetry({ maxAttempts: 1, baseDelayMs: 10, jitter: 0 })]);
+
+    const getThree = three.get<{ response: unknown }>('/three');
+    const getOne = one.get<{ response: unknown }>('/one');
+
+    three.run(() => getThree());
+    one.run(() => getOne());
+
+    s.flush();
+
+    expect(s.api.requestCount('GET', '/three')).toBe(4);
+    expect(s.api.requestCount('GET', '/one')).toBe(2);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+
+    three.destroy();
+    one.destroy();
   });
 });
