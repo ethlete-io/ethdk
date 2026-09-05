@@ -264,7 +264,9 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       .pipe(
         filter(() => !this.isObserving),
         debounceTime(0),
-        tap(() => this.handleFormChange()),
+        // Force: a write before `observe()` is the new baseline, not a transition. Without it the
+        // replay on `observe()` diffs against the pre-write value and `isResetBy` clears a sibling.
+        tap(() => this.handleFormChange(true)),
         takeUntil(this.destroy$),
       )
       .subscribe();

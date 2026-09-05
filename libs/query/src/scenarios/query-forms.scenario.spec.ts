@@ -784,6 +784,79 @@ describe('query forms scenario', () => {
   });
 });
 
+describe('query form observed after a pre-observe write', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  const paginatedFields = () => ({
+    search: searchQueryField(),
+    page: queryField<number>({ defaultValue: 1, isResetBy: 'search' }),
+  });
+
+  it('keeps a page written before observe() even though it is isResetBy search', async () => {
+    const s = scenario();
+
+    const qf = s.run(() => defineQueryForm({ fields: paginatedFields() }));
+
+    qf.patchValue({ search: 'shoes' });
+    await s.settle();
+    qf.patchValue({ page: 3 });
+    await s.settle();
+
+    qf.observe();
+    await s.settle();
+    await s.settle();
+
+    expect(qf.value()).toEqual({ search: 'shoes', page: 3 });
+
+    qf.unobserve();
+    await s.settle();
+  });
+
+  it('writes a value committed before observe() to the URL', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const qf = s.run(() => defineQueryForm({ fields: paginatedFields() }));
+
+    qf.setValue({ search: 'shoes', page: 3 });
+    await s.settle();
+    expect(router.parseUrl(router.url).queryParams).toEqual({});
+
+    qf.observe();
+    await s.settle();
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ search: 'shoes', page: '3' });
+
+    qf.unobserve();
+    await s.settle();
+    expect(router.parseUrl(router.url).queryParams).toEqual({});
+  });
+
+  it('merges a value committed before observe() with the params already in the URL', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await router.navigate([], { queryParams: { page: '7' } });
+    s.tick();
+
+    const qf = s.run(() => defineQueryForm({ fields: paginatedFields() }));
+
+    qf.patchValue({ search: 'shoes' });
+    await s.settle();
+
+    qf.observe();
+    await s.settle();
+    await s.settle();
+
+    expect(qf.value()).toEqual({ search: 'shoes', page: 7 });
+    expect(router.parseUrl(router.url).queryParams).toEqual({ search: 'shoes', page: '7' });
+
+    qf.unobserve();
+    await s.settle();
+  });
+});
+
 describe('query forms scenario with the devtools attached', () => {
   const scenario = useScenario({
     clientOptions: { keepUnusedFor: 0 },

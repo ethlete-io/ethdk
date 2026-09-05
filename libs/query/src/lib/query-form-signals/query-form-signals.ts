@@ -737,10 +737,15 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       // Commit whatever the model holds now (URL-restored or programmatic defaults).
       flush();
 
-      if (
-        options?.writeToQueryParams !== false &&
-        Object.values(fieldDefs).some((field) => field.appendDefaultValueToUrl === true)
-      ) {
+      // `flush()` writes the URL only when it commits a change, and a value written before
+      // `observe()` is committed already - so this is the only write that can put it in the URL.
+      // Nothing to put there means no write: an empty one merges onto a navigation in flight and
+      // deletes that route's own params.
+      const writesAnyParam = Object.entries(fieldDefs).some(
+        ([key, def]) => queryParamFor(key, def, (committed() as Dict)[key]) !== undefined,
+      );
+
+      if (options?.writeToQueryParams !== false && writesAnyParam) {
         writeToUrl(committed() as Dict);
       }
 

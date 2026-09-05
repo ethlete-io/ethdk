@@ -246,3 +246,59 @@ describe('legacy QueryForm url write', () => {
     c.destroy();
   });
 });
+
+describe('legacy QueryForm observed after a pre-observe write', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  const createPaginatedForm = () =>
+    new QueryForm({
+      page: new QueryField({ control: new FormControl<number | null>(1), defaultValue: 1, isResetBy: 'search' }),
+      search: new QueryField({ control: new FormControl<string | null>(null) }),
+    });
+
+  it('keeps a page seeded before observe() even though it is isResetBy search', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const c = s.consumer();
+    const qf = c.run(() => createPaginatedForm());
+
+    qf.controls.search.setValue('shoes');
+    qf.controls.page.setValue(3);
+    s.tick();
+
+    qf.observe();
+    await s.settle();
+    await s.settle();
+
+    expect(qf.controls.page.value).toBe(3);
+    expect(qf.value).toEqual({ page: 3, search: 'shoes' });
+    expect(router.parseUrl(router.url).queryParams).toEqual({ page: '3', search: 'shoes' });
+
+    qf.unobserve();
+    await s.settle();
+    c.destroy();
+  });
+
+  it('keeps a page seeded by setValue before observe() when the writes and observe() share a tick', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const c = s.consumer();
+    const qf = c.run(() => createPaginatedForm());
+
+    qf.controls.search.setValue('shoes');
+    qf.controls.page.setValue(3);
+    qf.observe();
+    await s.settle();
+    await s.settle();
+
+    expect(qf.controls.page.value).toBe(3);
+    expect(qf.value).toEqual({ page: 3, search: 'shoes' });
+    expect(router.parseUrl(router.url).queryParams).toEqual({ page: '3', search: 'shoes' });
+
+    qf.unobserve();
+    await s.settle();
+    c.destroy();
+  });
+});
