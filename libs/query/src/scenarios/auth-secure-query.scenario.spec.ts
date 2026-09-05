@@ -1,5 +1,5 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { createSecureGetQuery, createSecurePostQuery } from '../index';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { createSecureGetQuery, createSecurePostQuery, withArgs } from '../index';
 import { describe, expect, it } from 'vitest';
 import { mintToken, useScenario } from './harness';
 
@@ -250,6 +250,156 @@ describe('auth secure query scenario', () => {
     expect(query.response()).toBeNull();
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('leaves an Authorization header the caller set in place instead of injecting the bearer token', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const getSecureProfile = createSecureGetQuery(s.clientRef, auth.ref)<Profile>('/secure/profile');
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    const query = c.run(() =>
+      getSecureProfile(withArgs(() => ({ headers: new HttpHeaders({ Authorization: 'Bearer caller-token' }) }))),
+    );
+    await s.settle();
+
+    expect(query.response()).toEqual({ id: 'me' });
+    expect(s.api.requests.find((r) => r.path === '/secure/profile')?.headers.get('Authorization')).toBe(
+      'Bearer caller-token',
+    );
+    expect(auth.accessToken()).not.toBe('caller-token');
+
+    c.destroy();
+  });
+
+  it('parks a secure query executed before login and sends it once the login lands', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    s.api.protect('/secure/**');
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const getSecureProfile = createSecureGetQuery(s.clientRef, auth.ref)<Profile>('/secure/profile');
+
+    const c = s.consumer();
+    const query = c.run(() => getSecureProfile());
+    s.tick();
+
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(0);
+    expect(query.error()).toBeNull();
+    expect(query.loading()).not.toBeNull();
+
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+    s.flush();
+
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(1);
+    expect(query.response()).toEqual({ id: 'me' });
+    expect(s.api.requests.find((r) => r.path === '/secure/profile')?.headers.get('Authorization')).toBe(
+      `Bearer ${auth.accessToken()}`,
+    );
+
+    c.destroy();
+  });
+
+  it('sends the expired access token after 5 seconds when no refresh arrives', () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const getSecureProfile = createSecureGetQuery(s.clientRef, auth.ref)<Profile>('/secure/profile');
+
+    // A seeded pair with an expired access token and no refresh token to spend: nothing can end the
+    // wait but the timeout.
+    const expiredToken = mintToken({ expiresInMs: -1000 });
+
+    const c = s.consumer();
+    s.run(() => auth.setTokens(expiredToken, ''));
+    s.tick();
+
+    expect(auth.isAccessTokenExpired()).toBe(true);
+
+    const query = c.run(() => getSecureProfile());
+    s.tick();
+    s.tick(4000);
+
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(0);
+
+    s.tick(1001);
+
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(1);
+    expect(s.api.requests.find((r) => r.path === '/secure/profile')?.headers.get('Authorization')).toBe(
+      `Bearer ${expiredToken}`,
+    );
+    expect(query.response()).toEqual({ id: 'me' });
+
+    c.destroy();
+  });
+
+  it('sends an opaque access token immediately and reports it as not expired', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    s.api.once('POST', '/auth/login', () => ({
+      body: { accessToken: 'opaque-access-token', refreshToken: mintToken({ expiresInMs: 3600000 }) },
+    }));
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const getSecureProfile = createSecureGetQuery(s.clientRef, auth.ref)<Profile>('/secure/profile');
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    s.tick();
+
+    expect(auth.isAccessTokenExpired()).toBe(false);
+
+    const query = c.run(() => getSecureProfile());
+    s.tick();
+
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(1);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+    expect(s.api.requests.find((r) => r.path === '/secure/profile')?.headers.get('Authorization')).toBe(
+      'Bearer opaque-access-token',
+    );
+    expect(query.response()).toEqual({ id: 'me' });
+
+    c.destroy();
+  });
+
+  it('sends an expired token straight out with refreshIfExpired: false', async () => {
+    const s = scenario();
+    const auth = s.auth({ accessTokenExpiresInMs: -1000, refreshIfExpired: false });
+
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const getSecureProfile = createSecureGetQuery(s.clientRef, auth.ref)<Profile>('/secure/profile');
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    s.tick();
+
+    const expiredToken = auth.accessToken();
+
+    expect(auth.isAccessTokenExpired()).toBe(false);
+
+    const query = c.run(() => getSecureProfile());
+    s.tick();
+
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(1);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+    expect(s.api.requests.find((r) => r.path === '/secure/profile')?.headers.get('Authorization')).toBe(
+      `Bearer ${expiredToken}`,
+    );
+    expect(query.response()).toEqual({ id: 'me' });
+
     c.destroy();
   });
 });

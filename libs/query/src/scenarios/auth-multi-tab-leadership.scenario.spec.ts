@@ -9,6 +9,7 @@ import {
 } from '@ethlete/query/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  BearerAuthMultiTabSyncConfig,
   createBearerAuthProvider,
   createPostQuery,
   createQueryClient,
@@ -31,8 +32,10 @@ let tabCounter = 0;
 
 const is401 = (entry: { error: unknown }) => entry.error instanceof HttpErrorResponse && entry.error.status === 401;
 
+type TabOptions = { syncConfig?: BearerAuthMultiTabSyncConfig };
+
 /** One browser tab: its own query client and auth provider, sharing the fake API and the sync channel. */
-const createAuthTab = (s: Scenario) => {
+const createAuthTab = (s: Scenario, options: TabOptions = {}) => {
   const clientRef = createQueryClient({ name: `auth-tab-client-${++tabCounter}`, baseUrl: BASE_URL, keepUnusedFor: 0 });
   const authRef = createBearerAuthProvider({
     name: PROVIDER_NAME,
@@ -45,7 +48,7 @@ const createAuthTab = (s: Scenario) => {
         autoRetryOn401: true,
       }),
     ],
-    features: [withBearerAuthMultiTabSync()],
+    features: [withBearerAuthMultiTabSync(options.syncConfig)],
   });
 
   const injector = createEnvironmentInjector(
@@ -74,7 +77,7 @@ const createAuthTab = (s: Scenario) => {
 };
 
 /** Same as {@link createAuthTab}, with `withInactivityLogout` added so idleness can be measured. */
-const createInactivityTab = (s: Scenario, activityEvents: string[]) => {
+const createInactivityTab = (s: Scenario, activityEvents: string[], options: TabOptions = {}) => {
   const clientRef = createQueryClient({ name: `auth-tab-client-${++tabCounter}`, baseUrl: BASE_URL, keepUnusedFor: 0 });
   const authRef = createBearerAuthProvider({
     name: PROVIDER_NAME,
@@ -87,7 +90,7 @@ const createInactivityTab = (s: Scenario, activityEvents: string[]) => {
       }),
     ],
     features: [
-      withBearerAuthMultiTabSync(),
+      withBearerAuthMultiTabSync(options.syncConfig),
       withInactivityLogout({ inactivityTimeout: INACTIVITY_TIMEOUT, activityEvents }),
     ],
   });
@@ -117,16 +120,20 @@ const createFrozenLeaderTab = (name: string, options: { isVisible?: boolean; ans
   };
 
   const hold = () => {
-    void navigator.locks.request(`ethlete-auth:leader:${name}`, () => {
-      isLeader = true;
+    navigator.locks
+      .request(`ethlete-auth:leader:${name}`, () => {
+        isLeader = true;
 
-      return new Promise<void>((resolve) => {
-        release = () => {
-          isLeader = false;
-          resolve();
-        };
+        return new Promise<void>((resolve) => {
+          release = () => {
+            isLeader = false;
+            resolve();
+          };
+        });
+      })
+      .catch(() => {
+        isLeader = false;
       });
-    });
   };
 
   hold();
@@ -191,6 +198,11 @@ describe('auth multi-tab leadership scenario', () => {
   });
 
   const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
+
+  const activityMessages = () =>
+    bus.posted.filter(
+      (m) => m.channel === `ethlete-auth-sync:${PROVIDER_NAME}` && (m.data as { type?: string })?.type === 'activity',
+    );
 
   const refreshRequestedMessages = () =>
     bus.posted.filter(
@@ -624,5 +636,357 @@ describe('auth multi-tab leadership scenario', () => {
     expect(auth.sessionEndCause()).toBe('inactivity');
 
     c.destroy();
+  });
+
+  it('reports isLeader false until the next microtask after the lock is granted', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    await flushMultiTabSync();
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(a.auth.features.multiTabSync.leadership).toBe('election');
+
+    a.destroy();
+  });
+
+  it('hands the leadership to the longest-waiting tab when the leader closes', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    const c = createAuthTab(s);
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+    expect(c.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    a.destroy();
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(c.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    b.destroy();
+    await sync(s);
+
+    expect(c.auth.features.multiTabSync.isLeader()).toBe(true);
+
+    c.destroy();
+  });
+
+  it('elects itself with leadership unsupported when the browser has no Web Locks', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    locks.restore();
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.leadership).toBe('unsupported');
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(a.auth.features.multiTabSync.instanceCount()).toBe(1);
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(b.auth.features.multiTabSync.instanceCount()).toBe(1);
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('lets every tab refresh its own tokens with leadership off when leaderElection is false', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s, { syncConfig: { leaderElection: false } });
+    const b = createAuthTab(s, { syncConfig: { leaderElection: false } });
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.leadership).toBe('off');
+    expect(b.auth.features.multiTabSync.leadership).toBe('off');
+    expect(locks.heldNames()).toEqual([]);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+
+    s.tick(7.5 * 60 * 1000);
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(2);
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('a lone hidden leader gives the lock up and takes it straight back', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s);
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+
+    setVisibility('hidden');
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(locks.heldNames()).toEqual([`ethlete-auth:leader:${PROVIDER_NAME}`]);
+
+    a.destroy();
+  });
+
+  it('gives the leadership up on freeze and claims it back on resume', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s);
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+
+    document.dispatchEvent(new Event('freeze'));
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(false);
+    expect(locks.heldNames()).toEqual([]);
+
+    document.dispatchEvent(new Event('resume'));
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+
+    a.destroy();
+  });
+
+  it('steals the leadership from a frozen leader once a claim goes unanswered for 1.5 seconds', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const leader = createFrozenLeaderTab(PROVIDER_NAME);
+    await flushMultiTabSync();
+
+    expect(leader.isLeader()).toBe(true);
+
+    const b = createAuthTab(s);
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    s.tick(1500);
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(leader.isLeader()).toBe(false);
+
+    leader.close();
+    b.destroy();
+  });
+
+  it('a follower that has become the leader refreshes itself instead of re-asking', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+    s.api.protect('/secure/**');
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    setVisibility('hidden');
+    const leader = createFrozenLeaderTab(PROVIDER_NAME);
+
+    const b = createAuthTab(s);
+    await sync(s);
+
+    b.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    const queryB = b.consumer().run(() => b.getSecure<Profile>('/secure/profile')());
+    s.tick();
+    await sync(s);
+
+    expect(refreshRequestedMessages()).toHaveLength(1);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+
+    leader.close();
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(true);
+
+    s.tick(3000);
+    await sync(s);
+    s.flush();
+    await sync(s);
+
+    expect(refreshRequestedMessages()).toHaveLength(1);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(queryB.response()).toEqual({ id: 'me' });
+
+    s.expectError(is401);
+    b.destroy();
+  });
+
+  it('does not escalate a delegated refresh while the token still has more than 30 seconds left', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+
+    setVisibility('hidden');
+    const leader = createFrozenLeaderTab(PROVIDER_NAME);
+
+    const b = createAuthTab(s);
+    await sync(s);
+
+    b.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    // The follower's own proactive tick is due at half the 15 minute lifetime, with 7.5 minutes of
+    // token left - far outside the 30 second window that lets it act.
+    s.tick(7.5 * 60 * 1000 + 1000);
+    await sync(s);
+
+    expect(refreshRequestedMessages()).toHaveLength(0);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+
+    // Past the point where the token goes stale, the tab asks and then takes the refresh over.
+    s.tick(7 * 60 * 1000);
+    await sync(s);
+
+    expect(refreshRequestedMessages().length).toBeGreaterThan(0);
+
+    s.tick(3000);
+    await sync(s);
+    s.tick(3000);
+    await sync(s);
+    s.tick(3000);
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(b.auth.isAuthenticated()).toBe(true);
+
+    leader.close();
+    b.destroy();
+  });
+
+  it('announces activity at most once per quarter of the inactivity timeout, and re-broadcasts nothing it hears', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createInactivityTab(s, ['keydown']);
+    const b = createInactivityTab(s, ['mousedown']);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    const before = activityMessages().length;
+
+    for (let i = 0; i < 10; i++) {
+      s.tick(3000);
+      document.dispatchEvent(new KeyboardEvent('keydown'));
+      await sync(s);
+    }
+
+    // Ten keystrokes over 30s, with a quarter of the 100s timeout between announcements.
+    expect(activityMessages().length - before).toBe(2);
+    expect(b.auth.isAuthenticated()).toBe(true);
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('resetTimer() in one tab postpones the countdown in every other tab', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createInactivityTab(s, ['keydown']);
+    const b = createInactivityTab(s, ['mousedown']);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    s.tick(50000);
+    await sync(s);
+
+    expect(b.auth.features.inactivityLogout.calculateTimeUntilLogout()).toBeLessThan(51_000);
+
+    const before = activityMessages().length;
+
+    a.auth.features.inactivityLogout.resetTimer();
+    await sync(s);
+
+    expect(activityMessages().length).toBe(before + 1);
+    expect(b.auth.features.inactivityLogout.calculateTimeUntilLogout()).toBeGreaterThan(99_000);
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('does not treat a tab joining a live session as user activity', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createInactivityTab(s, ['keydown']);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    s.tick(50000);
+    await sync(s);
+
+    const before = a.auth.features.inactivityLogout.calculateTimeUntilLogout();
+
+    const b = createInactivityTab(s, ['mousedown']);
+    await sync(s);
+
+    expect(b.auth.isAuthenticated()).toBe(true);
+    expect(a.auth.features.inactivityLogout.calculateTimeUntilLogout()).toBeLessThanOrEqual(before ?? 0);
+    expect(a.auth.features.inactivityLogout.calculateTimeUntilLogout()).toBeLessThan(51_000);
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('times an inactive tab out on its own with syncLogout: false, leaving the active tab signed in', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+
+    const a = createInactivityTab(s, ['keydown'], { syncConfig: { syncLogout: false } });
+    const b = createInactivityTab(s, ['mousedown'], { syncConfig: { syncLogout: false } });
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.isAuthenticated()).toBe(true);
+
+    for (let i = 0; i < 13; i++) {
+      s.tick(9000);
+      document.dispatchEvent(new KeyboardEvent('keydown'));
+      await sync(s);
+    }
+
+    expect(a.auth.isAuthenticated()).toBe(true);
+    expect(b.auth.sessionStatus()).toBe('anonymous');
+    expect(b.auth.sessionEndCause()).toBe('inactivity');
+
+    a.destroy();
+    b.destroy();
   });
 });

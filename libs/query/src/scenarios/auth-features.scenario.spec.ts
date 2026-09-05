@@ -1,6 +1,8 @@
+import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { createEnvironmentInjector, EnvironmentInjector, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { createEnvironmentInjector, effect, EnvironmentInjector, inject } from '@angular/core';
+import { RedirectCommand, Router } from '@angular/router';
+import { isObservable } from 'rxjs';
 import {
   clearQueryDevtoolsTokenTtl,
   createAuthGuard,
@@ -13,13 +15,14 @@ import {
   queryDevtoolsTokenTtls,
   setQueryDevtoolsTokenTtl,
   withAuthenticationQuery,
+  withInactivityLogout,
   withPersistentAuth,
   withRefreshQuery,
   withTokenExpirationWarning,
   withTokenRevocation,
   withTracking,
 } from '../index';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';
@@ -481,6 +484,450 @@ describe('auth features without the devtools', () => {
     await navigation;
 
     expect(router.url).toBe('/dashboard');
+  });
+
+  it('canActivate and canActivateAnonymous decide a route the same way canMatch does', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth();
+    const router = s.run(() => inject(Router));
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login', defaultUrl: '/dashboard' });
+
+    router.resetConfig([
+      { path: 'login', canActivate: [guard.canActivateAnonymous], children: [] },
+      { path: 'dashboard', canActivate: [guard.canActivate], children: [] },
+    ]);
+
+    await s.run(() => router.navigateByUrl('/dashboard'));
+    await s.settle();
+    expect(router.url).toBe('/login?returnUrl=%2Fdashboard');
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    await s.run(() => router.navigateByUrl('/dashboard'));
+    await s.settle();
+    expect(router.url).toBe('/dashboard');
+
+    await s.run(() => router.navigateByUrl('/login'));
+    await s.settle();
+    expect(router.url).toBe('/dashboard');
+
+    c.destroy();
+  });
+
+  it('returnUrl() reads back the URL the guard captured, and is null when nothing was captured', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth();
+    const router = s.run(() => inject(Router));
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login', defaultUrl: '/dashboard' });
+
+    router.resetConfig([
+      { path: 'login', canMatch: [guard.canMatchAnonymous], children: [] },
+      { path: 'dashboard', canMatch: [guard.canMatch], children: [] },
+    ]);
+
+    await s.run(() => router.navigateByUrl('/dashboard'));
+    await s.settle();
+
+    expect(s.run(() => guard.returnUrl())).toBe('/dashboard');
+
+    await s.run(() => router.navigateByUrl('/login'));
+    await s.settle();
+
+    expect(s.run(() => guard.returnUrl())).toBeNull();
+  });
+
+  it('navigateAfterLogin() navigates nowhere until subscribed, then lands on the captured URL', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth();
+    const router = s.run(() => inject(Router));
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login', defaultUrl: '/dashboard' });
+
+    router.resetConfig([
+      { path: 'login', canMatch: [guard.canMatchAnonymous], children: [] },
+      { path: 'dashboard', canMatch: [guard.canMatch], children: [] },
+      { path: 'settings', children: [] },
+    ]);
+
+    await s.run(() => router.navigateByUrl('/settings'));
+    await s.settle();
+    await s.run(() => router.navigateByUrl('/dashboard'));
+    await s.settle();
+
+    expect(router.url).toBe('/login?returnUrl=%2Fdashboard');
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    const afterLogin$ = s.run(() => guard.navigateAfterLogin());
+    await s.settle();
+
+    expect(router.url).toBe('/login?returnUrl=%2Fdashboard');
+
+    const subscription = afterLogin$.subscribe();
+    await s.settle();
+
+    expect(router.url).toBe('/dashboard');
+
+    subscription.unsubscribe();
+    c.destroy();
+  });
+
+  it('lands a login on / when defaultUrl is not configured and nothing was captured', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth();
+    const router = s.run(() => inject(Router));
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login' });
+
+    router.resetConfig([
+      { path: '', children: [] },
+      { path: 'login', canMatch: [guard.canMatchAnonymous], children: [] },
+    ]);
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    await s.run(() => router.navigateByUrl('/login'));
+    await s.settle();
+
+    expect(router.url).toBe('/');
+
+    c.destroy();
+  });
+
+  it('redirects to the login URL with no return param when returnUrlParam is false', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth();
+    const router = s.run(() => inject(Router));
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login', defaultUrl: '/dashboard', returnUrlParam: false });
+
+    router.resetConfig([
+      { path: 'login', canMatch: [guard.canMatchAnonymous], children: [] },
+      { path: 'dashboard', canMatch: [guard.canMatch], children: [] },
+    ]);
+
+    await s.run(() => router.navigateByUrl('/dashboard'));
+    await s.settle();
+
+    expect(router.url).toBe('/login');
+    expect(s.run(() => guard.returnUrl())).toBeNull();
+  });
+
+  it('replaces the URL on a guard redirect, so the failed attempt leaves no history entry', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth();
+    const router = s.run(() => inject(Router));
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login', defaultUrl: '/dashboard' });
+
+    router.resetConfig([
+      { path: 'login', canMatch: [guard.canMatchAnonymous], children: [] },
+      { path: 'dashboard', canMatch: [guard.canMatch], children: [] },
+    ]);
+
+    const angularLocation = s.run(() => inject(Location));
+    const go = vi.spyOn(angularLocation, 'go');
+    const replaceState = vi.spyOn(angularLocation, 'replaceState');
+
+    await s.run(() => router.navigateByUrl('/dashboard'));
+    await s.settle();
+
+    const pushed = go.mock.calls.length;
+    const replaced = replaceState.mock.calls.length;
+
+    go.mockRestore();
+    replaceState.mockRestore();
+
+    expect(router.url).toBe('/login?returnUrl=%2Fdashboard');
+    expect(replaced).toBeGreaterThan(0);
+    expect(pushed).toBe(0);
+  });
+
+  it('answers a guard synchronously when sessionStatus() is already anonymous', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth();
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login', defaultUrl: '/dashboard' });
+
+    expect(auth.sessionStatus()).toBe('anonymous');
+
+    const decision = s.run(() => (guard.canMatch as () => unknown)());
+
+    expect(isObservable(decision)).toBe(false);
+    expect(decision).toBeInstanceOf(RedirectCommand);
+  });
+
+  it('captures the attempted URL with its query params and fragment into the return param', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth();
+    const router = s.run(() => inject(Router));
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login', defaultUrl: '/dashboard' });
+
+    router.resetConfig([
+      { path: 'login', canMatch: [guard.canMatchAnonymous], children: [] },
+      { path: 'dashboard', canMatch: [guard.canMatch], children: [] },
+    ]);
+
+    await s.run(() => router.navigateByUrl('/dashboard?tab=2#section'));
+    await s.settle();
+
+    expect(router.url).toBe('/login?returnUrl=%2Fdashboard%3Ftab%3D2%23section');
+    expect(s.run(() => guard.returnUrl())).toBe('/dashboard?tab=2#section');
+  });
+
+  it('discards an off-site returnUrl and navigates to defaultUrl instead', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth();
+    const router = s.run(() => inject(Router));
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login', defaultUrl: '/dashboard' });
+
+    router.resetConfig([
+      { path: 'login', canMatch: [guard.canMatchAnonymous], children: [] },
+      { path: 'dashboard', canMatch: [guard.canMatch], children: [] },
+    ]);
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    await s.run(() => router.navigateByUrl('/login?returnUrl=%2F%2Fevil.example'));
+    await s.settle();
+
+    expect(router.url).toBe('/dashboard');
+
+    await s.run(() => router.navigateByUrl('/login?returnUrl=https%3A%2F%2Fevil.example'));
+    await s.settle();
+
+    expect(router.url).toBe('/dashboard');
+
+    c.destroy();
+  });
+
+  it('reports the revocation query as executionState type revocation', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    s.api.on('POST', '/auth/login', () => ({
+      body: { accessToken: mintToken(), refreshToken: mintToken({ expiresInMs: 3600000 }) },
+    }));
+    s.api.on('POST', '/auth/revoke', () => ({ status: 200 }));
+
+    const { auth, destroy } = bootRevocationAuth(s);
+    const types: string[] = [];
+
+    s.run(() =>
+      effect(() => {
+        const state = auth.executionState();
+
+        if (state) types.push(state.type);
+      }),
+    );
+
+    auth.queries.login.execute({ body: {} });
+    s.tick();
+
+    auth.logout();
+    s.flush();
+
+    expect(types).toContain('revocation');
+    expect(auth.sessionStatus()).toBe('anonymous');
+
+    destroy();
+  });
+
+  it('throws when the same auth feature is passed twice', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const clientRef = createQueryClient({
+      name: `auth-features-duplicate-client-${++manualBootCounter}`,
+      baseUrl: BASE_URL,
+      keepUnusedFor: 0,
+    });
+    const post = createPostQuery(clientRef);
+    const authRef = createBearerAuthProvider({
+      name: `auth-features-duplicate-provider-${manualBootCounter}`,
+      queryClientRef: clientRef,
+      queries: [
+        withAuthenticationQuery('login', { queryCreator: post<TokenArgs>('/auth/login') }),
+        withRefreshQuery('refresh', { queryCreator: post<TokenArgs>('/auth/refresh') }),
+      ],
+      features: [withTokenExpirationWarning(), withTokenExpirationWarning()] as unknown as readonly [],
+    });
+
+    const injector = createEnvironmentInjector(
+      [...clientRef.provide(), ...authRef.provide()],
+      s.run(() => inject(EnvironmentInjector)),
+    );
+
+    expect(() => injector.runInContext(() => authRef.inject())).toThrow(/ET203/);
+
+    injector.destroy();
+  });
+
+  it('flips isExpiringSoon five minutes before expiry by default', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    // A buffer of zero keeps the proactive refresh out of the way until long after the warning.
+    const warning = withTokenExpirationWarning();
+    const auth = s.auth({ accessTokenExpiresInMs: 20 * 60 * 1000, refreshStrategy: 1, features: [warning] });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
+
+    await s.settle(14 * 60 * 1000);
+
+    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
+
+    await s.settle(61 * 1000);
+
+    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
+    expect(auth.features.tokenExpirationWarning.expiresIn()).toBeLessThanOrEqual(5 * 60 * 1000);
+
+    c.destroy();
+  });
+
+  it('logs out after the default 15 minute idle window, reset by any of the default activity events', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const inactivityLogout = withInactivityLogout<ScenarioAuthBuilders>();
+    const auth = s.auth({ features: [inactivityLogout] });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    s.tick();
+
+    expect(auth.isAuthenticated()).toBe(true);
+
+    for (const event of ['mousedown', 'keydown', 'scroll', 'touchstart']) {
+      s.tick(14 * 60 * 1000);
+
+      expect([event, auth.isAuthenticated()]).toEqual([event, true]);
+
+      document.dispatchEvent(new Event(event));
+      s.tick();
+    }
+
+    s.tick(15 * 60 * 1000 + 1);
+
+    expect(auth.sessionStatus()).toBe('anonymous');
+    expect(auth.sessionEndCause()).toBe('inactivity');
+
+    c.destroy();
+  });
+
+  it('emits tracking events for a login, a refresh and a logout, with the logout carrying its cause', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const events: string[] = [];
+    const auth = s.auth({
+      accessTokenExpiresInMs: 20000,
+      refreshStrategy: 0.5,
+      features: [
+        withTracking<ScenarioAuthBuilders>({
+          on: {
+            loginExecute: () => events.push('loginExecute'),
+            loginSuccess: () => events.push('loginSuccess'),
+            loginFailure: () => events.push('loginFailure'),
+            tokenRefreshSuccess: (data) =>
+              events.push(`tokenRefreshSuccess:${(data as unknown as { automatic: boolean }).automatic}`),
+            logout: ({ cause }) => events.push(`logout:${cause}`),
+          },
+        }),
+      ],
+    });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(events).toEqual(['loginExecute', 'loginSuccess']);
+
+    await s.settle(10001);
+    s.tick(1);
+
+    expect(events).toEqual(['loginExecute', 'loginSuccess', 'tokenRefreshSuccess:true']);
+
+    s.run(() => auth.logout('inactivity'));
+    s.tick();
+
+    expect(events).toEqual(['loginExecute', 'loginSuccess', 'tokenRefreshSuccess:true', 'logout:inactivity']);
+
+    c.destroy();
+  });
+
+  it('polls customActivityCheck once a second and postpones the logout while it returns true', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    let isActive = true;
+    let checks = 0;
+    const inactivityLogout = withInactivityLogout<ScenarioAuthBuilders>({
+      inactivityTimeout: 5000,
+      customActivityCheck: () => {
+        checks++;
+
+        return isActive;
+      },
+    });
+    const auth = s.auth({ features: [inactivityLogout] });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    s.tick();
+
+    s.tick(10000);
+
+    expect(checks).toBe(10);
+    expect(auth.isAuthenticated()).toBe(true);
+
+    isActive = false;
+    s.tick(5001);
+
+    expect(auth.sessionStatus()).toBe('anonymous');
+    expect(auth.sessionEndCause()).toBe('inactivity');
+
+    c.destroy();
   });
 });
 

@@ -1,4 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
+import { createUnsavedChangesTracker, injectUnsavedChangesCoordinator } from '@ethlete/core';
 import { createSecureGetQuery, withInactivityLogout } from '../index';
 import { describe, expect, it, vi } from 'vitest';
 import { mintToken, useScenario } from './harness';
@@ -295,6 +297,303 @@ describe('auth scenario', () => {
     // proving it was armed at all is the point; the timers invariant is what would have caught it
     // staying armed forever.
     expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+    c.destroy();
+  });
+
+  it('exposes the decoded JWT claims through bearerData(), and clears them on logout', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    s.api.once('POST', '/auth/login', () => ({
+      body: {
+        accessToken: mintToken({ expiresInMs: 900000, claims: { sub: 'user-1', role: 'admin' } }),
+        refreshToken: mintToken({ expiresInMs: 3600000 }),
+      },
+    }));
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(auth.bearerData()).toMatchObject({ sub: 'user-1', role: 'admin' });
+
+    s.run(() => auth.logout());
+    s.tick();
+
+    expect(auth.bearerData()).toBeNull();
+
+    c.destroy();
+  });
+
+  it('decodes the access token with a custom bearerDecryptFn', async () => {
+    const s = scenario();
+    const auth = s.auth({ bearerDecryptFn: (token: string) => ({ decodedBy: 'custom', length: token.length }) });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(auth.bearerData()).toEqual({ decodedBy: 'custom', length: auth.accessToken()?.length });
+
+    c.destroy();
+  });
+
+  it('isAccessTokenExpired() flips with the clock without any token change', () => {
+    const s = scenario();
+    // A buffer of zero puts the proactive refresh at the expiry itself, and its response never lands -
+    // so the only thing that changes between the two reads is the clock.
+    const auth = s.auth({ accessTokenExpiresInMs: 20000, refreshStrategy: 1 });
+
+    s.api.once('POST', '/auth/refresh', () => ({
+      body: { accessToken: mintToken({ expiresInMs: 900000 }), refreshToken: mintToken({ expiresInMs: 3600000 }) },
+      delay: 100000,
+    }));
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    s.tick();
+
+    const tokenAtLogin = auth.accessToken();
+
+    expect(auth.isAccessTokenExpired()).toBe(false);
+
+    s.tick(19000);
+
+    expect(auth.isAccessTokenExpired()).toBe(false);
+
+    s.tick(1001);
+
+    expect(auth.isAccessTokenExpired()).toBe(true);
+    expect(auth.accessToken()).toBe(tokenAtLogin);
+
+    s.tick(100000);
+    s.tick();
+
+    c.destroy();
+  });
+
+  it('records the cause an explicit logout(cause) passes', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    s.run(() => auth.logout('expired'));
+    s.tick();
+
+    expect(auth.sessionEndCause()).toBe('expired');
+    expect(auth.sessionStatus()).toBe('anonymous');
+    expect(auth.executionState()).toEqual({ type: 'logout', state: 'success' });
+
+    c.destroy();
+  });
+
+  it('clears sessionEndCause() once a new session starts', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(auth.sessionEndCause()).toBeNull();
+
+    s.run(() => auth.logout());
+    s.tick();
+
+    expect(auth.sessionEndCause()).toBe('user');
+
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(auth.sessionEndCause()).toBeNull();
+    expect(auth.sessionStatus()).toBe('authenticated');
+
+    c.destroy();
+  });
+
+  it('logout abandons every unsaved-changes guard, and guards created after a re-login work again', async () => {
+    const s = scenario();
+    const auth = s.auth();
+    const coordinator = s.run(() => injectUnsavedChangesCoordinator());
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    const draft = signal('edited');
+    c.run(() => createUnsavedChangesTracker({ source: draft, defaultValue: '', confirm: () => true, tab: false }));
+    s.tick();
+
+    expect(coordinator.hasUnsavedChanges()).toBe(true);
+
+    s.run(() => auth.logout());
+    s.tick();
+
+    expect(coordinator.hasUnsavedChanges()).toBe(false);
+
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    const nextDraft = signal('edited again');
+    c.run(() => createUnsavedChangesTracker({ source: nextDraft, defaultValue: '', confirm: () => true, tab: false }));
+    s.tick();
+
+    expect(coordinator.hasUnsavedChanges()).toBe(true);
+
+    c.destroy();
+  });
+
+  it('reports setTokens as a token seed that starts a session', () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    const accessToken = mintToken({ expiresInMs: 900000, claims: { sub: 'seeded' } });
+    const refreshToken = mintToken({ expiresInMs: 3600000 });
+
+    s.run(() => auth.setTokens(accessToken, refreshToken));
+    s.tick();
+
+    expect(auth.executionState()).toEqual({ type: 'tokenSeed', state: 'success' });
+    expect(auth.isAuthenticated()).toBe(true);
+    expect(auth.sessionStatus()).toBe('authenticated');
+    expect(auth.accessToken()).toBe(accessToken);
+    expect(auth.bearerData()).toMatchObject({ sub: 'seeded' });
+  });
+
+  it('a background token refresh overwrites the login executionState() but not the login snapshot', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    const c = s.consumer();
+    const attempt = c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(auth.executionState()).toMatchObject({ type: 'login', state: 'success' });
+    expect(auth.queries.login.snapshot()).toBe(attempt);
+    expect(attempt.loading()).toBeNull();
+    expect(attempt.error()).toBeNull();
+
+    s.run(() => auth.queries.refresh.execute({ body: { token: auth.refreshToken()! } }));
+    await s.settle();
+
+    expect(auth.executionState()).toMatchObject({ type: 'tokenRefresh', state: 'success' });
+    expect(auth.queries.login.snapshot()).toBe(attempt);
+    expect(attempt.loading()).toBeNull();
+    expect(attempt.error()).toBeNull();
+
+    c.destroy();
+  });
+
+  it('the most recently started token-issuing execution wins, and the earlier pair is dropped when it lands late', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: { attempt: 1 } }));
+    await s.settle();
+
+    const loginPair = {
+      accessToken: mintToken({ expiresInMs: 900000, claims: { sub: 'logged-in' } }),
+      refreshToken: mintToken({ expiresInMs: 3600000, claims: { sub: 'logged-in' } }),
+    };
+    const refreshPair = {
+      accessToken: mintToken({ expiresInMs: 900000, claims: { sub: 'refreshed' } }),
+      refreshToken: mintToken({ expiresInMs: 3600000, claims: { sub: 'refreshed' } }),
+    };
+
+    s.api.once('POST', '/auth/login', () => ({ body: loginPair, delay: 2000 }));
+    s.api.once('POST', '/auth/refresh', () => ({ body: refreshPair, delay: 100 }));
+
+    s.run(() => auth.queries.login.execute({ body: { attempt: 2 } }));
+    s.tick();
+    s.run(() => auth.queries.refresh.execute({ body: { token: auth.refreshToken()! } }));
+    s.tick(101);
+
+    expect(auth.accessToken()).toBe(refreshPair.accessToken);
+
+    s.tick(2000);
+    s.tick();
+
+    expect(s.api.requests.filter((r) => r.path === '/auth/login').map((r) => r.status)).toEqual([200, 200]);
+    expect(auth.accessToken()).toBe(refreshPair.accessToken);
+    expect(auth.refreshToken()).toBe(refreshPair.refreshToken);
+    expect(auth.executionState()).toMatchObject({ type: 'tokenRefresh', state: 'success' });
+
+    c.destroy();
+  });
+
+  it('a login supersedes an in-flight token refresh, whose late pair is dropped entirely', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    const refreshPair = {
+      accessToken: mintToken({ expiresInMs: 900000, claims: { sub: 'refreshed' } }),
+      refreshToken: mintToken({ expiresInMs: 3600000, claims: { sub: 'refreshed' } }),
+    };
+    const loginPair = {
+      accessToken: mintToken({ expiresInMs: 900000, claims: { sub: 'logged-in' } }),
+      refreshToken: mintToken({ expiresInMs: 3600000, claims: { sub: 'logged-in' } }),
+    };
+
+    s.api.once('POST', '/auth/refresh', () => ({ body: refreshPair, delay: 2000 }));
+    s.api.once('POST', '/auth/login', () => ({ body: loginPair, delay: 100 }));
+
+    s.run(() => auth.queries.refresh.execute({ body: { token: auth.refreshToken()! } }));
+    s.tick();
+    s.run(() => auth.queries.login.execute({ body: { attempt: 2 } }));
+    s.tick(101);
+
+    expect(auth.accessToken()).toBe(loginPair.accessToken);
+    expect(auth.executionState()).toMatchObject({ type: 'login', state: 'success' });
+
+    s.tick(2000);
+    s.tick();
+
+    expect(auth.accessToken()).toBe(loginPair.accessToken);
+    expect(auth.refreshToken()).toBe(loginPair.refreshToken);
+    expect(auth.executionState()).toMatchObject({ type: 'login', state: 'success' });
+
+    c.destroy();
+  });
+
+  it('holds a proactive refresh while a login is in flight, but runs an explicit one', async () => {
+    const s = scenario();
+    const auth = s.auth({ accessTokenExpiresInMs: 20000, refreshStrategy: 0.5 });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: { attempt: 1 } }));
+    await s.settle();
+
+    s.api.once('POST', '/auth/login', () => ({
+      body: { accessToken: mintToken({ expiresInMs: 900000 }), refreshToken: mintToken({ expiresInMs: 3600000 }) },
+      delay: 30000,
+    }));
+
+    s.run(() => auth.queries.login.execute({ body: { attempt: 2 } }));
+    s.tick();
+
+    // Past the proactive refresh of the first token, which is due at half its 20s lifetime.
+    s.tick(12000);
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+
+    s.run(() => auth.queries.refresh.execute({ body: { token: auth.refreshToken()! } }));
+    s.tick();
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+
+    s.tick(30000);
+    await s.settle();
+    s.flush();
 
     c.destroy();
   });

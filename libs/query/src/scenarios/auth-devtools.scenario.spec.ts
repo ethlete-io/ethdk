@@ -423,6 +423,46 @@ const flows: Flow[] = [
       });
     },
   },
+  {
+    title: 'a token seed starts a session and the secure query parked before it runs',
+    run: async (s) => {
+      serve(s);
+      const tab = boot(s);
+
+      const c = tab.consumer();
+      const secure = c.run(() => tab.getSecure<Profile>('/secure/me')());
+      await s.settle();
+
+      const requestsBeforeSeed = s.api.requests.length;
+
+      tab.auth.setTokens(
+        mintToken({ expiresInMs: 15 * 60 * 1000, claims: { sub: 'seeded' } }),
+        mintToken({ expiresInMs: 60 * 60 * 1000, claims: { sub: 'seeded' } }),
+      );
+      await s.settle();
+      s.flush();
+      await s.settle();
+
+      const trace = traceOf(s, tab.auth, {
+        requestsBeforeSeed,
+        secure: secure.response(),
+        executionState: stateOf(tab.auth),
+      });
+
+      tab.destroy();
+
+      return trace;
+    },
+    assert: (trace) => {
+      expect(trace.requests).toEqual([{ method: 'GET', path: '/secure/me', auth: 'token-1', status: 200 }]);
+      expect(trace.session.status).toBe('authenticated');
+      expect(trace.extra).toEqual({
+        requestsBeforeSeed: 0,
+        secure: { id: 'seeded' },
+        executionState: { type: 'tokenSeed', state: 'success' },
+      });
+    },
+  },
 ];
 
 const recorded = new Map<string, Trace>();

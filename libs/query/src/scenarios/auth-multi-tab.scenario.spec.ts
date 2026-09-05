@@ -9,15 +9,17 @@ import {
 } from '@ethlete/query/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  BearerAuthMultiTabSyncConfig,
   createBearerAuthProvider,
   createPostQuery,
   createQueryClient,
   createSecureGetQuery,
   withAuthenticationQuery,
   withBearerAuthMultiTabSync,
+  withPersistentAuth,
   withRefreshQuery,
 } from '../index';
-import { mintToken, Scenario, useScenario } from './harness';
+import { mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';
 const PROVIDER_NAME = 'auth-multi-tab-scenario';
@@ -29,11 +31,13 @@ let tabCounter = 0;
 
 const is401 = (entry: { error: unknown }) => entry.error instanceof HttpErrorResponse && entry.error.status === 401;
 
+type TabOptions = { name?: string; syncConfig?: BearerAuthMultiTabSyncConfig };
+
 /** One browser tab: its own query client and auth provider, sharing the fake API and the sync channel. */
-const createAuthTab = (s: Scenario) => {
+const createAuthTab = (s: Scenario, options: TabOptions = {}) => {
   const clientRef = createQueryClient({ name: `auth-tab-client-${++tabCounter}`, baseUrl: BASE_URL, keepUnusedFor: 0 });
   const authRef = createBearerAuthProvider({
-    name: PROVIDER_NAME,
+    name: options.name ?? PROVIDER_NAME,
     queryClientRef: clientRef,
     queries: [
       withAuthenticationQuery('login', { queryCreator: createPostQuery(clientRef)<TokenArgs>('/auth/login') }),
@@ -43,7 +47,7 @@ const createAuthTab = (s: Scenario) => {
         autoRetryOn401: true,
       }),
     ],
-    features: [withBearerAuthMultiTabSync()],
+    features: [withBearerAuthMultiTabSync(options.syncConfig)],
   });
 
   const injector = createEnvironmentInjector(
@@ -69,6 +73,58 @@ const createAuthTab = (s: Scenario) => {
       injector.destroy();
     },
   };
+};
+
+/** A tab that ships no multi-tab sync at all - the single-tab, kiosk or webview setup. */
+const createLoneTab = (s: Scenario) => {
+  const clientRef = createQueryClient({ name: `auth-tab-client-${++tabCounter}`, baseUrl: BASE_URL, keepUnusedFor: 0 });
+  const authRef = createBearerAuthProvider({
+    name: PROVIDER_NAME,
+    queries: [
+      withAuthenticationQuery('login', { queryCreator: createPostQuery(clientRef)<TokenArgs>('/auth/login') }),
+      withRefreshQuery('refresh', { queryCreator: createPostQuery(clientRef)<TokenArgs>('/auth/refresh') }),
+    ],
+    queryClientRef: clientRef,
+  });
+
+  const injector = createEnvironmentInjector(
+    [...clientRef.provide(), ...authRef.provide()],
+    s.run(() => inject(EnvironmentInjector)),
+  );
+  const auth = injector.runInContext(() => authRef.inject());
+
+  if (!auth) throw new Error('auth multi-tab scenario: failed to create the lone tab auth provider');
+
+  return { auth, destroy: () => injector.destroy() };
+};
+
+/** A tab that syncs and also restores its session from the remember-me cookie. */
+const createPersistentTab = (s: Scenario) => {
+  const clientRef = createQueryClient({ name: `auth-tab-client-${++tabCounter}`, baseUrl: BASE_URL, keepUnusedFor: 0 });
+  const authRef = createBearerAuthProvider({
+    name: PROVIDER_NAME,
+    queryClientRef: clientRef,
+    queries: [
+      withAuthenticationQuery('login', { queryCreator: createPostQuery(clientRef)<TokenArgs>('/auth/login') }),
+      withRefreshQuery('refresh', { queryCreator: createPostQuery(clientRef)<TokenArgs>('/auth/refresh') }),
+    ],
+    features: [
+      withBearerAuthMultiTabSync(),
+      withPersistentAuth<ScenarioAuthBuilders>({
+        autoLogin: { queryKey: 'refresh', buildArgs: (token: string) => ({ body: { token } }) },
+      }),
+    ] as unknown as readonly [],
+  });
+
+  const injector = createEnvironmentInjector(
+    [...clientRef.provide(), ...authRef.provide()],
+    s.run(() => inject(EnvironmentInjector)),
+  );
+  const auth = injector.runInContext(() => authRef.inject());
+
+  if (!auth) throw new Error('auth multi-tab scenario: failed to create the persistent tab auth provider');
+
+  return { auth, destroy: () => injector.destroy() };
 };
 
 const issueTokens = (accessTokenExpiresInMs: number) => () => ({
@@ -272,5 +328,305 @@ describe('auth multi-tab scenario', () => {
 
     expect(locks.heldNames()).toEqual([]);
     expect(locks.pendingNames()).toEqual([]);
+  });
+
+  it('keeps two providers with different names on separate channels and separate sessions', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s, { name: `${PROVIDER_NAME}-a` });
+    const b = createAuthTab(s, { name: `${PROVIDER_NAME}-b` });
+    await sync(s);
+    s.tick(251);
+    await sync(s);
+
+    expect(locks.heldNames().sort()).toEqual([
+      `ethlete-auth:leader:${PROVIDER_NAME}-a`,
+      `ethlete-auth:leader:${PROVIDER_NAME}-b`,
+    ]);
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(true);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(a.auth.isAuthenticated()).toBe(true);
+    expect(b.auth.isAuthenticated()).toBe(false);
+    expect(b.auth.sessionStatus()).toBe('anonymous');
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('syncs tokens but not logout with syncLogout: false', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s, { syncConfig: { syncLogout: false } });
+    const b = createAuthTab(s, { syncConfig: { syncLogout: false } });
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+
+    a.auth.logout();
+    await sync(s);
+
+    expect(a.auth.sessionStatus()).toBe('anonymous');
+    expect(b.auth.sessionStatus()).toBe('authenticated');
+    expect(b.auth.sessionEndCause()).toBeNull();
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('recounts instanceCount when a tab joins and when it says goodbye', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s);
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.instanceCount()).toBe(1);
+
+    const b = createAuthTab(s);
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.instanceCount()).toBe(2);
+    expect(b.auth.features.multiTabSync.instanceCount()).toBe(2);
+
+    b.destroy();
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.instanceCount()).toBe(1);
+
+    a.destroy();
+  });
+
+  it('re-asks for the session on resume and on a pageshow out of the back/forward cache', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.isAuthenticated()).toBe(true);
+
+    const stateRequests = () =>
+      bus.posted.filter(
+        (m) =>
+          m.channel === `ethlete-auth-sync:${PROVIDER_NAME}` && (m.data as { type?: string })?.type === 'state-request',
+      ).length;
+
+    const before = stateRequests();
+
+    document.dispatchEvent(new Event('resume'));
+    await sync(s);
+
+    expect(stateRequests()).toBe(before + 2);
+
+    const restored = new Event('pageshow');
+    Object.defineProperty(restored, 'persisted', { value: true });
+    window.dispatchEvent(restored);
+    await sync(s);
+
+    expect(stateRequests()).toBe(before + 4);
+
+    window.dispatchEvent(new Event('pageshow'));
+    await sync(s);
+
+    expect(stateRequests()).toBe(before + 4);
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('holds the cookie auto-login while the leader answers with the session it holds', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+
+    const a = createPersistentTab(s);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(document.cookie).toContain('etAuth=');
+
+    const requestsBeforeJoin = s.api.requests.length;
+    const b = createPersistentTab(s);
+
+    expect(b.auth.sessionStatus()).toBe('unknown');
+
+    await sync(s);
+
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+    expect(b.auth.sessionStatus()).toBe('authenticated');
+    expect(s.api.requests.slice(requestsBeforeJoin)).toEqual([]);
+
+    a.destroy();
+    b.destroy();
+    document.cookie = 'etAuth=; max-age=0; path=/';
+  });
+
+  it('settles a cross-tab login and logout in one round of broadcasts, with no echo', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    const c = createAuthTab(s);
+    await sync(s);
+    s.tick(251);
+    await sync(s);
+
+    const messagesOfType = (type: string) =>
+      bus.posted.filter(
+        (m) => m.channel === `ethlete-auth-sync:${PROVIDER_NAME}` && (m.data as { type?: string })?.type === type,
+      ).length;
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(messagesOfType('tokens-updated')).toBe(1);
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+    expect(c.auth.accessToken()).toBe(a.auth.accessToken());
+
+    a.auth.logout();
+    await sync(s);
+
+    expect(messagesOfType('logout')).toBe(1);
+    expect(b.auth.sessionStatus()).toBe('anonymous');
+    expect(c.auth.sessionStatus()).toBe('anonymous');
+
+    a.destroy();
+    b.destroy();
+    c.destroy();
+  });
+
+  it('opens no auth sync channel and requests no leader lock without withBearerAuthMultiTabSync', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const tab = createLoneTab(s);
+    await sync(s);
+
+    tab.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(tab.auth.isAuthenticated()).toBe(true);
+    expect(locks.heldNames()).toEqual([]);
+    expect(locks.pendingNames()).toEqual([]);
+    expect(bus.posted).toEqual([]);
+
+    tab.destroy();
+  });
+
+  it('writes the remember-me cookie for a pair adopted from another tab, and deletes it on a cross-tab logout', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    document.cookie = 'etAuth=; max-age=0; path=/';
+
+    const a = createAuthTab(s);
+    const b = createPersistentTab(s);
+    await sync(s);
+    s.tick(251);
+    await sync(s);
+
+    expect(document.cookie).not.toContain('etAuth=');
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+    expect(document.cookie).toContain('etAuth=');
+
+    a.auth.logout();
+    await sync(s);
+
+    expect(b.auth.sessionEndCause()).toBe('otherTab');
+    expect(document.cookie).not.toContain('etAuth=');
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('does not end a session adopted from another tab when the auto-login it raced comes back rejected', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+
+    document.cookie = 'etAuth=; max-age=0; path=/';
+
+    const seed = createPersistentTab(s);
+    await sync(s);
+    seed.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(document.cookie).toContain('etAuth=');
+
+    seed.destroy();
+    await sync(s);
+
+    s.api.once('POST', '/auth/refresh', () => ({ status: 401, body: { message: 'expired' }, delay: 2000 }));
+
+    const b = createPersistentTab(s);
+    await sync(s);
+    s.tick(251);
+    await sync(s);
+
+    expect(b.auth.sessionStatus()).toBe('restoring');
+
+    const a = createAuthTab(s);
+    await sync(s);
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+
+    s.tick(2000);
+    await sync(s);
+
+    expect(b.auth.sessionStatus()).toBe('authenticated');
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+    expect(b.auth.sessionEndCause()).toBeNull();
+
+    s.expectError(is401);
+    a.destroy();
+    b.destroy();
+    document.cookie = 'etAuth=; max-age=0; path=/';
+  });
+
+  it('broadcasts a seeded token pair to the other tabs', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    await sync(s);
+    s.tick(251);
+    await sync(s);
+
+    const accessToken = mintToken({ expiresInMs: 15 * 60 * 1000 });
+    const refreshToken = mintToken({ expiresInMs: 60 * 60 * 1000 });
+
+    a.auth.setTokens(accessToken, refreshToken);
+    await sync(s);
+
+    expect(a.auth.executionState()).toEqual({ type: 'tokenSeed', state: 'success' });
+    expect(b.auth.accessToken()).toBe(accessToken);
+    expect(b.auth.refreshToken()).toBe(refreshToken);
+    expect(b.auth.sessionStatus()).toBe('authenticated');
+
+    a.destroy();
+    b.destroy();
   });
 });
