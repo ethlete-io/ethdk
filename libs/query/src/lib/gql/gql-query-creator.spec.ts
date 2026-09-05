@@ -2,7 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { createQueryClient } from '../http';
-import { createGqlQueryCreator } from './gql-query-creator';
+import { CreateGqlQueryCreatorOptions, createGqlQueryCreator } from './gql-query-creator';
+import { GqlQueryArgs } from './gql-query';
 import { gql } from './gql-transformer';
 
 describe('createGqlQueryCreator', () => {
@@ -203,6 +204,41 @@ describe('createGqlQueryCreator', () => {
         client: client,
         query,
       });
+
+      expect(creator).toBeTruthy();
+    });
+  });
+
+  describe('rawResponse envelope typing', () => {
+    type User = { id: number; name: string };
+
+    const query = gql`
+      query GetUser {
+        user {
+          id
+          name
+        }
+      }
+    `;
+
+    it('should type transformResponse against { data: TResponse } when rawResponse is not declared', () => {
+      expectTypeOf<NonNullable<CreateGqlQueryCreatorOptions<{ response: User }>['transformResponse']>>()
+        .parameter(0)
+        .toEqualTypeOf<{ data: User }>();
+    });
+
+    it('should allow declaring an envelope other than { data }', () => {
+      type Args = { response: User; rawResponse: { payload: User } };
+
+      expectTypeOf<Args>().toExtend<GqlQueryArgs>();
+      expectTypeOf<NonNullable<CreateGqlQueryCreatorOptions<Args>['transformResponse']>>()
+        .parameter(0)
+        .toEqualTypeOf<{ payload: User }>();
+
+      const creator = createGqlQueryCreator<Args>(
+        { transformResponse: (raw) => raw.payload },
+        { method: 'QUERY', transport: 'POST', client, query },
+      );
 
       expect(creator).toBeTruthy();
     });

@@ -4,7 +4,7 @@ import { createGqlExecuteFn } from './gql-query-execute';
 
 export type GqlQueryArgs<TResponse = unknown> = QueryArgs & {
   response: TResponse;
-  rawResponse?: { data: TResponse };
+  rawResponse?: unknown;
   variables?: Record<string, unknown>;
 };
 

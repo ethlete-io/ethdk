@@ -4,9 +4,20 @@ import {
   CreateQueryCreatorOptions,
   gqlDataPropertyMissingInResponse,
   QueryCreator,
+  RawResponseType,
+  ResponseType,
   RouteType,
 } from '../http';
 import { createGqlQuery, GqlQueryArgs } from './gql-query';
+
+/**
+ * The envelope a GraphQL endpoint puts on the wire: whatever the args declare as `rawResponse`, or
+ * `{ data: TResponse }` - the GraphQL-over-HTTP envelope the default unwrapping reads - when they
+ * declare none.
+ */
+export type GqlRawResponseType<TArgs extends GqlQueryArgs> = 'rawResponse' extends keyof TArgs
+  ? RawResponseType<TArgs>
+  : { data: ResponseType<TArgs> };
 
 export type CreateGqlQueryCreatorOptions<TArgs extends GqlQueryArgs> = Omit<
   CreateQueryCreatorOptions<TArgs>,
@@ -15,10 +26,11 @@ export type CreateGqlQueryCreatorOptions<TArgs extends GqlQueryArgs> = Omit<
   route?: RouteType<TArgs>;
 
   /**
-   * Optional custom transform function for GQL responses.
-   * If not provided, the default { data: ... } unwrapping will be used.
+   * Transforms the raw GraphQL response into the final response type. Optional: without one, the
+   * `{ data: ... }` envelope is unwrapped - which is all the default does, so args declaring an
+   * envelope the default cannot read need one.
    */
-  transformResponse?: CreateQueryCreatorOptions<TArgs>['transformResponse'];
+  transformResponse?: (rawResponse: GqlRawResponseType<TArgs>) => ResponseType<TArgs>;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,7 +63,7 @@ export const createGqlQueryCreator = <TArgs extends GqlQueryArgs>(
 
           throw gqlDataPropertyMissingInResponse();
         }),
-    } as CreateQueryCreatorOptions<TArgs>,
+    } as CreateGqlQueryCreatorOptions<TArgs>,
     internals,
     queryFactory: createGqlQuery,
   });

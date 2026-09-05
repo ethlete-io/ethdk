@@ -744,11 +744,10 @@ describe('gql scenario', () => {
       const s = scenario();
       s.api.on('POST', '/', () => ({ body: { payload: { user: { id: '3', name: 'Grace' } } } }));
 
-      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: UserResponse }>(getUserDoc, {
-        // `GqlQueryArgs` pins `rawResponse` to `{ data: TResponse }`, so the envelope of this endpoint
-        // cannot be declared the way apps/docs/query/gql.md:66 describes. The cast stands in for it.
-        transformResponse: (raw) => (raw as unknown as { payload: UserResponse }).payload,
-      });
+      const getUser = createGqlQueryViaPost(s.clientRef)<{
+        response: UserResponse;
+        rawResponse: { payload: UserResponse };
+      }>(getUserDoc, { transformResponse: (raw) => raw.payload });
 
       const c = s.consumer();
       const query = c.run(() => getUser());

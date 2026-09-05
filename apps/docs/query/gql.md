@@ -58,17 +58,30 @@ The `Secure…` variants take `(client, authProviderRef)` and behave like [secur
 
 GQL args extend the core `QueryArgs` with a `variables` bag:
 
-| Field         | Description                                                                                                                   |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `response`    | The unwrapped data type - what `query.response()` returns.                                                                    |
-| `variables`   | GraphQL variables, passed via `withArgs` / `execute` - a JSON string query param via GET, a JSON object in the body via POST. |
-| `rawResponse` | Defaults to `{ data: TResponse }`; declare it only when your endpoint returns something else.                                 |
+| Field         | Description                                                                                                                                                 |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `response`    | The unwrapped data type - what `query.response()` returns.                                                                                                  |
+| `variables`   | GraphQL variables, passed via `withArgs` / `execute` - a JSON string query param via GET, a JSON object in the body via POST.                               |
+| `rawResponse` | The envelope on the wire - what `transformResponse` receives. Defaults to `{ data: TResponse }`; declare it only when your endpoint returns something else. |
 
 **Response unwrapping:** by default the `{ data }` envelope is stripped automatically. A `200` without a `data` property (a GraphQL errors payload) is a `failure`: `error()` carries the `ET600` error with code `0`, in every build - see [a `transformResponse` that throws](/query/errors#a-transformresponse-that-throws). Supplying your own `transformResponse` replaces this default:
 
 ```ts
 const getUserName = gqlQueryPost<GetUserNameQueryArgs>(gqlDocument, {
   transformResponse: (raw) => raw.data.user.name,
+});
+```
+
+An endpoint behind a gateway that wraps the envelope differently declares it as `rawResponse` - the default unwrapping only reads `data`, so such a query needs its own `transformResponse`:
+
+```ts
+type GetUserQueryArgs = {
+  response: { user: { id: string; name: string } };
+  rawResponse: { payload: { user: { id: string; name: string } } };
+};
+
+const getUser = gqlQueryPost<GetUserQueryArgs>(gqlDocument, {
+  transformResponse: (raw) => raw.payload,
 });
 ```
 
