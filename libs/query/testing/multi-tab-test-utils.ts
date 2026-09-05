@@ -116,6 +116,7 @@ type FakeLockWaiter = {
   resolve: (value: unknown) => void;
   reject: (reason: unknown) => void;
   granted: boolean;
+  releaseSignal: () => void;
 };
 
 /**
@@ -152,6 +153,7 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
       // of the tab it was taken from settles afterwards.
       if (holders.get(name) === waiter) holders.delete(name);
 
+      waiter.releaseSignal();
       settleWaiter();
       pump(name);
     };
@@ -182,21 +184,32 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
         return;
       }
 
-      const waiter: FakeLockWaiter = { callback, resolve, reject, granted: false };
+      const waiter: FakeLockWaiter = { callback, resolve, reject, granted: false, releaseSignal: () => undefined };
+      const signal = options.signal;
 
-      options.signal?.addEventListener('abort', () => {
-        if (waiter.granted) return;
+      if (signal) {
+        const onAbort = () => {
+          waiter.releaseSignal();
 
-        const queue = queues.get(name);
+          if (waiter.granted) return;
 
-        if (queue)
-          queues.set(
-            name,
-            queue.filter((entry) => entry !== waiter),
-          );
+          const queue = queues.get(name);
 
-        reject(abortError());
-      });
+          if (queue)
+            queues.set(
+              name,
+              queue.filter((entry) => entry !== waiter),
+            );
+
+          reject(abortError());
+        };
+
+        signal.addEventListener('abort', onAbort);
+        waiter.releaseSignal = () => {
+          waiter.releaseSignal = () => undefined;
+          signal.removeEventListener('abort', onAbort);
+        };
+      }
 
       if (options.steal) {
         queueMicrotask(() => {
@@ -219,6 +232,7 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
       if (options.ifAvailable) {
         queueMicrotask(() => {
           if (holders.has(name) || (queues.get(name)?.length ?? 0) > 0) {
+            waiter.releaseSignal();
             Promise.resolve(callback(null)).then(resolve, reject);
 
             return;
@@ -259,6 +273,8 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
     heldNames: () => [...holders.keys()],
     pendingNames: () => [...queues.entries()].filter(([, queue]) => queue.length > 0).map(([name]) => name),
     restore: () => {
+      for (const waiter of [...holders.values(), ...[...queues.values()].flat()]) waiter.releaseSignal();
+
       holders.clear();
       queues.clear();
 

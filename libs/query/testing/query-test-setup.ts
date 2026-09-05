@@ -26,6 +26,12 @@ export type QueryTestSetup = {
   createPut: ReturnType<typeof createPutQuery>;
   createPatch: ReturnType<typeof createPatchQuery>;
   createDelete: ReturnType<typeof createDeleteQuery>;
+
+  /**
+   * Puts back the `console.warn` / `console.error` that were installed before the first
+   * {@link setupQueryTest} call. Idempotent, and safe to call from any of the setups a file created.
+   */
+  restoreConsole: () => void;
 };
 
 export type QueryTestSetupConfig = {
@@ -34,39 +40,61 @@ export type QueryTestSetupConfig = {
   mockErrorHandler?: boolean;
 };
 
+let originalWarn: typeof console.warn | null = null;
+let originalError: typeof console.error | null = null;
+
+const filteredWarn = (...args: unknown[]) => {
+  const message = args[0];
+
+  if (typeof message === 'string' && message.includes('auto-refresh')) {
+    return;
+  }
+
+  originalWarn?.(...args);
+};
+
+const filteredError = (...args: unknown[]) => {
+  const message = args[0];
+
+  if (message && typeof message === 'object' && 'name' in message && message.name === 'HttpErrorResponse') {
+    return;
+  }
+
+  if (typeof message === 'string' && message.includes('Failed to decrypt bearer token')) {
+    return;
+  }
+
+  if (typeof message === 'string' && message.includes('Failed to extract tokens from')) {
+    return;
+  }
+
+  originalError?.(...args);
+};
+
+// Capture only what is not already the wrapper, so repeated calls reinstall the one filter instead
+// of nesting a new closure over the previous one and stranding the pristine handlers.
+const installConsoleFilters = () => {
+  if (console.warn !== filteredWarn) originalWarn = console.warn;
+  if (console.error !== filteredError) originalError = console.error;
+
+  console.warn = filteredWarn;
+  console.error = filteredError;
+};
+
+const restoreConsole = () => {
+  if (originalWarn && console.warn === filteredWarn) console.warn = originalWarn;
+  if (originalError && console.error === filteredError) console.error = originalError;
+
+  originalWarn = null;
+  originalError = null;
+};
+
 export const setupQueryTest = (config?: QueryTestSetupConfig): QueryTestSetup => {
   const baseUrl = config?.baseUrl ?? 'https://api.test.com';
   const name = config?.name ?? 'test';
   const mockErrorHandler = config?.mockErrorHandler !== false;
 
-  // Suppress console.warn for auth-related warnings during tests
-  const originalWarn = console.warn;
-  console.warn = (...args: unknown[]) => {
-    const message = args[0];
-    if (typeof message === 'string' && message.includes('auto-refresh')) {
-      return; // Suppress auto-refresh warnings
-    }
-    originalWarn(...args);
-  };
-
-  // Suppress console.error for expected error scenarios during tests
-  const originalError = console.error;
-  console.error = (...args: unknown[]) => {
-    const message = args[0];
-    // Suppress HttpErrorResponse logs
-    if (message && typeof message === 'object' && 'name' in message && message.name === 'HttpErrorResponse') {
-      return;
-    }
-    // Suppress bearer token decryption errors
-    if (typeof message === 'string' && message.includes('Failed to decrypt bearer token')) {
-      return;
-    }
-    // Suppress token extraction errors
-    if (typeof message === 'string' && message.includes('Failed to extract tokens from')) {
-      return;
-    }
-    originalError(...args);
-  };
+  installConsoleFilters();
 
   const providers: (EnvironmentProviders | object)[] = [
     provideHttpClient(),
@@ -85,7 +113,7 @@ export const setupQueryTest = (config?: QueryTestSetupConfig): QueryTestSetup =>
 
   const queryClientRef = createQueryClient({ baseUrl, name });
 
-  const setup = TestBed.runInInjectionContext(() => {
+  return TestBed.runInInjectionContext(() => {
     const { inject } = queryClientRef;
     const queryClient = inject();
 
@@ -105,17 +133,7 @@ export const setupQueryTest = (config?: QueryTestSetupConfig): QueryTestSetup =>
       createPut: createPutQuery(queryClientRef),
       createPatch: createPatchQuery(queryClientRef),
       createDelete: createDeleteQuery(queryClientRef),
+      restoreConsole,
     };
   });
-
-  // Restore console.warn and console.error when tests are done
-  const restoreConsole = () => {
-    console.warn = originalWarn;
-    console.error = originalError;
-  };
-
-  // Store the restore function for cleanup
-  (setup as typeof setup & { _restoreConsole: () => void })._restoreConsole = restoreConsole;
-
-  return setup;
 };

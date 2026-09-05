@@ -8,6 +8,9 @@ export type WebSocketTestDouble = {
   /** The url and options the client called the factory with, or `null` until it did. */
   connection: () => { url: string; transports: string[] | undefined } | null;
 
+  /** The `withCredentials` the client asked the factory for, or `null` until it called it. */
+  withCredentials: () => boolean | null;
+
   /** Every message the client sent, newest last - room joins and leaves included. */
   sent: () => { event: string; data: unknown }[];
 
@@ -42,6 +45,7 @@ export const createWebSocketTestDouble = (): WebSocketTestDouble => {
   const anyListeners: ((eventName: string, ...args: unknown[]) => void)[] = [];
 
   let connection: { url: string; transports: string[] | undefined } | null = null;
+  let withCredentials: boolean | null = null;
   let connectRequested = false;
   let disconnected = false;
 
@@ -56,9 +60,11 @@ export const createWebSocketTestDouble = (): WebSocketTestDouble => {
   return {
     io: (url, options) => {
       connection = { url, transports: options.transports };
+      withCredentials = options.withCredentials;
       return socket;
     },
     connection: () => connection,
+    withCredentials: () => withCredentials,
     sent: () => [...sent],
     state: () => ({ connectRequested, disconnected }),
     serverConnect: () => listeners.get('connect')?.(),
