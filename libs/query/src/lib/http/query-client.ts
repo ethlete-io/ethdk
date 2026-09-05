@@ -4,6 +4,7 @@ import { DestroyRef, ErrorHandler, inject, Injector, PLATFORM_ID } from '@angula
 import { defineRootProvider, ProviderDefinition } from '@ethlete/core';
 import { describeQueryDevtoolsFeatures, QueryDevtoolsFeature } from '../devtools/query-devtools-features';
 import { isQueryDevtoolsEnabled } from '../devtools/query-devtools-hook';
+import { registerLiveQueryDevtoolsRepository } from '../devtools/query-devtools-live-clients';
 import { BuildQueryStringConfig } from './internal/request-route';
 import { createQueryInvalidationFilter, QueryInvalidationOptions, resolveInvalidationUrl } from './query-invalidation';
 import { QueryPersistenceEngine } from './persistence/query-persistence-engine';
@@ -252,6 +253,11 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
       });
 
       const destroyRef = inject(DestroyRef);
+
+      // Only the client knows when its own injector dies. Without this the panel cannot tell a
+      // destroyed client from a live one whose queries all happen to be destroyed, because a
+      // tombstone keeps its `meta.repository`.
+      if (isQueryDevtoolsEnabled()) destroyRef.onDestroy(registerLiveQueryDevtoolsRepository(repository));
 
       let sync: QuerySyncEngine | null = null;
       let persistenceEngine: QueryPersistenceEngine | null = null;

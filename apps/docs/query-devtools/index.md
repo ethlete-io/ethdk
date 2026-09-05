@@ -1607,6 +1607,13 @@ a table row: a destroyed entry has no consumers, no size, no freshness and nothi
 on, so a full row would be seven columns of dashes. What is left worth showing is what it
 was and why it went.
 
+The whole card goes away when the client's own injector is destroyed - a route that
+provided a client of its own, unmounted. Its queries stay in the lists as
+[tombstones](#a-destroyed-query-leaves-a-tombstone), because their last state is still
+worth reading, but there is no cache left to measure and nothing left to evict. A client
+whose queries all happen to be destroyed keeps its card: that client is alive, and its
+cache is still holding memory somebody has to be able to see.
+
 ## Locks: what the other tabs are doing
 
 Every other tab in the panel answers a question about _this_ tab. The **Locks** tab does

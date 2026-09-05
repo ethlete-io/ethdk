@@ -57,6 +57,7 @@ import {
   createQueryKeyLockManager,
   EMPTY_QUERY_DEVTOOLS_FAULT,
   isQueryDevtoolsFaultArmed,
+  isQueryDevtoolsRepositoryLive,
   measureQueryDevtoolsPayload,
   QueryClient,
   queryDevtoolsAbout,
@@ -1149,12 +1150,16 @@ export class QueryDevtoolsComponent implements OnInit {
     return Array.from(names).sort();
   });
 
-  /** Unique repositories (with their client name + base URL) used by the Cache and Events tabs. */
+  /**
+   * Unique repositories (with their client name + base URL) used by the Cache and Events tabs. A
+   * tombstone keeps its `meta.repository`, so a destroyed client would otherwise keep its Cache card
+   * and its **Evict all** long after its injector died.
+   */
   private repositories = computed(() => {
     const map = new Map<QueryRepository, { name: string; baseUrl: string; client: QueryClient | null }>();
     for (const entry of queryDevtoolsEntries()) {
       const repo = entry.meta.repository;
-      if (repo && !map.has(repo)) {
+      if (repo && !map.has(repo) && isQueryDevtoolsRepositoryLive(repo)) {
         map.set(repo, {
           name: entry.meta.clientName ?? 'unknown',
           baseUrl: entry.meta.clientBaseUrl ?? '',

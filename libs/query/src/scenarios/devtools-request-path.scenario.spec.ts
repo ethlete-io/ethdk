@@ -15,6 +15,7 @@ import {
   createQueryClient,
   createSecureGetQuery,
   isQueryDevtoolsEnabled,
+  isQueryDevtoolsRepositoryLive,
   provideQueryDevtools,
   QUERY_DEVTOOLS_FAULT_STATUSES,
   queryDevtoolsApiEnvIsProduction,
@@ -616,5 +617,57 @@ describe('registry teardown once every client is destroyed', () => {
     clearQueryDevtoolsTombstones(ids);
 
     expect(queryDevtoolsEntries().some((entry) => ids.includes(entry.id))).toBe(false);
+  });
+});
+
+describe('a destroyed client stops being a client the panel can act on', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 0 },
+    providers: devtoolsProviders,
+  });
+
+  beforeEach(resetDevtoolsState);
+
+  it('reads as live while its injector is alive and dead once it is destroyed', async () => {
+    const s = scenario();
+    const clientRef = createQueryClient({
+      name: `devtools-request-path-liveness-${++bootCounter}`,
+      baseUrl: BASE_URL,
+      keepUnusedFor: 0,
+    });
+
+    s.api.on('GET', '/liveness', () => ({ body: { id: 'a' } }));
+
+    const getLiveness = createGetQuery(clientRef)<{ response: { id: string } }>('/liveness');
+
+    const injector = createEnvironmentInjector(
+      [...clientRef.provide()],
+      s.run(() => inject(EnvironmentInjector)),
+    );
+    const consumerInjector = createEnvironmentInjector([], injector);
+    const query = consumerInjector.runInContext(() => getLiveness());
+    await s.settle();
+
+    const repository = injector.runInContext(() => clientRef.inject()).repository;
+    const entryId = queryDevtoolsEntries().find((entry) => entry.handle === query)?.id;
+
+    expect(query.response()).toEqual({ id: 'a' });
+    expect(isQueryDevtoolsRepositoryLive(repository)).toBe(true);
+
+    consumerInjector.destroy();
+
+    expect(isQueryDevtoolsRepositoryLive(repository)).toBe(true);
+
+    injector.destroy();
+
+    // The query's tombstone keeps `meta.repository`, so the entry alone cannot say the client is gone.
+    const tombstone = queryDevtoolsEntries().find((entry) => entry.id === entryId);
+
+    expect(tombstone?.destroyedAt).toBeTruthy();
+    expect(tombstone?.meta.repository).toBe(repository);
+
+    expect(isQueryDevtoolsRepositoryLive(repository)).toBe(false);
+
+    clearQueryDevtoolsTombstones();
   });
 });
