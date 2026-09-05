@@ -833,30 +833,46 @@ describe('caching scenario', () => {
       expect(s.client.repository.subtle.cacheEntries().map((entry) => entry.key)).not.toContain(secureKey);
     });
 
-    it.fails('serves a remounting query from a still-fresh entry without a request', () => {
-      // caching.md:55 - an auto-execution never passes `allowCache`, so a rebind always re-requests.
+    it('re-requests when a query rebinds to a still-fresh entry, while an allowCache execute serves it', () => {
       const s = scenario();
-      s.api.on('GET', '/still-fresh', () => ({ body: { n: 1 }, headers: { 'cache-control': 'max-age=20' } }));
+      const headers = { 'cache-control': 'max-age=20' };
+      s.api.on(
+        'GET',
+        '/still-fresh',
+        sequence([
+          { body: { n: 1 }, headers },
+          { body: { n: 2 }, headers },
+        ]),
+      );
 
       const getStillFresh = s.get<{ response: { n: number } }>('/still-fresh');
 
       const a = s.consumer();
       a.run(() => getStillFresh());
       s.tick();
+      expect(s.api.requestCount('GET', '/still-fresh')).toBe(1);
       a.destroy();
 
       s.tick(1_000);
 
       const b = s.consumer();
-      b.run(() => getStillFresh());
+      const query = b.run(() => getStillFresh());
+
+      expect(query.response()).toEqual({ n: 1 });
+
       s.tick();
 
-      const requestsAfterRemount = s.api.requestCount('GET', '/still-fresh');
+      expect(s.api.requestCount('GET', '/still-fresh')).toBe(2);
+      expect(query.response()).toEqual({ n: 2 });
+
+      query.execute({ options: { allowCache: true } });
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/still-fresh')).toBe(2);
+      expect(query.response()).toEqual({ n: 2 });
 
       b.destroy();
       s.tick(5_001);
-
-      expect(requestsAfterRemount).toBe(1);
     });
   });
 
