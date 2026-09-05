@@ -5,6 +5,7 @@ import {
   ErrorHandler,
   inject,
   InjectionToken,
+  Injector,
   Input,
   TemplateRef,
   ViewContainerRef,
@@ -91,6 +92,7 @@ export class InfinityQueryDirective<
   private viewContainerRef = inject(ViewContainerRef);
   private mainTemplateRef = inject(TemplateRef<InfinityQueryContext<Q>>);
   private errorHandler = inject(ErrorHandler);
+  private injector = inject(Injector);
   private infinityQueryResponseDelay = injectInfinityQueryResponseDelay({ host: true });
 
   private readonly _data$ = new BehaviorSubject<Q['response']['arrayType']>([]);
@@ -140,7 +142,10 @@ export class InfinityQueryDirective<
   }
 
   private setupInfinityQuery(config: Q) {
-    const instance = new InfinityQuery(config as any, this.destroy$) as InfinityQueryOf<Q>;
+    const instance = new InfinityQuery(
+      { ...config, injector: config.injector ?? this.injector } as any,
+      this.destroy$,
+    ) as InfinityQueryOf<Q>;
 
     combineLatest([
       instance.currentQuery$.pipe(switchQueryState(), withLatestFrom(instance.currentQuery$)),

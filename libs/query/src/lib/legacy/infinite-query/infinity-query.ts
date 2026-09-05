@@ -220,7 +220,10 @@ export class InfinityQuery<
       },
     };
 
-    const defaultConfig = config?.defaultArgs ?? {};
+    const defaultConfig = {
+      ...(config?.defaultArgs ?? {}),
+      ...(config?.injector ? { injector: config.injector } : {}),
+    };
 
     const mergedArgs =
       pageParamLocation === limitParamLocation

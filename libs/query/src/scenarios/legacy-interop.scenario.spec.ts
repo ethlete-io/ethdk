@@ -1,9 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { createEnvironmentInjector, EnvironmentInjector, inject } from '@angular/core';
+import { Component, createEnvironmentInjector, EnvironmentInjector, inject, input } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import {
+  AnyInfinityQueryConfig,
   AnyLegacyQuery,
+  createInfinityQueryConfig,
   createLegacyQueryCreator,
   filterSuccess,
+  InfinityQueryDirective,
+  InfinityQueryTriggerDirective,
   provideLegacyPrepareFallback,
   QueryStateType,
   V2QueryState,
@@ -20,6 +25,28 @@ const recordStates = (query: AnyLegacyQuery) => {
 
   return { states, stop: () => subscription.unsubscribe() };
 };
+
+@Component({
+  imports: [InfinityQueryDirective, InfinityQueryTriggerDirective],
+  template: `
+    <div *etInfinityQuery="config(); let items; let canLoadMore = canLoadMore; let currentPage = currentPage">
+      <span data-slot="items">{{ ids(items) }}</span>
+      <span data-slot="canLoadMore">{{ canLoadMore }}</span>
+      <span data-slot="currentPage">{{ currentPage }}</span>
+      @if (canLoadMore) {
+        <button data-slot="more" etInfinityQueryTrigger type="button">more</button>
+      }
+    </div>
+  `,
+})
+class InteropInfinityQueryHost {
+  config = input.required<AnyInfinityQueryConfig>();
+
+  ids = (items: { id: string }[] | null) => (items ?? []).map((item) => item.id).join(',');
+}
+
+const slotText = (fixture: { nativeElement: HTMLElement }, slot: string) =>
+  (fixture.nativeElement.querySelector(`[data-slot="${slot}"]`)?.textContent ?? '').trim();
 
 describe('legacy interop scenario', () => {
   describe('createLegacyQueryCreator', () => {
@@ -166,6 +193,55 @@ describe('legacy interop scenario', () => {
       } finally {
         warn.mockRestore();
       }
+    });
+  });
+
+  describe('infinity query', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('renders an infinity query built on an interop creator', () => {
+      const s = scenario();
+      s.api.on('GET', '/users', ({ query }) => {
+        const page = Number(query['page'] ?? '1');
+
+        return { body: { items: [{ id: `${page}a` }, { id: `${page}b` }], totalPages: 2 } };
+      });
+
+      const getUsers = s.get<{
+        response: { items: { id: string }[]; totalPages: number };
+        queryParams: { page: number; limit: number };
+      }>('/users');
+      const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers, name: 'legacyGetUsers' });
+      const config = createInfinityQueryConfig({
+        queryCreator: legacyGetUsers,
+        limitParam: { value: 2 },
+        response: { arrayType: [] as { id: string }[], valueExtractor: (response) => response.items },
+      });
+
+      const fixture = TestBed.createComponent(InteropInfinityQueryHost);
+
+      fixture.componentRef.setInput('config', config);
+      fixture.detectChanges();
+      s.tick();
+      fixture.detectChanges();
+
+      expect(slotText(fixture, 'items')).toBe('1a,1b');
+      expect(slotText(fixture, 'currentPage')).toBe('1');
+      expect(slotText(fixture, 'canLoadMore')).toBe('true');
+
+      const trigger = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-slot="more"]');
+
+      expect(trigger).not.toBeNull();
+      trigger?.click();
+      s.tick();
+      fixture.detectChanges();
+
+      expect(slotText(fixture, 'items')).toBe('1a,1b,2a,2b');
+      expect(slotText(fixture, 'currentPage')).toBe('2');
+      expect(slotText(fixture, 'canLoadMore')).toBe('false');
+      expect(s.api.requests.map((request) => request.query['page'])).toEqual(['1', '2']);
+
+      fixture.destroy();
     });
   });
 

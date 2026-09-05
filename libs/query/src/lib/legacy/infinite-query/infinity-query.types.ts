@@ -1,3 +1,4 @@
+import { Injector } from '@angular/core';
 import { AnyLegacyQueryCreator } from '../interop';
 import { BaseArguments, WithHeaders } from '../query';
 import { AnyV2QueryCreator, ConstructQuery, QueryDataOf, V2QueryArgsOf } from '../query-creator';
@@ -55,6 +56,12 @@ export type InfinityQueryConfig<
    * The args that will be merged with the page arg.
    */
   defaultArgs?: Arguments & WithHeaders;
+
+  /**
+   * The injector each page is prepared with. Required for a creator made by `createLegacyQueryCreator()`, which
+   * cannot resolve one on its own. `[etInfinityQuery]` fills this in with its own injector.
+   */
+  injector?: Injector;
 
   /**
    * Enables or disables the infinite query functionality.
