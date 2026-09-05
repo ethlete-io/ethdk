@@ -439,3 +439,32 @@ second authenticated tab is not expressible; `Scenario` cannot observe live quer
 (`batching` uses the devtools registry); the ws test double exposes no `withCredentials`;
 `s.consumer()` takes no providers; there is no supported way to run a block in production mode; the
 harness captures `console.error` but not `console.warn`.
+
+## Wave 6 (2026-09-05)
+
+The trees wave 5 never read: `legacy`, `gql`, `ws`, `pipes`, `query-form-signals`, `persistence` and
+the signal-forms surface. Three scan agents produced `.claude/handoffs/wave6-scan-legacy-gql.md`,
+`wave6-scan-ws-forms.md` and `wave6-scan-persistence-forms.md` - 4 High, 12 Medium, 14 Low. Every
+High is fixed, each with a scenario that was red first.
+
+- **A cancelled execution never settled.** `HttpRequest.abort()` cleared `loading` but wrote no error
+  and emitted no terminal event, so `executeUntilSettled` stayed pending forever and a submitted form
+  never left `submitting()` - disabled, no error, no retry, reload only. Two ordinary paths reached
+  it: the devtools evict button, and `unbindAllSecure()`, which every logout runs. A cancelled
+  execution now reports a terminal failure carrying a new `HttpCancelEvent`, code `0` and the message
+  "The request was cancelled."; `validateWithQuery` aborts the round it abandons. This also settled
+  the parked `dependent-queries.md:119` claim, which is now a passing test and a corrected sentence.
+- **The signals query form re-parsed its own URL write.** The skip guard compared `<` where the newest
+  write is `===`, so a `searchQueryField` holding `'2024'` committed the string and then the number -
+  the declared type is `string | null`, so a `.trim()` on it throws. A `dateQueryField` lost up to
+  999 ms, and one `setValue` fired three requests. Three more form defects landed with it:
+  `skipFields` survives an `isResetBy` reset, the committed value moves without `observe()`, and
+  `appendToUrl: false` leaves a foreign param alone.
+- **A second `execute()` on an in-flight interop query** aborted the first request and sent a
+  duplicate; `V2Query` makes it a no-op unless `cancelPrevious: true`. A double-clicked submit
+  cancelled a request the server may already have accepted, then repeated it.
+- **`[etInfinityQuery]` with an interop creator** threw ET950 on its first page, and its config had no
+  `injector` field, so a consumer could not obey the documented rule. `InfinityQueryConfig` takes an
+  optional `injector` now and the directive supplies its own by default.
+
+Open: every Medium and Low in the three wave 6 files, plus the `## Unverified` section of each.
