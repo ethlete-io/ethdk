@@ -71,14 +71,37 @@ export const component = {
     expect(appConfig).not.toContain(',,');
 
     // The component only changed packages - it stays in the imports array.
-    expect(component).toContain("import { QueryDevtoolsComponent } from '@ethlete/components';");
+    expect(component).toContain("import { QueryDevtoolsComponent } from '@ethlete/query-devtools';");
     expect(component).not.toContain("from '@ethlete/query'");
     expect(component).toContain('imports: [QueryDevtoolsComponent]');
 
     // Both versions use the same selector, so the markup must survive untouched.
     expect(readFile('component.html')).toContain('<et-query-devtools />');
 
-    expect(report).toContain('Add @ethlete/components for the query devtools');
+    expect(report).toContain('Add @ethlete/query-devtools for the query devtools');
+  });
+
+  it('imports QueryDevtoolsComponent from @ethlete/query-devtools', async () => {
+    tree.write(
+      'component.ts',
+      `
+import { QueryDevtoolsComponent } from '@ethlete/query';
+
+export const component = {
+  imports: [QueryDevtoolsComponent],
+};
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const component = readFile('component.ts');
+    const report = readFile('query-v3-migration-tasks.md');
+
+    expect(component).toContain("import { QueryDevtoolsComponent } from '@ethlete/query-devtools';");
+    expect(component).not.toContain('@ethlete/components');
+    expect(report).toContain('@ethlete/query-devtools');
+    expect(report).not.toContain('@ethlete/components');
   });
 
   it('should leave a single devtools provider call in place', async () => {

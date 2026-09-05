@@ -14,7 +14,7 @@ import { createSourceFile, ensureImportFromQuery, ensureNamedImports, getLineNum
  */
 export const migrateDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: QueryV3MigrationReport) => {
   const updatedFiles: string[] = [];
-  const filesNeedingComponentsPackage: string[] = [];
+  const filesNeedingDevtoolsPackage: string[] = [];
 
   scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts')) {
@@ -40,7 +40,7 @@ export const migrateDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: 
     updatedFiles.push(filePath);
 
     if (importsComponent) {
-      filesNeedingComponentsPackage.push(filePath);
+      filesNeedingDevtoolsPackage.push(filePath);
     }
   });
 
@@ -51,18 +51,19 @@ export const migrateDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: 
   console.log('\n✅ Migrated query devtools usage to v3 in:');
   updatedFiles.forEach((filePath) => console.log(`   - ${filePath}`));
 
-  if (filesNeedingComponentsPackage.length > 0) {
+  if (filesNeedingDevtoolsPackage.length > 0) {
     // The component moved packages, which is the one part of this rewrite that can fail outside the
-    // file being edited: an app that only ever depended on `@ethlete/query` now needs `@ethlete/components`.
+    // file being edited: an app that only ever depended on `@ethlete/query` now needs
+    // `@ethlete/query-devtools`.
     report.addManualReview({
-      title: 'Add @ethlete/components for the query devtools',
+      title: 'Add @ethlete/query-devtools for the query devtools',
       summary:
-        '`QueryDevtoolsComponent` now lives in `@ethlete/components`. The imports were rewritten, but the package may not be a dependency of these projects yet.',
+        '`QueryDevtoolsComponent` now lives in `@ethlete/query-devtools`. The imports were rewritten, but the package may not be a dependency of these projects yet.',
       action:
-        'Run `yarn add @ethlete/components` where needed, then `yarn install` and re-lint the affected libs so the `@nx/dependency-checks` rule sees the new dependency.',
-      locations: filesNeedingComponentsPackage.map((filePath) => ({ filePath })),
+        'Run `yarn add @ethlete/query-devtools` where needed, then `yarn install` and re-lint the affected libs so the `@nx/dependency-checks` rule sees the new dependency.',
+      locations: filesNeedingDevtoolsPackage.map((filePath) => ({ filePath })),
       source: 'cleanup-migration',
-      dedupeKey: 'devtools-components-dependency',
+      dedupeKey: 'devtools-package-dependency',
     });
   }
 };
@@ -124,7 +125,7 @@ export const migrateEmptyPrepareCalls = (tree: Tree, scope: MigrationScope) => {
 type DevtoolsFileMigration = {
   content: string;
 
-  /** Whether the file now imports `QueryDevtoolsComponent` from `@ethlete/components`. */
+  /** Whether the file now imports `QueryDevtoolsComponent` from `@ethlete/query-devtools`. */
   importsComponent: boolean;
 };
 
@@ -145,7 +146,7 @@ const migrateDevtoolsInFile = (content: string): DevtoolsFileMigration => {
     result = ensureNamedImports({
       content: result,
       importsNeeded: ['QueryDevtoolsComponent'],
-      moduleSpecifier: '@ethlete/components',
+      moduleSpecifier: '@ethlete/query-devtools',
     });
   }
 
