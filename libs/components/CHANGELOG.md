@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.0.0-next.60
+
+### Major Changes
+
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) **Breaking:** three features are opt-in. Import `MENU_SEARCH_IMPORTS` for `etMenuSearch`, register `provideSchedulerEditSurface()` for the default appointment editor, and `provideStreamPip()` for picture-in-picture on player slots.
+
+### Minor Changes
+
+- [`c6cd941`](https://github.com/ethlete-io/ethdk/commit/c6cd94105ccb2f6b7de40a18a970d755a139e406) Bracket: add a framework-free prediction graph and resolver, prediction-aware slot states, an operable pick card, and focused round layout controls.
+
+### Patch Changes
+
+- [`56d8504`](https://github.com/ethlete-io/ethdk/commit/56d85042a69a42c7883a2318845da793322cfe3d) `mirroredSingleEliminationBracketLayout`'s JSDoc now describes the fold as it works: it stops at the
+  first round it cannot halve, and that round and every later one are drawn whole in the middle.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Color input: an empty string reads as unselected and `colorContrast` shares the picker's parser. A pasted OTP keeps its digits through separators, and choice-field support messages animate in severity order.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Range inputs no longer spin forever registering a side in development, `generateBracketDataForEthlete` accepts a stage whose leading rounds are empty, and forms and the calendar report a misplaced headless piece with an actionable error.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Focus follows the keyboard again: calendar arrow keys move DOM focus, the cascader sheet keeps it while drilling, a suffix-button icon click no longer steals it, and table `Enter` drills before it clicks the row.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Menu search keeps the runtime metadata Angular needs for its directives, and the phone input imports only the six select declarations its template uses.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Component CSS now loads with the feature that needs it. Calendar, dropzone, overlay, scheduler, select, cascader, table and the rich text editor ship none of their opt-in chrome unused, and related components share one stylesheet.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Toggletip follows a dismissal as it starts and re-opens during the leave transition; Escape dismisses a hover-shown tooltip from anywhere without blocking a dialog behind it.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Command palette: the search field drops `aria-controls` and reports `aria-expanded="false"` with no results, and `etCommandPaletteShortcut` closes a palette opened through `injectCommandPalette()` instead of stacking one.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Table selection checkboxes carry their accessible names again, the grid's default remove button emits the item's `remove` output, and pagination clamps a page past the end to the last one.
+- [`0952147`](https://github.com/ethlete-io/ethdk/commit/09521477d67b28a3051681fea1c88b9314bbfe4b) Overlay: a breakpoint strategy switch now adds or removes the arrow and the drag handle with the strategy, instead of keeping the ones the overlay mounted with.
+- [`6c744bb`](https://github.com/ethlete-io/ethdk/commit/6c744bb88ed65244ffd875eabd69a45e7a1bef7a) `defineQueryForm`: `branch()` now debounces and runs the reset graph like the source form and exposes `liveValue`; the filter overlay applies `liveValue` on submit.
+
 ## 1.0.0-next.59
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.15
+
+### Patch Changes
+
+- [`e7e4604`](https://github.com/ethlete-io/ethdk/commit/e7e4604629b3b0362996c228d581c915bbf795c0) Context warnings now distinguish sub-agent pressure from the main session and track each thread independently.
+
 ## 0.1.0-next.14
 
 ### Minor Changes
