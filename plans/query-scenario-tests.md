@@ -467,4 +467,24 @@ High is fixed, each with a scenario that was red first.
   `injector` field, so a consumer could not obey the documented rule. `InfinityQueryConfig` takes an
   optional `injector` now and the directive supplies its own by default.
 
-Open: every Medium and Low in the three wave 6 files, plus the `## Unverified` section of each.
+Then every Medium, and the Lows that were trivial once an agent was in the file:
+
+- **`legacy`**: the `migrate-to-query-v3` generator rewrote `QueryDevtoolsComponent` to
+  `@ethlete/components`, which does not export it; a container's teardown left a non-cacheable
+  interop query polling; `*etQuery`'s `refreshing` was permanently false for an interop query, so
+  every poll drove the full loading branch; `poll({ triggerImmediately: true })` still waited a whole
+  interval, in both implementations, which also delayed the focus-resume catch-up; `abort()` reported
+  `Prepared` rather than `Cancelled`.
+- **`ws` and `pipes`**: a frame that parses as JSON but carries no `room` was dropped in silence;
+  four status texts the error pipes render were wrong or said the opposite of their German twin. The
+  parked `ws.md:75` claim is settled in the docs' favour - the malformed-frame log is dev-mode gated
+  now, and the `it.fails` is a passing test.
+- **`persistence`**: a logout removal the adapter refused left the previous user's responses
+  hydratable (the body is forgotten at once and the removal is retried now); a hydration applied a
+  body that a `clearPersistedQueries` had already removed; `clearPersistedQueries()` did not let a
+  store that had stopped taking writes take them again; the IndexedDB store gave up for the whole
+  session after one failed or blocked open. The harness gained `failNextRemoves`, and the IndexedDB
+  adapter has its first tests - it had none, because jsdom has no IndexedDB.
+
+Open: the remaining Lows of the three wave 6 files, the gql document re-parse (finding 10 of the
+legacy/gql file), the `## Unverified` section of each file, and the seven `it.fails`.
