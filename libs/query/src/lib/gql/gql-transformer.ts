@@ -21,13 +21,13 @@ export type TransformedGqlQuery = {
 
 export type GqlTransformer = (
   variables: Record<string, unknown> | null | undefined,
-  transport: GqlQueryTransport,
+  transport?: GqlQueryTransport,
 ) => TransformedGqlQuery;
 
 /**
  * Builds the GraphQL-over-HTTP payload of a document. `variables` comes back as a JSON string for
- * the `GET` transport, where the payload travels as query parameters, and as the map itself for
- * `POST`, where it travels as a JSON body.
+ * the `GET` transport (the default), where the payload travels as query parameters, and as the map
+ * itself for `POST`, where it travels as a JSON body.
  */
 export const transformGql = (str: string | string[]): GqlTransformer => {
   const normalizedStr = Array.isArray(str) ? str.join('') : str;
@@ -35,7 +35,10 @@ export const transformGql = (str: string | string[]): GqlTransformer => {
   const operationName = getOpName.exec(normalizedStr)?.[1];
   let minified: string | undefined;
 
-  return (variables: Record<string, unknown> | null | undefined, transport: GqlQueryTransport): TransformedGqlQuery => {
+  return (
+    variables: Record<string, unknown> | null | undefined,
+    transport: GqlQueryTransport = 'GET',
+  ): TransformedGqlQuery => {
     const data: TransformedGqlQuery = { query: isDevMode() ? normalizedStr : (minified ??= minifyGql(normalizedStr)) };
 
     if (variables) {

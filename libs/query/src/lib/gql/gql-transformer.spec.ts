@@ -38,6 +38,16 @@ describe('transformGql', () => {
     });
   });
 
+  describe('transport argument', () => {
+    it('encodes for GET when the caller passes variables only', () => {
+      const transformer = transformGql('query GetUser($id: ID!) { user(id: $id) { name } }');
+      const variables = { id: '123' };
+
+      expectTypeOf(transformer).toBeCallableWith(variables);
+      expect(transformer(variables).variables).toBe(JSON.stringify(variables));
+    });
+  });
+
   describe('variables handling', () => {
     it('should add variables when provided', () => {
       const query = 'query GetUser($id: ID!) { user(id: $id) { name } }';
