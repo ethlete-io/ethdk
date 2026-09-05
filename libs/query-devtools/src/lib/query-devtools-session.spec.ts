@@ -1,4 +1,9 @@
-import { buildQueryDevtoolsSessionExport, BuildSessionExportOptions, slimForReport } from './query-devtools-session';
+import {
+  buildQueryDevtoolsSessionExport,
+  BuildSessionExportOptions,
+  sessionAuthQueryKey,
+  slimForReport,
+} from './query-devtools-session';
 
 const NOW = 1_700_000_000_000;
 
@@ -129,5 +134,115 @@ describe('buildQueryDevtoolsSessionExport', () => {
     const result = build({ entries: [{ id: 'q', kind: 'query', response: { ok: true } }] });
 
     expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+  });
+});
+
+describe('session export redaction', () => {
+  it('should not put a credential-shaped field in a session export', () => {
+    const result = build({
+      entries: [
+        {
+          id: 'login',
+          kind: 'query',
+          client: 'https://api.example.com',
+          method: 'POST',
+          route: '/auth/login',
+          args: { body: { email: 'dev@example.com', password: 'hunter2' } },
+          response: { accessToken: 'LIVE.ACCESS.TOKEN', refreshToken: 'LIVE.REFRESH.TOKEN' },
+        },
+      ],
+    });
+
+    const json = JSON.stringify(result);
+
+    expect(json).not.toContain('hunter2');
+    expect(json).not.toContain('LIVE.ACCESS.TOKEN');
+    expect(json).not.toContain('LIVE.REFRESH.TOKEN');
+    expect(json).toContain('dev@example.com');
+  });
+
+  it('should redact a credential in a header, at any depth and under any spelling', () => {
+    const [entry] = build({
+      entries: [
+        {
+          id: 'q',
+          kind: 'query',
+          args: {
+            headers: { Authorization: 'Bearer LIVE.ACCESS.TOKEN', 'X-Api-Key': 'KEY', accept: 'application/json' },
+            body: { nested: { deeper: { access_token: 'LIVE.ACCESS.TOKEN' } } },
+          },
+        },
+      ],
+    }).entries;
+
+    expect(entry?.args).toEqual({
+      headers: {
+        Authorization: '[redacted: credential]',
+        'X-Api-Key': '[redacted: credential]',
+        accept: 'application/json',
+      },
+      body: { nested: { deeper: { access_token: '[redacted: credential]' } } },
+    });
+  });
+
+  it('should keep a boolean or a number under a credential-named key', () => {
+    const [entry] = build({
+      entries: [
+        { id: 'auth', kind: 'auth-provider', detail: { hasAccessToken: true, overriddenTokenTtlSeconds: 900 } },
+      ],
+    }).entries;
+
+    expect(entry?.detail).toEqual({ hasAccessToken: true, overriddenTokenTtlSeconds: 900 });
+  });
+
+  it("should not put an auth query's tokens or credentials in a session export", () => {
+    const client = 'https://api.example.com';
+    const result = build({
+      authQueryKeys: [
+        sessionAuthQueryKey({ client, method: 'POST', route: '/auth/login' }),
+        sessionAuthQueryKey({ client, method: 'POST', route: '/auth/refresh' }),
+      ],
+      entries: [
+        {
+          id: 'login',
+          kind: 'query',
+          client,
+          method: 'POST',
+          route: '/auth/login',
+          args: { body: { email: 'dev@example.com', pwd: 'hunter2' } },
+          response: { user: { id: 1 } },
+          error: null,
+        },
+        {
+          id: 'refresh',
+          kind: 'query',
+          client,
+          method: 'POST',
+          route: '/auth/refresh',
+          args: { body: { refresh: 'LIVE.REFRESH.TOKEN' } },
+          response: { access: 'LIVE.ACCESS.TOKEN', refresh: 'LIVE.REFRESH.TOKEN' },
+        },
+        { id: 'posts', kind: 'query', client, method: 'GET', route: '/posts', response: { items: [1, 2] } },
+      ],
+    });
+
+    const [login, refresh, posts] = result.entries;
+
+    expect(login).toMatchObject({
+      args: '[redacted: auth query]',
+      response: '[redacted: auth query]',
+      error: '[redacted: auth query]',
+    });
+    expect(refresh).toMatchObject({ args: '[redacted: auth query]', response: '[redacted: auth query]' });
+    expect(sessionAuthQueryKey({ client, method: 'GQL POST', route: '/graphql' })).toBe(
+      sessionAuthQueryKey({ client, method: 'POST', route: '/graphql' }),
+    );
+    expect(posts?.response).toEqual({ items: [1, 2] });
+
+    const json = JSON.stringify(result);
+
+    expect(json).not.toContain('hunter2');
+    expect(json).not.toContain('LIVE.ACCESS.TOKEN');
+    expect(json).not.toContain('LIVE.REFRESH.TOKEN');
   });
 });

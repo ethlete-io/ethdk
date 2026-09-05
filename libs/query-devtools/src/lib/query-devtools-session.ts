@@ -8,10 +8,53 @@ const MAX_DEPTH = 6;
 const MAX_STRING = 200;
 const MAX_ARRAY_ITEMS = 2;
 
+/** What a redacted credential is written as, so a reader can tell it from a value the app never sent. */
+export const REDACTED_SECRET = '[redacted: credential]';
+
+/** What the args, response and error of a bearer auth provider's own query are written as. */
+export const REDACTED_AUTH_QUERY = '[redacted: auth query]';
+
+/**
+ * Key fragments that name a credential. Matched against the key with every separator removed, so
+ * `accessToken`, `access_token`, `X-Api-Key` and `set-cookie` all reduce to the same word.
+ */
+const SECRET_KEY_FRAGMENTS = [
+  'apikey',
+  'accesskey',
+  'authorization',
+  'bearer',
+  'cookie',
+  'credential',
+  'jwt',
+  'passphrase',
+  'passwd',
+  'password',
+  'privatekey',
+  'pwd',
+  'secret',
+  'sessionid',
+  'token',
+];
+
+const isSecretKey = (key: string) => {
+  const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  return SECRET_KEY_FRAGMENTS.some((fragment) => normalized.includes(fragment));
+};
+
+/**
+ * Booleans and numbers under a credential-named key are kept: `hasAccessToken: true` and
+ * `expiresIn: 900` are what a report is for, and neither can carry the credential itself.
+ */
+const holdsSecret = (value: unknown) =>
+  typeof value === 'string' ? value.length > 0 : !!value && typeof value === 'object';
+
 /**
  * Slims a value for a shareable report: long strings are truncated and long arrays keep only the first
  * couple of entries, replacing the repetitive tail with a `… (N more)` marker, so a big response
- * collapses to a representative sample.
+ * collapses to a representative sample. Anything under a credential-named key is replaced by
+ * {@link REDACTED_SECRET} instead - a report travels to a ticket, so a password or a bearer token must
+ * not be in it however deep in a body it sits.
  */
 export const slimForReport = (value: unknown, depth = 0): unknown => {
   if (typeof value === 'string') return value.length > MAX_STRING ? `${value.slice(0, MAX_STRING)}…` : value;
@@ -30,13 +73,24 @@ export const slimForReport = (value: unknown, depth = 0): unknown => {
 
   if (value && typeof value === 'object') {
     const out: Record<string, unknown> = {};
-    for (const [key, entry] of Object.entries(value)) out[key] = slimForReport(entry, depth + 1);
+    for (const [entryKey, entry] of Object.entries(value)) {
+      out[entryKey] = isSecretKey(entryKey) && holdsSecret(entry) ? REDACTED_SECRET : slimForReport(entry, depth + 1);
+    }
 
     return out;
   }
 
   return value;
 };
+
+/**
+ * The key an entry is matched by when deciding whether it is one of a bearer auth provider's own login
+ * or token-refresh queries: those are ordinary registered queries, and the client, method and route are
+ * what the provider's description and the query's own registration both carry. A GraphQL entry's method
+ * reads `GQL POST` in the panel and `POST` in the provider's description, so the prefix is dropped.
+ */
+export const sessionAuthQueryKey = (parts: { client?: string | null; method?: string | null; route?: string | null }) =>
+  `${parts.client ?? ''}|${(parts.method ?? '').toUpperCase().replace(/^GQL /, '')}|${parts.route ?? ''}`;
 
 /** One query client, as the export accounts for it. */
 export type SessionExportClient = {
@@ -141,6 +195,12 @@ export type BuildSessionExportOptions = {
   events: SessionExportEvent[];
   faults: SessionExportFault[];
   mocks: SessionExportMock[];
+
+  /**
+   * The bearer auth providers' own login and token-refresh queries, keyed by
+   * {@link sessionAuthQueryKey}. Whatever they sent and received is left out of the report entirely.
+   */
+  authQueryKeys?: readonly string[];
 };
 
 /** The whole panel state as one attachable JSON document. */
@@ -165,14 +225,28 @@ export type QueryDevtoolsSessionExport = {
 };
 
 /** Slims the free-form value fields of an entry, leaving the rest as it was collected. */
-const slimEntry = (entry: SessionExportEntry): SessionExportEntry => ({
-  ...entry,
-  ...('args' in entry ? { args: slimForReport(entry.args) } : {}),
-  ...('response' in entry ? { response: slimForReport(entry.response) } : {}),
-  ...('error' in entry ? { error: slimForReport(entry.error) } : {}),
-  ...(entry.detail ? { detail: slimForReport(entry.detail) as Record<string, unknown> } : {}),
-  ...(entry.overrides?.length ? { overrides: slimForReport(entry.overrides) as SessionExportEntry['overrides'] } : {}),
-});
+const slimEntry = (entry: SessionExportEntry, authQueryKeys: ReadonlySet<string>): SessionExportEntry => {
+  if (entry.kind === 'query' && authQueryKeys.has(sessionAuthQueryKey(entry))) {
+    return {
+      ...entry,
+      ...('args' in entry ? { args: REDACTED_AUTH_QUERY } : {}),
+      ...('response' in entry ? { response: REDACTED_AUTH_QUERY } : {}),
+      ...('error' in entry ? { error: REDACTED_AUTH_QUERY } : {}),
+      ...(entry.detail ? { detail: { redacted: REDACTED_AUTH_QUERY } } : {}),
+    };
+  }
+
+  return {
+    ...entry,
+    ...('args' in entry ? { args: slimForReport(entry.args) } : {}),
+    ...('response' in entry ? { response: slimForReport(entry.response) } : {}),
+    ...('error' in entry ? { error: slimForReport(entry.error) } : {}),
+    ...(entry.detail ? { detail: slimForReport(entry.detail) as Record<string, unknown> } : {}),
+    ...(entry.overrides?.length
+      ? { overrides: slimForReport(entry.overrides) as SessionExportEntry['overrides'] }
+      : {}),
+  };
+};
 
 /**
  * Builds the whole-session report: every registered entry with what it ran and what it holds, the event
@@ -184,23 +258,31 @@ const slimEntry = (entry: SessionExportEntry): SessionExportEntry => ({
  * are included because a report captured while the panel was lying to the app has to say so. Neither
  * survives past the current page - this is a snapshot for a bug report, not something the panel can
  * later import to restore a session.
+ *
+ * Credentials are the exception to "slimmed, not redacted": an auth provider's own queries are reported
+ * without what they sent or received, and any credential-named key anywhere else in the file is replaced
+ * by {@link REDACTED_SECRET}.
  */
-export const buildQueryDevtoolsSessionExport = (options: BuildSessionExportOptions): QueryDevtoolsSessionExport => ({
-  _type: 'ethlete.query:devtools-session',
-  exportedAt: new Date(options.now).toISOString(),
-  location: options.location,
-  about: options.about,
-  counts: {
-    clients: options.clients.length,
-    entries: options.entries.length,
-    events: options.events.length,
-    armedFaults: options.faults.length,
-    armedOverrides: options.entries.reduce((sum, entry) => sum + (entry.overrides?.length ?? 0), 0),
-    armedMocks: options.mocks.length,
-  },
-  clients: options.clients,
-  entries: options.entries.map(slimEntry),
-  events: options.events,
-  faults: options.faults,
-  mocks: options.mocks,
-});
+export const buildQueryDevtoolsSessionExport = (options: BuildSessionExportOptions): QueryDevtoolsSessionExport => {
+  const authQueryKeys = new Set(options.authQueryKeys ?? []);
+
+  return {
+    _type: 'ethlete.query:devtools-session',
+    exportedAt: new Date(options.now).toISOString(),
+    location: options.location,
+    about: options.about,
+    counts: {
+      clients: options.clients.length,
+      entries: options.entries.length,
+      events: options.events.length,
+      armedFaults: options.faults.length,
+      armedOverrides: options.entries.reduce((sum, entry) => sum + (entry.overrides?.length ?? 0), 0),
+      armedMocks: options.mocks.length,
+    },
+    clients: options.clients,
+    entries: options.entries.map((entry) => slimEntry(entry, authQueryKeys)),
+    events: options.events,
+    faults: options.faults,
+    mocks: options.mocks,
+  };
+};

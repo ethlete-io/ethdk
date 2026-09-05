@@ -106,6 +106,7 @@ import {
   map,
   merge,
   NEVER,
+  scan,
   startWith,
   Subject,
   switchMap,
@@ -164,6 +165,7 @@ import {
   SessionExportEvent,
   SessionExportFault,
   SessionExportMock,
+  sessionAuthQueryKey,
   slimForReport,
 } from './query-devtools-session';
 import { QueryDevtoolsTimelineStylesComponent } from './query-devtools-timeline-styles.component';
@@ -1070,8 +1072,19 @@ export class QueryDevtoolsComponent implements OnInit {
   public copiedRoute = signal(false);
   private copiedReset$ = new Subject<void>();
 
-  /** 1-second tick driving the cache freshness countdowns. */
-  private clock = toSignal(interval(1000), { initialValue: 0 });
+  /**
+   * 1-second tick driving the cache freshness countdowns. Gated the way the locks poll is: an ungated
+   * `interval` is a periodic macrotask zone.js counts forever, so a mounted panel would tick the host
+   * application once a second and keep `ApplicationRef.whenStable()` from ever resolving. Every reader
+   * sits inside `@if (open())`, so there is nothing to drive while the panel is shut or the tab hidden.
+   */
+  private clock = toSignal(
+    toObservable(computed(() => this.open() && this.isDocumentVisible())).pipe(
+      switchMap((ticking) => (ticking ? interval(1000) : EMPTY)),
+      scan((tick) => tick + 1, 0),
+    ),
+    { initialValue: 0 },
+  );
 
   /**
    * The probe lock behind every Locks row's "this tab" answer, and the last snapshot read through it.
@@ -2474,8 +2487,8 @@ export class QueryDevtoolsComponent implements OnInit {
    * holds, the event log, the cache totals and anything armed in the Faults tab. Unlike **Copy report**
    * this is not scoped to one query - it is the attachment for a bug report about a screen.
    *
-   * Deliberately unfiltered: a report is read by someone who was not there, and a dump that silently
-   * left out the client you were not looking at is worse than no dump.
+   * Deliberately unfiltered apart from credentials: a report is read by someone who was not there, and a
+   * dump that silently left out the client you were not looking at is worse than no dump.
    */
   protected downloadSession() {
     const now = Date.now();
@@ -2489,6 +2502,7 @@ export class QueryDevtoolsComponent implements OnInit {
         events: this.sessionEvents(),
         faults: this.sessionFaults(),
         mocks: this.sessionMocks(),
+        authQueryKeys: this.sessionAuthQueryKeys(),
       }),
       null,
       2,
@@ -3563,6 +3577,25 @@ export class QueryDevtoolsComponent implements OnInit {
       persistedEntries: client.client?.subtle.persistence ? this.persistedCount(client.client) : null,
       features: (client.client?.subtle.devtoolsFeatures ?? []).map((feature) => this.featureSummary(feature)),
     }));
+  }
+
+  /**
+   * A bearer auth provider's login and token-refresh queries are ordinary registered queries, so the
+   * export has to be told which ones they are before it can leave their bodies out. The provider's own
+   * entry lists them by client, method and route, which is what a query entry is matched on.
+   */
+  private sessionAuthQueryKeys(): string[] {
+    return queryDevtoolsEntries()
+      .filter((entry) => entry.kind === 'auth-provider')
+      .flatMap((entry) =>
+        (entry.meta.authQueries ?? []).map((authQuery) =>
+          sessionAuthQueryKey({
+            client: entry.meta.clientBaseUrl ?? entry.meta.clientName ?? null,
+            method: authQuery.method,
+            route: authQuery.route,
+          }),
+        ),
+      );
   }
 
   /** Every registered entry, described by whatever its kind carries. */

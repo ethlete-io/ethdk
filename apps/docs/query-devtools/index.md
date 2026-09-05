@@ -1747,14 +1747,19 @@ arrays sampled down to `… (N more)` - so the file stays small enough to attach
 captured on, so a report says which environment it came from.
 
 ::: warning
-Access and refresh tokens are **never** exported. An auth provider is described by
-whether it holds each token and how long the access token has left, because a file that
-travels to a ticket must not carry a bearer token. The Insomnia export is the deliberate
-exception - it carries a refresh token because that is what makes its chain work, and
+Access and refresh tokens are **never** exported. An auth provider is described by whether
+it holds each token and how long the access token has left, its own login and token-refresh
+queries are listed without what they sent or received, and any value under a
+credential-named key - `password`, `accessToken`, `Authorization`, `set-cookie`,
+`apiKey` and the like - is replaced by `[redacted: credential]` wherever it sits in an args
+or response body. The Insomnia export is the deliberate exception - it carries a refresh
+token because that is what makes its chain work, and
 [it says so](#secure-queries-get-a-self-refreshing-token).
 
-The rest is your app's data: args and responses go into the file as they are, slimmed
-but not redacted. Read it before you attach it.
+That rule is a key-name rule, so it is a floor and not a guarantee: a credential the API
+returns under a name that does not read like one, or one carried in a URL's query string,
+still travels in the file. The rest is your app's data - args and responses go in as they
+are, slimmed but not redacted. Read it before you attach it.
 :::
 
 ## About: which build is running
