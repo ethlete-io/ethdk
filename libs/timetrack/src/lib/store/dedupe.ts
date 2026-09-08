@@ -28,6 +28,10 @@ const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
  * An editor heartbeat keys by its reporter and its instant, which is what makes a reporter's retry
  * free: a POST whose response was lost is sent again, and one editor cannot have been in two states
  * at the same millisecond.
+ *
+ * An agent's token spend keys by the provider and the provider's own id for the turn. That is what lets
+ * a session log be read again from the top — which `resyncAgentSessionCursors` does whenever the user
+ * links a checkout — without the day's spend doubling.
  */
 export const dedupeKeyOf = (event: CollectedEvent): string | null => {
   switch (event.kind) {
@@ -41,6 +45,8 @@ export const dedupeKeyOf = (event: CollectedEvent): string | null => {
       return keyOf([event.kind, event.eventId]);
     case 'editor-heartbeat':
       return keyOf([event.kind, event.reporter, event.at.toISOString()]);
+    case 'agent-usage':
+      return keyOf([event.kind, event.provider, event.turnId]);
     default:
       return null;
   }

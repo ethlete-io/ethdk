@@ -21,6 +21,20 @@ const record = (options: { timestamp: string; sessionId?: string; cwd?: string }
     gitBranch: 'next',
   });
 
+const turn = (options: { timestamp: string; id: string; sessionId?: string; output?: number }) =>
+  JSON.stringify({
+    type: 'assistant',
+    timestamp: options.timestamp,
+    sessionId: options.sessionId ?? 's1',
+    cwd: '/Users/tom/dev/ethlete-sdk',
+    gitBranch: 'next',
+    message: {
+      id: options.id,
+      model: 'claude-opus-5',
+      usage: { input_tokens: 1, output_tokens: options.output ?? 10, cache_read_input_tokens: 500 },
+    },
+  });
+
 const customTitle = (title: string) => JSON.stringify({ type: 'custom-title', sessionId: 's1', customTitle: title });
 
 const readerFor = (logs: Log[]) => {
@@ -225,6 +239,28 @@ describe('collectAgentSessions$', () => {
   it('emits an empty collection when the agent has never run', () => {
     const { result } = collect({ logs: [] });
 
-    expect(result).toEqual({ events: [], cursors: [], unparsedLines: 0 });
+    expect(result).toEqual({ events: [], usage: [], cursors: [], unparsedLines: 0 });
+  });
+
+  it('reports the spend of every log it read, oldest turn first', () => {
+    const { result } = collect({
+      logs: [
+        { ref: ref('s2'), lines: [turn({ timestamp: '2026-08-11T09:10:00.000Z', id: 'msg_b', sessionId: 's2' })] },
+        { ref: ref('s1'), lines: [turn({ timestamp: '2026-08-11T09:00:00.000Z', id: 'msg_a' })] },
+      ],
+    });
+
+    expect(result.usage.map((event) => event.turnId)).toEqual(['msg_a', 'msg_b']);
+    expect(result.usage.map((event) => event.usage.cacheRead)).toEqual([500, 500]);
+  });
+
+  it('keeps the spend of a turn the sample cursor has already passed', () => {
+    const { result } = collect({
+      logs: [{ ref: ref('s1'), lines: [turn({ timestamp: '2026-08-11T09:00:00.000Z', id: 'msg_a' })] }],
+      cursors: [{ id: 's1', nextLine: 0, after: new Date('2026-08-11T09:05:00.000Z') }],
+    });
+
+    expect(result.events).toEqual([]);
+    expect(result.usage.map((event) => event.turnId)).toEqual(['msg_a']);
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TimetrackProjectLink } from '../correlate/project-link';
-import { AgentSessionEvent } from '../model/event';
+import { AgentSessionEvent, AgentUsageEvent } from '../model/event';
 import { keepLinkedAgentSessions } from './linked';
 
 const link = (path: string, target: TimetrackProjectLink['target']): TimetrackProjectLink => ({
@@ -21,6 +21,18 @@ const session = (cwd: string, at: string): AgentSessionEvent => ({
   at: new Date(at),
   sessionId: `${cwd}@${at}`,
   cwd,
+});
+
+const spend = (cwd: string, at: string): AgentUsageEvent => ({
+  source: 'agent-usage',
+  kind: 'agent-usage',
+  at: new Date(at),
+  provider: 'claude-code',
+  sessionId: `${cwd}@${at}`,
+  turnId: `msg_${at}`,
+  cwd,
+  model: 'claude-opus-5',
+  usage: { input: 1, output: 10, cacheWrite: 0, cacheRead: 500, thinking: 0 },
 });
 
 describe('keepLinkedAgentSessions', () => {
@@ -81,5 +93,25 @@ describe('keepLinkedAgentSessions', () => {
 
     expect(result.kept).toEqual([]);
     expect(result.unlinked).toHaveLength(1);
+  });
+
+  it("filters a turn's spend by the same link, and gives back the same shape", () => {
+    const kept = spend('/home/tom/dev/fut-frontend', '2026-08-17T09:00:00Z');
+    const dropped = spend('/home/tom/dev/unlinked', '2026-08-17T09:05:00Z');
+
+    const result = keepLinkedAgentSessions({ events: [kept, dropped], links: LINKS });
+
+    expect(result.kept).toEqual([kept]);
+    expect(result.unlinked).toEqual([{ cwd: '/home/tom/dev/unlinked', events: 1, lastAt: dropped.at }]);
+  });
+
+  it('drops the spend of a checkout a private link covers, the way it drops the session', () => {
+    const result = keepLinkedAgentSessions({
+      events: [spend('/home/tom/dev/side', '2026-08-17T09:00:00Z')],
+      links: LINKS,
+    });
+
+    expect(result.kept).toEqual([]);
+    expect(result.unlinked).toEqual([]);
   });
 });

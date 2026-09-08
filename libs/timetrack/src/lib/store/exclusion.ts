@@ -47,14 +47,20 @@ const titleOf = (event: CollectedEvent) =>
 /**
  * What a title pattern is tested against for an event that has no title.
  *
- * An editor heartbeat names a checkout and a file instead, and both are exactly the kind of thing a
- * user writes a rule about — a client's repository, a private side project. Without this a rule that
- * hides a name from every other source would let the same name through here.
+ * An editor heartbeat names a checkout and a file instead, and an agent's token spend names a checkout
+ * and a branch. Both are exactly the kind of thing a user writes a rule about — a client's repository,
+ * a private side project. Without this a rule that hides a name from every other source would let the
+ * same name through here.
  */
-const pathOf = (event: CollectedEvent) =>
-  event.kind === 'editor-heartbeat'
-    ? [event.repoPath, event.directory].filter(Boolean).join(' ') || undefined
-    : undefined;
+const pathOf = (event: CollectedEvent) => {
+  if (event.kind === 'editor-heartbeat') {
+    return [event.repoPath, event.directory].filter(Boolean).join(' ') || undefined;
+  }
+
+  if (event.kind === 'agent-usage') return [event.cwd, event.gitBranch].filter(Boolean).join(' ');
+
+  return undefined;
+};
 
 const appIdOf = (event: CollectedEvent) => ('appId' in event ? event.appId : undefined);
 

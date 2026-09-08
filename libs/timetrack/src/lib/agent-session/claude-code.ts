@@ -1,5 +1,11 @@
-import { AgentSessionEvent } from '../model/event';
+import { AgentSessionEvent, AgentUsageEvent, TokenUsage } from '../model/event';
 import { AgentSessionLogParseOptions, AgentSessionLogParser, DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS } from './source';
+
+/** The name this parser's events carry, and the first half of the key the store deduplicates them on. */
+export const CLAUDE_CODE_PROVIDER = 'claude-code';
+
+/** The model Claude Code names on a record it wrote itself. Every count on it is zero. */
+const SYNTHETIC_MODEL = '<synthetic>';
 
 type ActivityRecord = { at: Date; sessionId: string; cwd: string; gitBranch?: string };
 
@@ -52,6 +58,62 @@ const activityOf = (record: Record<string, unknown>): ActivityRecord | null => {
   return Number.isNaN(at.getTime()) ? null : { at, sessionId, cwd, gitBranch: branchOf(record) };
 };
 
+const objectAt = (record: Record<string, unknown>, key: string): Record<string, unknown> | null => {
+  const value = record[key];
+
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+};
+
+const countAt = (record: Record<string, unknown> | null, key: string) => {
+  const value = record?.[key];
+
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+};
+
+/**
+ * The turn's own counts, from the top level of `usage` only. `usage.iterations` restates them per API
+ * call, so reading it as well would count a turn twice.
+ */
+const tokenUsageOf = (usage: Record<string, unknown>): TokenUsage => ({
+  input: countAt(usage, 'input_tokens'),
+  output: countAt(usage, 'output_tokens'),
+  cacheWrite: countAt(usage, 'cache_creation_input_tokens'),
+  cacheRead: countAt(usage, 'cache_read_input_tokens'),
+  thinking: countAt(objectAt(usage, 'output_tokens_details'), 'thinking_tokens'),
+});
+
+/**
+ * The spend of one turn, or `null` where the record reports none.
+ *
+ * A subagent's records name the parent session in `sessionId` and the subagent in `agentId`, so a
+ * subagent's spend already lands in the stream that asked for it.
+ */
+const usageOf = (record: Record<string, unknown>): AgentUsageEvent | null => {
+  const activity = activityOf(record);
+  const message = objectAt(record, 'message');
+  const usage = message ? objectAt(message, 'usage') : null;
+  const turnId = message ? stringAt(message, 'id') : undefined;
+  const model = message ? stringAt(message, 'model') : undefined;
+
+  if (!activity || !usage || !turnId || !model || model === SYNTHETIC_MODEL) return null;
+
+  return {
+    at: activity.at,
+    source: 'agent-usage',
+    kind: 'agent-usage',
+    provider: CLAUDE_CODE_PROVIDER,
+    sessionId: activity.sessionId,
+    turnId,
+    cwd: activity.cwd,
+    gitBranch: activity.gitBranch,
+    model,
+    usage: tokenUsageOf(usage),
+    agentId: stringAt(record, 'agentId'),
+  };
+};
+
 const readTitle = (record: Record<string, unknown>, into: TitleCandidates) => {
   const type = stringAt(record, 'type');
 
@@ -94,6 +156,9 @@ const contextOf = (record: ActivityRecord) => `${record.cwd}\u0000${record.gitBr
  * Records are thinned to one sample per `sampleIntervalMs`, except that a change of directory or branch
  * always emits, and so does each session's final record, so a block ends where the session did.
  *
+ * Every turn that reports `message.usage` also becomes an `AgentUsageEvent`, whatever the sample
+ * interval: a token count is not a sample of time.
+ *
  * Only metadata is read. Message bodies never become events, and the session's first prompt is used as
  * a title only when `promptFallback` asks for it.
  */
@@ -102,6 +167,10 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   const after = options.resume?.after;
   const titles: TitleCandidates = {};
   const records: ActivityRecord[] = [];
+  // One assistant message is written as several records — one per content block — and each of them
+  // restates the same `message.usage`. Measured over this machine's logs: 46 % of usage records repeat
+  // an id, and a repeated id never carried different counts. So the first one wins.
+  const usageByTurnId = new Map<string, AgentUsageEvent>();
   let unparsedLines = 0;
 
   for (const line of options.lines) {
@@ -115,6 +184,12 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
     }
 
     readTitle(parsed, titles);
+
+    const spend = usageOf(parsed);
+
+    // No `after` guard: `after` follows the thinned samples, and a turn behind it is spend, not a
+    // repeat. The store's dedupe key — the provider and the turn id — is what makes a re-read safe.
+    if (spend && !usageByTurnId.has(spend.turnId)) usageByTurnId.set(spend.turnId, spend);
 
     const record = activityOf(parsed);
 
@@ -165,5 +240,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
     if (previous.context !== contextOf(record) || elapsed >= interval || (isFinal && elapsed > 0)) emit(record);
   });
 
-  return { events, title, unparsedLines };
+  const usage = [...usageByTurnId.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  return { events, usage, title, unparsedLines };
 };

@@ -111,13 +111,12 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * The cursors move either way: the line was read, and re-reading it would only drop it again.
    */
   const persist$ = (collection: AgentSessionCollection, startedAt: Date): Observable<AgentSessionCollection> => {
-    const linked = keepLinkedAgentSessions({
-      events: collection.events,
-      links: settings.settings().projectLinks,
-    });
+    const links = settings.settings().projectLinks;
+    const linked = keepLinkedAgentSessions({ events: collection.events, links });
+    const linkedUsage = keepLinkedAgentSessions({ events: collection.usage, links });
 
     const { kept, excluded } = applyExclusionRules({
-      events: linked.kept,
+      events: [...linked.kept, ...linkedUsage.kept],
       rules: effectiveExclusionRules(settings.settings()),
     });
 

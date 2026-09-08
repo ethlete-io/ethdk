@@ -1,5 +1,5 @@
 import { Observable, concatMap, from, map, toArray } from 'rxjs';
-import { AgentSessionEvent } from '../model/event';
+import { AgentSessionEvent, AgentUsageEvent } from '../model/event';
 import { AgentSessionLogParseOptions, AgentSessionLogParser } from './source';
 import { AgentSessionLogReader, AgentSessionLogRef } from './ports';
 
@@ -23,6 +23,8 @@ export type AgentSessionCursor = {
 
 export type AgentSessionCollection = {
   events: AgentSessionEvent[];
+  /** What the turns in the batch spent. Keyed by provider and turn id, so a re-read appends nothing new. */
+  usage: AgentUsageEvent[];
   /**
    * The cursors to persist, including the ones for logs this run did not list. Store them together with
    * the events: a cursor that goes missing re-reads its log from the top and appends every sample twice.
@@ -34,6 +36,7 @@ export type AgentSessionCollection = {
 
 type LogRead = {
   events: AgentSessionEvent[];
+  usage: AgentUsageEvent[];
   cursor: AgentSessionCursor;
   unparsedLines: number;
 };
@@ -59,6 +62,7 @@ const readLog$ = (options: {
 
       return {
         events: parsed.events,
+        usage: parsed.usage,
         unparsedLines: parsed.unparsedLines,
         cursor: {
           id: ref.id,
@@ -109,6 +113,7 @@ export const collectAgentSessions$ = (options: {
 
       return {
         events: reads.flatMap((read) => read.events).sort((a, b) => a.at.getTime() - b.at.getTime()),
+        usage: reads.flatMap((read) => read.usage).sort((a, b) => a.at.getTime() - b.at.getTime()),
         cursors: [...cursors.values()],
         unparsedLines: reads.reduce((total, read) => total + read.unparsedLines, 0),
       };

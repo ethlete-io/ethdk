@@ -1,5 +1,4 @@
 import { TimetrackProjectLink, matchProjectLink } from '../correlate/project-link';
-import { AgentSessionEvent } from '../model/event';
 
 /** One checkout whose sessions were dropped, so a repository nobody linked stays visible. */
 export type UnlinkedAgentSessions = {
@@ -8,14 +7,17 @@ export type UnlinkedAgentSessions = {
   lastAt: Date;
 };
 
-export type LinkedAgentSessions = {
-  kept: AgentSessionEvent[];
+/** Anything an agent produced inside a checkout: an activity sample, or one turn's token spend. */
+type AgentSessionRecord = { at: Date; cwd: string };
+
+export type LinkedAgentSessions<TEvent extends AgentSessionRecord> = {
+  kept: TEvent[];
   /** Dropped for want of a link, by checkout, most samples first. A private link is not reported here. */
   unlinked: UnlinkedAgentSessions[];
 };
 
 /**
- * Keeps only the sessions run inside a checkout a link files into a Jira project.
+ * Keeps only what an agent produced inside a checkout a link files into a Jira project.
  *
  * Tempo takes a worklog against an issue, so a session in a checkout no project covers is time nothing
  * can bill — and a developer's machine holds far more of those than it holds client repositories. A
@@ -25,11 +27,11 @@ export type LinkedAgentSessions = {
  * What is dropped is reported by checkout rather than swallowed. A repository the user has not linked
  * yet looks exactly like one they never will, and only they can tell the two apart.
  */
-export const keepLinkedAgentSessions = (options: {
-  events: readonly AgentSessionEvent[];
+export const keepLinkedAgentSessions = <TEvent extends AgentSessionRecord>(options: {
+  events: readonly TEvent[];
   links: readonly TimetrackProjectLink[];
-}): LinkedAgentSessions => {
-  const kept: AgentSessionEvent[] = [];
+}): LinkedAgentSessions<TEvent> => {
+  const kept: TEvent[] = [];
   const unlinked = new Map<string, UnlinkedAgentSessions>();
 
   for (const event of options.events) {

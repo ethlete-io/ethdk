@@ -193,3 +193,45 @@ describe('DEFAULT_EXCLUSION_RULES', () => {
     expect(applyExclusionRules({ events: [], rules: DEFAULT_EXCLUSION_RULES }).invalidRules).toEqual([]);
   });
 });
+
+describe("applyExclusionRules, on a turn's token spend", () => {
+  const spend = (cwd: string, gitBranch?: string): CollectedEvent => ({
+    at: new Date(2026, 7, 17, 9, 0),
+    source: 'agent-usage',
+    kind: 'agent-usage',
+    provider: 'claude-code',
+    sessionId: 's1',
+    turnId: 'msg_1',
+    cwd,
+    gitBranch,
+    model: 'claude-opus-5',
+    usage: { input: 1, output: 10, cacheWrite: 0, cacheRead: 500, thinking: 0 },
+  });
+
+  it('tests a title pattern against the checkout the turn ran in', () => {
+    const result = applyExclusionRules({
+      events: [spend('/home/tom/dev/invoices')],
+      rules: [{ kind: 'title-pattern', pattern: 'invoices' }],
+    });
+
+    expect(result.kept).toEqual([]);
+    expect(result.excluded.map((entry) => entry.kind)).toEqual(['agent-usage']);
+  });
+
+  it('tests a title pattern against the branch as well', () => {
+    const result = applyExclusionRules({
+      events: [spend('/home/tom/dev/fut-frontend', 'feat/secret-launch')],
+      rules: [{ kind: 'title-pattern', pattern: 'secret-launch' }],
+    });
+
+    expect(result.kept).toEqual([]);
+  });
+
+  it('keeps a turn no rule names, and reports no name in the summary', () => {
+    const kept = spend('/home/tom/dev/fut-frontend', 'next');
+
+    const result = applyExclusionRules({ events: [kept], rules: [{ kind: 'title-pattern', pattern: 'invoices' }] });
+
+    expect(result.kept).toEqual([kept]);
+  });
+});

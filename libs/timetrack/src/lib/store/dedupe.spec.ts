@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AgentUsageEvent,
   CalendarOccurrenceEvent,
   CollectedEvent,
   EditorHeartbeatEvent,
@@ -108,5 +109,25 @@ describe('dedupeKeyOf', () => {
     expect(dedupeKeyOf(heartbeat({ directory: 'src/lib' }))).toBe(dedupeKeyOf(heartbeat()));
     expect(dedupeKeyOf(heartbeat({ at: new Date(2026, 7, 11, 9, 31) }))).not.toBe(dedupeKeyOf(heartbeat()));
     expect(dedupeKeyOf(heartbeat({ reporter: 'chrome' }))).not.toBe(dedupeKeyOf(heartbeat()));
+  });
+
+  it('keys a turn by its provider and its own id, so a log read again adds no spend', () => {
+    const spend = (overrides: Partial<AgentUsageEvent> = {}): AgentUsageEvent => ({
+      at: new Date(2026, 7, 11, 9, 30),
+      source: 'agent-usage',
+      kind: 'agent-usage',
+      provider: 'claude-code',
+      sessionId: '154009aa-3442-401d-852b-07a0d5156e97',
+      turnId: 'msg_011Ceqk1wsbtNyCbzz8e9kGB',
+      cwd: '/home/tom/dev/fut-frontend',
+      gitBranch: 'feat/FIP-2177-user-management',
+      model: 'claude-opus-5',
+      usage: { input: 2, output: 289, cacheWrite: 17_421, cacheRead: 18_910, thinking: 0 },
+      ...overrides,
+    });
+
+    expect(dedupeKeyOf(spend({ at: new Date(2026, 7, 11, 9, 31) }))).toBe(dedupeKeyOf(spend()));
+    expect(dedupeKeyOf(spend({ turnId: 'msg_other' }))).not.toBe(dedupeKeyOf(spend()));
+    expect(dedupeKeyOf(spend({ provider: 'codex' }))).not.toBe(dedupeKeyOf(spend()));
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AgentSessionEvent } from '../model/event';
-import { parseClaudeCodeSessionLog } from './claude-code';
+import { CLAUDE_CODE_PROVIDER, parseClaudeCodeSessionLog } from './claude-code';
 
 const SESSION = '154009aa-3442-401d-852b-07a0d5156e97';
 const CWD = '/home/tom/dev/fut-frontend';
@@ -25,6 +25,51 @@ const customTitle = (title: string) => JSON.stringify({ type: 'custom-title', se
 
 const lastPrompt = (prompt: string) =>
   JSON.stringify({ type: 'last-prompt', sessionId: SESSION, leafUuid: 'leaf', lastPrompt: prompt });
+
+type UsageCounts = {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+  thinking_tokens?: number;
+};
+
+const turn = (options: {
+  minute: number;
+  second?: number;
+  id?: string;
+  model?: string;
+  cwd?: string;
+  branch?: string;
+  agentId?: string;
+  counts?: UsageCounts;
+  extra?: Record<string, unknown>;
+}) => {
+  const counts = options.counts ?? {};
+
+  return JSON.stringify({
+    type: 'assistant',
+    uuid: `uuid-${options.minute}-${options.second ?? 0}`,
+    timestamp: at(options.minute, options.second).toISOString(),
+    cwd: options.cwd ?? CWD,
+    sessionId: SESSION,
+    gitBranch: options.branch ?? BRANCH,
+    ...(options.agentId ? { agentId: options.agentId, isSidechain: true } : {}),
+    message: {
+      id: options.id ?? `msg_${options.minute}`,
+      model: options.model ?? 'claude-opus-5',
+      role: 'assistant',
+      usage: {
+        input_tokens: counts.input_tokens ?? 0,
+        output_tokens: counts.output_tokens ?? 0,
+        cache_creation_input_tokens: counts.cache_creation_input_tokens ?? 0,
+        cache_read_input_tokens: counts.cache_read_input_tokens ?? 0,
+        output_tokens_details: { thinking_tokens: counts.thinking_tokens ?? 0 },
+        ...(options.extra ?? {}),
+      },
+    },
+  });
+};
 
 const parse = (lines: string[], options: Partial<Parameters<typeof parseClaudeCodeSessionLog>[0]> = {}) =>
   parseClaudeCodeSessionLog({ lines, ...options });
@@ -236,5 +281,143 @@ describe('parseClaudeCodeSessionLog', () => {
 
       expect(result.title).toBe('Agent collector');
     });
+  });
+});
+
+describe('parseClaudeCodeSessionLog, on token spend', () => {
+  it('reads one turn as the five counts it is priced by', () => {
+    const result = parse([
+      turn({
+        minute: 0,
+        counts: {
+          input_tokens: 2,
+          output_tokens: 289,
+          cache_creation_input_tokens: 17_421,
+          cache_read_input_tokens: 18_910,
+          thinking_tokens: 96,
+        },
+      }),
+    ]);
+
+    expect(result.usage).toEqual([
+      {
+        at: at(0),
+        source: 'agent-usage',
+        kind: 'agent-usage',
+        provider: CLAUDE_CODE_PROVIDER,
+        sessionId: SESSION,
+        turnId: 'msg_0',
+        cwd: CWD,
+        gitBranch: BRANCH,
+        model: 'claude-opus-5',
+        usage: { input: 2, output: 289, cacheWrite: 17_421, cacheRead: 18_910, thinking: 96 },
+        agentId: undefined,
+      },
+    ]);
+  });
+
+  it('counts a turn once, however many records restate its usage', () => {
+    const result = parse([
+      turn({ minute: 0, id: 'msg_a', counts: { output_tokens: 100 } }),
+      turn({ minute: 0, second: 4, id: 'msg_a', counts: { output_tokens: 100 } }),
+      turn({ minute: 1, id: 'msg_b', counts: { output_tokens: 40 } }),
+    ]);
+
+    expect(result.usage.map((event) => event.turnId)).toEqual(['msg_a', 'msg_b']);
+    expect(result.usage.map((event) => event.usage.output)).toEqual([100, 40]);
+  });
+
+  it('reports every turn, however far the samples are thinned', () => {
+    const lines = [0, 2, 4].map((second) => turn({ minute: 0, second, id: `msg_${second}` }));
+
+    const result = parse(lines, { sampleIntervalMs: 60_000 });
+
+    expect(result.events).toHaveLength(2);
+    expect(result.usage).toHaveLength(3);
+  });
+
+  it('reports a turn behind the resume cursor, because a count is not a repeated sample', () => {
+    const result = parse([turn({ minute: 0, id: 'msg_early' })], { resume: { after: at(5) } });
+
+    expect(result.events).toEqual([]);
+    expect(result.usage.map((event) => event.turnId)).toEqual(['msg_early']);
+  });
+
+  it('skips the synthetic model, which reports a turn nobody ran', () => {
+    const result = parse([turn({ minute: 0, model: '<synthetic>' }), turn({ minute: 1, id: 'msg_real' })]);
+
+    expect(result.usage.map((event) => event.turnId)).toEqual(['msg_real']);
+  });
+
+  it('reads the top level of usage only, never the per-call iterations that restate it', () => {
+    const result = parse([
+      turn({
+        minute: 0,
+        counts: { output_tokens: 187 },
+        extra: { iterations: [{ output_tokens: 187 }, { output_tokens: 187 }] },
+      }),
+    ]);
+
+    expect(result.usage.map((event) => event.usage.output)).toEqual([187]);
+  });
+
+  it('names the subagent that ran the turn, and keeps its spend in the parent session', () => {
+    const result = parse([turn({ minute: 0, agentId: 'a37a4fb79537e0377' })]);
+
+    expect(result.usage[0]).toMatchObject({ sessionId: SESSION, agentId: 'a37a4fb79537e0377' });
+  });
+
+  it('reads a branch and a directory per turn, so a mid-session switch is attributed to each', () => {
+    const result = parse([
+      turn({ minute: 0, id: 'msg_a' }),
+      turn({ minute: 1, id: 'msg_b', cwd: '/home/tom/dev/ethlete-sdk', branch: 'next' }),
+    ]);
+
+    expect(result.usage.map((event) => [event.cwd, event.gitBranch])).toEqual([
+      [CWD, BRANCH],
+      ['/home/tom/dev/ethlete-sdk', 'next'],
+    ]);
+  });
+
+  it('takes no spend from a record that reports none', () => {
+    const result = parse([record({ minute: 0 }), aiTitle('A session with no usage record')]);
+
+    expect(result.usage).toEqual([]);
+  });
+
+  it('takes no spend from a usage record the agent wrote without a turn id', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      timestamp: at(0).toISOString(),
+      cwd: CWD,
+      sessionId: SESSION,
+      message: { model: 'claude-opus-5', usage: { output_tokens: 10 } },
+    });
+
+    expect(parse([line]).usage).toEqual([]);
+  });
+
+  it('reads a missing count as zero rather than dropping the turn', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      timestamp: at(0).toISOString(),
+      cwd: CWD,
+      sessionId: SESSION,
+      message: { id: 'msg_thin', model: 'claude-opus-5', usage: { output_tokens: 10, output_tokens_details: null } },
+    });
+
+    expect(parse([line]).usage[0]?.usage).toEqual({
+      input: 0,
+      output: 10,
+      cacheWrite: 0,
+      cacheRead: 0,
+      thinking: 0,
+    });
+  });
+
+  it('reports the turns oldest first, whatever order the log holds them in', () => {
+    const result = parse([turn({ minute: 5, id: 'msg_late' }), turn({ minute: 0, id: 'msg_early' })]);
+
+    expect(result.usage.map((event) => event.turnId)).toEqual(['msg_early', 'msg_late']);
   });
 });

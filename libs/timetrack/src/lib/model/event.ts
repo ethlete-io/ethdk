@@ -1,5 +1,6 @@
 /** The collector a raw observation came from. Retention and exclusion rules are applied per source. */
-export type CollectedEventSource = 'window' | 'idle' | 'git' | 'agent-session' | 'calendar' | 'gitlab' | 'editor';
+export type CollectedEventSource =
+  'window' | 'idle' | 'git' | 'agent-session' | 'agent-usage' | 'calendar' | 'gitlab' | 'editor';
 
 type CollectedEventBase<TSource extends CollectedEventSource, TKind extends string> = {
   at: Date;
@@ -41,6 +42,42 @@ export type AgentSessionEvent = CollectedEventBase<'agent-session', 'agent-sessi
   gitBranch?: string;
   /** The session's own summary line, when it has one. */
   title?: string;
+};
+
+/**
+ * What one agent turn spent, in tokens.
+ *
+ * The classes are kept apart because they are priced apart: on a real day cache reads are about 98 % of
+ * every token and the cheapest class, so one summed number cannot be turned into a cost.
+ */
+export type TokenUsage = {
+  input: number;
+  output: number;
+  cacheWrite: number;
+  cacheRead: number;
+  /** Part of `output`, never added to it. Priced as output, read as work. */
+  thinking: number;
+};
+
+/**
+ * What one turn of a coding agent spent. A turn has an instant, so the spend is an event and maps to a
+ * block the way a commit does — it is not a property of the session.
+ *
+ * It observes nothing, so it is no `ActivityEvent`: a turn that finished at 02:00 must not open a
+ * block. An `AgentSessionEvent` at the same instant does, so a day that ran an agent loses nothing.
+ */
+export type AgentUsageEvent = CollectedEventBase<'agent-usage', 'agent-usage'> & {
+  /** `claude-code` or `codex`. One provider is one parser and one price table. */
+  provider: string;
+  sessionId: string;
+  /** The provider's own id for the turn. With `provider`, the key the store deduplicates on. */
+  turnId: string;
+  cwd: string;
+  gitBranch?: string;
+  model: string;
+  usage: TokenUsage;
+  /** The subagent that ran the turn. Its spend belongs to the stream of `sessionId`. */
+  agentId?: string;
 };
 
 /**
@@ -107,6 +144,7 @@ export type CollectedEvent =
   | GitCheckoutEvent
   | GitCommitEvent
   | AgentSessionEvent
+  | AgentUsageEvent
   | EditorHeartbeatEvent
   | CalendarOccurrenceEvent
   | MergeRequestActivityEvent;
@@ -116,9 +154,10 @@ export type ActivityEvent =
   WindowFocusEvent | PresenceEvent | GitCheckoutEvent | GitCommitEvent | AgentSessionEvent | EditorHeartbeatEvent;
 
 /**
- * Whether the event is one the day is reconstructed from. A calendar occurrence and a GitLab event
- * both describe work without observing it, so neither may open or extend a block: an instant with no
- * duration would otherwise invent one, and a stale sticky context would take real work with it.
+ * Whether the event is one the day is reconstructed from. A calendar occurrence, a GitLab event and an
+ * agent's token spend all describe work without observing it, so none of them may open or extend a
+ * block: an instant with no duration would otherwise invent one, and a stale sticky context would take
+ * real work with it.
  */
 export const isActivityEvent = (event: CollectedEvent): event is ActivityEvent =>
-  event.source !== 'calendar' && event.source !== 'gitlab';
+  event.source !== 'calendar' && event.source !== 'gitlab' && event.source !== 'agent-usage';

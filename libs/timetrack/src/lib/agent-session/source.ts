@@ -1,4 +1,4 @@
-import { AgentSessionEvent } from '../model/event';
+import { AgentSessionEvent, AgentUsageEvent } from '../model/event';
 
 /**
  * Far enough apart to keep a long session from filling the store, and far below
@@ -27,6 +27,11 @@ export type AgentSessionLogParseOptions = {
 
 export type AgentSessionLogParseResult = {
   events: AgentSessionEvent[];
+  /**
+   * What the turns in this batch spent. Every turn is reported, never thinned: `events` is a sample of
+   * time and this is a count of tokens, so the sample interval must not reach it.
+   */
+  usage: AgentUsageEvent[];
   /** The title the events carry, to hand back as `resume.title` when reading the rest of the log. */
   title?: string;
   /**
