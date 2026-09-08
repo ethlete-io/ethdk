@@ -88,6 +88,7 @@ describe('streamDay', () => {
     expect(day.streams).toHaveLength(1);
     expect(streamOf(day, `repo:${SDK}`)?.engagedMs).toBe(30 * MINUTE);
     expect(streamOf(day, `repo:${SDK}`)?.apps).toEqual(['code']);
+    expect(streamOf(day, `repo:${SDK}`)?.agentSessions).toBe(0);
     expect(day.presenceMs).toBe(30 * MINUTE);
     expect(day.concurrency).toBe(1);
   });
@@ -142,6 +143,7 @@ describe('streamDay', () => {
 
     expect(stream?.blocks).toHaveLength(1);
     expect(stream?.engagedMs).toBe(20 * MINUTE);
+    expect(stream?.agentSessions).toBe(5);
     expect(stream?.spend.turns).toBe(5);
     expect(stream?.spend.usage.output).toBe(15_000);
   });

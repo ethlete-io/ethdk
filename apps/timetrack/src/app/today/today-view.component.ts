@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import { Stream, formatDurationMs } from '@ethlete/timetrack';
 import { formatClockTime, formatDayLabel } from '../day-review/format';
-import { formatSpend, formatStreamLabel } from './format';
+import { formatAgentSessions, formatSpend, formatStreamLabel } from './format';
 import { injectToday, provideToday } from './today';
 
 @Component({
@@ -53,6 +53,9 @@ import { injectToday, provideToday } from './today';
                 <span class="text-mono text-et-surface-muted" data-span>{{ spanOf(stream) }}</span>
                 <span [title]="stream.repoPath ?? ''" class="text-base" data-label>{{ LABEL_OF(stream) }}</span>
                 <span class="text-small" data-engaged>{{ engagedOf(stream) }} engaged</span>
+                @if (SESSIONS_OF(stream); as sessions) {
+                  <span class="text-small text-et-surface-muted" data-agent-sessions>{{ sessions }}</span>
+                }
                 @if (SPEND_OF(stream.spend); as spend) {
                   <span class="text-small text-et-surface-muted" data-spend>{{ spend }}</span>
                 }
@@ -124,6 +127,7 @@ export class TodayViewComponent {
 
   protected readonly LABEL_OF = formatStreamLabel;
   protected readonly SPEND_OF = formatSpend;
+  protected readonly SESSIONS_OF = formatAgentSessions;
   protected readonly CLOCK_OF = formatClockTime;
 
   protected engagedOf(stream: Stream) {

@@ -17,3 +17,15 @@ export const formatSpend = (spend: StreamSpend) => {
     usage.cacheRead,
   )} cached`;
 };
+
+/**
+ * How many agent runs a checkout held. Blocks are intervals, so five consoles in one checkout extend
+ * one block rather than sum to five, and this count is the only thing on the line that says five ran.
+ */
+export const formatAgentSessions = (stream: Stream) => {
+  const { agentSessions } = stream;
+
+  if (!agentSessions) return '';
+
+  return `${agentSessions} agent ${agentSessions === 1 ? 'session' : 'sessions'}`;
+};

@@ -89,6 +89,7 @@ test.describe('the today view', () => {
     const agentOnly = stream(page, `repo:${SDK}`);
 
     await expect(agentOnly.locator('[data-engaged]')).toHaveText('1h 0m engaged');
+    await expect(agentOnly.locator('[data-agent-sessions]')).toHaveText('1 agent session');
     await expect(agentOnly.locator('[data-never-focused]')).toHaveText('agent only, never focused');
     await expect(agentOnly).toContainText('Read a day as streams');
   });

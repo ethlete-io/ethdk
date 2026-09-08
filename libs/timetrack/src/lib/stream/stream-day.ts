@@ -58,6 +58,11 @@ export type Stream = {
   apps: string[];
   /** The branches the checkout was seen on, first seen first. A branch never splits a stream. */
   branches: string[];
+  /**
+   * How many agent runs the checkout held. Five consoles in one checkout are one stream, so this count
+   * is what says so on the line — the blocks never sum to five and the evidence deduplicates by title.
+   */
+  agentSessions: number;
   /** Contiguous time, gaps kept: the union of what the focused window and the agents observed. */
   blocks: TimeWindow[];
   /** The first block's start. */
@@ -92,6 +97,7 @@ type StreamDraft = {
   repoPath?: string;
   apps: string[];
   branches: string[];
+  sessions: Set<string>;
   focus: TimeWindow[];
   agent: TimeWindow[];
   evidence: Evidence[];
@@ -223,6 +229,7 @@ const draftFor = (drafts: Map<string, StreamDraft>, context: ActivityContext) =>
     repoPath: context.repoPath,
     apps: context.appId ? [context.appId] : [],
     branches: context.branch ? [context.branch] : [],
+    sessions: new Set(),
     focus: [],
     agent: [],
     evidence: [],
@@ -298,6 +305,8 @@ export const streamDay = (options: {
       const draft = draftFor(drafts, { repoPath: cwd, branch: branchOf(sample.gitBranch) });
       const last = lastAgentSample.get(cwd);
 
+      draft.sessions.add(sample.sessionId);
+
       if (last && sample.at.getTime() - last.getTime() < config.maxUnobservedMs) {
         draft.agent.push({ from: last, to: sample.at });
       }
@@ -327,6 +336,7 @@ export const streamDay = (options: {
       repoPath: draft.repoPath,
       apps: draft.apps,
       branches: draft.branches,
+      agentSessions: draft.sessions.size,
       blocks,
       from: first.from,
       to: last.to,
