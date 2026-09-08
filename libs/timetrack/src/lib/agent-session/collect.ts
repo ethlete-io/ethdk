@@ -1,6 +1,6 @@
 import { Observable, concatMap, from, map, toArray } from 'rxjs';
 import { AgentSessionEvent, AgentUsageEvent } from '../model/event';
-import { AgentSessionLogParseOptions, AgentSessionLogParser } from './source';
+import { AgentLogSessionState, AgentSessionLogParseOptions, AgentSessionLogParser } from './source';
 import { AgentSessionLogReader, AgentSessionLogRef } from './ports';
 
 export type AgentSessionCursor = {
@@ -14,6 +14,11 @@ export type AgentSessionCursor = {
   after?: Date;
   /** Title records are rewritten as a session grows, so a batch holding none keeps what the last one said. */
   title?: string;
+  /**
+   * What the parser knows about the log's session, for the formats that state it once rather than on
+   * every record. Without it a resumed read of a Codex log has no model to price its turns with.
+   */
+  session?: AgentLogSessionState;
   /**
    * The checkout the last sample was taken in, so a re-sync can tell which logs belong to a path
    * without reading any of them again. A log may change checkout part way through; the last one wins.
@@ -61,7 +66,9 @@ const readLog$ = (options: {
       const parsed = options.parser({
         ...options.parsing,
         lines: chunk.lines,
-        resume: cursor ? { after: cursor.after, title: cursor.title } : undefined,
+        resume: cursor
+          ? { after: cursor.after, title: cursor.title, cwd: cursor.cwd, session: cursor.session }
+          : undefined,
       });
 
       const last = parsed.events[parsed.events.length - 1];
@@ -76,6 +83,7 @@ const readLog$ = (options: {
           after: last?.at ?? cursor?.after,
           title: parsed.title,
           cwd: last?.cwd ?? cursor?.cwd,
+          session: parsed.session,
         },
       };
     }),

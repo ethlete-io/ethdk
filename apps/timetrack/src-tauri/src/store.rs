@@ -32,6 +32,8 @@ pub struct AgentSessionCursorRow {
     pub cwd: Option<String>,
     /// When the `spend` pass read the log to its end. Unset for a cursor the collector wrote.
     pub read_through_ms: Option<i64>,
+    /// The parser's own per-log session state, as JSON. Passed through: nothing here reads it.
+    pub session_json: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -129,10 +131,10 @@ fn append(
         }
 
         let mut upsert = transaction.prepare(
-            "INSERT INTO agent_session_cursor (id, kind, next_line, after_ms, title, cwd, read_through_ms)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+            "INSERT INTO agent_session_cursor (id, kind, next_line, after_ms, title, cwd, read_through_ms, session_json)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
              ON CONFLICT (id, kind) DO UPDATE SET
-               next_line = ?3, after_ms = ?4, title = ?5, cwd = ?6, read_through_ms = ?7",
+               next_line = ?3, after_ms = ?4, title = ?5, cwd = ?6, read_through_ms = ?7, session_json = ?8",
         )?;
         for cursor in cursors {
             upsert.execute(params![
@@ -142,7 +144,8 @@ fn append(
                 cursor.after_ms,
                 cursor.title,
                 cursor.cwd,
-                cursor.read_through_ms
+                cursor.read_through_ms,
+                cursor.session_json
             ])?;
         }
     }
@@ -198,7 +201,7 @@ pub async fn events_oldest_at(db: State<'_, Db>) -> TimetrackResult<Option<i64>>
 pub async fn agent_session_cursors(db: State<'_, Db>, kind: String) -> TimetrackResult<Vec<AgentSessionCursorRow>> {
     db.run(move |connection| {
         let mut statement = connection.prepare(
-            "SELECT id, kind, next_line, after_ms, title, cwd, read_through_ms
+            "SELECT id, kind, next_line, after_ms, title, cwd, read_through_ms, session_json
              FROM agent_session_cursor WHERE kind = ?1",
         )?;
         let rows = statement.query_map(params![kind], |row| {
@@ -210,6 +213,7 @@ pub async fn agent_session_cursors(db: State<'_, Db>, kind: String) -> Timetrack
                 title: row.get(4)?,
                 cwd: row.get(5)?,
                 read_through_ms: row.get(6)?,
+                session_json: row.get(7)?,
             })
         })?;
 
@@ -515,6 +519,7 @@ mod tests {
                 title: None,
                 cwd: None,
                 read_through_ms: None,
+                session_json: None,
             }],
         )
         .unwrap();
@@ -540,6 +545,7 @@ mod tests {
             title: title.map(str::to_string),
             cwd: Some("/home/tom/dev/fut-frontend".to_string()),
             read_through_ms: None,
+            session_json: None,
         };
 
         append(&mut connection, &[], &[cursor(42, Some(1_000), Some("a session"))]).unwrap();
@@ -573,6 +579,7 @@ mod tests {
             title: None,
             cwd: None,
             read_through_ms: None,
+            session_json: None,
         };
 
         append(

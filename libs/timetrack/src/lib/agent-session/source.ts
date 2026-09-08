@@ -6,15 +6,28 @@ import { AgentSessionEvent, AgentUsageEvent } from '../model/event';
  */
 export const DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS = 60_000;
 
+/**
+ * What a parser has to remember about one log between reads, because the log states it once instead of
+ * on every record.
+ *
+ * Codex names the session on a header record and the model on a turn boundary, so a read that resumes
+ * mid-turn sees neither. Claude Code repeats both on every record and carries nothing.
+ */
+export type AgentLogSessionState = {
+  sessionId?: string;
+  model?: string;
+};
+
 export type AgentSessionLogParseOptions = {
   /** The log's lines, in file order. */
   lines: string[];
   /**
-   * Continues an earlier read of the same log: only records after `after` are used, and `title` carries
-   * over what the previous batch resolved, because the record holding it may already be behind the
-   * cursor. `after` is unset while a resumed log has produced no sample yet.
+   * Continues an earlier read of the same log: only records after `after` are used, and `title`,
+   * `cwd` and `session` carry over what the previous batch resolved, because the records holding
+   * them may already be behind the cursor. `after` is unset while a resumed log has produced no
+   * sample yet.
    */
-  resume?: { after?: Date; title?: string };
+  resume?: { after?: Date; title?: string; cwd?: string; session?: AgentLogSessionState };
   /** Defaults to `DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS`. */
   sampleIntervalMs?: number;
   /**
@@ -34,6 +47,11 @@ export type AgentSessionLogParseResult = {
   usage: AgentUsageEvent[];
   /** The title the events carry, to hand back as `resume.title` when reading the rest of the log. */
   title?: string;
+  /**
+   * What this batch knows about the log's session, to hand back as `resume.session` when reading the
+   * rest of it. A parser whose format repeats everything per record returns none.
+   */
+  session?: AgentLogSessionState;
   /**
    * Lines that were not a JSON object. A log read while the agent is writing to it ends in a partial
    * line, so one is normal; a growing count is a corrupt log.

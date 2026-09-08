@@ -164,6 +164,15 @@ DROP TABLE agent_session_cursor;
 ALTER TABLE agent_session_cursor_next RENAME TO agent_session_cursor;
 ";
 
+/// Carries a parser's per-log session state, for a log format that states it once rather than on
+/// every record.
+///
+/// Codex writes the model on a turn boundary and the session id on a header record, so a read that
+/// resumes mid-turn has neither. The host never interprets the JSON: the format lives in the parser.
+const SCHEMA_V13: &str = "
+ALTER TABLE agent_session_cursor ADD COLUMN session_json TEXT;
+";
+
 /// Repairs a store whose v11 ran before `read_through_ms` was part of it.
 ///
 /// The column was added to `SCHEMA_V11` after that migration had already run on real stores, and a
@@ -313,6 +322,11 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         connection.pragma_update(None, "user_version", 12)?;
     }
 
+    if version < 13 {
+        connection.execute_batch(SCHEMA_V13)?;
+        connection.pragma_update(None, "user_version", 13)?;
+    }
+
     Ok(())
 }
 
@@ -388,7 +402,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            12
+            13
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -448,7 +462,27 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            12
+            13
+        );
+    }
+
+    #[test]
+    fn leaves_a_cursor_written_before_the_session_state_column_without_one() {
+        let connection = migrated_from(9);
+
+        connection
+            .execute(
+                "INSERT INTO agent_session_cursor (id, kind, next_line) VALUES ('s1', 'agent-session', 42)",
+                [],
+            )
+            .unwrap();
+
+        assert_eq!(
+            connection
+                .query_row("SELECT session_json FROM agent_session_cursor WHERE id = 's1'", [], |row| row
+                    .get::<_, Option<String>>(0))
+                .unwrap(),
+            None
         );
     }
 

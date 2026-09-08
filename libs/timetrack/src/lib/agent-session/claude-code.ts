@@ -1,4 +1,5 @@
 import { AgentSessionEvent, AgentUsageEvent, TokenUsage } from '../model/event';
+import { asJsonObject, countAt, objectAt, stringAt } from './record';
 import { AgentSessionLogParseOptions, AgentSessionLogParser, DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS } from './source';
 
 /** The name this parser's events carry, and the first half of the key the store deduplicates them on. */
@@ -10,24 +11,6 @@ const SYNTHETIC_MODEL = '<synthetic>';
 type ActivityRecord = { at: Date; sessionId: string; cwd: string; gitBranch?: string };
 
 type TitleCandidates = { custom?: string; generated?: string; firstPrompt?: string };
-
-const asJsonObject = (line: string): Record<string, unknown> | null => {
-  try {
-    const parsed: unknown = JSON.parse(line);
-
-    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : null;
-  } catch {
-    return null;
-  }
-};
-
-const stringAt = (record: Record<string, unknown>, key: string) => {
-  const value = record[key];
-
-  return typeof value === 'string' && value.length > 0 ? value : undefined;
-};
 
 /**
  * The branch the record names, or `undefined` for a detached checkout.
@@ -56,20 +39,6 @@ const activityOf = (record: Record<string, unknown>): ActivityRecord | null => {
   const at = new Date(timestamp);
 
   return Number.isNaN(at.getTime()) ? null : { at, sessionId, cwd, gitBranch: branchOf(record) };
-};
-
-const objectAt = (record: Record<string, unknown>, key: string): Record<string, unknown> | null => {
-  const value = record[key];
-
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-};
-
-const countAt = (record: Record<string, unknown> | null, key: string) => {
-  const value = record?.[key];
-
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 };
 
 /**

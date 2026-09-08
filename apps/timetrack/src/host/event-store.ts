@@ -1,4 +1,11 @@
-import { AgentLogPass, AgentSessionCursor, CollectedEvent, TimetrackEventStore, dedupeKeyOf } from '@ethlete/timetrack';
+import {
+  AgentLogPass,
+  AgentLogSessionState,
+  AgentSessionCursor,
+  CollectedEvent,
+  TimetrackEventStore,
+  dedupeKeyOf,
+} from '@ethlete/timetrack';
 import { Observable, map } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
@@ -30,6 +37,33 @@ type StoredCursor = {
   title: string | null;
   cwd: string | null;
   readThroughMs: number | null;
+  sessionJson: string | null;
+};
+
+const stringField = (record: Record<string, unknown>, key: string) => {
+  const value = record[key];
+
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+};
+
+/**
+ * The parser's session state as the store holds it — JSON the host wrote back untouched.
+ *
+ * Read field by field rather than cast: the row was written by an older version of this app, so a
+ * field it never wrote is missing and a field this one dropped is still there.
+ */
+const reviveSessionState = (json: string): AgentLogSessionState | undefined => {
+  try {
+    const parsed: unknown = JSON.parse(json);
+
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return undefined;
+
+    const record = parsed as Record<string, unknown>;
+
+    return { sessionId: stringField(record, 'sessionId'), model: stringField(record, 'model') };
+  } catch {
+    return undefined;
+  }
 };
 
 const toStored = (event: CollectedEvent): StoredEvent => ({
@@ -55,6 +89,7 @@ const toStoredCursor = (cursor: AgentSessionCursor, kind: AgentLogPass): StoredC
   title: cursor.title ?? null,
   cwd: cursor.cwd ?? null,
   readThroughMs: cursor.readThrough ? cursor.readThrough.getTime() : null,
+  sessionJson: cursor.session ? JSON.stringify(cursor.session) : null,
 });
 
 const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
@@ -64,6 +99,7 @@ const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
   ...(stored.title === null ? {} : { title: stored.title }),
   ...(stored.cwd === null ? {} : { cwd: stored.cwd }),
   ...(stored.readThroughMs === null ? {} : { readThrough: new Date(stored.readThroughMs) }),
+  ...(stored.sessionJson === null ? {} : { session: reviveSessionState(stored.sessionJson) }),
 });
 
 /**
