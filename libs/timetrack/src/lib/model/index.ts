@@ -6,3 +6,4 @@ export * from './evidence';
 export * from './proposal';
 export * from './time-window';
 export * from './timer';
+export * from './tokens';

@@ -5,6 +5,11 @@ export const APP_ROUTES: Routes = [
   // A window that opens on the view it was closed on, without the default one being painted first.
   { path: '', pathMatch: 'full', redirectTo: () => readViewState().view ?? 'day' },
   {
+    path: 'today',
+    title: 'Today',
+    loadComponent: () => import('./today/today-view.component').then((entry) => entry.TodayViewComponent),
+  },
+  {
     path: 'day',
     title: 'Day',
     loadComponent: () => import('./day-review/day-review-view.component').then((entry) => entry.DayReviewViewComponent),
