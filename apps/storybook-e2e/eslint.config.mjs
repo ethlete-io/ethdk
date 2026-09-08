@@ -8,7 +8,14 @@ export default [
   {
     rules: {
       'playwright/no-skipped-test': 'off',
-      'playwright/expect-expect': ['warn', { assertFunctionNames: ['expectFocusVisible', 'expectTouchMode'] }],
+      'playwright/expect-expect': ['warn', { assertFunctionPatterns: ['^expect[A-Z]'] }],
+    },
+  },
+  {
+    files: ['**/support/**/*.ts'],
+    rules: {
+      'playwright/no-wait-for-selector': 'off',
+      'playwright/no-wait-for-timeout': 'off',
     },
   },
 ];

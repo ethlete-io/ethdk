@@ -1,5 +1,5 @@
 import { Locator, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey } from '../support';
+import { expectFocusVisible, openStory, pressKey, settle } from '../support';
 
 const DEFAULT_ID = 'components-sports-standings-pick--default';
 const LOCKED_ID = 'components-sports-standings-pick--locked';
@@ -83,7 +83,7 @@ test.describe('standings pick / keyboard', () => {
 
     await pressKey(page, 'Tab');
     await pressKey(page, 'ArrowUp');
-    await page.waitForTimeout(100);
+    await settle(page, 100);
 
     await expect(names(root)).toHaveText(before.map((name) => name.trim()));
   });
@@ -97,7 +97,7 @@ test.describe('standings pick / keyboard', () => {
       .nth(count - 1)
       .focus();
     await pressKey(page, 'ArrowDown');
-    await page.waitForTimeout(100);
+    await settle(page, 100);
 
     await expect(names(root)).toHaveText(before.map((name) => name.trim()));
   });
@@ -153,7 +153,7 @@ test.describe('standings pick / locked', () => {
 
     await pressKey(page, 'Tab');
     await pressKey(page, 'ArrowDown');
-    await page.waitForTimeout(100);
+    await settle(page, 100);
 
     await expect(names(root)).toHaveText(before.map((name) => name.trim()));
   });

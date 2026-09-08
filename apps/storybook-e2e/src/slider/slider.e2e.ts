@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, touchDrag } from '../support';
+import { boxOf, expectFocusVisible, openStory, pressKey, touchDrag } from '../support';
 
 const STORY_ID = 'components-forms-slider--default';
 const THUMB = '.et-slider-thumb[role="slider"]';
@@ -83,8 +83,7 @@ test.describe('slider / keyboard', () => {
     const thumb = root.locator(THUMB);
     const track = root.locator('.et-slider-interaction');
 
-    const box = await track.boundingBox();
-    if (!box) throw new Error('slider track has no bounding box');
+    const box = await boxOf(track);
 
     await expect(thumb).toHaveAttribute('aria-valuenow', '40');
 
@@ -109,8 +108,7 @@ test.describe('slider / touch', () => {
     const thumb = root.locator(THUMB);
     const track = root.locator('.et-slider-interaction');
 
-    const box = await track.boundingBox();
-    if (!box) throw new Error('slider track has no bounding box');
+    const box = await boxOf(track);
 
     const startY = box.y + box.height / 2;
     const startX = box.x + box.width * 0.4;

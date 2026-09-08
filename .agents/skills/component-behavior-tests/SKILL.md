@@ -42,7 +42,7 @@ other's results; pass `--output=apps/storybook-e2e/test-results/<domain>` per ru
 
 ```
 apps/storybook-e2e/src/
-  support/        openStory, expectFocusVisible, expectFieldFocusVisible, focusedDescriptor, tabSequence, pressKey, tap, touchDrag, touchSwipe, expectTouchMode
+  support/        openStory, expectFocusVisible, expectFieldFocusVisible, focusedDescriptor, tabSequence, tabUntilFocused, pressKey, tap, touchDrag, touchSwipe, expectTouchMode, boxOf, viewportOf, settle
   <domain>/<domain>.e2e.ts
 ```
 
@@ -70,14 +70,21 @@ test.describe('menu / touch', () => {
 3. Use the helpers: `expectFocusVisible(locator)` checks `:focus-visible` plus a computed
    outline or box-shadow; `expectFieldFocusVisible(control)` is the variant for form controls,
    whose ring is the border of the surrounding `.et-form-field-control-frame`;
-   `focusedDescriptor(page)` and `tabSequence(page, n)` make tab-order assertions readable; `tap(locator)` for touch; `expectTouchMode(page)` asserts the SDK's own
-   check, `(pointer: coarse)` from `injectHasTouchInput`.
+   `focusedDescriptor(page)` and `tabSequence(page, n)` make tab-order assertions readable;
+   `tabUntilFocused(page, target)` tabs to a component whose number of leading tab stops
+   varies per story; `boxOf(locator)` and `viewportOf(page)` give a gesture its coordinates and
+   fail loudly instead of returning `null`; `tap(locator)` for touch; `expectTouchMode(page)`
+   asserts the SDK's own check, `(pointer: coarse)` from `injectHasTouchInput`.
 4. Prefer `expect(locator).toBeFocused()` and other auto-retrying assertions over sleeps. A
-   `pressKey` already waits a short settle. Add a `waitForTimeout` only for a negative
-   assertion ("nothing happened"), and keep it small.
-5. When the component contradicts its docs, keep the test and mark it
+   `pressKey` already waits a short settle. For a negative assertion ("nothing happened"), call
+   `settle(page, ms)` with a small delay - never `page.waitForTimeout` in a test, which lint
+   warns about.
+5. Keep `if`, `?:` and loop conditions out of a test body; lint warns about them. Put the branch
+   in a named helper above the describe blocks, or in `support/` when a second domain needs it.
+   An asserting helper needs a name that starts with `expect`, so `expect-expect` counts it.
+6. When the component contradicts its docs, keep the test and mark it
    `test.fail()` with a one-line reason. Report it; do not bend the assertion.
-6. Format and lint: `npx prettier --write <files>`, then `npx nx lint storybook-e2e` without
+7. Format and lint: `npx prettier --write <files>`, then `npx nx lint storybook-e2e` without
    `--fix` (the Playwright autofixer mangles code). Fix findings by hand.
 
 ## What belongs here, what does not

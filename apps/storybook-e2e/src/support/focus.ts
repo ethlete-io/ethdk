@@ -1,4 +1,5 @@
 import { Locator, Page, expect } from '@playwright/test';
+import { pressKey } from './keyboard';
 
 export interface FocusedDescriptor {
   tag: string;
@@ -93,4 +94,18 @@ export async function expectFieldFocusVisible(control: Locator): Promise<void> {
   expect(state, 'control is not inside an .et-form-field-control-frame').not.toBeNull();
   expect(state?.matchesFocusVisible).toBe(true);
   expect(state?.focused).not.toBe(state?.blurred);
+}
+
+/**
+ * Presses Tab up to `maxTabs` times and stops once `target` is the active element. The number of
+ * tab stops before a component varies per story, so a test cannot count them.
+ */
+export async function tabUntilFocused(page: Page, target: Locator, maxTabs = 10): Promise<void> {
+  for (let i = 0; i < maxTabs; i++) {
+    await pressKey(page, 'Tab');
+
+    if (await target.evaluate((el) => el === document.activeElement)) return;
+  }
+
+  await expect(target).toBeFocused();
 }

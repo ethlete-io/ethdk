@@ -1,5 +1,5 @@
-import { Locator, Page, expect, test } from '@playwright/test';
-import { expectFieldFocusVisible, openStory, pressKey, tap } from '../support';
+import { Page, expect, test } from '@playwright/test';
+import { expectFieldFocusVisible, openStory, pressKey, tabUntilFocused, tap } from '../support';
 
 const DATE_INPUT_ID = 'components-forms-date-input--default';
 const DATE_INPUT_PREFILLED_ID = 'components-forms-date-input--prefilled';
@@ -14,19 +14,6 @@ const FOCUSED_CELL = ".et-calendar-weeks:not(.et-calendar-weeks--leave) .et-cale
 /** The picker overlay ignores Escape until its enter transition has started. */
 async function waitForPickerEntered(page: Page): Promise<void> {
   await expect(page.locator('.et-overlay')).toHaveClass(/et-animation-enter-done/);
-}
-
-/** Presses Tab up to `max` times, stopping once `target` is the active element. */
-async function tabUntilFocused(page: Page, target: Locator, max = 10): Promise<void> {
-  for (let i = 0; i < max; i++) {
-    await pressKey(page, 'Tab');
-
-    if (await target.evaluate((el) => el === document.activeElement)) {
-      return;
-    }
-  }
-
-  throw new Error('Tab never reached the target element');
 }
 
 test.describe('date-inputs / date input focus', () => {

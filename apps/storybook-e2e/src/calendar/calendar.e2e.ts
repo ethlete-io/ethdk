@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { openStory, pressKey, tap } from '../support';
+import { openStory, pressKey, tabUntilFocused, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-date-time-calendar--default';
 const RANGE_STORY_ID = 'components-date-time-calendar--range';
@@ -28,17 +28,13 @@ async function expectCellFocusVisible(cell: Locator): Promise<void> {
   expect(state.outlineStyle).not.toBe('none');
 }
 
-/** The number of enabled header buttons before the grid varies per story, so tab until `target` has focus. */
-async function tabUntilFocused(page: Page, target: Locator): Promise<void> {
-  for (let i = 0; i < 8; i++) {
-    await pressKey(page, 'Tab');
+/** The disabled-dates story puts its first disabled date a few cells right of the focused one. */
+async function arrowRightUntilDisabled(page: Page, cell: Locator, maxPresses = 6): Promise<void> {
+  for (let i = 0; i < maxPresses; i++) {
+    if ((await cell.getAttribute('aria-disabled')) === 'true') return;
 
-    if (await target.evaluate((el) => el === document.activeElement)) {
-      return;
-    }
+    await pressKey(page, 'ArrowRight');
   }
-
-  throw new Error('Tab never reached the target element');
 }
 
 test.describe('calendar / focus', () => {
@@ -166,9 +162,7 @@ test.describe('calendar / keyboard', () => {
 
     await tabUntilFocused(page, focused);
 
-    for (let i = 0; i < 6 && (await focused.getAttribute('aria-disabled')) !== 'true'; i++) {
-      await pressKey(page, 'ArrowRight');
-    }
+    await arrowRightUntilDisabled(page, focused);
 
     await expect(focused).toHaveAttribute('aria-disabled', 'true');
     await expect(focused).toHaveAttribute('tabindex', '0');

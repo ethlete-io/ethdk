@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, tap, touchSwipe } from '../support';
+import { boxOf, expectFocusVisible, openStory, pressKey, settle, tabUntilFocused, tap, touchSwipe } from '../support';
 
 const BOTTOM_END_STORY_ID = 'components-feedback-notification--bottom-end';
 const PROMISE_API_STORY_ID = 'components-feedback-notification--promise-api';
@@ -49,9 +49,7 @@ test.describe('notification / keyboard', () => {
     const dismissButton = page.locator(DISMISS_BUTTON);
     await expect(dismissButton).toBeVisible();
 
-    for (let i = 0; i < 20 && !(await dismissButton.evaluate((el) => el === document.activeElement)); i++) {
-      await pressKey(page, 'Tab');
-    }
+    await tabUntilFocused(page, dismissButton, 20);
 
     await expectFocusVisible(dismissButton);
   });
@@ -89,7 +87,7 @@ test.describe('notification / keyboard', () => {
     const notification = page.locator(NOTIFICATION);
     await notification.hover();
 
-    await page.waitForTimeout(4300);
+    await settle(page, 4300);
     await expect(notification).toBeVisible();
   });
 
@@ -97,7 +95,7 @@ test.describe('notification / keyboard', () => {
     const root = await openStory(page, BOTTOM_END_STORY_ID);
     await root.getByRole('button', { name: 'Loading', exact: true }).click();
 
-    await page.waitForTimeout(4300);
+    await settle(page, 4300);
     await expect(page.locator(NOTIFICATION)).toBeVisible();
   });
 
@@ -151,9 +149,8 @@ test.describe('notification / keyboard', () => {
     await expect(stack).toHaveAttribute('data-position', 'bottom-end');
     expect(await page.evaluate(() => document.documentElement.dir)).toBe('rtl');
 
-    const stackBox = await stack.boundingBox();
-    const notificationBox = await notification.boundingBox();
-    if (!stackBox || !notificationBox) throw new Error('missing bounding box');
+    const stackBox = await boxOf(stack);
+    const notificationBox = await boxOf(notification);
 
     expect(notificationBox.x).toBeLessThan(stackBox.x + stackBox.width / 2);
   });
@@ -176,8 +173,7 @@ test.describe('notification / touch', () => {
     await tap(root.getByRole('button', { name: 'Success', exact: true }));
 
     const notification = page.locator(NOTIFICATION);
-    const box = await notification.boundingBox();
-    if (!box) throw new Error('notification has no bounding box');
+    const box = await boxOf(notification);
 
     const y = box.y + box.height / 2;
 

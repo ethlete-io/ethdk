@@ -1,5 +1,5 @@
 import { Locator, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, touchSwipe } from '../support';
+import { boxOf, expectFocusVisible, openStory, settle, touchSwipe } from '../support';
 
 const DEFAULT_STORY_ID = 'components-layout-scrollbar--default';
 const HORIZONTAL_STORY_ID = 'components-layout-scrollbar--horizontal';
@@ -102,8 +102,7 @@ test.describe('scrollbar / pointer', () => {
     const container = root.locator(VERTICAL_CONTAINER);
     const thumb = root.locator(THUMB);
 
-    const box = await thumb.boundingBox();
-    if (!box) throw new Error('thumb has no bounding box');
+    const box = await boxOf(thumb);
 
     const x = box.x + box.width / 2;
     const startY = box.y + box.height / 2;
@@ -121,8 +120,7 @@ test.describe('scrollbar / pointer', () => {
     const container = root.locator(VERTICAL_CONTAINER);
     const scrollbar = root.locator(SCROLLBAR).first();
 
-    const box = await scrollbar.boundingBox();
-    if (!box) throw new Error('scrollbar has no bounding box');
+    const box = await boxOf(scrollbar);
     const viewportSize = await container.evaluate((el) => el.clientHeight);
 
     await page.mouse.click(box.x + box.width / 2, box.y + box.height - 5);
@@ -175,8 +173,7 @@ test.describe('scrollbar / pointer', () => {
     await expect(scrollbar).toHaveAttribute('data-direction', 'rtl');
     expect(await track.evaluate((el) => el.scrollLeft)).toBe(0);
 
-    const box = await thumb.boundingBox();
-    if (!box) throw new Error('thumb has no bounding box');
+    const box = await boxOf(thumb);
 
     const y = box.y + box.height / 2;
     const startX = box.x + box.width / 2;
@@ -213,7 +210,7 @@ test.describe('scrollbar / pointer', () => {
     await container.hover();
 
     await expect(scrollbar).toHaveClass(/et-scrollbar--visible/);
-    await page.waitForTimeout(900);
+    await settle(page, 900);
     await expect(scrollbar).toHaveClass(/et-scrollbar--visible/);
   });
 });
@@ -226,8 +223,7 @@ test.describe('scrollbar / touch', () => {
     const container = root.locator(VERTICAL_CONTAINER);
     const scrollbar = root.locator(SCROLLBAR).first();
 
-    const box = await container.boundingBox();
-    if (!box) throw new Error('container has no bounding box');
+    const box = await boxOf(container);
 
     const x = box.x + box.width / 2;
     const startY = box.y + box.height * 0.8;
@@ -246,8 +242,7 @@ test.describe('scrollbar / touch', () => {
     const container = root.locator(VERTICAL_CONTAINER);
     const thumb = root.locator(THUMB);
 
-    const box = await thumb.boundingBox();
-    if (!box) throw new Error('thumb has no bounding box');
+    const box = await boxOf(thumb);
 
     const x = box.x + box.width / 2;
     const startY = box.y + box.height / 2;

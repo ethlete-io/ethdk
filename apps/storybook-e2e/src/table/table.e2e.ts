@@ -1,5 +1,5 @@
-import { Locator, Page, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, tap } from '../support';
+import { Locator, expect, test } from '@playwright/test';
+import { expectFocusVisible, openStory, pressKey, tabUntilFocused, tap } from '../support';
 
 const KEYBOARD_NAV_STORY_ID = 'components-data-display-table--keyboard-navigation';
 const SELECTABLE_STORY_ID = 'components-data-display-table--selectable';
@@ -17,16 +17,6 @@ function headerCell(root: Locator, colKey: string): Locator {
 
 function rowCheckbox(root: Locator, rowIndex = 0): Locator {
   return root.locator('.et-table-cell.et-table-select-cell').nth(rowIndex).locator('et-checkbox');
-}
-
-async function tabUntilFocused(page: Page, locator: Locator, maxTabs = 10): Promise<void> {
-  for (let i = 0; i < maxTabs; i++) {
-    await pressKey(page, 'Tab');
-
-    if (await locator.evaluate((el) => el === document.activeElement)) return;
-  }
-
-  await expect(locator).toBeFocused();
 }
 
 test.describe('table / keyboard', () => {

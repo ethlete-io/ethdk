@@ -1,5 +1,5 @@
 import { Page, expect, test } from '@playwright/test';
-import { openStory, pressKey, tap, touchSwipe } from '../support';
+import { boxOf, openStory, pressKey, tap, touchSwipe, viewportOf } from '../support';
 
 const STORY_ID = 'components-overlays-overlay--default';
 
@@ -114,11 +114,9 @@ test.describe('dialog / touch', () => {
 
     await waitForEntered(page);
 
-    const viewport = page.viewportSize();
-    if (!viewport) throw new Error('no viewport size');
+    const viewport = viewportOf(page);
 
     await page.locator(BACKDROP).tap({ position: { x: viewport.width / 2, y: 4 } });
-    await page.waitForTimeout(50);
 
     await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
   });
@@ -144,8 +142,7 @@ test.describe('dialog / touch', () => {
     await waitForEntered(page);
 
     const pane = page.locator(PANE);
-    const box = await pane.boundingBox();
-    if (!box) throw new Error('bottom sheet pane has no bounding box');
+    const box = await boxOf(pane);
 
     const startX = box.x + box.width / 2;
     const startY = box.y + 12;

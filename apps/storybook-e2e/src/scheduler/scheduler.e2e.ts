@@ -1,5 +1,5 @@
 import { Page, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, touchDrag } from '../support';
+import { boxOf, expectFocusVisible, openStory, pressKey, touchDrag } from '../support';
 
 const DEFAULT_ID = 'components-date-time-scheduler--default';
 const WEEK_ID = 'components-date-time-scheduler--week';
@@ -159,8 +159,7 @@ test.describe('scheduler / drag', () => {
     await block.scrollIntoViewIfNeeded();
     const before = await block.locator('.et-scheduler-appointment-time-range').textContent();
 
-    const box = await block.boundingBox();
-    if (!box) throw new Error('appointment block has no bounding box');
+    const box = await boxOf(block);
 
     const x = box.x + box.width / 2;
     const y = box.y + box.height / 2;
@@ -182,8 +181,7 @@ test.describe('scheduler / drag', () => {
     await block.scrollIntoViewIfNeeded();
     const before = await block.locator('.et-scheduler-appointment-time-range').textContent();
 
-    const box = await block.boundingBox();
-    if (!box) throw new Error('appointment block has no bounding box');
+    const box = await boxOf(block);
 
     const x = box.x + box.width / 2;
     const y = box.y + box.height / 2;
@@ -232,8 +230,7 @@ test.describe('scheduler / touch', () => {
     await call.scrollIntoViewIfNeeded();
     const before = await call.locator('.et-scheduler-appointment-time-range').textContent();
 
-    const box = await call.boundingBox();
-    if (!box) throw new Error('appointment block has no bounding box');
+    const box = await boxOf(call);
 
     const x = box.x + box.width / 2;
     const y = box.y + box.height / 2;
@@ -250,8 +247,7 @@ test.describe('scheduler / touch', () => {
     const before = await header.textContent();
 
     const body = root.locator('.et-scheduler-time-grid-body');
-    const box = await body.boundingBox();
-    if (!box) throw new Error('time grid body has no bounding box');
+    const box = await boxOf(body);
 
     const y = box.y + box.height / 2;
 

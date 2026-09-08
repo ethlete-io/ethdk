@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { expectFocusVisible, focusedDescriptor, openStory, pressKey, tap } from '../support';
+import { expectFocusVisible, focusedDescriptor, openStory, pressKey, settle, tap } from '../support';
 
 const STORY_ID = 'components-sports-bracket-prediction--interactive';
 const SLOT_SOURCES_STORY_ID = 'components-sports-bracket-prediction--slot-sources';
@@ -213,7 +213,7 @@ test.describe('bracket prediction / journey highlight', () => {
     const host = root.locator('.et-bracket-host');
 
     await root.locator('et-bracket-pick-card [data-participant-id]').first().hover();
-    await page.waitForTimeout(150);
+    await settle(page, 150);
 
     await expect(host).not.toHaveClass(/et-bracket-host--journey-hover/);
     await expect(root.locator('.et-bracket-journey-active')).toHaveCount(0);

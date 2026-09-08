@@ -1,5 +1,5 @@
-import { Locator, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, tap, touchDrag } from '../support';
+import { expect, test } from '@playwright/test';
+import { boxOf, expectFocusVisible, openStory, pressKey, settle, tap, touchDrag } from '../support';
 
 const DEFAULT_STORY_ID = 'components-layout-grid--default';
 const READONLY_STORY_ID = 'components-layout-grid--read-only';
@@ -7,12 +7,6 @@ const READONLY_STORY_ID = 'components-layout-grid--read-only';
 const ITEM = '.et-grid-item';
 const ITEM_CONTENT = '.et-grid-item__content';
 const REMOVE_BUTTON = '.et-grid-item-default-actions__remove';
-
-async function itemBox(item: Locator) {
-  const box = await item.boundingBox();
-  if (!box) throw new Error('grid item has no bounding box');
-  return box;
-}
 
 test.describe('grid / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
@@ -49,13 +43,13 @@ test.describe('grid / keyboard', () => {
     const item = root.locator(ITEM).first();
 
     await pressKey(page, 'Tab');
-    const before = await itemBox(item);
+    const before = await boxOf(item);
 
     await pressKey(page, 'Control+ArrowRight');
-    await expect.poll(async () => (await itemBox(item)).x).toBeGreaterThan(before.x + 10);
+    await expect.poll(async () => (await boxOf(item)).x).toBeGreaterThan(before.x + 10);
 
     await pressKey(page, 'Control+ArrowLeft');
-    await expect.poll(async () => (await itemBox(item)).x).toBeLessThan(before.x + 1);
+    await expect.poll(async () => (await boxOf(item)).x).toBeLessThan(before.x + 1);
   });
 
   test('Shift+ArrowRight and Shift+ArrowLeft resize the focused item across columns', async ({ page }) => {
@@ -63,13 +57,13 @@ test.describe('grid / keyboard', () => {
     const item = root.locator(ITEM).first();
 
     await pressKey(page, 'Tab');
-    const before = await itemBox(item);
+    const before = await boxOf(item);
 
     await pressKey(page, 'Shift+ArrowRight');
-    await expect.poll(async () => (await itemBox(item)).width).toBeGreaterThan(before.width + 10);
+    await expect.poll(async () => (await boxOf(item)).width).toBeGreaterThan(before.width + 10);
 
     await pressKey(page, 'Shift+ArrowLeft');
-    await expect.poll(async () => (await itemBox(item)).width).toBeLessThan(before.width + 1);
+    await expect.poll(async () => (await boxOf(item)).width).toBeLessThan(before.width + 1);
   });
 
   test('Shift+ArrowDown and Shift+ArrowUp resize the focused item across rows', async ({ page }) => {
@@ -77,13 +71,13 @@ test.describe('grid / keyboard', () => {
     const item = root.locator(ITEM).first();
 
     await pressKey(page, 'Tab');
-    const before = await itemBox(item);
+    const before = await boxOf(item);
 
     await pressKey(page, 'Shift+ArrowDown');
-    await expect.poll(async () => (await itemBox(item)).height).toBeGreaterThan(before.height + 10);
+    await expect.poll(async () => (await boxOf(item)).height).toBeGreaterThan(before.height + 10);
 
     await pressKey(page, 'Shift+ArrowUp');
-    await expect.poll(async () => (await itemBox(item)).height).toBeLessThan(before.height + 1);
+    await expect.poll(async () => (await boxOf(item)).height).toBeLessThan(before.height + 1);
   });
 
   test('Control+Delete removes the focused item', async ({ page }) => {
@@ -103,13 +97,13 @@ test.describe('grid / keyboard', () => {
     const item = root.locator(ITEM).first();
 
     await pressKey(page, 'Tab');
-    const before = await itemBox(item);
+    const before = await boxOf(item);
 
     await pressKey(page, 'Control+ArrowRight');
     await pressKey(page, 'Shift+ArrowRight');
-    await page.waitForTimeout(200);
+    await settle(page, 200);
 
-    const after = await itemBox(item);
+    const after = await boxOf(item);
     expect(after.x).toBeCloseTo(before.x, 0);
     expect(after.width).toBeCloseTo(before.width, 0);
   });
@@ -123,8 +117,8 @@ test.describe('grid / pointer', () => {
     const item = root.locator(ITEM).nth(2);
     const content = item.locator(ITEM_CONTENT);
 
-    const before = await itemBox(item);
-    const grabBox = await itemBox(content);
+    const before = await boxOf(item);
+    const grabBox = await boxOf(content);
     const startX = grabBox.x + grabBox.width / 2;
     const startY = grabBox.y + grabBox.height / 2;
 
@@ -133,7 +127,7 @@ test.describe('grid / pointer', () => {
     await page.mouse.move(startX + 250, startY, { steps: 10 });
     await page.mouse.up();
 
-    await expect.poll(async () => (await itemBox(item)).x).toBeGreaterThan(before.x + 50);
+    await expect.poll(async () => (await boxOf(item)).x).toBeGreaterThan(before.x + 50);
   });
 
   test('a mouse drag on the resize handle changes the item size', async ({ page }) => {
@@ -141,8 +135,8 @@ test.describe('grid / pointer', () => {
     const item = root.locator(ITEM).first();
     const handle = item.locator('.et-resize-handle--se');
 
-    const before = await itemBox(item);
-    const handleBox = await itemBox(handle);
+    const before = await boxOf(item);
+    const handleBox = await boxOf(handle);
     const startX = handleBox.x + handleBox.width / 2;
     const startY = handleBox.y + handleBox.height / 2;
 
@@ -151,8 +145,8 @@ test.describe('grid / pointer', () => {
     await page.mouse.move(startX + 100, startY + 100, { steps: 10 });
     await page.mouse.up();
 
-    await expect.poll(async () => (await itemBox(item)).width).toBeGreaterThan(before.width + 10);
-    await expect.poll(async () => (await itemBox(item)).height).toBeGreaterThan(before.height + 10);
+    await expect.poll(async () => (await boxOf(item)).width).toBeGreaterThan(before.width + 10);
+    await expect.poll(async () => (await boxOf(item)).height).toBeGreaterThan(before.height + 10);
   });
 
   test('the read-only story disables the resize handles and ignores a mouse drag', async ({ page }) => {
@@ -162,8 +156,8 @@ test.describe('grid / pointer', () => {
 
     await expect(item.locator('et-resize-handles')).toHaveAttribute('inert', '');
 
-    const before = await itemBox(item);
-    const grabBox = await itemBox(content);
+    const before = await boxOf(item);
+    const grabBox = await boxOf(content);
     const startX = grabBox.x + grabBox.width / 2;
     const startY = grabBox.y + grabBox.height / 2;
 
@@ -171,9 +165,9 @@ test.describe('grid / pointer', () => {
     await page.mouse.down();
     await page.mouse.move(startX + 150, startY + 100, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(200);
+    await settle(page, 200);
 
-    const after = await itemBox(item);
+    const after = await boxOf(item);
     expect(after.x).toBeCloseTo(before.x, 0);
     expect(after.y).toBeCloseTo(before.y, 0);
   });
@@ -187,14 +181,14 @@ test.describe('grid / touch', () => {
     const item = root.locator(ITEM).first();
     const content = item.locator(ITEM_CONTENT);
 
-    const before = await itemBox(item);
-    const grabBox = await itemBox(content);
+    const before = await boxOf(item);
+    const grabBox = await boxOf(content);
     const startX = grabBox.x + grabBox.width / 2;
     const startY = grabBox.y + grabBox.height / 2;
 
     await touchDrag(page, { x: startX, y: startY }, { x: startX, y: startY + 250 });
 
-    await expect.poll(async () => (await itemBox(item)).y).toBeGreaterThan(before.y + 50);
+    await expect.poll(async () => (await boxOf(item)).y).toBeGreaterThan(before.y + 50);
   });
 
   test('a tap on the remove action removes the item', async ({ page }) => {

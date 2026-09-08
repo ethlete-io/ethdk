@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, tap, touchSwipe } from '../support';
+import { boxOf, expectFocusVisible, openStory, pressKey, settle, tap, touchSwipe } from '../support';
 
 const DEFAULT_STORY_ID = 'components-media-carousel--default';
 const LOOP_STORY_ID = 'components-media-carousel--loop';
@@ -92,7 +92,7 @@ test.describe('carousel / keyboard', () => {
     await expect(activeDot).toHaveAttribute('aria-label', 'Go to slide 1');
 
     await track.hover();
-    await page.waitForTimeout(3500);
+    await settle(page, 3500);
 
     await expect(activeDot).toHaveAttribute('aria-label', 'Go to slide 1');
   });
@@ -104,7 +104,7 @@ test.describe('carousel / keyboard', () => {
     await pressKey(page, 'Tab');
     await expect(activeDot).toHaveAttribute('aria-label', 'Go to slide 1');
 
-    await page.waitForTimeout(3500);
+    await settle(page, 3500);
 
     await expect(activeDot).toHaveAttribute('aria-label', 'Go to slide 1');
   });
@@ -118,8 +118,7 @@ test.describe('carousel / touch', () => {
     const track = root.locator(TRACK);
     const dots = root.locator(DOT);
 
-    const box = await track.boundingBox();
-    if (!box) throw new Error('carousel track has no bounding box');
+    const box = await boxOf(track);
 
     const y = box.y + box.height / 2;
 

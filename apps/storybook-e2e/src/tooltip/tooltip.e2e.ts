@@ -1,5 +1,5 @@
 import { Locator, expect, test } from '@playwright/test';
-import { openStory, pressKey, tap } from '../support';
+import { openStory, pressKey, settle, tap } from '../support';
 
 const STORY_ID = 'components-feedback-tooltip--default';
 const TOOLTIP_TEXT = 'A lightweight tooltip built on the new overlay primitives.';
@@ -84,7 +84,7 @@ test.describe('tooltip / touch', () => {
     const trigger = root.getByRole('button', { name: 'Text tooltip' });
 
     await tap(trigger);
-    await page.waitForTimeout(400);
+    await settle(page, 400);
 
     await expect(page.getByRole('tooltip')).toHaveCount(0);
   });

@@ -155,6 +155,9 @@ test.describe('menu / keyboard', () => {
     await openStory(page, STORY_ID);
 
     await focusExportAsItem(page);
+
+    await expect(page.getByRole('menuitem', { name: 'Publish (disabled)' })).not.toBeFocused();
+    await expect(page.getByRole('menuitem', { name: 'Export as' })).toBeFocused();
   });
 
   test('Escape closes the menu and returns focus to the trigger', async ({ page }) => {
