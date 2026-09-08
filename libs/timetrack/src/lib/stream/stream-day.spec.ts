@@ -210,17 +210,74 @@ describe('streamDay', () => {
     expect(streamOf(day, `repo:${SDK}`)?.engagedMs).toBe(20 * MINUTE);
   });
 
-  it('holds the checkout for a title that names none, until the stickiness runs out', () => {
+  it('holds the checkout a title named for a title that names none, until the stickiness runs out', () => {
     const day = streamDay({
       events: [
-        commit(0, 'feat(bracket): Add the resolver'),
-        ...focusRun({ from: 0, to: 30, appId: 'firefox', title: 'localhost:4200 — Firefox' }),
+        ...focusRun({ from: 0, to: 5, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 6, to: 30, appId: 'code', title: 'Visual Studio Code' }),
       ],
       options: { repoRoots: [SDK], repoStickinessMs: 5 * MINUTE },
     });
 
-    expect(streamOf(day, `repo:${SDK}`)?.engagedMs).toBe(6 * MINUTE);
-    expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(24 * MINUTE);
+    expect(streamOf(day, `repo:${SDK}`)?.engagedMs).toBe(11 * MINUTE);
+    expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(19 * MINUTE);
+  });
+
+  it('never lets a commit hold the focused window, so browsing after one stays off the checkout', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 30, appId: 'firefox', title: 'Home · GitLab — Firefox' }),
+      ],
+      options: { repoRoots: [SDK], repoStickinessMs: 5 * MINUTE },
+    });
+
+    expect(streamOf(day, `repo:${SDK}`)).toBeUndefined();
+    expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(30 * MINUTE);
+  });
+
+  it('never passes the sticky to another application, so a browser page stays off the checkout', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 5, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 6, to: 10, appId: 'chrome', title: 'Generate legacy token · User Settings · GitLab' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(streamOf(day, `repo:${SDK}`)?.evidence.map((entry) => entry.detail)).toEqual([
+      'block.ts - ethlete-sdk - Code',
+    ]);
+    expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.evidence.map((entry) => entry.detail)).toEqual([
+      'Generate legacy token · User Settings · GitLab',
+    ]);
+    expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(4 * MINUTE);
+  });
+
+  it('passes the sticky inside one application, so an editor title that names nothing keeps its checkout', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 5, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 6, to: 10, appId: 'code', title: 'Visual Studio Code' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(streamOf(day, `repo:${SDK}`)?.engagedMs).toBe(10 * MINUTE);
+    expect(streamOf(day, OTHER_APPLICATIONS_KEY)).toBeUndefined();
+  });
+
+  it('names a checkout by a discovered root the day holds no event for', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'notes.md - specs - Code' }),
+        ...focusRun({ from: 11, to: 20, appId: 'code', title: 'bracket.spec.ts - fut-frontend - Code' }),
+      ],
+      options: { repoRoots: ['/home/tom/dev/specs', FUT] },
+    });
+
+    expect(streamOf(day, 'repo:/home/tom/dev/specs')?.engagedMs).toBe(11 * MINUTE);
+    expect(streamOf(day, `repo:${FUT}`)?.engagedMs).toBe(9 * MINUTE);
   });
 
   it('books a turn to its checkout by the working directory alone, whatever the clock said', () => {

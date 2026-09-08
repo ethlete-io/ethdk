@@ -207,15 +207,19 @@ const repoNamedIn = (options: { title: string; byName: Map<string, string> }) =>
 /**
  * Indexes the checkouts by their directory name.
  *
+ * Every discovered root counts, not only the checkouts the day holds an event for: an editor open on
+ * a repository you neither committed in nor ran an agent in would otherwise resolve to nothing, and
+ * the sticky would hand its hours to whichever other checkout an event named last.
+ *
  * A name two of them share is dropped rather than resolved: guessing which `api` an editor is showing
  * would attribute one project's time to another, and no attribution is the better failure.
  */
 const reposByName = (samples: readonly ActivityEvent[], roots: readonly string[]) => {
   const byName = new Map<string, string>();
   const ambiguous = new Set<string>();
+  const paths = [...roots, ...samples.map((sample) => repoStateFor(sample, roots)?.repoPath)];
 
-  for (const sample of samples) {
-    const repoPath = repoStateFor(sample, roots)?.repoPath;
+  for (const repoPath of paths) {
     const name = repoPath?.split('/').filter(Boolean).pop();
 
     if (!repoPath || !name) continue;
@@ -387,7 +391,7 @@ export const streamDay = (options: {
   /** The branch each checkout was last seen on. Learned from git and from an agent session alike. */
   const branches = new Map<string, string | undefined>();
   const lastAgentSample = new Map<string, Date>();
-  let sticky: { repoPath: string; at: Date } | undefined;
+  let sticky: { repoPath: string; at: Date; appId?: string } | undefined;
   let focused: string | undefined;
   let appId: string | undefined;
 
@@ -409,14 +413,16 @@ export const streamDay = (options: {
     // checkout is in front of you, not what is checked out in it.
     if (observed) branches.set(observed.repoPath, observed.branch ?? branches.get(observed.repoPath));
 
-    // An agent session does not make its checkout sticky. It has a stream of its own now, and letting
-    // it hold the sticky would hand it every minute the user spent in an unrelated window.
-    const named = sample.kind === 'window-focus' ? focused : sample.source === 'git' ? observed?.repoPath : undefined;
-
-    if (named) sticky = { repoPath: named, at: sample.at };
+    // Only a window title may set the sticky. A commit and an agent session label a stream, and neither
+    // is a reason to hand the following minutes to the checkout they name — which is what put a Figma
+    // tab and a merge-request page on the checkout somebody had just committed in.
+    if (focused && sample.kind === 'window-focus') sticky = { repoPath: focused, at: sample.at, appId };
     if (sticky && sample.at.getTime() - sticky.at.getTime() > config.repoStickinessMs) sticky = undefined;
 
-    const holder = focused ?? sticky?.repoPath;
+    // The sticky passes only inside the application that set it: an editor whose title stops naming the
+    // checkout is plainly still that checkout, and a browser or a chat window is plainly not. Without
+    // this, every page opened within the stickiness of an editor was booked to the editor's checkout.
+    const holder = focused ?? (sticky?.appId === appId ? sticky?.repoPath : undefined);
     const context: ActivityContext = holder ? { repoPath: holder, branch: branches.get(holder), appId } : { appId };
     const next = samples[index + 1];
 
@@ -438,10 +444,9 @@ export const streamDay = (options: {
       lastAgentSample.set(cwd, sample.at);
     }
 
-    const evidence = secludedWindow ? null : evidenceFor(sample);
     const of = observed ? { repoPath: observed.repoPath, branch: observed.branch } : context;
 
-    addEvidence(draftFor(drafts, of).evidence, evidence);
+    addEvidence(draftFor(drafts, of).evidence, secludedWindow ? null : evidenceFor(sample));
   });
 
   const streams: Stream[] = [];
