@@ -25,12 +25,27 @@ export const E2E_PARENT_BRANCH = `feat/${E2E_PARENT_KEY}-member-onboarding`;
 export const E2E_ISSUE_BRANCH = `feat/${E2E_ISSUE_KEY}-user-management`;
 
 /**
+ * One agent session log the fake host serves. `lines` are the log's JSONL lines, as the reader hands
+ * them to a parser.
+ */
+export type FakeAgentLog = {
+  id: string;
+  path: string;
+  /** ISO 8601, because the seed crosses into the page as JSON. */
+  modifiedAt: string;
+  lines: string[];
+};
+
+/**
  * The world an e2e spec declares. Every key it leaves out falls back to the default fixture, so a
  * spec that does not care about Tempo states nothing about Tempo.
  */
 export type TimetrackWorldSeed = {
   events?: CollectedEvent[];
   settings?: TimetrackSettings;
+  /** Claude Code's session logs. Empty by default, so no spec collects an agent it says nothing about. */
+  agentLogs?: FakeAgentLog[];
+  codexLogs?: FakeAgentLog[];
   jira?: Partial<FakeJiraState>;
   tempo?: Partial<FakeTempoState>;
   gitlab?: Partial<FakeGitLabState>;
@@ -41,6 +56,8 @@ export type TimetrackWorldSeed = {
 export type FakeWorld = {
   events: CollectedEvent[];
   settings: TimetrackSettings;
+  agentLogs: FakeAgentLog[];
+  codexLogs: FakeAgentLog[];
   backend: FakeBackend;
 };
 
@@ -205,6 +222,8 @@ const defaultGit = (): FakeGitState => ({
 export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   events: seed.events ?? defaultEvents(),
   settings: seed.settings ?? defaultSettings(),
+  agentLogs: seed.agentLogs ?? [],
+  codexLogs: seed.codexLogs ?? [],
   backend: {
     jira: { ...defaultJira(), ...seed.jira },
     tempo: { ...defaultTempo(), ...seed.tempo },

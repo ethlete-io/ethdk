@@ -1,4 +1,5 @@
 import { CollectedEvent, GIT_FIELD_SEPARATOR } from '@ethlete/timetrack';
+import { defaultSettings } from '@ethlete/timetrack/testing';
 import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
 
 /** The checkout the fake git backend discovers, so its subdirectories fold into it. */
@@ -51,6 +52,55 @@ const day = (): CollectedEvent[] => [
     model: 'claude-opus-5',
     usage: { input: 12_000, output: 1_200_000, cacheWrite: 40_000, cacheRead: 604_000_000, thinking: 30_000 },
   },
+];
+
+/** One record of a Codex rollout log. `ordinal` is what a `token_count` is identified as a turn by. */
+const codexRecord = (options: { minutes: number; type: string; payload: Record<string, unknown>; ordinal: number }) =>
+  JSON.stringify({
+    timestamp: at(options.minutes).toISOString(),
+    type: options.type,
+    payload: options.payload,
+    ordinal: options.ordinal,
+  });
+
+const codexCounts = (output: number) => ({
+  input_tokens: 4_000,
+  cached_input_tokens: 1_000,
+  cache_write_input_tokens: 0,
+  output_tokens: output,
+  reasoning_output_tokens: 500,
+  total_tokens: 4_000 + output,
+});
+
+/**
+ * A rollout log the Codex passes read: the session it belongs to, the turn's checkout and model, and
+ * two turns that spent something. The zero-valued `token_count` Codex opens a turn with is the
+ * context window rather than spend, so this holds none.
+ */
+const codexRollout = (): string[] => [
+  codexRecord({
+    minutes: 30,
+    type: 'session_meta',
+    payload: { session_id: 'codex-e2e', cwd: SDK, cli_version: '0.147.0' },
+    ordinal: 0,
+  }),
+  codexRecord({
+    minutes: 31,
+    type: 'turn_context',
+    payload: { turn_id: 't1', cwd: SDK, model: 'gpt-5-codex' },
+    ordinal: 1,
+  }),
+  ...[35, 45].map((minutes, step) =>
+    codexRecord({
+      minutes,
+      type: 'event_msg',
+      payload: {
+        type: 'token_count',
+        info: { last_token_usage: codexCounts(200_000 * (step + 1)), total_token_usage: codexCounts(999_999) },
+      },
+      ordinal: 2 + step,
+    }),
+  ),
 ];
 
 const stream = (page: Parameters<typeof seedWorld>[0], key: string) => page.locator(`[data-stream="${key}"]`);
@@ -138,6 +188,34 @@ test.describe('the today view', () => {
 
   test('shows what the turns spent, in the classes they are priced in', async ({ page }) => {
     await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toHaveText('1 turn · 1.2 M out · 604 M cached');
+  });
+
+  test('reads a codex rollout log and books its turns on the checkout the turn ran in', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: day(),
+      // The backfill keeps only a checkout a project link covers, the same filter the session
+      // collector applies. Without the link the rollout's turns are dropped before the store.
+      settings: {
+        ...defaultSettings(),
+        projectLinks: [
+          { id: 'link-sdk', path: SDK, target: { kind: 'project', projectKey: 'ABC' }, createdAt: new Date(0) },
+        ],
+      },
+      codexLogs: [
+        {
+          id: 'rollout-codex-e2e',
+          path: '/Users/e2e/.codex/sessions/2026/08/12/rollout-codex-e2e.jsonl',
+          modifiedAt: `${E2E_DAY_KEY}T12:00:00.000Z`,
+          lines: codexRollout(),
+        },
+      ],
+    });
+    await page.goto('/today');
+
+    // One claude-code turn is already in the day's events; the two the rollout holds join it.
+    await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toContainText('3 turns');
+    await expect(page.locator('[data-unattributed]')).toHaveCount(0);
   });
 
   test('books what an agent spent while nobody was at the machine, and calls that time unattended', async ({

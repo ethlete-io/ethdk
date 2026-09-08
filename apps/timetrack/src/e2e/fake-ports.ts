@@ -1,4 +1,7 @@
 import {
+  AgentLogPass,
+  AgentSessionCursor,
+  AgentSessionLogReader,
   CollectedEvent,
   DayNudgeRecord,
   DayReviewEdits,
@@ -10,8 +13,10 @@ import {
   TimetrackRequest,
   TimetrackResponse,
   TimetrackSettings,
+  dedupeKeyOf,
 } from '@ethlete/timetrack';
 import {
+  FakeAgentLog,
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_SEED_KEY,
   createFakeWorld,
@@ -24,6 +29,24 @@ import { HostPorts } from '../host/ports';
 
 const ok = <T>(value: T): Observable<T> => of(value);
 const done = (): Observable<void> => of(undefined);
+
+/**
+ * Serves one provider's seeded session logs. A read never yields a line the seed does not hold, so a
+ * collector's cursor lands where a real one would.
+ */
+const fakeLogReader = (logs: FakeAgentLog[]): AgentSessionLogReader => ({
+  logs$: ({ modifiedAfter }) =>
+    ok(
+      logs
+        .map((log) => ({ id: log.id, path: log.path, modifiedAt: new Date(log.modifiedAt) }))
+        .filter((ref) => !modifiedAfter || ref.modifiedAt > modifiedAfter),
+    ),
+  readLines$: ({ ref, fromLine }) => {
+    const lines = (logs.find((log) => log.path === ref.path)?.lines ?? []).slice(fromLine);
+
+    return ok({ lines, nextLine: fromLine + lines.length });
+  },
+});
 
 const seedFromWindow = () =>
   parseWorldSeed((globalThis as Record<string, unknown>)[TIMETRACK_E2E_SEED_KEY] as string | undefined);
@@ -39,6 +62,8 @@ export const createFakePorts = (): HostPorts => {
   const world = createFakeWorld(seedFromWindow());
   const { backend } = world;
   const events = [...world.events];
+  const dedupeKeys = new Set(events.map(dedupeKeyOf).filter((key): key is string => key !== null));
+  const cursorsByPass = new Map<AgentLogPass, Map<string, AgentSessionCursor>>();
   const ledger = new Map<string, SyncedWorklog[]>();
   const edits = new Map<string, DayReviewEdits>();
   const coverage = new Map<string, TempoDayCoverage>();
@@ -54,6 +79,27 @@ export const createFakePorts = (): HostPorts => {
   let reasoningRuns = 0;
 
   (globalThis as Record<string, unknown>)[TIMETRACK_E2E_BACKEND_KEY] = backend;
+
+  /**
+   * Appends what the store does not already hold, and answers how many rows were new. The real store
+   * refuses a second row under one dedupe key, so a fake that appends blindly would let a collector's
+   * re-read double every turn it re-parses.
+   */
+  const appendEvents = (appended: readonly CollectedEvent[]) => {
+    let added = 0;
+
+    for (const event of appended) {
+      const key = dedupeKeyOf(event);
+
+      if (key !== null && dedupeKeys.has(key)) continue;
+      if (key !== null) dedupeKeys.add(key);
+
+      events.push(event);
+      added += 1;
+    }
+
+    return added;
+  };
 
   return {
     transport: { request$: <T>(request: TimetrackRequest) => ok(respond(backend, request) as TimetrackResponse<T>) },
@@ -76,24 +122,25 @@ export const createFakePorts = (): HostPorts => {
     events: {
       eventsBetween$: (from, to) => ok(events.filter((event) => event.at >= from && event.at < to)),
       append$: (appended: CollectedEvent[]) => {
-        events.push(...appended);
+        appendEvents(appended);
 
         return done();
       },
-      appendCounted$: (appended) => {
-        events.push(...appended);
-
-        return ok(appended.length);
-      },
+      appendCounted$: (appended) => ok(appendEvents(appended)),
       appendWithCursors$: (options) => {
-        events.push(...options.events);
+        const added = appendEvents(options.events);
+        const held = cursorsByPass.get(options.pass) ?? new Map<string, AgentSessionCursor>();
 
-        return ok(options.events.length);
+        for (const cursor of options.cursors) held.set(cursor.id, cursor);
+
+        cursorsByPass.set(options.pass, held);
+
+        return ok(added);
       },
       deleteEventsBefore$: () => ok(0),
       oldestEventAt$: () => ok(events[0]?.at ?? null),
       bySource$: () => ok([]),
-      cursors$: () => ok([]),
+      cursors$: (pass) => ok([...(cursorsByPass.get(pass)?.values() ?? [])]),
       compactedThrough$: () => ok(null),
       setCompactedThrough$: () => done(),
     },
@@ -195,9 +242,9 @@ export const createFakePorts = (): HostPorts => {
       },
     },
 
-    agentLogs: { logs$: () => ok([]), readLines$: () => ok({ lines: [], nextLine: 0 }) },
+    agentLogs: fakeLogReader(world.agentLogs),
 
-    codexLogs: { logs$: () => ok([]), readLines$: () => ok({ lines: [], nextLine: 0 }) },
+    codexLogs: fakeLogReader(world.codexLogs),
 
     collection: {
       state$: () => ok({ pausedAt }),
