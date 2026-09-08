@@ -141,6 +141,29 @@ const SCHEMA_V10: &str = "
 ALTER TABLE agent_session_cursor ADD COLUMN cwd TEXT;
 ";
 
+/// Splits the session-log cursors by the pass that wrote them, so the spend backfill of ADR 0003 can
+/// read a log from the top without moving the collector's own offset.
+///
+/// SQLite cannot widen a primary key in place, so the table is rebuilt. Every existing row belongs to
+/// the collector, because the backfill has never run. `read_through_ms` is what says a log has been
+/// read to its end: an empty log leaves `next_line` at 0, and the pass would otherwise read it for ever.
+const SCHEMA_V11: &str = "
+CREATE TABLE agent_session_cursor_next (
+  id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  next_line INTEGER NOT NULL,
+  after_ms INTEGER,
+  title TEXT,
+  cwd TEXT,
+  read_through_ms INTEGER,
+  PRIMARY KEY (id, kind)
+);
+INSERT INTO agent_session_cursor_next (id, kind, next_line, after_ms, title, cwd)
+  SELECT id, 'agent-session', next_line, after_ms, title, cwd FROM agent_session_cursor;
+DROP TABLE agent_session_cursor;
+ALTER TABLE agent_session_cursor_next RENAME TO agent_session_cursor;
+";
+
 /// Gives every ledger entry written before schema v8 its day.
 ///
 /// A proposal id is `<issueKey>@<ISO instant>`, so the day is in the row already; a row whose id does
@@ -262,6 +285,11 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         connection.pragma_update(None, "user_version", 10)?;
     }
 
+    if version < 11 {
+        connection.execute_batch(SCHEMA_V11)?;
+        connection.pragma_update(None, "user_version", 11)?;
+    }
+
     Ok(())
 }
 
@@ -313,6 +341,10 @@ mod tests {
             connection.execute_batch(SCHEMA_V9).unwrap();
         }
 
+        if version >= 10 {
+            connection.execute_batch(SCHEMA_V10).unwrap();
+        }
+
         connection.pragma_update(None, "user_version", version).unwrap();
         migrate(&connection).unwrap();
 
@@ -333,7 +365,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            10
+            11
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -343,7 +375,10 @@ mod tests {
         let connection = migrated_from(9);
 
         connection
-            .execute("INSERT INTO agent_session_cursor (id, next_line) VALUES ('s1', 42)", [])
+            .execute(
+                "INSERT INTO agent_session_cursor (id, kind, next_line) VALUES ('s1', 'agent-session', 42)",
+                [],
+            )
             .unwrap();
 
         assert_eq!(
@@ -352,6 +387,61 @@ mod tests {
                     .get::<_, Option<String>>(0))
                 .unwrap(),
             None
+        );
+    }
+
+    #[test]
+    fn gives_a_cursor_written_before_the_pass_column_the_collector_as_its_pass() {
+        let connection = Connection::open_in_memory().unwrap();
+
+        for schema in [
+            SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9,
+            SCHEMA_V10,
+        ] {
+            connection.execute_batch(schema).unwrap();
+        }
+
+        connection
+            .execute(
+                "INSERT INTO agent_session_cursor (id, next_line, cwd) VALUES ('s1', 42, '/repo')",
+                [],
+            )
+            .unwrap();
+        connection.pragma_update(None, "user_version", 10).unwrap();
+
+        migrate(&connection).unwrap();
+
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT kind, next_line, cwd FROM agent_session_cursor WHERE id = 's1'",
+                    [],
+                    |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?, row.get::<_, String>(2)?))
+                )
+                .unwrap(),
+            ("agent-session".to_string(), 42, "/repo".to_string())
+        );
+    }
+
+    #[test]
+    fn keeps_the_two_passes_over_one_log_apart() {
+        let connection = migrated_from(10);
+
+        for kind in ["agent-session", "spend"] {
+            connection
+                .execute(
+                    "INSERT INTO agent_session_cursor (id, kind, next_line) VALUES ('s1', ?1, 7)",
+                    params![kind],
+                )
+                .unwrap();
+        }
+
+        assert_eq!(
+            connection
+                .query_row("SELECT count(*) FROM agent_session_cursor WHERE id = 's1'", [], |row| row
+                    .get::<_, i64>(0))
+                .unwrap(),
+            2
         );
     }
 

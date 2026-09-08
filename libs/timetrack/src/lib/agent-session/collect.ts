@@ -19,6 +19,12 @@ export type AgentSessionCursor = {
    * without reading any of them again. A log may change checkout part way through; the last one wins.
    */
   cwd?: string;
+  /**
+   * The log's modification time when a pass last read it to its end. Set by the spend backfill and by
+   * nothing else: the line offset alone cannot say an empty log is done, so that pass would read such
+   * a log on every run.
+   */
+  readThrough?: Date;
 };
 
 export type AgentSessionCollection = {

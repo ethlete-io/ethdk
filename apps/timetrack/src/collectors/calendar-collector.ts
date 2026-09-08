@@ -77,7 +77,7 @@ const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       concatMap((perCalendar: CalendarOccurrenceEvent[][]) => {
         const events = perCalendar.flat();
 
-        return ports.events.appendWithCursors$(events, []).pipe(
+        return ports.events.appendCounted$(events).pipe(
           tap((stored) => {
             failure.set(null);
             lastRun.set({ at, calendars: calendarIds.length, seen: events.length, stored });

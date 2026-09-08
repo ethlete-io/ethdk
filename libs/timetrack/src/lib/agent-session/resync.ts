@@ -26,6 +26,28 @@ export const resyncAgentSessionCursors = (options: {
     return { id: cursor.id, nextLine: 0, cwd };
   });
 
+/**
+ * The `spend` cursors of the logs run under `paths`, cleared so the backfill reads those logs again.
+ *
+ * Only the cleared ones come back, because they are the whole write: the backfill hands back a cursor
+ * for each log it reaches, and a rewound log it does not reach in the same run has to keep its cleared
+ * cursor in the store or the next run would skip it again.
+ *
+ * A re-read is free here, unlike the collector's: token spend keys on the provider and the turn id, so
+ * appending it twice stores it once. See ADR 0003.
+ */
+export const rewindAgentSpendCursors = (options: {
+  cursors: readonly AgentSessionCursor[];
+  paths: readonly string[];
+}): AgentSessionCursor[] =>
+  options.cursors.flatMap((cursor) => {
+    const cwd = cursor.cwd;
+
+    if (!cwd || !cursor.readThrough || !options.paths.some((path) => pathIsUnder(path, cwd))) return [];
+
+    return [{ id: cursor.id, nextLine: 0, cwd }];
+  });
+
 /** A checkout whose skipped sessions a link now files into a project, so a re-read would store them. */
 export type AgentSessionResyncOffer = UnlinkedAgentSessions & { projectKey: string };
 

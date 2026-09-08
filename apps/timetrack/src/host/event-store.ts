@@ -1,4 +1,4 @@
-import { AgentSessionCursor, CollectedEvent, TimetrackEventStore, dedupeKeyOf } from '@ethlete/timetrack';
+import { AgentLogPass, AgentSessionCursor, CollectedEvent, TimetrackEventStore, dedupeKeyOf } from '@ethlete/timetrack';
 import { Observable, map } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
@@ -24,10 +24,12 @@ type StoredTally = { source: string; count: number; latestAtMs: number | null };
 
 type StoredCursor = {
   id: string;
+  kind: AgentLogPass;
   nextLine: number;
   afterMs: number | null;
   title: string | null;
   cwd: string | null;
+  readThroughMs: number | null;
 };
 
 const toStored = (event: CollectedEvent): StoredEvent => ({
@@ -45,12 +47,14 @@ const reviveEvent = (stored: StoredEvent): CollectedEvent => {
   return (typeof until === 'string' ? { ...revived, until: new Date(until) } : revived) as CollectedEvent;
 };
 
-const toStoredCursor = (cursor: AgentSessionCursor): StoredCursor => ({
+const toStoredCursor = (cursor: AgentSessionCursor, kind: AgentLogPass): StoredCursor => ({
   id: cursor.id,
+  kind,
   nextLine: cursor.nextLine,
   afterMs: cursor.after ? cursor.after.getTime() : null,
   title: cursor.title ?? null,
   cwd: cursor.cwd ?? null,
+  readThroughMs: cursor.readThrough ? cursor.readThrough.getTime() : null,
 });
 
 const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
@@ -59,6 +63,7 @@ const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
   ...(stored.afterMs === null ? {} : { after: new Date(stored.afterMs) }),
   ...(stored.title === null ? {} : { title: stored.title }),
   ...(stored.cwd === null ? {} : { cwd: stored.cwd }),
+  ...(stored.readThroughMs === null ? {} : { readThrough: new Date(stored.readThroughMs) }),
 });
 
 /**
@@ -69,23 +74,37 @@ const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
  */
 export type TauriEventStore = TimetrackEventStore & {
   /** Resolves with the rows that were new — an event the store already holds under its dedupe key is skipped. */
-  appendWithCursors$(events: CollectedEvent[], cursors: AgentSessionCursor[]): Observable<number>;
+  appendCounted$(events: CollectedEvent[]): Observable<number>;
+  /** The same, and moves the cursors of one pass over the agent logs in the same transaction. */
+  appendWithCursors$(options: {
+    events: CollectedEvent[];
+    cursors: AgentSessionCursor[];
+    pass: AgentLogPass;
+  }): Observable<number>;
   bySource$(): Observable<SourceTally[]>;
-  cursors$(): Observable<AgentSessionCursor[]>;
+  cursors$(pass: AgentLogPass): Observable<AgentSessionCursor[]>;
   compactedThrough$(): Observable<Date | null>;
   setCompactedThrough$(through: Date | null): Observable<void>;
 };
 
 export const createTauriEventStore = (): TauriEventStore => {
-  const appendWithCursors$ = (events: CollectedEvent[], cursors: AgentSessionCursor[]) =>
+  const appendWithCursors$ = (options: {
+    events: CollectedEvent[];
+    cursors: AgentSessionCursor[];
+    pass: AgentLogPass;
+  }) =>
     invokeHost$<number>('events_append', {
-      events: events.map(toStored),
-      cursors: cursors.map(toStoredCursor),
+      events: options.events.map(toStored),
+      cursors: options.cursors.map((cursor) => toStoredCursor(cursor, options.pass)),
     });
 
+  const appendCounted$ = (events: CollectedEvent[]) =>
+    invokeHost$<number>('events_append', { events: events.map(toStored), cursors: [] });
+
   return {
+    appendCounted$,
     appendWithCursors$,
-    append$: (events) => appendWithCursors$(events, []).pipe(map(() => undefined)),
+    append$: (events) => appendCounted$(events).pipe(map(() => undefined)),
     eventsBetween$: (from, to) =>
       invokeHost$<StoredEvent[]>('events_between', { fromMs: from.getTime(), toMs: to.getTime() }).pipe(
         map((stored) => stored.map(reviveEvent)),
@@ -103,7 +122,8 @@ export const createTauriEventStore = (): TauriEventStore => {
           })),
         ),
       ),
-    cursors$: () => invokeHost$<StoredCursor[]>('agent_session_cursors').pipe(map((rows) => rows.map(reviveCursor))),
+    cursors$: (pass) =>
+      invokeHost$<StoredCursor[]>('agent_session_cursors', { kind: pass }).pipe(map((rows) => rows.map(reviveCursor))),
     compactedThrough$: () =>
       invokeHost$<number | null>('compacted_through').pipe(map((atMs) => (atMs === null ? null : new Date(atMs)))),
     setCompactedThrough$: (through) =>

@@ -5,6 +5,7 @@ import { formatDurationMs } from '@ethlete/timetrack';
 import { catchError, of, switchMap } from 'rxjs';
 import {
   injectAgentSessionCollector,
+  injectAgentSpendBackfill,
   injectCalendarCollector,
   injectGitCollector,
   injectGitLabCollector,
@@ -21,6 +22,7 @@ import {
   formatGitLabRead,
   formatGitScan,
   formatIngest,
+  formatSpendBackfill,
   formatTally,
   formatWindowSource,
 } from './format';
@@ -152,6 +154,7 @@ export class SourcesViewComponent {
   protected pause = injectCollectionPause();
   private windows = injectWindowCollector();
   private agentSessions = injectAgentSessionCollector();
+  private agentSpend = injectAgentSpendBackfill();
   private git = injectGitCollector();
   private calendar = injectCalendarCollector();
   private gitlab = injectGitLabCollector();
@@ -162,6 +165,7 @@ export class SourcesViewComponent {
   private collected = computed(() => ({
     windows: this.windows.lastRun(),
     agentSessions: this.agentSessions.lastRun(),
+    agentSpend: this.agentSpend.lastRun(),
     git: this.git.lastRun(),
     calendar: this.calendar.lastRun(),
     gitlab: this.gitlab.lastRun(),
@@ -222,6 +226,14 @@ export class SourcesViewComponent {
         return formatWindowSource({ status: this.windows.status(), totals: this.windows.totals() }) || null;
       case 'agent-session':
         return formatAgentSessions(this.agentSessions.totals()) || null;
+      case 'agent-usage':
+        return (
+          formatSpendBackfill({
+            lastRun: this.agentSpend.lastRun(),
+            remaining: this.agentSpend.remaining(),
+            excluded: this.agentSpend.excluded(),
+          }) || null
+        );
       case 'git':
         return formatGitScan({ discovery: this.git.discovery(), scannedAt: this.git.lastRun()?.at ?? null }) || null;
       case 'calendar':
@@ -265,6 +277,8 @@ export class SourcesViewComponent {
         return this.windows.failure();
       case 'agent-session':
         return this.agentSessions.failure();
+      case 'agent-usage':
+        return this.agentSpend.failure();
       case 'git':
         return this.git.failure();
       case 'calendar':

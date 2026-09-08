@@ -3,7 +3,12 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { StreamDay, localDayKey, localDayRange, shiftDayKey, streamDay } from '@ethlete/timetrack';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
-import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
+import {
+  injectAgentSessionCollector,
+  injectAgentSpendBackfill,
+  injectGitCollector,
+  injectWindowCollector,
+} from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { readViewState, rememberViewState } from '../view-state';
 
@@ -22,6 +27,7 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
   const ports = injectHostPorts();
   const windows = injectWindowCollector();
   const agentSessions = injectAgentSessionCollector();
+  const spend = injectAgentSpendBackfill();
   const git = injectGitCollector();
 
   const key = signal(readViewState().day ?? localDayKey(new Date()));
@@ -36,6 +42,7 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
     repoRoots: git.discovery()?.repos ?? [],
     windows: windows.lastRun(),
     sessions: agentSessions.lastRun(),
+    spend: spend.lastRun(),
     git: git.lastRun(),
   }));
 

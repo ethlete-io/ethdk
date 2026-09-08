@@ -1,5 +1,10 @@
 import { GitScanFailure } from '@ethlete/timetrack';
-import { AgentSessionCollectorTotals, IngestCollectorTotals, WindowCollectorTotals } from '../../collectors';
+import {
+  AgentSessionCollectorTotals,
+  AgentSpendBackfillRun,
+  IngestCollectorTotals,
+  WindowCollectorTotals,
+} from '../../collectors';
 import { GitRepoDiscovery, IngestStatus, SourceTally, WindowSourceStatus } from '../../host';
 
 const clock = (at: Date) => at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -53,6 +58,32 @@ export const formatAgentSessions = (totals: AgentSessionCollectorTotals) => {
           totals.unlinked.length > named.length ? ', and more' : ''
         }.`
       : null,
+  ]);
+};
+
+/**
+ * How far the one-off pass over the old logs has got, and what it found.
+ *
+ * The pass has an end, so its progress is the whole state: until it reports nothing left, every day
+ * before spend collection started still reads zero, and the user has to be able to see that it is
+ * being worked on rather than broken.
+ */
+export const formatSpendBackfill = (options: {
+  lastRun: AgentSpendBackfillRun | null;
+  remaining: number | null;
+  excluded: number;
+}) => {
+  const { lastRun, remaining, excluded } = options;
+
+  return sentences([
+    remaining === null
+      ? 'Reading the older session logs for the spend they hold.'
+      : remaining
+        ? `${remaining} older ${remaining === 1 ? 'log' : 'logs'} still to read.`
+        : 'Every older log has been read; the collector keeps it current from here.',
+    lastRun?.turns ? `${lastRun.turns.toLocaleString()} turns stored at ${clock(lastRun.at)}.` : null,
+    excluded ? `${excluded} denied by an exclusion rule.` : null,
+    lastRun?.unparsedLines ? `${lastRun.unparsedLines} lines could not be read as JSON.` : null,
   ]);
 };
 

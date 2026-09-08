@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, effect } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { injectRoute } from '@ethlete/core';
+import { injectAgentSpendBackfill } from '../collectors';
 import { injectAgentEndpoint } from './agent';
 import { injectCollectionPause } from './collection-pause';
 import { LockViewComponent } from './lock-view.component';
@@ -98,6 +99,9 @@ export class AppComponent {
 
     // Neither does the agent endpoint, and it has to answer whatever view the window is on.
     injectAgentEndpoint();
+
+    // Nor the spend backfill, which has to converge whether or not anybody opens the Sources screen.
+    injectAgentSpendBackfill();
 
     // So the window reopens on the view it was closed on. `APP_ROUTES` reads it back.
     effect(() => {

@@ -73,7 +73,7 @@ const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
           rules: effectiveExclusionRules(settings.settings()),
         });
 
-        return ports.events.appendWithCursors$(kept, []).pipe(
+        return ports.events.appendCounted$(kept).pipe(
           tap((stored) => {
             read = true;
             failure.set(null);

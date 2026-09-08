@@ -1,5 +1,12 @@
 import { Observable } from 'rxjs';
 
+/**
+ * Which pass over the agent logs a cursor belongs to. Both read the same files from an offset of their
+ * own: `agent-session` collects activity samples as the agent writes them, `spend` reads each log once
+ * from the top for the token counts it already went past. See ADR 0003.
+ */
+export type AgentLogPass = 'agent-session' | 'spend';
+
 /** One session log the host found. `id` identifies the log — for Claude Code it is the file's basename. */
 export type AgentSessionLogRef = {
   id: string;

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TimetrackProjectLink } from '../correlate/project-link';
 import { AgentSessionCursor } from './collect';
 import { UnlinkedAgentSessions } from './linked';
-import { agentSessionResyncOffers, resyncAgentSessionCursors } from './resync';
+import { agentSessionResyncOffers, resyncAgentSessionCursors, rewindAgentSpendCursors } from './resync';
 
 const cursor = (id: string, cwd?: string): AgentSessionCursor => ({
   id,
@@ -131,5 +131,45 @@ describe('agentSessionResyncOffers', () => {
     });
 
     expect(result.map((offer) => offer.cwd)).toEqual(['/home/tom/dev/two', '/home/tom/dev/one']);
+  });
+});
+
+describe('rewindAgentSpendCursors', () => {
+  const spendCursor = (id: string, options: { cwd?: string; readThrough?: boolean } = {}): AgentSessionCursor => ({
+    id,
+    nextLine: 120,
+    ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
+    ...(options.readThrough === false ? {} : { readThrough: new Date('2026-08-17T09:00:00Z') }),
+  });
+
+  it('clears the cursor of a log run under one of the paths', () => {
+    const result = rewindAgentSpendCursors({
+      cursors: [spendCursor('a', { cwd: '/home/tom/dev/fut-frontend/apps/web' })],
+      paths: ['/home/tom/dev/fut-frontend'],
+    });
+
+    expect(result).toEqual([{ id: 'a', nextLine: 0, cwd: '/home/tom/dev/fut-frontend/apps/web' }]);
+  });
+
+  it('returns only the cleared cursors, because they are the whole write', () => {
+    const result = rewindAgentSpendCursors({
+      cursors: [
+        spendCursor('a', { cwd: '/home/tom/dev/fut-frontend' }),
+        spendCursor('b', { cwd: '/home/tom/dev/ethlete-sdk' }),
+      ],
+      paths: ['/home/tom/dev/fut-frontend'],
+    });
+
+    expect(result.map((cursor) => cursor.id)).toEqual(['a']);
+  });
+
+  it('leaves a cursor whose checkout was never recorded, because nothing says the path covers it', () => {
+    expect(rewindAgentSpendCursors({ cursors: [spendCursor('a')], paths: ['/home/tom/dev'] })).toEqual([]);
+  });
+
+  it('leaves a log the pass has not read through, because it is queued already', () => {
+    const cursors = [spendCursor('a', { cwd: '/home/tom/dev/fut-frontend', readThrough: false })];
+
+    expect(rewindAgentSpendCursors({ cursors, paths: ['/home/tom/dev/fut-frontend'] })).toEqual([]);
   });
 });

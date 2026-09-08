@@ -100,7 +100,7 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     return collectGitEvents$({ processes: ports.processes, repos: scans }).pipe(
       concatMap((scan) =>
-        ports.events.appendWithCursors$(scan.events, []).pipe(
+        ports.events.appendCounted$(scan.events).pipe(
           tap((stored) => {
             scannedOnce = true;
             failure.set(null);

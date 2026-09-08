@@ -80,10 +80,15 @@ export const createFakePorts = (): HostPorts => {
 
         return done();
       },
-      appendWithCursors$: (appended) => {
+      appendCounted$: (appended) => {
         events.push(...appended);
 
         return ok(appended.length);
+      },
+      appendWithCursors$: (options) => {
+        events.push(...options.events);
+
+        return ok(options.events.length);
       },
       deleteEventsBefore$: () => ok(0),
       oldestEventAt$: () => ok(events[0]?.at ?? null),

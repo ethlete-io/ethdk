@@ -30,7 +30,7 @@ export type EvidenceSource = {
   /** What the source is still waiting on. Not shown once it has everything it needs. */
   detail?: string;
   /** The collector whose run this row reports. Focus and presence share one drain, so both name it. */
-  collector?: 'window' | 'git' | 'agent-session' | 'calendar' | 'gitlab' | 'ingest';
+  collector?: 'window' | 'git' | 'agent-session' | 'agent-usage' | 'calendar' | 'gitlab' | 'ingest';
   /** The `source` its events carry in the store, for counting what it has actually put there. */
   eventSource?: CollectedEventSource;
 };
@@ -78,6 +78,15 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     state: 'collecting',
     collector: 'agent-session',
     eventSource: 'agent-session',
+  },
+  {
+    id: 'agent-usage',
+    name: 'Coding-agent spend',
+    reads: 'The token counts of every turn in the same session logs, and the model that ran it.',
+    stores: 'The turn id, the model, and five token counts. No prompt and no message body.',
+    state: 'collecting',
+    collector: 'agent-usage',
+    eventSource: 'agent-usage',
   },
   {
     id: 'google-calendar',

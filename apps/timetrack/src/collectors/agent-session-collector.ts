@@ -120,7 +120,7 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       rules: effectiveExclusionRules(settings.settings()),
     });
 
-    return ports.events.appendWithCursors$(kept, collection.cursors).pipe(
+    return ports.events.appendWithCursors$({ events: kept, cursors: collection.cursors, pass: 'agent-session' }).pipe(
       map(() => collection),
       tap(() => {
         modifiedAfter = startedAt;
@@ -152,7 +152,7 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       isCollecting.set(true);
 
       return settings.ready$.pipe(
-        concatMap(() => ports.events.cursors$()),
+        concatMap(() => ports.events.cursors$('agent-session')),
         map((cursors) => (resyncPaths.length ? resyncAgentSessionCursors({ cursors, paths: resyncPaths }) : cursors)),
         switchMap((cursors) =>
           collectAgentSessions$({

@@ -24,10 +24,14 @@ pub struct StoredEvent {
 #[serde(rename_all = "camelCase")]
 pub struct AgentSessionCursorRow {
     pub id: String,
+    /// Which pass over the log wrote it: `agent-session` or `spend`. See ADR 0003.
+    pub kind: String,
     pub next_line: i64,
     pub after_ms: Option<i64>,
     pub title: Option<String>,
     pub cwd: Option<String>,
+    /// When the `spend` pass read the log to its end. Unset for a cursor the collector wrote.
+    pub read_through_ms: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -125,17 +129,20 @@ fn append(
         }
 
         let mut upsert = transaction.prepare(
-            "INSERT INTO agent_session_cursor (id, next_line, after_ms, title, cwd)
-             VALUES (?1, ?2, ?3, ?4, ?5)
-             ON CONFLICT (id) DO UPDATE SET next_line = ?2, after_ms = ?3, title = ?4, cwd = ?5",
+            "INSERT INTO agent_session_cursor (id, kind, next_line, after_ms, title, cwd, read_through_ms)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+             ON CONFLICT (id, kind) DO UPDATE SET
+               next_line = ?3, after_ms = ?4, title = ?5, cwd = ?6, read_through_ms = ?7",
         )?;
         for cursor in cursors {
             upsert.execute(params![
                 cursor.id,
+                cursor.kind,
                 cursor.next_line,
                 cursor.after_ms,
                 cursor.title,
-                cursor.cwd
+                cursor.cwd,
+                cursor.read_through_ms
             ])?;
         }
     }
@@ -188,17 +195,21 @@ pub async fn events_oldest_at(db: State<'_, Db>) -> TimetrackResult<Option<i64>>
 }
 
 #[tauri::command]
-pub async fn agent_session_cursors(db: State<'_, Db>) -> TimetrackResult<Vec<AgentSessionCursorRow>> {
-    db.run(|connection| {
-        let mut statement =
-            connection.prepare("SELECT id, next_line, after_ms, title, cwd FROM agent_session_cursor")?;
-        let rows = statement.query_map([], |row| {
+pub async fn agent_session_cursors(db: State<'_, Db>, kind: String) -> TimetrackResult<Vec<AgentSessionCursorRow>> {
+    db.run(move |connection| {
+        let mut statement = connection.prepare(
+            "SELECT id, kind, next_line, after_ms, title, cwd, read_through_ms
+             FROM agent_session_cursor WHERE kind = ?1",
+        )?;
+        let rows = statement.query_map(params![kind], |row| {
             Ok(AgentSessionCursorRow {
                 id: row.get(0)?,
-                next_line: row.get(1)?,
-                after_ms: row.get(2)?,
-                title: row.get(3)?,
-                cwd: row.get(4)?,
+                kind: row.get(1)?,
+                next_line: row.get(2)?,
+                after_ms: row.get(3)?,
+                title: row.get(4)?,
+                cwd: row.get(5)?,
+                read_through_ms: row.get(6)?,
             })
         })?;
 
@@ -498,10 +509,12 @@ mod tests {
             &[commit(1_500)],
             &[AgentSessionCursorRow {
                 id: "session-a".to_string(),
+                kind: "agent-session".to_string(),
                 next_line: 42,
                 after_ms: None,
                 title: None,
                 cwd: None,
+                read_through_ms: None,
             }],
         )
         .unwrap();
@@ -521,10 +534,12 @@ mod tests {
         let mut connection = store();
         let cursor = |next_line: i64, after_ms: Option<i64>, title: Option<&str>| AgentSessionCursorRow {
             id: "session-a".to_string(),
+            kind: "agent-session".to_string(),
             next_line,
             after_ms,
             title: title.map(str::to_string),
             cwd: Some("/home/tom/dev/fut-frontend".to_string()),
+            read_through_ms: None,
         };
 
         append(&mut connection, &[], &[cursor(42, Some(1_000), Some("a session"))]).unwrap();
@@ -544,6 +559,41 @@ mod tests {
                 )
                 .unwrap(),
             (0, None, None, Some("/home/tom/dev/fut-frontend".to_string()))
+        );
+    }
+
+    #[test]
+    fn keeps_the_spend_pass_offset_apart_from_the_collector_s() {
+        let mut connection = store();
+        let cursor = |kind: &str, next_line: i64| AgentSessionCursorRow {
+            id: "session-a".to_string(),
+            kind: kind.to_string(),
+            next_line,
+            after_ms: None,
+            title: None,
+            cwd: None,
+            read_through_ms: None,
+        };
+
+        append(
+            &mut connection,
+            &[],
+            &[cursor("agent-session", 42), cursor("spend", 7)],
+        )
+        .unwrap();
+
+        let mut statement = connection
+            .prepare("SELECT kind, next_line FROM agent_session_cursor WHERE id = 'session-a' ORDER BY kind")
+            .unwrap();
+        let rows = statement
+            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert_eq!(
+            rows,
+            vec![("agent-session".to_string(), 42), ("spend".to_string(), 7)]
         );
     }
 }

@@ -67,7 +67,7 @@ export class HostStatusViewComponent {
       switchMap(() =>
         combineLatest({
           oldestEventAt: this.ports.events.oldestEventAt$(),
-          cursors: this.ports.events.cursors$().pipe(map((cursors) => cursors.length)),
+          cursors: this.ports.events.cursors$('agent-session').pipe(map((cursors) => cursors.length)),
           compactedThrough: this.ports.events.compactedThrough$(),
         }).pipe(
           map((health): HostStatus => ({ state: 'ready', ...health })),

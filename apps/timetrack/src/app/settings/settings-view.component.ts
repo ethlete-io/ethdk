@@ -12,7 +12,7 @@ import {
   SpinnerComponent,
   TAB_IMPORTS,
 } from '@ethlete/components';
-import { injectAgentSessionCollector, injectGitCollector } from '../../collectors';
+import { injectAgentSessionCollector, injectAgentSpendBackfill, injectGitCollector } from '../../collectors';
 import { IssueSelectComponent } from '../jira';
 import { injectDayNudge } from '../day-nudge';
 import { injectWindowLock } from '../window-lock';
@@ -272,7 +272,7 @@ window title, never a file path. A suggestion never syncs on its own.`;
                 [unlinked]="agent.totals().unlinked"
                 [links]="store.settings().projectLinks"
                 [busy]="agent.isCollecting()"
-                (resync)="agent.resync($event)"
+                (resync)="resync($event)"
               />
 
               <ethlete-attribution-rules
@@ -425,6 +425,7 @@ export class SettingsViewComponent {
 
   public git = injectGitCollector();
   protected agent = injectAgentSessionCollector();
+  private agentSpend = injectAgentSpendBackfill();
   protected lock = injectWindowLock();
   private dayNudge = injectDayNudge();
   private destroyRef = inject(DestroyRef);
@@ -443,6 +444,12 @@ export class SettingsViewComponent {
 
   /** The reminder is configured as a time of day, and the control it is typed into holds a duration. */
   protected nudgeAtMs = computed(() => this.store.settings().nudge.atMinute * 60_000);
+
+  /** Both passes over the logs read the checkout again: one for its sessions, one for their spend. */
+  protected resync(paths: readonly string[]) {
+    this.agent.resync(paths);
+    this.agentSpend.resync(paths);
+  }
 
   protected sendTestNudge() {
     this.dayNudge.sendTest$().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
