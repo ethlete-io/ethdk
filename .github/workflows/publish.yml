@@ -32,14 +32,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - run: corepack enable
-
-      - uses: actions/setup-node@v6
+      # Shares the cache entry the CI `build` job just wrote, so this restores the same dist
+      # instead of building it again.
+      - uses: ./.github/actions/setup
         with:
-          node-version: '24.11.0'
-          cache: 'yarn'
-
-      - run: yarn install --immutable
+          nx-cache-key: build
 
       - run: yarn nx run-many -t build
 

@@ -3,101 +3,20 @@ name: CI (PR)
 on:
   pull_request:
 
-concurrency: ci-${{ github.ref }}
-
-# Nx Cloud is temporarily bypassed while the self-hosted instance is unstable. Remote caching
-# is off; everything else about the run is unchanged. Delete this to re-enable.
-env:
-  NX_NO_CLOUD: 'true'
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  pr:
-    runs-on: ubuntu-latest
+  ci:
+    uses: ./.github/workflows/ci.yml
     permissions:
       contents: read
       pull-requests: write
       checks: write
-    steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-        with:
-          fetch-depth: 0
-
-      - run: corepack enable
-
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: '24.11.0'
-          cache: 'yarn'
-
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        uses: nrwl/nx-set-shas@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4.4.0
-
-      - run: yarn install --immutable
-
-      - run: yarn nx format:check
-
-      # Fails when the generated agent files (AGENTS.md marker block, .agents/skills/ethlete-*)
-      # drift from libs/agent-rules/content/**.
-      - run: yarn agents:check
-
-      # Fails when libs/*/src/lib/version.ts drifts from that lib's package.json version. Must run
-      # before `build`, which regenerates those files as a target dependency and would hide the drift.
-      - run: yarn versions:check
-
-      # Changeset notes are capped at one to two sentences / 40 words (see the `changeset` skill).
-      # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.
-      - run: yarn lint:changesets
-
-      # Spec files are excluded from every lib's build tsconfig, so this is the only step that
-      # type-checks them. Runs before lint and test: it is the cheapest of the three, and broken
-      # spec types make both of their failures unreadable.
-      - run: yarn nx run-many -t typecheck
-
-      - run: yarn nx run-many -t lint
-
-      - run: yarn nx run-many -t test
-
-      # The only step that compiles the Rust host: nothing else in CI touches src-tauri, so a
-      # change that broke it could not fail a run before this.
-      - name: Install the Tauri Linux build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
-
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            apps/timetrack/src-tauri/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('apps/timetrack/src-tauri/Cargo.lock') }}
-          restore-keys: cargo-${{ runner.os }}-
-
-      - run: yarn nx run timetrack-app:test-rust
-
-      - run: yarn nx run-many -t build
-
-      # Bundle-size goldens: fails when something in core/query/components becomes unshakeable again.
-      # Accept a real change with `nx run treeshake:bundle-goldens:update` and commit goldens.json.
-      - run: yarn nx run treeshake:bundle-goldens
-
-      - if: "${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
-        run: yarn nx run storybook:build-storybook:ci
-
-      - run: yarn playwright install --with-deps chromium
-
-      # Component behavior tests drive the build above; `nx e2e storybook-e2e` would rebuild it.
-      - if: "${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
-        run: yarn playwright test -c apps/storybook-e2e/playwright.config.ts
-
-      # Serves the app itself with the e2e host fakes, so unlike storybook-e2e above there is no
-      # prebuilt artifact to drive - the Playwright config starts the server.
-      - run: yarn nx e2e timetrack-e2e
-
-      - uses: FirebaseExtended/action-hosting-deploy@e2eda2e106cfa35cdbcf4ac9ddaf6c4756df2c8c # v0
-        if: "${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
-          projectId: ethlete-sdk
-          target: storybook-next
+    with:
+      # A generated API pull request touches no story, and a fork has no access to the deploy secret.
+      run_storybook: ${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}
+      deploy: ${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}
+      storybook_target: storybook-next
+    secrets: inherit

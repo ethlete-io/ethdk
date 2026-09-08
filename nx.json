@@ -20,9 +20,8 @@
       "!{projectRoot}/tsconfig.storybook.json"
     ],
     "sharedGlobals": [
-      "{workspaceRoot}/.github/workflows/ci-main.yml",
-      "{workspaceRoot}/.github/workflows/ci-next.yml",
-      "{workspaceRoot}/.github/workflows/ci-pr.yml",
+      "{workspaceRoot}/.github/workflows/ci*.yml",
+      "{workspaceRoot}/.github/actions/setup/action.yml",
       "{workspaceRoot}/tools/testing/**/*"
     ]
   },
