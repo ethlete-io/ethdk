@@ -61,24 +61,28 @@ test.describe('dropzone / keyboard', () => {
     const root = await openStory(page, DEFAULT_ID);
     const trigger = root.locator(TRIGGER);
 
+    // Listen before the key press. Playwright turns the file chooser interception on when the first
+    // listener attaches, and a press that wins that race opens a dialog no event ever reports.
+    const chooser = page.waitForEvent('filechooser');
+
     await pressKey(page, 'Tab');
     await expect(trigger).toBeFocused();
+    await pressKey(page, 'Enter');
 
-    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), pressKey(page, 'Enter')]);
-
-    expect(chooser).toBeTruthy();
+    expect(await chooser).toBeTruthy();
   });
 
   test('Space on the focused trigger opens the file chooser', async ({ page }) => {
     const root = await openStory(page, DEFAULT_ID);
     const trigger = root.locator(TRIGGER);
 
+    const chooser = page.waitForEvent('filechooser');
+
     await pressKey(page, 'Tab');
     await expect(trigger).toBeFocused();
+    await pressKey(page, ' ');
 
-    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), pressKey(page, ' ')]);
-
-    expect(chooser).toBeTruthy();
+    expect(await chooser).toBeTruthy();
   });
 
   test('a file added through the hidden input renders a media item in single mode', async ({ page }) => {
@@ -154,8 +158,10 @@ test.describe('dropzone / touch', () => {
     const root = await openStory(page, DEFAULT_ID);
     const trigger = root.locator(TRIGGER);
 
-    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), tap(trigger)]);
+    const chooser = page.waitForEvent('filechooser');
 
-    expect(chooser).toBeTruthy();
+    await tap(trigger);
+
+    expect(await chooser).toBeTruthy();
   });
 });
