@@ -73,7 +73,7 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
   {
     id: 'agent-session',
     name: 'Coding-agent sessions',
-    reads: "Claude Code's own session logs under the home directory.",
+    reads: 'The session logs Claude Code and the Codex CLI write under the home directory.',
     stores: 'When a session was active, its working directory and branch, and its summary line.',
     state: 'collecting',
     collector: 'agent-session',
@@ -82,7 +82,7 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
   {
     id: 'agent-usage',
     name: 'Coding-agent spend',
-    reads: 'The token counts of every turn in the same session logs, and the model that ran it.',
+    reads: 'The token counts of every turn in those same session logs, and the model that ran it.',
     stores: 'The turn id, the model, and five token counts. No prompt and no message body.',
     state: 'collecting',
     collector: 'agent-usage',

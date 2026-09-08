@@ -12,7 +12,13 @@ import {
   SpinnerComponent,
   TAB_IMPORTS,
 } from '@ethlete/components';
-import { injectAgentSessionCollector, injectAgentSpendBackfill, injectGitCollector } from '../../collectors';
+import {
+  injectAgentSessionCollector,
+  injectAgentSpendBackfill,
+  injectCodexSessionCollector,
+  injectCodexSpendBackfill,
+  injectGitCollector,
+} from '../../collectors';
 import { IssueSelectComponent } from '../jira';
 import { injectDayNudge } from '../day-nudge';
 import { injectWindowLock } from '../window-lock';
@@ -435,6 +441,8 @@ export class SettingsViewComponent {
   public git = injectGitCollector();
   protected agent = injectAgentSessionCollector();
   private agentSpend = injectAgentSpendBackfill();
+  private codex = injectCodexSessionCollector();
+  private codexSpend = injectCodexSpendBackfill();
   protected lock = injectWindowLock();
   private dayNudge = injectDayNudge();
   private destroyRef = inject(DestroyRef);
@@ -454,10 +462,12 @@ export class SettingsViewComponent {
   /** The reminder is configured as a time of day, and the control it is typed into holds a duration. */
   protected nudgeAtMs = computed(() => this.store.settings().nudge.atMinute * 60_000);
 
-  /** Both passes over the logs read the checkout again: one for its sessions, one for their spend. */
+  /** Every pass over the logs reads the checkout again: one per agent for its sessions, one for their spend. */
   protected resync(paths: readonly string[]) {
     this.agent.resync(paths);
     this.agentSpend.resync(paths);
+    this.codex.resync(paths);
+    this.codexSpend.resync(paths);
   }
 
   protected sendTestNudge() {

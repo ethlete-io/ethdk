@@ -7,6 +7,8 @@ import {
   injectAgentSessionCollector,
   injectAgentSpendBackfill,
   injectCalendarCollector,
+  injectCodexSessionCollector,
+  injectCodexSpendBackfill,
   injectGitCollector,
   injectGitLabCollector,
   injectIngestCollector,
@@ -22,6 +24,7 @@ import {
   formatGitLabRead,
   formatGitScan,
   formatIngest,
+  formatPerAgent,
   formatSpendBackfill,
   formatTally,
   formatWindowSource,
@@ -155,6 +158,8 @@ export class SourcesViewComponent {
   private windows = injectWindowCollector();
   private agentSessions = injectAgentSessionCollector();
   private agentSpend = injectAgentSpendBackfill();
+  private codexSessions = injectCodexSessionCollector();
+  private codexSpend = injectCodexSpendBackfill();
   private git = injectGitCollector();
   private calendar = injectCalendarCollector();
   private gitlab = injectGitLabCollector();
@@ -166,6 +171,8 @@ export class SourcesViewComponent {
     windows: this.windows.lastRun(),
     agentSessions: this.agentSessions.lastRun(),
     agentSpend: this.agentSpend.lastRun(),
+    codexSessions: this.codexSessions.lastRun(),
+    codexSpend: this.codexSpend.lastRun(),
     git: this.git.lastRun(),
     calendar: this.calendar.lastRun(),
     gitlab: this.gitlab.lastRun(),
@@ -220,19 +227,33 @@ export class SourcesViewComponent {
     return formatTally(this.tallies().find((tally) => tally.source === row.source.eventSource));
   }
 
+  private backfillOf(backfill: NonNullable<ReturnType<typeof injectAgentSpendBackfill>>) {
+    return (
+      formatSpendBackfill({
+        lastRun: backfill.lastRun(),
+        remaining: backfill.remaining(),
+        excluded: backfill.excluded(),
+      }) || null
+    );
+  }
+
   private runOf(source: EvidenceSource) {
     switch (source.collector) {
       case 'window':
         return formatWindowSource({ status: this.windows.status(), totals: this.windows.totals() }) || null;
       case 'agent-session':
-        return formatAgentSessions(this.agentSessions.totals()) || null;
+        return (
+          formatPerAgent([
+            { agent: 'Claude Code', line: formatAgentSessions(this.agentSessions.totals()) },
+            { agent: 'Codex', line: formatAgentSessions(this.codexSessions.totals()) },
+          ]) || null
+        );
       case 'agent-usage':
         return (
-          formatSpendBackfill({
-            lastRun: this.agentSpend.lastRun(),
-            remaining: this.agentSpend.remaining(),
-            excluded: this.agentSpend.excluded(),
-          }) || null
+          formatPerAgent([
+            { agent: 'Claude Code', line: this.backfillOf(this.agentSpend) },
+            { agent: 'Codex', line: this.backfillOf(this.codexSpend) },
+          ]) || null
         );
       case 'git':
         return formatGitScan({ discovery: this.git.discovery(), scannedAt: this.git.lastRun()?.at ?? null }) || null;
@@ -276,9 +297,19 @@ export class SourcesViewComponent {
       case 'window':
         return this.windows.failure();
       case 'agent-session':
-        return this.agentSessions.failure();
+        return (
+          formatPerAgent([
+            { agent: 'Claude Code', line: this.agentSessions.failure() },
+            { agent: 'Codex', line: this.codexSessions.failure() },
+          ]) || null
+        );
       case 'agent-usage':
-        return this.agentSpend.failure();
+        return (
+          formatPerAgent([
+            { agent: 'Claude Code', line: this.agentSpend.failure() },
+            { agent: 'Codex', line: this.codexSpend.failure() },
+          ]) || null
+        );
       case 'git':
         return this.git.failure();
       case 'calendar':

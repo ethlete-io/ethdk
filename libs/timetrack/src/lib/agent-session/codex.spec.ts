@@ -8,7 +8,7 @@ const SESSION = '01a016ac-fe48-73d1-bf46-fc7e92d6c807';
 let nextOrdinal = 0;
 
 const line = (options: { timestamp: string; type: string; payload: Record<string, unknown> }) =>
-  JSON.stringify({ timestamp: options.timestamp, ordinal: nextOrdinal++, ...options });
+  JSON.stringify({ ...options, ordinal: nextOrdinal++ });
 
 const sessionMeta = (timestamp: string, cwd = CWD) =>
   line({ timestamp, type: 'session_meta', payload: { session_id: SESSION, cwd, cli_version: '0.147.0' } });

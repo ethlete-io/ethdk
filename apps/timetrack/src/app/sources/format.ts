@@ -62,6 +62,21 @@ export const formatAgentSessions = (totals: AgentSessionCollectorTotals) => {
 };
 
 /**
+ * Names the agent each line reports, for a row that reports more than one of them.
+ *
+ * A row covering two agents would otherwise read as one contradiction: one agent's backfill can have
+ * converged while the other's has not. Where every agent says the same thing the name is dropped,
+ * because naming them then only repeats one sentence per agent.
+ */
+export const formatPerAgent = (lines: { agent: string; line: string | null }[]) => {
+  const said = lines.map(({ line }) => line).filter((line) => !!line);
+
+  if (said.length && new Set(said).size === 1) return said[0] ?? '';
+
+  return sentences(lines.map(({ agent, line }) => (line ? `${agent}: ${line}` : null)));
+};
+
+/**
  * How far the one-off pass over the old logs has got, and what it found.
  *
  * The pass has an end, so its progress is the whole state: until it reports nothing left, every day

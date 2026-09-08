@@ -25,6 +25,7 @@ export type HostPorts = TimetrackPorts & {
   collection: TauriCollectionPause;
   events: TauriEventStore;
   agentLogs: AgentSessionLogReader;
+  codexLogs: AgentSessionLogReader;
   git: TauriGitSource;
   ingest: TauriIngestSource;
   nudge: TauriNudge;
@@ -48,6 +49,7 @@ export const createHostPorts = (): HostPorts => ({
   timers: createTauriTimerStore(),
   processes: createTauriProcessRunner(),
   agentLogs: createTauriAgentSessionLogReader(),
+  codexLogs: createTauriAgentSessionLogReader({ provider: 'codex' }),
   git: createTauriGitSource(),
   ingest: createTauriIngestSource(),
   nudge: createTauriNudge(),

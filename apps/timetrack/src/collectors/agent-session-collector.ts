@@ -9,6 +9,7 @@ import {
   effectiveExclusionRules,
   keepLinkedAgentSessions,
   parseClaudeCodeSessionLog,
+  parseCodexSessionLog,
   pathIsUnder,
   resyncAgentSessionCursors,
 } from '@ethlete/timetrack';
@@ -30,6 +31,7 @@ import {
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { injectHostPorts } from '../host';
+import { AgentLogSource } from './agent-log-source';
 
 export const AGENT_SESSION_POLL_INTERVAL_MS = 60_000;
 
@@ -74,13 +76,15 @@ const mergeUnlinked = (all: UnlinkedAgentSessions[], run: UnlinkedAgentSessions[
 };
 
 /**
- * Polls the agent's session logs and stores what they gained since the last run.
+ * Polls one agent's session logs and stores what they gained since the last run.
  *
  * A run reads the cursors, collects from every log the host lists, and writes the events and the moved
  * cursors back in one transaction. Ticks arriving while a run is in flight are dropped rather than
  * queued, so a first run over a machine's whole log history cannot stack up behind itself.
+ *
+ * One collector per agent, because one agent is one log format and one set of cursors.
  */
-const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
+const createAgentSessionCollector = (source: AgentLogSource) => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
   const pause = injectCollectionPause();
@@ -120,7 +124,7 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       rules: effectiveExclusionRules(settings.settings()),
     });
 
-    return ports.events.appendWithCursors$({ events: kept, cursors: collection.cursors, pass: 'agent-session' }).pipe(
+    return ports.events.appendWithCursors$({ events: kept, cursors: collection.cursors, pass: source.pass }).pipe(
       map(() => collection),
       tap(() => {
         modifiedAfter = startedAt;
@@ -152,12 +156,12 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       isCollecting.set(true);
 
       return settings.ready$.pipe(
-        concatMap(() => ports.events.cursors$('agent-session')),
+        concatMap(() => ports.events.cursors$(source.pass)),
         map((cursors) => (resyncPaths.length ? resyncAgentSessionCursors({ cursors, paths: resyncPaths }) : cursors)),
         switchMap((cursors) =>
           collectAgentSessions$({
-            parser: parseClaudeCodeSessionLog,
-            reader: ports.agentLogs,
+            parser: source.parser,
+            reader: source.readerOf(ports),
             cursors,
             modifiedAfter: resyncPaths.length ? undefined : modifiedAfter,
           }),
@@ -202,6 +206,24 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     .subscribe();
 
   return { lastRun, totals, failure, isCollecting, resync };
-});
+};
+
+const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() =>
+  createAgentSessionCollector({
+    parser: parseClaudeCodeSessionLog,
+    readerOf: (ports) => ports.agentLogs,
+    pass: 'agent-session',
+  }),
+);
+
+const CODEX_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() =>
+  createAgentSessionCollector({
+    parser: parseCodexSessionLog,
+    readerOf: (ports) => ports.codexLogs,
+    pass: 'codex-session',
+  }),
+);
 
 export const injectAgentSessionCollector = /* @__PURE__ */ toInjectFn(AGENT_SESSION_COLLECTOR_DEF);
+
+export const injectCodexSessionCollector = /* @__PURE__ */ toInjectFn(CODEX_SESSION_COLLECTOR_DEF);

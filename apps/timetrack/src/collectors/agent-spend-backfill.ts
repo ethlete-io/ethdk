@@ -9,6 +9,7 @@ import {
   effectiveExclusionRules,
   keepLinkedAgentSessions,
   parseClaudeCodeSessionLog,
+  parseCodexSessionLog,
   rewindAgentSpendCursors,
 } from '@ethlete/timetrack';
 import {
@@ -29,6 +30,7 @@ import {
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { injectHostPorts } from '../host';
+import { AgentLogSource } from './agent-log-source';
 
 /**
  * Short, because the pass has an end: it reads a handful of logs per run and stops for good once every
@@ -48,7 +50,7 @@ export type AgentSpendBackfillRun = {
 type Rewound = { rewound: AgentSessionCursor[]; cursors: AgentSessionCursor[] };
 
 /**
- * Reads the token spend out of the agent logs the session collector had already read past.
+ * Reads the token spend out of one agent's logs, the ones its session collector had already read past.
  *
  * Spend collection started after months of logs had been read, so every stored day before it shows
  * zero. This fills them in: it reads each log once from the top, appends only the token counts, and
@@ -58,7 +60,7 @@ type Rewound = { rewound: AgentSessionCursor[]; cursors: AgentSessionCursor[] };
  * The pass converges and then stops. Everything a log gains after its one read is the session
  * collector's to store, because that collector already reports spend as it goes.
  */
-const AGENT_SPEND_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() => {
+const createAgentSpendBackfill = (source: AgentLogSource) => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
   const pause = injectCollectionPause();
@@ -94,7 +96,7 @@ const AGENT_SPEND_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() => {
       .appendWithCursors$({
         events: denied.kept,
         cursors: [...rewound, ...result.cursors],
-        pass: 'spend',
+        pass: source.pass,
       })
       .pipe(
         map(() => result),
@@ -130,12 +132,12 @@ const AGENT_SPEND_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() => {
       isRunning.set(true);
 
       return settings.ready$.pipe(
-        concatMap(() => ports.events.cursors$('spend')),
+        concatMap(() => ports.events.cursors$(source.pass)),
         map((cursors) => rewind(cursors, paths)),
         switchMap((state) =>
           backfillAgentSpend$({
-            parser: parseClaudeCodeSessionLog,
-            reader: ports.agentLogs,
+            parser: source.parser,
+            reader: source.readerOf(ports),
             cursors: state.cursors,
           }).pipe(switchMap((result) => persist$({ result, rewound: state.rewound, startedAt }))),
         ),
@@ -173,6 +175,24 @@ const AGENT_SPEND_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() => {
     .subscribe();
 
   return { lastRun, remaining, excluded, failure, isRunning, isDone, resync };
-});
+};
+
+const AGENT_SPEND_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() =>
+  createAgentSpendBackfill({
+    parser: parseClaudeCodeSessionLog,
+    readerOf: (ports) => ports.agentLogs,
+    pass: 'spend',
+  }),
+);
+
+const CODEX_SPEND_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() =>
+  createAgentSpendBackfill({
+    parser: parseCodexSessionLog,
+    readerOf: (ports) => ports.codexLogs,
+    pass: 'codex-spend',
+  }),
+);
 
 export const injectAgentSpendBackfill = /* @__PURE__ */ toInjectFn(AGENT_SPEND_BACKFILL_DEF);
+
+export const injectCodexSpendBackfill = /* @__PURE__ */ toInjectFn(CODEX_SPEND_BACKFILL_DEF);

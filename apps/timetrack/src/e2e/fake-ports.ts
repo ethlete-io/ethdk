@@ -197,6 +197,8 @@ export const createFakePorts = (): HostPorts => {
 
     agentLogs: { logs$: () => ok([]), readLines$: () => ok({ lines: [], nextLine: 0 }) },
 
+    codexLogs: { logs$: () => ok([]), readLines$: () => ok({ lines: [], nextLine: 0 }) },
+
     collection: {
       state$: () => ok({ pausedAt }),
       setPaused$: (paused, whenPaused) => {

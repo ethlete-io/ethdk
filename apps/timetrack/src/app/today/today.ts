@@ -6,6 +6,8 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import {
   injectAgentSessionCollector,
   injectAgentSpendBackfill,
+  injectCodexSessionCollector,
+  injectCodexSpendBackfill,
   injectGitCollector,
   injectWindowCollector,
 } from '../../collectors';
@@ -27,7 +29,9 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
   const ports = injectHostPorts();
   const windows = injectWindowCollector();
   const agentSessions = injectAgentSessionCollector();
+  const codexSessions = injectCodexSessionCollector();
   const spend = injectAgentSpendBackfill();
+  const codexSpend = injectCodexSpendBackfill();
   const git = injectGitCollector();
 
   const key = signal(readViewState().day ?? localDayKey(new Date()));
@@ -42,7 +46,9 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
     repoRoots: git.discovery()?.repos ?? [],
     windows: windows.lastRun(),
     sessions: agentSessions.lastRun(),
+    codexSessions: codexSessions.lastRun(),
     spend: spend.lastRun(),
+    codexSpend: codexSpend.lastRun(),
     git: git.lastRun(),
   }));
 

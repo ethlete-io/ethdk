@@ -1,3 +1,4 @@
+export * from './agent-log-source';
 export * from './agent-session-collector';
 export * from './agent-spend-backfill';
 export * from './calendar-collector';

@@ -7,6 +7,19 @@ use tauri::Manager;
 
 const MAX_LINES: usize = 20_000;
 
+/// How far below its root a log tree is walked. Codex files a log under `<yyyy>/<mm>/<dd>/`, and the
+/// cap is what stops a mistyped root from walking a whole home directory.
+const MAX_LOG_TREE_DEPTH: usize = 4;
+
+/// Which agent's logs to list, which decides both the default root and the shape of the tree.
+#[derive(Deserialize, Default, Clone, Copy, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum AgentLogProvider {
+    #[default]
+    ClaudeCode,
+    Codex,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentLogRef {
@@ -28,6 +41,8 @@ pub struct AgentLogLinesRequest {
     pub path: String,
     pub from_line: i64,
     pub root: Option<String>,
+    #[serde(default)]
+    pub provider: AgentLogProvider,
 }
 
 struct Read {
@@ -36,11 +51,21 @@ struct Read {
     complete: usize,
 }
 
-fn agent_log_root(app: &tauri::AppHandle, root: Option<String>) -> TimetrackResult<PathBuf> {
-    match root {
-        Some(root) => Ok(PathBuf::from(root)),
-        None => Ok(app.path().home_dir()?.join(".claude").join("projects")),
+fn agent_log_root(
+    app: &tauri::AppHandle,
+    root: Option<String>,
+    provider: AgentLogProvider,
+) -> TimetrackResult<PathBuf> {
+    if let Some(root) = root {
+        return Ok(PathBuf::from(root));
     }
+
+    let home = app.path().home_dir()?;
+
+    Ok(match provider {
+        AgentLogProvider::ClaudeCode => home.join(".claude").join("projects"),
+        AgentLogProvider::Codex => home.join(".codex").join("sessions"),
+    })
 }
 
 fn modified_at_ms(path: &Path) -> TimetrackResult<i64> {
@@ -129,6 +154,61 @@ fn list_logs(root: &Path, modified_after_ms: Option<i64>) -> TimetrackResult<Vec
     Ok(refs)
 }
 
+/// Every log in a tree filed by date, keyed by its path below the root.
+///
+/// Codex writes `<yyyy>/<mm>/<dd>/rollout-<iso>-<id>.jsonl`, and the walk is generic so a change of
+/// depth in that layout needs no change here. The relative path is the `id` because a rollout's file
+/// name already names its session; the directories keep two trees apart if Codex ever repeats one.
+fn push_logs_below(
+    dir: &Path,
+    id_prefix: &str,
+    modified_after_ms: Option<i64>,
+    depth: usize,
+    refs: &mut Vec<AgentLogRef>,
+) -> TimetrackResult<()> {
+    push_logs_in(dir, id_prefix, modified_after_ms, refs)?;
+
+    if depth == 0 {
+        return Ok(());
+    }
+
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Ok(());
+    };
+
+    for entry in entries.filter_map(Result::ok) {
+        let path = entry.path();
+
+        if !path.is_dir() {
+            continue;
+        }
+
+        let name = entry.file_name();
+        let Some(name) = name.to_str() else {
+            continue;
+        };
+
+        push_logs_below(
+            &path,
+            &format!("{id_prefix}{name}/"),
+            modified_after_ms,
+            depth - 1,
+            refs,
+        )?;
+    }
+
+    Ok(())
+}
+
+fn list_codex_logs(root: &Path, modified_after_ms: Option<i64>) -> TimetrackResult<Vec<AgentLogRef>> {
+    let mut refs = Vec::new();
+
+    push_logs_below(root, "", modified_after_ms, MAX_LOG_TREE_DEPTH, &mut refs)?;
+    refs.sort_by_key(|log| log.modified_at_ms);
+
+    Ok(refs)
+}
+
 fn read_from(path: &Path, from_line: usize) -> TimetrackResult<Read> {
     let mut reader = BufReader::new(File::open(path)?);
     let mut lines = Vec::new();
@@ -187,12 +267,17 @@ pub async fn agent_logs(
     app: tauri::AppHandle,
     root: Option<String>,
     modified_after_ms: Option<i64>,
+    provider: Option<AgentLogProvider>,
 ) -> TimetrackResult<Vec<AgentLogRef>> {
-    let root = agent_log_root(&app, root)?;
+    let provider = provider.unwrap_or_default();
+    let root = agent_log_root(&app, root, provider)?;
 
-    tauri::async_runtime::spawn_blocking(move || list_logs(&root, modified_after_ms))
-        .await
-        .map_err(|error| TimetrackError::Rejected(error.to_string()))?
+    tauri::async_runtime::spawn_blocking(move || match provider {
+        AgentLogProvider::ClaudeCode => list_logs(&root, modified_after_ms),
+        AgentLogProvider::Codex => list_codex_logs(&root, modified_after_ms),
+    })
+    .await
+    .map_err(|error| TimetrackError::Rejected(error.to_string()))?
 }
 
 /// Reads one log the webview previously listed.
@@ -205,7 +290,7 @@ pub async fn agent_log_lines(
     app: tauri::AppHandle,
     request: AgentLogLinesRequest,
 ) -> TimetrackResult<AgentLogLines> {
-    let root = agent_log_root(&app, request.root)?;
+    let root = agent_log_root(&app, request.root, request.provider)?;
     let path = PathBuf::from(&request.path);
     let (root, resolved) = (root.canonicalize()?, path.canonicalize()?);
 
@@ -256,6 +341,12 @@ mod tests {
         root.is_dir().then_some(root)
     }
 
+    fn real_codex_root() -> Option<PathBuf> {
+        let root = PathBuf::from(std::env::var_os("HOME")?).join(".codex").join("sessions");
+
+        root.is_dir().then_some(root)
+    }
+
     #[test]
     fn lists_one_ref_per_jsonl_log_keyed_by_session_id() {
         let root = temp_root("listing");
@@ -294,6 +385,54 @@ mod tests {
         ids.sort();
 
         assert_eq!(ids, ["session-one/agent-a1", "session-two/agent-a1"]);
+    }
+
+    #[test]
+    fn lists_a_codex_log_filed_by_date_keyed_by_its_path_below_the_root() {
+        let root = temp_root("codex-listing");
+
+        write_log(&root, "2026/08/18", "rollout-2026-08-18T23-00-31-one", "{}\n");
+        write_log(&root, "2026/08/19", "rollout-2026-08-19T09-47-35-two", "{}\n");
+
+        let mut ids = list_codex_logs(&root, None)
+            .unwrap()
+            .into_iter()
+            .map(|log| log.id)
+            .collect::<Vec<_>>();
+        ids.sort();
+
+        assert_eq!(
+            ids,
+            [
+                "2026/08/18/rollout-2026-08-18T23-00-31-one",
+                "2026/08/19/rollout-2026-08-19T09-47-35-two"
+            ]
+        );
+    }
+
+    #[test]
+    fn stops_walking_a_codex_root_at_the_depth_cap() {
+        let root = temp_root("codex-depth");
+
+        write_log(&root, "a/b/c/d/e", "too-deep", "{}\n");
+
+        assert!(list_codex_logs(&root, None).unwrap().is_empty());
+    }
+
+    #[test]
+    fn reads_the_real_codex_logs_on_this_machine() {
+        let Some(root) = real_codex_root() else { return };
+
+        let logs = list_codex_logs(&root, None).unwrap();
+        assert!(!logs.is_empty(), "{} holds no logs", root.display());
+
+        let newest = logs.last().unwrap();
+        let read = read_lines(Path::new(&newest.path), 0).unwrap();
+
+        assert!(newest.id.contains('/'), "a codex id names its date: {}", newest.id);
+        for line in read.lines.iter().take(50) {
+            assert!(serde_json::from_str::<serde_json::Value>(line).is_ok(), "not JSON: {line}");
+        }
     }
 
     #[test]

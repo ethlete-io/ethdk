@@ -1,13 +1,24 @@
 import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, DESCRIPTION_LIST_IMPORTS, SpinnerComponent } from '@ethlete/components';
-import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import { AgentLogPass } from '@ethlete/timetrack';
+import { catchError, combineLatest, forkJoin, map, of, switchMap } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 
+/** One row per pass, because each reads its own agent's logs and each converges on its own. */
+const CURSOR_PASSES: { pass: AgentLogPass; label: string }[] = [
+  { pass: 'agent-session', label: 'Claude Code session cursors' },
+  { pass: 'spend', label: 'Claude Code spend cursors' },
+  { pass: 'codex-session', label: 'Codex session cursors' },
+  { pass: 'codex-spend', label: 'Codex spend cursors' },
+];
+
+type CursorTally = { label: string; count: number };
+
 type HostStatus =
   | { state: 'checking' }
-  | { state: 'ready'; oldestEventAt: Date | null; cursors: number; compactedThrough: Date | null }
+  | { state: 'ready'; oldestEventAt: Date | null; cursors: CursorTally[]; compactedThrough: Date | null }
   | { state: 'failed'; message: string };
 
 /** Whether the encrypted store came up, and what it currently holds. */
@@ -36,8 +47,10 @@ type HostStatus =
             <dd>{{ oldestEventAt() ?? 'none stored yet' }}</dd>
             <dt>Compacted through</dt>
             <dd>{{ compactedThrough() ?? 'nothing compacted yet' }}</dd>
-            <dt>Agent-session cursors</dt>
-            <dd>{{ cursors() }}</dd>
+            @for (tally of cursors(); track tally.label) {
+              <dt>{{ tally.label }}</dt>
+              <dd>{{ tally.count }}</dd>
+            }
           </dl>
 
           <p class="text-small text-et-surface-subtle">The keychain answered and the database decrypted.</p>
@@ -67,7 +80,11 @@ export class HostStatusViewComponent {
       switchMap(() =>
         combineLatest({
           oldestEventAt: this.ports.events.oldestEventAt$(),
-          cursors: this.ports.events.cursors$('agent-session').pipe(map((cursors) => cursors.length)),
+          cursors: forkJoin(
+            CURSOR_PASSES.map(({ pass, label }) =>
+              this.ports.events.cursors$(pass).pipe(map((cursors): CursorTally => ({ label, count: cursors.length }))),
+            ),
+          ),
           compactedThrough: this.ports.events.compactedThrough$(),
         }).pipe(
           map((health): HostStatus => ({ state: 'ready', ...health })),
@@ -101,7 +118,7 @@ export class HostStatusViewComponent {
   protected cursors = computed(() => {
     const status = this.status();
 
-    return status.state === 'ready' ? status.cursors : 0;
+    return status.state === 'ready' ? status.cursors : [];
   });
 
   protected recheck() {
