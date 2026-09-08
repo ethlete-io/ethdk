@@ -4,3 +4,4 @@ export * from './lib/drawing';
 export * from './lib/integrations';
 export * from './lib/layout-registry';
 export * from './lib/linked';
+export * from './lib/standings';

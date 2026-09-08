@@ -297,6 +297,7 @@ export default defineConfig({
             { text: 'Scrollable', link: '/components/scrollable' },
             { text: 'Scrollbar', link: '/components/scrollbar' },
             { text: 'Standings', link: '/components/standings' },
+            { text: 'Standings pick', link: '/components/standings-pick' },
             { text: 'Sport UI recipes', link: '/components/sport-recipes' },
             { text: 'Table', link: '/components/table' },
             { text: 'Tabs', link: '/components/tabs' },

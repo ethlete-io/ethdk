@@ -132,6 +132,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Progress steps](/components/progress-steps) - wizard step indicator, numbered and connected purely in CSS.
 - [Scheduler](/components/scheduler) - composable appointment calendar with a month grid, per-day overflow and arbitrarily deep sub-appointment chains.
 - [Standings](/components/standings) - league and group table with position zones, a legend that can't drift from them, and column-dropping density.
+- [Standings pick](/components/standings-pick) - the group table a viewer predicts the order of: drag or arrow-key reordering, an advancing cut, and a row slot for your own score mark.
 - [Sport UI recipes](/components/sport-recipes) - copy-paste compositions the library deliberately doesn't ship as components: the today's-matches rail, competition/team/player cards.
 - [Scrollable](/components/scrollable) - scroll containers with buttons, masks, snap and drag scrolling.
 - [Scrollbar](/components/scrollbar) - a custom scrollbar for a container that already scrolls, on either axis, with a drag-to-scroll thumb.

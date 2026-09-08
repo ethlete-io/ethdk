@@ -1,0 +1,64 @@
+<ol
+  [attr.aria-label]="labels().pickCaption"
+  [attr.data-dragging]="isDragging() ? '' : null"
+  class="et-standings-pick-list"
+>
+  @for (renderRow of renderRows(); track renderRow.row.participant.id; let index = $index) {
+    <li [attr.data-advancing]="renderRow.row.isAdvancing ? '' : null" class="et-standings-pick-item">
+      <!-- Never transformed - the preview moves the card inside it, so this wrapper stays a resting slot the
+           drag can measure, and the position number and the cut line below stay put while cards slide past. -->
+      <div #rowElement class="et-standings-pick-row">
+        <span class="et-standings-pick-position">{{ renderRow.row.position }}</span>
+
+        <div
+          [style.translate]="translates()[index] ?? null"
+          [attr.data-dragging]="draggingIndex() === index ? '' : null"
+          class="et-standings-pick-card"
+        >
+          <et-match-participant [participant]="renderRow.row.participant" class="et-standings-pick-participant" />
+
+          @if (renderRow.row.isAdvancing) {
+            <!-- The cut is drawn, so it needs saying too: a row-by-row reader never reaches the line. -->
+            <span class="et-standings-pick-note">{{ labels().pickAdvancingRow }}</span>
+          }
+
+          @if (pick.registeredMarkTemplate(); as mark) {
+            <span class="et-standings-pick-mark">
+              <ng-template [ngTemplateOutlet]="mark.templateRef" [ngTemplateOutletContext]="renderRow.markContext" />
+            </span>
+          }
+
+          @if (!pick.locked()) {
+            <button
+              [attr.aria-label]="renderRow.moveLabel"
+              (dragStarted)="startDrag(index)"
+              (dragMoved)="previewDrop($event)"
+              (dragEnded)="commitDrop()"
+              (dragCancelled)="abandonDrag()"
+              (keydown.arrowUp)="moveByKey($event, { from: index, to: index - 1 })"
+              (keydown.arrowDown)="moveByKey($event, { from: index, to: index + 1 })"
+              class="et-standings-pick-handle"
+              type="button"
+              etDragHandle
+              etFocusRing
+            >
+              <span class="et-standings-pick-grip" aria-hidden="true"></span>
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (renderRow.row.isLastAdvancing) {
+        <p class="et-standings-pick-cut" aria-hidden="true">
+          <span class="et-standings-pick-cut-line"></span>
+          <span class="et-standings-pick-cut-label">{{ labels().pickCut }}</span>
+          <span class="et-standings-pick-cut-line"></span>
+        </p>
+      }
+    </li>
+  }
+</ol>
+
+@if (pick.locked()) {
+  <p class="et-standings-pick-note">{{ labels().pickLocked }}</p>
+}

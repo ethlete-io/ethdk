@@ -34,6 +34,16 @@ export type StandingsLabels = {
   legend: string;
   /** Announced on the highlighted row, so it is findable without seeing the highlight. */
   highlightedRow: string;
+  /** Names the pick list - what the order being arranged is an order of. */
+  pickCaption: string;
+  /** The cut between the last advancing position and the first one below it. */
+  pickCut: string;
+  /** Announced on every row above the cut, so the line isn't the only thing that says it. */
+  pickAdvancingRow: string;
+  /** Names a row's reorder control. Both ways to sort belong in it, so both are named. */
+  pickMoveRow: (participant: string) => string;
+  /** Announced on a list whose order can no longer be changed. */
+  pickLocked: string;
 };
 
 /** The built-in English labels. */
@@ -59,6 +69,11 @@ export const DEFAULT_STANDINGS_LABELS: StandingsLabels = {
   formResult: (result) => (result === 'win' ? 'Win' : result === 'loss' ? 'Loss' : 'Draw'),
   legend: 'What the highlighted positions mean',
   highlightedRow: 'Your team',
+  pickCaption: 'Your predicted order',
+  pickCut: 'Advancing',
+  pickAdvancingRow: 'Advancing',
+  pickMoveRow: (participant) => `Move ${participant}. Drag it, or use the arrow keys.`,
+  pickLocked: 'This order can no longer be changed',
 };
 
 const STANDINGS_LABELS_DEF = /* @__PURE__ */ defineLabels<StandingsLabels>(

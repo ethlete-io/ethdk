@@ -4,6 +4,9 @@ A league or group table: positions, participants, played/won/drawn/lost, the poi
 form where the competition reports it. With position **zones** - promotion, playoffs, relegation, advancing
 out of a group - that band the rows and draw their own legend.
 
+Letting a viewer **predict** an order rather than read one is a separate component - see
+[standings pick](/components/standings-pick).
+
 Import `STANDINGS_IMPORTS`. No provider is required; `provideStandingsLabels()` localizes the strings.
 
 ```html

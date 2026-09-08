@@ -1,0 +1,185 @@
+@layer components {
+  @property --et-standings-pick-row-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 40px;
+  }
+
+  @property --et-standings-pick-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-standings-pick-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-standings-pick-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 13px;
+  }
+
+  @property --et-standings-pick-preview-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 180ms;
+  }
+
+  .et-standings-pick {
+    display: block;
+    box-sizing: border-box;
+    font-size: var(--et-standings-pick-font-size);
+    color: var(--et-surface-color-solid, currentColor);
+  }
+
+  .et-standings-pick-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-standings-pick-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .et-standings-pick-row {
+    display: flex;
+    align-items: center;
+    gap: var(--et-standings-pick-gap);
+    block-size: var(--et-standings-pick-row-height);
+  }
+
+  .et-standings-pick-position {
+    flex: none;
+    inline-size: 20px;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  .et-standings-pick-card {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--et-standings-pick-gap);
+    min-inline-size: 0;
+    block-size: 100%;
+    padding-inline: 8px;
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
+    border-radius: var(--et-standings-pick-radius);
+  }
+
+  /* Only while a drag runs: on release the reordered list renders with the transforms already gone, and a
+     transition would animate every card back from where the preview had it. */
+  .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card {
+    transition: translate var(--et-standings-pick-preview-duration) ease;
+  }
+
+  .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-dragging]) {
+    position: relative;
+    z-index: 1;
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 20%, transparent);
+    box-shadow: 0 8px 20px rgb(0 0 0 / 0.25);
+    transition: none;
+  }
+
+  .et-standings-pick:where([data-locked]) .et-standings-pick-card {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 5%, transparent);
+  }
+
+  .et-standings-pick:where([data-locked]) .et-standings-pick-participant {
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+
+  .et-standings-pick-participant {
+    --et-match-participant-emblem-size: 22px;
+    --et-match-participant-gap: 8px;
+    --et-match-participant-font-size: var(--et-standings-pick-font-size);
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  .et-standings-pick-mark {
+    display: grid;
+    flex: none;
+    place-items: center;
+    min-inline-size: 28px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .et-standings-pick-handle {
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: 24px;
+    block-size: 24px;
+    padding: 0;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    cursor: grab;
+  }
+
+  .et-standings-pick-handle:hover {
+    color: var(--et-surface-color-solid, currentColor);
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 16%, transparent);
+  }
+
+  .et-standings-pick-handle:active {
+    cursor: grabbing;
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 20%, transparent);
+  }
+
+  .et-standings-pick-grip {
+    inline-size: 12px;
+    block-size: 8px;
+    background: repeating-linear-gradient(to bottom, currentColor 0 1.5px, transparent 1.5px 3.5px);
+  }
+
+  .et-standings-pick-cut {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding-block: calc(var(--et-standings-pick-gap) + 2px);
+    padding-inline: 0;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .et-standings-pick-cut-line {
+    flex: 1;
+    block-size: 1px;
+    background: var(--et-theme-color-primary-solid, currentColor);
+    opacity: 0.5;
+  }
+
+  .et-standings-pick-cut-label {
+    flex: none;
+  }
+
+  /* For assistive tech only: the cut is a drawn line and the locked note is a state, neither of which a
+     row-by-row reader would otherwise meet. */
+  .et-standings-pick-note {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card {
+      transition: none;
+    }
+  }
+}

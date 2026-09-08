@@ -425,11 +425,12 @@ Checked in dev mode only, after the first render.
 
 ## Standings (ET44xx)
 
-Checked in dev mode only, after the first render.
+Checked in dev mode only.
 
-| Code     | Cause                                                     | Fix                                        |
-| -------- | --------------------------------------------------------- | ------------------------------------------ |
-| `ET4400` | Two `zones` cover the same position, so a row is in both. | Give every zone its own `from`–`to` range. |
+| Code     | Cause                                                         | Fix                                             |
+| -------- | ------------------------------------------------------------- | ----------------------------------------------- |
+| `ET4400` | Two `zones` cover the same position, so a row is in both.     | Give every zone its own `from`–`to` range.      |
+| `ET4401` | A second `ng-template[etStandingsPickMark]` in one pick list. | Keep one mark template per `et-standings-pick`. |
 
 ## Scheduler (ET45xx)
 
