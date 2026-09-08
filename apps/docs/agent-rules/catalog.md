@@ -65,10 +65,10 @@ names its upstream commit; `THIRD-PARTY-LICENSES.md` in the package holds the li
 Agent hooks are not emitted by default. Add their names to `hooks`; a local
 `disableHooks` setting can then turn all or selected generated hooks off on one machine.
 
-| Name                    | Targets               | Event                             | Behavior                                                                                                                                                          |
-| ----------------------- | --------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `context-warning`       | Claude Code and Codex | `UserPromptSubmit`                | Warns at 70% and 85% of the effective context or long-context pricing budget and recommends or saves a handoff before quality degrades or premium pricing starts. |
-| `subagent-model-policy` | Claude Code           | `PreToolUse` on the subagent tool | Denies a subagent call that names no model and returns the model table instead, then asks the user before a subagent runs on the most expensive model.            |
+| Name                    | Targets               | Event                             | Behavior                                                                                                                                                                                                                         |
+| ----------------------- | --------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `context-warning`       | Claude Code and Codex | `UserPromptSubmit`                | Warns at 70%, 85% and 95% of the effective context or long-context pricing budget, then repeats the remaining budget on every later prompt, so work is finished or handed off before quality degrades or premium pricing starts. |
+| `subagent-model-policy` | Claude Code           | `PreToolUse` on the subagent tool | Denies a subagent call that names no model and returns the model table instead, then asks the user before a subagent runs on the most expensive model.                                                                           |
 
 For Codex, [GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
 [Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra),

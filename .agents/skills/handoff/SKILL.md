@@ -20,6 +20,33 @@ command this guide quotes, and from `/clear` say "start a new session" instead.
 Handoff files live in `.claude/handoffs/` (gitignored - they are personal,
 ephemeral working state, not team docs).
 
+## Handoff mode
+
+The `context-warning` hook turns handoff mode on at 70% of the token budget, then repeats a
+short note with the remaining budget on every prompt after that. Handoff mode is not an
+order to stop. It is the signal to change how you work, so that either ending - you finish,
+or a fresh session takes over - stays cheap:
+
+- Work in slices that each end in a committable state. Never leave two half-finished edits
+  in the tree.
+- Send bulky reads, searches and test runs to a sub-agent. Its output stays out of your
+  context; its answer does not.
+- Write down each decision and dead end as you reach it, in the commit message or in the
+  handoff file. Do not save them for a final summary you may have no room for.
+- Start nothing you cannot finish or hand off inside the remaining budget.
+
+At the critical tier (85%) the hook asks you to choose one of two, and to tell the user
+which you chose:
+
+1. **Finish the task.** Only when you can name every step that is left, and they plainly
+   fit the remaining budget. Finish it, commit, then apply the save test below - the answer
+   is then usually that no file is needed at all.
+2. **Hand off.** Everything else. Finish the in-flight atomic edit, nothing new, then save.
+
+"Nearly done" means you can name the last steps now. It does not mean the end feels close.
+At the last tier (95%) the hook takes option 1 away, because a budget that small covers no
+task.
+
 ## Save mode
 
 **Decide first whether a handoff is needed at all.** One exists so work can resume, so

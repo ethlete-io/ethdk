@@ -136,14 +136,25 @@ the generated script again.
 
 ### `context-warning`
 
-Warns once per tier, and instructs the agent, when the session context crosses 70% and
-85% of its effective budget. Claude's budget is capped at its 200k long-context pricing
-boundary. Codex uses the 272k pricing boundary for GPT-5.6, GPT-5.5 and GPT-5.4, and
-the rollout's reported window for models without that pricing rule. A reported window
+Warns once per tier, and instructs the agent, when the session context crosses 70%, 85%
+and 95% of its effective budget. Claude's budget is capped at its 200k long-context
+pricing boundary. Codex uses the 272k pricing boundary for GPT-5.6, GPT-5.5 and GPT-5.4,
+and the rollout's reported window for models without that pricing rule. A reported window
 smaller than a pricing boundary always wins.
 
+The 85% tier does not force a handoff. A session is often a step or two from done when it
+fires, and handing off then costs a fresh session to finish work that already fits. The
+agent must choose instead - finish the task, or hand off - under a test it can fail
+honestly: name every remaining step now, or hand off. The 95% tier takes the choice away,
+so "nearly done" cannot be claimed forever.
+
+Every prompt after the first warning carries a short reminder in its place: how much budget
+is left, and how to work so that either ending stays cheap. One warning at 70% is stale by
+the time the budget is tight, and an agent cannot read its own token count between prompts.
+The `handoff` skill calls this handoff mode and describes how to work under it.
+
 Claude additionally gets a separate user-facing warning and can save a handoff
-automatically in auto mode at the critical tier. Codex receives the warning through
+automatically in auto mode from the critical tier on. Codex receives the warning through
 the hook's additional context; its permission-mode values are not documented, so the
 hook never enables automatic saving there.
 

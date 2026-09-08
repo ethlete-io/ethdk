@@ -298,12 +298,18 @@ unregisters and deletes the script again. Codex only loads project-local hooks o
 Available hooks:
 
 - **`context-warning`** - warns once per tier (and instructs the agent) when the session
-  context crosses 70% / 85% of the token budget, recommending a handoff. Under Claude the
+  context crosses 70% / 85% / 95% of the token budget, recommending a handoff. Under Claude the
   budget is capped at the 200k long-context pricing boundary: on 1M-window models every
   request past 200k input tokens bills the whole context at a premium rate, so the
   warnings fire at ~140k/~170k instead of deep into the expensive range. Codex uses
   the model-specific 272k pricing boundary for GPT-5.6, GPT-5.5 and GPT-5.4, and the
   rollout's reported context window for models without that pricing rule.
+
+  The 85% tier asks the agent to choose - finish the task, or hand off - because a session
+  is often a step or two from done when it fires. The 95% tier takes that choice away. Every
+  prompt after the first warning carries a short reminder instead of a new warning: the
+  remaining budget, and how to work so that either ending stays cheap. The `handoff` skill
+  calls this handoff mode.
 
   Two things are Claude-only: the separate user-facing line (Codex documents only
   `additionalContext`, so there the warning is folded into the text the model is told to

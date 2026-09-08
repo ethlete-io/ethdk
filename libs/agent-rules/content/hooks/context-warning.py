@@ -38,8 +38,18 @@ handoff file itself immediately rather than waiting for a natural stopping
 point. Codex's permission_mode value set is undocumented, so its profile lists
 no auto modes and the escalation stays off there.
 
+The critical tier does not force a handoff, because a session is often a step
+or two from done when it fires, and handing off then costs a whole fresh
+session to finish work that already fits. It asks for a choice instead —
+finish it, or hand off — under a test the agent can fail honestly: name every
+remaining step now, or hand off. A third tier at 95% takes the choice back
+away, so "nearly done" cannot be claimed forever.
+
 Warns once per tier per session (state kept in a temp file); re-arms itself
-if the context shrinks again (e.g. after a compaction).
+if the context shrinks again (e.g. after a compaction). Every prompt after the
+first warning carries a short reminder instead: how much budget is left, and
+how to work so that either ending stays cheap. One warning at 70% is stale by
+the time it matters, and the agent cannot see its own token count.
 
 Can be disabled per machine via a gitignored ethlete-agents.config.local.json
 at the repo root: {"disableHooks": true} or {"disableHooks": ["context-warning"]}.
@@ -58,9 +68,27 @@ import tempfile
 HOOK_NAME = "context-warning"
 LOCAL_CONFIG_FILE = "ethlete-agents.config.local.json"
 
-# Warn / critical fire at these fractions of the token budget.
+# Warn / critical / final fire at these fractions of the token budget.
 WARN_FRACTION = 0.70
 CRITICAL_FRACTION = 0.85
+FINAL_FRACTION = 0.95
+
+# How to work once the budget is tight — repeated on every prompt from the first
+# warning on, so it stays in view as the budget shrinks.
+HANDOFF_MODE = (
+    "Work in slices that each end in a committable state. Send bulky reads, searches and "
+    "test runs to a sub-agent so their output stays out of this context. Write down each "
+    "decision and dead end as you reach it, in the commit message or the handoff file. "
+    "Start nothing you cannot finish or hand off inside the remaining budget."
+)
+
+# The escape from a handoff at the critical tier, with the test that keeps it honest.
+FINISH_FIRST = (
+    "If you can name every step that is left, and they plainly fit the remaining budget, "
+    "finish the task, commit, and then apply the handoff skill's own save test — with "
+    "everything committed and no step left, write no handoff file and say so instead. "
+    "\"Nearly done\" means you can name the last steps now, not that the end feels close."
+)
 
 # On models with a window larger than this, tokens beyond it bill the whole
 # context at the long-context premium rate — so the budget never exceeds it.
@@ -105,13 +133,13 @@ AGENT_PROFILES = {
         "recommend": "recommend the user run /{handoff} to save state and start a fresh session",
         "suggest": "suggest the user run /{handoff} to save state and start a fresh session",
         "save_now": (
-            "run the handoff skill's save mode right now (finish only an in-flight atomic "
-            "edit first, nothing new). Apply its own test first: with every change "
-            "committed, no step left and nothing running, write no file — say that instead, "
-            "and recommend /clear. Otherwise tell the user exactly which handoff file was "
-            "written and that they should run /clear, then '/{handoff} resume <slug>', to "
-            "continue — clearing and resuming can't be done programmatically, so this is "
-            "the one step still on them."
+            "run the handoff skill's save mode right now — finish only an in-flight atomic "
+            "edit first, nothing new. Apply its own test: with every change committed, no "
+            "step left and nothing running, write no file, say that instead, and recommend "
+            "/clear. If a file is warranted, tell the user exactly which one was written and "
+            "that they should run /clear, then '/{handoff} resume <slug>', to continue — "
+            "clearing and resuming can't be done programmatically, so this is the one step "
+            "still on them."
         ),
     },
     "codex": {
@@ -138,11 +166,11 @@ AGENT_PROFILES = {
             "continuing in a fresh session"
         ),
         "save_now": (
-            "follow .agents/skills/{handoff}/SKILL.md and save a handoff right now "
-            "(finish only an in-flight atomic edit first, nothing new). Apply its own test "
-            "first: with every change committed, no step left and nothing running, write no "
-            "file and say that instead. Otherwise tell the user exactly which handoff file "
-            "was written and that they should start a fresh codex session and resume from it."
+            "follow .agents/skills/{handoff}/SKILL.md and save a handoff right now — finish "
+            "only an in-flight atomic edit first, nothing new. Apply its own test: with "
+            "every change committed, no step left and nothing running, write no file and say "
+            "that instead. If a file is warranted, tell the user exactly which one was "
+            "written and that they should start a fresh codex session and resume from it."
         ),
     },
 }
@@ -338,60 +366,101 @@ def codex_context_state(transcript_path):
 CONTEXT_READERS = {"claude": claude_context_state, "codex": codex_context_state}
 
 
+def headroom(tokens, budget):
+    """How much budget is left, as a short human string."""
+    left = max(budget - tokens, 0)
+    return f"~{left // 1000}k tokens" if left >= 1000 else "under 1k tokens"
+
+
+def limit_name(priced):
+    return "long-context pricing boundary" if priced else "context window"
+
+
 def messages(profile, tier, tokens, budget, priced, auto_mode):
     """(systemMessage, additionalContext) for a tier.
 
     priced: the budget is the pricing boundary, not the window — the reason to
     hand off is cost, not an imminent auto-compact.
-    auto_mode: at the critical tier, escalates from "recommend a handoff" to
-    "save it now" — see the module docstring for why.
+    auto_mode: from the critical tier on, escalates from "recommend a handoff"
+    to "save it now" — see the module docstring for why.
     """
     k = f"~{tokens // 1000}k"
     pct = round(tokens / budget * 100)
     budget_k = f"{budget // 1000}k"
+    left = headroom(tokens, budget)
 
     if priced:
-        approach = "about to cross" if tier == 2 else "approaching"
+        approach = "about to cross" if tier >= 2 else "approaching"
         headline = f"Context is at {k} tokens — {approach} the {budget_k} long-context pricing boundary"
         detail = (
             f"The context is at {k} tokens — {pct}% of the {budget_k} long-context "
-            f"pricing boundary."
+            f"pricing boundary, {left} left."
         )
+        pressure = "Past it every request is billed at the premium rate. "
+        tail = ""
     else:
         headline = f"Context is at {k} tokens ({pct}% of the {budget_k} window)"
         detail = (
             f"The context window is at {k} tokens — {pct}% of this model's "
-            f"{budget_k} window"
+            f"{budget_k} window, {left} left."
         )
+        pressure = ""
+        tail = " — auto-compact is imminent" if tier >= 3 else " — auto-compact is close" if tier == 2 else ""
 
-    if tier == 2:
-        threshold = f" (critical, ≥{int(CRITICAL_FRACTION * 100)}%)"
-        detail = detail if priced else f"{detail}{threshold}."
-        pressure = (
-            "Past it every request is billed at the premium rate. "
-            if priced
-            else ""
+    if tier >= 3:
+        gone = (
+            f"The finish-first choice from the last warning is gone: {left} does not "
+            f"cover another task."
         )
-        tail = "" if priced else " — auto-compact is imminent"
         if auto_mode:
             return (
-                f"🔴 {headline}{tail}. Auto mode is active: saving a handoff if work is left.",
-                f"[context-warning hook] {detail} {pressure}Auto mode is active, so don't "
-                f"just recommend a handoff — {profile['save_now']}",
+                f"🔴 {headline}{tail}. Auto mode is active: saving a handoff now.",
+                f"[context-warning hook] {detail} {pressure}{gone} Auto mode is active, so "
+                f"{profile['save_now']}",
             )
         return (
             f"🔴 {headline}{tail}. {profile['act_now']}",
-            f"[context-warning hook] {detail} {pressure}Finish only the immediate step, "
-            f"then {profile['recommend']}. Do not start new sub-tasks.",
+            f"[context-warning hook] {detail} {pressure}{gone} Stop after the current tool "
+            f"call, then {profile['recommend']}.",
         )
 
-    threshold = f" (≥{int(WARN_FRACTION * 100)}%)"
-    detail = detail if priced else f"{detail}{threshold}."
-    pressure = "Past it every request is billed at the premium rate. " if priced else ""
+    if tier == 2:
+        if auto_mode:
+            return (
+                f"🔴 {headline}{tail}. Auto mode is active: finishing the task, or saving a handoff.",
+                f"[context-warning hook] {detail} {pressure}Auto mode is active, so don't "
+                f"just recommend a handoff. Choose one of two, and tell the user which. "
+                f"{FINISH_FIRST} Otherwise {profile['save_now']}",
+            )
+        return (
+            f"🔴 {headline}{tail}. {profile['act_now']}",
+            f"[context-warning hook] {detail} {pressure}Choose one of two, and tell the user "
+            f"which. {FINISH_FIRST} Otherwise finish only the immediate step, then "
+            f"{profile['recommend']}. Either way, start no new sub-tasks.",
+        )
+
     return (
         f"🟡 {headline}. At the next natural stopping point, {profile['act_later']}.",
-        f"[context-warning hook] {detail} {pressure}When the current task reaches a "
-        f"natural stopping point, {profile['suggest']}. Keep working normally until then.",
+        f"[context-warning hook] {detail} {pressure}Handoff mode is active from here on. "
+        f"{HANDOFF_MODE} Keep working; when the current task reaches a natural stopping "
+        f"point, {profile['suggest']}.",
+    )
+
+
+def reminder(tier, tokens, budget, priced):
+    """The short note repeated on every prompt after a tier was already warned about.
+
+    A single warning at 70% is stale by the time the budget is actually tight, and the
+    agent has no way to read its own token count between prompts.
+    """
+    stop = (
+        " You were already told to hand off. Do not take on new work."
+        if tier >= 2
+        else ""
+    )
+    return (
+        f"[context-warning hook] Handoff mode is active: {headroom(tokens, budget)} left of "
+        f"the {budget // 1000}k {limit_name(priced)}. {HANDOFF_MODE}{stop}"
     )
 
 
@@ -399,20 +468,41 @@ def subagent_message(tier, tokens, budget, priced):
     k = f"~{tokens // 1000}k"
     pct = round(tokens / budget * 100)
     budget_k = f"{budget // 1000}k"
-    limit = "long-context pricing boundary" if priced else "context window"
     next_step = (
         "Finish only the immediate step, then send the parent agent detailed findings, "
         "completed work, and remaining work, and stop."
-        if tier == 2
+        if tier >= 2
         else "Keep working normally; at the next natural stopping point, send detailed progress "
         "and any remaining work to the parent agent."
     )
     return (
         f"[context-warning hook] This warning applies to a sub-agent thread, not the "
         f"parent/main agent. This sub-agent is at {k} tokens — {pct}% of its {budget_k} "
-        f"{limit}. {next_step} Do not create a user-facing session handoff or claim that "
-        f"the main agent's context is full."
+        f"{limit_name(priced)}. {next_step} Do not create a user-facing session handoff or "
+        f"claim that the main agent's context is full."
     )
+
+
+def subagent_reminder(tokens, budget, priced):
+    return (
+        f"[context-warning hook] Handoff mode is active for this sub-agent thread, not the "
+        f"parent/main agent: {headroom(tokens, budget)} left of its {budget // 1000}k "
+        f"{limit_name(priced)}. Keep findings compact and send them to the parent agent "
+        f"before the budget runs out. Do not create a user-facing session handoff."
+    )
+
+
+def emit(additional_context, system_message=None):
+    payload = {
+        "hookSpecificOutput": {
+            "hookEventName": "UserPromptSubmit",
+            "additionalContext": additional_context,
+        }
+    }
+    if system_message:
+        payload["systemMessage"] = system_message
+        payload["suppressOutput"] = True
+    print(json.dumps(payload))
 
 
 def main():
@@ -439,9 +529,11 @@ def main():
     window = reported_window or profile["default_window"] or window_for(model)
     boundary = premium_boundary_for(profile, model)
     budget = min(window, boundary) if boundary else window
-    warn_tokens = int(budget * WARN_FRACTION)
-    critical_tokens = int(budget * CRITICAL_FRACTION)
-    tier = 2 if tokens >= critical_tokens else 1 if tokens >= warn_tokens else 0
+    tier = 0
+    for level, fraction in ((3, FINAL_FRACTION), (2, CRITICAL_FRACTION), (1, WARN_FRACTION)):
+        if tokens >= int(budget * fraction):
+            tier = level
+            break
 
     state_id = thread_id or session_id
     safe_state_id = "".join(char for char in str(state_id) if char.isalnum() or char in "-_")[:128]
@@ -460,31 +552,29 @@ def main():
         except OSError:
             pass
 
+    priced = budget < window
+
     if tier <= prev_tier:
-        return  # already warned at this tier (or context shrank — state re-armed above)
+        if tier == 0:
+            return  # below the first threshold (or context shrank — state re-armed above)
+        emit(
+            subagent_reminder(tokens, budget, priced)
+            if is_subagent
+            else reminder(tier, tokens, budget, priced)
+        )
+        return
 
     if is_subagent:
-        system_message = None
-        additional_context = subagent_message(tier, tokens, budget, budget < window)
+        emit(subagent_message(tier, tokens, budget, priced))
+        return
+
+    system_message, additional_context = messages(
+        profile, tier, tokens, budget, priced, auto_mode
+    )
+    if profile["emits_system_message"]:
+        emit(additional_context, system_message)
     else:
-        system_message, additional_context = messages(
-            profile, tier, tokens, budget, budget < window, auto_mode
-        )
-
-    if not profile["emits_system_message"] and system_message:
-        additional_context = f"{additional_context}\n\nTell the user: {system_message}"
-
-    payload = {
-        "hookSpecificOutput": {
-            "hookEventName": "UserPromptSubmit",
-            "additionalContext": additional_context,
-        }
-    }
-    if profile["emits_system_message"] and system_message:
-        payload["systemMessage"] = system_message
-        payload["suppressOutput"] = True
-
-    print(json.dumps(payload))
+        emit(f"{additional_context}\n\nTell the user: {system_message}")
 
 
 if __name__ == "__main__":
