@@ -58,8 +58,8 @@ describe('sessionize', () => {
     });
 
     expect(blocks).toHaveLength(1);
-    expect(blocks[0].context.branch).toBe('feat/FIP-2177-user-management');
-    expect(blockDurationMs(blocks[0])).toBe(40 * 60_000);
+    expect(blocks[0]!.context.branch).toBe('feat/FIP-2177-user-management');
+    expect(blockDurationMs(blocks[0]!)).toBe(40 * 60_000);
   });
 
   it('reads a stored detached checkout as no branch at all', () => {
@@ -84,8 +84,8 @@ describe('sessionize', () => {
     });
 
     expect(blocks).toHaveLength(2);
-    expect(blocks[0].to).toEqual(AT(11));
-    expect(blocks[1].from).toEqual(AT(71));
+    expect(blocks[0]!.to).toEqual(AT(11));
+    expect(blocks[1]!.from).toEqual(AT(71));
   });
 
   it('ends a block at its last sample when the samples simply stop', () => {
@@ -99,7 +99,7 @@ describe('sessionize', () => {
     });
 
     expect(blocks).toHaveLength(2);
-    expect(blocks[0].to).toEqual(AT(10));
+    expect(blocks[0]!.to).toEqual(AT(10));
   });
 
   it('absorbs a sub-minute alt-tab instead of splitting the block', () => {
@@ -115,8 +115,8 @@ describe('sessionize', () => {
     });
 
     expect(blocks).toHaveLength(1);
-    expect(blocks[0].context.branch).toBe('feat/FIP-2177-user-management');
-    expect(blockDurationMs(blocks[0])).toBe(30 * 60_000);
+    expect(blocks[0]!.context.branch).toBe('feat/FIP-2177-user-management');
+    expect(blockDurationMs(blocks[0]!)).toBe(30 * 60_000);
   });
 
   it('keeps repo context across a focus change until stickiness runs out', () => {
@@ -131,7 +131,7 @@ describe('sessionize', () => {
     });
 
     expect(blocks).toHaveLength(1);
-    expect(blocks[0].context.repoPath).toBe('/home/tom/dev/fut-frontend');
+    expect(blocks[0]!.context.repoPath).toBe('/home/tom/dev/fut-frontend');
   });
 
   it('deduplicates repeated window titles but keeps every commit', () => {
@@ -145,8 +145,8 @@ describe('sessionize', () => {
       ],
     });
 
-    const titles = blocks[0].evidence.filter((entry) => entry.kind === 'window-title');
-    const commits = blocks[0].evidence.filter((entry) => entry.kind === 'commit');
+    const titles = blocks[0]!.evidence.filter((entry) => entry.kind === 'window-title');
+    const commits = blocks[0]!.evidence.filter((entry) => entry.kind === 'commit');
 
     expect(titles).toHaveLength(1);
     expect(commits).toHaveLength(2);
@@ -162,8 +162,8 @@ describe('sessionize', () => {
     });
 
     expect(blocks).toHaveLength(1);
-    expect(blocks[0].from.getHours()).toBeGreaterThanOrEqual(9);
-    expect(blocks[0].to.getHours()).toBeLessThanOrEqual(17);
+    expect(blocks[0]!.from.getHours()).toBeGreaterThanOrEqual(9);
+    expect(blocks[0]!.to.getHours()).toBeLessThanOrEqual(17);
   });
 
   it('follows the editor window that has focus between two checkouts', () => {
@@ -183,7 +183,7 @@ describe('sessionize', () => {
       '/home/tom/dev/ethlete-sdk',
       '/home/tom/dev/fut-frontend',
     ]);
-    expect(blocks[2].context.branch).toBe('feat/FIP-2177-user-management');
+    expect(blocks[2]!.context.branch).toBe('feat/FIP-2177-user-management');
   });
 
   it('keeps a repository alive while its window stays focused', () => {
@@ -196,7 +196,7 @@ describe('sessionize', () => {
     });
 
     expect(blocks).toHaveLength(1);
-    expect(blocks[0].context.repoPath).toBe('/home/tom/dev/fut-frontend');
+    expect(blocks[0]!.context.repoPath).toBe('/home/tom/dev/fut-frontend');
   });
 
   it('does not read a repository name buried inside a page title as a switch', () => {
@@ -208,7 +208,7 @@ describe('sessionize', () => {
       ],
     });
 
-    expect(blocks[blocks.length - 1].context.repoPath).toBe('/home/tom/dev/ethlete-sdk');
+    expect(blocks[blocks.length - 1]!.context.repoPath).toBe('/home/tom/dev/ethlete-sdk');
   });
 
   it('refuses to guess which of two repositories a shared directory name means', () => {
@@ -328,7 +328,7 @@ describe('sessionize, while the user is away', () => {
     });
 
     expect(blocks).toHaveLength(1);
-    expect(blocks[0].from).toEqual(AT(61));
+    expect(blocks[0]!.from).toEqual(AT(61));
   });
 
   it('still learns the branch the agent checked out while the user was gone', () => {
@@ -360,7 +360,7 @@ describe('sessionize, while the user is away', () => {
     });
 
     expect(blocks).toHaveLength(1);
-    expect(blocks[0].to).toEqual(AT(10));
+    expect(blocks[0]!.to).toEqual(AT(10));
   });
 });
 

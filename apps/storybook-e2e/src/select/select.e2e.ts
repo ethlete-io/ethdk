@@ -1,8 +1,17 @@
-import { expect, test } from '@playwright/test';
+import { Locator, expect, test } from '@playwright/test';
 import { expectFieldFocusVisible, expectTouchMode, openStory, pressKey, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-forms-select--default';
 const PRESELECTED_STORY_ID = 'components-forms-select--preselected';
+
+/** The option's `id`, which `aria-activedescendant` must carry. No id is a failure, not a pass. */
+const idOf = async (option: Locator) => {
+  const id = await option.getAttribute('id');
+
+  if (!id) throw new Error('the option has no id, so aria-activedescendant cannot name it');
+
+  return id;
+};
 
 test.describe('select / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
@@ -45,11 +54,11 @@ test.describe('select / keyboard', () => {
     await pressKey(page, 'Enter');
 
     await expect(apple).toHaveAttribute('data-active', 'true');
-    await expect(trigger).toHaveAttribute('aria-activedescendant', await apple.getAttribute('id'));
+    await expect(trigger).toHaveAttribute('aria-activedescendant', await idOf(apple));
 
     await pressKey(page, 'ArrowDown');
     await expect(banana).toHaveAttribute('data-active', 'true');
-    await expect(trigger).toHaveAttribute('aria-activedescendant', await banana.getAttribute('id'));
+    await expect(trigger).toHaveAttribute('aria-activedescendant', await idOf(banana));
 
     await pressKey(page, 'ArrowUp');
     await expect(apple).toHaveAttribute('data-active', 'true');

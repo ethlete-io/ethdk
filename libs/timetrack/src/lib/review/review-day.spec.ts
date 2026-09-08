@@ -17,7 +17,7 @@ import {
   setRowState,
   splitRow,
 } from './edits';
-import { DayReviewEdits, EMPTY_DAY_REVIEW_EDITS } from './model';
+import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS } from './model';
 import { reviewDay } from './review-day';
 
 const MINUTE = 60_000;
@@ -58,10 +58,16 @@ const correlation = (options: { proposals: WorklogProposal[]; unattributed?: Wor
   proposals: options.proposals,
   unattributed: options.unattributed ?? [],
   meetings: [],
-  check: { proposedMs: 0, unattributedMs: 0, warnings: [] },
+  timers: [],
+  filledMs: 0,
+  pauses: [],
+  pausedMs: 0,
+  private: [],
+  privateMs: 0,
+  check: { proposedMs: 0, coveredMs: 0, loggedMs: 0, unattributedMs: 0, warnings: [] },
 });
 
-const rowFor = (review: { rows: { issueKey: string }[] }, issueKey: string) => {
+const rowFor = (review: DayReview, issueKey: string) => {
   const row = review.rows.find((candidate) => candidate.issueKey === issueKey);
 
   if (!row) throw new Error(`no row for ${issueKey}`);

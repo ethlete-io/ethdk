@@ -11,6 +11,7 @@ const meeting = (overrides: Partial<CalendarOccurrenceEvent> = {}): CalendarOccu
   at: at(10),
   source: 'calendar',
   kind: 'calendar-event',
+  occurrenceId: 'occ-sprint-planning',
   until: at(11),
   title: 'Sprint Planning',
   accepted: true,

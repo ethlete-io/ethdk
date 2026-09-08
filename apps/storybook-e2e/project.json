@@ -13,6 +13,12 @@
         "config": "apps/storybook-e2e/playwright.config.ts"
       },
       "dependsOn": [{ "projects": ["storybook"], "target": "build-storybook" }]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/storybook-e2e/tsconfig.json --noEmit"
+      }
     }
   }
 }

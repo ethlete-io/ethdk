@@ -14,6 +14,7 @@ const calendar = (title: string): CollectedEvent => ({
   at: new Date(2026, 7, 11, 10, 0),
   source: 'calendar',
   kind: 'calendar-event',
+  occurrenceId: `occ-${title}`,
   until: new Date(2026, 7, 11, 11, 0),
   title,
   accepted: true,

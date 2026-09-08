@@ -33,17 +33,23 @@ const row = (options: {
   };
 };
 
-const review = (options: { rows: ReviewedRow[]; unattributedMs?: number }): DayReview => ({
-  rows: options.rows,
-  check: {
-    proposedMs: options.rows
-      .filter((entry) => entry.state === 'accepted' || entry.state === 'edited')
-      .reduce((sum, entry) => sum + entry.durationMs, 0),
-    unattributedMs: options.unattributedMs ?? 0,
-    warnings: [],
-  },
-  unreconciledMs: 0,
-});
+const review = (options: { rows: ReviewedRow[]; unattributedMs?: number }): DayReview => {
+  const proposedMs = options.rows
+    .filter((entry) => entry.state === 'accepted' || entry.state === 'edited')
+    .reduce((sum, entry) => sum + entry.durationMs, 0);
+
+  return {
+    rows: options.rows,
+    check: {
+      proposedMs,
+      coveredMs: 0,
+      loggedMs: proposedMs,
+      unattributedMs: options.unattributedMs ?? 0,
+      warnings: [],
+    },
+    unreconciledMs: 0,
+  };
+};
 
 const ledgerFor = (entry: ReviewedRow): SyncedWorklog => ({
   proposalId: entry.id,

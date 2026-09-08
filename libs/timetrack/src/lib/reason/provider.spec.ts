@@ -25,7 +25,7 @@ const stubRunner = (results: (ProcessResult | Error)[]) => {
   const runner: TimetrackProcessRunner = {
     run$: vi.fn((spec: ProcessSpec) => {
       specs.push(spec);
-      const next = results[Math.min(specs.length - 1, results.length - 1)];
+      const next = results[Math.min(specs.length - 1, results.length - 1)]!;
 
       return next instanceof Error ? throwError(() => next) : of(next);
     }),

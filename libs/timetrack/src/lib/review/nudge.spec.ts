@@ -39,15 +39,21 @@ const row = (options: {
   };
 };
 
-const review = (options: { rows: ReviewedRow[]; unattributedMs?: number }): DayReview => ({
-  rows: options.rows,
-  check: {
-    proposedMs: options.rows.reduce((sum, entry) => sum + entry.durationMs, 0),
-    unattributedMs: options.unattributedMs ?? 0,
-    warnings: [],
-  },
-  unreconciledMs: 0,
-});
+const review = (options: { rows: ReviewedRow[]; unattributedMs?: number }): DayReview => {
+  const proposedMs = options.rows.reduce((sum, entry) => sum + entry.durationMs, 0);
+
+  return {
+    rows: options.rows,
+    check: {
+      proposedMs,
+      coveredMs: 0,
+      loggedMs: proposedMs,
+      unattributedMs: options.unattributedMs ?? 0,
+      warnings: [],
+    },
+    unreconciledMs: 0,
+  };
+};
 
 const coverage = (coveredMsByIssueKey: Record<string, number>): TempoDayCoverage => ({
   day: '2026-08-11',

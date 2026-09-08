@@ -12,6 +12,12 @@
       "options": {
         "config": "apps/timetrack-e2e/playwright.config.ts"
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/timetrack-e2e/tsconfig.json --noEmit"
+      }
     }
   }
 }

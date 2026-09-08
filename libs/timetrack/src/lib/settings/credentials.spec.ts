@@ -30,6 +30,7 @@ const configured: TimetrackSettings = {
   ...DEFAULT_TIMETRACK_SETTINGS,
   jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
   google: { clientId: 'client.apps.googleusercontent.com', calendarIds: [] },
+  gitlab: { host: 'gitlab.braune-digital.com' },
 };
 
 describe('readJiraCredentials$', () => {
@@ -73,28 +74,31 @@ describe('readTempoCredentials$', () => {
 });
 
 describe('timetrackCredentialStatus', () => {
-  it('reports Jira and Google as configured only once the settings name them too', () => {
-    const held = { jira: true, tempo: true, google: true };
+  it('reports Jira, Google and GitLab as configured only once the settings name them too', () => {
+    const held = { jira: true, tempo: true, google: true, gitlab: true };
 
     expect(timetrackCredentialStatus({ held, settings: DEFAULT_TIMETRACK_SETTINGS })).toEqual({
       jira: false,
       tempo: true,
       google: false,
+      gitlab: false,
     });
     expect(timetrackCredentialStatus({ held, settings: configured })).toEqual({
       jira: true,
       tempo: true,
       google: true,
+      gitlab: true,
     });
   });
 
   it('reports nothing as configured while the keychain holds no token', () => {
-    const held = { jira: false, tempo: false, google: false };
+    const held = { jira: false, tempo: false, google: false, gitlab: false };
 
     expect(timetrackCredentialStatus({ held, settings: configured })).toEqual({
       jira: false,
       tempo: false,
       google: false,
+      gitlab: false,
     });
   });
 });

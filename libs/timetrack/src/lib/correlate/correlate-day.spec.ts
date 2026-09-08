@@ -46,6 +46,7 @@ const calendar = (options: { minute: number; minutes: number; title: string; acc
   at: AT(options.minute),
   source: 'calendar',
   kind: 'calendar-event',
+  occurrenceId: `occ-${options.minute}`,
   until: AT(options.minute + options.minutes),
   title: options.title,
   accepted: options.accepted ?? true,
@@ -112,7 +113,7 @@ describe('correlateDay', () => {
 
     expect(day.filledMs).toBe(24 * MINUTE);
     expect(day.proposals).toHaveLength(1);
-    expect(day.proposals[0]?.durationMs / MINUTE).toBe(90);
+    expect(day.proposals[0]!.durationMs / MINUTE).toBe(90);
     expect(day.proposals[0]?.evidence.some((entry) => entry.kind === 'gap-fill')).toBe(true);
   });
 
@@ -126,7 +127,7 @@ describe('correlateDay', () => {
     const day = correlateDay({ events: THINKING_DAY, config: FIP, fill: { maxFillGapMs: 0 } });
 
     expect(day.filledMs).toBe(0);
-    expect(day.proposals[0]?.durationMs / MINUTE).toBe(60);
+    expect(day.proposals[0]!.durationMs / MINUTE).toBe(60);
   });
 
   it('rates a conforming branch above one that only inherited its key', () => {

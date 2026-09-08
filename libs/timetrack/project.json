@@ -22,6 +22,12 @@
         }
       }
     },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/timetrack/tsconfig.spec.json --noEmit"
+      }
+    },
     "lint": {
       "inputs": [
         "default",

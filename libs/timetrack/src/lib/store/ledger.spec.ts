@@ -9,7 +9,7 @@ type Call = { kind: 'upsert'; proposalIds: string[] } | { kind: 'remove'; propos
 const recordingStore = () => {
   const calls: Call[] = [];
   const store: TimetrackLedgerStore = {
-    entriesFor$: () => of([]),
+    entriesForDay$: () => of([]),
     upsert$: (entries) => {
       calls.push({ kind: 'upsert', proposalIds: entries.map((entry) => entry.proposalId) });
 

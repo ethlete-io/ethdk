@@ -27,7 +27,6 @@ const worklogResource = (options: { id: number; issueId: number; hours: number }
 const ledgerEntry = (overrides: Partial<SyncedWorklog>): SyncedWorklog => ({
   proposalId: 'p1',
   tempoWorklogId: '1',
-  issueKey: 'FIP-2964',
   day: DAY,
   contentHash: 'hash',
   syncedAt: OBSERVED_AT,
