@@ -6,13 +6,6 @@
   "tags": ["type:e2e", "scope:timetrack"],
   "implicitDependencies": ["timetrack-app"],
   "targets": {
-    "e2e": {
-      "executor": "@nx/playwright:playwright",
-      "outputs": ["{workspaceRoot}/dist/.playwright/apps/timetrack-e2e"],
-      "options": {
-        "config": "apps/timetrack-e2e/playwright.config.ts"
-      }
-    },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
