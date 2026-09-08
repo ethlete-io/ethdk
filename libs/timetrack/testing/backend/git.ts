@@ -9,8 +9,8 @@ const MUTATING_PREFIXES = ['branch ', 'push ', 'switch ', 'fetch '];
  * `clean: false` puts one modified file in `status --porcelain`, which is the state every write flow
  * has to refuse on.
  */
-export const runFakeGit = (backend: FakeBackend, args: readonly string[]) => {
-  const command = args.join(' ');
+export const runFakeGit = (backend: FakeBackend, spec: { args: readonly string[]; cwd?: string }) => {
+  const command = spec.args.join(' ');
   const { git } = backend;
 
   if (MUTATING_PREFIXES.some((prefix) => command.startsWith(prefix))) {
@@ -18,6 +18,8 @@ export const runFakeGit = (backend: FakeBackend, args: readonly string[]) => {
 
     return '';
   }
+
+  if (command.startsWith('reflog show')) return git.reflog[spec.cwd ?? ''] ?? '';
 
   if (command === 'status --porcelain') return git.clean ? '' : ' M src/invite.ts\n';
   if (command === 'remote') return 'origin\n';

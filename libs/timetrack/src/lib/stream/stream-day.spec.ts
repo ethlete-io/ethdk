@@ -414,6 +414,27 @@ describe('streamDay', () => {
     expect(day.presenceMs).toBe(20 * MINUTE);
   });
 
+  it('names the checkout name it dropped, so the folded time on the screen has a reason', () => {
+    const OTHER_ELROND = '/home/tom/elrond-usb/stick-bios/doku/elrond';
+
+    const day = streamDay({
+      events: focusRun({ from: 0, to: 10, appId: 'code', title: 'boot.md - elrond - Code' }),
+      options: { repoRoots: ['/home/tom/umbau-elrond/elrond', OTHER_ELROND] },
+    });
+
+    expect(day.ambiguousNames).toEqual(['elrond']);
+    expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(10 * MINUTE);
+  });
+
+  it('names nothing for a day whose windows never claimed a shared name', () => {
+    const day = streamDay({
+      events: focusRun({ from: 0, to: 10, appId: 'slack' }),
+      options: { repoRoots: ['/home/tom/umbau-elrond/elrond', '/home/tom/elrond-usb/stick-bios/doku/elrond'] },
+    });
+
+    expect(day.ambiguousNames).toEqual([]);
+  });
+
   it('reads nothing from a day nothing observed', () => {
     const day = streamDay({ events: [] });
 
@@ -429,6 +450,7 @@ describe('streamDay', () => {
         turns: 0,
         models: [],
       },
+      ambiguousNames: [],
     });
   });
 

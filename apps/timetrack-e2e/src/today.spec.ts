@@ -1,4 +1,4 @@
-import { CollectedEvent } from '@ethlete/timetrack';
+import { CollectedEvent, GIT_FIELD_SEPARATOR } from '@ethlete/timetrack';
 import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
 
 /** The checkout the fake git backend discovers, so its subdirectories fold into it. */
@@ -55,6 +55,10 @@ const day = (): CollectedEvent[] => [
 
 const stream = (page: Parameters<typeof seedWorld>[0], key: string) => page.locator(`[data-stream="${key}"]`);
 
+/** One line of `git reflog show`, in the format the app asks for. */
+const reflogLine = (options: { stamp: string; from: string; to: string }) =>
+  `HEAD@{${options.stamp}}${GIT_FIELD_SEPARATOR}checkout: moving from ${options.from} to ${options.to}`;
+
 test.describe('the today view', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: day() });
@@ -103,6 +107,33 @@ test.describe('the today view', () => {
     await agentOnly.getByRole('button', { name: /ethlete-sdk/ }).click();
 
     await expect(evidence).toBeVisible();
+  });
+
+  test('reads the branch out of the reflog for a checkout the day named none for', async ({ page }) => {
+    // Nothing that day says which branch the checkout was on: no commit, no switch, and an agent
+    // session that carried no branch. The reflog is the only thing left that knows.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: day().map((event) => (event.kind === 'agent-session' ? { ...event, gitBranch: undefined } : event)),
+      git: {
+        reflog: {
+          [SDK]: reflogLine({ stamp: '2026-07-01T09:00:00+02:00', from: 'main', to: 'feature/read-a-day' }),
+        },
+      },
+    });
+    await page.goto('/today');
+
+    await expect(stream(page, `repo:${SDK}`).locator('[data-branches]')).toHaveText('feature/read-a-day');
+  });
+
+  test('says nothing about a branch for a checkout whose reflog holds no switch', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: day().map((event) => (event.kind === 'agent-session' ? { ...event, gitBranch: undefined } : event)),
+    });
+    await page.goto('/today');
+
+    await expect(stream(page, `repo:${SDK}`).locator('[data-branches]')).toHaveCount(0);
   });
 
   test('shows what the turns spent, in the classes they are priced in', async ({ page }) => {
@@ -170,6 +201,21 @@ test.describe('the today view', () => {
     await expect(backfilled.locator('[data-engaged]')).toHaveText('0m engaged');
     await expect(backfilled.locator('[data-spend]')).toContainText('2 turns');
     await expect(page.locator('[data-unattributed]')).toHaveCount(0);
+  });
+
+  test('names a checkout name two checkouts share, rather than folding the time in silence', async ({ page }) => {
+    const ONE = '/Users/e2e/dev/elrond';
+    const OTHER = '/Users/e2e/archive/elrond';
+
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [...day(), focus(10, 'code', 'boot.md - elrond - Visual Studio Code')],
+      git: { extraRepos: [ONE, OTHER] },
+    });
+    await page.goto('/today');
+
+    await expect(page.locator('[data-ambiguous]')).toHaveText('elrond');
+    await expect(page.locator('[data-stream="repo:' + ONE + '"]')).toHaveCount(0);
   });
 
   test('names only the spend that carries no checkout at all', async ({ page }) => {

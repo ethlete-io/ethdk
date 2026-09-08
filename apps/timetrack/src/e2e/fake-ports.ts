@@ -188,7 +188,7 @@ export const createFakePorts = (): HostPorts => {
         const stdout = isReasoningSpec(spec)
           ? fakeReasoningAnswer(spec, reasoningRuns)
           : spec.command === 'git'
-            ? runFakeGit(backend, spec.args)
+            ? runFakeGit(backend, spec)
             : EMPTY_AGENT_ANSWER;
 
         return ok({ code: 0, stdout, stderr: '' });
@@ -209,7 +209,7 @@ export const createFakePorts = (): HostPorts => {
     },
 
     git: {
-      repos$: () => ok({ repos: [backend.git.repoPath], kind: 'watching', detail: null }),
+      repos$: () => ok({ repos: [backend.git.repoPath, ...backend.git.extraRepos], kind: 'watching', detail: null }),
       changes$: (afterSeq) => ok({ repos: [], seq: afterSeq }),
     },
 

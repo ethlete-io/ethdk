@@ -109,6 +109,11 @@ export type StreamDay = {
    * unattended.
    */
   unattributedSpend: StreamSpend;
+  /**
+   * The checkout names a window claimed that two checkouts share. Neither could take the window, so
+   * its time is in the other-applications line, and this is the only thing that says why.
+   */
+  ambiguousNames: string[];
 };
 
 type StreamDraft = {
@@ -204,6 +209,13 @@ const repoNamedIn = (options: { title: string; byName: Map<string, string> }) =>
     .map((segment) => options.byName.get(segment.trim()))
     .find((repoPath) => !!repoPath);
 
+/** Which dropped name a window title claims, so the day can say why the window resolved to nothing. */
+const ambiguousNamedIn = (options: { title: string; ambiguous: ReadonlySet<string> }) =>
+  options.title
+    .split(TITLE_SEGMENTS)
+    .map((segment) => segment.trim())
+    .find((segment) => options.ambiguous.has(segment));
+
 /**
  * Indexes the checkouts by their directory name.
  *
@@ -230,7 +242,7 @@ const reposByName = (samples: readonly ActivityEvent[], roots: readonly string[]
 
   for (const name of ambiguous) byName.delete(name);
 
-  return byName;
+  return { byName, ambiguous };
 };
 
 /** Whether a link takes a checkout out of the day. A path no link covers is work until the user says so. */
@@ -386,7 +398,8 @@ export const streamDay = (options: {
   });
 
   const presence = presenceWindows({ samples: observed, maxUnobservedMs: config.maxUnobservedMs });
-  const byName = reposByName(samples, roots);
+  const { byName, ambiguous } = reposByName(samples, roots);
+  const claimedAmbiguously = new Set<string>();
   const drafts = new Map<string, StreamDraft>();
   /** The branch each checkout was last seen on. Learned from git and from an agent session alike. */
   const branches = new Map<string, string | undefined>();
@@ -405,6 +418,12 @@ export const streamDay = (options: {
       focused = secludedWindow ? undefined : repoNamedIn({ title: sample.title, byName });
 
       if (secludedWindow) sticky = undefined;
+
+      if (!focused && !secludedWindow) {
+        const claimed = ambiguousNamedIn({ title: sample.title, ambiguous });
+
+        if (claimed) claimedAmbiguously.add(claimed);
+      }
     }
 
     const observed = repoStateFor(sample, roots);
@@ -509,5 +528,6 @@ export const streamDay = (options: {
     streams,
     spend,
     unattributedSpend,
+    ambiguousNames: [...claimedAmbiguously],
   };
 };

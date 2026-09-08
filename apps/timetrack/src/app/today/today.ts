@@ -1,7 +1,7 @@
 import { computed, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
-import { StreamDay, localDayKey, localDayRange, shiftDayKey, streamDay } from '@ethlete/timetrack';
+import { StreamDay, localDayKey, localDayRange, readHeadBranches$, shiftDayKey, streamDay } from '@ethlete/timetrack';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import {
   injectAgentSessionCollector,
@@ -80,9 +80,39 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
     return read?.key === key() ? read : null;
   });
 
+  /** The checkouts the day named no branch for: no commit, no branch switch and no agent session. */
+  const unnamed = computed(() => {
+    const read = current();
+
+    if (!read?.value) return null;
+
+    return {
+      at: localDayRange(read.key).to,
+      repoPaths: read.value.streams
+        .filter((stream) => !!stream.repoPath && !stream.branches.length)
+        .map((stream) => stream.repoPath as string),
+    };
+  });
+
+  /**
+   * The branch each of those checkouts was on that day, from its reflog. It resolves after the day
+   * does, so a slow repository delays the branch on one line and never the day's numbers.
+   */
+  const headBranches = toSignal(
+    toObservable(unnamed).pipe(
+      switchMap((ask) =>
+        ask?.repoPaths.length
+          ? readHeadBranches$({ processes: ports.processes, ...ask }).pipe(catchError(() => of({})))
+          : of<Record<string, string>>({}),
+      ),
+    ),
+    { initialValue: {} as Record<string, string> },
+  );
+
   return {
     dayKey: key.asReadonly(),
     day: computed(() => current()?.value ?? null),
+    headBranches,
     isLoading: computed(() => !current()),
     failure: computed(() => current()?.failure ?? null),
     isToday: computed(() => key() === localDayKey(new Date())),

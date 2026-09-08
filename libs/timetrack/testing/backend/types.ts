@@ -136,11 +136,15 @@ export type FakeGitLabState = {
 
 export type FakeGitState = {
   repoPath: string;
+  /** More working-tree roots the host discovers, beside `repoPath`. */
+  extraRepos: string[];
   /** `false` puts something in `git status --porcelain`, which every write flow must refuse on. */
   clean: boolean;
   branches: string[];
   remoteBranches: string[];
   remoteUrl: string;
+  /** What `git reflog show` prints, per working-tree root. A path with no entry has an empty reflog. */
+  reflog: Record<string, string>;
   /** Every mutating git command the app ran, joined as it spelled the arguments. */
   ran: string[];
 };

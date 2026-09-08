@@ -31,6 +31,18 @@ export const formatAgentSessions = (stream: Stream) => {
 };
 
 /**
+ * The branches on a stream's line: what the day observed, and otherwise the branch the reflog says the
+ * checkout was on. A stream with no checkout at all never carries one.
+ */
+export const formatBranches = (options: { stream: Stream; headBranches: Record<string, string> }) => {
+  const { stream, headBranches } = options;
+
+  if (stream.branches.length) return stream.branches.join(' · ');
+
+  return stream.repoPath ? (headBranches[stream.repoPath] ?? '') : '';
+};
+
+/**
  * Agent time nobody was at the machine for. No such time reads as nothing at all, so an ordinary day
  * gains no extra number.
  */
