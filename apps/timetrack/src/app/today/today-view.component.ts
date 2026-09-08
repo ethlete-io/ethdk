@@ -1,5 +1,11 @@
 import { Component, ViewEncapsulation, computed } from '@angular/core';
-import { BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent } from '@ethlete/components';
+import {
+  ACCORDION_IMPORTS,
+  BANNER_IMPORTS,
+  BUTTON_IMPORTS,
+  EMPTY_STATE_IMPORTS,
+  SpinnerComponent,
+} from '@ethlete/components';
 import { Stream, formatDurationMs } from '@ethlete/timetrack';
 import { formatClockTime, formatDayLabel } from '../day-review/format';
 import { formatAgentSessions, formatSpend, formatStreamLabel, formatUnattended } from './format';
@@ -46,54 +52,61 @@ import { injectToday, provideToday } from './today';
           }
         </div>
 
-        <ul class="flex min-h-0 grow list-none flex-col gap-2 overflow-y-auto px-6 py-4">
-          @for (stream of day.streams; track stream.key) {
-            <li
-              [attr.data-stream]="stream.key"
-              class="flex flex-col gap-1 rounded-md border border-et-surface-border px-3 py-2"
-            >
-              <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                <span class="text-mono text-et-surface-muted" data-span>{{ spanOf(stream) }}</span>
-                <span [title]="stream.repoPath ?? ''" class="text-base" data-label>{{ LABEL_OF(stream) }}</span>
-                <span class="text-small" data-engaged>{{ engagedOf(stream) }} engaged</span>
-                @if (UNATTENDED_OF(stream.unattendedMs); as unattended) {
-                  <span class="text-small text-et-surface-subtle" data-unattended>{{ unattended }}</span>
-                }
-                @if (SESSIONS_OF(stream); as sessions) {
-                  <span class="text-small text-et-surface-muted" data-agent-sessions>{{ sessions }}</span>
-                }
-                @if (SPEND_OF(stream.spend); as spend) {
-                  <span class="text-small text-et-surface-muted" data-spend>{{ spend }}</span>
-                }
-                @if (stream.neverFocused) {
-                  <span class="text-small text-et-surface-subtle" data-never-focused>agent only, never focused</span>
-                }
-              </div>
+        <div class="flex min-h-0 grow flex-col gap-4 overflow-y-auto px-6 py-4">
+          @if (day.streams.length) {
+            <et-accordion-group>
+              @for (stream of day.streams; track stream.key) {
+                <et-accordion [attr.data-stream]="stream.key">
+                  <ng-template etAccordionLabel>
+                    <span class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                      <span class="text-mono text-et-surface-muted" data-span>{{ spanOf(stream) }}</span>
+                      <span [title]="stream.repoPath ?? ''" class="text-base" data-label>{{ LABEL_OF(stream) }}</span>
+                      <span class="text-small" data-engaged>{{ engagedOf(stream) }} engaged</span>
+                      @if (UNATTENDED_OF(stream.unattendedMs); as unattended) {
+                        <span class="text-small text-et-surface-subtle" data-unattended>{{ unattended }}</span>
+                      }
+                      @if (SESSIONS_OF(stream); as sessions) {
+                        <span class="text-small text-et-surface-muted" data-agent-sessions>{{ sessions }}</span>
+                      }
+                      @if (SPEND_OF(stream.spend); as spend) {
+                        <span class="text-small text-et-surface-muted" data-spend>{{ spend }}</span>
+                      }
+                      @if (stream.neverFocused) {
+                        <span class="text-small text-et-surface-subtle" data-never-focused>
+                          agent only, never focused
+                        </span>
+                      }
+                    </span>
+                  </ng-template>
 
-              @if (stream.branches.length) {
-                <span class="text-small text-et-surface-subtle" data-branches>{{ stream.branches.join(' · ') }}</span>
+                  @if (stream.branches.length) {
+                    <ng-template etAccordionHint>
+                      <span class="text-small" data-branches>{{ stream.branches.join(' · ') }}</span>
+                    </ng-template>
+                  }
+
+                  <ul class="flex list-none flex-col gap-0.5">
+                    @for (entry of stream.evidence; track entry.kind + entry.detail) {
+                      <li class="text-small text-et-surface-muted">
+                        <span class="text-mono">{{ CLOCK_OF(entry.at) }}</span>
+                        {{ entry.detail }}
+                      </li>
+                    } @empty {
+                      <li class="text-small text-et-surface-subtle">No evidence was recorded for this stream.</li>
+                    }
+                  </ul>
+                </et-accordion>
               }
-
-              <ul class="flex list-none flex-col gap-0.5">
-                @for (entry of stream.evidence; track entry.kind + entry.detail) {
-                  <li class="text-small text-et-surface-muted">
-                    <span class="text-mono">{{ CLOCK_OF(entry.at) }}</span>
-                    {{ entry.detail }}
-                  </li>
-                }
-              </ul>
-            </li>
-          } @empty {
-            <li>
-              <et-empty-state
-                description="Nothing observed this day. A collector that was not running records nothing after the fact."
-                heading="No streams"
-              />
-            </li>
+            </et-accordion-group>
+          } @else {
+            <et-empty-state
+              description="Nothing observed this day. A collector that was not running records nothing after the fact."
+              heading="No streams"
+            />
           }
 
           @if (unattributed(); as spend) {
-            <li class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
+            <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
               <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
                 <span class="text-base" data-unattributed-label>No checkout for this spend</span>
                 <span class="text-small text-et-surface-muted" data-unattributed>{{ spend }}</span>
@@ -102,14 +115,14 @@ import { injectToday, provideToday } from './today';
               <span class="text-small text-et-surface-subtle">
                 These turns name no working directory, so no line can carry them.
               </span>
-            </li>
+            </div>
           }
-        </ul>
+        </div>
       }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent],
+  imports: [ACCORDION_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent],
   providers: [provideToday()],
   host: { class: 'flex min-h-0 grow flex-col' },
 })

@@ -94,6 +94,17 @@ test.describe('the today view', () => {
     await expect(agentOnly).toContainText('Read a day as streams');
   });
 
+  test("holds a stream's evidence closed until its header is opened", async ({ page }) => {
+    const agentOnly = stream(page, `repo:${SDK}`);
+    const evidence = agentOnly.getByText('Read a day as streams');
+
+    await expect(evidence).toBeHidden();
+
+    await agentOnly.getByRole('button', { name: /ethlete-sdk/ }).click();
+
+    await expect(evidence).toBeVisible();
+  });
+
   test('shows what the turns spent, in the classes they are priced in', async ({ page }) => {
     await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toHaveText('1 turn · 1.2 M out · 604 M cached');
   });
