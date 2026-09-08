@@ -37,10 +37,30 @@ runs:
     # Nx Cloud is off, so this is the only cache that survives a run. The key never hits exactly,
     # which is what makes it roll forward: the restore key loads the newest entry, and the run saves
     # a fresh one. The lockfile hash scopes it, because the cache holds an Nx-version-specific
-    # database.
+    # database. Both paths are needed: .nx/cache holds the artifacts, .nx/workspace-data holds the
+    # database that says which artifact belongs to which task hash.
     - if: inputs.nx-cache-key != ''
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: .nx/cache
-        key: nx-${{ inputs.nx-cache-key }}-${{ hashFiles('yarn.lock') }}-${{ steps.nx-cache-epoch.outputs.week }}-${{ github.sha }}
-        restore-keys: nx-${{ inputs.nx-cache-key }}-${{ hashFiles('yarn.lock') }}-${{ steps.nx-cache-epoch.outputs.week }}-
+        path: |
+          .nx/cache
+          .nx/workspace-data
+          !.nx/workspace-data/d
+        key: nx2-${{ inputs.nx-cache-key }}-${{ hashFiles('yarn.lock') }}-${{ steps.nx-cache-epoch.outputs.week }}-${{ github.sha }}
+        restore-keys: nx2-${{ inputs.nx-cache-key }}-${{ hashFiles('yarn.lock') }}-${{ steps.nx-cache-epoch.outputs.week }}-
+
+    # Nx names the database file after the machine ID, and every runner gets a new one, so the
+    # restored database is invisible to Nx until it is renamed. Without it Nx has no metadata for
+    # the restored artifacts, throws all of them away and prints "Unrecognized Cache Artifacts".
+    # Rename the -wal and -shm files with it, or SQLite loses the last transactions.
+    - if: inputs.nx-cache-key != ''
+      shell: bash
+      run: |
+        set -euo pipefail
+        machine_id=$(cat /var/lib/dbus/machine-id 2>/dev/null || cat /etc/machine-id)
+        for file in .nx/workspace-data/*.db .nx/workspace-data/*.db-wal .nx/workspace-data/*.db-shm; do
+          [ -e "$file" ] || continue
+          name=${file##*/}
+          target=".nx/workspace-data/${machine_id}-${name#*-}"
+          [ "$file" = "$target" ] || mv -- "$file" "$target"
+        done
