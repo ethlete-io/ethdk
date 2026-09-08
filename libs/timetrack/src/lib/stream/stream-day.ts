@@ -2,6 +2,7 @@ import { ActivityContext, streamKey } from '../model/block';
 import { branchOf, repoRootOf } from '../model/context';
 import {
   ActivityEvent,
+  AgentPromptEvent,
   AgentUsageEvent,
   CollectedEvent,
   CollectedEventSource,
@@ -11,7 +12,7 @@ import {
 import { Evidence } from '../model/evidence';
 import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 import { TimeWindow } from '../model/time-window';
-import { presenceWindows } from './presence';
+import { PresenceSample, presenceWindows } from './presence';
 import { clipWindows, mergeWindows, subtractWindows, windowsMs } from './windows';
 
 /** The key of the one line every application with no checkout folds into. */
@@ -30,6 +31,12 @@ export type StreamDayOptions = {
   /** How long a checkout keeps holding the focused window after its last event names it. */
   repoStickinessMs: number;
   /**
+   * The silence that ends a stretch either side of an agent event, when a day is rebuilt from the
+   * prompts the user typed. Shorter than `maxUnobservedMs`, because it is an idle rule rather than a
+   * safety valve: waiting on an agent is being at the machine, and an hour of neither is not.
+   */
+  maxAgentGapMs: number;
+  /**
    * The repository roots the host discovered. An agent session reports the directory it was started in,
    * which is often a subdirectory of a checkout, and without these each subdirectory becomes a stream.
    */
@@ -45,6 +52,7 @@ export type StreamDayOptions = {
 export const DEFAULT_STREAM_DAY_OPTIONS: StreamDayOptions = {
   maxUnobservedMs: 30 * 60_000,
   repoStickinessMs: 5 * 60_000,
+  maxAgentGapMs: 15 * 60_000,
 };
 
 /** What a set of turns spent. The five classes are kept apart because they are priced apart. */
@@ -85,6 +93,11 @@ export type Stream = {
   unattendedMs: number;
   /** True when no focused window ever resolved here: an agent ran it and nobody looked. */
   neverFocused: boolean;
+  /**
+   * The part of `engagedMs` that no window and no idle transition observed, rebuilt from the prompts
+   * the user typed and the commits they made. It is inside `engagedMs`, never beside it.
+   */
+  reconstructedMs: number;
   spend: StreamSpend;
   evidence: Evidence[];
 };
@@ -101,6 +114,12 @@ export type StreamDay = {
   streams: Stream[];
   /** Every stream's unattended time summed. Outside both `presenceMs` and `engagedMs`. */
   unattendedMs: number;
+  /**
+   * The part of `presenceMs` that no window and no idle transition observed. It is presence the
+   * prompts and commits of the day rebuilt, and it is inside `presenceMs` rather than beside it — a
+   * day the collector never ran would otherwise report an empty one. See ADR 0006.
+   */
+  reconstructedMs: number;
   /** Every turn the day read, whichever stream took it. */
   spend: StreamSpend;
   /**
@@ -124,8 +143,17 @@ type StreamDraft = {
   sessions: Set<string>;
   focus: TimeWindow[];
   agent: TimeWindow[];
+  /** The stretches this context claimed where nothing observed the day. Clipped to the rebuilt part. */
+  rebuilt: TimeWindow[];
   evidence: Evidence[];
 };
+
+/**
+ * One thing that happened at an instant, and where. A rebuilt stretch is tiled by these: each claims
+ * the minutes up to the next one, so a stretch nothing watched still has one owner per minute. A
+ * `state` of `null` names no checkout, and the folded line takes it.
+ */
+type Mark = { at: Date; state: RepoState | null };
 
 type RepoState = { repoPath: string; branch?: string };
 
@@ -148,6 +176,13 @@ const addSpend = (into: StreamSpend, turn: AgentUsageEvent) => {
 
   if (!into.models.includes(turn.model)) into.models.push(turn.model);
 };
+
+/** A stream's rebuilt time, said once. A prompt carries no text, so the instant is the whole of it. */
+const promptEvidence = (prompt: AgentPromptEvent): Evidence => ({
+  kind: 'prompt',
+  at: prompt.at,
+  detail: 'prompts you typed here',
+});
 
 const evidenceFor = (sample: ActivityEvent): Evidence | null => {
   switch (sample.kind) {
@@ -298,6 +333,7 @@ const draftFor = (drafts: Map<string, StreamDraft>, context: ActivityContext) =>
     sessions: new Set(),
     focus: [],
     agent: [],
+    rebuilt: [],
     evidence: [],
   };
 
@@ -346,6 +382,7 @@ const spendOnlyStreams = (options: {
           engagedMs: 0,
           unattendedMs: 0,
           neverFocused: true,
+          reconstructedMs: 0,
           spend: emptySpend(),
           evidence: [],
         },
@@ -397,13 +434,41 @@ export const streamDay = (options: {
     return !repoPath || !isPrivate({ repoPath, links });
   });
 
-  const presence = presenceWindows({ samples: observed, maxUnobservedMs: config.maxUnobservedMs });
+  const prompts = options.events
+    .filter((event): event is AgentPromptEvent => event.source === 'agent-prompt')
+    .filter((prompt) => !isPrivate({ repoPath: repoRootOf({ path: prompt.cwd, roots }), links }))
+    .slice()
+    .sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  const turns = options.events
+    .filter((event): event is AgentUsageEvent => event.source === 'agent-usage')
+    .filter((turn) => !turn.cwd || !isPrivate({ repoPath: repoRootOf({ path: turn.cwd, roots }), links }));
+
+  const rebuildSamples: PresenceSample[] = [...observed, ...prompts, ...turns].sort(
+    (a, b) => a.at.getTime() - b.at.getTime(),
+  );
+
+  const presence = presenceWindows({
+    samples: rebuildSamples,
+    maxUnobservedMs: config.maxUnobservedMs,
+    maxAgentGapMs: config.maxAgentGapMs,
+  });
+
+  // What the machine itself watched. Everything presence holds beyond it was rebuilt, and the two are
+  // disjoint, so each minute of presence has exactly one owner and the ratio keeps its meaning.
+  const seen = presenceWindows({
+    samples: observed.filter((sample) => sample.source === 'window' || sample.source === 'idle'),
+    maxUnobservedMs: config.maxUnobservedMs,
+  });
+
+  const rebuilt = subtractWindows({ windows: presence, without: seen });
   const { byName, ambiguous } = reposByName(samples, roots);
   const claimedAmbiguously = new Set<string>();
   const drafts = new Map<string, StreamDraft>();
   /** The branch each checkout was last seen on. Learned from git and from an agent session alike. */
   const branches = new Map<string, string | undefined>();
   const lastAgentSample = new Map<string, Date>();
+  const marks: Mark[] = [];
   let sticky: { repoPath: string; at: Date; appId?: string } | undefined;
   let focused: string | undefined;
   let appId: string | undefined;
@@ -466,14 +531,45 @@ export const streamDay = (options: {
     const of = observed ? { repoPath: observed.repoPath, branch: observed.branch } : context;
 
     addEvidence(draftFor(drafts, of).evidence, secludedWindow ? null : evidenceFor(sample));
+    marks.push({
+      at: sample.at,
+      state: observed ?? (holder ? { repoPath: holder, branch: branches.get(holder) } : null),
+    });
+  });
+
+  for (const prompt of prompts) {
+    const state = { repoPath: repoRootOf({ path: prompt.cwd, roots }), branch: branchOf(prompt.gitBranch) };
+
+    addEvidence(draftFor(drafts, state).evidence, promptEvidence(prompt));
+    marks.push({ at: prompt.at, state });
+  }
+
+  for (const turn of turns) {
+    const repoPath = turn.cwd ? repoRootOf({ path: turn.cwd, roots }) : undefined;
+
+    marks.push({ at: turn.at, state: repoPath ? { repoPath, branch: branchOf(turn.gitBranch) } : null });
+  }
+
+  marks.sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  // Each mark claims the stretch up to the next one, the way the focused window claims one on an
+  // observed day. A mark that names no checkout claims it for the folded line, so every minute of
+  // presence has an owner and the ratio still reconciles.
+  marks.forEach((mark, index) => {
+    const next = marks[index + 1];
+
+    if (!next) return;
+
+    draftFor(drafts, mark.state ?? {}).rebuilt.push({ from: mark.at, to: next.at });
   });
 
   const streams: Stream[] = [];
 
   for (const draft of drafts.values()) {
-    const focus = clipWindows({ windows: draft.focus, within: presence });
+    const focus = clipWindows({ windows: draft.focus, within: seen });
     const agent = mergeWindows(draft.agent);
-    const blocks = mergeWindows([...focus, ...clipWindows({ windows: agent, within: presence })]);
+    const claimed = clipWindows({ windows: draft.rebuilt, within: rebuilt });
+    const blocks = mergeWindows([...focus, ...claimed, ...clipWindows({ windows: agent, within: presence })]);
     const unattended = subtractWindows({ windows: agent, without: presence });
     const span = mergeWindows([...blocks, ...unattended]);
 
@@ -494,14 +590,11 @@ export const streamDay = (options: {
       engagedMs: windowsMs(blocks),
       unattendedMs: windowsMs(unattended),
       neverFocused: !focus.length,
+      reconstructedMs: windowsMs(clipWindows({ windows: blocks, within: rebuilt })),
       spend: emptySpend(),
       evidence: draft.evidence.slice().sort((a, b) => a.at.getTime() - b.at.getTime()),
     });
   }
-
-  const turns = options.events
-    .filter((event): event is AgentUsageEvent => event.source === 'agent-usage')
-    .filter((turn) => !turn.cwd || !isPrivate({ repoPath: repoRootOf({ path: turn.cwd, roots }), links }));
 
   streams.push(...spendOnlyStreams({ turns, streams, roots }));
   streams.sort((a, b) => a.from.getTime() - b.from.getTime() || a.key.localeCompare(b.key));
@@ -525,6 +618,7 @@ export const streamDay = (options: {
     engagedMs,
     concurrency: presenceMs ? engagedMs / presenceMs : 0,
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
+    reconstructedMs: windowsMs(rebuilt),
     streams,
     spend,
     unattributedSpend,

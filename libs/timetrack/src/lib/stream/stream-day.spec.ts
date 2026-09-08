@@ -64,6 +64,17 @@ const usage = (minutes: number, cwd: string, counts: Partial<TokenUsage> = {}): 
   usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0, ...counts },
 });
 
+const typed = (minutes: number, cwd: string): CollectedEvent => ({
+  at: AT(minutes),
+  source: 'agent-prompt',
+  kind: 'agent-prompt',
+  provider: 'claude-code',
+  sessionId: 'session-1',
+  promptId: `prompt-${minutes}`,
+  cwd,
+  gitBranch: 'next',
+});
+
 /** A minute-by-minute focus run, so presence covers the stretch the way a real day's samples do. */
 const focusRun = (options: { from: number; to: number; appId: string; title?: string }): CollectedEvent[] =>
   Array.from({ length: options.to - options.from + 1 }, (_, offset) =>
@@ -443,6 +454,7 @@ describe('streamDay', () => {
       engagedMs: 0,
       concurrency: 0,
       unattendedMs: 0,
+      reconstructedMs: 0,
       streams: [],
       spend: { usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0 }, turns: 0, models: [] },
       unattributedSpend: {
@@ -468,5 +480,89 @@ describe('streamDay', () => {
     expect(day.engagedMs).toBe(day.streams.reduce((sum, stream) => sum + stream.engagedMs, 0));
     expect(day.concurrency).toBe(day.engagedMs / day.presenceMs);
     expect(day.engagedMs).toBeGreaterThanOrEqual(day.presenceMs);
+  });
+});
+
+describe('streamDay, on a day the collector never ran', () => {
+  it('rebuilds the day from the prompts the user typed, and says how much of it that is', () => {
+    const day = streamDay({ events: [typed(0, SDK), typed(10, SDK), typed(20, SDK)] });
+
+    expect(day.presenceMs).toBe(20 * MINUTE);
+    expect(day.reconstructedMs).toBe(20 * MINUTE);
+    expect(day.streams).toHaveLength(1);
+    expect(day.streams[0]?.key).toBe(`repo:${SDK}`);
+    expect(day.streams[0]?.engagedMs).toBe(20 * MINUTE);
+    expect(day.streams[0]?.reconstructedMs).toBe(20 * MINUTE);
+  });
+
+  it('carries the checkout the prompts were typed in, not the other-applications line', () => {
+    const day = streamDay({ events: [typed(0, `${FUT}/apps/web`), typed(10, `${FUT}/apps/web`)] });
+
+    expect(day.streams.map((stream) => stream.key)).toEqual([`repo:${FUT}/apps/web`]);
+    expect(day.streams[0]?.neverFocused).toBe(true);
+    expect(day.streams[0]?.evidence.map((entry) => entry.kind)).toEqual(['prompt']);
+  });
+
+  it('holds the day open across the minutes an agent worked between two prompts', () => {
+    const day = streamDay({
+      events: [typed(0, SDK), usage(10, SDK), usage(20, SDK), typed(25, SDK)],
+    });
+
+    expect(day.presenceMs).toBe(25 * MINUTE);
+    expect(day.streams[0]?.engagedMs).toBe(25 * MINUTE);
+  });
+
+  it('books nothing for a day of turns the user typed nothing in', () => {
+    const day = streamDay({ events: [usage(0, SDK), usage(10, SDK), usage(20, SDK)] });
+
+    expect(day.presenceMs).toBe(0);
+    expect(day.reconstructedMs).toBe(0);
+    expect(day.streams[0]?.engagedMs).toBe(0);
+  });
+
+  it('splits the streams by the checkout each prompt names', () => {
+    const day = streamDay({ events: [typed(0, SDK), typed(10, FUT), typed(20, FUT)] });
+
+    expect(day.streams.map((stream) => [stream.key, stream.engagedMs])).toEqual([
+      [`repo:${SDK}`, 10 * MINUTE],
+      [`repo:${FUT}`, 10 * MINUTE],
+    ]);
+    expect(day.engagedMs).toBe(day.presenceMs);
+  });
+
+  it('drops a prompt typed in a private checkout', () => {
+    const day = streamDay({
+      events: [typed(0, ELROND), typed(10, ELROND)],
+      options: { links: [privateLink(ELROND)] },
+    });
+
+    expect(day.streams).toEqual([]);
+    expect(day.presenceMs).toBe(0);
+  });
+
+  it('reconciles a day that was watched in the morning and rebuilt in the afternoon', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 40, appId: 'code', title: 'ethlete-sdk - Code' }),
+        typed(60, SDK),
+        typed(70, SDK),
+        typed(80, SDK),
+      ],
+    });
+
+    expect(day.presenceMs).toBe(60 * MINUTE);
+    expect(day.reconstructedMs).toBe(20 * MINUTE);
+    expect(day.engagedMs).toBe(60 * MINUTE);
+    expect(day.streams.find((stream) => stream.key === `repo:${SDK}`)?.reconstructedMs).toBe(20 * MINUTE);
+    expect(day.streams.find((stream) => stream.key === OTHER_APPLICATIONS_KEY)?.reconstructedMs).toBe(0);
+  });
+
+  it('reports nothing rebuilt for a day its windows observed', () => {
+    const day = streamDay({
+      events: [...focusRun({ from: 0, to: 40, appId: 'code', title: 'ethlete-sdk - Code' }), typed(20, SDK)],
+    });
+
+    expect(day.presenceMs).toBe(40 * MINUTE);
+    expect(day.reconstructedMs).toBe(0);
   });
 });

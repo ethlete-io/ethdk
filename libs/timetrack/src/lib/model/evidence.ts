@@ -3,6 +3,8 @@ export type EvidenceKind =
   | 'inherited-branch'
   | 'commit'
   | 'agent-session'
+  /** A prompt the user typed at an agent. It carries no text, so its instant is the whole observation. */
+  | 'prompt'
   | 'merge-request'
   | 'issue-view'
   | 'attribution-rule'
