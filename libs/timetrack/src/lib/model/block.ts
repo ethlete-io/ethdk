@@ -24,3 +24,13 @@ export const blockDurationMs = (block: ActivityBlock) => block.to.getTime() - bl
  */
 export const contextKey = (context: ActivityContext) =>
   context.repoPath ? `repo:${context.repoPath}@${context.branch ?? ''}` : `app:${context.appId ?? ''}`;
+
+/**
+ * Identity of a stream: the checkout, or the application when there is no checkout.
+ *
+ * The branch is deliberately not part of it, so a day that switched branch three times is one
+ * stream. `contextKey` is the other identity here and it does carry the branch: it decides block
+ * continuation, not which line of work a block belongs to.
+ */
+export const streamKey = (context: ActivityContext) =>
+  context.repoPath ? `repo:${context.repoPath}` : `app:${context.appId ?? ''}`;
