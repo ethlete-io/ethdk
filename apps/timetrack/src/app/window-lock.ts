@@ -19,6 +19,7 @@ const WINDOW_LOCK_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const isLocked = signal(true);
   const ready = signal(false);
   const promptsItself = signal(false);
+  const isAvailable = signal(false);
   const isChecking = signal(false);
   const wasRefused = signal(false);
   const failure = signal<string | null>(null);
@@ -36,6 +37,7 @@ const WINDOW_LOCK_DEF = /* @__PURE__ */ defineRootProvider(() => {
       tap((state) => {
         isLocked.set(state.locked);
         promptsItself.set(state.promptsItself);
+        isAvailable.set(state.available);
         ready.set(true);
       }),
       catchError((error: unknown) => {
@@ -86,6 +88,7 @@ const WINDOW_LOCK_DEF = /* @__PURE__ */ defineRootProvider(() => {
     isLocked: isLocked.asReadonly(),
     ready: ready.asReadonly(),
     promptsItself: promptsItself.asReadonly(),
+    isAvailable: isAvailable.asReadonly(),
     isChecking: isChecking.asReadonly(),
     wasRefused: wasRefused.asReadonly(),
     failure: failure.asReadonly(),

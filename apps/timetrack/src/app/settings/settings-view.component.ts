@@ -330,15 +330,24 @@ window title, never a file path. A suggestion never syncs on its own.`;
               <div class="flex flex-col gap-3">
                 <div class="flex items-center gap-2">
                   <h3 class="text-h4">Lock the window</h3>
-                  <et-switch
-                    [checked]="store.settings().lockWindow"
-                    (checkedChange)="store.setLockWindow($event)"
-                    aria-label="Lock the window until the account password is given"
-                  />
+                  @if (lock.isAvailable()) {
+                    <et-switch
+                      [checked]="store.settings().lockWindow"
+                      (checkedChange)="store.setLockWindow($event)"
+                      aria-label="Lock the window until the account password is given"
+                    />
+                  }
                   <ethlete-explain [text]="LOCK_WHY" label="the window lock" />
                 </div>
 
-                @if (store.settings().lockWindow) {
+                @if (!lock.isAvailable()) {
+                  <p class="text-small text-et-surface-subtle" data-lock-unavailable>
+                    This build cannot lock the window. A development build never locks, and a machine with no
+                    account-password check never locks either.
+                  </p>
+                }
+
+                @if (lock.isAvailable() && store.settings().lockWindow) {
                   <div class="flex flex-wrap items-end gap-3">
                     <et-form-field class="w-30" appearance="underline" size="sm">
                       <et-label>Lock after idle</et-label>

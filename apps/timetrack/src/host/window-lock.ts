@@ -2,7 +2,12 @@ import { Observable } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
 /** Whether the window may show what it holds, and whether the platform asks for the secret itself. */
-export type WindowLockState = { locked: boolean; promptsItself: boolean };
+export type WindowLockState = {
+  locked: boolean;
+  promptsItself: boolean;
+  /** `false` where locking does nothing at all, such as a debug build or a machine without PAM. */
+  available: boolean;
+};
 
 /**
  * The host's own record of whether the window is locked.

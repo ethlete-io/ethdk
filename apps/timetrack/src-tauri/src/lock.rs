@@ -28,6 +28,23 @@ const DEFAULT_LOCK_AFTER_IDLE_MS: i64 = 60_000;
 /// rather than through the parser that would have clamped it.
 const MAX_LOCK_AFTER_IDLE_MS: i64 = 60 * 60_000;
 
+/// The variable that puts the lock back on in a debug build, so the PAM path stays reachable there.
+const FORCE_LOCK_ENV: &str = "TIMETRACK_LOCK";
+
+/// Whether a build with this debug flag and this override locks the window at all.
+///
+/// A debug build is a developer's build: `tauri dev` restarts the app at every source change, and an
+/// account-password prompt at each restart makes the app unworkable to develop against. A release
+/// build locks whatever the environment says, so the shipped app is never affected by this.
+fn locks_build(debug: bool, forced: bool) -> bool {
+    !debug || forced
+}
+
+/// Whether this machine and this build can lock the window at all.
+fn can_lock() -> bool {
+    auth::can_verify() && locks_build(cfg!(debug_assertions), std::env::var_os(FORCE_LOCK_ENV).is_some())
+}
+
 /// What the settings document says about the lock.
 ///
 /// The host reads these two fields for itself rather than being told them. It has to know before any
@@ -74,6 +91,9 @@ pub struct LockState {
     pub locked: bool,
     /// `false` where the webview has to collect the account password itself, as on Linux.
     pub prompts_itself: bool,
+    /// Whether locking works at all here. `false` hides the setting, so no button offers a lock that
+    /// the host would ignore and leave the webview showing a prompt only PAM could answer.
+    pub available: bool,
 }
 
 /// Whether the window may be shown, and when idleness started counting towards locking it.
@@ -92,9 +112,10 @@ pub struct WindowLock {
 
 impl WindowLock {
     /// Locked from the start, unless this machine cannot check the account password — a lock with no
-    /// way past it would leave the app unopenable, which is worse than showing the window.
+    /// way past it would leave the app unopenable, which is worse than showing the window. A debug
+    /// build does not lock either; see `locks_build`.
     pub fn new() -> Self {
-        let usable = auth::can_verify();
+        let usable = can_lock();
 
         Self {
             locked: Arc::new(AtomicBool::new(usable)),
@@ -111,7 +132,7 @@ impl WindowLock {
     /// Applies the user's settings. Turning the lock on is refused where the password cannot be
     /// checked, for the same reason `new` starts unlocked there.
     pub fn apply(&self, settings: &LockSettings) {
-        let enabled = settings.enabled && auth::can_verify();
+        let enabled = settings.enabled && can_lock();
 
         self.enabled.store(enabled, Ordering::SeqCst);
         self.after_idle_ms.store(settings.after_idle_ms, Ordering::SeqCst);
@@ -125,6 +146,7 @@ impl WindowLock {
         LockState {
             locked: self.is_locked(),
             prompts_itself: auth::collects_its_own_secret(),
+            available: can_lock(),
         }
     }
 
@@ -247,7 +269,21 @@ mod tests {
     /// but never on a machine that could not let the owner back in.
     #[test]
     fn starts_locked_exactly_where_the_password_can_be_checked() {
-        assert_eq!(WindowLock::new().is_locked(), auth::can_verify());
+        assert_eq!(WindowLock::new().is_locked(), can_lock());
+    }
+
+    #[test]
+    fn leaves_a_debug_build_unlocked_unless_the_environment_asks_for_the_lock() {
+        assert!(locks_build(false, false));
+        assert!(locks_build(false, true));
+        assert!(!locks_build(true, false));
+        assert!(locks_build(true, true));
+    }
+
+    /// The setting is hidden where the lock does nothing, so no button offers a lock the host ignores.
+    #[test]
+    fn tells_the_webview_whether_this_build_can_lock_at_all() {
+        assert_eq!(WindowLock::new().state().available, can_lock());
     }
 
     fn off() -> LockSettings {
