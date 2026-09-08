@@ -375,9 +375,12 @@ collection work; step 3 is the model change.
    `ActivityBlock` and `WorklogProposal` inside `correlate/`. That feeds `day-review/`, which slice
    3 deletes, so the work would be paid for twice. `vertical-slices.md` wins. The week reads its
    spend from the stream model instead. Corrected on 2026-09-08.
-2. **The Codex collector.** The rollout reader, the field mapping, the `info: null` skip, the branch
-   from the git collector. It is the second provider, which is what proves the shape is not
-   Claude-shaped by accident.
+2. **The Codex collector.** **Done on 2026-09-08.** `parseCodexSessionLog`, a host listing for the
+   `yyyy/mm/dd` tree, and a session collector plus a spend backfill of its own. Two findings the
+   measurements above did not have: `cached_input_tokens` is part of `input_tokens`, not counted
+   beside it, so the parser subtracts it; and a `token_count` whose classes are all zero reports the
+   context window at the start of a turn, not spend. Codex logs no branch, and the stream line takes
+   its branch from the git collector already, so nothing was added for it. See ADR 0005.
 3. **`sessionizeStreams`.** The per-stream state machine, the exclusivity rule, the flattened view
    for the timeline and the tray, `DayTotals`.
 4. **The review UI.** Overlapping lanes in the day timeline, presence against engaged time, the
