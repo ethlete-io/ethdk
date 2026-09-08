@@ -1,7 +1,5 @@
 import { ActivityBlock } from '../model/block';
-
-/** A half-open span of wall-clock time. */
-export type TimeWindow = { from: Date; to: Date };
+import { TimeWindow } from '../model/time-window';
 
 /** How much of a block falls inside a window — time two rows would each claim in full. */
 export const overlapMs = (options: { block: ActivityBlock; window: TimeWindow }) => {

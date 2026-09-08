@@ -12,6 +12,7 @@ export * from './lib/reason';
 export * from './lib/review';
 export * from './lib/settings';
 export * from './lib/store';
+export * from './lib/stream';
 export * from './lib/tempo';
 export * from './lib/ticket';
 export * from './lib/transport';

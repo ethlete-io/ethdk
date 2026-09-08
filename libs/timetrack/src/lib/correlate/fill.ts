@@ -1,7 +1,7 @@
 import { formatDurationMs } from '../model/duration';
 import { CollectedEvent } from '../model/event';
+import { TimeWindow } from '../model/time-window';
 import { AttributedBlock } from './attribute';
-import { TimeWindow } from './overlap';
 
 export type FillOptions = {
   /**

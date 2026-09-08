@@ -1,5 +1,5 @@
 import { CollectedEvent, PresenceEvent } from '../model/event';
-import { TimeWindow } from './overlap';
+import { TimeWindow } from '../model/time-window';
 
 const isPresence = (event: CollectedEvent): event is PresenceEvent => event.source === 'idle';
 
