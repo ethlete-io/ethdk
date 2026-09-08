@@ -164,6 +164,24 @@ DROP TABLE agent_session_cursor;
 ALTER TABLE agent_session_cursor_next RENAME TO agent_session_cursor;
 ";
 
+/// Repairs a store whose v11 ran before `read_through_ms` was part of it.
+///
+/// The column was added to `SCHEMA_V11` after that migration had already run on real stores, and a
+/// store at v11 never runs it again — so a store can sit at v11 either with the column or without it,
+/// and the one without it fails every read of the table. The check is what makes v12 right for both.
+/// Never edit a migration that has run; add the next one.
+fn add_read_through_ms(connection: &Connection) -> TimetrackResult<()> {
+    let present = connection
+        .prepare("SELECT 1 FROM pragma_table_info('agent_session_cursor') WHERE name = 'read_through_ms'")?
+        .exists([])?;
+
+    if !present {
+        connection.execute_batch("ALTER TABLE agent_session_cursor ADD COLUMN read_through_ms INTEGER;")?;
+    }
+
+    Ok(())
+}
+
 /// Gives every ledger entry written before schema v8 its day.
 ///
 /// A proposal id is `<issueKey>@<ISO instant>`, so the day is in the row already; a row whose id does
@@ -290,6 +308,11 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         connection.pragma_update(None, "user_version", 11)?;
     }
 
+    if version < 12 {
+        add_read_through_ms(connection)?;
+        connection.pragma_update(None, "user_version", 12)?;
+    }
+
     Ok(())
 }
 
@@ -365,9 +388,68 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            11
+            12
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
+    }
+
+    /// The store on a machine that ran v11 before the column was part of it. Every read of the table
+    /// failed there, so the repair has to reach a store already at v11.
+    #[test]
+    fn gives_a_cursor_table_that_stopped_at_the_pass_column_the_read_through_column() {
+        let connection = Connection::open_in_memory().unwrap();
+
+        for schema in [
+            SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9,
+            SCHEMA_V10,
+        ] {
+            connection.execute_batch(schema).unwrap();
+        }
+
+        connection
+            .execute_batch(
+                "DROP TABLE agent_session_cursor;
+                 CREATE TABLE agent_session_cursor (
+                   id TEXT NOT NULL,
+                   kind TEXT NOT NULL,
+                   next_line INTEGER NOT NULL,
+                   after_ms INTEGER,
+                   title TEXT,
+                   cwd TEXT,
+                   PRIMARY KEY (id, kind)
+                 );
+                 INSERT INTO agent_session_cursor (id, kind, next_line) VALUES ('s1', 'agent-session', 42);",
+            )
+            .unwrap();
+        connection.pragma_update(None, "user_version", 11).unwrap();
+
+        migrate(&connection).unwrap();
+
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT read_through_ms FROM agent_session_cursor WHERE id = 's1'",
+                    [],
+                    |row| row.get::<_, Option<i64>>(0)
+                )
+                .unwrap(),
+            None
+        );
+    }
+
+    /// The same repair on a store whose v11 already carried the column, which must not fail.
+    #[test]
+    fn leaves_a_cursor_table_that_already_has_the_read_through_column_alone() {
+        let connection = migrated_from(9);
+
+        migrate(&connection).unwrap();
+
+        assert_eq!(
+            connection
+                .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
+                .unwrap(),
+            12
+        );
     }
 
     #[test]
