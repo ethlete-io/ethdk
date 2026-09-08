@@ -1,3 +1,4 @@
+import { BracketSlotSource } from '@ethlete/bracket';
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
@@ -24,6 +25,29 @@ export type BracketLabels = {
   lowerBracketSection: string;
   /** Heads the deciding rounds - grand final, bracket reset, third place - in a rounds list. */
   finalsSection: string;
+  /** A slot an earlier match's winner walks into. */
+  slotMatchWinner: string;
+  /** A slot an earlier match's loser drops into. */
+  slotMatchLoser: string;
+  /** A slot a place in a standing feeds, e.g. `'Group A position 2'`. Either part may be unknown. */
+  slotStandingRank: (standing: string | null, rank: number | null) => string;
+  /** A slot reserved for a seeding position, e.g. `'Seed 3'`. */
+  slotSeed: (seed: number | null) => string;
+  /** A slot a swiss round's draw fills, which only happens once the round is scheduled. */
+  slotSwissBucket: string;
+  /** A slot nobody plays in. */
+  slotBye: string;
+  /** A slot whoever qualifies from another competition arrives in. */
+  slotExternal: string;
+  /** A slot the competition says nothing at all about. */
+  slotUnknown: string;
+  /**
+   * A pick-card side the viewer could reach by predicting the round that feeds it, and hasn't. The
+   * card's `earlierRoundsClosed` input swaps it for {@link BracketLabels.slotNotPredicted}.
+   */
+  slotPredictEarlierRound: string;
+  /** The same side once no earlier round is left to predict, so the invitation would be a dead end. */
+  slotNotPredicted: string;
 };
 
 /** The built-in English labels. */
@@ -36,6 +60,20 @@ export const DEFAULT_BRACKET_LABELS: BracketLabels = {
   upperBracketSection: 'Upper bracket',
   lowerBracketSection: 'Lower bracket',
   finalsSection: 'Finals',
+  slotMatchWinner: 'Winner of an earlier match',
+  slotMatchLoser: 'Loser of an earlier match',
+  slotStandingRank: (standing, rank) => {
+    if (standing && rank !== null) return `${standing} position ${rank}`;
+
+    return standing ?? (rank === null ? 'A standing position' : `Standing position ${rank}`);
+  },
+  slotSeed: (seed) => (seed === null ? 'A seeded slot' : `Seed ${seed}`),
+  slotSwissBucket: 'Drawn once the round is scheduled',
+  slotBye: 'Bye',
+  slotExternal: 'Arrives from another competition',
+  slotUnknown: 'Not known yet',
+  slotPredictEarlierRound: 'Predict the earlier round first',
+  slotNotPredicted: 'Not predicted',
 };
 
 const BRACKET_LABELS_DEF = /* @__PURE__ */ defineLabels<BracketLabels>('BRACKET_LABELS', DEFAULT_BRACKET_LABELS);
@@ -53,3 +91,31 @@ const BRACKET_LABELS_DEF = /* @__PURE__ */ defineLabels<BracketLabels>('BRACKET_
 export const provideBracketLabels = /* @__PURE__ */ toProvideFn(BRACKET_LABELS_DEF);
 export const injectBracketLabels = /* @__PURE__ */ toInjectFn(BRACKET_LABELS_DEF);
 export const BRACKET_LABELS = /* @__PURE__ */ toToken(BRACKET_LABELS_DEF);
+
+/**
+ * What a slot with no participant in it is, in one line - the winner of an earlier match, a place in a
+ * standing, a seed, a bye. `source.label` always wins: where the competition worded the slot itself,
+ * this repeats that word rather than inventing one. A slot with no source at all reads as unknown.
+ *
+ * @example
+ * describeBracketSlot(bracketMatch.homeSource, injectBracketLabels()());
+ */
+export const describeBracketSlot = (source: BracketSlotSource | null | undefined, labels: BracketLabels) => {
+  if (!source) return labels.slotUnknown;
+  if (source.label) return source.label;
+
+  switch (source.kind) {
+    case 'match-outcome':
+      return source.role === 'loser' ? labels.slotMatchLoser : labels.slotMatchWinner;
+    case 'standing-rank':
+      return labels.slotStandingRank(source.standingName ?? null, source.rank);
+    case 'seed':
+      return labels.slotSeed(source.seed ?? null);
+    case 'swiss-bucket':
+      return labels.slotSwissBucket;
+    case 'bye':
+      return labels.slotBye;
+    case 'external':
+      return labels.slotExternal;
+  }
+};

@@ -1,36 +1,62 @@
-<div class="et-bracket-pick-card-sides">
-  @for (item of sides(); track item.side) {
-    @if (item.selectable) {
-      <button
-        [attr.aria-pressed]="item.selected"
-        [attr.data-side-state]="item.state"
-        (click)="pick.emit(item.side)"
-        class="et-bracket-pick-card-side"
-        etFocusRing
-        type="button"
-      >
-        <et-match-participant [participant]="item.participant" compact />
-        @if (item.state === 'predicted') {
-          <span class="et-bracket-pick-card-predicted">{{ predictedLabel() }}</span>
-        }
-      </button>
-    } @else {
-      <div
-        [attr.data-selected]="item.selected ? '' : null"
-        [attr.data-side-state]="item.state"
-        class="et-bracket-pick-card-side"
-      >
-        @if (item.participant) {
-          <et-match-participant [participant]="item.participant" compact />
-          @if (item.state === 'predicted') {
-            <span class="et-bracket-pick-card-predicted">{{ predictedLabel() }}</span>
-          }
-        } @else {
-          <span class="et-bracket-pick-card-empty">{{ item.emptyLabel }}</span>
-        }
-      </div>
+<div class="et-bracket-pick-card-box">
+  <div class="et-bracket-pick-card-sides">
+    @for (item of sides(); track item.side) {
+      @if (item.selectable) {
+        <button
+          [attr.aria-pressed]="item.selected"
+          [attr.aria-describedby]="note() ? NOTE_ID : null"
+          [attr.data-participant-id]="item.participant?.id ?? null"
+          [attr.data-side-state]="item.state"
+          (click)="pick.emit(item.side)"
+          class="et-bracket-pick-card-side"
+          etFocusRing
+          type="button"
+        >
+          <ng-container [ngTemplateOutlet]="sideBody" [ngTemplateOutletContext]="{ item: item }" />
+        </button>
+      } @else {
+        <div
+          [attr.data-selected]="item.selected ? '' : null"
+          [attr.data-dimmed]="item.dimmed ? '' : null"
+          [attr.data-participant-id]="item.participant?.id ?? null"
+          [attr.data-side-state]="item.state"
+          class="et-bracket-pick-card-side"
+        >
+          <ng-container [ngTemplateOutlet]="sideBody" [ngTemplateOutletContext]="{ item: item }" />
+        </div>
+      }
     }
-  }
+  </div>
+
+  <ng-content select="[etBracketPickCardScore]" />
 </div>
 
-<ng-content select="[etBracketPickCardScore]" />
+<!--
+  Absolutely positioned over and under the card rather than after it: the bracket cell's height
+  belongs to the card, and a line in the flow would take that height from it and squash its two rows.
+-->
+@if (note(); as noteText) {
+  <span [etProvideColor]="noteColorTheme()" class="et-bracket-pick-card-note-layer">
+    @if (noteTone() === 'invalid') {
+      <span class="et-bracket-pick-card-invalid-outline" aria-hidden="true"></span>
+    }
+
+    <span [id]="NOTE_ID" class="et-bracket-pick-card-note">{{ noteText }}</span>
+  </span>
+}
+
+<ng-template #sideBody let-item="item">
+  @if (item.participant) {
+    <et-match-participant [participant]="item.participant" compact />
+  } @else {
+    <span class="et-bracket-pick-card-empty">{{ item.emptyLabel }}</span>
+  }
+
+  @if (item.state === 'predicted') {
+    <span class="et-bracket-pick-card-predicted">{{ predictedLabel() }}</span>
+  }
+
+  @if (item.showMark) {
+    <span class="et-bracket-pick-card-mark" aria-hidden="true"></span>
+  }
+</ng-template>

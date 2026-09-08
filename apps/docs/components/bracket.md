@@ -402,6 +402,23 @@ name) comes from [`provideMatchLabels()`](/components/match#localization).
 | `champion`        | `(name) => 'Champion: <name>'`                   |
 | `championPending` | `'Champion not decided yet'`                     |
 
+`describeBracketSlot` words a [slot nobody stands on](/components/bracket-prediction#wording-a-slot-nobody-stands-on)
+from the same
+label set:
+
+| Label                     | Default                                                                     |
+| ------------------------- | --------------------------------------------------------------------------- |
+| `slotMatchWinner`         | `'Winner of an earlier match'`                                              |
+| `slotMatchLoser`          | `'Loser of an earlier match'`                                               |
+| `slotStandingRank`        | `(standing, rank) => '<standing> position <rank>'`, either part may be null |
+| `slotSeed`                | `(seed) => 'Seed <seed>'`, or `'A seeded slot'` for a null seed             |
+| `slotSwissBucket`         | `'Drawn once the round is scheduled'`                                       |
+| `slotBye`                 | `'Bye'`                                                                     |
+| `slotExternal`            | `'Arrives from another competition'`                                        |
+| `slotUnknown`             | `'Not known yet'`                                                           |
+| `slotPredictEarlierRound` | `'Predict the earlier round first'`                                         |
+| `slotNotPredicted`        | `'Not predicted'`                                                           |
+
 ## Custom cards
 
 Each slot is an Angular component rendered per element via `ngComponentOutlet`. Provide
@@ -432,35 +449,10 @@ export class MatchCardComponent {
 
 ## Prediction brackets
 
-`resolveBracketSlot({ bracket, picks, matchId, side })` follows slot provenance through the viewer's
-own choices. It resolves winners and losers, table positions, and byes; a malformed cycle or an
-incomplete chain returns `null`. It deliberately ignores a later real result when following a
-`match-outcome`, so scoring a prediction never rewrites what the viewer chose.
-
-Use `createBracket(source, options)` to link the source first. Slot provenance supplies the feeder
-graph by default; for a source whose slots do not carry it, pass `previousMatchIds(match)` explicitly.
-Both functions also ship from the framework-free `@ethlete/bracket` package, which has no Angular
-peer dependency.
-
-`<et-bracket-pick-card>` is the default operable cell to use from a custom `matchComponent`. Bind its
-linked `bracketMatch`, your `normalized` view, and `pickedSide`; write `(pick)` back to your prediction
-state. Both sides must be resolved before either becomes a control. Locked, disabled, unresolvable,
-unavailable, partial, and bye matchups are non-focusable content. The chosen side uses
-`aria-pressed`, and a `predicted` side carries a visible “Prediction” marker.
-
-```html
-<et-bracket-pick-card
-  [bracketMatch]="bracketMatch()"
-  [normalized]="normalized()"
-  [pickedSide]="pickedSide()"
-  [locked]="deadlinePassed()"
-  (pick)="savePick($event)"
->
-  <app-points etBracketPickCardScore />
-</et-bracket-pick-card>
-```
-
-<StoryEmbed id="components-sports-bracket-prediction--interactive" height="420px" />
+The bracket doubles as the thing a viewer picks the winners in: `resolveBracketSlot()` reads every
+slot through their own picks, and `<et-bracket-pick-card>` is the cell they pick in. Those two, the
+helper that follows a pick when a pairing changes, and the labels that word a slot nobody stands on,
+are all in [bracket prediction](/components/bracket-prediction).
 
 ## Double elimination
 
@@ -672,6 +664,16 @@ Single-participant highlighting works because each participant's row carries
 anything built on the card get it for free. A card of your own opts in by setting the same
 attribute on the element that represents each side; without it the card behaves as it always
 did - hovering anywhere on it lights both journeys.
+
+`et-bracket-pick-card` sets it, so a prediction card hit-tests per side too.
+
+### A prediction bracket wants it off
+
+The highlight reads the **real** source: it names a participant's matches from the bracket the API
+returned, not from the viewer's picks. A prediction bracket's later rounds hold no real participant,
+so a predicted run has nothing to light - hovering a picked side dims the whole bracket and lights
+only the matches that were really played. Set `disableJourneyHighlight` on a bracket a viewer
+[predicts in](/components/bracket-prediction).
 
 ## Participant focus
 

@@ -12,6 +12,7 @@ import {
   Bracket,
   BracketDataSource,
   BracketMatch,
+  BracketMatchId,
   BracketRound,
   BracketRoundSwissGroup,
   BracketSlotSource,
@@ -22,7 +23,7 @@ import {
 } from '@ethlete/bracket';
 import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchSideState } from '../../match';
 import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../../scrollable/scrollable.imports';
-import { BracketPickCardComponent } from '../bracket-pick-card.component';
+import { BracketPickCardComponent, BracketPickCardNoteTone } from '../bracket-pick-card.component';
 import { BracketComponent } from '../bracket.component';
 import { singleEliminationBracketLayout } from '../layouts';
 
@@ -38,12 +39,53 @@ const matchOutcome = (matchId: string): BracketSlotSource => ({
 const PREDICTION_SOURCE: BracketDataSource<null, null> = {
   mode: 'single-elimination',
   rounds: [
+    { id: 'quarter-finals', name: 'Quarter-finals', type: 'single-elimination-bracket', data: null },
     { id: 'semi-finals', name: 'Semi-finals', type: 'single-elimination-bracket', data: null },
     { id: 'final', name: 'Final', type: 'final', data: null },
   ],
   matches: [
-    { id: 'semi-1', roundId: 'semi-finals', home: 'red', away: 'blue', winner: null, status: 'pending', data: null },
-    { id: 'semi-2', roundId: 'semi-finals', home: 'gold', away: 'green', winner: null, status: 'pending', data: null },
+    { id: 'qf-1', roundId: 'quarter-finals', home: 'red', away: 'iron', winner: null, status: 'pending', data: null },
+    { id: 'qf-2', roundId: 'quarter-finals', home: 'gold', away: 'amber', winner: null, status: 'pending', data: null },
+    {
+      id: 'qf-3',
+      roundId: 'quarter-finals',
+      home: 'green',
+      away: 'purple',
+      winner: null,
+      status: 'pending',
+      data: null,
+    },
+    {
+      id: 'qf-4',
+      roundId: 'quarter-finals',
+      home: 'blue',
+      away: 'silver',
+      winner: null,
+      status: 'pending',
+      data: null,
+    },
+    {
+      id: 'semi-1',
+      roundId: 'semi-finals',
+      home: null,
+      away: null,
+      homeSource: matchOutcome('qf-1'),
+      awaySource: matchOutcome('qf-2'),
+      winner: null,
+      status: 'pending',
+      data: null,
+    },
+    {
+      id: 'semi-2',
+      roundId: 'semi-finals',
+      home: null,
+      away: null,
+      homeSource: matchOutcome('qf-3'),
+      awaySource: matchOutcome('qf-4'),
+      winner: null,
+      status: 'pending',
+      data: null,
+    },
     {
       id: 'final',
       roundId: 'final',
@@ -58,11 +100,81 @@ const PREDICTION_SOURCE: BracketDataSource<null, null> = {
   ],
 };
 
+const RED: NormalizedMatchParticipant = {
+  id: 'red',
+  name: 'Red Foxes',
+  code: 'FOX',
+  subtitle: null,
+  emblem: null,
+  seed: 1,
+};
+const BLUE: NormalizedMatchParticipant = {
+  id: 'blue',
+  name: 'Blue Whales',
+  code: 'BLU',
+  subtitle: null,
+  emblem: null,
+  seed: 4,
+};
+const GOLD: NormalizedMatchParticipant = {
+  id: 'gold',
+  name: 'Golden Owls',
+  code: 'OWL',
+  subtitle: null,
+  emblem: null,
+  seed: 2,
+};
+const GREEN: NormalizedMatchParticipant = {
+  id: 'green',
+  name: 'Green Bears',
+  code: 'GRN',
+  subtitle: null,
+  emblem: null,
+  seed: 3,
+};
+
+const SILVER: NormalizedMatchParticipant = {
+  id: 'silver',
+  name: 'Silver Sharks',
+  code: 'SHK',
+  subtitle: null,
+  emblem: null,
+  seed: 5,
+};
+const PURPLE: NormalizedMatchParticipant = {
+  id: 'purple',
+  name: 'Purple Panthers',
+  code: 'PAN',
+  subtitle: null,
+  emblem: null,
+  seed: 6,
+};
+const AMBER: NormalizedMatchParticipant = {
+  id: 'amber',
+  name: 'Amber Aces',
+  code: 'ACE',
+  subtitle: null,
+  emblem: null,
+  seed: 7,
+};
+const IRON: NormalizedMatchParticipant = {
+  id: 'iron',
+  name: 'Iron Ibises',
+  code: 'IBS',
+  subtitle: null,
+  emblem: null,
+  seed: 8,
+};
+
 const PARTICIPANTS: Record<string, NormalizedMatchParticipant> = {
-  red: { id: 'red', name: 'Red Foxes', code: 'FOX', subtitle: null, emblem: null, seed: 1 },
-  blue: { id: 'blue', name: 'Blue Whales', code: 'BLU', subtitle: null, emblem: null, seed: 4 },
-  gold: { id: 'gold', name: 'Golden Owls', code: 'OWL', subtitle: null, emblem: null, seed: 2 },
-  green: { id: 'green', name: 'Green Bears', code: 'GRN', subtitle: null, emblem: null, seed: 3 },
+  red: RED,
+  blue: BLUE,
+  gold: GOLD,
+  green: GREEN,
+  silver: SILVER,
+  purple: PURPLE,
+  amber: AMBER,
+  iron: IRON,
 };
 
 type PredictionStoryState = {
@@ -101,7 +213,7 @@ export class StorybookBracketPickCardComponent {
 @Component({
   selector: 'et-sb-bracket-prediction',
   template: `
-    <div [style.max-inline-size.px]="760">
+    <div [style.max-inline-size.px]="900">
       <et-scrollable [etScrollableButtons]="{ sticky: true }">
         <et-bracket
           [source]="SOURCE"
@@ -111,6 +223,7 @@ export class StorybookBracketPickCardComponent {
           [matchHeight]="104"
           [finalMatchHeight]="104"
           [finalColumnWidth]="250"
+          disableJourneyHighlight
         />
       </et-scrollable>
     </div>
@@ -206,4 +319,197 @@ export class StorybookBracketPredictionComponent implements PredictionStoryState
 
     return isBracketSlotPredictable(source) ? 'unresolvable' : 'unavailable';
   }
+}
+
+const slotSource = (overrides: Partial<BracketSlotSource> & Pick<BracketSlotSource, 'kind'>): BracketSlotSource => ({
+  role: null,
+  matchId: null,
+  standingId: null,
+  rank: null,
+  label: null,
+  ...overrides,
+});
+
+const finalOf = (awaySource: BracketSlotSource | null): BracketMatch<null, null> => {
+  const bracket = createBracket<null, null>(
+    {
+      mode: 'single-elimination',
+      rounds: [
+        { id: 'semi-finals', name: 'Semi-finals', type: 'single-elimination-bracket', data: null },
+        { id: 'final', name: 'Final', type: 'final', data: null },
+      ],
+      matches: [
+        {
+          id: 'semi-1',
+          roundId: 'semi-finals',
+          home: 'red',
+          away: 'blue',
+          winner: 'home',
+          status: 'completed',
+          data: null,
+        },
+        {
+          id: 'final',
+          roundId: 'final',
+          home: 'red',
+          away: null,
+          homeSource: matchOutcome('semi-1'),
+          awaySource,
+          winner: null,
+          status: 'pending',
+          data: null,
+        },
+      ],
+    },
+    { layout: 'left-to-right' },
+  );
+
+  const final = bracket.matches.get('final' as BracketMatchId);
+
+  if (!final) throw new Error('The demo source above must contain a match called "final".');
+
+  return final;
+};
+
+const normalizedFinal = (options: {
+  away?: NormalizedMatchParticipant | null;
+  awayState?: NormalizedMatchSideState;
+  winnerSide?: MatchParticipantSide | null;
+}): NormalizedMatch => ({
+  id: 'final',
+  status: 'scheduled',
+  startTime: null,
+  home: RED,
+  away: options.away ?? null,
+  homeState: 'occupied',
+  awayState: options.awayState ?? (options.away ? 'occupied' : 'unavailable'),
+  homeScore: null,
+  awayScore: null,
+  resultKind: 'score',
+  gameScores: null,
+  winnerSide: options.winnerSide ?? null,
+  label: null,
+});
+
+export type PickCardCase = {
+  title: string;
+  bracketMatch: BracketMatch<null, null>;
+  normalized: NormalizedMatch;
+  pickedSide: MatchParticipantSide | null;
+  note: string | null;
+  noteTone: BracketPickCardNoteTone;
+  locked: boolean;
+  disabled: boolean;
+  readonly: boolean;
+  earlierRoundsClosed: boolean;
+};
+
+const pickCardCase = (title: string, overrides: Partial<PickCardCase> = {}): PickCardCase => ({
+  title,
+  bracketMatch: finalOf(null),
+  normalized: normalizedFinal({ away: GOLD }),
+  pickedSide: null,
+  note: null,
+  noteTone: 'muted',
+  locked: false,
+  disabled: false,
+  readonly: false,
+  earlierRoundsClosed: false,
+  ...overrides,
+});
+
+/** `unavailable` is the state a slot source words; an `unresolvable` side says "predict it" instead. */
+const sourceCase = ({
+  title,
+  source,
+  ...overrides
+}: Partial<PickCardCase> & { title: string; source: BracketSlotSource | null }) =>
+  pickCardCase(title, {
+    bracketMatch: finalOf(source),
+    normalized: normalizedFinal({ awayState: 'unavailable' }),
+    ...overrides,
+  });
+
+const unresolvedCase = ({ title, ...overrides }: Partial<PickCardCase> & { title: string }) =>
+  pickCardCase(title, {
+    bracketMatch: finalOf(slotSource({ kind: 'match-outcome', role: 'winner' })),
+    normalized: normalizedFinal({ awayState: 'unresolvable' }),
+    ...overrides,
+  });
+
+export const PICK_CARD_SLOT_SOURCE_CASES: PickCardCase[] = [
+  sourceCase({
+    title: "match-outcome, the earlier match's winner",
+    source: slotSource({ kind: 'match-outcome', role: 'winner' }),
+  }),
+  sourceCase({
+    title: "match-outcome, the earlier match's loser",
+    source: slotSource({ kind: 'match-outcome', role: 'loser' }),
+  }),
+  sourceCase({
+    title: 'standing-rank',
+    source: slotSource({ kind: 'standing-rank', standingName: 'Group A', rank: 2 }),
+  }),
+  sourceCase({ title: 'seed', source: slotSource({ kind: 'seed', seed: 3 }) }),
+  sourceCase({ title: 'swiss-bucket', source: slotSource({ kind: 'swiss-bucket' }) }),
+  sourceCase({ title: 'bye', source: slotSource({ kind: 'bye' }) }),
+  sourceCase({ title: 'external', source: slotSource({ kind: 'external' }) }),
+  sourceCase({ title: 'no source at all', source: null }),
+  sourceCase({
+    title: "the competition's own wording, which always wins",
+    source: slotSource({ kind: 'seed', seed: 3, label: 'Host nation' }),
+  }),
+  unresolvedCase({ title: 'a side a prediction could still name' }),
+  unresolvedCase({ title: 'the same side, with no earlier round left to predict', earlierRoundsClosed: true }),
+];
+
+export const PICK_CARD_STATE_CASES: PickCardCase[] = [
+  pickCardCase('Picked, and still changeable', { pickedSide: 'home' }),
+  pickCardCase('A muted note', {
+    pickedSide: 'home',
+    note: 'Followed Red Foxes from Semi-final 1',
+  }),
+  pickCardCase('An invalid note, which outlines the card too', {
+    note: 'Blue Whales - no longer in this match',
+    noteTone: 'invalid',
+  }),
+  pickCardCase('Locked - the deadline passed, the pick stays', { pickedSide: 'home', locked: true }),
+  pickCardCase('Disabled - this viewer may not pick here', { disabled: true }),
+  pickCardCase('Readonly - a results view; this pick was on the side that lost', {
+    pickedSide: 'away',
+    normalized: normalizedFinal({ away: GOLD, winnerSide: 'home' }),
+    readonly: true,
+  }),
+];
+
+@Component({
+  selector: 'et-sb-bracket-pick-card-cases',
+  template: `
+    <div [style.max-inline-size.px]="420" class="grid gap-8 p-8 font-sans">
+      @for (item of cases(); track item.title) {
+        <div class="grid gap-2">
+          <p class="text-small">{{ item.title }}</p>
+
+          <div [style.block-size.px]="88">
+            <et-bracket-pick-card
+              [bracketMatch]="item.bracketMatch"
+              [normalized]="item.normalized"
+              [pickedSide]="item.pickedSide"
+              [note]="item.note"
+              [noteTone]="item.noteTone"
+              [locked]="item.locked"
+              [disabled]="item.disabled"
+              [readonly]="item.readonly"
+              [earlierRoundsClosed]="item.earlierRoundsClosed"
+            />
+          </div>
+        </div>
+      }
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BracketPickCardComponent],
+})
+export class StorybookBracketPickCardCasesComponent {
+  public cases = input.required<PickCardCase[]>();
 }

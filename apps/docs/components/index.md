@@ -117,6 +117,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 - [Accordion](/components/accordion) - disclosure headers with an animated collapse, single-open groups and arrow-key navigation.
 - [Bracket](/components/bracket) - tournament bracket renderer for single/double-elimination and swiss stages, with SVG connectors, journey highlighting and pluggable match/header cards.
+- [Bracket prediction](/components/bracket-prediction) - the same bracket a viewer picks the winners in: the slot resolver that reads their picks, the pick card, and the migration that follows a pick when a pairing changes.
 - [Bracket rounds list](/components/bracket-rounds-list) - the same tournament as a vertical round-by-round list, plus the helpers that decide when to swap to it.
 - [Breadcrumb](/components/breadcrumb) - template-authored trail with an overflow popover, loading crumbs and a routed-page outlet.
 - [Card](/components/card) - generic content container with elevated, outlined and filled variants.

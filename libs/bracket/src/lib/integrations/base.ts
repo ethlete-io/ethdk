@@ -9,6 +9,10 @@ export type BracketSlotSource = {
   standingId: string | null;
   rank: number | null;
   label: string | null;
+  /** The seeding position this slot is reserved for. Optional - a source may carry no seeding at all. */
+  seed?: number | null;
+  /** What {@link standingId} is called, for a slot that has to be worded without a lookup. */
+  standingName?: string | null;
 };
 
 export type BracketMatchSlot = {

@@ -1,5 +1,13 @@
 @layer components {
   .et-bracket-pick-card {
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .et-bracket-pick-card-box {
     display: grid;
     box-sizing: border-box;
     inline-size: 100%;
@@ -13,10 +21,12 @@
 
   .et-bracket-pick-card-sides {
     display: grid;
+    grid-auto-rows: 1fr;
     min-block-size: 0;
   }
 
   .et-bracket-pick-card-side {
+    position: relative;
     display: flex;
     min-inline-size: 0;
     align-items: center;
@@ -30,6 +40,24 @@
     color: inherit;
     font: inherit;
     text-align: start;
+    transition: background-color 120ms ease;
+
+    /* Always drawn, so the bar can fade rather than appear. Inset from both block edges, so it never
+       reaches the box's rounded corner - a bar that did would be cut across the diagonal by the
+       `overflow: hidden` clip. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block: 25%;
+      inset-inline-start: 0;
+      inline-size: 3px;
+      border-radius: 999px;
+      background: var(--et-theme-color-primary-solid, #555);
+      opacity: 0;
+      transition:
+        opacity 120ms ease,
+        background-color 120ms ease;
+    }
 
     &:where(button) {
       cursor: pointer;
@@ -39,23 +67,181 @@
       background: color-mix(in srgb, var(--et-surface-interaction-solid, #777) 12%, transparent);
     }
 
+    &:where(button)[aria-pressed='true']:hover {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid, #555) 20%, transparent);
+    }
+
     &:where([aria-pressed='true'], [data-selected]) {
       background: color-mix(in srgb, var(--et-theme-color-primary-solid, #555) 12%, transparent);
-      box-shadow: inset 3px 0 var(--et-theme-color-primary-solid, #555);
+
+      &::before {
+        opacity: 1;
+      }
     }
 
     &:where([data-side-state='predicted']) {
       color: var(--et-theme-color-ink-solid, currentColor);
     }
+
+    &:where([data-dimmed]) {
+      opacity: 0.55;
+    }
+  }
+
+  /* The box clips with `overflow: hidden`, so the ring's default 3px outward offset would be cut away
+     on every edge that is also a card edge - a focused first row kept only the line it shares with
+     the row below. Inside the row, and rounded to match the clip at the two outer corners. */
+  .et-bracket-pick-card-side {
+    --_et-focus-ring-offset: -2px;
+  }
+
+  .et-bracket-pick-card-side:first-child {
+    border-start-start-radius: calc(var(--et-bracket-pick-card-border-radius, 10px) - 1px);
+    border-start-end-radius: calc(var(--et-bracket-pick-card-border-radius, 10px) - 1px);
   }
 
   .et-bracket-pick-card-side:last-child {
     border-block-end: 0;
+    border-end-start-radius: calc(var(--et-bracket-pick-card-border-radius, 10px) - 1px);
+    border-end-end-radius: calc(var(--et-bracket-pick-card-border-radius, 10px) - 1px);
   }
 
-  .et-bracket-pick-card-predicted,
+  .et-bracket-pick-card-side > et-match-participant {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  /* `et-match-participant` sets its own colour rather than inheriting one, so the state's colour has
+     to be applied to it directly - on the side alone it would never reach the name. */
+  .et-bracket-pick-card-side:where([data-side-state='predicted']) > et-match-participant {
+    color: var(--et-theme-color-ink-solid, currentColor);
+  }
+
   .et-bracket-pick-card-empty {
     color: var(--et-surface-color-muted-solid, #666);
-    font-size: 0.8em;
+    font-size: var(--et-bracket-pick-card-slot-font-size, 13px);
+  }
+
+  /* A predicted side reads in the accent ink colour, which a colour-blind reader cannot use. The word
+     stays in the accessibility tree instead. There is no shared visually-hidden class in this
+     library, so the clip trick lives here. */
+  .et-bracket-pick-card-predicted {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    border: 0;
+    clip-path: inset(50%);
+  }
+
+  .et-bracket-pick-card-empty {
+    min-inline-size: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-bracket-pick-card-mark {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: var(--et-bracket-pick-card-mark-size, 14px);
+    block-size: var(--et-bracket-pick-card-mark-size, 14px);
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.2));
+    border-radius: 50%;
+    transition: border-color 120ms ease;
+    animation: et-bracket-pick-card-mark-in 120ms ease;
+
+    &::after {
+      content: '';
+      inline-size: 50%;
+      block-size: 50%;
+      border-radius: 50%;
+      background: var(--et-surface-interaction-solid, #777);
+      opacity: 0;
+      transition: opacity 120ms ease;
+    }
+  }
+
+  .et-bracket-pick-card-side:where([aria-pressed='true'], [data-selected]) .et-bracket-pick-card-mark {
+    border-color: var(--et-theme-color-primary-solid, #555);
+
+    &::after {
+      background: var(--et-theme-color-primary-solid, #555);
+      opacity: 1;
+    }
+  }
+
+  .et-bracket-pick-card:where([data-locked]) .et-bracket-pick-card-side:where([data-selected])::before {
+    background: var(--et-surface-color-muted-solid, #666);
+  }
+
+  .et-bracket-pick-card:where([data-locked])
+    .et-bracket-pick-card-side:where([data-selected])
+    .et-bracket-pick-card-mark {
+    border-color: var(--et-surface-color-muted-solid, #666);
+
+    &::after {
+      background: var(--et-surface-color-muted-solid, #666);
+    }
+  }
+
+  .et-bracket-pick-card-side[aria-pressed='false']:hover .et-bracket-pick-card-mark::after {
+    opacity: 0.45;
+  }
+
+  .et-bracket-pick-card-note-layer {
+    position: absolute;
+    display: block;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .et-bracket-pick-card-invalid-outline {
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--et-theme-color-ink-solid, currentColor);
+    border-radius: var(--et-bracket-pick-card-border-radius, 10px);
+  }
+
+  .et-bracket-pick-card-note {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 100%;
+    display: block;
+    margin-block-start: var(--et-bracket-pick-card-note-offset, 4px);
+    overflow: hidden;
+    color: var(--et-surface-color-muted-solid, #666);
+    font-size: var(--et-bracket-pick-card-note-font-size, 10px);
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-bracket-pick-card:where([data-note-tone='invalid']) .et-bracket-pick-card-note {
+    color: var(--et-theme-color-ink-solid, currentColor);
+  }
+
+  @keyframes et-bracket-pick-card-mark-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-bracket-pick-card-side,
+    .et-bracket-pick-card-side::before,
+    .et-bracket-pick-card-mark,
+    .et-bracket-pick-card-mark::after {
+      transition: none;
+    }
+
+    .et-bracket-pick-card-mark {
+      animation: none;
+    }
   }
 }
