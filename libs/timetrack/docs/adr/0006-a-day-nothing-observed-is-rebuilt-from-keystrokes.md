@@ -50,6 +50,9 @@ with turns bridging, 7 h 13 m in 3. Tom chose the second on 2026-09-08.
   46 m against the 7 h 13 m this rule predicts, measured on 2026-09-07. A link decides what can be
   billed, not what is collected, and no worklog can be written for a checkout no project covers. A
   private checkout still drops whole.
+- **The spend passes are renamed** `spend-all` and `codex-spend-all`, so the stored days gain the
+  turns they were denied. ADR 0005 rejected renaming a pass because a new name is a cursor at line 0
+  and re-reads every log; here that is the whole point.
 - **Two passes more per agent**, `prompt` and `codex-prompt`, reading each log once from the top. The
   spend passes have converged, and re-reading their logs under those names would be a rewind of a
   cursor that is finished — a new pass name is a cursor at line 0, which is what this needs.
