@@ -36,7 +36,7 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
       <div class="flex flex-wrap items-center gap-3">
         <et-checkbox
           [checked]="willSync()"
-          [attr.aria-label]="'Log time for ' + row().issueKey"
+          [aria-label]="'Log time for ' + row().issueKey"
           (checkedChange)="stateChange.emit($event ? 'accepted' : 'rejected')"
         />
 
