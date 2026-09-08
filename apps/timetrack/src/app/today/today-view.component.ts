@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import { Stream, formatDurationMs } from '@ethlete/timetrack';
 import { formatClockTime, formatDayLabel } from '../day-review/format';
-import { formatStreamLabel, formatStreamSpend } from './format';
+import { formatSpend, formatStreamLabel } from './format';
 import { injectToday, provideToday } from './today';
 
 @Component({
@@ -53,7 +53,7 @@ import { injectToday, provideToday } from './today';
                 <span class="text-mono text-et-surface-muted" data-span>{{ spanOf(stream) }}</span>
                 <span [title]="stream.repoPath ?? ''" class="text-base" data-label>{{ LABEL_OF(stream) }}</span>
                 <span class="text-small" data-engaged>{{ engagedOf(stream) }} engaged</span>
-                @if (SPEND_OF(stream); as spend) {
+                @if (SPEND_OF(stream.spend); as spend) {
                   <span class="text-small text-et-surface-muted" data-spend>{{ spend }}</span>
                 }
                 @if (stream.neverFocused) {
@@ -82,6 +82,19 @@ import { injectToday, provideToday } from './today';
               />
             </li>
           }
+
+          @if (unattributed(); as spend) {
+            <li class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
+              <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <span class="text-base" data-unattributed-label>Nobody was here</span>
+                <span class="text-small text-et-surface-muted" data-unattributed>{{ spend }}</span>
+              </div>
+
+              <span class="text-small text-et-surface-subtle">
+                An agent spent this while the machine was idle or locked, so no line books it.
+              </span>
+            </li>
+          }
         </ul>
       }
     </div>
@@ -99,8 +112,18 @@ export class TodayViewComponent {
   protected engaged = computed(() => formatDurationMs(this.store.day()?.engagedMs ?? 0));
   protected concurrency = computed(() => `${(this.store.day()?.concurrency ?? 0).toFixed(1)}×`);
 
+  /**
+   * The turns no stream was running for. Without it the day does not reconcile: the lines and this
+   * remainder together are the whole of what the agents spent.
+   */
+  protected unattributed = computed(() => {
+    const day = this.store.day();
+
+    return day ? formatSpend(day.unattributedSpend) : '';
+  });
+
   protected readonly LABEL_OF = formatStreamLabel;
-  protected readonly SPEND_OF = formatStreamSpend;
+  protected readonly SPEND_OF = formatSpend;
   protected readonly CLOCK_OF = formatClockTime;
 
   protected engagedOf(stream: Stream) {

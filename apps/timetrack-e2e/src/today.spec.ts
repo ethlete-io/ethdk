@@ -97,6 +97,35 @@ test.describe('the today view', () => {
     await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toHaveText('1 turn · 1.2 M out · 604 M cached');
   });
 
+  test('names the spend no line books, so the day reconciles', async ({ page }) => {
+    // Two hours after the last sample, so the machine had long gone idle. Nothing is present, so no
+    // block covers it and no stream can take it.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        ...day(),
+        {
+          at: at(240),
+          source: 'agent-usage',
+          kind: 'agent-usage',
+          provider: 'claude-code',
+          sessionId: 'session-sdk',
+          turnId: 'turn-away',
+          cwd: SDK,
+          model: 'claude-opus-5',
+          usage: { input: 500, output: 800_000, cacheWrite: 0, cacheRead: 90_000_000, thinking: 0 },
+        },
+      ],
+    });
+    await page.goto('/today');
+
+    await expect(page.locator('[data-unattributed]')).toHaveText('1 turn · 800 k out · 90.0 M cached');
+  });
+
+  test('shows no unbooked line for a day every turn belongs to a stream', async ({ page }) => {
+    await expect(page.locator('[data-unattributed]')).toHaveCount(0);
+  });
+
   test('says so for a day nothing observed', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: [] });
     await page.goto('/today');
