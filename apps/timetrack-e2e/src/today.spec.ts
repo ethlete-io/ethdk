@@ -98,21 +98,82 @@ test.describe('the today view', () => {
     await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toHaveText('1 turn · 1.2 M out · 604 M cached');
   });
 
-  test('names the spend no line books, so the day reconciles', async ({ page }) => {
-    // Two hours after the last sample, so the machine had long gone idle. Nothing is present, so no
-    // block covers it and no stream can take it.
+  test('books what an agent spent while nobody was at the machine, and calls that time unattended', async ({
+    page,
+  }) => {
+    // The machine locks at noon and the agent works on in the SDK checkout for another hour. The
+    // customer pays for that hour's turns, so the checkout books them; the day does not call it presence.
     await seedWorld(page, {
       now: E2E_NOW,
       events: [
         ...day(),
+        { at: at(121), source: 'idle', kind: 'lock' },
+        ...Array.from({ length: 7 }, (_, step) => session(180 + step * 10)),
         {
-          at: at(240),
+          at: at(200),
           source: 'agent-usage',
           kind: 'agent-usage',
           provider: 'claude-code',
           sessionId: 'session-sdk',
           turnId: 'turn-away',
           cwd: SDK,
+          model: 'claude-opus-5',
+          usage: { input: 500, output: 800_000, cacheWrite: 0, cacheRead: 90_000_000, thinking: 0 },
+        },
+      ],
+    });
+    await page.goto('/today');
+
+    const agentOnly = stream(page, `repo:${SDK}`);
+
+    await expect(agentOnly.locator('[data-unattended]')).toHaveText('1h 0m unattended');
+    await expect(agentOnly.locator('[data-engaged]')).toHaveText('1h 0m engaged');
+    await expect(agentOnly.locator('[data-spend]')).toContainText('2 turns');
+    await expect(page.locator('[data-totals]')).toContainText('+ 1h 0m unattended');
+    await expect(page.locator('[data-unattributed]')).toHaveCount(0);
+  });
+
+  test('gives a checkout the backfill found turns for a line of its own, with spend and no time', async ({ page }) => {
+    // What a replayed day looks like: the spend pass read an old log the session collector never saw.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        ...day().filter((event) => event.source !== 'agent-session'),
+        {
+          at: at(65),
+          source: 'agent-usage',
+          kind: 'agent-usage',
+          provider: 'codex',
+          sessionId: 'session-codex',
+          turnId: 'turn-codex',
+          cwd: SDK,
+          model: 'gpt-5-codex',
+          usage: { input: 500, output: 800_000, cacheWrite: 0, cacheRead: 90_000_000, thinking: 0 },
+        },
+      ],
+    });
+    await page.goto('/today');
+
+    const backfilled = stream(page, `repo:${SDK}`);
+
+    await expect(backfilled.locator('[data-engaged]')).toHaveText('0m engaged');
+    await expect(backfilled.locator('[data-spend]')).toContainText('2 turns');
+    await expect(page.locator('[data-unattributed]')).toHaveCount(0);
+  });
+
+  test('names only the spend that carries no checkout at all', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        ...day(),
+        {
+          at: at(60),
+          source: 'agent-usage',
+          kind: 'agent-usage',
+          provider: 'claude-code',
+          sessionId: 'session-nowhere',
+          turnId: 'turn-nowhere',
+          cwd: '',
           model: 'claude-opus-5',
           usage: { input: 500, output: 800_000, cacheWrite: 0, cacheRead: 90_000_000, thinking: 0 },
         },

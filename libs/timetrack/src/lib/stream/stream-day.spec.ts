@@ -214,23 +214,104 @@ describe('streamDay', () => {
     expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(24 * MINUTE);
   });
 
-  it('leaves spend no stream was running for out of every line, and still reports it', () => {
+  it('books a turn to its checkout by the working directory alone, whatever the clock said', () => {
     const day = streamDay({
       events: [
         ...focusRun({ from: 0, to: 10, appId: 'code', title: 'ethlete-sdk - Code' }),
         commit(0, 'feat(bracket): Add the resolver'),
         usage(5, SDK, { output: 400 }),
         usage(300, SDK, { output: 700 }),
-        usage(6, FUT, { output: 900 }),
       ],
       options: { repoRoots: [SDK, FUT] },
     });
 
-    expect(streamOf(day, `repo:${SDK}`)?.spend.usage.output).toBe(400);
-    expect(day.unattributedSpend.usage.output).toBe(1_600);
-    expect(day.spend.usage.output).toBe(2_000);
-    expect(day.spend.turns).toBe(3);
+    expect(streamOf(day, `repo:${SDK}`)?.spend.usage.output).toBe(1_100);
+    expect(streamOf(day, `repo:${SDK}`)?.spend.turns).toBe(2);
+    expect(day.unattributedSpend.turns).toBe(0);
+    expect(day.spend.usage.output).toBe(1_100);
     expect(day.spend.models).toEqual(['claude-opus-5']);
+  });
+
+  it('gives a checkout with turns and no samples a line of its own, carrying spend and no time', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'ethlete-sdk - Code' }),
+        commit(0, 'feat(bracket): Add the resolver'),
+        usage(4, FUT, { output: 900 }),
+        usage(9, FUT, { output: 100 }),
+      ],
+      options: { repoRoots: [SDK, FUT] },
+    });
+
+    const fut = streamOf(day, `repo:${FUT}`);
+
+    expect(fut?.spend.usage.output).toBe(1_000);
+    expect(fut?.engagedMs).toBe(0);
+    expect(fut?.unattendedMs).toBe(0);
+    expect(fut?.neverFocused).toBe(true);
+    expect(fut?.from).toEqual(AT(4));
+    expect(fut?.to).toEqual(AT(9));
+    expect(day.engagedMs).toBe(10 * MINUTE);
+    expect(day.unattributedSpend.turns).toBe(0);
+  });
+
+  it('reports a turn that names no working directory as unattributed, because nothing can carry it', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'ethlete-sdk - Code' }),
+        commit(0, 'feat(bracket): Add the resolver'),
+        usage(5, '', { output: 700 }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.unattributedSpend.usage.output).toBe(700);
+    expect(day.spend.usage.output).toBe(700);
+    expect(day.streams.map((stream) => stream.key)).toEqual([`repo:${SDK}`]);
+  });
+
+  it('books an agent turn spent while the user was away to its checkout, and calls the time unattended', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'ethlete-sdk - Code' }),
+        commit(0, 'feat(bracket): Add the resolver'),
+        presence(11, 'lock'),
+        ...sessionRun({ from: 20, to: 50, cwd: FUT }),
+        usage(35, FUT, { output: 900 }),
+      ],
+      options: { repoRoots: [SDK, FUT] },
+    });
+
+    const fut = streamOf(day, `repo:${FUT}`);
+
+    expect(fut?.spend.usage.output).toBe(900);
+    expect(fut?.engagedMs).toBe(0);
+    expect(fut?.unattendedMs).toBe(30 * MINUTE);
+    expect(fut?.from).toEqual(AT(20));
+    expect(fut?.to).toEqual(AT(50));
+    expect(day.unattendedMs).toBe(30 * MINUTE);
+    expect(day.engagedMs).toBe(11 * MINUTE);
+    expect(day.presenceMs).toBe(11 * MINUTE);
+    expect(day.unattributedSpend.turns).toBe(0);
+  });
+
+  it('splits one agent run into the attended part and the unattended part, and counts each minute once', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 20, appId: 'code', title: 'ethlete-sdk - Code' }),
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...sessionRun({ from: 10, to: 40, cwd: FUT }),
+        presence(20, 'lock'),
+      ],
+      options: { repoRoots: [SDK, FUT] },
+    });
+
+    const fut = streamOf(day, `repo:${FUT}`);
+
+    expect(fut?.engagedMs).toBe(10 * MINUTE);
+    expect(fut?.unattendedMs).toBe(20 * MINUTE);
+    expect(fut?.from).toEqual(AT(10));
+    expect(fut?.to).toEqual(AT(40));
   });
 
   it('reads nothing from a day nothing observed', () => {
@@ -240,6 +321,7 @@ describe('streamDay', () => {
       presenceMs: 0,
       engagedMs: 0,
       concurrency: 0,
+      unattendedMs: 0,
       streams: [],
       spend: { usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0 }, turns: 0, models: [] },
       unattributedSpend: {

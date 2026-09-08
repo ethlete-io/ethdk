@@ -11,7 +11,7 @@ import {
 import { Evidence } from '../model/evidence';
 import { TimeWindow } from '../model/time-window';
 import { presenceWindows } from './presence';
-import { clipWindows, mergeWindows, windowsContain, windowsMs } from './windows';
+import { clipWindows, mergeWindows, subtractWindows, windowsMs } from './windows';
 
 /** The key of the one line every application with no checkout folds into. */
 export const OTHER_APPLICATIONS_KEY = 'other-applications';
@@ -65,11 +65,17 @@ export type Stream = {
   agentSessions: number;
   /** Contiguous time, gaps kept: the union of what the focused window and the agents observed. */
   blocks: TimeWindow[];
-  /** The first block's start. */
+  /** The earliest instant the stream covers, attended or not. */
   from: Date;
-  /** The last block's end. It disagrees with `engagedMs` exactly when the stream has a gap. */
+  /** The latest instant the stream covers. It disagrees with `engagedMs` exactly when there is a gap. */
   to: Date;
   engagedMs: number;
+  /**
+   * Agent time outside presence: the machine worked and nobody was at it. It counts in neither
+   * `presenceMs` nor `engagedMs`, so a day never claims an hour a person was not there for. The turns
+   * spent in it are still this stream's, because a token is spent at an instant and paid for either way.
+   */
+  unattendedMs: number;
   /** True when no focused window ever resolved here: an agent ran it and nobody looked. */
   neverFocused: boolean;
   spend: StreamSpend;
@@ -86,9 +92,15 @@ export type StreamDay = {
   concurrency: number;
   /** Ordered by when each stream started. */
   streams: Stream[];
+  /** Every stream's unattended time summed. Outside both `presenceMs` and `engagedMs`. */
+  unattendedMs: number;
   /** Every turn the day read, whichever stream took it. */
   spend: StreamSpend;
-  /** The part of `spend` no stream was running for, such as an agent that spent while the user was away. */
+  /**
+   * The part of `spend` that names no working directory at all, so nothing can carry it. A turn spent
+   * while the user was away is not this: its checkout books it, and the stream reports the time as
+   * unattended.
+   */
   unattributedSpend: StreamSpend;
 };
 
@@ -241,6 +253,66 @@ const draftFor = (drafts: Map<string, StreamDraft>, context: ActivityContext) =>
 };
 
 /**
+ * A stream for a checkout the day has turns for and no samples of.
+ *
+ * The spend backfill reads a log the session collector never saw, so a replayed day carries an agent's
+ * turns without the samples that would have drawn its blocks. Without this the whole of such a day's
+ * spend reports as belonging to no checkout at all. The line carries no time, because a turn is an
+ * instant and inventing a duration for it is the bug the presence rule exists to prevent.
+ */
+const spendOnlyStreams = (options: {
+  turns: readonly AgentUsageEvent[];
+  streams: readonly Stream[];
+  roots: readonly string[];
+}): Stream[] => {
+  const drafts = new Map<string, { stream: Stream; sessions: Set<string> }>();
+
+  for (const turn of options.turns) {
+    if (!turn.cwd) continue;
+
+    const repoPath = repoRootOf({ path: turn.cwd, roots: options.roots });
+    const key = streamKey({ repoPath });
+
+    if (options.streams.some((stream) => stream.key === key)) continue;
+
+    const branch = branchOf(turn.gitBranch);
+    const found = drafts.get(key);
+
+    if (!found) {
+      drafts.set(key, {
+        stream: {
+          key,
+          repoPath,
+          apps: [],
+          branches: branch ? [branch] : [],
+          agentSessions: 1,
+          blocks: [],
+          from: turn.at,
+          to: turn.at,
+          engagedMs: 0,
+          unattendedMs: 0,
+          neverFocused: true,
+          spend: emptySpend(),
+          evidence: [],
+        },
+        sessions: new Set([turn.sessionId]),
+      });
+
+      continue;
+    }
+
+    found.sessions.add(turn.sessionId);
+    found.stream.agentSessions = found.sessions.size;
+
+    if (branch && !found.stream.branches.includes(branch)) found.stream.branches.push(branch);
+    if (turn.at < found.stream.from) found.stream.from = turn.at;
+    if (turn.at > found.stream.to) found.stream.to = turn.at;
+  }
+
+  return [...drafts.values()].map((draft) => draft.stream);
+};
+
+/**
  * What a local day was worked on, for how long, and what the agents spent on it.
  *
  * Pure: it reads no clock and no network, so replaying a stored day gives the same answer it did on the
@@ -324,10 +396,13 @@ export const streamDay = (options: {
 
   for (const draft of drafts.values()) {
     const focus = clipWindows({ windows: draft.focus, within: presence });
-    const blocks = mergeWindows([...focus, ...clipWindows({ windows: draft.agent, within: presence })]);
+    const agent = mergeWindows(draft.agent);
+    const blocks = mergeWindows([...focus, ...clipWindows({ windows: agent, within: presence })]);
+    const unattended = subtractWindows({ windows: agent, without: presence });
+    const span = mergeWindows([...blocks, ...unattended]);
 
-    const first = blocks[0];
-    const last = blocks[blocks.length - 1];
+    const first = span[0];
+    const last = span[span.length - 1];
 
     if (!first || !last) continue;
 
@@ -341,22 +416,26 @@ export const streamDay = (options: {
       from: first.from,
       to: last.to,
       engagedMs: windowsMs(blocks),
+      unattendedMs: windowsMs(unattended),
       neverFocused: !focus.length,
       spend: emptySpend(),
       evidence: draft.evidence.slice().sort((a, b) => a.at.getTime() - b.at.getTime()),
     });
   }
 
+  const turns = options.events.filter((event): event is AgentUsageEvent => event.source === 'agent-usage');
+
+  streams.push(...spendOnlyStreams({ turns, streams, roots }));
   streams.sort((a, b) => a.from.getTime() - b.from.getTime() || a.key.localeCompare(b.key));
 
   const spend = emptySpend();
   const unattributedSpend = emptySpend();
 
-  for (const turn of options.events.filter((event): event is AgentUsageEvent => event.source === 'agent-usage')) {
+  for (const turn of turns) {
     const key = streamKey({ repoPath: repoRootOf({ path: turn.cwd, roots }) });
     const stream = streams.find((candidate) => candidate.key === key);
 
-    addSpend(stream && windowsContain(stream.blocks, turn.at) ? stream.spend : unattributedSpend, turn);
+    addSpend(stream ? stream.spend : unattributedSpend, turn);
     addSpend(spend, turn);
   }
 
@@ -367,6 +446,7 @@ export const streamDay = (options: {
     presenceMs,
     engagedMs,
     concurrency: presenceMs ? engagedMs / presenceMs : 0,
+    unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
     streams,
     spend,
     unattributedSpend,

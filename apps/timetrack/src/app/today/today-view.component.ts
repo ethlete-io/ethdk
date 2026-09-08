@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import { Stream, formatDurationMs } from '@ethlete/timetrack';
 import { formatClockTime, formatDayLabel } from '../day-review/format';
-import { formatAgentSessions, formatSpend, formatStreamLabel } from './format';
+import { formatAgentSessions, formatSpend, formatStreamLabel, formatUnattended } from './format';
 import { injectToday, provideToday } from './today';
 
 @Component({
@@ -41,6 +41,9 @@ import { injectToday, provideToday } from './today';
           <span class="text-large" data-presence>{{ presence() }} present</span>
           <span class="text-large" data-engaged>{{ engaged() }} engaged</span>
           <span class="text-small text-et-surface-muted" data-concurrency>{{ concurrency() }} at once</span>
+          @if (unattended(); as unattended) {
+            <span class="text-small text-et-surface-subtle" data-unattended-total>+ {{ unattended }}</span>
+          }
         </div>
 
         <ul class="flex min-h-0 grow list-none flex-col gap-2 overflow-y-auto px-6 py-4">
@@ -53,6 +56,9 @@ import { injectToday, provideToday } from './today';
                 <span class="text-mono text-et-surface-muted" data-span>{{ spanOf(stream) }}</span>
                 <span [title]="stream.repoPath ?? ''" class="text-base" data-label>{{ LABEL_OF(stream) }}</span>
                 <span class="text-small" data-engaged>{{ engagedOf(stream) }} engaged</span>
+                @if (UNATTENDED_OF(stream.unattendedMs); as unattended) {
+                  <span class="text-small text-et-surface-subtle" data-unattended>{{ unattended }}</span>
+                }
                 @if (SESSIONS_OF(stream); as sessions) {
                   <span class="text-small text-et-surface-muted" data-agent-sessions>{{ sessions }}</span>
                 }
@@ -89,12 +95,12 @@ import { injectToday, provideToday } from './today';
           @if (unattributed(); as spend) {
             <li class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
               <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                <span class="text-base" data-unattributed-label>Nobody was here</span>
+                <span class="text-base" data-unattributed-label>No checkout for this spend</span>
                 <span class="text-small text-et-surface-muted" data-unattributed>{{ spend }}</span>
               </div>
 
               <span class="text-small text-et-surface-subtle">
-                An agent spent this while the machine was idle or locked, so no line books it.
+                These turns name no working directory, so no line can carry them.
               </span>
             </li>
           }
@@ -114,9 +120,10 @@ export class TodayViewComponent {
   protected presence = computed(() => formatDurationMs(this.store.day()?.presenceMs ?? 0));
   protected engaged = computed(() => formatDurationMs(this.store.day()?.engagedMs ?? 0));
   protected concurrency = computed(() => `${(this.store.day()?.concurrency ?? 0).toFixed(1)}×`);
+  protected unattended = computed(() => formatUnattended(this.store.day()?.unattendedMs ?? 0));
 
   /**
-   * The turns no stream was running for. Without it the day does not reconcile: the lines and this
+   * The turns that name no checkout. Without it the day does not reconcile: the lines and this
    * remainder together are the whole of what the agents spent.
    */
   protected unattributed = computed(() => {
@@ -129,6 +136,7 @@ export class TodayViewComponent {
   protected readonly SPEND_OF = formatSpend;
   protected readonly SESSIONS_OF = formatAgentSessions;
   protected readonly CLOCK_OF = formatClockTime;
+  protected readonly UNATTENDED_OF = formatUnattended;
 
   protected engagedOf(stream: Stream) {
     return formatDurationMs(stream.engagedMs);

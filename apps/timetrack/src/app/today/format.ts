@@ -1,4 +1,4 @@
-import { Stream, StreamSpend, formatTokenCount } from '@ethlete/timetrack';
+import { Stream, StreamSpend, formatDurationMs, formatTokenCount } from '@ethlete/timetrack';
 
 /** What a stream is, for its line: the checkout's directory name, else the folded line's own name. */
 export const formatStreamLabel = (stream: Stream) =>
@@ -29,3 +29,9 @@ export const formatAgentSessions = (stream: Stream) => {
 
   return `${agentSessions} agent ${agentSessions === 1 ? 'session' : 'sessions'}`;
 };
+
+/**
+ * Agent time nobody was at the machine for. No such time reads as nothing at all, so an ordinary day
+ * gains no extra number.
+ */
+export const formatUnattended = (ms: number) => (ms ? `${formatDurationMs(ms)} unattended` : '');

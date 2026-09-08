@@ -37,3 +37,31 @@ export const windowsMs = (windows: readonly TimeWindow[]) =>
 /** Whether an instant falls in one of the windows, either edge included. */
 export const windowsContain = (windows: readonly TimeWindow[], at: Date) =>
   windows.some((window) => at >= window.from && at <= window.to);
+
+/**
+ * The parts of `windows` that fall outside `without`. The result is merged, so it never overlaps.
+ *
+ * It is the counterpart of `clipWindows`: together the two split a set of windows by a boundary and
+ * lose nothing, which is what keeps attended and unattended time from double-counting a minute.
+ */
+export const subtractWindows = (options: {
+  windows: readonly TimeWindow[];
+  without: readonly TimeWindow[];
+}): TimeWindow[] => {
+  let rest = mergeWindows(options.windows);
+
+  for (const cut of options.without) {
+    rest = rest.flatMap((window) => {
+      if (cut.to <= window.from || cut.from >= window.to) return [window];
+
+      const parts: TimeWindow[] = [];
+
+      if (cut.from > window.from) parts.push({ from: window.from, to: cut.from });
+      if (cut.to < window.to) parts.push({ from: cut.to, to: window.to });
+
+      return parts;
+    });
+  }
+
+  return rest;
+};
