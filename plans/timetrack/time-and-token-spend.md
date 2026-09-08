@@ -93,7 +93,13 @@ Four facts the parser has to respect:
 - **Subagent turns live in their own files**, under `<sessionId>/subagents/agent-*.jsonl`. In one
   real session the main log held 103 usage records and the four subagent logs held 128 more. No
   `message.id` appeared in both, so the totals must be summed across both, and a subagent's spend
-  belongs to its parent's stream.
+  belongs to its parent's stream. **A subagent record already names the parent** in `sessionId` and
+  the subagent in `agentId`: 6 723 of 6 723 subagent records on this machine carry the parent's id,
+  so the event needs `agentId`, not a `parentSessionId`. Measured on 2026-09-08.
+- **One turn is written as several records**, one per content block, and each restates the same
+  `message.usage`. Of 93 643 usage records in the main logs, 42 849 repeat a `message.id`, and a
+  repeated id never carried different counts. So the first record of an id wins, and the dedupe is
+  not only about older versions writing sidechain records into the main log.
 - **`message.id` is the dedupe key.** Older Claude Code versions wrote sidechain records into the
   main log instead. A resync must not count a turn twice, and the message id is what prevents it.
 - **`model` can be `<synthetic>`**, with every count at zero. Skip it, or the model list grows an
@@ -268,8 +274,8 @@ export type AgentUsageEvent = CollectedEventBase<'agent-usage', 'agent-usage'> &
   gitBranch?: string;
   model: string;
   usage: TokenUsage;
-  /** The parent session, where a subagent's turn is being reported. */
-  parentSessionId?: string;
+  /** The subagent that ran the turn. Its spend belongs to the stream of `sessionId`. */
+  agentId?: string;
 };
 
 export type TokenUsage = {
