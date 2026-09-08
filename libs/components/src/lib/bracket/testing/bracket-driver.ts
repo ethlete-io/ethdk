@@ -7,6 +7,7 @@ import { BracketMatchNormalizer } from '../bracket-card-context';
 import { BracketRoundsListComponent } from '../bracket-rounds-list.component';
 import { BracketLayout } from '../bracket-layout';
 import { BracketComponent } from '../bracket.component';
+import { BracketRoundHeaderAlign } from '../bracket.config';
 import { BracketMatchComponent } from '@ethlete/bracket';
 import { BracketDataSource } from '../integrations';
 import { doubleEliminationBracketLayout, singleEliminationBracketLayout } from '../layouts';
@@ -41,11 +42,23 @@ export type BracketTestDriverOptions = {
   selectedRoundId?: string | null;
   rowSpanRoundId?: string | null;
   focusRoundId?: string | null;
+  focusInset?: number;
+  thirdPlaceTopOffset?: number | null;
+  finalRoundHeaderGap?: number | null;
+  alignRoundHeaders?: BracketRoundHeaderAlign;
   matchComponent?: BracketMatchComponent<unknown, unknown>;
   providers?: Provider[];
 };
 
 const BRACKET_TEST_OPTIONS = new InjectionToken<BracketTestDriverOptions>('BRACKET_TEST_OPTIONS');
+
+const TRANSLATE_PATTERN = /translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/;
+
+const parseTranslate = (element: HTMLElement | null) => {
+  const [, x, y] = TRANSLATE_PATTERN.exec(element?.style.transform ?? '') ?? [];
+
+  return { x: Number.parseFloat(x ?? '0'), y: Number.parseFloat(y ?? '0') };
+};
 
 @Component({
   template: `
@@ -66,6 +79,10 @@ const BRACKET_TEST_OPTIONS = new InjectionToken<BracketTestDriverOptions>('BRACK
         [disableJourneyHighlight]="disableJourneyHighlight"
         [rowSpanRoundId]="rowSpanRoundId()"
         [focusRoundId]="focusRoundId()"
+        [focusInset]="focusInset()"
+        [thirdPlaceTopOffset]="thirdPlaceTopOffset()"
+        [finalRoundHeaderGap]="finalRoundHeaderGap()"
+        [alignRoundHeaders]="alignRoundHeaders()"
       />
     }
   `,
@@ -81,6 +98,10 @@ class BracketTestHost {
   public readonly selectedRoundId = signal(this.options.selectedRoundId ?? null);
   public readonly rowSpanRoundId = signal(this.options.rowSpanRoundId ?? null);
   public readonly focusRoundId = signal(this.options.focusRoundId ?? null);
+  public readonly focusInset = signal(this.options.focusInset);
+  public readonly thirdPlaceTopOffset = signal(this.options.thirdPlaceTopOffset);
+  public readonly finalRoundHeaderGap = signal(this.options.finalRoundHeaderGap);
+  public readonly alignRoundHeaders = signal(this.options.alignRoundHeaders);
   public readonly matchComponent = signal(this.options.matchComponent);
   public readonly matchNormalizer = this.options.matchNormalizer ?? testBracketMatchNormalizer;
   public readonly disableJourneyHighlight = this.options.disableJourneyHighlight ?? false;
@@ -115,6 +136,25 @@ export const bracketTestDriver = (options: BracketTestDriverOptions) => {
     },
 
     cellFor: (matchId: string) => query(fixture, `[data-match-id="${matchId}"]`),
+
+    /** Where a cell sits in the grid: its own translate plus the one of the round container around it. */
+    positionOf: (matchId: string) => {
+      const cell = query(fixture, `[data-match-id="${matchId}"]`);
+      const round = cell?.closest<HTMLElement>('.et-bracket-round') ?? null;
+      const cellOffset = parseTranslate(cell);
+      const roundOffset = parseTranslate(round);
+
+      return { x: cellOffset.x + roundOffset.x, y: cellOffset.y + roundOffset.y };
+    },
+
+    headerCells: () => queryAll(fixture, '.et-bracket-element--header'),
+
+    /** Every connector, by the `d` attribute that draws it and the classes a journey lights it by. */
+    edges: () =>
+      queryAll(fixture, '.et-bracket-svg path').map((path) => ({
+        d: path.getAttribute('d') ?? '',
+        classes: path.getAttribute('class') ?? '',
+      })),
 
     activeMatchIds: () =>
       queryAll(fixture, '.et-bracket-element--match.et-bracket-journey-active').map((el) =>

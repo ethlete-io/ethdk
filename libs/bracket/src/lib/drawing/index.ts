@@ -13,4 +13,4 @@ export * from './grid/types';
 export * from './line';
 export * from './math';
 export * from './path';
-export * from './svg';
+export * from './shapes';

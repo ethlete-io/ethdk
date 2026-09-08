@@ -6,6 +6,7 @@ import { isBracketContinueMatch } from './grid/prebuild/bracket-continue-master-
 import { gutterPath, linePath, LineOptions, verticalPath } from './line';
 import { BracketPosition } from './math';
 import { path, PathOptions } from './path';
+import { BracketDrawing, BracketEdge } from './shapes';
 
 export type DrawManDimensions<TRoundData, TMatchData> = {
   columnWidth: number;
@@ -15,11 +16,11 @@ export type DrawManDimensions<TRoundData, TMatchData> = {
   upperLowerGap: number;
   rowGap: number;
   bracketGrid: ComputedBracketGrid<TRoundData, TMatchData>;
-  path: Omit<PathOptions, 'className'>;
+  path: Omit<PathOptions, 'className' | 'id'>;
   curve: Omit<CurveOptions, 'path' | 'inverted'>;
 
   /** Path options for the lines connecting the continuing matches to the continue element */
-  continuePath?: Omit<PathOptions, 'className'>;
+  continuePath?: Omit<PathOptions, 'className' | 'id'>;
 };
 
 const makePos = (dimensions: Dimensions): BracketPosition => ({
@@ -57,14 +58,30 @@ const mergePath = (
 ) =>
   isSameColumn(from, to) ? verticalPath(from, to, { path: options.path }) : curvePath(from, to, direction, options);
 
-export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TRoundData, TMatchData>) => {
-  const svgParts: string[] = [];
+const edgeId = (fromMatchId: string, toMatchId: string) => `${fromMatchId}|${toMatchId}`;
+
+export const drawMan = <TRoundData, TMatchData>(
+  dimensions: DrawManDimensions<TRoundData, TMatchData>,
+): BracketDrawing => {
+  const edges: BracketEdge[] = [];
+  const takenIds = new Set<string>();
+
+  // A repeated id would make the host's `@for` throw, and a mirrored fold can draw the same pair of
+  // cards from both of its sides.
+  const pushEdge = (edge: BracketEdge) => {
+    let id = edge.id;
+
+    for (let attempt = 2; takenIds.has(id); attempt++) id = `${edge.id}#${attempt}`;
+
+    takenIds.add(id);
+    edges.push(id === edge.id ? edge : { ...edge, id });
+  };
 
   const continueElement = dimensions.bracketGrid.columns
     .flatMap((col) => col.elements)
     .find((el) => el.type === 'continue');
   const continuePos = continueElement ? makePos(continueElement.dimensions) : null;
-  const continueSources: { pos: BracketPosition; className: string }[] = [];
+  const continueSources: { pos: BracketPosition; className: string; matchId: string }[] = [];
 
   for (const col of dimensions.bracketGrid.columns) {
     for (const el of col.elements) {
@@ -74,15 +91,17 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
         .filter((id) => !!id)
         .join(' ');
 
-      const pathOptions: PathOptions = { ...dimensions.path, className: currentMatchParticipantsShortIds };
-
       const currentPos = makePos(el.dimensions);
 
       // No lines for the third place match
       if (el.round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) continue;
 
       if (continuePos && isBracketContinueMatch(el.match)) {
-        continueSources.push({ pos: currentPos, className: el.match.winner?.shortId || '' });
+        continueSources.push({
+          pos: currentPos,
+          className: el.match.winner?.shortId || '',
+          matchId: el.match.id,
+        });
       }
 
       // Crossing the middle of a fold. Every other line here is drawn by the match it flows *into*, but a
@@ -98,9 +117,13 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
 
           // The winner's short id, not both participants': this line is somebody advancing along it, and
           // the journey highlight lights the path a participant actually travelled.
-          svgParts.push(
+          pushEdge(
             straightPath(makePos(next.dimensions), currentPos, {
-              path: { ...dimensions.path, className: el.match.winner?.shortId || '' },
+              path: {
+                ...dimensions.path,
+                id: edgeId(nextMatch.id, el.match.id),
+                className: el.match.winner?.shortId || '',
+              },
             }),
           );
         }
@@ -117,9 +140,13 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
 
           // The winner of the match it comes from, like every other connector - this used to carry both of
           // the *current* match's participants, which lit the line for whoever arrived from somewhere else.
-          svgParts.push(
+          pushEdge(
             straightPath(prevPos, currentPos, {
-              path: { ...dimensions.path, className: el.match.relation.previousMatch.winner?.shortId || '' },
+              path: {
+                ...dimensions.path,
+                id: edgeId(el.match.relation.previousMatch.id, el.match.id),
+                className: el.match.relation.previousMatch.winner?.shortId || '',
+              },
               // The way back runs right to left: the round it comes from sits on the *other* side.
               inverted: el.round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT,
             }),
@@ -136,6 +163,9 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
           const prevUpperPos = makePos(prevUpper.dimensions);
           const prevLowerPos = makePos(prevLower.dimensions);
 
+          const upperId = edgeId(el.match.relation.previousUpperMatch.id, el.match.id);
+          const lowerId = edgeId(el.match.relation.previousLowerMatch.id, el.match.id);
+
           const isLowerUpperMerger =
             el.match.relation.previousLowerRound.id !== el.match.relation.previousUpperRound.id;
 
@@ -144,14 +174,19 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
           const curveOptions: CurveOptions = {
             ...dimensions.curve,
             inverted: invertCurve,
-            path: { ...dimensions.path, className: '' },
+            path: { ...dimensions.path, id: upperId, className: '' },
           };
 
           if (isLowerUpperMerger) {
-            svgParts.push(straightPath(prevUpperPos, currentPos, { path: pathOptions, inverted: invertCurve }));
+            pushEdge(
+              straightPath(prevUpperPos, currentPos, {
+                path: { ...dimensions.path, id: upperId, className: currentMatchParticipantsShortIds },
+                inverted: invertCurve,
+              }),
+            );
           } else {
             // draw two lines that merge into one in the middle
-            svgParts.push(
+            pushEdge(
               mergePath(prevUpperPos, currentPos, 'down', {
                 ...curveOptions,
                 path: {
@@ -164,6 +199,7 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
 
           const lowerPathOptions = {
             ...curveOptions.path,
+            id: lowerId,
             className: el.match.relation.previousLowerMatch.winner?.shortId || '',
           };
 
@@ -173,12 +209,16 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
           const isBlockToBlock =
             isSameColumn(prevLowerPos, currentPos) && prevLowerPos.block.start > currentPos.block.end;
 
-          svgParts.push(
+          pushEdge(
             isBlockToBlock
               ? gutterPath(prevLowerPos, currentPos, {
                   // Dashed, like the continue column's: it runs the height of a block past cards it has
                   // nothing to do with, and reads as a stray bracket edge if it looks like one.
-                  path: { ...(dimensions.continuePath ?? dimensions.path), className: lowerPathOptions.className },
+                  path: {
+                    ...(dimensions.continuePath ?? dimensions.path),
+                    id: lowerId,
+                    className: lowerPathOptions.className,
+                  },
                   inverted: invertCurve,
                   gutter: dimensions.columnGap / 2,
                 })
@@ -193,7 +233,6 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
 
   if (continuePos && continueSources.length) {
     const continuePathOptions = dimensions.continuePath ?? dimensions.path;
-    const sharedPathOptions: PathOptions = { ...continuePathOptions, className: '' };
     const curveAmount = dimensions.curve.lineStartingCurveAmount;
     const trunkInline = continuePos.inline.start - dimensions.columnGap / 2;
     const continueBlockCenter = continuePos.block.center;
@@ -205,41 +244,54 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
     for (const source of continueSources) {
       const sourceBlockCenter = source.pos.block.center;
       const blockDistance = continueBlockCenter - sourceBlockCenter;
-      const sourcePathOptions: PathOptions = { ...continuePathOptions, className: source.className };
+      const sourcePathOptions: PathOptions = {
+        ...continuePathOptions,
+        id: edgeId(source.matchId, 'continue'),
+        className: source.className,
+      };
 
       const isTrunkCorner =
         (sourceBlockCenter === firstSourceBlock && blockDistance > 0.5) ||
         (sourceBlockCenter === lastSourceBlock && blockDistance < -0.5);
 
-      if (!isTrunkCorner) {
-        svgParts.push(path(`M ${source.pos.inline.end} ${sourceBlockCenter} H ${trunkInline}`, sourcePathOptions));
-        trunkBlocks.push(sourceBlockCenter);
-      } else {
-        const curve = Math.min(curveAmount, Math.abs(blockDistance));
-        const curveEndBlock = sourceBlockCenter + curve * Math.sign(blockDistance);
+      // The straight run into the trunk is the same three commands with a zero-radius corner, so that a
+      // source turning into a corner as the rows move animates rather than jumping.
+      const curve = isTrunkCorner ? Math.min(curveAmount, Math.abs(blockDistance)) : 0;
+      const curveEndBlock = sourceBlockCenter + curve * Math.sign(blockDistance);
 
-        svgParts.push(
-          path(
-            `M ${source.pos.inline.end} ${sourceBlockCenter}
-             H ${trunkInline - curve}
-             Q ${trunkInline} ${sourceBlockCenter}, ${trunkInline} ${curveEndBlock}`,
-            sourcePathOptions,
-          ),
-        );
+      pushEdge(
+        path(
+          `M ${source.pos.inline.end} ${sourceBlockCenter}
+           H ${trunkInline - curve}
+           Q ${trunkInline} ${sourceBlockCenter}, ${trunkInline} ${curveEndBlock}`,
+          sourcePathOptions,
+        ),
+      );
 
-        trunkBlocks.push(curveEndBlock);
-      }
+      trunkBlocks.push(curveEndBlock);
     }
 
     const trunkBlockStart = Math.min(...trunkBlocks);
     const trunkBlockEnd = Math.max(...trunkBlocks);
 
     if (trunkBlockEnd - trunkBlockStart > 0.5) {
-      svgParts.push(path(`M ${trunkInline} ${trunkBlockStart} V ${trunkBlockEnd}`, sharedPathOptions));
+      pushEdge(
+        path(`M ${trunkInline} ${trunkBlockStart} V ${trunkBlockEnd}`, {
+          ...continuePathOptions,
+          id: 'continue|trunk',
+          className: '',
+        }),
+      );
     }
 
-    svgParts.push(path(`M ${trunkInline} ${continueBlockCenter} H ${continuePos.inline.start}`, sharedPathOptions));
+    pushEdge(
+      path(`M ${trunkInline} ${continueBlockCenter} H ${continuePos.inline.start}`, {
+        ...continuePathOptions,
+        id: 'continue|element',
+        className: '',
+      }),
+    );
   }
 
-  return svgParts.join('');
+  return { edges, rects: [], gradients: [] };
 };

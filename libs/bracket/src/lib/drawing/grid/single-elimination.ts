@@ -1,15 +1,18 @@
 import { COMMON_BRACKET_ROUND_TYPE } from '../../core';
-import { Bracket } from '../../linked';
+import { Bracket, BracketRound } from '../../linked';
 import {
   BracketComponents,
+  BracketSubColumn,
   createBracketGrid,
   createBracketMasterColumn,
   createBracketMasterColumnSection,
+  BracketMasterColumnSection,
   finalizeBracketGrid,
 } from './core';
 import {
   createBracketContinueMasterColumn,
   createBracketGapMasterColumn,
+  createFoldedThirdPlaceSection,
   createRoundBracketSubColumnRelativeToFirstRound,
   getBracketContinueMatches,
 } from './prebuild';
@@ -17,6 +20,16 @@ import { ComputedBracketGrid, CreateBracketGridConfig } from './types';
 import { resolveBracketGridRowSpan } from './row-span';
 import { BracketRuntimeError } from '../../bracket-runtime-error';
 import { BRACKET_ERROR_CODES } from '../../bracket-errors';
+
+const resolveFoldedThirdPlaceRound = <TRoundData, TMatchData>(
+  rounds: BracketRound<TRoundData, TMatchData>[],
+  options: CreateBracketGridConfig,
+) => {
+  if (options.thirdPlaceTopOffset === null || options.thirdPlaceTopOffset === undefined) return null;
+  if (!rounds.some((round) => round.type === COMMON_BRACKET_ROUND_TYPE.FINAL)) return null;
+
+  return rounds.find((round) => round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) ?? null;
+};
 
 export const createSingleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: Bracket<TRoundData, TMatchData>,
@@ -33,11 +46,17 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
   }
 
   const resolvedOptions = resolveBracketGridRowSpan(bracketData, options);
+  const foldedThirdPlaceRound = resolveFoldedThirdPlaceRound(rounds, options);
+  const columnRounds = rounds.filter((round) => round !== foldedThirdPlaceRound);
 
-  for (const [roundIndex, round] of rounds.entries()) {
-    const isLastRound = roundIndex === rounds.length - 1;
+  let pushSectionToFinal: ((...sections: BracketMasterColumnSection<TRoundData, TMatchData>[]) => void) | null = null;
+  let finalSubColumn: BracketSubColumn<TRoundData, TMatchData> | null = null;
+
+  for (const [roundIndex, round] of columnRounds.entries()) {
+    const isLastRound = roundIndex === columnRounds.length - 1;
+    const isFinalRound = round.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
     const { masterColumn, ...mutableMasterColumn } = createBracketMasterColumn<TRoundData, TMatchData>({
-      columnWidth: round.type === COMMON_BRACKET_ROUND_TYPE.FINAL ? options.finalColumnWidth : options.columnWidth,
+      columnWidth: isFinalRound ? options.finalColumnWidth : options.columnWidth,
       padding: {
         bottom: 0,
         left: 0,
@@ -67,6 +86,11 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
 
     grid.pushMasterColumn(masterColumn);
 
+    if (isFinalRound) {
+      pushSectionToFinal = mutableMasterColumn.pushSection;
+      finalSubColumn = sub;
+    }
+
     if (!isLastRound) {
       grid.pushMasterColumn(
         createBracketGapMasterColumn({
@@ -75,6 +99,20 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
         }),
       );
     }
+  }
+
+  // After the loop, so the gap column beside the final mirrors the final's section alone: the folded
+  // round has nothing to its right to stay aligned with.
+  if (foldedThirdPlaceRound && pushSectionToFinal && finalSubColumn) {
+    pushSectionToFinal(
+      createFoldedThirdPlaceSection({
+        finalSubColumn,
+        round: foldedThirdPlaceRound,
+        topOffset: options.thirdPlaceTopOffset ?? 0,
+        options: resolvedOptions,
+        components,
+      }),
+    );
   }
 
   if (options.continueElement && components.continue) {

@@ -26,6 +26,19 @@ export type CreateBracketGridConfig = {
   rowSpanMatchCount?: number;
   finalMatchHeight: number;
   finalColumnWidth: number;
+
+  /**
+   * What the final keeps between its round header and its card, in px, where that is more than
+   * `roundHeaderGap`. The room goes to the final's column alone. Unset gives it the same gap as every
+   * other round.
+   */
+  finalRoundHeaderGap?: number | null;
+
+  /**
+   * How far below the top of the final's card a third place match sits, in px, when the two share a
+   * column. Unset (or `null`) gives the third place a column of its own.
+   */
+  thirdPlaceTopOffset?: number | null;
   swissGroupPadding: number;
   swissGroupBorderWidth: number;
   layout: BracketDataLayout;

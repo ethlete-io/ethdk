@@ -22,6 +22,12 @@ export type CreateRoundBracketSubColumnRelativeToFirstRoundConfig<TRoundData, TM
    * needs - a stacked bracket's centre chain hanging past the bottom of its block.
    */
   bottomPadding?: number;
+
+  /**
+   * How many first-round rows each of this round's matches owns. Derived from the round's own match
+   * count when unset; a folded round is placed by its offset instead and takes `1`.
+   */
+  matchFactor?: number;
 };
 
 export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMatchData>(
@@ -33,8 +39,17 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
     span,
   });
 
-  const matchFactor = Math.max(1, (options.rowSpanMatchCount ?? firstRound.matchCount) / round.matchCount);
+  const matchFactor =
+    config.matchFactor ?? Math.max(1, (options.rowSpanMatchCount ?? firstRound.matchCount) / round.matchCount);
   const matches = Array.from(round.matches.values());
+
+  const isFinalRound = hasReverseFinal
+    ? round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL
+    : round.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
+
+  const roundHeaderGap = isFinalRound
+    ? Math.max(options.roundHeaderGap, options.finalRoundHeaderGap ?? 0)
+    : options.roundHeaderGap;
 
   const elementsToCreate: Array<BracketElementToCreate<TRoundData, TMatchData>> = [];
 
@@ -53,8 +68,8 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
       {
         type: 'roundHeaderGap',
         area: '.',
-        partHeights: [options.roundHeaderGap],
-        elementHeight: options.roundHeaderGap,
+        partHeights: [roundHeaderGap],
+        elementHeight: roundHeaderGap,
       },
     );
   }
@@ -75,10 +90,7 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
       if (factorIndex < fedMatchCount - 1) matchRows.push(options.rowGap);
     }
 
-    const isFinalMatch = hasReverseFinal
-      ? round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL
-      : round.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
-    const elementHeight = isFinalMatch ? options.finalMatchHeight : options.matchHeight;
+    const elementHeight = isFinalRound ? options.finalMatchHeight : options.matchHeight;
     const blockHeight = Math.max(elementHeight, matchFactor * options.matchHeight + (matchFactor - 1) * options.rowGap);
     const currentBlockHeight = matchRows.reduce((total, height) => total + height, 0);
 
@@ -89,7 +101,7 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
       area: `m${match.shortId}`,
       partHeights: matchRows,
       elementHeight,
-      component: isFinalMatch ? config.components.finalMatch : config.components.match,
+      component: isFinalRound ? config.components.finalMatch : config.components.match,
       match,
       round,
       roundSwissGroup: null,

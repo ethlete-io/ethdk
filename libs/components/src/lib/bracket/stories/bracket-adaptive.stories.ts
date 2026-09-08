@@ -1,5 +1,6 @@
 import { Meta, StoryFn } from '@storybook/angular';
 import { StorybookBracketAdaptiveComponent } from './bracket-rounds-list-storybook.component';
+import { StorybookBracketSqueezeComponent } from './bracket-storybook.component';
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from './generate-bracket';
 
 export default {
@@ -38,5 +39,32 @@ export const DoubleElimination = {
   args: {
     source: generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true }),
     containerWidth: 900,
+  },
+};
+
+// A template rather than the meta's component: this file's default export is the adaptive demo, and a
+// story-level `component` is not what the Angular renderer draws.
+const SqueezeTemplate: StoryFn<StorybookBracketSqueezeComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-bracket-squeeze
+    [source]="source"
+    [panelWidth]="panelWidth"
+    [focusInset]="focusInset"
+    [finalRoundHeaderGap]="finalRoundHeaderGap"
+  />`,
+  moduleMetadata: { imports: [StorybookBracketSqueezeComponent] },
+});
+
+/**
+ * The other narrow-screen answer: the grid itself, clipped to one round. Stepping rounds squeezes the
+ * rows and slides the column into view - every cell and every connector moving as one transition.
+ */
+export const OneRoundPanel = {
+  render: SqueezeTemplate,
+  args: {
+    source: generateSingleEliminationBracket(8),
+    panelWidth: 360,
+    focusInset: 40,
+    finalRoundHeaderGap: 60,
   },
 };

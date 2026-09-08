@@ -17,6 +17,19 @@ export type OptionalBooleanInput = boolean | string | undefined | null;
 export const optionalNumberAttribute = (value: OptionalNumberInput): number | undefined =>
   value === undefined || value === null ? undefined : numberAttribute(value);
 
+/**
+ * Likewise, except that `null` survives as `null`: it is the "off" value of a setting whose default is
+ * `null` (`thirdPlaceTopOffset`), so an instance has to be able to bind it to opt out of an app-wide
+ * number.
+ *
+ * @internal
+ */
+export const nullableNumberAttribute = (value: OptionalNumberInput): number | null | undefined => {
+  if (value === undefined) return undefined;
+
+  return value === null ? null : numberAttribute(value);
+};
+
 /** `booleanAttribute` with the same treatment - see {@link optionalNumberAttribute}. @internal */
 export const optionalBooleanAttribute = (value: OptionalBooleanInput): boolean | undefined =>
   value === undefined || value === null ? undefined : booleanAttribute(value);

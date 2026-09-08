@@ -14,7 +14,6 @@ import {
   Type,
   ViewEncapsulation,
 } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
 import { createComponentId, injectRenderer, injectStyleManager } from '@ethlete/core';
 import {
   BracketContinueComponent,
@@ -36,13 +35,14 @@ import { resolveBracketComponents } from './bracket-components';
 import { BracketDensity } from './bracket-density';
 import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
 import {
+  nullableNumberAttribute,
   OptionalBooleanInput,
   optionalBooleanAttribute,
   OptionalNumberInput,
   optionalNumberAttribute,
 } from './bracket-input-transforms';
 import { BracketLayout, resolveBracketLayout } from './bracket-layout';
-import { BRACKET_DEFAULTS, injectBracketConfig } from './bracket.config';
+import { BRACKET_DEFAULTS, BracketRoundHeaderAlign, injectBracketConfig } from './bracket.config';
 
 @Component({
   selector: 'et-bracket',
@@ -58,7 +58,6 @@ import { BRACKET_DEFAULTS, injectBracketConfig } from './bracket.config';
   },
 })
 export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
-  private domSanitizer = inject(DomSanitizer);
   private config = injectBracketConfig();
 
   public source = input.required<BracketDataSource<TRoundData, TMatchData>>();
@@ -90,9 +89,24 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     transform: optionalNumberAttribute,
   });
   public rowSpanRoundId = input<string | null | undefined>(undefined);
+  public thirdPlaceTopOffset = input<number | null | undefined, OptionalNumberInput>(undefined, {
+    transform: nullableNumberAttribute,
+  });
+  public finalRoundHeaderGap = input<number | null | undefined, OptionalNumberInput>(undefined, {
+    transform: nullableNumberAttribute,
+  });
+  public alignRoundHeaders = input<BracketRoundHeaderAlign | undefined>(undefined);
 
   /** Move this round to the inline start without changing the bracket's vertical density. */
   public focusRoundId = input<string | null>(null);
+
+  /**
+   * Room kept to the inline start of `focusRoundId`, in px - the gutter a one-round panel puts its
+   * navigation in, and that a card badge may straddle the card's edge into.
+   */
+  public focusInset = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
+  });
   public lineStartingCurveAmount = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
@@ -218,6 +232,12 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
       rowGap: this.rowGap() ?? this.config.rowGap,
       rowRoundGap: this.rowRoundGap() ?? this.config.rowRoundGap,
       rowSpanRoundId: this.rowSpanRoundId() === undefined ? this.config.rowSpanRoundId : this.rowSpanRoundId(),
+      thirdPlaceTopOffset:
+        this.thirdPlaceTopOffset() === undefined ? this.config.thirdPlaceTopOffset : this.thirdPlaceTopOffset(),
+      finalRoundHeaderGap:
+        this.finalRoundHeaderGap() === undefined ? this.config.finalRoundHeaderGap : this.finalRoundHeaderGap(),
+      alignRoundHeaders: this.alignRoundHeaders() ?? this.config.alignRoundHeaders,
+      focusInset: this.focusInset() ?? this.config.focusInset,
       lineStartingCurveAmount: this.lineStartingCurveAmount() ?? this.config.lineStartingCurveAmount,
       lineEndingCurveAmount: this.lineEndingCurveAmount() ?? this.config.lineEndingCurveAmount,
       lineWidth: this.lineWidth() ?? this.config.lineWidth,
@@ -269,20 +289,15 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     return layout.createGrid(bracketData, options, components);
   });
 
-  public drawManData = computed(() => {
-    const bracketGrid = this.bracketGrid();
-
-    if (!bracketGrid) return '';
-
-    return this.resolvedLayout().drawEdges({
-      grid: bracketGrid,
+  /** The connectors, group borders and gradients the active layout draws for this grid. */
+  public drawing = computed(() =>
+    this.resolvedLayout().drawEdges({
+      grid: this.bracketGrid(),
       settings: this.settings(),
       idPrefix: this.elementId,
       colors: this.swissColors(),
-    });
-  });
-
-  public svgContent = computed(() => this.domSanitizer.bypassSecurityTrustHtml(this.drawManData()));
+    }),
+  );
 
   protected focusRoundOffset = computed(() => {
     const focusRoundId = this.focusRoundId();
@@ -297,7 +312,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
       ),
     );
 
-    return column?.dimensions.left ?? 0;
+    return (column?.dimensions.left ?? 0) - this.settings().focusInset;
   });
 
   constructor() {

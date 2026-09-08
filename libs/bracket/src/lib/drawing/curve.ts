@@ -23,9 +23,16 @@ export const curvePath = (
   const fromBlock = from.block.center;
   const toBlock = to.block.center;
 
-  // Curve parameters
-  const startCurve = options.lineStartingCurveAmount;
-  const endCurve = options.lineEndingCurveAmount;
+  // Both bends have to fit inside the block distance between the two cards, or the line turns past its
+  // target and comes back. Scaling them down instead - to nothing, for two cards on the same row - is
+  // also what keeps the six commands below identical for every connector: a CSS `d` transition
+  // interpolates only between two paths of the same shape.
+  const requestedCurve = options.lineStartingCurveAmount + options.lineEndingCurveAmount;
+  const blockDistance = Math.abs(toBlock - fromBlock);
+  const curveScale = requestedCurve > blockDistance ? blockDistance / requestedCurve : 1;
+
+  const startCurve = options.lineStartingCurveAmount * curveScale;
+  const endCurve = options.lineEndingCurveAmount * curveScale;
   const totalInline = Math.abs(toInline - fromInline);
   const straightLength = (totalInline - startCurve - endCurve) / 2;
 

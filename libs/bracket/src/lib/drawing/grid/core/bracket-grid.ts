@@ -109,7 +109,9 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
           currentSubColumnLeft += subColumnWidth;
         }
 
-        section.dimensions.height = sectionPaddingTop + maxSectionHeight + sectionPadding.bottom;
+        // Never negative: a section may start above where it would stack (a folded third place asks for
+        // that with a negative padding), but its own box still has to be a box.
+        section.dimensions.height = Math.max(0, sectionPaddingTop + maxSectionHeight + sectionPadding.bottom);
 
         runningTop += maxSectionHeight + sectionPadding.bottom;
       }

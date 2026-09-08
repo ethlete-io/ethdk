@@ -6,6 +6,7 @@ import { BracketDataLayout } from './core/layout';
 import { TournamentMode } from './core/tournament';
 import {
   BracketComponents,
+  BracketDrawing,
   ComputedBracketGrid,
   CreateBracketGridConfig,
   resolveBracketLayout as resolveBracketLayoutCore,
@@ -75,8 +76,12 @@ export type BracketLayout<TRoundData = any, TMatchData = any> = {
     components: BracketComponents<TRoundData, TMatchData>,
   ) => ComputedBracketGrid<TRoundData, TMatchData>;
 
-  /** Draws the SVG between the cells - connectors, group borders - as an HTML string. */
-  drawEdges: (context: BracketDrawEdgesContext<TRoundData, TMatchData>) => string;
+  /**
+   * Describes what goes between the cells - the connectors, and any group borders behind them - as data
+   * the host renders with `@for`. See {@link BracketDrawing}: give an edge an `id` that survives a
+   * re-layout, or it will be replaced instead of animated.
+   */
+  drawEdges: (context: BracketDrawEdgesContext<TRoundData, TMatchData>) => BracketDrawing;
 
   /**
    * Splits rounds into standings groups for `<et-bracket-rounds-list>` - a swiss round lists each

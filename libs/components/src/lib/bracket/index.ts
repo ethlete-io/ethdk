@@ -81,7 +81,12 @@ export * from './bracket.config';
 export type {
   BracketComponents,
   BracketContinueComponent,
+  BracketDrawing,
+  BracketEdge,
+  BracketGradient,
+  BracketGradientStop,
   BracketMatchComponent,
+  BracketRect,
   BracketRoundHeaderComponent,
   ComputedBracketGrid,
   CreateBracketGridConfig,

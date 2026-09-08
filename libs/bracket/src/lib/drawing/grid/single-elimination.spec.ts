@@ -133,3 +133,79 @@ describe('createSingleEliminationGrid, element parts', () => {
     expect(rows.find((row) => row.area === 'm2-0')?.heights).toEqual([80, 10, 80, 10, 80, 10, 80]);
   });
 });
+
+const withThirdPlace = (source: BracketDataSource<null, null>): BracketDataSource<null, null> => ({
+  ...source,
+  rounds: [...source.rounds, { id: 'third', name: 'Third place', type: 'third-place' as const, data: null }],
+  matches: [
+    ...source.matches,
+    { id: 'thirdm0', roundId: 'third', home: null, away: null, winner: null, status: 'pending' as const, data: null },
+  ],
+});
+
+const leftToRightGrid = (source: BracketDataSource<null, null>, config: Partial<CreateBracketGridConfig> = {}) =>
+  createSingleEliminationGrid(
+    createBracket(source, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT }),
+    { ...CONFIG, layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT, ...config },
+    COMPONENTS,
+  );
+
+describe('createSingleEliminationGrid, a folded third place', () => {
+  const source = () => withThirdPlace(singleElimination([4, 2, 1]));
+
+  it('gives the third place its own column while the offset is unset', () => {
+    const grid = leftToRightGrid(source());
+
+    expect(grid.matchElementMap.getOrThrow('thirdm0').dimensions.left).toBe(
+      grid.matchElementMap.getOrThrow('r2m0').dimensions.left + COLUMN_WIDTH + COLUMN_GAP,
+    );
+  });
+
+  it("places it in the final's column, that many px below the final's card", () => {
+    const grid = leftToRightGrid(source(), { thirdPlaceTopOffset: 100 });
+    const final = grid.matchElementMap.getOrThrow('r2m0').dimensions;
+    const thirdPlace = grid.matchElementMap.getOrThrow('thirdm0').dimensions;
+
+    expect(thirdPlace.left).toBe(final.left);
+    expect(thirdPlace.top).toBe(final.top + 100);
+  });
+
+  it('keeps the grid tall enough for a fold that hangs past the final', () => {
+    const grid = leftToRightGrid(source(), { thirdPlaceTopOffset: 400 });
+    const thirdPlace = grid.matchElementMap.getOrThrow('thirdm0').dimensions;
+
+    expect(grid.raw.grid.dimensions.height).toBeGreaterThanOrEqual(thirdPlace.top + thirdPlace.height);
+  });
+
+  it('leaves the fold alone when the source has no final to fold it into', () => {
+    const noFinal: BracketDataSource<null, null> = {
+      ...withThirdPlace(singleElimination([4, 2])),
+      rounds: [
+        { id: 'r0', name: 'Round 0', type: 'single-elimination-bracket', data: null },
+        { id: 'r1', name: 'Round 1', type: 'single-elimination-bracket', data: null },
+        { id: 'third', name: 'Third place', type: 'third-place', data: null },
+      ],
+    };
+    const grid = leftToRightGrid(noFinal, { thirdPlaceTopOffset: 100 });
+
+    expect(grid.matchElementMap.getOrThrow('thirdm0').dimensions.left).toBeGreaterThan(
+      grid.matchElementMap.getOrThrow('r1m0').dimensions.left,
+    );
+  });
+});
+
+describe("createSingleEliminationGrid, the final's header gap", () => {
+  const headed = { includeRoundHeaders: true, roundHeaderHeight: 40, roundHeaderGap: 10 };
+
+  it("lowers the final's card alone", () => {
+    const relaxed = leftToRightGrid(singleElimination([4, 2, 1]), headed);
+    const roomy = leftToRightGrid(singleElimination([4, 2, 1]), { ...headed, finalRoundHeaderGap: 60 });
+
+    expect(roomy.matchElementMap.getOrThrow('r0m0').dimensions.top).toBe(
+      relaxed.matchElementMap.getOrThrow('r0m0').dimensions.top,
+    );
+    expect(roomy.matchElementMap.getOrThrow('r2m0').dimensions.top).toBe(
+      relaxed.matchElementMap.getOrThrow('r2m0').dimensions.top + 50,
+    );
+  });
+});

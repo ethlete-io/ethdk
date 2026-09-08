@@ -4,6 +4,13 @@ import { BracketDensity } from './bracket-density';
 import { BracketLayout } from './bracket-layout';
 import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from '@ethlete/bracket';
 
+export const BRACKET_ROUND_HEADER_ALIGN = {
+  START: 'start',
+  CENTER: 'center',
+} as const;
+
+export type BracketRoundHeaderAlign = (typeof BRACKET_ROUND_HEADER_ALIGN)[keyof typeof BRACKET_ROUND_HEADER_ALIGN];
+
 /**
  * Default values for the et-bracket component inputs. Inputs set on the component
  * always win over the config.
@@ -31,6 +38,35 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
   rowRoundGap?: number;
   /** The round whose density determines vertical spacing. `null` uses the opening round. */
   rowSpanRoundId?: string | null;
+  /**
+   * How far below the top of the final's card a third place match sits, in px, folding it into the
+   * final's column and moving its round header above its own card. `null` gives it a column of its own.
+   *
+   * Only a single elimination layout has a column to fold: a double elimination grid already hangs the
+   * third place under its final.
+   */
+  thirdPlaceTopOffset?: number | null;
+  /**
+   * What the final keeps between its round header and its card, in px, where that is more than
+   * `roundHeaderGap` - room for a trophy line or a stage label. `null` gives it the same gap as every
+   * other round.
+   *
+   * The room goes to the final's column alone; widening `roundHeaderGap` instead lowers the card of
+   * every round.
+   */
+  finalRoundHeaderGap?: number | null;
+  /**
+   * Where a round header sits over its column. `'center'` is the one round of a narrow panel, where the
+   * header names the panel rather than labelling a column it starts.
+   *
+   * A header that fills its column - the shipped one does - looks the same either way.
+   */
+  alignRoundHeaders?: BracketRoundHeaderAlign;
+  /**
+   * How much room to keep to the inline start of `focusRoundId`, in px - the gutter a one-round panel
+   * puts its navigation in, and that a card badge may straddle the card's edge into.
+   */
+  focusInset?: number;
   lineStartingCurveAmount?: number;
   lineEndingCurveAmount?: number;
   lineWidth?: number;
@@ -104,6 +140,10 @@ export const BRACKET_DEFAULTS: Required<BracketLayoutConfig> = {
   rowGap: 30,
   rowRoundGap: 20,
   rowSpanRoundId: null,
+  thirdPlaceTopOffset: null,
+  finalRoundHeaderGap: null,
+  alignRoundHeaders: BRACKET_ROUND_HEADER_ALIGN.START,
+  focusInset: 0,
   lineStartingCurveAmount: 10,
   lineEndingCurveAmount: 0,
   lineWidth: 2,

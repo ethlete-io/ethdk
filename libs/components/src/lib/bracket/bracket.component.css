@@ -1,28 +1,37 @@
 @layer components {
   .et-bracket {
     position: relative;
-    transition: transform 0.2s ease;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .et-bracket {
-      transition: none;
-    }
+    transition: transform var(--et-bracket-move-duration, 0.2s) ease;
   }
 
   .et-bracket-round {
     position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
     list-style: none;
     margin: 0;
     padding: 0;
+    transition: transform var(--et-bracket-move-duration, 0.2s) ease;
   }
 
   .et-bracket-element {
     position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
     list-style: none;
     margin: 0;
     padding: 0;
-    transition: opacity 0.2s;
+    transition:
+      transform var(--et-bracket-move-duration, 0.2s) ease,
+      opacity 0.2s;
+  }
+
+  /* Only the centered case has a rule: a header that fills its column - the shipped one does - is
+     centered already, so `start` has to leave it exactly as it was. */
+  .et-bracket-element--header:where([data-align='center']) {
+    display: flex;
+    justify-content: center;
+    text-align: center;
   }
 
   .et-bracket-svg {
@@ -37,11 +46,22 @@
      */
     path {
       color: var(--et-bracket-line-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
-      transition: opacity 0.2s;
+      transition:
+        d var(--et-bracket-move-duration, 0.2s) ease,
+        opacity 0.2s;
     }
 
     /* The swiss group border color lives in BracketSwissStylesComponent, mounted by swissBracketLayout() —
        a bracket that never draws groups never injects it. */
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-bracket,
+    .et-bracket-round,
+    .et-bracket-element,
+    .et-bracket-svg path {
+      transition: none;
+    }
   }
 
   .et-bracket-host--journey-hover {

@@ -3,16 +3,15 @@ import { BracketSwissColors, BracketSwissGroupColorType, getSwissGroupColorType 
 import { curvePath } from './curve';
 import { FinalizedBracketElement, FinalizedMatchBracketElement } from './grid/core/bracket-finalizer';
 import { ComputedBracketGrid } from './grid/types';
-import { linePath } from './line';
 import { BracketPosition } from './math';
 import { PathOptions } from './path';
-import { escapeSvgAttributeValue } from './svg';
+import { BracketDrawing, BracketEdge, BracketGradient, BracketRect } from './shapes';
 import { BracketRuntimeError } from '../bracket-runtime-error';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
 
 export type DrawSwissManDimensions<TRoundData, TMatchData> = {
   bracketGrid: ComputedBracketGrid<TRoundData, TMatchData>;
-  path: Omit<PathOptions, 'className' | 'stroke'>;
+  path: Omit<PathOptions, 'className' | 'stroke' | 'id'>;
 
   // The swiss connection lines always bend twice with the same radius, so there is no
   // dedicated ending curve amount (it would make no sense here).
@@ -131,20 +130,35 @@ const groupBorderRect = (
   group: SwissGroupGeometry,
   border: DrawSwissManDimensions<unknown, unknown>['groupBorder'],
   color: string | undefined,
-  // eslint-disable-next-line max-params -- SVG geometry helper; (group, border, color) are distinct positional inputs
-) => {
+  id: string,
+  // eslint-disable-next-line max-params -- SVG geometry helper; (group, border, color, id) are distinct positional inputs
+): BracketRect => {
   // The group box wraps the matches plus the group padding plus the border itself. The
   // rect is inset by half the stroke width so the stroke renders fully inside the group
   // bounds instead of getting cut off at the edges of the bracket container.
   const boxPadding = border.padding + border.width;
   const strokeInset = border.width / 2;
 
-  const x = group.position.inline.start + strokeInset;
-  const y = group.position.block.start - boxPadding + strokeInset;
-  const width = group.position.inline.end - group.position.inline.start - border.width;
-  const height = group.position.block.end - group.position.block.start + boxPadding * 2 - border.width;
+  return {
+    id,
+    x: group.position.inline.start + strokeInset,
+    y: group.position.block.start - boxPadding + strokeInset,
+    width: group.position.inline.end - group.position.inline.start - border.width,
+    height: group.position.block.end - group.position.block.start + boxPadding * 2 - border.width,
+    radius: border.radius,
+    stroke: color ?? 'currentColor',
+    strokeWidth: border.width,
+    cssClass: `et-bracket-swiss-group-border et-bracket-swiss-group-border--${group.id} et-bracket-swiss-group-border--${group.colorType}`,
+  };
+};
 
-  return `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${border.radius}" stroke="${escapeSvgAttributeValue(color ?? 'currentColor')}" fill="none" stroke-width="${border.width}" class="et-bracket-swiss-group-border et-bracket-swiss-group-border--${group.id} et-bracket-swiss-group-border--${group.colorType}" />`;
+type SwissLineGradient = {
+  id: string;
+  fromX: number;
+  toX: number;
+  from: string;
+  neutral: string;
+  to: string;
 };
 
 // A horizontal gradient for the connection lines: they leave the source group in its
@@ -152,20 +166,32 @@ const groupBorderRect = (
 // the target group color on the second half. The connection lines always run from left to
 // right, so user space coordinates can be used (they also work for straight lines, where
 // the bounding box has no height).
-// eslint-disable-next-line max-params -- SVG gradient stops are inherently positional (id, fromX, toX, from, neutral, to)
-const lineGradientDef = (id: string, fromX: number, toX: number, from: string, neutral: string, to: string) =>
-  `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${fromX}" y1="0" x2="${toX}" y2="0"><stop offset="0%" stop-color="${escapeSvgAttributeValue(from)}" /><stop offset="50%" stop-color="${escapeSvgAttributeValue(neutral)}" /><stop offset="100%" stop-color="${escapeSvgAttributeValue(to)}" /></linearGradient>`;
+const lineGradient = (config: SwissLineGradient): BracketGradient => ({
+  id: config.id,
+  fromX: config.fromX,
+  toX: config.toX,
+  stops: [
+    { offset: '0%', color: config.from },
+    { offset: '50%', color: config.neutral },
+    { offset: '100%', color: config.to },
+  ],
+});
 
-export const drawSwissMan = <TRoundData, TMatchData>(dimensions: DrawSwissManDimensions<TRoundData, TMatchData>) => {
-  const svgParts: string[] = [];
-  const gradientDefs: string[] = [];
+export const drawSwissMan = <TRoundData, TMatchData>(
+  dimensions: DrawSwissManDimensions<TRoundData, TMatchData>,
+): BracketDrawing => {
+  const edges: BracketEdge[] = [];
+  const rects: BracketRect[] = [];
+  const gradients: BracketGradient[] = [];
 
   const roundGeometries = collectSwissRoundGeometries(dimensions.bracketGrid);
   const colors = dimensions.colors;
 
-  for (const roundGeometry of roundGeometries) {
+  for (const [roundIndex, roundGeometry] of roundGeometries.entries()) {
     for (const group of roundGeometry.groups.values()) {
-      svgParts.push(groupBorderRect(group, dimensions.groupBorder, colors?.[group.colorType]));
+      rects.push(
+        groupBorderRect(group, dimensions.groupBorder, colors?.[group.colorType], `r${roundIndex}|${group.id}`),
+      );
     }
   }
 
@@ -173,8 +199,6 @@ export const drawSwissMan = <TRoundData, TMatchData>(dimensions: DrawSwissManDim
     lineStartingCurveAmount: dimensions.curve.lineStartingCurveAmount,
     lineEndingCurveAmount: dimensions.curve.lineStartingCurveAmount,
   };
-
-  let edgeIndex = 0;
 
   for (const [roundIndex, roundGeometry] of roundGeometries.entries()) {
     const nextRoundGeometry = roundGeometries[roundIndex + 1];
@@ -190,43 +214,52 @@ export const drawSwissMan = <TRoundData, TMatchData>(dimensions: DrawSwissManDim
       for (const { geometry: target, shortIds } of targets) {
         if (!target) continue;
 
+        const edgeId = `r${roundIndex}|${group.id}|${target.id}`;
+        // Only URI characters: this ends up inside a `url(#…)` the `stroke` attribute has to resolve.
+        const gradientId = `${dimensions.idPrefix}-swiss-line-r${roundIndex}-${group.id}-to-${target.id}`;
         const neutralColor = colors?.neutral;
-        const fromColor = colors?.[group.colorType] ?? neutralColor;
-        const toColor = colors?.[target.colorType] ?? neutralColor;
 
         let stroke = neutralColor;
 
-        if (neutralColor && (fromColor !== neutralColor || toColor !== neutralColor)) {
-          const gradientId = `${dimensions.idPrefix}-swiss-line-${edgeIndex}`;
-          const fromX = group.position.inline.end;
-          const toX = target.position.inline.start;
+        if (neutralColor) {
+          const from = colors?.[group.colorType] ?? neutralColor;
+          const to = colors?.[target.colorType] ?? neutralColor;
 
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          gradientDefs.push(lineGradientDef(gradientId, fromX, toX, fromColor!, neutralColor, toColor!));
+          if (from !== neutralColor || to !== neutralColor) {
+            gradients.push(
+              lineGradient({
+                id: gradientId,
+                fromX: group.position.inline.end,
+                toX: target.position.inline.start,
+                from,
+                neutral: neutralColor,
+                to,
+              }),
+            );
 
-          stroke = `url(#${gradientId})`;
+            stroke = `url(#${gradientId})`;
+          }
         }
 
-        const pathOptions: PathOptions = { ...dimensions.path, className: shortIds.join(' '), stroke };
+        const pathOptions: PathOptions = {
+          ...dimensions.path,
+          id: edgeId,
+          className: shortIds.join(' '),
+          stroke,
+        };
         const blockDelta = target.position.block.center - group.position.block.center;
 
-        if (Math.abs(blockDelta) < 0.5) {
-          svgParts.push(linePath(group.position, target.position, { path: pathOptions }));
-        } else {
-          svgParts.push(
-            curvePath(group.position, target.position, blockDelta > 0 ? 'down' : 'up', {
-              ...curveOptions,
-              path: pathOptions,
-            }),
-          );
-        }
-
-        edgeIndex++;
+        // Always a curve, even between two groups on the same row, where the bends collapse to nothing
+        // and it draws as a straight run - one shape per connector is what lets it animate.
+        edges.push(
+          curvePath(group.position, target.position, blockDelta < 0 ? 'up' : 'down', {
+            ...curveOptions,
+            path: pathOptions,
+          }),
+        );
       }
     }
   }
 
-  const defs = gradientDefs.length ? `<defs>${gradientDefs.join('')}</defs>` : '';
-
-  return defs + svgParts.join('');
+  return { edges, rects, gradients };
 };

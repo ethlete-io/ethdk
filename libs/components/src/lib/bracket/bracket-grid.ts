@@ -61,6 +61,8 @@ export const createBracketGridConfig = (
   finalMatchHeight: settings.finalMatchHeight,
   finalColumnWidth: settings.finalColumnWidth,
   roundHeaderGap: settings.hideRoundHeaders ? 0 : settings.roundHeaderGap,
+  finalRoundHeaderGap: settings.hideRoundHeaders ? null : settings.finalRoundHeaderGap,
+  thirdPlaceTopOffset: settings.thirdPlaceTopOffset,
   swissGroupPadding: settings.swissGroupPadding,
   swissGroupBorderWidth: settings.lineWidth,
   continueElement:

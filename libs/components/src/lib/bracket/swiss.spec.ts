@@ -116,18 +116,22 @@ describe('the swiss grid', () => {
 });
 
 describe('the swiss drawing', () => {
-  it('escapes a color so it cannot inject an attribute of its own', () => {
-    const svg = drawSwiss(DECIDED_SWISS, { neutral: '#fff" onload="alert(1)', positive: '#0f0' });
+  // The drawing is data the host binds, never markup it parses, so a color carrying a quote is just a
+  // color - there is no attribute for it to close.
+  it('hands a color through verbatim, however it is written', () => {
+    const drawing = drawSwiss(DECIDED_SWISS, { neutral: '#fff" onload="alert(1)', positive: '#0f0' });
 
-    const host = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    host.innerHTML = svg;
+    expect(drawing.rects.map((rect) => rect.stroke)).toContain('#fff" onload="alert(1)');
+    expect(drawing.gradients.flatMap((gradient) => gradient.stops.map((stop) => stop.color))).toContain(
+      '#fff" onload="alert(1)',
+    );
+  });
 
-    const rect = host.querySelector('rect');
-    const stop = host.querySelector('stop');
+  it('names every group border and connector uniquely', () => {
+    const drawing = drawSwiss(DECIDED_SWISS, { neutral: '#888', positive: '#0f0' });
+    const ids = [...drawing.rects, ...drawing.edges].map((shape) => shape.id);
 
-    expect(rect?.getAttributeNames()).not.toContain('onload');
-    expect(rect?.getAttribute('stroke')).toBe('#fff" onload="alert(1)');
-    expect(stop?.getAttributeNames()).not.toContain('onload');
-    expect(host.querySelectorAll('[onload]').length).toBe(0);
+    expect(ids.length).toBeGreaterThan(0);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

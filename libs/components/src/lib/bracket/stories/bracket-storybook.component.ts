@@ -11,6 +11,7 @@ import { BUTTON_IMPORTS } from '../../button';
 import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../../scrollable/scrollable.imports';
 import { BRACKET_DENSITY, BracketDensity } from '../bracket-density';
 import { BracketComponent } from '../bracket.component';
+import { BRACKET_ROUND_HEADER_ALIGN, BracketRoundHeaderAlign } from '../bracket.config';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout } from '../core/layout';
 import { BracketDataSource } from '../integrations/base';
 import {
@@ -77,6 +78,99 @@ export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unk
   public bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
   public bracketMatch = input.required<BracketMatch<TRoundData, TMatchData>>();
   public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
+}
+
+/**
+ * A round header that sizes to its own text, which is what `alignRoundHeaders` moves - the shipped one
+ * fills its column and looks the same either way. Not part of the library's public API.
+ */
+@Component({
+  selector: 'et-sb-round-header',
+  template: ` <span>{{ bracketRound().name }}</span> `,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-sb-round-header-host',
+  },
+  styles: `
+    @layer components {
+      .et-sb-round-header-host {
+        display: inline-flex;
+        align-items: center;
+        padding-inline: 8px;
+        border: 1px dashed var(--et-surface-border-solid);
+        border-radius: 4px;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+    }
+  `,
+})
+export class StorybookRoundHeaderComponent<TRoundData = unknown, TMatchData = unknown> {
+  public bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
+  public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
+}
+
+/**
+ * The one-round panel: the same grid, clipped to one column, with `rowSpanRoundId` squeezing the rows of
+ * the round on screen and `focusRoundId` bringing it to the inline start. Both move every cell and every
+ * connector as one transition.
+ */
+@Component({
+  selector: 'et-sb-bracket-squeeze',
+  template: `
+    <div class="flex items-center gap-2">
+      <button (click)="step(-1)" et-button size="sm" type="button" data-testid="previous-round">Previous</button>
+      <button (click)="step(1)" et-button size="sm" type="button" data-testid="next-round">Next</button>
+      <span class="text-small" data-testid="focused-round">{{ focusedRoundId() }}</span>
+    </div>
+
+    <div
+      [style.inline-size.px]="panelWidth()"
+      class="mt-4 overflow-hidden"
+      data-testid="panel"
+      style="border: 1px solid var(--et-surface-border-solid)"
+    >
+      <et-bracket
+        [source]="source()"
+        [layouts]="LAYOUTS"
+        [matchNormalizer]="MATCH_NORMALIZER"
+        [rowSpanRoundId]="focusedRoundId()"
+        [focusRoundId]="focusedRoundId()"
+        [focusInset]="focusInset()"
+        [alignRoundHeaders]="alignRoundHeaders()"
+        [thirdPlaceTopOffset]="thirdPlaceTopOffset()"
+        [finalRoundHeaderGap]="finalRoundHeaderGap()"
+        [roundHeaderComponent]="ROUND_HEADER_COMPONENT"
+      />
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BracketComponent, BUTTON_IMPORTS],
+})
+export class StorybookBracketSqueezeComponent {
+  public source = input.required<BracketDataSource<unknown, unknown>>();
+
+  public panelWidth = input(360, { transform: numberAttribute });
+  public focusInset = input(40, { transform: numberAttribute });
+  public alignRoundHeaders = input<BracketRoundHeaderAlign>(BRACKET_ROUND_HEADER_ALIGN.CENTER);
+  public thirdPlaceTopOffset = input<number | null>(null);
+  public finalRoundHeaderGap = input<number | null>(null);
+
+  public roundIndex = signal(0);
+
+  protected focusedRoundId = computed(() => this.source().rounds[this.roundIndex()]?.id ?? null);
+
+  protected readonly LAYOUTS = LEFT_TO_RIGHT_LAYOUTS;
+
+  protected readonly ROUND_HEADER_COMPONENT = StorybookRoundHeaderComponent;
+
+  protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
+
+  protected step(direction: number) {
+    const lastIndex = this.source().rounds.length - 1;
+
+    this.roundIndex.update((current) => Math.min(lastIndex, Math.max(0, current + direction)));
+  }
 }
 
 /**
@@ -164,6 +258,11 @@ export class StorybookBracketDensityComponent {
         [continueColumnWidth]="continueColumnWidth()"
         [continueElementHeight]="continueElementHeight()"
         [continueLineDashArray]="continueLineDashArray()"
+        [focusRoundId]="focusRoundId()"
+        [focusInset]="focusInset()"
+        [alignRoundHeaders]="alignRoundHeaders()"
+        [thirdPlaceTopOffset]="thirdPlaceTopOffset()"
+        [finalRoundHeaderGap]="finalRoundHeaderGap()"
       />
     </et-scrollable>
   `,
@@ -188,6 +287,11 @@ export class StorybookBracketComponent {
   public rowRoundGap = input(70, { transform: numberAttribute });
   public roundHeaderGap = input(20, { transform: numberAttribute });
   public swissGroupPadding = input(10, { transform: numberAttribute });
+  public focusRoundId = input<string | null>(null);
+  public focusInset = input(0, { transform: numberAttribute });
+  public alignRoundHeaders = input<BracketRoundHeaderAlign>(BRACKET_ROUND_HEADER_ALIGN.START);
+  public thirdPlaceTopOffset = input<number | null>(null);
+  public finalRoundHeaderGap = input<number | null>(null);
 
   /**
    * The story control for the fold. There is no `layout` input on `et-bracket` any more - the fold is a

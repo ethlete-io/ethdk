@@ -5,14 +5,63 @@
     [style.transform]="'translateX(' + -focusRoundOffset() + 'px)'"
     class="et-bracket et-bracket--{{ bracketData().mode }}"
   >
-    <svg [innerHTML]="svgContent()" class="et-bracket-svg" xmlns="http://www.w3.org/2000/svg" />
+    @let drawn = drawing();
+
+    <svg class="et-bracket-svg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      @if (drawn.gradients.length) {
+        <defs>
+          @for (gradient of drawn.gradients; track gradient.id) {
+            <linearGradient
+              [attr.id]="gradient.id"
+              [attr.x1]="gradient.fromX"
+              [attr.x2]="gradient.toX"
+              gradientUnits="userSpaceOnUse"
+              y1="0"
+              y2="0"
+            >
+              @for (stop of gradient.stops; track $index) {
+                <stop [attr.offset]="stop.offset" [attr.stop-color]="stop.color" />
+              }
+            </linearGradient>
+          }
+        </defs>
+      }
+
+      @for (rect of drawn.rects; track rect.id) {
+        <rect
+          [attr.x]="rect.x"
+          [attr.y]="rect.y"
+          [attr.width]="rect.width"
+          [attr.height]="rect.height"
+          [attr.rx]="rect.radius"
+          [attr.stroke]="rect.stroke"
+          [attr.stroke-width]="rect.strokeWidth"
+          [attr.class]="rect.cssClass"
+          fill="none"
+        />
+      }
+
+      <!-- Both: the attribute is what draws the line, and the CSS `d` property is the only one a
+           transition can animate. A browser without it keeps the attribute and skips the animation. -->
+      @for (edge of drawn.edges; track edge.id) {
+        <path
+          [attr.d]="edge.d"
+          [style.d]="edge.cssPath"
+          [attr.stroke]="edge.stroke"
+          [attr.stroke-width]="edge.strokeWidth"
+          [attr.stroke-dasharray]="edge.dashArray"
+          [attr.stroke-dashoffset]="edge.dashOffset"
+          [attr.class]="edge.cssClass"
+          fill="none"
+        />
+      }
+    </svg>
 
     @for (round of grid.columns; track $index) {
       <ul
         [style.width.px]="round.dimensions.width"
         [style.height.px]="round.dimensions.height"
-        [style.top.px]="round.dimensions.top"
-        [style.left.px]="round.dimensions.left"
+        [style.transform]="'translate(' + round.dimensions.left + 'px, ' + round.dimensions.top + 'px)'"
         class="et-bracket-round"
       >
         @for (element of round.elements; track $index) {
@@ -32,12 +81,17 @@
           <!-- The cell names its match so a journey can say where it ended — see journey-highlight.ts. -->
           @let matchId = element.type === 'match' ? element.match.id : null;
 
+          <!-- Moved with `translate`, not with `top`/`left`: a squeeze moves every cell of every round at
+               once, as one transition, without the page laying out again per frame. -->
+          @let inlineOffset = element.dimensions.left - round.dimensions.left;
+          @let blockOffset = element.dimensions.top - round.dimensions.top;
+
           <li
             [attr.data-match-id]="matchId"
+            [attr.data-align]="element.type === 'header' ? settings().alignRoundHeaders : null"
             [style.width.px]="element.dimensions.width"
             [style.height.px]="element.dimensions.height"
-            [style.top.px]="element.dimensions.top - round.dimensions.top"
-            [style.left.px]="element.dimensions.left - round.dimensions.left"
+            [style.transform]="'translate(' + inlineOffset + 'px, ' + blockOffset + 'px)'"
             class="et-bracket-element et-bracket-element--{{ element.type }} {{ highlightClass }}"
           >
             <ng-container *ngComponentOutlet="componentFor(element); inputs: inputs" />

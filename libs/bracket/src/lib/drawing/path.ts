@@ -1,6 +1,8 @@
-import { escapeSvgAttributeValue } from './svg';
+import { BracketEdge } from './shapes';
 
 export type PathOptions = {
+  /** Unique within one drawing - see {@link BracketEdge.id}. */
+  id: string;
   width: number;
   dashArray: number;
   dashOffset: number;
@@ -8,5 +10,17 @@ export type PathOptions = {
   stroke?: string;
 };
 
-export const path = (d: string, options: PathOptions) =>
-  `<path d="${d.replace(/\s+/g, ' ').trim()}" stroke="${escapeSvgAttributeValue(options.stroke ?? 'currentColor')}" fill="none" stroke-width="${options.width}" stroke-dasharray="${options.dashArray}" stroke-dashoffset="${options.dashOffset}" class="${escapeSvgAttributeValue(options.className)}" />`;
+export const path = (d: string, options: PathOptions): BracketEdge => {
+  const commands = d.replace(/\s+/g, ' ').trim();
+
+  return {
+    id: options.id,
+    d: commands,
+    cssPath: `path("${commands}")`,
+    cssClass: options.className,
+    strokeWidth: options.width,
+    dashArray: options.dashArray,
+    dashOffset: options.dashOffset,
+    stroke: options.stroke ?? 'currentColor',
+  };
+};

@@ -141,7 +141,7 @@ private:
 | `name`          | Names it in errors and devtools (`'single-elimination-mirrored'`).                  |
 | `mode`          | The `TournamentMode` it answers for.                                                |
 | `createGrid`    | Positions the linked bracket's rounds and matches into columns.                     |
-| `drawEdges`     | Returns the SVG between the cells as an HTML string.                                |
+| `drawEdges`     | Describes what goes between the cells as data - see `BracketDrawing` below.         |
 | `listGrouping?` | Splits a round into groups for the rounds list - what swiss uses for standings.     |
 | `listSection?`  | Puts a round under a heading in the rounds list - what double elimination uses.     |
 | `components?`   | Per-layout default cards, between the host's inputs and `provideBracketConfig`.     |
@@ -154,6 +154,29 @@ next to them. The types `createGrid` and `drawEdges` speak in (`ComputedBracketG
 `CreateBracketGridConfig`, `BracketDrawEdgesContext`) are public too, so a layout of your own can wrap
 or replace a shipped one - but the SDK's own grid builders stay internal; the five factories are the
 supported way to get them.
+
+`drawEdges` returns a **`BracketDrawing`**: `{ edges, rects, gradients }`. Nothing about it is markup,
+so a custom layout never builds an SVG string and the host never trusts one past the sanitizer.
+
+| Field       | Purpose                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| `edges`     | The connectors. Each is a `BracketEdge`: `id`, `d`, `cssPath`, `cssClass`, stroke and dash. |
+| `rects`     | Boxes drawn behind them - what a swiss layout's group borders are.                          |
+| `gradients` | Definitions an edge's `stroke` names by `url(#id)`; prefix every id with `idPrefix`.        |
+
+Two rules a layout of your own has to keep, because the animation depends on them:
+
+- **An `id` has to survive a re-layout.** The host tracks paths by it; a new id replaces the node
+  instead of moving it, and a replaced node cannot transition. The shipped layouts name a connector
+  after the two matches it joins.
+- **A connector's path has to keep its shape.** A browser interpolates the CSS `d` property only
+  between two paths with the same commands in the same order, so emit one fixed command sequence per
+  connector and let a degenerate case collapse - a curve with a radius of nothing rather than a
+  straight `M ... H ...`. The shipped `curvePath` scales its bends down to nothing between two cards
+  on the same row for exactly this reason.
+
+The participant short ids the [journey highlight](#journey-highlight) matches on ride in `cssClass`,
+so an edge of your own joins in by carrying them.
 
 ## Data source
 
@@ -227,39 +250,69 @@ All layout inputs are numbers (px) unless noted. Each is an **override**: leave 
 value comes from `provideBracketConfig`, then from the [density](#density) preset, then from the
 shipped default listed below. The resolved set is on the component as `settings()`.
 
-| Input                     | Default      | Purpose                                                                              |
-| ------------------------- | ------------ | ------------------------------------------------------------------------------------ |
-| `source`                  | - (required) | The resolved `BracketDataSource`.                                                    |
-| `layouts`                 | -            | Replaces the registered layout list for this instance - see [Layouts](#layouts).     |
-| `density`                 | `'default'`  | `'default'` or `'compact'` - see [Density](#density).                                |
-| `columnWidth`             | `250`        | Width of a round column.                                                             |
-| `matchHeight`             | `75`         | Height of a match card.                                                              |
-| `columnGap`               | `60`         | Horizontal gap between round columns.                                                |
-| `rowGap`                  | `30`         | Vertical gap between matches in a column.                                            |
-| `rowRoundGap`             | `20`         | Vertical gap between the upper/lower halves of a double-elimination round.           |
-| `rowSpanRoundId`          | `null`       | Round whose match count sets vertical spacing; the opening round is the default.     |
-| `focusRoundId`            | `null`       | Translates this round to the inline start without changing vertical density.         |
-| `finalColumnWidth`        | `360`        | Width of the final column - sized for the shipped final card.                        |
-| `finalMatchHeight`        | `200`        | Height of the final match card - likewise.                                           |
-| `roundHeaderHeight`       | `50`         | Height of the round-header row.                                                      |
-| `roundHeaderGap`          | `20`         | Gap between the header row and the first match.                                      |
-| `hideRoundHeaders`        | `false`      | Drop the header row entirely.                                                        |
-| `lineWidth`               | `2`          | Connector stroke width.                                                              |
-| `lineStartingCurveAmount` | `10`         | Curve radius where a connector leaves a match.                                       |
-| `lineEndingCurveAmount`   | `0`          | Curve radius where a connector meets the next match.                                 |
-| `lineDashArray`           | `0`          | Connector dash length (`0` = solid).                                                 |
-| `lineDashOffset`          | `0`          | Connector dash offset.                                                               |
-| `disableJourneyHighlight` | `false`      | Turn off journey highlighting and pinning entirely.                                  |
-| `focusedParticipantId`    | `null`       | Two-way. Pins a participant's journey - see [Participant focus](#participant-focus). |
-| `swissGroupPadding`       | `10`         | Padding inside a swiss group border box.                                             |
-| `swissGroupBorderRadius`  | `12`         | Corner radius of a swiss group border box.                                           |
-| `swissColors`             | -            | Per-group-type colors (see [Swiss](#swiss)).                                         |
-| `showContinueElement`     | `false`      | Append a "continue" column (see [Continue element](#continue-element)).              |
-| `continueColumnWidth`     | `250`        | Width of the continue column.                                                        |
-| `continueElementHeight`   | `75`         | Height of the continue card.                                                         |
-| `continueLineDashArray`   | `6`          | Dash length for the continue connectors.                                             |
-| `matchNormalizer`         | -            | How to read your match data, for the default cards (see below).                      |
-| `roundHeaderLevel`        | `3`          | `aria-level` the default round headers announce themselves at.                       |
+| Input                     | Default      | Purpose                                                                                      |
+| ------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
+| `source`                  | - (required) | The resolved `BracketDataSource`.                                                            |
+| `layouts`                 | -            | Replaces the registered layout list for this instance - see [Layouts](#layouts).             |
+| `density`                 | `'default'`  | `'default'` or `'compact'` - see [Density](#density).                                        |
+| `columnWidth`             | `250`        | Width of a round column.                                                                     |
+| `matchHeight`             | `75`         | Height of a match card.                                                                      |
+| `columnGap`               | `60`         | Horizontal gap between round columns.                                                        |
+| `rowGap`                  | `30`         | Vertical gap between matches in a column.                                                    |
+| `rowRoundGap`             | `20`         | Vertical gap between the upper/lower halves of a double-elimination round.                   |
+| `rowSpanRoundId`          | `null`       | Round whose match count sets vertical spacing; the opening round is the default.             |
+| `focusRoundId`            | `null`       | Translates this round to the inline start without changing vertical density.                 |
+| `focusInset`              | `0`          | Room kept to the inline start of `focusRoundId` - the gutter a one-round panel navigates in. |
+| `finalColumnWidth`        | `360`        | Width of the final column - sized for the shipped final card.                                |
+| `finalMatchHeight`        | `200`        | Height of the final match card - likewise.                                                   |
+| `roundHeaderHeight`       | `50`         | Height of the round-header row.                                                              |
+| `roundHeaderGap`          | `20`         | Gap between the header row and the first match.                                              |
+| `thirdPlaceTopOffset`     | `null`       | Folds the third place into the final's column, this far below the top of the final's card.   |
+| `finalRoundHeaderGap`     | `null`       | Header-to-card gap for the final's column alone, where it is wider than `roundHeaderGap`.    |
+| `alignRoundHeaders`       | `'start'`    | `'start'` or `'center'` - where a round header sits over its column.                         |
+| `hideRoundHeaders`        | `false`      | Drop the header row entirely.                                                                |
+| `lineWidth`               | `2`          | Connector stroke width.                                                                      |
+| `lineStartingCurveAmount` | `10`         | Curve radius where a connector leaves a match.                                               |
+| `lineEndingCurveAmount`   | `0`          | Curve radius where a connector meets the next match.                                         |
+| `lineDashArray`           | `0`          | Connector dash length (`0` = solid).                                                         |
+| `lineDashOffset`          | `0`          | Connector dash offset.                                                                       |
+| `disableJourneyHighlight` | `false`      | Turn off journey highlighting and pinning entirely.                                          |
+| `focusedParticipantId`    | `null`       | Two-way. Pins a participant's journey - see [Participant focus](#participant-focus).         |
+| `swissGroupPadding`       | `10`         | Padding inside a swiss group border box.                                                     |
+| `swissGroupBorderRadius`  | `12`         | Corner radius of a swiss group border box.                                                   |
+| `swissColors`             | -            | Per-group-type colors (see [Swiss](#swiss)).                                                 |
+| `showContinueElement`     | `false`      | Append a "continue" column (see [Continue element](#continue-element)).                      |
+| `continueColumnWidth`     | `250`        | Width of the continue column.                                                                |
+| `continueElementHeight`   | `75`         | Height of the continue card.                                                                 |
+| `continueLineDashArray`   | `6`          | Dash length for the continue connectors.                                                     |
+| `matchNormalizer`         | -            | How to read your match data, for the default cards (see below).                              |
+| `roundHeaderLevel`        | `3`          | `aria-level` the default round headers announce themselves at.                               |
+
+### The final's own column
+
+`finalRoundHeaderGap` buys room between the final's round header and its card - for a trophy line, a
+stage label, a countdown - and buys it **for the final's column only**. Widening `roundHeaderGap`
+instead lowers the first card of every round, which a layout that shows one round at a time reads as
+the whole bracket sliding. A value at or below `roundHeaderGap` changes nothing.
+
+`thirdPlaceTopOffset` moves the third place match out of its own column and into the final's, that
+many px below the top of the final's card, with its round header above its own card. It takes the
+final's column width, and the grid gets narrower by the column and gap it saves - so
+`bracketNaturalWidth()` answers a smaller number with it set.
+
+Only a single elimination layout has a column to fold: a double elimination grid already hangs the
+third place under its grand final, and ignores the setting.
+
+```html
+<et-bracket [source]="source()" [thirdPlaceTopOffset]="260" [finalRoundHeaderGap]="60" />
+```
+
+### Where a round header sits
+
+`alignRoundHeaders` aligns whatever header component the column holds inside that column. The shipped
+`et-bracket-default-round-header` fills its column and centres its own text, so it looks the same
+either way; a header of your own that sizes to its content moves. `'center'` is what a one-round panel
+wants, where the header names the panel rather than labelling a column it starts.
 
 ## Default cards
 
@@ -552,15 +605,27 @@ inputs. `density="compact"` with `[columnWidth]="180"` is a compact bracket with
 <et-bracket [source]="source()" density="compact" />
 ```
 
-<StoryEmbed id="components-sports-bracket-density--compact-double-elimination" height="520px" />
+The `Components/Sports/Bracket Density` stories in Storybook draw the same bracket at each density,
+single- and double-elimination.
 
 ## Narrow screens
 
 A bracket is as wide as its rounds make it. There are two supported responses. A results view can
 swap to [`<et-bracket-rounds-list>`](/components/bracket-rounds-list). A prediction view can retain
 the connectors, set `rowSpanRoundId` to squeeze the visible rounds vertically, and move between them
-with `focusRoundId`. The translation animates normally and becomes an instant jump under
-`prefers-reduced-motion`; vertical scrolling remains available for tall rounds.
+with `focusRoundId`.
+
+Every cell is positioned with a `transform` and every connector carries its path in the CSS `d`
+property as well as in the attribute, so changing either input moves the whole drawing - cards,
+headers and lines together - as one CSS transition, with no layout per frame.
+`--et-bracket-move-duration` (default `0.2s`) sets its pace; under `prefers-reduced-motion` there is
+no transition and the new layout appears at once. Vertical scrolling remains available for tall
+rounds.
+
+`focusInset` keeps room to the inline start of the focused round: it is subtracted from the
+translation, so the gutter belongs to the grid rather than to the padding of the box that clips it.
+That is where a panel's navigation chevrons stand, and what a card badge straddling the card's edge
+needs in order not to be clipped.
 
 Use `bracketFitsWidth(source, config, availableWidth)` to make the choice from a measured container
 rather than a viewport breakpoint. Measure an ancestor that does not grow with the bracket content.
@@ -673,6 +738,7 @@ it sits on - set them to override:
 | --------------------------------------- | ------------------------------ | ----------------------------------------------------------------------- |
 | `--et-bracket-line-color`               | `--et-surface-border-solid`    | Connector line color.                                                   |
 | `--et-bracket-swiss-group-border-color` | `var(--et-bracket-line-color)` | Swiss group border color (per-group overrides come from `swissColors`). |
+| `--et-bracket-move-duration`            | `0.2s`                         | How long a relayout takes - see [Narrow screens](#narrow-screens).      |
 
 These are not declared via `@property`: an `@property` `initial-value` can't contain a
 `var()`, and the defaults intentionally resolve to a theme token. The bracket doesn't
