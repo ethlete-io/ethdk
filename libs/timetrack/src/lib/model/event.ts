@@ -1,6 +1,6 @@
 /** The collector a raw observation came from. Retention and exclusion rules are applied per source. */
 export type CollectedEventSource =
-  'window' | 'idle' | 'git' | 'agent-session' | 'agent-usage' | 'calendar' | 'gitlab' | 'editor';
+  'window' | 'idle' | 'git' | 'agent-session' | 'agent-usage' | 'agent-prompt' | 'calendar' | 'gitlab' | 'editor';
 
 type CollectedEventBase<TSource extends CollectedEventSource, TKind extends string> = {
   at: Date;
@@ -81,6 +81,26 @@ export type AgentUsageEvent = CollectedEventBase<'agent-usage', 'agent-usage'> &
 };
 
 /**
+ * One prompt the user typed at an agent: its instant, its session and the checkout it was typed in.
+ *
+ * A turn says the machine worked, and this says a person was at the keyboard. That difference is why
+ * it is the only agent evidence a day nothing observed may rebuild presence from — see ADR 0006. It
+ * carries no text, which is what lets it outlive the raw samples the way spend does (ADR 0002).
+ *
+ * It is no `ActivityEvent`: on an observed day the focused window says where the person was, and a
+ * prompt at 09:00 would otherwise open a block in a checkout nobody had in front of them.
+ */
+export type AgentPromptEvent = CollectedEventBase<'agent-prompt', 'agent-prompt'> & {
+  /** `claude-code` or `codex`. One provider is one parser. */
+  provider: string;
+  sessionId: string;
+  /** The provider's own id for the record. With `provider`, the key the store deduplicates on. */
+  promptId: string;
+  cwd: string;
+  gitBranch?: string;
+};
+
+/**
  * What an editor was showing when it last reported, from a reporter the user installed themselves.
  *
  * A window title says which application had focus; this says which checkout, which branch and which
@@ -145,6 +165,7 @@ export type CollectedEvent =
   | GitCommitEvent
   | AgentSessionEvent
   | AgentUsageEvent
+  | AgentPromptEvent
   | EditorHeartbeatEvent
   | CalendarOccurrenceEvent
   | MergeRequestActivityEvent;
@@ -160,4 +181,7 @@ export type ActivityEvent =
  * real work with it.
  */
 export const isActivityEvent = (event: CollectedEvent): event is ActivityEvent =>
-  event.source !== 'calendar' && event.source !== 'gitlab' && event.source !== 'agent-usage';
+  event.source !== 'calendar' &&
+  event.source !== 'gitlab' &&
+  event.source !== 'agent-usage' &&
+  event.source !== 'agent-prompt';

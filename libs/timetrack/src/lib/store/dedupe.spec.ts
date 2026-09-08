@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AgentPromptEvent,
   AgentUsageEvent,
   CalendarOccurrenceEvent,
   CollectedEvent,
@@ -129,5 +130,22 @@ describe('dedupeKeyOf', () => {
     expect(dedupeKeyOf(spend({ at: new Date(2026, 7, 11, 9, 31) }))).toBe(dedupeKeyOf(spend()));
     expect(dedupeKeyOf(spend({ turnId: 'msg_other' }))).not.toBe(dedupeKeyOf(spend()));
     expect(dedupeKeyOf(spend({ provider: 'codex' }))).not.toBe(dedupeKeyOf(spend()));
+  });
+
+  it('keys a prompt by its provider and the record id, so a log read again adds no keystroke', () => {
+    const prompt = (overrides: Partial<AgentPromptEvent> = {}): AgentPromptEvent => ({
+      at: new Date(2026, 8, 7, 9, 57),
+      source: 'agent-prompt',
+      kind: 'agent-prompt',
+      provider: 'claude-code',
+      sessionId: '154009aa-3442-401d-852b-07a0d5156e97',
+      promptId: '7afab4fa-fa08-475b-b9c0-23ba6a62ceb2',
+      cwd: '/home/tom/dev/fut-frontend',
+      ...overrides,
+    });
+
+    expect(dedupeKeyOf(prompt({ at: new Date(2026, 8, 7, 9, 58) }))).toBe(dedupeKeyOf(prompt()));
+    expect(dedupeKeyOf(prompt({ promptId: 'other' }))).not.toBe(dedupeKeyOf(prompt()));
+    expect(dedupeKeyOf(prompt({ provider: 'codex' }))).not.toBe(dedupeKeyOf(prompt()));
   });
 });

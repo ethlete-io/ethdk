@@ -3,14 +3,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AgentSessionCursor,
-  AgentSpendBackfill,
+  AgentLogBackfill,
   applyExclusionRules,
-  backfillAgentSpend$,
+  backfillAgentLogs$,
   effectiveExclusionRules,
   keepLinkedAgentSessions,
   parseClaudeCodeSessionLog,
   parseCodexSessionLog,
-  rewindAgentSpendCursors,
+  rewindAgentBackfillCursors,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -84,10 +84,10 @@ const createAgentSpendBackfill = (source: AgentLogSource) => {
    * not reach has to keep its cleared cursor in the store, or the next run would skip it again.
    */
   const persist$ = (options: {
-    result: AgentSpendBackfill;
+    result: AgentLogBackfill;
     rewound: AgentSessionCursor[];
     startedAt: Date;
-  }): Observable<AgentSpendBackfill> => {
+  }): Observable<AgentLogBackfill> => {
     const { result, rewound, startedAt } = options;
     const linked = keepLinkedAgentSessions({ events: result.usage, links: settings.settings().projectLinks });
     const denied = applyExclusionRules({ events: linked.kept, rules: effectiveExclusionRules(settings.settings()) });
@@ -117,13 +117,13 @@ const createAgentSpendBackfill = (source: AgentLogSource) => {
   const rewind = (cursors: AgentSessionCursor[], paths: string[]): Rewound => {
     if (!paths.length) return { rewound: [], cursors };
 
-    const rewound = rewindAgentSpendCursors({ cursors, paths });
+    const rewound = rewindAgentBackfillCursors({ cursors, paths });
     const byId = new Map(rewound.map((cursor) => [cursor.id, cursor]));
 
     return { rewound, cursors: cursors.map((cursor) => byId.get(cursor.id) ?? cursor) };
   };
 
-  const run$ = (): Observable<AgentSpendBackfill> =>
+  const run$ = (): Observable<AgentLogBackfill> =>
     defer(() => {
       const startedAt = new Date();
       const paths = pendingRewind;
@@ -135,7 +135,7 @@ const createAgentSpendBackfill = (source: AgentLogSource) => {
         concatMap(() => ports.events.cursors$(source.pass)),
         map((cursors) => rewind(cursors, paths)),
         switchMap((state) =>
-          backfillAgentSpend$({
+          backfillAgentLogs$({
             parser: source.parser,
             reader: source.readerOf(ports),
             cursors: state.cursors,

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TimetrackProjectLink } from '../model/project-link';
 import { AgentSessionCursor } from './collect';
 import { UnlinkedAgentSessions } from './linked';
-import { agentSessionResyncOffers, resyncAgentSessionCursors, rewindAgentSpendCursors } from './resync';
+import { agentSessionResyncOffers, resyncAgentSessionCursors, rewindAgentBackfillCursors } from './resync';
 
 const cursor = (id: string, cwd?: string): AgentSessionCursor => ({
   id,
@@ -134,7 +134,7 @@ describe('agentSessionResyncOffers', () => {
   });
 });
 
-describe('rewindAgentSpendCursors', () => {
+describe('rewindAgentBackfillCursors', () => {
   const spendCursor = (id: string, options: { cwd?: string; readThrough?: boolean } = {}): AgentSessionCursor => ({
     id,
     nextLine: 120,
@@ -143,7 +143,7 @@ describe('rewindAgentSpendCursors', () => {
   });
 
   it('clears the cursor of a log run under one of the paths', () => {
-    const result = rewindAgentSpendCursors({
+    const result = rewindAgentBackfillCursors({
       cursors: [spendCursor('a', { cwd: '/home/tom/dev/fut-frontend/apps/web' })],
       paths: ['/home/tom/dev/fut-frontend'],
     });
@@ -152,7 +152,7 @@ describe('rewindAgentSpendCursors', () => {
   });
 
   it('returns only the cleared cursors, because they are the whole write', () => {
-    const result = rewindAgentSpendCursors({
+    const result = rewindAgentBackfillCursors({
       cursors: [
         spendCursor('a', { cwd: '/home/tom/dev/fut-frontend' }),
         spendCursor('b', { cwd: '/home/tom/dev/ethlete-sdk' }),
@@ -164,12 +164,12 @@ describe('rewindAgentSpendCursors', () => {
   });
 
   it('leaves a cursor whose checkout was never recorded, because nothing says the path covers it', () => {
-    expect(rewindAgentSpendCursors({ cursors: [spendCursor('a')], paths: ['/home/tom/dev'] })).toEqual([]);
+    expect(rewindAgentBackfillCursors({ cursors: [spendCursor('a')], paths: ['/home/tom/dev'] })).toEqual([]);
   });
 
   it('leaves a log the pass has not read through, because it is queued already', () => {
     const cursors = [spendCursor('a', { cwd: '/home/tom/dev/fut-frontend', readThrough: false })];
 
-    expect(rewindAgentSpendCursors({ cursors, paths: ['/home/tom/dev/fut-frontend'] })).toEqual([]);
+    expect(rewindAgentBackfillCursors({ cursors, paths: ['/home/tom/dev/fut-frontend'] })).toEqual([]);
   });
 });

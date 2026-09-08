@@ -1,4 +1,4 @@
-import { AgentSessionEvent, AgentUsageEvent, TokenUsage } from '../model/event';
+import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent, TokenUsage } from '../model/event';
 import { asJsonObject, countAt, objectAt, stringAt } from './record';
 import { AgentLogSessionState, AgentSessionLogParser, DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS } from './source';
 
@@ -131,6 +131,63 @@ const usageOf = (record: CodexRecord, state: CodexSessionState): AgentUsageEvent
   };
 };
 
+/** What the CLI opens a session with, in the user's own role. Neither is anybody at a keyboard. */
+const INJECTED_PREFIXES = ['<environment_context>', '<user_instructions>'];
+
+/**
+ * The text of a message record, joined across its content blocks.
+ *
+ * It is read to tell a typed prompt from one the CLI wrote for itself, and then dropped. Nothing in it
+ * reaches an event.
+ */
+const textOf = (payload: Record<string, unknown>) => {
+  const content = payload['content'];
+
+  if (!Array.isArray(content)) return '';
+
+  return content
+    .map((block) =>
+      typeof block === 'object' && block !== null ? stringAt(block as Record<string, unknown>, 'text') : undefined,
+    )
+    .filter((text): text is string => text !== undefined)
+    .join(' ')
+    .trimStart();
+};
+
+/**
+ * The prompt the user typed, or `null` for every other record.
+ *
+ * Codex writes what the person sent as a `response_item` message in the `user` role, and opens every
+ * session with two of its own in the same role — the environment and the instructions files. Those are
+ * rejected by their opening tag, because a session would otherwise report a keystroke at the instant
+ * the CLI started.
+ */
+const promptOf = (record: CodexRecord, state: CodexSessionState): AgentPromptEvent | null => {
+  const { payload } = record;
+
+  if (!payload || record.type !== 'response_item') return null;
+  if (payload['type'] !== 'message' || payload['role'] !== 'user') return null;
+
+  const promptId = stringAt(payload, 'id');
+  const { sessionId, cwd } = state;
+
+  if (!promptId || !sessionId || !cwd) return null;
+
+  const text = textOf(payload);
+
+  if (INJECTED_PREFIXES.some((prefix) => text.startsWith(prefix))) return null;
+
+  return {
+    at: record.at,
+    source: 'agent-prompt',
+    kind: 'agent-prompt',
+    provider: CODEX_PROVIDER,
+    sessionId,
+    promptId,
+    cwd,
+  };
+};
+
 /**
  * Reads a Codex CLI rollout log — the JSONL file under `~/.codex/sessions/<yyyy>/<mm>/<dd>/` — into
  * activity samples and one event per turn's token spend.
@@ -144,13 +201,15 @@ const usageOf = (record: CodexRecord, state: CodexSessionState): AgentUsageEvent
  * through `resume.session`. A read that resumes mid-turn has no `turn_context` in view, and a turn
  * with no model cannot be priced.
  *
- * Codex records no branch and no title. Only metadata is read: message bodies never become events.
+ * Codex records no branch and no title. Only metadata is read: message bodies never become events, and
+ * a prompt's text is read to reject the CLI's own opening messages and then dropped.
  */
 export const parseCodexSessionLog: AgentSessionLogParser = (options) => {
   const interval = options.sampleIntervalMs ?? DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS;
   const after = options.resume?.after;
   const records: ActivityRecord[] = [];
   const usageByTurnId = new Map<string, AgentUsageEvent>();
+  const promptById = new Map<string, AgentPromptEvent>();
   let state: CodexSessionState = { ...options.resume?.session, cwd: options.resume?.cwd };
   let unparsedLines = 0;
 
@@ -171,6 +230,12 @@ export const parseCodexSessionLog: AgentSessionLogParser = (options) => {
     // No `after` guard: `after` follows the thinned samples, and a turn behind it is spend, not a
     // repeat. The store's dedupe key — the provider and the turn id — is what makes a re-read safe.
     if (spend && !usageByTurnId.has(spend.turnId)) usageByTurnId.set(spend.turnId, spend);
+
+    // Kept behind `after` for the same reason spend is: the record's own id is what the store
+    // deduplicates a prompt on, so a re-read appends nothing.
+    const prompt = promptOf(record, state);
+
+    if (prompt && !promptById.has(prompt.promptId)) promptById.set(prompt.promptId, prompt);
 
     const { sessionId, cwd } = state;
 
@@ -202,6 +267,7 @@ export const parseCodexSessionLog: AgentSessionLogParser = (options) => {
   });
 
   const usage = [...usageByTurnId.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
+  const prompts = [...promptById.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  return { events, usage, session: { sessionId: state.sessionId, model: state.model }, unparsedLines };
+  return { events, usage, prompts, session: { sessionId: state.sessionId, model: state.model }, unparsedLines };
 };

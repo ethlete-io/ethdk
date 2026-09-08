@@ -31,7 +31,8 @@ const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
  *
  * An agent's token spend keys by the provider and the provider's own id for the turn. That is what lets
  * a session log be read again from the top — which `resyncAgentSessionCursors` does whenever the user
- * links a checkout — without the day's spend doubling.
+ * links a checkout — without the day's spend doubling. A typed prompt keys the same way, on the id of
+ * the record that holds it, so the pass that rebuilds a day from the top is free to re-read too.
  */
 export const dedupeKeyOf = (event: CollectedEvent): string | null => {
   switch (event.kind) {
@@ -47,6 +48,8 @@ export const dedupeKeyOf = (event: CollectedEvent): string | null => {
       return keyOf([event.kind, event.reporter, event.at.toISOString()]);
     case 'agent-usage':
       return keyOf([event.kind, event.provider, event.turnId]);
+    case 'agent-prompt':
+      return keyOf([event.kind, event.provider, event.promptId]);
     default:
       return null;
   }

@@ -42,6 +42,18 @@ const tokenCount = (
     },
   });
 
+const userMessage = (timestamp: string, options?: { id?: string; text?: string }) =>
+  line({
+    timestamp,
+    type: 'response_item',
+    payload: {
+      type: 'message',
+      role: 'user',
+      id: options?.id ?? 'msg_01a05778-714e-7f21-af4b-5303deb81b7b',
+      content: [{ type: 'input_text', text: options?.text ?? 'mache das' }],
+    },
+  });
+
 const item = (timestamp: string) =>
   line({ timestamp, type: 'event_msg', payload: { type: 'item_completed', item: { id: 'i1' } } });
 
@@ -250,5 +262,51 @@ describe('parseCodexSessionLog', () => {
     const result = parse({ lines: [sessionMeta('2026-08-18T21:04:23.696Z')] });
 
     expect(result.events[0]).not.toHaveProperty('gitBranch');
+  });
+});
+
+describe('parseCodexSessionLog prompts', () => {
+  it('reads a typed prompt as its instant, session and checkout', () => {
+    const result = parse({
+      lines: [sessionMeta('2026-08-31T10:58:00.000Z'), userMessage('2026-08-31T10:58:26.254Z', { id: 'msg_a' })],
+    });
+
+    expect(result.prompts).toEqual([
+      {
+        at: new Date('2026-08-31T10:58:26.254Z'),
+        source: 'agent-prompt',
+        kind: 'agent-prompt',
+        provider: CODEX_PROVIDER,
+        sessionId: SESSION,
+        promptId: 'msg_a',
+        cwd: CWD,
+      },
+    ]);
+  });
+
+  it('drops the two messages the CLI opens a session with, in the user role', () => {
+    const result = parse({
+      lines: [
+        sessionMeta('2026-08-31T10:58:00.000Z'),
+        userMessage('2026-08-31T10:58:07.518Z', { id: 'msg_env', text: '<environment_context>\n  <cwd>/home</cwd>' }),
+        userMessage('2026-08-31T10:58:07.527Z', { id: 'msg_ins', text: '<user_instructions>read AGENTS.md' }),
+        userMessage('2026-08-31T10:58:26.254Z', { id: 'msg_a' }),
+      ],
+    });
+
+    expect(result.prompts.map((event) => event.promptId)).toEqual(['msg_a']);
+  });
+
+  it('drops a prompt the log has not named a session for yet', () => {
+    expect(parse({ lines: [userMessage('2026-08-31T10:58:26.254Z')] }).prompts).toEqual([]);
+  });
+
+  it('reads a prompt behind the resume cursor, because the store keys it', () => {
+    const result = parse({
+      lines: [sessionMeta('2026-08-31T10:58:00.000Z'), userMessage('2026-08-31T10:58:26.254Z')],
+      resume: { after: new Date('2026-08-31T12:00:00.000Z') },
+    });
+
+    expect(result.prompts).toHaveLength(1);
   });
 });

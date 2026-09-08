@@ -27,16 +27,16 @@ export const resyncAgentSessionCursors = (options: {
   });
 
 /**
- * The `spend` cursors of the logs run under `paths`, cleared so the backfill reads those logs again.
+ * The cursors of one backfill pass, for the logs run under `paths`, cleared so it reads them again.
  *
  * Only the cleared ones come back, because they are the whole write: the backfill hands back a cursor
  * for each log it reaches, and a rewound log it does not reach in the same run has to keep its cleared
  * cursor in the store or the next run would skip it again.
  *
- * A re-read is free here, unlike the collector's: token spend keys on the provider and the turn id, so
- * appending it twice stores it once. See ADR 0003.
+ * A re-read is free here, unlike the collector's: every event a backfill pass stores keys on the
+ * provider and the provider's own id, so appending it twice stores it once. See ADR 0003.
  */
-export const rewindAgentSpendCursors = (options: {
+export const rewindAgentBackfillCursors = (options: {
   cursors: readonly AgentSessionCursor[];
   paths: readonly string[];
 }): AgentSessionCursor[] =>

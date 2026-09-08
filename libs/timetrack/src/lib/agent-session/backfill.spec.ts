@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
-import { AgentSpendBackfill, backfillAgentSpend$ } from './backfill';
+import { AgentLogBackfill, backfillAgentLogs$ } from './backfill';
 import { parseClaudeCodeSessionLog } from './claude-code';
 import { AgentSessionCursor } from './collect';
 import { AgentSessionLogReader, AgentSessionLogRef } from './ports';
@@ -50,7 +50,7 @@ const backfill = (options: { logs: Log[]; cursors?: AgentSessionCursor[]; logsPe
   const { reader, reads } = readerFor(options.logs, options.maxLines);
   const seen = vi.fn();
 
-  backfillAgentSpend$({
+  backfillAgentLogs$({
     parser: parseClaudeCodeSessionLog,
     reader,
     cursors: options.cursors ?? [],
@@ -58,10 +58,10 @@ const backfill = (options: { logs: Log[]; cursors?: AgentSessionCursor[]; logsPe
     parsing: { sampleIntervalMs: 0 },
   }).subscribe(seen);
 
-  return { result: seen.mock.calls[0]?.[0] as AgentSpendBackfill, reads, reader };
+  return { result: seen.mock.calls[0]?.[0] as AgentLogBackfill, reads, reader };
 };
 
-describe('backfillAgentSpend$', () => {
+describe('backfillAgentLogs$', () => {
   it('reads a log from the top and keeps only its spend', () => {
     const { result, reads } = backfill({
       logs: [{ ref: ref('a'), lines: [turn({ timestamp: '2026-08-11T09:00:00Z', id: 't1' })] }],
@@ -88,7 +88,7 @@ describe('backfillAgentSpend$', () => {
     });
 
     expect(reads).toEqual([]);
-    expect(result).toEqual({ usage: [], cursors: [], remaining: 0, unparsedLines: 0 });
+    expect(result).toEqual({ usage: [], prompts: [], cursors: [], remaining: 0, unparsedLines: 0 });
   });
 
   it('reads a log again once a re-sync has dropped its read-through', () => {

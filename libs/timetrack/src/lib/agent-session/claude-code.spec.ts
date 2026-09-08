@@ -71,6 +71,24 @@ const turn = (options: {
   });
 };
 
+const prompt = (options: {
+  minute: number;
+  second?: number;
+  content?: unknown;
+  cwd?: string;
+  extra?: Record<string, unknown>;
+}) =>
+  JSON.stringify({
+    type: 'user',
+    uuid: `prompt-${options.minute}-${options.second ?? 0}`,
+    timestamp: at(options.minute, options.second).toISOString(),
+    cwd: options.cwd ?? CWD,
+    sessionId: SESSION,
+    gitBranch: BRANCH,
+    ...(options.extra ?? {}),
+    message: { role: 'user', content: options.content ?? 'fix the failing spec' },
+  });
+
 const parse = (lines: string[], options: Partial<Parameters<typeof parseClaudeCodeSessionLog>[0]> = {}) =>
   parseClaudeCodeSessionLog({ lines, ...options });
 
@@ -419,5 +437,68 @@ describe('parseClaudeCodeSessionLog, on token spend', () => {
     const result = parse([turn({ minute: 5, id: 'msg_late' }), turn({ minute: 0, id: 'msg_early' })]);
 
     expect(result.usage.map((event) => event.turnId)).toEqual(['msg_early', 'msg_late']);
+  });
+});
+
+describe('parseClaudeCodeSessionLog prompts', () => {
+  it('reads a typed prompt as its instant, session and checkout, and never its text', () => {
+    const result = parse([prompt({ minute: 5 })]);
+
+    expect(result.prompts).toEqual([
+      {
+        at: at(5),
+        source: 'agent-prompt',
+        kind: 'agent-prompt',
+        provider: CLAUDE_CODE_PROVIDER,
+        sessionId: SESSION,
+        promptId: 'prompt-5-0',
+        cwd: CWD,
+        gitBranch: BRANCH,
+      },
+    ]);
+  });
+
+  it('drops a tool result, which arrives as a user record too', () => {
+    const result = parse([
+      prompt({ minute: 5, content: [{ type: 'tool_result', content: 'ok' }], extra: { toolUseResult: { ok: true } } }),
+    ]);
+
+    expect(result.prompts).toEqual([]);
+  });
+
+  it('drops a subagent record, because the model wrote it', () => {
+    expect(parse([prompt({ minute: 6, extra: { isSidechain: true } })]).prompts).toEqual([]);
+  });
+
+  it('drops a record the CLI wrote for itself', () => {
+    expect(parse([prompt({ minute: 7, extra: { isMeta: true } })]).prompts).toEqual([]);
+  });
+
+  it('drops a content array, which nobody typed', () => {
+    expect(parse([prompt({ minute: 8, content: [{ type: 'text', text: 'hi' }] })]).prompts).toEqual([]);
+  });
+
+  it('reports every prompt, whatever the sample interval thins the activity to', () => {
+    const result = parse(
+      [prompt({ minute: 5 }), prompt({ minute: 5, second: 20 }), prompt({ minute: 5, second: 40 })],
+      {
+        sampleIntervalMs: 60_000,
+      },
+    );
+
+    expect(result.prompts.map((event) => event.at.toISOString())).toEqual([
+      at(5).toISOString(),
+      at(5, 20).toISOString(),
+      at(5, 40).toISOString(),
+    ]);
+    expect(times(result.events)).toEqual([at(5).toISOString(), at(5, 40).toISOString()]);
+  });
+
+  it('reads a prompt behind the resume cursor, because the store keys it', () => {
+    expect(parse([prompt({ minute: 5 })], { resume: { after: at(9) } }).prompts).toHaveLength(1);
+  });
+
+  it('keeps one copy of a prompt whose record repeats', () => {
+    expect(parse([prompt({ minute: 5 }), prompt({ minute: 5 })]).prompts).toHaveLength(1);
   });
 });

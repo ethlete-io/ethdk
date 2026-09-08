@@ -239,7 +239,7 @@ describe('collectAgentSessions$', () => {
   it('emits an empty collection when the agent has never run', () => {
     const { result } = collect({ logs: [] });
 
-    expect(result).toEqual({ events: [], usage: [], cursors: [], unparsedLines: 0 });
+    expect(result).toEqual({ events: [], usage: [], prompts: [], cursors: [], unparsedLines: 0 });
   });
 
   it('reports the spend of every log it read, oldest turn first', () => {

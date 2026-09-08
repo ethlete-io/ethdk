@@ -1,5 +1,5 @@
 import { Observable, concatMap, from, map, toArray } from 'rxjs';
-import { AgentSessionEvent, AgentUsageEvent } from '../model/event';
+import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent } from '../model/event';
 import { AgentLogSessionState, AgentSessionLogParseOptions, AgentSessionLogParser } from './source';
 import { AgentSessionLogReader, AgentSessionLogRef } from './ports';
 
@@ -25,9 +25,9 @@ export type AgentSessionCursor = {
    */
   cwd?: string;
   /**
-   * The log's modification time when a pass last read it to its end. Set by the spend backfill and by
-   * nothing else: the line offset alone cannot say an empty log is done, so that pass would read such
-   * a log on every run.
+   * The log's modification time when a pass last read it to its end. Set by a backfill pass and by
+   * nothing else: the line offset alone cannot say an empty log is done, so such a pass would read an
+   * empty log on every run.
    */
   readThrough?: Date;
 };
@@ -36,6 +36,8 @@ export type AgentSessionCollection = {
   events: AgentSessionEvent[];
   /** What the turns in the batch spent. Keyed by provider and turn id, so a re-read appends nothing new. */
   usage: AgentUsageEvent[];
+  /** The prompts the user typed in the batch. Keyed the same way, on the record's own id. */
+  prompts: AgentPromptEvent[];
   /**
    * The cursors to persist, including the ones for logs this run did not list. Store them together with
    * the events: a cursor that goes missing re-reads its log from the top and appends every sample twice.
@@ -48,6 +50,7 @@ export type AgentSessionCollection = {
 type LogRead = {
   events: AgentSessionEvent[];
   usage: AgentUsageEvent[];
+  prompts: AgentPromptEvent[];
   cursor: AgentSessionCursor;
   unparsedLines: number;
 };
@@ -76,6 +79,7 @@ const readLog$ = (options: {
       return {
         events: parsed.events,
         usage: parsed.usage,
+        prompts: parsed.prompts,
         unparsedLines: parsed.unparsedLines,
         cursor: {
           id: ref.id,
@@ -128,6 +132,7 @@ export const collectAgentSessions$ = (options: {
       return {
         events: reads.flatMap((read) => read.events).sort((a, b) => a.at.getTime() - b.at.getTime()),
         usage: reads.flatMap((read) => read.usage).sort((a, b) => a.at.getTime() - b.at.getTime()),
+        prompts: reads.flatMap((read) => read.prompts).sort((a, b) => a.at.getTime() - b.at.getTime()),
         cursors: [...cursors.values()],
         unparsedLines: reads.reduce((total, read) => total + read.unparsedLines, 0),
       };

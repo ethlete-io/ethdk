@@ -1,11 +1,11 @@
 import { EMPTY, Observable, concatMap, expand, from, last, map, of, toArray } from 'rxjs';
-import { AgentUsageEvent } from '../model/event';
+import { AgentPromptEvent, AgentUsageEvent } from '../model/event';
 import { AgentSessionCursor } from './collect';
 import { AgentSessionLogParseOptions, AgentSessionLogParser } from './source';
 import { AgentSessionLogReader, AgentSessionLogRef } from './ports';
 
 /** How many logs one run reads to their end. Small, because a run parses every line of each of them. */
-export const DEFAULT_SPEND_BACKFILL_LOGS_PER_RUN = 5;
+export const DEFAULT_LOG_BACKFILL_LOGS_PER_RUN = 5;
 
 /**
  * The reads one log may take in one run. A read that returns lines always advances the offset, so this
@@ -13,9 +13,11 @@ export const DEFAULT_SPEND_BACKFILL_LOGS_PER_RUN = 5;
  */
 const MAX_READS_PER_LOG = 200;
 
-export type AgentSpendBackfill = {
+export type AgentLogBackfill = {
   /** Every turn's spend the run found. Keyed by provider and turn id, so appending it twice is free. */
   usage: AgentUsageEvent[];
+  /** Every prompt the run found. Keyed the same way, on the record's own id. */
+  prompts: AgentPromptEvent[];
   /** The cursors to persist, for the logs this run read to their end. Logs it did not reach get none. */
   cursors: AgentSessionCursor[];
   /** Logs still without a cursor after this run. Zero means the pass has converged and can stop. */
@@ -25,6 +27,7 @@ export type AgentSpendBackfill = {
 
 type LogBackfill = {
   usage: AgentUsageEvent[];
+  prompts: AgentPromptEvent[];
   unparsedLines: number;
   nextLine: number;
   reachedEnd: boolean;
@@ -46,6 +49,7 @@ const readToEnd$ = (options: {
 }): Observable<LogBackfill> =>
   of<LogBackfill>({
     usage: [],
+    prompts: [],
     unparsedLines: 0,
     nextLine: options.fromLine,
     reachedEnd: false,
@@ -60,6 +64,7 @@ const readToEnd$ = (options: {
 
               return {
                 usage: [...seen.usage, ...parsed.usage],
+                prompts: [...seen.prompts, ...parsed.prompts],
                 unparsedLines: seen.unparsedLines + parsed.unparsedLines,
                 nextLine: chunk.nextLine,
                 reachedEnd: !chunk.lines.length,
@@ -72,34 +77,44 @@ const readToEnd$ = (options: {
   );
 
 /**
- * Reads the spend out of agent session logs the collector had already read past, and hands back the
- * cursors the host has to persist.
+ * The checkout the log ended in, for the re-sync to find it by. A pass that keeps only prompts stores
+ * logs that hold no spend at all, so both kinds answer.
+ */
+const cwdOf = (read: LogBackfill) => {
+  const cwd = read.usage[read.usage.length - 1]?.cwd ?? read.prompts[read.prompts.length - 1]?.cwd;
+
+  return cwd ? { cwd } : {};
+};
+
+/**
+ * Reads the keyed events out of agent session logs the collector had already read past, and hands back
+ * the cursors the host has to persist.
  *
- * Spend collection started after months of logs had been read, so the stored days hold none. This
- * reads each log from the top and keeps only the token counts — it never touches the collector's own
- * cursor, because an activity sample has no dedupe key and a re-read would append every one of them a
- * second time. See ADR 0003.
+ * Both the token counts and the user's own prompts were collected only after months of logs had been
+ * read, so the stored days hold neither. This reads each log from the top and keeps only those two —
+ * never an activity sample, which has no dedupe key, so a re-read would append every one of them a
+ * second time. See ADR 0003. The caller stores whichever of the two its pass is for.
  *
  * The pass converges: a log read to its end is never read again, and everything the log gains after
  * that is the collector's to store. A run reads `logsPerRun` logs, so a machine with hundreds of them
  * fills in over several runs rather than in one that blocks the application.
  */
-export const backfillAgentSpend$ = (options: {
+export const backfillAgentLogs$ = (options: {
   parser: AgentSessionLogParser;
   reader: AgentSessionLogReader;
-  /** The `spend` cursors, never the collector's. A log one of them reports read through is skipped. */
+  /** One backfill pass's cursors, never the collector's. A log one of them reports read through is skipped. */
   cursors: readonly AgentSessionCursor[];
-  /** Defaults to `DEFAULT_SPEND_BACKFILL_LOGS_PER_RUN`. */
+  /** Defaults to `DEFAULT_LOG_BACKFILL_LOGS_PER_RUN`. */
   logsPerRun?: number;
   parsing?: Omit<AgentSessionLogParseOptions, 'lines' | 'resume'>;
-}): Observable<AgentSpendBackfill> => {
+}): Observable<AgentLogBackfill> => {
   const done = new Map(options.cursors.map((cursor) => [cursor.id, cursor]));
-  const perRun = options.logsPerRun ?? DEFAULT_SPEND_BACKFILL_LOGS_PER_RUN;
+  const perRun = options.logsPerRun ?? DEFAULT_LOG_BACKFILL_LOGS_PER_RUN;
 
   return options.reader.logs$({}).pipe(
     concatMap((refs) => {
       // A cursor a re-sync rewound has no `readThrough` any more, so the log is read again — which is
-      // how a new project link recovers the spend dropped while nothing covered its checkout.
+      // how a new project link recovers what was dropped while nothing covered its checkout.
       const pending = refs.filter((ref) => !done.get(ref.id)?.readThrough);
       const taken = pending.slice(0, perRun);
 
@@ -114,16 +129,17 @@ export const backfillAgentSpend$ = (options: {
           }).pipe(map((read) => ({ ref, read }))),
         ),
         toArray(),
-        map((reads): AgentSpendBackfill => {
+        map((reads): AgentLogBackfill => {
           const finished = reads.filter((entry) => entry.read.reachedEnd);
 
           return {
             usage: reads.flatMap((entry) => entry.read.usage).sort((a, b) => a.at.getTime() - b.at.getTime()),
+            prompts: reads.flatMap((entry) => entry.read.prompts).sort((a, b) => a.at.getTime() - b.at.getTime()),
             cursors: finished.map((entry) => ({
               id: entry.ref.id,
               nextLine: entry.read.nextLine,
               readThrough: entry.ref.modifiedAt,
-              ...(entry.read.usage.length ? { cwd: entry.read.usage[entry.read.usage.length - 1]?.cwd } : {}),
+              ...cwdOf(entry.read),
             })),
             remaining: pending.length - finished.length,
             unparsedLines: reads.reduce((total, entry) => total + entry.read.unparsedLines, 0),

@@ -1,4 +1,4 @@
-import { AgentSessionEvent, AgentUsageEvent } from '../model/event';
+import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent } from '../model/event';
 
 /**
  * Far enough apart to keep a long session from filling the store, and far below
@@ -45,6 +45,11 @@ export type AgentSessionLogParseResult = {
    * time and this is a count of tokens, so the sample interval must not reach it.
    */
   usage: AgentUsageEvent[];
+  /**
+   * Every prompt the user typed in this batch, never thinned either. It is the one agent evidence that
+   * says a person was at the keyboard, so a day nothing observed rebuilds its presence from it.
+   */
+  prompts: AgentPromptEvent[];
   /** The title the events carry, to hand back as `resume.title` when reading the rest of the log. */
   title?: string;
   /**

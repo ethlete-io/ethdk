@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TimetrackProjectLink } from '../model/project-link';
-import { AgentSessionEvent, AgentUsageEvent } from '../model/event';
-import { keepLinkedAgentSessions } from './linked';
+import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent } from '../model/event';
+import { keepLinkedAgentSessions, keepPublicAgentPrompts } from './linked';
 
 const link = (path: string, target: TimetrackProjectLink['target']): TimetrackProjectLink => ({
   id: path,
@@ -33,6 +33,36 @@ const spend = (cwd: string, at: string): AgentUsageEvent => ({
   cwd,
   model: 'claude-opus-5',
   usage: { input: 1, output: 10, cacheWrite: 0, cacheRead: 500, thinking: 0 },
+});
+
+const typed = (cwd: string, at: string): AgentPromptEvent => ({
+  source: 'agent-prompt',
+  kind: 'agent-prompt',
+  at: new Date(at),
+  provider: 'claude-code',
+  sessionId: `${cwd}@${at}`,
+  promptId: `prompt_${at}`,
+  cwd,
+});
+
+describe('keepPublicAgentPrompts', () => {
+  it('keeps a prompt typed in a checkout no link covers, because the day still happened', () => {
+    const kept = typed('/home/tom/dev/ethlete-sdk', '2026-09-07T09:57:00Z');
+
+    expect(keepPublicAgentPrompts({ events: [kept], links: LINKS })).toEqual([kept]);
+  });
+
+  it('keeps a prompt typed in a linked checkout', () => {
+    const kept = typed('/home/tom/dev/fut-frontend', '2026-09-07T09:57:00Z');
+
+    expect(keepPublicAgentPrompts({ events: [kept], links: LINKS })).toEqual([kept]);
+  });
+
+  it('drops a prompt typed in a private checkout', () => {
+    const dropped = typed('/home/tom/dev/side/thing', '2026-09-07T09:57:00Z');
+
+    expect(keepPublicAgentPrompts({ events: [dropped], links: LINKS })).toEqual([]);
+  });
 });
 
 describe('keepLinkedAgentSessions', () => {

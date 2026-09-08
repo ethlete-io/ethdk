@@ -1,4 +1,4 @@
-import { AgentSessionEvent, AgentUsageEvent, TokenUsage } from '../model/event';
+import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent, TokenUsage } from '../model/event';
 import { asJsonObject, countAt, objectAt, stringAt } from './record';
 import { AgentSessionLogParseOptions, AgentSessionLogParser, DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS } from './source';
 
@@ -83,6 +83,37 @@ const usageOf = (record: Record<string, unknown>): AgentUsageEvent | null => {
   };
 };
 
+/**
+ * The prompt the user typed, or `null` for every other record.
+ *
+ * A user record whose content is a plain string is what the person sent; a tool result arrives as the
+ * same type with `toolUseResult` beside it, and a content array is never typed by hand. A sidechain
+ * record is a subagent's instructions written by the model, so it is nobody at a keyboard — which is
+ * the one thing this event exists to state.
+ */
+const promptOf = (record: Record<string, unknown>): AgentPromptEvent | null => {
+  if (stringAt(record, 'type') !== 'user') return null;
+  if (record['toolUseResult'] !== undefined && record['toolUseResult'] !== null) return null;
+  if (record['isMeta'] === true || record['isSidechain'] === true) return null;
+
+  const message = objectAt(record, 'message');
+  const activity = activityOf(record);
+  const promptId = stringAt(record, 'uuid');
+
+  if (!message || !activity || !promptId || typeof message['content'] !== 'string') return null;
+
+  return {
+    at: activity.at,
+    source: 'agent-prompt',
+    kind: 'agent-prompt',
+    provider: CLAUDE_CODE_PROVIDER,
+    sessionId: activity.sessionId,
+    promptId,
+    cwd: activity.cwd,
+    gitBranch: activity.gitBranch,
+  };
+};
+
 const readTitle = (record: Record<string, unknown>, into: TitleCandidates) => {
   const type = stringAt(record, 'type');
 
@@ -125,8 +156,8 @@ const contextOf = (record: ActivityRecord) => `${record.cwd}\u0000${record.gitBr
  * Records are thinned to one sample per `sampleIntervalMs`, except that a change of directory or branch
  * always emits, and so does each session's final record, so a block ends where the session did.
  *
- * Every turn that reports `message.usage` also becomes an `AgentUsageEvent`, whatever the sample
- * interval: a token count is not a sample of time.
+ * Every turn that reports `message.usage` also becomes an `AgentUsageEvent`, and every prompt the user
+ * typed becomes an `AgentPromptEvent`, both whatever the sample interval: neither is a sample of time.
  *
  * Only metadata is read. Message bodies never become events, and the session's first prompt is used as
  * a title only when `promptFallback` asks for it.
@@ -140,6 +171,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   // restates the same `message.usage`. Measured over this machine's logs: 46 % of usage records repeat
   // an id, and a repeated id never carried different counts. So the first one wins.
   const usageByTurnId = new Map<string, AgentUsageEvent>();
+  const promptById = new Map<string, AgentPromptEvent>();
   let unparsedLines = 0;
 
   for (const line of options.lines) {
@@ -159,6 +191,12 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
     // No `after` guard: `after` follows the thinned samples, and a turn behind it is spend, not a
     // repeat. The store's dedupe key — the provider and the turn id — is what makes a re-read safe.
     if (spend && !usageByTurnId.has(spend.turnId)) usageByTurnId.set(spend.turnId, spend);
+
+    // Kept behind `after` for the same reason spend is: the record's own id is what the store
+    // deduplicates a prompt on, so a re-read appends nothing.
+    const prompt = promptOf(parsed);
+
+    if (prompt && !promptById.has(prompt.promptId)) promptById.set(prompt.promptId, prompt);
 
     const record = activityOf(parsed);
 
@@ -210,6 +248,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   });
 
   const usage = [...usageByTurnId.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
+  const prompts = [...promptById.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  return { events, usage, title, unparsedLines };
+  return { events, usage, prompts, title, unparsedLines };
 };
