@@ -24,6 +24,7 @@ machine-specific values only, keeping generated output identical locally and in 
 | `lint-and-format` | Runs lint with auto-fixes first and formats every edited file before completion.                                         | All profiles                           |
 | `reactive-state`  | Uses signals for synchronous state, RxJS for asynchronous work and bridges rather than copied state.                     | All profiles                           |
 | `styling`         | Keeps component styling in plain layered CSS and resolves every color through theme tokens.                              | All profiles; requires `@ethlete/core` |
+| `subagent-models` | Names the model on every subagent call: haiku for a lookup, opus for real work, fable for judgment-heavy work.           | All profiles                           |
 
 Rules are always loaded by the configured agents. Use `exclude` when a repository has
 its own replacement for one of them.
@@ -34,9 +35,12 @@ its own replacement for one of them.
 | --------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | `angular-patterns`    | Choosing and structuring Angular components, directives, services, pipes, templates and lifecycle behavior.   | All profiles; requires `@ethlete/core`              |
 | `api-source`          | Reading a configured backend checkout to verify API behavior without editing that checkout.                   | Consumer profile                                    |
+| `domain-modeling`     | Building a project's glossary and recording an architecture decision while a design is discussed.             | All profiles                                        |
 | `figma-export`        | Reconciling rendered components with SVG and CSS exports from Figma.                                          | All profiles                                        |
 | `git-commit`          | Writing commitlint-compatible, scoped, lean commit messages.                                                  | All profiles                                        |
 | `git-flow`            | Naming, basing and targeting feature, sub-feature, release and hotfix branches.                               | All profiles                                        |
+| `grill-with-docs`     | Running the interview and the documentation together; the user starts it, no agent does.                      | All profiles                                        |
+| `grilling`            | Stress-testing a plan or a decision through rounds of questions, one settled frontier at a time.              | All profiles                                        |
 | `handoff`             | Saving work state for a fresh agent session or resuming a saved handoff.                                      | All profiles                                        |
 | `query`               | Building with the signals-first query client, reactive arguments, auth, polling, pagination and RxJS bridges. | Consumer profile; requires `@ethlete/query`         |
 | `rxjs-signals`        | Choosing between signals and RxJS, managing subscriptions and avoiding streams inside effects or computeds.   | All profiles; requires `@ethlete/core`              |
@@ -52,14 +56,19 @@ its own replacement for one of them.
 Skills are emitted in the Agent Skills `SKILL.md` format and load on demand. Their
 frontmatter descriptions tell each agent when the guide applies.
 
+`domain-modeling`, `grill-with-docs` and `grilling` are vendored from
+[mattpocock/skills](https://github.com/mattpocock/skills) under the MIT license. Each one
+names its upstream commit; `THIRD-PARTY-LICENSES.md` in the package holds the license.
+
 ## Agent hooks
 
 Agent hooks are not emitted by default. Add their names to `hooks`; a local
 `disableHooks` setting can then turn all or selected generated hooks off on one machine.
 
-| Name              | Targets               | Event              | Behavior                                                                                                                                                          |
-| ----------------- | --------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `context-warning` | Claude Code and Codex | `UserPromptSubmit` | Warns at 70% and 85% of the effective context or long-context pricing budget and recommends or saves a handoff before quality degrades or premium pricing starts. |
+| Name                    | Targets               | Event                             | Behavior                                                                                                                                                          |
+| ----------------------- | --------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `context-warning`       | Claude Code and Codex | `UserPromptSubmit`                | Warns at 70% and 85% of the effective context or long-context pricing budget and recommends or saves a handoff before quality degrades or premium pricing starts. |
+| `subagent-model-policy` | Claude Code           | `PreToolUse` on the subagent tool | Denies a subagent call that names no model and returns the model table instead, then asks the user before a subagent runs on the most expensive model.            |
 
 For Codex, [GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
 [Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra),

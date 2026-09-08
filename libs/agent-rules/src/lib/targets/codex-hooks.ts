@@ -1,5 +1,5 @@
 import { EmitContext, EmittedFile } from './shared';
-import { emitHookScripts, emitHookSettings } from './hooks-shared';
+import { emitHookScripts, emitHookSettings, hooksForAgent } from './hooks-shared';
 
 export const CODEX_HOOKS_FILE = '.codex/hooks.json';
 
@@ -22,7 +22,7 @@ export const emitCodexHooks = (options: {
   existingHooks: string;
 }): EmittedFile[] => {
   const { context, codexTarget, existingHooks } = options;
-  const hooks = codexTarget ? context.hooks : [];
+  const hooks = codexTarget ? hooksForAgent({ hooks: context.hooks, agent: 'codex' }) : [];
 
   return [
     ...emitHookScripts({ hooks, hooksDir: HOOKS_DIR }),

@@ -12,6 +12,8 @@ export type Frontmatter = {
   requires: string[];
   paths: string[];
   vars: string[];
+  /** `false` keeps an agent from invoking the skill on its own, so only the user can start it. */
+  modelInvocation: boolean;
 };
 
 export type ParsedDocument = {
@@ -20,7 +22,7 @@ export type ParsedDocument = {
 };
 
 const FENCE = '---';
-const KNOWN_KEYS = ['name', 'description', 'kind', 'scope', 'requires', 'paths', 'vars'];
+const KNOWN_KEYS = ['name', 'description', 'kind', 'scope', 'requires', 'paths', 'vars', 'modelInvocation'];
 const LIST_KEYS = ['requires', 'paths', 'vars'];
 
 const unquote = (value: string) => {
@@ -151,6 +153,7 @@ export const parseFrontmatter = (source: string, origin: string): ParsedDocument
       requires: readList('requires'),
       paths: readList('paths'),
       vars: readList('vars'),
+      modelInvocation: readText('modelInvocation') !== 'false',
     },
     body: body.trimEnd(),
   };

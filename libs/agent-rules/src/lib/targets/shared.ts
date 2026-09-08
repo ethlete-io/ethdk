@@ -77,6 +77,7 @@ export const skillBundle = (options: {
     '---',
     `name: ethlete-${item.frontmatter.name}`,
     `description: ${yamlString(description({ item, context }))}`,
+    ...(item.frontmatter.modelInvocation ? [] : ['disable-model-invocation: true']),
     '---',
   ].join('\n');
 

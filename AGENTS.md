@@ -169,6 +169,10 @@ npx prettier --write libs/agent-rules/content/<file>   # format first
 yarn agents:sync                                       # then regenerate
 ```
 
+A few content files are vendored from another repository. Keep them as written upstream,
+apart from the generator's link syntax - `libs/agent-rules/THIRD-PARTY-LICENSES.md` names
+each one, its upstream commit and its license.
+
 `content/output-styles/` is the exception: a Claude Code output style is a machine-level
 file, so `sync` never emits it and `agents:check` never diffs it. It is installed on
 demand instead - `node dist/libs/agent-rules/src/index.js output-style` after a build here,
@@ -313,6 +317,24 @@ Theme **names** (`brand`, `danger`, `dark-elevated`, …) are registered by the 
 the SDK ships none. Never hardcode them as an SDK-defined union or reusable API contract.
 If an app-specific example names one, label it as belonging to that app. Semantic colours
 resolve by theme `type` (e.g. `injectErrorTheme()`).
+
+## Delegating: name the subagent's model
+
+A subagent spawned without a `model` runs on the model leading the session, so an expensive
+model ends up doing every small job it delegates. **Set `model` on every call**, matched to the
+task:
+
+| Model    | The work it fits                                                                                                                                         |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `haiku`  | Mechanical lookups: grep, find, read a file, run a command and report what it said.                                                                      |
+| `sonnet` | A middle ground where opus is more than the task needs.                                                                                                  |
+| `opus`   | The default for real work: code changes, tests, debugging, reviewing a diff.                                                                             |
+| `fable`  | Judgment-heavy work: planning, design, cross-cutting review, leading other subagents. The most expensive of the four, so ask the user before picking it. |
+
+Effort follows the prompt, not a parameter: scope the prompt to one question, name what "done"
+means, and say "keep it brief" for a lookup. Two calls need no `model` of their own - a named
+agent type carries the model and reasoning effort its own definition sets, and a fork always
+inherits the parent's model.
 
 ## Ethlete skills
 

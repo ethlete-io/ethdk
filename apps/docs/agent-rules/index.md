@@ -121,7 +121,7 @@ per hook:
 
 ```json
 {
-  "hooks": ["context-warning"]
+  "hooks": ["context-warning", "subagent-model-policy"]
 }
 ```
 
@@ -146,6 +146,18 @@ Claude additionally gets a separate user-facing warning and can save a handoff
 automatically in auto mode at the critical tier. Codex receives the warning through
 the hook's additional context; its permission-mode values are not documented, so the
 hook never enables automatic saving there.
+
+### `subagent-model-policy`
+
+Claude Code only. On every call to the subagent tool, a call that names no `model` is denied
+and the model table goes back to the agent instead: haiku for a lookup, opus for real work,
+sonnet in between, fable for judgment-heavy work. A subagent therefore never inherits the
+session's model by accident, and the mistake costs one tool call rather than a whole run.
+
+A call that names `fable` asks the user, because it is the most expensive option and only
+the user knows whether the task is judgment-heavy. Two calls pass untouched, because `model`
+would change nothing: a fork, which always inherits the parent model, and an agent type whose
+own definition under `.claude/agents/` sets a model.
 
 Hooks can be turned off per machine - see the local config below.
 

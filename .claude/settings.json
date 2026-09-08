@@ -28,6 +28,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Task|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ethlete/subagent-model-policy.py\" --agent claude",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

@@ -280,7 +280,7 @@ per hook in the config:
 
 ```json
 {
-  "hooks": ["context-warning"]
+  "hooks": ["context-warning", "subagent-model-policy"]
 }
 ```
 
@@ -313,6 +313,16 @@ Available hooks:
   Codex sub-agents are tracked by their own thread ids even though they share the root
   session id. A sub-agent warning tells that child to report its state to the parent; it
   never tells the user or the main agent to hand off the root session.
+
+- **`subagent-model-policy`** (Claude Code only) - gates every call to the subagent tool.
+  A call that names no `model` is denied and the model table is returned instead: haiku for
+  a lookup, opus for real work, sonnet in between, fable for judgment-heavy work. Without
+  it a subagent inherits the model leading the session, which is how an expensive model
+  ends up doing every grep it delegates; with it, that mistake costs one tool call.
+
+  A call that names `fable` asks the user - it is the most expensive option, and only the
+  user knows whether the task is judgment-heavy. A fork and an agent type whose own
+  definition sets a model both pass untouched, because `model` would change nothing there.
 
 Hooks can be turned off per machine - see the local config below.
 
@@ -441,8 +451,13 @@ scope: consumer # consumer | sdk | both
 requires: ['@ethlete/core'] # optional
 paths: ['**/*.css'] # optional; becomes Claude `paths` and Cursor `globs` on rules
 vars: [docsBaseUrl] # optional
+modelInvocation: false # optional; a skill only the user may start
 ---
 ```
+
+A content file vendored from another repository keeps its upstream wording apart from the
+link syntax, and names its source in the body. `THIRD-PARTY-LICENSES.md` lists each one,
+its upstream commit and its license.
 
 `content/output-styles/<name>.md` is a third kind, and the only one this package does not
 compile: it is a Claude Code output style verbatim, so its frontmatter is Claude's

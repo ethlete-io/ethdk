@@ -1,5 +1,5 @@
 import { EmitContext, EmittedFile } from './shared';
-import { emitHookScripts, emitHookSettings } from './hooks-shared';
+import { emitHookScripts, emitHookSettings, hooksForAgent } from './hooks-shared';
 
 export const CLAUDE_SETTINGS_FILE = '.claude/settings.json';
 
@@ -17,7 +17,7 @@ export const emitClaudeHooks = (options: {
   existingSettings: string;
 }): EmittedFile[] => {
   const { context, claudeTarget, existingSettings } = options;
-  const hooks = claudeTarget ? context.hooks : [];
+  const hooks = claudeTarget ? hooksForAgent({ hooks: context.hooks, agent: 'claude' }) : [];
 
   return [
     ...emitHookScripts({ hooks, hooksDir: HOOKS_DIR }),

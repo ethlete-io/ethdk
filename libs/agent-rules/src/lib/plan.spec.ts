@@ -32,6 +32,7 @@ const contentItem = (options: { name: string; body?: string; resources?: string[
     requires: [],
     paths: [],
     vars: [],
+    modelInvocation: true,
   },
   body: options.body ?? '',
   sourcePath: `/content/skills/${options.name}/SKILL.md`,

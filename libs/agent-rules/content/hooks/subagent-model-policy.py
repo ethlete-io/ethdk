@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""PreToolUse hook: make a subagent's model an explicit choice.
+
+A `Task` call that passes no `model` runs the subagent on the parent session's
+model. A session led by an expensive model therefore spends that model on every
+grep and every file read it delegates, which burns a usage limit in minutes for
+work a small model does just as well.
+
+So this hook gates the tool call rather than only advising:
+
+  * No `model` at all - denied, with the model table returned to the agent. The
+    agent then repeats the call with a model, so the cost of the mistake is one
+    tool call, not a whole subagent run.
+  * `model: fable` - the user is asked. Fable is the right pick for planning,
+    design, cross-cutting review and leading other subagents, and the wrong pick
+    for the twentieth mechanical lookup; only the user knows which this is.
+  * Any other model - allowed silently.
+
+Two cases are left alone, because the tool's `model` would change nothing:
+
+  * `subagent_type: fork`, which always inherits the parent model.
+  * An agent type whose own definition under `.claude/agents/` sets a model.
+
+Can be disabled per machine via a gitignored ethlete-agents.config.local.json at
+the repo root: {"disableHooks": true} or {"disableHooks": ["subagent-model-policy"]}.
+
+Fail-safe: any error exits 0 with no output - the hook must never block work
+because it could not read its own input.
+"""
+
+import json
+import os
+import sys
+
+HOOK_NAME = "subagent-model-policy"
+LOCAL_CONFIG_FILE = "ethlete-agents.config.local.json"
+
+# The tool that spawns a subagent, under both names it has carried.
+SUBAGENT_TOOLS = ("Task", "Agent")
+
+POLICY = """A subagent's model is a choice, not an inheritance. This call passes no `model`, so the subagent \
+would run on the model leading this session - which is how one expensive model ends up doing every small job. \
+Call the tool again with `model` set:
+
+- `haiku` - mechanical lookups: grep, find, read a file, run a command and report what it said.
+- `opus` - the default for real work: code changes, tests, debugging, reviewing a diff.
+- `sonnet` - a middle ground where opus is more than the task needs.
+- `fable` - judgment-heavy work: planning, design, cross-cutting review, leading other subagents. The most \
+expensive of the four, so choosing it asks the user first.
+
+Effort follows the prompt, not a parameter: scope the prompt to one question, name what "done" is, and say \
+"keep it brief" for a lookup. An agent type defined under `.claude/agents/` carries its own model and reasoning \
+effort, so a call that names one needs no `model` of its own."""
+
+FABLE_REASON = """This subagent would run on fable, the most expensive model. Approve it where the task is \
+judgment-heavy - planning, design, cross-cutting review, or leading other subagents. Deny it for implementation \
+(`model: "opus"`) or for a mechanical lookup (`model: "haiku"`), then repeat the call with that model."""
+
+
+def agent_name(argv):
+    """The --agent value, defaulting to claude — older registrations pass no flag."""
+    for index, arg in enumerate(argv):
+        if arg == "--agent" and index + 1 < len(argv):
+            return argv[index + 1]
+        if arg.startswith("--agent="):
+            return arg.split("=", 1)[1]
+    return "claude"
+
+
+def repo_root(data):
+    """Repo root: the env var the agent sets, else the script's own location, else the cwd.
+
+    The script always lives at <root>/.<agent>/hooks/ethlete/subagent-model-policy.py, so
+    walking four levels up works for any agent that has no project-dir variable of its own.
+    """
+    for variable in ("CLAUDE_PROJECT_DIR", "CODEX_PROJECT_DIR"):
+        value = os.environ.get(variable)
+        if value:
+            return value
+    here = os.path.abspath(__file__)
+    derived = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(here))))
+    if os.path.isfile(os.path.join(derived, LOCAL_CONFIG_FILE)):
+        return derived
+    cwd = data.get("cwd")
+    return cwd if isinstance(cwd, str) and cwd else derived
+
+
+def load_local_config(root):
+    """Parsed ethlete-agents.config.local.json at the repo root, or {} if missing/unreadable."""
+    if not root:
+        return {}
+    try:
+        with open(os.path.join(root, LOCAL_CONFIG_FILE), encoding="utf-8") as f:
+            config = json.load(f)
+    except (OSError, ValueError, AttributeError):
+        return {}
+    return config if isinstance(config, dict) else {}
+
+
+def disabled_locally(config):
+    """True when the local config disables this hook (or all hooks) on this machine."""
+    disabled = config.get("disableHooks")
+    return disabled is True or (isinstance(disabled, list) and HOOK_NAME in disabled)
+
+
+def definition_sets_model(root, subagent_type):
+    """True when a project or user agent definition of that name declares its own model."""
+    if not subagent_type:
+        return False
+    file_name = f"{subagent_type.split(':')[-1]}.md"
+    candidates = [
+        os.path.join(root or ".", ".claude", "agents", file_name),
+        os.path.join(os.path.expanduser("~"), ".claude", "agents", file_name),
+    ]
+    for path in candidates:
+        try:
+            with open(path, encoding="utf-8") as f:
+                head = f.read(4096)
+        except OSError:
+            continue
+        for line in head.split("\n"):
+            key, separator, value = line.partition(":")
+            if separator and key.strip() == "model" and value.strip():
+                return True
+    return False
+
+
+def decision_for(tool_input, root):
+    """The (decision, reason) this call needs, or None when it may run untouched."""
+    subagent_type = str(tool_input.get("subagent_type") or "").strip().lower()
+    model = str(tool_input.get("model") or "").strip().lower()
+
+    if "fable" in model:
+        return "ask", FABLE_REASON
+    if model:
+        return None
+    if subagent_type == "fork" or definition_sets_model(root, subagent_type):
+        return None
+    return "deny", POLICY
+
+
+def main():
+    if agent_name(sys.argv[1:]) != "claude":
+        return
+
+    data = json.load(sys.stdin)
+
+    if data.get("tool_name") not in SUBAGENT_TOOLS:
+        return
+
+    tool_input = data.get("tool_input")
+
+    if not isinstance(tool_input, dict):
+        return
+
+    root = repo_root(data)
+
+    if disabled_locally(load_local_config(root)):
+        return
+
+    outcome = decision_for(tool_input, root)
+
+    if not outcome:
+        return
+
+    decision, reason = outcome
+    print(
+        json.dumps(
+            {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": decision,
+                    "permissionDecisionReason": reason,
+                }
+            }
+        )
+    )
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception:
+        pass
+    sys.exit(0)

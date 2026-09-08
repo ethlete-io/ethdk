@@ -4,7 +4,15 @@ import { resolveContentRoot } from '../load-content';
 import { SHELL_BANNER } from '../render';
 import { EmittedFile } from './shared';
 
-type HookDefinition = { event: string; file: string; timeout: number };
+type HookDefinition = {
+  event: string;
+  file: string;
+  timeout: number;
+  /** Tool-name pattern for a tool-scoped event, so the script is not run on every tool call. */
+  matcher?: string;
+  /** Agents that have the event at all. Empty means every target registers the hook. */
+  agents?: string[];
+};
 
 /**
  * Hooks a repo can opt into via the config's `hooks` array. Hooks run arbitrary commands on the
@@ -12,7 +20,22 @@ type HookDefinition = { event: string; file: string; timeout: number };
  */
 export const KNOWN_HOOKS: Record<string, HookDefinition> = {
   'context-warning': { event: 'UserPromptSubmit', file: 'context-warning.py', timeout: 10 },
+  'subagent-model-policy': {
+    event: 'PreToolUse',
+    file: 'subagent-model-policy.py',
+    timeout: 10,
+    matcher: 'Task|Agent',
+    agents: ['claude'],
+  },
 };
+
+/** Drops the hooks whose event the agent does not have, so neither script nor entry is emitted. */
+export const hooksForAgent = (options: { hooks: string[]; agent: string }) =>
+  options.hooks.filter((name) => {
+    const agents = KNOWN_HOOKS[name]?.agents ?? [];
+
+    return agents.length === 0 || agents.includes(options.agent);
+  });
 
 export const assertKnownHooks = (hooks: string[]) => {
   const unknown = hooks.filter((name) => !(name in KNOWN_HOOKS));
@@ -32,7 +55,7 @@ const withBanner = (raw: string) => {
 };
 
 type HookCommand = { type?: string; command?: string; timeout?: number };
-type HookGroup = { hooks?: HookCommand[] };
+type HookGroup = { matcher?: string; hooks?: HookCommand[] };
 type HookSettings = Record<string, unknown> & { hooks?: Record<string, HookGroup[]> };
 
 /**
@@ -69,7 +92,10 @@ export const mergeHookSettings = (options: {
 
     events[definition.event] = [
       ...(events[definition.event] ?? []),
-      { hooks: [{ type: 'command', command: commandFor(definition.file), timeout: definition.timeout }] },
+      {
+        ...(definition.matcher ? { matcher: definition.matcher } : {}),
+        hooks: [{ type: 'command', command: commandFor(definition.file), timeout: definition.timeout }],
+      },
     ];
   }
 
