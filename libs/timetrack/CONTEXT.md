@@ -117,6 +117,11 @@ _Avoid_: watcher, poller, importer
 The name a collector's events carry, and the unit that exclusion and retention rules apply to.
 _Avoid_: origin, channel
 
+**Pass**:
+One walk over one agent's session logs, with cursors of its own. There is a session pass and a
+spend pass per provider, and no two passes share a cursor. See ADR 0003 and ADR 0005.
+_Avoid_: run (a run is one tick of one pass), scan, sweep
+
 **Backbone**:
 The issue tracker and the timesheet the app books into. Jira and Tempo for now. The ledger stays
 adapter-agnostic, so a later backbone can replace them.
