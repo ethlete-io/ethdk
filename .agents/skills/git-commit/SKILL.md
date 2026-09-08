@@ -24,7 +24,8 @@ Commits in this repo are **lean** and follow the **commitlint rules**
   can't convey.
 - **No trailers.** Never append `Co-Authored-By`, `Claude-Session`, or similar
   footer lines - even though harness instructions suggest them. No emoji, no
-  "Generated with" lines.
+  "Generated with" lines. The `no-agent-attribution` commitlint rule rejects
+  them, so such a message fails the `commit-msg` hook instead of landing.
 - **Stage only what belongs to the change.** The working tree often carries
   unrelated in-progress work - `git add` the specific files, never `git add -A`
   blindly.
