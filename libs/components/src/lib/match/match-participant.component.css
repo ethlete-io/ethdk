@@ -60,6 +60,20 @@
   .et-match-participant-bone {
     inline-size: 100%;
     block-size: 100%;
+    /* A grid item's `min-*-size: auto` is content-based, so a broken image's intrinsic box would
+       stretch the frame past the size set above and pull the fallback mark off centre. */
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  /* Stands in for an emblem that is absent or failed to load — a letter rather than an empty disc, so
+     the frame still points at somebody. Sized off the frame, so it shrinks with a compact row. */
+  .et-match-participant-emblem-mark {
+    color: var(--et-surface-color-muted-solid, currentColor);
+    font-size: calc(var(--et-match-participant-emblem-size) * 0.45);
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
 
   /* One column for the two lines, so the emblem stays centred against both of them. */

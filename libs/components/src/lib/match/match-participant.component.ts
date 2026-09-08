@@ -43,9 +43,16 @@ import { NormalizedMatchParticipant } from './match.types';
           [defaultSrc]="media.defaultSrc ?? null"
           [alt]="emblemAlt()"
           class="et-match-participant-picture"
-        />
+          fit="contain"
+        >
+          <ng-template etPictureError>
+            <span class="et-match-participant-emblem-mark" aria-hidden="true">{{ emblemMark() }}</span>
+          </ng-template>
+        </et-picture>
       } @else if (loading()) {
         <et-skeleton-item class="et-match-participant-bone" shape="circle" />
+      } @else if (participant()) {
+        <span class="et-match-participant-emblem-mark" aria-hidden="true">{{ emblemMark() }}</span>
       }
     </span>
 
@@ -139,6 +146,9 @@ export class MatchParticipantComponent {
   );
 
   protected emblemAlt = computed(() => this.resolvedLabels().emblemAlt(this.displayName()));
+
+  /** Only ever drawn for a participant: a TBD slot has no name to take a letter from. */
+  protected emblemMark = computed(() => this.displayName().trim().charAt(0).toUpperCase());
 
   protected seedLabel = computed(() => {
     const seed = this.participant()?.seed;

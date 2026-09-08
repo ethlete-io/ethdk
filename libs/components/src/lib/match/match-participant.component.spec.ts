@@ -116,6 +116,39 @@ describe('MatchParticipantComponent', () => {
     });
   });
 
+  describe('the emblem', () => {
+    const mark = (fixture: ComponentFixture<HostComponent>) =>
+      host(fixture).querySelector('.et-match-participant-emblem-mark')?.textContent?.trim();
+
+    it('stands in with the participant’s first letter when there is none', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, emblem: null });
+      fixture.detectChanges();
+
+      expect(mark(fixture)).toBe('F');
+    });
+
+    it('stands in the same way when the file fails to load', () => {
+      const fixture = create();
+      const img = host(fixture).querySelector('img');
+
+      img?.dispatchEvent(new Event('error'));
+      fixture.detectChanges();
+
+      expect(mark(fixture)).toBe('F');
+    });
+
+    it('leaves a TBD slot unmarked - it is nobody yet', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set(null);
+      fixture.detectChanges();
+
+      expect(mark(fixture)).toBeUndefined();
+    });
+  });
+
   it('draws bones while loading - a pending slot is not the same as a decided TBD', () => {
     const fixture = create();
 

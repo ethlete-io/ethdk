@@ -278,6 +278,19 @@ other way.
 **absence** - a bracket match whose feeder hasn't finished - and renders "TBD" at full row height, so nothing
 jumps when the name arrives. `loading` is a pending one.
 
+### An emblem that is missing or fails to load
+
+The emblem frame is never empty for a participant that exists. With no emblem at all, or after the file fails
+to load, the frame draws the participant's first letter in the muted surface color. A TBD slot gets neither -
+it is nobody yet, so the frame stays blank and keeps the row's height.
+
+Nothing is needed on the consumer's side: `<et-picture>` already reports the failure (`data-state`,
+`imgError`, the `etPictureError` slot), and the participant supplies the fallback for it - so an `(error)`
+handler and a remembered broken `src` in application code can go.
+
+The emblem is drawn with `fit="contain"`, so a logo that is not square is letterboxed inside the round frame
+rather than cropped by it.
+
 A participant's `subtitle` renders as a quieter second line under the name - the org behind an esports roster,
 the club behind a squad. It is dropped in a dense row (and by `compact`), where a second line would double
 every row's height.
