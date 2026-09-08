@@ -59,6 +59,24 @@ jobs:
 
       - run: yarn nx run-many -t test
 
+      # The only step that compiles the Rust host: nothing else in CI touches src-tauri, so a
+      # change that broke it could not fail a run before this.
+      - name: Install the Tauri Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/timetrack/src-tauri/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('apps/timetrack/src-tauri/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
+
+      - run: yarn nx run timetrack-app:test-rust
+
       - run: yarn nx run-many -t build
 
       # Bundle-size goldens: fails when something in core/query/components becomes unshakeable again.

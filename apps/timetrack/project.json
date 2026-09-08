@@ -56,6 +56,15 @@
         }
       }
     },
+    "test-rust": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["{projectRoot}/src-tauri/**/*"],
+      "options": {
+        "cwd": "apps/timetrack/src-tauri",
+        "command": "cargo test"
+      }
+    },
     "tauri": {
       "executor": "nx:run-commands",
       "options": {

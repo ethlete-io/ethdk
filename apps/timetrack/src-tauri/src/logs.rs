@@ -52,6 +52,48 @@ fn modified_at_ms(path: &Path) -> TimetrackResult<i64> {
         .unwrap_or(0))
 }
 
+fn push_logs_in(
+    dir: &Path,
+    id_prefix: &str,
+    modified_after_ms: Option<i64>,
+    refs: &mut Vec<AgentLogRef>,
+) -> TimetrackResult<()> {
+    let Ok(logs) = std::fs::read_dir(dir) else {
+        return Ok(());
+    };
+
+    for log in logs.filter_map(Result::ok) {
+        let path = log.path();
+
+        if path.extension().is_none_or(|extension| extension != "jsonl") {
+            continue;
+        }
+
+        let Some(stem) = path.file_stem().and_then(|stem| stem.to_str()) else {
+            continue;
+        };
+        let at_ms = modified_at_ms(&path)?;
+
+        if modified_after_ms.is_some_and(|after| at_ms <= after) {
+            continue;
+        }
+
+        refs.push(AgentLogRef {
+            id: format!("{id_prefix}{stem}"),
+            path: path.to_string_lossy().into_owned(),
+            modified_at_ms: at_ms,
+        });
+    }
+
+    Ok(())
+}
+
+/// Every session log the agent wrote: one per session, plus the ones its subagents wrote under
+/// `<project>/<sessionId>/subagents/`.
+///
+/// A subagent log's file name names the agent rather than the run, so it repeats across sessions.
+/// Its `id` therefore carries the session directory: keyed by the file name alone, several logs
+/// would share one cursor and each read would move it past the lines of the others.
 fn list_logs(root: &Path, modified_after_ms: Option<i64>) -> TimetrackResult<Vec<AgentLogRef>> {
     let Ok(projects) = std::fs::read_dir(root) else {
         return Ok(Vec::new());
@@ -60,31 +102,25 @@ fn list_logs(root: &Path, modified_after_ms: Option<i64>) -> TimetrackResult<Vec
     let mut refs = Vec::new();
 
     for project in projects.filter_map(Result::ok) {
-        let Ok(logs) = std::fs::read_dir(project.path()) else {
+        push_logs_in(&project.path(), "", modified_after_ms, &mut refs)?;
+
+        let Ok(sessions) = std::fs::read_dir(project.path()) else {
             continue;
         };
 
-        for log in logs.filter_map(Result::ok) {
-            let path = log.path();
+        for session in sessions.filter_map(Result::ok) {
+            let subagents = session.path().join("subagents");
 
-            if path.extension().is_none_or(|extension| extension != "jsonl") {
+            if !subagents.is_dir() {
                 continue;
             }
 
-            let Some(id) = path.file_stem().and_then(|stem| stem.to_str()) else {
+            let name = session.file_name();
+            let Some(id) = name.to_str() else {
                 continue;
             };
-            let at_ms = modified_at_ms(&path)?;
 
-            if modified_after_ms.is_some_and(|after| at_ms <= after) {
-                continue;
-            }
-
-            refs.push(AgentLogRef {
-                id: id.to_owned(),
-                path: path.to_string_lossy().into_owned(),
-                modified_at_ms: at_ms,
-            });
+            push_logs_in(&subagents, &format!("{id}/"), modified_after_ms, &mut refs)?;
         }
     }
 
@@ -210,6 +246,16 @@ mod tests {
         path
     }
 
+    fn write_subagent_log(root: &Path, project: &str, session: &str, id: &str, contents: &str) -> PathBuf {
+        write_log(root, &format!("{project}/{session}/subagents"), id, contents)
+    }
+
+    fn real_log_root() -> Option<PathBuf> {
+        let root = PathBuf::from(std::env::var_os("HOME")?).join(".claude").join("projects");
+
+        root.is_dir().then_some(root)
+    }
+
     #[test]
     fn lists_one_ref_per_jsonl_log_keyed_by_session_id() {
         let root = temp_root("listing");
@@ -222,6 +268,32 @@ mod tests {
         ids.sort();
 
         assert_eq!(ids, ["session-one", "session-two"]);
+    }
+
+    #[test]
+    fn lists_a_subagent_log_beside_the_session_that_ran_it() {
+        let root = temp_root("subagents");
+
+        write_log(&root, "-home-tom-dev-a", "session-one", "{}\n");
+        write_subagent_log(&root, "-home-tom-dev-a", "session-one", "agent-a1", "{}\n");
+
+        let mut ids = list_logs(&root, None).unwrap().into_iter().map(|log| log.id).collect::<Vec<_>>();
+        ids.sort();
+
+        assert_eq!(ids, ["session-one", "session-one/agent-a1"]);
+    }
+
+    #[test]
+    fn keeps_two_subagent_logs_of_the_same_name_apart() {
+        let root = temp_root("subagent-name-repeats");
+
+        write_subagent_log(&root, "-home-tom-dev-a", "session-one", "agent-a1", "a\n");
+        write_subagent_log(&root, "-home-tom-dev-a", "session-two", "agent-a1", "b\n");
+
+        let mut ids = list_logs(&root, None).unwrap().into_iter().map(|log| log.id).collect::<Vec<_>>();
+        ids.sort();
+
+        assert_eq!(ids, ["session-one/agent-a1", "session-two/agent-a1"]);
     }
 
     #[test]
@@ -288,12 +360,7 @@ mod tests {
 
     #[test]
     fn reads_the_real_claude_code_logs_on_this_machine() {
-        let Some(home) = std::env::var_os("HOME") else { return };
-        let root = PathBuf::from(home).join(".claude").join("projects");
-
-        if !root.is_dir() {
-            return;
-        }
+        let Some(root) = real_log_root() else { return };
 
         let logs = list_logs(&root, None).unwrap();
         assert!(!logs.is_empty(), "{} holds no logs", root.display());
@@ -305,5 +372,33 @@ mod tests {
         for line in read.lines.iter().take(50) {
             assert!(serde_json::from_str::<serde_json::Value>(line).is_ok(), "not JSON: {line}");
         }
+    }
+
+    #[test]
+    fn reaches_the_real_subagent_logs_on_this_machine() {
+        let Some(root) = real_log_root() else { return };
+
+        let sessions = std::fs::read_dir(&root)
+            .unwrap()
+            .filter_map(Result::ok)
+            .flat_map(|project| std::fs::read_dir(project.path()).into_iter().flatten().filter_map(Result::ok));
+
+        let Some(expected) = sessions
+            .flat_map(|session| {
+                std::fs::read_dir(session.path().join("subagents"))
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Result::ok)
+            })
+            .map(|log| log.path())
+            .find(|path| path.extension().is_some_and(|extension| extension == "jsonl"))
+        else {
+            return;
+        };
+
+        let expected = expected.to_string_lossy().into_owned();
+        let logs = list_logs(&root, None).unwrap();
+
+        assert!(logs.iter().any(|log| log.path == expected), "{expected} was not listed");
     }
 }
