@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TimetrackProjectLink } from '../model/project-link';
 import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent } from '../model/event';
-import { keepLinkedAgentSessions, keepPublicAgentPrompts } from './linked';
+import { keepLinkedAgentSessions, keepPublicAgentRecords } from './linked';
 
 const link = (path: string, target: TimetrackProjectLink['target']): TimetrackProjectLink => ({
   id: path,
@@ -45,23 +45,35 @@ const typed = (cwd: string, at: string): AgentPromptEvent => ({
   cwd,
 });
 
-describe('keepPublicAgentPrompts', () => {
+describe('keepPublicAgentRecords', () => {
   it('keeps a prompt typed in a checkout no link covers, because the day still happened', () => {
     const kept = typed('/home/tom/dev/ethlete-sdk', '2026-09-07T09:57:00Z');
 
-    expect(keepPublicAgentPrompts({ events: [kept], links: LINKS })).toEqual([kept]);
+    expect(keepPublicAgentRecords({ events: [kept], links: LINKS })).toEqual([kept]);
   });
 
   it('keeps a prompt typed in a linked checkout', () => {
     const kept = typed('/home/tom/dev/fut-frontend', '2026-09-07T09:57:00Z');
 
-    expect(keepPublicAgentPrompts({ events: [kept], links: LINKS })).toEqual([kept]);
+    expect(keepPublicAgentRecords({ events: [kept], links: LINKS })).toEqual([kept]);
   });
 
   it('drops a prompt typed in a private checkout', () => {
     const dropped = typed('/home/tom/dev/side/thing', '2026-09-07T09:57:00Z');
 
-    expect(keepPublicAgentPrompts({ events: [dropped], links: LINKS })).toEqual([]);
+    expect(keepPublicAgentRecords({ events: [dropped], links: LINKS })).toEqual([]);
+  });
+
+  it('keeps a turn in a checkout no link covers, so it can hold a rebuilt stretch open', () => {
+    const kept = spend('/home/tom/dev/ethlete-sdk', '2026-09-07T10:04:00Z');
+
+    expect(keepPublicAgentRecords({ events: [kept], links: LINKS })).toEqual([kept]);
+  });
+
+  it('drops a turn in a private checkout', () => {
+    const dropped = spend('/home/tom/dev/side/thing', '2026-09-07T10:04:00Z');
+
+    expect(keepPublicAgentRecords({ events: [dropped], links: LINKS })).toEqual([]);
   });
 });
 

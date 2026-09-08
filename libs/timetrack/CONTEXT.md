@@ -69,6 +69,11 @@ The sum of every stream's blocks. It may exceed presence, and that is the point:
 once are two lines of work, and both book their full time.
 _Avoid_: total time, tracked time, worked time
 
+**Rebuilt time**:
+Presence no window and no idle transition observed, read back afterwards from the prompts the person
+typed and the commits they made. It is part of presence, never a number beside it.
+_Avoid_: reconstructed, recovered, inferred time
+
 **Concurrency**:
 Engaged time divided by presence. 1 is a serial day. 2.4 is a day that ran several agents.
 _Avoid_: overlap factor, parallelism, multiplier
@@ -82,8 +87,14 @@ _Avoid_: date, period, session
 
 **Turn**:
 One exchange with an agent model. It has an instant and a token cost. It is the unit spend is
-collected in.
+collected in. It says the machine worked, never that a person was there.
 _Avoid_: message, request, call, iteration
+
+**Prompt**:
+One thing the person typed at an agent, as an instant and a checkout. The text is never collected.
+It is the one agent evidence that says somebody was at the keyboard — see ADR 0006. A prompt and a
+turn are kept for a checkout no project link covers, and both drop for a private one.
+_Avoid_: message, input, keystroke in prose
 
 **Agent session**:
 One run of an agent CLI in one checkout, identified by the provider's own session id. A subagent
@@ -118,8 +129,8 @@ The name a collector's events carry, and the unit that exclusion and retention r
 _Avoid_: origin, channel
 
 **Pass**:
-One walk over one agent's session logs, with cursors of its own. There is a session pass and a
-spend pass per provider, and no two passes share a cursor. See ADR 0003 and ADR 0005.
+One walk over one agent's session logs, with cursors of its own. There is a session pass, a spend
+pass and a prompt pass per provider, and no two passes share a cursor. See ADR 0003 and ADR 0005.
 _Avoid_: run (a run is one tick of one pass), scan, sweep
 
 **Backbone**:

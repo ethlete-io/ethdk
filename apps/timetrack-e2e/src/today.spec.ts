@@ -5,8 +5,17 @@ import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
 /** The checkout the fake git backend discovers, so its subdirectories fold into it. */
 const FUT = '/Users/e2e/dev/fut-frontend';
 
-/** A second checkout no root covers. An agent ran in it and no window ever showed it. */
+/** A second checkout the host discovers. An agent ran in it and no window ever showed it. */
 const SDK = '/Users/e2e/dev/ethlete-sdk';
+
+/**
+ * What the fake host reports as the repositories on this machine, beside `FUT`.
+ *
+ * A prompt and a turn are the two marks kept for a checkout no project link covers, so a directory
+ * they name is only a stream of its own when something says it is a checkout. Here the git discovery
+ * is that something, as it is on a real machine.
+ */
+const DISCOVERED = { extraRepos: [SDK] };
 
 /** Nine in the morning on the seeded day. The browser is pinned to UTC, so this is 09:00 on screen. */
 const at = (minutes: number) => new Date(new Date(`${E2E_DAY_KEY}T09:00:00.000Z`).getTime() + minutes * 60_000);
@@ -52,6 +61,48 @@ const day = (): CollectedEvent[] => [
     model: 'claude-opus-5',
     usage: { input: 12_000, output: 1_200_000, cacheWrite: 40_000, cacheRead: 604_000_000, thinking: 30_000 },
   },
+];
+
+/**
+ * One Claude Code record. A `user` record whose content is a plain string is a prompt the person
+ * typed; an `assistant` record with `message.usage` is a turn the machine spent.
+ */
+const claudeRecord = (options: { minutes: number; typed?: boolean; id: string }) =>
+  JSON.stringify({
+    type: options.typed ? 'user' : 'assistant',
+    uuid: options.id,
+    timestamp: at(options.minutes).toISOString(),
+    cwd: SDK,
+    sessionId: 'session-rebuilt',
+    gitBranch: 'next',
+    message: options.typed
+      ? { role: 'user', content: 'read the day back' }
+      : {
+          id: options.id,
+          model: 'claude-opus-5',
+          role: 'assistant',
+          usage: {
+            input_tokens: 100,
+            output_tokens: 2_000,
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 500_000,
+            output_tokens_details: { thinking_tokens: 0 },
+          },
+        },
+  });
+
+/**
+ * A log of a morning nothing watched: three prompts twenty minutes apart, with the agent's turns
+ * between them. The turns are what carry the stretch over the gaps the prompts leave.
+ */
+const rebuiltLog = (): string[] => [
+  claudeRecord({ minutes: 0, typed: true, id: 'prompt-0' }),
+  claudeRecord({ minutes: 5, id: 'msg_5' }),
+  claudeRecord({ minutes: 12, id: 'msg_12' }),
+  claudeRecord({ minutes: 20, typed: true, id: 'prompt-20' }),
+  claudeRecord({ minutes: 28, id: 'msg_28' }),
+  claudeRecord({ minutes: 35, id: 'msg_35' }),
+  claudeRecord({ minutes: 40, typed: true, id: 'prompt-40' }),
 ];
 
 /** One record of a Codex rollout log. `ordinal` is what a `token_count` is identified as a turn by. */
@@ -111,7 +162,7 @@ const reflogLine = (options: { stamp: string; from: string; to: string }) =>
 
 test.describe('the today view', () => {
   test.beforeEach(async ({ page }) => {
-    await seedWorld(page, { now: E2E_NOW, events: day() });
+    await seedWorld(page, { now: E2E_NOW, events: day(), git: DISCOVERED });
     await page.goto('/today');
   });
 
@@ -166,6 +217,7 @@ test.describe('the today view', () => {
       now: E2E_NOW,
       events: day().map((event) => (event.kind === 'agent-session' ? { ...event, gitBranch: undefined } : event)),
       git: {
+        ...DISCOVERED,
         reflog: {
           [SDK]: reflogLine({ stamp: '2026-07-01T09:00:00+02:00', from: 'main', to: 'feature/read-a-day' }),
         },
@@ -179,6 +231,7 @@ test.describe('the today view', () => {
   test('says nothing about a branch for a checkout whose reflog holds no switch', async ({ page }) => {
     await seedWorld(page, {
       now: E2E_NOW,
+      git: DISCOVERED,
       events: day().map((event) => (event.kind === 'agent-session' ? { ...event, gitBranch: undefined } : event)),
     });
     await page.goto('/today');
@@ -193,6 +246,7 @@ test.describe('the today view', () => {
   test('reads a codex rollout log and books its turns on the checkout the turn ran in', async ({ page }) => {
     await seedWorld(page, {
       now: E2E_NOW,
+      git: DISCOVERED,
       events: day(),
       // The backfill keeps only a checkout a project link covers, the same filter the session
       // collector applies. Without the link the rollout's turns are dropped before the store.
@@ -225,6 +279,7 @@ test.describe('the today view', () => {
     // customer pays for that hour's turns, so the checkout books them; the day does not call it presence.
     await seedWorld(page, {
       now: E2E_NOW,
+      git: DISCOVERED,
       events: [
         ...day(),
         { at: at(121), source: 'idle', kind: 'lock' },
@@ -257,6 +312,7 @@ test.describe('the today view', () => {
     // What a replayed day looks like: the spend pass read an old log the session collector never saw.
     await seedWorld(page, {
       now: E2E_NOW,
+      git: DISCOVERED,
       events: [
         ...day().filter((event) => event.source !== 'agent-session'),
         {
@@ -288,7 +344,7 @@ test.describe('the today view', () => {
     await seedWorld(page, {
       now: E2E_NOW,
       events: [...day(), focus(10, 'code', 'boot.md - elrond - Visual Studio Code')],
-      git: { extraRepos: [ONE, OTHER] },
+      git: { extraRepos: [...DISCOVERED.extraRepos, ONE, OTHER] },
     });
     await page.goto('/today');
 
@@ -299,6 +355,7 @@ test.describe('the today view', () => {
   test('names only the spend that carries no checkout at all', async ({ page }) => {
     await seedWorld(page, {
       now: E2E_NOW,
+      git: DISCOVERED,
       events: [
         ...day(),
         {
@@ -321,6 +378,33 @@ test.describe('the today view', () => {
 
   test('shows no unbooked line for a day every turn belongs to a stream', async ({ page }) => {
     await expect(page.locator('[data-unattributed]')).toHaveCount(0);
+  });
+
+  test('rebuilds a day no window watched from the prompts the user typed', async ({ page }) => {
+    // Nothing was collected on the day itself: no focus sample, no idle transition and no session.
+    // The prompt pass reads the log afterwards, and the turns between two prompts carry the stretch.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: [],
+      agentLogs: [
+        {
+          id: 'session-rebuilt',
+          path: '/Users/e2e/.claude/projects/-Users-e2e-dev-ethlete-sdk/session-rebuilt.jsonl',
+          modifiedAt: `${E2E_DAY_KEY}T12:00:00.000Z`,
+          lines: rebuiltLog(),
+        },
+      ],
+    });
+    await page.goto('/today');
+
+    const rebuilt = stream(page, `repo:${SDK}`);
+
+    await expect(rebuilt.locator('[data-engaged]')).toHaveText('40m engaged');
+    await expect(rebuilt.locator('[data-rebuilt]')).toHaveText('40m rebuilt');
+    await expect(page.locator('[data-presence]')).toHaveText('40m present');
+    await expect(page.locator('[data-rebuilt-total]')).toHaveText('40m rebuilt');
+    await expect(page.getByText(/Part of this day was rebuilt/)).toBeVisible();
   });
 
   test('says so for a day nothing observed', async ({ page }) => {

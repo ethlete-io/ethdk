@@ -9,10 +9,10 @@ import { injectHostPorts } from '../../host';
 /** One row per pass, because each reads its own agent's logs and each converges on its own. */
 const CURSOR_PASSES: { pass: AgentLogPass; label: string }[] = [
   { pass: 'agent-session', label: 'Claude Code session cursors' },
-  { pass: 'spend', label: 'Claude Code spend cursors' },
+  { pass: 'spend-all', label: 'Claude Code spend cursors' },
   { pass: 'prompt', label: 'Claude Code prompt cursors' },
   { pass: 'codex-session', label: 'Codex session cursors' },
-  { pass: 'codex-spend', label: 'Codex spend cursors' },
+  { pass: 'codex-spend-all', label: 'Codex spend cursors' },
   { pass: 'codex-prompt', label: 'Codex prompt cursors' },
 ];
 

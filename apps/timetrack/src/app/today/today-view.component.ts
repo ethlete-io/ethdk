@@ -8,7 +8,14 @@ import {
 } from '@ethlete/components';
 import { Stream, formatDurationMs } from '@ethlete/timetrack';
 import { formatClockTime, formatDayLabel } from '../day-review/format';
-import { formatAgentSessions, formatBranches, formatSpend, formatStreamLabel, formatUnattended } from './format';
+import {
+  formatAgentSessions,
+  formatBranches,
+  formatRebuilt,
+  formatSpend,
+  formatStreamLabel,
+  formatUnattended,
+} from './format';
 import { injectToday, provideToday } from './today';
 
 @Component({
@@ -50,6 +57,9 @@ import { injectToday, provideToday } from './today';
           @if (unattended(); as unattended) {
             <span class="text-small text-et-surface-subtle" data-unattended-total>+ {{ unattended }}</span>
           }
+          @if (rebuilt(); as rebuilt) {
+            <span class="text-small text-et-brand-ink" data-rebuilt-total>{{ rebuilt }}</span>
+          }
         </div>
 
         <div class="flex min-h-0 grow flex-col gap-4 overflow-y-auto px-6 py-4">
@@ -64,6 +74,9 @@ import { injectToday, provideToday } from './today';
                       <span class="text-small" data-engaged>{{ engagedOf(stream) }} engaged</span>
                       @if (UNATTENDED_OF(stream.unattendedMs); as unattended) {
                         <span class="text-small text-et-surface-subtle" data-unattended>{{ unattended }}</span>
+                      }
+                      @if (REBUILT_OF(stream.rebuiltMs); as rebuilt) {
+                        <span class="text-small text-et-brand-ink" data-rebuilt>{{ rebuilt }}</span>
                       }
                       @if (SESSIONS_OF(stream); as sessions) {
                         <span class="text-small text-et-surface-muted" data-agent-sessions>{{ sessions }}</span>
@@ -81,7 +94,9 @@ import { injectToday, provideToday } from './today';
 
                   @if (branchesOf(stream); as branches) {
                     <ng-template etAccordionHint>
-                      <span class="text-small" data-branches>{{ branches }}</span>
+                      <span [title]="branches" class="block max-w-96 truncate text-small" data-branches>
+                        {{ branches }}
+                      </span>
                     </ng-template>
                   }
 
@@ -103,6 +118,20 @@ import { injectToday, provideToday } from './today';
               description="Nothing observed this day. A collector that was not running records nothing after the fact."
               heading="No streams"
             />
+          }
+
+          @if (day.rebuiltMs) {
+            <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
+              <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <span class="text-base" data-rebuilt-label>Part of this day was rebuilt</span>
+                <span class="text-small text-et-surface-muted" data-rebuilt-note>{{ rebuilt() }}</span>
+              </div>
+
+              <span class="text-small text-et-surface-subtle">
+                No window and no idle transition watched those minutes. They come from the prompts you typed and the
+                commits you made, and an agent's turns hold a stretch open between two of them.
+              </span>
+            </div>
           }
 
           @if (ambiguous(); as names) {
@@ -147,6 +176,7 @@ export class TodayViewComponent {
   protected engaged = computed(() => formatDurationMs(this.store.day()?.engagedMs ?? 0));
   protected concurrency = computed(() => `${(this.store.day()?.concurrency ?? 0).toFixed(1)}×`);
   protected unattended = computed(() => formatUnattended(this.store.day()?.unattendedMs ?? 0));
+  protected rebuilt = computed(() => formatRebuilt(this.store.day()?.rebuiltMs ?? 0));
 
   /**
    * The turns that name no checkout. Without it the day does not reconcile: the lines and this
@@ -169,6 +199,7 @@ export class TodayViewComponent {
   protected readonly SESSIONS_OF = formatAgentSessions;
   protected readonly CLOCK_OF = formatClockTime;
   protected readonly UNATTENDED_OF = formatUnattended;
+  protected readonly REBUILT_OF = formatRebuilt;
 
   protected engagedOf(stream: Stream) {
     return formatDurationMs(stream.engagedMs);

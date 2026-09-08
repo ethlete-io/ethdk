@@ -4,8 +4,10 @@ import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { StreamDay, localDayKey, localDayRange, readHeadBranches$, shiftDayKey, streamDay } from '@ethlete/timetrack';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import {
+  injectAgentPromptBackfill,
   injectAgentSessionCollector,
   injectAgentSpendBackfill,
+  injectCodexPromptBackfill,
   injectCodexSessionCollector,
   injectCodexSpendBackfill,
   injectGitCollector,
@@ -33,6 +35,8 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
   const codexSessions = injectCodexSessionCollector();
   const spend = injectAgentSpendBackfill();
   const codexSpend = injectCodexSpendBackfill();
+  const prompts = injectAgentPromptBackfill();
+  const codexPrompts = injectCodexPromptBackfill();
   const git = injectGitCollector();
   const settings = injectTimetrackSettings();
 
@@ -52,6 +56,8 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
     codexSessions: codexSessions.lastRun(),
     spend: spend.lastRun(),
     codexSpend: codexSpend.lastRun(),
+    prompts: prompts.lastRun(),
+    codexPrompts: codexPrompts.lastRun(),
     git: git.lastRun(),
   }));
 

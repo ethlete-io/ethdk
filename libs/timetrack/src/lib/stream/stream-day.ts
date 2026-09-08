@@ -97,7 +97,7 @@ export type Stream = {
    * The part of `engagedMs` that no window and no idle transition observed, rebuilt from the prompts
    * the user typed and the commits they made. It is inside `engagedMs`, never beside it.
    */
-  reconstructedMs: number;
+  rebuiltMs: number;
   spend: StreamSpend;
   evidence: Evidence[];
 };
@@ -119,7 +119,7 @@ export type StreamDay = {
    * prompts and commits of the day rebuilt, and it is inside `presenceMs` rather than beside it — a
    * day the collector never ran would otherwise report an empty one. See ADR 0006.
    */
-  reconstructedMs: number;
+  rebuiltMs: number;
   /** Every turn the day read, whichever stream took it. */
   spend: StreamSpend;
   /**
@@ -311,6 +311,39 @@ const privateNames = (options: {
   return byName;
 };
 
+/**
+ * The checkouts the day can name: the roots the host discovered, and whatever a git event reported. A
+ * path the user linked counts too, because a link is a statement that the path is a project of theirs
+ * whether or not the git scan walked it.
+ *
+ * A prompt and a turn are kept for a checkout no link covers, so they are the marks that can name a
+ * directory which is no checkout at all — a scratch folder under `~/Downloads`, or the home directory a
+ * console was opened in. Their minutes are presence and stay in the day, but they must not invent a
+ * stream named after a directory, which is also what put the parent directory of a private checkout on
+ * the screen.
+ */
+const checkoutNamer = (options: {
+  samples: readonly ActivityEvent[];
+  roots: readonly string[];
+  links: readonly TimetrackProjectLink[];
+}) => {
+  const known = new Set(options.roots);
+
+  for (const sample of options.samples) {
+    if (sample.kind === 'git-commit' || sample.kind === 'git-checkout') known.add(sample.repoPath);
+  }
+
+  return (path: string | undefined) => {
+    if (!path) return undefined;
+
+    const repoPath = repoRootOf({ path, roots: options.roots });
+
+    return known.has(repoPath) || matchProjectLink({ context: { repoPath }, links: options.links })
+      ? repoPath
+      : undefined;
+  };
+};
+
 /** A checkout is a stream of its own. Everything else folds into one line, or presence never reconciles. */
 const draftKeyOf = (context: ActivityContext) => (context.repoPath ? streamKey(context) : OTHER_APPLICATIONS_KEY);
 
@@ -353,14 +386,15 @@ const draftFor = (drafts: Map<string, StreamDraft>, context: ActivityContext) =>
 const spendOnlyStreams = (options: {
   turns: readonly AgentUsageEvent[];
   streams: readonly Stream[];
-  roots: readonly string[];
+  checkoutOf: (path: string | undefined) => string | undefined;
 }): Stream[] => {
   const drafts = new Map<string, { stream: Stream; sessions: Set<string> }>();
 
   for (const turn of options.turns) {
-    if (!turn.cwd) continue;
+    const repoPath = options.checkoutOf(turn.cwd);
 
-    const repoPath = repoRootOf({ path: turn.cwd, roots: options.roots });
+    if (!repoPath) continue;
+
     const key = streamKey({ repoPath });
 
     if (options.streams.some((stream) => stream.key === key)) continue;
@@ -382,7 +416,7 @@ const spendOnlyStreams = (options: {
           engagedMs: 0,
           unattendedMs: 0,
           neverFocused: true,
-          reconstructedMs: 0,
+          rebuiltMs: 0,
           spend: emptySpend(),
           evidence: [],
         },
@@ -462,6 +496,7 @@ export const streamDay = (options: {
   });
 
   const rebuilt = subtractWindows({ windows: presence, without: seen });
+  const checkoutOf = checkoutNamer({ samples, roots, links });
   const { byName, ambiguous } = reposByName(samples, roots);
   const claimedAmbiguously = new Set<string>();
   const drafts = new Map<string, StreamDraft>();
@@ -538,14 +573,15 @@ export const streamDay = (options: {
   });
 
   for (const prompt of prompts) {
-    const state = { repoPath: repoRootOf({ path: prompt.cwd, roots }), branch: branchOf(prompt.gitBranch) };
+    const repoPath = checkoutOf(prompt.cwd);
+    const state = repoPath ? { repoPath, branch: branchOf(prompt.gitBranch) } : null;
 
-    addEvidence(draftFor(drafts, state).evidence, promptEvidence(prompt));
+    addEvidence(draftFor(drafts, state ?? {}).evidence, promptEvidence(prompt));
     marks.push({ at: prompt.at, state });
   }
 
   for (const turn of turns) {
-    const repoPath = turn.cwd ? repoRootOf({ path: turn.cwd, roots }) : undefined;
+    const repoPath = checkoutOf(turn.cwd);
 
     marks.push({ at: turn.at, state: repoPath ? { repoPath, branch: branchOf(turn.gitBranch) } : null });
   }
@@ -590,21 +626,25 @@ export const streamDay = (options: {
       engagedMs: windowsMs(blocks),
       unattendedMs: windowsMs(unattended),
       neverFocused: !focus.length,
-      reconstructedMs: windowsMs(clipWindows({ windows: blocks, within: rebuilt })),
+      rebuiltMs: windowsMs(clipWindows({ windows: blocks, within: rebuilt })),
       spend: emptySpend(),
       evidence: draft.evidence.slice().sort((a, b) => a.at.getTime() - b.at.getTime()),
     });
   }
 
-  streams.push(...spendOnlyStreams({ turns, streams, roots }));
+  streams.push(...spendOnlyStreams({ turns, streams, checkoutOf }));
   streams.sort((a, b) => a.from.getTime() - b.from.getTime() || a.key.localeCompare(b.key));
 
   const spend = emptySpend();
   const unattributedSpend = emptySpend();
 
   for (const turn of turns) {
-    const key = streamKey({ repoPath: repoRootOf({ path: turn.cwd, roots }) });
-    const stream = streams.find((candidate) => candidate.key === key);
+    const repoPath = checkoutOf(turn.cwd);
+    const key = repoPath ? streamKey({ repoPath }) : OTHER_APPLICATIONS_KEY;
+    // `turn.cwd` is tested apart from `repoPath`: a turn that names a directory is carried by the line
+    // holding that directory's minutes, the folded one included. One that names none is carried by
+    // nothing, which is what `unattributedSpend` reports.
+    const stream = turn.cwd ? streams.find((candidate) => candidate.key === key) : undefined;
 
     addSpend(stream ? stream.spend : unattributedSpend, turn);
     addSpend(spend, turn);
@@ -618,7 +658,7 @@ export const streamDay = (options: {
     engagedMs,
     concurrency: presenceMs ? engagedMs / presenceMs : 0,
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
-    reconstructedMs: windowsMs(rebuilt),
+    rebuiltMs: windowsMs(rebuilt),
     streams,
     spend,
     unattributedSpend,

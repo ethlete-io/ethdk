@@ -8,7 +8,7 @@ import {
   collectAgentSessions$,
   effectiveExclusionRules,
   keepLinkedAgentSessions,
-  keepPublicAgentPrompts,
+  keepPublicAgentRecords,
   parseClaudeCodeSessionLog,
   parseCodexSessionLog,
   pathIsUnder,
@@ -109,23 +109,24 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
 
   /**
    * Two filters, and they answer different questions. The project link asks whether the checkout is one
-   * this machine bills at all — a session Tempo could never take a worklog for is stored nowhere. An
-   * exclusion rule then title-matches what is left, because an agent session is named after the work and
-   * the work is sometimes what the rule is there to keep out.
+   * this machine bills at all — a session sample Tempo could never take a worklog for is stored
+   * nowhere. An exclusion rule then title-matches what is left, because an agent session is named after
+   * the work and the work is sometimes what the rule is there to keep out.
    *
-   * A typed prompt answers the first question differently: it is presence rather than billable work, so
-   * it is kept for an unlinked checkout and dropped only for a private one. See ADR 0006.
+   * A typed prompt and a turn answer the first question differently: together they are what a day
+   * nothing watched is rebuilt from, so both are kept for an unlinked checkout and dropped only for a
+   * private one. See ADR 0006.
    *
    * The cursors move either way: the line was read, and re-reading it would only drop it again.
    */
   const persist$ = (collection: AgentSessionCollection, startedAt: Date): Observable<AgentSessionCollection> => {
     const links = settings.settings().projectLinks;
     const linked = keepLinkedAgentSessions({ events: collection.events, links });
-    const linkedUsage = keepLinkedAgentSessions({ events: collection.usage, links });
-    const prompts = keepPublicAgentPrompts({ events: collection.prompts, links });
+    const usage = keepPublicAgentRecords({ events: collection.usage, links });
+    const prompts = keepPublicAgentRecords({ events: collection.prompts, links });
 
     const { kept, excluded } = applyExclusionRules({
-      events: [...linked.kept, ...linkedUsage.kept, ...prompts],
+      events: [...linked.kept, ...usage, ...prompts],
       rules: effectiveExclusionRules(settings.settings()),
     });
 

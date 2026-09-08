@@ -29,17 +29,26 @@ with turns bridging, 7 h 13 m in 3. Tom chose the second on 2026-09-08.
 - The gap is its own option. `maxUnobservedMs` is a safety valve at 30 minutes, and this is an idle
   rule at 15: a person waiting on an agent is at the machine, and a person who typed nothing and ran
   nothing for a quarter of an hour is not.
-- **What was rebuilt is reported, and it is inside presence.** `StreamDay.reconstructedMs` and
-  `Stream.reconstructedMs` are the part of presence no window and no idle transition observed. A day
+- **What was rebuilt is reported, and it is inside presence.** `StreamDay.rebuiltMs` and
+  `Stream.rebuiltMs` are the part of presence no window and no idle transition observed. A day
   with a rebuilt afternoon says so and still reports one presence number.
 - **A keystroke names the stream.** Inside a rebuilt stretch there is no focused window to be
   exclusive, so each mark — a prompt, a commit, a session sample, a turn — claims the minutes up to
   the next one, exactly as the focused window claims them on an observed day. A mark that names no
   checkout gives them to the folded line, so presence still reconciles with the list.
+- **A directory is only a stream when something says it is a checkout**: the git discovery reported
+  it, a git event named it, or the user linked it. A prompt and a turn are the two marks kept without
+  a link, so they are the two that can name a directory that is no repository at all — a console
+  opened in `~`, a folder under `~/Downloads`, or the directory a private checkout sits in. Their
+  minutes and their turns go to the folded line, which is how the hours stay in the day while no
+  such path is ever named on the screen.
 - **A prompt carries no text**, so it can outlive the raw samples the way spend does (ADR 0002), and
   a title-pattern exclusion rule is tested against the checkout it names.
-- **It is kept for a checkout no project link covers**, where a session and a turn are dropped. A
-  prompt is presence rather than billable work, and a day in an unlinked repository still happened. A
+- **A prompt and a turn are kept for a checkout no project link covers**, where a session sample is
+  dropped. Both are what a rebuilt day is made of: the prompt is the presence and the turn is the
+  bridge, so gating the turn cost a day in an unlinked repository every gap over the agent gap — 4 h
+  46 m against the 7 h 13 m this rule predicts, measured on 2026-09-07. A link decides what can be
+  billed, not what is collected, and no worklog can be written for a checkout no project covers. A
   private checkout still drops whole.
 - **Two passes more per agent**, `prompt` and `codex-prompt`, reading each log once from the top. The
   spend passes have converged, and re-reading their logs under those names would be a rewind of a

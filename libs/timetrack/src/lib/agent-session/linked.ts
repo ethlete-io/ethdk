@@ -62,14 +62,16 @@ export const keepLinkedAgentSessions = <TEvent extends AgentSessionRecord>(optio
 };
 
 /**
- * Keeps every prompt except the ones typed inside a checkout the user marked private.
+ * Keeps every record except the ones inside a checkout the user marked private.
  *
- * A prompt is presence rather than billable work: it says a person was at the keyboard at a known
- * instant, and a day nothing else observed rebuilds its hours from that. So it is kept for a checkout
- * no project link covers, where a session or a turn is dropped — the day happened either way, and only
- * the hours are the point. A private checkout stays dropped whole, which is the one rule above this one.
+ * This is the filter for what a rebuilt day is made of: a prompt, which says a person was at the
+ * keyboard at a known instant, and a turn, which holds a stretch open between two prompts. Both are
+ * kept for a checkout no project link covers, where a session sample is dropped — the day happened
+ * either way, and only the hours are the point. A link decides what can be billed, not what is
+ * collected, and no worklog can be written for a checkout no project covers. A private checkout stays
+ * dropped whole, which is the one rule above this one. See ADR 0006.
  */
-export const keepPublicAgentPrompts = <TEvent extends AgentSessionRecord>(options: {
+export const keepPublicAgentRecords = <TEvent extends AgentSessionRecord>(options: {
   events: readonly TEvent[];
   links: readonly TimetrackProjectLink[];
 }): TEvent[] =>

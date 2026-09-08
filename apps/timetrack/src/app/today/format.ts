@@ -47,3 +47,9 @@ export const formatBranches = (options: { stream: Stream; headBranches: Record<s
  * gains no extra number.
  */
 export const formatUnattended = (ms: number) => (ms ? `${formatDurationMs(ms)} unattended` : '');
+
+/**
+ * Presence nothing watched, rebuilt from what the day left behind. No such time reads as nothing at
+ * all, so an ordinary day gains no extra number.
+ */
+export const formatRebuilt = (ms: number) => (ms ? `${formatDurationMs(ms)} rebuilt` : '');

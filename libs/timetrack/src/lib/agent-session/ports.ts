@@ -9,11 +9,15 @@ import { Observable } from 'rxjs';
  *
  * One pass per provider, so two collectors that run at the same time move disjoint sets of cursors —
  * both write back every cursor they read, and a shared set would let one undo the other's offset.
- * `agent-session` and `spend` are Claude Code's: they were the only pair when the store first held
- * them, and renaming a stored cursor would re-read its whole log. A prompt pass of its own is what
- * gives the prompts a cursor at line 0 without rewinding the spend pass, which has converged.
+ *
+ * A pass name is a store key, so renaming one is how a converged pass reads every log again: its new
+ * name has no cursor, which is a cursor at line 0. `prompt` was added that way, and `spend-all`
+ * replaced `spend` when a turn stopped needing a project link — the days already stored held the
+ * turns of the linked checkouts only. The old names may still have rows in the store; nothing reads
+ * them.
  */
-export type AgentLogPass = 'agent-session' | 'spend' | 'prompt' | 'codex-session' | 'codex-spend' | 'codex-prompt';
+export type AgentLogPass =
+  'agent-session' | 'spend-all' | 'prompt' | 'codex-session' | 'codex-spend-all' | 'codex-prompt';
 
 /** One session log the host found. `id` identifies the log — for Claude Code it is the file's basename. */
 export type AgentSessionLogRef = {

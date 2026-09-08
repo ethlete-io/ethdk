@@ -9,8 +9,7 @@ import {
   applyExclusionRules,
   backfillAgentLogs$,
   effectiveExclusionRules,
-  keepLinkedAgentSessions,
-  keepPublicAgentPrompts,
+  keepPublicAgentRecords,
   parseClaudeCodeSessionLog,
   parseCodexSessionLog,
   rewindAgentBackfillCursors,
@@ -53,16 +52,15 @@ export type AgentLogBackfillRun = {
 type Rewound = { rewound: AgentSessionCursor[]; cursors: AgentSessionCursor[] };
 
 /**
- * Which of a log's keyed events one pass stores, and under which filter.
- *
- * Spend needs a project link, because a turn in a checkout no project covers is time Tempo could never
- * take. A prompt needs none: it says a person was at the keyboard, and an unlinked day still happened.
+ * Which of a log's keyed events one pass stores. Both passes drop a private checkout and keep an
+ * unlinked one: a prompt says a person was at the keyboard, a turn holds the stretch between two of
+ * them open, and an unlinked day still happened.
  */
 type BackfillKeep = (options: { result: AgentLogBackfill; links: readonly TimetrackProjectLink[] }) => CollectedEvent[];
 
-const keepSpend: BackfillKeep = ({ result, links }) => keepLinkedAgentSessions({ events: result.usage, links }).kept;
+const keepSpend: BackfillKeep = ({ result, links }) => keepPublicAgentRecords({ events: result.usage, links });
 
-const keepPrompts: BackfillKeep = ({ result, links }) => keepPublicAgentPrompts({ events: result.prompts, links });
+const keepPrompts: BackfillKeep = ({ result, links }) => keepPublicAgentRecords({ events: result.prompts, links });
 
 /**
  * Reads one kind of keyed event out of one agent's logs, the ones its session collector had already
@@ -195,14 +193,14 @@ const createAgentLogBackfill = (source: AgentLogSource, keep: BackfillKeep) => {
 
 const AGENT_SPEND_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() =>
   createAgentLogBackfill(
-    { parser: parseClaudeCodeSessionLog, readerOf: (ports) => ports.agentLogs, pass: 'spend' },
+    { parser: parseClaudeCodeSessionLog, readerOf: (ports) => ports.agentLogs, pass: 'spend-all' },
     keepSpend,
   ),
 );
 
 const CODEX_SPEND_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() =>
   createAgentLogBackfill(
-    { parser: parseCodexSessionLog, readerOf: (ports) => ports.codexLogs, pass: 'codex-spend' },
+    { parser: parseCodexSessionLog, readerOf: (ports) => ports.codexLogs, pass: 'codex-spend-all' },
     keepSpend,
   ),
 );
