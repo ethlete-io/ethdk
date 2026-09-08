@@ -5,9 +5,11 @@ import { formatDurationMs } from '@ethlete/timetrack';
 import { catchError, of, switchMap } from 'rxjs';
 import {
   injectAgentSessionCollector,
+  injectAgentPromptBackfill,
   injectAgentSpendBackfill,
   injectCalendarCollector,
   injectCodexSessionCollector,
+  injectCodexPromptBackfill,
   injectCodexSpendBackfill,
   injectGitCollector,
   injectGitLabCollector,
@@ -25,11 +27,15 @@ import {
   formatGitScan,
   formatIngest,
   formatPerAgent,
-  formatSpendBackfill,
+  formatLogBackfill,
   formatTally,
   formatWindowSource,
 } from './format';
 import { EVIDENCE_SOURCES, EvidenceSource, EvidenceSourceState } from './inventory';
+
+const SPEND_WORDS = { holds: 'spend', stored: 'turns' };
+
+const PROMPT_WORDS = { holds: 'prompts', stored: 'prompts' };
 
 /** What every built source reads as while the hard pause is on, whatever its own state would be. */
 const PAUSED_LABEL = 'paused';
@@ -160,6 +166,8 @@ export class SourcesViewComponent {
   private agentSpend = injectAgentSpendBackfill();
   private codexSessions = injectCodexSessionCollector();
   private codexSpend = injectCodexSpendBackfill();
+  private agentPrompts = injectAgentPromptBackfill();
+  private codexPrompts = injectCodexPromptBackfill();
   private git = injectGitCollector();
   private calendar = injectCalendarCollector();
   private gitlab = injectGitLabCollector();
@@ -173,6 +181,8 @@ export class SourcesViewComponent {
     agentSpend: this.agentSpend.lastRun(),
     codexSessions: this.codexSessions.lastRun(),
     codexSpend: this.codexSpend.lastRun(),
+    agentPrompts: this.agentPrompts.lastRun(),
+    codexPrompts: this.codexPrompts.lastRun(),
     git: this.git.lastRun(),
     calendar: this.calendar.lastRun(),
     gitlab: this.gitlab.lastRun(),
@@ -227,12 +237,16 @@ export class SourcesViewComponent {
     return formatTally(this.tallies().find((tally) => tally.source === row.source.eventSource));
   }
 
-  private backfillOf(backfill: NonNullable<ReturnType<typeof injectAgentSpendBackfill>>) {
+  private backfillOf(
+    backfill: NonNullable<ReturnType<typeof injectAgentSpendBackfill>>,
+    words: { holds: string; stored: string },
+  ) {
     return (
-      formatSpendBackfill({
+      formatLogBackfill({
         lastRun: backfill.lastRun(),
         remaining: backfill.remaining(),
         excluded: backfill.excluded(),
+        ...words,
       }) || null
     );
   }
@@ -251,8 +265,15 @@ export class SourcesViewComponent {
       case 'agent-usage':
         return (
           formatPerAgent([
-            { agent: 'Claude Code', line: this.backfillOf(this.agentSpend) },
-            { agent: 'Codex', line: this.backfillOf(this.codexSpend) },
+            { agent: 'Claude Code', line: this.backfillOf(this.agentSpend, SPEND_WORDS) },
+            { agent: 'Codex', line: this.backfillOf(this.codexSpend, SPEND_WORDS) },
+          ]) || null
+        );
+      case 'agent-prompt':
+        return (
+          formatPerAgent([
+            { agent: 'Claude Code', line: this.backfillOf(this.agentPrompts, PROMPT_WORDS) },
+            { agent: 'Codex', line: this.backfillOf(this.codexPrompts, PROMPT_WORDS) },
           ]) || null
         );
       case 'git':
@@ -308,6 +329,13 @@ export class SourcesViewComponent {
           formatPerAgent([
             { agent: 'Claude Code', line: this.agentSpend.failure() },
             { agent: 'Codex', line: this.codexSpend.failure() },
+          ]) || null
+        );
+      case 'agent-prompt':
+        return (
+          formatPerAgent([
+            { agent: 'Claude Code', line: this.agentPrompts.failure() },
+            { agent: 'Codex', line: this.codexPrompts.failure() },
           ]) || null
         );
       case 'git':

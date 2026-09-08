@@ -10,8 +10,10 @@ import { injectHostPorts } from '../../host';
 const CURSOR_PASSES: { pass: AgentLogPass; label: string }[] = [
   { pass: 'agent-session', label: 'Claude Code session cursors' },
   { pass: 'spend', label: 'Claude Code spend cursors' },
+  { pass: 'prompt', label: 'Claude Code prompt cursors' },
   { pass: 'codex-session', label: 'Codex session cursors' },
   { pass: 'codex-spend', label: 'Codex spend cursors' },
+  { pass: 'codex-prompt', label: 'Codex prompt cursors' },
 ];
 
 type CursorTally = { label: string; count: number };

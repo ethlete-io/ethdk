@@ -194,6 +194,46 @@ describe('DEFAULT_EXCLUSION_RULES', () => {
   });
 });
 
+describe('applyExclusionRules, on a typed prompt', () => {
+  const prompt = (cwd: string, gitBranch?: string): CollectedEvent => ({
+    at: new Date(2026, 8, 7, 9, 57),
+    source: 'agent-prompt',
+    kind: 'agent-prompt',
+    provider: 'claude-code',
+    sessionId: 's1',
+    promptId: 'prompt_1',
+    cwd,
+    gitBranch,
+  });
+
+  it('tests a title pattern against the checkout the prompt was typed in', () => {
+    const result = applyExclusionRules({
+      events: [prompt('/home/tom/dev/invoices')],
+      rules: [{ kind: 'title-pattern', pattern: 'invoices' }],
+    });
+
+    expect(result.kept).toEqual([]);
+    expect(result.excluded.map((entry) => entry.kind)).toEqual(['agent-prompt']);
+  });
+
+  it('tests a title pattern against the branch as well', () => {
+    const result = applyExclusionRules({
+      events: [prompt('/home/tom/dev/fut-frontend', 'feat/secret-launch')],
+      rules: [{ kind: 'title-pattern', pattern: 'secret-launch' }],
+    });
+
+    expect(result.kept).toEqual([]);
+  });
+
+  it('keeps a prompt no rule names', () => {
+    const kept = prompt('/home/tom/dev/fut-frontend', 'next');
+
+    expect(
+      applyExclusionRules({ events: [kept], rules: [{ kind: 'title-pattern', pattern: 'invoices' }] }).kept,
+    ).toEqual([kept]);
+  });
+});
+
 describe("applyExclusionRules, on a turn's token spend", () => {
   const spend = (cwd: string, gitBranch?: string): CollectedEvent => ({
     at: new Date(2026, 7, 17, 9, 0),

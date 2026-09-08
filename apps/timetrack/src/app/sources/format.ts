@@ -1,7 +1,7 @@
 import { GitScanFailure } from '@ethlete/timetrack';
 import {
   AgentSessionCollectorTotals,
-  AgentSpendBackfillRun,
+  AgentLogBackfillRun,
   IngestCollectorTotals,
   WindowCollectorTotals,
 } from '../../collectors';
@@ -77,26 +77,29 @@ export const formatPerAgent = (lines: { agent: string; line: string | null }[]) 
 };
 
 /**
- * How far the one-off pass over the old logs has got, and what it found.
+ * How far one one-off pass over the old logs has got, and what it found.
  *
  * The pass has an end, so its progress is the whole state: until it reports nothing left, every day
- * before spend collection started still reads zero, and the user has to be able to see that it is
- * being worked on rather than broken.
+ * before that pass started still reads zero, and the user has to be able to see that it is being
+ * worked on rather than broken.
  */
-export const formatSpendBackfill = (options: {
-  lastRun: AgentSpendBackfillRun | null;
+export const formatLogBackfill = (options: {
+  lastRun: AgentLogBackfillRun | null;
   remaining: number | null;
   excluded: number;
+  /** What the pass reads the older logs for, and what one stored event is called, in the plural. */
+  holds: string;
+  stored: string;
 }) => {
-  const { lastRun, remaining, excluded } = options;
+  const { lastRun, remaining, excluded, holds, stored } = options;
 
   return sentences([
     remaining === null
-      ? 'Reading the older session logs for the spend they hold.'
+      ? `Reading the older session logs for the ${holds} they hold.`
       : remaining
         ? `${remaining} older ${remaining === 1 ? 'log' : 'logs'} still to read.`
         : 'Every older log has been read; the collector keeps it current from here.',
-    lastRun?.turns ? `${lastRun.turns.toLocaleString()} turns stored at ${clock(lastRun.at)}.` : null,
+    lastRun?.stored ? `${lastRun.stored.toLocaleString()} ${stored} stored at ${clock(lastRun.at)}.` : null,
     excluded ? `${excluded} denied by an exclusion rule.` : null,
     lastRun?.unparsedLines ? `${lastRun.unparsedLines} lines could not be read as JSON.` : null,
   ]);

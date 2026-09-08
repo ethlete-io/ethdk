@@ -30,7 +30,7 @@ export type EvidenceSource = {
   /** What the source is still waiting on. Not shown once it has everything it needs. */
   detail?: string;
   /** The collector whose run this row reports. Focus and presence share one drain, so both name it. */
-  collector?: 'window' | 'git' | 'agent-session' | 'agent-usage' | 'calendar' | 'gitlab' | 'ingest';
+  collector?: 'window' | 'git' | 'agent-session' | 'agent-usage' | 'agent-prompt' | 'calendar' | 'gitlab' | 'ingest';
   /** The `source` its events carry in the store, for counting what it has actually put there. */
   eventSource?: CollectedEventSource;
 };
@@ -87,6 +87,15 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     state: 'collecting',
     collector: 'agent-usage',
     eventSource: 'agent-usage',
+  },
+  {
+    id: 'agent-prompt',
+    name: 'Coding-agent prompts',
+    reads: 'The prompts you typed, out of those same session logs.',
+    stores: 'The instant, the session and the working directory. No text of any kind.',
+    state: 'collecting',
+    collector: 'agent-prompt',
+    eventSource: 'agent-prompt',
   },
   {
     id: 'google-calendar',

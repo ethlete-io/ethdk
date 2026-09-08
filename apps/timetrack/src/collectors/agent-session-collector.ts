@@ -8,6 +8,7 @@ import {
   collectAgentSessions$,
   effectiveExclusionRules,
   keepLinkedAgentSessions,
+  keepPublicAgentPrompts,
   parseClaudeCodeSessionLog,
   parseCodexSessionLog,
   pathIsUnder,
@@ -112,15 +113,19 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
    * exclusion rule then title-matches what is left, because an agent session is named after the work and
    * the work is sometimes what the rule is there to keep out.
    *
+   * A typed prompt answers the first question differently: it is presence rather than billable work, so
+   * it is kept for an unlinked checkout and dropped only for a private one. See ADR 0006.
+   *
    * The cursors move either way: the line was read, and re-reading it would only drop it again.
    */
   const persist$ = (collection: AgentSessionCollection, startedAt: Date): Observable<AgentSessionCollection> => {
     const links = settings.settings().projectLinks;
     const linked = keepLinkedAgentSessions({ events: collection.events, links });
     const linkedUsage = keepLinkedAgentSessions({ events: collection.usage, links });
+    const prompts = keepPublicAgentPrompts({ events: collection.prompts, links });
 
     const { kept, excluded } = applyExclusionRules({
-      events: [...linked.kept, ...linkedUsage.kept],
+      events: [...linked.kept, ...linkedUsage.kept, ...prompts],
       rules: effectiveExclusionRules(settings.settings()),
     });
 

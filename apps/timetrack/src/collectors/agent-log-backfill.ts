@@ -2,12 +2,15 @@ import { computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
-  AgentSessionCursor,
   AgentLogBackfill,
+  AgentSessionCursor,
+  CollectedEvent,
+  TimetrackProjectLink,
   applyExclusionRules,
   backfillAgentLogs$,
   effectiveExclusionRules,
   keepLinkedAgentSessions,
+  keepPublicAgentPrompts,
   parseClaudeCodeSessionLog,
   parseCodexSessionLog,
   rewindAgentBackfillCursors,
@@ -36,35 +39,48 @@ import { AgentLogSource } from './agent-log-source';
  * Short, because the pass has an end: it reads a handful of logs per run and stops for good once every
  * log has been read. A machine with hundreds of them is filled in in minutes rather than in days.
  */
-export const AGENT_SPEND_BACKFILL_POLL_INTERVAL_MS = 5_000;
+export const AGENT_LOG_BACKFILL_POLL_INTERVAL_MS = 5_000;
 
-export type AgentSpendBackfillRun = {
+export type AgentLogBackfillRun = {
   at: Date;
   /** Logs read to their end by this run. */
   logs: number;
-  /** Turns whose spend the run stored. */
-  turns: number;
+  /** Events the run stored: the turns' spend for one pass, the typed prompts for the other. */
+  stored: number;
   unparsedLines: number;
 };
 
 type Rewound = { rewound: AgentSessionCursor[]; cursors: AgentSessionCursor[] };
 
 /**
- * Reads the token spend out of one agent's logs, the ones its session collector had already read past.
+ * Which of a log's keyed events one pass stores, and under which filter.
  *
- * Spend collection started after months of logs had been read, so every stored day before it shows
- * zero. This fills them in: it reads each log once from the top, appends only the token counts, and
- * never touches the collector's own cursor — an activity sample has no dedupe key, so a re-read would
- * store every one of them a second time. See ADR 0003.
+ * Spend needs a project link, because a turn in a checkout no project covers is time Tempo could never
+ * take. A prompt needs none: it says a person was at the keyboard, and an unlinked day still happened.
+ */
+type BackfillKeep = (options: { result: AgentLogBackfill; links: readonly TimetrackProjectLink[] }) => CollectedEvent[];
+
+const keepSpend: BackfillKeep = ({ result, links }) => keepLinkedAgentSessions({ events: result.usage, links }).kept;
+
+const keepPrompts: BackfillKeep = ({ result, links }) => keepPublicAgentPrompts({ events: result.prompts, links });
+
+/**
+ * Reads one kind of keyed event out of one agent's logs, the ones its session collector had already
+ * read past.
+ *
+ * Both the token counts and the typed prompts were collected only after months of logs had been read,
+ * so every stored day before that shows neither. This fills them in: it reads each log once from the
+ * top, appends only what `keep` selects, and never touches the collector's own cursor — an activity
+ * sample has no dedupe key, so a re-read would store every one of them a second time. See ADR 0003.
  *
  * The pass converges and then stops. Everything a log gains after its one read is the session
- * collector's to store, because that collector already reports spend as it goes.
+ * collector's to store, because that collector reports both as it goes.
  */
-const createAgentSpendBackfill = (source: AgentLogSource) => {
+const createAgentLogBackfill = (source: AgentLogSource, keep: BackfillKeep) => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
   const pause = injectCollectionPause();
-  const lastRun = signal<AgentSpendBackfillRun | null>(null);
+  const lastRun = signal<AgentLogBackfillRun | null>(null);
   const remaining = signal<number | null>(null);
   const excluded = signal(0);
   const failure = signal<string | null>(null);
@@ -77,8 +93,8 @@ const createAgentSpendBackfill = (source: AgentLogSource) => {
   const rewindAsked$ = new Subject<void>();
 
   /**
-   * The same two filters the session collector applies, and for the same reasons: a checkout no project
-   * link covers is time Tempo could never take, and an exclusion rule then denies what is left.
+   * The same filters the session collector applies, and for the same reasons: `keep` answers whether a
+   * checkout's events are stored at all, and an exclusion rule then denies what is left.
    *
    * The rewound cursors are written together with the ones the run produced. A rewound log the run did
    * not reach has to keep its cleared cursor in the store, or the next run would skip it again.
@@ -89,8 +105,8 @@ const createAgentSpendBackfill = (source: AgentLogSource) => {
     startedAt: Date;
   }): Observable<AgentLogBackfill> => {
     const { result, rewound, startedAt } = options;
-    const linked = keepLinkedAgentSessions({ events: result.usage, links: settings.settings().projectLinks });
-    const denied = applyExclusionRules({ events: linked.kept, rules: effectiveExclusionRules(settings.settings()) });
+    const wanted = keep({ result, links: settings.settings().projectLinks });
+    const denied = applyExclusionRules({ events: wanted, rules: effectiveExclusionRules(settings.settings()) });
 
     return ports.events
       .appendWithCursors$({
@@ -107,7 +123,7 @@ const createAgentSpendBackfill = (source: AgentLogSource) => {
           lastRun.set({
             at: startedAt,
             logs: result.cursors.length,
-            turns: denied.kept.length,
+            stored: denied.kept.length,
             unparsedLines: result.unparsedLines,
           });
         }),
@@ -152,7 +168,7 @@ const createAgentSpendBackfill = (source: AgentLogSource) => {
     });
 
   /**
-   * Reads the logs under `paths` again, so the spend dropped while nothing linked them is stored.
+   * Reads the logs under `paths` again, so what was dropped while nothing linked them is stored.
    *
    * `remaining` goes back to unknown at once, which is what restarts a pass that had converged.
    */
@@ -167,7 +183,7 @@ const createAgentSpendBackfill = (source: AgentLogSource) => {
   };
 
   /** Paused means no log is read at all, on the same rule the session collector follows. */
-  merge(timer(0, AGENT_SPEND_BACKFILL_POLL_INTERVAL_MS), rewindAsked$)
+  merge(timer(0, AGENT_LOG_BACKFILL_POLL_INTERVAL_MS), rewindAsked$)
     .pipe(
       exhaustMap(() => (pause.isPaused() || isDone() ? EMPTY : run$())),
       takeUntilDestroyed(),
@@ -178,21 +194,37 @@ const createAgentSpendBackfill = (source: AgentLogSource) => {
 };
 
 const AGENT_SPEND_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() =>
-  createAgentSpendBackfill({
-    parser: parseClaudeCodeSessionLog,
-    readerOf: (ports) => ports.agentLogs,
-    pass: 'spend',
-  }),
+  createAgentLogBackfill(
+    { parser: parseClaudeCodeSessionLog, readerOf: (ports) => ports.agentLogs, pass: 'spend' },
+    keepSpend,
+  ),
 );
 
 const CODEX_SPEND_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() =>
-  createAgentSpendBackfill({
-    parser: parseCodexSessionLog,
-    readerOf: (ports) => ports.codexLogs,
-    pass: 'codex-spend',
-  }),
+  createAgentLogBackfill(
+    { parser: parseCodexSessionLog, readerOf: (ports) => ports.codexLogs, pass: 'codex-spend' },
+    keepSpend,
+  ),
+);
+
+const AGENT_PROMPT_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() =>
+  createAgentLogBackfill(
+    { parser: parseClaudeCodeSessionLog, readerOf: (ports) => ports.agentLogs, pass: 'prompt' },
+    keepPrompts,
+  ),
+);
+
+const CODEX_PROMPT_BACKFILL_DEF = /* @__PURE__ */ defineRootProvider(() =>
+  createAgentLogBackfill(
+    { parser: parseCodexSessionLog, readerOf: (ports) => ports.codexLogs, pass: 'codex-prompt' },
+    keepPrompts,
+  ),
 );
 
 export const injectAgentSpendBackfill = /* @__PURE__ */ toInjectFn(AGENT_SPEND_BACKFILL_DEF);
 
 export const injectCodexSpendBackfill = /* @__PURE__ */ toInjectFn(CODEX_SPEND_BACKFILL_DEF);
+
+export const injectAgentPromptBackfill = /* @__PURE__ */ toInjectFn(AGENT_PROMPT_BACKFILL_DEF);
+
+export const injectCodexPromptBackfill = /* @__PURE__ */ toInjectFn(CODEX_PROMPT_BACKFILL_DEF);
