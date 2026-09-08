@@ -13,6 +13,13 @@ type RunHookOptions = {
   localConfig?: Record<string, unknown>;
 };
 
+type HookOutput = {
+  hookSpecificOutput: {
+    permissionDecision: string;
+    permissionDecisionReason: string;
+  };
+};
+
 const runHook = (options: RunHookOptions) => {
   const { toolName = 'Task', toolInput = {}, agentDefinition, localConfig } = options;
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-subagent-model-'));
@@ -32,7 +39,7 @@ const runHook = (options: RunHookOptions) => {
     input: JSON.stringify({ cwd: root, hook_event_name: 'PreToolUse', tool_name: toolName, tool_input: toolInput }),
   });
 
-  return output.trim() ? (JSON.parse(output) as { hookSpecificOutput: Record<string, string> }) : null;
+  return output.trim() ? (JSON.parse(output) as HookOutput) : null;
 };
 
 const decisionOf = (options: RunHookOptions) => runHook(options)?.hookSpecificOutput.permissionDecision ?? null;
