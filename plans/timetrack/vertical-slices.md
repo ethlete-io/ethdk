@@ -109,10 +109,37 @@ and the old screen keeps using them.
 
 `streamDay()` in `libs/timetrack/src/lib/stream/`, one pure function, no network and no clock:
 
-1. Gate on presence. The rule is copied from `sessionize`, unchanged.
+1. Gate on presence. The rule is copied from `sessionize`, unchanged. A meeting away from the
+   machine therefore books nothing, even with five agents running. Slice 4 gives meetings their
+   own treatment; slice 1 gains no rule for them.
 2. Open, extend and close one block sequence **per stream key**.
 3. Sum `agent-usage` onto the stream whose instant contains it.
-4. Report `presenceMs`, `engagedMs`, `concurrency` and the per-stream totals.
+4. Report `presenceMs`, `engagedMs`, `concurrency` and the per-stream totals. `engagedMs` sums
+   **every** stream, the Other applications line included, so `concurrency` always equals
+   `engagedMs / presenceMs`. One definition is worth more than a truer-sounding ratio.
+
+**How an exclusive focus sample picks its stream.** Copied from `sessionize` and not changed: the
+window title names a repository, else the one global sticky checkout inside `repoStickinessMs`,
+else the Other applications line. One window has focus, so one stream gets it.
+
+**Known weak, and deliberately not fixed in slice 1.** `repoStickinessMs` is 5 minutes, and a
+window title of `localhost:4200 — Mozilla Firefox` names no repository. So 30 minutes of browser
+testing gives 5 minutes to the checkout and 25 to Other applications. Two fixes were considered and
+both were held back: raise the stickiness, or let a running agent session hold the checkout sticky.
+Each attaches unfocused time to a checkout on a guess, and slice 1's claim is that exactly one
+thing can be wrong with a line. Let the exit test show it on a real day, then choose. The running
+agent is the likelier answer, because it is evidence and a timer is not.
+
+**A stream nobody ever focused** still books its time — the locked decision says it must — and its
+line carries `agent only, never focused` as evidence. That label is what makes the exit test's
+"can you explain every line" answerable for it. This resolves open question 2 of
+[`time-and-token-spend.md`](./time-and-token-spend.md).
+
+**Five consoles in one checkout are one stream.** Blocks are intervals, so five overlapping agent
+sessions extend one block rather than sum to five; only the spend sums. The line reads
+`ethlete-sdk · 5 agent sessions` with the sessions as evidence. If a real day shows one checkout
+holding two clearly different tickets, slice 2 needs a way to split a stream. The exit test is what
+will surface that.
 
 No attribution, no rules, no donation, no gap fill, no rounding, no merge, no reasoning provider.
 Those are five later steps of the old pipeline, and every one of them is a reason to distrust a
@@ -121,15 +148,30 @@ wrong with it.
 
 ### What it shows
 
-One list, ordered by time. One row per stream:
+One list, ordered by time. One line per stream. A line here is never called a row: a row is a line
+that can be booked, and none of these can. See
+[`libs/timetrack/CONTEXT.md`](../../libs/timetrack/CONTEXT.md).
+
+A stream is keyed by the checkout, so a day that switched branch three times is one line and not
+three. ADR 0001 says why. The branch is shown on the line, and it stays evidence.
 
 ```
-09:12 – 11:40   ethlete-sdk @ next            2 h 28 m   1.2 M out · 604 M cached   [3 commits, 2 agent sessions]
-09:30 – 10:05   fut-frontend @ feat/hub-…       35 m     0.3 M out ·  88 M cached   [1 agent session]
+09:12 – 17:40   ethlete-sdk         2 h 28 m engaged   1.2 M out · 604 M cached   [3 commits, 2 agent sessions]
+09:30 – 10:05   fut-frontend          35 m engaged     0.3 M out ·  88 M cached   [1 agent session]
+11:05 – 16:20   Other applications   1 h 04 m engaged                             [Slack, Firefox, Spotify]
 ```
 
-Above the list, three numbers and nothing else: presence, engaged time, and the ratio between
-them. Below each row, its evidence, verbatim, exactly as the old timeline shows it.
+Two numbers per line, and they may differ. The span reads the first block's start to the last
+block's end. The engaged time reads the sum of the blocks. A stream with a gap in it says so by
+letting the two disagree.
+
+An application with no checkout is not hidden, and it gets no line of its own. Every one of them
+folds into a single **Other applications** line, with the applications named under it as evidence.
+Without that line presence does not reconcile with the list, and reconciliation is the one thing
+slice 1 must deliver.
+
+Above the list, three numbers and nothing else: presence, engaged time, and the ratio between them.
+Below each line, its evidence, verbatim, exactly as the old timeline shows it.
 
 ### What it must not do
 
@@ -142,8 +184,20 @@ them. Below each row, its evidence, verbatim, exactly as the old timeline shows 
 
 Replay 2026-08-12, 2026-08-17 and 2026-08-18. All three are measured in
 [`time-and-token-spend.md`](./time-and-token-spend.md) and all three are real multi-stream days.
-The test is a judgment: the user reads the screen and either recognises the day or does not. A
-failure is fixed in a collector or in `streamDay`, never by an edit in the UI.
+It is a judgment by the user, and it is a written one. For each of the three days it runs in this
+order:
+
+1. Before the screen is opened, the user writes down what they remember working on that day.
+2. The screen is opened.
+3. The day passes only if every item on that list appears as a stream, **and** every stream on the
+   screen is one the user can explain.
+
+Step 3's second half is what catches an inflated day. Recognition alone never does: a screen that
+is 80 % right still reads as familiar. One unexplainable stream fails the day.
+
+The test needs the spend backfill of ADR 0003 to have run, or all three days show zero spend.
+
+A failure is fixed in a collector or in `streamDay`, never by an edit in the UI.
 
 ## No git flow. Chaos is the case to build for
 

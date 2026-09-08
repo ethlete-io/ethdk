@@ -1,0 +1,123 @@
+# Timetrack
+
+The domain of `@ethlete/timetrack`: what a person worked on, for how long, what the agents spent
+on it, and which Jira issue it books to. The library holds the model and the pipeline. The
+application in `apps/timetrack` is a consumer of both.
+
+## Language
+
+### What was worked on
+
+**Context**:
+Where work happened. A checkout with a branch, or an application when there is no checkout. A
+context has no time of its own.
+_Avoid_: workspace, project (a project is a Jira project), location
+
+**Stream**:
+One context's work across one local day: its blocks, its evidence and its spend. Several streams
+run at the same time, and each books its full time.
+_Avoid_: track, lane, timeline
+
+**Stream key**:
+The identity of a stream. It names the checkout, or the application when there is no checkout. It
+does **not** name the branch — see ADR 0001.
+_Avoid_: context key (that is the older, branch-bearing identity, kept for attribution)
+
+**Block**:
+Contiguous time inside one context, after idle gaps split it and sub-minute flapping is merged.
+_Avoid_: interval, span, chunk, segment
+
+**Sample**:
+One raw observation that a block is built from. A focus change, an editor heartbeat, a commit.
+_Avoid_: tick, datapoint, ping
+
+**Evidence**:
+A concrete observation a person can read back, attached to a block or a proposal. A commit
+subject, a branch checkout, an agent session. A count is never evidence.
+_Avoid_: source (a source is a collector), reason, proof
+
+### What it is booked as
+
+**Proposal**:
+A block, or a set of merged blocks, attributed to a Jira issue, with a duration, a description, a
+confidence and an evidence chain.
+_Avoid_: suggestion, entry, draft
+
+**Row**:
+One line the user can review and book. Every row is attributed and can reach Tempo.
+_Avoid_: line, item. A read-only line on the Today screen is a **stream**, not a row.
+
+**Attribution**:
+The assignment of a block to a Jira issue. Distinct from a Tempo _work attribute_, which is a
+field on a worklog.
+_Avoid_: mapping, matching, assignment
+
+**Confidence**:
+How well the evidence supports an attribution: `certain`, `likely` or `weak`. An enum, never a
+number.
+_Avoid_: score, certainty, probability
+
+### Time
+
+**Presence**:
+Wall-clock time the person was at the machine, with overlaps counted once. It can never exceed
+the length of the day. An agent that runs while nobody is there is not presence.
+_Avoid_: active time, uptime, attendance
+
+**Engaged time**:
+The sum of every stream's blocks. It may exceed presence, and that is the point: two streams at
+once are two lines of work, and both book their full time.
+_Avoid_: total time, tracked time, worked time
+
+**Concurrency**:
+Engaged time divided by presence. 1 is a serial day. 2.4 is a day that ran several agents.
+_Avoid_: overlap factor, parallelism, multiplier
+
+**Day**:
+A local calendar day, written `YYYY-MM-DD`. Every total, every review and every sync is bounded
+to one.
+_Avoid_: date, period, session
+
+### Agents and spend
+
+**Turn**:
+One exchange with an agent model. It has an instant and a token cost. It is the unit spend is
+collected in.
+_Avoid_: message, request, call, iteration
+
+**Agent session**:
+One run of an agent CLI in one checkout, identified by the provider's own session id. A subagent
+runs inside its parent's session and belongs to the same stream.
+_Avoid_: conversation, chat, thread
+
+**Spend**:
+What an agent's turns cost, in tokens. Five classes kept apart, because they are priced apart:
+input, output, cache write, cache read, and thinking. Thinking is part of output, never added
+to it.
+_Avoid_: usage in prose (the type is `TokenUsage`), consumption, tokens as one number
+
+**Cost**:
+Spend converted to currency through the price table. A day with no price for a model it used
+shows spend and no cost.
+_Avoid_: price (a price is a rate per million tokens), charge, bill
+
+**Provider**:
+The agent CLI a turn ran on: `claude-code` or `codex`. One provider is one parser and one price
+table.
+_Avoid_: vendor, tool, backend (the backbone is Jira and Tempo)
+
+### Collection
+
+**Collector**:
+The component that turns one outside thing into collected events. Window focus, idle, git, agent
+sessions, Jira, Tempo, GitLab, Google Calendar.
+_Avoid_: watcher, poller, importer
+
+**Source**:
+The name a collector's events carry, and the unit that exclusion and retention rules apply to.
+_Avoid_: origin, channel
+
+**Backbone**:
+The issue tracker and the timesheet the app books into. Jira and Tempo for now. The ledger stays
+adapter-agnostic, so a later backbone can replace them.
+_Avoid_: integration, provider (a provider is an agent CLI)

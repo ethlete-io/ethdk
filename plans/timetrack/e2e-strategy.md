@@ -206,9 +206,13 @@ fake backend, a seed function, a clock, and three lines of workflow.
 
 ## Open questions
 
-1. **Rust tests.** `cargo test` needs a target in `project.json` and a place in CI. The Rust
-   toolchain is already a prerequisite for `tauri:build`, so the cost is a workflow step, not a
-   new dependency. Decide it when the store next changes shape.
+1. ~~**Rust tests.**~~ **Decided on 2026-09-08: add the target and the CI step now, with no tests in
+   it.** The reason changed the answer. All three workflows were checked, and none mentions `cargo`,
+   `tauri` or `rust` — so the 6 746-line host is **never compiled in CI**, and a change that breaks
+   it leaves CI green. An empty `cargo test` run still compiles the crate, so the step closes that
+   hole on the day it lands, before it holds a single test. The cost is a toolchain install and a
+   slow first build; the cache makes later runs cheap. The first real tests arrive with compaction,
+   which ADR 0002 schedules.
 2. **A real Tauri run.** `tauri-driver` with WebdriverIO can drive the built app, host included.
    It is the only way to test the tray, the lock and the widget automatically. It is also a second
    driver, a second config and a much slower run. Not now; revisit if the manual list grows past

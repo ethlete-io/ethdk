@@ -16,3 +16,14 @@ This directory holds the per-feature plans that came after it.
 A plan here may contradict `plans/timetrack.md`, and one of them does. Where that happens the
 plan here says so, and names the section it replaces. Do not fold it back into the main plan
 until the feature is built.
+
+## The glossary and the decision records
+
+The vocabulary lives in [`libs/timetrack/CONTEXT.md`](../../libs/timetrack/CONTEXT.md), and the
+decisions that are hard to reverse live in `libs/timetrack/docs/adr/`. A plan here uses those terms
+and never redefines one.
+
+## Which plan wins
+
+`vertical-slices.md` wins. Where a plan here disagrees with it about what gets built, or in which
+order, the slice plan is right and the other plan is corrected. Agreed with Tom on 2026-09-08.

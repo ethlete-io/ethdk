@@ -90,6 +90,13 @@ Every assistant record carries `timestamp`, `cwd`, `gitBranch`, `sessionId`, `me
 
 Four facts the parser has to respect:
 
+- **Subagent logs are never read today, and that is a bug to fix before the backfill.** `list_logs`
+  in `apps/timetrack/src-tauri/src/logs.rs:55` walks exactly two levels,
+  `<root>/<project>/<log>.jsonl`, and a subagent log sits one level deeper. Measured on this machine
+  on 2026-09-08: 556 reachable logs, 50 unreachable ones holding 1 814 distinct turns. Their share of
+  all cache reads is only 2.1 %, but it is spiky — one real session held 128 subagent usage records
+  against the main log's 103. Fix the Rust enumeration first, so the backfill of ADR 0003 reads both
+  in one pass. A backfill that has to be run twice will be run once.
 - **Subagent turns live in their own files**, under `<sessionId>/subagents/agent-*.jsonl`. In one
   real session the main log held 103 usage records and the four subagent logs held 128 more. No
   `message.id` appeared in both, so the totals must be summed across both, and a subagent's spend
@@ -253,8 +260,12 @@ export type DayTotals = {
 ```
 
 `presenceMs` is the union of every stream's blocks, so it is the one number a person can check
-against their own memory of the day. `checkDay` gains a warning where `concurrency` is above a
-configured ceiling, because a day at 6.0 is more likely a broken exclusivity rule than a real one.
+against their own memory of the day. `checkDay` gains a ceiling warning as a setting, **off by
+default**. The earlier claim here — that a day at 6.0 is more likely a broken exclusivity rule than a
+real one — is wrong for this user, and it was corrected on 2026-09-08. Tom's words: five consoles
+running Claude at once, some with subagents, while he is in a meeting or tests in the browser. That
+is a real day above 6.0. Turn the ceiling on once three real days have been measured. A threshold
+nobody measured is exactly the kind of thing that makes a screen untrustworthy.
 
 ## Token spend
 
@@ -322,6 +333,8 @@ history rather than from a list the app invented.
 
 ### Where the rollup lands
 
+It lands in the stream model, not in `correlate`. See the correction to build-order step 1 below.
+
 - `ActivityBlock` gains no usage field. A block is an interval; usage is summed onto it on demand.
 - `WorklogProposal` gains `usage?: TokenUsage` and `cost?: CostEstimate`, summed over the blocks the
   proposal was merged from.
@@ -358,7 +371,10 @@ collection work; step 3 is the model change.
 
 1. **Token usage in the model and in the Claude Code parser.** `TokenUsage`, `AgentUsageEvent`, the
    parse of `message.usage`, the subagent files, the `<synthetic>` skip, the `message.id` dedupe.
-   Rolled up onto blocks and proposals. No stream model yet, so the day stays serial.
+   **Done, apart from the rollup, and the rollup is cancelled.** It was to sum spend onto
+   `ActivityBlock` and `WorklogProposal` inside `correlate/`. That feeds `day-review/`, which slice
+   3 deletes, so the work would be paid for twice. `vertical-slices.md` wins. The week reads its
+   spend from the stream model instead. Corrected on 2026-09-08.
 2. **The Codex collector.** The rollout reader, the field mapping, the `info: null` skip, the branch
    from the git collector. It is the second provider, which is what proves the shape is not
    Claude-shaped by accident.
@@ -377,10 +393,22 @@ all three are real multi-stream days.
 1. **`scaleToPresence`.** A customer who bills wall clock needs the day scaled down to presence. It
    is a Tempo-adapter setting, off by default, and it belongs to the adapter, never to the ledger.
    Build it when a real invoice needs it.
-2. **A stream with no keyboard at all.** An agent ran for 40 minutes in a checkout the user never
-   focused, while the user worked elsewhere. It is real work and it books its time. Whether it needs
-   its own confidence step is open; the honest first answer is `likely`, not `certain`.
-3. **Other agent CLIs.** Cursor, Copilot CLI and Gemini CLI are out of scope. The `provider` field
+2. ~~**A stream with no keyboard at all.**~~ **Answered on 2026-09-08.** It books its full time, and
+   its line carries `agent only, never focused` as evidence. No confidence step in slice 1.
+3. **A subagent has no readable name.** A subagent log carries `agentId`, `sessionId`, `cwd`,
+   `gitBranch` and `attributionAgent`, and `attributionAgent` names only the agent type —
+   `general-purpose` in 1 868 records, `Explore` in 44. There is no `ai-title`. The description the
+   parent passed is not recoverable either: `sourceToolAssistantUUID` resolved to a record in the
+   parent log in **0 of 40** pairs tested. So spend can be attributed to a stream but never named
+   inside it. The agreed shape is a `PostToolUse` hook on the Agent tool that writes one JSONL line
+   per spawn — `agentId`, `description`, `subagent_type`, `model`, the parent `sessionId` and the
+   instant — shipped in `@ethlete/agent-rules`, so any repository that installs the rules gets it.
+   The collector joins on `agentId`, and degrades to "an unnamed subagent" where the file is absent.
+   **Its own small slice, after slice 1**, never before: slice 1 is what tells us whether subagent
+   spend is worth naming on a real day.
+4. **The week shows no spend until slice 6.** Accepted on 2026-09-08. A direct per-day sum now would
+   be a second spend path that slice 6 deletes.
+5. **Other agent CLIs.** Cursor, Copilot CLI and Gemini CLI are out of scope. The `provider` field
    and the price table are what keep the seam open.
-4. **Subscription against list price.** A cost estimate at list price overstates what a subscription
+6. **Subscription against list price.** A cost estimate at list price overstates what a subscription
    day cost. A second, per-plan price mode may be needed once the numbers are used for pricing.
