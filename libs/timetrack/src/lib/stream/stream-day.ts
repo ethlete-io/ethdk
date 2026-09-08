@@ -9,6 +9,7 @@ import {
   isActivityEvent,
 } from '../model/event';
 import { Evidence } from '../model/evidence';
+import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 import { TimeWindow } from '../model/time-window';
 import { presenceWindows } from './presence';
 import { clipWindows, mergeWindows, subtractWindows, windowsMs } from './windows';
@@ -33,6 +34,12 @@ export type StreamDayOptions = {
    * which is often a subdirectory of a checkout, and without these each subdirectory becomes a stream.
    */
   repoRoots?: readonly string[];
+  /**
+   * The user's path-to-project links. A private one takes its checkout out of the day: no line, no
+   * evidence, no spend and no branch name. Its window time folds into the other-applications line, so
+   * presence still reconciles without the path being named.
+   */
+  links?: readonly TimetrackProjectLink[];
 };
 
 export const DEFAULT_STREAM_DAY_OPTIONS: StreamDayOptions = {
@@ -222,6 +229,37 @@ const reposByName = (samples: readonly ActivityEvent[], roots: readonly string[]
   return byName;
 };
 
+/** Whether a link takes a checkout out of the day. A path no link covers is work until the user says so. */
+const isPrivate = (options: { repoPath: string; links: readonly TimetrackProjectLink[] }) =>
+  matchProjectLink({ context: { repoPath: options.repoPath }, links: options.links })?.target.kind === 'private';
+
+/**
+ * The directory names of the private checkouts, so a window title that names one can be recognised.
+ *
+ * Both sources are needed: a link may name a root that covers checkouts it does not name itself, and a
+ * checkout the day saw no git event for is known only from the link.
+ */
+const privateNames = (options: {
+  samples: readonly ActivityEvent[];
+  roots: readonly string[];
+  links: readonly TimetrackProjectLink[];
+}) => {
+  const paths = options.samples
+    .map((sample) => repoStateFor(sample, options.roots)?.repoPath)
+    .concat(options.links.filter((link) => link.target.kind === 'private').map((link) => link.path));
+
+  const byName = new Map<string, string>();
+
+  for (const path of paths) {
+    const name = path?.split('/').filter(Boolean).pop();
+
+    if (!path || !name) continue;
+    if (isPrivate({ repoPath: path, links: options.links })) byName.set(name, path);
+  }
+
+  return byName;
+};
+
 /** A checkout is a stream of its own. Everything else folds into one line, or presence never reconciles. */
 const draftKeyOf = (context: ActivityContext) => (context.repoPath ? streamKey(context) : OTHER_APPLICATIONS_KEY);
 
@@ -329,13 +367,21 @@ export const streamDay = (options: {
 }): StreamDay => {
   const config = { ...DEFAULT_STREAM_DAY_OPTIONS, ...options.options };
   const roots = config.repoRoots ?? [];
-  const samples = options.events
+  const links = config.links ?? [];
+  const observed = options.events
     .filter(isActivityEvent)
     .filter((sample) => READ_SOURCES.includes(sample.source))
     .slice()
     .sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  const presence = presenceWindows({ samples, maxUnobservedMs: config.maxUnobservedMs });
+  const secluded = privateNames({ samples: observed, roots, links });
+  const samples = observed.filter((sample) => {
+    const repoPath = repoStateFor(sample, roots)?.repoPath;
+
+    return !repoPath || !isPrivate({ repoPath, links });
+  });
+
+  const presence = presenceWindows({ samples: observed, maxUnobservedMs: config.maxUnobservedMs });
   const byName = reposByName(samples, roots);
   const drafts = new Map<string, StreamDraft>();
   /** The branch each checkout was last seen on. Learned from git and from an agent session alike. */
@@ -346,9 +392,15 @@ export const streamDay = (options: {
   let appId: string | undefined;
 
   samples.forEach((sample, index) => {
+    // A window on a private checkout must not fall through to the sticky, or the last client repository
+    // would be billed for the time. It folds into the other-applications line and names nothing.
+    const secludedWindow = sample.kind === 'window-focus' && !!repoNamedIn({ title: sample.title, byName: secluded });
+
     if (sample.kind === 'window-focus') {
       appId = sample.appId;
-      focused = repoNamedIn({ title: sample.title, byName });
+      focused = secludedWindow ? undefined : repoNamedIn({ title: sample.title, byName });
+
+      if (secludedWindow) sticky = undefined;
     }
 
     const observed = repoStateFor(sample, roots);
@@ -386,7 +438,7 @@ export const streamDay = (options: {
       lastAgentSample.set(cwd, sample.at);
     }
 
-    const evidence = evidenceFor(sample);
+    const evidence = secludedWindow ? null : evidenceFor(sample);
     const of = observed ? { repoPath: observed.repoPath, branch: observed.branch } : context;
 
     addEvidence(draftFor(drafts, of).evidence, evidence);
@@ -423,7 +475,9 @@ export const streamDay = (options: {
     });
   }
 
-  const turns = options.events.filter((event): event is AgentUsageEvent => event.source === 'agent-usage');
+  const turns = options.events
+    .filter((event): event is AgentUsageEvent => event.source === 'agent-usage')
+    .filter((turn) => !turn.cwd || !isPrivate({ repoPath: repoRootOf({ path: turn.cwd, roots }), links }));
 
   streams.push(...spendOnlyStreams({ turns, streams, roots }));
   streams.sort((a, b) => a.from.getTime() - b.from.getTime() || a.key.localeCompare(b.key));

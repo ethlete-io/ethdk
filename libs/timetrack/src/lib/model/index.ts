@@ -3,6 +3,7 @@ export * from './context';
 export * from './duration';
 export * from './event';
 export * from './evidence';
+export * from './project-link';
 export * from './proposal';
 export * from './time-window';
 export * from './timer';

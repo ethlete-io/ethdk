@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent, TokenUsage } from '../model/event';
+import { TimetrackProjectLink } from '../model/project-link';
 import { OTHER_APPLICATIONS_KEY, streamDay } from './stream-day';
 
 const SDK = '/home/tom/dev/ethlete-sdk';
 const FUT = '/home/tom/dev/fut-frontend';
+const ELROND = '/home/tom/umbau-elrond';
 
 const AT = (minutes: number) => new Date(new Date(2026, 7, 12, 9, 0, 0).getTime() + minutes * 60_000);
 
@@ -72,6 +74,13 @@ const sessionRun = (options: { from: number; to: number; cwd: string; sessionId?
   Array.from({ length: options.to - options.from + 1 }, (_, offset) =>
     session(options.from + offset, options.cwd, options.sessionId),
   );
+
+const privateLink = (path: string): TimetrackProjectLink => ({
+  id: path,
+  path,
+  target: { kind: 'private' },
+  createdAt: new Date(2026, 0, 1),
+});
 
 const streamOf = (day: ReturnType<typeof streamDay>, key: string) => day.streams.find((stream) => stream.key === key);
 
@@ -312,6 +321,40 @@ describe('streamDay', () => {
     expect(fut?.unattendedMs).toBe(20 * MINUTE);
     expect(fut?.from).toEqual(AT(10));
     expect(fut?.to).toEqual(AT(40));
+  });
+
+  it('takes a checkout a private link covers out of the day, line, evidence and spend alike', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'ethlete-sdk - Code' }),
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 11, to: 20, appId: 'code', title: 'plan.md - umbau-elrond - Code' }),
+        commit(12, 'chore: Tile the bathroom', ELROND),
+        ...sessionRun({ from: 12, to: 20, cwd: ELROND }),
+        usage(15, ELROND, { output: 900 }),
+      ],
+      options: { repoRoots: [SDK, ELROND], links: [privateLink(ELROND)] },
+    });
+
+    expect(day.streams.map((stream) => stream.key)).toEqual([`repo:${SDK}`, OTHER_APPLICATIONS_KEY]);
+    expect(day.spend.turns).toBe(0);
+    expect(JSON.stringify(day)).not.toContain('elrond');
+    expect(JSON.stringify(day)).not.toContain('bathroom');
+  });
+
+  it('folds a private window into the other line rather than onto the last checkout the sticky held', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'ethlete-sdk - Code' }),
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 11, to: 20, appId: 'code', title: 'plan.md - umbau-elrond - Code' }),
+      ],
+      options: { repoRoots: [SDK, ELROND], links: [privateLink(ELROND)] },
+    });
+
+    expect(streamOf(day, `repo:${SDK}`)?.engagedMs).toBe(11 * MINUTE);
+    expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(9 * MINUTE);
+    expect(day.presenceMs).toBe(20 * MINUTE);
   });
 
   it('reads nothing from a day nothing observed', () => {

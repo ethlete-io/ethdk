@@ -12,6 +12,7 @@ import {
   injectWindowCollector,
 } from '../../collectors';
 import { injectHostPorts } from '../../host';
+import { injectTimetrackSettings } from '../settings/settings';
 import { readViewState, rememberViewState } from '../view-state';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -33,6 +34,7 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
   const spend = injectAgentSpendBackfill();
   const codexSpend = injectCodexSpendBackfill();
   const git = injectGitCollector();
+  const settings = injectTimetrackSettings();
 
   const key = signal(readViewState().day ?? localDayKey(new Date()));
 
@@ -44,6 +46,7 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
   const probe = computed(() => ({
     key: key(),
     repoRoots: git.discovery()?.repos ?? [],
+    links: settings.settings().projectLinks,
     windows: windows.lastRun(),
     sessions: agentSessions.lastRun(),
     codexSessions: codexSessions.lastRun(),
@@ -60,7 +63,7 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
         return ports.events.eventsBetween$(from, to).pipe(
           map((events): Loaded => ({
             key: current.key,
-            value: streamDay({ events, options: { repoRoots: [...current.repoRoots] } }),
+            value: streamDay({ events, options: { repoRoots: [...current.repoRoots], links: current.links } }),
             failure: null,
           })),
           catchError((error: unknown) => of<Loaded>({ key: current.key, value: null, failure: messageOf(error) })),

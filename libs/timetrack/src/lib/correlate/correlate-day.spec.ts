@@ -2,7 +2,7 @@ import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
 import { correlateDay } from './correlate-day';
-import { TimetrackProjectLink } from './project-link';
+import { TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule } from './rules';
 
 const MINUTE = 60_000;

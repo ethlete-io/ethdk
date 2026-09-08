@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TimetrackProjectLink } from '../correlate/project-link';
+import { TimetrackProjectLink } from '../model/project-link';
 import { TimetrackFavoriteProject } from './model';
 import { repoProjectRows, suggestProjectForRepo } from './repo-project';
 

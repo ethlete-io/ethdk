@@ -1,4 +1,4 @@
-import { TimetrackProjectLink, matchProjectLink } from '../correlate/project-link';
+import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 
 /** One checkout whose sessions were dropped, so a repository nobody linked stays visible. */
 export type UnlinkedAgentSessions = {

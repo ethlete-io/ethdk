@@ -2,7 +2,7 @@ import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { IssueActivity, attribute } from './attribute';
-import { TimetrackProjectLink } from './project-link';
+import { TimetrackProjectLink } from '../model/project-link';
 import { RecurringPattern } from './recurrence';
 import { AttributionRule } from './rules';
 

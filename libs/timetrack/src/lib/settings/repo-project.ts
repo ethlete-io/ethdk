@@ -1,4 +1,4 @@
-import { TimetrackProjectLink, matchProjectLink } from '../correlate/project-link';
+import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 import { TimetrackFavoriteProject } from './model';
 
 /** A word short enough to appear in any directory name says nothing about which project it is. */

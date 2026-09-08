@@ -1,4 +1,4 @@
-import { ProjectLinkTarget, TimetrackProjectLink } from '../correlate/project-link';
+import { ProjectLinkTarget, TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule, AttributionTarget } from '../correlate/rules';
 import { REASONING_COMMANDS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';

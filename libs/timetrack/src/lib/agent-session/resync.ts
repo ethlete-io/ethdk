@@ -1,4 +1,4 @@
-import { TimetrackProjectLink, pathIsUnder, projectKeyFor } from '../correlate/project-link';
+import { TimetrackProjectLink, pathIsUnder, projectKeyFor } from '../model/project-link';
 import { AgentSessionCursor } from './collect';
 import { UnlinkedAgentSessions } from './linked';
 

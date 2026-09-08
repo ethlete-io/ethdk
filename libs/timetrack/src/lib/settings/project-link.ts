@@ -1,4 +1,4 @@
-import { TimetrackProjectLink } from '../correlate/project-link';
+import { TimetrackProjectLink } from '../model/project-link';
 import { TimetrackSettings } from './model';
 
 const pathOf = (link: Pick<TimetrackProjectLink, 'path'>) => link.path.trim().replace(/\/+$/, '');

@@ -8,7 +8,7 @@ import {
 } from '@ethlete/agent-rules/git-flow';
 import { ActivityBlock } from '../model/block';
 import { Confidence, Evidence } from '../model/evidence';
-import { TimetrackProjectLink, describeProjectLink, matchProjectLink } from './project-link';
+import { TimetrackProjectLink, describeProjectLink, matchProjectLink } from '../model/project-link';
 import { RecurringPattern, patternAt } from './recurrence';
 import {
   AttributionRule,

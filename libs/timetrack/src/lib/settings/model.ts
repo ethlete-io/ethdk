@@ -1,4 +1,4 @@
-import { TimetrackProjectLink } from '../correlate/project-link';
+import { TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule } from '../correlate/rules';
 import { JiraParenting } from '../jira/hierarchy';
 import { DEFAULT_REASONING_OPTIONS } from '../reason/model';

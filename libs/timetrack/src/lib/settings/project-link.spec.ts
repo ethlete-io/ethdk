@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TimetrackProjectLink } from '../correlate/project-link';
+import { TimetrackProjectLink } from '../model/project-link';
 import { DEFAULT_TIMETRACK_SETTINGS } from './model';
 import { withProjectLink, withoutProjectLink } from './project-link';
 
