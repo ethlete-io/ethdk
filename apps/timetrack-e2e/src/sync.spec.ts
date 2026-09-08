@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
+import { tempoWorklogOn } from '@ethlete/timetrack/testing';
 
 /**
  * The subtraction itself is unit-tested in `tempo/diff.spec.ts`. What only an end-to-end run can show
@@ -13,7 +14,10 @@ test.describe('the sync preview', () => {
   });
 
   test('lists time somebody logged outside the app, and never plans to touch it', async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem('e2e.foreignMinutes', '90'));
+    await seedWorld(page, {
+      now: E2E_NOW,
+      tempo: { worklogs: [tempoWorklogOn({ day: E2E_DAY_KEY, minutes: 90 })] },
+    });
     await page.goto('/#/sync');
     await page.getByRole('button', { name: 'Plan this day' }).click();
 

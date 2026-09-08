@@ -16,6 +16,9 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     trace: 'on-first-retry',
+    // Pinned so the seeded instant lands on the same calendar day on CI and on a contributor's
+    // machine. `support/fixtures.ts` names the day it produces.
+    timezoneId: 'UTC',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {

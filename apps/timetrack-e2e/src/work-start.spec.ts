@@ -1,4 +1,5 @@
-import { Page, expect, test } from '@playwright/test';
+import { Page } from '@playwright/test';
+import { expect, test } from './support';
 
 /**
  * The prospective flow: a ticket, the branch the grammar names for it, and a draft merge request.

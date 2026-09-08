@@ -1,13 +1,9 @@
-import { Page, expect, test } from '@playwright/test';
+import { Page } from '@playwright/test';
+import { tempoWorklogOn } from '@ethlete/timetrack/testing';
+import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
 
-const pad = (value: number) => String(value).padStart(2, '0');
-
-/** Today's own row. Selected by its day key, because which of the seven it is depends on the weekday. */
-const seededDay = (page: Page) => {
-  const today = new Date();
-
-  return page.locator(`[data-day="${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}"]`);
-};
+/** The seeded day's own row. Selected by its day key, because which of the seven it is depends on the weekday. */
+const seededDay = (page: Page) => page.locator(`[data-day="${E2E_DAY_KEY}"]`);
 
 /**
  * The week view has no token, so it can only tell a day logged in Tempo by hand from a day nobody
@@ -16,7 +12,10 @@ const seededDay = (page: Page) => {
  */
 test.describe('a day logged in tempo by hand', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem('e2e.foreignMinutes', '90'));
+    await seedWorld(page, {
+      now: E2E_NOW,
+      tempo: { worklogs: [tempoWorklogOn({ day: E2E_DAY_KEY, minutes: 90 })] },
+    });
     await page.goto('/');
     await page.getByLabel('Log time for ABC-3010').check();
   });

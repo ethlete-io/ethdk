@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support';
 
 /**
  * The repair a filed ticket makes possible. The fixture's second branch names no issue and the

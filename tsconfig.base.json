@@ -33,6 +33,7 @@
       "@ethlete/query-devtools/toggle": ["libs/query-devtools/toggle/index.ts"],
       "@ethlete/query/testing": ["libs/query/testing/index.ts"],
       "@ethlete/timetrack": ["libs/timetrack/src/index.ts"],
+      "@ethlete/timetrack/testing": ["libs/timetrack/testing/index.ts"],
       "@ethlete/types": ["libs/types/src/index.ts"]
     },
     "strict": false,

@@ -1,4 +1,5 @@
-import { Page, expect, test } from '@playwright/test';
+import { Page } from '@playwright/test';
+import { expect, test } from './support';
 
 test.describe('a row the day did not see', () => {
   test.beforeEach(async ({ page }) => {
