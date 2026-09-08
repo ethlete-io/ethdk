@@ -33,7 +33,13 @@ export type {
   CreateBracketOptions,
 } from './core';
 export * from './integrations';
-export { BRACKET_SWISS_GROUP_COLOR_TYPE, createBracket, isBracketSlotPredictable, resolveBracketSlot } from './linked';
+export {
+  BRACKET_SWISS_GROUP_COLOR_TYPE,
+  createBracket,
+  isBracketSlotPredictable,
+  migrateBracketPicks,
+  resolveBracketSlot,
+} from './linked';
 export type {
   Bracket,
   BracketMatch,
@@ -47,6 +53,8 @@ export type {
   BracketMatchRelationTwoToOne,
   BracketParticipant,
   BracketParticipantMatch,
+  BracketPickMigration,
+  BracketPickMigrationOptions,
   BracketPickSet,
   BracketRound,
   BracketRoundMapWithSwissData,
@@ -60,6 +68,7 @@ export type {
   BracketRoundSwissGroup,
   BracketRoundSwissGroupId,
   BracketRoundSwissGroupMap,
+  BracketSlotResolutionPolicy,
   BracketSwissColors,
   BracketSwissGroupColorType,
 } from './linked';
