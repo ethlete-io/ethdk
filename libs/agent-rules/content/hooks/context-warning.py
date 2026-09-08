@@ -106,7 +106,9 @@ AGENT_PROFILES = {
         "suggest": "suggest the user run /{handoff} to save state and start a fresh session",
         "save_now": (
             "run the handoff skill's save mode right now (finish only an in-flight atomic "
-            "edit first, nothing new). Then tell the user exactly which handoff file was "
+            "edit first, nothing new). Apply its own test first: with every change "
+            "committed, no step left and nothing running, write no file — say that instead, "
+            "and recommend /clear. Otherwise tell the user exactly which handoff file was "
             "written and that they should run /clear, then '/{handoff} resume <slug>', to "
             "continue — clearing and resuming can't be done programmatically, so this is "
             "the one step still on them."
@@ -137,9 +139,10 @@ AGENT_PROFILES = {
         ),
         "save_now": (
             "follow .agents/skills/{handoff}/SKILL.md and save a handoff right now "
-            "(finish only an in-flight atomic edit first, nothing new). Then tell the user "
-            "exactly which handoff file was written and that they should start a fresh "
-            "codex session and resume from it."
+            "(finish only an in-flight atomic edit first, nothing new). Apply its own test "
+            "first: with every change committed, no step left and nothing running, write no "
+            "file and say that instead. Otherwise tell the user exactly which handoff file "
+            "was written and that they should start a fresh codex session and resume from it."
         ),
     },
 }
@@ -372,7 +375,7 @@ def messages(profile, tier, tokens, budget, priced, auto_mode):
         tail = "" if priced else " — auto-compact is imminent"
         if auto_mode:
             return (
-                f"🔴 {headline}{tail}. Auto mode is active: saving a handoff now.",
+                f"🔴 {headline}{tail}. Auto mode is active: saving a handoff if work is left.",
                 f"[context-warning hook] {detail} {pressure}Auto mode is active, so don't "
                 f"just recommend a handoff — {profile['save_now']}",
             )

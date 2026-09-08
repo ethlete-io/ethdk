@@ -26,6 +26,21 @@ ephemeral working state, not team docs).
 
 ## Save mode
 
+**Decide first whether a handoff is needed at all.** One exists so work can resume, so
+write one only when at least one of these holds:
+
+- Uncommitted work from this session sits in the tree.
+- A step the user asked for is unfinished, blocked, or waiting on a result.
+- A decision, dead end, or user constraint from this session is written down nowhere else -
+  not in a commit message, a changeset, a docs page, or a plan file.
+
+Check it, never assume it: `git status`, `git log`, and the task as the user stated it. A
+context warning is a token count, not evidence that work is left.
+
+If none of them holds, write no file. Tell the user in two or three lines what landed, name
+the commits, and say a fresh session needs nothing from this one. A handoff nobody resumes is
+noise, and it costs the next session the tokens to read it.
+
 Write `{%handoffDir%}/<slug>.md` where `<slug>` is a short kebab-case name for
 the task (use the user-provided slug if they gave one). If the file exists,
 overwrite it - a handoff always describes the _current_ state.
