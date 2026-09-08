@@ -12,9 +12,10 @@ continue in a fresh session. This skill has two modes:
 - **save** (`handoff`, optionally followed by a short slug) - write a handoff file.
 - **resume** (`handoff resume [name]`) - read a handoff file and continue the work.
 
-In Codex these are normal prompts, not slash commands: enter `handoff` or
-`handoff resume [name]` without a leading `/`. Under Claude Code this skill is
-available as `/handoff`.
+Name one invocation form to the user - your own - and never both. Under Claude
+Code that is `/handoff` and `/handoff resume [name]`. Codex has no slash
+commands, so there both are plain prompts: drop the leading `/` from every
+command this guide quotes, and from `/clear` say "start a new session" instead.
 
 Handoff files live in `.claude/handoffs/` (gitignored - they are personal,
 ephemeral working state, not team docs).
@@ -83,8 +84,7 @@ map, not a transcript.
 After writing, tell the user:
 
 > Handoff saved to `.claude/handoffs/<slug>.md`. Start a fresh session (`/clear`
-> or a new terminal). In Codex, enter `handoff resume <slug>` as a normal prompt;
-> in Claude Code, run `/handoff resume <slug>`.
+> or a new terminal), then run `/handoff resume <slug>`.
 
 ## Resume mode
 
