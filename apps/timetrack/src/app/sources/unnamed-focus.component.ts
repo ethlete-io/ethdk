@@ -2,6 +2,7 @@ import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS } from '@ethlete/components';
 import {
+  READABLE_MS,
   UnnamedFocusReason,
   UnnamedFocusSpan,
   byLocalDay,
@@ -73,7 +74,7 @@ const isOnPurpose = (reason: UnnamedFocusReason) => ON_PURPOSE.includes(reason);
 
       <p class="text-small text-et-surface-muted">
         Every minute here is on the Today screen already, folded into the Other applications line. A private project and
-        this app's own window are unnamed on purpose. The rest is a window a checkout should have taken.
+        this app's own window are unnamed on purpose. The rest carries no checkout in the title.
       </p>
 
       @if (failure()) {
@@ -97,7 +98,7 @@ const isOnPurpose = (reason: UnnamedFocusReason) => ON_PURPOSE.includes(reason);
         </div>
 
         <p class="text-small text-et-surface" data-unnamed-total>{{ total() }}</p>
-        <p class="text-small text-et-surface-subtle" data-unnamed-defect>{{ defect() }}</p>
+        <p class="text-small text-et-surface-subtle" data-unnamed-unjudged>{{ unjudged() }}</p>
 
         <ul class="flex flex-col gap-1">
           @for (row of rows(); track row.key) {
@@ -111,7 +112,7 @@ const isOnPurpose = (reason: UnnamedFocusReason) => ON_PURPOSE.includes(reason);
               }
             </li>
           } @empty {
-            <li class="text-small text-et-surface-subtle">Every window that held the focus named a checkout.</li>
+            <li class="text-small text-et-surface-subtle">{{ emptyNote() }}</li>
           }
         </ul>
       }
@@ -176,7 +177,7 @@ export class UnnamedFocusComponent {
 
   private current = computed(() => this.loaded()?.[this.span()] ?? null);
 
-  private defectMs = computed(() =>
+  private unjudgedMs = computed(() =>
     (this.current()?.rows ?? []).filter((row) => !isOnPurpose(row.reason)).reduce((sum, row) => sum + row.ms, 0),
   );
 
@@ -193,27 +194,43 @@ export class UnnamedFocusComponent {
     )} focused named no checkout. That is ${formatShare({ ms: unnamedMs, ofMs: focusMs })}.`;
   });
 
-  protected defect = computed(() => {
+  /**
+   * What carries no checkout, without calling it wrong.
+   *
+   * A window a checkout should have taken and an application that is no work context at all both land
+   * in `no-name`, and nothing collected so far tells them apart. Rung 3 of
+   * `plans/timetrack/name-the-window.md` is what splits this line into the two.
+   */
+  protected unjudged = computed(() => {
     const read = this.current();
 
     if (!read?.focusMs) return '';
 
-    const ms = this.defectMs();
+    const ms = this.unjudgedMs();
 
-    if (!ms) return 'None of it is a window a checkout should have taken.';
-    if (ms === read.unnamedMs) return 'All of it is a window a checkout should have taken.';
+    if (!ms) return 'All of it is unnamed on purpose.';
 
-    return `${formatDurationMs(ms)} of it is a window a checkout should have taken. The rest is unnamed on purpose.`;
+    const held = ms === read.unnamedMs ? 'All of it' : `${formatDurationMs(ms)} of it`;
+
+    return `${held} carries no checkout in the title. A window a checkout should have taken reads the same way as an application that is no work context at all, so the split between them is not known yet.`;
   });
 
   protected rows = computed<FocusRow[]>(() =>
-    (this.current()?.rows ?? []).map((row) => ({
-      key: `${row.appId ?? ''} ${row.reason}`,
-      app: row.appId ?? 'no application reported',
-      duration: formatDurationMs(row.ms),
-      why: REASON_LABEL[row.reason],
-      onPurpose: isOnPurpose(row.reason),
-    })),
+    (this.current()?.rows ?? [])
+      .filter((row) => row.ms >= READABLE_MS)
+      .map((row) => ({
+        key: `${row.appId ?? ''} ${row.reason}`,
+        app: row.appId ?? 'no application reported',
+        duration: formatDurationMs(row.ms),
+        why: REASON_LABEL[row.reason],
+        onPurpose: isOnPurpose(row.reason),
+      })),
+  );
+
+  protected emptyNote = computed(() =>
+    this.current()?.rows.length
+      ? 'Every window that named no checkout held it for under a minute.'
+      : 'Every window that held the focus named a checkout.',
   );
 }
 

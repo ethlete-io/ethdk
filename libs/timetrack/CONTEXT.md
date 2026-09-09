@@ -90,7 +90,8 @@ _Avoid_: window time, active window time, screen time
 
 **Unnamed focus**:
 Focus time no checkout took, per application and per cause. It is the Other applications line split
-by why each application is in it, and only the `no-name` cause is a defect.
+by why each application is in it. No cause is a defect on its own: `no-name` holds both a window a
+checkout should have taken and an application that is no work context at all.
 _Avoid_: unattributed focus (spend is unattributed), folded time, orphan time
 
 ### Agents and spend

@@ -8,3 +8,6 @@ export const formatDurationMs = (ms: number) => {
 
   return hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`;
 };
+
+/** Under this `formatDurationMs` reads `0m`, so a line carrying only this much carries no number. */
+export const READABLE_MS = 30_000;

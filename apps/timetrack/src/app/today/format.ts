@@ -1,4 +1,4 @@
-import { Stream, StreamSpend, formatDurationMs, formatTokenCount } from '@ethlete/timetrack';
+import { READABLE_MS, Stream, StreamSpend, formatDurationMs, formatTokenCount } from '@ethlete/timetrack';
 
 /** What a stream is, for its line: the checkout's directory name, else the folded line's own name. */
 export const formatStreamLabel = (stream: Stream) =>
@@ -41,9 +41,6 @@ export const formatBranches = (options: { stream: Stream; headBranches: Record<s
 
   return stream.repoPath ? (headBranches[stream.repoPath] ?? '') : '';
 };
-
-/** Under this a minute readout rounds to `0m`, so a labelled sliver would carry no number at all. */
-const READABLE_MS = 30_000;
 
 /**
  * Agent time nobody was at the machine for. Anything under a rounded minute reads as nothing at all,

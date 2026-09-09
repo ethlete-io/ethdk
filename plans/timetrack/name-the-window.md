@@ -47,7 +47,7 @@ exists, and it is not built.
 **Built on 2026-09-09.** `streamDay` reports `focusMs` and `unnamedFocus`, computed in the pass that
 builds the folded line, so the two can never disagree. `UnnamedFocusComponent` in the Sources view
 shows it for today and for the last 14 days, and `apps/timetrack-e2e/src/unnamed-focus.spec.ts`
-covers it. Nothing below has started; the number decides the order.
+covers it. Nothing below has started; the number decides the order. The first reading is below.
 
 A panel in the **Sources** view reports the focus time that named no checkout, grouped by
 application id, for the day and for the last 14 days.
@@ -67,6 +67,10 @@ Three kinds of time land in it, and only the first is a defect:
 | A window on a **private** checkout          | Already correct            |
 | A window that is no work context at all     | Already correct            |
 
+**The panel cannot tell the first kind from the third.** Both are `no-name`, and nothing collected
+so far separates them, so the panel names the cause and does not claim the time as wrong. Rung 3 is
+what splits the line. The first reading is what forced this: it called 1h 45m of chat a defect.
+
 The private part gets its own row, marked as correctly unnamed. It is never taken out of the
 total: the total has to reconcile with the Other applications line, or no other screen agrees with
 it. The row names an application and never a path.
@@ -75,6 +79,33 @@ The panel also counts the disagreements described under "Which name wins". Many 
 of the two readers is wrong, and the plan is then not done. **Not built:** there is no second reader
 until rung 1, so there is nothing yet to disagree with. A fourth cause is reported instead, a name
 two checkouts share, which is a defect rung 1 fixes for free.
+
+### The first reading, on Linux, 2026-09-09
+
+```
+Last 14 days: 4h 10m of 8h 6m focused named no checkout. That is 51%.
+
+timetrack                                          1h 39m  this app
+com.slack.Slack                                    1h 1m   no checkout in the title
+discord                                            44m     no checkout in the title
+google-chrome                                      41m     no checkout in the title
+code                                               5m      no checkout in the title
+```
+
+Five things it says, none of them predicted:
+
+1. **No terminal appears at all.** This plan's premise is that a terminal and a dev-server tab lose
+   the time. Against this number rung 1 recovers the 5 minutes of `code` and nothing else. **Rung 1
+   is not obviously the first rung.**
+2. **Chat is 1h 45m.** Slack and Discord are the third kind above, already correct, and the panel
+   read them as a defect until this reading. Rung 3 is what the number asks for first.
+3. **`google-chrome`, 41m, is the one unknown row.** It is either a dev server (rung 2) or a real
+   website (correctly unnamed). Nothing says which, and rung 2 is worth building only if it is the
+   former.
+4. `timetrack` at 1h 39m is a fifth of all focus: the app watched while it was built. On purpose.
+5. **The sample is thin.** 8h 6m of focus in 14 days, because most of them were worked on the Mac.
+   A rung order decided on eight hours is a guess, so read the panel again after an ordinary Linux
+   week.
 
 ## The platform seam
 

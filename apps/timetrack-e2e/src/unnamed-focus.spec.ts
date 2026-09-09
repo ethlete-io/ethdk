@@ -35,7 +35,7 @@ const day = (): CollectedEvent[] => [
 
 const total = (page: Page) => page.locator('[data-unnamed-total]');
 
-const defect = (page: Page) => page.locator('[data-unnamed-defect]');
+const unjudged = (page: Page) => page.locator('[data-unnamed-unjudged]');
 
 const row = (page: Page, app: string) => page.locator(`[data-app="${app}"]`);
 
@@ -66,8 +66,36 @@ test.describe('the focus that named no checkout', () => {
     await expect(row(page, 'code')).toHaveCount(0);
   });
 
-  test('says how much of it is a window a checkout should have taken', async ({ page }) => {
-    await expect(defect(page)).toContainText('All of it is a window a checkout should have taken.');
+  test('says how much of it carries no checkout, without calling that time wrong', async ({ page }) => {
+    await expect(unjudged(page)).toContainText('All of it carries no checkout in the title.');
+    await expect(unjudged(page)).toContainText('the split between them is not known yet');
+  });
+
+  test('drops a window that held the focus for less than a rounded minute', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [...day(), focus(91, 'gnome-ssh-askpass', 'ssh'), focus(91.25, 'foot', 'tom@e2e: ~')],
+    });
+    await page.goto('/sources');
+
+    await expect(row(page, 'spotify')).toContainText('16m');
+    await expect(row(page, 'gnome-ssh-askpass')).toHaveCount(0);
+  });
+
+  test('says the unnamed time was all slivers, rather than that every window named a checkout', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        { at: at(0), source: 'git', kind: 'git-checkout', repoPath: FUT, branch: 'next' },
+        focus(0, 'code', 'invite.ts - fut-frontend - Visual Studio Code'),
+        focus(30, 'gnome-ssh-askpass', 'ssh'),
+        focus(30.25, 'code', 'invite.ts - fut-frontend - Visual Studio Code'),
+        focus(60, 'code', 'invite.ts - fut-frontend - Visual Studio Code'),
+      ],
+    });
+    await page.goto('/sources');
+
+    await expect(page.getByText('held it for under a minute')).toBeVisible();
   });
 
   test('reads the last fourteen days as well as today, and says which it is showing', async ({ page }) => {
@@ -95,8 +123,7 @@ test.describe('the focus that named no checkout', () => {
     await expect(row(page, 'code')).toContainText('a private project');
     await expect(row(page, 'code')).toContainText('on purpose');
     await expect(row(page, 'code')).toContainText('15m');
-    await expect(defect(page)).toContainText('1h 0m of it is a window a checkout should have taken.');
-    await expect(defect(page)).toContainText('The rest is unnamed on purpose.');
+    await expect(unjudged(page)).toContainText('1h 0m of it carries no checkout in the title.');
   });
 
   test('says no window held the focus, rather than showing an empty list', async ({ page }) => {

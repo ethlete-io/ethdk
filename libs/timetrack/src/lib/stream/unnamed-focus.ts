@@ -1,9 +1,10 @@
 /**
  * Why a stretch of focused-window time took no checkout.
  *
- * Only `no-name` is a defect. A private checkout, this app's own window and a name two checkouts share
- * are each unnamed on purpose, and they are reported so that the rows sum to the whole of the folded
- * line rather than to the part that is wrong.
+ * A private checkout and this app's own window are unnamed on purpose. `no-name` is not a verdict on
+ * its own: a window a checkout should have taken lands in it, and so does an application that is no
+ * work context at all. Every cause is reported, so the rows sum to the whole of the folded line
+ * rather than to the part of it that is wrong.
  */
 export type UnnamedFocusReason = 'no-name' | 'ambiguous-name' | 'private' | 'own-window';
 
