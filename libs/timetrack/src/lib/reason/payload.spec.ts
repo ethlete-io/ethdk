@@ -52,13 +52,14 @@ describe('reasoningPlan', () => {
     expect(contextIds['c1']).toBe(contextKey(context));
   });
 
-  it('quotes commit and agent-session evidence but never a window title', () => {
+  it('quotes commit and agent-session evidence but never a window title or a meeting title', () => {
     const context = { repoPath: REPO, branch: 'refactor/hub-query-v3' };
     const blocks = [
       block(context, [
         evidence('commit', '17 commits', 'refactor(hub): Replace the query v2 client'),
         evidence('agent-session', 'session', 'Port the hub query client'),
         evidence('window-title', 'Q3 redundancies — final.xlsx'),
+        evidence('calendar', 'Kickoff with Contoso', 'Kickoff with Contoso'),
       ]),
     ];
 
@@ -69,6 +70,7 @@ describe('reasoningPlan', () => {
       'Port the hub query client',
     ]);
     expect(JSON.stringify(request)).not.toContain('redundancies');
+    expect(JSON.stringify(request)).not.toContain('Contoso');
   });
 
   it('leaves out a context too short to be worth asking about', () => {

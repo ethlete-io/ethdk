@@ -1,7 +1,13 @@
 import { signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { CalendarOccurrenceEvent, fetchGoogleCalendarEvents$ } from '@ethlete/timetrack';
+import {
+  CalendarOccurrenceEvent,
+  applyExclusionRules,
+  effectiveExclusionRules,
+  fetchGoogleCalendarEvents$,
+  redactEventTitles,
+} from '@ethlete/timetrack';
 import {
   EMPTY,
   Observable,
@@ -37,6 +43,8 @@ export type CalendarCollectorRun = {
   /** Occurrences the read produced, including the ones the store already had. */
   seen: number;
   stored: number;
+  /** Occurrences a rule denied. A meeting is named after the work, like everything else. */
+  excluded: number;
 };
 
 /**
@@ -76,11 +84,25 @@ const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       }),
       concatMap((perCalendar: CalendarOccurrenceEvent[][]) => {
         const events = perCalendar.flat();
+        // A meeting title is written by whoever sent the invitation, so it carries a customer name as
+        // readily as a window title does. Both passes run here for the same reason they run on a
+        // window: the rule is written against the title the user saw, and the store keeps neither a
+        // denied occurrence nor the query string of a URL somebody pasted into the invitation.
+        const { kept, excluded } = applyExclusionRules({
+          events,
+          rules: effectiveExclusionRules(settings.settings()),
+        });
 
-        return ports.events.appendCounted$(events).pipe(
+        return ports.events.appendCounted$(redactEventTitles(kept)).pipe(
           tap((stored) => {
             failure.set(null);
-            lastRun.set({ at, calendars: calendarIds.length, seen: events.length, stored });
+            lastRun.set({
+              at,
+              calendars: calendarIds.length,
+              seen: events.length,
+              stored,
+              excluded: excluded.length,
+            });
           }),
         );
       }),

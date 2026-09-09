@@ -27,9 +27,7 @@ import { TokenFieldComponent } from './token-field.component';
       <div class="flex items-center gap-3">
         <h3 class="text-h4">Google Calendar</h3>
 
-        <et-badge [color]="connected() ? 'success' : 'warning'" size="sm">
-          {{ connected() ? 'connected' : 'not connected' }}
-        </et-badge>
+        <et-badge [color]="badge().color" size="sm">{{ badge().label }}</et-badge>
 
         @if (account.busy()) {
           <et-spinner size="sm" />
@@ -37,13 +35,17 @@ import { TokenFieldComponent } from './token-field.component';
       </div>
 
       <p class="text-small text-et-surface-muted">
-        Meetings say which part of the day was spent with other people, and a Meet window title is matched to the event
-        it belongs to. Register an OAuth client of type <em>Desktop app</em> in your own Google Cloud project, then add
-        yourself as a test user — Google shows an unverified-app warning until you do.
+        A calendar names a meeting and gives its time. It does not decide that one was held — Google writes a Meet link
+        for a call held somewhere else. Register an OAuth client of type <em>Desktop app</em> in your own Google Cloud
+        project, then add yourself as a test user — Google shows an unverified-app warning until you do.
       </p>
 
       @if (account.failure(); as failure) {
-        <et-banner [description]="failure" type="error" heading="The account could not be connected" />
+        <et-banner
+          [description]="failure"
+          [heading]="account.needsReconnect() ? 'The account stopped working' : 'The account could not be connected'"
+          type="error"
+        />
       }
 
       <et-form-field class="min-w-60" appearance="underline" size="sm">
@@ -97,9 +99,7 @@ import { TokenFieldComponent } from './token-field.component';
               <et-label>{{ calendar.name }}</et-label>
             </et-choice-field>
           } @empty {
-            <p class="text-small text-et-surface-subtle">
-              {{ account.calendars() ? 'This account has no calendars.' : 'Reading the calendars…' }}
-            </p>
+            <p class="text-small text-et-surface-subtle">{{ calendarsNote() }}</p>
           }
 
           <p class="text-small text-et-surface-subtle">
@@ -135,9 +135,26 @@ export class GoogleConnectionComponent {
 
   protected picked = computed(() => new Set(this.settings().calendarIds));
 
+  protected badge = computed(() => {
+    if (this.account.needsReconnect()) return { color: 'danger', label: 'reconnect needed' };
+
+    return this.connected() ? { color: 'success', label: 'connected' } : { color: 'warning', label: 'not connected' };
+  });
+
+  protected calendarsNote = computed(() => {
+    if (this.account.calendars()) return 'This account has no calendars.';
+    if (this.account.loadFailed()) return 'The calendars could not be read. Refresh to try again.';
+
+    return 'Reading the calendars…';
+  });
+
   constructor() {
+    // A read is asked for once. Retrying it here on sight is what pinned `busy` true against a
+    // rejected refresh token, which disabled both the Connect and the Disconnect button.
     effect(() => {
-      if (this.connected() && !this.account.calendars() && !this.account.busy()) this.account.loadCalendars();
+      if (this.connected() && !this.account.calendars() && !this.account.busy() && !this.account.loadFailed()) {
+        this.account.loadCalendars();
+      }
     });
   }
 

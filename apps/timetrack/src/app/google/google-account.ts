@@ -4,6 +4,7 @@ import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   GOOGLE_AUTHORIZATION_ENDPOINT,
   GoogleCalendar,
+  GoogleAuthError,
   GoogleCalendarCredentials,
   GoogleOAuthClient,
   TIMETRACK_SECRET_KEYS,
@@ -35,6 +36,8 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const busy = signal(false);
   const failure = signal<string | null>(null);
   const calendars = signal<GoogleCalendar[] | null>(null);
+  const needsReconnect = signal(false);
+  const loadFailed = signal(false);
 
   const tokens = createGoogleTokenSource({
     transport: ports.transport,
@@ -62,10 +65,15 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     defer(() => {
       busy.set(true);
       failure.set(null);
+      needsReconnect.set(false);
 
       return work$.pipe(
         catchError((error: unknown) => {
           failure.set(messageOf(error));
+          // A rejected refresh token is kept rather than deleted: Google also answers `invalid_grant`
+          // for a clock skew and for a changed client secret, so one response must not destroy a
+          // credential a different fix would revive.
+          if (error instanceof GoogleAuthError && error.needsReconnect) needsReconnect.set(true);
 
           return EMPTY;
         }),
@@ -78,7 +86,15 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       switchMap((credentials) =>
         credentials ? fetchGoogleCalendarList$({ transport: ports.transport, credentials }) : of([]),
       ),
-      tap((found) => calendars.set(found)),
+      tap({
+        next: (found) => {
+          calendars.set(found);
+          loadFailed.set(false);
+        },
+        // A caller that reads this is what keeps a failed read from being asked for again on sight.
+        // Without it the settings card retries forever, and its `busy` never settles.
+        error: () => loadFailed.set(true),
+      }),
     );
 
   const connect$ = () =>
@@ -135,6 +151,7 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           tokens.invalidate();
           settings.recheckCredentials();
           calendars.set(null);
+          loadFailed.set(false);
         }),
       ),
     );
@@ -153,6 +170,13 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     failure: failure.asReadonly(),
     /** The account's calendars, or `null` until they have been asked for. */
     calendars: calendars.asReadonly(),
+    /**
+     * Whether Google has rejected the stored refresh token. The token is still there, so every other
+     * check reads as connected — this is the only thing that says the connection stopped working.
+     */
+    needsReconnect: needsReconnect.asReadonly(),
+    /** Whether the last read of the calendar list failed. Ask again by hand, never on sight. */
+    loadFailed: loadFailed.asReadonly(),
 
     /** An access token that is valid now, or `null` while no account is connected. */
     credentials$: (): Observable<GoogleCalendarCredentials | null> => tokens.credentials$(),

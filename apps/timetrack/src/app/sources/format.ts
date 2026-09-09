@@ -123,13 +123,18 @@ export const formatGitScan = (options: { discovery: GitRepoDiscovery | null; sca
 };
 
 /** Which calendars are being read, and when. No calendar picked is a configuration state, not a fault. */
-export const formatCalendarRead = (options: { calendarIds: readonly string[]; readAt: Date | null }) => {
-  const { calendarIds, readAt } = options;
+export const formatCalendarRead = (options: {
+  calendarIds: readonly string[];
+  readAt: Date | null;
+  excluded: number;
+}) => {
+  const { calendarIds, readAt, excluded } = options;
   const count = calendarIds.length;
 
   return sentences([
     count ? `Reading ${count} ${count === 1 ? 'calendar' : 'calendars'}.` : 'No calendar is picked yet.',
     readAt ? `Last read at ${clock(readAt)}.` : null,
+    excluded ? `${excluded} denied by an exclusion rule.` : null,
   ]);
 };
 

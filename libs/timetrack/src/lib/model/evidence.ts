@@ -43,14 +43,16 @@ export type Evidence = {
  * It is an allowlist because the alternative fails open: `window-title` details are raw window titles,
  * which carry document names, customer names and private browsing, and a kind added later would join
  * every payload unnoticed. `editor` is left out for the same reason — a path names a client's
- * repository as readily as it names this one.
+ * repository as readily as it names this one. `calendar` is left out because an invitation's title is
+ * written by whoever sent it, and a summary can give a meeting's time and length without its name. What
+ * stays in is written against something the user owns: their own commit, their own agent session, a
+ * merge request on their own repository.
  */
 export const QUOTABLE_EVIDENCE_KINDS: readonly EvidenceKind[] = [
   'commit',
   'agent-session',
   'merge-request',
   'issue-view',
-  'calendar',
 ];
 
 export type Confidence = 'certain' | 'likely' | 'weak';

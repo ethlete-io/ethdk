@@ -283,6 +283,7 @@ export class SourcesViewComponent {
           formatCalendarRead({
             calendarIds: this.settings.settings().google.calendarIds,
             readAt: this.calendar.lastRun()?.at ?? null,
+            excluded: this.calendar.lastRun()?.excluded ?? 0,
           }) || null
         );
       case 'gitlab':
