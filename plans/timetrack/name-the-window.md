@@ -161,9 +161,60 @@ ones add up to, so it still reconciles with the total above it.
 link exists to hold that name out of every report. The row still counts the minutes, it just has
 nothing to open. `streamDay`'s spec asserts the name is absent from the whole report.
 
-**When the minutes happened is still dropped.** The second reading named two missing things and this
-built one of them. A row is a span total with no clock, so `google-chrome` at 42m still cannot be
-placed in the day. Build that only if a reading with the titles in hand still cannot be judged.
+**When the minutes happened is still dropped**, and the third reading says to leave it dropped. The
+second reading named two missing things and this built one of them. Every row in the reading below
+was judged from its titles alone, so the clock is not what the panel was short of.
+
+### The third reading, on Linux, 2026-09-09, with the titles open
+
+```
+Last 14 days: 4h 30m of 9h 9m focused named no checkout. That is 49%.
+11m gap, 1h 28m unknown.
+
+timetrack          1h 48m  this app          on purpose           1 title
+com.slack.Slack    1h 1m   no work context   on purpose           12 titles
+discord            44m     no checkout       never names one      3 titles
+google-chrome      43m     no checkout       never names one      17 titles
+code               11m     no checkout       names one elsewhere  3 titles
+Alacritty          1m      no checkout       never names one      1 title
+```
+
+**Rung 2 is dead on this evidence.** Not one of the seventeen `google-chrome` titles carries a host
+or a port. Chrome shows the page's `<title>`, and every application on this machine sets one, so
+`localhost:4200 - …` never appears. Rung 2 keys on exactly that string. It has nothing to match.
+
+What the browser titles carry instead is the **product name**, and it names a checkout as well as a
+port would have:
+
+| What the title says                                             | Time | The checkout it means |
+| --------------------------------------------------------------- | ---- | --------------------- |
+| `Components / Sports / Bracket / … · Storybook`, five of them   | 11m  | this repository       |
+| `… · ethlete-io/ethdk@<sha>`, a GitHub commit page, two of them | 8m   | this repository       |
+| `Bracket Challenge: Groups`, `: Knockouts`, `FIFAe Club Series` | 8m   | `fifagg-frontend`     |
+| `@ethlete/agent-rules \| Ethlete SDK`, the documentation site   | 1m   | this repository       |
+| `Overview – Home Assistant`, `Energy – Home Assistant`          | 5m   | no work context       |
+| `Omarchy`, `New Tab`, `Client Devices \| Dream Machine`, GitLab | 4m   | no work context       |
+| `wz-waermepumpe.lan.elros.cc`                                   | 1m   | a private project     |
+| titles too short to read                                        | 7m   | not known             |
+
+Each title is rounded to the minute on its own, so the parts read as a little more than the row. The
+remainder is computed from the exact milliseconds, so the arithmetic under it is right.
+
+**28m of the 43m is nameable work, and a product name is what names it.** So the rung after this one
+is not a port. It is a rule the user teaches: _a title matching this pattern means that checkout_.
+That is a new mechanism and it is not decided here.
+
+**Discord is two things, and the room name says which.** `Open Room #1 | Braune Digital` 23m and
+`Meeting #1 | Braune Digital` 21m against `#divinity-general | Divinity of Thrones` 1m: 43m of the
+44m is the work server. This is the case for a judgement per **title** that this plan left open, now
+backed by numbers rather than by recall.
+
+**Rung 1 is dead a third time.** `Alacritty` is 1m, and its one title is `btop`.
+
+**A private project has a browser side no private link covers.** `wz-waermepumpe.lan.elros.cc` is a
+host on a private project's network, and it is now printed in the panel. The private project link
+holds a checkout **path** out of every report, and a browser window on that project names no
+checkout at all, so the link never reaches it. It is 1m here, and nothing is changed for it yet.
 
 ## The platform seam
 
@@ -217,6 +268,10 @@ window that keeps focus for an hour, and the shell hook covers that case if the 
 matters.
 
 ## Rung 2: the dev server behind a port
+
+**Not built, and the third reading says not to build it.** No browser title on this machine carries
+a host or a port, so the match below never fires. The section is kept because a machine whose
+browser does show an address would still be served by it.
 
 A browser window on `localhost:4200` cannot be named from its origin. It can be named from its
 port: read which process listens on 4200, then read that process's working directory.
