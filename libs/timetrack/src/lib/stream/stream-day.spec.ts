@@ -490,6 +490,7 @@ describe('streamDay', () => {
       engagedMs: 0,
       focusMs: 0,
       unnamedFocus: [],
+      namedApps: [],
       concurrency: 0,
       unattendedMs: 0,
       rebuiltMs: 0,
@@ -1104,5 +1105,41 @@ describe('streamDay, the focus that named no checkout', () => {
     expect(day.rebuiltMs).toBe(20 * MINUTE);
     expect(day.unnamedFocus).toEqual([]);
     expect(day.focusMs).toBe(0);
+  });
+
+  it('names the application whose window held a checkout, and only that one', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 11, to: 20, appId: 'discord', title: 'Discord' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.namedApps).toEqual(['code']);
+  });
+
+  it('names an application the sticky held the checkout for, because the window was still its own', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 5, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 5, to: 10, appId: 'code', title: 'Visual Studio Code' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.namedApps).toEqual(['code']);
+    expect(day.unnamedFocus).toEqual([]);
+  });
+
+  it('names no application on a day no window held a checkout', () => {
+    const day = streamDay({
+      events: focusRun({ from: 0, to: 20, appId: 'discord', title: 'Discord' }),
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.namedApps).toEqual([]);
   });
 });

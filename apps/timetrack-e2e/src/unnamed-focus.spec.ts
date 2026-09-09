@@ -35,7 +35,9 @@ const day = (): CollectedEvent[] => [
 
 const total = (page: Page) => page.locator('[data-unnamed-total]');
 
-const unjudged = (page: Page) => page.locator('[data-unnamed-unjudged]');
+const gap = (page: Page) => page.locator('[data-unnamed-gap]');
+
+const unknown = (page: Page) => page.locator('[data-unnamed-unknown]');
 
 const row = (page: Page, app: string) => page.locator(`[data-app="${app}"]`);
 
@@ -66,9 +68,25 @@ test.describe('the focus that named no checkout', () => {
     await expect(row(page, 'code')).toHaveCount(0);
   });
 
-  test('says how much of it carries no checkout, without calling that time wrong', async ({ page }) => {
-    await expect(unjudged(page)).toContainText('All of it carries no checkout in the title.');
-    await expect(unjudged(page)).toContainText('the split between them is not known yet');
+  test('calls no time a gap when no application that names checkouts lost any', async ({ page }) => {
+    await expect(gap(page)).toContainText('No application that names checkouts lost any of it.');
+    await expect(unknown(page)).toContainText('45m of it is an application that never named a checkout');
+  });
+
+  test('calls it a gap when the application that lost the time names checkouts elsewhere', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [...day(), focus(105, 'code', 'Visual Studio Code'), focus(120, 'foot', 'tom@e2e: ~')],
+    });
+    await page.goto('/sources');
+
+    await expect(row(page, 'code')).toContainText('names one elsewhere');
+    await expect(gap(page)).toContainText('15m of it is a window a checkout should have taken');
+  });
+
+  test('marks an application that never named a checkout as one that never does', async ({ page }) => {
+    await expect(row(page, 'spotify')).toContainText('never names one');
+    await expect(row(page, 'foot')).toContainText('never names one');
   });
 
   test('drops a window that held the focus for less than a rounded minute', async ({ page }) => {
@@ -123,7 +141,7 @@ test.describe('the focus that named no checkout', () => {
     await expect(row(page, 'code')).toContainText('a private project');
     await expect(row(page, 'code')).toContainText('on purpose');
     await expect(row(page, 'code')).toContainText('15m');
-    await expect(unjudged(page)).toContainText('1h 0m of it carries no checkout in the title.');
+    await expect(unknown(page)).toContainText('1h 0m of it is an application that never named a checkout');
   });
 
   test('says no window held the focus, rather than showing an empty list', async ({ page }) => {

@@ -19,13 +19,51 @@ export type UnnamedFocus = {
 /**
  * What one day contributed to a span. `StreamDay` satisfies it, and a span needs nothing else from a day.
  */
-export type UnnamedFocusDay = { focusMs: number; unnamedFocus: readonly UnnamedFocus[] };
+export type UnnamedFocusDay = {
+  focusMs: number;
+  unnamedFocus: readonly UnnamedFocus[];
+  namedApps: readonly string[];
+};
 
-/** The focus of a span, and the part of it no checkout took. */
+/**
+ * What a row's time is, once the cause and the rest of the span are read together.
+ *
+ * `unknown` is not a hedge. An application that never named a checkout is either no work context at
+ * all or one this app cannot read a name for yet, and to call either of them wrong is to report a
+ * number nobody can act on.
+ */
+export type UnnamedFocusVerdict = 'on-purpose' | 'gap' | 'unknown';
+
+/** A row of a span: what a day reported, and what the whole span makes of it. */
+export type UnnamedFocusRow = UnnamedFocus & { verdict: UnnamedFocusVerdict };
+
+/** The focus of a span, and the part of it no checkout took, split by what can be said about it. */
 export type UnnamedFocusSpan = {
   focusMs: number;
   unnamedMs: number;
-  rows: UnnamedFocus[];
+  /** Time an application that names checkouts elsewhere lost. It is the part this plan set out to fix. */
+  gapMs: number;
+  /** Time no cause and no other day can judge. */
+  unknownMs: number;
+  rows: UnnamedFocusRow[];
+};
+
+/** The causes that are the right answer rather than a gap, whatever the rest of the span says. */
+const ON_PURPOSE: readonly UnnamedFocusReason[] = ['private', 'own-window'];
+
+/**
+ * What a row's time is.
+ *
+ * A name two checkouts share is a gap without asking the span: the paths differ, so the window is
+ * nameable, and the day drops it only because a title is all it has to go on.
+ */
+export const verdictFor = (options: { row: UnnamedFocus; namedApps: ReadonlySet<string> }): UnnamedFocusVerdict => {
+  const { row, namedApps } = options;
+
+  if (ON_PURPOSE.includes(row.reason)) return 'on-purpose';
+  if (row.reason === 'ambiguous-name') return 'gap';
+
+  return row.appId && namedApps.has(row.appId) ? 'gap' : 'unknown';
 };
 
 /** How much of a span named no checkout, defect or not. */
@@ -65,11 +103,18 @@ export const mergeUnnamedFocus = (days: readonly (readonly UnnamedFocus[])[]): U
  * next morning's checkout.
  */
 export const unnamedFocusOver = (days: readonly UnnamedFocusDay[]): UnnamedFocusSpan => {
-  const rows = mergeUnnamedFocus(days.map((day) => day.unnamedFocus));
+  const namedApps = new Set(days.flatMap((day) => [...day.namedApps]));
+  const rows = mergeUnnamedFocus(days.map((day) => day.unnamedFocus)).map((row) => ({
+    ...row,
+    verdict: verdictFor({ row, namedApps }),
+  }));
+  const msOf = (verdict: UnnamedFocusVerdict) => unnamedFocusMs(rows.filter((row) => row.verdict === verdict));
 
   return {
     focusMs: days.reduce((sum, day) => sum + day.focusMs, 0),
     unnamedMs: unnamedFocusMs(rows),
+    gapMs: msOf('gap'),
+    unknownMs: msOf('unknown'),
     rows,
   };
 };

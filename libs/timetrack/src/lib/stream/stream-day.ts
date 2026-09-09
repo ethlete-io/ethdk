@@ -161,6 +161,15 @@ export type StreamDay = {
    * only place the day says which applications the folded line is made of.
    */
   unnamedFocus: UnnamedFocus[];
+  /**
+   * The applications whose focused window held a checkout at some point in the day, `app_id` as the
+   * compositor reported it.
+   *
+   * It is what separates an application that lost a name from one that never had one: an editor in
+   * this list held the focus for a stretch that named nothing, and a music player is not in it at all.
+   * Nothing here is a verdict on its own — `unnamedFocusOver` is where the two meet.
+   */
+  namedApps: string[];
   /** Ordered by when each stream started. */
   streams: Stream[];
   /** Every stream's unattended time summed. Outside both `presenceMs` and `engagedMs`. */
@@ -673,6 +682,7 @@ export const streamDay = (options: {
    */
   let windowAppId: string | undefined;
   let unnamedReason: UnnamedFocusReason = 'no-name';
+  const namedApps = new Set<string>();
 
   const unnamedDraftFor = (reason: UnnamedFocusReason) => {
     const found = unnamed.find((draft) => draft.appId === windowAppId && draft.reason === reason);
@@ -734,6 +744,7 @@ export const streamDay = (options: {
     // focus time of every stream sums to presence exactly and the concurrency ratio has one meaning.
     if (next) draftFor(drafts, context).focus.push({ from: sample.at, to: next.at });
     if (next && !holder) unnamedDraftFor(unnamedReason).windows.push({ from: sample.at, to: next.at });
+    if (holder && windowAppId && sample.kind === 'window-focus') namedApps.add(windowAppId);
 
     if (sample.kind === 'agent-session') {
       const cwd = repoRootOf({ path: sample.cwd, roots });
@@ -858,6 +869,7 @@ export const streamDay = (options: {
     concurrency: presenceMs ? engagedMs / presenceMs : 0,
     focusMs,
     unnamedFocus,
+    namedApps: [...namedApps].sort(),
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
     rebuiltMs: windowsMs(rebuilt),
     streams,

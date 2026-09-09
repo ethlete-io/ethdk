@@ -5,6 +5,7 @@ import {
   READABLE_MS,
   UnnamedFocusReason,
   UnnamedFocusSpan,
+  UnnamedFocusVerdict,
   byLocalDay,
   dayKeysThrough,
   formatDurationMs,
@@ -30,13 +31,17 @@ const REASON_LABEL: Record<UnnamedFocusReason, string> = {
   'own-window': 'this app',
 };
 
-/**
- * The causes that are the right answer rather than a defect.
- *
- * A name two checkouts share is not one of them: the paths differ, so the window is nameable, and the
- * day drops it only because a title is all it has to go on.
- */
-const ON_PURPOSE: readonly UnnamedFocusReason[] = ['private', 'own-window'];
+const VERDICT_LABEL: Record<UnnamedFocusVerdict, string> = {
+  'on-purpose': 'on purpose',
+  gap: 'names one elsewhere',
+  unknown: 'never names one',
+};
+
+const VERDICT_COLOR: Record<UnnamedFocusVerdict, string> = {
+  'on-purpose': 'neutral',
+  gap: 'warning',
+  unknown: 'brand',
+};
 
 type Span = keyof typeof SPAN_LABEL;
 
@@ -48,12 +53,11 @@ type FocusRow = {
   app: string;
   duration: string;
   why: string;
-  onPurpose: boolean;
+  standing: string;
+  color: string;
 };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
-
-const isOnPurpose = (reason: UnnamedFocusReason) => ON_PURPOSE.includes(reason);
 
 /**
  * How much of the focused window's time no checkout took, per application, for today and for the last
@@ -73,8 +77,9 @@ const isOnPurpose = (reason: UnnamedFocusReason) => ON_PURPOSE.includes(reason);
       <span class="text-base font-medium">Focus that named no checkout</span>
 
       <p class="text-small text-et-surface-muted">
-        Every minute here is on the Today screen already, folded into the Other applications line. A private project and
-        this app's own window are unnamed on purpose. The rest carries no checkout in the title.
+        Every minute here is on the Today screen already, folded into the Other applications line. An application that
+        names a checkout at another time lost this stretch. One that never names a checkout either holds no work context
+        at all, or holds one this app cannot read yet.
       </p>
 
       @if (failure()) {
@@ -98,7 +103,8 @@ const isOnPurpose = (reason: UnnamedFocusReason) => ON_PURPOSE.includes(reason);
         </div>
 
         <p class="text-small text-et-surface" data-unnamed-total>{{ total() }}</p>
-        <p class="text-small text-et-surface-subtle" data-unnamed-unjudged>{{ unjudged() }}</p>
+        <p class="text-small text-et-surface-subtle" data-unnamed-gap>{{ gap() }}</p>
+        <p class="text-small text-et-surface-subtle" data-unnamed-unknown>{{ unknown() }}</p>
 
         <ul class="flex flex-col gap-1">
           @for (row of rows(); track row.key) {
@@ -106,10 +112,7 @@ const isOnPurpose = (reason: UnnamedFocusReason) => ON_PURPOSE.includes(reason);
               <span class="font-medium">{{ row.app }}</span>
               <span class="tabular-nums">{{ row.duration }}</span>
               <span class="text-et-surface-muted">{{ row.why }}</span>
-
-              @if (row.onPurpose) {
-                <et-badge color="neutral" variant="outline" size="sm">on purpose</et-badge>
-              }
+              <et-badge [color]="row.color" variant="outline" size="sm">{{ row.standing }}</et-badge>
             </li>
           } @empty {
             <li class="text-small text-et-surface-subtle">{{ emptyNote() }}</li>
@@ -177,10 +180,6 @@ export class UnnamedFocusComponent {
 
   private current = computed(() => this.loaded()?.[this.span()] ?? null);
 
-  private unjudgedMs = computed(() =>
-    (this.current()?.rows ?? []).filter((row) => !isOnPurpose(row.reason)).reduce((sum, row) => sum + row.ms, 0),
-  );
-
   protected total = computed(() => {
     const read = this.current();
 
@@ -194,25 +193,29 @@ export class UnnamedFocusComponent {
     )} focused named no checkout. That is ${formatShare({ ms: unnamedMs, ofMs: focusMs })}.`;
   });
 
-  /**
-   * What carries no checkout, without calling it wrong.
-   *
-   * A window a checkout should have taken and an application that is no work context at all both land
-   * in `no-name`, and nothing collected so far tells them apart. Rung 3 of
-   * `plans/timetrack/name-the-window.md` is what splits this line into the two.
-   */
-  protected unjudged = computed(() => {
+  /** The part this plan set out to fix: an application that names checkouts lost this stretch. */
+  protected gap = computed(() => {
     const read = this.current();
 
     if (!read?.focusMs) return '';
+    if (!read.gapMs) return 'No application that names checkouts lost any of it.';
 
-    const ms = this.unjudgedMs();
+    return `${formatDurationMs(read.gapMs)} of it is a window a checkout should have taken: the application named one at another time.`;
+  });
 
-    if (!ms) return 'All of it is unnamed on purpose.';
+  /**
+   * The part nothing can judge yet.
+   *
+   * An application that never named a checkout is either no work context at all or one this app cannot
+   * read a name for, and rungs 1 and 2 of `plans/timetrack/name-the-window.md` are what tell the two
+   * apart. To call it a defect before then reports a number nobody can act on.
+   */
+  protected unknown = computed(() => {
+    const read = this.current();
 
-    const held = ms === read.unnamedMs ? 'All of it' : `${formatDurationMs(ms)} of it`;
+    if (!read?.focusMs || !read.unknownMs) return '';
 
-    return `${held} carries no checkout in the title. A window a checkout should have taken reads the same way as an application that is no work context at all, so the split between them is not known yet.`;
+    return `${formatDurationMs(read.unknownMs)} of it is an application that never named a checkout, so nothing here can say whether it should have.`;
   });
 
   protected rows = computed<FocusRow[]>(() =>
@@ -223,7 +226,8 @@ export class UnnamedFocusComponent {
         app: row.appId ?? 'no application reported',
         duration: formatDurationMs(row.ms),
         why: REASON_LABEL[row.reason],
-        onPurpose: isOnPurpose(row.reason),
+        standing: VERDICT_LABEL[row.verdict],
+        color: VERDICT_COLOR[row.verdict],
       })),
   );
 

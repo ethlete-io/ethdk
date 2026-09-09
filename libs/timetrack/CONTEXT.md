@@ -90,9 +90,19 @@ _Avoid_: window time, active window time, screen time
 
 **Unnamed focus**:
 Focus time no checkout took, per application and per cause. It is the Other applications line split
-by why each application is in it. No cause is a defect on its own: `no-name` holds both a window a
-checkout should have taken and an application that is no work context at all.
+by why each application is in it. A cause is not a verdict: `no-name` holds both a window a checkout
+should have taken and an application that is no work context at all.
 _Avoid_: unattributed focus (spend is unattributed), folded time, orphan time
+
+**Gap**:
+Unnamed focus of an application that named a checkout at another time in the span. The application
+holds work, so the stretch it lost is the defect `plans/timetrack/name-the-window.md` fixes.
+_Avoid_: defect, miss, wrong time
+
+**Unknown focus**:
+Unnamed focus of an application that never named a checkout. It is either no work context at all or
+one no collector can read a name for yet, and the app says so rather than picking.
+_Avoid_: other, unclassified, noise
 
 ### Agents and spend
 

@@ -176,11 +176,26 @@ still names nothing, and that is correct: to read production is not to work on a
 
 ## Rung 3: say why an application has no name
 
-A label per application inside the folded line, as evidence: a terminal with no working directory
-available reads differently from a music player.
+**Built on 2026-09-09**, first, because step 0's number pointed here: 1h 45m of the 2h 32m the panel
+called a defect was chat.
 
-Build it **after** step 0. The label is worth nothing until the number says which applications hold
-the time.
+The evidence is the span itself. `streamDay` reports `namedApps`, the applications whose focused
+window held a checkout at some point in the day, and `unnamedFocusOver` reads a row against the
+union of them over the span:
+
+| The row                                       | Verdict      | What it means                                           |
+| --------------------------------------------- | ------------ | ------------------------------------------------------- |
+| `private`, `own-window`                       | `on-purpose` | The cause settles it; the span is not asked             |
+| `ambiguous-name`                              | `gap`        | The paths differ, so the window is nameable             |
+| `no-name`, and the application named one else | `gap`        | It holds work and lost this stretch                     |
+| `no-name`, and it never named one             | `unknown`    | No work context at all, or a name no collector can read |
+
+`unknown` is the honest answer, not a hedge. Rung 1 and rung 2 are what move a row out of it, and a
+number the user cannot act on is what the panel used to report.
+
+**Still open:** an application the user knows holds no work context stays `unknown` for ever, because
+no rung will ever name a checkout for Spotify. A standing statement from the user is what settles
+it.
 
 ## The model change
 
