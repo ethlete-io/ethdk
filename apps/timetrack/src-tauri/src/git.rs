@@ -2,7 +2,7 @@ use crate::error::{TimetrackError, TimetrackResult};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tauri::{Manager, State};
 
@@ -36,9 +36,15 @@ pub struct GitChanges {
     pub seq: u64,
 }
 
+/// A repository the watch is armed over, and the directories an event in it arrives under.
+struct Watched {
+    repo: PathBuf,
+    roots: Vec<PathBuf>,
+}
+
 struct Inner {
     watcher: Mutex<Option<RecommendedWatcher>>,
-    watched: Arc<Mutex<Vec<PathBuf>>>,
+    watched: Arc<Mutex<Vec<Watched>>>,
     /// The sequence each repository last moved at, and the sequence handed out for it.
     changes: Mutex<(HashMap<String, u64>, u64)>,
 }
@@ -70,17 +76,80 @@ fn is_a_move(relative: &Path) -> bool {
     )
 }
 
-fn moved_repo(watched: &[PathBuf], path: &Path) -> Option<String> {
-    watched.iter().find_map(|repo| {
-        path.strip_prefix(repo.join(".git"))
-            .ok()
-            .filter(|relative| is_a_move(relative))
-            .map(|_| repo.to_string_lossy().into_owned())
-    })
+/// Every watched repository a moved path belongs to.
+///
+/// A linked worktree keeps its branches in the repository it was linked from, so a ref moving in
+/// there belongs to both. Reporting both costs one more scan; reporting the first would lose the
+/// commits of whichever one lost the race.
+fn moved_repos<'a>(watched: &'a [Watched], path: &'a Path) -> impl Iterator<Item = String> + 'a {
+    watched
+        .iter()
+        .filter(move |entry| {
+            entry
+                .roots
+                .iter()
+                .any(|root| path.strip_prefix(root).is_ok_and(is_a_move))
+        })
+        .map(|entry| entry.repo.to_string_lossy().into_owned())
 }
 
-fn is_repo(path: &Path) -> bool {
-    path.join(".git").exists()
+/// Resolves `.` and `..` without reading the filesystem.
+///
+/// An event path is matched against a watch by prefix, which is a text comparison, so a `..` left in
+/// a watch never matches. `canonicalize` would also rewrite symlinks, which the event paths keep.
+fn normalize(path: &Path) -> PathBuf {
+    let mut resolved = PathBuf::new();
+
+    for component in path.components() {
+        match component {
+            Component::ParentDir => {
+                resolved.pop();
+            }
+            Component::CurDir => {}
+            component => resolved.push(component),
+        }
+    }
+
+    resolved
+}
+
+/// Reads the path a git pointer file names, relative to the directory that holds the pointer.
+fn pointed_dir(pointer: &Path, relative_to: &Path, prefix: &str) -> Option<PathBuf> {
+    let content = std::fs::read_to_string(pointer).ok()?;
+    let target = Path::new(content.strip_prefix(prefix)?.trim());
+    let resolved = normalize(&relative_to.join(target));
+
+    resolved.is_dir().then_some(resolved)
+}
+
+/// The directory git keeps a repository's state in, or `None` when the path is not a repository.
+///
+/// A linked worktree and a submodule have a `.git` **file** that names the real directory. Nothing
+/// ever appears under the file, so a watch on `<repo>/.git` reports no move for either of them.
+fn git_dir(repo: &Path) -> Option<PathBuf> {
+    let dot_git = repo.join(".git");
+
+    if dot_git.is_dir() {
+        return Some(dot_git);
+    }
+
+    pointed_dir(&dot_git, repo, "gitdir:")
+}
+
+/// The directories a move arrives under for one repository.
+///
+/// A worktree's `HEAD` moves in its own git directory, but its branches move in the directory that
+/// `commondir` names, so a commit needs the second root.
+fn watch_roots(git_dir: &Path) -> Vec<PathBuf> {
+    let mut roots = vec![git_dir.to_path_buf()];
+
+    if let Some(common) = pointed_dir(&git_dir.join("commondir"), git_dir, "") {
+        if common != *git_dir {
+            roots.push(common);
+        }
+    }
+
+    roots
 }
 
 fn is_skipped(entry: &Path) -> bool {
@@ -110,12 +179,27 @@ fn discover(root: &Path, depth: usize, found: &mut Vec<PathBuf>) {
             continue;
         }
 
-        if is_repo(&path) {
+        if git_dir(&path).is_some() {
             found.push(path);
         } else {
             discover(&path, depth + 1, found);
         }
     }
+}
+
+/// Arms the watch over one root, reporting whether every watch it needs went on.
+///
+/// The directory rather than `HEAD` itself: a checkout writes `HEAD.lock` and renames it over
+/// `HEAD`, which leaves a watch on the file pointing at the replaced inode. The directory sees the
+/// rename. A worktree git directory holds no `refs` of its own, which is not a failure.
+fn arm(watcher: &mut RecommendedWatcher, root: &Path) -> bool {
+    if watcher.watch(root, RecursiveMode::NonRecursive).is_err() {
+        return false;
+    }
+
+    let refs = root.join("refs");
+
+    !refs.is_dir() || watcher.watch(&refs, RecursiveMode::Recursive).is_ok()
 }
 
 impl GitWatcher {
@@ -157,7 +241,7 @@ impl GitWatcher {
             };
 
             for path in &event.paths {
-                if let Some(repo) = moved_repo(&repos, path) {
+                for repo in moved_repos(&repos, path) {
                     source.mark(repo);
                 }
             }
@@ -166,20 +250,20 @@ impl GitWatcher {
             Err(error) => return Some(error.to_string()),
         };
 
-        let armed = repos
-            .iter()
-            .take(MAX_WATCHED_REPOS)
-            .filter(|repo| {
-                let git_dir = repo.join(".git");
+        let mut armed = Vec::new();
 
-                // The `.git` directory itself rather than `HEAD`: a checkout writes `HEAD.lock` and
-                // renames it over `HEAD`, which leaves a watch on the file pointing at the replaced
-                // inode. The directory sees the rename.
-                watcher.watch(&git_dir, RecursiveMode::NonRecursive).is_ok()
-                    && watcher.watch(&git_dir.join("refs"), RecursiveMode::Recursive).is_ok()
-            })
-            .cloned()
-            .collect::<Vec<_>>();
+        for repo in repos.iter().take(MAX_WATCHED_REPOS) {
+            let Some(roots) = git_dir(repo).map(|dir| watch_roots(&dir)) else {
+                continue;
+            };
+
+            if roots.iter().all(|root| arm(&mut watcher, root)) {
+                armed.push(Watched {
+                    repo: repo.clone(),
+                    roots,
+                });
+            }
+        }
 
         let skipped = repos.len().saturating_sub(armed.len());
 
@@ -293,6 +377,22 @@ mod tests {
         path
     }
 
+    /// Links a worktree of `of` the way `git worktree add` does: a `.git` file at the worktree, and
+    /// a directory under the main repository holding its `HEAD` and a relative `commondir`.
+    fn worktree(root: &Path, relative: &str, of: &Path) -> PathBuf {
+        let path = root.join(relative);
+        let name = path.file_name().unwrap().to_string_lossy().into_owned();
+        let git_dir = of.join(".git").join("worktrees").join(&name);
+
+        std::fs::create_dir_all(&git_dir).unwrap();
+        std::fs::create_dir_all(&path).unwrap();
+        std::fs::write(git_dir.join("commondir"), "../..\n").unwrap();
+        std::fs::write(git_dir.join("HEAD"), "ref: refs/heads/e2e\n").unwrap();
+        std::fs::write(path.join(".git"), format!("gitdir: {}\n", git_dir.to_string_lossy())).unwrap();
+
+        path
+    }
+
     fn found_in(root: &Path) -> Vec<String> {
         discover_all(&[root.to_path_buf()])
             .iter()
@@ -366,16 +466,101 @@ mod tests {
         assert!(!is_a_move(Path::new("objects/ab/cdef")));
     }
 
+    fn watching(repos: &[&str]) -> Vec<Watched> {
+        repos
+            .iter()
+            .map(|repo| Watched {
+                repo: PathBuf::from(repo),
+                roots: vec![PathBuf::from(repo).join(".git")],
+            })
+            .collect()
+    }
+
+    fn moved(watched: &[Watched], path: &str) -> Vec<String> {
+        moved_repos(watched, Path::new(path)).collect()
+    }
+
     #[test]
     fn attributes_a_moved_ref_to_the_repository_it_is_in() {
-        let watched = [PathBuf::from("/home/tom/dev/sdk"), PathBuf::from("/home/tom/dev/app")];
+        let watched = watching(&["/home/tom/dev/sdk", "/home/tom/dev/app"]);
 
         assert_eq!(
-            moved_repo(&watched, Path::new("/home/tom/dev/app/.git/refs/heads/next")),
-            Some("/home/tom/dev/app".to_string())
+            moved(&watched, "/home/tom/dev/app/.git/refs/heads/next"),
+            ["/home/tom/dev/app"]
         );
-        assert_eq!(moved_repo(&watched, Path::new("/home/tom/dev/app/.git/index")), None);
-        assert_eq!(moved_repo(&watched, Path::new("/home/tom/dev/other/.git/HEAD")), None);
+        assert!(moved(&watched, "/home/tom/dev/app/.git/index").is_empty());
+        assert!(moved(&watched, "/home/tom/dev/other/.git/HEAD").is_empty());
+    }
+
+    #[test]
+    fn attributes_a_shared_ref_to_the_repository_and_to_its_worktree() {
+        let watched = vec![
+            Watched {
+                repo: PathBuf::from("/home/tom/dev/sdk"),
+                roots: vec![PathBuf::from("/home/tom/dev/sdk/.git")],
+            },
+            Watched {
+                repo: PathBuf::from("/home/tom/dev/sdk-e2e"),
+                roots: vec![
+                    PathBuf::from("/home/tom/dev/sdk/.git/worktrees/sdk-e2e"),
+                    PathBuf::from("/home/tom/dev/sdk/.git"),
+                ],
+            },
+        ];
+
+        assert_eq!(
+            moved(&watched, "/home/tom/dev/sdk/.git/refs/heads/next"),
+            ["/home/tom/dev/sdk", "/home/tom/dev/sdk-e2e"]
+        );
+        assert_eq!(
+            moved(&watched, "/home/tom/dev/sdk/.git/worktrees/sdk-e2e/HEAD"),
+            ["/home/tom/dev/sdk-e2e"]
+        );
+    }
+
+    #[test]
+    fn reads_a_worktree_state_directory_out_of_its_git_file() {
+        let root = temp_root("worktree");
+        let sdk = repo(&root, "sdk");
+        let e2e = worktree(&root, "sdk-e2e", &sdk);
+
+        assert_eq!(git_dir(&sdk), Some(sdk.join(".git")));
+        assert_eq!(git_dir(&e2e), Some(sdk.join(".git/worktrees/sdk-e2e")));
+        assert_eq!(git_dir(&root.join("nothing")), None);
+    }
+
+    #[test]
+    fn watches_a_worktree_head_and_the_branches_it_shares() {
+        let root = temp_root("roots-of");
+        let sdk = repo(&root, "sdk");
+        let e2e = worktree(&root, "sdk-e2e", &sdk);
+
+        assert_eq!(watch_roots(&git_dir(&sdk).unwrap()), [sdk.join(".git")]);
+        assert_eq!(
+            watch_roots(&git_dir(&e2e).unwrap()),
+            [sdk.join(".git/worktrees/sdk-e2e"), sdk.join(".git")]
+        );
+    }
+
+    #[test]
+    fn finds_a_worktree_as_a_repository_of_its_own() {
+        let root = temp_root("worktree-discovery");
+        let sdk = repo(&root, "sdk");
+
+        worktree(&root, "sdk-e2e", &sdk);
+        std::fs::create_dir_all(root.join("stale")).unwrap();
+        std::fs::write(root.join("stale/.git"), "gitdir: /nowhere/at/all\n").unwrap();
+
+        assert_eq!(found_in(&root), ["sdk", "sdk-e2e"]);
+    }
+
+    #[test]
+    fn resolves_a_relative_pointer_without_leaving_a_parent_step_in_the_path() {
+        assert_eq!(
+            normalize(Path::new("/home/tom/dev/sdk/.git/worktrees/e2e/../..")),
+            PathBuf::from("/home/tom/dev/sdk/.git")
+        );
+        assert_eq!(normalize(Path::new("/home/./tom/dev")), PathBuf::from("/home/tom/dev"));
     }
 
     #[test]
