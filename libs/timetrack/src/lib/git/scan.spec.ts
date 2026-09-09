@@ -17,6 +17,22 @@ const LOG = [
   ),
 ].join('\n');
 
+const WORKTREES = (worktree: string) =>
+  [
+    `worktree ${REPO}`,
+    'HEAD 1111111111111111111111111111111111111111',
+    'branch refs/heads/next',
+    '',
+    `worktree ${worktree}`,
+    'HEAD 2222222222222222222222222222222222222222',
+    'branch refs/heads/wt/components-e2e',
+  ].join('\n');
+
+const SHARED_LOG = [
+  ['sha1', '2026-08-11T10:00:00+02:00', 'next', 'feat(repo): Land the thing'].join(GIT_FIELD_SEPARATOR),
+  ['sha2', '2026-08-11T11:00:00+02:00', 'wt/components-e2e', 'test(repo): Add the suite'].join(GIT_FIELD_SEPARATOR),
+].join('\n');
+
 const runner = (outputs: (spec: ProcessSpec) => Partial<{ code: number; stdout: string; stderr: string }>) => {
   const specs: ProcessSpec[] = [];
   const processes: TimetrackProcessRunner = {
@@ -114,7 +130,7 @@ describe('collectGitEvents$', () => {
         spec.cwd === REPO ? byCommand(spec) : { code: 128, stderr: 'fatal: cannot change to /home/tom/dev/moved-away' },
     });
 
-    expect(result?.failures).toHaveLength(2);
+    expect(result?.failures).toHaveLength(3);
     expect(result?.failures[0]?.stderr).toContain('cannot change to');
     expect(result?.events.map((event) => event.kind)).toEqual(['git-checkout', 'git-commit']);
   });
@@ -134,5 +150,78 @@ describe('collectGitEvents$', () => {
 
     expect(result).toEqual({ events: [], failures: [] });
     expect(specs).toEqual([]);
+  });
+  it('reads the commits of a repository and its worktree once, in the checkout that holds each branch', () => {
+    const worktree = `${REPO}-e2e`;
+    const { result, specs } = scan({
+      repos: [
+        { path: REPO, window: WINDOW },
+        { path: worktree, window: WINDOW },
+      ],
+      outputs: (spec) =>
+        spec.args[0] === 'worktree'
+          ? { stdout: WORKTREES(worktree) }
+          : spec.args[0] === 'log'
+            ? { stdout: SHARED_LOG }
+            : { stdout: '' },
+    });
+
+    expect(specs.filter((spec) => spec.args[0] === 'log')).toHaveLength(1);
+    expect(result?.events.map((event) => (event.kind === 'git-commit' ? event.repoPath : null))).toEqual([
+      REPO,
+      worktree,
+    ]);
+  });
+
+  it('reads the shared log in the main checkout, whichever order the roots are configured in', () => {
+    const worktree = `${REPO}-e2e`;
+    const { specs } = scan({
+      repos: [
+        { path: worktree, window: WINDOW },
+        { path: REPO, window: WINDOW },
+      ],
+      outputs: (spec) => (spec.args[0] === 'worktree' ? { stdout: WORKTREES(worktree) } : { stdout: '' }),
+    });
+
+    expect(specs.find((spec) => spec.args[0] === 'log')?.cwd).toBe(REPO);
+  });
+
+  it('reads the reflog of every checkout, because a worktree switches its own head', () => {
+    const worktree = `${REPO}-e2e`;
+    const { specs } = scan({
+      repos: [
+        { path: REPO, window: WINDOW },
+        { path: worktree, window: WINDOW },
+      ],
+      outputs: (spec) => (spec.args[0] === 'worktree' ? { stdout: WORKTREES(worktree) } : { stdout: '' }),
+    });
+
+    expect(specs.filter((spec) => spec.args[0] === 'reflog').map((spec) => spec.cwd)).toEqual([REPO, worktree]);
+  });
+
+  it('keeps a branch no configured checkout holds on the repository the log was read in', () => {
+    const worktree = `${REPO}-e2e`;
+    const { result } = scan({
+      repos: [{ path: REPO, window: WINDOW }],
+      outputs: (spec) =>
+        spec.args[0] === 'worktree'
+          ? { stdout: WORKTREES(worktree) }
+          : spec.args[0] === 'log'
+            ? { stdout: SHARED_LOG }
+            : { stdout: '' },
+    });
+
+    expect(result?.events.map((event) => (event.kind === 'git-commit' ? event.repoPath : null))).toEqual([REPO, REPO]);
+  });
+
+  it('scans a checkout on its own when the worktree list fails', () => {
+    const { result, specs } = scan({
+      repos: REPOS,
+      outputs: (spec) => (spec.args[0] === 'worktree' ? { code: 1, stderr: 'unknown subcommand' } : byCommand(spec)),
+    });
+
+    expect(specs.filter((spec) => spec.args[0] === 'log')).toHaveLength(1);
+    expect(result?.events.map((event) => event.kind)).toEqual(['git-checkout', 'git-commit']);
+    expect(result?.failures.map((failure) => failure.args[0])).toEqual(['worktree']);
   });
 });

@@ -23,11 +23,16 @@ const branchOf = (ref: string) => {
  * `window` is what decides which commits belong to the day, and it is not the same filter `--since` and
  * `--until` apply: those read the commit date, while a commit is timed by its author date here. Rebasing
  * last week's work today gives it a commit date of today, and without this it would be logged today.
+ *
+ * `owners` names the checkout that holds each branch. Every worktree of a repository shares
+ * `refs/heads/`, so one log covers all of them and the ref a commit was reached from is what says which
+ * checkout it belongs to. A branch no checkout holds falls back to `repoPath`.
  */
 export const parseGitLog = (options: {
   repoPath: string;
   output: string;
   window?: GitScanWindow;
+  owners?: ReadonlyMap<string, string>;
 }): GitCommitEvent[] => {
   const events: GitCommitEvent[] = [];
   const seen = new Set<string>();
@@ -45,7 +50,15 @@ export const parseGitLog = (options: {
     if (options.window && (at < options.window.from || at > options.window.to)) continue;
 
     seen.add(sha);
-    events.push({ at, source: 'git', kind: 'git-commit', repoPath: options.repoPath, branch, sha, subject });
+    events.push({
+      at,
+      source: 'git',
+      kind: 'git-commit',
+      repoPath: options.owners?.get(branch) ?? options.repoPath,
+      branch,
+      sha,
+      subject,
+    });
   }
 
   return events.sort((a, b) => a.at.getTime() - b.at.getTime());

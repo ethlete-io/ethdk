@@ -1,9 +1,10 @@
-import { Observable, concatMap, forkJoin, from, map, of, reduce } from 'rxjs';
+import { Observable, concatMap, forkJoin, from, map, of, toArray } from 'rxjs';
 import { CollectedEvent } from '../model/event';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { GIT_LOG_FORMAT, GIT_REFLOG_FORMAT, GitScanWindow } from './format';
 import { parseGitLog } from './log';
 import { parseGitReflog } from './reflog';
+import { gitWorktreeArgs, parseGitWorktrees } from './worktree';
 
 export type GitRepoScan = {
   /** The repository's working-tree root. */
@@ -69,25 +70,104 @@ const failureOf = (options: { repoPath: string; run: GitRun }): GitScanFailure |
         stderr: options.run.result.stderr,
       };
 
-const scanOf = (options: { repo: GitRepoScan; reflog: GitRun; log: GitRun }): GitScanResult => {
-  const { repo, reflog, log } = options;
-  const events: CollectedEvent[] = [];
+/** A trailing separator is the same directory, and git never prints one. */
+const trimmedPath = (path: string) => path.replace(/\/+$/, '') || path;
 
-  if (reflog.result.code === 0) {
-    events.push(...parseGitReflog({ repoPath: repo.path, output: reflog.result.stdout, window: repo.window }));
+type RepoProbe = { repo: GitRepoScan; reflog: GitRun; worktrees: GitRun };
+
+/**
+ * Every checkout of a repository shares one object database and one set of branches, so the commits
+ * are read once per group and the reflogs once per checkout. A checkout whose `git worktree list`
+ * failed is a group of its own, which is what the scan did before it read the list at all.
+ */
+type RepoGroup = { store: string; scanner: RepoProbe; members: RepoProbe[] };
+
+const worktreesOf = (probe: RepoProbe) =>
+  probe.worktrees.result.code === 0 ? parseGitWorktrees(probe.worktrees.result.stdout) : [];
+
+const storeOf = (probe: RepoProbe) => trimmedPath(worktreesOf(probe)[0]?.path ?? probe.repo.path);
+
+const groupsOf = (probes: RepoProbe[]): RepoGroup[] => {
+  const groups = new Map<string, RepoGroup>();
+
+  for (const probe of probes) {
+    const store = storeOf(probe);
+    const group = groups.get(store);
+
+    if (!group) {
+      groups.set(store, { store, scanner: probe, members: [probe] });
+      continue;
+    }
+
+    group.members.push(probe);
+
+    if (trimmedPath(probe.repo.path) === store) group.scanner = probe;
   }
 
-  if (log.result.code === 0) {
-    events.push(...parseGitLog({ repoPath: repo.path, output: log.result.stdout, window: repo.window }));
+  return [...groups.values()];
+};
+
+/**
+ * Which configured checkout holds each branch. A branch checked out in a worktree the user never
+ * configured is left out, so its commits stay on the checkout the log was read from rather than
+ * opening a row for a repository nobody asked about.
+ */
+const ownersOf = (group: RepoGroup): ReadonlyMap<string, string> => {
+  const configured = new Map(group.members.map((member) => [trimmedPath(member.repo.path), member.repo.path]));
+  const owners = new Map<string, string>();
+
+  for (const worktree of worktreesOf(group.scanner)) {
+    const owner = worktree.branch ? configured.get(trimmedPath(worktree.path)) : undefined;
+
+    if (worktree.branch && owner) owners.set(worktree.branch, owner);
   }
+
+  return owners;
+};
+
+const probeOf = (options: { processes: TimetrackProcessRunner; repo: GitRepoScan }): Observable<RepoProbe> => {
+  const { processes, repo } = options;
+
+  return forkJoin({
+    reflog: run$({ processes, spec: gitSpec({ repoPath: repo.path, args: gitReflogArgs() }) }),
+    worktrees: run$({ processes, spec: gitSpec({ repoPath: repo.path, args: gitWorktreeArgs() }) }),
+  }).pipe(map(({ reflog, worktrees }): RepoProbe => ({ repo, reflog, worktrees })));
+};
+
+const probeScanOf = (probe: RepoProbe): GitScanResult => ({
+  events:
+    probe.reflog.result.code === 0
+      ? parseGitReflog({ repoPath: probe.repo.path, output: probe.reflog.result.stdout, window: probe.repo.window })
+      : [],
+  failures: [
+    failureOf({ repoPath: probe.repo.path, run: probe.reflog }),
+    failureOf({ repoPath: probe.repo.path, run: probe.worktrees }),
+  ].filter((failure): failure is GitScanFailure => !!failure),
+});
+
+const logScanOf = (options: { group: RepoGroup; log: GitRun }): GitScanResult => {
+  const { group, log } = options;
+  const repo = group.scanner.repo;
+  const failure = failureOf({ repoPath: repo.path, run: log });
 
   return {
-    events,
-    failures: [failureOf({ repoPath: repo.path, run: reflog }), failureOf({ repoPath: repo.path, run: log })].filter(
-      (failure): failure is GitScanFailure => !!failure,
-    ),
+    events:
+      log.result.code === 0
+        ? parseGitLog({
+            repoPath: repo.path,
+            output: log.result.stdout,
+            window: repo.window,
+            owners: ownersOf(group),
+          })
+        : [],
+    failures: failure ? [failure] : [],
   };
 };
+
+const merged = (scans: GitScanResult[]): GitScanResult => ({
+  events: scans.flatMap((scan) => scan.events).sort((a, b) => a.at.getTime() - b.at.getTime()),
+  failures: scans.flatMap((scan) => scan.failures),
+});
 
 /**
  * Reads a day out of the configured repositories: the branch switches from each one's reflog and the
@@ -104,19 +184,19 @@ export const collectGitEvents$ = (options: {
   if (options.repos.length === 0) return of({ events: [], failures: [] });
 
   return from(options.repos).pipe(
-    concatMap((repo) =>
-      forkJoin({
-        reflog: run$({ processes: options.processes, spec: gitSpec({ repoPath: repo.path, args: gitReflogArgs() }) }),
-        log: run$({ processes: options.processes, spec: gitSpec({ repoPath: repo.path, args: gitLogArgs(repo) }) }),
-      }).pipe(map(({ reflog, log }) => scanOf({ repo, reflog, log }))),
+    concatMap((repo) => probeOf({ processes: options.processes, repo })),
+    toArray(),
+    concatMap((probes) =>
+      from(groupsOf(probes)).pipe(
+        concatMap((group) =>
+          run$({
+            processes: options.processes,
+            spec: gitSpec({ repoPath: group.scanner.repo.path, args: gitLogArgs(group.scanner.repo) }),
+          }).pipe(map((log) => logScanOf({ group, log }))),
+        ),
+        toArray(),
+        map((logs) => merged([...probes.map(probeScanOf), ...logs])),
+      ),
     ),
-    reduce(
-      (all: GitScanResult, scan) => ({
-        events: [...all.events, ...scan.events],
-        failures: [...all.failures, ...scan.failures],
-      }),
-      { events: [], failures: [] },
-    ),
-    map((all) => ({ ...all, events: all.events.sort((a, b) => a.at.getTime() - b.at.getTime()) })),
   );
 };

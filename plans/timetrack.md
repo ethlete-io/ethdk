@@ -441,6 +441,34 @@ What building it settled:
 - Rebases and stashes mark context switches but have no event kind in the model, so they are not
   emitted. Revisit only if real days show blocks that nothing else explains.
 
+#### A worktree is a checkout, not a second repository - fixed 2026-09-09
+
+`git log --branches` reads the branches of the object store, and every linked worktree shares that
+store. Run once per configured root, it reported the same commits under each of them: on 2026-09-09
+the whole day's work on `next` in `/Users/tom/dev/ethlete-sdk` was also booked on
+`/Users/tom/dev/ethlete-sdk-e2e`, a worktree untouched since 2026-09-05, as 46m of engaged time that
+nobody spent. `dedupeKeyOf` did not drop the repeat, because the key carries `repoPath` and the two
+paths differ.
+
+Attributing by cwd was the wrong seam. **The ref a commit was reached from is what names its
+checkout**, so the scan now:
+
+- runs `git worktree list --porcelain` per root. The main worktree is always first, from any checkout,
+  so its path is the identity of the group that shares one object store.
+- reads the commit log **once per group**, in the main worktree when that root is configured. The
+  reflog stays per root, because a worktree switches its own `HEAD`.
+- names each commit by the configured checkout that holds the branch `%S` reports. A branch no
+  configured checkout holds keeps the root the log was read in, so a worktree the user never added
+  does not open a row of its own.
+
+Restricting each root to its own `HEAD` was rejected: a worktree branched from today's `next` shares
+today's commits as ancestors, so per-root queries double-count exactly when an agent worktree is
+newest. Scanning one root per store was rejected too - it drops the worktree's name from work really
+done there.
+
+**The rows already stored are not repaired.** The duplicate is one event per commit per extra
+checkout, and it stays in the day until something rewrites it.
+
 ### Coding-agent session logs (Rust or TS, phase 1)
 
 **The core half is built** - `libs/timetrack/src/lib/agent-session/`: `AgentSessionLogParser` is the
