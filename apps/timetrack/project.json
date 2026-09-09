@@ -56,6 +56,15 @@
         }
       }
     },
+    "format-rust": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["{projectRoot}/src-tauri/**/*"],
+      "options": {
+        "cwd": "apps/timetrack/src-tauri",
+        "command": "cargo fmt --check"
+      }
+    },
     "test-rust": {
       "executor": "nx:run-commands",
       "cache": true,

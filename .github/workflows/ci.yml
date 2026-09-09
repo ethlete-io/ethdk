@@ -173,6 +173,10 @@ jobs:
         with:
           nx-cache-key: rust
 
+      # Before the build dependencies: rustfmt needs no toolchain beyond the one the image ships,
+      # so a badly formatted crate fails the job in seconds rather than after a cargo build.
+      - run: yarn nx run timetrack-app:format-rust
+
       - name: Install the Tauri Linux build dependencies
         run: |
           sudo apt-get update
