@@ -10,6 +10,7 @@ This directory holds the per-feature plans that came after it.
 | [`time-and-token-spend.md`](./time-and-token-spend.md) | The model: concurrent work streams, and the token spend collected per stream.           |
 | [`vertical-slices.md`](./vertical-slices.md)           | Where the v2 core lives, and the slices that deliver it. Read this second.              |
 | [`e2e-strategy.md`](./e2e-strategy.md)                 | How every flow is proven: the fake backend, the seed, the clock, and what stays manual. |
+| [`name-the-window.md`](./name-the-window.md)           | How a terminal and a dev-server tab get named. Hardens slice 1; it is not a slice.      |
 
 ## How a plan here relates to the main plan
 

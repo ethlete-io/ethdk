@@ -122,13 +122,15 @@ and the old screen keeps using them.
 window title names a repository, else the one global sticky checkout inside `repoStickinessMs`,
 else the Other applications line. One window has focus, so one stream gets it.
 
-**Known weak, and deliberately not fixed in slice 1.** `repoStickinessMs` is 5 minutes, and a
-window title of `localhost:4200 — Mozilla Firefox` names no repository. So 30 minutes of browser
-testing gives 5 minutes to the checkout and 25 to Other applications. Two fixes were considered and
-both were held back: raise the stickiness, or let a running agent session hold the checkout sticky.
-Each attaches unfocused time to a checkout on a guess, and slice 1's claim is that exactly one
-thing can be wrong with a line. Let the exit test show it on a real day, then choose. The running
-agent is the likelier answer, because it is evidence and a timer is not.
+**Known weak, and deliberately not fixed in slice 1. Answered on 2026-09-09 by
+[`name-the-window.md`](./name-the-window.md), which replaces the rest of this paragraph.**
+`repoStickinessMs` is 5 minutes, and a window title of `localhost:4200 — Mozilla Firefox` names no
+repository, so a terminal and a dev-server tab both fall through to the Other applications line.
+The two fixes held back here — raise the stickiness, or let a running agent session hold the
+checkout sticky — are both guesses, and that plan takes neither. It reads the working directory of
+the focused window's process, and the process that listens on the port a title names. It also
+measures the unnamed time first, because no measurement of it exists. The 30 minutes against 5 and
+25 above is an illustration, not an observation.
 
 **A stream nobody ever focused** still books its time — the locked decision says it must — and its
 line carries `agent only, never focused` as evidence. That label is what makes the exit test's
