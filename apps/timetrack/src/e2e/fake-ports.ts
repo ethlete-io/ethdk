@@ -20,11 +20,14 @@ import {
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_SEED_KEY,
   createFakeWorld,
+  glabNotInstalledMessage,
+  isGlabSpec,
   parseWorldSeed,
   respond,
   runFakeGit,
+  runFakeGlab,
 } from '@ethlete/timetrack/testing';
-import { EMPTY, Observable, of } from 'rxjs';
+import { EMPTY, Observable, of, throwError } from 'rxjs';
 import { HostPorts } from '../host/ports';
 
 const ok = <T>(value: T): Observable<T> => of(value);
@@ -157,7 +160,21 @@ export const createFakePorts = (): HostPorts => {
 
         return ok(rows.length);
       },
-      bySource$: () => ok([]),
+      bySource$: () =>
+        ok(
+          [...new Set(events.map((event) => event.source))].map((source) => {
+            const held = events.filter((event) => event.source === source);
+
+            return {
+              source,
+              count: held.length,
+              latestAt: held.reduce<Date | null>(
+                (newest, event) => (!newest || event.at > newest ? event.at : newest),
+                null,
+              ),
+            };
+          }),
+        ),
       cursors$: (pass) => ok([...(cursorsByPass.get(pass)?.values() ?? [])]),
       compactedThrough$: () => ok(null),
       setCompactedThrough$: () => done(),
@@ -248,6 +265,12 @@ export const createFakePorts = (): HostPorts => {
 
     processes: {
       run$: (spec: ProcessSpec) => {
+        if (isGlabSpec(spec)) {
+          return world.glab.installed
+            ? ok(runFakeGlab({ backend, spec, state: world.glab }))
+            : throwError(() => new Error(glabNotInstalledMessage()));
+        }
+
         if (isReasoningSpec(spec)) reasoningRuns += 1;
 
         const stdout = isReasoningSpec(spec)

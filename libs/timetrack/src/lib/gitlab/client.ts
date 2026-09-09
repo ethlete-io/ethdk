@@ -5,10 +5,9 @@ import { TimetrackRequestMethod, TimetrackResponse, TimetrackTransport } from '.
 /**
  * A personal access token for the user's own GitLab, self-hosted or not.
  *
- * `api` is what the app asks for, because repairing a branch and starting one both write merge
- * requests. Collection alone needs **both** `read_api` and `read_user`: `/events` is documented as
- * `read_user` or `api`, and `read_api` does not include it. The token is a keychain entry, never part
- * of the settings document.
+ * `api` is what the app asks for, and the only thing it is used for now: repairing a branch and
+ * starting one both write merge requests. Collection needs no token at all — it reads through `glab`,
+ * which holds its own credential. The token is a keychain entry, never part of the settings document.
  */
 export type GitLabCredentials = {
   host: string;
@@ -41,20 +40,11 @@ const withQuery = (url: string, query: GitLabQuery | undefined) => {
     : `${url}?${params.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`).join('&')}`;
 };
 
-/**
- * The scope GitLab documents for a path, so a 403 names the one that is missing.
- *
- * `/events` is the exception the whole distinction exists for: it is documented as `read_user` or
- * `api`, and `read_api` does not cover it. A token made from the `read_api` instruction this app used
- * to give therefore reads every merge request and refuses the activity feed.
- */
-const scopeFor = (path: string) => (path === '/events' ? 'read_user' : 'read_api');
-
-const messageFor = (options: { status: number; describe: string; path: string }) => {
-  const { status, describe, path } = options;
+const messageFor = (options: { status: number; describe: string }) => {
+  const { status, describe } = options;
 
   if (status === 401) return `GitLab rejected the access token for ${describe}.`;
-  if (status === 403) return `The token may not read ${describe}. That needs the \`${scopeFor(path)}\` scope.`;
+  if (status === 403) return `The token may not write ${describe}. That needs the \`api\` scope.`;
   if (status === 404) return `GitLab has no ${describe}, or the token cannot see it.`;
   if (status === 429) return `GitLab rate-limited the request for ${describe}.`;
 
@@ -98,7 +88,7 @@ export const gitlabRequest$ = <T>(options: {
           throw new GitLabRequestError({
             status: response.status,
             describe,
-            message: messageFor({ status: response.status, describe, path }),
+            message: messageFor({ status: response.status, describe }),
           });
         }
 

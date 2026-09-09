@@ -18,6 +18,10 @@ pub enum TimetrackError {
     Notification(#[from] tauri_plugin_notification::Error),
     #[error("{0}")]
     Rejected(String),
+    /// The webview tells a missing binary apart from every other failure by this exact prefix, so a
+    /// source can report "not installed" rather than an OS error nobody can act on.
+    #[error("not installed: {0}")]
+    NotInstalled(String),
     #[error("the database lock was poisoned, so the app can no longer trust it; restart")]
     Poisoned,
 }

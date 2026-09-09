@@ -4,10 +4,11 @@ use std::process::Stdio;
 use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 
-/// The only binaries the webview may ask the host to spawn. `git` drives the reconcile pass and the
-/// two agent CLIs answer the reasoning prompts; nothing else in the plan needs a process, and an
+/// The only binaries the webview may ask the host to spawn. `git` drives the reconcile pass, the two
+/// agent CLIs answer the reasoning prompts, and `glab` and `gh` read the user's own merge request
+/// activity under a login this app never sees; nothing else in the plan needs a process, and an
 /// open `run` command would turn any injected script in the webview into arbitrary code execution.
-const ALLOWED_COMMANDS: [&str; 3] = ["git", "claude", "codex"];
+const ALLOWED_COMMANDS: [&str; 5] = ["git", "claude", "codex", "glab", "gh"];
 
 const DEFAULT_TIMEOUT_MS: u64 = 30_000;
 
@@ -49,7 +50,10 @@ pub async fn run_process(spec: HostProcessSpec) -> TimetrackResult<HostProcessRe
         command.current_dir(cwd);
     }
 
-    let mut child = command.spawn()?;
+    let mut child = command.spawn().map_err(|error| match error.kind() {
+        std::io::ErrorKind::NotFound => TimetrackError::NotInstalled(spec.command.clone()),
+        _ => TimetrackError::Io(error),
+    })?;
     let pipe = child.stdin.take();
     let input = spec.stdin.clone();
 

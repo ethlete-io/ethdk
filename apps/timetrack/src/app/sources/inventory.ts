@@ -1,4 +1,4 @@
-import { CollectedEventSource, TimetrackCredentialStatus } from '@ethlete/timetrack';
+import { CollectedEventSource, ForgeCli, TimetrackCredentialStatus } from '@ethlete/timetrack';
 
 /**
  * Whether a source is producing evidence right now.
@@ -31,6 +31,14 @@ export type EvidenceSource = {
    * needing an edit here.
    */
   credential?: keyof TimetrackCredentialStatus;
+  /**
+   * The CLI whose own login this source reads through, instead of a credential this app stores.
+   *
+   * It replaces `credential` rather than joining it: there is no keychain entry to look at, so the row
+   * has to ask the CLI whether it is installed and whether it is logged in, which are two separate
+   * repairs and must not read as one.
+   */
+  login?: ForgeCli;
   /** What the source is still waiting on. Not shown once it has everything it needs. */
   detail?: string;
   /** The collector whose run this row reports. Focus and presence share one drain, so both name it. */
@@ -137,11 +145,10 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     reads: 'Your own push, comment, approval and merge events, and the branch of each merge request they name.',
     stores: 'That you acted on a merge request, when, and which branch it is on. No comment text.',
     state: 'collecting',
-    credential: 'gitlab',
+    login: 'glab',
     collector: 'gitlab',
     eventSource: 'gitlab',
-    detail:
-      'Waiting on an instance and a personal access token with `api`, or `read_api` and `read_user` to only collect.',
+    detail: 'Waiting on an instance in Settings, and on `glab` being installed and logged in to it.',
   },
   {
     id: 'vscode',

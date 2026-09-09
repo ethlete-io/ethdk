@@ -2,11 +2,8 @@ import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { MergeRequestActivityEvent } from '../model/event';
 import { dedupeKeyOf } from '../store/dedupe';
-import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
-import { GitLabCredentials } from './client';
+import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { GitLabCollection, collectGitLabEvents$ } from './collect';
-
-const CREDENTIALS: GitLabCredentials = { host: 'git.example.com', token: 'glpat-secret' };
 
 const NOTE = {
   id: 9002,
@@ -26,45 +23,51 @@ const MERGE_REQUEST = {
   references: { full: 'braune-digital/app!412' },
 };
 
-const stubTransport = (options: { events: unknown[]; mergeRequest?: unknown; mergeRequestStatus?: number }) => {
-  const requests: TimetrackRequest[] = [];
-  const transport: TimetrackTransport = {
-    request$: vi.fn((request: TimetrackRequest) => {
-      requests.push(request);
+const endpointOf = (spec: ProcessSpec) => spec.args.at(-1) ?? '';
 
-      if (request.url.includes('/merge_requests/')) {
-        return of({
-          status: options.mergeRequestStatus ?? 200,
-          headers: {},
-          body: options.mergeRequest ?? MERGE_REQUEST,
-        }) as never;
+const stubRunner = (options: { events: unknown[]; mergeRequest?: unknown; mergeRequestRefused?: boolean }) => {
+  const specs: ProcessSpec[] = [];
+  let page = 0;
+  const runner: TimetrackProcessRunner = {
+    run$: vi.fn((spec: ProcessSpec) => {
+      specs.push(spec);
+
+      if (endpointOf(spec).includes('/merge_requests/')) {
+        return options.mergeRequestRefused
+          ? of({ code: 1, stdout: '{"message":"404 Not Found"}', stderr: 'glab: 404 Not Found (HTTP 404)' })
+          : of({ code: 0, stdout: JSON.stringify(options.mergeRequest ?? MERGE_REQUEST), stderr: '' });
       }
 
-      return of({ status: 200, headers: { 'x-next-page': '' }, body: options.events }) as never;
+      page += 1;
+
+      return of({ code: 0, stdout: JSON.stringify(page === 1 ? options.events : []), stderr: '' });
     }),
   };
 
-  return { transport, requests };
+  return { runner, specs };
 };
 
-const collect = (transport: TimetrackTransport, options: { maxMergeRequestLookups?: number } = {}) => {
+const collect = (runner: TimetrackProcessRunner, options: { maxMergeRequestLookups?: number } = {}) => {
   const seen = vi.fn();
 
   collectGitLabEvents$({
-    transport,
-    credentials: CREDENTIALS,
+    runner,
+    hostname: 'git.example.com',
     from: new Date(2026, 7, 11, 0, 0),
     to: new Date(2026, 7, 11, 23, 59, 59),
     maxMergeRequestLookups: options.maxMergeRequestLookups,
+    paging: { pageSize: 1 },
   }).subscribe(seen);
 
   return (seen.mock.calls[0]?.[0] ?? { events: [], failures: [] }) as GitLabCollection;
 };
 
+const lookupsIn = (specs: ProcessSpec[]) => specs.filter((spec) => endpointOf(spec).includes('/merge_requests/'));
+
 describe('collectGitLabEvents$', () => {
   it('gives a note event the branch its merge request is on', () => {
-    const { transport } = stubTransport({ events: [NOTE] });
-    const [event] = collect(transport).events as MergeRequestActivityEvent[];
+    const { runner } = stubRunner({ events: [NOTE] });
+    const [event] = collect(runner).events as MergeRequestActivityEvent[];
 
     expect(event).toMatchObject({
       source: 'gitlab',
@@ -78,15 +81,15 @@ describe('collectGitLabEvents$', () => {
   });
 
   it('reads one merge request however many events were left on it', () => {
-    const { transport, requests } = stubTransport({ events: [NOTE, { ...NOTE, id: 9003 }] });
-    const collection = collect(transport);
+    const { runner, specs } = stubRunner({ events: [NOTE, { ...NOTE, id: 9003 }] });
+    const collection = collect(runner);
 
     expect(collection.events).toHaveLength(2);
-    expect(requests.filter((request) => request.url.includes('/merge_requests/'))).toHaveLength(1);
+    expect(lookupsIn(specs)).toHaveLength(1);
   });
 
   it('never looks up a push, which already said which branch it moved', () => {
-    const { transport, requests } = stubTransport({
+    const { runner, specs } = stubRunner({
       events: [
         {
           id: 9004,
@@ -99,15 +102,15 @@ describe('collectGitLabEvents$', () => {
         },
       ],
     });
-    const collection = collect(transport);
+    const collection = collect(runner);
 
-    expect(requests.filter((request) => request.url.includes('/merge_requests/'))).toEqual([]);
+    expect(lookupsIn(specs)).toEqual([]);
     expect((collection.events[0] as MergeRequestActivityEvent).branch).toBe('feat/FIP-2177-user-management');
   });
 
-  it('keeps an event whose merge request the token cannot read, and reports why', () => {
-    const { transport } = stubTransport({ events: [NOTE], mergeRequestStatus: 404 });
-    const collection = collect(transport);
+  it('keeps an event whose merge request the login cannot read, and reports why', () => {
+    const { runner } = stubRunner({ events: [NOTE], mergeRequestRefused: true });
+    const collection = collect(runner);
 
     expect(collection.events).toHaveLength(1);
     expect((collection.events[0] as MergeRequestActivityEvent).branch).toBeUndefined();
@@ -115,30 +118,29 @@ describe('collectGitLabEvents$', () => {
   });
 
   it('drops activity that was about no merge request at all', () => {
-    const { transport } = stubTransport({
+    const { runner } = stubRunner({
       events: [
         { id: 1, created_at: '2026-08-11T09:00:00.000+02:00', action_name: 'joined', project_id: 42 },
         { ...NOTE, note: { noteable_type: 'Issue', noteable_iid: 7 } },
       ],
     });
 
-    expect(collect(transport).events).toEqual([]);
+    expect(collect(runner).events).toEqual([]);
   });
 
   it('reports the merge requests a run did not read rather than dropping them silently', () => {
-    const { transport } = stubTransport({
+    const { runner } = stubRunner({
       events: [NOTE, { ...NOTE, id: 9005, note: { noteable_type: 'MergeRequest', noteable_iid: 413 } }],
     });
-    const collection = collect(transport, { maxMergeRequestLookups: 1 });
+    const collection = collect(runner, { maxMergeRequestLookups: 1 });
 
     expect(collection.events).toHaveLength(2);
     expect(collection.failures[0]).toContain('1 more merge request');
   });
 
   it('keys an event by GitLab’s own id, so an overlapping run appends nothing twice', () => {
-    const { transport } = stubTransport({ events: [NOTE] });
-    const [event] = collect(transport).events;
+    const [event] = collect(stubRunner({ events: [NOTE] }).runner).events;
 
-    expect(dedupeKeyOf(event!)).toBe(dedupeKeyOf(collect(stubTransport({ events: [NOTE] }).transport).events[0]!));
+    expect(dedupeKeyOf(event!)).toBe(dedupeKeyOf(collect(stubRunner({ events: [NOTE] }).runner).events[0]!));
   });
 });

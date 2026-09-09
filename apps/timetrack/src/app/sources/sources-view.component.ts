@@ -1,7 +1,7 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, BadgeVariant } from '@ethlete/components';
-import { formatDurationMs } from '@ethlete/timetrack';
+import { formatDurationMs, forgeHostname, forgeLoginFor } from '@ethlete/timetrack';
 import { catchError, of, switchMap } from 'rxjs';
 import {
   injectAgentSessionCollector,
@@ -258,7 +258,8 @@ export class SourcesViewComponent {
 
       return {
         source,
-        detail: state === 'ready' || state === 'collecting' ? null : (source.detail ?? null),
+        detail:
+          state === 'ready' || state === 'collecting' ? null : (this.loginDetailOf(source) ?? source.detail ?? null),
         label: paused ? PAUSED_LABEL : STATE_LABEL[state],
         color: paused ? 'warning' : STATE_COLOR[state],
         variant: STATE_VARIANT[state],
@@ -286,11 +287,36 @@ export class SourcesViewComponent {
    * that nothing is watching.
    */
   private stateOf(source: EvidenceSource): EvidenceSourceState {
+    if (source.login) return this.loginDetailOf(source) ? 'configured' : source.state;
+
     if (source.credential) return this.settings.credentials()[source.credential] ? source.state : 'configured';
 
     if (source.state === 'collecting' && this.hostStatusKindOf(source) === 'none') return 'not-running';
 
     return source.state;
+  }
+
+  /**
+   * Why a shell-out source is not reading yet, or `null` when it is.
+   *
+   * The three causes are kept apart on purpose. A shell-out has no token in the keychain to go stale,
+   * so the two ways it can go quiet — the binary leaving the `PATH`, and the login expiring — would
+   * otherwise both read as "not set up", and neither would say which repair to make.
+   */
+  private loginDetailOf(source: EvidenceSource) {
+    if (source.login !== 'glab') return null;
+
+    const { host } = this.settings.settings().gitlab;
+
+    if (!host) return 'Waiting on a GitLab instance in Settings.';
+
+    const auth = this.gitlab.auth();
+
+    if (!auth) return null;
+    if (auth.state === 'not-installed') return 'Waiting on `glab`, which is not installed.';
+    if (!forgeLoginFor(auth, host)) return `Waiting on \`glab auth login --hostname ${forgeHostname(host)}\`.`;
+
+    return null;
   }
 
   /** What the host says is watching for this source, or `null` for a source the host has no status for. */

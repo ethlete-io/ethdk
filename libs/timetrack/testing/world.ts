@@ -1,4 +1,5 @@
 import { CollectedEvent, DEFAULT_TIMETRACK_SETTINGS, TimetrackSettings } from '@ethlete/timetrack';
+import { FakeGlabState } from './backend/glab';
 import {
   FakeBackend,
   FakeFault,
@@ -61,6 +62,8 @@ export type TimetrackWorldSeed = {
   jira?: Partial<FakeJiraState>;
   tempo?: Partial<FakeTempoState>;
   gitlab?: Partial<FakeGitLabState>;
+  /** What the `glab` binary is on the seeded machine. Installed and logged in by default. */
+  glab?: Partial<FakeGlabState>;
   git?: Partial<FakeGitState>;
   windowSource?: Partial<FakeWindowSourceStatus>;
   faults?: FakeFault[];
@@ -68,6 +71,7 @@ export type TimetrackWorldSeed = {
 
 export type FakeWorld = {
   events: CollectedEvent[];
+  glab: FakeGlabState;
   settings: TimetrackSettings;
   agentLogs: FakeAgentLog[];
   codexLogs: FakeAgentLog[];
@@ -169,6 +173,11 @@ export const defaultEvents = (): CollectedEvent[] => [
   { at: e2eAt(12, 0), source: 'idle', kind: 'idle-start' },
 ];
 
+const defaultGlab = (): FakeGlabState => ({
+  installed: true,
+  logins: [{ host: 'gitlab.example.com', login: 'e2e' }],
+});
+
 export const defaultSettings = (): TimetrackSettings => ({
   ...DEFAULT_TIMETRACK_SETTINGS,
   jira: { host: E2E_JIRA_HOST, email: 'e2e@example.com' },
@@ -239,6 +248,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   agentLogs: seed.agentLogs ?? [],
   codexLogs: seed.codexLogs ?? [],
   windowSource: { kind: 'none', detail: null, capabilities: [], ...seed.windowSource },
+  glab: { ...defaultGlab(), ...seed.glab },
   backend: {
     jira: { ...defaultJira(), ...seed.jira },
     tempo: { ...defaultTempo(), ...seed.tempo },

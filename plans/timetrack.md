@@ -1055,6 +1055,30 @@ Not taken: reading the local checkout with `gh pr status` or `glab mr list`. An 
 answers "what did you touch today"; a per-checkout query answers "what is open", which is not a
 timetrack question.
 
+**Built on 2026-09-10: the GitLab half.** `libs/timetrack/src/lib/forge/` is the shared CLI transport —
+`forgeApi$`, `forgeApiPaged$`, `probeForgeAuth$`, `forgeHostname` — and `events.ts` and the by-iid read
+in `merge-requests.ts` now run through it. The collector holds no credential; it probes `glab auth
+status` on every run and reads only when a login for the configured instance is there. The Sources row
+reports **not installed**, **not logged in to this instance** and **collecting** as three states, and
+`apps/timetrack-e2e/src/sources.spec.ts` holds one test per state against a seeded fake `glab`.
+
+What building it settled:
+
+- **The settings field is a base URL and a CLI takes a bare hostname.** `gitlab.host` may carry a
+  scheme, and `glab auth status` reports the bare host, so a raw comparison never matches and
+  `--hostname https://…/` reaches nothing. `forgeHostname` strips both ends of that.
+- **A missing binary needs its own channel.** `command.spawn()` answers `ErrorKind::NotFound`, which
+  reached the webview as an OS error nobody could act on. `TimetrackError::NotInstalled` gives it the
+  prefix `not installed: `, and that prefix is the whole contract `isMissingCliError` reads.
+- **The PAT is not gone, it is now write-only.** Repairing a branch and starting one still open merge
+  requests through `TimetrackTransport`, so `gitlab-token` stays and asks for `api`. The dead
+  `read_user` special case in `client.ts` went with the events read.
+- **The e2e fake reported no tally at all** (`bySource$: () => ok([])`), so every source row read
+  "Nothing stored yet" and no test could prove a collector stored anything. It counts the seeded
+  events now.
+
+Left for the GitHub half: the `gh` reader, its collector and its own Sources row.
+
 Measured on 2026-09-10, about how both CLIs behave as a transport:
 
 - **Both report an HTTP error the same way**: exit code 1, the API's own JSON body on **stdout**, and

@@ -1,39 +1,35 @@
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
-import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
-import { GitLabCredentials, gitlabRequest$ } from './client';
+import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { fetchGitLabEvents$ } from './events';
 
-const CREDENTIALS: GitLabCredentials = { host: 'git.example.com', token: 'glpat-secret' };
-
-const eventTransport = (pages: { body: unknown[]; nextPage?: string }[]) => {
-  const requests: TimetrackRequest[] = [];
+const eventRunner = (pages: unknown[][]) => {
+  const specs: ProcessSpec[] = [];
   let page = 0;
-  const transport: TimetrackTransport = {
-    request$: vi.fn((request: TimetrackRequest) => {
-      requests.push(request);
-      const current = pages[page] ?? { body: [] };
+  const runner: TimetrackProcessRunner = {
+    run$: vi.fn((spec: ProcessSpec) => {
+      specs.push(spec);
+      const current = pages[page] ?? [];
       page += 1;
 
-      return of({
-        status: 200,
-        headers: { 'X-Next-Page': current.nextPage ?? '' },
-        body: current.body,
-      }) as never;
+      return of({ code: 0, stdout: JSON.stringify(current), stderr: '' });
     }),
   };
 
-  return { transport, requests };
+  return { runner, specs };
 };
 
-const events = (transport: TimetrackTransport) => {
+const endpointOf = (spec: ProcessSpec | undefined) => spec?.args.at(-1) ?? '';
+
+const events = (runner: TimetrackProcessRunner) => {
   const seen = vi.fn();
 
   fetchGitLabEvents$({
-    transport,
-    credentials: CREDENTIALS,
+    runner,
+    hostname: 'git.example.com',
     from: new Date(2026, 7, 11, 0, 0),
     to: new Date(2026, 7, 11, 23, 59, 59),
+    paging: { pageSize: 1 },
   }).subscribe(seen);
 
   return seen.mock.calls[0]?.[0] ?? [];
@@ -60,100 +56,72 @@ const NOTE = {
 
 describe('fetchGitLabEvents$', () => {
   it('asks the instance for the window with a day of slack at each end', () => {
-    const { transport, requests } = eventTransport([{ body: [] }]);
+    const { runner, specs } = eventRunner([[]]);
 
-    events(transport);
+    events(runner);
 
-    expect(requests[0]?.url).toContain('https://git.example.com/api/v4/events');
-    expect(requests[0]?.url).toContain('after=2026-08-10');
-    expect(requests[0]?.url).toContain('before=2026-08-12');
-    expect(requests[0]?.headers?.['private-token']).toBe('glpat-secret');
+    expect(specs[0]?.command).toBe('glab');
+    expect(endpointOf(specs[0])).toContain('events?');
+    expect(endpointOf(specs[0])).toContain('after=2026-08-10');
+    expect(endpointOf(specs[0])).toContain('before=2026-08-12');
+  });
+
+  it('names the host on every call, because `glab` otherwise picks one from the working directory', () => {
+    const { runner, specs } = eventRunner([[]]);
+
+    events(runner);
+
+    expect(specs[0]?.args.slice(0, 3)).toEqual(['api', '--hostname', 'git.example.com']);
   });
 
   it('reads the merge request a note was left on, which the event names only through the note', () => {
-    const { transport } = eventTransport([{ body: [APPROVAL, NOTE] }]);
-    const read = events(transport);
+    const read = events(eventRunner([[APPROVAL], [NOTE], []]).runner);
 
     expect(read.map((event: { mergeRequestIid?: string }) => event.mergeRequestIid)).toEqual(['412', '412']);
     expect(read[0]).toMatchObject({ id: '9001', action: 'approved', projectId: '42', title: 'Club pack' });
   });
 
   it('takes the branch straight off a push, which is the one event that carries it', () => {
-    const { transport } = eventTransport([
-      {
-        body: [
-          {
-            id: 9003,
-            created_at: '2026-08-11T10:00:00.000+02:00',
-            action_name: 'pushed to',
-            project_id: 42,
-            push_data: { ref: 'sub/feat/FIP-2177-x/FIP-2178-y', ref_type: 'branch', commit_title: 'Add the thing' },
-          },
-        ],
-      },
+    const { runner } = eventRunner([
+      [
+        {
+          id: 9003,
+          created_at: '2026-08-11T10:00:00.000+02:00',
+          action_name: 'pushed to',
+          project_id: 42,
+          push_data: { ref: 'sub/feat/FIP-2177-x/FIP-2178-y', ref_type: 'branch', commit_title: 'Add the thing' },
+        },
+      ],
+      [],
     ]);
 
-    expect(events(transport)[0]).toMatchObject({
+    expect(events(runner)[0]).toMatchObject({
       branch: 'sub/feat/FIP-2177-x/FIP-2178-y',
       title: 'Add the thing',
     });
   });
 
   it('drops what fell outside the window the wider query brought back', () => {
-    const { transport } = eventTransport([
-      { body: [{ ...APPROVAL, id: 1, created_at: '2026-08-10T22:00:00.000+02:00' }, APPROVAL] },
+    const { runner } = eventRunner([
+      [{ ...APPROVAL, id: 1, created_at: '2026-08-10T22:00:00.000+02:00' }],
+      [APPROVAL],
+      [],
     ]);
 
-    expect(events(transport).map((event: { id: string }) => event.id)).toEqual(['9001']);
+    expect(events(runner).map((event: { id: string }) => event.id)).toEqual(['9001']);
   });
 
-  it('follows the next page the header names, and stops when it comes back empty', () => {
-    const { transport, requests } = eventTransport([
-      { body: [APPROVAL], nextPage: '2' },
-      { body: [NOTE], nextPage: '' },
-    ]);
+  it('reads the next page while one comes back full, and stops on the first short one', () => {
+    const { runner, specs } = eventRunner([[APPROVAL], [NOTE], []]);
 
-    expect(events(transport)).toHaveLength(2);
-    expect(requests).toHaveLength(2);
-    expect(requests[1]?.url).toContain('page=2');
+    expect(events(runner)).toHaveLength(2);
+    expect(specs).toHaveLength(3);
+    expect(endpointOf(specs[1])).toContain('page=2');
   });
 
   it('ignores an event with no id, no project or no readable instant', () => {
-    const { transport } = eventTransport([
-      {
-        body: [
-          { ...APPROVAL, id: undefined },
-          { ...APPROVAL, created_at: 'not a date' },
-        ],
-      },
-    ]);
+    const { runner } = eventRunner([[{ ...APPROVAL, id: undefined }], [{ ...APPROVAL, created_at: 'not a date' }], []]);
 
-    expect(events(transport)).toEqual([]);
-  });
-});
-
-describe('a refused GitLab read', () => {
-  const refusing = (status: number): TimetrackTransport => ({
-    request$: vi.fn(() => of({ status, headers: {}, body: null }) as never),
-  });
-
-  const failureOf = (transport: TimetrackTransport, path: string) => {
-    const seen = vi.fn();
-
-    gitlabRequest$({ transport, credentials: CREDENTIALS, path, describe: 'the thing' }).subscribe({ error: seen });
-
-    return (seen.mock.calls[0]?.[0] as Error).message;
-  };
-
-  it('names `read_user` for the activity feed, which `read_api` does not cover', () => {
-    expect(failureOf(refusing(403), '/events')).toContain('`read_user`');
-  });
-
-  it('names `read_api` for a project read', () => {
-    expect(failureOf(refusing(403), '/projects/4/merge_requests')).toContain('`read_api`');
-  });
-
-  it('names no scope at all when the token itself was rejected', () => {
-    expect(failureOf(refusing(401), '/events')).not.toContain('scope');
+    expect(events(runner)).toEqual([]);
   });
 });

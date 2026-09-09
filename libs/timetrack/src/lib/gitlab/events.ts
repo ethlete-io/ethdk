@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention -- GitLab's REST v4 wire format is snake_case. */
 import { Observable, map } from 'rxjs';
-import { TimetrackTransport } from '../transport/ports';
-import { GitLabCredentials, GitLabPagingOptions, gitlabPaged$ } from './client';
+import { ForgePagingOptions, forgeApiPaged$ } from '../forge/cli';
+import { TimetrackProcessRunner } from '../transport/ports';
 
 /**
  * One thing the user did in GitLab, as the events API reports it.
@@ -82,19 +82,20 @@ const toEvent = (resource: GitLabEventResource): GitLabEvent | undefined => {
  * a project is scoped to the token's owner.
  */
 export const fetchGitLabEvents$ = (options: {
-  transport: TimetrackTransport;
-  credentials: GitLabCredentials;
+  runner: TimetrackProcessRunner;
+  hostname: string;
   from: Date;
   to: Date;
-  paging?: Partial<GitLabPagingOptions>;
+  paging?: Partial<ForgePagingOptions>;
 }): Observable<GitLabEvent[]> =>
-  gitlabPaged$<GitLabEventResource>({
-    transport: options.transport,
-    credentials: options.credentials,
+  forgeApiPaged$<GitLabEventResource>({
+    runner: options.runner,
+    cli: 'glab',
+    hostname: options.hostname,
     path: '/events',
     describe: `your GitLab activity from ${dayOf(options.from)} to ${dayOf(options.to)}`,
     query: { after: boundary(options.from, -1), before: boundary(options.to, 1) },
-    options: options.paging,
+    paging: options.paging,
   }).pipe(
     map((resources) =>
       resources

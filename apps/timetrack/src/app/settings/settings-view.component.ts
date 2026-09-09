@@ -56,9 +56,11 @@ about, so there is no path back into this window for the value itself.`;
 const TEMPO_WHY = `Worklogs are written here. Tempo issues its own bearer token, separate from Jira's.`;
 
 const GITLAB_WHY = `Your own merge-request activity is read here, which is how reviewing somebody else's
-branch becomes time on the issue being reviewed. Give the personal access token the api scope, which
-also covers repairing a branch and starting one. For collection alone, read_api and read_user together
-are enough - the activity feed is a user endpoint, so read_api does not cover it on its own.`;
+branch becomes time on the issue being reviewed. Collection needs no token: it runs glab, which holds
+its own login that this app never sees. Run glab auth login --hostname on the instance named above.
+
+The token below is only for writing - repairing a branch and starting one both open merge requests.
+Give it the api scope. Leave it empty if you never use those two.`;
 
 const MEETING_WHY = `A meeting whose own title names an issue is logged against it, and one that repeats at
 a time Tempo already holds an issue for follows that history. This is the answer for every other meeting.

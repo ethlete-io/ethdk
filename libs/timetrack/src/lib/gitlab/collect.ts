@@ -1,7 +1,7 @@
 import { Observable, catchError, concatMap, from, map, of, reduce } from 'rxjs';
+import { ForgePagingOptions } from '../forge/cli';
 import { CollectedEvent, MergeRequestActivityEvent } from '../model/event';
-import { TimetrackTransport } from '../transport/ports';
-import { GitLabCredentials, GitLabPagingOptions } from './client';
+import { TimetrackProcessRunner } from '../transport/ports';
 import { GitLabEvent, fetchGitLabEvents$ } from './events';
 import { GitLabMergeRequest, fetchGitLabMergeRequest$ } from './merge-requests';
 
@@ -15,8 +15,9 @@ export type GitLabCollection = {
 };
 
 export type GitLabCollectOptions = {
-  transport: TimetrackTransport;
-  credentials: GitLabCredentials;
+  runner: TimetrackProcessRunner;
+  /** The instance `glab` is logged in to. It never falls back to a default; a collector has no checkout. */
+  hostname: string;
   from: Date;
   to: Date;
   /**
@@ -24,7 +25,7 @@ export type GitLabCollectOptions = {
    * is what keeps a first run over a wide window from making hundreds of calls.
    */
   maxMergeRequestLookups?: number;
-  paging?: Partial<GitLabPagingOptions>;
+  paging?: Partial<ForgePagingOptions>;
 };
 
 export const DEFAULT_MAX_MERGE_REQUEST_LOOKUPS = 40;
@@ -66,8 +67,8 @@ const resolveMergeRequests$ = (options: GitLabCollectOptions, events: GitLabEven
   return from(lookups).pipe(
     concatMap((event) =>
       fetchGitLabMergeRequest$({
-        transport: options.transport,
-        credentials: options.credentials,
+        runner: options.runner,
+        hostname: options.hostname,
         projectId: event.projectId,
         iid: event.mergeRequestIid ?? '',
       }).pipe(
@@ -118,8 +119,8 @@ const toCollectedEvent = (options: {
  */
 export const collectGitLabEvents$ = (options: GitLabCollectOptions): Observable<GitLabCollection> =>
   fetchGitLabEvents$({
-    transport: options.transport,
-    credentials: options.credentials,
+    runner: options.runner,
+    hostname: options.hostname,
     from: options.from,
     to: options.to,
     paging: options.paging,

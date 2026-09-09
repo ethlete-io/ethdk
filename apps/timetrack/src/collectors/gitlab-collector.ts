@@ -2,10 +2,13 @@ import { signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
+  ForgeAuth,
   applyExclusionRules,
   collectGitLabEvents$,
   effectiveExclusionRules,
-  readGitLabCredentials$,
+  forgeHostname,
+  forgeLoginFor,
+  probeForgeAuth$,
 } from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, of, switchMap, tap, timer } from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
@@ -39,6 +42,10 @@ export type GitLabCollectorRun = {
  * Reads the user's own GitLab activity into the event store, so reviewing somebody else's merge
  * request reaches `correlateDay` through the same path as a commit.
  *
+ * It reads through `glab`, which holds its own credential, so this app stores no GitLab token. That
+ * moves the two ways the source can go quiet — the binary leaving the `PATH`, and the login expiring —
+ * out of the keychain and into `auth`, which the Sources row reports as two distinct states.
+ *
  * Every read overlaps the last one, and `dedupeKeyOf` keys each event by GitLab's own id — which is
  * what lets the first run of a session reach back a month without storing anything twice.
  */
@@ -48,23 +55,19 @@ const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const pause = injectCollectionPause();
   const lastRun = signal<GitLabCollectorRun | null>(null);
   const failure = signal<string | null>(null);
+  const auth = signal<ForgeAuth | null>(null);
   let read = false;
 
-  const read$ = (): Observable<unknown> => {
+  const read$ = (hostname: string): Observable<unknown> => {
     const at = new Date();
     const windowMs = read ? GITLAB_WINDOW_MS : GITLAB_FIRST_WINDOW_MS;
 
-    return readGitLabCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
-      switchMap((credentials) => {
-        if (!credentials) return EMPTY;
-
-        return collectGitLabEvents$({
-          transport: ports.transport,
-          credentials,
-          from: new Date(at.getTime() - windowMs),
-          to: at,
-        });
-      }),
+    return collectGitLabEvents$({
+      runner: ports.processes,
+      hostname,
+      from: new Date(at.getTime() - windowMs),
+      to: at,
+    }).pipe(
       concatMap((collection) => {
         // A merge request title is named after the work, so a title rule applies to it exactly as it
         // applies to a window title — the same argument as an agent session's own title.
@@ -92,10 +95,19 @@ const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const collect$ = (): Observable<unknown> =>
     defer(() =>
       settings.ready$.pipe(
-        concatMap(() => (settings.settings().gitlab.host ? read$() : of(undefined))),
+        concatMap(() => {
+          const { host } = settings.settings().gitlab;
+
+          if (!host) return of(undefined);
+
+          return probeForgeAuth$({ runner: ports.processes, cli: 'glab' }).pipe(
+            tap((probed) => auth.set(probed)),
+            switchMap((probed) => (forgeLoginFor(probed, host) ? read$(forgeHostname(host)) : of(undefined))),
+          );
+        }),
         // A run that throws never completes, so this is the one owner of clearing the failure. Doing
         // it in the success `tap` instead left the banner up for good in every run that stores
-        // nothing: no host and no credential both short-circuit before that `tap` is ever reached.
+        // nothing: no host and no login both short-circuit before that `tap` is ever reached.
         tap({ complete: () => failure.set(null) }),
         catchError((error: unknown) => {
           failure.set(error instanceof Error ? error.message : String(error));
@@ -114,7 +126,7 @@ const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
-  return { lastRun, failure };
+  return { lastRun, failure, auth };
 });
 
 export const injectGitLabCollector = /* @__PURE__ */ toInjectFn(GITLAB_COLLECTOR_DEF);

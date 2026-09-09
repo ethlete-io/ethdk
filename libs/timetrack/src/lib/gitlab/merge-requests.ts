@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention -- GitLab's REST v4 wire format is snake_case. */
 import { Observable, forkJoin, map } from 'rxjs';
-import { TimetrackTransport } from '../transport/ports';
+import { forgeApi$ } from '../forge/cli';
+import { TimetrackProcessRunner, TimetrackTransport } from '../transport/ports';
 import { GitLabCredentials, gitlabPaged$, gitlabRequest$ } from './client';
 
 /** A merge request, reduced to what attribution and the evidence chain need. */
@@ -44,18 +45,19 @@ const projectPathOf = (resource: GitLabMergeRequestResource) => {
  * not once per event.
  */
 export const fetchGitLabMergeRequest$ = (options: {
-  transport: TimetrackTransport;
-  credentials: GitLabCredentials;
+  runner: TimetrackProcessRunner;
+  hostname: string;
   projectId: string;
   iid: string;
 }): Observable<GitLabMergeRequest | null> =>
-  gitlabRequest$<GitLabMergeRequestResource>({
-    transport: options.transport,
-    credentials: options.credentials,
+  forgeApi$<GitLabMergeRequestResource>({
+    runner: options.runner,
+    cli: 'glab',
+    hostname: options.hostname,
     path: `/projects/${encodeURIComponent(options.projectId)}/merge_requests/${encodeURIComponent(options.iid)}`,
     describe: `merge request !${options.iid}`,
   }).pipe(
-    map(({ body }) => {
+    map((body) => {
       if (!body?.source_branch) return null;
 
       return {

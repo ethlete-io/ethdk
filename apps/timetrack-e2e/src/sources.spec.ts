@@ -108,3 +108,74 @@ test.describe('what the focused-window source reads on this machine', () => {
     await expect(row(page, 'idle')).not.toContainText('What it reads on this machine');
   });
 });
+
+/**
+ * A shell-out source holds no token in this app's keychain, so nothing here can go stale the way a
+ * personal access token does. What can go away instead is the binary and the login, and those are two
+ * different repairs. A row that reported them as one would trade a visible expiry for a silent one.
+ */
+test.describe('the GitLab row, which reads through `glab`', () => {
+  test('reads the instance through the CLI and stores what it found', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      gitlab: {
+        // The event names the merge request and not its branch, so the run only stays free of a
+        // warning if the second call — the lookup by iid — went through the CLI as well.
+        events: [
+          {
+            id: '5001',
+            at: '2026-08-12T09:00:00.000Z',
+            actionName: 'approved',
+            projectId: 'braune-digital/fut-frontend',
+            targetType: 'MergeRequest',
+            targetTitle: 'Password reset',
+            mergeRequestIid: '77',
+          },
+        ],
+        mergeRequests: [
+          {
+            iid: '77',
+            projectId: 'braune-digital/fut-frontend',
+            title: 'Password reset',
+            sourceBranch: 'feat/ABC-1-user-management',
+            targetBranch: 'next',
+            state: 'opened',
+            webUrl: 'https://gitlab.example.com/braune-digital/fut-frontend/-/merge_requests/77',
+          },
+        ],
+      },
+    });
+    await page.goto('/sources');
+
+    await expect(row(page, 'gitlab')).toContainText('collecting');
+    await expect(row(page, 'gitlab')).toContainText('Last read at');
+    await expect(row(page, 'gitlab')).toContainText('1 stored');
+    await expect(row(page, 'gitlab')).not.toContainText('merge request !77');
+  });
+
+  test('says the binary is missing, and does not call that a login problem', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, glab: { installed: false, logins: [] } });
+    await page.goto('/sources');
+
+    await expect(row(page, 'gitlab')).toContainText('not installed');
+    await expect(row(page, 'gitlab')).not.toContainText('auth login');
+  });
+
+  test('names the login command when the binary is there and holds no credential', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, glab: { installed: true, logins: [] } });
+    await page.goto('/sources');
+
+    await expect(row(page, 'gitlab')).toContainText('glab auth login --hostname gitlab.example.com');
+    await expect(row(page, 'gitlab')).not.toContainText('not installed');
+  });
+
+  test('asks for a login to the configured instance, not to whichever one `glab` happens to hold', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      glab: { installed: true, logins: [{ host: 'gitlab.com', login: 'somebody' }] },
+    });
+    await page.goto('/sources');
+
+    await expect(row(page, 'gitlab')).toContainText('glab auth login --hostname gitlab.example.com');
+  });
+});
