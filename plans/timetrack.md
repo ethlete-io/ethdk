@@ -17,27 +17,29 @@ ticket creation or the MR flow.
 
 ## Decisions already locked
 
-| Question        | Decision                                                                                                 |
-| --------------- | -------------------------------------------------------------------------------------------------------- |
-| Placement       | Publishable `libs/timetrack` core + `apps/timetrack` Tauri shell, both in this monorepo                  |
-| Auth            | Fully local; each user registers their own OAuth clients; tokens in the OS keychain                      |
-| Audience        | Anyone who installs it, but a strictly local application - the data never leaves the machine             |
-| Interaction     | Hybrid: passive daemon as the base, optional explicit timer, retroactive API pull to fill/cross-check    |
-| Local signals   | Active window + idle, local git repos, editor heartbeats, coding-agent session logs                      |
-| Browser         | Window titles only; a generic ingest seam so an extension can be added later                             |
-| Matching        | Deterministic rules first, LLM only for genuinely ambiguous blocks                                       |
-| LLM             | Invoke the user's local agent CLI (`claude -p`, `codex exec`) so their subscription pays, not an API key |
-| Jira/Tempo      | Jira Cloud (REST v3) + Tempo Cloud (API v4)                                                              |
-| Ticket creation | Both directions: retroactive work → ticket, and prospective ticket → branch → pushed draft MR            |
-| Granularity     | 15-minute rounding (configurable), day compared to a target with a warning, never silent fill            |
-| Gap filling     | Confidence model; high-confidence entries sync without per-row review, weak ones must be accepted        |
-| Platforms       | Pluggable window source, macOS-first now the dev machine is a Mac; degrade where there is none           |
-| Storage         | Encrypted at rest, raw-sample retention window, exclusion rules, hard pause                              |
-| Tempo sync      | Idempotent upsert of app-owned worklogs only; foreign worklogs read-only                                 |
-| UI              | Tray presence + day timeline with an editable worklog list                                               |
-| Daemon          | Rust collectors inside the Tauri app; starts minimized, autostarts on login                              |
-| Phase 1         | Jira/Tempo + local collectors + Google Calendar + review UI + sync                                       |
-| Name            | `@ethlete/timetrack`                                                                                     |
+| Question        | Decision                                                                                                                               |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Placement       | Publishable `libs/timetrack` core + `apps/timetrack` Tauri shell, both in this monorepo                                                |
+| Auth            | Fully local; each user registers their own OAuth clients; tokens in the OS keychain                                                    |
+| Audience        | Anyone who installs it, but a strictly local application - the data never leaves the machine                                           |
+| Interaction     | Hybrid: passive daemon as the base, optional explicit timer, retroactive API pull to fill/cross-check                                  |
+| Local signals   | Active window + idle, local git repos, editor heartbeats, coding-agent session logs                                                    |
+| Browser         | Window titles, plus a reporter over the ingest seam sending a tab origin and a work-issue id, never a path                             |
+| Calls           | The process holding the microphone is presence; whether a call is work is classified at read time, default-deny                        |
+| Versions        | `streamDay` and the Today view are the v2 foundation; `correlate/` and the day, start, week and sync tabs are v1, awaiting replacement |
+| Matching        | Deterministic rules first, LLM only for genuinely ambiguous blocks                                                                     |
+| LLM             | Invoke the user's local agent CLI (`claude -p`, `codex exec`) so their subscription pays, not an API key                               |
+| Jira/Tempo      | Jira Cloud (REST v3) + Tempo Cloud (API v4)                                                                                            |
+| Ticket creation | Both directions: retroactive work → ticket, and prospective ticket → branch → pushed draft MR                                          |
+| Granularity     | 15-minute rounding (configurable), day compared to a target with a warning, never silent fill                                          |
+| Gap filling     | Confidence model; high-confidence entries sync without per-row review, weak ones must be accepted                                      |
+| Platforms       | Pluggable window source, macOS-first now the dev machine is a Mac; degrade where there is none                                         |
+| Storage         | Encrypted at rest, raw-sample retention window, exclusion rules, hard pause                                                            |
+| Tempo sync      | Idempotent upsert of app-owned worklogs only; foreign worklogs read-only                                                               |
+| UI              | Tray presence + day timeline with an editable worklog list                                                                             |
+| Daemon          | Rust collectors inside the Tauri app; starts minimized, autostarts on login                                                            |
+| Phase 1         | Jira/Tempo + local collectors + Google Calendar + review UI + sync                                                                     |
+| Name            | `@ethlete/timetrack`                                                                                                                   |
 
 ## The central insight: the branch name is the worklog
 
@@ -134,6 +136,41 @@ apps/timetrack/                     private Angular app (@ethlete/components UI)
 **The shell is built.** The Nx project is `timetrack-app` — the library already owns the name
 `timetrack` — and `tauri:dev` / `tauri:build` are `nx:run-commands` targets deliberately outside the
 default pipeline. Prerequisites and the command-to-port table are in `apps/timetrack/README.md`.
+
+### The v2 rebuild, and what is v1
+
+Recorded 2026-09-09, because the two halves look like one system with a bug and nothing in the
+repository said otherwise.
+
+The app holds **two day builders**, and they read different sources:
+
+| Builder                           | Screens               | Reads                                                |
+| --------------------------------- | --------------------- | ---------------------------------------------------- |
+| `streamDay` (`lib/stream/`)       | `today`               | `window`, `idle`, `git`, `agent-session`             |
+| `correlateDay` (`lib/correlate/`) | `day`, `week`, `sync` | all of those, plus `editor`, `calendar` and `gitlab` |
+
+**`streamDay` and the Today view are the v2 foundation.** `correlateDay`, `sessionize`, `meetings`,
+`merge-request-activity` and the day, start, week and sync tabs are v1, and they are to be redone on
+top of the Today view's reporting rather than repaired. ADR 0004 forbids the stream module from
+importing correlate, which is why `evidenceFor`, `repoStateFor`, `reposByName`, `repoNamedIn`,
+`TITLE_SEGMENTS` and `addEvidence` exist twice in near-duplicate form.
+
+**Do not extract a shared layer between them.** It would marry the new foundation to code with a
+delete date and spend the effort twice. Delete per tab instead, as v2 replaces each one.
+
+The cost of the drift is already visible: the three fixes of 2026-09-08 - `stillFocused`,
+`windowsSeenThroughMs` and `ownAppIds` - exist only in `streamDay`. The v1 screens still read a
+still focus as unobserved time and still count the app's own window. The URL redaction is safe in
+both, because `store/title.ts` runs before either builder.
+
+Two smaller consequences worth knowing before touching either side:
+
+- `app.routes.ts` redirects `''` to the remembered view and defaults to **`day`**, and `**` also
+  lands there - so the app opens on a v1 screen. Flip the default to `today`.
+- `QUOTABLE_EVIDENCE_KINDS` has no consumer on the v2 path. The Today view renders evidence on
+  screen and quotes nothing off the machine: no clipboard write, no file write, no export. Its only
+  live readers are `reason/payload.ts` and `ticket/draft.ts`, both reached from the day-review tab -
+  and from the agent endpoint, which is why the allowlist still matters today.
 
 ### Why the core is framework-agnostic and transport-agnostic
 
@@ -560,6 +597,23 @@ block with the checkout and branch that no window title could name. What buildin
   API is promise-based and there is no injection context for `takeUntilDestroyed`; obeying them would
   have put RxJS in a bundle that has no other use for it. The bundle is 3.9 kB.
 
+**The v2 day does not read it yet, and that is the next change here.** `READ_SOURCES` in
+`stream/stream-day.ts` lists `window`, `idle`, `git` and `agent-session`, so every heartbeat the
+extension has posted since it was installed sits in the store unread by the Today view. The v1
+`correlate/sessionize.ts` does read them, which is why the gap was easy to miss.
+
+Adding `'editor'` to `READ_SOURCES` is not enough on its own. Four places in `stream-day.ts`
+hardcode kinds and would ignore a heartbeat: `repoStateFor` (so no checkout, no branch and **no
+private-checkout filtering**), `evidenceFor` (no evidence row), `stillFocused` and the `seen`
+filter (so the time would land in `rebuilt` rather than in what the machine watched).
+
+The role it takes is **attribution and evidence, and not presence**. A heartbeat names the checkout
+directly, which is what a window reading `Visual Studio Code` cannot do when several editor windows
+are open on different repositories. But it only fires while its window has focus, so it can add no
+presence the window source missed - it can only disagree with it and break the reconciliation
+between `present`, `engaged` and the concurrency ratio. `sessionize.ts` counts a heartbeat as
+presence today; the v2 reader deliberately will not.
+
 ### Jira Cloud (phase 1)
 
 REST v3 on the user's Cloud host with an API token (email + token, Basic) or a per-user
@@ -736,10 +790,13 @@ Own OAuth desktop client, PKCE + loopback redirect, scope `calendar.events.reado
 `events.list` with `singleEvents=true` and a `timeMin`/`timeMax` window. Take from each
 event: the title (worklog description material), the attendee list, **your own
 `responseStatus`** (a declined event is not time you spent) and `conferenceData` - which
-carries the Meet URL and therefore lets a Meet window title be matched to a specific
-calendar event. That pairing is what makes "window titles only" sufficient for Meet: the
-calendar says which meeting, the window title says when you were actually in it, and idle
-state says whether you were present.
+carries the Meet URL.
+
+**That pairing is weaker than this section originally claimed, and it is not what covers Meet.**
+Google Calendar writes a Meet URL for a call actually held somewhere else - Discord, in this team's
+case - so `conferenceData` names the tool Google wishes were used, not where anybody was. What
+covers a Meet call is the call source: the browser holds the microphone. The calendar's job is to
+**name** a meeting, never to decide one. See **Calls** above.
 
 Because each user registers their own OAuth client, they will see Google's unverified-app
 screen and must add themselves as a test user. That belongs in the onboarding flow as an
@@ -815,6 +872,47 @@ Still unverified: everything past `oauth_authorize` opening a browser. The flow 
 against a real Google client yet, so the exchange, the refresh and the revoke have only been driven
 against fakes.
 
+#### Two defects found 2026-09-09, both open
+
+**The collector runs neither privacy pass.** `calendar-collector.ts` appends a
+`CalendarOccurrenceEvent` straight to the store: no `applyExclusionRules` and no
+`redactEventTitles`. So an exclusion rule written to keep a client out of the day does not apply to
+the calendar, and a raw meeting title and a `conferenceUrl` are stored verbatim. The ingest collector
+runs both passes; the GitLab collector runs the exclusion pass only. Both must run all of it.
+
+That matters beyond storage, because `calendar` is on `QUOTABLE_EVIDENCE_KINDS`
+(`model/evidence.ts`), so a meeting title may be quoted into a ticket description or into a prompt to
+an agent CLI. The allowlist's own comment says it exists because the alternative fails open, and
+names customer names as the reason. A title written by whoever sent the invitation is exactly that
+case. **`calendar` comes off the allowlist**: a summary can give a meeting's time and length without
+quoting its name. `merge-request` stays, because a merge request title is written against a
+repository the user owns.
+
+This is live rather than theoretical: `app/agent/agent-endpoint.ts` reads `injectDayReview`, and the
+endpoint runs - `agent.json` sits in the app data directory beside `ingest.json`.
+
+**A dead refresh token makes re-authentication impossible.** Measured 2026-09-09 against a real
+expired token. `prompt=consent` and `access_type=offline` are both set correctly, so the flow itself
+would work; it never starts:
+
+1. Nothing deletes a rejected token. `google-auth/token-source.ts` lets the error propagate and never
+   calls `secrets.delete$`.
+2. So `secrets.has$('google-refresh-token')` stays true, and the card keeps its **connected** badge.
+3. An effect in `settings/google-connection.component.ts` loads the calendars whenever the account is
+   connected, has no calendars and is not busy. Every attempt fails with `invalid_grant`, `calendars()`
+   stays `null`, and `busy` flips true then false - which re-dirties the effect. It retries forever.
+4. That pins `busy()` true, which disables **both** the Connect and the Disconnect button, and any
+   click that slips through is dropped by the `exhaustMap` in `google-account.ts`.
+
+`google-auth/tokens.ts` already sets a `needsReconnect` flag on `invalid_grant`, with the right
+message. Nothing outside its own spec reads it.
+
+The fix: make `needsReconnect` reach the UI, and stop the effect retrying a load that already failed.
+**A rejected token is not deleted automatically** - `invalid_grant` is also what Google answers for a
+clock skew or a changed client secret, so one error response must not destroy a credential a
+different fix would revive. The honest state is "this stopped working", the badge says so, and both
+buttons work.
+
 ### GitLab CE, self-hosted (phase 2)
 
 PAT with `read_api`. The high-value endpoint is `/api/v4/events` scoped to the user with
@@ -857,7 +955,23 @@ the sources row. What building it settled:
   is _awaiting_ you and carries no instant, so it can no more place a block than Jira's
   `issueHistory()` can. Both are left out for the same reason.
 
-Still unverified: everything past the request builder. Nothing has run against a real instance yet.
+The host is configured on this machine, so the request builder is no longer the frontier - but no
+run has been verified against it here.
+
+**Decided 2026-09-09: shell out to `glab`, and add GitHub through `gh`.** Both are installed at
+`/usr/bin` and both hold their own credential, which the app never sees. The strongest privacy answer
+for a source is that the app holds no secret for it, and a `read_api` PAT in the keychain is only the
+second-strongest. GitHub comes nearly free once the collector shells out, because
+`MergeRequestActivityEvent` needs no new field for it.
+
+Two things this must not lose. A shell-out depends on a binary on the `PATH` and on a login performed
+elsewhere, so the **Sources row has to report "not found" and "not logged in" as distinct states** -
+otherwise this trades a visible token expiry for a silent one. And `process.rs` runs an allowlist
+(`git`, `claude`, `codex`), so both binaries have to be added to it deliberately.
+
+Not taken: reading the local checkout with `gh pr status` or `glab mr list`. An account-wide feed
+answers "what did you touch today"; a per-checkout query answers "what is open", which is not a
+timetrack question.
 
 ### Gmail (phase 3)
 
@@ -867,35 +981,137 @@ the notification mails are a strictly worse copy of the same events. Its only re
 covering systems with no API access. Keep it last, and keep the query narrow enough that the
 app never touches unrelated mail.
 
-### Slack huddles (phase 3, live-only)
+### Calls: huddles, voice rooms and meetings (phase 2)
 
-There is no retroactive huddle API. The observable signal is `users.info` /
-`users.profile.get` on your own user, whose profile carries `huddle_state`
-(`in_a_huddle` / `default`) and an expiration timestamp; the daemon polls it on an interval
-and records transitions. Consequences to state plainly in the UI: huddles are only captured
-for days the daemon was running, the boundaries are as coarse as the poll interval, and
-`huddle_state` is not a stable documented field - it can disappear without notice. Slack
-needs a user token with `users:read`, from the user's own Slack app.
+**Designed 2026-09-09, not built.** This supersedes the Slack-huddle and Discord sketches that stood
+here, both of which reached for a vendor API. Neither is needed. The signal is local, it needs no
+token and nobody's permission, and one mechanism covers every meeting tool at once.
 
-### Discord (phase 3, weak)
+**The signal is which process holds the microphone.** Measured on this machine with `pw-dump`,
+inside and outside a real Discord call:
 
-Deliberately constrained, because you flagged that not every Braune Digital call is a
-meeting. Three possible mechanisms, in descending order of quality:
+| State                 | What PipeWire reports                                                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Discord open, no call | no `Stream/Input/Audio` node at all, and both microphone sources sit in state `suspended`                                                                   |
+| In a Discord call     | a `Stream/Input/Audio` node in state `running`, `media.name = recStream`, `application.process.binary = Discord`, and the microphone source turns `running` |
 
-1. **A bot in the guild** with the `GUILD_VOICE_STATES` intent, running inside the daemon
-   and filtered to the Braune Digital guild and your own user id. This gives exact
-   join/leave timestamps and the channel name. It requires a server admin to add the bot,
-   and a bot token in the local keychain.
-2. **Window title + audio state** - which voice channel Discord shows, plus whether the
-   process holds a mic stream. No permission needed, and genuinely unreliable.
-3. **Discord RPC** over the local `discord-ipc-0` socket - not viable: the `rpc` scope is
-   allowlisted per application by Discord.
+Two things that measurement settled:
 
-Using your own user token to read voice state ("self-bot") violates Discord's ToS and is out
-of scope regardless of how convenient it looks.
+- **Key on `application.process.binary`, never `application.name`.** Discord's node reports
+  `application.name = WEBRTC VoiceEngine`, which names Electron's audio engine rather than any
+  application a user would recognise.
+- **An application's own mute is invisible.** Muted inside Discord, the same node still reports
+  `mute: false`, `volume: 1.0`, `softMute: false` and state `running`. Discord mutes inside WebRTC and
+  never touches the stream. A mute check therefore cannot separate a passive voice room from a
+  meeting, and every design that leaned on one is out.
 
-Whatever the mechanism, Discord output is always `weak`: proposed as an unchecked
-gap-filler, never synced without an explicit accept, and only inside the configured guild.
+The vendor APIs are ruled out rather than deferred. Slack's `huddle_state` is an undocumented field
+behind a user token, Discord's voice state needs a bot a server admin has to add, and a bot reports
+on everybody in the channel rather than only on the user. A self-bot token also breaks Discord's
+terms. All of that buys a channel name the microphone signal gets for free.
+
+#### A call is presence
+
+A held microphone clears `away`. It is the one signal that names presence nothing else can see: a
+call spent listening leaves no input for the idle timer, so today it reads as absence. It also cannot
+double-count: one machine, one wall clock. That is the property a LAN presence share from a second
+device has to solve and this does not have to, which is why the call source is not a substitute for
+it - that idea is still deferred and undesigned.
+
+The editor heartbeat is the deliberate contrast. A heartbeat only fires while its window has focus,
+so it can add no presence the window source missed and can only contradict it. **A heartbeat is not a
+presence sample. A call is.**
+
+#### Whether a call is work is classified at read time, and defaults to no
+
+An open voice room is not a meeting. The real case on this machine is hours in `#divinity-general |
+Divinity of Thrones`, muted, while coding - and with the mute invisible, nothing automatic separates
+it from a real call.
+
+**The classification is a second system, beside `TimetrackExclusionRule`, and the two must not be
+merged.** They have opposite failure modes, and that is the reason to keep them apart:
+
+| System                    | Runs                         | Job                         | Fails  |
+| ------------------------- | ---------------------------- | --------------------------- | ------ |
+| `TimetrackExclusionRule`  | before the store             | this must never be recorded | closed |
+| call classification (new) | at read time, in `streamDay` | this call was work          | open   |
+
+Using the exclusion rules for this would resurrect a bug already fixed once. A deny rule drops the
+event before the store, and a call event is also a presence sample, so excluding Discord would turn
+the open-room hours into **absence** rather than into unclassified time. That is the same trap
+`ownAppIds` avoided by deciding at read time instead.
+
+The rule shape, in settings:
+
+- **Two pattern lists over the whole title**, plus the process name as a matchable field:
+  `countsAsWork: ['Braune Digital']`, `neverCountsAsWork: ['#.*-general']`. Deny beats allow.
+- **The process name matters on its own**, because a Slack huddle's title may not name the workspace
+  at all, and "every Slack call is work" is a true and stable sentence a user should be able to write
+  in one line.
+- **No per-application title grammar.** Splitting Discord's title into a channel and a guild would
+  buy precision at the cost of a parser that breaks when Discord changes its title, or when macOS
+  reports it differently.
+- **Default-deny.** An unclassified call adds no presence and proposes no meeting. It is still
+  stored, and the Today view shows it as unclassified so the rule can be written. This does nothing
+  on the first day, which is the price of the only default that cannot silently invent hours.
+
+Discord's output keeps the property the earlier sketch gave it: always `weak`, proposed rather than
+synced, and never synced without an explicit accept.
+
+#### The title comes from the last focus event, not from the compositor
+
+A call event carries the process name, the start and the end. Its title is **the last `window-focus`
+event for that application before the call opened** - not a fresh read of the compositor.
+
+Joining a call means focusing the application, so that event is nearly always there, and it names the
+channel that was deliberately opened. Two facts made the compositor read the worse option:
+
+- The `zwlr_foreign_toplevel_manager_v1` protocol the window source uses carries an app id and a
+  title and **no pid**, so a call cannot be matched to a window by process id on Linux without a
+  second source, and the app deliberately does not use a compositor's own IPC.
+- PipeWire named the binary `Discord` for a `WEBRTC VoiceEngine` node, which is likely an Electron
+  child process, while the window belongs to another pid. A pid match would have to walk up the
+  process tree.
+
+A name match instead - PipeWire's `Discord` against the compositor's `discord`, or against
+`com.slack.Slack` - needs a table of exceptions that grows with every Flatpak installed.
+
+When no focus event is near, the call stays unclassified. Under default-deny that is safe rather than
+wrong.
+
+#### The calendar names a meeting; it does not decide one
+
+The classification decides whether a call counts. A calendar occurrence over the same stretch only
+**names** it. That ordering is what makes the calendar's two known defects harmless:
+
+- Not every meeting is in the calendar. A meeting missing from it is still a meeting, with no name.
+- `conferenceData` names the tool Google wishes were used. Google Calendar writes a Meet URL for a
+  call actually held in Discord, so the Meet URL is not evidence of where anybody was.
+
+This corrects the claim under **Google Calendar** below, that pairing a Meet URL with a window title
+is what makes window titles sufficient for Meet. It is not, and a browser reporter is not the fix
+either: after this design a Meet call is already covered, because the browser holds the microphone.
+
+#### Platforms
+
+The call source follows the window source's existing shape - a portable buffer, a module per
+platform, and a named degrade (`apps/timetrack/src-tauri/src/window.rs:133-142`). The portable
+contract is a **process name plus a window title**, which all three platforms can produce.
+
+| Platform | API                                                                                                      | Names the application |
+| -------- | -------------------------------------------------------------------------------------------------------- | --------------------- |
+| Linux    | PipeWire, verified 2026-09-09                                                                            | yes, by binary name   |
+| macOS    | CoreAudio `kAudioHardwarePropertyProcessObjectList` + `kAudioProcessPropertyIsRunningInput`, macOS 14.4+ | yes, by pid           |
+| Windows  | WASAPI `IAudioSessionManager2`, then `IAudioSessionControl2::GetProcessId`                               | yes, by pid           |
+
+**Linux lands first, and macOS and Windows report `none`**, as the window source already does. A
+device-level fallback is ruled out on its own merits: `kAudioDevicePropertyDeviceIsRunningSomewhere`
+says the microphone is in use and names no application, so under default-deny it can match no rule
+and would count as nothing. It would be dead code shaped like a feature.
+
+Still unverified: whether PipeWire exposes `application.process.id` at all, and what
+`application.process.binary` reports for a Flatpak application - Slack runs sandboxed on this machine
+and its window app id is `com.slack.Slack`. One Slack huddle settles both.
 
 ## Projects without the grammar
 
@@ -1830,6 +2046,16 @@ the user doing by hand, and what each answer rests on:
 
 ## Storage, privacy, secrets
 
+### Owed: the titles already stored raw
+
+The URL redaction in `store/title.ts` landed 2026-09-08 and runs on the way in, so it protects
+nothing already written. Every window title collected before that sits in the database whole, query
+strings and fragments included - which is where an OAuth token in a redirect URL would be.
+
+The event store port has `append$` and `deleteEventsBefore$` and no update, so a pass over stored
+titles needs a **new host command**. Until it exists the only remedy available is deleting the
+affected range, which throws away the day with the title.
+
 **The core half is built** - `libs/timetrack/src/lib/store/`: the two persistence ports, the
 exclusion rules, the retention plan and the ledger writer (22 tests). No encryption is in it and
 none belongs there: the key lives in the OS keychain and the cipher in SQLCipher, both host-side,
@@ -2204,9 +2430,14 @@ ticket → branch → draft MR flow~~ **- built**, and ~~MR → ticket repair~~ 
 extension and the generic ingest endpoint~~ **- built**, so an editor now names the checkout and
 branch that a window title reading `Visual Studio Code` never could. **Phase 2 is complete.**
 
-**Phase 3 - the noisy tail.** Slack huddle polling, Discord (bot mechanism, guild-scoped,
-`weak`), Gmail notification parsing, Codex session logs, and a Chrome extension if window
-titles have proven insufficient by then.
+**Phase 3 - the noisy tail.** Gmail notification parsing, and Codex session logs.
+
+Two entries left this phase on 2026-09-09. **Calls moved into phase 2 and changed mechanism**: the
+Slack huddle poll and the Discord bot are both ruled out, replaced by the process that holds the
+microphone, which needs no token and covers every meeting tool at once - see **Calls** above. **A
+browser reporter is decided rather than conditional**, and it is not a fallback for window titles
+proving insufficient; it exists to carry a tab origin and a work-issue id. It stays after the editor
+source. See **Ideas not yet scheduled**.
 
 **Deliberately not in the plan.** Any manager or aggregate view over other people's time; a
 hosted backend or cross-device sync; a Jira Data Center provider (keep the seam, do not
@@ -2220,9 +2451,24 @@ alongside and only affects how much of a day arrives pre-labelled.
 
 ## Ideas not yet scheduled
 
-Raised 2026-08-16, in no order and none of them designed yet.
+Raised 2026-08-16 unless an entry says otherwise, in no order. An entry is scheduled work only
+once it names a date and a decision; the rest are undesigned.
 
 - ~~**Work versus private use of the same application.**~~ **- built**, see below.
+- **A reporter-install wizard** (decided 2026-09-09, not built)**.** A reporter that stopped posting is a silent hole in the day, and
+  the VS Code extension installs today with `npx nx install timetrack-vscode` - fine from this
+  checkout, impossible for anybody else. First step is **detect and report**, which needs nothing
+  new: the ingest endpoint already knows which reporters posted, so the Sources view can say
+  "installed and reporting", "installed, not reporting" or "not installed" per editor it finds on the
+  `PATH`, and show the install command. Installing from a button, with the `.vsix` shipped inside the
+  app bundle, is the step after - it is a build change and a permission change, so it is its own task.
+- **A browser reporter over the ingest seam** (decided 2026-09-09, not built)**.** It sends the **origin** of the focused tab, plus a
+  Jira key or a merge request number when a known host's path holds one. Never a full path, never a
+  query string, never a title - an allowlist over a known host, not a filter over an accident.
+  Ordered strictly after the editor source, because that one will teach us what a reporter costs to
+  maintain. Note that the ingest endpoint refuses any request carrying an `Origin` header, so this
+  needs a deliberate change there rather than arriving by accident. It is **not** how meetings get
+  covered: a Meet call is already covered by the call source.
 - **A Windows collector.** The window source was always meant to be pluggable and macOS proved it;
   Windows is the third source. Focus and idle both have plain Win32 answers
   (`GetForegroundWindow`, `GetLastInputInfo`).
