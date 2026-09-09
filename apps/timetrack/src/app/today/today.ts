@@ -7,6 +7,7 @@ import {
   injectAgentPromptBackfill,
   injectAgentSessionCollector,
   injectAgentSpendBackfill,
+  injectCallCollector,
   injectCodexPromptBackfill,
   injectCodexSessionCollector,
   injectCodexSpendBackfill,
@@ -37,6 +38,7 @@ type Loaded = { key: string; value: StreamDay | null; failure: string | null };
 const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
   const ports = injectHostPorts();
   const windows = injectWindowCollector();
+  const calls = injectCallCollector();
   const agentSessions = injectAgentSessionCollector();
   const codexSessions = injectCodexSessionCollector();
   const spend = injectAgentSpendBackfill();
@@ -58,6 +60,8 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
     repoRoots: git.discovery()?.repos ?? [],
     links: settings.settings().projectLinks,
     windows: windows.lastRun(),
+    calls: calls.lastRun(),
+    callRules: settings.settings().callRules,
     sessions: agentSessions.lastRun(),
     codexSessions: codexSessions.lastRun(),
     spend: spend.lastRun(),
@@ -82,6 +86,7 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
                 links: current.links,
                 ownAppIds: OWN_APP_IDS,
                 windowsSeenThroughMs: current.windows?.at.getTime(),
+                callRules: current.callRules,
               },
             }),
             failure: null,

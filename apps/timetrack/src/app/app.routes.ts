@@ -3,7 +3,7 @@ import { readViewState } from './view-state';
 
 export const APP_ROUTES: Routes = [
   // A window that opens on the view it was closed on, without the default one being painted first.
-  { path: '', pathMatch: 'full', redirectTo: () => readViewState().view ?? 'day' },
+  { path: '', pathMatch: 'full', redirectTo: () => readViewState().view ?? 'today' },
   {
     path: 'today',
     title: 'Today',
@@ -46,5 +46,5 @@ export const APP_ROUTES: Routes = [
     loadComponent: () =>
       import('./host-status/host-status-view.component').then((entry) => entry.HostStatusViewComponent),
   },
-  { path: '**', redirectTo: 'day' },
+  { path: '**', redirectTo: 'today' },
 ];

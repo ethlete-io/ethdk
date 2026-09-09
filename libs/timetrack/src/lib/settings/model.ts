@@ -126,6 +126,24 @@ export type TimetrackNudgeSettings = {
 
 export const DEFAULT_NUDGE_AT_MINUTE = 17 * 60 + 30;
 
+/**
+ * Which calls on this machine were work. Both lists are regular expressions, matched case-insensitively
+ * against the process that held the microphone and against the window title the call was named from.
+ *
+ * This is a second system beside `TimetrackExclusionRule`, and the two must not be merged: an exclusion
+ * rule runs before the store and fails closed, and this runs at read time and fails open. Excluding a
+ * call would drop a presence sample, so the hours in an open voice room would become **absence** rather
+ * than unclassified time — the bug `ownAppIds` avoided by deciding at read time as well.
+ *
+ * `neverCountsAsWork` beats `countsAsWork`, and a call neither list names is not work. The process
+ * matters on its own, because a huddle's title may not name the workspace at all and "every Slack call
+ * is work" should be one line.
+ */
+export type TimetrackCallRules = {
+  countsAsWork: string[];
+  neverCountsAsWork: string[];
+};
+
 export const MAX_MINUTE_OF_DAY = 24 * 60 - 1;
 
 /** Holds a reminder time inside a day, whether it came from a control or from a stored document. */
@@ -165,6 +183,8 @@ export type TimetrackSettings = {
   nudge: TimetrackNudgeSettings;
   /** The user's own deny rules. `effectiveExclusionRules` is what composes them with the defaults. */
   exclusionRules: TimetrackExclusionRule[];
+  /** Which calls were work. Deliberately not an exclusion rule — see `TimetrackCallRules`. */
+  callRules: TimetrackCallRules;
   /** Whether the shipped defaults still apply. Turning them off is a deliberate, visible choice. */
   keepDefaultExclusionRules: boolean;
   /** Directories the repository discovery walks. Empty means the host decides. */
@@ -232,6 +252,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   reasoning: { enabled: false, command: DEFAULT_REASONING_OPTIONS.command, model: DEFAULT_REASONING_OPTIONS.model },
   nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
   exclusionRules: [],
+  callRules: { countsAsWork: [], neverCountsAsWork: [] },
   keepDefaultExclusionRules: true,
   gitScanRoots: [],
   favoriteProjects: [],

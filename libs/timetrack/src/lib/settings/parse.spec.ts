@@ -31,6 +31,7 @@ describe('parseTimetrackSettings', () => {
       reasoning: { enabled: true, command: 'codex', model: 'gpt-5' },
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
+      callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['#.*-general'] },
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/you/dev'],
     });
@@ -51,6 +52,7 @@ describe('parseTimetrackSettings', () => {
       reasoning: { enabled: true, command: 'codex', model: 'gpt-5' },
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
+      callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['#.*-general'] },
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/you/dev'],
       favoriteProjects: [],
@@ -86,6 +88,7 @@ describe('parseTimetrackSettings', () => {
       reasoning: DEFAULT_TIMETRACK_SETTINGS.reasoning,
       nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
       exclusionRules: [],
+      callRules: { countsAsWork: [], neverCountsAsWork: [] },
       keepDefaultExclusionRules: true,
       gitScanRoots: [],
       favoriteProjects: [],

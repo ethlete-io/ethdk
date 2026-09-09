@@ -152,6 +152,16 @@ describe('sessionize', () => {
     expect(commits).toHaveLength(2);
   });
 
+  it('names the application when the window source reports no title', () => {
+    const blocks = sessionize({
+      events: [focus(1, 'com.google.Chrome', ''), focus(2, 'com.tinyspeck.slackmacgap', '')],
+    });
+
+    const titles = blocks[0]!.evidence.filter((entry) => entry.kind === 'window-title');
+
+    expect(titles.map((entry) => entry.detail)).toEqual(['com.google.Chrome', 'com.tinyspeck.slackmacgap']);
+  });
+
   it('clips to working hours and drops what falls outside', () => {
     const blocks = sessionize({
       events: [
@@ -461,5 +471,32 @@ describe('sessionize, with editor heartbeats', () => {
 
     expect(blocks).toHaveLength(1);
     expect(blocks[0]?.context.repoPath).toBe('/home/tom/dev/ethlete-sdk');
+  });
+
+  /**
+   * A call is presence in the stream reading of the day and it is deliberately not a block here. It
+   * carries no checkout, so without the skip a `call-end` would extend the last block by the whole
+   * length of the call and book it to whatever window happened to be in front before the call opened.
+   */
+  it('extends no block for a call, however long the microphone was held', () => {
+    const call = (minutes: number, kind: 'call-start' | 'call-end'): CollectedEvent => ({
+      at: AT(minutes),
+      source: 'call',
+      kind,
+      appId: 'com.hnc.Discord.helper.Renderer',
+    });
+
+    const blocks = sessionize({
+      events: [
+        focus(0, 'code', 'block.ts - ethlete-sdk - Code'),
+        focus(2, 'code', 'block.ts - ethlete-sdk - Code'),
+        call(3, 'call-start'),
+        call(50, 'call-end'),
+      ],
+      options: { repoRoots: ['/home/tom/dev/ethlete-sdk'] },
+    });
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]?.to).toEqual(AT(2));
   });
 });

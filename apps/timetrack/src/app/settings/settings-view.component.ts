@@ -24,6 +24,7 @@ import { injectDayNudge } from '../day-nudge';
 import { injectWindowLock } from '../window-lock';
 import { AgentSessionResyncComponent } from './agent-session-resync.component';
 import { AttributionRulesComponent } from './attribution-rules.component';
+import { CallRulesComponent } from './call-rules.component';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { ExplainComponent } from './explain.component';
 import { FavoriteProjectsComponent } from './favorite-projects.component';
@@ -380,6 +381,14 @@ window title, never a file path. A suggestion never syncs on its own.`;
                 (remove)="store.removeExclusionRule($event)"
                 (keepDefaultsChange)="store.setKeepDefaultExclusionRules($event)"
               />
+
+              <ethlete-call-rules
+                [rules]="store.settings().callRules"
+                (addCountsAsWork)="store.addCallRule('countsAsWork', $event)"
+                (removeCountsAsWork)="store.removeCallRule('countsAsWork', $event)"
+                (addNeverCountsAsWork)="store.addCallRule('neverCountsAsWork', $event)"
+                (removeNeverCountsAsWork)="store.removeCallRule('neverCountsAsWork', $event)"
+              />
             </div>
           </et-tab>
 
@@ -417,6 +426,7 @@ window title, never a file path. A suggestion never syncs on its own.`;
     BUTTON_IMPORTS,
     CHOICE_FIELD_IMPORTS,
     DURATION_INPUT_IMPORTS,
+    CallRulesComponent,
     ExclusionRulesComponent,
     ExplainComponent,
     FORM_FIELD_IMPORTS,

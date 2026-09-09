@@ -293,6 +293,11 @@ export const createFakePorts = (): HostPorts => {
       requestAccessibility$: () => ok(true),
     },
 
+    calls: {
+      batch$: (afterSeq) => ok({ events: [], throughSeq: afterSeq, dropped: 0 }),
+      status$: () => ok({ kind: 'none', detail: null }),
+    },
+
     ingest: {
       batch$: (afterSeq) => ok({ records: [], throughSeq: afterSeq, dropped: 0 }),
       status$: () => ok({ kind: 'none', detail: null, port: null, discoveryPath: null, reporters: [], refused: 0 }),

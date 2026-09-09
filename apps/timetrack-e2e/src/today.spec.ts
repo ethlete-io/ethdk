@@ -159,6 +159,18 @@ const UNBROKEN = `accounts.google.com/signin/oauth/v3/consent${'/segment'.repeat
 
 const stream = (page: Parameters<typeof seedWorld>[0], key: string) => page.locator(`[data-stream="${key}"]`);
 
+/** What the reporter posts while its window has focus. It names the checkout the title does not. */
+const heartbeat = (minutes: number, directory: string): CollectedEvent => ({
+  at: at(minutes),
+  source: 'editor',
+  kind: 'editor-heartbeat',
+  reporter: 'vscode',
+  repoPath: FUT,
+  branch: 'next',
+  directory,
+  editing: true,
+});
+
 /** One line of `git reflog show`, in the format the app asks for. */
 const reflogLine = (options: { stamp: string; from: string; to: string }) =>
   `HEAD@{${options.stamp}}${GIT_FIELD_SEPARATOR}checkout: moving from ${options.from} to ${options.to}`;
@@ -167,6 +179,14 @@ test.describe('the today view', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: day(), git: DISCOVERED });
     await page.goto('/today');
+  });
+
+  test('is where the window opens, with nothing remembered', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('/');
+
+    await expect(page.locator('[data-totals]')).toContainText('present');
+    expect(new URL(page.url()).hash).toBe('#/today');
   });
 
   test('reports presence, engaged time and the ratio between them', async ({ page }) => {
@@ -427,6 +447,31 @@ test.describe('the today view', () => {
     await expect(page.getByText(/Part of this day was rebuilt/)).toBeVisible();
   });
 
+  test('names the checkout from what an editor reported, when no window title could', async ({ page }) => {
+    // macOS reports the application and no document, so this is the shape a real Mac day arrives in:
+    // every title reads `Visual Studio Code` and only the reporter knows which checkout was open.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: [
+        ...[0, 10, 20, 30].map((minutes) => focus(minutes, 'code', 'Visual Studio Code')),
+        ...[0, 10, 20, 30].map((minutes) => heartbeat(minutes, 'src/app/invite')),
+      ],
+    });
+    await page.goto('/today');
+
+    const editor = stream(page, `repo:${FUT}`);
+
+    await expect(editor.locator('[data-label]')).toHaveText('fut-frontend');
+    await expect(editor.locator('[data-engaged]')).toHaveText('30m engaged');
+    await expect(page.locator('[data-presence]')).toHaveText('30m present');
+    await expect(page.locator('[data-rebuilt-total]')).toHaveCount(0);
+
+    await editor.getByRole('button').first().click();
+
+    await expect(editor.getByText('edited src/app/invite')).toBeVisible();
+  });
+
   test('makes no rebuilt claim for a sliver the readout rounds to nothing', async ({ page }) => {
     // A prompt seconds after the last window sample holds presence open past what the machine
     // watched. Every observed day ends in such a sliver, and `0m rebuilt` reads as a broken screen.
@@ -460,5 +505,50 @@ test.describe('the today view', () => {
     await page.goto('/today');
 
     await expect(page.getByText(/Nothing observed this day/)).toBeVisible();
+  });
+});
+
+test.describe('the today view, on a day something held the microphone', () => {
+  const DISCORD = 'com.hnc.Discord';
+  const HELPER = 'com.hnc.Discord.helper.Renderer';
+
+  const call = (minutes: number, kind: 'call-start' | 'call-end'): CollectedEvent => ({
+    at: at(minutes),
+    source: 'call',
+    kind,
+    appId: HELPER,
+  });
+
+  const meeting = [focus(0, DISCORD, '#standup | Braune Digital'), call(2, 'call-start'), call(50, 'call-end')];
+
+  test('names the call from the window in front of it, and says it is not counted', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: meeting });
+    await page.goto('/today');
+
+    const row = page.locator(`[data-call="${HELPER}"]`);
+
+    await expect(row).toContainText('#standup | Braune Digital');
+    await expect(row).toContainText('48m');
+    await expect(row.locator('[data-call-unclassified]')).toBeVisible();
+  });
+
+  test('counts the call as presence once a rule names it', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: meeting,
+      settings: { ...defaultSettings(), callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] } },
+    });
+    await page.goto('/today');
+
+    await expect(page.locator('[data-presence]')).toHaveText('48m present');
+    await expect(page.locator('[data-call-unclassified]')).toHaveCount(0);
+    await expect(page.locator('[data-rebuilt-total]')).toHaveCount(0);
+  });
+
+  test('shows no call panel at all on a day nothing held the microphone', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, git: DISCOVERED, events: day() });
+    await page.goto('/today');
+
+    await expect(page.locator('[data-calls]')).toHaveCount(0);
   });
 });

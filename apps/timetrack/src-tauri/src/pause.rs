@@ -1,3 +1,4 @@
+use crate::calls::CallSource;
 use crate::error::TimetrackResult;
 use crate::ingest::IngestSource;
 use crate::state::Db;
@@ -137,15 +138,18 @@ pub async fn collection_set_paused(
     db: State<'_, Db>,
     windows: State<'_, WindowSource>,
     reporters: State<'_, IngestSource>,
+    calls: State<'_, CallSource>,
     paused: bool,
     at_ms: i64,
 ) -> TimetrackResult<CollectionState> {
     let windows = windows.inner().clone();
     let reporters = reporters.inner().clone();
+    let calls = calls.inner().clone();
     let was = windows.is_paused();
     let apply = |paused: bool| {
         windows.set_paused(paused);
         reporters.set_paused(paused);
+        calls.set_paused(paused);
     };
 
     if paused {

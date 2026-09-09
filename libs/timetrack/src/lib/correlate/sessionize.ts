@@ -1,6 +1,6 @@
 import { ActivityBlock, ActivityContext, blockDurationMs, contextKey } from '../model/block';
 import { branchOf, repoRootOf } from '../model/context';
-import { ActivityEvent, CollectedEvent, isActivityEvent } from '../model/event';
+import { ActivityEvent, CollectedEvent, isActivityEvent, windowFocusDetail } from '../model/event';
 import { Evidence } from '../model/evidence';
 
 export type WorkingHours = {
@@ -45,7 +45,7 @@ const TITLE_SEGMENTS = /\s[-–—|]\s/;
 const evidenceFor = (event: ActivityEvent): Evidence | null => {
   switch (event.kind) {
     case 'window-focus':
-      return { kind: 'window-title', at: event.at, detail: event.title };
+      return { kind: 'window-title', at: event.at, detail: windowFocusDetail(event) };
     case 'git-checkout':
       return { kind: 'branch', at: event.at, detail: `branch \`${event.branch}\` checked out in ${event.repoPath}` };
     case 'git-commit':
@@ -215,6 +215,11 @@ export const sessionize = (options: {
   const config = { ...DEFAULT_SESSIONIZE_OPTIONS, ...options.options };
   const samples = options.events
     .filter(isActivityEvent)
+    // A call is presence in the stream reading of the day and it is deliberately no block here. It
+    // names no checkout, so an end 48 minutes after its start would extend the last block by the whole
+    // call and book it to whatever window was in front before the call opened. Turning a call into a
+    // proposed meeting block is still owed; until then this is what keeps it from inventing one.
+    .filter((sample) => sample.source !== 'call')
     .slice()
     .sort((a, b) => a.at.getTime() - b.at.getTime());
 

@@ -1,5 +1,8 @@
 mod agent;
 mod auth;
+mod calls;
+#[cfg(target_os = "macos")]
+mod calls_macos;
 mod db;
 mod decorations;
 #[cfg(target_os = "linux")]
@@ -72,6 +75,7 @@ pub fn run() {
             let window_lock = lock::WindowLock::new();
             let windows = window::WindowSource::new(window_lock.clone());
             let reporters = ingest::IngestSource::new();
+            let calls = calls::CallSource::new();
 
             app.manage(window_lock);
             lock::start(app.handle().clone());
@@ -86,10 +90,13 @@ pub fn run() {
             // user took yesterday must not collect the first seconds of today's start.
             windows.set_paused(paused);
             reporters.set_paused(paused);
+            calls.set_paused(paused);
             window::start(&windows);
             ingest::start(reporters.clone(), data_dir.clone());
+            calls::start(&calls);
             app.manage(windows);
             app.manage(reporters);
+            app.manage(calls);
 
             let agents = agent::AgentEndpoint::new();
 
@@ -110,6 +117,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             agent::agent_reply,
             agent::agent_status,
+            calls::call_events,
+            calls::call_source_status,
             decorations::window_capabilities,
             git::git_changes,
             git::git_repos,

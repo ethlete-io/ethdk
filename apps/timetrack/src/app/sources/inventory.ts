@@ -30,7 +30,8 @@ export type EvidenceSource = {
   /** What the source is still waiting on. Not shown once it has everything it needs. */
   detail?: string;
   /** The collector whose run this row reports. Focus and presence share one drain, so both name it. */
-  collector?: 'window' | 'git' | 'agent-session' | 'agent-usage' | 'agent-prompt' | 'calendar' | 'gitlab' | 'ingest';
+  collector?:
+    'window' | 'git' | 'agent-session' | 'agent-usage' | 'agent-prompt' | 'calendar' | 'gitlab' | 'ingest' | 'call';
   /** The `source` its events carry in the store, for counting what it has actually put there. */
   eventSource?: CollectedEventSource;
 };
@@ -147,6 +148,15 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     eventSource: 'editor',
   },
   {
+    id: 'call',
+    name: 'Calls',
+    reads: 'Which process on this machine is holding the microphone, and when it lets go.',
+    stores: 'The process that held it and the two instants. No audio, no title and no participant.',
+    state: 'collecting',
+    collector: 'call',
+    eventSource: 'call',
+  },
+  {
     id: 'slack',
     name: 'Slack huddles',
     reads: 'Your own profile’s huddle state, polled on an interval.',
@@ -158,9 +168,10 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     id: 'discord',
     name: 'Discord calls',
     reads: 'Voice state in the one configured guild, through a bot you have to be allowed to add.',
-    stores: 'When you joined and left a voice channel, and which one.',
+    stores: 'Which voice channel you were in, which the microphone alone cannot say.',
     state: 'planned',
-    detail: 'Phase 3, and always proposed as a weak guess that is never synced without an explicit accept.',
+    detail:
+      'Phase 3. Calls already covers when a Discord call ran; this would only name the channel, and it needs a bot in the guild.',
   },
   {
     id: 'gmail',

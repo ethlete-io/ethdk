@@ -7,7 +7,7 @@ import { E2E_NOW, expect, readBackend, seedWorld, test } from './support';
  * backend at the wire: what the screen says is a second, weaker check.
  */
 const planTheNamedRow = async (page: Page) => {
-  await page.goto('/');
+  await page.goto('/day');
   await page.getByLabel('Log time for ABC-3010').check();
   await page.getByRole('link', { name: 'Sync' }).click();
   await page.getByRole('button', { name: 'Plan this day' }).click();

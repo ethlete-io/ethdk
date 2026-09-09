@@ -144,10 +144,10 @@ repository said otherwise.
 
 The app holds **two day builders**, and they read different sources:
 
-| Builder                           | Screens               | Reads                                                |
-| --------------------------------- | --------------------- | ---------------------------------------------------- |
-| `streamDay` (`lib/stream/`)       | `today`               | `window`, `idle`, `git`, `agent-session`             |
-| `correlateDay` (`lib/correlate/`) | `day`, `week`, `sync` | all of those, plus `editor`, `calendar` and `gitlab` |
+| Builder                           | Screens               | Reads                                              |
+| --------------------------------- | --------------------- | -------------------------------------------------- |
+| `streamDay` (`lib/stream/`)       | `today`               | `window`, `idle`, `git`, `agent-session`, `editor` |
+| `correlateDay` (`lib/correlate/`) | `day`, `week`, `sync` | all of those, plus `calendar` and `gitlab`         |
 
 **`streamDay` and the Today view are the v2 foundation.** `correlateDay`, `sessionize`, `meetings`,
 `merge-request-activity` and the day, start, week and sync tabs are v1, and they are to be redone on
@@ -165,12 +165,13 @@ both, because `store/title.ts` runs before either builder.
 
 Two smaller consequences worth knowing before touching either side:
 
-- `app.routes.ts` redirects `''` to the remembered view and defaults to **`day`**, and `**` also
-  lands there - so the app opens on a v1 screen. Flip the default to `today`.
+- `app.routes.ts` defaults `''` and `**` to **`today`** since 2026-09-09. The remembered view still
+  wins, so a window closed on the day tab still opens there.
 - `QUOTABLE_EVIDENCE_KINDS` has no consumer on the v2 path. The Today view renders evidence on
   screen and quotes nothing off the machine: no clipboard write, no file write, no export. Its only
   live readers are `reason/payload.ts` and `ticket/draft.ts`, both reached from the day-review tab -
-  and from the agent endpoint, which is why the allowlist still matters today.
+  and from the agent endpoint, which is why the allowlist still matters today. `calendar` came off it
+  on 2026-09-09; `editor` was never on it, which is what makes a heartbeat's directory safe to render.
 
 ### Why the core is framework-agnostic and transport-agnostic
 
@@ -597,22 +598,42 @@ block with the checkout and branch that no window title could name. What buildin
   API is promise-based and there is no injection context for `takeUntilDestroyed`; obeying them would
   have put RxJS in a bundle that has no other use for it. The bundle is 3.9 kB.
 
-**The v2 day does not read it yet, and that is the next change here.** `READ_SOURCES` in
-`stream/stream-day.ts` lists `window`, `idle`, `git` and `agent-session`, so every heartbeat the
-extension has posted since it was installed sits in the store unread by the Today view. The v1
-`correlate/sessionize.ts` does read them, which is why the gap was easy to miss.
+**The v2 day reads it - built 2026-09-09.** `READ_SOURCES` in `stream/stream-day.ts` now lists
+`editor` beside `window`, `idle`, `git` and `agent-session`, and a second list, `PRESENCE_SOURCES`,
+holds the four that say somebody was at the machine. That split is the whole design: the role a
+heartbeat takes is **attribution and evidence, and not presence**.
 
-Adding `'editor'` to `READ_SOURCES` is not enough on its own. Four places in `stream-day.ts`
-hardcode kinds and would ignore a heartbeat: `repoStateFor` (so no checkout, no branch and **no
-private-checkout filtering**), `evidenceFor` (no evidence row), `stillFocused` and the `seen`
-filter (so the time would land in `rebuilt` rather than in what the machine watched).
+It names the checkout directly, which is what a window reading `Visual Studio Code` cannot do when
+several editor windows are open on different repositories. **On macOS it is not an improvement but
+the only naming source there is**: `window_macos.rs` reports an empty title without the Accessibility
+permission, so until that is granted no title names anything, and a reporter is the whole of what a
+line can be named after. But it only fires while its own window has
+focus, so it can add no presence the window source missed - it could only disagree with it and break
+the reconciliation between `present`, `engaged` and the concurrency ratio. `sessionize.ts` counts a
+heartbeat as presence; the v2 reader deliberately does not.
 
-The role it takes is **attribution and evidence, and not presence**. A heartbeat names the checkout
-directly, which is what a window reading `Visual Studio Code` cannot do when several editor windows
-are open on different repositories. But it only fires while its window has focus, so it can add no
-presence the window source missed - it can only disagree with it and break the reconciliation
-between `present`, `engaged` and the concurrency ratio. `sessionize.ts` counts a heartbeat as
-presence today; the v2 reader deliberately will not.
+What it took, past the one entry in `READ_SOURCES`:
+
+| Place              | What it does now                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| `PRESENCE_SOURCES` | Keeps the heartbeat out of `presence`, so nothing it covers can land in `rebuilt`.        |
+| `repoStateFor`     | Reads its checkout and branch, which is also what applies the private-checkout filtering. |
+| `evidenceFor`      | `edited libs/components/src/lib/table`, the directory and never the file.                 |
+| the sticky         | A heartbeat sets it, so the checkout holds while that editor keeps focus.                 |
+| `checkoutNamer`    | A reporter names a checkout as well as a git event does.                                  |
+
+Two decisions the build added. A heartbeat **sets the sticky**, which a commit and an agent session
+may not: those label a stream, while a heartbeat is the focused window itself saying which checkout it
+holds. The reporter posts every 30 s and the stickiness is 5 minutes, so it refreshes constantly while
+the editor is in front and lapses five minutes after it is not. And a heartbeat that **names no
+checkout is dropped entirely** - it is not presence, and the absolute path it carries instead is
+outside every project rather than something a line can be named after.
+
+**One thing this leaves open, found while building it.** `maxUnobservedMs` closes presence after 30
+minutes of no sample at all, and the window source is edge-triggered, so an unbroken hour in one
+window with no commit reads as half an hour of presence and half an hour of nothing. A heartbeat is
+the one periodic sample the app has and it is now deliberately not allowed to fix that. Whether it
+should is a measurement, not an argument: it needs a real day where the two answers differ.
 
 ### Jira Cloud (phase 1)
 
@@ -874,24 +895,26 @@ against fakes.
 
 #### Two defects found 2026-09-09, both open
 
-**The collector runs neither privacy pass.** `calendar-collector.ts` appends a
-`CalendarOccurrenceEvent` straight to the store: no `applyExclusionRules` and no
-`redactEventTitles`. So an exclusion rule written to keep a client out of the day does not apply to
-the calendar, and a raw meeting title and a `conferenceUrl` are stored verbatim. The ingest collector
-runs both passes; the GitLab collector runs the exclusion pass only. Both must run all of it.
+**The collector ran neither privacy pass. Fixed 2026-09-09.** `calendar-collector.ts` appended a
+`CalendarOccurrenceEvent` straight to the store: no `applyExclusionRules` and no `redactEventTitles`.
+So an exclusion rule written to keep a client out of the day did not apply to the calendar, and a raw
+meeting title was stored verbatim. Both passes run now, and the Sources row says how many occurrences
+a rule denied - a meeting that vanishes silently is the same confusion the v2 rules exist to end.
+`titleOf` in `store/exclusion.ts` already covered a calendar title, so the rule needed no change.
 
-That matters beyond storage, because `calendar` is on `QUOTABLE_EVIDENCE_KINDS`
-(`model/evidence.ts`), so a meeting title may be quoted into a ticket description or into a prompt to
-an agent CLI. The allowlist's own comment says it exists because the alternative fails open, and
-names customer names as the reason. A title written by whoever sent the invitation is exactly that
-case. **`calendar` comes off the allowlist**: a summary can give a meeting's time and length without
-quoting its name. `merge-request` stays, because a merge request title is written against a
-repository the user owns.
+**`calendar` came off `QUOTABLE_EVIDENCE_KINDS` in the same change.** A meeting title may otherwise be
+quoted into a ticket description or into a prompt to an agent CLI, and the allowlist's own comment
+says it exists because the alternative fails open, naming customer names as the reason. A title
+written by whoever sent the invitation is exactly that case, and a summary can give a meeting's time
+and length without quoting its name. `merge-request` stays, because a merge request title is written
+against a repository the user owns. This was live rather than theoretical:
+`app/agent/agent-endpoint.ts` reads `injectDayReview`, and the endpoint runs - `agent.json` sits in
+the app data directory beside `ingest.json`.
 
-This is live rather than theoretical: `app/agent/agent-endpoint.ts` reads `injectDayReview`, and the
-endpoint runs - `agent.json` sits in the app data directory beside `ingest.json`.
+`conferenceUrl` is still stored whole, and it is still a decision nobody has taken. It carries no
+query string, so the URL redaction has nothing to remove from it.
 
-**A dead refresh token makes re-authentication impossible.** Measured 2026-09-09 against a real
+**A dead refresh token made re-authentication impossible. Fixed 2026-09-09.** Measured against a real
 expired token. `prompt=consent` and `access_type=offline` are both set correctly, so the flow itself
 would work; it never starts:
 
@@ -907,11 +930,12 @@ would work; it never starts:
 `google-auth/tokens.ts` already sets a `needsReconnect` flag on `invalid_grant`, with the right
 message. Nothing outside its own spec reads it.
 
-The fix: make `needsReconnect` reach the UI, and stop the effect retrying a load that already failed.
-**A rejected token is not deleted automatically** - `invalid_grant` is also what Google answers for a
-clock skew or a changed client secret, so one error response must not destroy a credential a
-different fix would revive. The honest state is "this stopped working", the badge says so, and both
-buttons work.
+What was built: `needsReconnect` reaches the UI through the account provider, the badge reads
+**reconnect needed** in `danger` rather than **connected**, and a failed read of the calendar list is
+never asked for again on sight - only by the Refresh button. `busy` therefore settles, so both the
+Connect and the Disconnect button work. **A rejected token is still not deleted** - `invalid_grant` is
+also what Google answers for a clock skew or a changed client secret, so one error response must not
+destroy a credential a different fix would revive.
 
 ### GitLab CE, self-hosted (phase 2)
 
@@ -1109,9 +1133,94 @@ device-level fallback is ruled out on its own merits: `kAudioDevicePropertyDevic
 says the microphone is in use and names no application, so under default-deny it can match no rule
 and would count as nothing. It would be dead code shaped like a feature.
 
-Still unverified: whether PipeWire exposes `application.process.id` at all, and what
-`application.process.binary` reports for a Flatpak application - Slack runs sandboxed on this machine
+Still unverified on Linux: whether PipeWire exposes `application.process.id` at all, and what
+`application.process.binary` reports for a Flatpak application - Slack runs sandboxed on that machine
 and its window app id is `com.slack.Slack`. One Slack huddle settles both.
+
+#### macOS measured 2026-09-09, and it lands first now
+
+The dev machine is a Mac, so the platform order above is reversed: CoreAudio is the testable half and
+PipeWire is not. Measured with a scratch crate against `objc2-core-audio` 0.3.2, outside a call and
+inside a real Discord call:
+
+| Question                                                          | Answer                                                                      |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Does `kAudioHardwarePropertyProcessObjectList` need a permission? | No. 33 process objects read with no prompt at all.                          |
+| How is a process named?                                           | By **bundle id** - `com.hnc.Discord`, `com.tinyspeck.slackmacgap`.          |
+| Does `kAudioProcessPropertyIsRunningInput` flip?                  | Yes. Zero for every object outside a call, one inside one.                  |
+| Which object holds it?                                            | The **helper**: `com.hnc.Discord.helper.Renderer`, not `com.hnc.Discord`.   |
+| Can it be pushed rather than polled?                              | Every one of the 33 objects accepted an `AudioObjectAddPropertyListener`.   |
+| What does a sweep cost?                                           | 8-12 ms for the list plus every `IsRunningInput`; 135 ms on the first call. |
+
+**This is a better signal than Linux's, and one measurement is why.** macOS names the holder with the
+same identifier `window_macos.rs` reports for a window (`NSRunningApplication.bundleIdentifier`), and
+the helper that holds the microphone is a **prefix** of the application's own id. So the name match
+the Linux design could not have - PipeWire's `Discord` against a compositor's `discord` - is here a
+prefix test against a value both sources already produce. **No table of exceptions, and no walk up the
+process tree.** The plan's rule stands as written: key on the process, never on a display name.
+
+Two consequences for the build:
+
+- **Listen, do not poll.** A sweep at 8 ms a second is 0.8 % of a core for a signal that changes a few
+  times a day, and every listener registered. The source watches
+  `kAudioHardwarePropertyProcessObjectList` to learn of a new process and
+  `kAudioProcessPropertyIsRunningInput` on each, which is the edge-triggered shape every other
+  collector already has.
+- **Match the process by prefix.** `com.hnc.Discord.helper.Renderer` counts as `com.hnc.Discord`, so
+  the title from the last focus event of that application is the title of the call.
+
+Still unverified on macOS: whether the `kAudioProcessPropertyIsRunningInput` listener fires on the
+change itself. Two 240-second probe runs on 2026-09-09 both had Discord holding the microphone from
+start to finish, so there was no edge to fire on and both printed no `input changed` at all. What they
+did settle is that CoreAudio delivers callbacks to this process: the process-list listener fired four
+times across the two runs. Leaving a call under a running probe still settles the rest.
+
+#### Built 2026-09-09, and it does not depend on that answer
+
+The source is edge-driven and reconciles the whole state on any callback, so the open question above
+costs a late edge at worst rather than a wrong day:
+
+- `calls.rs` holds the portable buffer, the status and `reconcile(at_ms, holding)`. It takes the whole
+  set of holders and pushes one edge per difference, because a platform listener says a property
+  changed and never which way. Pushing the same set twice pushes nothing.
+- `calls_macos.rs` listens on the process list and on every process's `IsRunningInput`, and it runs a
+  **backstop sweep every 60 s**. It registers **no run loop**: measured 2026-09-09 with a second probe
+  that ran no CFRunLoop on any thread and still received four process-list callbacks, so CoreAudio
+  delivers a property listener callback on its own internal thread. A run-loop thread would be a thread
+  doing nothing. That is not how it learns of a call — the listeners are — it is what
+  makes a callback macOS never delivered cost one late edge rather than a call that never ends. At
+  8-12 ms a sweep that is under 0.02 % of a core, so it is not the 1 Hz poll the plan ruled out.
+- The process id is stored **raw**, helper suffix and all. Normalising it in the host would make which
+  suffixes exist part of the settings contract; `classifyCalls` pairs the two by prefix instead, and
+  the separator is part of the test so `com.foo` cannot claim `com.foobar`.
+- `classifyCalls` pairs the edges into `CallWindow`s, names each from the last `window-focus` of that
+  application **before** the call opened, and classifies it. An end with nothing open before it is
+  dropped rather than paired to the start of the day. A call still open runs to the later of what the
+  sources reported through and the last thing the day saw.
+- `streamDay` **unions** the working call windows into presence rather than sampling them: two edges an
+  hour apart would otherwise be split by `maxUnobservedMs` into two instants with an absence between
+  them. They go into `seen` as well as into `presence`, because the microphone observed those minutes —
+  without that an hour of listening would read as a rebuilt hour.
+- A call is no `Stream`, so a working call adds to `presenceMs` and to no `engagedMs`, and
+  `concurrency` reads below 1 on a day of long calls. That is what an hour of presence no checkout
+  booked should read as.
+- `appIdOf` in `exclusion.ts` now refuses a call event by name. A `CallEvent` carries an `appId`, so
+  without that an `app-id` deny rule would reach it by another route and resurrect exactly the bug this
+  section was written to avoid. Nothing private is left unprotected: a call carries a process id and
+  two instants and no title, and the title the review names it with comes from a `window-focus` event
+  those rules already deny.
+
+Three things are still owed.
+
+- **A call is not yet a block in the review.** `sessionize` skips a call event by name, and that skip is
+  load-bearing rather than tidy: a `CallEvent` is an `ActivityEvent`, so without it a `call-end` 48
+  minutes after its start would extend the last block by the whole call and book it to whatever window
+  was in front before the call opened. So the Today screen counts a working call and the day review
+  still proposes no meeting row for it. Turning one into a weak, proposed block is the next slice, and
+  it is where `meetingIssueKey` and the calendar's naming finally meet.
+- **Linux is still `none`,** as designed. The Slack-huddle measurement that settles
+  `application.process.id` and the Flatpak binary name is still owed.
+- **Windows is still `none`.** WASAPI is designed and unbuilt.
 
 ## Projects without the grammar
 

@@ -2,7 +2,7 @@ import { expect, test } from './support';
 
 test.describe('the day view', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/day');
   });
 
   test('reconstructs the seeded morning into a row that names its issue', async ({ page }) => {

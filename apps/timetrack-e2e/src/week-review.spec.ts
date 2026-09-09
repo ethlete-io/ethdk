@@ -16,7 +16,7 @@ test.describe('a day logged in tempo by hand', () => {
       now: E2E_NOW,
       tempo: { worklogs: [tempoWorklogOn({ day: E2E_DAY_KEY, minutes: 90 })] },
     });
-    await page.goto('/');
+    await page.goto('/day');
     await page.getByLabel('Log time for ABC-3010').check();
   });
 

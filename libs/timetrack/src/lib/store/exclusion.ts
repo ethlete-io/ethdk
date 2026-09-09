@@ -64,7 +64,17 @@ const pathOf = (event: CollectedEvent) => {
   return undefined;
 };
 
-const appIdOf = (event: CollectedEvent) => ('appId' in event ? event.appId : undefined);
+/**
+ * The application an exclusion rule may deny. A call's is deliberately not one.
+ *
+ * A call event is a presence sample, so denying it before the store would turn the hours in a voice
+ * room into **absence** rather than into unclassified time — that is why `TimetrackCallRules` decides
+ * at read time instead, and this is what keeps an `app-id` rule from reaching the same event by
+ * another route. Nothing private is left unprotected: a call carries a process id and two instants and
+ * no title, and the title the review names it with comes from a `window-focus` event these rules
+ * already deny.
+ */
+const appIdOf = (event: CollectedEvent) => (event.source !== 'call' && 'appId' in event ? event.appId : undefined);
 
 /** The compiled pattern, or the reason it does not compile. */
 const compiledPattern = (pattern: string): RegExp | string => {

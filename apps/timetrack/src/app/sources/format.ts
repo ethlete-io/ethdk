@@ -2,10 +2,11 @@ import { GitScanFailure } from '@ethlete/timetrack';
 import {
   AgentSessionCollectorTotals,
   AgentLogBackfillRun,
+  CallCollectorTotals,
   IngestCollectorTotals,
   WindowCollectorTotals,
 } from '../../collectors';
-import { GitRepoDiscovery, IngestStatus, SourceTally, WindowSourceStatus } from '../../host';
+import { CallSourceStatus, GitRepoDiscovery, IngestStatus, SourceTally, WindowSourceStatus } from '../../host';
 
 const clock = (at: Date) => at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -39,6 +40,22 @@ export const formatWindowSource = (options: { status: WindowSourceStatus | null;
   return sentences([
     status ? `Source: ${status.kind}.` : null,
     totals.excluded ? `${totals.excluded} denied by an exclusion rule since ${clock(totals.since)}.` : null,
+    totals.dropped ? `${totals.dropped} lost because nothing drained them in time.` : null,
+  ]);
+};
+
+/**
+ * What the microphone is being watched with, and what the drain lost.
+ *
+ * No count of calls is reported here, because a call is not a fault: a day with no meeting stores
+ * nothing and `formatTally` already says so. Which rule made a call work is a read-time question, and
+ * the Today screen answers it per call.
+ */
+export const formatCallSource = (options: { status: CallSourceStatus | null; totals: CallCollectorTotals }) => {
+  const { status, totals } = options;
+
+  return sentences([
+    status ? `Source: ${status.kind}.` : null,
     totals.dropped ? `${totals.dropped} lost because nothing drained them in time.` : null,
   ]);
 };

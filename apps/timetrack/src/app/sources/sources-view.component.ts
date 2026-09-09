@@ -8,6 +8,7 @@ import {
   injectAgentPromptBackfill,
   injectAgentSpendBackfill,
   injectCalendarCollector,
+  injectCallCollector,
   injectCodexSessionCollector,
   injectCodexPromptBackfill,
   injectCodexSpendBackfill,
@@ -22,6 +23,7 @@ import { injectTimetrackSettings } from '../settings/settings';
 import {
   formatAgentSessions,
   formatCalendarRead,
+  formatCallSource,
   formatGitFailures,
   formatGitLabRead,
   formatGitScan,
@@ -170,6 +172,7 @@ export class SourcesViewComponent {
   private codexPrompts = injectCodexPromptBackfill();
   private git = injectGitCollector();
   private calendar = injectCalendarCollector();
+  private calls = injectCallCollector();
   private gitlab = injectGitLabCollector();
   private ingest = injectIngestCollector();
   private settings = injectTimetrackSettings();
@@ -185,6 +188,7 @@ export class SourcesViewComponent {
     codexPrompts: this.codexPrompts.lastRun(),
     git: this.git.lastRun(),
     calendar: this.calendar.lastRun(),
+    calls: this.calls.lastRun(),
     gitlab: this.gitlab.lastRun(),
     ingest: this.ingest.lastRun(),
   }));
@@ -293,6 +297,8 @@ export class SourcesViewComponent {
             readAt: this.gitlab.lastRun()?.at ?? null,
           }) || null
         );
+      case 'call':
+        return formatCallSource({ status: this.calls.status(), totals: this.calls.totals() }) || null;
       case 'ingest':
         return formatIngest({ status: this.ingest.status(), totals: this.ingest.totals() }) || null;
       default:
@@ -304,6 +310,8 @@ export class SourcesViewComponent {
     if (source.collector === 'window') return this.windows.status()?.detail ?? null;
 
     if (source.collector === 'gitlab') return this.gitlab.lastRun()?.failures.join(' ') || null;
+
+    if (source.collector === 'call') return this.calls.status()?.detail ?? null;
 
     if (source.collector === 'ingest') return this.ingest.status()?.detail ?? null;
 
@@ -345,6 +353,8 @@ export class SourcesViewComponent {
         return this.calendar.failure();
       case 'gitlab':
         return this.gitlab.failure();
+      case 'call':
+        return this.calls.failure();
       case 'ingest':
         return this.ingest.failure();
       default:

@@ -13,6 +13,7 @@ import {
   TimetrackGoogleSettings,
   TimetrackJiraSettings,
   TimetrackSettings,
+  TimetrackCallRules,
   TimetrackTicketSettings,
   clampDayTargetMs,
   clampGapFillMs,
@@ -202,6 +203,21 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     removeExclusionRule: (rule: TimetrackExclusionRule) =>
       patch({ exclusionRules: settings().exclusionRules.filter((existing) => !sameRule(existing, rule)) }),
+
+    addCallRule: (list: keyof TimetrackCallRules, pattern: string) => {
+      const trimmed = pattern.trim();
+      const rules = settings().callRules;
+
+      if (!trimmed || rules[list].includes(trimmed)) return;
+
+      patch({ callRules: { ...rules, [list]: [...rules[list], trimmed] } });
+    },
+
+    removeCallRule: (list: keyof TimetrackCallRules, pattern: string) => {
+      const rules = settings().callRules;
+
+      patch({ callRules: { ...rules, [list]: rules[list].filter((existing) => existing !== pattern) } });
+    },
 
     addGitScanRoot: (root: string) => {
       const trimmed = root.trim();

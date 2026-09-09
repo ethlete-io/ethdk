@@ -22,7 +22,7 @@ const openTheForm = async (page: Page) => {
 
 test.describe('starting work', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/day');
   });
 
   test('names the branch before anything is filed', async ({ page }) => {

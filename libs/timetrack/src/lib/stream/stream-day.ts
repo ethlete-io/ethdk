@@ -8,18 +8,39 @@ import {
   CollectedEventSource,
   TokenUsage,
   isActivityEvent,
+  windowFocusDetail,
 } from '../model/event';
 import { Evidence } from '../model/evidence';
 import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 import { TimeWindow } from '../model/time-window';
+import { TimetrackCallRules } from '../settings/model';
+import { CallWindow, classifyCalls } from './calls';
 import { PresenceSample, presenceWindows } from './presence';
 import { clipWindows, mergeWindows, subtractWindows, windowsMs } from './windows';
 
 /** The key of the one line every application with no checkout folds into. */
 export const OTHER_APPLICATIONS_KEY = 'other-applications';
 
-/** The sources a day is read from. `editor`, `calendar`, `gitlab` and `ingest` stay in the store, unread. */
-const READ_SOURCES: readonly CollectedEventSource[] = ['window', 'idle', 'git', 'agent-session'];
+/**
+ * The sources the streams are built from. `calendar`, `gitlab` and `ingest` stay in the store, unread.
+ *
+ * `call` is read too, in a pass of its own, and it is deliberately not here: a call is presence and it
+ * is never attribution, so it may not enter the loop that sets the sticky context or claims a stretch
+ * for a checkout. Adding it here would book the microphone's hours to whatever repository was last in
+ * front. See `classifyCalls`.
+ */
+const READ_SOURCES: readonly CollectedEventSource[] = ['window', 'idle', 'git', 'agent-session', 'editor'];
+
+/**
+ * The sources that say somebody was at the machine.
+ *
+ * An editor heartbeat is deliberately not one, and this list is what keeps it out. It only fires while
+ * its own window has focus, so every minute it covers is a minute the window source already reported —
+ * it can name the checkout that window holds and it can add no time. Counting it would only let the two
+ * disagree, and the difference reads on screen as time nothing watched. `sessionize` counts a heartbeat
+ * as presence; this deliberately does not.
+ */
+const PRESENCE_SOURCES: readonly CollectedEventSource[] = ['window', 'idle', 'git', 'agent-session'];
 
 export type StreamDayOptions = {
   /**
@@ -58,6 +79,8 @@ export type StreamDayOptions = {
    * sample. Without it a day still being collected reports its own live tail as rebuilt.
    */
   windowsSeenThroughMs?: number;
+  /** Which calls counted as work. Nothing configured leaves every call unclassified — see `classifyCalls`. */
+  callRules?: TimetrackCallRules;
 };
 
 export const DEFAULT_STREAM_DAY_OPTIONS: StreamDayOptions = {
@@ -146,6 +169,16 @@ export type StreamDay = {
    * its time is in the other-applications line, and this is the only thing that says why.
    */
   ambiguousNames: string[];
+  /**
+   * Every call of the day, in order — the ones a rule made work and the ones nothing classified alike.
+   *
+   * The unclassified ones are here so the review can show them and the user can write the rule; under
+   * default-deny they add no presence and propose nothing. A call is no `Stream`, because a stream is a
+   * checkout and a call is not one, so a working call adds to `presenceMs` and to no `engagedMs`. On a
+   * day of long calls `concurrency` therefore reads below 1, which is what an hour of presence that no
+   * checkout booked should read as.
+   */
+  calls: CallWindow[];
 };
 
 type StreamDraft = {
@@ -202,7 +235,13 @@ const promptEvidence = (prompt: AgentPromptEvent): Evidence => ({
 const evidenceFor = (sample: ActivityEvent): Evidence | null => {
   switch (sample.kind) {
     case 'window-focus':
-      return { kind: 'window-title', at: sample.at, detail: sample.title };
+      return { kind: 'window-title', at: sample.at, detail: windowFocusDetail(sample) };
+    case 'editor-heartbeat':
+      return {
+        kind: 'editor',
+        at: sample.at,
+        detail: `${sample.editing ? 'edited' : 'read'} ${sample.directory ?? sample.repoPath ?? sample.reporter}`,
+      };
     case 'git-checkout':
       return {
         kind: 'branch',
@@ -280,6 +319,10 @@ const repoStateFor = (sample: ActivityEvent, roots: readonly string[]): RepoStat
       return { repoPath: sample.repoPath, branch: branchOf(sample.branch) };
     case 'agent-session':
       return { repoPath: repoRootOf({ path: sample.cwd, roots }), branch: branchOf(sample.gitBranch) };
+    case 'editor-heartbeat':
+      return sample.repoPath
+        ? { repoPath: repoRootOf({ path: sample.repoPath, roots }), branch: branchOf(sample.branch) }
+        : null;
     default:
       return null;
   }
@@ -384,6 +427,9 @@ const checkoutNamer = (options: {
 
   for (const sample of options.samples) {
     if (sample.kind === 'git-commit' || sample.kind === 'git-checkout') known.add(sample.repoPath);
+    // A reporter names the checkout it found with git, so it names one as well as a git event does —
+    // and it is the only source for a repository the user only ever opens in an editor.
+    if (sample.kind === 'editor-heartbeat' && sample.repoPath) known.add(sample.repoPath);
   }
 
   return (path: string | undefined) => {
@@ -515,6 +561,9 @@ export const streamDay = (options: {
   const observed = options.events
     .filter(isActivityEvent)
     .filter((sample) => READ_SOURCES.includes(sample.source))
+    // A heartbeat naming no checkout has no job here: it is not presence, and the directory it carries
+    // is an absolute path outside every project rather than something a line can be named after.
+    .filter((sample) => sample.kind !== 'editor-heartbeat' || !!sample.repoPath)
     .slice()
     .sort((a, b) => a.at.getTime() - b.at.getTime());
 
@@ -543,22 +592,46 @@ export const streamDay = (options: {
     .filter((event): event is AgentUsageEvent => event.source === 'agent-usage')
     .filter((turn) => !turn.cwd || !isPrivate({ repoPath: repoRootOf({ path: turn.cwd, roots }), links }));
 
-  const rebuildSamples: PresenceSample[] = [...observed, ...prompts, ...turns].sort(
-    (a, b) => a.at.getTime() - b.at.getTime(),
-  );
+  const rebuildSamples: PresenceSample[] = [
+    ...observed.filter((sample) => PRESENCE_SOURCES.includes(sample.source)),
+    ...prompts,
+    ...turns,
+  ].sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  const presence = presenceWindows({
-    samples: rebuildSamples,
-    maxUnobservedMs: config.maxUnobservedMs,
-    maxAgentGapMs: config.maxAgentGapMs,
+  const calls = classifyCalls({
+    events: options.events,
+    rules: config.callRules ?? { countsAsWork: [], neverCountsAsWork: [] },
+    // Where a call nothing has ended yet is cut: the later of what the sources have reported through
+    // and the last thing the day saw. A call with neither has no known duration and reads as none.
+    until: new Date(Math.max(config.windowsSeenThroughMs ?? 0, ...options.events.map((event) => +event.at))),
   });
+
+  // A call is a stretch rather than a point, so it is unioned in rather than sampled: two edges an hour
+  // apart would otherwise be split by `maxUnobservedMs` into two instants with an absence between them.
+  const heldMicrophone = calls.filter((call) => call.countsAsWork).map(({ from, to }) => ({ from, to }));
+
+  const presence = mergeWindows([
+    ...presenceWindows({
+      samples: rebuildSamples,
+      maxUnobservedMs: config.maxUnobservedMs,
+      maxAgentGapMs: config.maxAgentGapMs,
+    }),
+    ...heldMicrophone,
+  ]);
 
   // What the machine itself watched. Everything presence holds beyond it was rebuilt, and the two are
   // disjoint, so each minute of presence has exactly one owner and the ratio keeps its meaning.
-  const seen = presenceWindows({
-    samples: observed.filter((sample) => sample.source === 'window' || sample.source === 'idle'),
-    maxUnobservedMs: config.maxUnobservedMs,
-  });
+  //
+  // A working call belongs here and not only in `presence`: the microphone observed those minutes, so
+  // they were watched rather than reconstructed. An hour spent listening produces no input at all, and
+  // this is what stops it reading as a rebuilt hour.
+  const seen = mergeWindows([
+    ...presenceWindows({
+      samples: observed.filter((sample) => sample.source === 'window' || sample.source === 'idle'),
+      maxUnobservedMs: config.maxUnobservedMs,
+    }),
+    ...heldMicrophone,
+  ]);
 
   const rebuilt = subtractWindows({ windows: presence, without: seen });
   const checkoutOf = checkoutNamer({ samples, roots, links });
@@ -594,14 +667,18 @@ export const streamDay = (options: {
 
     const observed = repoStateFor(sample, roots);
 
-    // A branch is only ever learned from git or an agent session. Focusing a window says which
-    // checkout is in front of you, not what is checked out in it.
+    // A branch is only ever learned from git, an agent session or an editor. Focusing a window says
+    // which checkout is in front of you, not what is checked out in it.
     if (observed) branches.set(observed.repoPath, observed.branch ?? branches.get(observed.repoPath));
 
-    // Only a window title may set the sticky. A commit and an agent session label a stream, and neither
-    // is a reason to hand the following minutes to the checkout they name — which is what put a Figma
-    // tab and a merge-request page on the checkout somebody had just committed in.
+    // A window title and an editor heartbeat may set the sticky. A commit and an agent session may not:
+    // they label a stream, and neither is a reason to hand the following minutes to the checkout they
+    // name — which is what put a Figma tab and a merge-request page on the checkout somebody had just
+    // committed in. A heartbeat is the opposite case. It only fires while its own window has focus, so
+    // it says which checkout that window holds, which is what a title reading `Visual Studio Code`
+    // cannot say when two editor windows are open on different repositories.
     if (focused && sample.kind === 'window-focus') sticky = { repoPath: focused, at: sample.at, appId };
+    if (sample.kind === 'editor-heartbeat' && observed) sticky = { repoPath: observed.repoPath, at: sample.at, appId };
     if (sticky && sample.at.getTime() - sticky.at.getTime() > config.repoStickinessMs) sticky = undefined;
 
     // The sticky passes only inside the application that set it: an editor whose title stops naming the
@@ -730,5 +807,6 @@ export const streamDay = (options: {
     spend,
     unattributedSpend,
     ambiguousNames: [...claimedAmbiguously],
+    calls,
   };
 };

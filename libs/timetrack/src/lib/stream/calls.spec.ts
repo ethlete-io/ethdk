@@ -1,0 +1,188 @@
+import { CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
+import { TimetrackCallRules } from '../settings/model';
+import { classifyCalls } from './calls';
+
+const at = (minute: number) => new Date(Date.UTC(2026, 8, 9, 9, minute));
+
+const call = (minute: number, kind: CallEvent['kind'], appId: string): CallEvent => ({
+  at: at(minute),
+  source: 'call',
+  kind,
+  appId,
+});
+
+const focus = (minute: number, appId: string, title: string): WindowFocusEvent => ({
+  at: at(minute),
+  source: 'window',
+  kind: 'window-focus',
+  appId,
+  title,
+});
+
+const rules = (over: Partial<TimetrackCallRules> = {}): TimetrackCallRules => ({
+  countsAsWork: [],
+  neverCountsAsWork: [],
+  ...over,
+});
+
+const classify = (events: CollectedEvent[], over: Partial<TimetrackCallRules> = {}, untilMinute = 120) =>
+  classifyCalls({ events, rules: rules(over), until: at(untilMinute) });
+
+describe('classifyCalls', () => {
+  it('pairs a start and an end into one window', () => {
+    const windows = classify([
+      call(0, 'call-start', 'com.hnc.Discord.helper.Renderer'),
+      call(45, 'call-end', 'com.hnc.Discord.helper.Renderer'),
+    ]);
+
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.from).toEqual(at(0));
+    expect(windows[0]!.to).toEqual(at(45));
+    expect(windows[0]!.appId).toBe('com.hnc.Discord.helper.Renderer');
+  });
+
+  it('runs a call nobody has ended yet to the cut-off', () => {
+    const windows = classify([call(0, 'call-start', 'com.hnc.Discord')], {}, 90);
+
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.to).toEqual(at(90));
+  });
+
+  it('invents no call from an end that nothing opened', () => {
+    expect(classify([call(30, 'call-end', 'com.hnc.Discord')])).toHaveLength(0);
+  });
+
+  it('keeps two applications on the microphone apart', () => {
+    const windows = classify([
+      call(0, 'call-start', 'com.hnc.Discord'),
+      call(10, 'call-start', 'com.tinyspeck.slackmacgap'),
+      call(20, 'call-end', 'com.hnc.Discord'),
+      call(50, 'call-end', 'com.tinyspeck.slackmacgap'),
+    ]);
+
+    expect(windows.map((window) => window.appId)).toEqual(['com.hnc.Discord', 'com.tinyspeck.slackmacgap']);
+    expect(windows[0]!.to).toEqual(at(20));
+    expect(windows[1]!.to).toEqual(at(50));
+  });
+
+  it('names the call from the last window that application had in front before it', () => {
+    const windows = classify([
+      focus(0, 'com.hnc.Discord', '#general | Some Server'),
+      focus(5, 'com.hnc.Discord', '#divinity-general | Divinity of Thrones'),
+      focus(8, 'com.microsoft.VSCode', 'calls.rs - timetrack'),
+      call(10, 'call-start', 'com.hnc.Discord.helper.Renderer'),
+      call(40, 'call-end', 'com.hnc.Discord.helper.Renderer'),
+    ]);
+
+    expect(windows[0]!.title).toBe('#divinity-general | Divinity of Thrones');
+  });
+
+  it('reads no title from a focus that came after the call opened', () => {
+    const windows = classify([
+      call(10, 'call-start', 'com.hnc.Discord.helper.Renderer'),
+      focus(20, 'com.hnc.Discord', '#general | Some Server'),
+      call(40, 'call-end', 'com.hnc.Discord.helper.Renderer'),
+    ]);
+
+    expect(windows[0]!.title).toBe('');
+  });
+
+  it('never reads a title from an application whose id the holder only starts like', () => {
+    const windows = classify([
+      focus(0, 'com.hnc.Discordant', 'not the same application'),
+      call(10, 'call-start', 'com.hnc.Discord'),
+      call(40, 'call-end', 'com.hnc.Discord'),
+    ]);
+
+    expect(windows[0]!.title).toBe('');
+  });
+
+  it('counts no call as work when nothing is configured', () => {
+    const windows = classify([
+      focus(0, 'com.hnc.Discord', '#braune-digital | Braune Digital'),
+      call(10, 'call-start', 'com.hnc.Discord'),
+      call(40, 'call-end', 'com.hnc.Discord'),
+    ]);
+
+    expect(windows[0]!.countsAsWork).toBe(false);
+  });
+
+  it('counts a call as work when a pattern names its title', () => {
+    const windows = classify(
+      [
+        focus(0, 'com.hnc.Discord', '#standup | Braune Digital'),
+        call(10, 'call-start', 'com.hnc.Discord.helper.Renderer'),
+        call(40, 'call-end', 'com.hnc.Discord.helper.Renderer'),
+      ],
+      { countsAsWork: ['Braune Digital'] },
+    );
+
+    expect(windows[0]!.countsAsWork).toBe(true);
+  });
+
+  it('counts a call as work when a pattern names the process alone', () => {
+    const windows = classify(
+      [call(10, 'call-start', 'com.tinyspeck.slackmacgap'), call(40, 'call-end', 'com.tinyspeck.slackmacgap')],
+      { countsAsWork: ['tinyspeck'] },
+    );
+
+    expect(windows[0]!.countsAsWork).toBe(true);
+  });
+
+  it('lets a deny pattern beat an allow pattern', () => {
+    const windows = classify(
+      [
+        focus(0, 'com.hnc.Discord', '#divinity-general | Divinity of Thrones'),
+        call(10, 'call-start', 'com.hnc.Discord'),
+        call(40, 'call-end', 'com.hnc.Discord'),
+      ],
+      { countsAsWork: ['com.hnc.Discord'], neverCountsAsWork: ['#.*-general'] },
+    );
+
+    expect(windows[0]!.countsAsWork).toBe(false);
+  });
+
+  it('matches a pattern whatever its case', () => {
+    const windows = classify(
+      [
+        focus(0, 'com.hnc.Discord', '#STANDUP | BRAUNE DIGITAL'),
+        call(10, 'call-start', 'com.hnc.Discord'),
+        call(40, 'call-end', 'com.hnc.Discord'),
+      ],
+      { countsAsWork: ['braune digital'] },
+    );
+
+    expect(windows[0]!.countsAsWork).toBe(true);
+  });
+
+  it('reads the day rather than throwing when a pattern does not compile', () => {
+    const windows = classify([call(10, 'call-start', 'com.hnc.Discord'), call(40, 'call-end', 'com.hnc.Discord')], {
+      countsAsWork: ['com.hnc.Discord', '[unfinished'],
+    });
+
+    expect(windows[0]!.countsAsWork).toBe(true);
+  });
+
+  it('counts no call as work when the only allow pattern does not compile', () => {
+    const windows = classify([call(10, 'call-start', 'com.hnc.Discord'), call(40, 'call-end', 'com.hnc.Discord')], {
+      countsAsWork: ['[unfinished'],
+    });
+
+    expect(windows[0]!.countsAsWork).toBe(false);
+  });
+
+  it('drops an open call the cut-off is not after', () => {
+    expect(classify([call(90, 'call-start', 'com.hnc.Discord')], {}, 90)).toHaveLength(0);
+  });
+
+  it('orders the calls by when each one started', () => {
+    const windows = classify([
+      call(0, 'call-start', 'com.hnc.Discord'),
+      call(10, 'call-start', 'com.tinyspeck.slackmacgap'),
+      call(20, 'call-end', 'com.tinyspeck.slackmacgap'),
+      call(50, 'call-end', 'com.hnc.Discord'),
+    ]);
+
+    expect(windows.map((window) => window.from)).toEqual([at(0), at(10)]);
+  });
+});

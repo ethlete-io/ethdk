@@ -4,6 +4,7 @@ import { REASONING_COMMANDS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
 import {
   DEFAULT_TIMETRACK_SETTINGS,
+  TimetrackCallRules,
   TimetrackFavoriteProject,
   TimetrackNudgeSettings,
   TimetrackReasoningSettings,
@@ -164,6 +165,20 @@ const asTextList = (value: unknown) =>
   Array.isArray(value) ? [...new Set(value.map(asText).filter((entry) => !!entry))] : [];
 
 /**
+ * A pattern that does not compile survives the read, for the same reason an exclusion rule does: the
+ * settings screen is the only place the user can find the typo, and `classifyCalls` already treats an
+ * unreadable pattern as matching nothing.
+ */
+const asCallRules = (value: unknown): TimetrackCallRules => {
+  const raw = asRecord(value);
+
+  return {
+    countsAsWork: asTextList(raw['countsAsWork']),
+    neverCountsAsWork: asTextList(raw['neverCountsAsWork']),
+  };
+};
+
+/**
  * Reads the picked projects, and reads a document written before they existed: the list used to be
  * bare `issueKeyPrefixes`, which held exactly these keys with no name beside them. Migrating them here
  * rather than asking again keeps the one setting that stops a false issue key from being read.
@@ -233,6 +248,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     reasoning: asReasoning(document['reasoning']),
     nudge: asNudge(document['nudge']),
     exclusionRules: asRules(document['exclusionRules']),
+    callRules: asCallRules(document['callRules']),
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,
     gitScanRoots: asTextList(document['gitScanRoots']),
     favoriteProjects: asFavoriteProjects(document),

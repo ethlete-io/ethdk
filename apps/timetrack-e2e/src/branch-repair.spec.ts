@@ -12,7 +12,7 @@ const fileTheTicket = async (page: import('@playwright/test').Page) => {
 
 test.describe('branch repair', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/day');
   });
 
   test('offers no repair before a ticket exists to name the branch after', async ({ page }) => {

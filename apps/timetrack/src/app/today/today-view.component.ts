@@ -6,7 +6,7 @@ import {
   EMPTY_STATE_IMPORTS,
   SpinnerComponent,
 } from '@ethlete/components';
-import { Stream, formatDurationMs } from '@ethlete/timetrack';
+import { CallWindow, Stream, callLabel, formatDurationMs } from '@ethlete/timetrack';
 import { formatClockTime, formatDayLabel } from '../day-review/format';
 import {
   formatAgentSessions,
@@ -140,6 +140,34 @@ import { injectToday, provideToday } from './today';
             </div>
           }
 
+          @if (day.calls.length) {
+            <div
+              class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2"
+              data-calls
+            >
+              <span class="text-base" data-calls-label>Calls</span>
+
+              <ul class="flex list-none flex-col gap-0.5">
+                @for (call of day.calls; track call.appId + call.from.getTime()) {
+                  <li [attr.data-call]="call.appId" class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-small">
+                    <span class="text-mono shrink-0 text-et-surface-muted">{{ CALL_SPAN_OF(call) }}</span>
+                    <span [title]="call.appId" class="min-w-0 truncate">{{ CALL_LABEL_OF(call) }}</span>
+                    <span class="text-et-surface-muted">{{ CALL_LENGTH_OF(call) }}</span>
+
+                    @if (!call.countsAsWork) {
+                      <span class="text-et-surface-subtle" data-call-unclassified>not counted</span>
+                    }
+                  </li>
+                }
+              </ul>
+
+              <span class="text-small text-et-surface-subtle">
+                A call is presence: an hour spent listening leaves no keystroke, so nothing else sees it. Whether it was
+                work is your call, and a call no rule names is not counted. Write the rule in Settings.
+              </span>
+            </div>
+          }
+
           @if (ambiguous(); as names) {
             <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
               <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -206,6 +234,15 @@ export class TodayViewComponent {
   protected readonly CLOCK_OF = formatClockTime;
   protected readonly UNATTENDED_OF = formatUnattended;
   protected readonly REBUILT_OF = formatRebuilt;
+  protected readonly CALL_LABEL_OF = callLabel;
+
+  protected CALL_SPAN_OF(call: CallWindow) {
+    return `${formatClockTime(call.from)} – ${formatClockTime(call.to)}`;
+  }
+
+  protected CALL_LENGTH_OF(call: CallWindow) {
+    return formatDurationMs(call.to.getTime() - call.from.getTime());
+  }
 
   protected engagedOf(stream: Stream) {
     return formatDurationMs(stream.engagedMs);

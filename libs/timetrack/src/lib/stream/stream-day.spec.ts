@@ -86,6 +86,28 @@ const sessionRun = (options: { from: number; to: number; cwd: string; sessionId?
     session(options.from + offset, options.cwd, options.sessionId),
   );
 
+const heartbeat = (options: {
+  minutes: number;
+  repoPath?: string;
+  directory?: string;
+  branch?: string;
+  editing?: boolean;
+}): CollectedEvent => ({
+  at: AT(options.minutes),
+  source: 'editor',
+  kind: 'editor-heartbeat',
+  reporter: 'vscode',
+  repoPath: options.repoPath,
+  branch: options.branch ?? 'next',
+  directory: options.directory,
+  editing: options.editing ?? true,
+});
+
+const heartbeatRun = (options: { from: number; to: number; repoPath?: string; directory?: string }): CollectedEvent[] =>
+  Array.from({ length: options.to - options.from + 1 }, (_, offset) =>
+    heartbeat({ ...options, minutes: options.from + offset }),
+  );
+
 const privateLink = (path: string): TimetrackProjectLink => ({
   id: path,
   path,
@@ -129,6 +151,19 @@ describe('streamDay', () => {
     expect(folded?.apps).toEqual(['slack', 'firefox', 'spotify']);
     expect(folded?.engagedMs).toBe(30 * MINUTE);
     expect(folded?.repoPath).toBeUndefined();
+  });
+
+  it('names the application when the window source reports no title', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'com.google.Chrome', title: '' }),
+        ...focusRun({ from: 10, to: 20, appId: 'com.tinyspeck.slackmacgap', title: '' }),
+      ],
+    });
+
+    const folded = streamOf(day, OTHER_APPLICATIONS_KEY);
+
+    expect(folded?.evidence.map((entry) => entry.detail)).toEqual(['com.google.Chrome', 'com.tinyspeck.slackmacgap']);
   });
 
   it('books a checkout an agent ran in, and says nobody ever looked at it', () => {
@@ -463,6 +498,7 @@ describe('streamDay', () => {
         models: [],
       },
       ambiguousNames: [],
+      calls: [],
     });
   });
 
@@ -480,6 +516,124 @@ describe('streamDay', () => {
     expect(day.engagedMs).toBe(day.streams.reduce((sum, stream) => sum + stream.engagedMs, 0));
     expect(day.concurrency).toBe(day.engagedMs / day.presenceMs);
     expect(day.engagedMs).toBeGreaterThanOrEqual(day.presenceMs);
+  });
+});
+
+describe('streamDay, on a day an editor reported', () => {
+  it('names the checkout a window title reading only the application cannot', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 30, appId: 'code', title: 'Visual Studio Code' }),
+        ...heartbeatRun({ from: 0, to: 30, repoPath: FUT, directory: 'src/app' }),
+      ],
+      options: { repoRoots: [SDK, FUT] },
+    });
+
+    expect(day.streams.map((stream) => stream.key)).toEqual([`repo:${FUT}`]);
+    expect(streamOf(day, `repo:${FUT}`)?.engagedMs).toBe(30 * MINUTE);
+    expect(streamOf(day, `repo:${FUT}`)?.branches).toEqual(['next']);
+  });
+
+  it('adds no presence of its own, so the ratio still reconciles', () => {
+    const withEditor = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'Visual Studio Code' }),
+        ...heartbeatRun({ from: 0, to: 40, repoPath: FUT }),
+      ],
+      options: { repoRoots: [FUT] },
+    });
+    const withoutEditor = streamDay({
+      events: focusRun({ from: 0, to: 10, appId: 'code', title: 'Visual Studio Code' }),
+      options: { repoRoots: [FUT] },
+    });
+
+    expect(withEditor.presenceMs).toBe(withoutEditor.presenceMs);
+    expect(withEditor.rebuiltMs).toBe(0);
+    expect(withEditor.engagedMs).toBe(withEditor.presenceMs);
+    expect(withEditor.concurrency).toBe(1);
+  });
+
+  it('keeps the checkout while the editor holds focus, and drops it at the next application', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 20, appId: 'code', title: 'Visual Studio Code' }),
+        ...heartbeatRun({ from: 0, to: 20, repoPath: FUT }),
+        ...focusRun({ from: 20, to: 40, appId: 'slack' }),
+      ],
+      options: { repoRoots: [FUT] },
+    });
+
+    expect(streamOf(day, `repo:${FUT}`)?.engagedMs).toBe(20 * MINUTE);
+    expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(20 * MINUTE);
+  });
+
+  it('holds the checkout no longer than the stickiness once the heartbeats stop', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 20, appId: 'code', title: 'Visual Studio Code' }),
+        heartbeat({ minutes: 0, repoPath: FUT }),
+      ],
+      options: { repoRoots: [FUT], repoStickinessMs: 5 * MINUTE },
+    });
+
+    expect(streamOf(day, `repo:${FUT}`)?.engagedMs).toBe(6 * MINUTE);
+    expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(14 * MINUTE);
+  });
+
+  it('says what was read and what was edited, and names the directory rather than the file', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'Visual Studio Code' }),
+        heartbeat({ minutes: 2, repoPath: FUT, directory: 'src/app/today', editing: false }),
+        heartbeat({ minutes: 4, repoPath: FUT, directory: 'src/app/today', editing: true }),
+      ],
+      options: { repoRoots: [FUT] },
+    });
+
+    expect(streamOf(day, `repo:${FUT}`)?.evidence.filter((entry) => entry.kind === 'editor')).toEqual([
+      { kind: 'editor', at: AT(2), detail: 'read src/app/today' },
+      { kind: 'editor', at: AT(4), detail: 'edited src/app/today' },
+    ]);
+  });
+
+  it('drops a heartbeat from a private checkout, name and directory alike', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 20, appId: 'code', title: 'Visual Studio Code' }),
+        ...heartbeatRun({ from: 0, to: 20, repoPath: ELROND, directory: 'src/secret' }),
+      ],
+      options: { repoRoots: [ELROND], links: [privateLink(ELROND)] },
+    });
+
+    expect(day.streams.map((stream) => stream.key)).toEqual([OTHER_APPLICATIONS_KEY]);
+    expect(JSON.stringify(day)).not.toContain('elrond');
+    expect(JSON.stringify(day)).not.toContain('secret');
+  });
+
+  it('names no stream for a heartbeat that found no checkout', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'Visual Studio Code' }),
+        heartbeat({ minutes: 2, directory: '/home/tom/Downloads/scratch' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.streams.map((stream) => stream.key)).toEqual([OTHER_APPLICATIONS_KEY]);
+    expect(JSON.stringify(day)).not.toContain('Downloads');
+  });
+
+  it('lets a window title that names a checkout outrank the editor', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 20, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...heartbeatRun({ from: 0, to: 20, repoPath: FUT }),
+      ],
+      options: { repoRoots: [SDK, FUT] },
+    });
+
+    expect(streamOf(day, `repo:${SDK}`)?.engagedMs).toBe(20 * MINUTE);
+    expect(streamOf(day, `repo:${FUT}`)).toBeUndefined();
   });
 });
 
@@ -717,5 +871,105 @@ describe('streamDay, on a day still being collected', () => {
     });
 
     expect(day.presenceMs).toBe(11 * MINUTE);
+  });
+});
+
+describe('streamDay, on a day something held the microphone', () => {
+  const DISCORD = 'com.hnc.Discord';
+  const HELPER = 'com.hnc.Discord.helper.Renderer';
+
+  const call = (minutes: number, kind: 'call-start' | 'call-end', appId = HELPER): CollectedEvent => ({
+    at: AT(minutes),
+    source: 'call',
+    kind,
+    appId,
+  });
+
+  const meeting = [focus(0, DISCORD, '#standup | Braune Digital'), call(2, 'call-start'), call(50, 'call-end')];
+
+  it('reports every call, whether or not a rule made it work', () => {
+    const day = streamDay({ events: meeting });
+
+    expect(day.calls).toHaveLength(1);
+    expect(day.calls[0]!.title).toBe('#standup | Braune Digital');
+    expect(day.calls[0]!.countsAsWork).toBe(false);
+  });
+
+  it('adds no presence for a call nothing classified', () => {
+    const day = streamDay({ events: meeting });
+
+    expect(day.presenceMs).toBe(0);
+  });
+
+  it('counts a working call as presence for its whole stretch', () => {
+    const day = streamDay({
+      events: meeting,
+      options: { callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] } },
+    });
+
+    expect(day.presenceMs).toBe(48 * MINUTE);
+  });
+
+  it('reports a working call as watched rather than as rebuilt', () => {
+    const day = streamDay({
+      events: meeting,
+      options: { callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] } },
+    });
+
+    expect(day.rebuiltMs).toBe(0);
+  });
+
+  it('books the call to no checkout, so the hour reads as presence nothing engaged', () => {
+    const day = streamDay({
+      events: meeting,
+      options: { callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] } },
+    });
+
+    expect(day.engagedMs).toBe(0);
+    expect(day.concurrency).toBe(0);
+  });
+
+  it('never lets a call set the checkout the following minutes are booked to', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 4, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        focus(5, DISCORD, '#standup | Braune Digital'),
+        call(6, 'call-start'),
+        call(40, 'call-end'),
+      ],
+      options: {
+        repoRoots: [SDK],
+        callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] },
+      },
+    });
+
+    expect(streamOf(day, `repo:${SDK}`)?.engagedMs).toBe(5 * MINUTE);
+  });
+
+  it('runs a call nobody has hung up through what the sources reported', () => {
+    const day = streamDay({
+      events: [focus(0, DISCORD, '#standup | Braune Digital'), call(2, 'call-start')],
+      options: {
+        windowsSeenThroughMs: AT(60).getTime(),
+        callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] },
+      },
+    });
+
+    expect(day.calls[0]!.to).toEqual(AT(60));
+    expect(day.presenceMs).toBe(58 * MINUTE);
+  });
+
+  it('counts a call the user was silent through, which nothing else observed at all', () => {
+    const day = streamDay({
+      events: [
+        focus(0, DISCORD, '#standup | Braune Digital'),
+        presence(1, 'idle-start'),
+        call(2, 'call-start'),
+        call(50, 'call-end'),
+      ],
+      options: { callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] } },
+    });
+
+    expect(day.presenceMs).toBe(49 * MINUTE);
   });
 });

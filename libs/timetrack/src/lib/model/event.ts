@@ -1,6 +1,15 @@
 /** The collector a raw observation came from. Retention and exclusion rules are applied per source. */
 export type CollectedEventSource =
-  'window' | 'idle' | 'git' | 'agent-session' | 'agent-usage' | 'agent-prompt' | 'calendar' | 'gitlab' | 'editor';
+  | 'window'
+  | 'idle'
+  | 'git'
+  | 'agent-session'
+  | 'agent-usage'
+  | 'agent-prompt'
+  | 'calendar'
+  | 'gitlab'
+  | 'editor'
+  | 'call';
 
 type CollectedEventBase<TSource extends CollectedEventSource, TKind extends string> = {
   at: Date;
@@ -10,8 +19,12 @@ type CollectedEventBase<TSource extends CollectedEventSource, TKind extends stri
 
 export type WindowFocusEvent = CollectedEventBase<'window', 'window-focus'> & {
   appId: string;
+  /** Empty when the window source has no permission to read titles, and for a window without one. */
   title: string;
 };
+
+/** What a focused window reads as: its title, or the application alone when it reports no title. */
+export const windowFocusDetail = (event: WindowFocusEvent) => event.title || event.appId;
 
 /**
  * A transition in whether the machine was being watched at all. `idle-start` and `lock` both end the
@@ -126,6 +139,31 @@ export type EditorHeartbeatEvent = CollectedEventBase<'editor', 'editor-heartbea
   editing: boolean;
 };
 
+/**
+ * A transition in whether some process on this machine held the microphone.
+ *
+ * It is the one signal that names a meeting without a vendor API and without anybody's permission, and
+ * the one presence signal a call spent listening leaves at all — an hour of listening produces no
+ * input, so the idle timer reads it as absence. Presence rather than attribution is the deliberate
+ * contrast with an editor heartbeat, which is attribution and never presence.
+ *
+ * Whether the call was *work* is decided at read time and defaults to no, so this carries no such
+ * claim: an open voice room and a client meeting look identical here, and an application's own mute is
+ * invisible to the microphone. See `classifyCalls`.
+ */
+export type CallEvent = CollectedEventBase<'call', 'call-start' | 'call-end'> & {
+  /**
+   * The process that held the microphone, by the identifier the platform names a process with — raw,
+   * helper suffix and all.
+   *
+   * On macOS the helper reports `com.hnc.Discord.helper.Renderer` while the window reports
+   * `com.hnc.Discord`, so the two are paired by prefix rather than through a table of exceptions. Do
+   * not normalise it here: the rules match this value, and trimming a suffix would make which suffixes
+   * exist part of the settings contract.
+   */
+  appId: string;
+};
+
 export type CalendarOccurrenceEvent = CollectedEventBase<'calendar', 'calendar-event'> & {
   /**
    * The provider's id for this one occurrence, not for the series. A collector reads overlapping
@@ -167,12 +205,19 @@ export type CollectedEvent =
   | AgentUsageEvent
   | AgentPromptEvent
   | EditorHeartbeatEvent
+  | CallEvent
   | CalendarOccurrenceEvent
   | MergeRequestActivityEvent;
 
 /** Events that describe what the machine was doing, as opposed to what a calendar or an API claims. */
 export type ActivityEvent =
-  WindowFocusEvent | PresenceEvent | GitCheckoutEvent | GitCommitEvent | AgentSessionEvent | EditorHeartbeatEvent;
+  | WindowFocusEvent
+  | PresenceEvent
+  | GitCheckoutEvent
+  | GitCommitEvent
+  | AgentSessionEvent
+  | EditorHeartbeatEvent
+  | CallEvent;
 
 /**
  * Whether the event is one the day is reconstructed from. A calendar occurrence, a GitLab event and an
