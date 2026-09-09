@@ -1,0 +1,8 @@
+# The runner signs every dev build before it runs. An unsigned binary cannot stay in a keychain item's
+# ACL across a rebuild, so without this macOS asks for the login password at each start. See
+# `tools/sign-and-run.sh`.
+[target.x86_64-apple-darwin]
+runner = "tools/sign-and-run.sh"
+
+[target.aarch64-apple-darwin]
+runner = "tools/sign-and-run.sh"

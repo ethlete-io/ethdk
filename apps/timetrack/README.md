@@ -38,8 +38,40 @@ does not resolve on every network, and the formula installs `rustup` without `ru
 
 The window source collects idle time and the frontmost application without any permission, and the
 **window title** only with Accessibility. Until it is granted the source reports `macos-app-only`
-and the sources screen offers the button that asks for it; granting it needs no restart. Expect to
-grant it again after a rebuild, because macOS keys the grant to the binary it saw.
+and the sources screen offers the button that asks for it; granting it needs no restart. macOS keys
+the grant to the binary it saw, so an unsigned build asks again after every rebuild - the signing
+identity below is what stops that.
+
+### The signing identity, on macOS
+
+Run this once per machine:
+
+```bash
+apps/timetrack/src-tauri/tools/macos-dev-identity.sh
+```
+
+It creates a self-signed code-signing certificate in the login keychain, and the cargo runner in
+`src-tauri/.cargo/config.toml` signs every dev build with it.
+
+Without it the dev binary is unsigned, and macOS has nothing stable to identify the app by. Two
+grants then break at each rebuild:
+
+- **Every keychain item** asks for the login password again. "Always Allow" writes the binary's
+  identity into the item's ACL, and an unsigned binary's identity is its file hash, which the next
+  `cargo` build changes. The app reads four items on boot, so this is four prompts each start.
+- **The Accessibility permission** has to be granted again, for the same reason.
+
+A certificate gives the binary a designated requirement that names the certificate rather than the
+file, so both grants hold. Answer "Always Allow" once per keychain item after the first signed
+build.
+
+To undo it, delete the identity from Keychain Access, or:
+
+```bash
+security delete-identity -c "Timetrack Dev Signing"
+```
+
+`tauri build` signs nothing by itself. Set `APPLE_SIGNING_IDENTITY` to sign a bundle.
 
 ## Running it
 

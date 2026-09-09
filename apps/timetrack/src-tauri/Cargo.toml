@@ -57,6 +57,8 @@ objc2-foundation = { version = "0.3.2", features = [
   "block2",
 ] }
 objc2-local-authentication = { version = "0.3.2", features = ["LAContext", "block2"] }
+# Held at what `keyring`'s apple-native store already pulls, so the lockfile keeps one copy.
+security-framework = "3.7.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 keyring = { version = "4.1.6", default-features = false, features = ["windows-native-keyring-store"] }
