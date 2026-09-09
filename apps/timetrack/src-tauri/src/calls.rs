@@ -1,6 +1,6 @@
-// macOS is the only platform with a call source. Everywhere else the buffer, the edges and the
-// event itself are unreachable, and the status says so at runtime.
-#![cfg_attr(not(target_os = "macos"), allow(dead_code))]
+// macOS and Linux have a call source. Everywhere else the buffer, the edges and the event itself are
+// unreachable, and the status says so at runtime.
+#![cfg_attr(not(any(target_os = "macos", target_os = "linux")), allow(dead_code))]
 
 use crate::error::{TimetrackError, TimetrackResult};
 #[cfg(test)]
@@ -15,6 +15,9 @@ use tauri::State;
 /// It is reported raw, helper suffix and all: on macOS `com.hnc.Discord.helper.Renderer` is what holds
 /// the microphone and it is a prefix of the window source's own `com.hnc.Discord`. The read side
 /// matches the two by prefix, so nothing here needs a table of exceptions.
+///
+/// Linux has no identifier both sources read, so its source picks the property most likely to be the
+/// Wayland app id — see `app_id_of` in `calls_linux`. A miss there costs the call its title only.
 #[derive(Clone, Serialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum CallEventPayload {
@@ -148,7 +151,10 @@ pub fn start(source: &CallSource) {
     #[cfg(target_os = "macos")]
     crate::calls_macos::start(source.clone());
 
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "linux")]
+    crate::calls_linux::start(source.clone());
+
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     source.set_status(
         "none",
         Some("no call source is implemented for this platform yet".to_string()),

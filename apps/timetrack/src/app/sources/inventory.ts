@@ -162,23 +162,6 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     eventSource: 'call',
   },
   {
-    id: 'slack',
-    name: 'Slack huddles',
-    reads: 'Your own profile’s huddle state, polled on an interval.',
-    stores: 'When a huddle started and ended, as coarsely as the poll interval allows.',
-    state: 'planned',
-    detail: 'Phase 3. There is no retroactive huddle API, so only days the app was running can ever be covered.',
-  },
-  {
-    id: 'discord',
-    name: 'Discord calls',
-    reads: 'Voice state in the one configured guild, through a bot you have to be allowed to add.',
-    stores: 'Which voice channel you were in, which the microphone alone cannot say.',
-    state: 'planned',
-    detail:
-      'Phase 3. Calls already covers when a Discord call ran; this would only name the channel, and it needs a bot in the guild.',
-  },
-  {
     id: 'gmail',
     name: 'Gmail notifications',
     reads: 'A narrow query over Jira and GitLab notification senders.',

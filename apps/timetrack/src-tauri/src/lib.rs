@@ -1,6 +1,8 @@
 mod agent;
 mod auth;
 mod calls;
+#[cfg(target_os = "linux")]
+mod calls_linux;
 #[cfg(target_os = "macos")]
 mod calls_macos;
 mod db;
