@@ -2192,15 +2192,31 @@ the user doing by hand, and what each answer rests on:
 
 ## Storage, privacy, secrets
 
-### Owed: the titles already stored raw
+### The titles already stored raw - repaired 2026-09-09
 
-The URL redaction in `store/title.ts` landed 2026-09-08 and runs on the way in, so it protects
-nothing already written. Every window title collected before that sits in the database whole, query
+The URL redaction in `store/title.ts` landed 2026-09-08 and runs on the way in, so it protected
+nothing already written. Every window title collected before that sat in the database whole, query
 strings and fragments included - which is where an OAuth token in a redirect URL would be.
 
-The event store port has `append$` and `deleteEventsBefore$` and no update, so a pass over stored
-titles needs a **new host command**. Until it exists the only remedy available is deleting the
-affected range, which throws away the day with the title.
+**`repairStoredTitles$` (`store/title.ts`) is the pass.** It reads the stored titles a page at a time,
+applies `redactTitleUrls` to each, and writes back only the rows it changed. What it settled:
+
+- **The rule stays in one place.** The regex is not reimplemented in Rust. The host answers with
+  `{ id, title }` rows and takes `{ id, title }` rows back, so the policy is the core's and the two
+  commands are dumb. `TimetrackTitleRepairStore` (`store/ports.ts`) is that seam, kept off
+  `TimetrackEventStore` so nothing that only reads a day has to grow an update it never calls.
+- **`events_set_titles` is the only update the event store has**, and it patches the payload with
+  `json_set(payload, '$.title', ?)` rather than rewriting the row. No `dedupe_key` holds a title
+  (`store/dedupe.ts`), so the key column stays correct across the write - a key that starts to
+  include one would have to be recomputed there.
+- **Paged by row id, not by date.** A date boundary would need the exact instant the redaction
+  reached each machine. Every row is read instead, and a title that is already clean is not written
+  back, so the pass is free to run twice and safe to interrupt: each page commits on its own.
+- **`events_titles_after` filters on `json_type(payload, '$.title') = 'text'`**, so an event without
+  a title is never a page slot, and a full page always means more rows follow.
+- **Pressed by hand on the Host screen**, not run at startup. It is a one-time repair of history, and
+  a user who has never collected a raw title should not have their store rewritten silently. Covered
+  by `apps/timetrack-e2e/src/host-title-repair.spec.ts` (3 runs) plus 8 core specs and 3 Rust tests.
 
 **The core half is built** - `libs/timetrack/src/lib/store/`: the two persistence ports, the
 exclusion rules, the retention plan and the ledger writer (22 tests). No encryption is in it and

@@ -58,6 +58,7 @@ const correlation = (options: { proposals: WorklogProposal[]; unattributed?: Wor
   proposals: options.proposals,
   unattributed: options.unattributed ?? [],
   meetings: [],
+  calls: [],
   timers: [],
   filledMs: 0,
   pauses: [],

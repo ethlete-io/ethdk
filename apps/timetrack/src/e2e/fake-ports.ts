@@ -139,6 +139,24 @@ export const createFakePorts = (): HostPorts => {
       },
       deleteEventsBefore$: () => ok(0),
       oldestEventAt$: () => ok(events[0]?.at ?? null),
+      titlesAfterId$: (afterId, limit) =>
+        ok(
+          events
+            .flatMap((event, index) =>
+              'title' in event && typeof event.title === 'string' ? [{ id: index + 1, title: event.title }] : [],
+            )
+            .filter((row) => row.id > afterId)
+            .slice(0, limit),
+        ),
+      setTitles$: (rows) => {
+        for (const row of rows) {
+          const event = events[row.id - 1];
+
+          if (event) events[row.id - 1] = { ...event, title: row.title } as CollectedEvent;
+        }
+
+        return ok(rows.length);
+      },
       bySource$: () => ok([]),
       cursors$: (pass) => ok([...(cursorsByPass.get(pass)?.values() ?? [])]),
       compactedThrough$: () => ok(null),

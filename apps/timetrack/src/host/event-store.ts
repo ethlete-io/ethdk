@@ -3,7 +3,9 @@ import {
   AgentLogSessionState,
   AgentSessionCursor,
   CollectedEvent,
+  StoredTitle,
   TimetrackEventStore,
+  TimetrackTitleRepairStore,
   dedupeKeyOf,
 } from '@ethlete/timetrack';
 import { Observable, map } from 'rxjs';
@@ -108,20 +110,21 @@ const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
  * appends every sample in it a second time, so the agent-session collector must use
  * `appendWithCursors$` and never `append$`.
  */
-export type TauriEventStore = TimetrackEventStore & {
-  /** Resolves with the rows that were new — an event the store already holds under its dedupe key is skipped. */
-  appendCounted$(events: CollectedEvent[]): Observable<number>;
-  /** The same, and moves the cursors of one pass over the agent logs in the same transaction. */
-  appendWithCursors$(options: {
-    events: CollectedEvent[];
-    cursors: AgentSessionCursor[];
-    pass: AgentLogPass;
-  }): Observable<number>;
-  bySource$(): Observable<SourceTally[]>;
-  cursors$(pass: AgentLogPass): Observable<AgentSessionCursor[]>;
-  compactedThrough$(): Observable<Date | null>;
-  setCompactedThrough$(through: Date | null): Observable<void>;
-};
+export type TauriEventStore = TimetrackEventStore &
+  TimetrackTitleRepairStore & {
+    /** Resolves with the rows that were new — an event the store already holds under its dedupe key is skipped. */
+    appendCounted$(events: CollectedEvent[]): Observable<number>;
+    /** The same, and moves the cursors of one pass over the agent logs in the same transaction. */
+    appendWithCursors$(options: {
+      events: CollectedEvent[];
+      cursors: AgentSessionCursor[];
+      pass: AgentLogPass;
+    }): Observable<number>;
+    bySource$(): Observable<SourceTally[]>;
+    cursors$(pass: AgentLogPass): Observable<AgentSessionCursor[]>;
+    compactedThrough$(): Observable<Date | null>;
+    setCompactedThrough$(through: Date | null): Observable<void>;
+  };
 
 export const createTauriEventStore = (): TauriEventStore => {
   const appendWithCursors$ = (options: {
@@ -164,5 +167,7 @@ export const createTauriEventStore = (): TauriEventStore => {
       invokeHost$<number | null>('compacted_through').pipe(map((atMs) => (atMs === null ? null : new Date(atMs)))),
     setCompactedThrough$: (through) =>
       invokeHost$<void>('set_compacted_through', { throughMs: through === null ? null : through.getTime() }),
+    titlesAfterId$: (afterId, limit) => invokeHost$<StoredTitle[]>('events_titles_after', { afterId, limit }),
+    setTitles$: (rows) => invokeHost$<number>('events_set_titles', { rows: [...rows] }),
   };
 };

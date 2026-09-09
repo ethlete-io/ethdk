@@ -85,3 +85,18 @@ export type TimetrackTimerStore = {
   /** Names what a run was for, after the fact. An empty string clears the field. */
   label$(id: string, label: { issueKey: string; note: string }): Observable<void>;
 };
+
+/** One stored row's window title, keyed by the row id the host assigned. */
+export type StoredTitle = { id: number; title: string };
+
+/**
+ * The one write the event store has that is not an append. It exists for `repairStoredTitles$`,
+ * which applies today's redaction to the titles collected before it existed, and for nothing else —
+ * an observation is immutable once it is stored.
+ */
+export type TimetrackTitleRepairStore = {
+  /** Rows that carry a title, `id` ascending, starting above `afterId`. A short page is the end. */
+  titlesAfterId$(afterId: number, limit: number): Observable<StoredTitle[]>;
+  /** Sets each row's title, and reports how many rows changed. */
+  setTitles$(rows: readonly StoredTitle[]): Observable<number>;
+};

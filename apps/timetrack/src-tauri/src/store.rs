@@ -155,6 +155,65 @@ fn append(
     Ok(appended)
 }
 
+/// One stored row's window title. `id` is the row's own key, which nothing outside the repair pass
+/// in the core ever sees — a title is otherwise only read back inside its whole event.
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StoredTitleRow {
+    pub id: i64,
+    pub title: String,
+}
+
+/// One page of the titles already stored, `id` ascending, so the core can redact them with the same
+/// rule it applies on the way in. A page shorter than `limit` is the end of the table.
+#[tauri::command]
+pub async fn events_titles_after(db: State<'_, Db>, after_id: i64, limit: i64) -> TimetrackResult<Vec<StoredTitleRow>> {
+    db.run(move |connection| titles_after(connection, after_id, limit))
+        .await
+}
+
+fn titles_after(connection: &Connection, after_id: i64, limit: i64) -> TimetrackResult<Vec<StoredTitleRow>> {
+    let mut statement = connection.prepare(
+        "SELECT id, json_extract(payload, '$.title') FROM collected_event
+         WHERE id > ?1 AND json_type(payload, '$.title') = 'text'
+         ORDER BY id ASC LIMIT ?2",
+    )?;
+    let rows = statement.query_map(params![after_id, limit], |row| {
+        Ok(StoredTitleRow {
+            id: row.get(0)?,
+            title: row.get(1)?,
+        })
+    })?;
+
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+/// Rewrites the title inside each row's payload, and reports how many rows changed.
+#[tauri::command]
+pub async fn events_set_titles(db: State<'_, Db>, rows: Vec<StoredTitleRow>) -> TimetrackResult<i64> {
+    db.run(move |connection| set_titles(connection, &rows)).await
+}
+
+/// This is the only update the event store has, and it exists for the redaction repair pass. No
+/// `dedupe_key` holds a title, so the key column stays correct across the write — a key that starts
+/// to include one would have to be recomputed here.
+fn set_titles(connection: &mut Connection, rows: &[StoredTitleRow]) -> TimetrackResult<i64> {
+    let transaction = connection.transaction()?;
+    let mut updated = 0i64;
+
+    {
+        let mut update = transaction
+            .prepare("UPDATE collected_event SET payload = json_set(payload, '$.title', ?2) WHERE id = ?1")?;
+        for row in rows {
+            updated += update.execute(params![row.id, row.title])? as i64;
+        }
+    }
+
+    transaction.commit()?;
+
+    Ok(updated)
+}
+
 #[tauri::command]
 pub async fn events_delete_before(db: State<'_, Db>, before_ms: i64) -> TimetrackResult<i64> {
     db.run(move |connection| {
@@ -488,6 +547,82 @@ mod tests {
         let rows = statement.query_map([], |row| row.get(0)).unwrap();
 
         rows.collect::<Result<Vec<_>, _>>().unwrap()
+    }
+
+    fn focus(at_ms: i64, title: &str) -> StoredEvent {
+        StoredEvent {
+            at_ms,
+            source: "window".to_string(),
+            kind: "window-focus".to_string(),
+            payload: serde_json::json!({ "title": title, "app": "Google Chrome" }),
+            dedupe_key: None,
+        }
+    }
+
+    fn title_of(connection: &Connection, id: i64) -> String {
+        connection
+            .query_row(
+                "SELECT json_extract(payload, '$.title') FROM collected_event WHERE id = ?1",
+                params![id],
+                |row| row.get(0),
+            )
+            .unwrap()
+    }
+
+    #[test]
+    fn pages_the_stored_titles_by_id() {
+        let mut connection = store();
+
+        append(&mut connection, &[focus(1_000, "a"), focus(2_000, "b")], &[]).unwrap();
+
+        let first = titles_after(&connection, 0, 1).unwrap();
+
+        assert_eq!(first.len(), 1);
+        assert_eq!(first[0].title, "a");
+
+        let second = titles_after(&connection, first[0].id, 1).unwrap();
+
+        assert_eq!(second[0].title, "b");
+        assert!(titles_after(&connection, second[0].id, 1).unwrap().is_empty());
+    }
+
+    #[test]
+    fn offers_no_row_for_an_event_that_carries_no_title() {
+        let mut connection = store();
+
+        append(&mut connection, &[commit(1_000)], &[]).unwrap();
+
+        assert!(titles_after(&connection, 0, 10).unwrap().is_empty());
+    }
+
+    #[test]
+    fn rewrites_a_title_and_leaves_the_rest_of_the_payload_standing() {
+        let mut connection = store();
+
+        append(&mut connection, &[focus(1_000, "example.com/a?token=x")], &[]).unwrap();
+        let id = titles_after(&connection, 0, 10).unwrap()[0].id;
+
+        let updated = set_titles(
+            &mut connection,
+            &[StoredTitleRow {
+                id,
+                title: "example.com/a".to_string(),
+            }],
+        )
+        .unwrap();
+
+        assert_eq!(updated, 1);
+        assert_eq!(title_of(&connection, id), "example.com/a");
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT json_extract(payload, '$.app') FROM collected_event WHERE id = ?1",
+                    params![id],
+                    |row| row.get::<_, String>(0)
+                )
+                .unwrap(),
+            "Google Chrome"
+        );
     }
 
     #[test]

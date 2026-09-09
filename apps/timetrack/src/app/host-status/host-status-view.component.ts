@@ -1,8 +1,8 @@
-import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, DESCRIPTION_LIST_IMPORTS, SpinnerComponent } from '@ethlete/components';
-import { AgentLogPass } from '@ethlete/timetrack';
-import { catchError, combineLatest, forkJoin, map, of, switchMap } from 'rxjs';
+import { AgentLogPass, TitleRepairReport, repairStoredTitles$ } from '@ethlete/timetrack';
+import { catchError, combineLatest, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 
@@ -21,6 +21,12 @@ type CursorTally = { label: string; count: number };
 type HostStatus =
   | { state: 'checking' }
   | { state: 'ready'; oldestEventAt: Date | null; cursors: CursorTally[]; compactedThrough: Date | null }
+  | { state: 'failed'; message: string };
+
+type TitleRepair =
+  | { state: 'idle' }
+  | { state: 'running' }
+  | { state: 'done'; report: TitleRepairReport }
   | { state: 'failed'; message: string };
 
 /** Whether the encrypted store came up, and what it currently holds. */
@@ -56,6 +62,40 @@ type HostStatus =
           </dl>
 
           <p class="text-small text-et-surface-subtle">The keychain answered and the database decrypted.</p>
+
+          <h3 class="text-h4 mt-3">Titles collected before the redaction</h3>
+          <p class="text-small text-et-surface-subtle">
+            A window title is redacted on the way into the store, so a title collected before that rule existed still
+            holds the query string of every URL in it. Run this once to apply the rule to what is already stored. It
+            changes nothing else, and running it twice is free.
+          </p>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button
+              [disabled]="repair().state === 'running'"
+              (click)="redactTitles()"
+              et-button
+              variant="outline"
+              size="sm"
+            >
+              Redact stored titles
+            </button>
+
+            @switch (repair().state) {
+              @case ('running') {
+                <span class="flex items-center gap-2 text-small text-et-surface-muted">
+                  <et-spinner />
+                  Reading the stored titles…
+                </span>
+              }
+              @case ('done') {
+                <span class="text-small text-et-surface-muted">{{ repaired() }}</span>
+              }
+              @case ('failed') {
+                <span class="text-small text-et-error">{{ repairFailure() }}</span>
+              }
+            }
+          </div>
         }
       }
     </div>
@@ -68,6 +108,8 @@ export class HostStatusViewComponent {
   private agentSessions = injectAgentSessionCollector();
   private windows = injectWindowCollector();
   private git = injectGitCollector();
+
+  private destroyRef = inject(DestroyRef);
 
   private reload = signal(0);
   private probe = computed(() => ({
@@ -123,7 +165,41 @@ export class HostStatusViewComponent {
     return status.state === 'ready' ? status.cursors : [];
   });
 
+  protected repair = signal<TitleRepair>({ state: 'idle' });
+
+  protected repaired = computed(() => {
+    const repair = this.repair();
+
+    if (repair.state !== 'done') return '';
+
+    const { scanned, rewritten } = repair.report;
+    const read = `${scanned} stored ${scanned === 1 ? 'title' : 'titles'}`;
+
+    return rewritten === 0 ? `Read ${read}. None held a query string.` : `Read ${read} and redacted ${rewritten}.`;
+  });
+
+  protected repairFailure = computed(() => {
+    const repair = this.repair();
+
+    return repair.state === 'failed' ? repair.message : '';
+  });
+
   protected recheck() {
     this.reload.update((count) => count + 1);
+  }
+
+  protected redactTitles() {
+    this.repair.set({ state: 'running' });
+
+    repairStoredTitles$(this.ports.events)
+      .pipe(
+        map((report): TitleRepair => ({ state: 'done', report })),
+        catchError((error: unknown) =>
+          of<TitleRepair>({ state: 'failed', message: error instanceof Error ? error.message : String(error) }),
+        ),
+        tap((repair) => this.repair.set(repair)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 }
