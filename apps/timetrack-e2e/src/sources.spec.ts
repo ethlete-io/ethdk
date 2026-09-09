@@ -47,7 +47,7 @@ test.describe('the sources screen', () => {
   });
 
   test('still reads as planned for a source nobody built', async ({ page }) => {
-    await expect(row(page, 'slack')).toContainText('planned');
+    await expect(row(page, 'gmail')).toContainText('planned');
   });
 });
 
