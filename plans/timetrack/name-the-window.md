@@ -211,6 +211,11 @@ backed by numbers rather than by recall.
 
 **Rung 1 is dead a third time.** `Alacritty` is 1m, and its one title is `btop`.
 
+**What was decided: collect for five more workdays before any rung is built.** At most 28m of Chrome
+and 11m of `code` are recoverable here, under 3m a day, and 2h 49m of the 4h 30m is already correct
+(this app 1h 48m, Slack 1h 1m). No mechanism is worth that. A fourth reading with five more workdays
+behind it decides whether a title pattern rule or a judgement per title is worth its cost.
+
 **A private project has a browser side no private link covers.** `wz-waermepumpe.lan.elros.cc` is a
 host on a private project's network, and it is now printed in the panel. The private project link
 holds a checkout **path** out of every report, and a browser window on that project names no
@@ -248,8 +253,12 @@ number instead of a missing capability.
    platform can see, and a new platform source adds a row to that one table. Under wlr the working
    directory names the protocol as the reason; under macOS it names that no source reads one yet.
    A source that is not running claims nothing.
-2. **One sentence on the Today screen**, under the Other applications line: how much could not be
-   named, and that this machine cannot read a window's working directory. **Not built.**
+2. **One sentence on the Today screen. Built on 2026-09-09.** Under the Other applications line, a
+   dashed block says how much of the day no checkout was named for, and why. The why is read from
+   the same `capabilities` list: a machine whose source reads no working directory says so, and one
+   that does reads that a title without a checkout names none. It says how much, never which
+   applications — that is the Sources view's job, and to say it twice is to let the two disagree.
+   The block is absent under `READABLE_MS`.
 
 Both are about the machine. Neither says the user's setup is wrong.
 

@@ -558,3 +558,77 @@ test.describe('the today view, on a day something held the microphone', () => {
     await expect(page.locator('[data-calls]')).toHaveCount(0);
   });
 });
+
+/**
+ * A folded Other applications line is either a defect or a capability this machine does not have.
+ * The Today screen has to say which, or the number reads as a fault the user cannot act on.
+ */
+test.describe('the today view, on a day some window named no checkout', () => {
+  const day = (): CollectedEvent[] => [
+    { at: at(0), source: 'git', kind: 'git-checkout', repoPath: FUT, branch: 'next' },
+    ...[0, 15].map((minutes) => focus(minutes, 'code', 'invite.ts - fut-frontend - Visual Studio Code')),
+    ...[30, 45].map((minutes) => focus(minutes, 'discord', 'Meeting - Discord')),
+  ];
+
+  test('says how much of the day no checkout was named for', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: day(), ...DISCOVERED });
+    await page.goto('/today');
+
+    await expect(page.locator('[data-unnamed-today]')).toHaveText('15m');
+  });
+
+  test('says the machine cannot read a working directory, when the source says it cannot', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: day(),
+      ...DISCOVERED,
+      windowSource: {
+        kind: 'wayland-wlr',
+        detail: null,
+        capabilities: [
+          { reads: 'app-id', available: true, detail: null },
+          { reads: 'title', available: true, detail: null },
+          { reads: 'working-directory', available: false, detail: 'The wlr toplevel protocol reports no process id.' },
+        ],
+      },
+    });
+    await page.goto('/today');
+
+    await expect(page.getByText('cannot read the directory a focused window works in')).toBeVisible();
+  });
+
+  test('claims no missing capability on a machine whose source reads the directory', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: day(),
+      ...DISCOVERED,
+      windowSource: {
+        kind: 'macos',
+        detail: null,
+        capabilities: [
+          { reads: 'app-id', available: true, detail: null },
+          { reads: 'title', available: true, detail: null },
+          { reads: 'working-directory', available: true, detail: null },
+        ],
+      },
+    });
+    await page.goto('/today');
+
+    await expect(page.getByText('cannot read the directory a focused window works in')).toHaveCount(0);
+    await expect(page.getByText('folds into Other applications')).toBeVisible();
+  });
+
+  test('says nothing on a day every window named a checkout', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        { at: at(0), source: 'git', kind: 'git-checkout', repoPath: FUT, branch: 'next' },
+        ...[0, 15, 30].map((minutes) => focus(minutes, 'code', 'invite.ts - fut-frontend - Visual Studio Code')),
+      ],
+      ...DISCOVERED,
+    });
+    await page.goto('/today');
+
+    await expect(page.locator('[data-unnamed-today]')).toHaveCount(0);
+  });
+});

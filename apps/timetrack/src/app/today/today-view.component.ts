@@ -6,7 +6,7 @@ import {
   EMPTY_STATE_IMPORTS,
   SpinnerComponent,
 } from '@ethlete/components';
-import { CallWindow, Stream, callLabel, formatDurationMs } from '@ethlete/timetrack';
+import { CallWindow, READABLE_MS, Stream, callLabel, formatDurationMs, unnamedFocusMs } from '@ethlete/timetrack';
 import { formatClockTime, formatDayLabel } from '../day-review/format';
 import { readHeat } from './heat';
 import {
@@ -17,7 +17,14 @@ import {
   formatStreamLabel,
   formatUnattended,
 } from './format';
+import { injectWindowCollector } from '../../collectors';
 import { injectToday, provideToday } from './today';
+
+const NAMES_NONE =
+  'A window whose title holds no checkout names none, and its time folds into Other applications. Sources says which applications this is.';
+
+const NO_DIRECTORY =
+  'This machine cannot read the directory a focused window works in, so a window names a checkout only when its title holds one. Sources says what each collector reads.';
 
 @Component({
   selector: 'ethlete-today',
@@ -206,6 +213,17 @@ import { injectToday, provideToday } from './today';
             </div>
           }
 
+          @if (unnamed(); as read) {
+            <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
+              <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <span class="text-base" data-unnamed-label>No checkout named this window time</span>
+                <span class="text-small text-et-surface-muted" data-unnamed-today>{{ read.duration }}</span>
+              </div>
+
+              <span class="text-small text-et-surface-subtle">{{ read.why }}</span>
+            </div>
+          }
+
           @if (unattributed(); as spend) {
             <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
               <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -229,6 +247,14 @@ import { injectToday, provideToday } from './today';
 })
 export class TodayViewComponent {
   protected store = injectToday();
+  private windows = injectWindowCollector();
+
+  /** Absent while nothing is watching, which is when no capability may be claimed either way. */
+  private readsDirectory = computed(
+    () =>
+      this.windows.status()?.capabilities.find((capability) => capability.reads === 'working-directory')?.available !==
+      false,
+  );
 
   protected dayLabel = computed(() => formatDayLabel(this.store.dayKey()));
   protected presence = computed(() => formatDurationMs(this.store.day()?.presenceMs ?? 0));
@@ -237,6 +263,21 @@ export class TodayViewComponent {
   protected heat = computed(() => readHeat(this.store.day()?.concurrency ?? 0));
   protected unattended = computed(() => formatUnattended(this.store.day()?.unattendedMs ?? 0));
   protected rebuilt = computed(() => formatRebuilt(this.store.day()?.rebuiltMs ?? 0));
+
+  /**
+   * How much of the Other applications line no checkout could be named for, and why.
+   *
+   * A large folded line reads as a wrong number unless the screen says what it is. Which applications
+   * it is made of is the Sources view's job; this says only how much, and what this machine cannot
+   * read. Empty under `READABLE_MS`, because a line carrying `0m` carries nothing.
+   */
+  protected unnamed = computed(() => {
+    const ms = unnamedFocusMs(this.store.day()?.unnamedFocus ?? []);
+
+    if (ms < READABLE_MS) return null;
+
+    return { duration: formatDurationMs(ms), why: this.readsDirectory() ? NAMES_NONE : NO_DIRECTORY };
+  });
 
   /**
    * The turns that name no checkout. Without it the day does not reconcile: the lines and this
