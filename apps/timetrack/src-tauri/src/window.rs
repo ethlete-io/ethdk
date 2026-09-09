@@ -1,5 +1,7 @@
 use crate::error::{TimetrackError, TimetrackResult};
-use crate::samples::{Sample, SampleBatch, SampleBuffer};
+#[cfg(test)]
+use crate::samples::Sample;
+use crate::samples::{SampleBatch, SampleBuffer};
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use tauri::State;
@@ -26,6 +28,7 @@ pub struct WindowSourceStatus {
     pub detail: Option<String>,
 }
 
+#[cfg(test)]
 pub type WindowEvent = Sample<WindowEventPayload>;
 pub type WindowEventBatch = SampleBatch<WindowEventPayload>;
 

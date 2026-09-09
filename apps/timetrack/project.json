@@ -65,6 +65,15 @@
         "command": "cargo fmt --check"
       }
     },
+    "lint-rust": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["{projectRoot}/src-tauri/**/*"],
+      "options": {
+        "cwd": "apps/timetrack/src-tauri",
+        "command": "cargo clippy --all-targets -- -D warnings"
+      }
+    },
     "test-rust": {
       "executor": "nx:run-commands",
       "cache": true,

@@ -191,6 +191,9 @@ jobs:
           key: cargo-${{ runner.os }}-${{ hashFiles('apps/timetrack/src-tauri/Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-
 
+      # After the build dependencies: clippy compiles the crate, where `cargo fmt --check` reads it.
+      - run: yarn nx run timetrack-app:lint-rust
+
       - run: yarn nx run timetrack-app:test-rust
 
   verified:

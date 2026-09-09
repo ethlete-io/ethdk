@@ -361,6 +361,6 @@ mod tests {
     #[cfg(target_os = "linux")]
     #[test]
     fn answers_no_for_a_password_that_cannot_reach_pam() {
-        assert_eq!(verify_owner(Some("before\0after")).unwrap(), false);
+        assert!(!verify_owner(Some("before\0after")).unwrap());
     }
 }
