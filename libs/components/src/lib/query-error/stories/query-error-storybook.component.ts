@@ -1,9 +1,17 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { ProvideSurfaceDirective, injectLocale } from '@ethlete/core';
-import { createQueryErrorResponse } from '@ethlete/query';
+import {
+  createQueryErrorResponse,
+  registerQueryErrorParser,
+  shouldRetryRequest,
+  symfonyQueryErrorParser,
+} from '@ethlete/query';
 import { BUTTON_IMPORTS } from '../../button';
 import { QUERY_ERROR_IMPORTS } from '../query-error.imports';
+
+// An application installs this through the `withSymfonyErrors` client feature; a story has no client.
+registerQueryErrorParser(symfonyQueryErrorParser);
 
 /** The shapes an API actually answers with - each one a different branch of the client's normalizer. */
 const ERROR_BODIES = {
@@ -87,6 +95,7 @@ export class QueryErrorStorybookComponent {
 
     return createQueryErrorResponse(
       new HttpErrorResponse({ error: body, status, statusText: 'Error', url: '/api/teams/42' }),
+      { retryCount: 0, retryFn: shouldRetryRequest },
     );
   });
 

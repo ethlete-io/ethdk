@@ -38,6 +38,20 @@ test.describe('dialog / focus', () => {
     await expect(trigger).toBeFocused();
   });
 
+  test('a press that opens a dialog keeps focus there while an anchored popover closes', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const popoverTrigger = root.getByRole('button', { name: 'Anchored popover' });
+    const dialogTrigger = root.getByRole('button', { name: 'Dialog', exact: true });
+
+    await popoverTrigger.click();
+    await waitForEntered(page);
+
+    await dialogTrigger.click();
+
+    await expect(page.locator(PANE)).toHaveCount(1);
+    await expect(page.locator(PANE).getByRole('button', { name: 'Cancel' })).toBeFocused();
+  });
+
   test('a click on the backdrop closes the dialog', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
     await root.getByRole('button', { name: 'Dialog', exact: true }).click();

@@ -1,7 +1,8 @@
 import { Locator, expect, test } from '@playwright/test';
-import { openStory, pressKey, settle, tap } from '../support';
+import { openStory, pressKey, pressKeys, settle, tap } from '../support';
 
 const STORY_ID = 'components-feedback-tooltip--default';
+const IN_DIALOG_STORY_ID = 'components-feedback-tooltip-in-dialog--default';
 const TOOLTIP_TEXT = 'A lightweight tooltip built on the new overlay primitives.';
 
 /** Resolves the element `trigger`'s `aria-describedby` currently points at. */
@@ -57,6 +58,48 @@ test.describe('tooltip / focus', () => {
 
     const openDescription = await describedByElement(trigger);
     await expect(openDescription).toHaveText(TOOLTIP_TEXT);
+  });
+});
+
+test.describe('tooltip / inside a dialog', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hover triggers the tooltip');
+
+  test('a backdrop press closes the dialog while a tooltip is shown inside it', async ({ page }) => {
+    const root = await openStory(page, IN_DIALOG_STORY_ID);
+    await root.getByRole('button', { name: 'Open dialog' }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(page.locator('.et-overlay')).toHaveClass(/et-animation-enter-done/);
+
+    const tooltipTrigger = page.getByRole('button', { name: 'Tooltip inside the dialog' });
+    await expect(tooltipTrigger).toBeFocused();
+    await pressKeys(page, ['Tab', 'Tab']);
+    await expect(tooltipTrigger).toBeFocused();
+    await expect(page.getByRole('tooltip')).toBeVisible();
+
+    await page.locator('.et-overlay-runtime-backdrop').click({ position: { x: 5, y: 5 } });
+
+    await expect(dialog).toHaveCount(0);
+  });
+
+  test('Escape hides the tooltip first and closes the dialog next', async ({ page }) => {
+    const root = await openStory(page, IN_DIALOG_STORY_ID);
+    await root.getByRole('button', { name: 'Open dialog' }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(page.locator('.et-overlay')).toHaveClass(/et-animation-enter-done/);
+
+    await page.getByRole('button', { name: 'Tooltip inside the dialog' }).hover();
+    await expect(page.getByRole('tooltip')).toBeVisible();
+
+    await pressKey(page, 'Escape');
+
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
+    await expect(dialog).toBeVisible();
+
+    await pressKey(page, 'Escape');
+
+    await expect(dialog).toHaveCount(0);
   });
 });
 

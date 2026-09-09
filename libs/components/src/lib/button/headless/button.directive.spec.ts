@@ -33,6 +33,14 @@ class AnchorTestHost {
   loading = false;
 }
 
+@Component({
+  template: `<button [disabled]="disabled" etButton tabindex="-1">Test</button>`,
+  imports: [ButtonDirective],
+})
+class UntabbableButtonTestHost {
+  disabled = false;
+}
+
 describe('ButtonDirective', () => {
   describe('on a <button> element', () => {
     let fixture: ComponentFixture<ButtonTestHost>;
@@ -162,6 +170,29 @@ describe('ButtonDirective', () => {
       fixture.componentInstance.disabled = true;
       fixture.detectChanges();
       expect(button.getAttribute('tabindex')).toBeNull();
+    });
+  });
+
+  describe('on a <button> with its own tabindex', () => {
+    let fixture: ComponentFixture<UntabbableButtonTestHost>;
+    let button: HTMLButtonElement;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [UntabbableButtonTestHost] });
+      fixture = TestBed.createComponent(UntabbableButtonTestHost);
+      button = fixture.nativeElement.querySelector('button');
+    });
+
+    it('keeps the tabindex the consumer set', () => {
+      fixture.detectChanges();
+      expect(button.getAttribute('tabindex')).toBe('-1');
+      expect(button.tabIndex).toBe(-1);
+    });
+
+    it('keeps it while the button is disabled', () => {
+      fixture.componentInstance.disabled = true;
+      fixture.detectChanges();
+      expect(button.getAttribute('tabindex')).toBe('-1');
     });
   });
 

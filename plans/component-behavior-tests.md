@@ -276,3 +276,119 @@ loops, run against the static build: `npx nx build-storybook storybook`, then ru
 delete each other's `test-results`; pass `--output=apps/storybook-e2e/test-results/<domain>` per
 run. Subagents must run Playwright in the foreground: a background run ends their turn and loses the
 report.
+
+## Wave 4 (2026-09-05)
+
+### The two open `it.fails`, both fixed in `@ethlete/core`
+
+- `ef2277d0a fix(core): Restore overlay focus only when it is still inside the overlay`.
+  `destroyMountedOverlay` reads `document.activeElement` **before** the teardown detaches the host
+  element - after the detach every close looks restorable, because the active element is the body by
+  then - and skips the restore when focus already sits on an element outside the overlay. The
+  toggletip spec is an `it` again. Two e2e tests: an outside press that moves focus keeps it there
+  (`toggletip.e2e.ts`), and a press that opens a dialog keeps focus in the dialog while an anchored
+  popover tears down (`dialog.e2e.ts`).
+- `4326376c9 fix(core): Skip passive overlays when the runtime picks the top layer`.
+  New `passive` flag on `OverlayRuntimeMountConfig` and on the components `OverlayConfig`;
+  `isTopMost` skips a passive entry, so the dialog under a tooltip still answers a backdrop press,
+  an Escape and its focus trap. `etTooltip` sets it. The tooltip spec is an `it` again, and the
+  suite has two browser tests against the new story `Components/Feedback/Tooltip/In Dialog` - no
+  other story puts a tooltip inside a dialog.
+
+Both fixes were proven the hard way: with the fix reverted and Storybook rebuilt, the new e2e tests
+fail; with it, they pass. The toggletip case needs the focus move to land while the leave animation
+still runs, so the test focuses the neighbour right after the outside press. A `pointerdown`
+listener that focuses instead does **not** work - the browser's own mousedown default action then
+puts focus back on the body.
+
+### Twenty-five new suites
+
+`banner` (19 tests), `breadcrumb` (52), `copy-button` (11), `scrollable` (16), `color-input` (30),
+`empty-state` (19), `floating-action` (32), `query-error` (24), `counter` (20), `nav-tabs` (22),
+`phone-input` (24), `split-button` (13), `card` (15), `masonry` (14), `match` (58), `standings` (36),
+`avatar` (25), `badge` (21), `description-list` (15), `divider` (15), `icon` (10), `kbd` (13),
+`skeleton` (20), `loader` (38), `picture` (23), `stream` (39).
+
+Every domain in `libs/components` that ships a story now has a suite. The project holds 62 suites
+and 979 tests per browser project; a full run takes about eight minutes with three workers against
+the static build, and it is green.
+
+The `stream` suite intercepts every request that leaves the Storybook origin, so it never depends on
+YouTube or Twitch being reachable: `blockThirdParty` aborts them all, and a second helper answers
+the four SDK URLs with a recording stub, which is what makes the per-provider option assertions
+possible.
+
+`card` and `standings` carry no keyboard model at all, so those two suites assert structure, ARIA,
+surface theming and the touch presentation, and drop the keyboard block.
+
+`Components/Forms/Counter` is the **character counter** in a form field's support row, not a numeric
+stepper - it has no buttons and no value of its own.
+
+### Defects found and fixed
+
+- **Button**: `ButtonDirective` bound `[attr.tabindex]` to `null` for a `<button>`, which removed a
+  `tabindex` the consumer had put on the element. The scrollable's `aria-hidden` navigation buttons
+  were therefore in the tab order. The binding writes the element's own initial value back now.
+  jsdom keeps the static attribute either way, so the two new unit specs document the contract and
+  only the Playwright test proves the browser path.
+- **Copy button**: the icon-only copy button in the story and in the docs sample had no accessible
+  name, which the guide itself demands. Both carry an `aria-label` now.
+- **Query error stories**: the story built its error with `createQueryErrorResponse` alone, so no
+  retry policy and no Symfony parser were installed - the `Retryable` story showed no retry button
+  and the `ViolationList` story rendered a sentence instead of a `<ul>`, both the opposite of what
+  the docs page around those embeds claims. The story installs `symfonyQueryErrorParser` and passes
+  `shouldRetryRequest` now.
+
+- **Nav tabs, two keyboard defects.** `TabBarDirective.handleKeydown` called `preventDefault()` on
+  every Enter and then bailed when no arrow key had moved its focused index, so a nav tab link a
+  user reached with Tab never activated - the bar cancelled the browser's own anchor activation and
+  put nothing in its place. It leaves that key alone now. `NavTabLinkComponent.handleSpace` clicked
+  the host without consulting `disabled`, so Space followed a disabled link. Both have a jsdom spec
+  that fails without the fix, plus the two e2e tests that found them.
+
+### Defects recorded, still `test.fail()`
+
+- `color-input`: the docs say a Tab past the panel's last control closes the picker. When the field
+  is the last tab stop on the page, Tab leaves focus on `document.body` and the panel stays open.
+  Closing on focus-leave works whenever focus lands on a real element outside.
+- `nav-tabs`: a bar whose links are all disabled keeps a tab stop. `disabled` on an `<a>` is inert
+  and the roving tab index still gives the selected trigger `tabindex="0"`. Content tabs are skipped
+  because a native `button[disabled]` cannot take focus.
+- `match`: the meta row is `aria-hidden` because "the label, live badge and kick-off are all in the
+  card's name already", but `DEFAULT_MATCH_LABELS.matchName` composes `result ?? startTime`. As soon
+  as a match has a result, the drawn kick-off is announced by nobody. The fix has to decide which
+  fields belong in the name of a live card and of a finished one, so it is a decision for the label
+  owner, not a mechanical change.
+- `loader`: `--et-spinner-duration` is registered as an `@property` and listed in the docs, but no
+  rule reads it - the three keyframe animations hardcode their timings. A real consumer already
+  pays for it: `button-properties-styles.component.css` sets `700ms` for the button's loading
+  spinner and gets nothing. Wiring one token into three related durations is a design decision, not
+  a mechanical fix.
+- `phone-input`: the country trigger has no accessible name. The template binds
+  `[attr.aria-label]="resolvedCountryLabel()"`, and `SelectTriggerDirective`'s own host binding
+  writes `null` over it whenever the panel has a search. The `hasSearch()` condition looks
+  deliberate, so the fix belongs with whoever owns that decision - the trigger reads "+49" today.
+
+### Harness notes
+
+- One static build serves every agent. An agent must never run `nx build-storybook` itself - the
+  coordinator rebuilds between waves, after a story or a lib changes.
+- A Playwright `click` fails when the overlay under test covers the target. The toggletip panel
+  flips to `right` in the story and covers the second trigger, so a test that needs a second control
+  must pick a story whose panel drops away from it.
+- `nx lint storybook-e2e` still runs without `--fix`.
+- Never verify a fix with `git checkout HEAD -- <file>` while the fix is uncommitted: `HEAD` is the
+  state without it, so the "restore" throws the work away. Copy the file aside instead.
+- `test.use({ reducedMotion: 'reduce' })` at describe level does not reach the page in this config.
+  Call `page.emulateMedia({ reducedMotion: 'reduce' })` inside the test instead, as `floating-action`
+  and `match` do.
+- A select panel with a search claims focus only after its enter transition. A test that types into
+  the search right after opening loses the first characters and commits the wrong option. Wait for
+  the search input to be focused, then type, then wait for the filtered option count.
+- The `components` vitest project has a **sixth** file that exhausts a worker:
+  `libs/components/src/lib/scheduler/scheduler.component.spec.ts` (11 tests). It crashes alone, with
+  `--maxWorkers=1`, and on `next` without this wave's changes, so it is not a regression from the
+  overlay or button fixes. Five chunks of 55 spec files give: 699 / 876+4 skipped / 804+8 skipped /
+  417 / 537 passed, no failure, 146 tests unrun in the six crashing files (135 of them the five
+  date-time and form-field files, 11 the scheduler one). The last run after the tab bar fixes gives
+  699 / 876+4 skipped / 804+8 skipped / 417 / 540 - 3336 passed, 12 skipped, no failure.

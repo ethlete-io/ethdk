@@ -7,7 +7,14 @@ import { COPY_BUTTON_IMPORTS } from '@ethlete/components';
 ```
 
 ```html
-<button #copyBtn="etCopyButton" [text]="installCommand" et-icon-button etCopyButton type="button">
+<button
+  #copyBtn="etCopyButton"
+  [text]="installCommand"
+  aria-label="Copy the install command"
+  et-icon-button
+  etCopyButton
+  type="button"
+>
   @if (copyBtn.copied()) {
   <i etIcon="et-check"></i>
   } @else {

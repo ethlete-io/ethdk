@@ -132,6 +132,13 @@ export type OverlayRuntimeMountConfig<TComponent extends object> = {
   restoreFocus?: boolean;
   closeOnEscape?: boolean;
   closeOnOutsidePointer?: boolean;
+  /**
+   * Marks an overlay that never owns the interaction - a tooltip, a hover card, a drag preview.
+   * A passive overlay is skipped when the runtime looks for the top-most layer, so the overlay
+   * below it keeps answering Escape, an outside press and the focus trap while it is shown.
+   * Defaults to `false`.
+   */
+  passive?: boolean;
   ariaDescribedBy?: string | null;
   ariaLabelledBy?: string | null;
   ariaLabel?: string | null;

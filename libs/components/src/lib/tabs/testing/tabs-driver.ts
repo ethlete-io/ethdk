@@ -44,7 +44,7 @@ export const createTabBarDriver = <T>(fixture: ComponentFixture<T>, options: Tab
 
     if (!target) throw new Error('No focused trigger to dispatch the keydown on');
 
-    pressKey(target, key, init);
+    return pressKey(target, key, init);
   };
 
   return {

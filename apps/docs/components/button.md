@@ -77,7 +77,7 @@ button keeps its resting theme and only its variant swaps.
 All flavors share the headless `ButtonDirective` (`[etButton]`):
 
 - `disabled` and `loading` both make the button **inactive**: `aria-disabled`, no pointer events, and a blocked click.
-- Only `disabled` takes the control out of the tab order (native `disabled` on `<button>`, `tabindex="-1"` on `<a>`). A **loading** button stays focusable, so it keeps the focus it already had - which matters when the work behind it opens an overlay that restores focus on close.
+- Only `disabled` takes the control out of the tab order (native `disabled` on `<button>`, `tabindex="-1"` on `<a>`). A `tabindex` you put on the element yourself stays - that is how a decorative control (the scrollable's navigation buttons) opts out for good. A **loading** button stays focusable, so it keeps the focus it already had - which matters when the work behind it opens an overlay that restores focus on close.
 - `loading` additionally overlays a size-matched spinner (`aria-busy`) on top of the hidden label.
 - `progress` (`0`-`100`) turns that spinner from an indeterminate ring into a determinate arc with a track. Leave it unset for work of unknown length. It pairs directly with a [query batch](/query/batching) or a [query sequence](/query/dependent-queries#imperative-waterfalls-dependent-mutations), whose `progress()` signals use the same scale:
 
