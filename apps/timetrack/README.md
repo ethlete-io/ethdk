@@ -55,6 +55,28 @@ that it is not running inside the shell rather than failing obscurely. Use it fo
 `tauri:dev` and `tauri:build` are deliberately outside the default CI pipeline and the `ci-check`
 skill: they need a Rust toolchain and a per-OS matrix that the Angular libraries do not.
 
+## Where the window comes back
+
+The window's size, its position and whether it was maximised or minimised are stored in
+`window-placement.json` beside the database. It is written when the window is closed to the tray and
+when the app quits, and applied before the window is drawn — which is why the main window is declared
+`"visible": false` in `tauri.conf.json`: `placement::restore` is the only thing that shows it. It is
+applied again on every reveal, because a window hidden to the tray is unmapped and the compositor
+decides the geometry of every window it maps.
+
+Three limits are worth knowing:
+
+- **Wayland lets no client place its own window.** The position applies on X11, macOS and Windows
+  only. On Wayland the compositor places the window and the stored position reads `0,0`.
+- **A window rule that fixes the size beats the app.** A niri rule with `default-column-width` or
+  `default-window-height` for app-id `timetrack` overrules the stored size at every open, and no
+  request from the app takes it back. Leave the size out of the rule and niri honours the stored one.
+- **A tiling compositor may have no minimize.** niri has none, so the stored `minimized` does nothing
+  there.
+
+A window hidden to the tray is not stored as minimised. Reopening it is how the user asks for it back,
+and a start with no window at all reads as an app that failed to open.
+
 ## What the host owns
 
 | Command                                                  | Port it satisfies        |

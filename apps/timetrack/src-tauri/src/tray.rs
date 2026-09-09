@@ -40,8 +40,17 @@ pub fn reveal<R: Runtime>(app: &AppHandle<R>) {
         return;
     };
 
+    // A hidden window is unmapped, so a compositor that sizes and places windows by its own rules
+    // applies them again when it comes back, over whatever the window was left at.
+    let unmapped = !window.is_visible().unwrap_or(true);
+
     let _ = window.show();
     let _ = window.unminimize();
+
+    if unmapped {
+        crate::placement::reapply(app);
+    }
+
     let _ = window.set_focus();
 }
 

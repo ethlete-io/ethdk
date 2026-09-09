@@ -18,6 +18,7 @@ mod logs;
 mod nudge;
 mod oauth;
 mod pause;
+mod placement;
 mod process;
 mod samples;
 mod secrets;
@@ -51,6 +52,11 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
+            // Before the database: the window is declared invisible so its stored size and position
+            // can be applied before it is drawn, and a keychain that asks for a password must not be
+            // what the window waits on to appear at all.
+            app.manage(placement::Remembered::new(placement::restore(app.handle())));
+
             let data_dir = app.path().app_data_dir()?;
             let key = keychain::database_key()?;
             let connection = db::open(&data_dir.join("timetrack.db"), &key)?;
@@ -96,7 +102,11 @@ pub fn run() {
 
             Ok(())
         })
-        .on_window_event(tray::hide_instead_of_closing)
+        .on_window_event(|window, event| {
+            // Before the hide: a hidden window no longer reports where it was or how big it was.
+            placement::remember(window, event);
+            tray::hide_instead_of_closing(window, event);
+        })
         .invoke_handler(tauri::generate_handler![
             agent::agent_reply,
             agent::agent_status,
@@ -153,6 +163,13 @@ pub fn run() {
             window::window_request_accessibility,
             window::window_source_status,
         ])
-        .run(tauri::generate_context!())
-        .expect("timetrack failed to start");
+        .build(tauri::generate_context!())
+        .expect("timetrack failed to start")
+        .run(|app, event| {
+            // A quit from the tray passes through no close, so this is the only place a resize made
+            // since the window was last put away is written.
+            if matches!(event, tauri::RunEvent::Exit) {
+                placement::persist(app);
+            }
+        });
 }
