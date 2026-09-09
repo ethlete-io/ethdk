@@ -19,6 +19,13 @@ const sentences = (parts: (string | null)[]) => parts.filter((part) => !!part).j
 const isToday = (at: Date) => at.toDateString() === new Date().toDateString();
 
 /**
+ * What is watching, or nothing for a source that is not. A `none` kind is the row's badge and its
+ * warning already, and naming it a third time as a source called `none` reads as a fault.
+ */
+const watching = (status: { kind: string } | null) =>
+  status && status.kind !== 'none' ? `Source: ${status.kind}.` : null;
+
+/**
  * What a source has in the store, and when it last added to it.
  *
  * The newest instant is the liveness signal rather than the count: every collector here reads on a
@@ -38,7 +45,7 @@ export const formatWindowSource = (options: { status: WindowSourceStatus | null;
   const { status, totals } = options;
 
   return sentences([
-    status ? `Source: ${status.kind}.` : null,
+    watching(status),
     totals.excluded ? `${totals.excluded} denied by an exclusion rule since ${clock(totals.since)}.` : null,
     totals.dropped ? `${totals.dropped} lost because nothing drained them in time.` : null,
   ]);
@@ -55,7 +62,7 @@ export const formatCallSource = (options: { status: CallSourceStatus | null; tot
   const { status, totals } = options;
 
   return sentences([
-    status ? `Source: ${status.kind}.` : null,
+    watching(status),
     totals.dropped ? `${totals.dropped} lost because nothing drained them in time.` : null,
   ]);
 };

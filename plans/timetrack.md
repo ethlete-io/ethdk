@@ -1210,6 +1210,21 @@ costs a late edge at worst rather than a wrong day:
   two instants and no title, and the title the review names it with comes from a `window-focus` event
   those rules already deny.
 
+#### TODO: Linux and Windows calls, both blocked on a machine
+
+Both report `none`, which is the window source's named degrade and not a defect. Neither is blocked on
+code, and neither can be closed from the Mac this app is developed on:
+
+- **Linux.** The design is written above and PipeWire is the API. What is missing is one measurement:
+  whether PipeWire exposes `application.process.id` at all, and what `application.process.binary`
+  reports for a Flatpak Slack, whose window app id is `com.slack.Slack`. **One Slack huddle on a Linux
+  machine settles both.** Writing `calls_linux.rs` before that answer would guess the identifier the
+  whole prefix match rests on.
+- **Windows.** WASAPI `IAudioSessionManager2` then `IAudioSessionControl2::GetProcessId`, named by pid.
+  Designed and unbuilt. It can be written blind - the portable half (`calls.rs`, `classifyCalls`,
+  `streamDay`) is finished and platform-free - but nothing on macOS can run it, and no Windows Rust
+  target is installed here, so it would land unverified.
+
 #### A working call is a row in the review — built 2026-09-09
 
 `matchCalls` in `libs/timetrack/src/lib/correlate/calls.ts` turns each call the rules counted as work
@@ -2344,6 +2359,29 @@ commit that later also lives on another branch is not a second piece of work.
   - Still owed here: the hard pause, the OAuth client registration, and the marker scheme. The two
     ticket-creation config values - `subjectField` and parenting - now have fields to hold them
     (`TimetrackTicketSettings`, the New tickets section); what is missing is the answer, not the seam.
+
+### A source that is not running says so - fixed 2026-09-09
+
+The Sources screen read `collecting` off the inventory, which is a static description of what a
+source does, not a report of what it is doing. The window, call and ingest collectors all answer
+`kind: 'none'` on a platform that has no implementation of them, so on Linux the Calls row claimed a
+microphone was being watched that nothing was watching. `collecting` is the one badge that promises
+rows reach the database, so this was a false claim about what is stored, not a cosmetic one.
+
+- **`not-running` is read, never written.** `EvidenceSourceState` gained the state, but no entry in
+  `inventory.ts` uses it. `stateOf` in `sources-view.component.ts` turns `collecting` into it when
+  `hostStatusKindOf` reports `none`, so the inventory keeps saying what a source is for and the host
+  keeps saying what it is doing.
+- **A stopped source keeps its tally, a source that never ran loses it.** That a row holds events and
+  its newest one stopped moving is the whole story of a source that was collecting; a count of zero
+  under a `not-running` badge is noise, so `storedOf` drops it.
+- **The two redundant lines are gone.** `Source: none.` repeated the badge and the warning a third
+  time, and `Nothing stored yet.` under a source nothing runs reads as a fault. The private
+  `watching()` helper in `format.ts` suppresses the first.
+- The row's warning banner is still headed **Degraded**, which is the wrong word for a platform that
+  never had the source. Pre-existing wording, no false claim, left alone.
+
+Covered by `apps/timetrack-e2e/src/sources.spec.ts`.
 
 ### A lock over the window
 

@@ -47,6 +47,7 @@ const STATE_LABEL: Record<EvidenceSourceState, string> = {
   ready: 'ready',
   configured: 'not set up',
   planned: 'planned',
+  'not-running': 'not running',
 };
 
 const STATE_COLOR: Record<EvidenceSourceState, string> = {
@@ -54,6 +55,7 @@ const STATE_COLOR: Record<EvidenceSourceState, string> = {
   ready: 'brand',
   configured: 'warning',
   planned: 'neutral',
+  'not-running': 'warning',
 };
 
 /** Outlined for what is not built: a tonal neutral badge is too faint to read as a label at all. */
@@ -62,6 +64,7 @@ const STATE_VARIANT: Record<EvidenceSourceState, BadgeVariant> = {
   ready: 'tonal',
   configured: 'tonal',
   planned: 'outline',
+  'not-running': 'tonal',
 };
 
 type SourceRow = {
@@ -113,7 +116,10 @@ type SourceRow = {
 
       <ul class="mt-4 flex flex-col gap-2">
         @for (row of rows(); track row.source.id) {
-          <li class="flex flex-col gap-1 rounded-md border border-et-surface-border p-3">
+          <li
+            [attr.data-source]="row.source.id"
+            class="flex flex-col gap-1 rounded-md border border-et-surface-border p-3"
+          >
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-base font-medium">{{ row.source.name }}</span>
               <et-badge [color]="row.color" [variant]="row.variant" size="sm">{{ row.label }}</et-badge>
@@ -228,17 +234,50 @@ export class SourcesViewComponent {
     this.windows.requestAccessibility$().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 
-  /** A source that names a credential is waiting on the keychain, whatever the inventory says it does. */
+  /**
+   * A source that names a credential is waiting on the keychain, whatever the inventory says it does.
+   *
+   * A source the host is not watching reads `not-running` rather than `collecting`, because
+   * `collecting` is the row that claims something reaches the database. The window and call sources
+   * report `none` on a platform they have no implementation for, and the ingest endpoint reports it
+   * until it has started, so on Linux the badge would otherwise say a microphone is being watched
+   * that nothing is watching.
+   */
   private stateOf(source: EvidenceSource): EvidenceSourceState {
-    if (!source.credential) return source.state;
+    if (source.credential) return this.settings.credentials()[source.credential] ? source.state : 'configured';
 
-    return this.settings.credentials()[source.credential] ? source.state : 'configured';
+    if (source.state === 'collecting' && this.hostStatusKindOf(source) === 'none') return 'not-running';
+
+    return source.state;
   }
 
-  private storedOf(row: { source: EvidenceSource; state: EvidenceSourceState }) {
-    if (row.state !== 'collecting' || !row.source.eventSource) return null;
+  /** What the host says is watching for this source, or `null` for a source the host has no status for. */
+  private hostStatusKindOf(source: EvidenceSource) {
+    switch (source.collector) {
+      case 'window':
+        return this.windows.status()?.kind ?? null;
+      case 'call':
+        return this.calls.status()?.kind ?? null;
+      case 'ingest':
+        return this.ingest.status()?.kind ?? null;
+      default:
+        return null;
+    }
+  }
 
-    return formatTally(this.tallies().find((tally) => tally.source === row.source.eventSource));
+  /**
+   * A source that has stopped keeps its tally: that it holds events and its newest one has stopped
+   * moving is the whole story of a source that was collecting and is not any more.
+   */
+  private storedOf(row: { source: EvidenceSource; state: EvidenceSourceState }) {
+    if (!row.source.eventSource) return null;
+    if (row.state !== 'collecting' && row.state !== 'not-running') return null;
+
+    const tally = this.tallies().find((held) => held.source === row.source.eventSource);
+
+    if (row.state === 'not-running' && !tally?.count) return null;
+
+    return formatTally(tally);
   }
 
   private backfillOf(

@@ -6,8 +6,12 @@ import { CollectedEventSource, TimetrackCredentialStatus } from '@ethlete/timetr
  * `collecting` is the only state that puts anything in the database. `ready` has its credentials and
  * answers when something asks, `configured` means the code is there and waiting on credentials the user
  * has not given yet, and `planned` means it is not built.
+ *
+ * `not-running` is the one state a row cannot declare for itself: the host says the source is not
+ * watching, whether because this platform has no implementation of it or because it stopped. It is
+ * never written here — `stateOf` reads it off the host status, and the row's warning says why.
  */
-export type EvidenceSourceState = 'collecting' | 'ready' | 'configured' | 'planned';
+export type EvidenceSourceState = 'collecting' | 'ready' | 'configured' | 'planned' | 'not-running';
 
 export type EvidenceSource = {
   id: string;
