@@ -136,7 +136,8 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     credential: 'gitlab',
     collector: 'gitlab',
     eventSource: 'gitlab',
-    detail: 'Waiting on an instance and a personal access token with `read_api` in Settings.',
+    detail:
+      'Waiting on an instance and a personal access token with `api`, or `read_api` and `read_user` to only collect.',
   },
   {
     id: 'vscode',

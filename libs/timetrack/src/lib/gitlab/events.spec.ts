@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
-import { GitLabCredentials } from './client';
+import { GitLabCredentials, gitlabRequest$ } from './client';
 import { fetchGitLabEvents$ } from './events';
 
 const CREDENTIALS: GitLabCredentials = { host: 'git.example.com', token: 'glpat-secret' };
@@ -129,5 +129,31 @@ describe('fetchGitLabEvents$', () => {
     ]);
 
     expect(events(transport)).toEqual([]);
+  });
+});
+
+describe('a refused GitLab read', () => {
+  const refusing = (status: number): TimetrackTransport => ({
+    request$: vi.fn(() => of({ status, headers: {}, body: null }) as never),
+  });
+
+  const failureOf = (transport: TimetrackTransport, path: string) => {
+    const seen = vi.fn();
+
+    gitlabRequest$({ transport, credentials: CREDENTIALS, path, describe: 'the thing' }).subscribe({ error: seen });
+
+    return (seen.mock.calls[0]?.[0] as Error).message;
+  };
+
+  it('names `read_user` for the activity feed, which `read_api` does not cover', () => {
+    expect(failureOf(refusing(403), '/events')).toContain('`read_user`');
+  });
+
+  it('names `read_api` for a project read', () => {
+    expect(failureOf(refusing(403), '/projects/4/merge_requests')).toContain('`read_api`');
+  });
+
+  it('names no scope at all when the token itself was rejected', () => {
+    expect(failureOf(refusing(401), '/events')).not.toContain('scope');
   });
 });

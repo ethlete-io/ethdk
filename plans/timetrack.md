@@ -939,7 +939,7 @@ destroy a credential a different fix would revive.
 
 ### GitLab CE, self-hosted (phase 2)
 
-PAT with `read_api`. The high-value endpoint is `/api/v4/events` scoped to the user with
+PAT with `api`. The high-value endpoint is `/api/v4/events` scoped to the user with
 `after`/`before` - it returns `action_name` and `created_at` for pushes, comments,
 approvals and merges, which is a genuine retroactive record of review work that leaves no
 local trace.
@@ -1712,9 +1712,11 @@ the remaining steps in order. What building it settled:
   so `draftMergeRequestTitle` owns the prefix and nothing else builds that title. The source branch
   is set to be removed on merge: the grammar makes the name reconstructible, and a stale branch is a
   collision the next start has to refuse.
-- **The GitLab token needs `api`, not `read_api`.** Collection only ever read; repair and start both
-  write merge requests. The type's doc comment said otherwise and was already wrong when repair
-  shipped.
+- **The GitLab token needs `api`, not `read_api`.** Repair and start both write merge requests, and
+  `/events` is documented as `read_user` or `api` - `read_api` is a separate scope that does not cover
+  it. So a `read_api` token reads every merge request and answers 403 for the activity feed, which is
+  exactly what the measured instance did. Collection alone wants `read_api` **and** `read_user`. The
+  type's doc comment, the settings help text and the sources row all said `read_api` alone.
 - **An `et-select` bound to `''` reads as a selected value.** `hasValue()` is true for an empty
   string, so the trigger renders an empty label instead of the placeholder and collapses to zero
   height. Bind `null` for "nothing picked".
