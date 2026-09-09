@@ -83,6 +83,25 @@ describe('exchangeGoogleAuthCode$', () => {
 
     expect(errorFrom(() => exchange$(answering(400, body))).message).toBe('Bad grant type');
   });
+
+  it('does not send the user back to the browser flow that just failed', () => {
+    const error = errorFrom(() => exchange$(answering(400, { error: 'invalid_grant' })));
+
+    expect(error.needsReconnect).toBe(false);
+    expect(error.message).toContain('rejected the authorization the browser carried back');
+  });
+
+  it('keeps what google said about a rejected code, which is the only part naming the cause', () => {
+    const body = { error: 'invalid_grant', error_description: 'Malformed auth code.' };
+
+    expect(errorFrom(() => exchange$(answering(400, body))).message).toContain('Malformed auth code.');
+  });
+
+  it('keeps what google said about an unusable client', () => {
+    const body = { error: 'invalid_client', error_description: 'The OAuth client was not found.' };
+
+    expect(errorFrom(() => exchange$(answering(401, body))).message).toContain('The OAuth client was not found.');
+  });
 });
 
 describe('refreshGoogleAccessToken$', () => {
@@ -119,6 +138,12 @@ describe('refreshGoogleAccessToken$', () => {
 
     expect(error.needsReconnect).toBe(true);
     expect(error.message).toContain('connect the account again');
+  });
+
+  it('keeps what google said about a rejected refresh token', () => {
+    const body = { error: 'invalid_grant', error_description: 'Token has been expired or revoked.' };
+
+    expect(errorFrom(() => refresh$(answering(400, body))).message).toContain('Token has been expired or revoked.');
   });
 });
 

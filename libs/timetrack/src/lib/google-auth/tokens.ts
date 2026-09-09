@@ -22,23 +22,35 @@ export type GoogleTokenGrant = {
   scopes: string[];
 };
 
+/**
+ * Which of the two token requests failed. Google answers both with the same `error` codes and they mean
+ * different things: `invalid_grant` on a refresh means the stored token is dead, while on an exchange it
+ * means the code the browser just carried was not usable.
+ */
+export type GoogleTokenFlow = 'authorization-code' | 'refresh-token';
+
 export class GoogleAuthError extends Error {
   readonly status: number;
   /** Google's own `error` code, when the body carried one — `invalid_grant`, `invalid_client`, … */
   readonly code?: string;
+  readonly flow: GoogleTokenFlow;
   /**
    * Whether the stored refresh token is dead. Google answers `invalid_grant` once the user revokes
    * access, changes their password or leaves the token unused for six months, and the only way out is
    * connecting again — so a caller shows that rather than retrying.
+   *
+   * Never set for a failed exchange: the browser flow is what just ran, so asking for it again is a
+   * loop rather than a fix.
    */
   readonly needsReconnect: boolean;
 
-  constructor(options: { status: number; code?: string; message: string }) {
+  constructor(options: { status: number; code?: string; message: string; flow: GoogleTokenFlow }) {
     super(options.message);
     this.name = 'GoogleAuthError';
     this.status = options.status;
     this.code = options.code;
-    this.needsReconnect = options.code === 'invalid_grant';
+    this.flow = options.flow;
+    this.needsReconnect = options.code === 'invalid_grant' && options.flow === 'refresh-token';
   }
 }
 
@@ -57,11 +69,22 @@ const DEFAULT_EXPIRES_IN_SECONDS = 3600;
 const asBody = (body: unknown): GoogleTokenBody =>
   typeof body === 'object' && body !== null ? (body as GoogleTokenBody) : {};
 
-const messageFor = (options: { status: number; code?: string; description?: string }) => {
-  const { status, code, description } = options;
+/**
+ * Google's `error_description` is kept on every code it is sent with, because it is the only part of the
+ * answer that says which of several causes applies — an exchange is rejected the same way for a code
+ * that was already spent, one that expired, and a redirect that did not match.
+ */
+const messageFor = (options: { status: number; code?: string; description?: string; flow: GoogleTokenFlow }) => {
+  const { status, code, description, flow } = options;
+  const said = description ? ` Google said: ${description}` : '';
 
-  if (code === 'invalid_grant') return 'Google no longer accepts the stored authorization — connect the account again.';
-  if (code === 'invalid_client') return 'Google does not recognise the client id and secret for this app.';
+  if (code === 'invalid_grant') {
+    return flow === 'refresh-token'
+      ? `Google no longer accepts the stored authorization — connect the account again.${said}`
+      : `Google rejected the authorization the browser carried back. It was already spent, it expired, or the redirect did not match.${said}`;
+  }
+
+  if (code === 'invalid_client') return `Google does not recognise the client id and secret for this app.${said}`;
 
   return description ?? `Google responded ${status} to the token request${code ? ` (${code})` : ''}.`;
 };
@@ -69,6 +92,7 @@ const messageFor = (options: { status: number; code?: string; description?: stri
 const token$ = (options: {
   transport: TimetrackTransport;
   form: Record<string, string>;
+  flow: GoogleTokenFlow;
 }): Observable<GoogleTokenGrant> =>
   options.transport
     .request$<unknown>({
@@ -85,7 +109,13 @@ const token$ = (options: {
           throw new GoogleAuthError({
             status: response.status,
             code: body.error,
-            message: messageFor({ status: response.status, code: body.error, description: body.error_description }),
+            flow: options.flow,
+            message: messageFor({
+              status: response.status,
+              code: body.error,
+              description: body.error_description,
+              flow: options.flow,
+            }),
           });
         }
 
@@ -113,6 +143,7 @@ export const exchangeGoogleAuthCode$ = (options: {
 }): Observable<GoogleTokenGrant> =>
   token$({
     transport: options.transport,
+    flow: 'authorization-code',
     form: {
       grant_type: 'authorization_code',
       client_id: options.client.clientId,
@@ -143,6 +174,7 @@ export const refreshGoogleAccessToken$ = (options: {
 }): Observable<GoogleTokenGrant> =>
   token$({
     transport: options.transport,
+    flow: 'refresh-token',
     form: {
       grant_type: 'refresh_token',
       client_id: options.client.clientId,

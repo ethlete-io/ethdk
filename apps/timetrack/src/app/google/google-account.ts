@@ -65,7 +65,6 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     defer(() => {
       busy.set(true);
       failure.set(null);
-      needsReconnect.set(false);
 
       return work$.pipe(
         catchError((error: unknown) => {
@@ -90,6 +89,9 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         next: (found) => {
           calendars.set(found);
           loadFailed.set(false);
+          // A read that got through proves the stored token works, which is the only thing that takes
+          // the reconnect warning back. Clearing it when the attempt starts would hide a failed one.
+          needsReconnect.set(false);
         },
         // A caller that reads this is what keeps a failed read from being asked for again on sight.
         // Without it the settings card retries forever, and its `busy` never settles.
@@ -132,6 +134,7 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         tap(() => {
           tokens.invalidate();
           settings.recheckCredentials();
+          needsReconnect.set(false);
         }),
         switchMap(() => calendars$()),
       ),
@@ -152,6 +155,7 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           settings.recheckCredentials();
           calendars.set(null);
           loadFailed.set(false);
+          needsReconnect.set(false);
         }),
       ),
     );
