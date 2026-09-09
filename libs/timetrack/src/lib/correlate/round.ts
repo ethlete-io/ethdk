@@ -107,7 +107,7 @@ export type CheckDayOptions = {
   /** A day this close to the target is not worth a warning. Defaults to one rounding increment. */
   toleranceMs?: number;
   maxRowsPerDay?: number;
-  /** Time a meeting and observed activity both claim, from `matchMeetings`. */
+  /** Time a meeting or a call and observed activity both claim, from `matchMeetings` and `matchCalls`. */
   meetingOverlapMs?: number;
   /** Time a timer claimed with no activity observed inside it, from `matchTimerRuns`. */
   timerUnobservedMs?: number;
@@ -165,7 +165,7 @@ export const checkDay = (options: {
   if (meetingOverlapMs !== undefined && meetingOverlapMs >= tolerance) {
     warnings.push({
       kind: 'meeting-overlap',
-      detail: `${formatDurationMs(meetingOverlapMs)} is claimed by a meeting and by observed activity at the same time`,
+      detail: `${formatDurationMs(meetingOverlapMs)} is claimed by a meeting or a call and by observed activity at the same time`,
     });
   }
 

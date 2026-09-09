@@ -1,5 +1,6 @@
 import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
+import { CallWindow } from '../model/call';
 import { CollectedEvent } from '../model/event';
 import { correlateDay } from './correlate-day';
 import { TimetrackProjectLink } from '../model/project-link';
@@ -51,6 +52,14 @@ const calendar = (options: { minute: number; minutes: number; title: string; acc
   title: options.title,
   accepted: options.accepted ?? true,
   conferenceUrl: 'https://meet.google.com/abc-defg-hij',
+});
+
+const workingCall = (options: { minute: number; minutes: number }): CallWindow => ({
+  from: AT(options.minute),
+  to: AT(options.minute + options.minutes),
+  appId: 'com.hnc.Discord',
+  title: '#standup | Braune Digital',
+  countsAsWork: true,
 });
 
 const STORY = 'feat/FIP-2177-user-management';
@@ -191,6 +200,73 @@ describe('correlateDay', () => {
 
     expect(day.proposals.map((proposal) => proposal.issueKey)).toEqual(['FIP-2177', 'FIP-2177']);
     expect(day.unattributed.map((group) => group.evidence[0]?.summary)).toEqual(['Braune Digital Weekly']);
+  });
+
+  it('places a working call in the day as its own row, on the meetings issue', () => {
+    const day = correlateDay({
+      events: DAY,
+      calls: [workingCall({ minute: 150, minutes: 60 })],
+      config: FIP,
+      resolveBase: () => STORY,
+      meetings: { defaultIssueKey: 'FIP-9' },
+    });
+
+    expect(day.calls).toHaveLength(1);
+    expect(day.proposals.map((proposal) => proposal.issueKey)).toEqual(['FIP-2177', 'FIP-2177', 'FIP-9']);
+    expect(day.proposals[2]?.description).toBe('#standup | Braune Digital');
+    expect(day.proposals[2]?.confidence).toBe('weak');
+    expect(day.proposals[2]?.durationMs).toBe(60 * MINUTE);
+  });
+
+  it('leaves a working call nothing names in the unattributed groups', () => {
+    const day = correlateDay({
+      events: DAY,
+      calls: [workingCall({ minute: 150, minutes: 60 })],
+      config: FIP,
+      resolveBase: () => STORY,
+    });
+
+    expect(day.proposals.map((proposal) => proposal.issueKey)).toEqual(['FIP-2177', 'FIP-2177']);
+    expect(day.unattributed.map((group) => group.evidence[0]?.summary)).toEqual(['#standup | Braune Digital']);
+  });
+
+  it('proposes no second row for a call the calendar already names', () => {
+    const day = correlateDay({
+      events: [...DAY, calendar({ minute: 150, minutes: 60, title: 'FIP-2222 refinement' })],
+      calls: [workingCall({ minute: 150, minutes: 60 })],
+      config: FIP,
+      resolveBase: () => STORY,
+      meetings: { defaultIssueKey: 'FIP-9' },
+    });
+
+    expect(day.calls).toEqual([]);
+    expect(day.proposals.map((proposal) => proposal.issueKey)).toEqual(['FIP-2177', 'FIP-2177', 'FIP-2222']);
+  });
+
+  it('warns when a call and observed activity claim the same time', () => {
+    const day = correlateDay({
+      events: DAY,
+      calls: [workingCall({ minute: 0, minutes: 60 })],
+      config: FIP,
+      resolveBase: () => STORY,
+      meetings: { defaultIssueKey: 'FIP-9' },
+    });
+
+    expect(day.calls[0]?.overlapMs).toBe(60 * MINUTE);
+    expect(day.check.warnings.map((warning) => warning.kind)).toContain('meeting-overlap');
+  });
+
+  it('proposes nothing for a call no rule counted as work', () => {
+    const day = correlateDay({
+      events: DAY,
+      calls: [{ ...workingCall({ minute: 150, minutes: 60 }), countsAsWork: false }],
+      config: FIP,
+      resolveBase: () => STORY,
+      meetings: { defaultIssueKey: 'FIP-9' },
+    });
+
+    expect(day.calls).toEqual([]);
+    expect(day.proposals.map((proposal) => proposal.issueKey)).toEqual(['FIP-2177', 'FIP-2177']);
   });
 
   it('lets a timer run displace the reconstruction underneath it', () => {

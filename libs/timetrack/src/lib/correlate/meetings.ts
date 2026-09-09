@@ -17,6 +17,13 @@ export type MeetingAttendance = 'confirmed' | 'observed' | 'unobserved';
 /** Where a meeting's issue key came from, which is what its confidence is computed from. */
 export type MeetingKeySource = 'event-title' | 'tempo-history' | 'default';
 
+/** The issue a meeting or a call was named from, and the observation that named it. */
+export type NamedIssue = {
+  issueKey: string;
+  keySource: MeetingKeySource;
+  evidence?: Evidence;
+};
+
 export type MeetingMatch = {
   event: CalendarOccurrenceEvent;
   attendance: MeetingAttendance;
@@ -115,17 +122,16 @@ const confidenceOf = (options: {
   return attendance === 'confirmed' ? 'likely' : 'weak';
 };
 
-const resolveKey = (options: {
-  event: CalendarOccurrenceEvent;
-  config: GitFlowConfig;
-  meetings: MeetingOptions;
-}): { issueKey: string; keySource: MeetingKeySource; evidence?: Evidence } | undefined => {
-  const { event, config, meetings } = options;
-  const titleKey = issueKeyInText({ text: event.title, config });
-
-  if (titleKey) return { issueKey: titleKey, keySource: 'event-title' };
-
-  const pattern = meetings.patterns?.length ? patternAt({ patterns: meetings.patterns, at: event.at }) : undefined;
+/**
+ * The issue a commitment at this instant lands on when nothing names one: a standing pattern read out
+ * of Tempo history, else the internal meetings issue.
+ *
+ * A call is named this way too. Its own title is whatever window was in front when it opened, so it
+ * names a channel rather than a ticket, and there is nothing in it to read a key out of.
+ */
+export const standingIssueKey = (options: { at: Date; meetings: MeetingOptions }): NamedIssue | undefined => {
+  const { at, meetings } = options;
+  const pattern = meetings.patterns?.length ? patternAt({ patterns: meetings.patterns, at }) : undefined;
 
   if (pattern) {
     return {
@@ -133,13 +139,26 @@ const resolveKey = (options: {
       keySource: 'tempo-history',
       evidence: {
         kind: 'tempo-history',
-        at: event.at,
+        at,
         detail: `${pattern.issueKey} logged at this time on ${pattern.occurrences} earlier weeks`,
       },
     };
   }
 
   return meetings.defaultIssueKey ? { issueKey: meetings.defaultIssueKey, keySource: 'default' } : undefined;
+};
+
+const resolveKey = (options: {
+  event: CalendarOccurrenceEvent;
+  config: GitFlowConfig;
+  meetings: MeetingOptions;
+}): NamedIssue | undefined => {
+  const { event, config, meetings } = options;
+  const titleKey = issueKeyInText({ text: event.title, config });
+
+  if (titleKey) return { issueKey: titleKey, keySource: 'event-title' };
+
+  return standingIssueKey({ at: event.at, meetings });
 };
 
 const calendarEvidence = (event: CalendarOccurrenceEvent): Evidence => ({

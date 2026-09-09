@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clipWindows, mergeWindows, subtractWindows, windowsContain, windowsMs } from './windows';
+import { clipWindows, mergeWindows, subtractWindows, windowsContain, windowsMs } from './time-window';
 
 const AT = (minutes: number) => new Date(new Date(2026, 7, 12, 9, 0, 0).getTime() + minutes * 60_000);
 

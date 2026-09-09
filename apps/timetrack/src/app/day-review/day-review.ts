@@ -18,6 +18,7 @@ import {
   TimerRun,
   UnnamedContext,
   addManualRow,
+  classifyCalls,
   closeTimerRun,
   correlateDay,
   coveredMsOf,
@@ -86,7 +87,13 @@ const isSettled = (coverage: TempoDayCoverage, dayEnd: Date) => coverage.observe
 type Loaded<T> = { key: string; value: T | null; failure: string | null };
 
 /** One day's raw inputs, loaded together so a half-loaded day is never correlated. */
-type DayEvidence = { events: CollectedEvent[]; runs: ClosedTimerRun[]; pauses: TimeWindow[] };
+type DayEvidence = {
+  events: CollectedEvent[];
+  runs: ClosedTimerRun[];
+  pauses: TimeWindow[];
+  /** The instant the day is read through, for anything that has to cut off a stretch still open. */
+  through: Date;
+};
 
 /**
  * Cuts an open run off at now, or at the end of the day being read, whichever comes first.
@@ -158,6 +165,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           }).pipe(
             map((loaded) => ({
               ...loaded,
+              through,
               // The same rule as an open timer run, for the same reason: a pause taken this morning
               // must not claim every hour left until midnight.
               pauses: pauseWindows({ events: loaded.events, window: { from, to }, through }),
@@ -251,6 +259,22 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   const evidence = computed(() => evidenceLoad()?.value ?? null);
+
+  /**
+   * The day's calls, classified here rather than in the loader: the rules are a setting, so editing one
+   * has to re-read the day the reviewer is looking at without waiting for it to be loaded again.
+   */
+  const calls = computed(() => {
+    const collected = evidence();
+
+    return collected
+      ? classifyCalls({
+          events: collected.events,
+          rules: settings.settings().callRules,
+          until: collected.through,
+        })
+      : [];
+  });
   const edits = computed(() => local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS);
 
   const correlateOptions = computed((): CorrelateDayOptions => ({
@@ -275,6 +299,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           events: collected.events,
           timerRuns: collected.runs,
           pauses: collected.pauses,
+          calls: calls(),
           ...correlateOptions(),
         })
       : null;
@@ -331,6 +356,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           events: collected.events,
           timerRuns: collected.runs,
           pauses: collected.pauses,
+          calls: calls(),
           inferred: proposed,
           ...correlateOptions(),
         })

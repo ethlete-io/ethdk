@@ -1,4 +1,5 @@
 import { ActivityContext, streamKey } from '../model/block';
+import { CallWindow } from '../model/call';
 import { branchOf, repoRootOf } from '../model/context';
 import {
   ActivityEvent,
@@ -12,11 +13,10 @@ import {
 } from '../model/event';
 import { Evidence } from '../model/evidence';
 import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
-import { TimeWindow } from '../model/time-window';
+import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } from '../model/time-window';
 import { TimetrackCallRules } from '../settings/model';
-import { CallWindow, classifyCalls } from './calls';
+import { classifyCalls } from './calls';
 import { PresenceSample, presenceWindows } from './presence';
-import { clipWindows, mergeWindows, subtractWindows, windowsMs } from './windows';
 
 /** The key of the one line every application with no checkout folds into. */
 export const OTHER_APPLICATIONS_KEY = 'other-applications';

@@ -15,6 +15,8 @@ export type EvidenceKind =
   | 'window-title'
   | 'editor'
   | 'calendar'
+  /** A stretch a process held the microphone, which a call rule counted as work. */
+  | 'call'
   | 'timer'
   /** A row the reviewer added by hand. Nothing observed it, and the day says so rather than implying it. */
   | 'manual';

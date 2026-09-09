@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityEvent, AgentPromptEvent, AgentUsageEvent } from '../model/event';
 import { PresenceSample, presenceWindows } from './presence';
-import { windowsMs } from './windows';
+import { windowsMs } from '../model/time-window';
 
 const AT = (minutes: number) => new Date(new Date(2026, 7, 12, 9, 0, 0).getTime() + minutes * 60_000);
 

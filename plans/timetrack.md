@@ -1210,17 +1210,52 @@ costs a late edge at worst rather than a wrong day:
   two instants and no title, and the title the review names it with comes from a `window-focus` event
   those rules already deny.
 
-Three things are still owed.
+#### A working call is a row in the review — built 2026-09-09
 
-- **A call is not yet a block in the review.** `sessionize` skips a call event by name, and that skip is
-  load-bearing rather than tidy: a `CallEvent` is an `ActivityEvent`, so without it a `call-end` 48
-  minutes after its start would extend the last block by the whole call and book it to whatever window
-  was in front before the call opened. So the Today screen counts a working call and the day review
-  still proposes no meeting row for it. Turning one into a weak, proposed block is the next slice, and
-  it is where `meetingIssueKey` and the calendar's naming finally meet.
+`matchCalls` in `libs/timetrack/src/lib/correlate/calls.ts` turns each call the rules counted as work
+into a reviewable row, beside `matchMeetings` and `matchTimerRuns` rather than inside `sessionize`.
+What building it settled:
+
+- **It is built beside `sessionize`, never inside it.** `sessionize`'s `sample.source !== 'call'` skip
+  is load-bearing: a `CallEvent` is an `ActivityEvent`, so without it a `call-end` 48 minutes after its
+  start extends the last block by the whole call and books it to whatever window was in front before
+  the call opened. The test that holds this is `extends no block for a call, however long the
+microphone was held`.
+- **The day's claimed time is cut out of a call first, and each stretch that is left becomes a row.**
+  A calendar occurrence over the same minutes already proposes that hour, and proposing the call over
+  it bills the hour twice — the same reason a timer run displaces the reconstruction underneath it.
+  Cutting rather than dropping is what keeps the 30 minutes of a two-hour call that a one-hour meeting
+  does not cover. A remaining stretch under `MIN_PROPOSED_CALL_MS` (5 minutes) proposes nothing: it is
+  the scrap either end of a meeting the microphone opened early and closed late, and a scrap that
+  rounds up to a whole increment is worse than no row.
+- **A call does not raise a calendar row's attendance or confidence.** A microphone held through a
+  meeting's hour is evidence the user was in _a_ call and not in _that_ one, so `confirmed` would sync
+  a meeting nobody attended. Only a window title naming the conference id or the event does that, and
+  the rule is unchanged. `attendance` reads `unobserved` for a call-only meeting, which is currently
+  shown nowhere.
+- **A call's own title names no ticket.** It is whatever window was in front when the call opened — a
+  channel, not an issue — so `issueKeyInText` is not run over it. A call is named by the standing
+  ladder alone: `standingIssueKey` was extracted out of `meetings.ts` for exactly this, so a call and a
+  meeting land on the same Tempo pattern and then on the same `meetingIssueKey`. A call nothing names
+  lands in the day's unattributed groups.
+- **Always `weak`, whatever named it.** The rules say a call was work; nothing on the machine says
+  which work. So no call ever syncs unreviewed, and the row's description — the call's own window title
+  — is always read by a person before it leaves the machine.
+- **The overlap is reported, not hidden.** Activity observed during a call is time the day proposes
+  twice, so it joins `meetingOverlapMs` and raises the same `meeting-overlap` warning.
+- **The rows are classified where the settings are read, not in the day's loader.** The day review
+  classifies its calls in a `computed` over `settings.callRules`; in the loader, editing a rule would
+  not re-read the day the reviewer is looking at.
+
+Two moves came with it, both to give the step a home without a `correlate` → `stream` edge: `CallWindow`
+and `callLabel` moved to `model/call.ts` (beside `ClosedTimerRun` in `model/timer.ts`, the same
+precedent), and the four window helpers moved from `stream/windows.ts` into `model/time-window.ts`.
+
+Two things are still owed.
+
 - **Linux is still `none`,** as designed. The Slack-huddle measurement that settles
   `application.process.id` and the Flatpak binary name is still owed.
-- **Windows is still `none`.** WASAPI is designed and unbuilt.
+- **Windows is still `none`**. WASAPI is designed and unbuilt.
 
 ## Projects without the grammar
 
