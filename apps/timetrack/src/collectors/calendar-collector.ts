@@ -95,7 +95,6 @@ const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
         return ports.events.appendCounted$(redactEventTitles(kept)).pipe(
           tap((stored) => {
-            failure.set(null);
             lastRun.set({
               at,
               calendars: calendarIds.length,
@@ -117,6 +116,10 @@ const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
           return calendarIds.length ? read$(calendarIds) : of(undefined);
         }),
+        // The one owner of clearing the failure, for the reason the GitLab collector names: a run
+        // with no calendar picked or no credential short-circuits before the success `tap`, so
+        // clearing there left a dead failure on screen for good.
+        tap({ complete: () => failure.set(null) }),
         catchError((error: unknown) => {
           failure.set(error instanceof Error ? error.message : String(error));
 

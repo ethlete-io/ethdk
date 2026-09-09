@@ -76,7 +76,6 @@ const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return ports.events.appendCounted$(kept).pipe(
           tap((stored) => {
             read = true;
-            failure.set(null);
             lastRun.set({
               at,
               seen: collection.events.length,
@@ -94,6 +93,10 @@ const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     defer(() =>
       settings.ready$.pipe(
         concatMap(() => (settings.settings().gitlab.host ? read$() : of(undefined))),
+        // A run that throws never completes, so this is the one owner of clearing the failure. Doing
+        // it in the success `tap` instead left the banner up for good in every run that stores
+        // nothing: no host and no credential both short-circuit before that `tap` is ever reached.
+        tap({ complete: () => failure.set(null) }),
         catchError((error: unknown) => {
           failure.set(error instanceof Error ? error.message : String(error));
 
