@@ -199,6 +199,12 @@ test.describe('the today view', () => {
     await expect(totals).toContainText('1.5× at once');
   });
 
+  test('marks a day that ran something beside you with a fire', async ({ page }) => {
+    // 1.5× reaches the first tier and no further, so the readout carries one flame.
+    await expect(page.locator('[data-heat]')).toHaveAttribute('data-heat', 'warm');
+    await expect(page.locator('[data-heat-flame]')).toHaveCount(1);
+  });
+
   test('shows one line per checkout, ordered by when it started', async ({ page }) => {
     await expect(page.locator('[data-stream] [data-label]')).toHaveText([
       'fut-frontend',

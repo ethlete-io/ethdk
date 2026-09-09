@@ -8,6 +8,7 @@ import {
 } from '@ethlete/components';
 import { CallWindow, Stream, callLabel, formatDurationMs } from '@ethlete/timetrack';
 import { formatClockTime, formatDayLabel } from '../day-review/format';
+import { readHeat } from './heat';
 import {
   formatAgentSessions,
   formatBranches,
@@ -53,7 +54,31 @@ import { injectToday, provideToday } from './today';
         >
           <span class="text-large" data-presence>{{ presence() }} present</span>
           <span class="text-large" data-engaged>{{ engaged() }} engaged</span>
-          <span class="text-small text-et-surface-muted" data-concurrency>{{ concurrency() }} at once</span>
+          <span class="flex items-baseline gap-2">
+            <span class="text-small text-et-surface-muted" data-concurrency>{{ concurrency() }} at once</span>
+
+            @if (heat(); as heat) {
+              <span
+                [attr.data-heat]="heat.level"
+                [style.--_et-heat]="heat.glow"
+                [title]="heat.hint"
+                class="inline-flex items-baseline gap-0.5 text-small leading-none"
+              >
+                @for (flame of heat.flames; track flame) {
+                  <span
+                    [style.animation-delay.ms]="flame * 240"
+                    class="inline-block"
+                    aria-hidden="true"
+                    data-heat-flame
+                  >
+                    🔥
+                  </span>
+                }
+                <span class="sr-only">{{ heat.hint }}</span>
+              </span>
+            }
+          </span>
+
           @if (unattended(); as unattended) {
             <span class="text-small text-et-surface-subtle" data-unattended-total>+ {{ unattended }}</span>
           }
@@ -209,6 +234,7 @@ export class TodayViewComponent {
   protected presence = computed(() => formatDurationMs(this.store.day()?.presenceMs ?? 0));
   protected engaged = computed(() => formatDurationMs(this.store.day()?.engagedMs ?? 0));
   protected concurrency = computed(() => `${(this.store.day()?.concurrency ?? 0).toFixed(1)}×`);
+  protected heat = computed(() => readHeat(this.store.day()?.concurrency ?? 0));
   protected unattended = computed(() => formatUnattended(this.store.day()?.unattendedMs ?? 0));
   protected rebuilt = computed(() => formatRebuilt(this.store.day()?.rebuiltMs ?? 0));
 

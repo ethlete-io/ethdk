@@ -51,3 +51,32 @@ body {
   color: var(--et-surface-color-solid);
   font-family: system-ui, sans-serif;
 }
+
+/*
+ * The fire beside the concurrency readout. `--_et-heat` runs 0 to 1 across the tiers, so the glow and
+ * the flicker keep growing between them. The static filter is what a reduced-motion reader sees, and
+ * the animation's first keyframe repeats it so the two agree.
+ */
+[data-heat-flame] {
+  animation: et-heat-flicker calc(1.6s - var(--_et-heat, 0) * 0.7s) ease-in-out infinite;
+  filter: drop-shadow(0 0 calc(0.2rem + var(--_et-heat, 0) * 0.4rem) var(--color-et-warning-ink));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-heat-flame] {
+    animation: none;
+  }
+}
+
+@keyframes et-heat-flicker {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 0 calc(0.2rem + var(--_et-heat, 0) * 0.4rem) var(--color-et-warning-ink));
+  }
+
+  50% {
+    transform: translateY(calc(var(--_et-heat, 0) * -0.2rem)) scale(calc(1 + var(--_et-heat, 0) * 0.16));
+    filter: drop-shadow(0 0 calc(0.4rem + var(--_et-heat, 0) * 1rem) var(--color-et-danger-ink));
+  }
+}
