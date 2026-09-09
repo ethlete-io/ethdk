@@ -1021,6 +1021,25 @@ elsewhere, so the **Sources row has to report "not found" and "not logged in" as
 otherwise this trades a visible token expiry for a silent one. And `process.rs` runs an allowlist
 (`git`, `claude`, `codex`), so both binaries have to be added to it deliberately.
 
+Measured on this machine 2026-09-10, before any of it was built:
+
+- **`glab api <path>` returns GitLab's own REST v4 JSON unchanged.** `events.ts` and `merge-requests.ts`
+  parse it as they stand, so only the transport changes: the request builder and the `private-token`
+  header go, and `TimetrackProcessRunner` takes their place.
+- **`glab auth status` exits non-zero while a host is perfectly usable.** This machine is logged in to
+  `gitlab.braune-digital.com` and has no token for `gitlab.com`, and the one failure fails the whole
+  command. So "not logged in" must be read from the per-host lines, never from the exit code — reading
+  the code would report the working host as broken.
+- **`glab api` picks its host from the current directory** when that directory is a git checkout, and
+  falls back to `gitlab.com`. The collector has no meaningful working directory, so it must pass
+  `--hostname` explicitly on every call.
+- **GitHub's events embed the pull request**, so the second lookup GitLab needs has no counterpart
+  here: `payload.pull_request` carries the number, the title, the head ref and the URL. `gh api
+/users/<login>/events` returns private events when the token owns the account, which it does.
+- **GitHub's feed takes no `after` or `before`.** It is newest-first, 30 per page, and stops at 300
+  events. The window has to be filtered after the read, and a first run cannot reach back 30 days the
+  way GitLab's does. Record what the cap dropped rather than reaching silently short.
+
 Not taken: reading the local checkout with `gh pr status` or `glab mr list`. An account-wide feed
 answers "what did you touch today"; a per-checkout query answers "what is open", which is not a
 timetrack question.
