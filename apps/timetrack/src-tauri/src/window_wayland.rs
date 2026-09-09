@@ -153,9 +153,8 @@ impl Dispatch<zwlr_foreign_toplevel_handle_v1::ZwlrForeignToplevelHandleV1, ()> 
                 state.pending.entry(id).or_default().title = title;
             }
             zwlr_foreign_toplevel_handle_v1::Event::State { state: states } => {
-                let activated = states.chunks_exact(4).any(|chunk| {
-                    u32::from_ne_bytes([chunk[0], chunk[1], chunk[2], chunk[3]])
-                        == zwlr_foreign_toplevel_handle_v1::State::Activated as u32
+                let activated = states.as_chunks::<4>().0.iter().any(|chunk| {
+                    u32::from_ne_bytes(*chunk) == zwlr_foreign_toplevel_handle_v1::State::Activated as u32
                 });
 
                 state.pending.entry(id).or_default().activated = activated;

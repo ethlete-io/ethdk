@@ -9,8 +9,10 @@ const CAPABILITIES_SINCE: u32 = 5;
 /// The capabilities arrive as an array of 32-bit enum values in the compositor's own endianness.
 fn read_capabilities(raw: &[u8]) -> WindowCapabilities {
     let has = |wanted: xdg_toplevel::WmCapabilities| {
-        raw.chunks_exact(4)
-            .any(|chunk| u32::from_ne_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) == wanted as u32)
+        raw.as_chunks::<4>()
+            .0
+            .iter()
+            .any(|chunk| u32::from_ne_bytes(*chunk) == wanted as u32)
     };
 
     WindowCapabilities {
