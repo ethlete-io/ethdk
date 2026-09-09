@@ -154,6 +154,9 @@ const codexRollout = (): string[] => [
   ),
 ];
 
+/** A title with no whitespace to break at, which is what a browser writes while a page has none of its own. */
+const UNBROKEN = `accounts.google.com/signin/oauth/v3/consent${'/segment'.repeat(40)}`;
+
 const stream = (page: Parameters<typeof seedWorld>[0], key: string) => page.locator(`[data-stream="${key}"]`);
 
 /** One line of `git reflog show`, in the format the app asks for. */
@@ -208,6 +211,23 @@ test.describe('the today view', () => {
     await agentOnly.getByRole('button', { name: /ethlete-sdk/ }).click();
 
     await expect(evidence).toBeVisible();
+  });
+
+  test('holds an evidence row that has nowhere to wrap on one line', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, git: DISCOVERED, events: [...day(), focus(61, 'google-chrome', UNBROKEN)] });
+    await page.goto('/today');
+
+    const folded = stream(page, 'other-applications');
+
+    await folded.getByRole('button', { name: /Other applications/ }).click();
+
+    const list = folded.locator('ul').first();
+
+    await expect(folded.getByTitle(UNBROKEN, { exact: true })).toBeVisible();
+
+    // The row is clipped to the list either way, so its own box says nothing. What the title costs is
+    // the width the list has to scroll, and a clamped row costs none.
+    expect(await list.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
   });
 
   test('reads the branch out of the reflog for a checkout the day named none for', async ({ page }) => {

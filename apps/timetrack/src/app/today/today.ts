@@ -19,6 +19,12 @@ import { readViewState, rememberViewState } from '../view-state';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
+/**
+ * What this app's own windows report themselves as: the bundle identifier on macOS, and on Linux the
+ * GTK application id, which is the binary name rather than the identifier.
+ */
+const OWN_APP_IDS = ['io.ethlete.timetrack', 'timetrack'];
+
 /** A day tagged with the day it was asked for, so an answer for yesterday is not shown as today. */
 type Loaded = { key: string; value: StreamDay | null; failure: string | null };
 
@@ -69,7 +75,15 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
         return ports.events.eventsBetween$(from, to).pipe(
           map((events): Loaded => ({
             key: current.key,
-            value: streamDay({ events, options: { repoRoots: [...current.repoRoots], links: current.links } }),
+            value: streamDay({
+              events,
+              options: {
+                repoRoots: [...current.repoRoots],
+                links: current.links,
+                ownAppIds: OWN_APP_IDS,
+                windowsSeenThroughMs: current.windows?.at.getTime(),
+              },
+            }),
             failure: null,
           })),
           catchError((error: unknown) => of<Loaded>({ key: current.key, value: null, failure: messageOf(error) })),

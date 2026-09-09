@@ -47,6 +47,17 @@ export type StreamDayOptions = {
    * presence still reconciles without the path being named.
    */
   links?: readonly TimetrackProjectLink[];
+  /**
+   * The application ids of the app reading the day. Its own window still holds the minutes it was in
+   * front, so presence and the concurrency ratio still reconcile, but it names neither an application
+   * nor an observation — a tool that lists itself as evidence reports on itself.
+   */
+  ownAppIds?: readonly string[];
+  /**
+   * The instant the window source has reported through, which is its last drain rather than its last
+   * sample. Without it a day still being collected reports its own live tail as rebuilt.
+   */
+  windowsSeenThroughMs?: number;
 };
 
 export const DEFAULT_STREAM_DAY_OPTIONS: StreamDayOptions = {
@@ -100,6 +111,8 @@ export type Stream = {
   rebuiltMs: number;
   spend: StreamSpend;
   evidence: Evidence[];
+  /** Observations past the cap, which the list does not hold. Zero on all but a very long day. */
+  evidenceOmitted: number;
 };
 
 /** What a local day was worked on, for how long, and what the agents spent on it. */
@@ -146,6 +159,8 @@ type StreamDraft = {
   /** The stretches this context claimed where nothing observed the day. Clipped to the rebuilt part. */
   rebuilt: TimeWindow[];
   evidence: Evidence[];
+  evidenceKeys: Set<string>;
+  evidenceOmitted: number;
 };
 
 /**
@@ -213,11 +228,49 @@ const evidenceFor = (sample: ActivityEvent): Evidence | null => {
   }
 };
 
-const addEvidence = (into: Evidence[], evidence: Evidence | null) => {
-  if (!evidence) return;
-  if (into.some((entry) => entry.kind === evidence.kind && entry.detail === evidence.detail)) return;
+const MAX_EVIDENCE_PER_STREAM = 500;
 
-  into.push(evidence);
+/**
+ * The focused window, still where the last sample left it.
+ *
+ * The window source reports a change, so a stretch in which the focus does not move carries no sample
+ * at all, and the last sample of the day ends the part of it the machine watched. The agents mark the
+ * minutes after it, and without this those minutes read as time no window watched — a `rebuilt` number
+ * that appears while one window holds the focus and vanishes at the next switch.
+ *
+ * It is only added while the source is fresh: a gap wider than `maxUnobservedMs` is the safety valve's
+ * to judge, and a day whose last sample is hours old gets nothing.
+ */
+const stillFocused = (options: {
+  observed: readonly ActivityEvent[];
+  throughMs?: number;
+  maxUnobservedMs: number;
+}): ActivityEvent | null => {
+  const last = options.observed.filter((sample) => sample.source === 'window' || sample.source === 'idle').at(-1);
+  const throughMs = options.throughMs;
+
+  if (!last || last.kind !== 'window-focus' || throughMs === undefined) return null;
+  if (throughMs <= last.at.getTime() || throughMs - last.at.getTime() > options.maxUnobservedMs) return null;
+
+  return { ...last, at: new Date(throughMs) };
+};
+
+const addEvidence = (draft: StreamDraft, evidence: Evidence | null) => {
+  if (!evidence) return;
+
+  const key = `${evidence.kind}\u0000${evidence.detail}`;
+
+  if (draft.evidenceKeys.has(key)) return;
+
+  draft.evidenceKeys.add(key);
+
+  if (draft.evidence.length >= MAX_EVIDENCE_PER_STREAM) {
+    draft.evidenceOmitted++;
+
+    return;
+  }
+
+  draft.evidence.push(evidence);
 };
 
 const repoStateFor = (sample: ActivityEvent, roots: readonly string[]): RepoState | null => {
@@ -368,6 +421,8 @@ const draftFor = (drafts: Map<string, StreamDraft>, context: ActivityContext) =>
     agent: [],
     rebuilt: [],
     evidence: [],
+    evidenceKeys: new Set(),
+    evidenceOmitted: 0,
   };
 
   drafts.set(key, draft);
@@ -419,6 +474,7 @@ const spendOnlyStreams = (options: {
           rebuiltMs: 0,
           spend: emptySpend(),
           evidence: [],
+          evidenceOmitted: 0,
         },
         sessions: new Set([turn.sessionId]),
       });
@@ -455,11 +511,20 @@ export const streamDay = (options: {
   const config = { ...DEFAULT_STREAM_DAY_OPTIONS, ...options.options };
   const roots = config.repoRoots ?? [];
   const links = config.links ?? [];
+  const ownAppIds = new Set((config.ownAppIds ?? []).map((id) => id.toLowerCase()));
   const observed = options.events
     .filter(isActivityEvent)
     .filter((sample) => READ_SOURCES.includes(sample.source))
     .slice()
     .sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  const tail = stillFocused({
+    observed,
+    throughMs: config.windowsSeenThroughMs,
+    maxUnobservedMs: config.maxUnobservedMs,
+  });
+
+  if (tail) observed.push(tail);
 
   const secluded = privateNames({ samples: observed, roots, links });
   const samples = observed.filter((sample) => {
@@ -512,14 +577,15 @@ export const streamDay = (options: {
     // A window on a private checkout must not fall through to the sticky, or the last client repository
     // would be billed for the time. It folds into the other-applications line and names nothing.
     const secludedWindow = sample.kind === 'window-focus' && !!repoNamedIn({ title: sample.title, byName: secluded });
+    const ownWindow = sample.kind === 'window-focus' && ownAppIds.has(sample.appId.toLowerCase());
 
     if (sample.kind === 'window-focus') {
-      appId = sample.appId;
-      focused = secludedWindow ? undefined : repoNamedIn({ title: sample.title, byName });
+      appId = ownWindow ? undefined : sample.appId;
+      focused = secludedWindow || ownWindow ? undefined : repoNamedIn({ title: sample.title, byName });
 
       if (secludedWindow) sticky = undefined;
 
-      if (!focused && !secludedWindow) {
+      if (!focused && !secludedWindow && !ownWindow) {
         const claimed = ambiguousNamedIn({ title: sample.title, ambiguous });
 
         if (claimed) claimedAmbiguously.add(claimed);
@@ -565,7 +631,7 @@ export const streamDay = (options: {
 
     const of = observed ? { repoPath: observed.repoPath, branch: observed.branch } : context;
 
-    addEvidence(draftFor(drafts, of).evidence, secludedWindow ? null : evidenceFor(sample));
+    addEvidence(draftFor(drafts, of), secludedWindow || ownWindow ? null : evidenceFor(sample));
     marks.push({
       at: sample.at,
       state: observed ?? (holder ? { repoPath: holder, branch: branches.get(holder) } : null),
@@ -576,7 +642,7 @@ export const streamDay = (options: {
     const repoPath = checkoutOf(prompt.cwd);
     const state = repoPath ? { repoPath, branch: branchOf(prompt.gitBranch) } : null;
 
-    addEvidence(draftFor(drafts, state ?? {}).evidence, promptEvidence(prompt));
+    addEvidence(draftFor(drafts, state ?? {}), promptEvidence(prompt));
     marks.push({ at: prompt.at, state });
   }
 
@@ -629,6 +695,7 @@ export const streamDay = (options: {
       rebuiltMs: windowsMs(clipWindows({ windows: blocks, within: rebuilt })),
       spend: emptySpend(),
       evidence: draft.evidence.slice().sort((a, b) => a.at.getTime() - b.at.getTime()),
+      evidenceOmitted: draft.evidenceOmitted,
     });
   }
 

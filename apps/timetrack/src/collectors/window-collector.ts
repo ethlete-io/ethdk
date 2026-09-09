@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { applyExclusionRules, effectiveExclusionRules } from '@ethlete/timetrack';
+import { applyExclusionRules, effectiveExclusionRules, redactEventTitles } from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, concat, concatMap, defer, exhaustMap, map, switchMap, tap, timer } from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
@@ -34,7 +34,8 @@ export type WindowCollectorTotals = {
  *
  * The sequence is only acknowledged once a batch is stored, so a failure repeats it rather than
  * leaving a hole. Titles are matched against the rules before the store is touched — an excluded
- * title must never reach the database, not even to be deleted later.
+ * title must never reach the database, not even to be deleted later. The rules run on the raw title
+ * and `redactEventTitles` on what survives them, so a rule still matches everything the user saw.
  */
 const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -75,7 +76,7 @@ const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       return EMPTY;
     }
 
-    return ports.events.append$(kept).pipe(
+    return ports.events.append$(redactEventTitles(kept)).pipe(
       map(() => batch),
       tap(record),
     );

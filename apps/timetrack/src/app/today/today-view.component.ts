@@ -102,12 +102,18 @@ import { injectToday, provideToday } from './today';
 
                   <ul class="flex list-none flex-col gap-0.5">
                     @for (entry of stream.evidence; track entry.kind + entry.detail) {
-                      <li class="text-small text-et-surface-muted">
-                        <span class="text-mono">{{ CLOCK_OF(entry.at) }}</span>
-                        {{ entry.detail }}
+                      <li [title]="entry.detail" class="flex gap-2 text-small text-et-surface-muted">
+                        <span class="text-mono shrink-0">{{ CLOCK_OF(entry.at) }}</span>
+                        <span class="min-w-0 truncate">{{ entry.detail }}</span>
                       </li>
                     } @empty {
                       <li class="text-small text-et-surface-subtle">No evidence was recorded for this stream.</li>
+                    }
+
+                    @if (stream.evidenceOmitted) {
+                      <li class="text-small text-et-surface-subtle" data-evidence-omitted>
+                        and {{ stream.evidenceOmitted }} more, not listed
+                      </li>
                     }
                   </ul>
                 </et-accordion>

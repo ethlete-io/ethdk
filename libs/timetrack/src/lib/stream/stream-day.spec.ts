@@ -609,3 +609,113 @@ describe('streamDay, on a day the collector never ran', () => {
     expect(day.rebuiltMs).toBe(0);
   });
 });
+
+describe('streamDay, on the app reading the day', () => {
+  it('keeps the minutes its own window held, and names neither the application nor the observation', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'timetrack', title: 'Timetrack' }),
+        ...focusRun({ from: 10, to: 20, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+      ],
+      options: { repoRoots: [SDK], ownAppIds: ['timetrack'] },
+    });
+    const folded = streamOf(day, OTHER_APPLICATIONS_KEY);
+
+    expect(day.presenceMs).toBe(20 * MINUTE);
+    expect(folded?.engagedMs).toBe(10 * MINUTE);
+    expect(folded?.apps).toEqual([]);
+    expect(folded?.evidence).toEqual([]);
+  });
+
+  it('matches an application id whatever its case', () => {
+    const day = streamDay({
+      events: focusRun({ from: 0, to: 10, appId: 'io.ethlete.Timetrack', title: 'Timetrack' }),
+      options: { ownAppIds: ['io.ethlete.timetrack'] },
+    });
+
+    expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.apps).toEqual([]);
+  });
+
+  it('does not book its own window to a checkout its title happens to name', () => {
+    const events = [
+      commit(0, 'feat(timetrack): Add the day', '/home/tom/dev/timetrack'),
+      ...focusRun({ from: 1, to: 10, appId: 'timetrack', title: 'timetrack' }),
+    ];
+    const repoRoots = ['/home/tom/dev/timetrack'];
+    const own = streamDay({ events, options: { repoRoots, ownAppIds: ['timetrack'] } });
+    const named = streamDay({ events, options: { repoRoots } });
+
+    expect(streamOf(named, 'repo:/home/tom/dev/timetrack')?.neverFocused).toBe(false);
+    expect(streamOf(own, 'repo:/home/tom/dev/timetrack')?.neverFocused).toBe(true);
+    expect(streamOf(own, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(9 * MINUTE);
+  });
+});
+
+describe('streamDay, on a stream with more observations than the list holds', () => {
+  it('keeps the first 500 and counts the rest', () => {
+    const day = streamDay({
+      events: Array.from({ length: 600 }, (_, index) => focus(index, 'google-chrome', `page ${index}`)),
+      options: {},
+    });
+    const folded = streamOf(day, OTHER_APPLICATIONS_KEY);
+
+    expect(folded?.evidence).toHaveLength(500);
+    expect(folded?.evidenceOmitted).toBe(100);
+    expect(folded?.evidence[0]?.detail).toBe('page 0');
+  });
+
+  it('counts a repeated title once, so a cap is never reached by repetition', () => {
+    const day = streamDay({
+      events: focusRun({ from: 0, to: 600, appId: 'google-chrome', title: 'Inbox' }),
+      options: {},
+    });
+    const folded = streamOf(day, OTHER_APPLICATIONS_KEY);
+
+    expect(folded?.evidence).toHaveLength(1);
+    expect(folded?.evidenceOmitted).toBe(0);
+  });
+});
+
+describe('streamDay, on a day still being collected', () => {
+  const morning = [
+    ...focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+    typed(11, SDK),
+    usage(12, SDK),
+    usage(13, SDK),
+  ];
+
+  it('reports the minutes after the last focus change as rebuilt, when nothing says the source is fresh', () => {
+    const day = streamDay({ events: morning, options: { repoRoots: [SDK] } });
+
+    expect(day.rebuiltMs).toBe(MINUTE);
+  });
+
+  it('holds the focused window where it was left, through what the source reported', () => {
+    const day = streamDay({
+      events: morning,
+      options: { repoRoots: [SDK], windowsSeenThroughMs: AT(13).getTime() },
+    });
+
+    expect(day.rebuiltMs).toBe(0);
+    expect(day.presenceMs).toBe(13 * MINUTE);
+    expect(streamOf(day, `repo:${SDK}`)?.engagedMs).toBe(13 * MINUTE);
+  });
+
+  it('holds nothing open across a gap wider than the safety valve', () => {
+    const day = streamDay({
+      events: focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+      options: { repoRoots: [SDK], windowsSeenThroughMs: AT(90).getTime() },
+    });
+
+    expect(day.presenceMs).toBe(10 * MINUTE);
+  });
+
+  it('holds nothing open once the machine reported the user away', () => {
+    const day = streamDay({
+      events: [...focusRun({ from: 0, to: 10, appId: 'code' }), presence(11, 'idle-start')],
+      options: { windowsSeenThroughMs: AT(13).getTime() },
+    });
+
+    expect(day.presenceMs).toBe(11 * MINUTE);
+  });
+});

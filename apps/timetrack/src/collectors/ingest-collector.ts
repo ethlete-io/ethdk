@@ -1,7 +1,13 @@
 import { signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { applyExclusionRules, effectiveExclusionRules, parseIngestedRecords, rejectedCount } from '@ethlete/timetrack';
+import {
+  applyExclusionRules,
+  effectiveExclusionRules,
+  parseIngestedRecords,
+  redactEventTitles,
+  rejectedCount,
+} from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, concat, concatMap, defer, exhaustMap, map, switchMap, tap, timer } from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
@@ -76,7 +82,7 @@ const INGEST_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       return EMPTY;
     }
 
-    return ports.events.append$(kept).pipe(
+    return ports.events.append$(redactEventTitles(kept)).pipe(
       map(() => batch),
       tap(record),
     );
