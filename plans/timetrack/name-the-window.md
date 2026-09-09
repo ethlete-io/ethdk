@@ -132,10 +132,15 @@ That is a guess, and the rule above refuses it.
 A machine whose compositor gives no process id must say so, or a large folded line reads as a wrong
 number instead of a missing capability.
 
-1. **A capability row in the Sources view.** The focused-window row says what it can read on this
-   machine, and names the working directory as unavailable where it is. Build this first.
+1. **A capability row in the Sources view. Built on 2026-09-09.** `WindowSourceStatus` carries a
+   `capabilities` list, one entry per thing the source reads about the focused window: `app-id`,
+   `title` and `working-directory`. The host fills it from the running source's kind
+   (`window.rs:capabilities_of`), so no screen above the host reads a kind to work out what a
+   platform can see, and a new platform source adds a row to that one table. Under wlr the working
+   directory names the protocol as the reason; under macOS it names that no source reads one yet.
+   A source that is not running claims nothing.
 2. **One sentence on the Today screen**, under the Other applications line: how much could not be
-   named, and that this machine cannot read a window's working directory.
+   named, and that this machine cannot read a window's working directory. **Not built.**
 
 Both are about the machine. Neither says the user's setup is wrong.
 

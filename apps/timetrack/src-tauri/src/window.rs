@@ -26,6 +26,58 @@ pub struct WindowSourceStatus {
     pub kind: String,
     /// Why there is no source, for the banner naming what is degraded.
     pub detail: Option<String>,
+    /// What the running source can observe here. The host answers this so that no screen above it has
+    /// to know which platform, protocol or compositor is behind the source.
+    pub capabilities: Vec<WindowSourceCapability>,
+}
+
+/// One thing the running source does, or does not, read about the focused window.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowSourceCapability {
+    /// `app-id`, `title` or `working-directory`.
+    pub reads: String,
+    pub available: bool,
+    /// Why this machine does not read it. `None` while it does.
+    pub detail: Option<String>,
+}
+
+const WLR_HAS_NO_PROCESS: &str =
+    "The wlr toplevel protocol reports an application id, a title and a state, and no process id.";
+
+const NO_ACCESSIBILITY: &str = "Timetrack has no Accessibility permission.";
+
+const NO_WORKING_DIRECTORY_YET: &str = "No source reads a window's working directory yet.";
+
+fn capability(reads: &str, detail: Option<&str>) -> WindowSourceCapability {
+    WindowSourceCapability {
+        reads: reads.to_string(),
+        available: detail.is_none(),
+        detail: detail.map(str::to_string),
+    }
+}
+
+/// A source that is not running reads nothing, and the row's badge already says so, so it reports an
+/// empty list rather than three denials.
+fn capabilities_of(kind: &str) -> Vec<WindowSourceCapability> {
+    match kind {
+        "wayland-wlr" => vec![
+            capability("app-id", None),
+            capability("title", None),
+            capability("working-directory", Some(WLR_HAS_NO_PROCESS)),
+        ],
+        "macos-ax" => vec![
+            capability("app-id", None),
+            capability("title", None),
+            capability("working-directory", Some(NO_WORKING_DIRECTORY_YET)),
+        ],
+        "macos-app-only" => vec![
+            capability("app-id", None),
+            capability("title", Some(NO_ACCESSIBILITY)),
+            capability("working-directory", Some(NO_WORKING_DIRECTORY_YET)),
+        ],
+        _ => Vec::new(),
+    }
 }
 
 #[cfg(test)]
@@ -48,6 +100,7 @@ impl WindowSource {
             status: Arc::new(Mutex::new(WindowSourceStatus {
                 kind: "none".to_string(),
                 detail: Some("the window source has not started yet".to_string()),
+                capabilities: Vec::new(),
             })),
             lock,
         }
@@ -78,6 +131,7 @@ impl WindowSource {
             *status = WindowSourceStatus {
                 kind: kind.to_string(),
                 detail,
+                capabilities: capabilities_of(kind),
             };
         }
     }
@@ -175,6 +229,64 @@ mod tests {
         );
 
         assert_eq!(source.status().unwrap().kind, "macos-app-only");
+    }
+
+    #[test]
+    fn says_a_wlr_source_reads_the_application_and_the_title_and_no_working_directory() {
+        let source = WindowSource::default();
+
+        source.set_status("wayland-wlr", None);
+
+        let capabilities = source.status().unwrap().capabilities;
+        let directory = capabilities
+            .iter()
+            .find(|held| held.reads == "working-directory")
+            .unwrap();
+
+        assert!(capabilities
+            .iter()
+            .all(|held| held.available || held.reads == "working-directory"));
+        assert!(!directory.available);
+        assert_eq!(directory.detail.as_deref(), Some(WLR_HAS_NO_PROCESS));
+    }
+
+    #[test]
+    fn says_a_macos_source_without_the_permission_reads_no_title() {
+        let source = WindowSource::default();
+
+        source.set_status("macos-app-only", None);
+
+        let capabilities = source.status().unwrap().capabilities;
+        let title = capabilities.iter().find(|held| held.reads == "title").unwrap();
+
+        assert!(!title.available);
+        assert_eq!(title.detail.as_deref(), Some(NO_ACCESSIBILITY));
+    }
+
+    #[test]
+    fn says_a_macos_source_with_the_permission_reads_the_title() {
+        let source = WindowSource::default();
+
+        source.set_status("macos-ax", None);
+
+        let capabilities = source.status().unwrap().capabilities;
+
+        assert!(
+            capabilities
+                .iter()
+                .find(|held| held.reads == "title")
+                .unwrap()
+                .available
+        );
+    }
+
+    #[test]
+    fn claims_nothing_at_all_while_no_source_is_running() {
+        let source = WindowSource::default();
+
+        source.set_status("none", Some("the window source stopped".to_string()));
+
+        assert!(source.status().unwrap().capabilities.is_empty());
     }
 
     #[test]

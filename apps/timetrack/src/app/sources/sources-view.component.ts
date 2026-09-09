@@ -32,6 +32,7 @@ import {
   formatLogBackfill,
   formatTally,
   formatWindowSource,
+  windowCapabilityLabel,
 } from './format';
 import { EVIDENCE_SOURCES, EvidenceSource, EvidenceSourceState } from './inventory';
 import { UnnamedFocusComponent } from './unnamed-focus.component';
@@ -68,6 +69,14 @@ const STATE_VARIANT: Record<EvidenceSourceState, BadgeVariant> = {
   'not-running': 'tonal',
 };
 
+/** What the source reads about the focused window on this machine, as the row renders it. */
+type SourceCapability = {
+  reads: string;
+  label: string;
+  available: boolean;
+  detail: string | null;
+};
+
 type SourceRow = {
   source: EvidenceSource;
   /** What the source is still waiting on, or `null` once it is not waiting on anything. */
@@ -79,6 +88,8 @@ type SourceRow = {
   stored: string | null;
   /** How the collector behind it is doing, where there is more to say than the count. */
   run: string | null;
+  /** What the source reads here. Empty for every source but the focused window. */
+  capabilities: SourceCapability[];
   /** Something degraded that still leaves the source working. */
   warning: string | null;
   /** Whether the degradation is a permission the user can grant from here. */
@@ -139,6 +150,33 @@ type SourceRow = {
 
             @if (row.run) {
               <p class="text-small text-et-surface-subtle">{{ row.run }}</p>
+            }
+
+            @if (row.capabilities.length) {
+              <div class="mt-1 flex flex-col gap-1">
+                <p class="text-small font-medium">What it reads on this machine</p>
+
+                <ul class="flex flex-col gap-1">
+                  @for (capability of row.capabilities; track capability.reads) {
+                    <li [attr.data-capability]="capability.reads" class="flex flex-col gap-0.5">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <et-badge
+                          [color]="capability.available ? 'success' : 'neutral'"
+                          [variant]="capability.available ? 'tonal' : 'outline'"
+                          size="sm"
+                        >
+                          {{ capability.available ? 'reads' : 'does not read' }}
+                        </et-badge>
+                        <span class="text-small">{{ capability.label }}</span>
+                      </div>
+
+                      @if (capability.detail) {
+                        <p class="text-small text-et-surface-subtle">{{ capability.detail }}</p>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
             }
 
             @if (row.detail) {
@@ -226,6 +264,7 @@ export class SourcesViewComponent {
         variant: STATE_VARIANT[state],
         stored: this.storedOf({ source, state }),
         run: this.runOf(source),
+        capabilities: this.capabilitiesOf(source),
         warning: this.warningOf(source),
         grant: source.collector === 'window' && this.windows.status()?.kind === WINDOW_SOURCE_NEEDS_ACCESSIBILITY,
         failure: this.failureOf(source),
@@ -346,6 +385,21 @@ export class SourcesViewComponent {
       default:
         return null;
     }
+  }
+
+  /**
+   * Only the focused-window row. Presence shares the same collector, and none of these three things is
+   * what it reads.
+   */
+  private capabilitiesOf(source: EvidenceSource): SourceCapability[] {
+    if (source.id !== 'window') return [];
+
+    return (this.windows.status()?.capabilities ?? []).map((capability) => ({
+      reads: capability.reads,
+      label: windowCapabilityLabel(capability.reads),
+      available: capability.available,
+      detail: capability.detail,
+    }));
   }
 
   private warningOf(source: EvidenceSource) {

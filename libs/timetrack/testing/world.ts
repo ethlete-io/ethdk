@@ -37,6 +37,18 @@ export type FakeAgentLog = {
 };
 
 /**
+ * What the host says the focused-window source is doing, in the shape the host wire reports it.
+ *
+ * A browser watches no window, so the default is a source that is not running. A spec about the
+ * capability row declares the platform it wants to read as.
+ */
+export type FakeWindowSourceStatus = {
+  kind: string;
+  detail: string | null;
+  capabilities: { reads: string; available: boolean; detail: string | null }[];
+};
+
+/**
  * The world an e2e spec declares. Every key it leaves out falls back to the default fixture, so a
  * spec that does not care about Tempo states nothing about Tempo.
  */
@@ -50,6 +62,7 @@ export type TimetrackWorldSeed = {
   tempo?: Partial<FakeTempoState>;
   gitlab?: Partial<FakeGitLabState>;
   git?: Partial<FakeGitState>;
+  windowSource?: Partial<FakeWindowSourceStatus>;
   faults?: FakeFault[];
 };
 
@@ -58,6 +71,7 @@ export type FakeWorld = {
   settings: TimetrackSettings;
   agentLogs: FakeAgentLog[];
   codexLogs: FakeAgentLog[];
+  windowSource: FakeWindowSourceStatus;
   backend: FakeBackend;
 };
 
@@ -224,6 +238,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   settings: seed.settings ?? defaultSettings(),
   agentLogs: seed.agentLogs ?? [],
   codexLogs: seed.codexLogs ?? [],
+  windowSource: { kind: 'none', detail: null, capabilities: [], ...seed.windowSource },
   backend: {
     jira: { ...defaultJira(), ...seed.jira },
     tempo: { ...defaultTempo(), ...seed.tempo },

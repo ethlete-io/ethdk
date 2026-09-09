@@ -51,6 +51,15 @@ export const formatWindowSource = (options: { status: WindowSourceStatus | null;
   ]);
 };
 
+const WINDOW_CAPABILITY_LABEL: Record<string, string> = {
+  'app-id': 'The application in front',
+  title: 'The window title',
+  'working-directory': 'The directory the focused window works in',
+};
+
+/** Falls back to the host's own id, so a capability a newer host reports still reaches the screen. */
+export const windowCapabilityLabel = (reads: string) => WINDOW_CAPABILITY_LABEL[reads] ?? reads;
+
 /**
  * What the microphone is being watched with, and what the drain lost.
  *

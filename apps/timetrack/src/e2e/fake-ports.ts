@@ -307,7 +307,7 @@ export const createFakePorts = (): HostPorts => {
 
     windows: {
       batch$: (afterSeq) => ok({ events: [], throughSeq: afterSeq, dropped: 0 }),
-      status$: () => ok({ kind: 'none', detail: null }),
+      status$: () => ok(world.windowSource),
       requestAccessibility$: () => ok(true),
     },
 

@@ -19,6 +19,22 @@ export type WindowSourceStatus = {
    */
   kind: string;
   detail: string | null;
+  /**
+   * What the running source can observe on this machine. Empty while nothing is watching.
+   *
+   * The host decides this. Nothing above it reads `kind` to work out what a platform, a protocol or a
+   * compositor can see.
+   */
+  capabilities: WindowSourceCapability[];
+};
+
+/** One thing the running source does, or does not, read about the focused window. */
+export type WindowSourceCapability = {
+  /** `app-id`, `title` or `working-directory`. */
+  reads: string;
+  available: boolean;
+  /** Why this machine does not read it. `null` while it does. */
+  detail: string | null;
 };
 
 /** The status a macOS source reports until the Accessibility permission is granted. */

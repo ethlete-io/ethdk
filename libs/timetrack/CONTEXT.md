@@ -157,6 +157,13 @@ _Avoid_: watcher, poller, importer
 The name a collector's events carry, and the unit that exclusion and retention rules apply to.
 _Avoid_: origin, channel
 
+**Capability**:
+One thing a running source can, or cannot, observe on this machine. The focused-window source reads
+an application id, a title and a working directory, and which of the three it reads depends on the
+platform and the compositor. A source that cannot observe something says so, so that the time it
+therefore fails to name reads as a missing capability and not as a wrong number.
+_Avoid_: feature, permission (a permission is one reason a capability is missing)
+
 **Pass**:
 One walk over one agent's session logs, with cursors of its own. There is a session pass, a spend
 pass and a prompt pass per provider, and no two passes share a cursor. See ADR 0003 and ADR 0005.
