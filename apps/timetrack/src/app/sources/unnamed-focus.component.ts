@@ -263,8 +263,7 @@ export class UnnamedFocusComponent {
   protected declare(row: FocusRow) {
     if (!row.appId) return;
 
-    if (row.declared) this.settings.removeNoWorkContextApp(row.appId);
-    else this.settings.addNoWorkContextApp(row.appId);
+    this.settings.setAppHoldsWork(row.appId, row.declared);
   }
 }
 

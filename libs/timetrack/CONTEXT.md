@@ -106,8 +106,10 @@ _Avoid_: other, unclassified, noise
 
 **No work context**:
 A standing statement that an application never holds a checkout — a music player, a chat client. It
-is the one thing no collector can ever observe, so only the user writes it, and it settles a row for
-good. It is not an exclusion rule: the minutes stay in the day and still reconcile.
+is the one thing no collector can ever observe. A short list ships (media players, and the messengers
+whose calls `TimetrackCallRules` counts instead, never Discord), and the user adds to it or takes an
+application back off it one at a time. It is not an exclusion rule: the minutes stay in the day and
+still reconcile.
 _Avoid_: excluded app, ignored app, blocked app
 
 ### Agents and spend

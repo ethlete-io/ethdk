@@ -33,6 +33,7 @@ describe('parseTimetrackSettings', () => {
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['#.*-general'] },
       noWorkContextApps: ['spotify'],
+      holdsWorkApps: ['discord'],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/you/dev'],
     });
@@ -55,6 +56,7 @@ describe('parseTimetrackSettings', () => {
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['#.*-general'] },
       noWorkContextApps: ['spotify'],
+      holdsWorkApps: ['discord'],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/you/dev'],
       favoriteProjects: [],
@@ -92,6 +94,7 @@ describe('parseTimetrackSettings', () => {
       exclusionRules: [],
       callRules: { countsAsWork: [], neverCountsAsWork: [] },
       noWorkContextApps: [],
+      holdsWorkApps: [],
       keepDefaultExclusionRules: true,
       gitScanRoots: [],
       favoriteProjects: [],

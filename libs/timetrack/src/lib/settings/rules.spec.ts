@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_EXCLUSION_RULES } from '../store/exclusion';
 import { DEFAULT_TIMETRACK_SETTINGS, TimetrackSettings } from './model';
-import { effectiveExclusionRules } from './rules';
+import { DEFAULT_NO_WORK_CONTEXT_APPS, effectiveExclusionRules, effectiveNoWorkContextApps } from './rules';
 
 const settingsWith = (patch: Partial<TimetrackSettings>): TimetrackSettings => ({
   ...DEFAULT_TIMETRACK_SETTINGS,
@@ -30,5 +30,44 @@ describe('effectiveExclusionRules', () => {
     );
 
     expect(rules).toHaveLength(DEFAULT_EXCLUSION_RULES.length);
+  });
+});
+
+describe('effectiveNoWorkContextApps', () => {
+  it('ships a media player and a messenger, and never Discord', () => {
+    const apps = effectiveNoWorkContextApps(settingsWith({}));
+
+    expect(apps).toContain('spotify');
+    expect(apps).toContain('com.slack.Slack');
+    expect(apps).not.toContain('discord');
+  });
+
+  it('adds the user statements to the shipped ones, without repeating either', () => {
+    const apps = effectiveNoWorkContextApps(settingsWith({ noWorkContextApps: ['discord', 'spotify'] }));
+
+    expect(apps).toContain('discord');
+    expect(apps.filter((app) => app === 'spotify')).toHaveLength(1);
+  });
+
+  it('lets one application be taken back off the shipped list, and leaves the rest of it', () => {
+    const apps = effectiveNoWorkContextApps(settingsWith({ holdsWorkApps: ['com.slack.Slack'] }));
+
+    expect(apps).not.toContain('com.slack.Slack');
+    expect(apps).toContain('spotify');
+    expect(apps).toContain('com.microsoft.teams');
+  });
+
+  it('reads the taking back whatever case the user wrote it in', () => {
+    expect(effectiveNoWorkContextApps(settingsWith({ holdsWorkApps: ['SPOTIFY'] }))).not.toContain('spotify');
+  });
+
+  it('lets a statement of the users own be taken back too', () => {
+    const settings = settingsWith({ noWorkContextApps: ['obsidian'], holdsWorkApps: ['obsidian'] });
+
+    expect(effectiveNoWorkContextApps(settings)).not.toContain('obsidian');
+  });
+
+  it('ships no application twice', () => {
+    expect(new Set(DEFAULT_NO_WORK_CONTEXT_APPS).size).toBe(DEFAULT_NO_WORK_CONTEXT_APPS.length);
   });
 });

@@ -195,7 +195,11 @@ number the user cannot act on is what the panel used to report.
 
 An application no rung will ever name a checkout for would otherwise stay `unknown` for ever, so the
 user can say so: `noWorkContextApps` in the settings, written from a control on the panel row
-itself. It is a fifth cause rather than an exclusion rule — the minutes stay in the day and still
+itself. A short list ships as well, in `DEFAULT_NO_WORK_CONTEXT_APPS` — media players, and the
+messengers whose calls `TimetrackCallRules` already counts instead of their window. **Discord is
+deliberately absent**: it is the one of them a team may run a working session in all day. Every entry
+is reversible one application at a time through `holdsWorkApps`, so a team that works in one of them
+keeps the rest of the list. It is a fifth cause rather than an exclusion rule — the minutes stay in the day and still
 reconcile with the Today screen, and a declared application whose title does name a checkout still
 names it.
 

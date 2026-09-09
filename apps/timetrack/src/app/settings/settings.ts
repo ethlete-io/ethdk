@@ -219,18 +219,26 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       patch({ callRules: { ...rules, [list]: rules[list].filter((existing) => existing !== pattern) } });
     },
 
-    /** Says an application holds no work context, so its unnamed focus stops reading as unjudged. */
-    addNoWorkContextApp: (appId: string) => {
+    /**
+     * Records whether an application holds work at all.
+     *
+     * It writes both lists, because a shipped default is only reversible by naming the application on
+     * the other one — filtering `noWorkContextApps` alone would leave the row unchanged.
+     */
+    setAppHoldsWork: (appId: string, holdsWork: boolean) => {
       const trimmed = appId.trim();
-      const apps = settings().noWorkContextApps;
 
-      if (!trimmed || apps.includes(trimmed)) return;
+      if (!trimmed) return;
 
-      patch({ noWorkContextApps: [...apps, trimmed] });
+      const without = (list: readonly string[]) => list.filter((existing) => existing !== trimmed);
+      const { noWorkContextApps, holdsWorkApps } = settings();
+
+      patch(
+        holdsWork
+          ? { noWorkContextApps: without(noWorkContextApps), holdsWorkApps: [...without(holdsWorkApps), trimmed] }
+          : { noWorkContextApps: [...without(noWorkContextApps), trimmed], holdsWorkApps: without(holdsWorkApps) },
+      );
     },
-
-    removeNoWorkContextApp: (appId: string) =>
-      patch({ noWorkContextApps: settings().noWorkContextApps.filter((existing) => existing !== appId) }),
 
     addGitScanRoot: (root: string) => {
       const trimmed = root.trim();

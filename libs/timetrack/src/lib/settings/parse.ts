@@ -250,6 +250,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     exclusionRules: asRules(document['exclusionRules']),
     callRules: asCallRules(document['callRules']),
     noWorkContextApps: asTextList(document['noWorkContextApps']),
+    holdsWorkApps: asTextList(document['holdsWorkApps']),
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,
     gitScanRoots: asTextList(document['gitScanRoots']),
     favoriteProjects: asFavoriteProjects(document),

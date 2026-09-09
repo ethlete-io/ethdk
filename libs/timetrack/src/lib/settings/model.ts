@@ -195,6 +195,8 @@ export type TimetrackSettings = {
    * checkout, and no amount of reading a process says whether that is a defect.
    */
   noWorkContextApps: string[];
+  /** The applications the user took back off that list, the shipped part of it included. */
+  holdsWorkApps: string[];
   /** Whether the shipped defaults still apply. Turning them off is a deliberate, visible choice. */
   keepDefaultExclusionRules: boolean;
   /** Directories the repository discovery walks. Empty means the host decides. */
@@ -264,6 +266,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   exclusionRules: [],
   callRules: { countsAsWork: [], neverCountsAsWork: [] },
   noWorkContextApps: [],
+  holdsWorkApps: [],
   keepDefaultExclusionRules: true,
   gitScanRoots: [],
   favoriteProjects: [],

@@ -70,7 +70,12 @@ test.describe('the focus that named no checkout', () => {
 
   test('calls no time a gap when no application that names checkouts lost any', async ({ page }) => {
     await expect(gap(page)).toContainText('No application that names checkouts lost any of it.');
-    await expect(unknown(page)).toContainText('45m of it is an application that never named a checkout');
+    await expect(unknown(page)).toContainText('30m of it is an application that never named a checkout');
+  });
+
+  test('reads a shipped media player as no work context, with nothing configured', async ({ page }) => {
+    await expect(row(page, 'spotify')).toContainText('no work context');
+    await expect(row(page, 'spotify')).toContainText('on purpose');
   });
 
   test('calls it a gap when the application that lost the time names checkouts elsewhere', async ({ page }) => {
@@ -85,7 +90,6 @@ test.describe('the focus that named no checkout', () => {
   });
 
   test('marks an application that never named a checkout as one that never does', async ({ page }) => {
-    await expect(row(page, 'spotify')).toContainText('never names one');
     await expect(row(page, 'foot')).toContainText('never names one');
   });
 
@@ -141,29 +145,36 @@ test.describe('the focus that named no checkout', () => {
     await expect(row(page, 'code')).toContainText('a private project');
     await expect(row(page, 'code')).toContainText('on purpose');
     await expect(row(page, 'code')).toContainText('15m');
-    await expect(unknown(page)).toContainText('1h 0m of it is an application that never named a checkout');
+    await expect(unknown(page)).toContainText('30m of it is an application that never named a checkout');
   });
 
   test('lets the user say an application holds no work context, and takes it out of the unknown time', async ({
     page,
   }) => {
-    await expect(unknown(page)).toContainText('45m of it is an application that never named a checkout');
-
-    await page.locator('[data-declare="spotify"]').click();
-
-    await expect(row(page, 'spotify')).toContainText('no work context');
-    await expect(row(page, 'spotify')).toContainText('on purpose');
     await expect(unknown(page)).toContainText('30m of it is an application that never named a checkout');
+
+    await page.locator('[data-declare="foot"]').click();
+
+    await expect(row(page, 'foot')).toContainText('no work context');
+    await expect(row(page, 'foot')).toContainText('on purpose');
+    await expect(unknown(page)).toContainText('');
   });
 
-  test('withdraws the statement again from the same row', async ({ page }) => {
-    await page.locator('[data-declare="spotify"]').click();
-    await expect(row(page, 'spotify')).toContainText('on purpose');
-
+  test('takes a shipped default back off the list, one application at a time', async ({ page }) => {
     await page.locator('[data-declare="spotify"]').click();
 
     await expect(row(page, 'spotify')).toContainText('never names one');
     await expect(unknown(page)).toContainText('45m of it is an application that never named a checkout');
+  });
+
+  test('withdraws a statement of the user own again from the same row', async ({ page }) => {
+    await page.locator('[data-declare="foot"]').click();
+    await expect(row(page, 'foot')).toContainText('on purpose');
+
+    await page.locator('[data-declare="foot"]').click();
+
+    await expect(row(page, 'foot')).toContainText('never names one');
+    await expect(unknown(page)).toContainText('30m of it is an application that never named a checkout');
   });
 
   test('says no window held the focus, rather than showing an empty list', async ({ page }) => {

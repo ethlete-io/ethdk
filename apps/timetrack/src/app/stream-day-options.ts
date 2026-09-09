@@ -1,4 +1,4 @@
-import { StreamDayOptions, TimetrackSettings } from '@ethlete/timetrack';
+import { StreamDayOptions, TimetrackSettings, effectiveNoWorkContextApps } from '@ethlete/timetrack';
 
 /**
  * What this app's own windows report themselves as: the bundle identifier on macOS, and on Linux the
@@ -24,5 +24,5 @@ export const streamDayOptionsOf = (options: {
   ownAppIds: OWN_APP_IDS,
   windowsSeenThroughMs: options.windowsSeenThroughMs,
   callRules: options.settings.callRules,
-  noWorkContextApps: options.settings.noWorkContextApps,
+  noWorkContextApps: effectiveNoWorkContextApps(options.settings),
 });
