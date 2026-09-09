@@ -990,8 +990,58 @@ describe('streamDay, the focus that named no checkout', () => {
     });
 
     expect(day.unnamedFocus).toEqual([
-      { appId: 'foot', reason: 'no-name', ms: 14 * MINUTE },
-      { appId: 'firefox', reason: 'no-name', ms: 6 * MINUTE },
+      { appId: 'foot', reason: 'no-name', ms: 14 * MINUTE, titles: [{ title: 'tom@fedora: ~', ms: 14 * MINUTE }] },
+      {
+        appId: 'firefox',
+        reason: 'no-name',
+        ms: 6 * MINUTE,
+        titles: [{ title: 'localhost:4200 \u2014 Mozilla Firefox', ms: 6 * MINUTE }],
+      },
+    ]);
+  });
+
+  it('names the distinct titles behind one application, longest first', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 5, appId: 'firefox', title: 'Mail \u2014 Mozilla Firefox' }),
+        ...focusRun({ from: 6, to: 20, appId: 'firefox', title: 'localhost:4200 \u2014 Mozilla Firefox' }),
+        ...focusRun({ from: 21, to: 24, appId: 'firefox', title: 'Mail \u2014 Mozilla Firefox' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.unnamedFocus[0]?.titles).toEqual([
+      { title: 'localhost:4200 \u2014 Mozilla Firefox', ms: 15 * MINUTE },
+      { title: 'Mail \u2014 Mozilla Firefox', ms: 9 * MINUTE },
+    ]);
+  });
+
+  it('sums the titles of a row to the row, so an open row reconciles with the line above it', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'firefox', title: 'Mail \u2014 Mozilla Firefox' }),
+        ...focusRun({ from: 11, to: 20, appId: 'firefox', title: 'localhost:4200 \u2014 Mozilla Firefox' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+    const row = day.unnamedFocus[0];
+
+    expect(row?.titles.reduce((sum, held) => sum + held.ms, 0)).toBe(row?.ms);
+  });
+
+  it('keeps the title of a window a checkout took out of the row, because that time is not folded', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 11, to: 20, appId: 'discord', title: 'Discord' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.unnamedFocus).toEqual([
+      { appId: 'discord', reason: 'no-name', ms: 9 * MINUTE, titles: [{ title: 'Discord', ms: 9 * MINUTE }] },
     ]);
   });
 
@@ -1045,7 +1095,7 @@ describe('streamDay, the focus that named no checkout', () => {
       options: { repoRoots: [SDK, ELROND], links: [privateLink(ELROND)] },
     });
 
-    expect(day.unnamedFocus).toEqual([{ appId: 'code', reason: 'private', ms: 9 * MINUTE }]);
+    expect(day.unnamedFocus).toEqual([{ appId: 'code', reason: 'private', ms: 9 * MINUTE, titles: [] }]);
     expect(JSON.stringify(day.unnamedFocus)).not.toContain('elrond');
   });
 
@@ -1059,7 +1109,9 @@ describe('streamDay, the focus that named no checkout', () => {
       options: { repoRoots: [SDK], ownAppIds: ['timetrack'] },
     });
 
-    expect(day.unnamedFocus).toEqual([{ appId: 'timetrack', reason: 'own-window', ms: 9 * MINUTE }]);
+    expect(day.unnamedFocus).toEqual([
+      { appId: 'timetrack', reason: 'own-window', ms: 9 * MINUTE, titles: [{ title: 'Timetrack', ms: 9 * MINUTE }] },
+    ]);
   });
 
   it('marks a name two checkouts share apart from a title that names nothing', () => {
@@ -1074,8 +1126,13 @@ describe('streamDay, the focus that named no checkout', () => {
     });
 
     expect(day.unnamedFocus).toEqual([
-      { appId: 'code', reason: 'ambiguous-name', ms: 11 * MINUTE },
-      { appId: 'spotify', reason: 'no-name', ms: 9 * MINUTE },
+      {
+        appId: 'code',
+        reason: 'ambiguous-name',
+        ms: 11 * MINUTE,
+        titles: [{ title: 'boot.md - elrond - Code', ms: 11 * MINUTE }],
+      },
+      { appId: 'spotify', reason: 'no-name', ms: 9 * MINUTE, titles: [{ title: 'Spotify', ms: 9 * MINUTE }] },
     ]);
   });
 
@@ -1091,8 +1148,13 @@ describe('streamDay, the focus that named no checkout', () => {
     });
 
     expect(day.unnamedFocus).toEqual([
-      { appId: 'code', reason: 'no-name', ms: 12 * MINUTE },
-      { appId: 'code', reason: 'private', ms: 7 * MINUTE },
+      {
+        appId: 'code',
+        reason: 'no-name',
+        ms: 12 * MINUTE,
+        titles: [{ title: 'Visual Studio Code', ms: 12 * MINUTE }],
+      },
+      { appId: 'code', reason: 'private', ms: 7 * MINUTE, titles: [] },
     ]);
   });
 
@@ -1117,7 +1179,9 @@ describe('streamDay, the focus that named no checkout', () => {
       options: { repoRoots: [SDK], noWorkContextApps: ['spotify'] },
     });
 
-    expect(day.unnamedFocus).toEqual([{ appId: 'Spotify', reason: 'no-work-context', ms: 14 * MINUTE }]);
+    expect(day.unnamedFocus).toEqual([
+      { appId: 'Spotify', reason: 'no-work-context', ms: 14 * MINUTE, titles: [{ title: 'Spotify', ms: 14 * MINUTE }] },
+    ]);
   });
 
   it('still lets a declared application name a checkout its title holds', () => {

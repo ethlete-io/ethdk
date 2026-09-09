@@ -145,6 +145,26 @@ row carries what it takes to judge it. That is what "measure before a collector 
 one Discord room holds work and another does not. Widening `title-pattern` was already rejected under
 **Privacy**, for a related reason. Revisit it with the title numbers in hand, and never before.
 
+### The titles behind a row. Built on 2026-09-09.
+
+Each `UnnamedFocus` row now carries the distinct window titles behind it, each with its own total,
+longest first (`libs/timetrack/src/lib/stream/unnamed-focus.ts`). `streamDay` folds them in the same
+pass that folds the row, from the title it already holds at the `window-focus` branch of the sample
+loop, so no second reader can drift from the folded line. A span sums a title across days the way it
+sums a row. In the panel the row opens to show them
+(`apps/timetrack/src/app/sources/unnamed-focus.component.ts`), and stays as it was when closed.
+
+A title under `READABLE_MS` is dropped, the same as a row, and the open row says what the dropped
+ones add up to, so it still reconciles with the total above it.
+
+**A private checkout keeps no title.** A title carries the checkout's name, and the private project
+link exists to hold that name out of every report. The row still counts the minutes, it just has
+nothing to open. `streamDay`'s spec asserts the name is absent from the whole report.
+
+**When the minutes happened is still dropped.** The second reading named two missing things and this
+built one of them. A row is a span total with no clock, so `google-chrome` at 42m still cannot be
+placed in the day. Build that only if a reading with the titles in hand still cannot be judged.
+
 ## The platform seam
 
 The window source answers one new question: **can this platform name the process of the focused

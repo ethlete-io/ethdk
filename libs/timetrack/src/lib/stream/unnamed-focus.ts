@@ -8,12 +8,25 @@
  */
 export type UnnamedFocusReason = 'no-name' | 'ambiguous-name' | 'private' | 'own-window' | 'no-work-context';
 
+/**
+ * One window title behind a row, and how long that title held the focus.
+ *
+ * The title is the evidence a row is judged by: an application and a total say a browser lost 42
+ * minutes, and only the title says whether they were a development server or a news site.
+ */
+export type UnnamedFocusTitle = { title: string; ms: number };
+
 /** Focused-window time no checkout took, per application and cause. */
 export type UnnamedFocus = {
   /** The application whose window held the focus. Absent before a day's first focus sample. */
   appId?: string;
   reason: UnnamedFocusReason;
   ms: number;
+  /**
+   * The distinct titles the row is made of, longest first. Empty for a private checkout, whose name
+   * a title carries and which a private project link exists to keep out of every report.
+   */
+  titles: readonly UnnamedFocusTitle[];
 };
 
 /**
@@ -66,6 +79,19 @@ export const verdictFor = (options: { row: UnnamedFocus; namedApps: ReadonlySet<
   return row.appId && namedApps.has(row.appId) ? 'gap' : 'unknown';
 };
 
+/** The titles of several rows summed per title, longest first. */
+export const mergeUnnamedTitles = (rows: readonly (readonly UnnamedFocusTitle[])[]): UnnamedFocusTitle[] => {
+  const summed = new Map<string, number>();
+
+  for (const titles of rows) {
+    for (const held of titles) summed.set(held.title, (summed.get(held.title) ?? 0) + held.ms);
+  }
+
+  return [...summed]
+    .map(([title, ms]) => ({ title, ms }))
+    .sort((a, b) => b.ms - a.ms || a.title.localeCompare(b.title));
+};
+
 /** How much of a span named no checkout, defect or not. */
 export const unnamedFocusMs = (rows: readonly UnnamedFocus[]) => rows.reduce((sum, row) => sum + row.ms, 0);
 
@@ -84,11 +110,12 @@ export const mergeUnnamedFocus = (days: readonly (readonly UnnamedFocus[])[]): U
 
       if (found) {
         found.ms += row.ms;
+        found.titles = mergeUnnamedTitles([found.titles, row.titles]);
 
         continue;
       }
 
-      summed.push({ ...row });
+      summed.push({ ...row, titles: mergeUnnamedTitles([row.titles]) });
     }
   }
 

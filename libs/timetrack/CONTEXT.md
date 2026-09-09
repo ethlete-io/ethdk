@@ -112,6 +112,13 @@ application back off it one at a time. It is not an exclusion rule: the minutes 
 still reconcile.
 _Avoid_: excluded app, ignored app, blocked app
 
+**Window title**:
+The text a compositor reports for the focused window. An unnamed focus row is split by it, so a
+browser that lost an hour reads as a development server or as a news page rather than as one number.
+A private checkout keeps none, because a title carries the checkout's name and a private project link
+exists to hold that name out of every report.
+_Avoid_: window name, tab title, caption
+
 ### Agents and spend
 
 **Turn**:

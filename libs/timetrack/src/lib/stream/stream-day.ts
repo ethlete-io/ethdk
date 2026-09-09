@@ -17,7 +17,7 @@ import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } fro
 import { TimetrackCallRules } from '../settings/model';
 import { classifyCalls } from './calls';
 import { PresenceSample, presenceWindows } from './presence';
-import { UnnamedFocus, UnnamedFocusReason } from './unnamed-focus';
+import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
 
 /** The key of the one line every application with no checkout folds into. */
 export const OTHER_APPLICATIONS_KEY = 'other-applications';
@@ -234,7 +234,12 @@ type StreamDraft = {
 type Mark = { at: Date; state: RepoState | null };
 
 /** One application's unnamed stretches, kept unclipped until `seen` is known. */
-type UnnamedDraft = { appId?: string; reason: UnnamedFocusReason; windows: TimeWindow[] };
+type UnnamedDraft = {
+  appId?: string;
+  reason: UnnamedFocusReason;
+  windows: TimeWindow[];
+  titles: Map<string, TimeWindow[]>;
+};
 
 type RepoState = { repoPath: string; branch?: string };
 
@@ -688,6 +693,7 @@ export const streamDay = (options: {
    * account for every minute of the folded line, and a minute this app was in front is one of them.
    */
   let windowAppId: string | undefined;
+  let windowTitle: string | undefined;
   let unnamedReason: UnnamedFocusReason = 'no-name';
   const namedApps = new Set<string>();
 
@@ -696,7 +702,7 @@ export const streamDay = (options: {
 
     if (found) return found;
 
-    const draft: UnnamedDraft = { appId: windowAppId, reason, windows: [] };
+    const draft: UnnamedDraft = { appId: windowAppId, reason, windows: [], titles: new Map() };
 
     unnamed.push(draft);
 
@@ -712,6 +718,7 @@ export const streamDay = (options: {
     if (sample.kind === 'window-focus') {
       appId = ownWindow ? undefined : sample.appId;
       windowAppId = sample.appId;
+      windowTitle = sample.title;
       focused = secludedWindow || ownWindow ? undefined : repoNamedIn({ title: sample.title, byName });
 
       if (secludedWindow) sticky = undefined;
@@ -758,7 +765,20 @@ export const streamDay = (options: {
     // Every stretch between two samples belongs to whichever context held the focused window, so the
     // focus time of every stream sums to presence exactly and the concurrency ratio has one meaning.
     if (next) draftFor(drafts, context).focus.push({ from: sample.at, to: next.at });
-    if (next && !holder) unnamedDraftFor(unnamedReason).windows.push({ from: sample.at, to: next.at });
+    if (next && !holder) {
+      const draft = unnamedDraftFor(unnamedReason);
+      const window = { from: sample.at, to: next.at };
+
+      draft.windows.push(window);
+      // A title on a private checkout carries the checkout's name, which the private project link
+      // exists to keep out of every report. The row still counts the minutes.
+      if (windowTitle !== undefined && unnamedReason !== 'private') {
+        const held = draft.titles.get(windowTitle) ?? [];
+
+        held.push(window);
+        draft.titles.set(windowTitle, held);
+      }
+    }
     if (holder && windowAppId && sample.kind === 'window-focus') namedApps.add(windowAppId);
 
     if (sample.kind === 'agent-session') {
@@ -871,6 +891,12 @@ export const streamDay = (options: {
       appId: draft.appId,
       reason: draft.reason,
       ms: windowsMs(clipWindows({ windows: draft.windows, within: seen })),
+      titles: mergeUnnamedTitles([
+        [...draft.titles].map(([title, windows]) => ({
+          title,
+          ms: windowsMs(clipWindows({ windows, within: seen })),
+        })),
+      ]).filter((held) => held.ms > 0),
     }))
     .filter((row) => row.ms > 0)
     .sort((a, b) => b.ms - a.ms || (a.appId ?? '').localeCompare(b.appId ?? ''));

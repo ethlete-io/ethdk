@@ -48,6 +48,8 @@ type Span = keyof typeof SPAN_LABEL;
 
 type Loaded = { today: UnnamedFocusSpan; span: UnnamedFocusSpan } | null;
 
+type TitleRow = { title: string; duration: string };
+
 type FocusRow = {
   key: string;
   /** The application, or a stretch before the day's first focus sample, which no window is known for. */
@@ -59,6 +61,11 @@ type FocusRow = {
   /** The application id the declaration is written against, or nothing for a row with no application. */
   appId?: string;
   declared: boolean;
+  /** The titles long enough to read, longest first. Empty for a private checkout, which keeps none. */
+  titles: TitleRow[];
+  /** What the titles above do not account for, or nothing when they account for all of it. */
+  remainder: string;
+  titlesLabel: string;
 };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -112,23 +119,53 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 
         <ul class="flex flex-col gap-1">
           @for (row of rows(); track row.key) {
-            <li [attr.data-app]="row.app" class="flex flex-wrap items-baseline gap-2 text-small">
-              <span class="font-medium">{{ row.app }}</span>
-              <span class="tabular-nums">{{ row.duration }}</span>
-              <span class="text-et-surface-muted">{{ row.why }}</span>
-              <et-badge [color]="row.color" variant="outline" size="sm">{{ row.standing }}</et-badge>
+            <li [attr.data-app]="row.app" class="flex flex-col gap-1 text-small">
+              <div class="flex flex-wrap items-baseline gap-2">
+                <span class="font-medium">{{ row.app }}</span>
+                <span class="tabular-nums">{{ row.duration }}</span>
+                <span class="text-et-surface-muted">{{ row.why }}</span>
+                <et-badge [color]="row.color" variant="outline" size="sm">{{ row.standing }}</et-badge>
 
-              @if (row.appId) {
-                <button
-                  [attr.data-declare]="row.appId"
-                  (click)="declare(row)"
-                  class="ml-auto"
-                  et-button
-                  variant="transparent"
-                  size="sm"
-                >
-                  {{ row.declared ? 'It does hold work' : 'It holds no work' }}
-                </button>
+                @if (row.titlesLabel) {
+                  <button
+                    [attr.aria-expanded]="opened().has(row.key)"
+                    [attr.data-titles-of]="row.app"
+                    (click)="toggleTitles(row)"
+                    et-button
+                    variant="transparent"
+                    size="sm"
+                  >
+                    {{ row.titlesLabel }}
+                  </button>
+                }
+
+                @if (row.appId) {
+                  <button
+                    [attr.data-declare]="row.appId"
+                    (click)="declare(row)"
+                    class="ml-auto"
+                    et-button
+                    variant="transparent"
+                    size="sm"
+                  >
+                    {{ row.declared ? 'It does hold work' : 'It holds no work' }}
+                  </button>
+                }
+              </div>
+
+              @if (opened().has(row.key)) {
+                <ul class="ml-4 flex flex-col gap-1 border-l border-et-surface-border pl-3">
+                  @for (title of row.titles; track title.title) {
+                    <li class="flex gap-3">
+                      <span class="w-14 shrink-0 tabular-nums text-et-surface-subtle">{{ title.duration }}</span>
+                      <span [attr.data-title]="title.title" class="grow break-all">{{ title.title }}</span>
+                    </li>
+                  }
+
+                  @if (row.remainder) {
+                    <li class="text-et-surface-subtle" data-title-remainder>{{ row.remainder }}</li>
+                  }
+                </ul>
               }
             </li>
           } @empty {
@@ -149,6 +186,7 @@ export class UnnamedFocusComponent {
   private settings = injectTimetrackSettings();
 
   protected span = signal<Span>('today');
+  protected opened = signal<ReadonlySet<string>>(new Set());
   protected readonly SPANS = Object.keys(SPAN_LABEL) as Span[];
   protected readonly SPAN_LABEL = SPAN_LABEL;
   protected readonly SPAN_DAYS = SPAN_DAYS;
@@ -238,16 +276,30 @@ export class UnnamedFocusComponent {
   protected rows = computed<FocusRow[]>(() =>
     (this.current()?.rows ?? [])
       .filter((row) => row.ms >= READABLE_MS)
-      .map((row) => ({
-        key: `${row.appId ?? ''} ${row.reason}`,
-        app: row.appId ?? 'no application reported',
-        duration: formatDurationMs(row.ms),
-        why: REASON_LABEL[row.reason],
-        standing: VERDICT_LABEL[row.verdict],
-        color: VERDICT_COLOR[row.verdict],
-        appId: row.appId,
-        declared: row.reason === 'no-work-context',
-      })),
+      .map((row) => {
+        const titles = row.titles.filter((held) => held.ms >= READABLE_MS);
+        const remainderMs = row.ms - titles.reduce((sum, held) => sum + held.ms, 0);
+        // A row the day kept no title for at all is a private checkout, or a stretch before the day's
+        // first focus sample. Neither has anything to open, and neither is a remainder either.
+        const remainder =
+          row.titles.length && remainderMs >= READABLE_MS
+            ? `${formatDurationMs(remainderMs)} across shorter titles`
+            : '';
+
+        return {
+          key: `${row.appId ?? ''} ${row.reason}`,
+          app: row.appId ?? 'no application reported',
+          duration: formatDurationMs(row.ms),
+          why: REASON_LABEL[row.reason],
+          standing: VERDICT_LABEL[row.verdict],
+          color: VERDICT_COLOR[row.verdict],
+          appId: row.appId,
+          declared: row.reason === 'no-work-context',
+          titles: titles.map((held) => ({ title: held.title, duration: formatDurationMs(held.ms) })),
+          remainder,
+          titlesLabel: titlesLabelOf({ count: titles.length, remainder }),
+        };
+      }),
   );
 
   protected emptyNote = computed(() =>
@@ -255,6 +307,15 @@ export class UnnamedFocusComponent {
       ? 'Every window that named no checkout held it for under a minute.'
       : 'Every window that held the focus named a checkout.',
   );
+
+  /** Opens a row to show the titles behind it, or closes it again. Several rows may stand open. */
+  protected toggleTitles(row: FocusRow) {
+    const open = new Set(this.opened());
+
+    if (!open.delete(row.key)) open.add(row.key);
+
+    this.opened.set(open);
+  }
 
   /**
    * Records, or withdraws, the one thing no collector can observe: that an application never holds a
@@ -269,3 +330,12 @@ export class UnnamedFocusComponent {
 
 /** Declared below the component so its template literal cannot desynchronise the language service. */
 const SPAN_LABEL = { today: 'Today', span: `Last ${SPAN_DAYS} days` };
+
+/** Empty for a row with no title to show, which is what hides the button that would open nothing. */
+const titlesLabelOf = (options: { count: number; remainder: string }) => {
+  const { count, remainder } = options;
+
+  if (count === 0) return remainder ? 'shorter titles' : '';
+
+  return count === 1 ? '1 title' : `${count} titles`;
+};

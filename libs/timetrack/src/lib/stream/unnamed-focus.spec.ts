@@ -1,19 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import {
   UnnamedFocus,
+  UnnamedFocusTitle,
   UnnamedFocusVerdict,
   mergeUnnamedFocus,
+  mergeUnnamedTitles,
   unnamedFocusMs,
   unnamedFocusOver,
 } from './unnamed-focus';
 
 const MINUTE = 60_000;
 
-const row = (appId: string, reason: UnnamedFocus['reason'], minutes: number): UnnamedFocus => ({
+const row = (
+  appId: string,
+  reason: UnnamedFocus['reason'],
+  minutes: number,
+  titles: UnnamedFocusTitle[] = [],
+): UnnamedFocus => ({
   appId,
   reason,
   ms: minutes * MINUTE,
+  titles,
 });
+
+const title = (name: string, minutes: number): UnnamedFocusTitle => ({ title: name, ms: minutes * MINUTE });
 
 describe('mergeUnnamedFocus', () => {
   it('sums one application over several days', () => {
@@ -42,9 +52,29 @@ describe('mergeUnnamedFocus', () => {
   });
 
   it('keeps a stretch no window is known for, rather than folding it onto an application', () => {
-    const summed = mergeUnnamedFocus([[{ reason: 'no-name', ms: 3 * MINUTE }], [row('foot', 'no-name', 1)]]);
+    const summed = mergeUnnamedFocus([
+      [{ reason: 'no-name', ms: 3 * MINUTE, titles: [] }],
+      [row('foot', 'no-name', 1)],
+    ]);
 
-    expect(summed).toEqual([{ reason: 'no-name', ms: 3 * MINUTE }, row('foot', 'no-name', 1)]);
+    expect(summed).toEqual([{ reason: 'no-name', ms: 3 * MINUTE, titles: [] }, row('foot', 'no-name', 1)]);
+  });
+
+  it('sums the titles of one application over several days, longest first', () => {
+    const summed = mergeUnnamedFocus([
+      [row('firefox', 'no-name', 30, [title('localhost:4200', 20), title('Mail', 10)])],
+      [row('firefox', 'no-name', 25, [title('Mail', 25)])],
+    ]);
+
+    expect(summed[0]?.titles).toEqual([title('Mail', 35), title('localhost:4200', 20)]);
+  });
+
+  it('leaves the titles of the day it read alone, so a second read of the same span agrees', () => {
+    const day = [row('firefox', 'no-name', 10, [title('Mail', 10)])];
+
+    mergeUnnamedFocus([day, [row('firefox', 'no-name', 5, [title('Mail', 5)])]]);
+
+    expect(day[0]?.titles).toEqual([title('Mail', 10)]);
   });
 
   it('reads a span with nothing unnamed as nothing', () => {
@@ -54,6 +84,23 @@ describe('mergeUnnamedFocus', () => {
 
   it('adds the causes up, because every one of them is folded time', () => {
     expect(unnamedFocusMs([row('code', 'private', 30), row('foot', 'no-name', 10)])).toBe(40 * MINUTE);
+  });
+});
+
+describe('mergeUnnamedTitles', () => {
+  it('sums one title over several rows and orders the longest first', () => {
+    expect(mergeUnnamedTitles([[title('Mail', 5), title('Chat', 9)], [title('Mail', 8)]])).toEqual([
+      title('Mail', 13),
+      title('Chat', 9),
+    ]);
+  });
+
+  it('orders two titles of the same length by name, so the list does not shuffle between reads', () => {
+    expect(mergeUnnamedTitles([[title('Mail', 5)], [title('Chat', 5)]])).toEqual([title('Chat', 5), title('Mail', 5)]);
+  });
+
+  it('reads a row with no title at all as no title', () => {
+    expect(mergeUnnamedTitles([[], []])).toEqual([]);
   });
 });
 
@@ -69,10 +116,9 @@ describe('unnamedFocusOver', () => {
 
     expect(span.focusMs).toBe(180 * MINUTE);
     expect(span.unnamedMs).toBe(35 * MINUTE);
-    expect(span.rows.map((held) => ({ appId: held.appId, reason: held.reason, ms: held.ms }))).toEqual([
-      row('foot', 'no-name', 30),
-      row('firefox', 'no-name', 5),
-    ]);
+    expect(
+      span.rows.map((held) => ({ appId: held.appId, reason: held.reason, ms: held.ms, titles: held.titles })),
+    ).toEqual([row('foot', 'no-name', 30), row('firefox', 'no-name', 5)]);
   });
 
   it('reads a span of days that named everything as nothing unnamed', () => {
@@ -143,7 +189,7 @@ describe('unnamedFocusOver', () => {
 
   it('judges a stretch no window is known for as unknown, because no application named it', () => {
     const span = unnamedFocusOver([
-      { focusMs: 60 * MINUTE, unnamedFocus: [{ reason: 'no-name', ms: 4 * MINUTE }], namedApps: ['code'] },
+      { focusMs: 60 * MINUTE, unnamedFocus: [{ reason: 'no-name', ms: 4 * MINUTE, titles: [] }], namedApps: ['code'] },
     ]);
 
     expect(span.rows[0]?.verdict).toBe('unknown');

@@ -41,6 +41,10 @@ const unknown = (page: Page) => page.locator('[data-unnamed-unknown]');
 
 const row = (page: Page, app: string) => page.locator(`[data-app="${app}"]`);
 
+const titlesButton = (page: Page, app: string) => page.locator(`[data-titles-of="${app}"]`);
+
+const titles = (page: Page, app: string) => row(page, app).locator('[data-title]');
+
 /**
  * The panel that measures what the Other applications line is made of.
  *
@@ -175,6 +179,71 @@ test.describe('the focus that named no checkout', () => {
 
     await expect(row(page, 'foot')).toContainText('never names one');
     await expect(unknown(page)).toContainText('30m of it is an application that never named a checkout');
+  });
+
+  test('keeps the titles behind a row closed until the row is opened', async ({ page }) => {
+    await expect(titlesButton(page, 'foot')).toHaveText('1 title');
+    await expect(titles(page, 'foot')).toHaveCount(0);
+
+    await titlesButton(page, 'foot').click();
+
+    await expect(titles(page, 'foot')).toHaveText(['tom@e2e: ~']);
+  });
+
+  test('names the distinct titles behind one application, longest first', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        ...day(),
+        focus(105, 'firefox', 'localhost:4200 - Mozilla Firefox'),
+        focus(115, 'firefox', 'Mail - Mozilla Firefox'),
+        focus(120, 'foot', 'tom@e2e: ~'),
+      ],
+    });
+    await page.goto('/sources');
+    await titlesButton(page, 'firefox').click();
+
+    await expect(titles(page, 'firefox')).toHaveText(['localhost:4200 - Mozilla Firefox', 'Mail - Mozilla Firefox']);
+    await expect(row(page, 'firefox')).toContainText('10m');
+  });
+
+  test('says what the titles too short to read add up to, so the open row still reconciles', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        ...day(),
+        focus(105, 'firefox', 'localhost:4200 - Mozilla Firefox'),
+        ...[115, 115.25, 115.5, 115.75].map((minutes, index) =>
+          focus(minutes, 'firefox', `A short page ${index} - Mozilla Firefox`),
+        ),
+        focus(116, 'foot', 'tom@e2e: ~'),
+      ],
+    });
+    await page.goto('/sources');
+    await titlesButton(page, 'firefox').click();
+
+    await expect(titles(page, 'firefox')).toHaveText(['localhost:4200 - Mozilla Firefox']);
+    await expect(page.locator('[data-title-remainder]')).toHaveText('1m across shorter titles');
+  });
+
+  test('keeps the title of a private project out of the panel, so no row can open it', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        ...day(),
+        focus(105, 'code', 'plan.md - umbau-elrond - Visual Studio Code'),
+        focus(120, 'foot', 'tom@e2e: ~'),
+      ],
+      settings: {
+        ...defaultSettings(),
+        projectLinks: [{ id: 'link-secret', path: SECRET, target: { kind: 'private' }, createdAt: new Date(0) }],
+      },
+    });
+    await page.goto('/sources');
+
+    await expect(row(page, 'code')).toContainText('a private project');
+    await expect(titlesButton(page, 'code')).toHaveCount(0);
+    await expect(page.getByText('umbau-elrond')).toHaveCount(0);
   });
 
   test('says no window held the focus, rather than showing an empty list', async ({ page }) => {
