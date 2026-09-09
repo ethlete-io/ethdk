@@ -21,7 +21,8 @@ hang in this environment.
 
 ## 1. Pick the packages
 
-Every published package is named `@ethlete/<name>`:
+Every published package is named `@ethlete/<name>`. The Timetrack app is versioned the
+same way, but it is private, so it keeps its plain nx project name:
 
 | Package                  | Covers |
 |--------------------------|--------|
@@ -29,10 +30,15 @@ Every published package is named `@ethlete/<name>`:
 | `@ethlete/cdk`           | Legacy/lower-level component toolkit |
 | `@ethlete/core`          | Framework-agnostic primitives, directives, overlay runtime, signals utils |
 | `@ethlete/query`         | Data fetching / query client |
+| `@ethlete/query-devtools`| The `<et-query-devtools>` panel |
+| `@ethlete/bracket`       | Framework-free bracket model, resolver and layout |
 | `@ethlete/contentful`    | Contentful integration |
+| `@ethlete/timetrack`     | Timetrack domain library |
 | `@ethlete/cli`           | CLI tooling |
 | `@ethlete/types`         | Shared TS types |
 | `@ethlete/eslint-plugin` | Custom lint rules |
+| `@ethlete/agent-rules`   | Portable agent rules and skills |
+| `timetrack-app`          | The Timetrack desktop app (private, never published) |
 
 List **only** the packages whose source you actually changed. Story-only,
 test-only, or `.claude/` changes don't need a changeset. If one logical change

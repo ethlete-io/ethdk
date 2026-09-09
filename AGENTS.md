@@ -134,6 +134,12 @@ Every change to a published package needs a changeset. Use the **`changeset`**
 skill (`.agents/skills/changeset/`) - write the file directly; don't run the
 interactive `npx changeset` CLI.
 
+The Timetrack app is versioned the same way, under the name `timetrack-app`. It is a
+private workspace package, so `changeset version` bumps it but never publishes it, and
+`yarn versions:sync` copies the new version into `tauri.conf.json`, `Cargo.toml` and
+`Cargo.lock`. Those three files are generated - change `apps/timetrack/package.json`, or
+write a changeset, and run `yarn versions:sync`. `yarn versions:check` fails CI on drift.
+
 ## Documentation
 
 Written docs live in the VitePress site at `apps/docs` (deployed per branch),

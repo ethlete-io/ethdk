@@ -22664,6 +22664,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"timetrack-app@workspace:apps/timetrack":
+  version: 0.0.0-use.local
+  resolution: "timetrack-app@workspace:apps/timetrack"
+  languageName: unknown
+  linkType: soft
+
 "tiny-invariant@npm:^1.3.3":
   version: 1.3.3
   resolution: "tiny-invariant@npm:1.3.3"

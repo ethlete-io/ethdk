@@ -35,6 +35,7 @@ const PACKAGES = [
   '@ethlete/query-devtools',
   '@ethlete/timetrack',
   '@ethlete/types',
+  'timetrack-app',
 ];
 
 const LEVELS = ['major', 'minor', 'patch'];
@@ -78,7 +79,7 @@ const checkFrontmatter = (lines) => {
     const entry = /^'([^']+)'\s*:\s*(\S+)$/.exec(line) ?? /^"([^"]+)"\s*:\s*(\S+)$/.exec(line);
 
     if (!entry) {
-      problems.push(`frontmatter line is not \`'@ethlete/<pkg>': <level>\`: ${line.trim()}`);
+      problems.push(`frontmatter line is not \`'<pkg>': <level>\`: ${line.trim()}`);
       continue;
     }
 
