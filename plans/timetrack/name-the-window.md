@@ -221,6 +221,29 @@ host on a private project's network, and it is now printed in the panel. The pri
 holds a checkout **path** out of every report, and a browser window on that project names no
 checkout at all, so the link never reaches it. It is 1m here, and nothing is changed for it yet.
 
+### Titles Tom named as no work context, 2026-09-10
+
+Tom named four more titles to ignore: **YouTube**, **Jellyfin**, **Spotify** and **Home Assistant**.
+All four are browser tab titles, not application ids.
+
+`DEFAULT_NO_WORK_CONTEXT_APPS` matches `app_id` only, so it cannot reach any of them. A Firefox tab
+named `YouTube` is an application that names checkouts at other times, so `verdictFor` reads it as a
+**gap** today. That is the wrong answer, and it is the same shape as the `Omarchy` and
+`Client Devices | Dream Machine` rows above.
+
+**Not built, on purpose.** A title rule is one of the two mechanisms the fourth reading decides
+between, and building it now would change the system the reading measures. The three readings so far
+would then not compare with the fourth. So these four are candidates, and the reading decides them.
+
+Two things the reading also has to answer for them:
+
+- **Which list they belong to.** A no-work-context rule keeps the minute and marks it on purpose. An
+  exclusion rule drops the event, the way it drops a password manager. Tom said "ignore", which fits
+  the first: the minute is real, and it is not work.
+- **Whether a title rule needs its own no-work-context kind.** `TimetrackExclusionRule` already has a
+  `title-pattern` kind, but it denies. Marking a minute rather than dropping it is a different
+  mechanism with the same matcher.
+
 ## The platform seam
 
 The window source answers one new question: **can this platform name the process of the focused

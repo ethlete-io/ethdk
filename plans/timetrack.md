@@ -1033,16 +1033,47 @@ Measured on this machine 2026-09-10, before any of it was built:
 - **`glab api` picks its host from the current directory** when that directory is a git checkout, and
   falls back to `gitlab.com`. The collector has no meaningful working directory, so it must pass
   `--hostname` explicitly on every call.
-- **GitHub's events embed the pull request**, so the second lookup GitLab needs has no counterpart
-  here: `payload.pull_request` carries the number, the title, the head ref and the URL. `gh api
+- **GitHub's events embed the pull request's branch, and nothing else.** `gh api
 /users/<login>/events` returns private events when the token owns the account, which it does.
+  **Corrected on 2026-09-10, against four real user feeds:** `payload.pull_request` is trimmed to
+  `{base, head, id, number, url}`. The `url` is the API URL, and `title`, `html_url`, `state` and
+  `draft` are all absent. So the head ref arrives free, which is the whole issue key under the
+  grammar and the one thing GitLab needs a second call for. A **title** still needs
+  `gh api /repos/<repo>/pulls/<number>`, and the browser URL is built from `repo.name` and `number`.
+  An earlier line here claimed the title and the browser URL came free. They do not.
+- **A comment on a pull request is the other shape.** `IssueCommentEvent` carries `payload.issue`
+  with the number, the **title** and the browser URL, and a `pull_request` key that marks it as a
+  pull request rather than an issue. It carries no head ref. So the two shapes are complementary,
+  and neither one gives both.
 - **GitHub's feed takes no `after` or `before`.** It is newest-first, 30 per page, and stops at 300
   events. The window has to be filtered after the read, and a first run cannot reach back 30 days the
-  way GitLab's does. Record what the cap dropped rather than reaching silently short.
+  way GitLab's does. Record what the cap dropped rather than reaching silently short. **Page 4 is an
+  HTTP 422**, not an empty page, so the reader stops at page 3 rather than reading the cap as a
+  failure.
 
 Not taken: reading the local checkout with `gh pr status` or `glab mr list`. An account-wide feed
 answers "what did you touch today"; a per-checkout query answers "what is open", which is not a
 timetrack question.
+
+Measured on 2026-09-10, about how both CLIs behave as a transport:
+
+- **Both report an HTTP error the same way**: exit code 1, the API's own JSON body on **stdout**, and
+  one line on **stderr** of the form `glab: 404 Project Not Found (HTTP 404)` or
+  `gh: Not Found (HTTP 404)`. The status code is read out of that line, which is what lets the
+  existing `GitLabRequestError` keep its status and its message.
+- **A success writes nothing to stderr** and the JSON body to stdout, with exit code 0.
+- **`glab auth status` writes every line to stderr, and stdout stays empty.** `gh auth status` writes
+  to stdout. So the probe has to read both streams joined, and never one of them.
+- **The two login lines are worded differently.** `glab` writes
+  `Logged in to gitlab.braune-digital.com as bornholdt (keyring)`; `gh` writes
+  `Logged in to github.com account TomTomB (keyring)`. Both give the login name, which `gh` needs for
+  `/users/<login>/events`.
+- **`glab api --paginate` does not emit one JSON array**, whatever its help text says. It concatenates
+  one array per page, so `JSON.parse` fails on the second page. Paging is therefore manual, with
+  `per_page` and `page`, and a page shorter than `per_page` ends it. That also keeps the `maxPages`
+  cap, which `--paginate` has no way to express.
+- **A query string in the endpoint argument works** — `glab api "events?after=…&per_page=3&page=1"` —
+  so the existing query builder needs no change beyond dropping the host and the `/api/v4` prefix.
 
 ### Gmail (phase 3)
 
