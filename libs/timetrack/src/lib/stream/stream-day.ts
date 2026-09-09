@@ -17,6 +17,7 @@ import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } fro
 import { TimetrackCallRules } from '../settings/model';
 import { classifyCalls } from './calls';
 import { PresenceSample, presenceWindows } from './presence';
+import { UnnamedFocus, UnnamedFocusReason } from './unnamed-focus';
 
 /** The key of the one line every application with no checkout folds into. */
 export const OTHER_APPLICATIONS_KEY = 'other-applications';
@@ -146,6 +147,20 @@ export type StreamDay = {
   engagedMs: number;
   /** `engagedMs / presenceMs`. 1 is a serial day, 2.4 is a day that ran several agents, 0 is a day nothing observed. */
   concurrency: number;
+  /**
+   * The focused window's time, every stream summed, clipped to what the machine watched. It is the
+   * denominator `unnamedFocus` is read against, and it is smaller than `engagedMs`: an agent's time and
+   * a rebuilt stretch are in that number and no window observed either.
+   */
+  focusMs: number;
+  /**
+   * The part of `focusMs` no checkout took, per application and cause. It sums to the focused-window
+   * part of the other-applications line, because the same pass produces both.
+   *
+   * Ordered longest first. It is the measurement `plans/timetrack/name-the-window.md` asks for, and the
+   * only place the day says which applications the folded line is made of.
+   */
+  unnamedFocus: UnnamedFocus[];
   /** Ordered by when each stream started. */
   streams: Stream[];
   /** Every stream's unattended time summed. Outside both `presenceMs` and `engagedMs`. */
@@ -202,6 +217,9 @@ type StreamDraft = {
  * `state` of `null` names no checkout, and the folded line takes it.
  */
 type Mark = { at: Date; state: RepoState | null };
+
+/** One application's unnamed stretches, kept unclipped until `seen` is known. */
+type UnnamedDraft = { appId?: string; reason: UnnamedFocusReason; windows: TimeWindow[] };
 
 type RepoState = { repoPath: string; branch?: string };
 
@@ -642,9 +660,31 @@ export const streamDay = (options: {
   const branches = new Map<string, string | undefined>();
   const lastAgentSample = new Map<string, Date>();
   const marks: Mark[] = [];
+  const unnamed: UnnamedDraft[] = [];
   let sticky: { repoPath: string; at: Date; appId?: string } | undefined;
   let focused: string | undefined;
   let appId: string | undefined;
+  /**
+   * The focused application as the compositor reported it, and why its window named no checkout.
+   *
+   * Both are read for the measurement only, so both keep the value of the last focus sample the way
+   * `focused` does. This app's own window is named here although `appId` drops it: the panel has to
+   * account for every minute of the folded line, and a minute this app was in front is one of them.
+   */
+  let windowAppId: string | undefined;
+  let unnamedReason: UnnamedFocusReason = 'no-name';
+
+  const unnamedDraftFor = (reason: UnnamedFocusReason) => {
+    const found = unnamed.find((draft) => draft.appId === windowAppId && draft.reason === reason);
+
+    if (found) return found;
+
+    const draft: UnnamedDraft = { appId: windowAppId, reason, windows: [] };
+
+    unnamed.push(draft);
+
+    return draft;
+  };
 
   samples.forEach((sample, index) => {
     // A window on a private checkout must not fall through to the sticky, or the last client repository
@@ -654,15 +694,17 @@ export const streamDay = (options: {
 
     if (sample.kind === 'window-focus') {
       appId = ownWindow ? undefined : sample.appId;
+      windowAppId = sample.appId;
       focused = secludedWindow || ownWindow ? undefined : repoNamedIn({ title: sample.title, byName });
 
       if (secludedWindow) sticky = undefined;
 
-      if (!focused && !secludedWindow && !ownWindow) {
-        const claimed = ambiguousNamedIn({ title: sample.title, ambiguous });
+      const claimed =
+        !focused && !secludedWindow && !ownWindow ? ambiguousNamedIn({ title: sample.title, ambiguous }) : undefined;
 
-        if (claimed) claimedAmbiguously.add(claimed);
-      }
+      if (claimed) claimedAmbiguously.add(claimed);
+
+      unnamedReason = ownWindow ? 'own-window' : secludedWindow ? 'private' : claimed ? 'ambiguous-name' : 'no-name';
     }
 
     const observed = repoStateFor(sample, roots);
@@ -691,6 +733,7 @@ export const streamDay = (options: {
     // Every stretch between two samples belongs to whichever context held the focused window, so the
     // focus time of every stream sums to presence exactly and the concurrency ratio has one meaning.
     if (next) draftFor(drafts, context).focus.push({ from: sample.at, to: next.at });
+    if (next && !holder) unnamedDraftFor(unnamedReason).windows.push({ from: sample.at, to: next.at });
 
     if (sample.kind === 'agent-session') {
       const cwd = repoRootOf({ path: sample.cwd, roots });
@@ -743,9 +786,12 @@ export const streamDay = (options: {
   });
 
   const streams: Stream[] = [];
+  let focusMs = 0;
 
   for (const draft of drafts.values()) {
     const focus = clipWindows({ windows: draft.focus, within: seen });
+
+    focusMs += windowsMs(focus);
     const agent = mergeWindows(draft.agent);
     const claimed = clipWindows({ windows: draft.rebuilt, within: rebuilt });
     const blocks = mergeWindows([...focus, ...claimed, ...clipWindows({ windows: agent, within: presence })]);
@@ -794,6 +840,15 @@ export const streamDay = (options: {
     addSpend(spend, turn);
   }
 
+  const unnamedFocus = unnamed
+    .map((draft) => ({
+      appId: draft.appId,
+      reason: draft.reason,
+      ms: windowsMs(clipWindows({ windows: draft.windows, within: seen })),
+    }))
+    .filter((row) => row.ms > 0)
+    .sort((a, b) => b.ms - a.ms || (a.appId ?? '').localeCompare(b.appId ?? ''));
+
   const presenceMs = windowsMs(presence);
   const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);
 
@@ -801,6 +856,8 @@ export const streamDay = (options: {
     presenceMs,
     engagedMs,
     concurrency: presenceMs ? engagedMs / presenceMs : 0,
+    focusMs,
+    unnamedFocus,
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
     rebuiltMs: windowsMs(rebuilt),
     streams,

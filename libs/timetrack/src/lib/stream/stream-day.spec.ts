@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CollectedEvent, TokenUsage } from '../model/event';
 import { TimetrackProjectLink } from '../model/project-link';
 import { OTHER_APPLICATIONS_KEY, streamDay } from './stream-day';
+import { unnamedFocusMs } from './unnamed-focus';
 
 const SDK = '/home/tom/dev/ethlete-sdk';
 const FUT = '/home/tom/dev/fut-frontend';
@@ -487,6 +488,8 @@ describe('streamDay', () => {
     expect(day).toEqual({
       presenceMs: 0,
       engagedMs: 0,
+      focusMs: 0,
+      unnamedFocus: [],
       concurrency: 0,
       unattendedMs: 0,
       rebuiltMs: 0,
@@ -971,5 +974,135 @@ describe('streamDay, on a day something held the microphone', () => {
     });
 
     expect(day.presenceMs).toBe(49 * MINUTE);
+  });
+});
+
+describe('streamDay, the focus that named no checkout', () => {
+  it('reports the time per application, longest first', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 5, appId: 'firefox', title: 'localhost:4200 \u2014 Mozilla Firefox' }),
+        ...focusRun({ from: 6, to: 20, appId: 'foot', title: 'tom@fedora: ~' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.unnamedFocus).toEqual([
+      { appId: 'foot', reason: 'no-name', ms: 14 * MINUTE },
+      { appId: 'firefox', reason: 'no-name', ms: 6 * MINUTE },
+    ]);
+  });
+
+  it('sums to the focused-window time of the folded line, so the panel reconciles with the screen', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 11, to: 30, appId: 'firefox', title: 'localhost:4200 \u2014 Mozilla Firefox' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(unnamedFocusMs(day.unnamedFocus)).toBe(streamOf(day, OTHER_APPLICATIONS_KEY)?.engagedMs);
+    expect(unnamedFocusMs(day.unnamedFocus) + (streamOf(day, `repo:${SDK}`)?.engagedMs ?? 0)).toBe(day.focusMs);
+  });
+
+  it('reports nothing for a window a checkout took', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 20, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.unnamedFocus).toEqual([]);
+    expect(day.focusMs).toBe(20 * MINUTE);
+  });
+
+  it('reports nothing for a window the sticky named, because that time is not folded either', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 11, to: 13, appId: 'code', title: 'Visual Studio Code' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.unnamedFocus).toEqual([]);
+  });
+
+  it('marks a private checkout as correctly unnamed, apart from the defect', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'ethlete-sdk - Code' }),
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 11, to: 20, appId: 'code', title: 'plan.md - umbau-elrond - Code' }),
+      ],
+      options: { repoRoots: [SDK, ELROND], links: [privateLink(ELROND)] },
+    });
+
+    expect(day.unnamedFocus).toEqual([{ appId: 'code', reason: 'private', ms: 9 * MINUTE }]);
+    expect(JSON.stringify(day.unnamedFocus)).not.toContain('elrond');
+  });
+
+  it('marks the time this app was in front as its own, although no line names it', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 11, to: 20, appId: 'timetrack', title: 'Timetrack' }),
+      ],
+      options: { repoRoots: [SDK], ownAppIds: ['timetrack'] },
+    });
+
+    expect(day.unnamedFocus).toEqual([{ appId: 'timetrack', reason: 'own-window', ms: 9 * MINUTE }]);
+  });
+
+  it('marks a name two checkouts share apart from a title that names nothing', () => {
+    const OTHER_ELROND = '/home/tom/elrond-usb/stick-bios/doku/elrond';
+
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'boot.md - elrond - Code' }),
+        ...focusRun({ from: 11, to: 20, appId: 'spotify', title: 'Spotify' }),
+      ],
+      options: { repoRoots: ['/home/tom/umbau-elrond/elrond', OTHER_ELROND] },
+    });
+
+    expect(day.unnamedFocus).toEqual([
+      { appId: 'code', reason: 'ambiguous-name', ms: 11 * MINUTE },
+      { appId: 'spotify', reason: 'no-name', ms: 9 * MINUTE },
+    ]);
+  });
+
+  it('keeps the two causes of one application apart', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 5, appId: 'code', title: 'ethlete-sdk - Code' }),
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 6, to: 12, appId: 'code', title: 'plan.md - umbau-elrond - Code' }),
+        ...focusRun({ from: 13, to: 25, appId: 'code', title: 'Visual Studio Code' }),
+      ],
+      options: { repoRoots: [SDK, ELROND], links: [privateLink(ELROND)] },
+    });
+
+    expect(day.unnamedFocus).toEqual([
+      { appId: 'code', reason: 'no-name', ms: 12 * MINUTE },
+      { appId: 'code', reason: 'private', ms: 7 * MINUTE },
+    ]);
+  });
+
+  it('counts none of a stretch nothing watched, so a rebuilt day reports no unnamed focus', () => {
+    const day = streamDay({
+      events: [typed(0, SDK), typed(20, SDK), usage(10, SDK, { output: 400 })],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.rebuiltMs).toBe(20 * MINUTE);
+    expect(day.unnamedFocus).toEqual([]);
+    expect(day.focusMs).toBe(0);
   });
 });

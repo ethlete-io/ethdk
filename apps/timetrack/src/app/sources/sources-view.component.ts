@@ -34,6 +34,7 @@ import {
   formatWindowSource,
 } from './format';
 import { EVIDENCE_SOURCES, EvidenceSource, EvidenceSourceState } from './inventory';
+import { UnnamedFocusComponent } from './unnamed-focus.component';
 
 const SPEND_WORDS = { holds: 'spend', stored: 'turns' };
 
@@ -114,7 +115,9 @@ type SourceRow = {
         </et-banner>
       }
 
-      <ul class="mt-4 flex flex-col gap-2">
+      <ethlete-unnamed-focus class="mt-4" />
+
+      <ul class="flex flex-col gap-2">
         @for (row of rows(); track row.source.id) {
           <li
             [attr.data-source]="row.source.id"
@@ -163,7 +166,7 @@ type SourceRow = {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS],
+  imports: [BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, UnnamedFocusComponent],
 })
 export class SourcesViewComponent {
   private destroyRef = inject(DestroyRef);

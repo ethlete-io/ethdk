@@ -200,3 +200,7 @@ export const formatGitFailures = (failures: GitScanFailure[]) => {
 
   return `${repos(paths.length)} could not be read: ${paths.join(', ')}`;
 };
+
+/** One number as a share of another, whole per cent. Nothing to be a share of reads as none. */
+export const formatShare = (options: { ms: number; ofMs: number }) =>
+  options.ofMs ? `${Math.round((100 * options.ms) / options.ofMs)}%` : '0%';

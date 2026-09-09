@@ -83,6 +83,16 @@ A local calendar day, written `YYYY-MM-DD`. Every total, every review and every 
 to one.
 _Avoid_: date, period, session
 
+**Focus time**:
+The time the focused window held, every stream summed, clipped to what the machine watched. Less
+than engaged time, which also holds an agent's time and rebuilt time.
+_Avoid_: window time, active window time, screen time
+
+**Unnamed focus**:
+Focus time no checkout took, per application and per cause. It is the Other applications line split
+by why each application is in it, and only the `no-name` cause is a defect.
+_Avoid_: unattributed focus (spend is unattributed), folded time, orphan time
+
 ### Agents and spend
 
 **Turn**:

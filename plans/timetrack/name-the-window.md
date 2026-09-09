@@ -44,6 +44,11 @@ exists, and it is not built.
 
 ## Step 0: measure, before a collector changes
 
+**Built on 2026-09-09.** `streamDay` reports `focusMs` and `unnamedFocus`, computed in the pass that
+builds the folded line, so the two can never disagree. `UnnamedFocusComponent` in the Sources view
+shows it for today and for the last 14 days, and `apps/timetrack-e2e/src/unnamed-focus.spec.ts`
+covers it. Nothing below has started; the number decides the order.
+
 A panel in the **Sources** view reports the focus time that named no checkout, grouped by
 application id, for the day and for the last 14 days.
 
@@ -67,7 +72,9 @@ total: the total has to reconcile with the Other applications line, or no other 
 it. The row names an application and never a path.
 
 The panel also counts the disagreements described under "Which name wins". Many of them mean one
-of the two readers is wrong, and the plan is then not done.
+of the two readers is wrong, and the plan is then not done. **Not built:** there is no second reader
+until rung 1, so there is nothing yet to disagree with. A fourth cause is reported instead, a name
+two checkouts share, which is a defect rung 1 fixes for free.
 
 ## The platform seam
 

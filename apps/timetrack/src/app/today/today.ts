@@ -16,15 +16,10 @@ import {
 } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
+import { streamDayOptionsOf } from '../stream-day-options';
 import { readViewState, rememberViewState } from '../view-state';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
-
-/**
- * What this app's own windows report themselves as: the bundle identifier on macOS, and on Linux the
- * GTK application id, which is the binary name rather than the identifier.
- */
-const OWN_APP_IDS = ['io.ethlete.timetrack', 'timetrack'];
 
 /** A day tagged with the day it was asked for, so an answer for yesterday is not shown as today. */
 type Loaded = { key: string; value: StreamDay | null; failure: string | null };
@@ -58,10 +53,9 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
   const probe = computed(() => ({
     key: key(),
     repoRoots: git.discovery()?.repos ?? [],
-    links: settings.settings().projectLinks,
+    settings: settings.settings(),
     windows: windows.lastRun(),
     calls: calls.lastRun(),
-    callRules: settings.settings().callRules,
     sessions: agentSessions.lastRun(),
     codexSessions: codexSessions.lastRun(),
     spend: spend.lastRun(),
@@ -81,13 +75,11 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
             key: current.key,
             value: streamDay({
               events,
-              options: {
-                repoRoots: [...current.repoRoots],
-                links: current.links,
-                ownAppIds: OWN_APP_IDS,
+              options: streamDayOptionsOf({
+                repoRoots: current.repoRoots,
+                settings: current.settings,
                 windowsSeenThroughMs: current.windows?.at.getTime(),
-                callRules: current.callRules,
-              },
+              }),
             }),
             failure: null,
           })),
