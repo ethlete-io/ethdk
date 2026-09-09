@@ -107,6 +107,44 @@ Five things it says, none of them predicted:
    A rung order decided on eight hours is a guess, so read the panel again after an ordinary Linux
    week.
 
+### The second reading, on Linux, 2026-09-09, and what it changed
+
+```
+Last 14 days: 4h 22m of 8h 50m focused named no checkout. That is 49%.
+
+timetrack          1h 46m  this app            on purpose
+com.slack.Slack    1h 1m   no work context     on purpose
+discord            44m     no checkout         never names one
+google-chrome      42m     no checkout         never names one
+code               8m      no checkout         names one elsewhere
+Alacritty          1m      no checkout         never names one
+```
+
+Rung 3 works: the 1h 45m of chat the first reading called a defect is now `on purpose`, and the
+whole unnamed line splits into 2h 47m on purpose, 8m of gap and 1h 27m of unknown.
+
+**Rung 1 is not worth building on this machine.** `Alacritty` is 1m and `code` is 8m, so rung 1
+recovers at most 9m of 8h 50m. Two readings, 14 days apart, both say a terminal loses almost nothing
+here. This plan's premise was that a terminal loses the day. On Linux it is wrong. No Mac reading
+exists yet, and the Mac is where the terminal days are.
+
+**The panel cannot be judged from, and that is the next thing to fix.** Asked whether
+`google-chrome`'s 42m was a dev server, Tom answered "42 minutes beginning when? in the last hour?
+hard to relate". The panel reports an application and a span total, and drops two things the store
+already holds: when the minutes happened, and the window title.
+
+The window title is the evidence, not a hint. A title reading `localhost:4200 — …` answers the rung 2
+question outright, with no recall and no rung. Asked about Discord, Tom told the rooms apart by their
+names - a 09:15 meeting in a room whose name starts with `Meeting`, against an `open room` for
+off-topic talk that sometimes carries project work - and the room name is in the window title.
+
+So the next step is not a rung. It is **to group a row by its window titles**, biggest first, so the
+row carries what it takes to judge it. That is what "measure before a collector changes" meant.
+
+**A judgement per title is left open.** `noWorkContextApps` is per application, so it cannot say that
+one Discord room holds work and another does not. Widening `title-pattern` was already rejected under
+**Privacy**, for a related reason. Revisit it with the title numbers in hand, and never before.
+
 ## The platform seam
 
 The window source answers one new question: **can this platform name the process of the focused
