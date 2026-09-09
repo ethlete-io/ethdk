@@ -144,6 +144,28 @@ test.describe('the focus that named no checkout', () => {
     await expect(unknown(page)).toContainText('1h 0m of it is an application that never named a checkout');
   });
 
+  test('lets the user say an application holds no work context, and takes it out of the unknown time', async ({
+    page,
+  }) => {
+    await expect(unknown(page)).toContainText('45m of it is an application that never named a checkout');
+
+    await page.locator('[data-declare="spotify"]').click();
+
+    await expect(row(page, 'spotify')).toContainText('no work context');
+    await expect(row(page, 'spotify')).toContainText('on purpose');
+    await expect(unknown(page)).toContainText('30m of it is an application that never named a checkout');
+  });
+
+  test('withdraws the statement again from the same row', async ({ page }) => {
+    await page.locator('[data-declare="spotify"]').click();
+    await expect(row(page, 'spotify')).toContainText('on purpose');
+
+    await page.locator('[data-declare="spotify"]').click();
+
+    await expect(row(page, 'spotify')).toContainText('never names one');
+    await expect(unknown(page)).toContainText('45m of it is an application that never named a checkout');
+  });
+
   test('says no window held the focus, rather than showing an empty list', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: [] });
     await page.goto('/sources');

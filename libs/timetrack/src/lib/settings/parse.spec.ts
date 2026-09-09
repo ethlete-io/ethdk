@@ -32,6 +32,7 @@ describe('parseTimetrackSettings', () => {
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['#.*-general'] },
+      noWorkContextApps: ['spotify'],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/you/dev'],
     });
@@ -53,6 +54,7 @@ describe('parseTimetrackSettings', () => {
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['#.*-general'] },
+      noWorkContextApps: ['spotify'],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/you/dev'],
       favoriteProjects: [],
@@ -89,6 +91,7 @@ describe('parseTimetrackSettings', () => {
       nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
       exclusionRules: [],
       callRules: { countsAsWork: [], neverCountsAsWork: [] },
+      noWorkContextApps: [],
       keepDefaultExclusionRules: true,
       gitScanRoots: [],
       favoriteProjects: [],

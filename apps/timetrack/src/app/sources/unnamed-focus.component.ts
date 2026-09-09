@@ -29,6 +29,7 @@ const REASON_LABEL: Record<UnnamedFocusReason, string> = {
   'ambiguous-name': 'a name two checkouts share',
   private: 'a private project',
   'own-window': 'this app',
+  'no-work-context': 'no work context',
 };
 
 const VERDICT_LABEL: Record<UnnamedFocusVerdict, string> = {
@@ -55,6 +56,9 @@ type FocusRow = {
   why: string;
   standing: string;
   color: string;
+  /** The application id the declaration is written against, or nothing for a row with no application. */
+  appId?: string;
+  declared: boolean;
 };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -113,6 +117,19 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
               <span class="tabular-nums">{{ row.duration }}</span>
               <span class="text-et-surface-muted">{{ row.why }}</span>
               <et-badge [color]="row.color" variant="outline" size="sm">{{ row.standing }}</et-badge>
+
+              @if (row.appId) {
+                <button
+                  [attr.data-declare]="row.appId"
+                  (click)="declare(row)"
+                  class="ml-auto"
+                  et-button
+                  variant="transparent"
+                  size="sm"
+                >
+                  {{ row.declared ? 'It does hold work' : 'It holds no work' }}
+                </button>
+              }
             </li>
           } @empty {
             <li class="text-small text-et-surface-subtle">{{ emptyNote() }}</li>
@@ -228,6 +245,8 @@ export class UnnamedFocusComponent {
         why: REASON_LABEL[row.reason],
         standing: VERDICT_LABEL[row.verdict],
         color: VERDICT_COLOR[row.verdict],
+        appId: row.appId,
+        declared: row.reason === 'no-work-context',
       })),
   );
 
@@ -236,6 +255,17 @@ export class UnnamedFocusComponent {
       ? 'Every window that named no checkout held it for under a minute.'
       : 'Every window that held the focus named a checkout.',
   );
+
+  /**
+   * Records, or withdraws, the one thing no collector can observe: that an application never holds a
+   * checkout. It re-reads the span, so the row moves out of the unknown number as soon as it is saved.
+   */
+  protected declare(row: FocusRow) {
+    if (!row.appId) return;
+
+    if (row.declared) this.settings.removeNoWorkContextApp(row.appId);
+    else this.settings.addNoWorkContextApp(row.appId);
+  }
 }
 
 /** Declared below the component so its template literal cannot desynchronise the language service. */

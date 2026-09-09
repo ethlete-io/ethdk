@@ -82,6 +82,12 @@ export type StreamDayOptions = {
   windowsSeenThroughMs?: number;
   /** Which calls counted as work. Nothing configured leaves every call unclassified — see `classifyCalls`. */
   callRules?: TimetrackCallRules;
+  /**
+   * The applications the user has said hold no work context. Their unnamed time is reported with its
+   * own cause, and nothing else about the day changes: a title of theirs that names a checkout still
+   * names it.
+   */
+  noWorkContextApps?: readonly string[];
 };
 
 export const DEFAULT_STREAM_DAY_OPTIONS: StreamDayOptions = {
@@ -585,6 +591,7 @@ export const streamDay = (options: {
   const roots = config.repoRoots ?? [];
   const links = config.links ?? [];
   const ownAppIds = new Set((config.ownAppIds ?? []).map((id) => id.toLowerCase()));
+  const noWorkContextApps = new Set((config.noWorkContextApps ?? []).map((id) => id.toLowerCase()));
   const observed = options.events
     .filter(isActivityEvent)
     .filter((sample) => READ_SOURCES.includes(sample.source))
@@ -714,7 +721,15 @@ export const streamDay = (options: {
 
       if (claimed) claimedAmbiguously.add(claimed);
 
-      unnamedReason = ownWindow ? 'own-window' : secludedWindow ? 'private' : claimed ? 'ambiguous-name' : 'no-name';
+      unnamedReason = ownWindow
+        ? 'own-window'
+        : secludedWindow
+          ? 'private'
+          : noWorkContextApps.has(sample.appId.toLowerCase())
+            ? 'no-work-context'
+            : claimed
+              ? 'ambiguous-name'
+              : 'no-name';
     }
 
     const observed = repoStateFor(sample, roots);

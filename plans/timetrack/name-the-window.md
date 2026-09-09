@@ -193,9 +193,11 @@ union of them over the span:
 `unknown` is the honest answer, not a hedge. Rung 1 and rung 2 are what move a row out of it, and a
 number the user cannot act on is what the panel used to report.
 
-**Still open:** an application the user knows holds no work context stays `unknown` for ever, because
-no rung will ever name a checkout for Spotify. A standing statement from the user is what settles
-it.
+An application no rung will ever name a checkout for would otherwise stay `unknown` for ever, so the
+user can say so: `noWorkContextApps` in the settings, written from a control on the panel row
+itself. It is a fifth cause rather than an exclusion rule — the minutes stay in the day and still
+reconcile with the Today screen, and a declared application whose title does name a checkout still
+names it.
 
 ## The model change
 

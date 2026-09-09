@@ -185,6 +185,16 @@ export type TimetrackSettings = {
   exclusionRules: TimetrackExclusionRule[];
   /** Which calls were work. Deliberately not an exclusion rule — see `TimetrackCallRules`. */
   callRules: TimetrackCallRules;
+  /**
+   * The applications the user has said hold no work context at all, `app_id` as the compositor reports
+   * it. A music player and a chat client are the whole of it.
+   *
+   * Deliberately not an exclusion rule. A rule drops the event, and the minutes of the folded line
+   * would then stop reconciling with the Today screen; this only says why those minutes named no
+   * checkout. It is also the one thing no collector can ever observe — Spotify will never name a
+   * checkout, and no amount of reading a process says whether that is a defect.
+   */
+  noWorkContextApps: string[];
   /** Whether the shipped defaults still apply. Turning them off is a deliberate, visible choice. */
   keepDefaultExclusionRules: boolean;
   /** Directories the repository discovery walks. Empty means the host decides. */
@@ -253,6 +263,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
   exclusionRules: [],
   callRules: { countsAsWork: [], neverCountsAsWork: [] },
+  noWorkContextApps: [],
   keepDefaultExclusionRules: true,
   gitScanRoots: [],
   favoriteProjects: [],

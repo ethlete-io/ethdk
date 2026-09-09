@@ -104,6 +104,12 @@ Unnamed focus of an application that never named a checkout. It is either no wor
 one no collector can read a name for yet, and the app says so rather than picking.
 _Avoid_: other, unclassified, noise
 
+**No work context**:
+A standing statement that an application never holds a checkout — a music player, a chat client. It
+is the one thing no collector can ever observe, so only the user writes it, and it settles a row for
+good. It is not an exclusion rule: the minutes stay in the day and still reconcile.
+_Avoid_: excluded app, ignored app, blocked app
+
 ### Agents and spend
 
 **Turn**:

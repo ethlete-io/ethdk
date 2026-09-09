@@ -219,6 +219,19 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       patch({ callRules: { ...rules, [list]: rules[list].filter((existing) => existing !== pattern) } });
     },
 
+    /** Says an application holds no work context, so its unnamed focus stops reading as unjudged. */
+    addNoWorkContextApp: (appId: string) => {
+      const trimmed = appId.trim();
+      const apps = settings().noWorkContextApps;
+
+      if (!trimmed || apps.includes(trimmed)) return;
+
+      patch({ noWorkContextApps: [...apps, trimmed] });
+    },
+
+    removeNoWorkContextApp: (appId: string) =>
+      patch({ noWorkContextApps: settings().noWorkContextApps.filter((existing) => existing !== appId) }),
+
     addGitScanRoot: (root: string) => {
       const trimmed = root.trim();
       const roots = settings().gitScanRoots;

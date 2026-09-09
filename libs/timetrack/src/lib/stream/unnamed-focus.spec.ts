@@ -122,6 +122,16 @@ describe('unnamedFocusOver', () => {
     expect(span.unnamedMs).toBe(35 * MINUTE);
   });
 
+  it('reads an application the user declared no work context as on purpose', () => {
+    const span = unnamedFocusOver([
+      { focusMs: 60 * MINUTE, unnamedFocus: [row('spotify', 'no-work-context', 25)], namedApps: ['code'] },
+    ]);
+
+    expect(judged(span)).toEqual({ spotify: 'on-purpose' });
+    expect(span.unknownMs).toBe(0);
+    expect(span.unnamedMs).toBe(25 * MINUTE);
+  });
+
   it('calls a name two checkouts share a gap without asking the rest of the span', () => {
     const span = unnamedFocusOver([
       { focusMs: 60 * MINUTE, unnamedFocus: [row('code', 'ambiguous-name', 12)], namedApps: [] },

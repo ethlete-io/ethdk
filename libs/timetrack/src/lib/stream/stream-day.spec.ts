@@ -1107,6 +1107,32 @@ describe('streamDay, the focus that named no checkout', () => {
     expect(day.focusMs).toBe(0);
   });
 
+  it('gives an application the user declared no work context its own cause', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 11, to: 25, appId: 'Spotify', title: 'Spotify' }),
+      ],
+      options: { repoRoots: [SDK], noWorkContextApps: ['spotify'] },
+    });
+
+    expect(day.unnamedFocus).toEqual([{ appId: 'Spotify', reason: 'no-work-context', ms: 14 * MINUTE }]);
+  });
+
+  it('still lets a declared application name a checkout its title holds', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 10, appId: 'firefox', title: 'ethlete-sdk - Mozilla Firefox' }),
+      ],
+      options: { repoRoots: [SDK], noWorkContextApps: ['firefox'] },
+    });
+
+    expect(day.unnamedFocus).toEqual([]);
+    expect(day.namedApps).toEqual(['firefox']);
+  });
+
   it('names the application whose window held a checkout, and only that one', () => {
     const day = streamDay({
       events: [

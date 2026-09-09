@@ -24,4 +24,5 @@ export const streamDayOptionsOf = (options: {
   ownAppIds: OWN_APP_IDS,
   windowsSeenThroughMs: options.windowsSeenThroughMs,
   callRules: options.settings.callRules,
+  noWorkContextApps: options.settings.noWorkContextApps,
 });
