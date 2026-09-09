@@ -311,8 +311,8 @@ window title, never a file path. A suggestion never syncs on its own.`;
               <div class="flex flex-col gap-3">
                 <div class="flex items-center gap-2">
                   <h3 class="text-h4">GitLab</h3>
-                  <et-badge [color]="store.credentials().gitlab ? 'success' : 'warning'" size="sm">
-                    {{ store.credentials().gitlab ? 'connected' : 'not connected' }}
+                  <et-badge [color]="store.credentials().gitlab ? 'success' : 'neutral'" size="sm">
+                    {{ store.credentials().gitlab ? 'can write' : 'read only' }}
                   </et-badge>
                   <ethlete-explain [text]="GITLAB_WHY" label="the GitLab connection" />
                 </div>
