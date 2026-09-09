@@ -63,24 +63,19 @@ const titleAt = (focus: readonly WindowFocusEvent[], call: { appId: string; at: 
   return last?.title ?? '';
 };
 
+/** A call, from the edge that opened it to the edge that closed it. */
+type PairedCall = { appId: string; from: Date; to: Date };
+
 /**
- * Every call in the events, paired from its edges, named from the focus history and classified.
+ * The call edges paired up: the calls that closed, and the ones still open with the instant each began.
  *
  * A `call-end` with nothing open before it is dropped: it is the tail of a call that started before
  * this day, or before the store was ever written, and pairing it to the start of the day would invent
- * a call. A call still open at the end runs to `until`.
+ * a call.
  */
-export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
-  const focus = options.events.filter((event): event is WindowFocusEvent => event.kind === 'window-focus');
-  const calls = options.events.filter((event): event is CallEvent => event.source === 'call');
+const pairCallEdges = (calls: readonly CallEvent[]) => {
   const open = new Map<string, Date>();
-  const windows: CallWindow[] = [];
-
-  const close = (closed: { appId: string; from: Date; to: Date }) => {
-    const title = titleAt(focus, { appId: closed.appId, at: closed.from });
-
-    windows.push({ ...closed, title, countsAsWork: countsAsWork(options.rules, { appId: closed.appId, title }) });
-  };
+  const closed: PairedCall[] = [];
 
   for (const call of calls) {
     if (call.kind === 'call-start') {
@@ -94,12 +89,74 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     if (!from) continue;
 
     open.delete(call.appId);
-    close({ appId: call.appId, from, to: call.at });
+    closed.push({ appId: call.appId, from, to: call.at });
   }
 
-  for (const [appId, from] of open) {
-    if (from < options.until) close({ appId, from, to: options.until });
-  }
+  return { closed, open };
+};
 
-  return windows.sort((left, right) => left.from.getTime() - right.from.getTime());
+/**
+ * Every call in the events, paired from its edges, named from the focus history and classified.
+ *
+ * A call still open at the end runs to `until`.
+ */
+export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
+  const focus = options.events.filter((event): event is WindowFocusEvent => event.kind === 'window-focus');
+  const calls = options.events.filter((event): event is CallEvent => event.source === 'call');
+  const { closed, open } = pairCallEdges(calls);
+
+  const toWindow = (call: PairedCall): CallWindow => {
+    const title = titleAt(focus, { appId: call.appId, at: call.from });
+
+    return { ...call, title, countsAsWork: countsAsWork(options.rules, { appId: call.appId, title }) };
+  };
+
+  return [
+    ...closed,
+    ...[...open].flatMap(([appId, from]) => (from < options.until ? [{ appId, from, to: options.until }] : [])),
+  ]
+    .map(toWindow)
+    .sort((left, right) => left.from.getTime() - right.from.getTime());
+};
+
+/**
+ * The sources the host samples on its own, so an event from one proves the app was running at its
+ * instant. A calendar occurrence or a GitLab event proves nothing: both are read from an API and both
+ * carry an instant the app was not there for.
+ */
+const HOST_SAMPLED: readonly CollectedEvent['source'][] = ['window', 'idle', 'call'];
+
+/** The last instant the app can be shown to have been running, or `undefined` if it cannot be shown at all. */
+const lastHostSampleAt = (events: readonly CollectedEvent[]) =>
+  events
+    .filter((event) => HOST_SAMPLED.includes(event.source))
+    .reduce<Date | undefined>((last, event) => (!last || event.at > last ? event.at : last), undefined);
+
+/**
+ * The `call-end` events a previous run of the app owed the store and never wrote.
+ *
+ * The call source watches the microphone from inside the app's own process, so a run that is killed
+ * with a call open writes no end for it at all — and `classifyCalls` then runs that call to `until`,
+ * which on the Today screen is now. One killed run would otherwise claim every hour since.
+ *
+ * The end goes at the last host sample, not at the restart: nothing watched the microphone while the
+ * app was down, so the call is cut where the watching stopped. That under-counts a call the user was
+ * still in, which is the safe direction — this app never invents time it did not observe.
+ *
+ * Pass only events from before the current run started, or this closes the calls that run just opened.
+ */
+export const closeAbandonedCalls = (options: { events: readonly CollectedEvent[]; startedAt: Date }): CallEvent[] => {
+  const earlier = options.events.filter((event) => event.at < options.startedAt);
+  const at = lastHostSampleAt(earlier);
+
+  if (!at) return [];
+
+  const { open } = pairCallEdges(earlier.filter((event): event is CallEvent => event.source === 'call'));
+
+  return [...open].map(([appId, from]) => ({
+    at: at > from ? at : from,
+    source: 'call' as const,
+    kind: 'call-end' as const,
+    appId,
+  }));
 };

@@ -1,6 +1,6 @@
 import { CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
 import { TimetrackCallRules } from '../settings/model';
-import { classifyCalls } from './calls';
+import { classifyCalls, closeAbandonedCalls } from './calls';
 
 const at = (minute: number) => new Date(Date.UTC(2026, 8, 9, 9, minute));
 
@@ -184,5 +184,119 @@ describe('classifyCalls', () => {
     ]);
 
     expect(windows.map((window) => window.from)).toEqual([at(0), at(10)]);
+  });
+});
+
+describe('closeAbandonedCalls', () => {
+  const idle = (minute: number, kind: 'idle-start' | 'idle-end'): CollectedEvent => ({
+    at: at(minute),
+    source: 'idle',
+    kind,
+  });
+
+  it('ends a call the run before this one was killed in the middle of', () => {
+    const ends = closeAbandonedCalls({
+      events: [call(0, 'call-start', 'pw-record'), focus(12, 'chrome', 'a tab')],
+      startedAt: at(30),
+    });
+
+    expect(ends).toHaveLength(1);
+    expect(ends[0]!.kind).toBe('call-end');
+    expect(ends[0]!.appId).toBe('pw-record');
+  });
+
+  it('ends it where the watching stopped, not where the app came back', () => {
+    const ends = closeAbandonedCalls({
+      events: [call(0, 'call-start', 'pw-record'), focus(12, 'chrome', 'a tab')],
+      startedAt: at(30),
+    });
+
+    expect(ends[0]!.at).toEqual(at(12));
+  });
+
+  it('reads an idle edge as proof the app was still running', () => {
+    const ends = closeAbandonedCalls({
+      events: [call(0, 'call-start', 'pw-record'), idle(20, 'idle-start')],
+      startedAt: at(30),
+    });
+
+    expect(ends[0]!.at).toEqual(at(20));
+  });
+
+  it('leaves a call the run before this one closed itself alone', () => {
+    const ends = closeAbandonedCalls({
+      events: [call(0, 'call-start', 'pw-record'), call(5, 'call-end', 'pw-record'), focus(12, 'chrome', 'a tab')],
+      startedAt: at(30),
+    });
+
+    expect(ends).toEqual([]);
+  });
+
+  it('never ends a call the current run opened', () => {
+    const ends = closeAbandonedCalls({
+      events: [call(40, 'call-start', 'com.hnc.Discord'), focus(45, 'chrome', 'a tab')],
+      startedAt: at(30),
+    });
+
+    expect(ends).toEqual([]);
+  });
+
+  it('ends the abandoned one and leaves the call this run opened alone', () => {
+    const ends = closeAbandonedCalls({
+      events: [
+        call(0, 'call-start', 'pw-record'),
+        focus(12, 'chrome', 'a tab'),
+        call(40, 'call-start', 'com.hnc.Discord'),
+      ],
+      startedAt: at(30),
+    });
+
+    expect(ends.map((end) => end.appId)).toEqual(['pw-record']);
+  });
+
+  it('ends each of two calls left open at once', () => {
+    const ends = closeAbandonedCalls({
+      events: [
+        call(0, 'call-start', 'pw-record'),
+        call(2, 'call-start', 'com.hnc.Discord'),
+        focus(12, 'chrome', 'a tab'),
+      ],
+      startedAt: at(30),
+    });
+
+    expect(ends.map((end) => end.appId).sort()).toEqual(['com.hnc.Discord', 'pw-record']);
+  });
+
+  it('leaves the call untouched when nothing proves the app was ever running', () => {
+    expect(closeAbandonedCalls({ events: [], startedAt: at(30) })).toEqual([]);
+  });
+
+  it('refuses to read an API event as proof the app was running', () => {
+    const calendar: CollectedEvent = {
+      at: at(20),
+      source: 'calendar',
+      kind: 'calendar-event',
+      occurrenceId: 'one',
+      until: at(25),
+      title: 'a meeting',
+      accepted: true,
+    };
+
+    const ends = closeAbandonedCalls({
+      events: [call(0, 'call-start', 'pw-record'), calendar],
+      startedAt: at(30),
+    });
+
+    expect(ends[0]!.at).toEqual(at(0));
+  });
+
+  it('produces an end the reading then pairs, so the call stops growing', () => {
+    const events: CollectedEvent[] = [call(0, 'call-start', 'pw-record'), focus(12, 'chrome', 'a tab')];
+    const repaired = [...events, ...closeAbandonedCalls({ events, startedAt: at(30) })];
+
+    const windows = classify(repaired, {}, 120);
+
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.to).toEqual(at(12));
   });
 });

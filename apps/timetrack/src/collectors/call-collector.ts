@@ -1,11 +1,20 @@
 import { signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { EMPTY, Observable, catchError, concat, defer, exhaustMap, map, switchMap, tap, timer } from 'rxjs';
+import { closeAbandonedCalls } from '@ethlete/timetrack';
+import { EMPTY, Observable, catchError, concat, concatMap, defer, exhaustMap, map, switchMap, tap, timer } from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
 import { CallBatch, CallSourceStatus, injectHostPorts } from '../host';
 
 export const CALL_POLL_INTERVAL_MS = 30_000;
+
+/**
+ * How far back the startup repair looks for a call a killed run left open.
+ *
+ * A week, because the app being closed over one is the ordinary case this exists for, and the read is
+ * made once per run.
+ */
+export const CALL_ABANDON_LOOKBACK_MS = 7 * 24 * 60 * 60_000;
 
 export type CallCollectorRun = {
   at: Date;
@@ -46,6 +55,8 @@ const CALL_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const status = signal<CallSourceStatus | null>(null);
 
   let throughSeq = 0;
+
+  const startedAt = new Date();
 
   const store$ = (batch: CallBatch): Observable<unknown> => {
     const record = () => {
@@ -90,15 +101,40 @@ const CALL_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   /**
+   * Closes what the run before this one left open, before a single edge of this run is drained.
+   *
+   * The host watches the microphone from inside this process, so a run that is killed mid-call writes
+   * no end and `classifyCalls` runs that call to now. It repairs the store rather than the reading
+   * because every later read of that day would otherwise have to guess the same thing again.
+   *
+   * A pause does not stop it. It only ever ends a call, so it can shorten a day and never lengthen one.
+   */
+  const repair$ = (): Observable<unknown> =>
+    defer(() =>
+      ports.events.eventsBetween$(new Date(startedAt.getTime() - CALL_ABANDON_LOOKBACK_MS), startedAt).pipe(
+        concatMap((events) => {
+          const ends = closeAbandonedCalls({ events, startedAt });
+
+          return ends.length ? ports.events.append$(ends) : EMPTY;
+        }),
+        catchError((error: unknown) => {
+          failure.set(error instanceof Error ? error.message : String(error));
+
+          return EMPTY;
+        }),
+      ),
+    );
+
+  /**
    * A paused collector does nothing at all, the host's own buffer included. The host stopped watching
    * the microphone when the pause was recorded, and it forgot who was holding it, so a call that
    * outlives the pause is seen to start again at the resume rather than arriving as a bare end.
    */
-  timer(0, CALL_POLL_INTERVAL_MS)
-    .pipe(
-      exhaustMap(() => (pause.isPaused() ? EMPTY : concat(status$(), collect$()))),
-      takeUntilDestroyed(),
-    )
+  concat(
+    repair$(),
+    timer(0, CALL_POLL_INTERVAL_MS).pipe(exhaustMap(() => (pause.isPaused() ? EMPTY : concat(status$(), collect$())))),
+  )
+    .pipe(takeUntilDestroyed())
     .subscribe();
 
   return { lastRun, totals, failure, status };
