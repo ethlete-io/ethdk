@@ -15,6 +15,7 @@ import {
   injectAgentSessionCollector,
   injectCalendarCollector,
   injectGitCollector,
+  injectGitHubCollector,
   injectGitLabCollector,
   injectIngestCollector,
   injectWindowCollector,
@@ -124,6 +125,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const agentSessions = injectAgentSessionCollector();
   const calendar = injectCalendarCollector();
   const gitlab = injectGitLabCollector();
+  const github = injectGitHubCollector();
   const ingest = injectIngestCollector();
   const timers = injectTimer();
   const pause = injectCollectionPause();
@@ -137,6 +139,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     sessions: agentSessions.lastRun(),
     calendar: calendar.lastRun(),
     gitlab: gitlab.lastRun(),
+    github: github.lastRun(),
     ingest: ingest.lastRun(),
     timer: timers.revision(),
     elapsed: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),

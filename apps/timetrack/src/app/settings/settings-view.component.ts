@@ -62,6 +62,13 @@ its own login that this app never sees. Run glab auth login --hostname on the in
 The token below is only for writing - repairing a branch and starting one both open merge requests.
 Give it the api scope. Leave it empty if you never use those two.`;
 
+const GITHUB_WHY = `The same reading as GitLab, for github.com. It runs gh, which holds its own login,
+so there is no host and no token to give - only this switch.
+
+It is off by default because the feed is account-wide: it reports every public and private repository
+you touched, not only the ones you work in. GitHub's feed also stops at 300 events and takes no date
+range, so a first run may not reach back a full month. It says so when that happens.`;
+
 const MEETING_WHY = `A meeting whose own title names an issue is logged against it, and one that repeats at
 a time Tempo already holds an issue for follows that history. This is the answer for every other meeting.
 
@@ -328,6 +335,21 @@ window title, never a file path. A suggestion never syncs on its own.`;
                 />
               </div>
 
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-h4">GitHub</h3>
+                  <ethlete-explain [text]="GITHUB_WHY" label="the GitHub connection" />
+                </div>
+
+                <et-choice-field>
+                  <et-switch
+                    [checked]="store.settings().github.enabled"
+                    (checkedChange)="store.setGitHubEnabled($event)"
+                  />
+                  <et-label>Read my pull request activity on github.com</et-label>
+                </et-choice-field>
+              </div>
+
               <ethlete-google-connection
                 [settings]="store.settings().google"
                 [connected]="store.credentials().google"
@@ -465,6 +487,7 @@ export class SettingsViewComponent {
   protected readonly JIRA_WHY = JIRA_WHY;
   protected readonly TEMPO_WHY = TEMPO_WHY;
   protected readonly GITLAB_WHY = GITLAB_WHY;
+  protected readonly GITHUB_WHY = GITHUB_WHY;
   protected readonly MEETING_WHY = MEETING_WHY;
   protected readonly SUGGESTIONS_WHY = SUGGESTIONS_WHY;
   protected readonly LOCK_WHY = LOCK_WHY;

@@ -21,6 +21,7 @@ describe('parseTimetrackSettings', () => {
       jira: { host: 'example.atlassian.net', email: 'you@example.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       gitlab: { host: 'git.example.com' },
+      github: { enabled: true },
       ticket: {
         issueTypeName: 'Aufgabe',
         parentIssueTypeNames: ['Story'],
@@ -44,6 +45,7 @@ describe('parseTimetrackSettings', () => {
       jira: { host: 'example.atlassian.net', email: 'you@example.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       gitlab: { host: 'git.example.com' },
+      github: { enabled: true },
       ticket: {
         issueTypeName: 'Aufgabe',
         parentIssueTypeNames: ['Story'],
@@ -88,6 +90,7 @@ describe('parseTimetrackSettings', () => {
       jira: { host: '', email: '' },
       google: { clientId: '', calendarIds: [] },
       gitlab: { host: '' },
+      github: { enabled: false },
       ticket: DEFAULT_TIMETRACK_SETTINGS.ticket,
       reasoning: DEFAULT_TIMETRACK_SETTINGS.reasoning,
       nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },

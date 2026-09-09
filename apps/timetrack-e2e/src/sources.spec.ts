@@ -1,3 +1,4 @@
+import { defaultSettings } from '@ethlete/timetrack/testing';
 import { Page } from '@playwright/test';
 import { E2E_NOW, expect, seedWorld, test } from './support';
 
@@ -177,5 +178,74 @@ test.describe('the GitLab row, which reads through `glab`', () => {
     await page.goto('/sources');
 
     await expect(row(page, 'gitlab')).toContainText('glab auth login --hostname gitlab.example.com');
+  });
+});
+
+/**
+ * GitHub's switch is off by default, so the row has a fourth thing to say that GitLab's does not: the
+ * source is built and installed and logged in, and the user has still not asked for it.
+ */
+test.describe('the GitHub row, which reads through `gh`', () => {
+  test('waits on the switch, even with the binary installed and logged in', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW });
+    await page.goto('/sources');
+
+    await expect(row(page, 'github')).toContainText('Waiting on the GitHub switch in Settings');
+    await expect(row(page, 'github')).not.toContainText('not installed');
+  });
+
+  test('reads the feed and stores what it found once the switch is on', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), github: { enabled: true } },
+      gh: {
+        events: [
+          {
+            id: '55001',
+            at: '2026-08-12T09:15:00.000Z',
+            repo: 'braune-digital/fut-frontend',
+            number: '412',
+            kind: 'review',
+            branch: 'feat/ABC-1-user-management',
+          },
+        ],
+        pullRequests: [
+          {
+            repo: 'braune-digital/fut-frontend',
+            number: '412',
+            title: 'User management',
+            branch: 'feat/ABC-1-user-management',
+          },
+        ],
+      },
+    });
+    await page.goto('/sources');
+
+    await expect(row(page, 'github')).toContainText('collecting');
+    await expect(row(page, 'github')).toContainText('Reading github.com');
+    await expect(row(page, 'github')).toContainText('1 stored');
+  });
+
+  test('says the binary is missing rather than blaming the login', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), github: { enabled: true } },
+      gh: { installed: false, logins: [] },
+    });
+    await page.goto('/sources');
+
+    await expect(row(page, 'github')).toContainText('not installed');
+    await expect(row(page, 'github')).not.toContainText('auth login');
+  });
+
+  test('names the login command when the binary is there and holds no credential', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), github: { enabled: true } },
+      gh: { installed: true, logins: [] },
+    });
+    await page.goto('/sources');
+
+    await expect(row(page, 'github')).toContainText('gh auth login --hostname github.com');
   });
 });

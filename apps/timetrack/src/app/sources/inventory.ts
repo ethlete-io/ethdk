@@ -43,7 +43,16 @@ export type EvidenceSource = {
   detail?: string;
   /** The collector whose run this row reports. Focus and presence share one drain, so both name it. */
   collector?:
-    'window' | 'git' | 'agent-session' | 'agent-usage' | 'agent-prompt' | 'calendar' | 'gitlab' | 'ingest' | 'call';
+    | 'window'
+    | 'git'
+    | 'agent-session'
+    | 'agent-usage'
+    | 'agent-prompt'
+    | 'calendar'
+    | 'gitlab'
+    | 'github'
+    | 'ingest'
+    | 'call';
   /** The `source` its events carry in the store, for counting what it has actually put there. */
   eventSource?: CollectedEventSource;
 };
@@ -149,6 +158,17 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     collector: 'gitlab',
     eventSource: 'gitlab',
     detail: 'Waiting on an instance in Settings, and on `glab` being installed and logged in to it.',
+  },
+  {
+    id: 'github',
+    name: 'GitHub',
+    reads: 'Your own pull request events on github.com, and the branch and title of each one they name.',
+    stores: 'That you acted on a pull request, when, and which branch it is on. No comment text.',
+    state: 'collecting',
+    login: 'gh',
+    collector: 'github',
+    eventSource: 'github',
+    detail: 'Waiting on the switch in Settings, and on `gh` being installed and logged in.',
   },
   {
     id: 'vscode',

@@ -74,6 +74,17 @@ export type TimetrackGitLabSettings = {
 };
 
 /**
+ * Whether pull request activity is read from github.com.
+ *
+ * There is no host and no token to configure — `gh` holds its own login — so a switch is all that is
+ * left. It is off by default: a shell-out that reads an account-wide feed must be asked for, not
+ * inherited from having the binary installed.
+ */
+export type TimetrackGitHubSettings = {
+  enabled: boolean;
+};
+
+/**
  * The local agent CLI that proposes an issue for a context nothing deterministic could name.
  *
  * Off until the user turns it on, and it is the one part of the app that sends anything about the
@@ -178,6 +189,7 @@ export type TimetrackSettings = {
   jira: TimetrackJiraSettings;
   google: TimetrackGoogleSettings;
   gitlab: TimetrackGitLabSettings;
+  github: TimetrackGitHubSettings;
   ticket: TimetrackTicketSettings;
   reasoning: TimetrackReasoningSettings;
   nudge: TimetrackNudgeSettings;
@@ -254,6 +266,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   jira: { host: '', email: '' },
   google: { clientId: '', calendarIds: [] },
   gitlab: { host: '' },
+  github: { enabled: false },
   ticket: {
     issueTypeName: 'Task',
     parentIssueTypeNames: ['Story', 'Epic'],

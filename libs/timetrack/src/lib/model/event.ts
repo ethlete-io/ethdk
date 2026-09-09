@@ -8,6 +8,7 @@ export type CollectedEventSource =
   | 'agent-prompt'
   | 'calendar'
   | 'gitlab'
+  | 'github'
   | 'editor'
   | 'call';
 
@@ -184,10 +185,17 @@ export type CalendarOccurrenceEvent = CollectedEventBase<'calendar', 'calendar-e
  * does carry is the merge request's source branch, which under the branch grammar names the issue,
  * and that is how time spent in somebody else's merge request reaches the Task being reviewed.
  */
-export type MergeRequestActivityEvent = CollectedEventBase<'gitlab', 'merge-request-activity'> & {
-  /** GitLab's own event id. Unique inside one instance, which is what the dedupe key rests on. */
+/**
+ * One thing the user did to a merge request, or to the pull request GitHub calls the same thing.
+ *
+ * Both forges land here because attribution needs the same three facts from either: when it happened,
+ * which branch the change is on, and what it was called. `source` says which one it came from, and
+ * nothing downstream of the dedupe key has to ask.
+ */
+export type MergeRequestActivityEvent = CollectedEventBase<'gitlab' | 'github', 'merge-request-activity'> & {
+  /** The forge's own event id. Unique inside one instance, which is what the dedupe key rests on. */
   eventId: string;
-  /** GitLab's wording for what happened — `approved`, `commented on`, `pushed to`. */
+  /** The forge's wording for what happened — `approved`, `commented on`, `pushed to`. */
   action: string;
   projectPath?: string;
   mergeRequestIid?: string;

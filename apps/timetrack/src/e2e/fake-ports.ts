@@ -20,10 +20,12 @@ import {
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_SEED_KEY,
   createFakeWorld,
-  glabNotInstalledMessage,
+  forgeCliNotInstalledMessage,
+  isGhSpec,
   isGlabSpec,
   parseWorldSeed,
   respond,
+  runFakeGh,
   runFakeGit,
   runFakeGlab,
 } from '@ethlete/timetrack/testing';
@@ -268,7 +270,13 @@ export const createFakePorts = (): HostPorts => {
         if (isGlabSpec(spec)) {
           return world.glab.installed
             ? ok(runFakeGlab({ backend, spec, state: world.glab }))
-            : throwError(() => new Error(glabNotInstalledMessage()));
+            : throwError(() => new Error(forgeCliNotInstalledMessage('glab')));
+        }
+
+        if (isGhSpec(spec)) {
+          return world.gh.installed
+            ? ok(runFakeGh({ spec, state: world.gh }))
+            : throwError(() => new Error(forgeCliNotInstalledMessage('gh')));
         }
 
         if (isReasoningSpec(spec)) reasoningRuns += 1;

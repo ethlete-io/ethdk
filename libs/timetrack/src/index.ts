@@ -3,6 +3,7 @@ export * from './lib/agent-session';
 export * from './lib/correlate';
 export * from './lib/forge';
 export * from './lib/git';
+export * from './lib/github';
 export * from './lib/gitlab';
 export * from './lib/google-auth';
 export * from './lib/google-calendar';

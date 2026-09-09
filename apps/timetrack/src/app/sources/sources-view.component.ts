@@ -1,7 +1,7 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, BadgeVariant } from '@ethlete/components';
-import { formatDurationMs, forgeHostname, forgeLoginFor } from '@ethlete/timetrack';
+import { GITHUB_HOST, formatDurationMs, forgeHostname, forgeLoginFor } from '@ethlete/timetrack';
 import { catchError, of, switchMap } from 'rxjs';
 import {
   injectAgentSessionCollector,
@@ -13,6 +13,7 @@ import {
   injectCodexPromptBackfill,
   injectCodexSpendBackfill,
   injectGitCollector,
+  injectGitHubCollector,
   injectGitLabCollector,
   injectIngestCollector,
   injectWindowCollector,
@@ -25,7 +26,7 @@ import {
   formatCalendarRead,
   formatCallSource,
   formatGitFailures,
-  formatGitLabRead,
+  formatForgeRead,
   formatGitScan,
   formatIngest,
   formatPerAgent,
@@ -221,6 +222,7 @@ export class SourcesViewComponent {
   private calendar = injectCalendarCollector();
   private calls = injectCallCollector();
   private gitlab = injectGitLabCollector();
+  private github = injectGitHubCollector();
   private ingest = injectIngestCollector();
   private settings = injectTimetrackSettings();
 
@@ -237,6 +239,7 @@ export class SourcesViewComponent {
     calendar: this.calendar.lastRun(),
     calls: this.calls.lastRun(),
     gitlab: this.gitlab.lastRun(),
+    github: this.github.lastRun(),
     ingest: this.ingest.lastRun(),
   }));
 
@@ -304,17 +307,23 @@ export class SourcesViewComponent {
    * otherwise both read as "not set up", and neither would say which repair to make.
    */
   private loginDetailOf(source: EvidenceSource) {
-    if (source.login !== 'glab') return null;
+    if (!source.login) return null;
 
-    const { host } = this.settings.settings().gitlab;
+    const gate =
+      source.login === 'glab'
+        ? { auth: this.gitlab.auth(), host: this.settings.settings().gitlab.host, waiting: 'a GitLab instance' }
+        : {
+            auth: this.github.auth(),
+            host: this.settings.settings().github.enabled ? GITHUB_HOST : '',
+            waiting: 'the GitHub switch',
+          };
 
-    if (!host) return 'Waiting on a GitLab instance in Settings.';
-
-    const auth = this.gitlab.auth();
-
-    if (!auth) return null;
-    if (auth.state === 'not-installed') return 'Waiting on `glab`, which is not installed.';
-    if (!forgeLoginFor(auth, host)) return `Waiting on \`glab auth login --hostname ${forgeHostname(host)}\`.`;
+    if (!gate.host) return `Waiting on ${gate.waiting} in Settings.`;
+    if (!gate.auth) return null;
+    if (gate.auth.state === 'not-installed') return `Waiting on \`${source.login}\`, which is not installed.`;
+    if (!forgeLoginFor(gate.auth, gate.host)) {
+      return `Waiting on \`${source.login} auth login --hostname ${forgeHostname(gate.host)}\`.`;
+    }
 
     return null;
   }
@@ -399,9 +408,16 @@ export class SourcesViewComponent {
         );
       case 'gitlab':
         return (
-          formatGitLabRead({
-            host: this.settings.settings().gitlab.host,
+          formatForgeRead({
+            reading: this.settings.settings().gitlab.host || null,
             readAt: this.gitlab.lastRun()?.at ?? null,
+          }) || null
+        );
+      case 'github':
+        return (
+          formatForgeRead({
+            reading: this.settings.settings().github.enabled ? GITHUB_HOST : null,
+            readAt: this.github.lastRun()?.at ?? null,
           }) || null
         );
       case 'call':
@@ -432,6 +448,8 @@ export class SourcesViewComponent {
     if (source.collector === 'window') return this.windows.status()?.detail ?? null;
 
     if (source.collector === 'gitlab') return this.gitlab.lastRun()?.failures.join(' ') || null;
+
+    if (source.collector === 'github') return this.github.lastRun()?.failures.join(' ') || null;
 
     if (source.collector === 'call') return this.calls.status()?.detail ?? null;
 
@@ -475,6 +493,8 @@ export class SourcesViewComponent {
         return this.calendar.failure();
       case 'gitlab':
         return this.gitlab.failure();
+      case 'github':
+        return this.github.failure();
       case 'call':
         return this.calls.failure();
       case 'ingest':

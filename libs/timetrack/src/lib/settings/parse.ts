@@ -237,6 +237,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
   const jira = asRecord(document['jira']);
   const google = asRecord(document['google']);
   const gitlab = asRecord(document['gitlab']);
+  const github = asRecord(document['github']);
 
   return {
     dayTargetMs: asTarget(document['dayTargetMs']),
@@ -244,6 +245,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     jira: { host: asText(jira['host']), email: asText(jira['email']) },
     google: { clientId: asText(google['clientId']), calendarIds: asTextList(google['calendarIds']) },
     gitlab: { host: asText(gitlab['host']) },
+    github: { enabled: github['enabled'] === true },
     ticket: asTicket(document['ticket']),
     reasoning: asReasoning(document['reasoning']),
     nudge: asNudge(document['nudge']),

@@ -1,4 +1,5 @@
 import { CollectedEvent, DEFAULT_TIMETRACK_SETTINGS, TimetrackSettings } from '@ethlete/timetrack';
+import { FakeGitHubState } from './backend/gh';
 import { FakeGlabState } from './backend/glab';
 import {
   FakeBackend,
@@ -64,6 +65,8 @@ export type TimetrackWorldSeed = {
   gitlab?: Partial<FakeGitLabState>;
   /** What the `glab` binary is on the seeded machine. Installed and logged in by default. */
   glab?: Partial<FakeGlabState>;
+  /** What the `gh` binary is, and what its feed holds. Installed, logged in, and reading nothing. */
+  gh?: Partial<FakeGitHubState>;
   git?: Partial<FakeGitState>;
   windowSource?: Partial<FakeWindowSourceStatus>;
   faults?: FakeFault[];
@@ -72,6 +75,7 @@ export type TimetrackWorldSeed = {
 export type FakeWorld = {
   events: CollectedEvent[];
   glab: FakeGlabState;
+  gh: FakeGitHubState;
   settings: TimetrackSettings;
   agentLogs: FakeAgentLog[];
   codexLogs: FakeAgentLog[];
@@ -178,6 +182,13 @@ const defaultGlab = (): FakeGlabState => ({
   logins: [{ host: 'gitlab.example.com', login: 'e2e' }],
 });
 
+const defaultGh = (): FakeGitHubState => ({
+  installed: true,
+  logins: [{ host: 'github.com', login: 'e2e' }],
+  events: [],
+  pullRequests: [],
+});
+
 export const defaultSettings = (): TimetrackSettings => ({
   ...DEFAULT_TIMETRACK_SETTINGS,
   jira: { host: E2E_JIRA_HOST, email: 'e2e@example.com' },
@@ -249,6 +260,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   codexLogs: seed.codexLogs ?? [],
   windowSource: { kind: 'none', detail: null, capabilities: [], ...seed.windowSource },
   glab: { ...defaultGlab(), ...seed.glab },
+  gh: { ...defaultGh(), ...seed.gh },
   backend: {
     jira: { ...defaultJira(), ...seed.jira },
     tempo: { ...defaultTempo(), ...seed.tempo },

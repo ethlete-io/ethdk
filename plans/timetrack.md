@@ -1077,7 +1077,26 @@ What building it settled:
   "Nothing stored yet" and no test could prove a collector stored anything. It counts the seeded
   events now.
 
-Left for the GitHub half: the `gh` reader, its collector and its own Sources row.
+**Built on 2026-09-10: the GitHub half.** `libs/timetrack/src/lib/github/` reads
+`/users/<login>/events` through `gh`, with its own collector, its own Sources row and a switch in
+Settings. Both forges store a `merge-request-activity` event, so `correlateDay` needed no change at
+all — the branch grammar reads a GitHub head ref exactly as it reads a GitLab source branch.
+
+What building it settled:
+
+- **`source` had to join the dedupe key, and only for GitHub.** GitLab's key is `[kind, eventId]` and
+  is already in a unique index on the user's machine, so respelling it would re-append every event the
+  store holds. GitHub's is `[kind, source, eventId]`. The asymmetry is the migration.
+- **Neither payload shape carries both halves**, so the lookup rule is "read the pull request when
+  either the branch or the title is missing" rather than GitLab's "when the branch is missing". A
+  comment gives the title and no head ref; everything else gives the head ref and no title.
+- **The cap has to be told apart from a short feed.** A read only reports how far back it got when it
+  filled every page it was allowed. Fewer events than that is the whole feed, however recent its
+  oldest entry is.
+- **The switch is off by default.** The feed is account-wide — every public and private repository the
+  account touched, not only the ones the user works in — so it has to be asked for.
+- **A review's `payload.action` is always `created`**, so `review.state === 'approved'` is the only
+  thing that separates an approval from a comment on a review.
 
 Measured on 2026-09-10, about how both CLIs behave as a transport:
 

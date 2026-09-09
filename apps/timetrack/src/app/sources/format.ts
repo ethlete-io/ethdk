@@ -172,9 +172,10 @@ export const formatCalendarRead = (options: {
 };
 
 /** Which instance is being read, and when. The failures name merge requests, not repositories. */
-export const formatGitLabRead = (options: { host: string; readAt: Date | null }) =>
+/** What a forge source is reading, or that it is not reading yet. `reading` is a host, or `null`. */
+export const formatForgeRead = (options: { reading: string | null; readAt: Date | null }) =>
   sentences([
-    options.host ? `Reading ${options.host}.` : 'No instance is configured yet.',
+    options.reading ? `Reading ${options.reading}.` : 'Nothing is configured yet.',
     options.readAt ? `Last read at ${clock(options.readAt)}.` : null,
   ]);
 

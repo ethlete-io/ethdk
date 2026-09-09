@@ -23,7 +23,7 @@ const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
  * again at the hour it moved to rather than keeping the one it was first read at.
  *
  * A GitLab event keys by GitLab's own id, which is unique inside one instance — a second instance
- * would have to put its host in the key.
+ * would have to put its host in the key. A GitHub event keys by its source and its id.
  *
  * An editor heartbeat keys by its reporter and its instant, which is what makes a reporter's retry
  * free: a POST whose response was lost is sent again, and one editor cannot have been in two states
@@ -43,7 +43,10 @@ export const dedupeKeyOf = (event: CollectedEvent): string | null => {
     case 'calendar-event':
       return keyOf([event.kind, event.occurrenceId, event.at.toISOString(), event.until.toISOString()]);
     case 'merge-request-activity':
-      return keyOf([event.kind, event.eventId]);
+      // GitLab's key predates GitHub and is already stored in a unique index, so it has to stay
+      // spelled exactly as it was: adding the source to it now would re-append every event the store
+      // already holds. GitHub's carries the source, because two forges can issue the same id.
+      return keyOf(event.source === 'gitlab' ? [event.kind, event.eventId] : [event.kind, event.source, event.eventId]);
     case 'editor-heartbeat':
       return keyOf([event.kind, event.reporter, event.at.toISOString()]);
     case 'agent-usage':
