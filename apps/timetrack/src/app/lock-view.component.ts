@@ -1,5 +1,7 @@
 import { Component, ViewEncapsulation, signal } from '@angular/core';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
+import { BuildStampComponent } from './build-stamp.component';
+import { LogoComponent } from './logo.component';
 import { injectWindowLock } from './window-lock';
 
 /**
@@ -11,10 +13,17 @@ import { injectWindowLock } from './window-lock';
 @Component({
   selector: 'ethlete-lock-view',
   template: `
-    <div class="flex h-dvh flex-col" data-tauri-drag-region="deep">
-      <div class="m-auto flex w-80 flex-col gap-4">
+    <div class="flex h-dvh flex-col items-center justify-center p-6" data-tauri-drag-region="deep">
+      <div
+        class="flex w-90 flex-col gap-5 rounded-xl border border-et-surface-border bg-et-surface-interaction/8 p-8 shadow-lg"
+      >
+        <div class="flex flex-col items-start gap-1">
+          <div class="w-50"><ethlete-logo /></div>
+          <div class="-mt-1"><ethlete-build-stamp /></div>
+        </div>
+
         <div class="flex flex-col gap-1">
-          <h1 class="text-h3">Timetrack is locked</h1>
+          <h1 class="text-h4 m-0">Locked</h1>
           <p class="text-small text-et-surface-subtle">
             Your day is still being collected. Only the reading of it is locked.
           </p>
@@ -46,7 +55,7 @@ import { injectWindowLock } from './window-lock';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS],
+  imports: [BUTTON_IMPORTS, BuildStampComponent, FORM_FIELD_IMPORTS, INPUT_IMPORTS, LogoComponent],
 })
 export class LockViewComponent {
   protected lock = injectWindowLock();

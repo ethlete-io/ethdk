@@ -9,8 +9,10 @@ import {
   injectCodexSpendBackfill,
 } from '../collectors';
 import { injectAgentEndpoint } from './agent';
+import { BuildStampComponent } from './build-stamp.component';
 import { injectCollectionPause } from './collection-pause';
 import { LockViewComponent } from './lock-view.component';
+import { LogoComponent } from './logo.component';
 import { NudgeBannerComponent } from './nudge-banner.component';
 import { PauseControlComponent } from './pause-control.component';
 import { SidebarComponent } from './shell';
@@ -66,9 +68,12 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
           <div
             class="flex w-56 shrink-0 flex-col gap-6 overflow-y-auto border-r border-et-surface-border py-6 pr-4 pl-3"
           >
-            <div class="flex flex-col gap-1 px-3">
-              <h1 class="text-h3">Timetrack</h1>
-              <p class="text-small text-et-surface-subtle">Local-first Jira and Tempo worklogs.</p>
+            <div class="flex flex-col items-start px-3">
+              <h1 class="m-0 flex w-full"><ethlete-logo /></h1>
+
+              <div class="-mt-1">
+                <ethlete-build-stamp />
+              </div>
             </div>
 
             <ethlete-sidebar />
@@ -83,7 +88,9 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    BuildStampComponent,
     LockViewComponent,
+    LogoComponent,
     RouterOutlet,
     SidebarComponent,
     TimerControlComponent,

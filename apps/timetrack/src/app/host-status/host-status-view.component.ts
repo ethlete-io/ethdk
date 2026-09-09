@@ -5,6 +5,7 @@ import { AgentLogPass, TitleRepairReport, repairStoredTitles$ } from '@ethlete/t
 import { catchError, combineLatest, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
+import { BuildStampComponent } from '../build-stamp.component';
 
 /** One row per pass, because each reads its own agent's logs and each converges on its own. */
 const CURSOR_PASSES: { pass: AgentLogPass; label: string }[] = [
@@ -38,6 +39,15 @@ type TitleRepair =
         <h2 class="text-h3">Host</h2>
         <button (click)="recheck()" et-button variant="outline" size="sm">Re-check host</button>
       </div>
+
+      <ethlete-build-stamp />
+
+      <p class="max-w-3xl text-small text-et-surface-subtle">
+        An early alpha reconstructs the day from evidence collected on this machine, and it can still get a day wrong.
+        Read every row before you sync it: what goes to Tempo is real time on a real issue. Screens, settings and the
+        shape of the stored data all still change from build to build, so quote the version above when something looks
+        wrong.
+      </p>
 
       @switch (status().state) {
         @case ('checking') {
@@ -101,7 +111,7 @@ type TitleRepair =
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, DESCRIPTION_LIST_IMPORTS, SpinnerComponent],
+  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, BuildStampComponent, DESCRIPTION_LIST_IMPORTS, SpinnerComponent],
 })
 export class HostStatusViewComponent {
   private ports = injectHostPorts();

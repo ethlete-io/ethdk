@@ -1,4 +1,5 @@
 export * from './agent-session-log-reader';
+export * from './app-info';
 export * from './call-source';
 export * from './collection-pause';
 export * from './coverage-store';
