@@ -120,11 +120,11 @@ import { injectToday, provideToday } from './today';
             />
           }
 
-          @if (day.rebuiltMs) {
+          @if (rebuilt(); as rebuilt) {
             <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
               <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
                 <span class="text-base" data-rebuilt-label>Part of this day was rebuilt</span>
-                <span class="text-small text-et-surface-muted" data-rebuilt-note>{{ rebuilt() }}</span>
+                <span class="text-small text-et-surface-muted" data-rebuilt-note>{{ rebuilt }}</span>
               </div>
 
               <span class="text-small text-et-surface-subtle">

@@ -407,6 +407,34 @@ test.describe('the today view', () => {
     await expect(page.getByText(/Part of this day was rebuilt/)).toBeVisible();
   });
 
+  test('makes no rebuilt claim for a sliver the readout rounds to nothing', async ({ page }) => {
+    // A prompt seconds after the last window sample holds presence open past what the machine
+    // watched. Every observed day ends in such a sliver, and `0m rebuilt` reads as a broken screen.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: [
+        ...day(),
+        {
+          at: new Date(at(120).getTime() + 15_000),
+          source: 'agent-prompt',
+          kind: 'agent-prompt',
+          provider: 'claude-code',
+          sessionId: 'session-sdk',
+          promptId: 'prompt-sliver',
+          cwd: SDK,
+          gitBranch: 'next',
+        },
+      ],
+    });
+    await page.goto('/today');
+
+    await expect(page.locator('[data-totals]')).toContainText('2h 0m present');
+    await expect(page.locator('[data-rebuilt-total]')).toHaveCount(0);
+    await expect(page.locator('[data-rebuilt]')).toHaveCount(0);
+    await expect(page.locator('[data-rebuilt-label]')).toHaveCount(0);
+  });
+
   test('says so for a day nothing observed', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: [] });
     await page.goto('/today');

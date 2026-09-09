@@ -42,14 +42,17 @@ export const formatBranches = (options: { stream: Stream; headBranches: Record<s
   return stream.repoPath ? (headBranches[stream.repoPath] ?? '') : '';
 };
 
-/**
- * Agent time nobody was at the machine for. No such time reads as nothing at all, so an ordinary day
- * gains no extra number.
- */
-export const formatUnattended = (ms: number) => (ms ? `${formatDurationMs(ms)} unattended` : '');
+/** Under this a minute readout rounds to `0m`, so a labelled sliver would carry no number at all. */
+const READABLE_MS = 30_000;
 
 /**
- * Presence nothing watched, rebuilt from what the day left behind. No such time reads as nothing at
- * all, so an ordinary day gains no extra number.
+ * Agent time nobody was at the machine for. Anything under a rounded minute reads as nothing at all,
+ * so an ordinary day gains no extra number.
  */
-export const formatRebuilt = (ms: number) => (ms ? `${formatDurationMs(ms)} rebuilt` : '');
+export const formatUnattended = (ms: number) => (ms >= READABLE_MS ? `${formatDurationMs(ms)} unattended` : '');
+
+/**
+ * Presence nothing watched, rebuilt from what the day left behind. Anything under a rounded minute
+ * reads as nothing at all, so an ordinary day gains no extra number.
+ */
+export const formatRebuilt = (ms: number) => (ms >= READABLE_MS ? `${formatDurationMs(ms)} rebuilt` : '');
