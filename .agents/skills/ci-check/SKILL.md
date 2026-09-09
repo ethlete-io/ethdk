@@ -1,6 +1,6 @@
 ---
 name: ci-check
-description: Run the same checks CI runs, locally, before pushing - format, agent-rules sync, changesets, lint, test, build, bundle-size goldens, the Storybook build and the component behavior tests. Use when the user says "run CI", "ci check", "lint format test build", or before pushing a change to a published lib.
+description: Run the same checks CI runs, locally, before pushing - format, agent-rules sync, changesets, lint, test, build, bundle-size goldens, the Storybook build, the component behavior tests, the timetrack e2e suite and the Rust host. Use when the user says "run CI", "ci check", "lint format test build", or before pushing a change to a published lib.
 ---
 
 # Local CI check
@@ -37,12 +37,20 @@ yarn nx run-many -t build                 # 9. all libs + apps (docs build fails
 yarn nx run treeshake:bundle-goldens      # 10. bundle-size goldens
 yarn nx run storybook:build-storybook:ci  # 11. Storybook production build
 yarn playwright test -c apps/storybook-e2e/playwright.config.ts  # 12. component behavior tests on that build
+yarn nx run timetrack-app:format-rust     # 13. cargo fmt --check on the Tauri host
+yarn nx run timetrack-app:lint-rust       # 14. cargo clippy -D warnings
+yarn nx run timetrack-app:test-rust       # 15. cargo test
+yarn nx e2e timetrack-e2e                 # 16. timetrack app e2e, against the host fakes
 ```
 
 Step 11 is the slowest by far. Skip steps 11 and 12 only when the change touches no component
 source and no story - and say so rather than reporting a clean run you didn't do. Step 12 serves
 `dist/storybook` itself; to run it against the dev server instead, set
 `STORYBOOK_URL=http://localhost:4400` (see the **`component-behavior-tests`** skill).
+
+Steps 13 to 15 are the workflow's `rust` job. Skip all three when the change touches nothing
+under `apps/timetrack/src-tauri`. Step 16 is the `timetrack-e2e` job. Skip it when the change
+touches neither `libs/timetrack` nor `apps/timetrack`.
 
 ## Reading the results
 
@@ -62,11 +70,9 @@ source and no story - and say so rather than reporting a clean run you didn't do
   running build first silently fixes the drift instead of reporting it - which is why the
   check runs before build.
 - **`typecheck`** - every lib's build tsconfig excludes the spec files, so this is the only
-  step that type-checks them. The target exists for **components**, **cdk**,
-  **query-devtools**, **core**, **query** and **contentful**; `run-many` skips a project that
-  does not declare it. `cli`, `agent-rules` and `libs/timetrack` have specs but no spec
-  tsconfig - giving one is a strictness decision that hasn't been made. Make a lib's spec
-  types clean first. Then add the target to that lib.
+  step that type-checks them. Read the current list with
+  `npx nx show projects --with-target typecheck`; `run-many` skips a project that does not
+  declare the target. To add a project, make its spec types clean first. Then add the target.
 - **`lint`** - re-run with `--fix` **scoped to the files you changed**:
   `npx eslint libs/components/src/lib/<domain> --fix`. Never
   `npx nx lint <project> --fix` - a project-wide fix races the user's editor autosave.
@@ -84,6 +90,23 @@ source and no story - and say so rather than reporting a clean run you didn't do
 
   Commit `goldens.json` with the change. Never update goldens to silence a `✖` you cannot
   explain - that is the regression the check exists to catch.
+
+- **`timetrack-e2e`** - the config sets `fullyParallel: true` and caps nothing, so a fast
+  machine gives Playwright far more workers than a CI runner has, and the one dev server
+  behind them times specs out. Ten to twelve specs fail, and a different set each run. Run
+  it the way CI does before you believe a failure:
+
+  ```bash
+  npx playwright test -c apps/timetrack-e2e/playwright.config.ts --workers=2 --retries=2
+  ```
+
+  A spec that fails alone at `--workers=1` is a real failure. One that only fails in a wide
+  parallel run is not.
+
+- **A single task that fails inside `run-many` and passes on its own is flaky.** `run-many`
+  starts every project at once, and `components:test` and `timetrack-app:lint` both lose to
+  the load on a busy machine. Re-run the one task; Nx prints `Nx detected a flaky task` when
+  it agrees. Do not report it as a break.
 
 ## What this does not cover
 
