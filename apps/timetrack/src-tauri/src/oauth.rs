@@ -142,14 +142,26 @@ async fn wait_for_code(listener: &TcpListener, state: &str) -> TimetrackResult<S
         // The state is what tells the user's own redirect from one another page talked this port into
         // sending, which is the whole reason the code is not accepted from the first caller.
         if params.get("state").map(String::as_str) != Some(state) {
-            respond(&mut stream, "400 Bad Request", "This did not come from the authorization.").await?;
+            respond(
+                &mut stream,
+                "400 Bad Request",
+                "This did not come from the authorization.",
+            )
+            .await?;
             continue;
         }
 
         if let Some(error) = error {
-            respond(&mut stream, "200 OK", "The authorization was refused. You can close this tab.").await?;
+            respond(
+                &mut stream,
+                "200 OK",
+                "The authorization was refused. You can close this tab.",
+            )
+            .await?;
 
-            return Err(TimetrackError::Rejected(format!("the authorization was refused ({error})")));
+            return Err(TimetrackError::Rejected(format!(
+                "the authorization was refused ({error})"
+            )));
         }
 
         respond(&mut stream, "200 OK", DONE_PAGE).await?;

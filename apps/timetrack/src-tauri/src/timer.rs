@@ -119,12 +119,7 @@ pub async fn timer_stop(db: State<'_, Db>, at_ms: i64) -> TimetrackResult<Option
 
 /// Names what a run was for. An empty string clears the field, which is how a mistyped key is undone.
 #[tauri::command]
-pub async fn timer_label(
-    db: State<'_, Db>,
-    id: String,
-    issue_key: String,
-    note: String,
-) -> TimetrackResult<()> {
+pub async fn timer_label(db: State<'_, Db>, id: String, issue_key: String, note: String) -> TimetrackResult<()> {
     db.run(move |connection| {
         let blank = |value: String| if value.trim().is_empty() { None } else { Some(value) };
 
@@ -201,7 +196,10 @@ mod tests {
 
         start(&mut connection, 5_000);
 
-        assert_eq!(close_open_run(&connection, 1_000).unwrap().unwrap().stopped_at_ms, Some(5_000));
+        assert_eq!(
+            close_open_run(&connection, 1_000).unwrap().unwrap().stopped_at_ms,
+            Some(5_000)
+        );
     }
 
     #[test]

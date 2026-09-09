@@ -49,7 +49,9 @@ fn focused_window_title(pid: libc::pid_t) -> Option<String> {
 
     unsafe { application.set_messaging_timeout(AX_TIMEOUT_SECONDS) };
 
-    let window = attribute(&application, FOCUSED_WINDOW)?.downcast::<AXUIElement>().ok()?;
+    let window = attribute(&application, FOCUSED_WINDOW)?
+        .downcast::<AXUIElement>()
+        .ok()?;
     let title = attribute(&window, TITLE)?;
 
     Some(title.downcast_ref::<CFString>()?.to_string())
@@ -283,7 +285,9 @@ mod tests {
 
         sampler.apply(0, 0, true, || sample("com.microsoft.VSCode", "lib.rs - timetrack"));
         sampler.apply(1000, 0, true, || sample("com.microsoft.VSCode", "lib.rs - timetrack"));
-        sampler.apply(2000, 0, true, || sample("com.microsoft.VSCode", "window.rs - timetrack"));
+        sampler.apply(2000, 0, true, || {
+            sample("com.microsoft.VSCode", "window.rs - timetrack")
+        });
 
         let events = pushed(&sampler);
 
@@ -296,7 +300,9 @@ mod tests {
         let mut sampler = sampler();
 
         sampler.sink.set_paused(true);
-        sampler.apply(60 * MINUTE, 7 * MINUTE, true, || sample("com.microsoft.VSCode", "lib.rs"));
+        sampler.apply(60 * MINUTE, 7 * MINUTE, true, || {
+            sample("com.microsoft.VSCode", "lib.rs")
+        });
 
         assert!(pushed(&sampler).is_empty());
     }

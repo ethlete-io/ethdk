@@ -247,9 +247,7 @@ pub fn open(path: &Path, key: &str) -> TimetrackResult<Connection> {
     connection
         .query_row("SELECT count(*) FROM sqlite_master", [], |row| row.get::<_, i64>(0))
         .map_err(|_| {
-            TimetrackError::Rejected(
-                "the database could not be decrypted with the key in the keychain".into(),
-            )
+            TimetrackError::Rejected("the database could not be decrypted with the key in the keychain".into())
         })?;
     connection.execute_batch("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;")?;
 
@@ -335,8 +333,7 @@ mod tests {
     use super::*;
     use rusqlite::params;
 
-    const INSERT: &str =
-        "INSERT INTO collected_event (at_ms, source, kind, payload, dedupe_key)
+    const INSERT: &str = "INSERT INTO collected_event (at_ms, source, kind, payload, dedupe_key)
          VALUES (?1, 'git', 'git-commit', '{}', ?2) ON CONFLICT (dedupe_key) DO NOTHING";
 
     fn migrated_from(version: i64) -> Connection {
@@ -414,8 +411,7 @@ mod tests {
         let connection = Connection::open_in_memory().unwrap();
 
         for schema in [
-            SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9,
-            SCHEMA_V10,
+            SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10,
         ] {
             connection.execute_batch(schema).unwrap();
         }
@@ -479,8 +475,11 @@ mod tests {
 
         assert_eq!(
             connection
-                .query_row("SELECT session_json FROM agent_session_cursor WHERE id = 's1'", [], |row| row
-                    .get::<_, Option<String>>(0))
+                .query_row(
+                    "SELECT session_json FROM agent_session_cursor WHERE id = 's1'",
+                    [],
+                    |row| row.get::<_, Option<String>>(0)
+                )
                 .unwrap(),
             None
         );
@@ -500,7 +499,11 @@ mod tests {
         assert_eq!(
             connection
                 .query_row("SELECT cwd FROM agent_session_cursor WHERE id = 's1'", [], |row| row
-                    .get::<_, Option<String>>(0))
+                    .get::<_, Option<
+                    String,
+                >>(
+                    0
+                ))
                 .unwrap(),
             None
         );
@@ -511,8 +514,7 @@ mod tests {
         let connection = Connection::open_in_memory().unwrap();
 
         for schema in [
-            SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9,
-            SCHEMA_V10,
+            SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10,
         ] {
             connection.execute_batch(schema).unwrap();
         }
@@ -532,7 +534,11 @@ mod tests {
                 .query_row(
                     "SELECT kind, next_line, cwd FROM agent_session_cursor WHERE id = 's1'",
                     [],
-                    |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?, row.get::<_, String>(2)?))
+                    |row| Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, i64>(1)?,
+                        row.get::<_, String>(2)?
+                    ))
                 )
                 .unwrap(),
             ("agent-session".to_string(), 42, "/repo".to_string())
@@ -554,8 +560,9 @@ mod tests {
 
         assert_eq!(
             connection
-                .query_row("SELECT count(*) FROM agent_session_cursor WHERE id = 's1'", [], |row| row
-                    .get::<_, i64>(0))
+                .query_row("SELECT count(*) FROM agent_session_cursor WHERE id = 's1'", [], |row| {
+                    row.get::<_, i64>(0)
+                })
                 .unwrap(),
             2
         );
@@ -574,9 +581,11 @@ mod tests {
 
         assert_eq!(
             connection
-                .query_row("SELECT coverage FROM tempo_coverage WHERE day = '2026-08-11'", [], |row| {
-                    row.get::<_, String>(0)
-                })
+                .query_row(
+                    "SELECT coverage FROM tempo_coverage WHERE day = '2026-08-11'",
+                    [],
+                    |row| { row.get::<_, String>(0) }
+                )
                 .unwrap(),
             "{}"
         );
@@ -625,8 +634,9 @@ mod tests {
 
         assert_eq!(
             connection
-                .query_row("SELECT paused_at_ms FROM collection_pause WHERE id = 1", [], |row| row
-                    .get::<_, Option<i64>>(0))
+                .query_row("SELECT paused_at_ms FROM collection_pause WHERE id = 1", [], |row| {
+                    row.get::<_, Option<i64>>(0)
+                })
                 .unwrap(),
             None
         );
@@ -649,10 +659,16 @@ mod tests {
         let connection = migrated_from(6);
 
         connection
-            .execute("INSERT INTO day_nudge (day, last_nudged_at_ms) VALUES ('2026-08-16', 1)", [])
+            .execute(
+                "INSERT INTO day_nudge (day, last_nudged_at_ms) VALUES ('2026-08-16', 1)",
+                [],
+            )
             .unwrap();
         assert!(connection
-            .execute("INSERT INTO day_nudge (day, last_nudged_at_ms) VALUES ('2026-08-16', 2)", [])
+            .execute(
+                "INSERT INTO day_nudge (day, last_nudged_at_ms) VALUES ('2026-08-16', 2)",
+                []
+            )
             .is_err());
     }
 
@@ -688,10 +704,16 @@ mod tests {
         let connection = migrated_from(0);
 
         connection
-            .execute("INSERT INTO timer_run (id, started_at_ms, stopped_at_ms) VALUES ('a', 1, 2)", [])
+            .execute(
+                "INSERT INTO timer_run (id, started_at_ms, stopped_at_ms) VALUES ('a', 1, 2)",
+                [],
+            )
             .unwrap();
         connection
-            .execute("INSERT INTO timer_run (id, started_at_ms, stopped_at_ms) VALUES ('b', 3, 4)", [])
+            .execute(
+                "INSERT INTO timer_run (id, started_at_ms, stopped_at_ms) VALUES ('b', 3, 4)",
+                [],
+            )
             .unwrap();
         connection
             .execute("INSERT INTO timer_run (id, started_at_ms) VALUES ('c', 5)", [])

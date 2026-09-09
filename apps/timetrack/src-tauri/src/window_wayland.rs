@@ -12,7 +12,8 @@ use wayland_protocols_wlr::foreign_toplevel::v1::client::{
 /// splits the block.
 const IDLE_THRESHOLD_MS: u32 = 5 * 60_000;
 
-const NO_MANAGER: &str = "this compositor does not implement zwlr_foreign_toplevel_manager_v1, so no window titles are collected";
+const NO_MANAGER: &str =
+    "this compositor does not implement zwlr_foreign_toplevel_manager_v1, so no window titles are collected";
 
 fn now_ms() -> i64 {
     chrono::Utc::now().timestamp_millis()
@@ -179,7 +180,9 @@ impl Dispatch<ext_idle_notification_v1::ExtIdleNotificationV1, ()> for WaylandSt
             // The notification fires a threshold *after* input stopped, and the block ended when the
             // input did — dating it now would bill every break its first five minutes.
             ext_idle_notification_v1::Event::Idled => {
-                state.sink.push(now_ms() - i64::from(IDLE_THRESHOLD_MS), WindowEventPayload::IdleStart);
+                state
+                    .sink
+                    .push(now_ms() - i64::from(IDLE_THRESHOLD_MS), WindowEventPayload::IdleStart);
             }
             ext_idle_notification_v1::Event::Resumed => {
                 state.sink.push(now_ms(), WindowEventPayload::IdleEnd);
@@ -202,15 +205,7 @@ impl Dispatch<ext_idle_notifier_v1::ExtIdleNotifierV1, ()> for WaylandState {
 }
 
 impl Dispatch<wl_seat::WlSeat, ()> for WaylandState {
-    fn event(
-        _: &mut Self,
-        _: &wl_seat::WlSeat,
-        _: wl_seat::Event,
-        _: &(),
-        _: &Connection,
-        _: &QueueHandle<Self>,
-    ) {
-    }
+    fn event(_: &mut Self, _: &wl_seat::WlSeat, _: wl_seat::Event, _: &(), _: &Connection, _: &QueueHandle<Self>) {}
 }
 
 fn run(sink: WindowSource) -> Result<(), String> {

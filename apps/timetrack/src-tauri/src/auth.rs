@@ -54,8 +54,7 @@ mod platform {
         retcode: c_int,
     }
 
-    type ConverseFn =
-        unsafe extern "C" fn(c_int, *const *const Message, *mut *mut Response, *mut c_void) -> c_int;
+    type ConverseFn = unsafe extern "C" fn(c_int, *const *const Message, *mut *mut Response, *mut c_void) -> c_int;
 
     #[repr(C)]
     struct Conversation {
@@ -308,9 +307,8 @@ mod platform {
     }
 
     pub fn verify_owner(_password: Option<&str>) -> TimetrackResult<bool> {
-        let interop = factory::<UserConsentVerifier, IUserConsentVerifierInterop>().map_err(|error| {
-            TimetrackError::Rejected(format!("Windows Hello could not be reached: {error}"))
-        })?;
+        let interop = factory::<UserConsentVerifier, IUserConsentVerifierInterop>()
+            .map_err(|error| TimetrackError::Rejected(format!("Windows Hello could not be reached: {error}")))?;
 
         // The window the user is looking at, because pressing unlock is what got here and there is no
         // other handle to reach from this side. A dialog with no parent is refused outright.
@@ -320,7 +318,9 @@ mod platform {
 
         // Every other result — cancelled, out of retries, the device busy — is a check that did not
         // pass rather than a machine that cannot check.
-        Ok(pending.get().is_ok_and(|result| result == UserConsentVerificationResult::Verified))
+        Ok(pending
+            .get()
+            .is_ok_and(|result| result == UserConsentVerificationResult::Verified))
     }
 }
 
@@ -345,7 +345,10 @@ mod tests {
 
     #[test]
     fn asks_for_a_password_everywhere_the_system_puts_up_no_sheet_of_its_own() {
-        assert_eq!(collects_its_own_secret(), cfg!(any(target_os = "macos", target_os = "windows")));
+        assert_eq!(
+            collects_its_own_secret(),
+            cfg!(any(target_os = "macos", target_os = "windows"))
+        );
     }
 
     #[cfg(target_os = "linux")]
@@ -361,4 +364,3 @@ mod tests {
         assert_eq!(verify_owner(Some("before\0after")).unwrap(), false);
     }
 }
-

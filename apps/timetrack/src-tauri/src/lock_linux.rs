@@ -57,14 +57,26 @@ fn by_id(connection: &Connection, id: &str) -> zbus::Result<OwnedObjectPath> {
 
 fn by_pid(connection: &Connection) -> zbus::Result<OwnedObjectPath> {
     connection
-        .call_method(Some(LOGIND), MANAGER_PATH, Some(MANAGER), "GetSessionByPID", &(std::process::id()))?
+        .call_method(
+            Some(LOGIND),
+            MANAGER_PATH,
+            Some(MANAGER),
+            "GetSessionByPID",
+            &(std::process::id()),
+        )?
         .body()
         .deserialize()
 }
 
 fn display_session(connection: &Connection) -> zbus::Result<OwnedObjectPath> {
     let user: OwnedObjectPath = connection
-        .call_method(Some(LOGIND), MANAGER_PATH, Some(MANAGER), "GetUser", &(unsafe { libc::getuid() }))?
+        .call_method(
+            Some(LOGIND),
+            MANAGER_PATH,
+            Some(MANAGER),
+            "GetUser",
+            &(unsafe { libc::getuid() }),
+        )?
         .body()
         .deserialize()?;
     let display: (String, OwnedObjectPath) = connection
@@ -143,4 +155,3 @@ mod tests {
         }
     }
 }
-

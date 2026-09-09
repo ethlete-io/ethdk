@@ -166,7 +166,10 @@ mod tests {
     fn reports_what_the_platform_source_last_said_about_itself() {
         let source = WindowSource::default();
 
-        source.set_status("macos-app-only", Some("the Accessibility permission is not granted".to_string()));
+        source.set_status(
+            "macos-app-only",
+            Some("the Accessibility permission is not granted".to_string()),
+        );
 
         assert_eq!(source.status().unwrap().kind, "macos-app-only");
     }

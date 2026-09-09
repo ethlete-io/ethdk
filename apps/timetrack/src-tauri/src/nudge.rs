@@ -116,7 +116,10 @@ mod tests {
         write(&connection, &row(Some(9_000))).unwrap();
         write(&connection, &row(None)).unwrap();
 
-        assert_eq!(read(&connection, "2026-08-16").unwrap().unwrap().silenced_until_ms, None);
+        assert_eq!(
+            read(&connection, "2026-08-16").unwrap().unwrap().silenced_until_ms,
+            None
+        );
     }
 
     #[test]

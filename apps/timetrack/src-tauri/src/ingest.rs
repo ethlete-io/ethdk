@@ -542,7 +542,10 @@ mod tests {
 
     #[test]
     fn treats_a_content_length_that_is_not_a_number_as_more_than_it_will_ever_read() {
-        assert_eq!(head("POST /ingest HTTP/1.1\r\nContent-Length: huge\r\n").content_length, usize::MAX);
+        assert_eq!(
+            head("POST /ingest HTTP/1.1\r\nContent-Length: huge\r\n").content_length,
+            usize::MAX
+        );
     }
 
     #[test]
@@ -558,7 +561,10 @@ mod tests {
     async fn buffers_what_an_authorized_reporter_posts() {
         let source = IngestSource::new();
 
-        assert_eq!(round_trip(&source, &authorized_post(&heartbeat())).await, "HTTP/1.1 204 No Content");
+        assert_eq!(
+            round_trip(&source, &authorized_post(&heartbeat())).await,
+            "HTTP/1.1 204 No Content"
+        );
 
         let batch = source.drain_after(0).unwrap();
 
@@ -578,14 +584,20 @@ mod tests {
 
         round_trip(&source, &authorized_post(body)).await;
 
-        assert_eq!(source.drain_after(0).unwrap().events[0].payload.payload["host"], "gitlab.com");
+        assert_eq!(
+            source.drain_after(0).unwrap().events[0].payload.payload["host"],
+            "gitlab.com"
+        );
     }
 
     #[tokio::test]
     async fn refuses_a_post_with_no_token_and_counts_it() {
         let source = IngestSource::new();
 
-        assert_eq!(round_trip(&source, &post(&heartbeat(), "")).await, "HTTP/1.1 401 Unauthorized");
+        assert_eq!(
+            round_trip(&source, &post(&heartbeat(), "")).await,
+            "HTTP/1.1 401 Unauthorized"
+        );
         assert!(source.drain_after(0).unwrap().events.is_empty());
         assert_eq!(source.status().unwrap().refused, 1);
     }
@@ -627,7 +639,10 @@ mod tests {
     async fn refuses_a_body_that_is_not_the_one_envelope() {
         let source = IngestSource::new();
 
-        assert_eq!(round_trip(&source, &authorized_post("not json")).await, "HTTP/1.1 400 Bad Request");
+        assert_eq!(
+            round_trip(&source, &authorized_post("not json")).await,
+            "HTTP/1.1 400 Bad Request"
+        );
         assert_eq!(
             round_trip(&source, &authorized_post(r#"{"reporter":"","events":[]}"#)).await,
             "HTTP/1.1 400 Bad Request"
@@ -640,7 +655,10 @@ mod tests {
 
         source.set_paused(true);
 
-        assert_eq!(round_trip(&source, &authorized_post(&heartbeat())).await, "HTTP/1.1 204 No Content");
+        assert_eq!(
+            round_trip(&source, &authorized_post(&heartbeat())).await,
+            "HTTP/1.1 204 No Content"
+        );
         assert!(source.drain_after(0).unwrap().events.is_empty());
     }
 

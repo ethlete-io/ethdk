@@ -21,9 +21,11 @@ pub struct CollectionState {
 }
 
 pub fn paused_at(connection: &Connection) -> TimetrackResult<Option<i64>> {
-    Ok(connection.query_row("SELECT paused_at_ms FROM collection_pause WHERE id = 1", [], |row| {
-        row.get(0)
-    })?)
+    Ok(
+        connection.query_row("SELECT paused_at_ms FROM collection_pause WHERE id = 1", [], |row| {
+            row.get(0)
+        })?,
+    )
 }
 
 /// The `CollectedEvent` the core will read back, as its own JSON. The host stores whole events rather

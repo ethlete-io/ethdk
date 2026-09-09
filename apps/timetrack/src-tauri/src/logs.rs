@@ -286,10 +286,7 @@ pub async fn agent_logs(
 /// anything reaching that code read any file the user can, which is the same reason `run_process`
 /// takes an allowlist.
 #[tauri::command]
-pub async fn agent_log_lines(
-    app: tauri::AppHandle,
-    request: AgentLogLinesRequest,
-) -> TimetrackResult<AgentLogLines> {
+pub async fn agent_log_lines(app: tauri::AppHandle, request: AgentLogLinesRequest) -> TimetrackResult<AgentLogLines> {
     let root = agent_log_root(&app, request.root, request.provider)?;
     let path = PathBuf::from(&request.path);
     let (root, resolved) = (root.canonicalize()?, path.canonicalize()?);
@@ -336,7 +333,9 @@ mod tests {
     }
 
     fn real_log_root() -> Option<PathBuf> {
-        let root = PathBuf::from(std::env::var_os("HOME")?).join(".claude").join("projects");
+        let root = PathBuf::from(std::env::var_os("HOME")?)
+            .join(".claude")
+            .join("projects");
 
         root.is_dir().then_some(root)
     }
@@ -355,7 +354,11 @@ mod tests {
         write_log(&root, "-home-tom-dev-b", "session-two", "{}\n");
         std::fs::write(root.join("-home-tom-dev-a").join("notes.txt"), "not a log").unwrap();
 
-        let mut ids = list_logs(&root, None).unwrap().into_iter().map(|log| log.id).collect::<Vec<_>>();
+        let mut ids = list_logs(&root, None)
+            .unwrap()
+            .into_iter()
+            .map(|log| log.id)
+            .collect::<Vec<_>>();
         ids.sort();
 
         assert_eq!(ids, ["session-one", "session-two"]);
@@ -368,7 +371,11 @@ mod tests {
         write_log(&root, "-home-tom-dev-a", "session-one", "{}\n");
         write_subagent_log(&root, "-home-tom-dev-a", "session-one", "agent-a1", "{}\n");
 
-        let mut ids = list_logs(&root, None).unwrap().into_iter().map(|log| log.id).collect::<Vec<_>>();
+        let mut ids = list_logs(&root, None)
+            .unwrap()
+            .into_iter()
+            .map(|log| log.id)
+            .collect::<Vec<_>>();
         ids.sort();
 
         assert_eq!(ids, ["session-one", "session-one/agent-a1"]);
@@ -381,7 +388,11 @@ mod tests {
         write_subagent_log(&root, "-home-tom-dev-a", "session-one", "agent-a1", "a\n");
         write_subagent_log(&root, "-home-tom-dev-a", "session-two", "agent-a1", "b\n");
 
-        let mut ids = list_logs(&root, None).unwrap().into_iter().map(|log| log.id).collect::<Vec<_>>();
+        let mut ids = list_logs(&root, None)
+            .unwrap()
+            .into_iter()
+            .map(|log| log.id)
+            .collect::<Vec<_>>();
         ids.sort();
 
         assert_eq!(ids, ["session-one/agent-a1", "session-two/agent-a1"]);
@@ -431,7 +442,10 @@ mod tests {
 
         assert!(newest.id.contains('/'), "a codex id names its date: {}", newest.id);
         for line in read.lines.iter().take(50) {
-            assert!(serde_json::from_str::<serde_json::Value>(line).is_ok(), "not JSON: {line}");
+            assert!(
+                serde_json::from_str::<serde_json::Value>(line).is_ok(),
+                "not JSON: {line}"
+            );
         }
     }
 
@@ -456,7 +470,12 @@ mod tests {
     #[test]
     fn withholds_a_line_the_agent_has_not_finished_writing() {
         let root = temp_root("partial");
-        let path = write_log(&root, "-home-tom-dev-a", "session-one", "{\"a\":1}\n{\"b\":2}\n{\"half\":");
+        let path = write_log(
+            &root,
+            "-home-tom-dev-a",
+            "session-one",
+            "{\"a\":1}\n{\"b\":2}\n{\"half\":",
+        );
 
         let read = read_lines(&path, 0).unwrap();
 
@@ -509,7 +528,10 @@ mod tests {
 
         assert_eq!(read.lines.len() as i64, read.next_line);
         for line in read.lines.iter().take(50) {
-            assert!(serde_json::from_str::<serde_json::Value>(line).is_ok(), "not JSON: {line}");
+            assert!(
+                serde_json::from_str::<serde_json::Value>(line).is_ok(),
+                "not JSON: {line}"
+            );
         }
     }
 
@@ -520,7 +542,12 @@ mod tests {
         let sessions = std::fs::read_dir(&root)
             .unwrap()
             .filter_map(Result::ok)
-            .flat_map(|project| std::fs::read_dir(project.path()).into_iter().flatten().filter_map(Result::ok));
+            .flat_map(|project| {
+                std::fs::read_dir(project.path())
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Result::ok)
+            });
 
         let Some(expected) = sessions
             .flat_map(|session| {

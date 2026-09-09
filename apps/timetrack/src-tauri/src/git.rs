@@ -62,7 +62,10 @@ fn is_a_move(relative: &Path) -> bool {
     }
 
     matches!(
-        relative.components().next().and_then(|first| first.as_os_str().to_str()),
+        relative
+            .components()
+            .next()
+            .and_then(|first| first.as_os_str().to_str()),
         Some("HEAD") | Some("refs") | Some("packed-refs")
     )
 }
@@ -81,9 +84,10 @@ fn is_repo(path: &Path) -> bool {
 }
 
 fn is_skipped(entry: &Path) -> bool {
-    entry.file_name().and_then(|name| name.to_str()).is_none_or(|name| {
-        name.starts_with('.') || SKIPPED_DIRS.contains(&name)
-    })
+    entry
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_none_or(|name| name.starts_with('.') || SKIPPED_DIRS.contains(&name))
 }
 
 /// Collects the repositories under `root`, stopping at each one rather than descending into it.

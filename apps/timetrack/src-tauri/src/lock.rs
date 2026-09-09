@@ -364,6 +364,9 @@ mod tests {
 
     #[test]
     fn tells_the_webview_whether_it_has_to_ask_for_a_password_itself() {
-        assert_eq!(WindowLock::new().state().prompts_itself, cfg!(any(target_os = "macos", target_os = "windows")));
+        assert_eq!(
+            WindowLock::new().state().prompts_itself,
+            cfg!(any(target_os = "macos", target_os = "windows"))
+        );
     }
 }

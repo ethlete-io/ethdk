@@ -183,7 +183,10 @@ impl AgentEndpoint {
             Err(_) => return AgentAnswer::failed("the endpoint can no longer be trusted; restart".to_string()),
         };
 
-        if app.emit_to(WINDOW_LABEL, REQUEST_EVENT, AgentRequest { id, body }).is_err() {
+        if app
+            .emit_to(WINDOW_LABEL, REQUEST_EVENT, AgentRequest { id, body })
+            .is_err()
+        {
             self.forget(id);
 
             return AgentAnswer::failed("the Timetrack window is not listening".to_string());
@@ -211,11 +214,7 @@ impl AgentEndpoint {
     }
 
     fn reply(&self, id: u64, answer: AgentAnswer) -> TimetrackResult<()> {
-        let sender = self
-            .pending
-            .lock()
-            .map_err(|_| TimetrackError::Poisoned)?
-            .remove(&id);
+        let sender = self.pending.lock().map_err(|_| TimetrackError::Poisoned)?.remove(&id);
 
         // A reply for a request that already timed out is dropped rather than reported: the caller is
         // gone, and the window has no way to know that before it answers.
@@ -338,12 +337,7 @@ async fn respond_json(stream: &mut TcpStream, status: &str, answer: &AgentAnswer
 /// A status other than 200 means the endpoint could not carry the request at all. Whether the
 /// operation itself succeeded is in the body, because a key Jira does not know says nothing about the
 /// endpoint that looked it up.
-async fn serve(
-    stream: &mut TcpStream,
-    endpoint: &AgentEndpoint,
-    app: &AppHandle,
-    token: &str,
-) -> TimetrackResult<()> {
+async fn serve(stream: &mut TcpStream, endpoint: &AgentEndpoint, app: &AppHandle, token: &str) -> TimetrackResult<()> {
     let mut buffer = Vec::new();
     let mut chunk = [0u8; 4096];
 

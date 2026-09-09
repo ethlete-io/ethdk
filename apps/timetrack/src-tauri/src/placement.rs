@@ -107,7 +107,10 @@ fn apply<R: Runtime>(app: &AppHandle<R>, window: &Window<R>, placement: Placemen
         let _ = window.set_size(LogicalSize::new(size.width, size.height));
     }
 
-    if let Some(position) = placement.position.filter(|position| is_on_a_screen(*position, &screens(app))) {
+    if let Some(position) = placement
+        .position
+        .filter(|position| is_on_a_screen(*position, &screens(app)))
+    {
         let _ = window.set_position(PhysicalPosition::new(position.x, position.y));
     }
 
@@ -294,7 +297,13 @@ mod tests {
 
         let next = restorable(placed(40, 20, 1100.0, 760.0), maximized);
 
-        assert_eq!(next.size, Some(Size { width: 1100.0, height: 760.0 }));
+        assert_eq!(
+            next.size,
+            Some(Size {
+                width: 1100.0,
+                height: 760.0
+            })
+        );
         assert_eq!(next.position, Some(Position { x: 40, y: 20 }));
         assert!(next.maximized);
     }

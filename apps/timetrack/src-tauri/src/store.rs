@@ -1,5 +1,5 @@
-use crate::state::Db;
 use crate::error::TimetrackResult;
+use crate::state::Db;
 use rusqlite::{params, params_from_iter, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use tauri::State;
@@ -173,9 +173,8 @@ pub async fn events_delete_before(db: State<'_, Db>, before_ms: i64) -> Timetrac
 #[tauri::command]
 pub async fn events_by_source(db: State<'_, Db>) -> TimetrackResult<Vec<SourceTally>> {
     db.run(|connection| {
-        let mut statement = connection.prepare(
-            "SELECT source, count(*), max(at_ms) FROM collected_event GROUP BY source ORDER BY source",
-        )?;
+        let mut statement = connection
+            .prepare("SELECT source, count(*), max(at_ms) FROM collected_event GROUP BY source ORDER BY source")?;
         let rows = statement.query_map([], |row| {
             Ok(SourceTally {
                 source: row.get(0)?,
@@ -191,10 +190,8 @@ pub async fn events_by_source(db: State<'_, Db>) -> TimetrackResult<Vec<SourceTa
 
 #[tauri::command]
 pub async fn events_oldest_at(db: State<'_, Db>) -> TimetrackResult<Option<i64>> {
-    db.run(|connection| {
-        Ok(connection.query_row("SELECT min(at_ms) FROM collected_event", [], |row| row.get(0))?)
-    })
-    .await
+    db.run(|connection| Ok(connection.query_row("SELECT min(at_ms) FROM collected_event", [], |row| row.get(0))?))
+        .await
 }
 
 #[tauri::command]
@@ -227,9 +224,11 @@ pub async fn agent_session_cursors(db: State<'_, Db>, kind: String) -> Timetrack
 #[tauri::command]
 pub async fn compacted_through(db: State<'_, Db>) -> TimetrackResult<Option<i64>> {
     db.run(|connection| {
-        Ok(connection.query_row("SELECT compacted_through_ms FROM compaction WHERE id = 1", [], |row| {
-            row.get(0)
-        })?)
+        Ok(
+            connection.query_row("SELECT compacted_through_ms FROM compaction WHERE id = 1", [], |row| {
+                row.get(0)
+            })?,
+        )
     })
     .await
 }
@@ -433,9 +432,11 @@ pub async fn set_day_review_edits(
 pub async fn tempo_coverage_for_day(db: State<'_, Db>, day: String) -> TimetrackResult<Option<serde_json::Value>> {
     db.run(move |connection| {
         let stored = connection
-            .query_row("SELECT coverage FROM tempo_coverage WHERE day = ?1", params![day], |row| {
-                row.get::<_, String>(0)
-            })
+            .query_row(
+                "SELECT coverage FROM tempo_coverage WHERE day = ?1",
+                params![day],
+                |row| row.get::<_, String>(0),
+            )
             .optional()?;
 
         Ok(stored.and_then(|coverage| serde_json::from_str(&coverage).ok()))
@@ -527,8 +528,11 @@ mod tests {
         assert_eq!(stored_at(&connection), Vec::<i64>::new());
         assert_eq!(
             connection
-                .query_row("SELECT next_line FROM agent_session_cursor WHERE id = 'session-a'", [], |row| row
-                    .get::<_, i64>(0))
+                .query_row(
+                    "SELECT next_line FROM agent_session_cursor WHERE id = 'session-a'",
+                    [],
+                    |row| row.get::<_, i64>(0)
+                )
                 .unwrap(),
             42
         );
@@ -582,12 +586,7 @@ mod tests {
             session_json: None,
         };
 
-        append(
-            &mut connection,
-            &[],
-            &[cursor("agent-session", 42), cursor("spend", 7)],
-        )
-        .unwrap();
+        append(&mut connection, &[], &[cursor("agent-session", 42), cursor("spend", 7)]).unwrap();
 
         let mut statement = connection
             .prepare("SELECT kind, next_line FROM agent_session_cursor WHERE id = 'session-a' ORDER BY kind")
@@ -598,9 +597,6 @@ mod tests {
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
 
-        assert_eq!(
-            rows,
-            vec![("agent-session".to_string(), 42), ("spend".to_string(), 7)]
-        );
+        assert_eq!(rows, vec![("agent-session".to_string(), 42), ("spend".to_string(), 7)]);
     }
 }
