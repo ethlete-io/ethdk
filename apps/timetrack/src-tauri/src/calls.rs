@@ -1,3 +1,7 @@
+// macOS is the only platform with a call source. Everywhere else the buffer, the edges and the
+// event itself are unreachable, and the status says so at runtime.
+#![cfg_attr(not(target_os = "macos"), allow(dead_code))]
+
 use crate::error::{TimetrackError, TimetrackResult};
 #[cfg(test)]
 use crate::samples::Sample;
