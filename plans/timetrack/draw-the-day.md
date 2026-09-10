@@ -27,19 +27,25 @@ the merged screen cannot borrow the old builder, and building it on v1 would bui
 ADR 0014 records the decision. Tom's words: "v1 can move into the trashcan. we can and should rebuild
 it into something that actually works."
 
-**Step one: the pipeline, with no screen change.** `streamDay` gains a proposal builder, and it takes
-over what only `correlateDay` sees today:
+**Step one: the pipeline, with no screen change. Built on 2026-09-10.** `streamDay` gained a proposal
+builder, and it took over what only `correlateDay` saw:
 
 - Editor, calendar and GitLab events, which `streamDay` never reads.
 - `TimerRun` and `ClosedTimerRun` (`model/timer.ts:5,17`), matched today by `matchTimerRuns`.
-- Pauses, which are plain `TimeWindow`s from `pauseWindows` (`correlate/pauses.ts:25`). Note that
+- Pauses, which are plain `TimeWindow`s from `pauseWindows` (now `stream/pauses.ts`). Note that
   `DayCorrelation.pauses` never reaches the timeline component even now.
 - Meetings, under ADR 0010, and the unattributed blocks.
 
 It is testable against the screen that exists: the same day, read through both pipelines, must
-produce the same rows before anything on screen changes.
+produce the same rows before anything on screen changes. `stream/both-pipelines.spec.ts` is that
+check, and the two agree except where ADR 0007 already measured the drift — `sessionize` hands the
+browser that opens a meeting five minutes of the editor's branch and `streamDay` does not.
 
-**Step two: the merged screen**, drawn on the new output.
+ADR 0016 changed what "the port" meant. Every file in `correlate/` but `sessionize.ts` and
+`correlate-day.ts` turned out to have no dependency on the v1 pipeline at all, so they moved to
+`rows/` rather than being duplicated into `stream/`. Both pipelines now call one `buildRows`.
+
+**Step two: the merged screen**, drawn on the new output. Not built.
 
 ## What the screen does
 
@@ -72,10 +78,10 @@ already packs arbitrary N-way overlap: transitive clusters, first free column pe
 `inlineSize = 100 / columnCount`. `DayTimelineComponent` only reads `inlineOffset` and `inlineSize`,
 so lanes need no app work at all.
 
-It has one real weakness, and Tom asked for it to be addressed here: every block in a cluster gets
-equal width, and none widens into free space. One short overlap therefore makes a whole cluster thin
-for the entire day. **That fix belongs in `libs/components`**, so it needs a changeset and a docs
-page, unlike the rest of this milestone.
+It had one real weakness, and Tom asked for it to be addressed here: every block in a cluster got
+equal width, and none widened into free space. One short overlap therefore made a whole cluster thin
+for the entire day. **Fixed in `libs/components` on 2026-09-10**, with a changeset and the scheduler
+guide updated.
 
 ### The axis stays 24 hours
 
@@ -85,20 +91,21 @@ rescales itself is hard to trust.
 
 ### A day starts at a configured hour
 
-ADR 0015. Work at 01:00 belongs to the evening it came from. The boundary reaches `day_review`, the
-coverage store and the pipeline input together, or two parts of the app will disagree about which day
-an hour is in.
+**Built.** ADR 0015. Work at 01:00 belongs to the evening it came from. `DayBoundary` is a required
+argument on `localDayKey`, `localDayRange` and `byLocalDay`, so a caller that forgets it is a compile
+error rather than two parts of the app disagreeing about which day an hour is in. The hour is
+`settings.dayStartHour`, edited on the Settings screen.
 
 ## Also in this milestone
 
-- **Split and glue.** `splitRow`, `mergeRows` and `moveRowBoundary` (`review/edits.ts:107,363,165`)
-  are built. `PinnedRow.issueKey` becomes optional (`review/model.ts:26`), so a fresh cut can stand
-  with neither half named.
-- **Two windows of the same application separated by a short gap are one call.** Every Google Meet
+- **Split and glue. Built.** `PinnedRow.issueKey` and `ReviewedRow.issueKey` are optional, `propose`
+  emits every unattributed group as a row, and `reviewDay` shows them. `isNamedRow` is what keeps an
+  unnamed row out of every sync, and the compiler finds a caller that forgets it.
+- **Two windows of the same application separated by a short gap are one call. Built.** Every Google Meet
   opens the microphone twice, because its pre-join screen runs a device check. Measured on 2026-09-10:
-  a 0-minute window at 11:29, then the real call from 11:29 to 11:57. `classifyCalls`
-  (`stream/calls.ts:104`) filters nothing by length today, so one meeting becomes two bands. The same
-  rule covers a call that drops and reconnects.
+  a 0-minute window at 11:29, then the real call from 11:29 to 11:57. `classifyCalls` now joins two
+  calls of one application under `DEFAULT_CALL_GLUE_MS`, which covers a call that drops and
+  reconnects as well.
 
 The screen writes local edits to `day_review` and never reaches Tempo.
 
@@ -107,8 +114,8 @@ The screen writes local edits to `day_review` and never reaches Tempo.
 Tom reads a real day on one screen, and cuts it where he wants it cut. It is a written judgment, and
 it is not automatable.
 
-Before step two is called done, step one has its own check: one real day read through both pipelines
-produces the same rows.
+Step one's own check is in `stream/both-pipelines.spec.ts` and passes. The real-day half of it needs
+the screen: the store is encrypted, so no script outside the app can read a day out of it.
 
 ## Not in this milestone
 

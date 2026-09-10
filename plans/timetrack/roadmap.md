@@ -31,12 +31,12 @@ up, whatever position the roadmap gives it.
 | Providers: Jira, Tempo, GitLab, GitHub, Google      | Built, and verified against the real instances.                       |
 | `streamDay` and the Today screen                    | Built. Slice 1 is on screen.                                          |
 | Naming the unnamed window                           | Two rungs built. The rest waits on five more workdays of measurement. |
-| Slices 2a to 2c                                     | M2 and M3 planned in full. M4 needs its own document.                 |
+| Slices 2a to 2c                                     | M2 step one built. M3 planned in full. M4 needs its own document.     |
 | Slices 5, 6, 9 to 12                                | One paragraph of outline each.                                        |
 | A production Tempo worklog                          | **Never written.** No day has left this machine.                      |
 | A day that spans two machines                       | **Not built.** Each machine reports only what it saw.                 |
 | Autostart, an updater, a packaged build             | Not built. `tauri:build` runs by hand.                                |
-| `correlate/` and the v1 screens                     | Alive. ADR 0007 says they are replaced, not repaired.                 |
+| `correlate/` and the v1 screens                     | Down to two files. M2 step two deletes them. See ADR 0016.            |
 
 ## The seven answers this plan is built on
 
