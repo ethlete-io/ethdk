@@ -121,7 +121,7 @@ type RowDrag = {
               <div
                 [style.minWidth.rem]="LANE_MIN_REM"
                 [title]="lane.key"
-                class="grow truncate border-b border-l border-et-surface-border px-2 py-1 text-small text-et-surface-muted"
+                class="grow basis-0 truncate border-b border-l border-et-surface-border px-2 py-1 text-small text-et-surface-muted"
                 data-lane-header
               >
                 {{ lane.label }}
@@ -167,7 +167,7 @@ type RowDrag = {
                   #column
                   [style.minWidth.rem]="LANE_MIN_REM"
                   (pointerdown)="startDraw({ event: $event, column, lane })"
-                  class="relative grow touch-none border-l border-et-surface-border"
+                  class="relative grow basis-0 touch-none border-l border-et-surface-border"
                   data-lane
                 >
                   @if (draftIn(lane); as draft) {
