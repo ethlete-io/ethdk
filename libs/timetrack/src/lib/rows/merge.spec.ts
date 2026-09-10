@@ -13,11 +13,12 @@ const attributed = (options: {
   storyKey?: string;
   confidence?: Confidence;
   branch?: string;
+  repoPath?: string;
 }): AttributedBlock => {
   const block: ActivityBlock = {
     from: AT(options.fromMinute),
     to: AT(options.toMinute),
-    context: { appId: 'code', branch: options.branch },
+    context: { appId: 'code', branch: options.branch, repoPath: options.repoPath },
     evidence: [{ kind: 'branch', at: AT(options.fromMinute), detail: `branch \`${options.branch}\`` }],
   };
 
@@ -44,7 +45,7 @@ describe('mergeBlocks', () => {
     expect(rows[0]?.to).toEqual(AT(60));
   });
 
-  it('keeps a context switch separate however short it was', () => {
+  it('joins one issue across a short switch to another, and books the switch to itself', () => {
     const rows = mergeBlocks({
       blocks: [
         attributed({ fromMinute: 0, toMinute: 30, issueKey: 'FIP-2177' }),
@@ -53,7 +54,9 @@ describe('mergeBlocks', () => {
       ],
     });
 
-    expect(rows.map((row) => row.issueKey)).toEqual(['FIP-2177', 'FIP-2222', 'FIP-2177']);
+    expect(rows.map((row) => row.issueKey)).toEqual(['FIP-2177', 'FIP-2222']);
+    expect(rows[0]?.observedMs).toBe(58 * 60_000);
+    expect(rows[1]?.observedMs).toBe(2 * 60_000);
   });
 
   it('does not merge the same issue across a gap wider than the threshold', () => {
@@ -67,11 +70,47 @@ describe('mergeBlocks', () => {
     expect(rows).toHaveLength(2);
   });
 
-  it('never merges blocks nothing could attribute', () => {
+  it('combines the unnamed blocks of one context into one band', () => {
     const rows = mergeBlocks({
       blocks: [
-        attributed({ fromMinute: 0, toMinute: 20, confidence: 'weak' }),
-        attributed({ fromMinute: 20, toMinute: 40, confidence: 'weak' }),
+        attributed({ fromMinute: 0, toMinute: 20, confidence: 'weak', repoPath: '/a' }),
+        attributed({ fromMinute: 20, toMinute: 40, confidence: 'weak', repoPath: '/a' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.issueKey).toBeUndefined();
+    expect(rows[0]?.observedMs).toBe(40 * 60_000);
+  });
+
+  it('joins an unnamed context across the other context that interleaved with it', () => {
+    const blocks = Array.from({ length: 20 }, (_, index) => [
+      attributed({ fromMinute: index * 2, toMinute: index * 2 + 1, confidence: 'weak', repoPath: '/a' }),
+      attributed({ fromMinute: index * 2 + 1, toMinute: index * 2 + 2, confidence: 'weak', repoPath: '/b' }),
+    ]).flat();
+
+    const rows = mergeBlocks({ blocks });
+
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.observedMs)).toEqual([20 * 60_000, 20 * 60_000]);
+  });
+
+  it('keeps unnamed bands of two contexts apart', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 20, confidence: 'weak', repoPath: '/a' }),
+        attributed({ fromMinute: 20, toMinute: 40, confidence: 'weak', repoPath: '/b' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(2);
+  });
+
+  it('does not merge one context across a break wider than the threshold', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 20, confidence: 'weak', repoPath: '/a' }),
+        attributed({ fromMinute: 60, toMinute: 80, confidence: 'weak', repoPath: '/a' }),
       ],
     });
 
@@ -111,7 +150,7 @@ describe('mergeBlocks', () => {
     expect(rows[0]?.storyKey).toBe('FIP-2177');
   });
 
-  it('collapses a day past the row cap into one row per issue, gaps and all', () => {
+  it('collapses a day past the row cap into one row per track, gaps and all', () => {
     const blocks = Array.from({ length: 6 }, (_, index) => [
       attributed({ fromMinute: index * 60, toMinute: index * 60 + 25, issueKey: 'FIP-2177' }),
       attributed({ fromMinute: index * 60 + 30, toMinute: index * 60 + 55, issueKey: 'FIP-2222' }),
@@ -124,16 +163,17 @@ describe('mergeBlocks', () => {
     expect(rows[0]?.to).toEqual(AT(5 * 60 + 25));
   });
 
-  it('leaves unattributed rows out of the collapse so each stays its own question', () => {
+  it('collapses the unnamed rows of one context too, so the cap holds for the whole day', () => {
     const blocks = Array.from({ length: 5 }, (_, index) => [
       attributed({ fromMinute: index * 60, toMinute: index * 60 + 25, issueKey: 'FIP-2177' }),
-      attributed({ fromMinute: index * 60 + 30, toMinute: index * 60 + 55, confidence: 'weak' }),
+      attributed({ fromMinute: index * 60 + 30, toMinute: index * 60 + 55, confidence: 'weak', repoPath: '/a' }),
     ]).flat();
 
     const rows = mergeBlocks({ blocks, options: { maxRowsPerDay: 4 } });
 
-    expect(rows.filter((row) => !row.issueKey)).toHaveLength(5);
+    expect(rows.filter((row) => !row.issueKey)).toHaveLength(1);
     expect(rows.filter((row) => row.issueKey)).toHaveLength(1);
+    expect(rows.find((row) => !row.issueKey)?.observedMs).toBe(5 * 25 * 60_000);
   });
 
   it('orders blocks by start time before merging', () => {

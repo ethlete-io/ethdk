@@ -1,4 +1,4 @@
-import { ActivityBlock, blockDurationMs } from '../model/block';
+import { ActivityBlock, blockDurationMs, contextKey } from '../model/block';
 import { Confidence, Evidence, compareConfidence } from '../model/evidence';
 import { AttributedBlock } from './attribute';
 
@@ -20,9 +20,9 @@ export type WorkGroup = {
 };
 
 export type MergeOptions = {
-  /** Two same-issue rows this close become one; a longer gap stays two rows, so lunch stays visible. */
+  /** Two rows of one track this close become one; a longer gap stays two rows, so lunch stays visible. */
   maxMergeGapMs: number;
-  /** Above this many rows, every row on one issue collapses into one regardless of the gaps. */
+  /** Above this many rows, every row on one track collapses into one regardless of the gaps. */
   maxRowsPerDay: number;
 };
 
@@ -87,19 +87,36 @@ const join = (into: WorkGroup, next: WorkGroup): WorkGroup => ({
 });
 
 /**
+ * Which row a block continues: the issue a rule named, or the context behind a block nothing could
+ * name. A group with neither - a meeting, a timer run - continues nothing and stays its own row.
+ *
+ * A context is the right identity for an unnamed band, because the reasoning provider is asked per
+ * context as well: `unnamedContexts` folds the day's unattributed groups by this same key. One band
+ * per context and stretch therefore asks exactly what hundreds of one-block bands asked.
+ */
+const trackOf = (group: WorkGroup) => {
+  if (group.issueKey) return `issue:${group.issueKey}`;
+
+  const context = group.blocks[0]?.context;
+
+  return context ? `context:${contextKey(context)}` : undefined;
+};
+
+/**
  * The last resort for a day that fragmented into more rows than anyone will review: every row on one
- * issue becomes one, gaps and all. `observedMs` still counts only observed time, so this widens a
+ * track becomes one, gaps and all. `observedMs` still counts only observed time, so this widens a
  * row's clock span without inventing any duration.
  */
-const consolidateByIssue = (rows: WorkGroup[]) => {
-  const indexByIssue = new Map<string, number>();
+const consolidateByTrack = (rows: WorkGroup[]) => {
+  const indexByTrack = new Map<string, number>();
   const kept: WorkGroup[] = [];
 
   for (const row of rows) {
-    const at = row.issueKey === undefined ? undefined : indexByIssue.get(row.issueKey);
+    const track = trackOf(row);
+    const at = track === undefined ? undefined : indexByTrack.get(track);
 
     if (at === undefined) {
-      if (row.issueKey) indexByIssue.set(row.issueKey, kept.length);
+      if (track !== undefined) indexByTrack.set(track, kept.length);
       kept.push(row);
       continue;
     }
@@ -112,28 +129,34 @@ const consolidateByIssue = (rows: WorkGroup[]) => {
 };
 
 /**
- * Combines consecutive blocks that carry the same issue key into one reviewable row, and leaves a
- * genuine context switch alone however short it was. Blocks nothing could attribute never merge with
- * anything: each one is a separate question for the reasoning provider, and merging them would
- * destroy the evidence that distinguishes them.
+ * Combines a track's blocks into reviewable rows - the same issue, or the same context while nothing
+ * has named it. Two blocks of one track join while less than `maxMergeGapMs` separates them, whatever
+ * held the machine in that gap: a day that moves between two checkouts every minute is two lines of
+ * work and not four hundred, and each row still counts only the time its own blocks held.
+ *
+ * A real break is longer than the gap, so it still ends a row and the timeline still shows when the
+ * work happened.
  */
 export const mergeBlocks = (options: { blocks: AttributedBlock[]; options?: Partial<MergeOptions> }): WorkGroup[] => {
   const config = { ...DEFAULT_MERGE_OPTIONS, ...options.options };
   const ordered = options.blocks.slice().sort((a, b) => a.block.from.getTime() - b.block.from.getTime());
   const rows: WorkGroup[] = [];
+  const lastOfTrack = new Map<string, number>();
 
   for (const attributed of ordered) {
     const group = groupFrom(attributed);
-    const previous = rows[rows.length - 1];
-    const mergeable =
-      !!previous &&
-      !!group.issueKey &&
-      previous.issueKey === group.issueKey &&
-      group.from.getTime() - previous.to.getTime() <= config.maxMergeGapMs;
+    const track = trackOf(group);
+    const at = track === undefined ? undefined : lastOfTrack.get(track);
+    const previous = at === undefined ? undefined : rows[at];
 
-    if (previous && mergeable) rows[rows.length - 1] = join(previous, group);
-    else rows.push(group);
+    if (at !== undefined && previous && group.from.getTime() - previous.to.getTime() <= config.maxMergeGapMs) {
+      rows[at] = join(previous, group);
+      continue;
+    }
+
+    if (track !== undefined) lastOfTrack.set(track, rows.length);
+    rows.push(group);
   }
 
-  return rows.length > config.maxRowsPerDay ? consolidateByIssue(rows) : rows;
+  return rows.length > config.maxRowsPerDay ? consolidateByTrack(rows) : rows;
 };
