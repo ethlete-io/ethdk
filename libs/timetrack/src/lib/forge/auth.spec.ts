@@ -61,14 +61,18 @@ describe('probeForgeAuth$', () => {
     expect(probe({ code: 1, stdout: '', stderr: 'gitlab.com\n  ! No token found.\n' }).state).toBe('not-logged-in');
   });
 
-  it('says not installed when the binary is absent, which is a different repair', () => {
-    const runner: TimetrackProcessRunner = { run$: () => throwError(() => new Error('not installed: glab')) };
-    const seen = vi.fn();
+  /** The host rejects with the string its error serialized to, which is the shape that matters most. */
+  it.each([['not installed: glab'], [new Error('not installed: glab')]])(
+    'says not installed when the binary is absent, which is a different repair: %s',
+    (rejection) => {
+      const runner: TimetrackProcessRunner = { run$: () => throwError(() => rejection) };
+      const seen = vi.fn();
 
-    probeForgeAuth$({ runner, cli: 'glab' }).subscribe(seen);
+      probeForgeAuth$({ runner, cli: 'glab' }).subscribe(seen);
 
-    expect((seen.mock.calls[0]?.[0] as ForgeAuth).state).toBe('not-installed');
-  });
+      expect((seen.mock.calls[0]?.[0] as ForgeAuth).state).toBe('not-installed');
+    },
+  );
 });
 
 describe('forgeLoginFor', () => {

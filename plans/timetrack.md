@@ -2776,13 +2776,33 @@ Raised 2026-08-16 unless an entry says otherwise, in no order. An entry is sched
 once it names a date and a decision; the rest are undesigned.
 
 - ~~**Work versus private use of the same application.**~~ **- built**, see below.
-- **A reporter-install wizard** (decided 2026-09-09, not built)**.** A reporter that stopped posting is a silent hole in the day, and
+- **A reporter-install wizard** (decided 2026-09-09)**.** A reporter that stopped posting is a silent hole in the day, and
   the VS Code extension installs today with `npx nx install timetrack-vscode` - fine from this
-  checkout, impossible for anybody else. First step is **detect and report**, which needs nothing
-  new: the ingest endpoint already knows which reporters posted, so the Sources view can say
-  "installed and reporting", "installed, not reporting" or "not installed" per editor it finds on the
-  `PATH`, and show the install command. Installing from a button, with the `.vsix` shipped inside the
+  checkout, impossible for anybody else.
+
+  **Detect and report is built (2026-09-10).** The Sources view asks each of the five editor clients
+  `--list-extensions`, and per editor on the `PATH` says "installed" or "not installed" with the
+  command that installs it into that one editor. An editor the `PATH` does not hold is left out. A
+  client that answers with a failure reads "could not be read", kept apart from a missing extension so
+  nobody is sent to install one that is already there.
+
+  **Whether a heartbeat arrived stays one line for the reporter as a whole**, decided with Tom on
+  2026-09-10. Every editor posts under the same reporter name, `vscode`, and a heartbeat is sent only
+  while the window has focus - so neither "which editor posted" nor "this one went quiet" is derivable
+  from what is stored. Two ways to make it per editor were weighed and both rejected for now: matching
+  a heartbeat's instant to the app the window source saw focused then, and making the extension post
+  under the editor it runs in. The second is the honest one if this ever matters; it costs a reinstall
+  in every editor before the row tells the truth.
+
+  **Building it found a live defect.** `isMissingCliError` required an `Error`, but a Tauri command
+  rejects with the **string** its error serialized to, so nothing ever matched. Every editor not on
+  the `PATH` read "could not be read", and a missing `glab` or `gh` would have read as a hard failure
+  rather than "not installed" - the e2e fake had hidden it by rejecting with an `Error`. Both the check
+  and the fake now use the host's real shape.
+
+  Installing from a button, with the `.vsix` shipped inside the
   app bundle, is the step after - it is a build change and a permission change, so it is its own task.
+
 - **A browser reporter over the ingest seam** (decided 2026-09-09, not built)**.** It sends the **origin** of the focused tab, plus a
   Jira key or a merge request number when a known host's path holds one. Never a full path, never a
   query string, never a title - an allowlist over a known host, not a filter over an accident.

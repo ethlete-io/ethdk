@@ -5,6 +5,7 @@ import {
   CollectedEvent,
   DayNudgeRecord,
   DayReviewEdits,
+  EditorCli,
   ProcessSpec,
   SyncedWorklog,
   TIMETRACK_SECRET_KEYS,
@@ -19,12 +20,14 @@ import {
   FakeAgentLog,
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_SEED_KEY,
+  cliNotInstalledMessage,
   createFakeWorld,
-  forgeCliNotInstalledMessage,
+  isEditorSpec,
   isGhSpec,
   isGlabSpec,
   parseWorldSeed,
   respond,
+  runFakeEditor,
   runFakeGh,
   runFakeGit,
   runFakeGlab,
@@ -270,13 +273,19 @@ export const createFakePorts = (): HostPorts => {
         if (isGlabSpec(spec)) {
           return world.glab.installed
             ? ok(runFakeGlab({ backend, spec, state: world.glab }))
-            : throwError(() => new Error(forgeCliNotInstalledMessage('glab')));
+            : throwError(() => cliNotInstalledMessage('glab'));
         }
 
         if (isGhSpec(spec)) {
           return world.gh.installed
             ? ok(runFakeGh({ spec, state: world.gh }))
-            : throwError(() => new Error(forgeCliNotInstalledMessage('gh')));
+            : throwError(() => cliNotInstalledMessage('gh'));
+        }
+
+        if (isEditorSpec(spec)) {
+          const editor = world.editors[spec.command as EditorCli];
+
+          return editor.onPath ? ok(runFakeEditor(editor)) : throwError(() => cliNotInstalledMessage(spec.command));
         }
 
         if (isReasoningSpec(spec)) reasoningRuns += 1;

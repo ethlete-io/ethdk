@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+// Has to hold the same clients as EDITOR_CLIS in libs/timetrack/src/lib/reporter/editors.ts, which is
+// what the Sources view offers this command for.
 const CLIS = ['code', 'code-insiders', 'codium', 'cursor', 'windsurf'];
 
 const { version } = JSON.parse(readFileSync(resolve('apps/timetrack-vscode/package.json'), 'utf8'));

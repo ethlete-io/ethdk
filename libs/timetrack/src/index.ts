@@ -11,6 +11,7 @@ export * from './lib/ingest';
 export * from './lib/jira';
 export * from './lib/model';
 export * from './lib/reason';
+export * from './lib/reporter';
 export * from './lib/review';
 export * from './lib/settings';
 export * from './lib/store';

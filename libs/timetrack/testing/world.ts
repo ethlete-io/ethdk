@@ -1,4 +1,5 @@
-import { CollectedEvent, DEFAULT_TIMETRACK_SETTINGS, TimetrackSettings } from '@ethlete/timetrack';
+import { CollectedEvent, DEFAULT_TIMETRACK_SETTINGS, EditorCli, TimetrackSettings } from '@ethlete/timetrack';
+import { FakeEditorState, FakeEditors } from './backend/editor-cli';
 import { FakeGitHubState } from './backend/gh';
 import { FakeGlabState } from './backend/glab';
 import {
@@ -67,6 +68,8 @@ export type TimetrackWorldSeed = {
   glab?: Partial<FakeGlabState>;
   /** What the `gh` binary is, and what its feed holds. Installed, logged in, and reading nothing. */
   gh?: Partial<FakeGitHubState>;
+  /** The editor clients on the seeded machine. Only `code`, holding the reporter, by default. */
+  editors?: Partial<Record<EditorCli, Partial<FakeEditorState>>>;
   git?: Partial<FakeGitState>;
   windowSource?: Partial<FakeWindowSourceStatus>;
   faults?: FakeFault[];
@@ -76,6 +79,7 @@ export type FakeWorld = {
   events: CollectedEvent[];
   glab: FakeGlabState;
   gh: FakeGitHubState;
+  editors: FakeEditors;
   settings: TimetrackSettings;
   agentLogs: FakeAgentLog[];
   codexLogs: FakeAgentLog[];
@@ -182,6 +186,15 @@ const defaultGlab = (): FakeGlabState => ({
   logins: [{ host: 'gitlab.example.com', login: 'e2e' }],
 });
 
+/** One editor, as most machines are: `code` installed with the reporter in it, and no fork beside it. */
+const defaultEditors = (): FakeEditors => ({
+  code: { onPath: true, reporter: true },
+  'code-insiders': { onPath: false, reporter: false },
+  codium: { onPath: false, reporter: false },
+  cursor: { onPath: false, reporter: false },
+  windsurf: { onPath: false, reporter: false },
+});
+
 const defaultGh = (): FakeGitHubState => ({
   installed: true,
   logins: [{ host: 'github.com', login: 'e2e' }],
@@ -252,6 +265,16 @@ const defaultGit = (): FakeGitState => ({
   ran: [],
 });
 
+const seedEditors = (seed: TimetrackWorldSeed['editors']): FakeEditors => {
+  const editors = defaultEditors();
+
+  for (const [cli, state] of Object.entries(seed ?? {})) {
+    editors[cli as EditorCli] = { ...editors[cli as EditorCli], ...state };
+  }
+
+  return editors;
+};
+
 /** Builds the whole fake world for one page load: the collected events, the settings and the backend. */
 export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   events: seed.events ?? defaultEvents(),
@@ -261,6 +284,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   windowSource: { kind: 'none', detail: null, capabilities: [], ...seed.windowSource },
   glab: { ...defaultGlab(), ...seed.glab },
   gh: { ...defaultGh(), ...seed.gh },
+  editors: seedEditors(seed.editors),
   backend: {
     jira: { ...defaultJira(), ...seed.jira },
     tempo: { ...defaultTempo(), ...seed.tempo },

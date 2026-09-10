@@ -158,10 +158,22 @@ export const forgeApiPaged$ = <T>(call: ForgeApiCall & { paging?: Partial<ForgeP
 };
 
 /**
+ * What a rejected host command said, whatever shape it arrived in.
+ *
+ * A Tauri command rejects with the string its error serialized to rather than with an `Error`, so a
+ * check that reads only `Error.message` sees nothing at all on the real host. See
+ * `impl Serialize for TimetrackError`.
+ */
+export const hostFailureMessage = (error: unknown) => {
+  if (typeof error === 'string') return error;
+
+  return error instanceof Error ? error.message : String(error);
+};
+
+/**
  * Whether the failure is the binary being absent, which every caller reports differently from a refusal.
  *
  * The host has one channel to say it in — the serialized error string — so the prefix it writes is the
  * contract. See `TimetrackError::NotInstalled`.
  */
-export const isMissingCliError = (error: unknown) =>
-  error instanceof Error && error.message.startsWith(NOT_INSTALLED_PREFIX);
+export const isMissingCliError = (error: unknown) => hostFailureMessage(error).startsWith(NOT_INSTALLED_PREFIX);

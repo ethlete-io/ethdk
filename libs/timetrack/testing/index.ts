@@ -1,3 +1,5 @@
+export * from './backend/cli';
+export * from './backend/editor-cli';
 export * from './backend/git';
 export * from './backend/forge-cli';
 export * from './backend/gh';

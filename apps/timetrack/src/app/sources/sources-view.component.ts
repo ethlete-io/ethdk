@@ -1,7 +1,17 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, BadgeVariant } from '@ethlete/components';
-import { GITHUB_HOST, formatDurationMs, forgeHostname, forgeLoginFor } from '@ethlete/timetrack';
+import {
+  EditorCli,
+  EditorReporter,
+  EditorReporterState,
+  GITHUB_HOST,
+  editorInstallCommand,
+  formatDurationMs,
+  forgeHostname,
+  forgeLoginFor,
+  probeEditorReporters$,
+} from '@ethlete/timetrack';
 import { catchError, of, switchMap } from 'rxjs';
 import {
   injectAgentSessionCollector,
@@ -70,6 +80,43 @@ const STATE_VARIANT: Record<EvidenceSourceState, BadgeVariant> = {
   'not-running': 'tonal',
 };
 
+/** Only the two states an editor row can be in once the one that hides it is filtered out. */
+type ShownReporterState = Exclude<EditorReporterState, 'not-on-path'>;
+
+const REPORTER_LABEL: Record<ShownReporterState, string> = {
+  installed: 'installed',
+  'not-installed': 'not installed',
+  unreadable: 'could not be read',
+};
+
+/**
+ * An editor without the reporter is neutral rather than a warning: most people run one editor, and
+ * three rows shouting about the two they never opened would bury the one that matters.
+ */
+const REPORTER_COLOR: Record<ShownReporterState, string> = {
+  installed: 'success',
+  'not-installed': 'neutral',
+  unreadable: 'warning',
+};
+
+const REPORTER_VARIANT: Record<ShownReporterState, BadgeVariant> = {
+  installed: 'tonal',
+  'not-installed': 'outline',
+  unreadable: 'tonal',
+};
+
+/** One editor found on this machine, and what to do about it. */
+type ReporterRow = {
+  cli: EditorCli;
+  name: string;
+  label: string;
+  color: string;
+  variant: BadgeVariant;
+  detail: string | null;
+  /** What to run to put the reporter in, and `null` once it is in. */
+  command: string | null;
+};
+
 /** What the source reads about the focused window on this machine, as the row renders it. */
 type SourceCapability = {
   reads: string;
@@ -91,6 +138,8 @@ type SourceRow = {
   run: string | null;
   /** What the source reads here. Empty for every source but the focused window. */
   capabilities: SourceCapability[];
+  /** The editors found on this machine, `null` for every other source and until they are asked. */
+  reporters: ReporterRow[] | null;
   /** Something degraded that still leaves the source working. */
   warning: string | null;
   /** Whether the degradation is a permission the user can grant from here. */
@@ -180,6 +229,37 @@ type SourceRow = {
               </div>
             }
 
+            @if (row.reporters) {
+              <div class="mt-1 flex flex-col gap-1">
+                <p class="text-small font-medium">Editors on this machine</p>
+
+                @if (row.reporters.length) {
+                  <ul class="flex flex-col gap-1">
+                    @for (reporter of row.reporters; track reporter.cli) {
+                      <li [attr.data-editor]="reporter.cli" class="flex flex-col gap-0.5">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <et-badge [color]="reporter.color" [variant]="reporter.variant" size="sm">
+                            {{ reporter.label }}
+                          </et-badge>
+                          <span class="text-small">{{ reporter.name }}</span>
+                        </div>
+
+                        @if (reporter.detail) {
+                          <p class="text-small text-et-surface-subtle">{{ reporter.detail }}</p>
+                        }
+
+                        @if (reporter.command) {
+                          <code class="text-small text-et-surface-subtle">{{ reporter.command }}</code>
+                        }
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="text-small text-et-surface-subtle">No editor this app has a reporter for is on the PATH.</p>
+                }
+              </div>
+            }
+
             @if (row.detail) {
               <p class="text-small text-et-surface-subtle">{{ row.detail }}</p>
             }
@@ -250,6 +330,15 @@ export class SourcesViewComponent {
     { initialValue: [] as SourceTally[] },
   );
 
+  /**
+   * Asked once, when this screen is created. Nothing installs an extension while it is open, and the
+   * next visit asks again — so a run of five processes on a timer would buy nothing.
+   */
+  private editors = toSignal(
+    probeEditorReporters$({ runner: this.ports.processes }).pipe(catchError(() => of<EditorReporter[]>([]))),
+    { initialValue: null },
+  );
+
   protected pausedFor = computed(() => formatDurationMs(this.pause.pausedForMs()));
 
   protected rows = computed<SourceRow[]>(() =>
@@ -269,6 +358,7 @@ export class SourcesViewComponent {
         stored: this.storedOf({ source, state }),
         run: this.runOf(source),
         capabilities: this.capabilitiesOf(source),
+        reporters: this.reportersOf(source),
         warning: this.warningOf(source),
         grant: source.collector === 'window' && this.windows.status()?.kind === WINDOW_SOURCE_NEEDS_ACCESSIBILITY,
         failure: this.failureOf(source),
@@ -427,6 +517,34 @@ export class SourcesViewComponent {
       default:
         return null;
     }
+  }
+
+  /**
+   * Only the editor row. An editor the `PATH` does not hold is left out rather than shown as missing
+   * the reporter: it is not on this machine, so there is nothing here to repair.
+   */
+  private reportersOf(source: EvidenceSource): ReporterRow[] | null {
+    if (source.id !== 'vscode') return null;
+
+    const found = this.editors();
+
+    if (!found) return null;
+
+    return found
+      .filter((editor) => editor.state !== 'not-on-path')
+      .map((editor): ReporterRow => {
+        const state = editor.state as ShownReporterState;
+
+        return {
+          cli: editor.cli,
+          name: editor.name,
+          label: REPORTER_LABEL[state],
+          color: REPORTER_COLOR[state],
+          variant: REPORTER_VARIANT[state],
+          detail: editor.detail,
+          command: state === 'not-installed' ? editorInstallCommand(editor.cli) : null,
+        };
+      });
   }
 
   /**

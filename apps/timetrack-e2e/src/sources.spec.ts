@@ -249,3 +249,57 @@ test.describe('the GitHub row, which reads through `gh`', () => {
     await expect(row(page, 'github')).toContainText('gh auth login --hostname github.com');
   });
 });
+
+/**
+ * A reporter that stopped posting is a silent hole in the day, and the editor row could not say
+ * anything about it: it reported the endpoint, never the editors. What this screen can prove is which
+ * editor holds the extension. Whether a heartbeat arrived stays one line for the reporter as a whole,
+ * because every editor posts under the same name.
+ */
+test.describe('the editor row, which reports which editors hold the reporter', () => {
+  const editor = (page: Page, cli: string) => row(page, 'vscode').locator(`[data-editor="${cli}"]`);
+
+  test('names the editor that holds the reporter, and offers it no install', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW });
+    await page.goto('/sources');
+
+    await expect(editor(page, 'code')).toContainText('installed');
+    await expect(editor(page, 'code')).not.toContainText('not installed');
+    await expect(editor(page, 'code')).not.toContainText('npx nx install');
+  });
+
+  test('offers the install command for an editor without it, naming that editor alone', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, editors: { cursor: { onPath: true, reporter: false } } });
+    await page.goto('/sources');
+
+    await expect(editor(page, 'cursor')).toContainText('not installed');
+    await expect(editor(page, 'cursor')).toContainText('TIMETRACK_VSCODE_CLI=cursor npx nx install timetrack-vscode');
+  });
+
+  test('leaves out an editor that is not on the machine, rather than asking for it', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW });
+    await page.goto('/sources');
+
+    await expect(editor(page, 'code')).toBeVisible();
+    await expect(editor(page, 'windsurf')).toHaveCount(0);
+  });
+
+  test('says so when no editor it knows is on the PATH', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, editors: { code: { onPath: false, reporter: false } } });
+    await page.goto('/sources');
+
+    await expect(row(page, 'vscode')).toContainText('No editor this app has a reporter for is on the PATH');
+  });
+
+  test('keeps an editor that answered with a failure apart from one missing the reporter', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      editors: { code: { onPath: true, reporter: true, fails: 'Unable to connect to the extension host.' } },
+    });
+    await page.goto('/sources');
+
+    await expect(editor(page, 'code')).toContainText('could not be read');
+    await expect(editor(page, 'code')).toContainText('Unable to connect to the extension host.');
+    await expect(editor(page, 'code')).not.toContainText('npx nx install');
+  });
+});

@@ -8,9 +8,6 @@ export type FakeForgeCliState = {
   logins: { host: string; login: string }[];
 };
 
-/** The host's own wording for a missing binary. `isMissingCliError` reads exactly this prefix. */
-export const forgeCliNotInstalledMessage = (cli: string) => `not installed: ${cli}`;
-
 /**
  * The report each CLI prints, copied from what they printed on 2026-09-10.
  *
