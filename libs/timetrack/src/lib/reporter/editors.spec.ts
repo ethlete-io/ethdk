@@ -19,7 +19,7 @@ ethlete.timetrack-vscode
 eamodio.gitlens
 `;
 
-const ran = (result: ProcessResult) => ({ code: 0, stdout: '', stderr: '', ...result });
+const ran = (result: Partial<ProcessResult>): ProcessResult => ({ code: 0, stdout: '', stderr: '', ...result });
 
 const probe = (answer: Observable<ProcessResult>) => {
   const runner: TimetrackProcessRunner = { run$: vi.fn(() => answer) };
@@ -100,13 +100,13 @@ describe('editorInstallCommand', () => {
 
 describe('installEditorReporter$', () => {
   const install = (answer: Observable<ProcessResult>) => {
-    const run$ = vi.fn(() => answer);
+    const run$ = vi.fn<TimetrackProcessRunner['run$']>(() => answer);
     const seen = vi.fn();
 
     installEditorReporter$({ runner: { run$ }, cli: 'cursor', vsix: '/bundle/timetrack-vscode.vsix' }).subscribe(seen);
 
     return {
-      spec: run$.mock.calls[0]?.[0] as ProcessSpec | undefined,
+      spec: run$.mock.calls[0]?.[0],
       result: seen.mock.calls[0]?.[0] as EditorInstall,
     };
   };
