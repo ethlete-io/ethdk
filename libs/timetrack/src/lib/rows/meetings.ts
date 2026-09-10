@@ -63,7 +63,7 @@ const conferenceIdOf = (event: CalendarOccurrenceEvent) => {
   return segment && segment.length >= 4 ? segment.toLowerCase() : undefined;
 };
 
-const titlesDuring = (options: { blocks: ActivityBlock[]; event: CalendarOccurrenceEvent }) =>
+const titlesDuring = (options: { blocks: readonly ActivityBlock[]; event: CalendarOccurrenceEvent }) =>
   options.blocks
     .flatMap((block) => block.evidence)
     .filter(
@@ -79,7 +79,7 @@ const titlesDuring = (options: { blocks: ActivityBlock[]; event: CalendarOccurre
  */
 const MIN_TITLE_MATCH_LENGTH = 6;
 
-const confirmingTitle = (options: { blocks: ActivityBlock[]; event: CalendarOccurrenceEvent }) => {
+const confirmingTitle = (options: { blocks: readonly ActivityBlock[]; event: CalendarOccurrenceEvent }) => {
   const conferenceId = conferenceIdOf(options.event);
   const title = options.event.title.toLowerCase();
   const matchesTitle = title.length >= MIN_TITLE_MATCH_LENGTH;
@@ -92,7 +92,7 @@ const confirmingTitle = (options: { blocks: ActivityBlock[]; event: CalendarOccu
 };
 
 const attendanceOf = (options: {
-  blocks: ActivityBlock[];
+  blocks: readonly ActivityBlock[];
   event: CalendarOccurrenceEvent;
   overlapMs: number;
 }): { attendance: MeetingAttendance; evidence?: Evidence } => {
@@ -172,7 +172,7 @@ const calendarEvidence = (event: CalendarOccurrenceEvent): Evidence => ({
 
 const matchOne = (options: {
   event: CalendarOccurrenceEvent;
-  blocks: ActivityBlock[];
+  blocks: readonly ActivityBlock[];
   meetings: MeetingOptions;
 }): MeetingMatch => {
   const { event, blocks, meetings } = options;
@@ -216,8 +216,8 @@ const matchOne = (options: {
  * one, which lands it in the day's unattributed groups rather than on a guessed ticket.
  */
 export const matchMeetings = (options: {
-  events: CollectedEvent[];
-  blocks: ActivityBlock[];
+  events: readonly CollectedEvent[];
+  blocks: readonly ActivityBlock[];
   meetings?: MeetingOptions;
 }): MeetingMatch[] => {
   const meetings = options.meetings ?? {};

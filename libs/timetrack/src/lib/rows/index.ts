@@ -1,4 +1,5 @@
 export * from './attribute';
+export * from './build-rows';
 export * from './calls';
 export * from './describe';
 export * from './donate';
