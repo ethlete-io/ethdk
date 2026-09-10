@@ -3,6 +3,7 @@ import {
   StreamDayOptions,
   TimetrackSettings,
   effectiveNoWorkContextApps,
+  effectiveTransientApps,
   gitFlowConfigFor,
 } from '@ethlete/timetrack';
 
@@ -24,6 +25,10 @@ export const dayRowsOptionsOf = (settings: TimetrackSettings): Omit<BuildRowsOpt
   rules: settings.attributionRules,
   fill: { maxFillGapMs: settings.gapFillMs },
   meetings: { defaultIssueKey: settings.meetingIssueKey || undefined },
+  noWorkContext: {
+    apps: effectiveNoWorkContextApps(settings),
+    transientApps: effectiveTransientApps(settings),
+  },
 });
 
 /**
@@ -47,5 +52,6 @@ export const streamDayOptionsOf = (options: {
   windowsSeenThroughMs: options.windowsSeenThroughMs,
   callRules: options.settings.callRules,
   noWorkContextApps: effectiveNoWorkContextApps(options.settings),
+  transientApps: effectiveTransientApps(options.settings),
   rows: { ...dayRowsOptionsOf(options.settings), ...options.rows },
 });

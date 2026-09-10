@@ -31,6 +31,7 @@ const REASON_LABEL: Record<UnnamedFocusReason, string> = {
   private: 'a private project',
   'own-window': 'this app',
   'no-work-context': 'no work context',
+  transient: 'a dialog over the work',
 };
 
 const VERDICT_LABEL: Record<UnnamedFocusVerdict, string> = {
@@ -298,7 +299,7 @@ export class UnnamedFocusComponent {
           standing: VERDICT_LABEL[row.verdict],
           color: VERDICT_COLOR[row.verdict],
           appId: row.appId,
-          declared: row.reason === 'no-work-context',
+          declared: row.reason === 'no-work-context' || row.reason === 'transient',
           titles: titles.map((held) => ({ title: held.title, duration: formatDurationMs(held.ms) })),
           remainder,
           titlesLabel: titlesLabelOf({ count: titles.length, remainder }),

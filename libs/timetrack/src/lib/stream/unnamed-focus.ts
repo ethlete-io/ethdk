@@ -1,12 +1,13 @@
 /**
  * Why a stretch of focused-window time took no checkout.
  *
- * A private checkout, this app's own window and an application the user declared no work context are
- * each unnamed on purpose. `no-name` is not a verdict on its own: a window a checkout should have
+ * A private checkout, this app's own window, an application the user declared no work context and a
+ * transient dialog that opened over the work are each unnamed on purpose. `no-name` is not a verdict on its own: a window a checkout should have
  * taken lands in it, and so does an application nobody has declared yet. Every cause is reported, so
  * the rows sum to the whole of the folded line rather than to the part of it that is wrong.
  */
-export type UnnamedFocusReason = 'no-name' | 'ambiguous-name' | 'private' | 'own-window' | 'no-work-context';
+export type UnnamedFocusReason =
+  'no-name' | 'ambiguous-name' | 'private' | 'own-window' | 'no-work-context' | 'transient';
 
 /**
  * One window title behind a row, and how long that title held the focus.
@@ -62,7 +63,7 @@ export type UnnamedFocusSpan = {
 };
 
 /** The causes that are the right answer rather than a gap, whatever the rest of the span says. */
-const ON_PURPOSE: readonly UnnamedFocusReason[] = ['private', 'own-window', 'no-work-context'];
+const ON_PURPOSE: readonly UnnamedFocusReason[] = ['private', 'own-window', 'no-work-context', 'transient'];
 
 /**
  * What a row's time is.

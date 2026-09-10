@@ -13,6 +13,7 @@ import { FillOptions, fillGaps } from './fill';
 import { MeetingMatch, MeetingOptions, matchMeetings } from './meetings';
 import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, mergeBlocks } from './merge';
 import { mergeRequestActivity } from './merge-request-activity';
+import { NoWorkContextOptions, dropNoWorkContext } from './no-work-context';
 import { clipBlocks } from './overlap';
 import { PrivateTime, privateTime } from './project-link';
 import { UnnamedProposal, propose } from './propose';
@@ -38,6 +39,11 @@ export type BuildRowsOptions = {
   fill?: Partial<FillOptions>;
   /** Meeting handling. `config` and `patterns` are taken from the day's own, not repeated here. */
   meetings?: Omit<MeetingOptions, 'config' | 'patterns'>;
+  /**
+   * The applications that can name no work, from `effectiveNoWorkContextApps` and
+   * `effectiveTransientApps`. Their blocks propose no time and get no lane.
+   */
+  noWorkContext?: NoWorkContextOptions;
   merge?: Partial<MergeOptions>;
   round?: Partial<RoundOptions>;
   describe?: Partial<DescribeOptions>;
@@ -86,6 +92,11 @@ export type DayRows = {
  * A pause is cut out for the opposite reason: nothing watched it, and the samples on either side are
  * close enough together that the block builder would otherwise bridge the hole and bill it.
  *
+ * A block that names nothing but an application on `noWorkContext` is dropped before it is
+ * attributed, so a media player proposes no time and gets no lane. Meetings, calls and timer runs are
+ * matched against the unfiltered blocks, so a call held in one of those applications keeps the
+ * activity observed during it.
+ *
  * Which builder produced the blocks is not its business, which is what lets the two day pipelines
  * share one ladder, one merge and one rounding rather than drifting apart on all three.
  */
@@ -102,7 +113,8 @@ export const buildRows = (
     ...(options.activity ?? []),
     ...mergeRequestActivity({ events: options.events, config: options.config }),
   ];
-  const attributed = reconstructed.map((block) =>
+  const nameable = dropNoWorkContext({ blocks: reconstructed, ...options.noWorkContext });
+  const attributed = nameable.map((block) =>
     attribute({
       block,
       config: options.config,
@@ -124,7 +136,10 @@ export const buildRows = (
   const naming = { ...options.meetings, config: options.config, patterns: options.patterns };
   const meetings = matchMeetings({ events: options.events, blocks, meetings: naming });
   const claimed = [...timers.map((timer) => timer.run), ...meetings.map((meeting) => meeting.group), ...pauses];
-  const calls = matchCalls({ calls: options.calls ?? [], blocks, claimed, meetings: naming });
+  // `nameable` rather than `blocks`: `overlapMs` is the time the day proposes twice, and a block no
+  // row is built from proposes nothing. A call held in one of those applications would otherwise warn
+  // that the reviewer has to look at an hour nothing else claims.
+  const calls = matchCalls({ calls: options.calls ?? [], blocks: nameable, claimed, meetings: naming });
   const filled = fillGaps({
     blocks: donated,
     events: options.events,

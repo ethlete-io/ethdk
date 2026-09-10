@@ -90,6 +90,11 @@ export type StreamDayOptions = {
    */
   noWorkContextApps?: readonly string[];
   /**
+   * The applications that open over the work rather than beside it — a file picker, a portal dialog.
+   * Reported with their own cause, for the same reason and to the same effect.
+   */
+  transientApps?: readonly string[];
+  /**
    * What the day's blocks are turned into rows with — see `buildRows`.
    *
    * `links` and `calls` are deliberately not repeatable here: this pass already holds the user's
@@ -620,6 +625,7 @@ export const streamDay = (options: {
   const links = config.links ?? [];
   const ownAppIds = new Set((config.ownAppIds ?? []).map((id) => id.toLowerCase()));
   const noWorkContextApps = new Set((config.noWorkContextApps ?? []).map((id) => id.toLowerCase()));
+  const transientApps = new Set((config.transientApps ?? []).map((id) => id.toLowerCase()));
   const observed = options.events
     .filter(isActivityEvent)
     .filter((sample) => READ_SOURCES.includes(sample.source))
@@ -761,9 +767,11 @@ export const streamDay = (options: {
           ? 'private'
           : noWorkContextApps.has(sample.appId.toLowerCase())
             ? 'no-work-context'
-            : claimed
-              ? 'ambiguous-name'
-              : 'no-name';
+            : transientApps.has(sample.appId.toLowerCase())
+              ? 'transient'
+              : claimed
+                ? 'ambiguous-name'
+                : 'no-name';
     }
 
     const observed = repoStateFor(sample, roots);

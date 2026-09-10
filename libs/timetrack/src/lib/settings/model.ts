@@ -215,9 +215,10 @@ export type TimetrackSettings = {
    * it. A music player and a chat client are the whole of it.
    *
    * Deliberately not an exclusion rule. A rule drops the event, and the minutes of the folded line
-   * would then stop reconciling with the Today screen; this only says why those minutes named no
-   * checkout. It is also the one thing no collector can ever observe — Spotify will never name a
-   * checkout, and no amount of reading a process says whether that is a defect.
+   * would then stop reconciling with the Today screen; this keeps both and drops only the row, so a
+   * media player proposes no time and takes no lane. It is also the one thing no collector can ever
+   * observe — Spotify will never name a checkout, and no amount of reading a process says whether
+   * that is a defect.
    */
   noWorkContextApps: string[];
   /** The applications the user took back off that list, the shipped part of it included. */

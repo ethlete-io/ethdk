@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_EXCLUSION_RULES } from '../store/exclusion';
 import { DEFAULT_TIMETRACK_SETTINGS, TimetrackSettings } from './model';
-import { DEFAULT_NO_WORK_CONTEXT_APPS, effectiveExclusionRules, effectiveNoWorkContextApps } from './rules';
+import {
+  DEFAULT_NO_WORK_CONTEXT_APPS,
+  DEFAULT_TRANSIENT_APPS,
+  effectiveExclusionRules,
+  effectiveNoWorkContextApps,
+  effectiveTransientApps,
+} from './rules';
 
 const settingsWith = (patch: Partial<TimetrackSettings>): TimetrackSettings => ({
   ...DEFAULT_TIMETRACK_SETTINGS,
@@ -69,5 +75,24 @@ describe('effectiveNoWorkContextApps', () => {
 
   it('ships no application twice', () => {
     expect(new Set(DEFAULT_NO_WORK_CONTEXT_APPS).size).toBe(DEFAULT_NO_WORK_CONTEXT_APPS.length);
+  });
+
+  it('ships nothing that is also transient chrome', () => {
+    const transient = new Set(DEFAULT_TRANSIENT_APPS);
+
+    expect(DEFAULT_NO_WORK_CONTEXT_APPS.filter((app) => transient.has(app))).toEqual([]);
+  });
+});
+
+describe('effectiveTransientApps', () => {
+  it('ships the desktop portals', () => {
+    expect(effectiveTransientApps(settingsWith({}))).toContain('xdg-desktop-portal-gnome');
+  });
+
+  it('lets one be taken back off the list, and leaves the rest of it', () => {
+    const apps = effectiveTransientApps(settingsWith({ holdsWorkApps: ['XDG-DESKTOP-PORTAL-GNOME'] }));
+
+    expect(apps).not.toContain('xdg-desktop-portal-gnome');
+    expect(apps).toContain('xdg-desktop-portal-kde');
   });
 });

@@ -8,6 +8,7 @@ export * from './lane';
 export * from './meetings';
 export * from './merge';
 export * from './merge-request-activity';
+export * from './no-work-context';
 export * from './overlap';
 export * from './project-link';
 export * from './propose';

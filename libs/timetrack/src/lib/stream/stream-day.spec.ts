@@ -1196,6 +1196,19 @@ describe('streamDay, the focus that named no checkout', () => {
     ]);
   });
 
+  it('gives a transient dialog its own cause', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 11, to: 13, appId: 'xdg-desktop-portal-gnome', title: 'Open File' }),
+      ],
+      options: { repoRoots: [SDK], transientApps: ['xdg-desktop-portal-gnome'] },
+    });
+
+    expect(day.unnamedFocus.map((row) => row.reason)).toEqual(['transient']);
+  });
+
   it('still lets a declared application name a checkout its title holds', () => {
     const day = streamDay({
       events: [
