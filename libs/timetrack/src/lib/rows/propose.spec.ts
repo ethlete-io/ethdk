@@ -151,6 +151,21 @@ describe('propose, the work nothing named', () => {
     expect(new Set(unnamed.map((row) => row.id)).size).toBe(2);
   });
 
+  it('carries its observed time, not a rounded one', () => {
+    const { unnamed } = propose({ groups: [group({ fromMinute: 0, observedMinutes: 47 })] });
+
+    expect(unnamed[0]?.durationMs).toBe(47 * MINUTE);
+  });
+
+  it('does not spread a day of increments over the other bands', () => {
+    const minutes = [7, 7, 7, 105];
+    const { unnamed } = propose({
+      groups: minutes.map((observedMinutes, index) => group({ fromMinute: index * 180, observedMinutes })),
+    });
+
+    expect(unnamed.map((row) => row.durationMs / MINUTE)).toEqual(minutes);
+  });
+
   it(`leaves a proposal's duration where it was`, () => {
     const named = group({ fromMinute: 0, observedMinutes: 37, issueKey: 'FIP-1' });
     const alone = propose({ groups: [named] });

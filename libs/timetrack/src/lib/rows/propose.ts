@@ -46,8 +46,10 @@ const unnamedId = (group: WorkGroup) => {
  * their own evidence, and carrying that evidence and their confidence so a reviewer can see why each
  * row exists.
  *
- * A group with no issue becomes a row too, in `unnamed`. It is rounded apart from the proposals, so
- * work nobody has named yet can never move the duration of work somebody has.
+ * A group with no issue becomes a row too, in `unnamed`, and carries its observed time. Rounding
+ * spreads a day's increments over its rows, so rounding a band that is not a worklog yet is what
+ * makes a band holding two hours read `15m`. `reviewDay` rounds it once naming it makes it a
+ * proposal.
  */
 export const propose = (options: {
   groups: WorkGroup[];
@@ -61,11 +63,6 @@ export const propose = (options: {
     durationsMs: attributed.map((group) => group.observedMs),
     options: options.round,
   });
-  const roundedUnnamed = roundDurations({
-    durationsMs: unattributed.map((group) => group.observedMs),
-    options: options.round,
-  });
-
   return {
     proposals: attributed.map((group, index) => ({
       id: proposalId(group),
@@ -83,11 +80,11 @@ export const propose = (options: {
       state: 'suggested',
     })),
     unattributed,
-    unnamed: unattributed.map((group, index) => ({
+    unnamed: unattributed.map((group) => ({
       id: unnamedId(group),
       from: group.from,
       to: group.to,
-      durationMs: roundedUnnamed[index] ?? group.observedMs,
+      durationMs: group.observedMs,
       observedMs: group.observedMs,
       stretches: stretchesOf(group.blocks),
       laneKey: laneKeyOf(group.blocks),

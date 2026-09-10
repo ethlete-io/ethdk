@@ -1,5 +1,12 @@
 import { DayRows, dayCheckOptions } from '../rows/build-rows';
-import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, checkDay } from '../rows/round';
+import {
+  CheckDayOptions,
+  DEFAULT_ROUND_OPTIONS,
+  DayCheck,
+  RoundOptions,
+  checkDay,
+  roundDurations,
+} from '../rows/round';
 import { formatDurationMs } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
@@ -63,6 +70,38 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
 });
 
 /**
+ * Rounds the rows a sync would write, as a day, so the increments land only on work somebody has
+ * named. A band with no issue keeps its observed time — a band nothing named is not a worklog, and
+ * spreading a day's increments over thirty of them is what makes each one read `15m`.
+ *
+ * A duration the reviewer typed is theirs and is left alone. A row `propose` already rounded is a
+ * whole number of increments, so it comes back out of this unchanged.
+ */
+const withRounding = (options: {
+  rows: ReviewedRow[];
+  edits: DayReviewEdits;
+  round?: Partial<RoundOptions>;
+}): ReviewedRow[] => {
+  const byHand = new Set([
+    ...options.edits.pinned.map((row) => row.id),
+    ...Object.entries(options.edits.overrides)
+      .filter(([, override]) => override.durationMs !== undefined)
+      .map(([id]) => id),
+  ]);
+  const writes = options.rows.filter(
+    (row) => isNamedRow(row) && syncsInState(row.state) && !byHand.has(row.id) && row.durationMs > 0,
+  );
+  const rounded = roundDurations({ durationsMs: writes.map((row) => row.durationMs), options: options.round });
+  const byId = new Map(writes.map((row, index) => [row.id, rounded[index] ?? row.durationMs]));
+
+  return options.rows.map((row) => {
+    const durationMs = byId.get(row.id);
+
+    return durationMs === undefined || durationMs === row.durationMs ? row : { ...row, durationMs };
+  });
+};
+
+/**
  * Applies a day's local edits to a freshly correlated day and reports what a sync would write.
  *
  * Edits always win. A proposal a split or a merge consumed is dropped rather than re-appearing beside
@@ -71,18 +110,27 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
  * observe *more* time under such a row, and that surplus is reported as `unreconciledMs` instead of
  * being folded in silently: the reviewer's numbers are theirs, but the day should still say so.
  */
-export const reviewDay = (options: { rows: DayRows; edits?: DayReviewEdits; check?: CheckDayOptions }): DayReview => {
+export const reviewDay = (options: {
+  rows: DayRows;
+  edits?: DayReviewEdits;
+  check?: CheckDayOptions;
+  round?: Partial<RoundOptions>;
+}): DayReview => {
   const edits = options.edits ?? EMPTY_DAY_REVIEW_EDITS;
   const consumed = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
-  const rows = [
-    ...options.rows.proposals
-      .filter((proposal) => !consumed.has(proposal.id))
-      .map((proposal) => withOverride(proposal, edits.overrides[proposal.id])),
-    ...options.rows.unnamed
-      .filter((row) => !consumed.has(row.id))
-      .map((row) => withOverride(row, edits.overrides[row.id])),
-    ...edits.pinned.map(fromPinned),
-  ].sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));
+  const rows = withRounding({
+    rows: [
+      ...options.rows.proposals
+        .filter((proposal) => !consumed.has(proposal.id))
+        .map((proposal) => withOverride(proposal, edits.overrides[proposal.id])),
+      ...options.rows.unnamed
+        .filter((row) => !consumed.has(row.id))
+        .map((row) => withOverride(row, edits.overrides[row.id])),
+      ...edits.pinned.map(fromPinned),
+    ].sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? '')),
+    edits,
+    round: options.round,
+  });
 
   const replacedMs = options.rows.proposals
     .filter((proposal) => consumed.has(proposal.id))

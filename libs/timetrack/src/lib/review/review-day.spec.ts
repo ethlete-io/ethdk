@@ -676,4 +676,53 @@ describe('reviewDay, a band nothing named', () => {
     expect(review.rows[0]?.issueKey).toBe('ABC-9');
     expect(review.check.proposedMs).toBe(60 * MINUTE);
   });
+
+  it('reads its observed time while nothing has named it', () => {
+    const odd = dayRows({ proposals: [], unnamed: [band({ from: '08:00', to: '09:00', minutes: 47 })] });
+
+    expect(reviewDay({ rows: odd }).rows[0]?.durationMs).toBe(47 * MINUTE);
+  });
+
+  it('rounds to whole increments once it is named', () => {
+    const odd = dayRows({ proposals: [], unnamed: [band({ from: '08:00', to: '09:00', minutes: 47 })] });
+    const edits = setRowIssue({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: odd }).rows[0]!,
+      issueKey: 'ABC-9',
+    });
+
+    expect(reviewDay({ rows: odd, edits }).rows[0]?.durationMs).toBe(45 * MINUTE);
+  });
+
+  it('keeps a duration typed by hand', () => {
+    const odd = dayRows({ proposals: [], unnamed: [band({ from: '08:00', to: '09:00', minutes: 47 })] });
+    const named = setRowIssue({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: odd }).rows[0]!,
+      issueKey: 'ABC-9',
+    });
+    const edits = setRowDuration({
+      edits: named,
+      row: reviewDay({ rows: odd, edits: named }).rows[0]!,
+      durationMs: 20 * MINUTE,
+    });
+
+    expect(reviewDay({ rows: odd, edits }).rows[0]?.durationMs).toBe(20 * MINUTE);
+  });
+
+  it('leaves a rounded proposal beside it untouched', () => {
+    const mixed = dayRows({
+      proposals: [proposal({ issueKey: 'ABC-1', from: '09:00', to: '10:00', minutes: 60 })],
+      unnamed: [band({ from: '08:00', to: '09:00', minutes: 47 })],
+    });
+    const edits = setRowIssue({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: mixed }).rows[0]!,
+      issueKey: 'ABC-9',
+    });
+    const review = reviewDay({ rows: mixed, edits });
+
+    expect(rowFor(review, 'ABC-1').durationMs).toBe(60 * MINUTE);
+    expect(rowFor(review, 'ABC-9').durationMs).toBe(45 * MINUTE);
+  });
 });
