@@ -9,6 +9,8 @@ export type ProposalOverride = {
   durationMs?: number;
   /** An explicit review decision. Without one, the row's confidence decides whether it syncs. */
   state?: 'accepted' | 'rejected';
+  /** Whether the reviewer took this row off the timeline. See {@link DayReview.hidden}. */
+  hidden?: boolean;
 };
 
 /**
@@ -40,6 +42,8 @@ export type PinnedRow = {
   evidence: Evidence[];
   /** `undefined` leaves the decision to `edited`; a reviewer can still reject a row they built. */
   state?: 'accepted' | 'rejected';
+  /** Whether the reviewer took this row off the timeline. See {@link DayReview.hidden}. */
+  hidden?: boolean;
 };
 
 /** Everything a reviewer changed about one day. The engine's own output is never stored alongside it. */
@@ -58,6 +62,8 @@ export type ReviewedRow = Omit<WorklogProposal, 'issueKey'> & {
   edited: boolean;
   /** What the engine proposed before the edit, when there is still a proposal to reset to. */
   proposed?: WorklogProposal;
+  /** Whether the reviewer took this row off the timeline. See {@link DayReview.hidden}. */
+  hidden: boolean;
 };
 
 /** A row that names an issue. It is the only kind a sync writes, and the only kind Tempo can take. */
@@ -67,7 +73,16 @@ export type NamedRow = ReviewedRow & { issueKey: string };
 export const isNamedRow = (row: ReviewedRow): row is NamedRow => !!row.issueKey;
 
 export type DayReview = {
+  /** The rows on the timeline. A hidden row is not among them — read {@link DayReview.hidden} for those. */
   rows: ReviewedRow[];
+  /**
+   * The rows the reviewer took off the timeline, newest decision last.
+   *
+   * A hidden row is neither written nor counted as unattributed: this list is where its time went, and
+   * the only way back. Hiding is the undo-able form of throwing a row away, which is why nothing
+   * deletes a proposal outright.
+   */
+  hidden: ReviewedRow[];
   check: DayCheck;
   /**
    * Observed time inside the proposals a local edit replaced that the edited rows no longer account

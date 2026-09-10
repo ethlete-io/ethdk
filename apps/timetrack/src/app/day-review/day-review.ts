@@ -23,6 +23,7 @@ import {
   coveredMsOf,
   dayBoundaryOf,
   fetchTempoDayCoverage$,
+  hideRow,
   localDayKey,
   localDayRange,
   matchAttributionRule,
@@ -45,6 +46,7 @@ import {
   setRowRange,
   setRowState,
   shiftDayKey,
+  showRow,
   splitRow,
   streamDay,
   unnamedContexts,
@@ -448,6 +450,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   const rows = computed(() => review()?.rows ?? []);
+  const hiddenRows = computed(() => review()?.hidden ?? []);
 
   // The whole day's ledger, not the rows': an entry no row claims is a worklog the sync has to delete,
   // and a read by row id can never return it. The failure stays inside the switch, or one failed read
@@ -559,6 +562,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     dayKey: day.asReadonly(),
     targetMs,
     rows,
+    /** The rows taken off the timeline. Neither written nor unattributed — this is where their time went. */
+    hiddenRows,
     review,
     /** The day as its streams: presence, concurrency, the agents' spend and the blocks behind the rows. */
     day: streamed,
@@ -680,6 +685,12 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /** Takes a hand-written row off the day. An engine proposal is rejected rather than removed. */
     removeRow: (row: ReviewedRow) => apply(removeManualRow({ edits: edits(), row })),
+
+    /** Takes a row off the timeline without throwing it away. `show` is the only way back. */
+    hide: (row: ReviewedRow) => apply(hideRow({ edits: edits(), row })),
+
+    /** Puts a hidden row back on the timeline with every other edit it carries intact. */
+    show: (row: ReviewedRow) => apply(showRow({ edits: edits(), row })),
 
     /** Folds several bands into one row. Two that meet on the clock is what the edit surface passes. */
     mergeRows: (merging: readonly ReviewedRow[]) => apply(mergeRows({ edits: edits(), rows: merging })),

@@ -7,6 +7,7 @@ import { UnnamedProposal } from '../rows/propose';
 import {
   ManualRow,
   addManualRow,
+  hideRow,
   isManualRow,
   mergeRows,
   moveRowBoundary,
@@ -17,6 +18,7 @@ import {
   setRowRange,
   setRowIssue,
   setRowState,
+  showRow,
   splitRow,
 } from './edits';
 import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS } from './model';
@@ -724,5 +726,94 @@ describe('reviewDay, a band nothing named', () => {
 
     expect(rowFor(review, 'ABC-1').durationMs).toBe(60 * MINUTE);
     expect(rowFor(review, 'ABC-9').durationMs).toBe(45 * MINUTE);
+  });
+});
+
+describe('hideRow and showRow', () => {
+  const day = () =>
+    dayRows({
+      proposals: [
+        proposal({ issueKey: 'ABC-1', from: '08:00', to: '09:00' }),
+        proposal({ issueKey: 'ABC-2', from: '09:00', to: '10:00' }),
+      ],
+    });
+
+  const hiddenReview = () => {
+    const first = reviewDay({ rows: day() });
+    const edits = hideRow({ edits: EMPTY_DAY_REVIEW_EDITS, row: rowFor(first, 'ABC-1') });
+
+    return { edits, review: reviewDay({ rows: day(), edits }) };
+  };
+
+  it('takes the row off the timeline', () => {
+    const { review } = hiddenReview();
+
+    expect(review.rows.map((row) => row.issueKey)).toEqual(['ABC-2']);
+  });
+
+  it('holds the row it took off, so nothing has to look for it', () => {
+    const { review } = hiddenReview();
+
+    expect(review.hidden.map((row) => row.issueKey)).toEqual(['ABC-1']);
+  });
+
+  it('writes none of the hidden row, so the day proposes only what is left', () => {
+    const { review } = hiddenReview();
+
+    expect(review.check.proposedMs).toBe(60 * MINUTE);
+  });
+
+  it('leaves the row unedited, so hiding is not a change to what it says', () => {
+    const { review } = hiddenReview();
+
+    expect(review.hidden[0]!.edited).toBe(false);
+    expect(review.hidden[0]!.hidden).toBe(true);
+  });
+
+  it('puts the row back where it was', () => {
+    const { edits, review } = hiddenReview();
+    const shown = reviewDay({ rows: day(), edits: showRow({ edits, row: review.hidden[0]! }) });
+
+    expect(shown.rows.map((row) => row.issueKey)).toEqual(['ABC-1', 'ABC-2']);
+    expect(shown.hidden).toEqual([]);
+  });
+
+  it('keeps every other edit the row carries while it is hidden', () => {
+    const first = reviewDay({ rows: day() });
+    const named = setRowIssue({ edits: EMPTY_DAY_REVIEW_EDITS, row: rowFor(first, 'ABC-1'), issueKey: 'ABC-9' });
+    const hiddenEdits = hideRow({ edits: named, row: rowFor(reviewDay({ rows: day(), edits: named }), 'ABC-9') });
+    const review = reviewDay({ rows: day(), edits: hiddenEdits });
+    const shown = reviewDay({ rows: day(), edits: showRow({ edits: hiddenEdits, row: review.hidden[0]! }) });
+
+    expect(rowFor(shown, 'ABC-9').edited).toBe(true);
+  });
+
+  it('leaves nothing behind in the edits once a row is shown again', () => {
+    const { edits, review } = hiddenReview();
+
+    expect(showRow({ edits, row: review.hidden[0]! })).toEqual(EMPTY_DAY_REVIEW_EDITS);
+  });
+
+  it('hides a row the reviewer built by hand as readily as one the engine proposed', () => {
+    const first = reviewDay({ rows: day() });
+    const split = splitRow({ edits: EMPTY_DAY_REVIEW_EDITS, row: rowFor(first, 'ABC-1'), at: at('08:30') });
+    const halves = reviewDay({ rows: day(), edits: split }).rows.filter((row) => row.from < at('09:00'));
+    const hiddenEdits = hideRow({ edits: split, row: halves[0]! });
+    const review = reviewDay({ rows: day(), edits: hiddenEdits });
+
+    expect(review.hidden).toHaveLength(1);
+    expect(review.rows).toHaveLength(2);
+  });
+
+  it('puts a hand-built row back too', () => {
+    const first = reviewDay({ rows: day() });
+    const split = splitRow({ edits: EMPTY_DAY_REVIEW_EDITS, row: rowFor(first, 'ABC-1'), at: at('08:30') });
+    const halves = reviewDay({ rows: day(), edits: split }).rows.filter((row) => row.from < at('09:00'));
+    const hiddenEdits = hideRow({ edits: split, row: halves[0]! });
+    const review = reviewDay({ rows: day(), edits: hiddenEdits });
+    const shown = reviewDay({ rows: day(), edits: showRow({ edits: hiddenEdits, row: review.hidden[0]! }) });
+
+    expect(shown.hidden).toEqual([]);
+    expect(shown.rows).toHaveLength(3);
   });
 });

@@ -13,6 +13,7 @@ import { DayWarningsComponent } from './day-warnings.component';
 import { formatDayLabel, formatSignedDurationMs } from './format';
 import { IssueFilterComponent } from '../jira';
 import { LoggedElsewhereComponent } from './logged-elsewhere.component';
+import { HiddenRowsComponent } from './hidden-rows.component';
 import { TimerRunLabel, TimerRunsComponent } from './timer-runs.component';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 import { injectTicketDraft } from './ticket-draft';
@@ -193,6 +194,16 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
             </div>
           </details>
 
+          @if (store.hiddenRows().length) {
+            <details class="rounded-md border border-et-surface-border open:w-full" data-hidden>
+              <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">{{ hiddenLabel() }}</summary>
+
+              <div class="flex max-h-96 flex-col gap-3 overflow-y-auto px-3 pb-3">
+                <ethlete-hidden-rows [rows]="store.hiddenRows()" (show)="store.show($event)" />
+              </div>
+            </details>
+          }
+
           <details class="rounded-md border border-et-surface-border open:w-full" data-notes>
             <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">Day notes</summary>
 
@@ -233,6 +244,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
     IssueFilterComponent,
     LoggedElsewhereComponent,
     SpinnerComponent,
+    HiddenRowsComponent,
     TimerRunsComponent,
     UnnamedWorkComponent,
   ],
@@ -286,6 +298,13 @@ export class DayReviewViewComponent {
     const secluded = this.store.privateTime().length;
 
     return `Logged elsewhere — ${elsewhere} in Tempo, ${secluded} private, ${runs} timed run(s)`;
+  });
+
+  protected hiddenLabel = computed(() => {
+    const hidden = this.store.hiddenRows();
+    const ms = hidden.reduce((sum, row) => sum + (row.to.getTime() - row.from.getTime()), 0);
+
+    return `Hidden — ${hidden.length} row(s), ${formatDurationMs(ms)}`;
   });
 
   /** Drafts a row over the hour the reviewer is most likely to mean: the one that just finished. */

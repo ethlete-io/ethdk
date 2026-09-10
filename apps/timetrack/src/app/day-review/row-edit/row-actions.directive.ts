@@ -61,6 +61,13 @@ export class RowActionsDirective {
     });
 
     this.host.registerAppointmentAction({
+      label: computed(() => 'Hide this row'),
+      order: 35,
+      enabled: computed(() => !!this.row()),
+      run: () => this.act((row) => this.store.hide(row)),
+    });
+
+    this.host.registerAppointmentAction({
       label: computed(() => 'Remove this row'),
       order: 40,
       destructive: true,

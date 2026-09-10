@@ -8,6 +8,12 @@ const pinnedById = (edits: DayReviewEdits, id: string) => edits.pinned.find((row
 /** What a row stands in for, so splitting or merging an already-edited row keeps the original's claim. */
 const replacedBy = (edits: DayReviewEdits, row: ReviewedRow) => pinnedById(edits, row.id)?.replaces ?? [row.id];
 
+const withoutHidden = <T extends { hidden?: boolean }>(entry: T): T => {
+  const { hidden: _hidden, ...kept } = entry;
+
+  return kept as T;
+};
+
 const withoutOverrides = (overrides: Record<string, ProposalOverride>, ids: readonly string[]) => {
   const kept = { ...overrides };
 
@@ -80,6 +86,39 @@ export const setRowDuration = (options: { edits: DayReviewEdits; row: ReviewedRo
 
 export const setRowState = (options: { edits: DayReviewEdits; row: ReviewedRow; state: 'accepted' | 'rejected' }) =>
   overrideOn({ edits: options.edits, row: options.row, change: { state: options.state } });
+
+/**
+ * Takes a row off the timeline. It is neither written nor counted as unattributed — `DayReview.hidden`
+ * holds it, and `showRow` puts it back.
+ *
+ * Hiding is the undo-able form of throwing a row away, which is why nothing deletes a proposal outright.
+ */
+export const hideRow = (options: { edits: DayReviewEdits; row: ReviewedRow }) =>
+  overrideOn({ edits: options.edits, row: options.row, change: { hidden: true } });
+
+/** Puts a hidden row back on the timeline, leaving every other edit it carries alone. */
+export const showRow = (options: { edits: DayReviewEdits; row: ReviewedRow }): DayReviewEdits => {
+  const { edits, row } = options;
+
+  if (pinnedById(edits, row.id)) {
+    return {
+      ...edits,
+      pinned: edits.pinned.map((entry) => (entry.id === row.id ? withoutHidden(entry) : entry)),
+    };
+  }
+
+  const stored = edits.overrides[row.id];
+
+  if (!stored) return edits;
+
+  const kept = withoutHidden(stored);
+  const overrides = { ...edits.overrides };
+
+  if (Object.keys(kept).length) overrides[row.id] = kept;
+  else delete overrides[row.id];
+
+  return { ...edits, overrides };
+};
 
 /**
  * Puts the engine's own rows back. Resetting one half of a split undoes the whole split rather than

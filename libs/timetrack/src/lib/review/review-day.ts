@@ -37,7 +37,7 @@ const defaultState = (row: RowSource): WorklogProposalState =>
 const withOverride = (row: RowSource, override: ProposalOverride | undefined): ReviewedRow => {
   const proposed = row.issueKey ? { ...row, issueKey: row.issueKey } : undefined;
 
-  if (!override) return { ...row, state: defaultState(row), edited: false };
+  if (!override) return { ...row, state: defaultState(row), edited: false, hidden: false };
 
   const changed =
     override.issueKey !== undefined || override.description !== undefined || override.durationMs !== undefined;
@@ -49,6 +49,7 @@ const withOverride = (row: RowSource, override: ProposalOverride | undefined): R
     durationMs: override.durationMs ?? row.durationMs,
     state: override.state ?? (changed ? 'edited' : defaultState(row)),
     edited: changed || override.state !== undefined,
+    hidden: override.hidden === true,
     proposed,
   };
 };
@@ -67,6 +68,7 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
   evidence: row.evidence,
   state: row.state ?? 'edited',
   edited: true,
+  hidden: row.hidden === true,
 });
 
 /**
@@ -118,19 +120,20 @@ export const reviewDay = (options: {
 }): DayReview => {
   const edits = options.edits ?? EMPTY_DAY_REVIEW_EDITS;
   const consumed = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
-  const rows = withRounding({
-    rows: [
-      ...options.rows.proposals
-        .filter((proposal) => !consumed.has(proposal.id))
-        .map((proposal) => withOverride(proposal, edits.overrides[proposal.id])),
-      ...options.rows.unnamed
-        .filter((row) => !consumed.has(row.id))
-        .map((row) => withOverride(row, edits.overrides[row.id])),
-      ...edits.pinned.map(fromPinned),
-    ].sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? '')),
-    edits,
-    round: options.round,
-  });
+  const reviewed = [
+    ...options.rows.proposals
+      .filter((proposal) => !consumed.has(proposal.id))
+      .map((proposal) => withOverride(proposal, edits.overrides[proposal.id])),
+    ...options.rows.unnamed
+      .filter((row) => !consumed.has(row.id))
+      .map((row) => withOverride(row, edits.overrides[row.id])),
+    ...edits.pinned.map(fromPinned),
+  ].sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));
+
+  const hidden = reviewed.filter((row) => row.hidden);
+  // Rounding spreads a day's increments over the rows a sync writes, so a hidden row has to be out of
+  // it before it runs: leaving one in would move minutes onto rows the reviewer can still see.
+  const rows = withRounding({ rows: reviewed.filter((row) => !row.hidden), edits, round: options.round });
 
   const replacedMs = options.rows.proposals
     .filter((proposal) => consumed.has(proposal.id))
@@ -144,7 +147,7 @@ export const reviewDay = (options: {
     options: { ...dayCheckOptions(options.rows), ...options.check },
   });
 
-  return { rows, check: withDrift({ check, unreconciledMs, options: options.check }), unreconciledMs };
+  return { rows, hidden, check: withDrift({ check, unreconciledMs, options: options.check }), unreconciledMs };
 };
 
 const withDrift = (options: { check: DayCheck; unreconciledMs: number; options?: CheckDayOptions }): DayCheck => {

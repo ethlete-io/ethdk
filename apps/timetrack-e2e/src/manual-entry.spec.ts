@@ -43,5 +43,38 @@ test.describe('a row the day did not see', () => {
   });
 });
 
+test.describe('a row taken off the timeline', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/day');
+
+    const surface = await addAnEntry(page);
+
+    await pickIssue(page, surface, /ABC-2000/);
+    await saveSurface(page);
+    await hideTheBand(page);
+  });
+
+  test('takes the band off the timeline and says where its time went', async ({ page }) => {
+    await expect(manualBand(page)).toHaveCount(0);
+    await expect(page.locator('[data-hidden] summary')).toContainText('1 row(s)');
+  });
+
+  test('puts the band back where it was', async ({ page }) => {
+    await page.locator('[data-hidden] summary').click();
+    await page.getByRole('button', { name: 'Put back' }).click();
+
+    await expect(manualBand(page)).toHaveCount(1);
+    await expect(page.locator('[data-hidden]')).toHaveCount(0);
+  });
+});
+
+const hideTheBand = async (page: Page) => {
+  const title = await manualBand(page).getAttribute('title');
+
+  await openBand(page, title ?? '');
+  await editSurface(page).getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name: 'Hide this row' }).click();
+};
+
 /** The band's own label is what tells a hand-written row from a reconstructed one in the DOM. */
 const manualBand = (page: Page) => page.locator('[data-kind="row"]').filter({ hasText: 'by hand' });
