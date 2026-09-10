@@ -155,8 +155,6 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const day = signal(readViewState().day ?? localDayKey(new Date(), dayBoundaryOf(settings.settings())));
   const targetMs = computed(() => settings.settings().dayTargetMs);
   const local = signal<Record<string, DayReviewEdits>>({});
-  const expanded = signal<ReadonlySet<string>>(new Set());
-  const selection = signal<readonly string[]>([]);
   const reload = signal(0);
   /** Set by `recorrelate` and cleared by `goToDay`, so only the day the reviewer asked about is re-read. */
   const coverageReload = signal(false);
@@ -520,8 +518,6 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     day.set(key);
     rememberViewState({ day: key });
     coverageReload.set(false);
-    selection.set([]);
-    expanded.set(new Set());
   };
 
   /** Whether the day on screen holds its own edits yet, and why it never will when a read failed. */
@@ -554,14 +550,6 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
         }),
       );
     });
-
-  const selectedRows = computed(() => {
-    const byId = new Map(rows().map((row) => [row.id, row]));
-
-    return selection()
-      .map((id) => byId.get(id))
-      .filter((row): row is ReviewedRow => !!row);
-  });
 
   return {
     dayKey: day.asReadonly(),
@@ -638,10 +626,6 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     syncedIds,
     /** How many of the day's rows Tempo holds. An entry no row claims is not one — the sync deletes it. */
     syncedRowCount: computed(() => rows().filter((row) => syncedIds().has(row.id)).length),
-    expanded: expanded.asReadonly(),
-    selection: selection.asReadonly(),
-    selectedRows,
-
     goToDay,
     boundary,
     goToToday: () => goToDay(localDayKey(new Date(), boundary())),
@@ -693,24 +677,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Takes a hand-written row off the day. An engine proposal is rejected rather than removed. */
     removeRow: (row: ReviewedRow) => apply(removeManualRow({ edits: edits(), row })),
 
-    mergeSelection: () => {
-      apply(mergeRows({ edits: edits(), rows: selectedRows() }));
-      selection.set([]);
-    },
-
-    toggleExpanded: (id: string) =>
-      expanded.update((ids) => {
-        const next = new Set(ids);
-
-        if (!next.delete(id)) next.add(id);
-
-        return next;
-      }),
-
-    toggleSelected: (id: string) =>
-      selection.update((ids) => (ids.includes(id) ? ids.filter((entry) => entry !== id) : [...ids, id])),
-
-    clearSelection: () => selection.set([]),
+    /** Folds several bands into one row. Two that meet on the clock is what the edit surface passes. */
+    mergeRows: (merging: readonly ReviewedRow[]) => apply(mergeRows({ edits: edits(), rows: merging })),
 
     labelRun: (id: string, label: { issueKey: string; note: string }) => timers.label(id, label),
 

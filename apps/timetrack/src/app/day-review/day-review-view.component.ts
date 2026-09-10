@@ -1,14 +1,6 @@
-import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
+import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent } from '@ethlete/components';
-import {
-  DayWarningKind,
-  ManualRow,
-  ReviewedRow,
-  DEFAULT_ROUND_OPTIONS,
-  formatDurationMs,
-  localDayRange,
-} from '@ethlete/timetrack';
-import { AddEntryComponent, EntryRange } from './add-entry.component';
+import { DEFAULT_ROUND_OPTIONS, formatDurationMs, localDayRange } from '@ethlete/timetrack';
 import { BranchRepairComponent } from './branch-repair.component';
 import { injectBranchRepair } from './branch-repair';
 import { CreateTicketComponent } from './create-ticket.component';
@@ -17,21 +9,32 @@ import { DayNotesComponent } from './day-notes.component';
 import { DayStreamsComponent } from './day-streams.component';
 import { DayTimelineComponent } from './day-timeline.component';
 import { DayTotalsComponent } from './day-totals.component';
+import { DayWarningsComponent } from './day-warnings.component';
 import { formatDayLabel, formatSignedDurationMs } from './format';
+import { IssueFilterComponent } from '../jira';
+import { LoggedElsewhereComponent } from './logged-elsewhere.component';
 import { TimerRunLabel, TimerRunsComponent } from './timer-runs.component';
+import { injectRowEditSurface } from './row-edit/row-edit-surface';
 import { injectTicketDraft } from './ticket-draft';
 import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
-import { WorklogRowComponent } from './worklog-row.component';
 
 /** What the header's own button drafts: the quarter-hour grid, and the hour that just finished. */
 const ENTRY_STEP_MS = DEFAULT_ROUND_OPTIONS.incrementMs;
 const DEFAULT_ENTRY_MS = 60 * 60_000;
 
+/**
+ * One day of work, drawn as a scheduler.
+ *
+ * The timeline is the screen: a band is pressed to name it, dragged to move it and cut at its own
+ * boundary, and every edit happens on the scheduler's edit surface rather than in a list beside it.
+ * What is not a band lives in a closed strip underneath — the streams behind the day, the work still
+ * waiting for a name, the time logged outside this app, and the day's notes.
+ */
 @Component({
   selector: 'ethlete-day-review',
   template: `
     <div class="flex min-h-0 grow flex-col">
-      <header class="flex shrink-0 flex-wrap items-center justify-between gap-3 px-6 pt-6 pb-4">
+      <header class="flex shrink-0 flex-wrap items-center justify-between gap-3 px-6 pt-6 pb-3">
         <div class="flex items-center gap-2">
           <button (click)="store.shiftDay(-1)" et-button variant="outline" size="sm" aria-label="Previous day">
             ←
@@ -44,13 +47,13 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
         </div>
 
         <div class="flex items-center gap-2">
-          <button (click)="openEntry()" et-button variant="outline" size="sm">Add an entry</button>
+          <button (click)="addEntry()" et-button variant="outline" size="sm">Add an entry</button>
           <button (click)="store.recorrelate()" et-button variant="outline" size="sm">Re-correlate</button>
         </div>
       </header>
 
       @if (store.failure(); as failure) {
-        <div class="shrink-0 px-6 pb-4">
+        <div class="shrink-0 px-6 pb-3">
           <et-banner [description]="failure" type="error" heading="This day could not be read" />
         </div>
       }
@@ -61,200 +64,138 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           <span class="text-base">Reading the day…</span>
         </div>
       } @else if (store.review(); as day) {
-        <div class="shrink-0 border-b border-et-surface-border px-6 pb-4">
+        <div class="flex shrink-0 flex-wrap items-baseline gap-x-8 gap-y-2 border-b border-et-surface-border px-6 pb-3">
           <ethlete-day-totals [day]="store.day()" />
+          <ethlete-day-warnings [warnings]="day.check.warnings" class="min-w-0 grow" />
         </div>
 
-        @if (day.check.warnings.length) {
-          <div class="flex shrink-0 flex-col gap-2 px-6 pb-4">
-            @for (warning of day.check.warnings; track warning.kind) {
-              <et-banner [description]="warning.detail" [heading]="WARNING_HEADINGS[warning.kind]" type="warning" />
-            }
-          </div>
-        }
+        <ethlete-day-timeline
+          [focusedDate]="focusedDate()"
+          [rows]="store.rows()"
+          (boundaryMove)="store.moveBoundary($event)"
+          (rowReschedule)="store.rescheduleRow($event)"
+          class="min-h-0 grow px-6"
+        />
 
-        <div class="grid min-h-0 grow gap-6 px-6 lg:grid-cols-[minmax(20rem,1fr)_clamp(20rem,30%,34rem)]">
-          <ethlete-day-timeline
-            [focusedDate]="focusedDate()"
-            [rows]="store.rows()"
-            (rowSelect)="store.toggleExpanded($event.id)"
-            (boundaryMove)="store.moveBoundary($event)"
-            (rowReschedule)="store.rescheduleRow($event)"
-            (rangeDrawn)="entryRange.set($event)"
-          />
+        <div class="flex shrink-0 flex-col gap-2 px-6 py-3">
+          <ethlete-day-streams [day]="store.day()" [headBranches]="store.headBranches()" />
 
-          <div class="flex min-h-0 flex-col gap-3 overflow-y-auto pb-6">
-            @if (entryRange(); as range) {
-              <ethlete-add-entry
-                [range]="range"
-                [meetings]="store.meetings()"
-                [suggestedIssueKey]="suggestedIssueKey()"
-                (entry)="addEntry($event)"
-                (dismiss)="entryRange.set(null)"
-              />
-            }
+          <details class="rounded-md border border-et-surface-border" data-waiting>
+            <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">{{ waitingLabel() }}</summary>
 
-            @if (store.rows().length) {
-              @for (row of store.rows(); track row.id) {
-                <ethlete-worklog-row
-                  [row]="row"
-                  [expanded]="store.expanded().has(row.id)"
-                  [selected]="store.selection().includes(row.id)"
-                  [synced]="store.syncedIds().has(row.id)"
-                  (issueChange)="store.setIssue(row, $event)"
-                  (descriptionChange)="store.setDescription(row, $event)"
-                  (durationChange)="store.setDuration(row, $event)"
-                  (stateChange)="store.setState(row, $event)"
-                  (expandToggle)="store.toggleExpanded(row.id)"
-                  (mergeToggle)="store.toggleSelected(row.id)"
-                  (split)="splitInHalf(row)"
-                  (revert)="store.reset(row)"
-                  (removeRow)="store.removeRow(row)"
+            <div class="flex max-h-96 flex-col gap-3 overflow-y-auto px-3 pb-3">
+              <ethlete-issue-filter />
+
+              @if (store.unnamed().length) {
+                <ethlete-unnamed-work
+                  [contexts]="store.unnamed()"
+                  [rules]="store.rulesByContext()"
+                  [suggestions]="store.inferredByContext()"
+                  [payload]="store.reasoningPayload()"
+                  [canAsk]="store.canAsk()"
+                  [isAsking]="store.isAsking()"
+                  [hasAsked]="store.hasAsked()"
+                  [askFailure]="store.askFailure()"
+                  [askedInVain]="store.askedInVain()"
+                  (name)="nameContext($event)"
+                  (ask)="store.ask()"
+                  (createTicket)="tickets.open($event)"
+                  (markPrivate)="store.markPathPrivate($event)"
+                  (forget)="store.forgetRule($event)"
+                />
+              } @else {
+                <et-empty-state
+                  description="Every band on this day is named, or nothing was observed that a rule could not read."
+                  heading="Nothing is waiting for a name"
                 />
               }
-            } @else if (!store.unnamed().length && !inTempo().length) {
-              <!--
-                Only when there is nothing to answer and nothing already logged either. A day whose
-                work is all unnamed has the naming card right below, and an empty state above it says
-                the opposite of the truth.
-              -->
-              <et-empty-state
-                description="Nothing on this day could be attributed to an issue. The timeline shows what was observed."
-                heading="No worklogs to review"
-              />
-            }
 
-            @if (store.unnamed().length) {
-              <ethlete-unnamed-work
-                [contexts]="store.unnamed()"
-                [rules]="store.rulesByContext()"
-                [suggestions]="store.inferredByContext()"
-                [payload]="store.reasoningPayload()"
-                [canAsk]="store.canAsk()"
-                [isAsking]="store.isAsking()"
-                [hasAsked]="store.hasAsked()"
-                [askFailure]="store.askFailure()"
-                [askedInVain]="store.askedInVain()"
-                (name)="nameContext($event)"
-                (ask)="store.ask()"
-                (createTicket)="tickets.open($event)"
-                (markPrivate)="store.markPathPrivate($event)"
-                (forget)="store.forgetRule($event)"
-              />
-            }
+              @if (tickets.context(); as drafting) {
+                <ethlete-create-ticket
+                  [context]="drafting"
+                  [form]="tickets.form()"
+                  [candidates]="tickets.candidates()"
+                  [existing]="tickets.existing()"
+                  [agentMatch]="tickets.agentMatch()"
+                  [payload]="tickets.writingRequest()"
+                  [isSearching]="tickets.isSearching()"
+                  [canWrite]="tickets.canWrite()"
+                  [isWriting]="tickets.isWriting()"
+                  [isCreating]="tickets.isCreating()"
+                  [canCreate]="tickets.canCreate()"
+                  [createdKey]="tickets.createdKey()"
+                  [searchFailure]="tickets.searchFailure()"
+                  [writeFailure]="tickets.writeFailure()"
+                  [createFailure]="tickets.createFailure()"
+                  (projectKeyChange)="tickets.setProjectKey($event)"
+                  (summaryChange)="tickets.setSummary($event)"
+                  (descriptionChange)="tickets.setDescription($event)"
+                  (parentKeyChange)="tickets.setParentKey($event)"
+                  (findParents)="tickets.findParents()"
+                  (write)="tickets.writeWithAgent()"
+                  (useExisting)="tickets.useExisting($event)"
+                  (create)="tickets.create()"
+                  (dismiss)="tickets.close()"
+                />
+              }
 
-            @if (inTempo().length) {
-              <div class="flex flex-col gap-2">
-                <div class="flex flex-col gap-1">
-                  <h3 class="text-h4">Already in Tempo</h3>
-                  <p class="text-small text-et-surface-muted">
-                    Time this day already holds, written outside this app. A sync leaves it alone.
-                  </p>
+              @if (repairOffer(); as offer) {
+                <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
+                  <span class="grow text-small">
+                    {{ offer.branch }} still names no issue. It can be renamed to carry {{ offer.issueKey }}.
+                  </span>
+                  <button (click)="repair.open(offer)" et-button variant="outline" size="sm">Show me the steps</button>
                 </div>
+              }
 
-                @for (entry of inTempo(); track entry.issueKey) {
-                  <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
-                    <span class="w-14 shrink-0 text-small">{{ entry.duration }}</span>
-                    <span class="grow text-mono text-small">{{ entry.issueKey }}</span>
-                  </div>
-                }
-              </div>
-            }
+              @if (repair.isReading()) {
+                <div class="flex items-center gap-3 text-et-surface-muted">
+                  <et-spinner size="sm" />
+                  <span class="text-small">Reading the repository…</span>
+                </div>
+              }
 
-            @for (entry of privateTime(); track entry.id) {
-              <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
-                <span class="w-14 shrink-0 text-small">{{ entry.duration }}</span>
-                <span class="grow break-all text-mono text-small text-et-surface-muted">{{ entry.path }}</span>
-                <span class="text-small text-et-surface-subtle">private — never logged</span>
-              </div>
-            }
+              @if (repair.readFailure(); as failure) {
+                <et-banner [description]="failure" type="error" heading="The repository could not be read" />
+              }
 
-            @if (tickets.context(); as drafting) {
-              <ethlete-create-ticket
-                [context]="drafting"
-                [form]="tickets.form()"
-                [candidates]="tickets.candidates()"
-                [existing]="tickets.existing()"
-                [agentMatch]="tickets.agentMatch()"
-                [payload]="tickets.writingRequest()"
-                [isSearching]="tickets.isSearching()"
-                [canWrite]="tickets.canWrite()"
-                [isWriting]="tickets.isWriting()"
-                [isCreating]="tickets.isCreating()"
-                [canCreate]="tickets.canCreate()"
-                [createdKey]="tickets.createdKey()"
-                [searchFailure]="tickets.searchFailure()"
-                [writeFailure]="tickets.writeFailure()"
-                [createFailure]="tickets.createFailure()"
-                (projectKeyChange)="tickets.setProjectKey($event)"
-                (summaryChange)="tickets.setSummary($event)"
-                (descriptionChange)="tickets.setDescription($event)"
-                (parentKeyChange)="tickets.setParentKey($event)"
-                (findParents)="tickets.findParents()"
-                (write)="tickets.writeWithAgent()"
-                (useExisting)="tickets.useExisting($event)"
-                (create)="tickets.create()"
-                (dismiss)="tickets.close()"
-              />
-            }
+              @if (repair.plan(); as plan) {
+                <ethlete-branch-repair
+                  [plan]="plan"
+                  [outcome]="repair.outcome()"
+                  [isRunning]="repair.isRunning()"
+                  [canRun]="repair.canRun()"
+                  (run)="repair.run()"
+                  (dismiss)="repair.close()"
+                />
+              }
+            </div>
+          </details>
 
-            @if (repairOffer(); as offer) {
-              <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
-                <span class="grow text-small">
-                  {{ offer.branch }} still names no issue. It can be renamed to carry {{ offer.issueKey }}.
-                </span>
-                <button (click)="repair.open(offer)" et-button variant="outline" size="sm">Show me the steps</button>
-              </div>
-            }
+          <details class="rounded-md border border-et-surface-border" data-logged>
+            <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">{{ loggedLabel() }}</summary>
 
-            @if (repair.isReading()) {
-              <div class="flex items-center gap-3 text-et-surface-muted">
-                <et-spinner size="sm" />
-                <span class="text-small">Reading the repository…</span>
-              </div>
-            }
+            <div class="flex max-h-96 flex-col gap-3 overflow-y-auto px-3 pb-3">
+              <ethlete-logged-elsewhere [coverage]="store.coverage()" [privateTime]="store.privateTime()" />
 
-            @if (repair.readFailure(); as failure) {
-              <et-banner [description]="failure" type="error" heading="The repository could not be read" />
-            }
+              @if (store.timerRuns().length) {
+                <ethlete-timer-runs
+                  [runs]="store.timerRuns()"
+                  [openRunId]="store.openRunId()"
+                  (label)="labelRun($event)"
+                />
+              }
+            </div>
+          </details>
 
-            @if (repair.plan(); as plan) {
-              <ethlete-branch-repair
-                [plan]="plan"
-                [outcome]="repair.outcome()"
-                [isRunning]="repair.isRunning()"
-                [canRun]="repair.canRun()"
-                (run)="repair.run()"
-                (dismiss)="repair.close()"
-              />
-            }
+          <details class="rounded-md border border-et-surface-border" data-notes>
+            <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">Day notes</summary>
 
-            @if (store.timerRuns().length) {
-              <ethlete-timer-runs
-                [runs]="store.timerRuns()"
-                [openRunId]="store.openRunId()"
-                (label)="labelRun($event)"
-              />
-            }
-
-            <ethlete-day-notes [day]="store.day()" />
-          </div>
+            <div class="px-3 pb-3">
+              <ethlete-day-notes [day]="store.day()" />
+            </div>
+          </details>
         </div>
-
-        <div class="shrink-0 px-6 pt-4">
-          <ethlete-day-streams [day]="store.day()" [headBranches]="store.headBranches()" />
-        </div>
-
-        @if (store.selection().length; as selected) {
-          <div class="mx-6 mb-4 flex shrink-0 items-center gap-3 rounded-md border border-et-brand-ink p-3">
-            <span class="grow text-small">{{ selected }} row(s) selected.</span>
-
-            <button [disabled]="selected < 2" (click)="store.mergeSelection()" et-button variant="filled" size="sm">
-              Merge into one
-            </button>
-            <button (click)="store.clearSelection()" et-button variant="transparent" size="sm">Clear</button>
-          </div>
-        }
 
         <footer
           class="flex shrink-0 flex-wrap items-baseline gap-x-8 gap-y-2 border-t border-et-surface-border px-6 py-3"
@@ -274,7 +215,6 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
-    AddEntryComponent,
     BANNER_IMPORTS,
     BUTTON_IMPORTS,
     BranchRepairComponent,
@@ -283,11 +223,13 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
     DayStreamsComponent,
     DayTimelineComponent,
     DayTotalsComponent,
+    DayWarningsComponent,
     EMPTY_STATE_IMPORTS,
+    IssueFilterComponent,
+    LoggedElsewhereComponent,
     SpinnerComponent,
     TimerRunsComponent,
     UnnamedWorkComponent,
-    WorklogRowComponent,
   ],
   host: { class: 'flex min-h-0 grow flex-col' },
 })
@@ -295,22 +237,7 @@ export class DayReviewViewComponent {
   protected store = injectDayReview();
   protected tickets = injectTicketDraft();
   protected repair = injectBranchRepair();
-
-  /** The range an entry is being written for, or nothing while the panel is closed. */
-  protected entryRange = signal<EntryRange | null>(null);
-
-  protected readonly WARNING_HEADINGS: Record<DayWarningKind, string> = {
-    'under-target': 'The day is short of its target',
-    'over-target': 'The day is over its target',
-    'unattributed-time': 'Some time matched no issue',
-    'too-many-rows': 'This day fragmented',
-    'zero-duration': 'A row rounded away to nothing',
-    'meeting-overlap': 'A meeting and observed work claim the same time',
-    'timer-unobserved': 'A timer ran while nothing was observed',
-    'filled-time': 'Short pauses were logged as the work around them',
-    'paused-time': 'You stopped collection for part of this day',
-    'edited-row-drift': 'New evidence landed under a row you edited',
-  };
+  private surface = injectRowEditSurface();
 
   protected dayLabel = computed(() => formatDayLabel(this.store.dayKey()));
   protected focusedDate = computed(() => localDayRange(this.store.dayKey(), this.store.boundary()).from);
@@ -342,48 +269,25 @@ export class DayReviewViewComponent {
   protected delta = computed(() => formatSignedDurationMs(this.store.review()?.check.deltaMs ?? 0));
   protected unattributed = computed(() => formatDurationMs(this.store.review()?.check.unattributedMs ?? 0));
 
-  /** What Tempo already holds, widest first, so the day shows it rather than only counting it. */
-  protected inTempo = computed(() =>
-    [...(this.store.coverage()?.issues ?? [])]
-      .sort((a, b) => b.coveredMs - a.coveredMs)
-      .map((issue) => ({ issueKey: issue.issueKey, duration: formatDurationMs(issue.coveredMs) })),
-  );
+  protected waitingLabel = computed(() => {
+    const contexts = this.store.unnamed().length;
 
-  protected privateTime = computed(() =>
-    this.store.privateTime().map((entry) => ({
-      id: entry.link.id,
-      path: entry.link.path,
-      duration: formatDurationMs(entry.observedMs),
-    })),
-  );
-
-  /**
-   * The issue an entry drawn over this range most likely belongs to: whatever the row nearest it is
-   * logged against. It is a starting point and not a decision — the field it fills is still a picker.
-   */
-  protected suggestedIssueKey = computed(() => {
-    const range = this.entryRange();
-
-    if (!range) return '';
-
-    const at = range.from.getTime();
-    const [nearest] = [...this.store.rows()].sort(
-      (a, b) => Math.abs(a.from.getTime() - at) - Math.abs(b.from.getTime() - at),
-    );
-
-    return nearest?.issueKey ?? '';
+    return contexts ? `Waiting for a name — ${contexts} context(s)` : 'Waiting for a name — none';
   });
 
-  /** Opens the panel over the hour the reviewer is most likely to mean: the one that just finished. */
-  protected openEntry() {
+  protected loggedLabel = computed(() => {
+    const runs = this.store.timerRuns().length;
+    const elsewhere = this.store.coverage()?.issues.length ?? 0;
+    const secluded = this.store.privateTime().length;
+
+    return `Logged elsewhere — ${elsewhere} in Tempo, ${secluded} private, ${runs} timed run(s)`;
+  });
+
+  /** Drafts a row over the hour the reviewer is most likely to mean: the one that just finished. */
+  protected addEntry() {
     const from = new Date(Math.floor(Date.now() / ENTRY_STEP_MS) * ENTRY_STEP_MS - DEFAULT_ENTRY_MS);
 
-    this.entryRange.set({ from, to: new Date(from.getTime() + DEFAULT_ENTRY_MS) });
-  }
-
-  protected addEntry(row: ManualRow) {
-    this.store.addRow(row);
-    this.entryRange.set(null);
+    this.surface.openDraft({ from, to: new Date(from.getTime() + DEFAULT_ENTRY_MS) });
   }
 
   protected nameContext(naming: ContextNaming) {
@@ -392,9 +296,5 @@ export class DayReviewViewComponent {
 
   protected labelRun(label: TimerRunLabel) {
     this.store.labelRun(label.id, { issueKey: label.issueKey, note: label.note });
-  }
-
-  protected splitInHalf(row: ReviewedRow) {
-    this.store.split(row, new Date((row.from.getTime() + row.to.getTime()) / 2));
   }
 }

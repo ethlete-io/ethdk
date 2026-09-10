@@ -1,6 +1,6 @@
 import { CollectedEvent, GIT_FIELD_SEPARATOR } from '@ethlete/timetrack';
 import { defaultSettings } from '@ethlete/timetrack/testing';
-import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
+import { E2E_DAY_KEY, E2E_NOW, expect, openDayNotes, openStreams, seedWorld, test } from './support';
 
 /** The checkout the fake git backend discovers, so its subdirectories fold into it. */
 const FUT = '/Users/e2e/dev/fut-frontend';
@@ -214,12 +214,16 @@ test.describe('the day view, as streams', () => {
   });
 
   test('gives the focused window its checkout, and the rest to one folded line', async ({ page }) => {
+    await openStreams(page);
+
     await expect(stream(page, `repo:${FUT}`).locator('[data-engaged]')).toHaveText('1h 30m engaged');
     await expect(stream(page, 'other-applications').locator('[data-engaged]')).toHaveText('30m engaged');
     await expect(stream(page, 'other-applications')).toContainText('Slack');
   });
 
   test('books a checkout an agent ran in, and says nobody ever looked at it', async ({ page }) => {
+    await openStreams(page);
+
     const agentOnly = stream(page, `repo:${SDK}`);
 
     await expect(agentOnly.locator('[data-engaged]')).toHaveText('1h 0m engaged');
@@ -229,6 +233,8 @@ test.describe('the day view, as streams', () => {
   });
 
   test("holds a stream's evidence closed until its header is opened", async ({ page }) => {
+    await openStreams(page);
+
     const agentOnly = stream(page, `repo:${SDK}`);
     const evidence = agentOnly.getByText('Read a day as streams');
 
@@ -242,6 +248,8 @@ test.describe('the day view, as streams', () => {
   test('holds an evidence row that has nowhere to wrap on one line', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, git: DISCOVERED, events: [...day(), focus(61, 'google-chrome', UNBROKEN)] });
     await page.goto('/day');
+
+    await openStreams(page);
 
     const folded = stream(page, 'other-applications');
 
@@ -271,6 +279,8 @@ test.describe('the day view, as streams', () => {
     });
     await page.goto('/day');
 
+    await openStreams(page);
+
     await expect(stream(page, `repo:${SDK}`).locator('[data-branches]')).toHaveText('feature/read-a-day');
   });
 
@@ -282,10 +292,14 @@ test.describe('the day view, as streams', () => {
     });
     await page.goto('/day');
 
+    await openStreams(page);
+
     await expect(stream(page, `repo:${SDK}`).locator('[data-branches]')).toHaveCount(0);
   });
 
   test('shows what the turns spent, in the classes they are priced in', async ({ page }) => {
+    await openStreams(page);
+
     await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toHaveText('1 turn · 1.2 M out · 604 M cached');
   });
 
@@ -314,6 +328,8 @@ test.describe('the day view, as streams', () => {
     await page.goto('/day');
 
     // One claude-code turn is already in the day's events; the two the rollout holds join it.
+    await openStreams(page);
+
     await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toContainText('3 turns');
     await expect(page.locator('[data-unattributed]')).toHaveCount(0);
   });
@@ -345,6 +361,8 @@ test.describe('the day view, as streams', () => {
     });
     await page.goto('/day');
 
+    await openStreams(page);
+
     const agentOnly = stream(page, `repo:${SDK}`);
 
     await expect(agentOnly.locator('[data-unattended]')).toHaveText('1h 0m unattended');
@@ -375,6 +393,8 @@ test.describe('the day view, as streams', () => {
       ],
     });
     await page.goto('/day');
+
+    await openStreams(page);
 
     const backfilled = stream(page, `repo:${SDK}`);
 
@@ -444,12 +464,16 @@ test.describe('the day view, as streams', () => {
     });
     await page.goto('/day');
 
+    await openStreams(page);
+
     const rebuilt = stream(page, `repo:${SDK}`);
 
     await expect(rebuilt.locator('[data-engaged]')).toHaveText('40m engaged');
     await expect(rebuilt.locator('[data-rebuilt]')).toHaveText('40m rebuilt');
     await expect(page.locator('[data-presence]')).toHaveText('40m present');
     await expect(page.locator('[data-rebuilt-total]')).toHaveText('40m rebuilt');
+    await openDayNotes(page);
+
     await expect(page.getByText(/Part of this day was rebuilt/)).toBeVisible();
   });
 
@@ -465,6 +489,8 @@ test.describe('the day view, as streams', () => {
       ],
     });
     await page.goto('/day');
+
+    await openStreams(page);
 
     const editor = stream(page, `repo:${FUT}`);
 
@@ -510,6 +536,8 @@ test.describe('the day view, as streams', () => {
     await seedWorld(page, { now: E2E_NOW, events: [] });
     await page.goto('/day');
 
+    await openStreams(page);
+
     await expect(page.getByText(/Nothing observed this day/)).toBeVisible();
   });
 });
@@ -530,6 +558,8 @@ test.describe('the day view, on a day something held the microphone', () => {
   test('names the call from the window in front of it, and says it is not counted', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: meeting });
     await page.goto('/day');
+
+    await openDayNotes(page);
 
     const row = page.locator(`[data-call="${HELPER}"]`);
 
@@ -574,6 +604,8 @@ test.describe('the day view, on a day some window named no checkout', () => {
     await seedWorld(page, { now: E2E_NOW, events: day(), ...DISCOVERED });
     await page.goto('/day');
 
+    await openDayNotes(page);
+
     await expect(page.locator('[data-unnamed-today]')).toHaveText('15m');
   });
 
@@ -594,6 +626,8 @@ test.describe('the day view, on a day some window named no checkout', () => {
     });
     await page.goto('/day');
 
+    await openDayNotes(page);
+
     await expect(page.getByText('cannot read the directory a focused window works in')).toBeVisible();
   });
 
@@ -613,6 +647,8 @@ test.describe('the day view, on a day some window named no checkout', () => {
       },
     });
     await page.goto('/day');
+
+    await openDayNotes(page);
 
     await expect(page.getByText('cannot read the directory a focused window works in')).toHaveCount(0);
     await expect(page.getByText('folds into Other applications')).toBeVisible();

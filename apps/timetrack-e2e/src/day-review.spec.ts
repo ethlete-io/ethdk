@@ -1,4 +1,4 @@
-import { expect, test } from './support';
+import { expect, openWaitingForAName, test } from './support';
 
 test.describe('the day view', () => {
   test.beforeEach(async ({ page }) => {
@@ -24,12 +24,14 @@ test.describe('the day view', () => {
   });
 
   test('says so when the agent named nothing, rather than looking unpressed', async ({ page }) => {
+    await openWaitingForAName(page);
     await page.getByRole('button', { name: 'Ask for suggestions' }).click();
 
     await expect(page.getByText('The agent had no suggestion')).toBeVisible();
   });
 
   test('runs the agent again when the button offers to', async ({ page }) => {
+    await openWaitingForAName(page);
     await page.getByRole('button', { name: 'Ask for suggestions' }).click();
 
     const again = page.getByRole('button', { name: 'Ask again' });
@@ -42,6 +44,7 @@ test.describe('the day view', () => {
   });
 
   test('opens the create-ticket form on no parent, never on a guess', async ({ page }) => {
+    await openWaitingForAName(page);
     await page.getByRole('button', { name: 'Create a ticket' }).click();
 
     const parent = page.locator('et-form-field').filter({ hasText: 'Parent' }).locator('input');
@@ -50,6 +53,7 @@ test.describe('the day view', () => {
   });
 
   test('drafts the summary and the description from what the work left behind', async ({ page }) => {
+    await openWaitingForAName(page);
     await page.getByRole('button', { name: 'Create a ticket' }).click();
 
     const field = (label: string) => page.locator('et-form-field').filter({ hasText: label });
@@ -59,6 +63,7 @@ test.describe('the day view', () => {
   });
 
   test('quotes only the commit subject, never a window title', async ({ page }) => {
+    await openWaitingForAName(page);
     await page.getByRole('button', { name: 'Create a ticket' }).click();
 
     const description = page.locator('et-form-field').filter({ hasText: 'Description' }).locator('textarea');

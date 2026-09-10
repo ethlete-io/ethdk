@@ -22,15 +22,11 @@ import {
   countDescendants,
 } from '@ethlete/components';
 import { DragGestureEvent, ProvideColorDirective, dragGestureFrom } from '@ethlete/core';
-import { Confidence, DEFAULT_ROUND_OPTIONS, ReviewedRow, formatDurationMs, isManualRow } from '@ethlete/timetrack';
+import { DEFAULT_ROUND_OPTIONS, ReviewedRow } from '@ethlete/timetrack';
 import { tap } from 'rxjs';
 import { formatClockTime } from './format';
-
-/** What a timeline block stands for, so a gesture knows what it is holding. */
-export type TimelineEntry =
-  | { kind: 'row'; row: ReviewedRow }
-  /** A story or epic several of the day's rows roll up to. Drawn in the all-day strip, never billed. */
-  | { kind: 'story'; issueKey: string };
+import { TimelineEntry, UNNAMED_LABEL, appointmentLabel, appointmentOf } from './row-edit/row-appointment';
+import { injectRowEditSurface } from './row-edit/row-edit-surface';
 
 /** Two rows that meet at one instant. Dragging that instant is what places a cut exactly. */
 export type TimelineBoundary = { id: string; before: ReviewedRow; after: ReviewedRow };
@@ -40,28 +36,12 @@ export type BoundaryMove = { before: ReviewedRow; after: ReviewedRow; at: Date }
 /** Where a row was dragged to, whether it moved whole or by one end. */
 export type RowReschedule = { row: ReviewedRow; from: Date; to: Date };
 
-/** A range drawn on empty grid, for the caller to open an add-entry surface over. */
-export type RangeDrawn = { from: Date; to: Date };
-
-/**
- * The theme each confidence tier paints in. Registered theme names, not colours — the scheduler reads
- * `colorToken` as `[etProvideColor]`.
- */
-const CONFIDENCE_THEME: Record<Confidence, string> = {
-  certain: 'success',
-  likely: 'brand',
-  weak: 'warning',
-};
-
 /**
  * How tall one hour of the grid is. Generous on purpose: at anything tighter a quarter-hour block is
  * shorter than one line of text, and a run of them renders as a stack of half-clipped labels. The
  * 24-hour body scrolls inside its own bounded height, so the cost is scrolling, not legibility.
  */
 const HOUR_REM = 8;
-
-/** What a band with no issue is called, on the timeline and in the label of a boundary beside it. */
-const UNNAMED_LABEL = 'Not yet named';
 
 /** A block shorter than one line of text renders as a bare bar; its hover title is where it reads. */
 const LABEL_MIN_REM = 2.2;
@@ -129,7 +109,7 @@ type RowDrag = {
                 [style.left.%]="entry.inlineOffset"
                 [style.width.%]="entry.inlineSize"
                 [title]="entry.node.appointment.title"
-                (click)="select(entry.node.appointment)"
+                (click)="select(entry.node.appointment, $event)"
                 class="absolute flex items-center gap-2 truncate rounded-sm border-l-2 border-l-et-theme bg-et-theme/10 px-2 text-left text-small"
                 style="height: 1.6rem"
                 type="button"
@@ -172,16 +152,16 @@ type RowDrag = {
                   [style.height.%]="block.span"
                   [style.left.%]="block.inlineOffset"
                   [style.width.%]="block.inlineSize"
-                  [title]="block.node.appointment.title"
+                  [title]="LABEL_OF(block.node.appointment)"
                   (pointerdown)="startDrag({ event: $event, appointment: block.node.appointment, column })"
-                  (click)="select(block.node.appointment)"
-                  (keydown.enter)="select(block.node.appointment)"
+                  (click)="select(block.node.appointment, $event)"
+                  (keydown.enter)="select(block.node.appointment, $event)"
                   class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[dragging]:opacity-70"
                   role="button"
                   tabindex="0"
                 >
                   @if (labelled(block.span)) {
-                    <span class="block truncate">{{ block.node.appointment.title }}</span>
+                    <span class="block truncate">{{ LABEL_OF(block.node.appointment) }}</span>
                   }
                   @if (detailed(block.span) && descriptionOf(block.node.appointment); as description) {
                     <span class="block truncate text-et-surface-muted">{{ description }}</span>
@@ -226,18 +206,15 @@ type RowDrag = {
 })
 export class DayTimelineComponent {
   private destroyRef = inject(DestroyRef);
+  private surface = injectRowEditSurface();
 
   public focusedDate = input.required<Date>();
   public rows = input.required<readonly ReviewedRow[]>();
 
-  /** The row behind a block the reviewer clicked, so the list can open it. */
-  public rowSelect = output<ReviewedRow>();
   /** Where two adjacent rows should meet instead. */
   public boundaryMove = output<BoundaryMove>();
   /** Where a row was dragged to, whole or by one end. */
   public rowReschedule = output<RowReschedule>();
-  /** A range drawn on empty grid, which is the ask for a row that nothing observed. */
-  public rangeDrawn = output<RangeDrawn>();
 
   private body = viewChild.required<ElementRef<HTMLElement>>('body');
   private dayColumn = viewChild<ElementRef<HTMLElement>>('dayColumn');
@@ -254,6 +231,7 @@ export class DayTimelineComponent {
   protected readonly STRIP_ROW_REM = STRIP_ROW_REM;
   protected readonly HOURS = Array.from({ length: 25 }, (_, hour) => hour);
   protected readonly COUNT_DESCENDANTS = countDescendants;
+  protected readonly LABEL_OF = appointmentLabel;
 
   /**
    * The pairs of rows that meet at one instant, ordered by the clock. A pair too short to keep a step
@@ -319,17 +297,12 @@ export class DayTimelineComponent {
       ...this.rows().map((row): Appointment<TimelineEntry> => {
         const drag = this.boundaryDrag();
 
-        return {
-          id: row.id,
+        return appointmentOf({
+          row,
           parentId: (row.storyKey && storyIds.get(row.storyKey)) ?? null,
-          title: `${row.issueKey ?? UNNAMED_LABEL} · ${formatDurationMs(row.durationMs)}${
-            isManualRow(row) ? ' · by hand' : ''
-          }`,
-          start: drag?.boundary.after.id === row.id ? drag.at : row.from,
-          end: drag?.boundary.before.id === row.id ? drag.at : row.to,
-          colorToken: CONFIDENCE_THEME[row.confidence],
-          extra: { kind: 'row', row },
-        };
+          from: drag?.boundary.after.id === row.id ? drag.at : row.from,
+          to: drag?.boundary.before.id === row.id ? drag.at : row.to,
+        });
       }),
     ];
   });
@@ -401,14 +374,20 @@ export class DayTimelineComponent {
     return this.scheduler().appointmentDrag()?.appointment.id === appointment.id;
   }
 
-  /** A press that moved the block is a drag, not a click on it — see {@link startDrag}. */
-  protected select(appointment: Appointment<TimelineEntry>) {
+  /**
+   * Opens the band's edit surface, anchored to the band itself.
+   *
+   * A press that moved the block is a drag and not a click on it — see {@link startDrag}. A press on
+   * a story opens the first row under it, because a story is a grouping and carries nothing to edit.
+   */
+  protected select(appointment: Appointment<TimelineEntry>, event: Event) {
     if (this.hasDragged) return;
 
     const entry = appointment.extra;
+    const origin = event.currentTarget as HTMLElement;
 
-    if (entry?.kind === 'row') this.rowSelect.emit(entry.row);
-    else if (entry?.kind === 'story') this.selectFirstUnder(entry.issueKey);
+    if (entry?.kind === 'row') this.openFor(entry.row, origin);
+    else if (entry?.kind === 'story') this.openFirstUnder(entry.issueKey, origin);
   }
 
   /** Moves a row to another time, or drags one of its ends. */
@@ -564,13 +543,17 @@ export class DayTimelineComponent {
     }
   }
 
+  private openFor(row: ReviewedRow, origin: HTMLElement) {
+    this.surface.openRow({ row, origin, appointments: this.appointments() });
+  }
+
   /** The first row under a story, so pressing the band opens something rather than nothing. */
-  private selectFirstUnder(issueKey: string) {
+  private openFirstUnder(issueKey: string, origin: HTMLElement) {
     const [first] = [...this.rows()]
       .filter((row) => row.storyKey === issueKey)
       .sort((a, b) => a.from.getTime() - b.from.getTime());
 
-    if (first) this.rowSelect.emit(first);
+    if (first) this.openFor(first, origin);
   }
 
   /** Whether the press landed near an end of the block, which resizes, or on its body, which moves it. */
@@ -611,8 +594,8 @@ export class DayTimelineComponent {
   }
 
   /**
-   * Hands the drawn range over, then drops it. The surface it opens belongs to the caller, so nothing
-   * here has to stay drawn — and a range left behind would sit under the next press.
+   * Opens the add surface over the drawn range, then drops the range: the surface holds it from here,
+   * and a range left behind would sit under the next press.
    */
   private settleDraw() {
     const scheduler = this.scheduler();
@@ -620,7 +603,7 @@ export class DayTimelineComponent {
 
     scheduler.clearDraftRange();
 
-    if (draft) this.rangeDrawn.emit({ from: draft.start, to: draft.end });
+    if (draft) this.surface.openDraft({ from: draft.start, to: draft.end });
   }
 
   /** The instant a pointer sits at in the day column, on the increment a worklog is logged in. */

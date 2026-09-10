@@ -22,7 +22,7 @@ import {
 @Component({
   selector: 'ethlete-day-streams',
   template: `
-    <details class="rounded-md border border-et-surface-border" data-streams open>
+    <details class="rounded-md border border-et-surface-border" data-streams>
       <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">{{ summary() }}</summary>
 
       <div class="max-h-64 overflow-y-auto px-3 pb-3">

@@ -7,4 +7,7 @@ export * from './day-timeline.component';
 export * from './ticket-draft';
 export * from './timer-runs.component';
 export * from './unnamed-work.component';
-export * from './worklog-row.component';
+export * from './day-warnings.component';
+export * from './logged-elsewhere.component';
+export * from './row-edit/row-appointment';
+export * from './row-edit/row-edit-surface';

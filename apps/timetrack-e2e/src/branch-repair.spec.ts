@@ -1,10 +1,11 @@
-import { expect, test } from './support';
+import { expect, openWaitingForAName, test } from './support';
 
 /**
  * The repair a filed ticket makes possible. The fixture's second branch names no issue and the
  * grammar can spell it, so filing the ticket is what unlocks the offer.
  */
 const fileTheTicket = async (page: import('@playwright/test').Page) => {
+  await openWaitingForAName(page);
   await page.getByRole('button', { name: 'Create a ticket' }).click();
   await page.getByRole('button', { name: 'Create in Jira' }).click();
   await expect(page.getByText(/now holds this work/)).toBeVisible();
@@ -16,6 +17,8 @@ test.describe('branch repair', () => {
   });
 
   test('offers no repair before a ticket exists to name the branch after', async ({ page }) => {
+    await openWaitingForAName(page);
+
     await expect(page.getByRole('button', { name: 'Show me the steps' })).toBeHidden();
   });
 

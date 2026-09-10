@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 import { tempoWorklogOn } from '@ethlete/timetrack/testing';
-import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
+import { E2E_DAY_KEY, E2E_NOW, expect, logTheNamedRow, seedWorld, test } from './support';
 
 /** The seeded day's own row. Selected by its day key, because which of the seven it is depends on the weekday. */
 const seededDay = (page: Page) => page.locator(`[data-day="${E2E_DAY_KEY}"]`);
@@ -17,7 +17,7 @@ test.describe('a day logged in tempo by hand', () => {
       tempo: { worklogs: [tempoWorklogOn({ day: E2E_DAY_KEY, minutes: 90 })] },
     });
     await page.goto('/day');
-    await page.getByLabel('Log time for ABC-3010').check();
+    await logTheNamedRow(page);
   });
 
   test('reads what tempo holds after the day review opened the day', async ({ page }) => {
