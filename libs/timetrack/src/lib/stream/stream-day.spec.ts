@@ -496,6 +496,16 @@ describe('streamDay', () => {
       rebuiltMs: 0,
       streams: [],
       blocks: [],
+      rows: {
+        proposals: [],
+        unattributed: [],
+        meetings: [],
+        calls: [],
+        timers: [],
+        filledMs: 0,
+        private: [],
+        privateMs: 0,
+      },
       spend: { usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0 }, turns: 0, models: [] },
       unattributedSpend: {
         usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0 },

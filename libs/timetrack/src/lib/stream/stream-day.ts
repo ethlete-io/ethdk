@@ -14,6 +14,7 @@ import {
 import { Evidence } from '../model/evidence';
 import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } from '../model/time-window';
+import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
 import { classifyCalls } from './calls';
@@ -89,6 +90,14 @@ export type StreamDayOptions = {
    * names it.
    */
   noWorkContextApps?: readonly string[];
+  /**
+   * What the day's blocks are turned into rows with — see `buildRows`.
+   *
+   * `links` and `calls` are deliberately not repeatable here: this pass already holds the user's
+   * project links and already classified the day's calls, and a second copy of either would let the
+   * streams and the rows disagree about a minute neither is wrong about.
+   */
+  rows?: Omit<BuildRowsOptions, 'links' | 'calls'>;
 };
 
 export const DEFAULT_STREAM_DAY_OPTIONS: StreamDayOptions = {
@@ -185,6 +194,14 @@ export type StreamDay = {
    * two contexts running at once and each books its full time.
    */
   blocks: ActivityBlock[];
+  /**
+   * The bookable rows those blocks produced, plus the rows nothing observed as a block: the meetings,
+   * the calls a rule counted and the runs the user timed.
+   *
+   * `private` is always empty here. A private checkout leaves this pass before a block is built, so
+   * there is nothing left for the ladder's private rung to find — see `privateNames`.
+   */
+  rows: DayRows;
   /** Every stream's unattended time summed. Outside both `presenceMs` and `engagedMs`. */
   unattendedMs: number;
   /**
@@ -932,6 +949,8 @@ export const streamDay = (options: {
     observations,
   });
 
+  const rows = buildRows({ ...config.rows, blocks, events: options.events, links, calls });
+
   const presenceMs = windowsMs(presence);
   const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);
 
@@ -943,6 +962,7 @@ export const streamDay = (options: {
     unnamedFocus,
     namedApps: [...namedApps].sort(),
     blocks,
+    rows,
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
     rebuiltMs: windowsMs(rebuilt),
     streams,
