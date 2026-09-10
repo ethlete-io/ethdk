@@ -215,7 +215,7 @@ export const SCHEDULER_EDIT_SURFACE_OVERLAY = /* @__PURE__ */ defineOverlay<
           // a dragged-out range as a single appointment, and a range wants its surface over its middle
           positionStrategy: buildAnchoredRuntimePositionStrategy({
             placement: 'bottom',
-            fallbackPlacements: ['top', 'bottom-end', 'top-end'],
+            fallbackPlacements: ['top', 'right', 'left', 'bottom-end', 'top-end', 'right-start', 'left-start'],
             offset: 10,
             arrowPadding: 16,
             shift: true,
