@@ -14,10 +14,16 @@ const block = (options: { fromMinute: number; toMinute: number; context: Activit
 const SDK = '/home/tom/dev/ethlete-sdk';
 
 describe('dropNoWorkContext', () => {
-  it('keeps every block when neither list holds anything', () => {
+  it('drops an application-only block when no rule says the application holds work', () => {
     const blocks = [block({ fromMinute: 0, toMinute: 10, context: { appId: 'spotify' } })];
 
-    expect(dropNoWorkContext({ blocks })).toEqual(blocks);
+    expect(dropNoWorkContext({ blocks })).toEqual([]);
+  });
+
+  it('keeps an application-only block once `workApps` names the application', () => {
+    const blocks = [block({ fromMinute: 0, toMinute: 10, context: { appId: 'spotify' } })];
+
+    expect(dropNoWorkContext({ blocks, workApps: ['Spotify'] })).toEqual(blocks);
   });
 
   it('drops a block that names nothing but an application on the list', () => {
@@ -117,8 +123,14 @@ describe('dropNoWorkContext, a glance away from the work', () => {
     expect(kept.map((entry) => entry.context.repoPath)).toEqual([SDK, SDK, SDK]);
   });
 
-  it('keeps a window that held the focus for longer as its own block', () => {
+  it('drops a window that held the focus for longer than a glance and holds no work', () => {
     const kept = dropNoWorkContext({ blocks: dayWith({ appId: 'google-chrome' }, 26) });
+
+    expect(kept.map((entry) => entry.context.repoPath)).toEqual([SDK, SDK]);
+  });
+
+  it('keeps that window as its own block once `workApps` names it', () => {
+    const kept = dropNoWorkContext({ blocks: dayWith({ appId: 'google-chrome' }, 26), workApps: ['google-chrome'] });
 
     expect(kept[1]?.context).toEqual({ appId: 'google-chrome' });
   });

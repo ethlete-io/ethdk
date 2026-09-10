@@ -36,6 +36,7 @@ export const dayRowsOptionsOf = (options: {
     meetings: { defaultIssueKey: settings.meetingIssueKey || undefined },
     noWorkContext: {
       apps: effectiveNoWorkContextApps(settings),
+      workApps: [...settings.holdsWorkApps],
       transientApps: effectiveTransientApps(settings),
     },
   };

@@ -221,7 +221,11 @@ export type TimetrackSettings = {
    * that is a defect.
    */
   noWorkContextApps: string[];
-  /** The applications the user took back off that list, the shipped part of it included. */
+  /**
+   * The applications the user took back off that list, the shipped part of it included. It is also the
+   * only thing that gives an application a lane of its own on the day screen: with no checkout to name
+   * the work, nothing else says the application's own time is work.
+   */
   holdsWorkApps: string[];
   /** Whether the shipped defaults still apply. Turning them off is a deliberate, visible choice. */
   keepDefaultExclusionRules: boolean;

@@ -20,6 +20,12 @@ export type NoWorkContextOptions = {
    */
   apps?: readonly string[];
   /**
+   * Applications whose own time is work, `app_id` as the platform reports it. Only these earn a lane
+   * of their own when no checkout names the block. Every other application-only stretch folds into
+   * the work around it, or is dropped.
+   */
+  workApps?: readonly string[];
+  /**
    * Applications that open over the work rather than beside it — a file picker, a portal dialog. A
    * short one takes the context of the block it interrupted; anything else about it is dropped.
    */
@@ -51,21 +57,18 @@ const interrupted = (options: { block: ActivityBlock; blocks: readonly ActivityB
 };
 
 /**
- * Takes the blocks nothing can name work in out of a day, before any row is built from them: the
- * applications on these lists, and every window too short to be a line of work of its own.
+ * Takes the blocks nothing can name work in out of a day, before any row is built from them.
  *
  * A block that names a checkout is kept whatever window held the focus: the checkout was named by
- * other evidence, and that evidence is work. The three rules below apply to the rest.
+ * other evidence, and that evidence is work. The rules below apply to the rest.
  *
  * - An application on `apps` names no work at all. Its blocks are dropped, so a media player gets no
  *   lane on the timeline and proposes no time.
- * - An application on `transientApps` opens over the work. A short one takes the context it
- *   interrupted; one that outlasts `maxTransientMs` is dropped, because a window held that long is
- *   not chrome over anything.
- * - Anything else shorter than `maxGlanceMs` is a glance away from the work and takes the context it
- *   interrupted as well. A glance at the edge of a stretch interrupted nothing and is dropped, and so
- *   is one whose host is itself an application off one of the two lists: a glance between two windows
- *   of a media player would otherwise give the player back the lane its own blocks were just denied.
+ * - An application on `workApps` holds work of its own. Its blocks are kept, so it earns a lane.
+ * - Every other application-only block is read as time around the work rather than a line of work of
+ *   its own. A short one takes the context it interrupted. The limit is `maxGlanceMs`, or
+ *   `maxTransientMs` for an application on `transientApps`, which opens over the work rather than
+ *   beside it. Anything longer, and anything that interrupted no single context, is dropped.
  *
  * The day's streams, its folded line and its `unnamedFocus` strip all read the unfiltered blocks, so
  * the minutes still reconcile with the Today screen and the strip still reports why each one named no
@@ -75,6 +78,7 @@ export const dropNoWorkContext = (
   options: { blocks: readonly ActivityBlock[] } & NoWorkContextOptions,
 ): ActivityBlock[] => {
   const apps = lower(options.apps ?? []);
+  const workApps = lower(options.workApps ?? []);
   const transientApps = lower(options.transientApps ?? []);
   const maxTransientMs = options.maxTransientMs ?? DEFAULT_MAX_TRANSIENT_MS;
   const maxGlanceMs = options.maxGlanceMs ?? DEFAULT_MAX_GLANCE_MS;
@@ -83,7 +87,7 @@ export const dropNoWorkContext = (
   const namesWork = (context: ActivityContext) => {
     const appId = context.appId?.toLowerCase();
 
-    return !!context.repoPath || !appId || !(apps.has(appId) || transientApps.has(appId));
+    return !!context.repoPath || (!!appId && workApps.has(appId));
   };
 
   for (const block of ordered) {
@@ -96,12 +100,14 @@ export const dropNoWorkContext = (
 
     if (appId && apps.has(appId)) continue;
 
-    const transient = !!appId && transientApps.has(appId);
-
-    if (blockDurationMs(block) > (transient ? maxTransientMs : maxGlanceMs)) {
-      if (!transient) kept.push(block);
+    if (appId && workApps.has(appId)) {
+      kept.push(block);
       continue;
     }
+
+    const transient = !!appId && transientApps.has(appId);
+
+    if (blockDurationMs(block) > (transient ? maxTransientMs : maxGlanceMs)) continue;
 
     const host = interrupted({ block, blocks: ordered });
 

@@ -93,7 +93,8 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       <p class="text-small text-et-surface-muted">
         Every minute here is on the Today screen already, folded into the Other applications line. An application that
         names a checkout at another time lost this stretch. One that never names a checkout either holds no work context
-        at all, or holds one this app cannot read yet.
+        at all, or holds one this app cannot read yet. Say that one does hold work and it takes a lane of its own on the
+        day screen; every other application stays folded into the line.
       </p>
 
       @if (failure()) {

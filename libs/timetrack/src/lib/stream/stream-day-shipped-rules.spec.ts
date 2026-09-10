@@ -57,6 +57,7 @@ const rowsOf = (options: { events: readonly CollectedEvent[]; settings: Timetrac
         config: CONFIG,
         noWorkContext: {
           apps: effectiveNoWorkContextApps(settings),
+          workApps: settings.holdsWorkApps,
           transientApps: effectiveTransientApps(settings),
         },
       },

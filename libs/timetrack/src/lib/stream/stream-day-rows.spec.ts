@@ -96,10 +96,14 @@ const optionsFor = (events: readonly CollectedEvent[]) => ({
   calls: classifyCalls({ events, rules: { countsAsWork: [], neverCountsAsWork: [] }, until: READ_THROUGH }),
 });
 
-const rowsOf = (events: CollectedEvent[]) =>
+const rowsOf = (events: CollectedEvent[], workApps?: readonly string[]) =>
   streamDay({
     events,
-    options: { repoRoots: [REPO], windowsSeenThroughMs: READ_THROUGH.getTime(), rows: optionsFor(events) },
+    options: {
+      repoRoots: [REPO],
+      windowsSeenThroughMs: READ_THROUGH.getTime(),
+      rows: { ...optionsFor(events), noWorkContext: { workApps } },
+    },
   }).rows;
 
 const bookedMsByIssue = (proposals: readonly WorklogProposal[]) => {
@@ -126,9 +130,16 @@ describe('the rows a quiet day produces', () => {
     expect(rows.timers.map((timer) => timer.run.id)).toEqual(['run-1']);
   });
 
-  it('leaves the browsing nothing could name waiting as one band', () => {
-    expect(rows.unattributed.map((group) => group.observedMs)).toEqual([44 * MINUTE]);
-    expect(rows.unnamed.map((row) => row.observedMs)).toEqual([44 * MINUTE]);
+  it('drops the browsing, since no rule says the browser holds work', () => {
+    expect(rows.unattributed).toEqual([]);
+    expect(rows.unnamed).toEqual([]);
+  });
+
+  it('leaves that browsing waiting as one band once a rule says the browser holds work', () => {
+    const named = rowsOf(QUIET_DAY, ['firefox']);
+
+    expect(named.unattributed.map((group) => group.observedMs)).toEqual([44 * MINUTE]);
+    expect(named.unnamed.map((row) => row.observedMs)).toEqual([44 * MINUTE]);
   });
 });
 
@@ -140,10 +151,7 @@ describe('the rows a day with a meeting produces', () => {
   });
 
   it('gives the meeting a band of its own, since no setting names an issue for one', () => {
-    expect(rows.unnamed.map((row) => [row.description, row.observedMs])).toEqual([
-      ['Sprint planning', 30 * MINUTE],
-      ['unattributed activity', 30 * MINUTE],
-    ]);
+    expect(rows.unnamed.map((row) => [row.description, row.observedMs])).toEqual([['Sprint planning', 30 * MINUTE]]);
   });
 
   /**
