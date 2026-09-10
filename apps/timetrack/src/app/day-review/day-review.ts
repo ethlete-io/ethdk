@@ -396,6 +396,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       events: collected.events,
       links: settings.settings().projectLinks,
       calls: calls(),
+      breaks: current.breaks,
       inferred: proposed,
       ...rowOptions(),
     });
