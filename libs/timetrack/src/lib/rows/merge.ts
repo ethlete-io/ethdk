@@ -1,5 +1,6 @@
 import { ActivityBlock, blockDurationMs, contextKey, streamKey } from '../model/block';
 import { Confidence, Evidence, compareConfidence } from '../model/evidence';
+import { TimeWindow } from '../model/time-window';
 import { AttributedBlock } from './attribute';
 
 /** One or more attributed blocks that will become a single reviewable row. */
@@ -130,10 +131,17 @@ const oneLane = (group: WorkGroup) => {
   return keys.size === 1 && !keys.has('app:');
 };
 
+/** Whether one of the barriers falls in the gap a join would swallow. */
+const barred = (options: { from: Date; to: Date; barriers: readonly TimeWindow[] }) =>
+  options.barriers.some(
+    (barrier) => barrier.from.getTime() < options.to.getTime() && barrier.to.getTime() > options.from.getTime(),
+  );
+
 /**
- * One merge over the day's blocks. A band joins the block after it while two things hold: the gap is
- * no wider than `maxGapMs`, and the band would still span no more than its own span ratio times the
- * time it observed - `maxLaneSpanRatio` while every block is one checkout, `maxSpanRatio` otherwise.
+ * One merge over the day's blocks. A band joins the block after it while three things hold: the gap is
+ * no wider than `maxGapMs`, no barrier falls in that gap, and the band would still span no more than
+ * its own span ratio times the time it observed - `maxLaneSpanRatio` while every block is one
+ * checkout, `maxSpanRatio` otherwise.
  *
  * The span test is what keeps the picture honest. Without it a band whose gaps another checkout filled
  * is drawn as a rectangle across the whole day while its label says fifteen minutes.
@@ -143,8 +151,9 @@ const mergePass = (options: {
   maxGapMs: number;
   maxSpanRatio: number;
   maxLaneSpanRatio: number;
+  barriers: readonly TimeWindow[];
 }) => {
-  const { ordered, maxGapMs, maxSpanRatio, maxLaneSpanRatio } = options;
+  const { ordered, maxGapMs, maxSpanRatio, maxLaneSpanRatio, barriers } = options;
   const rows: WorkGroup[] = [];
   const lastOfTrack = new Map<string, number>();
 
@@ -160,7 +169,11 @@ const mergePass = (options: {
       const span = joined.to.getTime() - joined.from.getTime();
       const ratio = oneLane(joined) ? maxLaneSpanRatio : maxSpanRatio;
 
-      if (gap <= maxGapMs && span <= joined.observedMs * ratio) {
+      if (
+        gap <= maxGapMs &&
+        span <= joined.observedMs * ratio &&
+        !barred({ from: previous.to, to: group.from, barriers })
+      ) {
         rows[at] = joined;
         continue;
       }
@@ -185,14 +198,28 @@ const mergePass = (options: {
  * one checkout is held to `maxLaneSpanRatio` instead, which is looser: it has its own lane on the day
  * screen, so twenty short touches of a browser read as a few bands rather than twenty bars.
  *
+ * A `barriers` window ends a band whatever the gap and the ratio allow. A break is one: the user left
+ * the desk, so the work before it and the work after it are two stretches and a band drawn across it
+ * claims an hour nobody was there for.
+ *
  * Above `maxRowsPerDay` the day is merged again with no gap limit at all, which is the last resort
- * for a day nobody would review row by row. The span rule holds in that pass too, so a day of short
- * touches far apart stays many rows and warns rather than lie in one band.
+ * for a day nobody would review row by row. The span rule and the barriers hold in that pass too, so
+ * a day of short touches far apart stays many rows and warns rather than lie in one band.
  */
-export const mergeBlocks = (options: { blocks: AttributedBlock[]; options?: Partial<MergeOptions> }): WorkGroup[] => {
+export const mergeBlocks = (options: {
+  blocks: AttributedBlock[];
+  /** Instants no band may be drawn across, whatever the gap rule allows — the day's breaks. */
+  barriers?: readonly TimeWindow[];
+  options?: Partial<MergeOptions>;
+}): WorkGroup[] => {
   const config = { ...DEFAULT_MERGE_OPTIONS, ...options.options };
   const ordered = options.blocks.slice().sort((a, b) => a.block.from.getTime() - b.block.from.getTime());
-  const pass = { ordered, maxSpanRatio: config.maxSpanRatio, maxLaneSpanRatio: config.maxLaneSpanRatio };
+  const pass = {
+    ordered,
+    maxSpanRatio: config.maxSpanRatio,
+    maxLaneSpanRatio: config.maxLaneSpanRatio,
+    barriers: options.barriers ?? [],
+  };
   const rows = mergePass({ ...pass, maxGapMs: config.maxMergeGapMs });
 
   return rows.length > config.maxRowsPerDay ? mergePass({ ...pass, maxGapMs: Infinity }) : rows;

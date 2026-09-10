@@ -973,10 +973,6 @@ export const streamDay = (options: {
     observations,
   });
 
-  const rows = buildRows({ ...config.rows, blocks, events: options.events, links, calls });
-
-  const presenceMs = windowsMs(presence);
-  const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);
   const breaks = breakWindows({
     presence,
     events: options.events,
@@ -985,6 +981,10 @@ export const streamDay = (options: {
     work: blocks,
     minBreakMs: config.minBreakMs,
   });
+  const rows = buildRows({ ...config.rows, blocks, events: options.events, links, calls, breaks });
+
+  const presenceMs = windowsMs(presence);
+  const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);
 
   return {
     presenceMs,

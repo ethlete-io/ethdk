@@ -251,3 +251,36 @@ describe('mergeBlocks', () => {
     expect(rows[0]?.from).toEqual(AT(0));
   });
 });
+
+describe('mergeBlocks across a break', () => {
+  const work = [
+    attributed({ fromMinute: 0, toMinute: 30, issueKey: 'FIP-2177' }),
+    attributed({ fromMinute: 40, toMinute: 70, issueKey: 'FIP-2177' }),
+  ];
+
+  it('joins the two stretches when nothing separates them', () => {
+    expect(mergeBlocks({ blocks: work })).toHaveLength(1);
+  });
+
+  it('ends the band at a break the gap holds', () => {
+    const rows = mergeBlocks({ blocks: work, barriers: [{ from: AT(31), to: AT(39) }] });
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.to).toEqual(AT(30));
+    expect(rows[1]?.from).toEqual(AT(40));
+  });
+
+  it('ends it in the no-gap-limit pass too', () => {
+    const rows = mergeBlocks({
+      blocks: work,
+      barriers: [{ from: AT(31), to: AT(39) }],
+      options: { maxRowsPerDay: 1 },
+    });
+
+    expect(rows).toHaveLength(2);
+  });
+
+  it('joins across a break that ended before the first stretch did', () => {
+    expect(mergeBlocks({ blocks: work, barriers: [{ from: AT(0), to: AT(20) }] })).toHaveLength(1);
+  });
+});

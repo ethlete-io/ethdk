@@ -59,6 +59,11 @@ export type BuildRowsOptions = {
    * this takes no clock either.
    */
   pauses?: readonly TimeWindow[];
+  /**
+   * The breaks the day held, from `breakWindows`. No band is drawn across one: the user left the desk,
+   * so the work before it and the work after it are two stretches.
+   */
+  breaks?: readonly TimeWindow[];
 };
 
 export type DayRows = {
@@ -91,6 +96,9 @@ export type DayRows = {
  *
  * A pause is cut out for the opposite reason: nothing watched it, and the samples on either side are
  * close enough together that the block builder would otherwise bridge the hole and bill it.
+ *
+ * A break ends a band rather than being cut out of one. The blocks on either side are real work and
+ * keep their time; what a break denies is one band drawn across it.
  *
  * A block that names nothing but an application on `noWorkContext` is dropped before it is
  * attributed, so a media player proposes no time and gets no lane. Meetings, calls and timer runs are
@@ -147,7 +155,7 @@ export const buildRows = (
     options: options.fill,
   });
   const groups = [
-    ...mergeBlocks({ blocks: filled.blocks, options: options.merge }),
+    ...mergeBlocks({ blocks: filled.blocks, barriers: options.breaks, options: options.merge }),
     ...meetings.map((meeting) => meeting.group),
     ...calls.map((call) => call.group),
     ...timers.map((timer) => timer.group),
