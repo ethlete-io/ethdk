@@ -1,3 +1,4 @@
+export * from './blocks';
 export * from './calls';
 export * from './presence';
 export * from './stream-day';

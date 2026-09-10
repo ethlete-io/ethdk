@@ -1,4 +1,4 @@
-import { ActivityContext, streamKey } from '../model/block';
+import { ActivityBlock, ActivityContext, streamKey } from '../model/block';
 import { CallWindow } from '../model/call';
 import { branchOf, repoRootOf } from '../model/context';
 import {
@@ -15,6 +15,7 @@ import { Evidence } from '../model/evidence';
 import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } from '../model/time-window';
 import { TimetrackCallRules } from '../settings/model';
+import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
 import { classifyCalls } from './calls';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
@@ -178,6 +179,12 @@ export type StreamDay = {
   namedApps: string[];
   /** Ordered by when each stream started. */
   streams: Stream[];
+  /**
+   * The day cut into contiguous same-context stretches, which is what a row is built from. Two blocks
+   * of the same context never overlap; blocks of different contexts do, because a concurrent day is
+   * two contexts running at once and each books its full time.
+   */
+  blocks: ActivityBlock[];
   /** Every stream's unattended time summed. Outside both `presenceMs` and `engagedMs`. */
   unattendedMs: number;
   /**
@@ -681,6 +688,10 @@ export const streamDay = (options: {
   const branches = new Map<string, string | undefined>();
   const lastAgentSample = new Map<string, Date>();
   const marks: Mark[] = [];
+  const focusSpans: ContextSpan[] = [];
+  const agentSpans: ContextSpan[] = [];
+  const rebuiltSpans: ContextSpan[] = [];
+  const observations: ContextObservation[] = [];
   const unnamed: UnnamedDraft[] = [];
   let sticky: { repoPath: string; at: Date; appId?: string } | undefined;
   let focused: string | undefined;
@@ -764,7 +775,10 @@ export const streamDay = (options: {
 
     // Every stretch between two samples belongs to whichever context held the focused window, so the
     // focus time of every stream sums to presence exactly and the concurrency ratio has one meaning.
-    if (next) draftFor(drafts, context).focus.push({ from: sample.at, to: next.at });
+    if (next) {
+      draftFor(drafts, context).focus.push({ from: sample.at, to: next.at });
+      focusSpans.push({ from: sample.at, to: next.at, context });
+    }
     if (next && !holder) {
       const draft = unnamedDraftFor(unnamedReason);
       const window = { from: sample.at, to: next.at };
@@ -783,21 +797,25 @@ export const streamDay = (options: {
 
     if (sample.kind === 'agent-session') {
       const cwd = repoRootOf({ path: sample.cwd, roots });
-      const draft = draftFor(drafts, { repoPath: cwd, branch: branchOf(sample.gitBranch) });
+      const ran: ActivityContext = { repoPath: cwd, branch: branchOf(sample.gitBranch) };
+      const draft = draftFor(drafts, ran);
       const last = lastAgentSample.get(cwd);
 
       draft.sessions.add(sample.sessionId);
 
       if (last && sample.at.getTime() - last.getTime() < config.maxUnobservedMs) {
         draft.agent.push({ from: last, to: sample.at });
+        agentSpans.push({ from: last, to: sample.at, context: ran });
       }
 
       lastAgentSample.set(cwd, sample.at);
     }
 
     const of = observed ? { repoPath: observed.repoPath, branch: observed.branch } : context;
+    const seenHere = secludedWindow || ownWindow ? null : evidenceFor(sample);
 
-    addEvidence(draftFor(drafts, of), secludedWindow || ownWindow ? null : evidenceFor(sample));
+    addEvidence(draftFor(drafts, of), seenHere);
+    if (seenHere) observations.push({ at: sample.at, context: of, evidence: seenHere });
     marks.push({
       at: sample.at,
       state: observed ?? (holder ? { repoPath: holder, branch: branches.get(holder) } : null),
@@ -808,7 +826,10 @@ export const streamDay = (options: {
     const repoPath = checkoutOf(prompt.cwd);
     const state = repoPath ? { repoPath, branch: branchOf(prompt.gitBranch) } : null;
 
-    addEvidence(draftFor(drafts, state ?? {}), promptEvidence(prompt));
+    const typed = promptEvidence(prompt);
+
+    addEvidence(draftFor(drafts, state ?? {}), typed);
+    observations.push({ at: prompt.at, context: state ?? {}, evidence: typed });
     marks.push({ at: prompt.at, state });
   }
 
@@ -829,6 +850,7 @@ export const streamDay = (options: {
     if (!next) return;
 
     draftFor(drafts, mark.state ?? {}).rebuilt.push({ from: mark.at, to: next.at });
+    rebuiltSpans.push({ from: mark.at, to: next.at, context: mark.state ?? {} });
   });
 
   const streams: Stream[] = [];
@@ -901,6 +923,15 @@ export const streamDay = (options: {
     .filter((row) => row.ms > 0)
     .sort((a, b) => b.ms - a.ms || (a.appId ?? '').localeCompare(b.appId ?? ''));
 
+  const blocks = blocksFromSpans({
+    spans: [
+      ...clipSpans({ spans: focusSpans, within: seen }),
+      ...clipSpans({ spans: agentSpans, within: presence }),
+      ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
+    ],
+    observations,
+  });
+
   const presenceMs = windowsMs(presence);
   const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);
 
@@ -911,6 +942,7 @@ export const streamDay = (options: {
     focusMs,
     unnamedFocus,
     namedApps: [...namedApps].sort(),
+    blocks,
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
     rebuiltMs: windowsMs(rebuilt),
     streams,

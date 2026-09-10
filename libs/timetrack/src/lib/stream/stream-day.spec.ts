@@ -495,6 +495,7 @@ describe('streamDay', () => {
       unattendedMs: 0,
       rebuiltMs: 0,
       streams: [],
+      blocks: [],
       spend: { usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0 }, turns: 0, models: [] },
       unattributedSpend: {
         usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0 },
@@ -1231,5 +1232,70 @@ describe('streamDay, the focus that named no checkout', () => {
     });
 
     expect(day.namedApps).toEqual([]);
+  });
+});
+
+describe('streamDay, the blocks a row is built from', () => {
+  const blocksIn = (day: ReturnType<typeof streamDay>, repoPath: string) =>
+    day.blocks.filter((block) => block.context.repoPath === repoPath);
+
+  const spanMs = (blocks: readonly { from: Date; to: Date }[]) =>
+    blocks.reduce((sum, block) => sum + (block.to.getTime() - block.from.getTime()), 0);
+
+  it('gives one checkout one block, carrying what was observed in it', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 30, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    const blocks = blocksIn(day, SDK);
+
+    expect(blocks).toHaveLength(1);
+    expect(spanMs(blocks)).toBe(30 * MINUTE);
+    expect(blocks[0]?.context.branch).toBe('next');
+    expect(blocks[0]?.evidence.map((entry) => entry.kind)).toContain('commit');
+  });
+
+  it('sums a checkout its stream engaged time', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 20, appId: 'code', title: 'a.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 20, to: 30, appId: 'slack' }),
+        ...focusRun({ from: 30, to: 50, appId: 'code', title: 'b.ts - ethlete-sdk - Code' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(spanMs(blocksIn(day, SDK))).toBe(streamOf(day, `repo:${SDK}`)?.engagedMs);
+  });
+
+  it('splits a block where the branch changed, and leaves the stream whole', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 40, appId: 'code', title: 'a.ts - ethlete-sdk - Code' }),
+        checkout(20, 'feat/EM-1'),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(blocksIn(day, SDK).map((block) => block.context.branch)).toEqual([undefined, 'feat/EM-1']);
+    expect(day.streams).toHaveLength(1);
+  });
+
+  it('lets two contexts hold the same minute, and no context overlap itself', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 40, appId: 'code', title: 'a.ts - ethlete-sdk - Code' }),
+        ...sessionRun({ from: 10, to: 30, cwd: FUT }),
+      ],
+      options: { repoRoots: [SDK, FUT] },
+    });
+
+    expect(spanMs(blocksIn(day, SDK))).toBe(40 * MINUTE);
+    expect(spanMs(blocksIn(day, FUT))).toBe(20 * MINUTE);
+    expect(blocksIn(day, FUT)).toHaveLength(1);
   });
 });
