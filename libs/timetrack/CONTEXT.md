@@ -45,7 +45,14 @@ _Avoid_: suggestion, entry, draft
 
 **Row**:
 One line the user can review and book. Every row is attributed and can reach Tempo.
-_Avoid_: line, item. A read-only line on the Today screen is a **stream**, not a row.
+_Avoid_: line, item. A row drawn against a time axis is a **band**; the work behind it is a
+**stream**.
+
+**Band**:
+One line on the day timeline: a row drawn against a proportional time axis. A band can be split and
+glued by hand; the stream behind it cannot, because a stream is keyed by its checkout. Opening a
+band shows that stream's evidence. See ADR 0011.
+_Avoid_: bar, slot, entry
 
 **Attribution**:
 The assignment of a block to a Jira issue. Distinct from a Tempo _work attribute_, which is a
@@ -56,6 +63,19 @@ _Avoid_: mapping, matching, assignment
 How well the evidence supports an attribution: `certain`, `likely` or `weak`. An enum, never a
 number.
 _Avoid_: score, certainty, probability
+
+**Standing ticket**:
+A Jira issue that takes every hour of one whole context or one meeting group, with no end and no
+relation to a single piece of work. `ET-772` for this repository, `BD-2049` for internal meetings.
+A standing ticket is retired and replaced by a successor without anyone telling the app, so the app
+watches whether it is still touched.
+_Avoid_: default ticket, catch-all, bucket
+
+**Remembered naming**:
+A stored answer that names later work the way earlier work was named: a set of features, an issue
+key, a count and the date it was last seen. Seeded from Tempo history, written by a naming of the
+user's, and never written by a model. See ADR 0012.
+_Avoid_: rule (a rule is hand-written and matches a context, not a call), pattern, learning
 
 ### Time
 
@@ -180,3 +200,18 @@ _Avoid_: run (a run is one tick of one pass), scan, sweep
 The issue tracker and the timesheet the app books into. Jira and Tempo for now. The ledger stays
 adapter-agnostic, so a later backbone can replace them.
 _Avoid_: integration, provider (a provider is an agent CLI)
+
+### What leaves the machine
+
+**Name list**:
+The real names the user maintains — people, clients and projects — that must never leave the machine
+as themselves. It is also the map back, because a pseudonym is derived from the real name by a fixed
+rule and nothing else is stored.
+_Avoid_: dictionary, mapping, glossary
+
+**Pseudonym**:
+The fictional name a real name becomes in anything sent to a model. Derived, never stored, and
+reversed by the same rule over the name list. A Jira project key prefix is a project name, so it
+becomes a pseudonym too. See ADR 0013.
+_Avoid_: alias, placeholder, redaction (redaction removes a thing; a pseudonym replaces it and can
+be reversed)

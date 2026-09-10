@@ -31,15 +31,16 @@ up, whatever position the roadmap gives it.
 | Providers: Jira, Tempo, GitLab, GitHub, Google      | Built, and verified against the real instances.                       |
 | `streamDay` and the Today screen                    | Built. Slice 1 is on screen.                                          |
 | Naming the unnamed window                           | Two rungs built. The rest waits on five more workdays of measurement. |
-| Slices 2 to 6                                       | One paragraph of outline each.                                        |
+| Slices 2a to 2c                                     | Planned. M2 needs its own document; M4 does too.                      |
+| Slices 5, 6, 9 to 12                                | One paragraph of outline each.                                        |
 | A production Tempo worklog                          | **Never written.** No day has left this machine.                      |
 | A day that spans two machines                       | **Not built.** Each machine reports only what it saw.                 |
 | Autostart, an updater, a packaged build             | Not built. `tauri:build` runs by hand.                                |
 | `correlate/` and the v1 screens                     | Alive. ADR 0007 says they are replaced, not repaired.                 |
 
-## The six answers this plan is built on
+## The seven answers this plan is built on
 
-Tom decided all six on 2026-09-10:
+Tom decided all seven on 2026-09-10:
 
 1. **The audience is Tom first, then the Braune Digital team.** So a milestone exists for the
    install, and it comes after booking works.
@@ -49,26 +50,38 @@ Tom decided all six on 2026-09-10:
    milestones and its own hardening slice.
 4. **Reliability is its own milestone, and an early one.** A day the app did not watch is a day
    nobody can book, so it comes before booking.
-5. **Naming a stream comes before everything except trusting the screen.** It is read-only, and it
-   is the step the vertical slice asks for next.
-6. **A day spans every machine the user owns, and it syncs over the LAN.** The whole day merges,
-   not presence alone, for any number of the user's own machines. It comes before booking, for the
-   same reason as answer 4.
+5. **Drawing the day comes before naming it, and naming it comes before everything else.** A match
+   with nothing to attach it to is not a product. So M2 draws, M3 names, and both precede booking.
+6. **A day spans every machine the user owns, and it syncs over the LAN.** The whole day merges, not
+   presence alone, for any number of the user's own machines. It sits **after** booking, unlike
+   reliability: it is convenience across machines Tom owns, and a lost day is not.
+7. **The basic app is the timeline, the match and the draft.** Everything else is nice to have. In
+   Tom's words: "if the basic app doesnt work then the auto update wont help either." This answer
+   outranks the other six wherever they disagree about order.
 
 ## The milestones
 
-| #   | Name                            | Slices | Ends when                                                            |
-| --- | ------------------------------- | ------ | -------------------------------------------------------------------- |
-| M1  | The day it shows is true        | 1      | Three replayed real days read as true, with no edit.                 |
-| M2  | Name it                         | 2      | Every stream of a real day carries the right issue, or says why not. |
-| M3  | No day is lost                  | 7      | A reboot, a crash and two hours off all reconcile on the screen.     |
-| M4  | One day, every machine          | 8      | A day worked on two machines reads the same on both, once.           |
-| M5  | Book it                         | 3      | One real week reaches Tempo, and the second sync writes nothing.     |
-| M6  | The whole day                   | 4      | A day with meetings, a timer and a pause needs no hand-typed row.    |
-| M7  | What a day cost                 | 5, 9   | A real day shows a cost Tom recognises, and names what it missed.    |
-| M8  | The week, and the price of work | 6, 10  | Time and cost per issue and per project, over a week.                |
-| M9  | A second person installs it     | 11     | A colleague books a day from a build, with no help from this repo.   |
-| M10 | The noisy tail                  | 12     | Gmail, Codex logs and the browser reporter.                          |
+| #   | Name                            | Slices | Ends when                                                          |
+| --- | ------------------------------- | ------ | ------------------------------------------------------------------ |
+| M1  | The day it shows is true        | 1      | Three replayed real days read as true, with no edit.               |
+| M2  | The day, drawn                  | 2a, 4  | Tom reads a real day on one screen, and cuts it where he wants.    |
+| M3  | The day, named                  | 2b     | Every band of a real day carries the right issue, or says why not. |
+| M4  | The day, ticketed               | 2c     | A real week: every gap drafts a ticket or produces a report.       |
+| M5  | No day is lost                  | 7      | A reboot, a crash and two hours off all reconcile on the screen.   |
+| M6  | Book it                         | 3      | One real week reaches Tempo, and the second sync writes nothing.   |
+| M7  | One day, every machine          | 8      | A day worked on two machines reads the same on both, once.         |
+| M8  | What a day cost                 | 5, 9   | A real day shows a cost Tom recognises, and names what it missed.  |
+| M9  | The week, and the price of work | 6, 10  | Time and cost per issue and per project, over a week.              |
+| M10 | A second person installs it     | 11     | A colleague books a day from a build, with no help from this repo. |
+| M11 | The noisy tail                  | 12     | Gmail, Codex logs and the browser reporter.                        |
+
+Reordered on 2026-09-10, after Tom described the product he wants. His words: "thats where you come
+in and thats why we should prioritize this part now since everthing else is nice to have. if the
+basic app doesnt work then the auto update wont help either." So the block he called the basic app
+— a timeline, a match, a draft — becomes M2, M3 and M4, and everything else moves down behind it.
+
+Old M6 ("the whole day": meetings, timers and pauses appear as themselves) is dissolved. A timeline
+that hides a meeting is not the timeline he asked for, so that work sits inside M2 and M3.
 
 ## M1: The day it shows is true
 
@@ -83,27 +96,87 @@ plus the exit test in [`name-the-window.md`](./name-the-window.md).
 Decided before the next rung is built: which mechanism names a browser tab, and whether a title
 rule is one of them. That plan holds the reading it waits for. Do not pick a rung before it.
 
-## M2: Name it
+## M2: The day, drawn
 
-**Slice 2.** Moved ahead of slices 7 and 8 on 2026-09-10, at Tom's request: mapping a stream to an
-issue is the next step the vertical slice asks for, and it is read-only, so it can precede both the
-reliability work and the sync.
+**Slices 2a and 4.** The screen Tom described: "a clear timeline of what i did and when i did it".
 
-It is planned in [`name-the-ticket.md`](./name-the-ticket.md), which measured four of Tom's real
-tickets and grew the slice well past the "a per-repo rule, then naming by hand" outline in
-`vertical-slices.md`. Three findings drive it:
+Today shows streams in an accordion with no time axis. Day Review draws a real 24-hour axis beside a
+table of bookable rows. Two screens mean he reads the same day twice in two shapes, so they merge.
+ADR 0011 records the decision and its cost.
 
-1. **Most of the day books to a standing ticket**, not to a ticket for the work. ET-772 for the SDK,
-   BD-2049 for internal meetings.
-2. **A work item spans repositories, and the epic is what it shares.** The branch slug names the
-   epic; the epic plus the checkout names the task.
-3. **The microphone is the fact and the calendar is a candidate list**, because Tom holds
-   overlapping invitations and attends one.
+What the milestone holds:
 
-Exit test: every stream of a real day carries the right issue, or states why it cannot. It stays
-read-only, so a wrong answer costs a correction and never a worklog.
+- One day screen. `DayTimelineComponent` moves onto it; it already draws a proportional axis on top
+  of `SchedulerTimeGridDirective` from `libs/components`.
+- **A band is a row, not a stream.** A row splits, merges and moves its boundary already. A stream is
+  keyed by its checkout under ADR 0001 and cannot be cut. The stream becomes the evidence behind a
+  band, shown when the band is opened.
+- Split and glue, which Tom asked for by name. `splitRow`, `mergeRows` and `moveRowBoundary` exist.
+- `PinnedRow.issueKey` becomes optional, so a fresh cut can stand with neither half named.
+- Meetings, timers and pauses appear as themselves rather than as gaps. This is the old slice 4: the
+  call source, the calendar provider, the timer and the hard pause are all built, and what is
+  missing is their place in `streamDay` and on the screen.
+- Two windows of the same application separated by a short gap are one call. Every Google Meet opens
+  the microphone twice, because its pre-join screen runs a device check. Measured on 2026-09-10.
 
-## M3: No day is lost
+It writes local edits to `day_review` and never reaches Tempo.
+
+Exit test: Tom reads a real day on one screen, and cuts it where he wants it cut.
+
+To decide before it is planned, both carried over from the dissolved slice 4:
+
+- Is a meeting presence when the machine is idle? Slice 1 gates everything on presence, so a meeting
+  away from the keyboard books nothing today. That rule has to change here.
+- How is a meeting that overlaps a coding stream counted? This is the change that can inflate a day.
+
+## M3: The day, named
+
+**Slice 2b.** Planned in [`name-the-ticket.md`](./name-the-ticket.md), grilled with Tom over five
+rounds on 2026-09-10 against four of his real tickets and one live meeting.
+
+Three decisions carry it, and each has an ADR:
+
+1. **The branch slug names the epic, not the issue** (ADR 0009). The epic plus the checkout names the
+   task, and the checkout is what cuts one task from its sibling.
+2. **A call is the fact and the calendar is a candidate list** (ADR 0010). An accepted occurrence
+   with no call observed proposes nothing.
+3. **A remembered naming outranks a branch parse** (ADR 0012). One learned store at rung 2, seeded
+   from Tempo history, written by a naming of Tom's, never written by a model.
+
+When two rungs disagree, the band shows both and asks.
+
+Exit test: every band of a real day carries the right issue, or states in words why it cannot name
+one. Tom writes the answers down before the screen is opened, and judges it in writing.
+
+## M4: The day, ticketed
+
+**Slice 2c.** What happens where the ladder found nothing.
+
+- A drafted ticket: a title, a body, and the epic it goes under, shown with the reason that epic was
+  chosen. It is created only on a press. `writeTicketWithAgent$` already drafts wording.
+- With no fitting epic, a report for the project manager, who owns epics. It is the gap plus a draft
+  epic, as text Tom copies. The app never writes an epic itself.
+- The model call, on a press, with the full prompt shown first and the answer stored so the same
+  question never costs twice. This changes the path that exists: `reasoning.enabled` is a setting
+  today, and once it is on the call runs during day review with no press and no preview.
+- The anonymiser (ADR 0013). Names inside free text become pseudonyms derived from the name list, and
+  no map is stored. A Jira project key prefix is a project name, so it is pseudonymised too.
+- The app meters its own model spend, on its own line, never charged to the band it asked about.
+
+The model's jobs, in order: draft a ticket, write a description, propose a pattern Tom accepts. It
+never names a band the ladder could not, and it never writes to the naming store.
+
+Exit test: one real week where every gap either drafts a ticket Tom is willing to create, or produces
+a report he is willing to send.
+
+To decide before it is planned:
+
+- Whether the report stays as copied text once the project manager says what they want.
+- Whether the name list is seeded from Jira and the address book, or built by hand as words appear.
+- Whether the CLI reports its token use in print mode. If it does not, the app records the call count
+  and the model instead.
+
+## M5: No day is lost
 
 **Slice 7. New, and it is a slice of its own.**
 
@@ -114,11 +187,11 @@ What the slice holds:
 
 - Autostart on login, and a start into the tray with no window.
 - A restart after a crash, and a day that spans a reboot.
-- A stretch the app did not watch, stated on the Today screen as such.
+- A stretch the app did not watch, stated on the day screen as such.
 - The rebuilt-time path of ADR 0006, proven from end to end rather than from one measurement.
 
 Exit test: three interruptions on one real day. Reboot in the middle of it. Kill the process.
-Quit the app for two hours. The Today screen reconciles all three, and it names each stretch it
+Quit the app for two hours. The day screen reconciles all three, and it names each stretch it
 did not watch.
 
 To decide before this is planned:
@@ -127,10 +200,36 @@ To decide before this is planned:
 - Does the tray say the app is collecting, or only that it runs?
 - What does a day hold for the time before the first login of the morning?
 
-Held back on purpose: the updater. It belongs to M9, because it only matters once somebody else
+Held back on purpose: the updater. It belongs to M10, because it only matters once somebody else
 holds a build.
 
-## M4: One day, every machine
+## M6: Book it
+
+**Slice 3.** This is the milestone the current phase ends on: no worklog typed by hand.
+
+M3 named the day, and M4 filled its gaps with tickets. This slice books it. Tempo sync for accepted rows only, one day at a time, through the `tempo/`
+module that is already built and already idempotent. It deletes `day-review/`.
+
+Exit test: one real week reaches Tempo through the app. Tom types no worklog by hand for code
+work in that week. Every day syncs twice, and the second sync writes nothing new.
+
+To decide before slice 3 is planned:
+
+- **The ownership marker.** Open question 4 of `plans/timetrack.md` leaves `description-suffix`
+  and `none` both built and neither picked. A worklog with no marker is foreign for good once the
+  local ledger is lost. Pick it before the first production write.
+- **The working-hours policy.** Open question 5 is still open. Is work at 23:00 proposed at all?
+- **The undo.** A wrong row that reached Tempo needs a way back out, and the ledger is the only
+  record of what the app wrote.
+- **The first production write is a one-way step.** It gets its own gate: one day, one issue, one
+  hour, checked in the Tempo UI by hand before a week is ever synced.
+
+**A tension this milestone used to carry, and no longer does.** Meetings arrived in the old M6,
+after booking, so a booked day still missed a meeting. Under the new order they arrive in M2 and are
+named in M3, both ahead of this. The milestone's name is now true for the whole day, not only for
+code work.
+
+## M7: One day, every machine
 
 **Slice 8. New.** It is the largest slice on this roadmap, and it is the one with the heaviest
 consequences. Raised on 2026-09-09, scoped on 2026-09-10.
@@ -140,7 +239,15 @@ unattended, because only its own collectors saw the day. ADR 0006's rebuilt time
 machine that observed nothing has no keystrokes and no commits to read back.
 
 So the day is wrong before anything books it, and the hours it loses are exactly the ones a
-hand-typed row would cover. That is why this comes before M5 and not after it.
+hand-typed row would cover.
+
+**It moved below booking on 2026-09-10.** On 2026-09-09 it sat ahead of M6 for that reason. Tom
+then named the timeline, the match and the draft as the product, and everything else as nice to
+have. Sync across his own machines is that: convenience across machines he owns, not a step
+booking cannot happen without. Reliability keeps its place ahead of booking, because a lost day
+makes a wrong worklog and a worklog is the one act that cannot be taken back. The cost of the move
+is stated plainly: until this ships, a day worked on a second machine books short, and Tom types
+that row by hand.
 
 ### The scope Tom set
 
@@ -200,48 +307,7 @@ One real workday, worked on both machines, with a meeting on the second one.
 - **Retention and redaction over what arrives.** A title from the other machine must obey the same
   redaction rules and the same private-project link as a title collected here.
 
-## M5: Book it
-
-**Slice 3.** This is the milestone the current phase ends on: no worklog typed by hand.
-
-M2 named the day. This slice books it. Tempo sync for accepted rows only, one day at a time, through the `tempo/`
-module that is already built and already idempotent. It deletes `day-review/`.
-
-Exit test: one real week reaches Tempo through the app. Tom types no worklog by hand for code
-work in that week. Every day syncs twice, and the second sync writes nothing new.
-
-To decide before slice 3 is planned:
-
-- **The ownership marker.** Open question 4 of `plans/timetrack.md` leaves `description-suffix`
-  and `none` both built and neither picked. A worklog with no marker is foreign for good once the
-  local ledger is lost. Pick it before the first production write.
-- **The working-hours policy.** Open question 5 is still open. Is work at 23:00 proposed at all?
-- **The undo.** A wrong row that reached Tempo needs a way back out, and the ledger is the only
-  record of what the app wrote.
-- **The first production write is a one-way step.** It gets its own gate: one day, one issue, one
-  hour, checked in the Tempo UI by hand before a week is ever synced.
-
-**A tension this milestone does not remove.** Meetings arrive in M6, not here. So a booked day may
-still miss a meeting, and Tom still types that row by hand. The milestone's name is true for code
-work. It is not yet true for the whole day.
-
-## M6: The whole day
-
-**Slice 4.** Meetings, timers and pauses appear as themselves, not as gaps.
-
-The parts already exist: the call source collects the process that holds the microphone, the
-Google Calendar provider reads the day, the timer runs, and the hard pause is built. What is
-missing is their place in `streamDay` and on the Today screen.
-
-Exit test: a real day with two meetings, one explicit timer and one pause books with no hand-typed
-row at all.
-
-To decide: whether a meeting is presence when the machine is idle, and how a meeting that overlaps
-a coding stream is counted. Slice 1 gates everything on presence, so a meeting away from the
-keyboard books nothing today. That rule has to change here, and it is the change that can inflate
-a day.
-
-## M7: What a day cost
+## M8: What a day cost
 
 **Slice 5, plus slice 9.**
 
@@ -257,7 +323,7 @@ took, rather than folding it into a line.
 To decide: where a price lives when it changes. A day in June and a day in September use different
 prices for the same model, so a price is dated, and a re-read of an old day must not reprice it.
 
-## M8: The week, and the price of work
+## M9: The week, and the price of work
 
 **Slice 6, plus slice 10.**
 
@@ -279,7 +345,7 @@ person's cost of it. If the first-class cost goal means the company-wide number,
 to be revisited, and it is a decision about the whole product rather than about a slice. Answer it
 before M8 is planned.
 
-## M9: A second person installs it
+## M10: A second person installs it
 
 **Slice 11.** It is one milestone with several parts, and it may split when it is planned.
 
@@ -299,7 +365,7 @@ To decide: which operating systems the first team build covers, and who pays for
 Developer identity if macOS is one of them. Also, what pairing means here: a colleague's machine
 never pairs with Tom's, and the install must make that impossible rather than merely unlikely.
 
-## M10: The noisy tail
+## M11: The noisy tail
 
 **Slice 12.** Phase 3 of `plans/timetrack.md`, unchanged: Gmail notification parsing, Codex
 session logs, and the browser reporter over the ingest seam.
