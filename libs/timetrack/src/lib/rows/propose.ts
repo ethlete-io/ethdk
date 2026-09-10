@@ -4,6 +4,7 @@ import { WorklogProposal } from '../model/proposal';
 import { DescribeOptions, describeWork } from './describe';
 import { WorkGroup } from './merge';
 import { RoundOptions, roundDurations } from './round';
+import { stretchesOf } from './stretches';
 
 /**
  * A band of work the day could not name. It is drawn, split and merged like any other row, and it
@@ -73,6 +74,7 @@ export const propose = (options: {
       to: group.to,
       durationMs: rounded[index] ?? group.observedMs,
       observedMs: group.observedMs,
+      stretches: stretchesOf(group.blocks),
       description: describeWork({ group, config: options.config, options: options.describe }),
       confidence: group.confidence,
       evidence: group.evidence,
@@ -85,6 +87,7 @@ export const propose = (options: {
       to: group.to,
       durationMs: roundedUnnamed[index] ?? group.observedMs,
       observedMs: group.observedMs,
+      stretches: stretchesOf(group.blocks),
       description: describeWork({ group, config: options.config, options: options.describe }),
       confidence: group.confidence,
       evidence: group.evidence,

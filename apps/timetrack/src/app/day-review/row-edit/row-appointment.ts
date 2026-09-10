@@ -82,3 +82,24 @@ export const appointmentLabel = (appointment: Appointment) => {
 
   return `${named} · ${formatDurationMs(entry.durationMs)}${isManualRow(entry.row) ? ' · by hand' : ''}`;
 };
+
+/**
+ * Where inside a band its work actually sat, as percentages of the band's own height. A row that
+ * carries no stretches - one the reviewer cut themselves - paints solid, because those bounds are
+ * theirs.
+ *
+ * A band spans the gaps between its stretches, so painting only the stretches is what keeps it from
+ * claiming hours another checkout held.
+ */
+export const appointmentPaint = (appointment: Appointment) => {
+  const stretches = rowEntryOf(appointment)?.row.stretches;
+  const from = appointment.start.getTime();
+  const spanMs = appointment.end.getTime() - from;
+
+  if (!stretches?.length || spanMs <= 0) return [{ offset: 0, span: 100 }];
+
+  return stretches.map((stretch) => ({
+    offset: ((stretch.from.getTime() - from) / spanMs) * 100,
+    span: ((stretch.to.getTime() - stretch.from.getTime()) / spanMs) * 100,
+  }));
+};

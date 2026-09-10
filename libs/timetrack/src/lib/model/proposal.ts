@@ -1,3 +1,4 @@
+import { TimeWindow } from './time-window';
 import { Confidence, Evidence } from './evidence';
 
 export type WorklogProposalState = 'suggested' | 'accepted' | 'rejected' | 'edited' | 'synced';
@@ -14,6 +15,12 @@ export type WorklogProposal = {
   durationMs: number;
   /** The evidence-backed duration behind `durationMs`, so review can show what rounding did. */
   observedMs: number;
+  /**
+   * The stretches the row's blocks held, for a screen to draw a band per stretch. Absent on a row the
+   * reviewer built, which is drawn as the one band they cut - and on a row read back from an older
+   * store, which never carried them.
+   */
+  stretches?: TimeWindow[];
   description: string;
   confidence: Confidence;
   evidence: Evidence[];

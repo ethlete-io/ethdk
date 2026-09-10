@@ -12,4 +12,5 @@ export * from './project-link';
 export * from './propose';
 export * from './round';
 export * from './rules';
+export * from './stretches';
 export * from './timers';

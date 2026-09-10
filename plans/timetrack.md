@@ -1593,16 +1593,14 @@ Code` says which checkout is in front of you. Consequences worth keeping: a focu
 
 5. ~~**Merge and split.**~~ **Built** - `merge.ts`. Blocks merge per track: the same issue, or the
    same context while nothing has named it. Two blocks of one track join while two things hold. The
-   gap between them is no wider than `maxMergeGapMs` (15 minutes), and the idle the row would then
-   have absorbed is no longer than the time it observed. Idle is the part of a gap no other block of
-   the day covered, so a switch to another context costs nothing and a break costs its full length.
-   Both tests are needed: the gap test alone let a day of one-minute samples ten minutes apart draw
-   one band across nine hours, and the idle test alone would split a day that flaps between three
-   checkouts into hundreds of rows. The rectangle a screen draws for a row is therefore never more
-   than twice the work behind it. The row cap is a second, more aggressive stage: above
-   `maxRowsPerDay` (12) the day is merged again with no gap limit at all, while the idle rule still
-   holds. That is why `WorkGroup.observedMs` exists beside `from`/`to` - a row spans a context switch
-   on the clock while its duration still counts only observed time.
+   gap between them is no wider than `maxMergeGapMs` (15 minutes), and the row would still span no
+   more than `maxSpanRatio` (2) times the time it observed. The span rule is what keeps the picture
+   honest: a gap another checkout filled is a context switch and not a break, but a band drawn across
+   it still claims hours it never held, so it is split instead. The row cap is a second, more
+   aggressive stage: above `maxRowsPerDay` (12) the day is merged again with no gap limit at all,
+   while the span rule still holds. `WorkGroup.observedMs` exists beside `from`/`to` for the
+   difference the span rule bounds, and `WorklogProposal.stretches` records where inside a band its
+   work sat, so the day screen paints the stretches rather than a solid rectangle.
 
    A merged row's confidence is the tier holding **most of its time**, ties to the weaker tier.
    Neither extreme survives review: taking the strongest lets a long weakly-evidenced stretch sync

@@ -25,7 +25,13 @@ import { DragGestureEvent, ProvideColorDirective, dragGestureFrom } from '@ethle
 import { DEFAULT_ROUND_OPTIONS, ReviewedRow } from '@ethlete/timetrack';
 import { tap } from 'rxjs';
 import { formatClockTime } from './format';
-import { TimelineEntry, UNNAMED_LABEL, appointmentLabel, appointmentOf } from './row-edit/row-appointment';
+import {
+  TimelineEntry,
+  UNNAMED_LABEL,
+  appointmentLabel,
+  appointmentOf,
+  appointmentPaint,
+} from './row-edit/row-appointment';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 
 /** Two rows that meet at one instant. Dragging that instant is what places a cut exactly. */
@@ -160,11 +166,18 @@ type RowDrag = {
                   role="button"
                   tabindex="0"
                 >
+                  @for (paint of PAINT_OF(block.node.appointment); track paint.offset) {
+                    <div
+                      [style.top.%]="paint.offset"
+                      [style.height.%]="paint.span"
+                      class="pointer-events-none absolute inset-x-0 bg-et-theme/20"
+                    ></div>
+                  }
                   @if (labelled(block.span)) {
-                    <span class="block truncate">{{ LABEL_OF(block.node.appointment) }}</span>
+                    <span class="relative block truncate">{{ LABEL_OF(block.node.appointment) }}</span>
                   }
                   @if (detailed(block.span) && descriptionOf(block.node.appointment); as description) {
-                    <span class="block truncate text-et-surface-muted">{{ description }}</span>
+                    <span class="relative block truncate text-et-surface-muted">{{ description }}</span>
                   }
                 </div>
               }
@@ -232,6 +245,7 @@ export class DayTimelineComponent {
   protected readonly HOURS = Array.from({ length: 25 }, (_, hour) => hour);
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
+  protected readonly PAINT_OF = appointmentPaint;
 
   /**
    * The pairs of rows that meet at one instant, ordered by the clock. A pair too short to keep a step

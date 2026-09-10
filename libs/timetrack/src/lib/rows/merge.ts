@@ -22,12 +22,19 @@ export type WorkGroup = {
 export type MergeOptions = {
   /** Two rows of one track this close become one; a longer gap stays two rows, so lunch stays visible. */
   maxMergeGapMs: number;
+  /**
+   * How far a row may be drawn past the work behind it. At 2 a band is at most twice its own time,
+   * whatever filled the gaps it absorbed, so the rectangle a screen draws is never a lie about when
+   * the work happened.
+   */
+  maxSpanRatio: number;
   /** Above this many rows, the day is merged again with no gap limit, so one track is fewer rows. */
   maxRowsPerDay: number;
 };
 
 export const DEFAULT_MERGE_OPTIONS: MergeOptions = {
   maxMergeGapMs: 15 * 60_000,
+  maxSpanRatio: 2,
   maxRowsPerDay: 12,
 };
 
@@ -102,62 +109,18 @@ const trackOf = (group: WorkGroup) => {
   return context ? `context:${contextKey(context)}` : undefined;
 };
 
-/** The day's blocks as one ordered set of busy stretches, so a gap can be asked what filled it. */
-const busyStretchesOf = (ordered: readonly AttributedBlock[]) => {
-  const stretches: { from: number; to: number }[] = [];
-
-  for (const { block } of ordered) {
-    const from = block.from.getTime();
-    const to = block.to.getTime();
-    const last = stretches[stretches.length - 1];
-
-    if (last && from <= last.to) {
-      if (to > last.to) last.to = to;
-      continue;
-    }
-
-    stretches.push({ from, to });
-  }
-
-  return stretches;
-};
-
-/** How much of a gap nothing at all covered: the time the machine stood idle. */
-const idleMsIn = (options: { stretches: readonly { from: number; to: number }[]; from: number; to: number }) => {
-  const { stretches, from, to } = options;
-
-  if (to <= from) return 0;
-
-  let busy = 0;
-
-  for (const stretch of stretches) {
-    if (stretch.to <= from) continue;
-    if (stretch.from >= to) break;
-
-    busy += Math.min(stretch.to, to) - Math.max(stretch.from, from);
-  }
-
-  return to - from - busy;
-};
-
 /**
  * One merge over the day's blocks. A band joins the block after it while two things hold: the gap is
- * no wider than `maxGapMs`, and the idle the band would then have absorbed is no longer than the time
+ * no wider than `maxGapMs`, and the band would still span no more than `maxSpanRatio` times the time
  * it observed.
  *
- * The idle test is what keeps the picture honest, and the coverage test is what keeps it from
- * fragmenting: a gap the machine spent in another context is a switch and costs nothing, while a gap
- * it spent doing nothing is a break. Without it a band of one-minute samples ten minutes apart is
- * drawn as one rectangle across the whole day.
+ * The span test is what keeps the picture honest. Without it a band of one-minute samples ten minutes
+ * apart, or one whose gaps another checkout filled, is drawn as a rectangle across the whole day while
+ * its label says fifteen minutes.
  */
-const mergePass = (options: {
-  ordered: readonly AttributedBlock[];
-  stretches: readonly { from: number; to: number }[];
-  maxGapMs: number;
-}) => {
-  const { ordered, stretches, maxGapMs } = options;
+const mergePass = (options: { ordered: readonly AttributedBlock[]; maxGapMs: number; maxSpanRatio: number }) => {
+  const { ordered, maxGapMs, maxSpanRatio } = options;
   const rows: WorkGroup[] = [];
-  const idleOfRow: number[] = [];
   const lastOfTrack = new Map<string, number>();
 
   for (const attributed of ordered) {
@@ -167,19 +130,17 @@ const mergePass = (options: {
     const previous = at === undefined ? undefined : rows[at];
 
     if (at !== undefined && previous) {
+      const joined = join(previous, group);
       const gap = group.from.getTime() - previous.to.getTime();
-      const idle =
-        (idleOfRow[at] ?? 0) + idleMsIn({ stretches, from: previous.to.getTime(), to: group.from.getTime() });
+      const span = joined.to.getTime() - joined.from.getTime();
 
-      if (gap <= maxGapMs && idle <= previous.observedMs) {
-        rows[at] = join(previous, group);
-        idleOfRow[at] = idle;
+      if (gap <= maxGapMs && span <= joined.observedMs * maxSpanRatio) {
+        rows[at] = joined;
         continue;
       }
     }
 
     if (track !== undefined) lastOfTrack.set(track, rows.length);
-    idleOfRow.push(0);
     rows.push(group);
   }
 
@@ -193,18 +154,18 @@ const mergePass = (options: {
  * work and not four hundred, and each row still counts only the time its own blocks held.
  *
  * A real break is longer than the gap, so it still ends a row and the timeline still shows when the
- * work happened. A row absorbs no more idle than the time it observed either, so the rectangle a
- * screen draws for it is never more than twice the work behind it.
+ * work happened. A row is never drawn more than `maxSpanRatio` times the work behind it either, so a
+ * band whose gaps another checkout filled is split rather than stretched across the day.
  *
  * Above `maxRowsPerDay` the day is merged again with no gap limit at all, which is the last resort
- * for a day nobody would review row by row. The idle rule holds in that pass too, so a day of short
+ * for a day nobody would review row by row. The span rule holds in that pass too, so a day of short
  * touches far apart stays many rows and warns rather than lie in one band.
  */
 export const mergeBlocks = (options: { blocks: AttributedBlock[]; options?: Partial<MergeOptions> }): WorkGroup[] => {
   const config = { ...DEFAULT_MERGE_OPTIONS, ...options.options };
   const ordered = options.blocks.slice().sort((a, b) => a.block.from.getTime() - b.block.from.getTime());
-  const stretches = busyStretchesOf(ordered);
-  const rows = mergePass({ ordered, stretches, maxGapMs: config.maxMergeGapMs });
+  const pass = { ordered, maxSpanRatio: config.maxSpanRatio };
+  const rows = mergePass({ ...pass, maxGapMs: config.maxMergeGapMs });
 
-  return rows.length > config.maxRowsPerDay ? mergePass({ ordered, stretches, maxGapMs: Infinity }) : rows;
+  return rows.length > config.maxRowsPerDay ? mergePass({ ...pass, maxGapMs: Infinity }) : rows;
 };
