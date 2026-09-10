@@ -124,13 +124,12 @@ const confidenceOf = (options: {
 };
 
 /**
- * The issue a commitment at this instant lands on when nothing names one: a standing pattern read out
- * of Tempo history, else the internal meetings issue.
+ * The issue the user's own Tempo history says a commitment at this instant lands on, and nothing else.
  *
- * A call is named this way too. Its own title is whatever window was in front when it opened, so it
- * names a channel rather than a ticket, and there is nothing in it to read a key out of.
+ * A call is named from this alone. A microphone that opened says a call happened, never which one, so
+ * a call the history cannot place stays unattributed and the review asks about it.
  */
-export const standingIssueKey = (options: { at: Date; meetings: MeetingOptions }): NamedIssue | undefined => {
+export const patternIssueKey = (options: { at: Date; meetings: MeetingOptions }): NamedIssue | undefined => {
   const { at, meetings } = options;
   const pattern = meetings.patterns?.length ? patternAt({ patterns: meetings.patterns, at }) : undefined;
 
@@ -146,8 +145,19 @@ export const standingIssueKey = (options: { at: Date; meetings: MeetingOptions }
     };
   }
 
-  return meetings.defaultIssueKey ? { issueKey: meetings.defaultIssueKey, keySource: 'default' } : undefined;
+  return undefined;
 };
+
+/**
+ * The issue a meeting at this instant lands on when its own title names none: a standing pattern read
+ * out of Tempo history, else the internal meetings issue.
+ *
+ * Only a meeting may fall back to that default. A calendar occurrence is a meeting by definition, so
+ * naming it after the internal meetings issue is a statement about a known thing.
+ */
+export const standingIssueKey = (options: { at: Date; meetings: MeetingOptions }): NamedIssue | undefined =>
+  patternIssueKey(options) ??
+  (options.meetings.defaultIssueKey ? { issueKey: options.meetings.defaultIssueKey, keySource: 'default' } : undefined);
 
 const resolveKey = (options: {
   event: CalendarOccurrenceEvent;

@@ -3,7 +3,7 @@ import { CallWindow, callLabel } from '../model/call';
 import { CALL_LANE_KEY } from './lane';
 import { Evidence } from '../model/evidence';
 import { TimeWindow, subtractWindows } from '../model/time-window';
-import { MeetingOptions, standingIssueKey } from './meetings';
+import { MeetingOptions, patternIssueKey } from './meetings';
 import { WorkGroup } from './merge';
 import { clipBlocks, overlapMs } from './overlap';
 
@@ -45,7 +45,7 @@ const matchOne = (options: {
   meetings: MeetingOptions;
 }): CallMatch => {
   const { call, window, blocks, meetings } = options;
-  const key = standingIssueKey({ at: window.from, meetings });
+  const key = patternIssueKey({ at: window.from, meetings });
 
   return {
     call,
@@ -115,7 +115,7 @@ export const matchCalls = (options: {
   blocks: readonly ActivityBlock[];
   /** Time the day already proposes: a meeting, a timer run, a pause. A call proposes no row over it. */
   claimed: readonly TimeWindow[];
-  /** How a call is named. The same options a meeting is named from, so both land on the same issue. */
+  /** How a call is named. A meeting's options, less the default issue: only history may name a call. */
   meetings?: MeetingOptions;
 }): CallMatch[] =>
   options.calls
