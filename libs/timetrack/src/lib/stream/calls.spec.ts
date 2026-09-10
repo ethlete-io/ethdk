@@ -300,3 +300,54 @@ describe('closeAbandonedCalls', () => {
     expect(windows[0]!.to).toEqual(at(12));
   });
 });
+
+describe('classifyCalls, a microphone taken twice for one meeting', () => {
+  const MEET = 'firefox';
+
+  it('reads the pre-join device check and the call as one', () => {
+    const windows = classify([
+      focus(28, MEET, 'Sprint planning - Google Meet'),
+      call(29, 'call-start', MEET),
+      call(29, 'call-end', MEET),
+      call(29, 'call-start', MEET),
+      call(57, 'call-end', MEET),
+    ]);
+
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.from).toEqual(at(29));
+    expect(windows[0]!.to).toEqual(at(57));
+  });
+
+  it('reads a call that dropped and came back as one', () => {
+    const windows = classify([
+      call(0, 'call-start', MEET),
+      call(20, 'call-end', MEET),
+      call(21, 'call-start', MEET),
+      call(50, 'call-end', MEET),
+    ]);
+
+    expect(windows.map((window) => [window.from, window.to])).toEqual([[at(0), at(50)]]);
+  });
+
+  it('leaves two calls a long break apart as two', () => {
+    const windows = classify([
+      call(0, 'call-start', MEET),
+      call(20, 'call-end', MEET),
+      call(40, 'call-start', MEET),
+      call(50, 'call-end', MEET),
+    ]);
+
+    expect(windows).toHaveLength(2);
+  });
+
+  it('never joins two applications', () => {
+    const windows = classify([
+      call(0, 'call-start', 'firefox'),
+      call(20, 'call-end', 'firefox'),
+      call(20, 'call-start', 'com.hnc.Discord'),
+      call(50, 'call-end', 'com.hnc.Discord'),
+    ]);
+
+    expect(windows).toHaveLength(2);
+  });
+});

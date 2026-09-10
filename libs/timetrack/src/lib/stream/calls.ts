@@ -12,7 +12,18 @@ export type ClassifyCallsOptions = {
    * keeps an open microphone from claiming the rest of the day.
    */
   until: Date;
+  /** How long a break in the microphone still reads as one call. Defaults to {@link DEFAULT_CALL_GLUE_MS}. */
+  glueMs?: number;
 };
+
+/**
+ * The break in the microphone that still reads as one call.
+ *
+ * Every Google Meet opens it twice: the pre-join screen runs a device check, drops the microphone and
+ * takes it again when the call is joined. Measured on 2026-09-10 the two were 0 seconds apart. A call
+ * that drops and reconnects leaves the same shape, so one rule covers both.
+ */
+export const DEFAULT_CALL_GLUE_MS = 2 * 60_000;
 
 /**
  * Whether the microphone holder belongs to this application.
@@ -96,6 +107,30 @@ const pairCallEdges = (calls: readonly CallEvent[]) => {
 };
 
 /**
+ * Joins the calls of one application that a short break separates, so a device check and the meeting
+ * it precedes are one band rather than two. Calls of different applications are never joined: two
+ * microphones at once is two calls, and one of them may be the open voice room.
+ */
+const glueCalls = (calls: readonly PairedCall[], glueMs: number): PairedCall[] => {
+  const byApp = new Map<string, PairedCall[]>();
+
+  for (const call of [...calls].sort((left, right) => left.from.getTime() - right.from.getTime())) {
+    const held = byApp.get(call.appId) ?? [];
+    const last = held[held.length - 1];
+
+    if (last && call.from.getTime() - last.to.getTime() <= glueMs) {
+      if (call.to > last.to) last.to = call.to;
+      continue;
+    }
+
+    held.push({ ...call });
+    byApp.set(call.appId, held);
+  }
+
+  return [...byApp.values()].flat();
+};
+
+/**
  * Every call in the events, paired from its edges, named from the focus history and classified.
  *
  * A call still open at the end runs to `until`.
@@ -111,10 +146,12 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     return { ...call, title, countsAsWork: countsAsWork(options.rules, { appId: call.appId, title }) };
   };
 
-  return [
+  const paired = [
     ...closed,
     ...[...open].flatMap(([appId, from]) => (from < options.until ? [{ appId, from, to: options.until }] : [])),
-  ]
+  ];
+
+  return glueCalls(paired, options.glueMs ?? DEFAULT_CALL_GLUE_MS)
     .map(toWindow)
     .sort((left, right) => left.from.getTime() - right.from.getTime());
 };
