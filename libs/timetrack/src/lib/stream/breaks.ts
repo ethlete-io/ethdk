@@ -13,7 +13,7 @@ export const DEFAULT_MIN_BREAK_MS = 15 * 60_000;
  */
 export const DEFAULT_MAX_BREAK_MS = 3 * 60 * 60_000;
 
-/** A stretch of a day nobody was at the machine and nothing ran. */
+/** A stretch of a day nobody was at the machine. */
 export type BreakWindow = TimeWindow & {
   /** Whether the screen was locked in it. A lock is a person saying they are leaving, so it needs no length. */
   locked: boolean;
@@ -25,12 +25,11 @@ const overlaps = (window: TimeWindow, windows: readonly TimeWindow[]) =>
   windows.some((other) => other.from.getTime() < window.to.getTime() && other.to.getTime() > window.from.getTime());
 
 /**
- * The breaks a day held: the gaps between one stretch of presence and the next, less the ones the
- * machine worked through and the ones nothing watched.
+ * The breaks a day held: the gaps between one stretch of presence and the next.
  *
- * A break is the opposite of unattended time. Unattended is the agent working while nobody is there;
- * a break is nobody there and nothing running, which is why a gap an agent ran through is left out
- * rather than counted twice under two names.
+ * A break is the user away from the machine, whatever the machine did in it. An agent that ran
+ * through one does not make it work the user was at: it is `unattendedMs` as well, because the two
+ * numbers answer different questions — who was there, and what ran.
  *
  * Only the gaps between two stretches of presence are read, so the hours before the first sample and
  * after the last are not a break — a day the collector was off for is a day with nothing to say. A
@@ -46,8 +45,6 @@ export const breakWindows = (options: {
   presence: readonly TimeWindow[];
   /** The day's own events, read only for its `lock` transitions. */
   events?: readonly CollectedEvent[];
-  /** Agent time outside presence, which is the machine working rather than a break. */
-  unattended?: readonly TimeWindow[];
   /** The stretches the user had stopped collection for, from `pauseWindows`. */
   pauses?: readonly TimeWindow[];
   /** The day's activity blocks. A gap outside the span they cover is not a break. */
@@ -58,7 +55,6 @@ export const breakWindows = (options: {
 }): BreakWindow[] => {
   const ordered = options.presence.slice().sort((a, b) => a.from.getTime() - b.from.getTime());
   const events = (options.events ?? []).filter(isPresence).filter((event) => event.kind === 'lock');
-  const unattended = options.unattended ?? [];
   const pauses = options.pauses ?? [];
   const minBreakMs = options.minBreakMs ?? DEFAULT_MIN_BREAK_MS;
   const maxBreakMs = options.maxBreakMs ?? DEFAULT_MAX_BREAK_MS;
@@ -75,7 +71,7 @@ export const breakWindows = (options: {
     const window = { from: earlier.to, to: later.from };
 
     if (window.to.getTime() <= window.from.getTime()) return;
-    if (overlaps(window, unattended) || overlaps(window, pauses)) return;
+    if (overlaps(window, pauses)) return;
 
     if (workFrom !== undefined && workTo !== undefined) {
       if (window.from.getTime() < workFrom || window.to.getTime() > workTo) return;

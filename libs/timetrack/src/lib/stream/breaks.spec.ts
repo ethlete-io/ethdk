@@ -36,15 +36,6 @@ describe('breakWindows', () => {
     expect(breaks).toEqual([{ from: at(11, 0), to: at(11, 5), locked: true }]);
   });
 
-  it('leaves a gap the agent worked through to the unattended number', () => {
-    const breaks = breakWindows({
-      presence: [MORNING, AFTERNOON],
-      unattended: [window([11, 30], [12, 0])],
-    });
-
-    expect(breaks).toEqual([]);
-  });
-
   it('says nothing about a gap the user had stopped collection for', () => {
     const breaks = breakWindows({ presence: [MORNING, AFTERNOON], pauses: [window([11, 30], [12, 0])] });
 

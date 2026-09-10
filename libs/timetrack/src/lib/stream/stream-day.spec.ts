@@ -408,6 +408,22 @@ describe('streamDay', () => {
     expect(day.unattributedSpend.turns).toBe(0);
   });
 
+  it('reads the stretch an agent worked through while the user was away as a break as well', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 60, appId: 'code', title: 'ethlete-sdk - Code' }),
+        commit(0, 'feat(bracket): Add the resolver'),
+        presence(61, 'lock'),
+        ...sessionRun({ from: 65, to: 115, cwd: SDK }),
+        ...focusRun({ from: 120, to: 180, appId: 'code', title: 'ethlete-sdk - Code' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.breaks).toEqual([{ from: AT(61), to: AT(120), locked: true }]);
+    expect(day.unattendedMs).toBe(50 * MINUTE);
+  });
+
   it('splits one agent run into the attended part and the unattended part, and counts each minute once', () => {
     const day = streamDay({
       events: [

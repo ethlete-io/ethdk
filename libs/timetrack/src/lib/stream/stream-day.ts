@@ -215,8 +215,8 @@ export type StreamDay = {
   /** Every stream's unattended time summed. Outside both `presenceMs` and `engagedMs`. */
   unattendedMs: number;
   /**
-   * The stretches nobody was at the machine and nothing ran, in order. Outside `presenceMs`, and
-   * outside `unattendedMs` too — a gap the agent worked through is that number and not this one.
+   * The stretches nobody was at the machine, in order. Outside `presenceMs`. A gap an agent ran
+   * through is in `unattendedMs` as well: one number says who was there, the other says what ran.
    */
   breaks: BreakWindow[];
   /** How long those breaks held. */
@@ -891,8 +891,6 @@ export const streamDay = (options: {
   });
 
   const streams: Stream[] = [];
-  /** Every stream's agent time outside presence, which a break must not also claim. */
-  const unattendedAll: TimeWindow[] = [];
   let focusMs = 0;
 
   for (const draft of drafts.values()) {
@@ -904,8 +902,6 @@ export const streamDay = (options: {
     const blocks = mergeWindows([...focus, ...claimed, ...clipWindows({ windows: agent, within: presence })]);
     const unattended = subtractWindows({ windows: agent, without: presence });
     const span = mergeWindows([...blocks, ...unattended]);
-
-    unattendedAll.push(...unattended);
 
     const first = span[0];
     const last = span[span.length - 1];
@@ -976,7 +972,6 @@ export const streamDay = (options: {
   const breaks = breakWindows({
     presence,
     events: options.events,
-    unattended: mergeWindows(unattendedAll),
     pauses: config.rows?.pauses,
     work: blocks,
     minBreakMs: config.minBreakMs,
