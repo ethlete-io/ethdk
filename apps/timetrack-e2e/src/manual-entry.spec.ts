@@ -97,6 +97,56 @@ test.describe("the band's own menu", () => {
   });
 });
 
+test.describe('bands marked to be merged', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/day');
+
+    const surface = await addAnEntry(page);
+
+    await pickIssue(page, surface, /ABC-2000/);
+    await saveSurface(page);
+
+    await manualBand(page).click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Split in half' }).click();
+    await expect(halves(page)).toHaveCount(2);
+  });
+
+  test('marks a band a modifier click landed on rather than opening it', async ({ page }) => {
+    await halves(page)
+      .first()
+      .click({ modifiers: ['Control'] });
+
+    await expect(halves(page).first()).toHaveAttribute('data-marked', 'true');
+    await expect(editSurface(page)).toHaveCount(0);
+  });
+
+  test('folds the marked bands back into one row', async ({ page }) => {
+    await halves(page)
+      .first()
+      .click({ modifiers: ['Control'] });
+    await halves(page)
+      .last()
+      .click({ modifiers: ['Control'] });
+
+    await halves(page).first().click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Merge the 2 marked rows' }).click();
+
+    await expect(halves(page)).toHaveCount(1);
+  });
+
+  test('offers no merge until two bands are marked', async ({ page }) => {
+    await halves(page)
+      .first()
+      .click({ modifiers: ['Control'] });
+    await halves(page).first().click({ button: 'right' });
+
+    await expect(page.getByRole('menuitem', { name: /Merge the/ })).toHaveCount(0);
+  });
+});
+
+/** The two bands one cut of the hand-written row left, which both still name its issue. */
+const halves = (page: Page) => page.locator('[data-kind="row"]').filter({ hasText: 'ABC-2000' });
+
 const hideTheBand = async (page: Page) => {
   const title = await manualBand(page).getAttribute('title');
 

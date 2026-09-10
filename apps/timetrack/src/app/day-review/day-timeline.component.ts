@@ -37,6 +37,10 @@ import {
 } from './row-edit/row-appointment';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 
+/** Whether the click asked to mark the band rather than to open it. */
+const withModifier = (event: Event) =>
+  event instanceof MouseEvent && (event.ctrlKey || event.metaKey || event.shiftKey);
+
 /** Two rows that meet at one instant. Dragging that instant is what places a cut exactly. */
 export type TimelineBoundary = { id: string; before: ReviewedRow; after: ReviewedRow };
 
@@ -203,6 +207,7 @@ type RowDrag = {
                     <div
                       [attr.data-kind]="kindOf(laid.block.node.appointment)"
                       [attr.data-dragging]="dragging(laid.block.node.appointment) || null"
+                      [attr.data-marked]="marks(laid.block.node.appointment) || null"
                       [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
                       [style.top.%]="laid.block.offset"
                       [style.height.%]="laid.block.span"
@@ -212,7 +217,7 @@ type RowDrag = {
                       (pointerdown)="startDrag({ event: $event, appointment: laid.block.node.appointment, column })"
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
-                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[dragging]:opacity-70"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme"
                       etMenu
                       etMenuContextTrigger
                       role="button"
@@ -223,6 +228,13 @@ type RowDrag = {
                           <et-menu>
                             <button (click)="rowHide.emit(row)" et-menu-item type="button">Hide this row</button>
                             <button (click)="splitInHalf(row)" et-menu-item type="button">Split in half</button>
+
+                            @if (markedCount() > 1) {
+                              <et-menu-separator />
+                              <button (click)="mergeMarked()" et-menu-item type="button">
+                                Merge the {{ markedCount() }} marked rows
+                              </button>
+                            }
                           </et-menu>
                         </ng-template>
                       }
@@ -251,19 +263,19 @@ type RowDrag = {
                       [attr.aria-valuenow]="minutesOf(instantOf(boundary).getTime())"
                       [attr.aria-valuetext]="clockOf(boundary)"
                       [style.top.%]="percentOf(instantOf(boundary))"
+                      [attr.data-dragging]="draggingBoundary(boundary) || null"
                       (keydown)="nudge($event, boundary)"
                       (pointerdown)="startBoundaryDrag({ event: $event, boundary, column })"
-                      class="group absolute inset-x-0 -mt-1 flex h-2 touch-none items-center outline-none"
+                      class="group absolute inset-x-0 -mt-1 flex h-2 cursor-ns-resize touch-none items-center outline-none"
                       aria-orientation="horizontal"
                       role="separator"
                       tabindex="0"
                     >
                       <span
-                        class="h-0.5 grow rounded-full bg-et-surface-subtle opacity-40 group-hover:opacity-100 group-focus-visible:opacity-100"
+                        class="h-0.5 grow rounded-full bg-et-surface-subtle opacity-40 group-hover:bg-et-theme group-hover:opacity-100 group-focus-visible:bg-et-theme group-focus-visible:opacity-100 group-active:bg-et-theme group-active:opacity-100 group-data-[dragging]:bg-et-theme group-data-[dragging]:opacity-100"
                       ></span>
                       <span
-                        [style.opacity]="draggingBoundary(boundary) ? 1 : null"
-                        class="ml-2 shrink-0 rounded-sm bg-et-surface-interaction px-1 text-mono opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+                        class="ml-2 shrink-0 rounded-sm bg-et-surface-interaction px-1 text-mono opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 group-active:opacity-100 group-data-[dragging]:opacity-100"
                         >{{ clockOf(boundary) }}</span
                       >
                     </div>
@@ -300,10 +312,16 @@ export class DayTimelineComponent {
   /** Where a row is to be cut, from the band's own menu. */
   public rowSplit = output<{ row: ReviewedRow; at: Date }>();
 
+  /** The marked bands, earliest first, which the band menu offers to fold into one row. */
+  public rowsMerge = output<readonly ReviewedRow[]>();
+
   private body = viewChild.required<ElementRef<HTMLElement>>('body');
   private dayColumn = viewChild<ElementRef<HTMLElement>>('dayColumn');
   public grid = viewChild(SchedulerTimeGridDirective);
   private scheduler = viewChild.required<SchedulerDirective<TimelineEntry>>(SchedulerDirective);
+
+  /** The rows a modifier-click marked, by id. A plain click anywhere on a band clears them. */
+  private marked = signal<ReadonlySet<string>>(new Set());
 
   /** The instant a boundary is being dragged to, until the pointer settles on it. */
   private boundaryDrag = signal<{ boundary: TimelineBoundary; at: Date } | null>(null);
@@ -430,6 +448,18 @@ export class DayTimelineComponent {
     return Math.max(0, Math.floor((Math.min(...starts) - this.focusedDate().getTime()) / HOUR_MS) - 1);
   });
 
+  /**
+   * The marked rows in the order the timeline draws them, so the earliest supplies the merged row's
+   * issue, description and lane — which is what `mergeRows` reads off the first row it is given.
+   */
+  private markedRows = computed(() => {
+    const ids = this.marked();
+
+    return this.rows().filter((row) => ids.has(row.id));
+  });
+
+  protected markedCount = computed(() => this.markedRows().length);
+
   constructor() {
     /**
      * Once, on mount: a 24-hour grid opened at midnight shows an empty screen. Scrolling on every
@@ -509,6 +539,12 @@ export class DayTimelineComponent {
     return rowEntryOf(appointment)?.row ?? null;
   }
 
+  protected marks(appointment: Appointment<TimelineEntry>) {
+    const row = this.rowOf(appointment);
+
+    return !!row && this.isMarked(row);
+  }
+
   protected splitInHalf(row: ReviewedRow) {
     this.rowSplit.emit({ row, at: new Date((row.from.getTime() + row.to.getTime()) / 2) });
   }
@@ -529,8 +565,29 @@ export class DayTimelineComponent {
     const entry = appointment.extra;
     const origin = event.currentTarget as HTMLElement;
 
+    if (entry?.kind === 'row' && withModifier(event)) {
+      this.toggleMark(entry.row);
+
+      return;
+    }
+
+    this.marked.set(new Set());
+
     if (entry?.kind === 'row') this.openFor(entry.row, origin);
     else if (entry?.kind === 'story') this.openFirstUnder(entry.issueKey, origin);
+  }
+
+  public isMarked(row: ReviewedRow) {
+    return this.marked().has(row.id);
+  }
+
+  protected mergeMarked() {
+    const rows = this.markedRows();
+
+    if (rows.length < 2) return;
+
+    this.marked.set(new Set());
+    this.rowsMerge.emit(rows);
   }
 
   /** Moves a row to another time, or drags one of its ends. */
@@ -688,6 +745,16 @@ export class DayTimelineComponent {
     if (entry?.kind === 'row') {
       this.rowReschedule.emit({ row: entry.row, from: move.appointment.start, to: move.appointment.end });
     }
+  }
+
+  private toggleMark(row: ReviewedRow) {
+    this.marked.update((ids) => {
+      const next = new Set(ids);
+
+      if (!next.delete(row.id)) next.add(row.id);
+
+      return next;
+    });
   }
 
   private openFor(row: ReviewedRow, origin: HTMLElement) {
