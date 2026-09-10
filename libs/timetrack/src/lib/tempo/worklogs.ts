@@ -1,5 +1,5 @@
 import { Observable, map } from 'rxjs';
-import { HistoricalWorklog } from '../correlate/recurrence';
+import { HistoricalWorklog } from '../model/recurrence';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials, TempoPagingOptions, tempoPaged$ } from './client';
 import { parseTempoWallClock, tempoDay } from './wall-clock';

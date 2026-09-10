@@ -1,7 +1,7 @@
 import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { WorkGroup } from '../correlate/merge';
-import { UnnamedContext } from '../correlate/rules';
+import { UnnamedContext } from '../model/attribution';
 import { ActivityBlock, contextKey } from '../model/block';
 import { Evidence } from '../model/evidence';
 import { draftTicket } from './draft';

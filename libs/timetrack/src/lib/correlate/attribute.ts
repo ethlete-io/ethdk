@@ -9,7 +9,7 @@ import {
 import { ActivityBlock } from '../model/block';
 import { Confidence, Evidence } from '../model/evidence';
 import { TimetrackProjectLink, describeProjectLink, matchProjectLink } from '../model/project-link';
-import { RecurringPattern, patternAt } from './recurrence';
+import { RecurringPattern, patternAt } from '../model/recurrence';
 import {
   AttributionRule,
   AttributionRuleMatch,
@@ -17,7 +17,7 @@ import {
   describeAttributionRule,
   matchAttributionRule,
   matchInferredAttribution,
-} from './rules';
+} from '../model/attribution';
 
 export type AttributedBlock = {
   block: ActivityBlock;

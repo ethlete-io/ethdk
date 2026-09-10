@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { AttributedBlock } from './attribute';
 import { donateBlocks } from './donate';
-import { AttributionRule } from './rules';
+import { AttributionRule } from '../model/attribution';
 
 const SDK = '/home/you/dev/shared-sdk';
 const APP = '/home/you/dev/abc-frontend';

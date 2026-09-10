@@ -1,5 +1,5 @@
 import { GitFlowConfig, resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
-import { AttributionRule } from '../correlate/rules';
+import { AttributionRule } from '../model/attribution';
 import { favoriteProjectKeys } from './favorites';
 import { TimetrackSettings } from './model';
 

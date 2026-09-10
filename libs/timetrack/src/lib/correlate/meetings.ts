@@ -5,7 +5,7 @@ import { Confidence, Evidence } from '../model/evidence';
 import { issueKeyInText } from './attribute';
 import { WorkGroup } from './merge';
 import { overlapMs } from './overlap';
-import { RecurringPattern, patternAt } from './recurrence';
+import { RecurringPattern, patternAt } from '../model/recurrence';
 
 /**
  * How much the machine saw of a meeting. `confirmed` means a window title named the conference or the

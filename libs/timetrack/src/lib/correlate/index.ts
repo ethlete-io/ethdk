@@ -11,7 +11,6 @@ export * from './overlap';
 export * from './pauses';
 export * from './project-link';
 export * from './propose';
-export * from './recurrence';
 export * from './round';
 export * from './rules';
 export * from './sessionize';

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { CalendarOccurrenceEvent } from '../model/event';
 import { MeetingOptions, matchMeetings } from './meetings';
-import { RecurringPattern } from './recurrence';
+import { RecurringPattern } from '../model/recurrence';
 
 const at = (hour: number, minute = 0) => new Date(2026, 7, 11, hour, minute);
 

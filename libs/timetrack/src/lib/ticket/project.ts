@@ -1,5 +1,5 @@
 import { TimetrackProjectLink, projectKeyFor } from '../model/project-link';
-import { AttributionRule, issueKeyOf } from '../correlate/rules';
+import { AttributionRule, issueKeyOf } from '../model/attribution';
 import { ActivityContext } from '../model/block';
 import { WorklogProposal } from '../model/proposal';
 

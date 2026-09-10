@@ -1,4 +1,4 @@
-import { InferredAttribution } from '../correlate/rules';
+import { InferredAttribution } from '../model/attribution';
 import { agentOutputDocument } from './envelope';
 import { ReasoningPlan, ReasoningRequest } from './model';
 

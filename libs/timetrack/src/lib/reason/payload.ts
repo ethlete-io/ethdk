@@ -1,5 +1,5 @@
 import { WorkGroup } from '../correlate/merge';
-import { UnnamedContext } from '../correlate/rules';
+import { UnnamedContext } from '../model/attribution';
 import { contextKey } from '../model/block';
 import { QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';

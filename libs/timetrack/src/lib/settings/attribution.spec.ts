@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AttributionRule } from '../correlate/rules';
+import { AttributionRule } from '../model/attribution';
 import { withAttributionRule, withoutAttributionRule } from './attribution';
 import { DEFAULT_TIMETRACK_SETTINGS } from './model';
 

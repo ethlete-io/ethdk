@@ -4,7 +4,7 @@ import { CallWindow } from '../model/call';
 import { TimeWindow } from '../model/time-window';
 import { CallMatch, matchCalls } from './calls';
 import { MeetingOptions } from './meetings';
-import { RecurringPattern } from './recurrence';
+import { RecurringPattern } from '../model/recurrence';
 
 const at = (hour: number, minute = 0) => new Date(2026, 7, 11, hour, minute);
 

@@ -1,6 +1,6 @@
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
-import { UnnamedContext } from '../correlate/rules';
+import { UnnamedContext } from '../model/attribution';
 import { JiraIssue } from '../jira/issue';
 import { contextKey } from '../model/block';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';

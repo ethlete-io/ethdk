@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { IssueActivity, attribute } from './attribute';
 import { TimetrackProjectLink } from '../model/project-link';
-import { RecurringPattern } from './recurrence';
-import { AttributionRule } from './rules';
+import { RecurringPattern } from '../model/recurrence';
+import { AttributionRule } from '../model/attribution';
 
 const block = (context: ActivityBlock['context'], evidence: ActivityBlock['evidence'] = []): ActivityBlock => ({
   from: new Date('2026-08-11T08:00:00Z'),

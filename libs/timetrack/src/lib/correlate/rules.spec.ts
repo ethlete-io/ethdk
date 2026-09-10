@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { WorkGroup } from './merge';
-import { AttributionRule, describeAttributionRule, issueKeyOf, matchAttributionRule, unnamedContexts } from './rules';
+import { unnamedContexts } from './rules';
+import { AttributionRule, describeAttributionRule, issueKeyOf, matchAttributionRule } from '../model/attribution';
 
 const rule = (overrides: Partial<AttributionRule> = {}): AttributionRule => ({
   id: 'rule-1',

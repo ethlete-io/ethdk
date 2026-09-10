@@ -1,3 +1,4 @@
+export * from './attribution';
 export * from './block';
 export * from './call';
 export * from './context';
@@ -6,6 +7,7 @@ export * from './event';
 export * from './evidence';
 export * from './project-link';
 export * from './proposal';
+export * from './recurrence';
 export * from './time-window';
 export * from './timer';
 export * from './tokens';

@@ -1,5 +1,5 @@
 import { TimetrackProjectLink } from '../model/project-link';
-import { AttributionRule } from '../correlate/rules';
+import { AttributionRule } from '../model/attribution';
 import { JiraParenting } from '../jira/hierarchy';
 import { DEFAULT_REASONING_OPTIONS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';

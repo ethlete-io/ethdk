@@ -1,6 +1,6 @@
 import { ActivityBlock, blockDurationMs } from '../model/block';
 import { AttributedBlock } from './attribute';
-import { AttributionRule, describeAttributionRule, matchAttributionRule } from './rules';
+import { AttributionRule, describeAttributionRule, matchAttributionRule } from '../model/attribution';
 
 export type DonateOptions = {
   /**

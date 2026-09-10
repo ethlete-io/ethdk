@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TimetrackProjectLink } from '../model/project-link';
-import { AttributionRule } from '../correlate/rules';
+import { AttributionRule } from '../model/attribution';
 import { WorklogProposal } from '../model/proposal';
 import { inferTicketProjectKey, projectKeyOf } from './project';
 

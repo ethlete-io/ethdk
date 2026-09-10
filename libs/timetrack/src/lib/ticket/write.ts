@@ -2,7 +2,7 @@ import { Observable, catchError, defer, map, of, retry } from 'rxjs';
 import { agentOutputDocument } from '../reason/envelope';
 import { ReasoningOptions } from '../reason/model';
 import { agentProcessSpec } from '../reason/spec';
-import { UnnamedContext } from '../correlate/rules';
+import { UnnamedContext } from '../model/attribution';
 import { JiraIssue } from '../jira/issue';
 import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { MAX_TICKET_SUMMARY_LENGTH } from './draft';

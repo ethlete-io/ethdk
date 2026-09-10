@@ -1,5 +1,5 @@
 import { Observable, catchError, defer, map, of, retry } from 'rxjs';
-import { InferredAttribution } from '../correlate/rules';
+import { InferredAttribution } from '../model/attribution';
 import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { ReasoningOptions, ReasoningPlan } from './model';
 import { parseReasoningOutput } from './parse';

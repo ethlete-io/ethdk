@@ -1,5 +1,5 @@
 import { ProjectLinkTarget, TimetrackProjectLink } from '../model/project-link';
-import { AttributionRule, AttributionTarget } from '../correlate/rules';
+import { AttributionRule, AttributionTarget } from '../model/attribution';
 import { REASONING_COMMANDS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
 import {

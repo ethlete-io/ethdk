@@ -4,7 +4,7 @@ import { CallWindow } from '../model/call';
 import { CollectedEvent } from '../model/event';
 import { correlateDay } from './correlate-day';
 import { TimetrackProjectLink } from '../model/project-link';
-import { AttributionRule } from './rules';
+import { AttributionRule } from '../model/attribution';
 
 const MINUTE = 60_000;
 const AT = (minute: number) => new Date(new Date(2026, 7, 11, 8, 0, 0).getTime() + minute * MINUTE);
