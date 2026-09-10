@@ -7,6 +7,12 @@ import { TimeWindow } from '../model/time-window';
  */
 export const DEFAULT_MIN_BREAK_MS = 15 * 60_000;
 
+/**
+ * The longest gap that is still a break. Past it the machine was simply on and nobody was there —
+ * the night, a weekend, a day off — and calling that a break puts hours nobody took on the readout.
+ */
+export const DEFAULT_MAX_BREAK_MS = 3 * 60 * 60_000;
+
 /** A stretch of a day nobody was at the machine and nothing ran. */
 export type BreakWindow = TimeWindow & {
   /** Whether the screen was locked in it. A lock is a person saying they are leaving, so it needs no length. */
@@ -31,9 +37,9 @@ const overlaps = (window: TimeWindow, windows: readonly TimeWindow[]) =>
  * paused stretch is left out for the same reason: the user stopped collection, so nobody knows what
  * happened in it.
  *
- * A gap also has to sit inside the day's work. A machine left on from early morning samples presence
- * long before the first block and long after the last, and those hours are time outside the working
- * day rather than a break taken in it.
+ * A gap also has to sit inside the day's work, and it has to be shorter than `maxBreakMs`. A machine
+ * left on overnight samples presence hours before the first block and hours after the last, and one
+ * gap of that size is the night rather than a break somebody took.
  */
 export const breakWindows = (options: {
   /** The stretches the user was at the machine, from `presenceWindows`. */
@@ -47,12 +53,15 @@ export const breakWindows = (options: {
   /** The day's activity blocks. A gap outside the span they cover is not a break. */
   work?: readonly TimeWindow[];
   minBreakMs?: number;
+  /** The longest gap that is still a break. A longer one is time away from the day, lock or no lock. */
+  maxBreakMs?: number;
 }): BreakWindow[] => {
   const ordered = options.presence.slice().sort((a, b) => a.from.getTime() - b.from.getTime());
   const events = (options.events ?? []).filter(isPresence).filter((event) => event.kind === 'lock');
   const unattended = options.unattended ?? [];
   const pauses = options.pauses ?? [];
   const minBreakMs = options.minBreakMs ?? DEFAULT_MIN_BREAK_MS;
+  const maxBreakMs = options.maxBreakMs ?? DEFAULT_MAX_BREAK_MS;
   const work = options.work ?? [];
   const workFrom = work.length ? Math.min(...work.map((window) => window.from.getTime())) : undefined;
   const workTo = work.length ? Math.max(...work.map((window) => window.to.getTime())) : undefined;
@@ -71,6 +80,8 @@ export const breakWindows = (options: {
     if (workFrom !== undefined && workTo !== undefined) {
       if (window.from.getTime() < workFrom || window.to.getTime() > workTo) return;
     }
+
+    if (window.to.getTime() - window.from.getTime() > maxBreakMs) return;
 
     const locked = events.some(
       (event) => event.at.getTime() >= window.from.getTime() && event.at.getTime() < window.to.getTime(),

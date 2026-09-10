@@ -73,6 +73,16 @@ describe('breakWindows', () => {
     expect(breaks).toEqual([{ from: at(11, 0), to: at(12, 30), locked: false }]);
   });
 
+  it('reads a gap longer than the limit as time away from the day rather than a break', () => {
+    expect(breakWindows({ presence: [MORNING, window([21, 0], [22, 0])] })).toEqual([]);
+  });
+
+  it('reads a long gap as time away even when the screen was locked in it', () => {
+    const breaks = breakWindows({ presence: [MORNING, window([21, 0], [22, 0])], events: [lock(11, 1)] });
+
+    expect(breaks).toEqual([]);
+  });
+
   it('sums the breaks it found', () => {
     expect(breakMs(breakWindows({ presence: [MORNING, AFTERNOON] }))).toBe(90 * 60_000);
   });
