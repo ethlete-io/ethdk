@@ -76,6 +76,12 @@ export type PresenceOptions = {
  * the stretch still ends at the last real sample. That is what carries a stretch across the minutes a
  * person spent reading what an agent wrote, and it can only ever happen between two of their own
  * actions. See ADR 0006.
+ *
+ * An `idle-start` a turn still runs through is the same wait, only longer than the idle notifier's
+ * patience, so it postpones the close in the same way: the stretch stays open while the turns keep
+ * arriving, and the resume that ends the idleness closes the whole wait as presence. If the agent
+ * stops too, the stretch ends where the idleness began and the wait is an absence. A `lock` and a
+ * `pause-start` say the user left, so neither may be held open this way.
  */
 export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
   const agentGapMs = options.maxAgentGapMs ?? options.maxUnobservedMs;
@@ -86,6 +92,10 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
   const resumeIndex = lastResumeIndex(options.samples);
   /** Whether the stretch away now running ends in a resume of its own, so nothing else may end it. */
   let awaited = away;
+  /** The `idle-start` an agent is still working through, and where the stretch closes if it stops too. */
+  let bridged: Date | null = null;
+  /** When the agent last did anything, which is what says whether one is still working. */
+  let lastAgent: Date | null = null;
 
   const close = (at: Date) => {
     if (!current) return;
@@ -93,12 +103,21 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
     windows.push(current);
     current = null;
     mark = null;
+    bridged = null;
   };
 
   /** The silence two marks tolerate: the shorter of what each of them allows. */
   const gapMs = (sample: PresenceSample) => Math.min(mark?.gapMs ?? Infinity, isAgents(sample) ? agentGapMs : Infinity);
 
   for (const [index, sample] of options.samples.entries()) {
+    // The agent stopped as well, so the wait it held open was an absence after all. This has to run
+    // before the branches below, or the resume that ends the idleness would close it as presence.
+    const agentWorks = !!lastAgent && sample.at.getTime() - lastAgent.getTime() < agentGapMs;
+
+    if (bridged && current && !agentWorks) close(current.to);
+
+    if (isAgents(sample)) lastAgent = sample.at;
+
     if (sample.source === 'idle') {
       if (endsPresence(sample.kind)) {
         away = true;
@@ -106,10 +125,23 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
         // must refuse it: the window source emits a focus event for a title change too, so an agent
         // working in the window the user left focused would otherwise read as the user returning.
         awaited = index < resumeIndex;
-        close(sample.at);
+
+        if (sample.kind === 'idle-start' && current && mark && agentWorks) {
+          if (sample.at > current.to) current.to = sample.at;
+          bridged = sample.at;
+        } else {
+          close(bridged ?? sample.at);
+        }
       }
 
-      if (resumesPresence(sample.kind)) away = false;
+      if (resumesPresence(sample.kind)) {
+        if (bridged && current) {
+          if (sample.at > current.to) current.to = sample.at;
+          bridged = null;
+        }
+
+        away = false;
+      }
 
       continue;
     }
@@ -117,7 +149,7 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
     if (sample.source === 'agent-usage') {
       const allowed = Math.min(gapMs(sample), options.maxUnobservedMs);
 
-      if (!away && current && mark && sample.at.getTime() - mark.at.getTime() < allowed) {
+      if ((!away || bridged) && current && mark && sample.at.getTime() - mark.at.getTime() < allowed) {
         mark = { at: sample.at, gapMs: agentGapMs };
       }
 
@@ -126,7 +158,10 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
 
     // Input the idle notifier may have missed the resume of. A focus change and a typed prompt each
     // need somebody at the keyboard, so either ends being away on its own.
-    if (!awaited && isPresent(sample)) away = false;
+    if (!awaited && isPresent(sample)) {
+      away = false;
+      bridged = null;
+    }
 
     if (away) continue;
 
