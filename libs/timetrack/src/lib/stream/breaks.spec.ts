@@ -55,6 +55,24 @@ describe('breakWindows', () => {
     expect(breakWindows({ presence: [MORNING] })).toEqual([]);
   });
 
+  it('reads no break in the hours a machine was on before the day work started', () => {
+    const breaks = breakWindows({
+      presence: [window([1, 0], [1, 30]), MORNING, AFTERNOON],
+      work: [window([9, 0], [17, 0])],
+    });
+
+    expect(breaks).toEqual([{ from: at(11, 0), to: at(12, 30), locked: false }]);
+  });
+
+  it('reads no break in the hours after the day work ended', () => {
+    const breaks = breakWindows({
+      presence: [MORNING, AFTERNOON, window([22, 0], [22, 30])],
+      work: [window([9, 0], [17, 0])],
+    });
+
+    expect(breaks).toEqual([{ from: at(11, 0), to: at(12, 30), locked: false }]);
+  });
+
   it('sums the breaks it found', () => {
     expect(breakMs(breakWindows({ presence: [MORNING, AFTERNOON] }))).toBe(90 * 60_000);
   });

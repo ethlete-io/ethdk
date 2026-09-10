@@ -30,6 +30,10 @@ const overlaps = (window: TimeWindow, windows: readonly TimeWindow[]) =>
  * after the last are not a break — a day the collector was off for is a day with nothing to say. A
  * paused stretch is left out for the same reason: the user stopped collection, so nobody knows what
  * happened in it.
+ *
+ * A gap also has to sit inside the day's work. A machine left on from early morning samples presence
+ * long before the first block and long after the last, and those hours are time outside the working
+ * day rather than a break taken in it.
  */
 export const breakWindows = (options: {
   /** The stretches the user was at the machine, from `presenceWindows`. */
@@ -40,6 +44,8 @@ export const breakWindows = (options: {
   unattended?: readonly TimeWindow[];
   /** The stretches the user had stopped collection for, from `pauseWindows`. */
   pauses?: readonly TimeWindow[];
+  /** The day's activity blocks. A gap outside the span they cover is not a break. */
+  work?: readonly TimeWindow[];
   minBreakMs?: number;
 }): BreakWindow[] => {
   const ordered = options.presence.slice().sort((a, b) => a.from.getTime() - b.from.getTime());
@@ -47,6 +53,9 @@ export const breakWindows = (options: {
   const unattended = options.unattended ?? [];
   const pauses = options.pauses ?? [];
   const minBreakMs = options.minBreakMs ?? DEFAULT_MIN_BREAK_MS;
+  const work = options.work ?? [];
+  const workFrom = work.length ? Math.min(...work.map((window) => window.from.getTime())) : undefined;
+  const workTo = work.length ? Math.max(...work.map((window) => window.to.getTime())) : undefined;
   const breaks: BreakWindow[] = [];
 
   ordered.forEach((earlier, index) => {
@@ -58,6 +67,10 @@ export const breakWindows = (options: {
 
     if (window.to.getTime() <= window.from.getTime()) return;
     if (overlaps(window, unattended) || overlaps(window, pauses)) return;
+
+    if (workFrom !== undefined && workTo !== undefined) {
+      if (window.from.getTime() < workFrom || window.to.getTime() > workTo) return;
+    }
 
     const locked = events.some(
       (event) => event.at.getTime() >= window.from.getTime() && event.at.getTime() < window.to.getTime(),

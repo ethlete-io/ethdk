@@ -982,6 +982,7 @@ export const streamDay = (options: {
     events: options.events,
     unattended: mergeWindows(unattendedAll),
     pauses: config.rows?.pauses,
+    work: blocks,
     minBreakMs: config.minBreakMs,
   });
 
