@@ -1,4 +1,4 @@
-import { DayCheck } from '../correlate/round';
+import { DayCheck } from '../rows/round';
 import { Confidence, Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
 

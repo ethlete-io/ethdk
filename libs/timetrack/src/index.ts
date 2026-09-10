@@ -13,6 +13,7 @@ export * from './lib/model';
 export * from './lib/reason';
 export * from './lib/reporter';
 export * from './lib/review';
+export * from './lib/rows';
 export * from './lib/settings';
 export * from './lib/store';
 export * from './lib/stream';

@@ -1,5 +1,5 @@
 import { GitFlowConfig, parseBranch, slugifySubject } from '@ethlete/agent-rules/git-flow';
-import { WorkGroup } from '../correlate/merge';
+import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
 import { contextKey } from '../model/block';
 import { formatDurationMs } from '../model/duration';

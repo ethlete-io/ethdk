@@ -1,5 +1,5 @@
 import { DayCorrelation } from '../correlate/correlate-day';
-import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, checkDay } from '../correlate/round';
+import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, checkDay } from '../rows/round';
 import { formatDurationMs } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';

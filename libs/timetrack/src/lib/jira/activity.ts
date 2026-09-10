@@ -1,5 +1,5 @@
 import { Observable, map } from 'rxjs';
-import { IssueActivity } from '../correlate/attribute';
+import { IssueActivity } from '../rows/attribute';
 import { TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
 import { searchJiraIssues$ } from './search';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { WorkGroup } from '../correlate/merge';
+import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
 import { ActivityBlock, contextKey } from '../model/block';
 import { Evidence } from '../model/evidence';

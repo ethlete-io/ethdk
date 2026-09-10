@@ -1,4 +1,4 @@
-import { DEFAULT_ROUND_OPTIONS } from '../correlate/round';
+import { DEFAULT_ROUND_OPTIONS } from '../rows/round';
 import { formatDurationMs } from '../model/duration';
 import { SyncedWorklog, syncsInState } from '../model/proposal';
 import { TempoDayCoverage, coverageAsForeignTime } from '../tempo/coverage';

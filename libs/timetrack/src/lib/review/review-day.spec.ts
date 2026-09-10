@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DayCorrelation } from '../correlate/correlate-day';
-import { WorkGroup } from '../correlate/merge';
+import { WorkGroup } from '../rows/merge';
 import { Confidence, Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
 import {

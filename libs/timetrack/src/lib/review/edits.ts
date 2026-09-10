@@ -1,5 +1,5 @@
-import { dominantConfidence, mergeEvidence } from '../correlate/merge';
-import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurations } from '../correlate/round';
+import { dominantConfidence, mergeEvidence } from '../rows/merge';
+import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurations } from '../rows/round';
 import { Evidence } from '../model/evidence';
 import { DayReviewEdits, PinnedRow, ProposalOverride, ReviewedRow } from './model';
 
