@@ -18,6 +18,7 @@ import {
   jiraSubjectFieldCandidates,
   dayBoundaryOf,
   localDayKey,
+  localDayRange,
   matchProjectLink,
   parseAgentRequest,
   readJiraCredentials$,
@@ -228,6 +229,20 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       );
   };
 
+  /**
+   * The evidence one day holds, straight out of the store.
+   *
+   * The store is encrypted, so no shell reads a day. Without this an agent asked to explain what the
+   * day screen drew has nothing to read but a screenshot of it.
+   */
+  const dayEvents$ = (request: Extract<AgentApiRequest, { op: 'day.events' }>) => {
+    const { from, to } = localDayRange(request.day, dayBoundaryOf(settings.settings()));
+
+    return ports.events
+      .eventsBetween$(from, to)
+      .pipe(map((events) => ({ day: request.day, fromMs: from.getTime(), toMs: to.getTime(), events })));
+  };
+
   const carryOut$ = (request: AgentApiRequest): Observable<unknown> => {
     switch (request.op) {
       case 'status':
@@ -244,6 +259,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return create$(request);
       case 'worklog.add':
         return addWorklog$(request);
+      case 'day.events':
+        return dayEvents$(request);
     }
   };
 

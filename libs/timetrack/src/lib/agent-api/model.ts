@@ -92,7 +92,8 @@ export type AgentApiRequest =
       parentKey?: string;
       subject?: string;
     }
-  | { op: 'worklog.add'; issueKey: string; description: string; fromMs: number; durationMs: number };
+  | { op: 'worklog.add'; issueKey: string; description: string; fromMs: number; durationMs: number }
+  | { op: 'day.events'; day: string };
 
 export type AgentApiOp = AgentApiRequest['op'];
 

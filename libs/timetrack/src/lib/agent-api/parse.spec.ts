@@ -76,3 +76,19 @@ describe('parseAgentRequest', () => {
     expect(parseAgentRequest({})).toEqual({ ok: false, message: 'The request names no operation.' });
   });
 });
+
+describe('parseAgentRequest, over a day', () => {
+  it('reads a day key', () => {
+    expect(parseAgentRequest({ op: 'day.events', day: '2026-09-10' })).toEqual({
+      ok: true,
+      request: { op: 'day.events', day: '2026-09-10' },
+    });
+  });
+
+  it('refuses anything that is not a day key', () => {
+    expect(parseAgentRequest({ op: 'day.events', day: 'yesterday' })).toEqual({
+      ok: false,
+      message: 'day.events needs a day as YYYY-MM-DD.',
+    });
+  });
+});

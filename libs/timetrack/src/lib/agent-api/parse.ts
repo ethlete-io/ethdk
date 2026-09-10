@@ -76,6 +76,12 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     };
   }
 
+  if (op === 'day.events') {
+    const day = asText(raw['day']);
+
+    return /^\d{4}-\d{2}-\d{2}$/.test(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');
+  }
+
   if (op === 'worklog.add') {
     const issueKey = asText(raw['issueKey']).toUpperCase();
     const fromMs = asCount(raw['fromMs']);
