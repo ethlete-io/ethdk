@@ -6,7 +6,7 @@ import { WorklogProposal } from '../model/proposal';
 import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
 import { TimeWindow } from '../model/time-window';
 import { AttributeOptions, attribute } from './attribute';
-import { CallMatch, matchCalls } from './calls';
+import { CallMatch, dropCallWindows, matchCalls } from './calls';
 import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { FillOptions, fillGaps } from './fill';
@@ -114,7 +114,10 @@ export const buildRows = (
   const { blocks } = options;
   const timers = matchTimerRuns({ runs: options.timerRuns ?? [], blocks });
   const pauses = options.pauses ?? [];
-  const reconstructed = clipBlocks({ blocks, windows: [...timers.map((timer) => timer.run), ...pauses] });
+  // Before anything else is cut: a call's own window is the call, and a band of it beside the call row
+  // would claim the same minutes twice.
+  const heard = dropCallWindows({ blocks, calls: options.calls ?? [] });
+  const reconstructed = clipBlocks({ blocks: heard, windows: [...timers.map((timer) => timer.run), ...pauses] });
   // The GitLab rung is derived here rather than passed in: the day's events already hold it, and a
   // caller that had to remember to fetch it would be a caller that forgets on one of the four screens.
   const activity = [

@@ -4,7 +4,7 @@ import { Evidence } from '../model/evidence';
 import { TimeWindow, subtractWindows } from '../model/time-window';
 import { MeetingOptions, standingIssueKey } from './meetings';
 import { WorkGroup } from './merge';
-import { overlapMs } from './overlap';
+import { clipBlocks, overlapMs } from './overlap';
 
 export type CallMatch = {
   call: CallWindow;
@@ -63,6 +63,34 @@ const matchOne = (options: {
       blocks: [],
     },
   };
+};
+
+/**
+ * Cuts the application a call is held in out of the blocks, for as long as the call runs.
+ *
+ * A browser window focused while a Meet runs in it is the call, and a chat window focused during a
+ * call in the same client is that call too. Left in, each becomes a band beside the call row claiming
+ * the same minutes, which is the only reason those applications ever took a lane.
+ *
+ * Only that one application, and only a block that names no checkout: an editor open during a call is
+ * work done while listening, and a day that ran work and a call at once says so on purpose.
+ */
+export const dropCallWindows = (options: {
+  blocks: readonly ActivityBlock[];
+  calls: readonly CallWindow[];
+}): ActivityBlock[] => {
+  const held = options.calls.filter((call) => call.countsAsWork);
+
+  if (!held.length) return [...options.blocks];
+
+  return options.blocks.flatMap((block) => {
+    if (block.context.repoPath || !block.context.appId) return [block];
+
+    const appId = block.context.appId.toLowerCase();
+    const windows = held.filter((call) => call.appId.toLowerCase() === appId);
+
+    return windows.length ? clipBlocks({ blocks: [block], windows }) : [block];
+  });
 };
 
 /**

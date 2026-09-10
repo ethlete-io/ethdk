@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { CallWindow } from '../model/call';
 import { TimeWindow } from '../model/time-window';
-import { CallMatch, matchCalls } from './calls';
+import { CallMatch, dropCallWindows, matchCalls } from './calls';
 import { MeetingOptions } from './meetings';
 import { RecurringPattern } from '../model/recurrence';
 
@@ -132,5 +132,53 @@ describe('matchCalls', () => {
     });
 
     expect(found.map((entry) => entry.group.from)).toEqual([at(10), at(14)]);
+  });
+});
+
+describe('dropCallWindows', () => {
+  const app = (options: { from: Date; to: Date; appId: string; repoPath?: string }): ActivityBlock => ({
+    from: options.from,
+    to: options.to,
+    context: { appId: options.appId, ...(options.repoPath ? { repoPath: options.repoPath } : {}) },
+    evidence: [],
+  });
+
+  it('cuts the application the call is held in out of the blocks', () => {
+    const found = dropCallWindows({
+      blocks: [app({ from: at(10, 30), to: at(10, 50), appId: 'com.hnc.Discord' })],
+      calls: [call()],
+    });
+
+    expect(found).toEqual([]);
+  });
+
+  it('keeps the part of the window that fell outside the call', () => {
+    const found = dropCallWindows({
+      blocks: [app({ from: at(9, 50), to: at(10, 30), appId: 'com.hnc.Discord' })],
+      calls: [call()],
+    });
+
+    expect(found.map((block) => [block.from, block.to])).toEqual([[at(9, 50), at(10)]]);
+  });
+
+  it('keeps every other application, so work done while listening still counts', () => {
+    const blocks = [
+      app({ from: at(10, 5), to: at(10, 40), appId: 'code', repoPath: '/home/tom/dev/sdk' }),
+      app({ from: at(10, 40), to: at(10, 50), appId: 'firefox' }),
+    ];
+
+    expect(dropCallWindows({ blocks, calls: [call()] })).toEqual(blocks);
+  });
+
+  it('keeps a checkout named in the call application, because other evidence named it', () => {
+    const blocks = [app({ from: at(10, 5), to: at(10, 40), appId: 'com.hnc.Discord', repoPath: '/home/tom/dev/sdk' })];
+
+    expect(dropCallWindows({ blocks, calls: [call()] })).toEqual(blocks);
+  });
+
+  it('cuts nothing for a call no rule counted as work', () => {
+    const blocks = [app({ from: at(10, 30), to: at(10, 50), appId: 'com.hnc.Discord' })];
+
+    expect(dropCallWindows({ blocks, calls: [call({ countsAsWork: false })] })).toEqual(blocks);
   });
 });
