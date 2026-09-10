@@ -2,6 +2,7 @@ import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { CalendarOccurrenceEvent } from '../model/event';
+import { MEETING_LANE_KEY } from './lane';
 import { MeetingOptions, matchMeetings } from './meetings';
 import { RecurringPattern } from '../model/recurrence';
 
@@ -90,6 +91,10 @@ describe('matchMeetings', () => {
     const found = match({ blocks: [block({ from: at(10, 5), to: at(10, 6), title: 'Meet - abc-defg-hij' })] });
 
     expect(found.group.observedMs).toBe(60 * 60_000);
+  });
+
+  it('draws every meeting in the meeting lane', () => {
+    expect(match({}).group.laneKey).toBe(MEETING_LANE_KEY);
   });
 
   it('takes the issue key out of the event title and is certain once attendance is confirmed', () => {

@@ -18,6 +18,11 @@ export type WorkGroup = {
   confidence: Confidence;
   evidence: Evidence[];
   blocks: ActivityBlock[];
+  /**
+   * The lane the row is drawn in when the row is not a checkout's work. A call and a meeting carry no
+   * blocks, so nothing else can say where they belong.
+   */
+  laneKey?: string;
 };
 
 export type MergeOptions = {

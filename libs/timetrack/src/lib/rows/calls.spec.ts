@@ -3,6 +3,7 @@ import { ActivityBlock } from '../model/block';
 import { CallWindow } from '../model/call';
 import { TimeWindow } from '../model/time-window';
 import { CallMatch, dropCallWindows, matchCalls } from './calls';
+import { CALL_LANE_KEY } from './lane';
 import { MeetingOptions } from './meetings';
 import { RecurringPattern } from '../model/recurrence';
 
@@ -48,6 +49,12 @@ describe('matchCalls', () => {
     expect(found?.group.from).toEqual(at(10));
     expect(found?.group.to).toEqual(at(11));
     expect(found?.group.observedMs).toBe(60 * 60_000);
+  });
+
+  it('draws every call in the call lane, whatever application held it', () => {
+    const [found] = match({});
+
+    expect(found?.group.laneKey).toBe(CALL_LANE_KEY);
   });
 
   it('proposes nothing for an unclassified call', () => {

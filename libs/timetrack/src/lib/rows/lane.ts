@@ -22,3 +22,14 @@ export const laneKeyOf = (blocks: readonly ActivityBlock[]) => {
 
   return ranked[0]?.[0];
 };
+
+/**
+ * The lane every call row is drawn in, whatever application held the call.
+ *
+ * A call carries no blocks, so `laneKeyOf` can read no checkout out of it, and a row with no lane
+ * falls into the day screen's `lane:none` beside the work nothing could place.
+ */
+export const CALL_LANE_KEY = 'lane:call';
+
+/** The lane every meeting row is drawn in, for the same reason a call has one. */
+export const MEETING_LANE_KEY = 'lane:meeting';

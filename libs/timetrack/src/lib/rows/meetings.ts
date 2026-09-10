@@ -3,6 +3,7 @@ import { ActivityBlock } from '../model/block';
 import { CalendarOccurrenceEvent, CollectedEvent } from '../model/event';
 import { Confidence, Evidence } from '../model/evidence';
 import { issueKeyInText } from './attribute';
+import { MEETING_LANE_KEY } from './lane';
 import { WorkGroup } from './merge';
 import { overlapMs } from './overlap';
 import { RecurringPattern, patternAt } from '../model/recurrence';
@@ -203,6 +204,7 @@ const matchOne = (options: {
       confidence: key ? confidenceOf({ attendance, keySource: key.keySource, accepted: event.accepted }) : 'weak',
       evidence: evidenceChain,
       blocks: [],
+      laneKey: MEETING_LANE_KEY,
     },
   };
 };

@@ -1,6 +1,7 @@
 import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { Confidence, Evidence } from '../model/evidence';
+import { CALL_LANE_KEY } from './lane';
 import { WorkGroup } from './merge';
 import { propose } from './propose';
 
@@ -172,5 +173,21 @@ describe('propose, the work nothing named', () => {
     const beside = propose({ groups: [named, group({ fromMinute: 60, observedMinutes: 23 })] });
 
     expect(beside.proposals[0]?.durationMs).toBe(alone.proposals[0]?.durationMs);
+  });
+
+  it('draws a row in the lane it names rather than the one its blocks read', () => {
+    const base = group({ fromMinute: 0, observedMinutes: 30 });
+    const inRepo = base.blocks.map((block) => ({ ...block, context: { repoPath: '/dev/a' } }));
+    const { unnamed } = propose({ groups: [{ ...base, blocks: inRepo, laneKey: CALL_LANE_KEY }] });
+
+    expect(unnamed[0]?.laneKey).toBe(CALL_LANE_KEY);
+  });
+
+  it('reads the lane off the blocks of a row that names none', () => {
+    const base = group({ fromMinute: 0, observedMinutes: 30 });
+    const inRepo = base.blocks.map((block) => ({ ...block, context: { repoPath: '/dev/a' } }));
+    const { unnamed } = propose({ groups: [{ ...base, blocks: inRepo }] });
+
+    expect(unnamed[0]?.laneKey).toBe('repo:/dev/a');
   });
 });

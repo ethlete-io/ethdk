@@ -1,16 +1,36 @@
 import { SchedulerTimeGridBlock } from '@ethlete/components';
-import { BreakWindow, ReviewedRow, streamKeyLabel } from '@ethlete/timetrack';
+import { BreakWindow, CALL_LANE_KEY, MEETING_LANE_KEY, ReviewedRow, streamKeyLabel } from '@ethlete/timetrack';
 import { TimelineEntry, rowEntryOf } from './row-edit/row-appointment';
 
 /** The lane a row with no checkout and no application behind it falls into. */
 export const NO_LANE_KEY = 'lane:none';
 
-const NO_LANE_LABEL = 'No checkout';
-
 /** The lane the day's breaks are drawn in. */
 export const BREAK_LANE_KEY = 'lane:break';
 
 const BREAK_LANE_LABEL = 'Break';
+
+/**
+ * The lanes that hold no checkout, in the order they are drawn after the checkouts.
+ *
+ * They trail rather than sort by their first band, because their position is what says they are not
+ * one of the day's checkouts.
+ */
+const TRAILING_LANES = [CALL_LANE_KEY, MEETING_LANE_KEY, NO_LANE_KEY];
+
+const TRAILING_LABELS: Record<string, string> = {
+  [CALL_LANE_KEY]: 'Calls',
+  [MEETING_LANE_KEY]: 'Meetings',
+  [NO_LANE_KEY]: 'No checkout',
+};
+
+const rankOf = (key: string) => {
+  const at = TRAILING_LANES.indexOf(key);
+
+  return at === -1 ? 0 : at + 1;
+};
+
+const labelOf = (key: string) => TRAILING_LABELS[key] ?? streamKeyLabel(key);
 
 const DAY_MS = 24 * 60 * 60_000;
 
@@ -128,15 +148,10 @@ export const lanesOf = (options: {
   const startOf = (lane: SchedulerTimeGridBlock<TimelineEntry>[]) => Math.min(...lane.map((block) => block.offset));
 
   const work = [...byLane]
-    .sort(([aKey, a], [bKey, b]) => {
-      if (aKey === NO_LANE_KEY) return 1;
-      if (bKey === NO_LANE_KEY) return -1;
-
-      return startOf(a) - startOf(b) || aKey.localeCompare(bKey);
-    })
+    .sort(([aKey, a], [bKey, b]) => rankOf(aKey) - rankOf(bKey) || startOf(a) - startOf(b) || aKey.localeCompare(bKey))
     .map(([key, laneBlocks]) => ({
       key,
-      label: key === NO_LANE_KEY ? NO_LANE_LABEL : streamKeyLabel(key),
+      label: labelOf(key),
       blocks: packLane(laneBlocks),
       breaks: [],
     }));

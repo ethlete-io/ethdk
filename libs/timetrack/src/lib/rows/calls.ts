@@ -1,5 +1,6 @@
 import { ActivityBlock } from '../model/block';
 import { CallWindow, callLabel } from '../model/call';
+import { CALL_LANE_KEY } from './lane';
 import { Evidence } from '../model/evidence';
 import { TimeWindow, subtractWindows } from '../model/time-window';
 import { MeetingOptions, standingIssueKey } from './meetings';
@@ -61,6 +62,7 @@ const matchOne = (options: {
       confidence: 'weak' as const,
       evidence: [callEvidence({ call, window }), ...(key?.evidence ? [key.evidence] : [])],
       blocks: [],
+      laneKey: CALL_LANE_KEY,
     },
   };
 };
