@@ -14,9 +14,8 @@ export interface MatchListView {
     id: string;
     status: MatchStatus | null;
     number: number | null;
-    matchNumber: number | null;
     type: MatchType | null;
-    startTime: string | null;
+    startTime: string;
     home: ParticipantViewUnion | null;
     away: ParticipantViewUnion | null;
     games: GameListViewUnion[];
