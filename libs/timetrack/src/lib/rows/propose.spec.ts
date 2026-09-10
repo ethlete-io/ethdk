@@ -125,3 +125,37 @@ describe('propose', () => {
     expect(proposals[0]?.evidence.map((entry) => entry.kind)).toEqual(['branch', 'inherited-branch']);
   });
 });
+
+describe('propose, the work nothing named', () => {
+  it('draws an unattributed group as a row of its own', () => {
+    const { proposals, unattributed, unnamed } = propose({
+      groups: [group({ fromMinute: 0, observedMinutes: 45 })],
+      config: FIP,
+    });
+
+    expect(proposals).toEqual([]);
+    expect(unattributed).toHaveLength(1);
+    expect(unnamed).toHaveLength(1);
+    expect(unnamed[0]).toMatchObject({ observedMs: 45 * MINUTE, description: 'unattributed activity' });
+  });
+
+  it('keeps two contexts that started together apart', () => {
+    const inRepo = (repoPath: string): WorkGroup => {
+      const base = group({ fromMinute: 0, observedMinutes: 30 });
+
+      return { ...base, blocks: base.blocks.map((block) => ({ ...block, context: { repoPath } })) };
+    };
+
+    const { unnamed } = propose({ groups: [inRepo('/dev/a'), inRepo('/dev/b')] });
+
+    expect(new Set(unnamed.map((row) => row.id)).size).toBe(2);
+  });
+
+  it(`leaves a proposal's duration where it was`, () => {
+    const named = group({ fromMinute: 0, observedMinutes: 37, issueKey: 'FIP-1' });
+    const alone = propose({ groups: [named] });
+    const beside = propose({ groups: [named, group({ fromMinute: 60, observedMinutes: 23 })] });
+
+    expect(beside.proposals[0]?.durationMs).toBe(alone.proposals[0]?.durationMs);
+  });
+});

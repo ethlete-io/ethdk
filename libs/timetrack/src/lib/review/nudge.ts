@@ -4,7 +4,7 @@ import { SyncedWorklog, syncsInState } from '../model/proposal';
 import { TempoDayCoverage, coverageAsForeignTime } from '../tempo/coverage';
 import { contentHashOf } from '../tempo/diff';
 import { subtractForeignTime } from '../tempo/subtract';
-import { DayReview } from './model';
+import { DayReview, isNamedRow } from './model';
 
 /** What a day still owes the person who worked it. */
 export type DayNudgeReason =
@@ -52,7 +52,7 @@ export const dayReviewGap = (options: {
   const tolerance = options.toleranceMs ?? DEFAULT_ROUND_OPTIONS.incrementMs;
   const entries = new Map(options.ledger.map((entry) => [entry.proposalId, entry]));
   const reduced = subtractForeignTime({
-    proposals: options.review.rows.filter((row) => syncsInState(row.state) && row.durationMs > 0),
+    proposals: options.review.rows.filter(isNamedRow).filter((row) => syncsInState(row.state) && row.durationMs > 0),
     foreign: coverageAsForeignTime(options.coverage),
   });
   const reducedById = new Map(reduced.proposals.map((proposal) => [proposal.id, proposal]));
@@ -82,7 +82,15 @@ export const dayReviewGap = (options: {
       continue;
     }
 
-    const hash = contentHashOf({ proposal: row, attributes: options.attributesByProposalId?.[row.id] });
+    if (!row.issueKey) {
+      undecidedMs += row.durationMs;
+      continue;
+    }
+
+    const hash = contentHashOf({
+      proposal: { ...row, issueKey: row.issueKey },
+      attributes: options.attributesByProposalId?.[row.id],
+    });
 
     if (!entry || entry.contentHash !== hash) unsyncedMs += row.durationMs;
   }

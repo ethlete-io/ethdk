@@ -3,7 +3,7 @@ import { SyncedWorklog, WorklogProposalState } from '../model/proposal';
 import { TempoDayCoverage } from '../tempo/coverage';
 import { contentHashOf } from '../tempo/diff';
 import { localDayKey } from './day';
-import { DayReview, ReviewedRow } from './model';
+import { DayReview, NamedRow, ReviewedRow } from './model';
 import {
   DEFAULT_NUDGE_REPEAT_MS,
   DayNudgeRecord,
@@ -16,12 +16,7 @@ import {
 const MINUTE = 60_000;
 const at = (time: string) => new Date(`2026-08-11T${time}:00`);
 
-const row = (options: {
-  issueKey: string;
-  from: string;
-  minutes: number;
-  state: WorklogProposalState;
-}): ReviewedRow => {
+const row = (options: { issueKey: string; from: string; minutes: number; state: WorklogProposalState }): NamedRow => {
   const durationMs = options.minutes * MINUTE;
 
   return {
@@ -61,7 +56,7 @@ const coverage = (coveredMsByIssueKey: Record<string, number>): TempoDayCoverage
   observedAt: at('18:00'),
 });
 
-const ledgerFor = (entry: ReviewedRow): SyncedWorklog => ({
+const ledgerFor = (entry: NamedRow): SyncedWorklog => ({
   proposalId: entry.id,
   day: localDayKey(entry.from),
   tempoWorklogId: '900',

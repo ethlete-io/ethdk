@@ -3,6 +3,7 @@ import { DayCorrelation } from '../correlate/correlate-day';
 import { WorkGroup } from '../rows/merge';
 import { Confidence, Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
+import { UnnamedProposal } from '../rows/propose';
 import {
   ManualRow,
   addManualRow,
@@ -14,6 +15,7 @@ import {
   setRowDuration,
   removeManualRow,
   setRowRange,
+  setRowIssue,
   setRowState,
   splitRow,
 } from './edits';
@@ -53,10 +55,15 @@ const proposal = (options: {
   };
 };
 
-const correlation = (options: { proposals: WorklogProposal[]; unattributed?: WorkGroup[] }): DayCorrelation => ({
+const correlation = (options: {
+  proposals: WorklogProposal[];
+  unattributed?: WorkGroup[];
+  unnamed?: UnnamedProposal[];
+}): DayCorrelation => ({
   blocks: [],
   proposals: options.proposals,
   unattributed: options.unattributed ?? [],
+  unnamed: options.unnamed ?? [],
   meetings: [],
   calls: [],
   timers: [],
@@ -622,5 +629,57 @@ describe('removeManualRow', () => {
     expect(
       removeManualRow({ edits: pinned, row: rowFor(reviewDay({ correlation: base, edits: pinned }), 'ABC-1') }),
     ).toBe(pinned);
+  });
+});
+
+describe('reviewDay, a band nothing named', () => {
+  const band = (options: { from: string; to: string; minutes: number }): UnnamedProposal => ({
+    id: `unnamed:app:firefox@${at(options.from).toISOString()}`,
+    from: at(options.from),
+    to: at(options.to),
+    durationMs: options.minutes * MINUTE,
+    observedMs: options.minutes * MINUTE,
+    description: 'unattributed activity',
+    confidence: 'weak',
+    evidence: [],
+    state: 'suggested',
+  });
+
+  const day = correlation({ proposals: [], unnamed: [band({ from: '08:00', to: '09:00', minutes: 60 })] });
+
+  it('shows it as a row', () => {
+    const review = reviewDay({ correlation: day });
+
+    expect(review.rows).toHaveLength(1);
+    expect(review.rows[0]?.issueKey).toBeUndefined();
+  });
+
+  it('books none of its time', () => {
+    expect(reviewDay({ correlation: day }).check.proposedMs).toBe(0);
+  });
+
+  it('cuts into two halves that are both still unnamed', () => {
+    const edits = splitRow({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ correlation: day }).rows[0]!,
+      at: at('08:30'),
+    });
+    const review = reviewDay({ correlation: day, edits });
+
+    expect(review.rows).toHaveLength(2);
+    expect(review.rows.map((row) => row.issueKey)).toEqual([undefined, undefined]);
+    expect(review.rows.map((row) => row.durationMs / MINUTE)).toEqual([30, 30]);
+  });
+
+  it('becomes a bookable row once it is named', () => {
+    const edits = setRowIssue({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ correlation: day }).rows[0]!,
+      issueKey: 'ABC-9',
+    });
+    const review = reviewDay({ correlation: day, edits });
+
+    expect(review.rows[0]?.issueKey).toBe('ABC-9');
+    expect(review.check.proposedMs).toBe(60 * MINUTE);
   });
 });

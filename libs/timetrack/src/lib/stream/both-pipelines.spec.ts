@@ -89,9 +89,7 @@ const MEETING_DAY: CollectedEvent[] = [
   ...focusRun({ from: 91, to: 140, appId: 'code', title: 'pack.ts - fut-frontend - Code' }),
 ];
 
-const RUNS: ClosedTimerRun[] = [
-  { id: 'run-1', from: AT(215), to: AT(245), issueKey: 'FIP-2200', note: 'whiteboard', startedAt: AT(215) },
-];
+const RUNS: ClosedTimerRun[] = [{ id: 'run-1', from: AT(215), to: AT(245), issueKey: 'FIP-2200', note: 'whiteboard' }];
 
 const READ_THROUGH = AT(260);
 

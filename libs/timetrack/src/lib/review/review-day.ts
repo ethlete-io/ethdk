@@ -3,30 +3,46 @@ import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, checkDay } from '../r
 import { formatDurationMs } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
-import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, PinnedRow, ProposalOverride, ReviewedRow } from './model';
+import {
+  DayReview,
+  DayReviewEdits,
+  EMPTY_DAY_REVIEW_EDITS,
+  PinnedRow,
+  ProposalOverride,
+  ReviewedRow,
+  isNamedRow,
+} from './model';
+
+/** What the engine offered for one band: a proposal, or a band nothing could name. */
+type RowSource = Omit<WorklogProposal, 'issueKey'> & { issueKey?: string };
 
 /**
  * The state an untouched row reviews in. A well-evidenced row is accepted on sight — asking for a
  * click on every certain row is what makes a reviewer stop reading them — while a weak one stays
  * `suggested` until somebody says otherwise, and so never syncs.
+ *
+ * A row with no issue is never accepted on sight however well evidenced it is. There is nothing to
+ * accept: it says a stretch of work happened, not what it was for.
  */
-const defaultState = (proposal: WorklogProposal): WorklogProposalState =>
-  syncsWithoutReview(proposal.confidence) ? 'accepted' : 'suggested';
+const defaultState = (row: RowSource): WorklogProposalState =>
+  row.issueKey && syncsWithoutReview(row.confidence) ? 'accepted' : 'suggested';
 
-const withOverride = (proposal: WorklogProposal, override: ProposalOverride | undefined): ReviewedRow => {
-  if (!override) return { ...proposal, state: defaultState(proposal), edited: false };
+const withOverride = (row: RowSource, override: ProposalOverride | undefined): ReviewedRow => {
+  const proposed = row.issueKey ? { ...row, issueKey: row.issueKey } : undefined;
+
+  if (!override) return { ...row, state: defaultState(row), edited: false };
 
   const changed =
     override.issueKey !== undefined || override.description !== undefined || override.durationMs !== undefined;
 
   return {
-    ...proposal,
-    issueKey: override.issueKey ?? proposal.issueKey,
-    description: override.description ?? proposal.description,
-    durationMs: override.durationMs ?? proposal.durationMs,
-    state: override.state ?? (changed ? 'edited' : defaultState(proposal)),
+    ...row,
+    issueKey: override.issueKey ?? row.issueKey,
+    description: override.description ?? row.description,
+    durationMs: override.durationMs ?? row.durationMs,
+    state: override.state ?? (changed ? 'edited' : defaultState(row)),
     edited: changed || override.state !== undefined,
-    proposed: proposal,
+    proposed,
   };
 };
 
@@ -65,8 +81,11 @@ export const reviewDay = (options: {
     ...options.correlation.proposals
       .filter((proposal) => !consumed.has(proposal.id))
       .map((proposal) => withOverride(proposal, edits.overrides[proposal.id])),
+    ...options.correlation.unnamed
+      .filter((row) => !consumed.has(row.id))
+      .map((row) => withOverride(row, edits.overrides[row.id])),
     ...edits.pinned.map(fromPinned),
-  ].sort((a, b) => a.from.getTime() - b.from.getTime() || a.issueKey.localeCompare(b.issueKey));
+  ].sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));
 
   const replacedMs = options.correlation.proposals
     .filter((proposal) => consumed.has(proposal.id))
@@ -75,7 +94,7 @@ export const reviewDay = (options: {
   const unreconciledMs = Math.max(0, replacedMs - pinnedMs);
 
   const check = checkDay({
-    proposals: rows.filter((row) => syncsInState(row.state)),
+    proposals: rows.filter(isNamedRow).filter((row) => syncsInState(row.state)),
     unattributed: options.correlation.unattributed,
     options: { filledMs: options.correlation.filledMs, ...options.check },
   });

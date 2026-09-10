@@ -16,8 +16,8 @@ const withoutOverrides = (overrides: Record<string, ProposalOverride>, ids: read
   return kept;
 };
 
-const pinnedIdFor = (options: { issueKey: string; from: Date; taken: ReadonlySet<string> }) => {
-  const base = `${options.issueKey}@${options.from.toISOString()}`;
+const pinnedIdFor = (options: { issueKey?: string; from: Date; taken: ReadonlySet<string> }) => {
+  const base = `${options.issueKey ?? 'unnamed'}@${options.from.toISOString()}`;
   let id = base;
   let suffix = 2;
 

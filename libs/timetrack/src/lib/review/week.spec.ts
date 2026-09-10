@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SyncedWorklog, WorklogProposalState } from '../model/proposal';
 import { contentHashOf } from '../tempo/diff';
 import { localDayKey } from './day';
-import { DayReview, ReviewedRow } from './model';
+import { DayReview, NamedRow, ReviewedRow } from './model';
 import { reviewWeek, shiftWeekKey, startOfWeekKey, weekDayKeys } from './week';
 
 const MINUTE = 60_000;
@@ -14,7 +14,7 @@ const row = (options: {
   from: string;
   minutes: number;
   state: WorklogProposalState;
-}): ReviewedRow => {
+}): NamedRow => {
   const from = new Date(`${options.day}T${options.from}:00`);
   const durationMs = options.minutes * MINUTE;
 
@@ -51,7 +51,7 @@ const review = (options: { rows: ReviewedRow[]; unattributedMs?: number }): DayR
   };
 };
 
-const ledgerFor = (entry: ReviewedRow): SyncedWorklog => ({
+const ledgerFor = (entry: NamedRow): SyncedWorklog => ({
   proposalId: entry.id,
   day: localDayKey(entry.from),
   tempoWorklogId: '900',

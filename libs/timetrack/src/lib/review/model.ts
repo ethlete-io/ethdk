@@ -23,7 +23,11 @@ export type PinnedRow = {
    * for nothing the engine ever proposed — `addManualRow` is the only thing that writes one.
    */
   replaces: string[];
-  issueKey: string;
+  /**
+   * Absent right after a cut, before either half has been named. An unnamed row is a legal state and
+   * never syncs — a split has to be able to leave both halves waiting for an answer.
+   */
+  issueKey?: string;
   storyKey?: string;
   from: Date;
   to: Date;
@@ -45,12 +49,20 @@ export type DayReviewEdits = {
 export const EMPTY_DAY_REVIEW_EDITS: DayReviewEdits = { overrides: {}, pinned: [] };
 
 /** A worklog row as the review UI shows it: the engine's proposal with any local edit applied. */
-export type ReviewedRow = WorklogProposal & {
+export type ReviewedRow = Omit<WorklogProposal, 'issueKey'> & {
+  /** Absent on a row a cut left unnamed. Such a row is shown and never written. */
+  issueKey?: string;
   /** True when a local edit produced this row, so re-correlation must leave it alone. */
   edited: boolean;
   /** What the engine proposed before the edit, when there is still a proposal to reset to. */
   proposed?: WorklogProposal;
 };
+
+/** A row that names an issue. It is the only kind a sync writes, and the only kind Tempo can take. */
+export type NamedRow = ReviewedRow & { issueKey: string };
+
+/** Whether a row names an issue. A row a cut left unnamed is shown, counted as undecided, never written. */
+export const isNamedRow = (row: ReviewedRow): row is NamedRow => !!row.issueKey;
 
 export type DayReview = {
   rows: ReviewedRow[];

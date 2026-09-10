@@ -499,6 +499,7 @@ describe('streamDay', () => {
       rows: {
         proposals: [],
         unattributed: [],
+        unnamed: [],
         meetings: [],
         calls: [],
         timers: [],

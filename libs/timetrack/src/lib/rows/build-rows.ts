@@ -15,7 +15,7 @@ import { MergeOptions, WorkGroup, mergeBlocks } from './merge';
 import { mergeRequestActivity } from './merge-request-activity';
 import { clipBlocks } from './overlap';
 import { PrivateTime, privateTime } from './project-link';
-import { propose } from './propose';
+import { UnnamedProposal, propose } from './propose';
 import { RoundOptions } from './round';
 import { TimerMatch, matchTimerRuns } from './timers';
 
@@ -58,6 +58,8 @@ export type BuildRowsOptions = {
 export type DayRows = {
   proposals: WorklogProposal[];
   unattributed: WorkGroup[];
+  /** The unattributed work as rows, for the day screen to draw and the reviewer to cut and name. */
+  unnamed: UnnamedProposal[];
   /** What the calendar contributed, with how much of each meeting the machine actually saw. */
   meetings: MeetingMatch[];
   /** The calls a rule counted as work, with how much activity was observed during each. */
@@ -135,7 +137,7 @@ export const buildRows = (
     ...calls.map((call) => call.group),
     ...timers.map((timer) => timer.group),
   ].sort((a, b) => a.from.getTime() - b.from.getTime());
-  const { proposals, unattributed } = propose({
+  const { proposals, unattributed, unnamed } = propose({
     groups,
     config: options.config,
     round: options.round,
@@ -146,6 +148,7 @@ export const buildRows = (
   return {
     proposals,
     unattributed,
+    unnamed,
     meetings,
     calls,
     timers,
