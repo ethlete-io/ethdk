@@ -368,6 +368,18 @@ describe('mergeRows', () => {
     expect(reviewDay({ rows: base, edits: merge() }).rows[0]!.confidence).toBe('weak');
   });
 
+  it("keeps the first row's lane, so a merge leaves the column it was drawn in", () => {
+    const laned = dayRows({
+      proposals: [
+        { ...proposal({ issueKey: 'ABC-1', from: '08:00', to: '09:00' }), laneKey: 'repo:/home/tom/dev/sdk' },
+        { ...proposal({ issueKey: 'ABC-2', from: '10:00', to: '11:00' }), laneKey: 'repo:/home/tom/dev/other' },
+      ],
+    });
+    const edits = mergeRows({ edits: EMPTY_DAY_REVIEW_EDITS, rows: reviewDay({ rows: laned }).rows });
+
+    expect(reviewDay({ rows: laned, edits }).rows[0]!.laneKey).toBe('repo:/home/tom/dev/sdk');
+  });
+
   it('drops the overrides of the rows it consumed', () => {
     const withOverride = setRowDescription({
       edits: EMPTY_DAY_REVIEW_EDITS,

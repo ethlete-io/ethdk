@@ -395,8 +395,9 @@ export const removeManualRow = (options: { edits: DayReviewEdits; row: ReviewedR
 };
 
 /**
- * Combines rows into one. The first row given supplies the issue and the description, so the caller
- * decides which of them the merged row is about; the clock spans all of them and the durations add up.
+ * Combines rows into one. The first row given supplies the issue, the description and the lane, so
+ * the caller decides which of them the merged row is about; the clock spans all of them and the
+ * durations add up.
  *
  * Fewer than two rows returns the edits unchanged.
  */
@@ -420,6 +421,7 @@ export const mergeRows = (options: { edits: DayReviewEdits; rows: readonly Revie
     to: new Date(Math.max(...rows.map((row) => row.to.getTime()))),
     durationMs: rows.reduce((sum, row) => sum + row.durationMs, 0),
     observedMs: rows.reduce((sum, row) => sum + row.observedMs, 0),
+    laneKey: first.laneKey,
     description: first.description,
     confidence: dominantConfidence(rows),
     evidence: mergeEvidence(rows.map((row) => row.evidence)),
