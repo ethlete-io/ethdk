@@ -48,6 +48,14 @@ export type TimetrackRepoProject = {
   suggestedProjectKey?: string;
 };
 
+/** One day's evidence, straight out of the app's encrypted store. `events` is opaque here on purpose. */
+export type TimetrackDayEvents = {
+  day: string;
+  fromMs: number;
+  toMs: number;
+  events: unknown[];
+};
+
 export type TimetrackWorklog = {
   day: string;
   issueKey: string;
@@ -188,3 +196,5 @@ export const timetrackAddWorklog = async (options: {
   fromMs: number;
   durationMs: number;
 }) => (await askTimetrack<{ worklog: TimetrackWorklog }>({ op: 'worklog.add', ...options })).worklog;
+
+export const timetrackDayEvents = (day: string) => askTimetrack<TimetrackDayEvents>({ op: 'day.events', day });

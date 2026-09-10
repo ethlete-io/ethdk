@@ -1,7 +1,9 @@
+import { writeFileSync } from 'fs';
 import {
   TimetrackIssue,
   timetrackAddWorklog,
   timetrackCreateIssue,
+  timetrackDayEvents,
   timetrackDiscoveryPath,
   timetrackInstance,
   timetrackIssue,
@@ -22,6 +24,7 @@ const FLAGS_WITH_VALUE = [
   '--issue',
   '--minutes',
   '--at',
+  '--out',
 ];
 
 const positionalArgs = (args: string[]) =>
@@ -67,6 +70,28 @@ const issueLine = (issue: TimetrackIssue) =>
     ...(issue.subject ? [`subject ${issue.subject}`] : []),
   ].join('  ');
 
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+const pad = (value: number) => String(value).padStart(2, '0');
+
+const today = () => {
+  const now = new Date();
+
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+};
+
+const countByKind = (events: readonly unknown[]) => {
+  const counts = new Map<string, number>();
+
+  for (const event of events) {
+    const kind = String((event as { kind?: unknown }).kind ?? 'unknown');
+
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  }
+
+  return [...counts].sort((left, right) => right[1] - left[1]);
+};
+
 const printed = (value: unknown, json: boolean) => {
   if (json) console.log(JSON.stringify(value, null, 2));
 
@@ -85,6 +110,7 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack create --summary …  File a new issue with the instance's own ticket settings
   timetrack log --issue <KEY> --minutes <n>
                                 Add a row nothing observed to the day it belongs to
+  timetrack day [YYYY-MM-DD]    The evidence a day holds, which the encrypted store hides otherwise
 
 Options for search
   --project <KEY>     Search this project instead of the picked ones
@@ -104,6 +130,9 @@ Options for log
   --minutes <n>       Required
   --at <date>         When the work started (default: now)
   --description <text>
+
+Options for day
+  --out <path>        Write the raw answer to a file, and print how many events it holds
 
 Options everywhere
   --json              Print the raw answer instead of lines
@@ -229,6 +258,30 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     return printed(worklog, json);
+  }
+
+  if (subcommand === 'day') {
+    const day = value ?? today();
+
+    if (!DAY.test(day)) throw new Error(`Pass a day as YYYY-MM-DD, not ${day}.`);
+
+    const found = await timetrackDayEvents(day);
+    const out = flagValue(argv, '--out');
+
+    if (out) {
+      writeFileSync(out, JSON.stringify(found));
+      console.log(`${found.day}  ${found.events.length} events written to ${out}`);
+
+      return 0;
+    }
+
+    if (!json) {
+      console.log(`${found.day}  ${found.events.length} events`);
+      countByKind(found.events).forEach(([kind, count]) => console.log(`  ${kind}  ${count}`));
+      console.log('Pass --out <path> to write the events themselves, which are far too many to read.');
+    }
+
+    return printed(found, json);
   }
 
   console.log(USAGE);

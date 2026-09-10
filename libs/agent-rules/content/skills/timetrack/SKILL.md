@@ -1,6 +1,6 @@
 ---
 name: timetrack
-description: How to reach Jira from any repo through the running Timetrack app - look up an issue, search for one, ask which project a repo logs into, file a ticket, or add a worklog row. Read whenever a task needs Jira data or a Jira write, and never put a Jira token in a repo.
+description: How to reach Jira from any repo through the running Timetrack app - look up an issue, search for one, ask which project a repo logs into, file a ticket, add a worklog row, or read the evidence a day holds. Read whenever a task needs Jira data, a Jira write, or the day's own events, and never put a Jira token in a repo.
 kind: skill
 scope: both
 ---
@@ -36,9 +36,23 @@ nobody can rotate.
 | `project [path]`                  | You need the project a repository files into                            |
 | `create --summary "…"`            | The work has no ticket and the user asked for one                       |
 | `log --issue <KEY> --minutes <n>` | The user asks to record time that nothing observed                      |
+| `day [YYYY-MM-DD]`                | You need the evidence a day holds, not a screenshot of it               |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
 from a key you typed. Follow the repository's branch workflow when creating a branch.
+
+## Reading a day
+
+The app's store is encrypted, so no shell reads a day off disk. `day` is the only way in:
+
+```bash
+npx ethlete-agents timetrack day                       # today: how many events, and of which kind
+npx ethlete-agents timetrack day 2026-09-10 --out /tmp/day.json
+```
+
+A real day holds thousands of events, so **never print them**. Write them to a file with
+`--out`, then read that file from a test or a script. Without `--out` the command reports
+only the counts, which is what tells you whether a day holds the source you are looking for.
 
 ## Writes
 
