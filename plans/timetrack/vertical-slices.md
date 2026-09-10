@@ -76,6 +76,10 @@ new screen:
 Each slice is shippable and each has its own exit test. Nothing from a later slice may leak into
 an earlier one.
 
+**The order in this table is replaced by [`roadmap.md`](./roadmap.md), on 2026-09-10.** Slice 7 (no
+day is lost) and slice 8 (one day, every machine) now run before slice 2, and slices 9 to 12 exist.
+The numbers below are unchanged, and they are names rather than positions.
+
 | Slice | Name              | Exit test                                                              |
 | ----: | ----------------- | ---------------------------------------------------------------------- |
 |     1 | Today, honestly   | Three replayed real days read as true, with no edit.                   |
@@ -230,6 +234,11 @@ Building for chaos first is also the cheaper order. A pipeline that works with n
 all works with one too; the reverse has never been true.
 
 ## Slice 2: Name it, in outline
+
+**Replaced on 2026-09-10 by [`name-the-ticket.md`](./name-the-ticket.md).** Four of Tom's real
+tickets showed the outline below is a third of the feature: most of his day books to a standing
+ticket, a work item spans two checkouts under one epic, and a meeting is named from the microphone
+rather than from the calendar. Read that plan instead.
 
 Attribution comes back, one rung at a time and in this order: a per-repo rule, then naming by hand.
 Nothing else, and no branch grammar — see the section above. The reasoning provider stays out until
