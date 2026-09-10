@@ -12,8 +12,7 @@ const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
  * A git scan reads a window of history rather than a stream, so overlapping runs — the periodic
  * reconcile, a run the watcher triggered, the wide scan after the app was closed — see the same
  * commits and switches again. The store drops a repeat by this key, which is what lets a scan window
- * be as wide as it needs to be. A focus sample has no such identity: two identical ones a minute
- * apart are two real observations, so they key to `null` and are always appended.
+ * be as wide as it needs to be.
  *
  * A commit keys by its sha alone, so the branch the first scan reported for it is the one that stays.
  * `%S` names whichever ref reached the commit first, and a commit that later also lives on another
@@ -24,6 +23,12 @@ const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
  *
  * A GitLab event keys by GitLab's own id, which is unique inside one instance — a second instance
  * would have to put its host in the key. A GitHub event keys by its source and its id.
+ *
+ * A sample the host buffered — a focus change, a presence transition, a microphone edge — keys by the
+ * instant it was taken at and the state it reports. The host holds such a sample until the collector
+ * acknowledges it, so a webview that reloads between reading and storing drains it a second time, and
+ * the key is what makes that repeat free. Two samples of the same window a minute apart are two real
+ * observations and both still store, because their instants differ.
  *
  * An editor heartbeat keys by its reporter and its instant, which is what makes a reporter's retry
  * free: a POST whose response was lost is sent again, and one editor cannot have been in two states
@@ -47,6 +52,18 @@ export const dedupeKeyOf = (event: CollectedEvent): string | null => {
       // spelled exactly as it was: adding the source to it now would re-append every event the store
       // already holds. GitHub's carries the source, because two forges can issue the same id.
       return keyOf(event.source === 'gitlab' ? [event.kind, event.eventId] : [event.kind, event.source, event.eventId]);
+    case 'window-focus':
+      return keyOf([event.kind, event.at.toISOString(), event.appId, event.title]);
+    case 'call-start':
+    case 'call-end':
+      return keyOf([event.kind, event.at.toISOString(), event.appId]);
+    case 'idle-start':
+    case 'idle-end':
+    case 'lock':
+    case 'unlock':
+    case 'pause-start':
+    case 'pause-end':
+      return keyOf([event.kind, event.at.toISOString()]);
     case 'editor-heartbeat':
       return keyOf([event.kind, event.reporter, event.at.toISOString()]);
     case 'agent-usage':

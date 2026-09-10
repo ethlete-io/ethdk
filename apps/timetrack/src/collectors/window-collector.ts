@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { applyExclusionRules, effectiveExclusionRules, redactEventTitles } from '@ethlete/timetrack';
-import { EMPTY, Observable, catchError, concat, concatMap, defer, exhaustMap, map, switchMap, tap, timer } from 'rxjs';
+import { EMPTY, Observable, catchError, concat, concatMap, defer, exhaustMap, switchMap, tap, timer } from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { WindowBatch, WindowSourceStatus, injectHostPorts } from '../host';
@@ -33,9 +33,12 @@ export type WindowCollectorTotals = {
  * Drains the host's focus and presence samples and stores the ones no exclusion rule denies.
  *
  * The sequence is only acknowledged once a batch is stored, so a failure repeats it rather than
- * leaving a hole. Titles are matched against the rules before the store is touched — an excluded
- * title must never reach the database, not even to be deleted later. The rules run on the raw title
- * and `redactEventTitles` on what survives them, so a rule still matches everything the user saw.
+ * leaving a hole, and `stored` counts the rows the store added rather than the samples handed to it —
+ * a reload drains the buffer from the top again, and the dedupe key drops what is already stored.
+ *
+ * Titles are matched against the rules before the store is touched — an excluded title must never
+ * reach the database, not even to be deleted later. The rules run on the raw title and
+ * `redactEventTitles` on what survives them, so a rule still matches everything the user saw.
  */
 const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -53,33 +56,30 @@ const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       events: batch.events,
       rules: effectiveExclusionRules(settings.settings()),
     });
-    const record = () => {
+    const record = (stored: number) => {
       throughSeq = batch.throughSeq;
       failure.set(null);
       lastRun.set({
         at: new Date(),
-        stored: kept.length,
+        stored,
         excluded: excluded.length,
         dropped: batch.dropped,
       });
       totals.update((all) => ({
         since: all.since,
-        stored: all.stored + kept.length,
+        stored: all.stored + stored,
         excluded: all.excluded + excluded.length,
         dropped: all.dropped + batch.dropped,
       }));
     };
 
     if (!kept.length) {
-      record();
+      record(0);
 
       return EMPTY;
     }
 
-    return ports.events.append$(redactEventTitles(kept)).pipe(
-      map(() => batch),
-      tap(record),
-    );
+    return ports.events.appendCounted$(redactEventTitles(kept)).pipe(tap(record));
   };
 
   /**

@@ -173,6 +173,28 @@ const SCHEMA_V13: &str = "
 ALTER TABLE agent_session_cursor ADD COLUMN session_json TEXT;
 ";
 
+/// Drops the repeats a keyless sample left behind.
+///
+/// The host holds a focus, presence or microphone sample until the collector acknowledges it, and the
+/// acknowledged sequence lives in the webview, so every reload drained the whole buffer again. Those
+/// samples carried no dedupe key, so each drain appended a second copy: one real day held 346 rows
+/// whose `at_ms`, source, kind and payload were already stored. `dedupeKeyOf` keys them now, which
+/// stops the next one; this clears what is stored already.
+///
+/// Only a keyless row is touched, and only where an earlier row is identical in all four columns. Two
+/// such rows cannot be told apart by any reader, so keeping the lower id loses nothing.
+const SCHEMA_V14: &str = "
+DELETE FROM collected_event WHERE dedupe_key IS NULL AND EXISTS (
+  SELECT 1 FROM collected_event AS earlier
+  WHERE earlier.dedupe_key IS NULL
+    AND earlier.at_ms = collected_event.at_ms
+    AND earlier.source = collected_event.source
+    AND earlier.kind = collected_event.kind
+    AND earlier.payload = collected_event.payload
+    AND earlier.id < collected_event.id
+);
+";
+
 /// Repairs a store whose v11 ran before `read_through_ms` was part of it.
 ///
 /// The column was added to `SCHEMA_V11` after that migration had already run on real stores, and a
@@ -325,6 +347,11 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         connection.pragma_update(None, "user_version", 13)?;
     }
 
+    if version < 14 {
+        connection.execute_batch(SCHEMA_V14)?;
+        connection.pragma_update(None, "user_version", 14)?;
+    }
+
     Ok(())
 }
 
@@ -399,9 +426,74 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            13
+            14
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
+    }
+
+    const FOCUS: &str = "INSERT INTO collected_event (at_ms, source, kind, payload, dedupe_key)
+         VALUES (?1, 'window', 'window-focus', ?2, NULL)";
+
+    /// A store at v13 holds the repeats every webview reload appended while a buffered sample carried
+    /// no key, so the migration has to reach a store that is already migrated.
+    fn stored_at_v13() -> Connection {
+        let connection = Connection::open_in_memory().unwrap();
+
+        migrate(&connection).unwrap();
+        connection.pragma_update(None, "user_version", 13).unwrap();
+
+        connection
+    }
+
+    #[test]
+    fn drops_a_keyless_row_an_identical_earlier_one_already_covers() {
+        let connection = stored_at_v13();
+
+        for _ in 0..3 {
+            connection
+                .execute(FOCUS, params![1_000_i64, r#"{"appId":"code","title":"db.rs"}"#])
+                .unwrap();
+        }
+
+        connection
+            .execute(FOCUS, params![2_000_i64, r#"{"appId":"code","title":"db.rs"}"#])
+            .unwrap();
+        connection
+            .execute(
+                FOCUS,
+                params![1_000_i64, r#"{"appId":"google-chrome","title":"db.rs"}"#],
+            )
+            .unwrap();
+
+        migrate(&connection).unwrap();
+
+        assert_eq!(count(&connection), 3);
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT count(*) FROM collected_event WHERE at_ms = 1000 AND payload LIKE '%code%'",
+                    [],
+                    |row| row.get::<_, i64>(0)
+                )
+                .unwrap(),
+            1
+        );
+    }
+
+    #[test]
+    fn leaves_a_keyed_row_alone_even_when_another_matches_it_column_for_column() {
+        let connection = stored_at_v13();
+
+        connection
+            .execute(INSERT, params![1_000_i64, "git-commit:abc"])
+            .unwrap();
+        connection
+            .execute(INSERT, params![1_000_i64, "git-commit:def"])
+            .unwrap();
+
+        migrate(&connection).unwrap();
+
+        assert_eq!(count(&connection), 2);
     }
 
     /// The store on a machine that ran v11 before the column was part of it. Every read of the table
@@ -458,7 +550,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            13
+            14
         );
     }
 

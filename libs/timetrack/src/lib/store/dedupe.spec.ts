@@ -3,10 +3,13 @@ import {
   AgentPromptEvent,
   AgentUsageEvent,
   CalendarOccurrenceEvent,
+  CallEvent,
   CollectedEvent,
   EditorHeartbeatEvent,
   GitCheckoutEvent,
   GitCommitEvent,
+  PresenceEvent,
+  WindowFocusEvent,
 } from '../model/event';
 import { dedupeKeyOf } from './dedupe';
 
@@ -38,6 +41,15 @@ const meeting = (overrides: Partial<CalendarOccurrenceEvent> = {}): CalendarOccu
   until: new Date(2026, 7, 11, 11, 0),
   title: 'Sprint Planning',
   accepted: true,
+  ...overrides,
+});
+
+const focus = (overrides: Partial<WindowFocusEvent> = {}): WindowFocusEvent => ({
+  at: new Date(2026, 7, 11, 9, 30),
+  source: 'window',
+  kind: 'window-focus',
+  appId: 'code',
+  title: 'dedupe.ts - ethlete-sdk',
   ...overrides,
 });
 
@@ -82,17 +94,47 @@ describe('dedupeKeyOf', () => {
     expect(dedupeKeyOf(checkout())).not.toBe(dedupeKeyOf(commit()));
   });
 
-  it('leaves an observation only its collector could have made unkeyed', () => {
-    const focus: CollectedEvent = {
+  it('keys a focus sample by its instant, so a repeated drain stores it once', () => {
+    expect(dedupeKeyOf(focus())).toBe(dedupeKeyOf(focus()));
+  });
+
+  it('separates two samples of the same window a minute apart', () => {
+    expect(dedupeKeyOf(focus({ at: new Date(2026, 7, 11, 9, 31) }))).not.toBe(dedupeKeyOf(focus()));
+  });
+
+  it('separates two windows sampled at the same instant', () => {
+    expect(dedupeKeyOf(focus({ appId: 'google-chrome' }))).not.toBe(dedupeKeyOf(focus()));
+    expect(dedupeKeyOf(focus({ title: 'event.ts - ethlete-sdk' }))).not.toBe(dedupeKeyOf(focus()));
+  });
+
+  it('keys a presence transition by its kind and its instant', () => {
+    const at = new Date(2026, 7, 11, 9, 30);
+    const idleStart: PresenceEvent = { at, source: 'idle', kind: 'idle-start' };
+
+    expect(dedupeKeyOf(idleStart)).toBe(dedupeKeyOf({ ...idleStart }));
+    expect(dedupeKeyOf(idleStart)).not.toBe(dedupeKeyOf({ ...idleStart, kind: 'idle-end' }));
+    expect(dedupeKeyOf(idleStart)).not.toBe(dedupeKeyOf({ ...idleStart, at: new Date(2026, 7, 11, 9, 31) }));
+  });
+
+  it('keys a microphone edge by the process that held it', () => {
+    const at = new Date(2026, 7, 11, 10, 0);
+    const start: CallEvent = { at, source: 'call', kind: 'call-start', appId: 'google-chrome' };
+
+    expect(dedupeKeyOf(start)).toBe(dedupeKeyOf({ ...start }));
+    expect(dedupeKeyOf(start)).not.toBe(dedupeKeyOf({ ...start, appId: 'Discord' }));
+    expect(dedupeKeyOf(start)).not.toBe(dedupeKeyOf({ ...start, kind: 'call-end' }));
+  });
+
+  it('leaves an agent session unkeyed, so a log is only re-read on purpose', () => {
+    const session: CollectedEvent = {
       at: new Date(2026, 7, 11, 9, 30),
-      source: 'window',
-      kind: 'window-focus',
-      appId: 'code',
-      title: 'dedupe.ts - ethlete-sdk',
+      source: 'agent-session',
+      kind: 'agent-session',
+      sessionId: '154009aa-3442-401d-852b-07a0d5156e97',
+      cwd: '/home/tom/dev/fut-frontend',
     };
 
-    expect(dedupeKeyOf(focus)).toBeNull();
-    expect(dedupeKeyOf({ at: new Date(), source: 'idle', kind: 'idle-start' })).toBeNull();
+    expect(dedupeKeyOf(session)).toBeNull();
   });
 
   it('keys a heartbeat by its reporter and its instant, so a retry stores it once', () => {

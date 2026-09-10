@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { closeAbandonedCalls } from '@ethlete/timetrack';
-import { EMPTY, Observable, catchError, concat, concatMap, defer, exhaustMap, map, switchMap, tap, timer } from 'rxjs';
+import { EMPTY, Observable, catchError, concat, concatMap, defer, exhaustMap, switchMap, tap, timer } from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
 import { CallBatch, CallSourceStatus, injectHostPorts } from '../host';
 
@@ -59,27 +59,24 @@ const CALL_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const startedAt = new Date();
 
   const store$ = (batch: CallBatch): Observable<unknown> => {
-    const record = () => {
+    const record = (stored: number) => {
       throughSeq = batch.throughSeq;
       failure.set(null);
-      lastRun.set({ at: new Date(), stored: batch.events.length, dropped: batch.dropped });
+      lastRun.set({ at: new Date(), stored, dropped: batch.dropped });
       totals.update((all) => ({
         since: all.since,
-        stored: all.stored + batch.events.length,
+        stored: all.stored + stored,
         dropped: all.dropped + batch.dropped,
       }));
     };
 
     if (!batch.events.length) {
-      record();
+      record(0);
 
       return EMPTY;
     }
 
-    return ports.events.append$(batch.events).pipe(
-      map(() => batch),
-      tap(record),
-    );
+    return ports.events.appendCounted$(batch.events).pipe(tap(record));
   };
 
   const status$ = (): Observable<unknown> =>
