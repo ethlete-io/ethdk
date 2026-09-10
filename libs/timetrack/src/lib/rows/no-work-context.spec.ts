@@ -148,3 +148,44 @@ describe('dropNoWorkContext, a glance away from the work', () => {
     expect(kept.map((entry) => entry.context.repoPath)).toEqual([SDK, SDK, SDK]);
   });
 });
+
+describe('dropNoWorkContext, over the host a glance takes its context from', () => {
+  it('drops a glance between two windows of an application that names no work', () => {
+    const kept = dropNoWorkContext({
+      blocks: [
+        block({ fromMinute: 0, toMinute: 10, context: { appId: 'spotify' } }),
+        block({ fromMinute: 10, toMinute: 11, context: { appId: 'nautilus' } }),
+        block({ fromMinute: 11, toMinute: 20, context: { appId: 'spotify' } }),
+      ],
+      apps: ['spotify'],
+    });
+
+    expect(kept).toEqual([]);
+  });
+
+  it('drops a glance between two windows of a transient application', () => {
+    const kept = dropNoWorkContext({
+      blocks: [
+        block({ fromMinute: 0, toMinute: 1, context: { appId: 'xdg-desktop-portal-gtk' } }),
+        block({ fromMinute: 1, toMinute: 2, context: { appId: 'nautilus' } }),
+        block({ fromMinute: 2, toMinute: 3, context: { appId: 'xdg-desktop-portal-gtk' } }),
+      ],
+      transientApps: ['xdg-desktop-portal-gtk'],
+    });
+
+    expect(kept).toEqual([]);
+  });
+
+  it('still gives a glance the checkout it interrupted', () => {
+    const kept = dropNoWorkContext({
+      blocks: [
+        block({ fromMinute: 0, toMinute: 10, context: { appId: 'code', repoPath: SDK } }),
+        block({ fromMinute: 10, toMinute: 11, context: { appId: 'spotify' } }),
+        block({ fromMinute: 11, toMinute: 20, context: { appId: 'code', repoPath: SDK } }),
+      ],
+      apps: [],
+    });
+
+    expect(kept.map((entry) => entry.context.repoPath)).toEqual([SDK, SDK, SDK]);
+  });
+});

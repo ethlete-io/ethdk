@@ -1,4 +1,4 @@
-import { ActivityBlock, blockDurationMs, contextKey } from '../model/block';
+import { ActivityBlock, ActivityContext, blockDurationMs, contextKey } from '../model/block';
 
 /** How long a transient window may hold the focus and still be read as chrome over the work. */
 export const DEFAULT_MAX_TRANSIENT_MS = 5 * 60_000;
@@ -63,7 +63,9 @@ const interrupted = (options: { block: ActivityBlock; blocks: readonly ActivityB
  *   interrupted; one that outlasts `maxTransientMs` is dropped, because a window held that long is
  *   not chrome over anything.
  * - Anything else shorter than `maxGlanceMs` is a glance away from the work and takes the context it
- *   interrupted as well. A glance at the edge of a stretch interrupted nothing and is dropped.
+ *   interrupted as well. A glance at the edge of a stretch interrupted nothing and is dropped, and so
+ *   is one whose host is itself an application off one of the two lists: a glance between two windows
+ *   of a media player would otherwise give the player back the lane its own blocks were just denied.
  *
  * The day's streams, its folded line and its `unnamedFocus` strip all read the unfiltered blocks, so
  * the minutes still reconcile with the Today screen and the strip still reports why each one named no
@@ -78,6 +80,11 @@ export const dropNoWorkContext = (
   const maxGlanceMs = options.maxGlanceMs ?? DEFAULT_MAX_GLANCE_MS;
   const ordered = options.blocks.slice().sort((a, b) => a.from.getTime() - b.from.getTime());
   const kept: ActivityBlock[] = [];
+  const namesWork = (context: ActivityContext) => {
+    const appId = context.appId?.toLowerCase();
+
+    return !!context.repoPath || !appId || !(apps.has(appId) || transientApps.has(appId));
+  };
 
   for (const block of ordered) {
     const appId = block.context.appId?.toLowerCase();
@@ -98,7 +105,7 @@ export const dropNoWorkContext = (
 
     const host = interrupted({ block, blocks: ordered });
 
-    if (host) kept.push({ ...block, context: host });
+    if (host && namesWork(host)) kept.push({ ...block, context: host });
   }
 
   return kept;
