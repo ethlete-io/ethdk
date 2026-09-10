@@ -36,13 +36,13 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
       <div class="flex flex-wrap items-center gap-3">
         <et-checkbox
           [checked]="willSync()"
-          [aria-label]="'Log time for ' + row().issueKey"
+          [aria-label]="'Log time for ' + named()"
           (checkedChange)="stateChange.emit($event ? 'accepted' : 'rejected')"
         />
 
         <ethlete-issue-select
-          [value]="row().issueKey"
-          [ariaLabel]="'Issue for ' + row().issueKey"
+          [value]="row().issueKey ?? ''"
+          [ariaLabel]="'Issue for ' + named()"
           (valueChange)="issueChange.emit($event)"
           class="w-42 shrink-0"
         />
@@ -54,7 +54,7 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
         <et-form-field class="w-22 shrink-0" appearance="underline" size="sm">
           <et-duration-input
             [value]="row().durationMs"
-            [aria-label]="'Duration for ' + row().issueKey"
+            [aria-label]="'Duration for ' + named()"
             (valueChange)="durationChange.emit($event ?? 0)"
             durationFormat="hh:mm"
           />
@@ -63,7 +63,7 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
         <et-form-field class="min-w-50 grow" appearance="underline" size="sm">
           <et-input
             [value]="row().description"
-            [aria-label]="'Description for ' + row().issueKey"
+            [aria-label]="'Description for ' + named()"
             (valueChange)="descriptionChange.emit($event)"
           />
         </et-form-field>
@@ -84,7 +84,7 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
 
         <button
           [attr.aria-expanded]="expanded()"
-          [attr.aria-label]="'Evidence for ' + row().issueKey"
+          [attr.aria-label]="'Evidence for ' + named()"
           (click)="expandToggle.emit()"
           et-button
           variant="transparent"
@@ -156,6 +156,9 @@ export class WorklogRowComponent {
   public revert = output<void>();
   /** Takes a hand-written row off the day. Only such a row can be removed — see `removeManualRow`. */
   public removeRow = output<void>();
+
+  /** What the row is called when a control has to name it. An unnamed band has no issue to name. */
+  protected named = computed(() => this.row().issueKey ?? 'this unnamed band');
 
   protected willSync = computed(() => syncsInState(this.row().state));
   protected manual = computed(() => isManualRow(this.row()));

@@ -6,6 +6,7 @@ import {
   DayNudge,
   DayNudgeRecord,
   dayNudge,
+  dayBoundaryOf,
   localDayKey,
   localDayRange,
 } from '@ethlete/timetrack';
@@ -99,7 +100,7 @@ const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     .pipe(
       concatMap((until) => {
         const record: DayNudgeRecord = {
-          day: pending()?.day ?? localDayKey(new Date()),
+          day: pending()?.day ?? localDayKey(new Date(), dayBoundaryOf(settings.settings())),
           lastNudgedAt: new Date(),
           silencedUntil: until,
         };
@@ -117,7 +118,11 @@ const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     pending: pending.asReadonly(),
 
     later: () => silences$.next(new Date(Date.now() + DEFAULT_NUDGE_SNOOZE_MS)),
-    notToday: () => silences$.next(localDayRange(localDayKey(new Date())).to),
+    notToday: () => {
+      const boundary = dayBoundaryOf(settings.settings());
+
+      silences$.next(localDayRange(localDayKey(new Date(), boundary), boundary).to);
+    },
 
     /** Puts one on screen now, so the user can see whether this desktop shows them at all. */
     sendTest$: () =>

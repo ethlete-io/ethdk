@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_DAY_TARGET_MS,
+  DEFAULT_DAY_START_HOUR,
   DEFAULT_GAP_FILL_MS,
   DEFAULT_LOCK_AFTER_IDLE_MS,
   DEFAULT_NUDGE_AT_MINUTE,
@@ -18,6 +19,7 @@ describe('parseTimetrackSettings', () => {
     const settings = parseTimetrackSettings({
       dayTargetMs: 7 * 60 * 60_000,
       gapFillMs: 10 * 60_000,
+      dayStartHour: 0,
       jira: { host: 'example.atlassian.net', email: 'you@example.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       gitlab: { host: 'git.example.com' },
@@ -42,6 +44,7 @@ describe('parseTimetrackSettings', () => {
     expect(settings).toEqual({
       dayTargetMs: 7 * 60 * 60_000,
       gapFillMs: 10 * 60_000,
+      dayStartHour: 0,
       jira: { host: 'example.atlassian.net', email: 'you@example.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       gitlab: { host: 'git.example.com' },
@@ -87,6 +90,7 @@ describe('parseTimetrackSettings', () => {
     expect(parseTimetrackSettings(null)).toEqual({
       dayTargetMs: DEFAULT_DAY_TARGET_MS,
       gapFillMs: DEFAULT_GAP_FILL_MS,
+      dayStartHour: DEFAULT_DAY_START_HOUR,
       jira: { host: '', email: '' },
       google: { clientId: '', calendarIds: [] },
       gitlab: { host: '' },

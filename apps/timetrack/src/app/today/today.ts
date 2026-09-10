@@ -1,7 +1,15 @@
 import { computed, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
-import { StreamDay, localDayKey, localDayRange, readHeadBranches$, shiftDayKey, streamDay } from '@ethlete/timetrack';
+import {
+  StreamDay,
+  dayBoundaryOf,
+  localDayKey,
+  localDayRange,
+  readHeadBranches$,
+  shiftDayKey,
+  streamDay,
+} from '@ethlete/timetrack';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import {
   injectAgentPromptBackfill,
@@ -43,7 +51,8 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
   const git = injectGitCollector();
   const settings = injectTimetrackSettings();
 
-  const key = signal(readViewState().day ?? localDayKey(new Date()));
+  const boundary = computed(() => dayBoundaryOf(settings.settings()));
+  const key = signal(readViewState().day ?? localDayKey(new Date(), dayBoundaryOf(settings.settings())));
 
   const goToDay = (day: string) => {
     key.set(day);
@@ -68,7 +77,7 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
   const loaded = toSignal(
     toObservable(probe).pipe(
       switchMap((current) => {
-        const { from, to } = localDayRange(current.key);
+        const { from, to } = localDayRange(current.key, boundary());
 
         return ports.events.eventsBetween$(from, to).pipe(
           map((events): Loaded => ({
@@ -104,7 +113,7 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
     if (!read?.value) return null;
 
     return {
-      at: localDayRange(read.key).to,
+      at: localDayRange(read.key, boundary()).to,
       repoPaths: read.value.streams
         .filter((stream) => !!stream.repoPath && !stream.branches.length)
         .map((stream) => stream.repoPath as string),
@@ -132,10 +141,10 @@ const TODAY_DEF = /* @__PURE__ */ defineProvider(() => {
     headBranches,
     isLoading: computed(() => !current()),
     failure: computed(() => current()?.failure ?? null),
-    isToday: computed(() => key() === localDayKey(new Date())),
+    isToday: computed(() => key() === localDayKey(new Date(), boundary())),
 
     shiftDay: (byDays: number) => goToDay(shiftDayKey(key(), byDays)),
-    goToToday: () => goToDay(localDayKey(new Date())),
+    goToToday: () => goToDay(localDayKey(new Date(), dayBoundaryOf(settings.settings()))),
   };
 });
 

@@ -11,6 +11,7 @@ import {
   TimetrackSettings,
   TimetrackTicketSettings,
   clampDayTargetMs,
+  clampDayStartHour,
   clampGapFillMs,
   clampLockAfterIdleMs,
   clampMinuteOfDay,
@@ -28,6 +29,11 @@ const asTarget = (value: unknown) =>
 
 const asGapFill = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) ? clampGapFillMs(value) : DEFAULT_TIMETRACK_SETTINGS.gapFillMs;
+
+const asDayStartHour = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value)
+    ? clampDayStartHour(value)
+    : DEFAULT_TIMETRACK_SETTINGS.dayStartHour;
 
 const asLockAfterIdle = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value)
@@ -242,6 +248,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
   return {
     dayTargetMs: asTarget(document['dayTargetMs']),
     gapFillMs: asGapFill(document['gapFillMs']),
+    dayStartHour: asDayStartHour(document['dayStartHour']),
     jira: { host: asText(jira['host']), email: asText(jira['email']) },
     google: { clientId: asText(google['clientId']), calendarIds: asTextList(google['calendarIds']) },
     gitlab: { host: asText(gitlab['host']) },

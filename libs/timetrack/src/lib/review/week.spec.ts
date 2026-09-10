@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SyncedWorklog, WorklogProposalState } from '../model/proposal';
 import { contentHashOf } from '../tempo/diff';
-import { localDayKey } from './day';
+import { MIDNIGHT, localDayKey } from './day';
 import { DayReview, NamedRow, ReviewedRow } from './model';
 import { reviewWeek, shiftWeekKey, startOfWeekKey, weekDayKeys } from './week';
 
@@ -53,7 +53,7 @@ const review = (options: { rows: ReviewedRow[]; unattributedMs?: number }): DayR
 
 const ledgerFor = (entry: NamedRow): SyncedWorklog => ({
   proposalId: entry.id,
-  day: localDayKey(entry.from),
+  day: localDayKey(entry.from, MIDNIGHT),
   tempoWorklogId: '900',
   contentHash: contentHashOf({ proposal: entry }),
   syncedAt: new Date(`${entry.from.toISOString().slice(0, 10)}T18:00:00`),

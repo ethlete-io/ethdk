@@ -1,3 +1,4 @@
+import { MIDNIGHT } from '../review/day';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { WorklogProposal } from '../model/proposal';
@@ -93,6 +94,7 @@ const execute = (options: {
     credentials: CREDENTIALS,
     plan: options.plan,
     authorAccountId: 'acc:123',
+    boundary: MIDNIGHT,
     workAttributes: options.workAttributes,
     attributesByProposalId: options.attributesByProposalId,
     marker: options.marker,

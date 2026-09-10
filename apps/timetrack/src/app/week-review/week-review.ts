@@ -4,6 +4,7 @@ import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import {
   WeekReview,
   WeekReviewDayInput,
+  dayBoundaryOf,
   localDayKey,
   reviewWeek,
   shiftWeekKey,
@@ -40,7 +41,9 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
   const git = injectGitCollector();
   const settings = injectTimetrackSettings();
 
-  const start = signal(startOfWeekKey(readViewState().weekStart ?? localDayKey(new Date())));
+  const start = signal(
+    startOfWeekKey(readViewState().weekStart ?? localDayKey(new Date(), dayBoundaryOf(settings.settings()))),
+  );
   const reload = signal(0);
 
   const goToWeek = (day: string) => {
@@ -102,10 +105,10 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
     isLoading: computed(() => !current()),
     failure: computed(() => current()?.failure ?? null),
     /** Whether the week under review is the one today falls in. */
-    isThisWeek: computed(() => start() === startOfWeekKey(localDayKey(new Date()))),
+    isThisWeek: computed(() => start() === startOfWeekKey(localDayKey(new Date(), dayBoundaryOf(settings.settings())))),
 
     shiftWeek: (byWeeks: number) => goToWeek(shiftWeekKey(start(), byWeeks)),
-    goToThisWeek: () => goToWeek(startOfWeekKey(localDayKey(new Date()))),
+    goToThisWeek: () => goToWeek(startOfWeekKey(localDayKey(new Date(), dayBoundaryOf(settings.settings())))),
     recorrelate: () => reload.update((count) => count + 1),
   };
 });

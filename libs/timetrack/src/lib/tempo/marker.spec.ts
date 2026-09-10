@@ -1,3 +1,4 @@
+import { MIDNIGHT } from '../review/day';
 import { describe, expect, it } from 'vitest';
 import { SyncedWorklog } from '../model/proposal';
 import {
@@ -132,6 +133,7 @@ describe('unmarkedDescription', () => {
 describe('recoverLedgerFromMarkers', () => {
   it('adopts a marked worklog the ledger no longer knows about', () => {
     const recovery = recoverLedgerFromMarkers({
+      boundary: MIDNIGHT,
       worklogs: [worklog({ id: 'w9', attributes: { _TimetrackId_: 'p1' } })],
       scheme: ATTRIBUTE,
       syncedAt: SYNCED_AT,
@@ -144,6 +146,7 @@ describe('recoverLedgerFromMarkers', () => {
 
   it('leaves the hash empty so the next sync re-asserts the content', () => {
     const recovery = recoverLedgerFromMarkers({
+      boundary: MIDNIGHT,
       worklogs: [worklog({ attributes: { _TimetrackId_: 'p1' } })],
       scheme: ATTRIBUTE,
     });
@@ -153,6 +156,7 @@ describe('recoverLedgerFromMarkers', () => {
 
   it('skips proposals the ledger already covers', () => {
     const recovery = recoverLedgerFromMarkers({
+      boundary: MIDNIGHT,
       worklogs: [worklog({ attributes: { _TimetrackId_: 'p1' } })],
       scheme: ATTRIBUTE,
       ledger: [{ proposalId: 'p1', day: '2026-08-11', tempoWorklogId: 'w1', contentHash: 'abc', syncedAt: SYNCED_AT }],
@@ -163,6 +167,7 @@ describe('recoverLedgerFromMarkers', () => {
 
   it('adopts neither worklog when two claim the same proposal', () => {
     const recovery = recoverLedgerFromMarkers({
+      boundary: MIDNIGHT,
       worklogs: [
         worklog({ id: 'w1', attributes: { _TimetrackId_: 'p1' } }),
         worklog({ id: 'w2', attributes: { _TimetrackId_: 'p1' } }),
@@ -176,6 +181,7 @@ describe('recoverLedgerFromMarkers', () => {
 
   it('recovers nothing when no marker is written', () => {
     const recovery = recoverLedgerFromMarkers({
+      boundary: MIDNIGHT,
       worklogs: [worklog({ description: 'Work [et:p1]', attributes: { _TimetrackId_: 'p1' } })],
       scheme: { kind: 'none' },
     });

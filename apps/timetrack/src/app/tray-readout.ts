@@ -9,6 +9,7 @@ import {
   currentActivity,
   currentAttribution,
   formatDurationMs,
+  isNamedRow,
 } from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, concatMap, distinctUntilChanged, map, merge, timer } from 'rxjs';
 import {
@@ -90,7 +91,7 @@ const widgetReadout = (options: {
   isPaused: boolean;
 }): WidgetReadout => {
   const { activity } = options;
-  const attributed = currentAttribution({ activity, rows: options.rows });
+  const attributed = currentAttribution({ activity, rows: options.rows.filter(isNamedRow) });
 
   return {
     state: activity.state,

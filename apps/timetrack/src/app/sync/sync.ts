@@ -5,8 +5,10 @@ import {
   TempoSyncOutcome,
   TempoSyncPlan,
   TempoSyncPreview,
+  dayBoundaryOf,
   executeTempoSync$,
   fetchTempoWorkAttributes$,
+  isNamedRow,
   previewTempoSync$,
   readJiraCredentials$,
   readTempoCredentials$,
@@ -73,7 +75,7 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const load$ = (): Observable<SyncPreviewStatus> => {
     const day = dayReview.dayKey();
-    const proposals = dayReview.rows();
+    const proposals = dayReview.rows().filter(isNamedRow);
 
     return combineLatest({
       jira: readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }),
@@ -160,6 +162,7 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
               credentials: tempo,
               plan: request.plan,
               authorAccountId: request.authorAccountId,
+              boundary: dayBoundaryOf(settings.settings()),
               workAttributes,
             }),
           ),

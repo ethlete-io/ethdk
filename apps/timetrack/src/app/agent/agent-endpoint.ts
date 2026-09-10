@@ -16,6 +16,7 @@ import {
   fetchJiraIssuePicks$,
   fetchJiraIssues$,
   jiraSubjectFieldCandidates,
+  dayBoundaryOf,
   localDayKey,
   matchProjectLink,
   parseAgentRequest,
@@ -200,7 +201,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const addWorklog$ = (request: Extract<AgentApiRequest, { op: 'worklog.add' }>) => {
     const from = new Date(request.fromMs);
     const to = new Date(request.fromMs + request.durationMs);
-    const day = localDayKey(from);
+    const day = localDayKey(from, dayBoundaryOf(settings.settings()));
 
     return review
       .addRowOnDay$({

@@ -1,5 +1,6 @@
 export * from './attribution';
 export * from './credentials';
+export * from './day';
 export * from './favorites';
 export * from './model';
 export * from './parse';

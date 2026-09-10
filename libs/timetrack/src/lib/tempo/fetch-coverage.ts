@@ -2,7 +2,7 @@ import { Observable, combineLatest, map, switchMap } from 'rxjs';
 import { JiraCredentials } from '../jira/client';
 import { fetchJiraIssueKeysByIds$ } from '../jira/issue';
 import { fetchJiraMyself$ } from '../jira/myself';
-import { localDayRange } from '../review/day';
+import { MIDNIGHT, localDayRange } from '../review/day';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
@@ -30,8 +30,9 @@ export const fetchTempoDayCoverage$ = (options: {
   /** Stamped on the record. Defaults to the moment it is built. */
   observedAt?: Date;
 }): Observable<TempoDayCoverage> => {
-  // Tempo's range is by inclusive date, so both ends are the day itself.
-  const at = localDayRange(options.day).from;
+  // Tempo's range is by inclusive date, so both ends are the day itself, at midnight whatever the day
+  // boundary is — see the same read in `previewTempoSync$`.
+  const at = localDayRange(options.day, MIDNIGHT).from;
 
   return fetchJiraMyself$({ transport: options.transport, credentials: options.jira }).pipe(
     switchMap((account) =>

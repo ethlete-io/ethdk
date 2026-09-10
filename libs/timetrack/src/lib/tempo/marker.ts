@@ -1,5 +1,5 @@
 import { SyncedWorklog } from '../model/proposal';
-import { localDayKey } from '../review/day';
+import { DayBoundary, localDayKey } from '../review/day';
 import { TempoWorklog } from './worklogs';
 
 /**
@@ -93,6 +93,8 @@ export const recoverLedgerFromMarkers = (options: {
   scheme?: TempoMarkerScheme;
   ledger?: SyncedWorklog[];
   syncedAt?: Date;
+  /** The boundary the recovered entry's day is keyed by. */
+  boundary: DayBoundary;
 }): TempoLedgerRecovery => {
   const known = new Set((options.ledger ?? []).map((entry) => entry.proposalId));
   const claims = new Map<string, TempoWorklog[]>();
@@ -118,7 +120,7 @@ export const recoverLedgerFromMarkers = (options: {
 
     recovery.recovered.push({
       proposalId,
-      day: localDayKey(only.from),
+      day: localDayKey(only.from, options.boundary),
       tempoWorklogId: only.id,
       contentHash: '',
       syncedAt,

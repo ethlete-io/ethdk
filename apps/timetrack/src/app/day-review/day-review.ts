@@ -3,15 +3,15 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AttributionRule,
+  AttributionTarget,
   ClosedTimerRun,
-  ManualRow,
   CollectedEvent,
   CorrelateDayOptions,
   DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
   InferredAttribution,
+  ManualRow,
   ReviewedRow,
-  AttributionTarget,
   SyncedWorklog,
   TempoDayCoverage,
   TimeWindow,
@@ -22,6 +22,7 @@ import {
   closeTimerRun,
   correlateDay,
   coveredMsOf,
+  dayBoundaryOf,
   fetchTempoDayCoverage$,
   gitFlowConfigFor,
   localDayKey,
@@ -132,7 +133,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const timers = injectTimer();
   const settings = injectTimetrackSettings();
 
-  const day = signal(readViewState().day ?? localDayKey(new Date()));
+  const boundary = computed(() => dayBoundaryOf(settings.settings()));
+  const day = signal(readViewState().day ?? localDayKey(new Date(), dayBoundaryOf(settings.settings())));
   const targetMs = computed(() => settings.settings().dayTargetMs);
   const local = signal<Record<string, DayReviewEdits>>({});
   const expanded = signal<ReadonlySet<string>>(new Set());
@@ -154,7 +156,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const loadedDay = toSignal(
     toObservable(probe).pipe(
       switchMap(({ key }) => {
-        const { from, to } = localDayRange(key);
+        const { from, to } = localDayRange(key, boundary());
         const through = new Date(Math.min(Date.now(), to.getTime()));
 
         return loadedFor<DayEvidence>({
@@ -225,7 +227,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const loadedCoverage = toSignal(
     toObservable(computed(() => ({ key: day(), forced: coverageReload() }))).pipe(
       switchMap(({ key, forced }) => {
-        const dayEnd = localDayRange(key).to;
+        const dayEnd = localDayRange(key, boundary()).to;
 
         return loadedFor<TempoDayCoverage | null>({
           key,
@@ -568,7 +570,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     selectedRows,
 
     goToDay,
-    goToToday: () => goToDay(localDayKey(new Date())),
+    boundary,
+    goToToday: () => goToDay(localDayKey(new Date(), boundary())),
     shiftDay: (byDays: number) => goToDay(shiftDayKey(day(), byDays)),
     recorrelate: () => {
       coverageReload.set(true);

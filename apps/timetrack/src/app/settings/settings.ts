@@ -16,6 +16,7 @@ import {
   TimetrackCallRules,
   TimetrackTicketSettings,
   clampDayTargetMs,
+  clampDayStartHour,
   clampGapFillMs,
   clampLockAfterIdleMs,
   clampMinuteOfDay,
@@ -181,6 +182,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     setDayTargetMs: (dayTargetMs: number) => patch({ dayTargetMs: clampDayTargetMs(dayTargetMs) }),
     setGapFillMs: (gapFillMs: number) => patch({ gapFillMs: clampGapFillMs(gapFillMs) }),
+    setDayStartHour: (dayStartHour: number) => patch({ dayStartHour: clampDayStartHour(dayStartHour) }),
     setNudgeEnabled: (enabled: boolean) => patch({ nudge: { ...settings().nudge, enabled } }),
     setNudgeAtMinute: (atMinute: number) =>
       patch({ nudge: { ...settings().nudge, atMinute: clampMinuteOfDay(atMinute) } }),

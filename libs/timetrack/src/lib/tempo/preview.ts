@@ -3,7 +3,7 @@ import { JiraCredentials } from '../jira/client';
 import { fetchJiraIssueIds$, fetchJiraIssueKeysByIds$ } from '../jira/issue';
 import { JiraMyself, fetchJiraMyself$ } from '../jira/myself';
 import { WorklogProposal } from '../model/proposal';
-import { localDayRange } from '../review/day';
+import { MIDNIGHT, localDayRange } from '../review/day';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
@@ -54,7 +54,9 @@ export const previewTempoSync$ = (options: {
 }): Observable<TempoSyncPreview> => {
   // Tempo's range is by date and inclusive, so both ends are the day itself: passing the range's `to`
   // — midnight of the day after — would read the next day's worklogs into this day's foreign list.
-  const at = localDayRange(options.day).from;
+  // Read at midnight whatever the day boundary is: the range Tempo takes is a calendar date, and
+  // whether a worklog may cross one is the question ADR 0015 leaves to the booking milestone.
+  const at = localDayRange(options.day, MIDNIGHT).from;
 
   return fetchJiraMyself$({ transport: options.transport, credentials: options.jira }).pipe(
     switchMap((account) =>

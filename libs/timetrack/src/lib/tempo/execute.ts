@@ -1,6 +1,6 @@
 import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
 import { SyncedWorklog, WorklogProposal } from '../model/proposal';
-import { localDayKey } from '../review/day';
+import { DayBoundary, localDayKey } from '../review/day';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoWorkAttribute, missingRequiredAttributes } from './attributes';
 import { TempoCredentials, TempoRequestError } from './client';
@@ -49,6 +49,8 @@ export type TempoSyncOptions = {
   attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;
   marker?: TempoMarkerScheme;
   syncedAt?: Date;
+  /** The boundary the ledger's day is keyed by. It has to be the one the review reads the day with. */
+  boundary: DayBoundary;
 };
 
 type ExecutedRow = {
@@ -135,7 +137,7 @@ const createStep$ = (context: CreateContext, entry: TempoSyncCreate): Observable
       row: { kind: 'create', proposalId, status: 'written', tempoWorklogId },
       ledger: {
         proposalId,
-        day: localDayKey(entry.proposal.from),
+        day: localDayKey(entry.proposal.from, options.boundary),
         tempoWorklogId,
         contentHash: entry.contentHash,
         syncedAt: options.syncedAt ?? new Date(),
@@ -173,7 +175,7 @@ const updateStep$ = (options: TempoSyncOptions, entry: TempoSyncUpdate): Observa
       row: { kind: 'update', proposalId, status: 'written', tempoWorklogId: entry.tempoWorklogId },
       ledger: {
         proposalId,
-        day: localDayKey(entry.proposal.from),
+        day: localDayKey(entry.proposal.from, options.boundary),
         tempoWorklogId: entry.tempoWorklogId,
         contentHash: entry.contentHash,
         syncedAt: options.syncedAt ?? new Date(),

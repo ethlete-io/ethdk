@@ -17,6 +17,14 @@ export const clampDayTargetMs = (value: number) =>
 /** How long an idle gap may be and still count as the work around it. */
 export const DEFAULT_GAP_FILL_MS = 15 * 60_000;
 
+/** Midnight, so a day is a calendar date until the user says otherwise. */
+export const DEFAULT_DAY_START_HOUR = 0;
+
+/** Past noon a day would start after most of it had happened, which is a setting, not a boundary. */
+export const MAX_DAY_START_HOUR = 12;
+
+export const clampDayStartHour = (value: number) => Math.min(MAX_DAY_START_HOUR, Math.max(0, Math.round(value)));
+
 /**
  * A cap rather than a preference. The sessionizer ends a block after 30 unobserved minutes, so a
  * longer gap is a stretch nothing watched at all — and claiming it would be inventing time, not
@@ -186,6 +194,11 @@ export type TimetrackSettings = {
    * reading a diff rather than a break, and a day is short by the sum of them. Zero fills nothing.
    */
   gapFillMs: number;
+  /**
+   * The local hour a day starts at. Work at 01:00 belongs to the evening it came from, so a day is
+   * not a calendar date — see ADR 0015. Zero keeps the two the same.
+   */
+  dayStartHour: number;
   jira: TimetrackJiraSettings;
   google: TimetrackGoogleSettings;
   gitlab: TimetrackGitLabSettings;
@@ -263,6 +276,7 @@ export type TimetrackSettings = {
 export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   dayTargetMs: DEFAULT_DAY_TARGET_MS,
   gapFillMs: DEFAULT_GAP_FILL_MS,
+  dayStartHour: DEFAULT_DAY_START_HOUR,
   jira: { host: '', email: '' },
   google: { clientId: '', calendarIds: [] },
   gitlab: { host: '' },

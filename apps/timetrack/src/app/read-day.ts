@@ -7,6 +7,7 @@ import {
   classifyCalls,
   closeTimerRun,
   correlateDay,
+  dayBoundaryOf,
   coveredMsOf,
   gitFlowConfigFor,
   localDayKey,
@@ -42,7 +43,8 @@ export type DayReadOptions = {
  */
 export const readDay$ = (options: DayReadOptions & { day: string }): Observable<DayRead> => {
   const { ports, settings, day: key } = options;
-  const { from, to } = localDayRange(key);
+  const boundary = dayBoundaryOf(settings);
+  const { from, to } = localDayRange(key, boundary);
 
   return combineLatest({
     events: ports.events.eventsBetween$(from, to),
@@ -84,4 +86,4 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
  * and the end-of-day reminder both do, and the review follows whichever day the reviewer stepped to.
  */
 export const readToday$ = (options: DayReadOptions): Observable<DayRead> =>
-  readDay$({ ...options, day: localDayKey(new Date()) });
+  readDay$({ ...options, day: localDayKey(new Date(), dayBoundaryOf(options.settings)) });

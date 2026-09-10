@@ -296,7 +296,7 @@ export class DayReviewViewComponent {
   };
 
   protected dayLabel = computed(() => formatDayLabel(this.store.dayKey()));
-  protected focusedDate = computed(() => localDayRange(this.store.dayKey()).from);
+  protected focusedDate = computed(() => localDayRange(this.store.dayKey(), this.store.boundary()).from);
 
   /** The time nothing could attribute, shown on the timeline behind the rows but never as a worklog. */
   protected unattributedBlocks = computed(() =>

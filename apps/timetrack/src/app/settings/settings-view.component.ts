@@ -36,6 +36,12 @@ import { injectTimetrackSettings } from './settings';
 import { TicketSettingsComponent } from './ticket-settings.component';
 import { TokenFieldComponent } from './token-field.component';
 
+const DAY_START_WHY = `Work at 01:00 belongs to the evening it came from, not to a two-hour Tuesday that
+describes nothing you did. Set the hour your day begins and every screen, total and booking follows it.
+
+Midnight makes a day a calendar date again. The cap is noon, because past that a day would start after
+most of it had happened.`;
+
 const FILL_WHY = `A pause shorter than this is logged as the work around it: five minutes without a
 keystroke is reading a diff, not a break. Anything longer stays off the timesheet.
 
@@ -149,6 +155,17 @@ window title, never a file path. A suggestion never syncs on its own.`;
                   </et-form-field>
 
                   <ethlete-explain [text]="FILL_WHY" label="filling idle time" />
+
+                  <et-form-field class="w-30" appearance="underline" size="sm">
+                    <et-label>A day starts at</et-label>
+                    <et-duration-input
+                      [value]="dayStartMs()"
+                      (valueChange)="store.setDayStartHour(($event ?? 0) / 3_600_000)"
+                      durationFormat="hh:mm"
+                    />
+                  </et-form-field>
+
+                  <ethlete-explain [text]="DAY_START_WHY" label="when a day starts" />
                 </div>
               </div>
 
@@ -482,6 +499,7 @@ export class SettingsViewComponent {
   private dayNudge = injectDayNudge();
   private destroyRef = inject(DestroyRef);
 
+  protected readonly DAY_START_WHY = DAY_START_WHY;
   protected readonly FILL_WHY = FILL_WHY;
   protected readonly NUDGE_WHY = NUDGE_WHY;
   protected readonly JIRA_WHY = JIRA_WHY;
@@ -497,6 +515,8 @@ export class SettingsViewComponent {
 
   /** The reminder is configured as a time of day, and the control it is typed into holds a duration. */
   protected nudgeAtMs = computed(() => this.store.settings().nudge.atMinute * 60_000);
+
+  protected dayStartMs = computed(() => this.store.settings().dayStartHour * 3_600_000);
 
   /** Every pass over the logs reads the checkout again: one per agent for its sessions, one for their spend. */
   protected resync(paths: readonly string[]) {

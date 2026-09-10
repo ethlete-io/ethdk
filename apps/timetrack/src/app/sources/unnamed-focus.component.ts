@@ -7,6 +7,7 @@ import {
   UnnamedFocusSpan,
   UnnamedFocusVerdict,
   byLocalDay,
+  dayBoundaryOf,
   dayKeysThrough,
   formatDurationMs,
   localDayKey,
@@ -193,7 +194,7 @@ export class UnnamedFocusComponent {
 
   /** Re-measured whenever a collector reports a run, so the number moves as the day is collected. */
   private probe = computed(() => ({
-    day: localDayKey(new Date()),
+    day: localDayKey(new Date(), dayBoundaryOf(this.settings.settings())),
     repoRoots: this.git.discovery()?.repos ?? [],
     settings: this.settings.settings(),
     windows: this.windows.lastRun(),
@@ -204,9 +205,10 @@ export class UnnamedFocusComponent {
   private read = toSignal(
     toObservable(this.probe).pipe(
       switchMap((current) => {
+        const boundary = dayBoundaryOf(current.settings);
         const days = dayKeysThrough({ day: current.day, count: SPAN_DAYS });
-        const from = localDayRange(days[0] ?? current.day).from;
-        const to = localDayRange(current.day).to;
+        const from = localDayRange(days[0] ?? current.day, boundary).from;
+        const to = localDayRange(current.day, boundary).to;
         const options = streamDayOptionsOf({
           repoRoots: current.repoRoots,
           settings: current.settings,
@@ -215,7 +217,9 @@ export class UnnamedFocusComponent {
 
         return this.ports.events.eventsBetween$(from, to).pipe(
           map((events) => {
-            const perDay = byLocalDay({ items: events, days }).map((held) => streamDay({ events: held, options }));
+            const perDay = byLocalDay({ items: events, days, boundary }).map((held) =>
+              streamDay({ events: held, options }),
+            );
 
             return {
               value: { today: unnamedFocusOver(perDay.slice(-1)), span: unnamedFocusOver(perDay) },
