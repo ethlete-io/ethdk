@@ -19,6 +19,19 @@ const distanceTo = (block: ActivityBlock, at: Date) =>
   Math.max(0, block.from.getTime() - at.getTime(), at.getTime() - block.to.getTime());
 
 /**
+ * The shortest stretch of focus that becomes a block.
+ *
+ * A window source re-emits focus when a window's title changes, and a background window whose title
+ * churns therefore lands a stretch of a second or two in the middle of somebody else's work. Kept as
+ * a block, each one is a band of its own on the day screen: a lane holding a quarter of an hour is
+ * drawn as twenty slivers, none of which a reader can name.
+ *
+ * The dropped time stays in the day's stream totals, which are measured from the windows rather than
+ * from the blocks. Only the timeline stops drawing it.
+ */
+export const DEFAULT_MIN_BLOCK_MS = 5_000;
+
+/**
  * Turns the stretches `streamDay` attributed into the contiguous same-context blocks a row is built
  * from, and hangs each observation on the block that holds it.
  *
@@ -33,7 +46,10 @@ const distanceTo = (block: ActivityBlock, at: Date) =>
 export const blocksFromSpans = (options: {
   spans: readonly ContextSpan[];
   observations: readonly ContextObservation[];
+  /** Defaults to `DEFAULT_MIN_BLOCK_MS`. */
+  minBlockMs?: number;
 }): ActivityBlock[] => {
+  const minBlockMs = options.minBlockMs ?? DEFAULT_MIN_BLOCK_MS;
   const byContext = new Map<string, { context: ActivityContext; windows: TimeWindow[] }>();
 
   for (const span of options.spans) {
@@ -51,7 +67,9 @@ export const blocksFromSpans = (options: {
   for (const [key, held] of byContext) {
     blocks.set(
       key,
-      mergeWindows(held.windows).map((window) => ({ ...window, context: held.context, evidence: [] })),
+      mergeWindows(held.windows)
+        .filter((window) => window.to.getTime() - window.from.getTime() >= minBlockMs)
+        .map((window) => ({ ...window, context: held.context, evidence: [] })),
     );
   }
 
