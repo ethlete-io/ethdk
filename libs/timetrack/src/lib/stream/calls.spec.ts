@@ -97,6 +97,20 @@ describe('classifyCalls', () => {
     expect(windows[0]!.title).toBe('');
   });
 
+  it('reads the title when the two sources disagree about the case of the application', () => {
+    const windows = classify(
+      [
+        focus(0, 'discord', 'Open Room #1 | Braune Digital'),
+        call(10, 'call-start', 'Discord'),
+        call(40, 'call-end', 'Discord'),
+      ],
+      { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['Open Room'] },
+    );
+
+    expect(windows[0]!.title).toBe('Open Room #1 | Braune Digital');
+    expect(windows[0]!.countsAsWork).toBe(false);
+  });
+
   it('counts no call as work when nothing is configured', () => {
     const windows = classify([
       focus(0, 'com.hnc.Discord', '#braune-digital | Braune Digital'),

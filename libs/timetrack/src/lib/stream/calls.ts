@@ -31,8 +31,17 @@ export const DEFAULT_CALL_GLUE_MS = 2 * 60_000;
  * The holder is a helper process, so its identifier extends the application's:
  * `com.hnc.Discord.helper.Renderer` belongs to `com.hnc.Discord`. The separator is part of the test on
  * purpose — without it `com.foo` would also claim `com.foobar`.
+ *
+ * Case is folded because the two collectors disagree about it: on 2026-09-10 the call source reported
+ * `Discord` and the window source `discord` for the same application, which left every Discord call
+ * with no title, so no call rule could read one and every row was labelled with the bare app id.
  */
-const belongsTo = (appId: string, application: string) => appId === application || appId.startsWith(`${application}.`);
+const belongsTo = (appId: string, application: string) => {
+  const holder = appId.toLowerCase();
+  const owner = application.toLowerCase();
+
+  return holder === owner || holder.startsWith(`${owner}.`);
+};
 
 /** What a rule is matched against: the process that held the microphone, and the title it was named from. */
 type Named = { appId: string; title: string };
