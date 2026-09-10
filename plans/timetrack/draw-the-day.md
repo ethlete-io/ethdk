@@ -7,14 +7,14 @@ a timeline that hides a meeting is not the timeline he asked for.
 His words for what this milestone is: "for a day view id like to have a clear timeline of what i did
 and when i did it."
 
-## The two screens today
+## The two screens this started from
 
-| Screen     | Draws                                   | Fed by         |
+| Screen     | Drew                                    | Fed by         |
 | ---------- | --------------------------------------- | -------------- |
 | Today      | Streams in an accordion. No time axis.  | `streamDay`    |
 | Day Review | A 24-hour axis, beside a table of rows. | `correlateDay` |
 
-They merge into one (ADR 0011). A band on it is a **row**, not a stream, because a row already
+They merged into one (ADR 0011). A band on it is a **row**, not a stream, because a row already
 splits, merges and moves its boundary, and a stream is keyed by its checkout under ADR 0001 and
 cannot be cut.
 
@@ -36,16 +36,29 @@ builder, and it took over what only `correlateDay` saw:
   `DayCorrelation.pauses` never reaches the timeline component even now.
 - Meetings, under ADR 0010, and the unattributed blocks.
 
-It is testable against the screen that exists: the same day, read through both pipelines, must
-produce the same rows before anything on screen changes. `stream/both-pipelines.spec.ts` is that
-check, and the two agree except where ADR 0007 already measured the drift — `sessionize` hands the
-browser that opens a meeting five minutes of the editor's branch and `streamDay` does not.
+It was testable against the screen that existed: the same day, read through both pipelines, had to
+produce the same rows before anything on screen changed. `stream/both-pipelines.spec.ts` was that
+check, and the two agreed except where ADR 0007 had already measured the drift — `sessionize` handed
+the browser that opens a meeting five minutes of the editor's branch and `streamDay` does not.
 
 ADR 0016 changed what "the port" meant. Every file in `correlate/` but `sessionize.ts` and
 `correlate-day.ts` turned out to have no dependency on the v1 pipeline at all, so they moved to
 `rows/` rather than being duplicated into `stream/`. Both pipelines now call one `buildRows`.
 
-**Step two: the merged screen**, drawn on the new output. Not built.
+**Step two: the merged screen. Built on 2026-09-10.** Today merged into Day, and `/today` redirects
+there. `readDay$` and the day store both read `streamDay`, `reviewDay` takes a `DayRows`, and
+`correlate/` is deleted.
+
+What the one screen holds, top to bottom: the day navigation, the totals Today reported (present,
+engaged, the ratio and its fire, unattended, rebuilt), the day's warnings, the 24-hour timeline
+beside the row list and the naming card, the streams accordion, and the footer's target line. The
+day's notes — the rebuilt stretch, the calls, the ambiguous checkout names, the window time no
+checkout took and the spend no checkout can carry — sit under the row list.
+
+Two things the merge had to correct. The timeline drew the unattributed blocks _behind_ the rows,
+and those minutes are a row now, so the same hour was drawn twice; the blocks are gone. And the grid
+opened at the current hour on a day that is today, which shows empty grid at six in the evening, so
+the day now opens an hour before its earliest band.
 
 ## What the screen does
 
@@ -112,9 +125,11 @@ The screen writes local edits to `day_review` and never reaches Tempo.
 ## Exit test
 
 Tom reads a real day on one screen, and cuts it where he wants it cut. It is a written judgment, and
-it is not automatable.
+it is not automatable. **Not yet done.**
 
-Step one's own check is in `stream/both-pipelines.spec.ts` and passes. The real-day half of it needs
+Step one's own check was `stream/both-pipelines.spec.ts`, which compared the two pipelines row for
+row. With `correlate/` deleted there is no second pipeline to compare against, so it is now
+`stream/stream-day-rows.spec.ts` and it pins the same days' numbers directly. The real-day half needs
 the screen: the store is encrypted, so no script outside the app can read a day out of it.
 
 ## Not in this milestone

@@ -153,9 +153,14 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const read$ = (): Observable<Readouts> => {
     const current = settings.settings();
 
-    return readToday$({ ports, settings: current, repoRoots: git.discovery()?.repos ?? [] }).pipe(
-      map(({ events, correlation, review }) => {
-        const activity = currentActivity({ events, blocks: correlation.blocks });
+    return readToday$({
+      ports,
+      settings: current,
+      repoRoots: git.discovery()?.repos ?? [],
+      windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
+    }).pipe(
+      map(({ events, day, review }) => {
+        const activity = currentActivity({ events, blocks: day.blocks });
         const total = formatTotal({ check: review.check, targetMs: current.dayTargetMs });
 
         return {

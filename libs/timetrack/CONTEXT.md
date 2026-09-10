@@ -44,7 +44,8 @@ confidence and an evidence chain.
 _Avoid_: suggestion, entry, draft
 
 **Row**:
-One line the user can review and book. Every row is attributed and can reach Tempo.
+One line the user can review and book. A row carries an issue or waits for one — a fresh cut leaves
+both halves unnamed, and only a named row reaches Tempo (`isNamedRow`).
 _Avoid_: line, item. A row drawn against a time axis is a **band**; the work behind it is a
 **stream**.
 

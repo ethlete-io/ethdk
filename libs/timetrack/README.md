@@ -12,10 +12,11 @@ The design and its rationale live in `plans/timetrack.md`; the branch grammar th
 - **`model/`** - the four layers of the data model. `CollectedEvent` (raw, append-only) →
   `ActivityBlock` (contiguous same-context time) → `WorklogProposal` (attributed, reviewable) →
   `SyncedWorklog` (exists in Tempo). Plus `Evidence` and `Confidence`.
-- **`correlate/sessionize`** - observations to blocks: presence splits, flap absorption,
-  optional working-hours clamping.
-- **`correlate/attribute`** - blocks to issues, through the branch grammar. Deterministic; a
-  block it cannot attribute stays unattributed rather than being guessed at.
+- **`stream/streamDay`** - observations to streams and blocks: presence, concurrency, the
+  agents' spend, and the day cut into contiguous same-context stretches.
+- **`rows/buildRows`** - blocks to the rows a day is booked from: attribute through the branch
+  grammar, donate, merge, round, describe. Deterministic; a block it cannot attribute becomes a
+  band waiting to be named rather than a guess.
 - **`transport/`** - the ports the host supplies. The core issues no network call, spawns no
   process and touches no keychain of its own.
 
@@ -23,19 +24,19 @@ The design and its rationale live in `plans/timetrack.md`; the branch grammar th
 
 No HTTP, no filesystem, no Angular, no Tauri. Jira, Tempo and Google all reject browser-origin
 requests and the tokens must never be readable from a webview, so every outbound call goes
-through the host's `TimetrackTransport`. That is also what lets the correlation pipeline - the
-part with the actual logic - run in `vitest` against fixture event streams.
+through the host's `TimetrackTransport`. That is also what lets the day pipeline - the part with
+the actual logic - run in `vitest` against fixture event streams.
 
 ## Usage
 
 ```ts
-import { attribute, sessionize } from '@ethlete/timetrack';
+import { reviewDay, streamDay } from '@ethlete/timetrack';
 
-const blocks = sessionize({ events });
-const attributed = blocks.map((block) => attribute({ block, config, resolveBase }));
+const day = streamDay({ events, options: { repoRoots, links, rows: { config } } });
+const review = reviewDay({ rows: day.rows, edits });
 ```
 
-`sessionize` is edge-triggered by design: window focus and commits fire on change, so a quiet
+`streamDay` is edge-triggered by design: window focus and commits fire on change, so a quiet
 ten minutes inside one context is work, not absence. Real idleness has to arrive as a presence
 event; `maxUnobservedMs` is only the safety valve for a stretch nothing observed at all.
 

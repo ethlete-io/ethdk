@@ -6,8 +6,7 @@ export type ShellView = {
 };
 
 export const SHELL_VIEWS: ShellView[] = [
-  { path: 'today', label: 'Today', hint: 'What was worked on, for how long, what it spent' },
-  { path: 'day', label: 'Day', hint: 'Review and edit the reconstruction' },
+  { path: 'day', label: 'Day', hint: 'The timeline of what was worked on, and what to log for it' },
   { path: 'start', label: 'Start', hint: 'A ticket, its branch and a draft merge request' },
   { path: 'week', label: 'Week', hint: 'Which days are still not finished' },
   { path: 'sync', label: 'Sync', hint: 'What would be written to Tempo' },

@@ -24,19 +24,19 @@ up, whatever position the roadmap gives it.
 
 ## Where the work stands, on 2026-09-10
 
-| Part                                                | State                                                                 |
-| --------------------------------------------------- | --------------------------------------------------------------------- |
-| Rust host, keychain, encrypted store, tray, widget  | Built. Proven on Linux and macOS.                                     |
-| Collectors: window, idle, git, agent sessions, call | Built. Being hardened now.                                            |
-| Providers: Jira, Tempo, GitLab, GitHub, Google      | Built, and verified against the real instances.                       |
-| `streamDay` and the Today screen                    | Built. Slice 1 is on screen.                                          |
-| Naming the unnamed window                           | Two rungs built. The rest waits on five more workdays of measurement. |
-| Slices 2a to 2c                                     | M2 step one built. M3 planned in full. M4 needs its own document.     |
-| Slices 5, 6, 9 to 12                                | One paragraph of outline each.                                        |
-| A production Tempo worklog                          | **Never written.** No day has left this machine.                      |
-| A day that spans two machines                       | **Not built.** Each machine reports only what it saw.                 |
-| Autostart, an updater, a packaged build             | Not built. `tauri:build` runs by hand.                                |
-| `correlate/` and the v1 screens                     | Down to two files. M2 step two deletes them. See ADR 0016.            |
+| Part                                                | State                                                                  |
+| --------------------------------------------------- | ---------------------------------------------------------------------- |
+| Rust host, keychain, encrypted store, tray, widget  | Built. Proven on Linux and macOS.                                      |
+| Collectors: window, idle, git, agent sessions, call | Built. Being hardened now.                                             |
+| Providers: Jira, Tempo, GitLab, GitHub, Google      | Built, and verified against the real instances.                        |
+| `streamDay` and the one day screen                  | Built. Slices 1 and 2a are on screen.                                  |
+| Naming the unnamed window                           | Two rungs built. The rest waits on five more workdays of measurement.  |
+| Slices 2a to 2c                                     | M2 built, its exit test unread. M3 planned. M4 needs its own document. |
+| Slices 5, 6, 9 to 12                                | One paragraph of outline each.                                         |
+| A production Tempo worklog                          | **Never written.** No day has left this machine.                       |
+| A day that spans two machines                       | **Not built.** Each machine reports only what it saw.                  |
+| Autostart, an updater, a packaged build             | Not built. `tauri:build` runs by hand.                                 |
+| `correlate/` and the v1 screens                     | Deleted. One day screen, on `streamDay`. See ADR 0016.                 |
 
 ## The seven answers this plan is built on
 

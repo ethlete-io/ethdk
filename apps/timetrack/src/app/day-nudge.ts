@@ -23,7 +23,7 @@ import {
   switchMap,
   timer,
 } from 'rxjs';
-import { injectGitCollector } from '../collectors';
+import { injectGitCollector, injectWindowCollector } from '../collectors';
 import { injectHostPorts } from '../host';
 import { injectTimetrackSettings } from './settings/settings';
 import { readToday$ } from './read-day';
@@ -41,6 +41,7 @@ const NUDGE_INTERVAL_MS = 60_000;
 const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const git = injectGitCollector();
+  const windows = injectWindowCollector();
   const settings = injectTimetrackSettings();
   const pending = signal<DayNudge | null>(null);
   const silences$ = new Subject<Date>();
@@ -50,7 +51,12 @@ const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     if (!current.nudge.enabled) return of(null);
 
-    return readToday$({ ports, settings: current, repoRoots: git.discovery()?.repos ?? [] }).pipe(
+    return readToday$({
+      ports,
+      settings: current,
+      repoRoots: git.discovery()?.repos ?? [],
+      windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
+    }).pipe(
       switchMap(({ key, review }) =>
         combineLatest({
           ledger: ports.ledger.entriesForDay$(key),

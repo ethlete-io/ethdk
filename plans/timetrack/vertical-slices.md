@@ -44,8 +44,8 @@ This repository already ran that experiment. `cdk` against `components` is the s
 Two facts make this cheap, and both are checked:
 
 - **`readDay$` already isolates the pipeline.** `apps/timetrack/src/app/read-day.ts` reads
-  `events` from the store and hands them to `correlateDay`. A v2 screen calls a second pure
-  function over the same array. No host change.
+  `events` from the store and hands them to one pure function over that array. It was `correlateDay`
+  and it is `streamDay` since 2026-09-10. No host change either way.
 - **A new event kind needs no migration.** `collected_event` in `src-tauri/src/db.rs` is
   `at_ms, source, kind, payload` with `payload` as text. An `agent-usage` row fits as it stands.
 

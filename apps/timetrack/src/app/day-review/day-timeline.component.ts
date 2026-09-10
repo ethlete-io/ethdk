@@ -22,22 +22,13 @@ import {
   countDescendants,
 } from '@ethlete/components';
 import { DragGestureEvent, ProvideColorDirective, dragGestureFrom } from '@ethlete/core';
-import {
-  ActivityBlock,
-  Confidence,
-  DEFAULT_ROUND_OPTIONS,
-  ReviewedRow,
-  blockDurationMs,
-  formatDurationMs,
-  isManualRow,
-} from '@ethlete/timetrack';
+import { Confidence, DEFAULT_ROUND_OPTIONS, ReviewedRow, formatDurationMs, isManualRow } from '@ethlete/timetrack';
 import { tap } from 'rxjs';
-import { formatBlockLabel, formatClockTime } from './format';
+import { formatClockTime } from './format';
 
 /** What a timeline block stands for, so a gesture knows what it is holding. */
 export type TimelineEntry =
   | { kind: 'row'; row: ReviewedRow }
-  | { kind: 'block' }
   /** A story or epic several of the day's rows roll up to. Drawn in the all-day strip, never billed. */
   | { kind: 'story'; issueKey: string };
 
@@ -69,6 +60,9 @@ const CONFIDENCE_THEME: Record<Confidence, string> = {
  */
 const HOUR_REM = 8;
 
+/** What a band with no issue is called, on the timeline and in the label of a boundary beside it. */
+const UNNAMED_LABEL = 'Not yet named';
+
 /** A block shorter than one line of text renders as a bare bar; its hover title is where it reads. */
 const LABEL_MIN_REM = 2.2;
 
@@ -78,7 +72,8 @@ const DETAIL_MIN_REM = 5;
 /** How tall one row of the all-day strip is, and the least it reserves when nothing is in it. */
 const STRIP_ROW_REM = 2;
 
-const DAY_MS = 24 * 60 * 60_000;
+const HOUR_MS = 60 * 60_000;
+const DAY_MS = 24 * HOUR_MS;
 
 /**
  * What a dragged range snaps to. The rounding increment and nothing finer: a row whose clock says
@@ -181,7 +176,7 @@ type RowDrag = {
                   (pointerdown)="startDrag({ event: $event, appointment: block.node.appointment, column })"
                   (click)="select(block.node.appointment)"
                   (keydown.enter)="select(block.node.appointment)"
-                  class="absolute flex touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme px-2 py-1 text-left text-small data-[dragging]:opacity-70 data-[kind=block]:bg-et-surface-interaction/8 data-[kind=row]:cursor-grab data-[kind=row]:bg-et-theme/15"
+                  class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[dragging]:opacity-70"
                   role="button"
                   tabindex="0"
                 >
@@ -196,7 +191,7 @@ type RowDrag = {
 
               @for (boundary of boundaries(); track boundary.id) {
                 <div
-                  [attr.aria-label]="'Boundary between ' + boundary.before.issueKey + ' and ' + boundary.after.issueKey"
+                  [attr.aria-label]="labelOf(boundary)"
                   [attr.aria-valuemax]="minutesOf(limitsOf(boundary).max)"
                   [attr.aria-valuemin]="minutesOf(limitsOf(boundary).min)"
                   [attr.aria-valuenow]="minutesOf(instantOf(boundary).getTime())"
@@ -234,8 +229,6 @@ export class DayTimelineComponent {
 
   public focusedDate = input.required<Date>();
   public rows = input.required<readonly ReviewedRow[]>();
-  /** The blocks nothing could attribute. Shown behind the rows, because the time was still spent. */
-  public unattributed = input.required<readonly ActivityBlock[]>();
 
   /** The row behind a block the reviewer clicked, so the list can open it. */
   public rowSelect = output<ReviewedRow>();
@@ -304,9 +297,10 @@ export class DayTimelineComponent {
   });
 
   /**
-   * The day as appointments. A row carries its confidence's theme; an unattributed block carries none,
-   * so the two never read as the same kind of thing. A story is an all-day appointment and the parent of
-   * its rows, which is what puts it on the strip instead of into the rows' own column packing.
+   * The day as appointments. Every band is a row, including one nothing could name — the work waiting
+   * for a name is a row that carries no issue yet, so drawing the blocks behind it as well would draw
+   * the same hour twice. A story is an all-day appointment and the parent of its rows, which is what
+   * puts it on the strip instead of into the rows' own column packing.
    */
   protected appointments = computed<Appointment<TimelineEntry>[]>(() => {
     const storyIds = this.storyIdOf();
@@ -322,21 +316,15 @@ export class DayTimelineComponent {
         colorToken: 'brand',
         extra: { kind: 'story', issueKey },
       })),
-      ...this.unattributed().map((block, index): Appointment<TimelineEntry> => ({
-        id: `block:${index}`,
-        parentId: null,
-        title: `${formatBlockLabel(block)} · ${formatDurationMs(blockDurationMs(block))}`,
-        start: block.from,
-        end: block.to,
-        extra: { kind: 'block' },
-      })),
       ...this.rows().map((row): Appointment<TimelineEntry> => {
         const drag = this.boundaryDrag();
 
         return {
           id: row.id,
           parentId: (row.storyKey && storyIds.get(row.storyKey)) ?? null,
-          title: `${row.issueKey} · ${formatDurationMs(row.durationMs)}${isManualRow(row) ? ' · by hand' : ''}`,
+          title: `${row.issueKey ?? UNNAMED_LABEL} · ${formatDurationMs(row.durationMs)}${
+            isManualRow(row) ? ' · by hand' : ''
+          }`,
           start: drag?.boundary.after.id === row.id ? drag.at : row.from,
           end: drag?.boundary.before.id === row.id ? drag.at : row.to,
           colorToken: CONFIDENCE_THEME[row.confidence],
@@ -344,6 +332,21 @@ export class DayTimelineComponent {
         };
       }),
     ];
+  });
+
+  /**
+   * The hour the day opens on: one hour of lead-in before its earliest band.
+   *
+   * The grid's own answer follows the clock on a day that is today, which opens an evening's screen on
+   * empty grid when the work ended at noon. It is the right answer for a calendar and the wrong one
+   * for a timesheet, where the whole day is what is being read.
+   */
+  private scrollHour = computed(() => {
+    const starts = this.rows().map((row) => row.from.getTime());
+
+    if (!starts.length) return this.grid().initialScrollHour();
+
+    return Math.max(0, Math.floor((Math.min(...starts) - this.focusedDate().getTime()) / HOUR_MS) - 1);
   });
 
   constructor() {
@@ -359,7 +362,7 @@ export class DayTimelineComponent {
 
       // `offsetTop` is measured against a shared offset parent, so the difference is where the hour
       // axis starts inside the scroller — the all-day strip above it is exactly what that accounts for.
-      body.scrollTop = hours.offsetTop - body.offsetTop + (hours.offsetHeight / 24) * this.grid().initialScrollHour();
+      body.scrollTop = hours.offsetTop - body.offsetTop + (hours.offsetHeight / 24) * this.scrollHour();
     });
   }
 
@@ -382,12 +385,16 @@ export class DayTimelineComponent {
     return entry?.kind === 'row' ? entry.row.description : null;
   }
 
+  /**
+   * Read off the clock rather than off the index, because a day may start at a configured hour: on a
+   * day that starts at 04:00 the first row of the axis is 04:00, not midnight. See ADR 0015.
+   */
   protected labelFor(hour: number) {
-    return `${String(hour).padStart(2, '0')}:00`;
+    return `${String(new Date(this.focusedDate().getTime() + hour * HOUR_MS).getHours()).padStart(2, '0')}:00`;
   }
 
   protected kindOf(appointment: Appointment<TimelineEntry>) {
-    return appointment.extra?.kind ?? 'block';
+    return appointment.extra?.kind ?? 'row';
   }
 
   protected dragging(appointment: Appointment<TimelineEntry>) {
@@ -404,10 +411,7 @@ export class DayTimelineComponent {
     else if (entry?.kind === 'story') this.selectFirstUnder(entry.issueKey);
   }
 
-  /**
-   * Moves a row to another time, or drags one of its ends. Only a row: an unattributed block is what
-   * was observed, and dragging it would be editing the evidence rather than the timesheet.
-   */
+  /** Moves a row to another time, or drags one of its ends. */
   protected startDrag(options: { event: PointerEvent; appointment: Appointment<TimelineEntry>; column: HTMLElement }) {
     const { event, appointment, column } = options;
     const entry = appointment.extra;
@@ -494,6 +498,12 @@ export class DayTimelineComponent {
 
   protected clockOf(boundary: TimelineBoundary) {
     return formatClockTime(this.instantOf(boundary));
+  }
+
+  protected labelOf(boundary: TimelineBoundary) {
+    const named = (row: ReviewedRow) => row.issueKey ?? UNNAMED_LABEL;
+
+    return `Boundary between ${named(boundary.before)} and ${named(boundary.after)}`;
   }
 
   protected percentOf(at: Date) {

@@ -6,13 +6,21 @@ test.describe('the day view', () => {
   });
 
   test('reconstructs the seeded morning into a row that names its issue', async ({ page }) => {
-    await expect(page.locator('[data-kind="row"]')).toHaveAttribute('title', 'ABC-3010 · 1h 30m');
+    await expect(page.locator('[data-kind="row"]').first()).toHaveAttribute('title', 'ABC-3010 · 1h 30m');
     await expect(page.getByText('feat(users): Invite a member by email').first()).toBeVisible();
   });
 
-  test('reports the work no issue claims rather than dropping it', async ({ page }) => {
+  /**
+   * The work nothing could name is a band of its own, drawn once. It used to be a block behind the
+   * rows as well, which drew the same hour twice.
+   */
+  test('reports the work no issue claims as a band rather than dropping it', async ({ page }) => {
     await expect(page.getByText(/matched no issue/).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'feat/pdf-export · 20m' })).toBeVisible();
+
+    const bands = page.locator('[data-kind="row"]');
+
+    await expect(bands).toHaveCount(2);
+    await expect(bands.nth(1)).toHaveAttribute('title', 'Not yet named · 1h 0m');
   });
 
   test('says so when the agent named nothing, rather than looking unpressed', async ({ page }) => {

@@ -17,29 +17,29 @@ ticket creation or the MR flow.
 
 ## Decisions already locked
 
-| Question        | Decision                                                                                                                               |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Placement       | Publishable `libs/timetrack` core + `apps/timetrack` Tauri shell, both in this monorepo                                                |
-| Auth            | Fully local; each user registers their own OAuth clients; tokens in the OS keychain                                                    |
-| Audience        | Anyone who installs it, but a strictly local application - the data never leaves the machine                                           |
-| Interaction     | Hybrid: passive daemon as the base, optional explicit timer, retroactive API pull to fill/cross-check                                  |
-| Local signals   | Active window + idle, local git repos, editor heartbeats, coding-agent session logs                                                    |
-| Browser         | Window titles, plus a reporter over the ingest seam sending a tab origin and a work-issue id, never a path                             |
-| Calls           | The process holding the microphone is presence; whether a call is work is classified at read time, default-deny                        |
-| Versions        | `streamDay` and the Today view are the v2 foundation; `correlate/` and the day, start, week and sync tabs are v1, awaiting replacement |
-| Matching        | Deterministic rules first, LLM only for genuinely ambiguous blocks                                                                     |
-| LLM             | Invoke the user's local agent CLI (`claude -p`, `codex exec`) so their subscription pays, not an API key                               |
-| Jira/Tempo      | Jira Cloud (REST v3) + Tempo Cloud (API v4)                                                                                            |
-| Ticket creation | Both directions: retroactive work → ticket, and prospective ticket → branch → pushed draft MR                                          |
-| Granularity     | 15-minute rounding (configurable), day compared to a target with a warning, never silent fill                                          |
-| Gap filling     | Confidence model; high-confidence entries sync without per-row review, weak ones must be accepted                                      |
-| Platforms       | Pluggable window source, macOS-first now the dev machine is a Mac; degrade where there is none                                         |
-| Storage         | Encrypted at rest, raw-sample retention window, exclusion rules, hard pause                                                            |
-| Tempo sync      | Idempotent upsert of app-owned worklogs only; foreign worklogs read-only                                                               |
-| UI              | Tray presence + day timeline with an editable worklog list                                                                             |
-| Daemon          | Rust collectors inside the Tauri app; starts minimized, autostarts on login                                                            |
-| Phase 1         | Jira/Tempo + local collectors + Google Calendar + review UI + sync                                                                     |
-| Name            | `@ethlete/timetrack`                                                                                                                   |
+| Question        | Decision                                                                                                             |
+| --------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Placement       | Publishable `libs/timetrack` core + `apps/timetrack` Tauri shell, both in this monorepo                              |
+| Auth            | Fully local; each user registers their own OAuth clients; tokens in the OS keychain                                  |
+| Audience        | Anyone who installs it, but a strictly local application - the data never leaves the machine                         |
+| Interaction     | Hybrid: passive daemon as the base, optional explicit timer, retroactive API pull to fill/cross-check                |
+| Local signals   | Active window + idle, local git repos, editor heartbeats, coding-agent session logs                                  |
+| Browser         | Window titles, plus a reporter over the ingest seam sending a tab origin and a work-issue id, never a path           |
+| Calls           | The process holding the microphone is presence; whether a call is work is classified at read time, default-deny      |
+| Versions        | `streamDay` is the one day builder; the start, week and sync tabs still read the day through it and are otherwise v1 |
+| Matching        | Deterministic rules first, LLM only for genuinely ambiguous blocks                                                   |
+| LLM             | Invoke the user's local agent CLI (`claude -p`, `codex exec`) so their subscription pays, not an API key             |
+| Jira/Tempo      | Jira Cloud (REST v3) + Tempo Cloud (API v4)                                                                          |
+| Ticket creation | Both directions: retroactive work → ticket, and prospective ticket → branch → pushed draft MR                        |
+| Granularity     | 15-minute rounding (configurable), day compared to a target with a warning, never silent fill                        |
+| Gap filling     | Confidence model; high-confidence entries sync without per-row review, weak ones must be accepted                    |
+| Platforms       | Pluggable window source, macOS-first now the dev machine is a Mac; degrade where there is none                       |
+| Storage         | Encrypted at rest, raw-sample retention window, exclusion rules, hard pause                                          |
+| Tempo sync      | Idempotent upsert of app-owned worklogs only; foreign worklogs read-only                                             |
+| UI              | Tray presence + day timeline with an editable worklog list                                                           |
+| Daemon          | Rust collectors inside the Tauri app; starts minimized, autostarts on login                                          |
+| Phase 1         | Jira/Tempo + local collectors + Google Calendar + review UI + sync                                                   |
+| Name            | `@ethlete/timetrack`                                                                                                 |
 
 ## The central insight: the branch name is the worklog
 
@@ -142,36 +142,25 @@ default pipeline. Prerequisites and the command-to-port table are in `apps/timet
 Recorded 2026-09-09, because the two halves look like one system with a bug and nothing in the
 repository said otherwise.
 
-The app holds **two day builders**, and they read different sources:
+The app holds **one day builder**. `streamDay` (`lib/stream/`) cuts the day into blocks, `buildRows`
+(`lib/rows/`) turns those into the rows a day is booked from, and every screen reads that one answer.
+It was two until 2026-09-10: `correlateDay` fed the day, week and sync tabs, and it is deleted. ADR
+0007 records why it was replaced rather than repaired, ADR 0014 why the merged screen was built on
+`streamDay`, and ADR 0016 what moved to `rows/` instead of being duplicated.
 
-| Builder                           | Screens               | Reads                                              |
-| --------------------------------- | --------------------- | -------------------------------------------------- |
-| `streamDay` (`lib/stream/`)       | `today`               | `window`, `idle`, `git`, `agent-session`, `editor` |
-| `correlateDay` (`lib/correlate/`) | `day`, `week`, `sync` | all of those, plus `calendar` and `gitlab`         |
+The drift the two builders carried is therefore gone. The three fixes of 2026-09-08 -
+`stillFocused`, `windowsSeenThroughMs` and `ownAppIds` - now reach every screen, and the near-
+duplicate `evidenceFor`, `repoStateFor`, `reposByName` and `repoNamedIn` exist once.
 
-**`streamDay` and the Today view are the v2 foundation.** `correlateDay`, `sessionize`, `meetings`,
-`merge-request-activity` and the day, start, week and sync tabs are v1, and they are to be redone on
-top of the Today view's reporting rather than repaired. ADR 0004 forbids the stream module from
-importing correlate, which is why `evidenceFor`, `repoStateFor`, `reposByName`, `repoNamedIn`,
-`TITLE_SEGMENTS` and `addEvidence` exist twice in near-duplicate form.
+Two smaller consequences worth knowing before touching the day path:
 
-**Do not extract a shared layer between them.** It would marry the new foundation to code with a
-delete date and spend the effort twice. Delete per tab instead, as v2 replaces each one.
-
-The cost of the drift is already visible: the three fixes of 2026-09-08 - `stillFocused`,
-`windowsSeenThroughMs` and `ownAppIds` - exist only in `streamDay`. The v1 screens still read a
-still focus as unobserved time and still count the app's own window. The URL redaction is safe in
-both, because `store/title.ts` runs before either builder.
-
-Two smaller consequences worth knowing before touching either side:
-
-- `app.routes.ts` defaults `''` and `**` to **`today`** since 2026-09-09. The remembered view still
-  wins, so a window closed on the day tab still opens there.
-- `QUOTABLE_EVIDENCE_KINDS` has no consumer on the v2 path. The Today view renders evidence on
-  screen and quotes nothing off the machine: no clipboard write, no file write, no export. Its only
-  live readers are `reason/payload.ts` and `ticket/draft.ts`, both reached from the day-review tab -
-  and from the agent endpoint, which is why the allowlist still matters today. `calendar` came off it
-  on 2026-09-09; `editor` was never on it, which is what makes a heartbeat's directory safe to render.
+- `app.routes.ts` defaults `''` and `**` to **`day`**, and `today` redirects there. The remembered
+  view still wins, so a window closed on another tab still opens on it.
+- `QUOTABLE_EVIDENCE_KINDS` guards what may leave the machine, not what reaches the screen. The day
+  screen renders evidence and quotes nothing off the machine: no clipboard write, no file write, no
+  export. Its live readers are `reason/payload.ts` and `ticket/draft.ts`, plus the agent endpoint,
+  which is why the allowlist still matters. `calendar` came off it on 2026-09-09; `editor` was never
+  on it, which is what makes a heartbeat's directory safe to render.
 
 ### Why the core is framework-agnostic and transport-agnostic
 

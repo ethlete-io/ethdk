@@ -175,10 +175,10 @@ const heartbeat = (minutes: number, directory: string): CollectedEvent => ({
 const reflogLine = (options: { stamp: string; from: string; to: string }) =>
   `HEAD@{${options.stamp}}${GIT_FIELD_SEPARATOR}checkout: moving from ${options.from} to ${options.to}`;
 
-test.describe('the today view', () => {
+test.describe('the day view, as streams', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: day(), git: DISCOVERED });
-    await page.goto('/today');
+    await page.goto('/day');
   });
 
   test('is where the window opens, with nothing remembered', async ({ page }) => {
@@ -186,7 +186,7 @@ test.describe('the today view', () => {
     await page.goto('/');
 
     await expect(page.locator('[data-totals]')).toContainText('present');
-    expect(new URL(page.url()).hash).toBe('#/today');
+    expect(new URL(page.url()).hash).toBe('#/day');
   });
 
   test('reports presence, engaged time and the ratio between them', async ({ page }) => {
@@ -241,7 +241,7 @@ test.describe('the today view', () => {
 
   test('holds an evidence row that has nowhere to wrap on one line', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, git: DISCOVERED, events: [...day(), focus(61, 'google-chrome', UNBROKEN)] });
-    await page.goto('/today');
+    await page.goto('/day');
 
     const folded = stream(page, 'other-applications');
 
@@ -269,7 +269,7 @@ test.describe('the today view', () => {
         },
       },
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(stream(page, `repo:${SDK}`).locator('[data-branches]')).toHaveText('feature/read-a-day');
   });
@@ -280,7 +280,7 @@ test.describe('the today view', () => {
       git: DISCOVERED,
       events: day().map((event) => (event.kind === 'agent-session' ? { ...event, gitBranch: undefined } : event)),
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(stream(page, `repo:${SDK}`).locator('[data-branches]')).toHaveCount(0);
   });
@@ -311,7 +311,7 @@ test.describe('the today view', () => {
         },
       ],
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     // One claude-code turn is already in the day's events; the two the rollout holds join it.
     await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toContainText('3 turns');
@@ -343,7 +343,7 @@ test.describe('the today view', () => {
         },
       ],
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     const agentOnly = stream(page, `repo:${SDK}`);
 
@@ -374,7 +374,7 @@ test.describe('the today view', () => {
         },
       ],
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     const backfilled = stream(page, `repo:${SDK}`);
 
@@ -392,7 +392,7 @@ test.describe('the today view', () => {
       events: [...day(), focus(10, 'code', 'boot.md - elrond - Visual Studio Code')],
       git: { extraRepos: [...DISCOVERED.extraRepos, ONE, OTHER] },
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.locator('[data-ambiguous]')).toHaveText('elrond');
     await expect(page.locator('[data-stream="repo:' + ONE + '"]')).toHaveCount(0);
@@ -417,7 +417,7 @@ test.describe('the today view', () => {
         },
       ],
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.locator('[data-unattributed]')).toHaveText('1 turn · 800 k out · 90.0 M cached');
   });
@@ -442,7 +442,7 @@ test.describe('the today view', () => {
         },
       ],
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     const rebuilt = stream(page, `repo:${SDK}`);
 
@@ -464,7 +464,7 @@ test.describe('the today view', () => {
         ...[0, 10, 20, 30].map((minutes) => heartbeat(minutes, 'src/app/invite')),
       ],
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     const editor = stream(page, `repo:${FUT}`);
 
@@ -498,7 +498,7 @@ test.describe('the today view', () => {
         },
       ],
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.locator('[data-totals]')).toContainText('2h 0m present');
     await expect(page.locator('[data-rebuilt-total]')).toHaveCount(0);
@@ -508,13 +508,13 @@ test.describe('the today view', () => {
 
   test('says so for a day nothing observed', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: [] });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.getByText(/Nothing observed this day/)).toBeVisible();
   });
 });
 
-test.describe('the today view, on a day something held the microphone', () => {
+test.describe('the day view, on a day something held the microphone', () => {
   const DISCORD = 'com.hnc.Discord';
   const HELPER = 'com.hnc.Discord.helper.Renderer';
 
@@ -529,7 +529,7 @@ test.describe('the today view, on a day something held the microphone', () => {
 
   test('names the call from the window in front of it, and says it is not counted', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: meeting });
-    await page.goto('/today');
+    await page.goto('/day');
 
     const row = page.locator(`[data-call="${HELPER}"]`);
 
@@ -544,7 +544,7 @@ test.describe('the today view, on a day something held the microphone', () => {
       events: meeting,
       settings: { ...defaultSettings(), callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] } },
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.locator('[data-presence]')).toHaveText('48m present');
     await expect(page.locator('[data-call-unclassified]')).toHaveCount(0);
@@ -553,7 +553,7 @@ test.describe('the today view, on a day something held the microphone', () => {
 
   test('shows no call panel at all on a day nothing held the microphone', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, git: DISCOVERED, events: day() });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.locator('[data-calls]')).toHaveCount(0);
   });
@@ -561,9 +561,9 @@ test.describe('the today view, on a day something held the microphone', () => {
 
 /**
  * A folded Other applications line is either a defect or a capability this machine does not have.
- * The Today screen has to say which, or the number reads as a fault the user cannot act on.
+ * The day screen has to say which, or the number reads as a fault the user cannot act on.
  */
-test.describe('the today view, on a day some window named no checkout', () => {
+test.describe('the day view, on a day some window named no checkout', () => {
   const day = (): CollectedEvent[] => [
     { at: at(0), source: 'git', kind: 'git-checkout', repoPath: FUT, branch: 'next' },
     ...[0, 15].map((minutes) => focus(minutes, 'code', 'invite.ts - fut-frontend - Visual Studio Code')),
@@ -572,7 +572,7 @@ test.describe('the today view, on a day some window named no checkout', () => {
 
   test('says how much of the day no checkout was named for', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: day(), ...DISCOVERED });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.locator('[data-unnamed-today]')).toHaveText('15m');
   });
@@ -592,7 +592,7 @@ test.describe('the today view, on a day some window named no checkout', () => {
         ],
       },
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.getByText('cannot read the directory a focused window works in')).toBeVisible();
   });
@@ -612,7 +612,7 @@ test.describe('the today view, on a day some window named no checkout', () => {
         ],
       },
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.getByText('cannot read the directory a focused window works in')).toHaveCount(0);
     await expect(page.getByText('folds into Other applications')).toBeVisible();
@@ -627,7 +627,7 @@ test.describe('the today view, on a day some window named no checkout', () => {
       ],
       ...DISCOVERED,
     });
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.locator('[data-unnamed-today]')).toHaveCount(0);
   });

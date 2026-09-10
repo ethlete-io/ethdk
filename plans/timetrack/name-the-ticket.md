@@ -80,8 +80,8 @@ was last seen. One store, three writers, and the model is not one of them. See A
 
 - **Tempo history seeds it.** `RecurringPattern` already carries issue key, weekday, start minute,
   end minute and a count. Rung 7 reads it and is dead code, because nothing passes `patterns` to
-  `correlateDay` (`apps/timetrack/src/app/read-day.ts:55`). Wiring that is what makes the store say
-  anything on a first run.
+  the day's row options (`dayRowsOptionsOf` in `apps/timetrack/src/app/stream-day-options.ts`).
+  Wiring that is what makes the store say anything on a first run.
 - **A naming of Tom's outranks the seed**, and returns `certain`.
 - **An accepted model proposal writes the record a naming writes.** A model never writes directly.
 

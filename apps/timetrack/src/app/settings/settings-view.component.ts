@@ -45,7 +45,7 @@ most of it had happened.`;
 const FILL_WHY = `A pause shorter than this is logged as the work around it: five minutes without a
 keystroke is reading a diff, not a break. Anything longer stays off the timesheet.
 
-Set it to zero to fill nothing. The cap is half an hour, because the sessionizer ends a block after 30
+Set it to zero to fill nothing. The cap is half an hour, because the day ends a block after 30
 unobserved minutes — a longer gap is a stretch nothing watched at all, and claiming it would be inventing
 time rather than reading evidence.`;
 

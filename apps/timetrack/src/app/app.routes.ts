@@ -3,12 +3,9 @@ import { readViewState } from './view-state';
 
 export const APP_ROUTES: Routes = [
   // A window that opens on the view it was closed on, without the default one being painted first.
-  { path: '', pathMatch: 'full', redirectTo: () => readViewState().view ?? 'today' },
-  {
-    path: 'today',
-    title: 'Today',
-    loadComponent: () => import('./today/today-view.component').then((entry) => entry.TodayViewComponent),
-  },
+  { path: '', pathMatch: 'full', redirectTo: () => readViewState().view ?? 'day' },
+  // A window closed on the retired Today view opens on the day screen it merged into.
+  { path: 'today', pathMatch: 'full', redirectTo: 'day' },
   {
     path: 'day',
     title: 'Day',
@@ -46,5 +43,5 @@ export const APP_ROUTES: Routes = [
     loadComponent: () =>
       import('./host-status/host-status-view.component').then((entry) => entry.HostStatusViewComponent),
   },
-  { path: '**', redirectTo: 'today' },
+  { path: '**', redirectTo: 'day' },
 ];

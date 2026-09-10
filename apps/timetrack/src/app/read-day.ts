@@ -1,29 +1,29 @@
 import {
   CollectedEvent,
-  DayCorrelation,
   DayReview,
   EMPTY_DAY_REVIEW_EDITS,
+  StreamDay,
   TimetrackSettings,
-  classifyCalls,
   closeTimerRun,
-  correlateDay,
-  dayBoundaryOf,
   coveredMsOf,
-  gitFlowConfigFor,
+  dayBoundaryOf,
   localDayKey,
   localDayRange,
   pauseWindows,
+  pausedMs,
   reviewDay,
+  streamDay,
 } from '@ethlete/timetrack';
 import { Observable, combineLatest, map } from 'rxjs';
 import { HostPorts } from '../host';
+import { streamDayOptionsOf } from './stream-day-options';
 
 export type DayRead = {
   key: string;
   /** The instant the day is read through: now, or the day's end once it is over. */
   at: Date;
   events: CollectedEvent[];
-  correlation: DayCorrelation;
+  day: StreamDay;
   review: DayReview;
 };
 
@@ -31,11 +31,18 @@ export type DayReadOptions = {
   ports: HostPorts;
   settings: TimetrackSettings;
   repoRoots: readonly string[];
+  /**
+   * The instant the window source has reported through, which is its last drain rather than now.
+   *
+   * Reading it as now would let a dead collector's last focus sample grow by half an hour, and the
+   * tray would report presence rising on a machine that observes nothing.
+   */
+  windowsSeenThroughMs?: number;
 };
 
 /**
  * One day, reconstructed from the store, for every surface that reads a day it does not own: the tray
- * menu, the end-of-day reminder and the week view all do. The day review has its own reader because it
+ * menu, the end-of-day reminder and the week view all do. The day screen has its own reader because it
  * also carries the reviewer's unsaved edits.
  *
  * A read rather than a store. Each caller already owns a clock or an anchor of its own, and one shared
@@ -54,27 +61,26 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
   }).pipe(
     map(({ events, edits, runs, coverage }) => {
       const at = new Date(Math.min(Date.now(), to.getTime()));
-      const correlation = correlateDay({
+      const pauses = pauseWindows({ events, window: { from, to }, through: at });
+      const day = streamDay({
         events,
-        timerRuns: runs.map((run) => closeTimerRun(run, at)),
-        pauses: pauseWindows({ events, window: { from, to }, through: at }),
-        calls: classifyCalls({ events, rules: settings.callRules, until: at }),
-        config: gitFlowConfigFor(settings),
-        rules: settings.attributionRules,
-        links: settings.projectLinks,
-        sessionize: { repoRoots: [...options.repoRoots] },
-        fill: { maxFillGapMs: settings.gapFillMs },
+        options: streamDayOptionsOf({
+          repoRoots: options.repoRoots,
+          settings,
+          windowsSeenThroughMs: options.windowsSeenThroughMs,
+          rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
+        }),
       });
 
       return {
         key,
         at,
         events,
-        correlation,
+        day,
         review: reviewDay({
-          correlation,
+          rows: day.rows,
           edits: edits ?? EMPTY_DAY_REVIEW_EDITS,
-          check: { targetMs: settings.dayTargetMs, coveredMs: coveredMsOf(coverage) },
+          check: { targetMs: settings.dayTargetMs, coveredMs: coveredMsOf(coverage), pausedMs: pausedMs(pauses) },
         }),
       };
     }),

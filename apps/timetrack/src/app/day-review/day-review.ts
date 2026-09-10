@@ -6,7 +6,6 @@ import {
   AttributionTarget,
   ClosedTimerRun,
   CollectedEvent,
-  CorrelateDayOptions,
   DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
   InferredAttribution,
@@ -20,17 +19,18 @@ import {
   addManualRow,
   classifyCalls,
   closeTimerRun,
-  correlateDay,
+  buildRows,
   coveredMsOf,
   dayBoundaryOf,
   fetchTempoDayCoverage$,
-  gitFlowConfigFor,
   localDayKey,
   localDayRange,
   matchAttributionRule,
   mergeRows,
   moveRowBoundary,
   pauseWindows,
+  pausedMs,
+  readHeadBranches$,
   readJiraCredentials$,
   readTempoCredentials$,
   reasoningCandidates,
@@ -46,6 +46,7 @@ import {
   setRowState,
   shiftDayKey,
   splitRow,
+  streamDay,
   unnamedContexts,
 } from '@ethlete/timetrack';
 import {
@@ -66,9 +67,20 @@ import {
   take,
   tap,
 } from 'rxjs';
-import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
+import {
+  injectAgentPromptBackfill,
+  injectAgentSessionCollector,
+  injectAgentSpendBackfill,
+  injectCallCollector,
+  injectCodexPromptBackfill,
+  injectCodexSessionCollector,
+  injectCodexSpendBackfill,
+  injectGitCollector,
+  injectWindowCollector,
+} from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
+import { dayRowsOptionsOf, streamDayOptionsOf } from '../stream-day-options';
 import { injectTimer } from '../timer';
 import { readViewState, rememberViewState } from '../view-state';
 
@@ -128,7 +140,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const destroyRef = inject(DestroyRef);
   const windows = injectWindowCollector();
+  const callSource = injectCallCollector();
   const agentSessions = injectAgentSessionCollector();
+  const codexSessions = injectCodexSessionCollector();
+  const spend = injectAgentSpendBackfill();
+  const codexSpend = injectCodexSpendBackfill();
+  const prompts = injectAgentPromptBackfill();
+  const codexPrompts = injectCodexPromptBackfill();
   const git = injectGitCollector();
   const timers = injectTimer();
   const settings = injectTimetrackSettings();
@@ -148,7 +166,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     key: day(),
     reload: reload(),
     windows: windows.lastRun(),
+    calls: callSource.lastRun(),
     sessions: agentSessions.lastRun(),
+    codexSessions: codexSessions.lastRun(),
+    spend: spend.lastRun(),
+    codexSpend: codexSpend.lastRun(),
+    prompts: prompts.lastRun(),
+    codexPrompts: codexPrompts.lastRun(),
     git: git.lastRun(),
     timers: timers.revision(),
   }));
@@ -279,35 +303,39 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
   const edits = computed(() => local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS);
 
-  const correlateOptions = computed((): CorrelateDayOptions => ({
-    config: gitFlowConfigFor(settings.settings()),
-    rules: settings.settings().attributionRules,
-    links: settings.settings().projectLinks,
-    sessionize: { repoRoots: git.discovery()?.repos ?? [] },
-    fill: { maxFillGapMs: settings.settings().gapFillMs },
-    meetings: { defaultIssueKey: settings.settings().meetingIssueKey || undefined },
+  const rowOptions = computed(() => ({
+    ...dayRowsOptionsOf(settings.settings()),
+    timerRuns: evidence()?.runs ?? [],
+    pauses: evidence()?.pauses ?? [],
   }));
 
   /**
-   * The day as the deterministic pipeline reads it, with no model answer in it. This is what the
-   * unnamed-work card and the provider's own payload are derived from, so asking a second time asks
-   * the same question — an answer that fed back into its own input would narrow every later run.
+   * The day as its streams, with no model answer in it: presence, concurrency, spend, the blocks the
+   * rows are built from, and the deterministic rows themselves.
+   *
+   * This is what the naming card and the provider's own payload are derived from, so asking a second
+   * time asks the same question — an answer that fed back into its own input would narrow every later
+   * run.
    */
-  const correlation = computed(() => {
+  const streamed = computed(() => {
     const collected = evidence();
 
     return collected
-      ? correlateDay({
+      ? streamDay({
           events: collected.events,
-          timerRuns: collected.runs,
-          pauses: collected.pauses,
-          calls: calls(),
-          ...correlateOptions(),
+          options: streamDayOptionsOf({
+            repoRoots: git.discovery()?.repos ?? [],
+            settings: settings.settings(),
+            windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
+            rows: rowOptions(),
+          }),
         })
       : null;
   });
 
-  const unnamed = computed(() => unnamedContexts({ unattributed: correlation()?.unattributed ?? [] }));
+  const deterministicRows = computed(() => streamed()?.rows ?? null);
+
+  const unnamed = computed(() => unnamedContexts({ unattributed: deterministicRows()?.unattributed ?? [] }));
 
   /**
    * The standing rule that already covers a context, for the naming card to say so.
@@ -330,13 +358,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   const plan = computed(() => {
-    const correlated = correlation();
+    const rows = deterministicRows();
 
-    return correlated
+    return rows
       ? reasoningPlan({
           contexts: unnamed(),
-          unattributed: correlated.unattributed,
-          candidates: reasoningCandidates({ proposals: correlated.proposals }),
+          unattributed: rows.unattributed,
+          candidates: reasoningCandidates({ proposals: rows.proposals }),
         })
       : null;
   });
@@ -349,30 +377,70 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   /** Keyed by payload rather than by day: a day whose evidence grew is a new question, and only then. */
   const inferred = computed(() => answers()[plan()?.hash ?? ''] ?? []);
 
-  const reasoned = computed(() => {
+  /**
+   * The same day with the provider's answers in it, rebuilt from the blocks the stream pass already
+   * produced rather than by reading the day a second time. Only the ladder changes, so re-running the
+   * whole of `streamDay` for it would recompute presence, concurrency and spend to the same numbers.
+   */
+  const reasonedRows = computed(() => {
+    const current = streamed();
     const collected = evidence();
     const proposed = inferred();
 
-    return collected && proposed.length
-      ? correlateDay({
-          events: collected.events,
-          timerRuns: collected.runs,
-          pauses: collected.pauses,
-          calls: calls(),
-          inferred: proposed,
-          ...correlateOptions(),
-        })
-      : correlation();
+    if (!current || !collected) return null;
+    if (!proposed.length) return current.rows;
+
+    return buildRows({
+      blocks: current.blocks,
+      events: collected.events,
+      links: settings.settings().projectLinks,
+      calls: calls(),
+      inferred: proposed,
+      ...rowOptions(),
+    });
   });
 
-  const review = computed(() => {
-    const correlated = reasoned();
+  /** The checkouts the day named no branch for: no commit, no branch switch and no agent session. */
+  const unbranched = computed(() => {
+    const current = streamed();
 
-    return correlated
+    if (!current) return null;
+
+    return {
+      at: localDayRange(day(), boundary()).to,
+      repoPaths: current.streams
+        .filter((stream) => !!stream.repoPath && !stream.branches.length)
+        .map((stream) => stream.repoPath as string),
+    };
+  });
+
+  /**
+   * The branch each of those checkouts was on that day, from its reflog. It resolves after the day
+   * does, so a slow repository delays the branch on one line and never the day's numbers.
+   */
+  const headBranches = toSignal(
+    toObservable(unbranched).pipe(
+      switchMap((ask) =>
+        ask?.repoPaths.length
+          ? readHeadBranches$({ processes: ports.processes, ...ask }).pipe(catchError(() => of({})))
+          : of<Record<string, string>>({}),
+      ),
+    ),
+    { initialValue: {} as Record<string, string> },
+  );
+
+  const review = computed(() => {
+    const rows = reasonedRows();
+
+    return rows
       ? reviewDay({
-          correlation: correlated,
+          rows,
           edits: edits(),
-          check: { targetMs: targetMs(), coveredMs: coveredMsOf(coverage()) },
+          check: {
+            targetMs: targetMs(),
+            coveredMs: coveredMsOf(coverage()),
+            pausedMs: pausedMs(evidence()?.pauses ?? []),
+          },
         })
       : null;
   });
@@ -500,14 +568,19 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     targetMs,
     rows,
     review,
-    /** The sessionized day behind the rows, for the timeline. */
-    correlation: reasoned,
+    /** The day as its streams: presence, concurrency, the agents' spend and the blocks behind the rows. */
+    day: streamed,
+    /** The branch a checkout the day named none for was on, by checkout path, from its reflog. */
+    headBranches,
+    isToday: computed(() => day() === localDayKey(new Date(), boundary())),
+    /** The rows the model's answers are in, which is what the screen draws and the reviewer edits. */
+    reasoned: reasonedRows,
     /**
      * The day with no model answer in it, which is what a ticket draft quotes — the same input the
      * unnamed-work card and the reasoning payload are built from. Drafting off `reasoned` would leave
      * a context the provider already named with no evidence to quote at all.
      */
-    deterministic: correlation,
+    deterministic: deterministicRows,
     /**
      * The contexts the day could not name an issue for, widest first. In a repository the branch
      * grammar cannot read, this is most of the day, and naming one of them is what turns it into
@@ -524,7 +597,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * Time in a path the user marked private. The day reports it rather than hiding it: a reviewer who
      * cannot see that the app watched has no way to tell a working link from a broken one.
      */
-    privateTime: computed(() => correlation()?.private ?? []),
+    privateTime: computed(() => deterministicRows()?.private ?? []),
     /** Exactly what a reasoning run would send, for the UI to show before anything leaves the machine. */
     reasoningPayload: computed(() => plan()?.request ?? null),
     /** What the provider proposed, by context id, for the naming card to offer as an answer. */
@@ -586,7 +659,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     meetings: computed(() => {
       const claimed = new Set(rows().map((row) => `${row.from.getTime()}|${row.to.getTime()}`));
 
-      return (reasoned()?.meetings ?? []).filter(
+      return (reasonedRows()?.meetings ?? []).filter(
         (meeting) => !claimed.has(`${meeting.event.at.getTime()}|${meeting.event.until.getTime()}`),
       );
     }),

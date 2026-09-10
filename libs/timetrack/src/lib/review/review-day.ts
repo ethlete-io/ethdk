@@ -1,4 +1,4 @@
-import { DayCorrelation } from '../correlate/correlate-day';
+import { DayRows, dayCheckOptions } from '../rows/build-rows';
 import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, checkDay } from '../rows/round';
 import { formatDurationMs } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
@@ -70,24 +70,20 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
  * observe *more* time under such a row, and that surplus is reported as `unreconciledMs` instead of
  * being folded in silently: the reviewer's numbers are theirs, but the day should still say so.
  */
-export const reviewDay = (options: {
-  correlation: DayCorrelation;
-  edits?: DayReviewEdits;
-  check?: CheckDayOptions;
-}): DayReview => {
+export const reviewDay = (options: { rows: DayRows; edits?: DayReviewEdits; check?: CheckDayOptions }): DayReview => {
   const edits = options.edits ?? EMPTY_DAY_REVIEW_EDITS;
   const consumed = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
   const rows = [
-    ...options.correlation.proposals
+    ...options.rows.proposals
       .filter((proposal) => !consumed.has(proposal.id))
       .map((proposal) => withOverride(proposal, edits.overrides[proposal.id])),
-    ...options.correlation.unnamed
+    ...options.rows.unnamed
       .filter((row) => !consumed.has(row.id))
       .map((row) => withOverride(row, edits.overrides[row.id])),
     ...edits.pinned.map(fromPinned),
   ].sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));
 
-  const replacedMs = options.correlation.proposals
+  const replacedMs = options.rows.proposals
     .filter((proposal) => consumed.has(proposal.id))
     .reduce((sum, proposal) => sum + proposal.observedMs, 0);
   const pinnedMs = edits.pinned.reduce((sum, row) => sum + row.observedMs, 0);
@@ -95,8 +91,8 @@ export const reviewDay = (options: {
 
   const check = checkDay({
     proposals: rows.filter(isNamedRow).filter((row) => syncsInState(row.state)),
-    unattributed: options.correlation.unattributed,
-    options: { filledMs: options.correlation.filledMs, ...options.check },
+    unattributed: options.rows.unattributed,
+    options: { ...dayCheckOptions(options.rows), ...options.check },
   });
 
   return { rows, check: withDrift({ check, unreconciledMs, options: options.check }), unreconciledMs };

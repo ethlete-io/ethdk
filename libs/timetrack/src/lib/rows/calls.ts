@@ -69,7 +69,7 @@ const matchOne = (options: {
  * Turns the calls the rules counted as work into reviewable rows of their own.
  *
  * A call is the one thing the microphone observed directly and the reconstruction cannot see. Sitting
- * in one produces no input, `sessionize` builds no block from a call event on purpose, and without
+ * in one produces no input, `streamDay` builds no block from a call event on purpose, and without
  * this the day counts the hour as presence and proposes nothing for it.
  *
  * Time the day already claims is cut out of a call first, and each stretch that is left becomes a row.

@@ -23,7 +23,7 @@ test.describe('a day logged in tempo by hand', () => {
   test('reads what tempo holds after the day review opened the day', async ({ page }) => {
     await page.getByRole('link', { name: 'Week' }).click();
 
-    await expect(seededDay(page)).toContainText('21m matched no issue');
+    await expect(seededDay(page)).toContainText('1h 0m matched no issue');
     await expect(seededDay(page)).not.toContainText('is not in Tempo yet');
   });
 
@@ -34,7 +34,7 @@ test.describe('a day logged in tempo by hand', () => {
 
     await page.getByRole('link', { name: 'Week' }).click();
 
-    await expect(seededDay(page)).toContainText('21m matched no issue');
+    await expect(seededDay(page)).toContainText('1h 0m matched no issue');
     await expect(seededDay(page)).not.toContainText('is not in Tempo yet');
   });
 });

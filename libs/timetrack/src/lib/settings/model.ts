@@ -26,7 +26,7 @@ export const MAX_DAY_START_HOUR = 12;
 export const clampDayStartHour = (value: number) => Math.min(MAX_DAY_START_HOUR, Math.max(0, Math.round(value)));
 
 /**
- * A cap rather than a preference. The sessionizer ends a block after 30 unobserved minutes, so a
+ * A cap rather than a preference. The block builder ends a block after 30 unobserved minutes, so a
  * longer gap is a stretch nothing watched at all — and claiming it would be inventing time, not
  * reading evidence.
  */

@@ -40,7 +40,7 @@ export type GitLabCollectorRun = {
 
 /**
  * Reads the user's own GitLab activity into the event store, so reviewing somebody else's merge
- * request reaches `correlateDay` through the same path as a commit.
+ * request reaches `streamDay` through the same path as a commit.
  *
  * It reads through `glab`, which holds its own credential, so this app stores no GitLab token. That
  * moves the two ways the source can go quiet — the binary leaving the `PATH`, and the login expiring —

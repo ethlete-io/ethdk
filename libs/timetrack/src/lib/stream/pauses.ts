@@ -15,7 +15,7 @@ const clip = (options: { window: TimeWindow; to: TimeWindow }): TimeWindow | nul
  *
  * A pause is the one thing the app records about time it deliberately did not watch, so it has to be
  * read back out of the same event stream everything else is: a paused stretch nothing knows about is a
- * stretch the sessionizer bridges and the day bills as work.
+ * stretch the block builder bridges and the day bills as work.
  *
  * Both edges are handled, because a pause outlives a calendar day: a `pause-end` with nothing open
  * before it started before the window, and a `pause-start` with no end is still running. `through` is

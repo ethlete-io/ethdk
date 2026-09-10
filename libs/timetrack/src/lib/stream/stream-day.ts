@@ -40,8 +40,7 @@ const READ_SOURCES: readonly CollectedEventSource[] = ['window', 'idle', 'git', 
  * An editor heartbeat is deliberately not one, and this list is what keeps it out. It only fires while
  * its own window has focus, so every minute it covers is a minute the window source already reported —
  * it can name the checkout that window holds and it can add no time. Counting it would only let the two
- * disagree, and the difference reads on screen as time nothing watched. `sessionize` counts a heartbeat
- * as presence; this deliberately does not.
+ * disagree, and the difference reads on screen as time nothing watched.
  */
 const PRESENCE_SOURCES: readonly CollectedEventSource[] = ['window', 'idle', 'git', 'agent-session'];
 

@@ -1,6 +1,5 @@
 import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
-import { correlateDay } from '../correlate/correlate-day';
 import { CollectedEvent } from '../model/event';
 import { WorklogProposal } from '../model/proposal';
 import { ClosedTimerRun } from '../model/timer';
@@ -66,9 +65,6 @@ const calendar = (options: { minute: number; minutes: number; title: string }): 
 /**
  * A day shaped like a real one: a checkout whose branch names the issue, a stretch of browsing that
  * names nothing, a run the user timed and a pause they took.
- *
- * Nothing switches application inside the stickiness window, so both block builders see the same
- * spans and the two pipelines have to agree row for row.
  */
 const QUIET_DAY: CollectedEvent[] = [
   checkout(0, BRANCH),
@@ -100,17 +96,11 @@ const optionsFor = (events: readonly CollectedEvent[]) => ({
   calls: classifyCalls({ events, rules: { countsAsWork: [], neverCountsAsWork: [] }, until: READ_THROUGH }),
 });
 
-const bothWays = (events: CollectedEvent[]) => {
-  const rows = optionsFor(events);
-
-  return {
-    v1: correlateDay({ ...rows, events, sessionize: { repoRoots: [REPO] } }),
-    v2: streamDay({
-      events,
-      options: { repoRoots: [REPO], windowsSeenThroughMs: READ_THROUGH.getTime(), rows },
-    }).rows,
-  };
-};
+const rowsOf = (events: CollectedEvent[]) =>
+  streamDay({
+    events,
+    options: { repoRoots: [REPO], windowsSeenThroughMs: READ_THROUGH.getTime(), rows: optionsFor(events) },
+  }).rows;
 
 const bookedMsByIssue = (proposals: readonly WorklogProposal[]) => {
   const totals = new Map<string, number>();
@@ -122,40 +112,49 @@ const bookedMsByIssue = (proposals: readonly WorklogProposal[]) => {
   return [...totals].sort(([a], [b]) => a.localeCompare(b));
 };
 
-describe('the day read through both pipelines', () => {
-  const { v1, v2 } = bothWays(QUIET_DAY);
+describe('the rows a quiet day produces', () => {
+  const rows = rowsOf(QUIET_DAY);
 
-  it('books the same issues for the same time', () => {
-    expect(bookedMsByIssue(v2.proposals)).toEqual(bookedMsByIssue(v1.proposals));
+  it('books the branch that names the issue, and the run the user timed', () => {
+    expect(bookedMsByIssue(rows.proposals)).toEqual([
+      ['FIP-2177', 116 * MINUTE],
+      ['FIP-2200', 30 * MINUTE],
+    ]);
   });
 
-  it('reads the same run the user timed', () => {
-    expect(v2.timers.map((timer) => timer.run.id)).toEqual(v1.timers.map((timer) => timer.run.id));
+  it('reads the run the user timed', () => {
+    expect(rows.timers.map((timer) => timer.run.id)).toEqual(['run-1']);
   });
 
-  it('leaves the same work waiting to be named', () => {
-    expect(v2.unattributed.map((group) => group.observedMs)).toEqual(v1.unattributed.map((group) => group.observedMs));
+  it('leaves the browsing nothing could name waiting as one band', () => {
+    expect(rows.unattributed.map((group) => group.observedMs)).toEqual([44 * MINUTE]);
+    expect(rows.unnamed.map((row) => row.observedMs)).toEqual([44 * MINUTE]);
   });
 });
 
-describe('the day read through both pipelines, where the two builders disagree', () => {
-  const { v1, v2 } = bothWays(MEETING_DAY);
+describe('the rows a day with a meeting produces', () => {
+  const rows = rowsOf(MEETING_DAY);
 
-  it('reads the same meeting off the calendar', () => {
-    expect(v2.meetings.map((meeting) => meeting.event.title)).toEqual(
-      v1.meetings.map((meeting) => meeting.event.title),
-    );
+  it('reads the meeting off the calendar', () => {
+    expect(rows.meetings.map((meeting) => meeting.event.title)).toEqual(['Sprint planning']);
+  });
+
+  it('gives the meeting a band of its own, since no setting names an issue for one', () => {
+    expect(rows.unnamed.map((row) => [row.description, row.observedMs])).toEqual([
+      ['Sprint planning', 30 * MINUTE],
+      ['unattributed activity', 30 * MINUTE],
+    ]);
   });
 
   /**
-   * The drift ADR 0007 measured, in minutes. `sessionize` keeps a checkout sticky for five minutes
-   * whatever takes the focus next, so the browser that opens the meeting is booked to the editor's
-   * branch. `streamDay` passes the sticky only inside the application that set it, so it is not.
+   * What ADR 0007 measured, stated as the rule rather than as a difference: the sticky checkout is
+   * passed only inside the application that set it, so the browser that opens a meeting takes none
+   * of the editor's branch with it. `sessionize` booked it five minutes of FIP-2177.
    */
   it('keeps the browser that opened the meeting off the editor branch', () => {
-    const of = (proposals: readonly WorklogProposal[]) =>
-      proposals.filter((proposal) => proposal.issueKey === 'FIP-2177').reduce((sum, row) => sum + row.observedMs, 0);
-
-    expect(of(v1.proposals) - of(v2.proposals)).toBe(5 * MINUTE);
+    expect(bookedMsByIssue(rows.proposals)).toEqual([
+      ['FIP-2177', 110 * MINUTE],
+      ['FIP-2200', 30 * MINUTE],
+    ]);
   });
 });

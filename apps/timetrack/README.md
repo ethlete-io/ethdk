@@ -1,7 +1,7 @@
 # timetrack
 
 The desktop shell for `@ethlete/timetrack`. The library is the deterministic part — it holds the
-model, the correlation pipeline and the providers, and it never makes a call or touches a file. This
+model, the day pipeline and the providers, and it never makes a call or touches a file. This
 app is the half that does: it owns the encrypted database, the keychain, every outbound request, and
 the collectors that watch the day.
 

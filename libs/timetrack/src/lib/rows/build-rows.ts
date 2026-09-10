@@ -3,7 +3,7 @@ import { ActivityBlock } from '../model/block';
 import { CallWindow } from '../model/call';
 import { CollectedEvent } from '../model/event';
 import { WorklogProposal } from '../model/proposal';
-import { ClosedTimerRun } from '../model/timer';
+import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
 import { TimeWindow } from '../model/time-window';
 import { AttributeOptions, attribute } from './attribute';
 import { CallMatch, matchCalls } from './calls';
@@ -11,12 +11,12 @@ import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { FillOptions, fillGaps } from './fill';
 import { MeetingMatch, MeetingOptions, matchMeetings } from './meetings';
-import { MergeOptions, WorkGroup, mergeBlocks } from './merge';
+import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, mergeBlocks } from './merge';
 import { mergeRequestActivity } from './merge-request-activity';
 import { clipBlocks } from './overlap';
 import { PrivateTime, privateTime } from './project-link';
 import { UnnamedProposal, propose } from './propose';
-import { RoundOptions } from './round';
+import { CheckDayOptions, RoundOptions } from './round';
 import { TimerMatch, matchTimerRuns } from './timers';
 
 export type BuildRowsOptions = {
@@ -157,3 +157,21 @@ export const buildRows = (
     privateMs: secludedTime.reduce((sum, entry) => sum + entry.observedMs, 0),
   };
 };
+
+/**
+ * What a day's own rows say about the checks a reviewer should see, for `checkDay` to warn on.
+ *
+ * Derived here rather than passed in, so a screen cannot forget one: `pausedMs` is the only input a
+ * caller still owns, because a pause is a window of the day rather than a row of it.
+ */
+export const dayCheckOptions = (rows: DayRows): CheckDayOptions => ({
+  maxRowsPerDay: DEFAULT_MERGE_OPTIONS.maxRowsPerDay,
+  meetingOverlapMs:
+    rows.meetings.reduce((sum, meeting) => sum + meeting.overlapMs, 0) +
+    rows.calls.reduce((sum, call) => sum + call.overlapMs, 0),
+  timerUnobservedMs: rows.timers.reduce(
+    (sum, timer) => sum + Math.max(0, timerRunDurationMs(timer.run) - timer.observedMs),
+    0,
+  ),
+  filledMs: rows.filledMs,
+});

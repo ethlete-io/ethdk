@@ -7,14 +7,14 @@ import { expect, test } from './support';
  */
 test.describe('the build stamp', () => {
   test('says the build is an early alpha where the app names itself', async ({ page }) => {
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.locator('[data-alpha-patch]')).toHaveText('Early alpha');
     await expect(page.locator('[data-build-label]')).toContainText('dev build');
   });
 
   test('keeps the app name reachable, now that the name is a logo', async ({ page }) => {
-    await page.goto('/today');
+    await page.goto('/day');
 
     await expect(page.getByRole('img', { name: 'Timetrack' })).toBeVisible();
   });

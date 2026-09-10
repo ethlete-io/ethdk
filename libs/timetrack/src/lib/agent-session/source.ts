@@ -2,7 +2,7 @@ import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent } from '../model/e
 
 /**
  * Far enough apart to keep a long session from filling the store, and far below
- * `SessionizeOptions.maxUnobservedMs` so a session that ran continuously still arrives as one block.
+ * `StreamDayOptions.maxUnobservedMs` so a session that ran continuously still arrives as one block.
  */
 export const DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS = 60_000;
 

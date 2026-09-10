@@ -48,7 +48,7 @@ export type CalendarCollectorRun = {
 };
 
 /**
- * Reads the picked calendars into the event store, so a meeting reaches `correlateDay` through the same
+ * Reads the picked calendars into the event store, so a meeting reaches `streamDay` through the same
  * path as a commit or a focus sample.
  *
  * Every read overlaps the last one by design — a moved meeting is only visible by reading its window

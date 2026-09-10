@@ -13,7 +13,10 @@ import { BranchRepairComponent } from './branch-repair.component';
 import { injectBranchRepair } from './branch-repair';
 import { CreateTicketComponent } from './create-ticket.component';
 import { injectDayReview } from './day-review';
+import { DayNotesComponent } from './day-notes.component';
+import { DayStreamsComponent } from './day-streams.component';
 import { DayTimelineComponent } from './day-timeline.component';
+import { DayTotalsComponent } from './day-totals.component';
 import { formatDayLabel, formatSignedDurationMs } from './format';
 import { TimerRunLabel, TimerRunsComponent } from './timer-runs.component';
 import { injectTicketDraft } from './ticket-draft';
@@ -35,7 +38,9 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           </button>
           <h2 class="text-h3">{{ dayLabel() }}</h2>
           <button (click)="store.shiftDay(1)" et-button variant="outline" size="sm" aria-label="Next day">→</button>
-          <button (click)="store.goToToday()" et-button variant="transparent" size="sm">Today</button>
+          @if (!store.isToday()) {
+            <button (click)="store.goToToday()" et-button variant="transparent" size="sm">Today</button>
+          }
         </div>
 
         <div class="flex items-center gap-2">
@@ -56,6 +61,10 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           <span class="text-base">Reading the day…</span>
         </div>
       } @else if (store.review(); as day) {
+        <div class="shrink-0 border-b border-et-surface-border px-6 pb-4">
+          <ethlete-day-totals [day]="store.day()" />
+        </div>
+
         @if (day.check.warnings.length) {
           <div class="flex shrink-0 flex-col gap-2 px-6 pb-4">
             @for (warning of day.check.warnings; track warning.kind) {
@@ -68,7 +77,6 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           <ethlete-day-timeline
             [focusedDate]="focusedDate()"
             [rows]="store.rows()"
-            [unattributed]="unattributedBlocks()"
             (rowSelect)="store.toggleExpanded($event.id)"
             (boundaryMove)="store.moveBoundary($event)"
             (rowReschedule)="store.rescheduleRow($event)"
@@ -228,7 +236,13 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
                 (label)="labelRun($event)"
               />
             }
+
+            <ethlete-day-notes [day]="store.day()" />
           </div>
+        </div>
+
+        <div class="shrink-0 px-6 pt-4">
+          <ethlete-day-streams [day]="store.day()" [headBranches]="store.headBranches()" />
         </div>
 
         @if (store.selection().length; as selected) {
@@ -265,7 +279,10 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
     BUTTON_IMPORTS,
     BranchRepairComponent,
     CreateTicketComponent,
+    DayNotesComponent,
+    DayStreamsComponent,
     DayTimelineComponent,
+    DayTotalsComponent,
     EMPTY_STATE_IMPORTS,
     SpinnerComponent,
     TimerRunsComponent,
@@ -297,11 +314,6 @@ export class DayReviewViewComponent {
 
   protected dayLabel = computed(() => formatDayLabel(this.store.dayKey()));
   protected focusedDate = computed(() => localDayRange(this.store.dayKey(), this.store.boundary()).from);
-
-  /** The time nothing could attribute, shown on the timeline behind the rows but never as a worklog. */
-  protected unattributedBlocks = computed(() =>
-    (this.store.correlation()?.unattributed ?? []).flatMap((group) => group.blocks),
-  );
 
   /**
    * The repair a just-filed ticket makes possible. It appears only once the key exists, because the

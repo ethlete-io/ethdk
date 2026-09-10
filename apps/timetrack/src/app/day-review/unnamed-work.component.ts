@@ -29,7 +29,8 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
         <div class="flex grow flex-col gap-1">
           <h3 class="text-h4">Not yet named</h3>
           <p class="text-small text-et-surface-muted">
-            Naming one of these logs it against that issue here and on every later day it appears in.
+            One line per context, not per band. The bands themselves are on the timeline and can be cut there; an answer
+            here logs the context against that issue on this day and on every later day it appears in.
           </p>
         </div>
 

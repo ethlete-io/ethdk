@@ -139,6 +139,10 @@ export const tempoWorklogOn = (options: {
  * One reconstructable morning: two hours on a branch that names an issue, then an hour on a branch
  * that names none. The second stretch is what puts a card under "Not yet named", and its branch is
  * one the grammar can rename, so the same fixture drives branch repair.
+ *
+ * Every window title carries the checkout's directory name, because that is what names the checkout —
+ * a git event labels a stream and never hands the minutes after it to the checkout it names. A title
+ * that names nothing is `unnamed-focus.spec.ts`, not this fixture.
  */
 export const defaultEvents = (): CollectedEvent[] => [
   { at: e2eAt(9, 0), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: E2E_ISSUE_BRANCH },
@@ -147,7 +151,7 @@ export const defaultEvents = (): CollectedEvent[] => [
     source: 'window',
     kind: 'window-focus',
     appId: 'com.microsoft.VSCode',
-    title: 'user-management.ts',
+    title: 'user-management.ts - fut-frontend - Visual Studio Code',
   },
   // The morning is sampled through, not just at its ends. A block ends at its last sample, so two
   // events 89 minutes apart describe one observed minute rather than the hour and a half between them.
@@ -171,7 +175,13 @@ export const defaultEvents = (): CollectedEvent[] => [
     subject: 'feat(users): Invite a member by email',
   },
   { at: e2eAt(11, 0), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: E2E_KEYLESS_BRANCH },
-  { at: e2eAt(11, 1), source: 'window', kind: 'window-focus', appId: 'com.microsoft.VSCode', title: 'pdf-export.ts' },
+  {
+    at: e2eAt(11, 1),
+    source: 'window',
+    kind: 'window-focus',
+    appId: 'com.microsoft.VSCode',
+    title: 'pdf-export.ts - fut-frontend - Visual Studio Code',
+  },
   {
     at: e2eAt(11, 40),
     source: 'git',
