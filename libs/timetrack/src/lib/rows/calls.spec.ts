@@ -14,6 +14,7 @@ const call = (overrides: Partial<CallWindow> = {}): CallWindow => ({
   to: at(11),
   appId: 'com.hnc.Discord',
   title: '#standup | Braune Digital',
+  attendedMs: 30 * 60_000,
   countsAsWork: true,
   ...overrides,
 });

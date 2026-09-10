@@ -18,6 +18,7 @@ const HUDDLE: CallWindow = {
   to: at(11),
   appId: 'com.slack.Slack',
   title: 'Huddle | Braune Digital',
+  attendedMs: 30 * 60_000,
   countsAsWork: true,
 };
 

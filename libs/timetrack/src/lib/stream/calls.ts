@@ -1,5 +1,6 @@
 import { CallWindow } from '../model/call';
 import { CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
+import { TimeWindow, clipWindows, windowsMs } from '../model/time-window';
 import { TimetrackCallRules } from '../settings/model';
 
 export type ClassifyCallsOptions = {
@@ -14,6 +15,11 @@ export type ClassifyCallsOptions = {
   until: Date;
   /** How long a break in the microphone still reads as one call. Defaults to {@link DEFAULT_CALL_GLUE_MS}. */
   glueMs?: number;
+  /**
+   * How long the call's own application must hold the focus inside the call before the call can count
+   * as work. Defaults to {@link DEFAULT_MIN_ATTENDED_MS}.
+   */
+  minAttendedMs?: number;
 };
 
 /**
@@ -24,6 +30,15 @@ export type ClassifyCallsOptions = {
  * that drops and reconnects leaves the same shape, so one rule covers both.
  */
 export const DEFAULT_CALL_GLUE_MS = 2 * 60_000;
+
+/**
+ * The focus a call needs before it reads as a call the user was in, rather than a voice room left open.
+ *
+ * Measured over the seven call windows of 2026-09-10: the two the user took part in held their own
+ * window for 9.2 and 10.7 minutes, and the four rooms held it for 0, 0, 0 and 1.0 minutes. Two minutes
+ * sits in that gap with room on both sides.
+ */
+export const DEFAULT_MIN_ATTENDED_MS = 2 * 60_000;
 
 /**
  * Whether the microphone holder belongs to this application.
@@ -68,6 +83,26 @@ const matches = (patterns: readonly string[], named: Named) =>
  */
 const countsAsWork = (rules: TimetrackCallRules, named: Named) =>
   !matches(rules.neverCountsAsWork, named) && matches(rules.countsAsWork, named);
+
+/** Each focus in order, holding until the next one takes over, and the last until the cut-off. */
+type HeldFocus = TimeWindow & { appId: string };
+
+const focusHeld = (focus: readonly WindowFocusEvent[], until: Date): HeldFocus[] =>
+  focus.map((event, index) => ({ appId: event.appId, from: event.at, to: focus[index + 1]?.at ?? until }));
+
+/**
+ * How long the call's own application held the focus inside the call.
+ *
+ * This is what separates a meeting from a voice room left open in the background: neither length nor
+ * concurrent work does. Measured on 2026-09-10, the rooms ran 87% to 200% concurrent unrelated work and
+ * the real meeting ran 118%, and the rooms were 0.9 to 34.5 minutes long.
+ *
+ * A call the user listened to for an hour without ever clicking its window reads as a room and is
+ * under-counted. That is the direction this module already picks: it never invents time it did not
+ * observe.
+ */
+const attendedMs = (held: readonly HeldFocus[], call: PairedCall) =>
+  windowsMs(clipWindows({ windows: held.filter((window) => belongsTo(call.appId, window.appId)), within: [call] }));
 
 /**
  * The title of the last window that application had in front before the call opened.
@@ -145,14 +180,29 @@ const glueCalls = (calls: readonly PairedCall[], glueMs: number): PairedCall[] =
  * A call still open at the end runs to `until`.
  */
 export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
-  const focus = options.events.filter((event): event is WindowFocusEvent => event.kind === 'window-focus');
+  const focus = options.events
+    .filter((event): event is WindowFocusEvent => event.kind === 'window-focus')
+    .sort((left, right) => left.at.getTime() - right.at.getTime());
   const calls = options.events.filter((event): event is CallEvent => event.source === 'call');
   const { closed, open } = pairCallEdges(calls);
 
+  const held = focusHeld(focus, options.until);
+  const minAttendedMs = options.minAttendedMs ?? DEFAULT_MIN_ATTENDED_MS;
+
   const toWindow = (call: PairedCall): CallWindow => {
     const title = titleAt(focus, { appId: call.appId, at: call.from });
+    const attended = attendedMs(held, call);
+    // A day with no window-focus event at all cannot be judged on attendance, and must not be gated on
+    // it: a platform whose window source is off would otherwise lose every call it ever recorded.
+    const readable = focus.length > 0;
 
-    return { ...call, title, countsAsWork: countsAsWork(options.rules, { appId: call.appId, title }) };
+    return {
+      ...call,
+      title,
+      attendedMs: attended,
+      countsAsWork:
+        (!readable || attended >= minAttendedMs) && countsAsWork(options.rules, { appId: call.appId, title }),
+    };
   };
 
   const paired = [

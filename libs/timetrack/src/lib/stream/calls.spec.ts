@@ -1,6 +1,6 @@
 import { CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
 import { TimetrackCallRules } from '../settings/model';
-import { classifyCalls, closeAbandonedCalls } from './calls';
+import { DEFAULT_MIN_ATTENDED_MS, classifyCalls, closeAbandonedCalls } from './calls';
 
 const at = (minute: number) => new Date(Date.UTC(2026, 8, 9, 9, minute));
 
@@ -363,5 +363,151 @@ describe('classifyCalls, a microphone taken twice for one meeting', () => {
     ]);
 
     expect(windows).toHaveLength(2);
+  });
+});
+
+describe('classifyCalls, the voice room left open', () => {
+  const WORK = { countsAsWork: ['Braune Digital'] };
+
+  it('counts a call its own window was in front of for long enough', () => {
+    const windows = classify(
+      [
+        focus(0, 'com.hnc.Discord', 'Meeting #1 | Braune Digital'),
+        call(10, 'call-start', 'com.hnc.Discord'),
+        focus(20, 'code', 'calls.ts - timetrack'),
+        call(40, 'call-end', 'com.hnc.Discord'),
+      ],
+      WORK,
+    );
+
+    expect(windows[0]!.attendedMs).toBe(10 * 60_000);
+    expect(windows[0]!.countsAsWork).toBe(true);
+  });
+
+  it('counts no room the user never came back to, whatever the rules allow', () => {
+    const windows = classify(
+      [
+        focus(0, 'com.hnc.Discord', 'Open Room #1 | Braune Digital'),
+        focus(1, 'code', 'calls.ts - timetrack'),
+        call(10, 'call-start', 'com.hnc.Discord'),
+        call(45, 'call-end', 'com.hnc.Discord'),
+      ],
+      WORK,
+    );
+
+    expect(windows[0]!.attendedMs).toBe(0);
+    expect(windows[0]!.countsAsWork).toBe(false);
+  });
+
+  it('counts no room the user only glanced at', () => {
+    const windows = classify(
+      [
+        focus(0, 'com.hnc.Discord', 'Meeting #1 | Braune Digital'),
+        focus(1, 'code', 'calls.ts - timetrack'),
+        call(10, 'call-start', 'com.hnc.Discord'),
+        focus(20, 'com.hnc.Discord', 'Meeting #1 | Braune Digital'),
+        focus(21, 'code', 'calls.ts - timetrack'),
+        call(45, 'call-end', 'com.hnc.Discord'),
+      ],
+      WORK,
+    );
+
+    expect(windows[0]!.attendedMs).toBe(60_000);
+    expect(windows[0]!.countsAsWork).toBe(false);
+  });
+
+  it('reads the focus a helper process holds as the call it belongs to', () => {
+    const windows = classify(
+      [
+        focus(0, 'discord', 'Meeting #1 | Braune Digital'),
+        call(10, 'call-start', 'Discord'),
+        focus(25, 'code', 'calls.ts - timetrack'),
+        call(40, 'call-end', 'Discord'),
+      ],
+      WORK,
+    );
+
+    expect(windows[0]!.attendedMs).toBe(15 * 60_000);
+    expect(windows[0]!.countsAsWork).toBe(true);
+  });
+
+  it('counts the focus inside the call only', () => {
+    const windows = classify(
+      [
+        focus(0, 'com.hnc.Discord', 'Meeting #1 | Braune Digital'),
+        focus(1, 'code', 'calls.ts - timetrack'),
+        call(10, 'call-start', 'com.hnc.Discord'),
+        focus(30, 'com.hnc.Discord', 'Meeting #1 | Braune Digital'),
+        call(40, 'call-end', 'com.hnc.Discord'),
+        focus(90, 'code', 'calls.ts - timetrack'),
+      ],
+      WORK,
+    );
+
+    expect(windows[0]!.attendedMs).toBe(10 * 60_000);
+  });
+
+  it('measures the attendance over the whole glued call', () => {
+    const windows = classify(
+      [
+        focus(0, 'com.hnc.Discord', 'Meeting #1 | Braune Digital'),
+        focus(1, 'code', 'calls.ts - timetrack'),
+        call(10, 'call-start', 'com.hnc.Discord'),
+        call(11, 'call-end', 'com.hnc.Discord'),
+        call(12, 'call-start', 'com.hnc.Discord'),
+        focus(20, 'com.hnc.Discord', 'Meeting #1 | Braune Digital'),
+        focus(25, 'code', 'calls.ts - timetrack'),
+        call(40, 'call-end', 'com.hnc.Discord'),
+      ],
+      WORK,
+    );
+
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.attendedMs).toBe(5 * 60_000);
+  });
+
+  it('lets a deny pattern beat an attendance nothing else faulted', () => {
+    const windows = classify(
+      [
+        focus(0, 'com.hnc.Discord', 'Open Room #1 | Braune Digital'),
+        call(10, 'call-start', 'com.hnc.Discord'),
+        call(40, 'call-end', 'com.hnc.Discord'),
+      ],
+      { ...WORK, neverCountsAsWork: ['Open Room'] },
+    );
+
+    expect(windows[0]!.attendedMs).toBe(30 * 60_000);
+    expect(windows[0]!.countsAsWork).toBe(false);
+  });
+
+  it('judges no call on attendance when the day reports no window at all', () => {
+    const windows = classify(
+      [call(10, 'call-start', 'com.tinyspeck.slackmacgap'), call(40, 'call-end', 'com.tinyspeck.slackmacgap')],
+      { countsAsWork: ['tinyspeck'] },
+    );
+
+    expect(windows[0]!.attendedMs).toBe(0);
+    expect(windows[0]!.countsAsWork).toBe(true);
+  });
+
+  it('takes the attendance a call needs from the options', () => {
+    const events = [
+      focus(0, 'com.hnc.Discord', 'Meeting #1 | Braune Digital'),
+      focus(1, 'code', 'calls.ts - timetrack'),
+      call(10, 'call-start', 'com.hnc.Discord'),
+      focus(20, 'com.hnc.Discord', 'Meeting #1 | Braune Digital'),
+      focus(21, 'code', 'calls.ts - timetrack'),
+      call(45, 'call-end', 'com.hnc.Discord'),
+    ];
+
+    const windows = classifyCalls({
+      events,
+      rules: rules(WORK),
+      until: at(120),
+      minAttendedMs: 60_000,
+    });
+
+    expect(DEFAULT_MIN_ATTENDED_MS).toBe(2 * 60_000);
+    expect(windows[0]!.countsAsWork).toBe(true);
   });
 });

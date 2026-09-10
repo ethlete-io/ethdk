@@ -46,6 +46,7 @@ const NO_DIRECTORY =
               <span class="text-mono shrink-0 text-et-surface-muted">{{ CALL_SPAN_OF(call) }}</span>
               <span [title]="call.appId" class="min-w-0 truncate">{{ CALL_LABEL_OF(call) }}</span>
               <span class="text-et-surface-muted">{{ CALL_LENGTH_OF(call) }}</span>
+              <span class="text-et-surface-subtle" data-call-attended>{{ CALL_ATTENDED_OF(call) }} in front</span>
 
               @if (!call.countsAsWork) {
                 <span class="text-et-surface-subtle" data-call-unclassified>not counted</span>
@@ -56,7 +57,8 @@ const NO_DIRECTORY =
 
         <span class="text-small text-et-surface-subtle">
           A call is presence: an hour spent listening leaves no keystroke, so nothing else sees it. Whether it was work
-          is your call, and a call no rule names is not counted. Write the rule in Settings.
+          is your call, and a call no rule names is not counted. Write the rule in Settings. A call you never brought to
+          the front is read as a voice room left open, and is not counted either.
         </span>
       </div>
     }
@@ -149,5 +151,9 @@ export class DayNotesComponent {
 
   protected CALL_LENGTH_OF(call: CallWindow) {
     return formatDurationMs(call.to.getTime() - call.from.getTime());
+  }
+
+  protected CALL_ATTENDED_OF(call: CallWindow) {
+    return formatDurationMs(call.attendedMs);
   }
 }

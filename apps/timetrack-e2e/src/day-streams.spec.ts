@@ -579,6 +579,26 @@ test.describe('the day view, on a day something held the microphone', () => {
     await expect(page.locator('[data-rebuilt-total]')).toHaveCount(0);
   });
 
+  test('counts no call the user never brought to the front, whatever the rule says', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        focus(0, DISCORD, '#standup | Braune Digital'),
+        focus(1, 'code', 'calls.ts - timetrack'),
+        ...meeting.slice(1),
+      ],
+      settings: { ...defaultSettings(), callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] } },
+    });
+    await page.goto('/day');
+
+    await openDayNotes(page);
+
+    const row = page.locator(`[data-call="${HELPER}"]`);
+
+    await expect(row.locator('[data-call-attended]')).toHaveText('0m in front');
+    await expect(row.locator('[data-call-unclassified]')).toBeVisible();
+  });
+
   test('shows no call panel at all on a day nothing held the microphone', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, git: DISCOVERED, events: day() });
     await page.goto('/day');

@@ -6,7 +6,15 @@ export type CallWindow = {
   appId: string;
   /** The last window title that application had before the call opened. Empty when it had none. */
   title: string;
-  /** Whether a rule said this was work. Nothing saying so means no — see `classifyCalls`. */
+  /**
+   * How long the call's own application held the focus inside this window.
+   *
+   * It separates a call the user took part in from a voice room left open in the background — see
+   * `classifyCalls`. It is 0 on a day whose window source reported nothing, where attendance cannot be
+   * read at all.
+   */
+  attendedMs: number;
+  /** Whether the user attended, and a rule said this was work. Nothing saying so means no — see `classifyCalls`. */
   countsAsWork: boolean;
 };
 
