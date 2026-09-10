@@ -21,6 +21,11 @@ export type WorklogProposal = {
    * store, which never carried them.
    */
   stretches?: TimeWindow[];
+  /**
+   * The checkout whose work this row mostly is, as a `streamKey`. Absent when nothing behind the row
+   * resolved to a checkout or an application, and on a row read back from an older store.
+   */
+  laneKey?: string;
   description: string;
   confidence: Confidence;
   evidence: Evidence[];

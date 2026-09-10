@@ -35,6 +35,7 @@ const asPinned = (row: ReviewedRow, replaces: readonly string[]): PinnedRow => (
   to: row.to,
   durationMs: row.durationMs,
   observedMs: row.observedMs,
+  laneKey: row.laneKey,
   description: row.description,
   confidence: row.confidence,
   evidence: row.evidence,

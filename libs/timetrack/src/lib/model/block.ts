@@ -34,3 +34,19 @@ export const contextKey = (context: ActivityContext) =>
  */
 export const streamKey = (context: ActivityContext) =>
   context.repoPath ? `repo:${context.repoPath}` : `app:${context.appId ?? ''}`;
+
+/**
+ * What a `streamKey` reads as on screen: the checkout's directory name, or the application's id.
+ *
+ * It lives beside `streamKey` because the two share the key's format, and a screen that parsed the
+ * key itself would break the next time the format changes.
+ */
+export const streamKeyLabel = (key: string) => {
+  if (key.startsWith('repo:')) {
+    const path = key.slice('repo:'.length);
+
+    return path.split('/').filter(Boolean).pop() ?? path;
+  }
+
+  return key.startsWith('app:') ? key.slice('app:'.length) : key;
+};

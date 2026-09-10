@@ -25,6 +25,7 @@ import { DragGestureEvent, ProvideColorDirective, dragGestureFrom } from '@ethle
 import { DEFAULT_ROUND_OPTIONS, ReviewedRow } from '@ethlete/timetrack';
 import { tap } from 'rxjs';
 import { formatClockTime } from './format';
+import { DayLane, lanesOf, laneKeyOfRow } from './lanes';
 import {
   TimelineEntry,
   UNNAMED_LABEL,
@@ -57,6 +58,12 @@ const DETAIL_MIN_REM = 5;
 
 /** How tall one row of the all-day strip is, and the least it reserves when nothing is in it. */
 const STRIP_ROW_REM = 2;
+
+/**
+ * The least a lane narrows to. A checkout's directory name has to stay readable, so a day of many
+ * checkouts scrolls sideways rather than shrinking every lane to a sliver.
+ */
+const LANE_MIN_REM = 14;
 
 const HOUR_MS = 60 * 60_000;
 const DAY_MS = 24 * HOUR_MS;
@@ -105,111 +112,135 @@ type RowDrag = {
       etScheduler
       view="day"
     >
-      <div #body #grid="etSchedulerTimeGrid" class="min-h-0 grow overflow-y-auto pb-6" etSchedulerTimeGrid>
-        @if (grid.allDay().length) {
-          <div [style.height.rem]="stripHeight(grid.allDayRowCount())" class="relative ml-13 mb-2">
-            @for (entry of grid.allDay(); track entry.node.appointment.id) {
-              <button
-                [etProvideColor]="entry.node.appointment.colorToken ?? 'neutral'"
-                [style.top.rem]="entry.row * STRIP_ROW_REM"
-                [style.left.%]="entry.inlineOffset"
-                [style.width.%]="entry.inlineSize"
-                [title]="entry.node.appointment.title"
-                (click)="select(entry.node.appointment, $event)"
-                class="absolute flex items-center gap-2 truncate rounded-sm border-l-2 border-l-et-theme bg-et-theme/10 px-2 text-left text-small"
-                style="height: 1.6rem"
-                type="button"
+      <div #body #grid="etSchedulerTimeGrid" class="min-h-0 grow overflow-auto pb-6" etSchedulerTimeGrid>
+        <div class="min-w-max">
+          <div class="sticky top-0 z-20 flex bg-et-surface-bg">
+            <div class="sticky left-0 w-13 shrink-0 bg-et-surface-bg"></div>
+
+            @for (lane of lanes(); track lane.key) {
+              <div
+                [style.minWidth.rem]="LANE_MIN_REM"
+                [title]="lane.key"
+                class="grow truncate border-b border-l border-et-surface-border px-2 py-1 text-small text-et-surface-muted"
+                data-lane-header
               >
-                <span class="truncate">{{ entry.node.appointment.title }}</span>
-                <span class="shrink-0 text-et-surface-muted">{{ COUNT_DESCENDANTS(entry.node) }} rows</span>
-              </button>
+                {{ lane.label }}
+              </div>
             }
           </div>
-        }
 
-        @for (day of grid.days(); track day.date.getTime()) {
+          @if (grid.allDay().length) {
+            <div [style.height.rem]="stripHeight(grid.allDayRowCount())" class="relative ml-13 mb-2">
+              @for (entry of grid.allDay(); track entry.node.appointment.id) {
+                <button
+                  [etProvideColor]="entry.node.appointment.colorToken ?? 'neutral'"
+                  [style.top.rem]="entry.row * STRIP_ROW_REM"
+                  [style.left.%]="entry.inlineOffset"
+                  [style.width.%]="entry.inlineSize"
+                  [title]="entry.node.appointment.title"
+                  (click)="select(entry.node.appointment, $event)"
+                  class="absolute flex items-center gap-2 truncate rounded-sm border-l-2 border-l-et-theme bg-et-theme/10 px-2 text-left text-small"
+                  style="height: 1.6rem"
+                  type="button"
+                >
+                  <span class="truncate">{{ entry.node.appointment.title }}</span>
+                  <span class="shrink-0 text-et-surface-muted">{{ COUNT_DESCENDANTS(entry.node) }} rows</span>
+                </button>
+              }
+            </div>
+          }
+
           <div #dayColumn [style.height.rem]="24 * HOUR_REM" class="relative">
             @for (hour of HOURS; track hour) {
               <div [style.top.rem]="hour * HOUR_REM" class="absolute inset-x-0 flex items-center gap-2">
-                <span class="w-11 shrink-0 text-right text-mono text-et-surface-subtle">{{ labelFor(hour) }}</span>
+                <span
+                  class="sticky left-0 z-10 w-11 shrink-0 bg-et-surface-bg text-right text-mono text-et-surface-subtle"
+                  >{{ labelFor(hour) }}</span
+                >
                 <span class="h-px grow bg-et-surface-border"></span>
               </div>
             }
 
-            <div
-              #column
-              (pointerdown)="startDraw({ event: $event, column })"
-              class="absolute inset-y-0 right-0 left-13 touch-none"
-            >
-              @if (grid.draftBlock(); as draft) {
+            <div class="absolute inset-y-0 right-0 left-13 flex">
+              @for (lane of lanes(); track lane.key) {
                 <div
-                  [style.top.%]="draft.offset"
-                  [style.height.%]="draft.span"
-                  class="pointer-events-none absolute inset-x-0 rounded-sm border border-dashed border-et-brand-ink bg-et-brand-ink/10"
-                ></div>
-              }
-
-              @for (block of day.blocks; track block.node.appointment.id) {
-                <div
-                  [attr.data-kind]="kindOf(block.node.appointment)"
-                  [attr.data-dragging]="dragging(block.node.appointment) || null"
-                  [etProvideColor]="block.node.appointment.colorToken ?? 'neutral'"
-                  [style.top.%]="block.offset"
-                  [style.height.%]="block.span"
-                  [style.left.%]="block.inlineOffset"
-                  [style.width.%]="block.inlineSize"
-                  [title]="LABEL_OF(block.node.appointment)"
-                  (pointerdown)="startDrag({ event: $event, appointment: block.node.appointment, column })"
-                  (click)="select(block.node.appointment, $event)"
-                  (keydown.enter)="select(block.node.appointment, $event)"
-                  class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[dragging]:opacity-70"
-                  role="button"
-                  tabindex="0"
+                  #column
+                  [style.minWidth.rem]="LANE_MIN_REM"
+                  (pointerdown)="startDraw({ event: $event, column, lane })"
+                  class="relative grow touch-none border-l border-et-surface-border"
+                  data-lane
                 >
-                  @for (paint of PAINT_OF(block.node.appointment); track paint.offset) {
+                  @if (draftIn(lane); as draft) {
                     <div
-                      [style.top.%]="paint.offset"
-                      [style.height.%]="paint.span"
-                      class="pointer-events-none absolute inset-x-0 bg-et-theme/20"
+                      [style.top.%]="draft.offset"
+                      [style.height.%]="draft.span"
+                      class="pointer-events-none absolute inset-x-0 rounded-sm border border-dashed border-et-brand-ink bg-et-brand-ink/10"
                     ></div>
                   }
-                  @if (labelled(block.span)) {
-                    <span class="relative block truncate">{{ LABEL_OF(block.node.appointment) }}</span>
-                  }
-                  @if (detailed(block.span) && descriptionOf(block.node.appointment); as description) {
-                    <span class="relative block truncate text-et-surface-muted">{{ description }}</span>
-                  }
-                </div>
-              }
 
-              @for (boundary of boundaries(); track boundary.id) {
-                <div
-                  [attr.aria-label]="labelOf(boundary)"
-                  [attr.aria-valuemax]="minutesOf(limitsOf(boundary).max)"
-                  [attr.aria-valuemin]="minutesOf(limitsOf(boundary).min)"
-                  [attr.aria-valuenow]="minutesOf(instantOf(boundary).getTime())"
-                  [attr.aria-valuetext]="clockOf(boundary)"
-                  [style.top.%]="percentOf(instantOf(boundary))"
-                  (keydown)="nudge($event, boundary)"
-                  (pointerdown)="startBoundaryDrag({ event: $event, boundary, column })"
-                  class="group absolute inset-x-0 -mt-1 flex h-2 touch-none items-center outline-none"
-                  aria-orientation="horizontal"
-                  role="separator"
-                  tabindex="0"
-                >
-                  <span
-                    class="h-0.5 grow rounded-full bg-et-surface-subtle opacity-40 group-hover:opacity-100 group-focus-visible:opacity-100"
-                  ></span>
-                  <span
-                    [style.opacity]="draggingBoundary(boundary) ? 1 : null"
-                    class="ml-2 shrink-0 rounded-sm bg-et-surface-interaction px-1 text-mono opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
-                    >{{ clockOf(boundary) }}</span
-                  >
+                  @for (laid of lane.blocks; track laid.block.node.appointment.id) {
+                    <div
+                      [attr.data-kind]="kindOf(laid.block.node.appointment)"
+                      [attr.data-dragging]="dragging(laid.block.node.appointment) || null"
+                      [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
+                      [style.top.%]="laid.block.offset"
+                      [style.height.%]="laid.block.span"
+                      [style.left.%]="laid.inlineOffset"
+                      [style.width.%]="laid.inlineSize"
+                      [title]="LABEL_OF(laid.block.node.appointment)"
+                      (pointerdown)="startDrag({ event: $event, appointment: laid.block.node.appointment, column })"
+                      (click)="select(laid.block.node.appointment, $event)"
+                      (keydown.enter)="select(laid.block.node.appointment, $event)"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[dragging]:opacity-70"
+                      role="button"
+                      tabindex="0"
+                    >
+                      @for (paint of PAINT_OF(laid.block.node.appointment); track paint.offset) {
+                        <div
+                          [style.top.%]="paint.offset"
+                          [style.height.%]="paint.span"
+                          class="pointer-events-none absolute inset-x-0 bg-et-theme/20"
+                        ></div>
+                      }
+                      @if (labelled(laid.block.span)) {
+                        <span class="relative block truncate">{{ LABEL_OF(laid.block.node.appointment) }}</span>
+                      }
+                      @if (detailed(laid.block.span) && descriptionOf(laid.block.node.appointment); as description) {
+                        <span class="relative block truncate text-et-surface-muted">{{ description }}</span>
+                      }
+                    </div>
+                  }
+
+                  @for (boundary of boundariesIn(lane); track boundary.id) {
+                    <div
+                      [attr.aria-label]="labelOf(boundary)"
+                      [attr.aria-valuemax]="minutesOf(limitsOf(boundary).max)"
+                      [attr.aria-valuemin]="minutesOf(limitsOf(boundary).min)"
+                      [attr.aria-valuenow]="minutesOf(instantOf(boundary).getTime())"
+                      [attr.aria-valuetext]="clockOf(boundary)"
+                      [style.top.%]="percentOf(instantOf(boundary))"
+                      (keydown)="nudge($event, boundary)"
+                      (pointerdown)="startBoundaryDrag({ event: $event, boundary, column })"
+                      class="group absolute inset-x-0 -mt-1 flex h-2 touch-none items-center outline-none"
+                      aria-orientation="horizontal"
+                      role="separator"
+                      tabindex="0"
+                    >
+                      <span
+                        class="h-0.5 grow rounded-full bg-et-surface-subtle opacity-40 group-hover:opacity-100 group-focus-visible:opacity-100"
+                      ></span>
+                      <span
+                        [style.opacity]="draggingBoundary(boundary) ? 1 : null"
+                        class="ml-2 shrink-0 rounded-sm bg-et-surface-interaction px-1 text-mono opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+                        >{{ clockOf(boundary) }}</span
+                      >
+                    </div>
+                  }
                 </div>
               }
             </div>
           </div>
-        }
+        </div>
       </div>
     </div>
   `,
@@ -231,7 +262,7 @@ export class DayTimelineComponent {
 
   private body = viewChild.required<ElementRef<HTMLElement>>('body');
   private dayColumn = viewChild<ElementRef<HTMLElement>>('dayColumn');
-  public grid = viewChild.required(SchedulerTimeGridDirective);
+  public grid = viewChild(SchedulerTimeGridDirective);
   private scheduler = viewChild.required<SchedulerDirective<TimelineEntry>>(SchedulerDirective);
 
   /** The instant a boundary is being dragged to, until the pointer settles on it. */
@@ -240,28 +271,50 @@ export class DayTimelineComponent {
   /** Whether the press now ending moved a block rather than being a click on it. */
   private hasDragged = false;
 
+  /** Which lane a range is being drawn in, so the draft is previewed there and nowhere else. */
+  private drawLane = signal<string | null>(null);
+
   protected readonly HOUR_REM = HOUR_REM;
   protected readonly STRIP_ROW_REM = STRIP_ROW_REM;
+  protected readonly LANE_MIN_REM = LANE_MIN_REM;
   protected readonly HOURS = Array.from({ length: 25 }, (_, hour) => hour);
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
   protected readonly PAINT_OF = appointmentPaint;
 
+  /** The day as one lane per checkout. The grid supplies the vertical geometry; the lane the inline. */
+  protected lanes = computed<DayLane[]>(() => lanesOf(this.grid()?.days()[0]?.blocks ?? []));
+
   /**
-   * The pairs of rows that meet at one instant, ordered by the clock. A pair too short to keep a step
-   * on either side of its boundary gets no handle: there is nowhere left to drag it to.
+   * The pairs of rows that meet at one instant, by the lane they are in. A pair too short to keep a
+   * step on either side of its boundary gets no handle: there is nowhere left to drag it to.
+   *
+   * Only rows of one checkout pair up. Dragging a boundary moves a slice of time from one row to the
+   * other, and across two checkouts that would book one checkout's minutes to another.
    */
-  protected boundaries = computed<TimelineBoundary[]>(() => {
-    const ordered = [...this.rows()].sort((a, b) => a.from.getTime() - b.from.getTime());
+  private boundariesByLane = computed(() => {
+    const rowsByLane = new Map<string, ReviewedRow[]>();
 
-    return ordered.flatMap((before, index) => {
-      const after = ordered[index + 1];
+    for (const row of this.rows()) {
+      const key = laneKeyOfRow(row);
 
-      if (!after || before.to.getTime() !== after.from.getTime()) return [];
-      if (after.to.getTime() - before.from.getTime() < 2 * SNAP_MS) return [];
+      rowsByLane.set(key, [...(rowsByLane.get(key) ?? []), row]);
+    }
 
-      return [{ id: `${before.id}|${after.id}`, before, after }];
-    });
+    const boundariesOf = (rows: readonly ReviewedRow[]): TimelineBoundary[] => {
+      const ordered = [...rows].sort((a, b) => a.from.getTime() - b.from.getTime());
+
+      return ordered.flatMap((before, index) => {
+        const after = ordered[index + 1];
+
+        if (!after || before.to.getTime() !== after.from.getTime()) return [];
+        if (after.to.getTime() - before.from.getTime() < 2 * SNAP_MS) return [];
+
+        return [{ id: `${before.id}|${after.id}`, before, after }];
+      });
+    };
+
+    return new Map([...rowsByLane].map(([key, rows]) => [key, boundariesOf(rows)]));
   });
 
   /**
@@ -331,7 +384,7 @@ export class DayTimelineComponent {
   private scrollHour = computed(() => {
     const starts = this.rows().map((row) => row.from.getTime());
 
-    if (!starts.length) return this.grid().initialScrollHour();
+    if (!starts.length) return this.grid()?.initialScrollHour() ?? 0;
 
     return Math.max(0, Math.floor((Math.min(...starts) - this.focusedDate().getTime()) / HOUR_MS) - 1);
   });
@@ -360,6 +413,15 @@ export class DayTimelineComponent {
 
   protected detailed(span: number) {
     return (span / 100) * 24 * HOUR_REM >= DETAIL_MIN_REM;
+  }
+
+  protected boundariesIn(lane: DayLane) {
+    return this.boundariesByLane().get(lane.key) ?? [];
+  }
+
+  /** The drawn range, in the lane the draw started in. Every other lane previews nothing. */
+  protected draftIn(lane: DayLane) {
+    return this.drawLane() === lane.key ? this.grid()?.draftBlock() : null;
   }
 
   protected stripHeight(rowCount: number) {
@@ -453,10 +515,12 @@ export class DayTimelineComponent {
    * Draws a range on empty grid. A press that never moves still draws one, so a click asks for a row
    * just as a drag does — the surface it opens is where the duration is corrected anyway.
    */
-  protected startDraw(options: { event: PointerEvent; column: HTMLElement }) {
-    const { event, column } = options;
+  protected startDraw(options: { event: PointerEvent; column: HTMLElement; lane: DayLane }) {
+    const { event, column, lane } = options;
 
     if (event.button !== 0) return;
+
+    this.drawLane.set(lane.key);
 
     const scheduler = this.scheduler();
     const at = (clientY: number) => this.instantAt({ column, clientY });
@@ -472,6 +536,8 @@ export class DayTimelineComponent {
         case 'tapped':
           return this.settleDraw();
         case 'cancelled':
+          this.drawLane.set(null);
+
           return scheduler.clearDraftRange();
       }
     };
@@ -615,6 +681,7 @@ export class DayTimelineComponent {
     const scheduler = this.scheduler();
     const draft = scheduler.draftRange();
 
+    this.drawLane.set(null);
     scheduler.clearDraftRange();
 
     if (draft) this.surface.openDraft({ from: draft.start, to: draft.end });

@@ -33,6 +33,8 @@ export type PinnedRow = {
   to: Date;
   durationMs: number;
   observedMs: number;
+  /** The lane the row was cut out of, so a cut keeps its checkout's column on the day screen. */
+  laneKey?: string;
   description: string;
   confidence: Confidence;
   evidence: Evidence[];

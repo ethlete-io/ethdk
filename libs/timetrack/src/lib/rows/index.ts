@@ -4,6 +4,7 @@ export * from './calls';
 export * from './describe';
 export * from './donate';
 export * from './fill';
+export * from './lane';
 export * from './meetings';
 export * from './merge';
 export * from './merge-request-activity';

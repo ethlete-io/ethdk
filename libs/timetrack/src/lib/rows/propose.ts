@@ -2,6 +2,7 @@ import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { contextKey } from '../model/block';
 import { WorklogProposal } from '../model/proposal';
 import { DescribeOptions, describeWork } from './describe';
+import { laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
 import { RoundOptions, roundDurations } from './round';
 import { stretchesOf } from './stretches';
@@ -75,6 +76,7 @@ export const propose = (options: {
       durationMs: rounded[index] ?? group.observedMs,
       observedMs: group.observedMs,
       stretches: stretchesOf(group.blocks),
+      laneKey: laneKeyOf(group.blocks),
       description: describeWork({ group, config: options.config, options: options.describe }),
       confidence: group.confidence,
       evidence: group.evidence,
@@ -88,6 +90,7 @@ export const propose = (options: {
       durationMs: roundedUnnamed[index] ?? group.observedMs,
       observedMs: group.observedMs,
       stretches: stretchesOf(group.blocks),
+      laneKey: laneKeyOf(group.blocks),
       description: describeWork({ group, config: options.config, options: options.describe }),
       confidence: group.confidence,
       evidence: group.evidence,
