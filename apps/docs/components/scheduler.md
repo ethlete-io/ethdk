@@ -138,7 +138,7 @@ The 24-hour body is bounded and internally scrollable (`--et-scheduler-time-grid
 <et-scheduler-time-grid-view />
 ```
 
-It takes no inputs of its own - like the month view, it reads its host `[etScheduler]` via DI. Appointments that overlap in time are packed into side-by-side columns wide enough to fit the busiest overlap group in view, so nothing ever visually overlaps; appointments that don't overlap anything each get the column's full width. A sub-appointment renders in its own column exactly like any other appointment (its own overlap group can differ from its parent's) but gets a depth-scaled inline inset and a shifted color dot, capped past four levels, as a "belongs to" cue - the day view below shows a two-level chain next to its sibling.
+It takes no inputs of its own - like the month view, it reads its host `[etScheduler]` via DI. Appointments that overlap in time are packed into side-by-side columns wide enough to fit the busiest overlap group in view, so nothing ever visually overlaps; appointments that don't overlap anything each get the column's full width. A block then widens into the columns to its right that nothing overlapping it occupies, so one short overlap in the morning no longer thins every block it is transitively grouped with for the rest of the day. A sub-appointment renders in its own column exactly like any other appointment (its own overlap group can differ from its parent's) but gets a depth-scaled inline inset and a shifted color dot, capped past four levels, as a "belongs to" cue - the day view below shows a two-level chain next to its sibling.
 
 <StoryEmbed id="components-date-time-scheduler--day" height="640px" />
 
@@ -386,7 +386,7 @@ Adding your own piece is the same mechanism: write a directive that injects `SCH
 
 ## Headless usage {#headless-usage}
 
-`[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in) - and `allDay()`, the all-day entries spanning across those days (`inlineOffset`/`inlineSize` as percentages of the whole visible range, `row` for the stacking row an overlapping span landed in; `allDayRowCount()` is how many rows that needs):
+`[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in - `inlineSize` can be several columns wide, so it is not `100 / columnCount`) - and `allDay()`, the all-day entries spanning across those days (`inlineOffset`/`inlineSize` as percentages of the whole visible range, `row` for the stacking row an overlapping span landed in; `allDayRowCount()` is how many rows that needs):
 
 ```html
 <div #scheduler="etScheduler" [appointments]="appointments" etScheduler>

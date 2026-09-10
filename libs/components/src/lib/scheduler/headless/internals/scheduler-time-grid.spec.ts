@@ -104,6 +104,30 @@ describe('buildSchedulerTimeGrid', () => {
     expect(blocksOf('c')(grid)).toMatchObject({ column: 0, columnCount: 2 });
   });
 
+  it('widens a block into the columns nothing overlapping it occupies', () => {
+    const grid = buildGrid([
+      appointment('a', new Date(2026, 6, 15, 9), new Date(2026, 6, 15, 9, 30)),
+      appointment('b', new Date(2026, 6, 15, 9, 15), new Date(2026, 6, 15, 9, 45)),
+      appointment('c', new Date(2026, 6, 15, 10), new Date(2026, 6, 15, 17)),
+    ]);
+
+    expect(blocksOf('a')(grid)).toMatchObject({ inlineOffset: 0, inlineSize: 50 });
+    expect(blocksOf('b')(grid)).toMatchObject({ inlineOffset: 50, inlineSize: 50 });
+    expect(blocksOf('c')(grid)).toMatchObject({ inlineOffset: 0, inlineSize: 100 });
+  });
+
+  it('stops a block widening at the column an overlapping appointment holds', () => {
+    const grid = buildGrid([
+      appointment('a', new Date(2026, 6, 15, 9), new Date(2026, 6, 15, 17)),
+      appointment('b', new Date(2026, 6, 15, 10), new Date(2026, 6, 15, 11)),
+      appointment('c', new Date(2026, 6, 15, 10, 30), new Date(2026, 6, 15, 12)),
+    ]);
+
+    expect(blocksOf('a')(grid)).toMatchObject({ column: 0, columnCount: 3, inlineOffset: 0, inlineSize: 100 / 3 });
+    expect(blocksOf('b')(grid)).toMatchObject({ column: 1, columnCount: 3, inlineSize: 100 / 3 });
+    expect(blocksOf('c')(grid)).toMatchObject({ column: 2, columnCount: 3, inlineSize: 100 / 3 });
+  });
+
   it('keeps a sub-appointment in the block list alongside its parent, packed independently of depth', () => {
     const grid = buildGrid([
       appointment('parent', new Date(2026, 6, 15, 9), new Date(2026, 6, 15, 12)),
