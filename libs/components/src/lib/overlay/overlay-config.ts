@@ -1,4 +1,4 @@
-import { Binding, Injector, StaticProvider, ViewContainerRef } from '@angular/core';
+import { Binding, DirectiveWithBindings, Injector, StaticProvider, Type, ViewContainerRef } from '@angular/core';
 import { OverlayStrategyBreakpoint } from './strategies/overlay-strategy.types';
 
 export type OverlayAutoFocusTarget = 'container' | 'first-heading' | 'first-tabbable';
@@ -36,6 +36,15 @@ export type OverlayConfig = {
    * (`inputBinding`, `outputBinding`, `twoWayBinding`).
    */
   bindings?: Binding[];
+
+  /**
+   * Directives applied to the overlay component, using Angular's `createComponent` directive API.
+   *
+   * This is how a consumer extends an overlay the SDK itself defines and opens: the component has no
+   * template to place a directive in, so a self-registering feature - a scheduler edit field, a badge
+   * adornment - reaches it here instead.
+   */
+  directives?: (Type<unknown> | DirectiveWithBindings<unknown>)[];
 
   ariaDescribedBy?: string | null;
   ariaLabelledBy?: string | null;

@@ -2,6 +2,7 @@ import {
   ApplicationRef,
   Component,
   ComponentRef,
+  Directive,
   InjectionToken,
   Injector,
   ViewContainerRef,
@@ -69,6 +70,11 @@ class ScopedOpenerComponent {
 
 @Component({ template: 'overlay content' })
 class OverlayContentComponent {}
+
+@Directive({ selector: '[etTestFeature]', host: { 'data-feature': 'on' } })
+class FeatureDirective {
+  public host = inject(OverlayContentComponent, { optional: true });
+}
 
 describe('OverlayContainerComponent color context', () => {
   let driver: ReturnType<typeof createOverlayDriver>;
@@ -282,5 +288,29 @@ describe('OverlayContainerComponent provider context', () => {
     });
 
     expect(overlayRef.componentInstance()?.scoped).toBe('scoped value');
+  });
+});
+
+describe('OverlayContainerComponent directives', () => {
+  let driver: ReturnType<typeof createOverlayDriver>;
+
+  beforeEach(() => {
+    driver = createOverlayDriver(null, { config: { strategies: dialogOverlayStrategy() } });
+  });
+
+  afterEach(() => {
+    driver.closeAll();
+  });
+
+  it('applies a directive the open call passed to the content component', async () => {
+    await driver.open(OverlayContentComponent, { directives: [FeatureDirective] });
+
+    expect(driver.paneEl('[data-feature="on"]')).not.toBeNull();
+  });
+
+  it('opens without one', async () => {
+    await driver.open(OverlayContentComponent);
+
+    expect(driver.paneEl('[data-feature="on"]')).toBeNull();
   });
 });

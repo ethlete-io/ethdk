@@ -7,8 +7,8 @@ const CLASS_KEYS = ['hostClass', 'backdropClass', 'panelClass'] as const;
 /**
  * Merges overlay configs from least to most specific (e.g. definition → opener → per-open).
  *
- * - `bindings` and `providers` are concatenated in layer order - a later binding or provider
- *   for the same input/token wins, matching Angular semantics.
+ * - `bindings`, `directives` and `providers` are concatenated in layer order - a later binding or
+ *   provider for the same input/token wins, matching Angular semantics.
  * - `hostClass`, `backdropClass` and `panelClass` are normalized to arrays, concatenated and deduped.
  * - Every other key is taken from the last layer that sets it to a value other than `undefined`
  *   (an explicit `null`, e.g. on the aria fields, does override earlier layers).
@@ -16,6 +16,7 @@ const CLASS_KEYS = ['hostClass', 'backdropClass', 'panelClass'] as const;
 export const mergeOverlayConfigs = (...configs: (OverlayConfig | undefined)[]): OverlayConfig => {
   const merged: OverlayConfig = {};
   const bindings: Binding[] = [];
+  const directives: NonNullable<OverlayConfig['directives']> = [];
   const providers: StaticProvider[] = [];
   const classes: Record<(typeof CLASS_KEYS)[number], string[]> = {
     hostClass: [],
@@ -28,6 +29,7 @@ export const mergeOverlayConfigs = (...configs: (OverlayConfig | undefined)[]): 
 
     const {
       bindings: layerBindings,
+      directives: layerDirectives,
       providers: layerProviders,
       hostClass,
       backdropClass,
@@ -36,6 +38,7 @@ export const mergeOverlayConfigs = (...configs: (OverlayConfig | undefined)[]): 
     } = config;
 
     bindings.push(...(layerBindings ?? []));
+    directives.push(...(layerDirectives ?? []));
     providers.push(...(layerProviders ?? []));
     classes.hostClass.push(...normalizeClassList(hostClass));
     classes.backdropClass.push(...normalizeClassList(backdropClass));
@@ -50,6 +53,10 @@ export const mergeOverlayConfigs = (...configs: (OverlayConfig | undefined)[]): 
 
   if (bindings.length) {
     merged.bindings = bindings;
+  }
+
+  if (directives.length) {
+    merged.directives = directives;
   }
 
   if (providers.length) {

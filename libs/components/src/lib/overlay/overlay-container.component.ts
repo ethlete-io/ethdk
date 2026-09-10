@@ -38,6 +38,7 @@ import {
   resolveSurfaceByElevation,
 } from '@ethlete/core';
 import { tap } from 'rxjs';
+import { OverlayConfig } from './overlay-config';
 import { OVERLAY_HAS_BACKDROP, resolveOverlayHasBackdrop } from './overlay-has-backdrop';
 import { OVERLAY_REF } from './overlay-ref';
 
@@ -73,6 +74,7 @@ export class OverlayContainerComponent {
 
   public component = input.required<Type<object>>();
   public componentBindings = input<Binding[] | undefined>(undefined);
+  public componentDirectives = input<OverlayConfig['directives'] | undefined>(undefined);
 
   public renderArrow = input(false, { transform: booleanAttribute });
   public renderDragHandle = input(false, { transform: booleanAttribute });
@@ -191,6 +193,7 @@ export class OverlayContainerComponent {
 
         const componentRef = outlet.createComponent(component, {
           bindings: this.componentBindings() ?? [],
+          directives: this.componentDirectives() ?? [],
         });
 
         this.contentComponentRef.set(componentRef);

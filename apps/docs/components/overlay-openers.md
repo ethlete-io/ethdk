@@ -64,13 +64,27 @@ this.product.open({
 });
 ```
 
+### Extending an overlay you did not define {#extending-an-overlay}
+
+`directives` applies directives to the overlay component itself, the way `bindings` applies inputs to it. It matters for an overlay the SDK defines and opens for you - the [scheduler's edit surface](/components/scheduler#extending-the-edit-surface) is the case it exists for. That component has no template of yours to place a directive in, so a self-registering feature reaches it here:
+
+```ts
+this.editSurface.open({
+  origin: bandElement,
+  bindings: [inputBinding('appointment', () => appointment)],
+  directives: [MyEditIssueDirective, MyEditDurationDirective],
+});
+```
+
+Each entry is a directive type, or Angular's `{ type, bindings }` pair when the directive needs inputs of its own. Nothing about the directive's own selector is checked - passing it here is what applies it.
+
 ## How configs merge
 
 Configs merge **additively** from least to most specific: definition → opener → per-open. The merge is exposed as `mergeOverlayConfigs(...configs)` if you need it yourself.
 
 | Config keys                                | Merge behavior                                                                                           |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `bindings`, `providers`                    | Concatenated in layer order - a later binding/provider for the same input/token wins (Angular semantics) |
+| `bindings`, `directives`, `providers`      | Concatenated in layer order - a later binding/provider for the same input/token wins (Angular semantics) |
 | `hostClass`, `backdropClass`, `panelClass` | Normalized to arrays, concatenated, deduped                                                              |
 | Everything else (`origin`, `role`, …)      | Most specific layer wins; `undefined` never overrides, an explicit `null` (aria fields) does             |
 | `strategies`, `component`                  | Fixed by the definition - not overridable                                                                |

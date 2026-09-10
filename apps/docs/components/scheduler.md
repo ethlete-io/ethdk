@@ -339,6 +339,33 @@ Without a palette in scope the field stays a plain text box, because theme names
 
 Add your own field the same way: a directive that injects `SCHEDULER_EDIT_SURFACE_HOST` (via `injectSchedulerEditSurfaceHost()`) and calls `registerEditField({ component, order, enabled, valid })` from its constructor. `component` must declare a `draft: InputSignal<WritableSignal<Appointment>>` input - call `draft()` for the shared writable signal, then read (`draft()()`) or write (`draft().update(a => ({ ...a, ... }))`) the appointment being edited. Custom fields typically write into `extra`.
 
+#### Extending the edit surface {#extending-the-edit-surface}
+
+Where that directive goes depends on who opens the surface.
+
+`<et-scheduler>` opens the default surface through an overlay definition, so there is no template of yours to place the directive in. Pass it as the open call's [`directives`](/components/overlay-openers#extending-an-overlay) instead - which is also how a headless scheduler of your own opens the surface:
+
+```ts
+private editSurface = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, {
+  afterClosed: (result) => this.applyEdit(result),
+});
+
+protected openFor(appointment: Appointment, band: HTMLElement) {
+  this.editSurface.open({
+    origin: band,
+    bindings: [
+      inputBinding('appointment', () => appointment),
+      inputBinding('appointments', () => this.appointments()),
+    ],
+    directives: [MyEditIssueDirective, MyEditDurationDirective],
+  });
+}
+```
+
+Disable a built-in field you are replacing by binding its own config through the same list: `{ type: SchedulerEditTitleDirective, bindings: [inputBinding('etSchedulerEditTitle', () => ({ enabled: false }))] }`.
+
+When you host `<et-scheduler-edit-surface>` in a template of your own, put the directive on the element as an attribute and skip all of this.
+
 ### Actions
 
 The header's "⋮" menu lists registered appointment actions - also self-registering directives, bundled by default:

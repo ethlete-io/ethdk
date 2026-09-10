@@ -1,4 +1,4 @@
-import { StaticProvider, inputBinding } from '@angular/core';
+import { Directive, StaticProvider, inputBinding } from '@angular/core';
 import '../../test-helpers';
 import { mergeOverlayConfigs } from './overlay-config-merger';
 
@@ -16,6 +16,18 @@ describe('mergeOverlayConfigs', () => {
     const merged = mergeOverlayConfigs({ bindings: [first] }, { bindings: [second, third] });
 
     expect(merged.bindings).toEqual([first, second, third]);
+  });
+
+  it('concatenates directives in layer order', () => {
+    @Directive({})
+    class First {}
+
+    @Directive({})
+    class Second {}
+
+    const merged = mergeOverlayConfigs({ directives: [First] }, undefined, { directives: [Second] });
+
+    expect(merged.directives).toEqual([First, Second]);
   });
 
   it('concatenates providers in layer order', () => {
