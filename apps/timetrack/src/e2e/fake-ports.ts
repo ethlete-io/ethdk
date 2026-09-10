@@ -22,12 +22,14 @@ import {
   TIMETRACK_E2E_SEED_KEY,
   cliNotInstalledMessage,
   createFakeWorld,
+  isEditorInstallSpec,
   isEditorSpec,
   isGhSpec,
   isGlabSpec,
   parseWorldSeed,
   respond,
   runFakeEditor,
+  runFakeEditorInstall,
   runFakeGh,
   runFakeGit,
   runFakeGlab,
@@ -268,6 +270,10 @@ export const createFakePorts = (): HostPorts => {
       },
     },
 
+    reporter: {
+      vsix$: () => ok(world.reporterVsix),
+    },
+
     processes: {
       run$: (spec: ProcessSpec) => {
         if (isGlabSpec(spec)) {
@@ -282,10 +288,16 @@ export const createFakePorts = (): HostPorts => {
             : throwError(() => cliNotInstalledMessage('gh'));
         }
 
-        if (isEditorSpec(spec)) {
+        if (isEditorSpec(spec) || isEditorInstallSpec(spec)) {
           const editor = world.editors[spec.command as EditorCli];
 
-          return editor.onPath ? ok(runFakeEditor(editor)) : throwError(() => cliNotInstalledMessage(spec.command));
+          if (!editor.onPath) return throwError(() => cliNotInstalledMessage(spec.command));
+
+          return ok(
+            isEditorSpec(spec)
+              ? runFakeEditor(editor)
+              : runFakeEditorInstall({ state: editor, spec, vsix: world.reporterVsix }),
+          );
         }
 
         if (isReasoningSpec(spec)) reasoningRuns += 1;

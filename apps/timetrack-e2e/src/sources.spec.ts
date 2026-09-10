@@ -268,12 +268,55 @@ test.describe('the editor row, which reports which editors hold the reporter', (
     await expect(editor(page, 'code')).not.toContainText('npx nx install');
   });
 
-  test('offers the install command for an editor without it, naming that editor alone', async ({ page }) => {
-    await seedWorld(page, { now: E2E_NOW, editors: { cursor: { onPath: true, reporter: false } } });
+  test('names the command for a checkout only when this build ships no extension to install', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      reporterVsix: null,
+      editors: { cursor: { onPath: true, reporter: false } },
+    });
     await page.goto('/sources');
 
     await expect(editor(page, 'cursor')).toContainText('not installed');
     await expect(editor(page, 'cursor')).toContainText('TIMETRACK_VSCODE_CLI=cursor npx nx install timetrack-vscode');
+    await expect(editor(page, 'cursor').getByRole('button', { name: 'Install' })).toHaveCount(0);
+  });
+
+  test('installs the shipped extension into one editor, and says that editor needs a restart', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, editors: { cursor: { onPath: true, reporter: false } } });
+    await page.goto('/sources');
+
+    await expect(editor(page, 'cursor')).toContainText('not installed');
+    await expect(editor(page, 'cursor')).not.toContainText('npx nx install');
+
+    await editor(page, 'cursor').getByRole('button', { name: 'Install' }).click();
+
+    await expect(editor(page, 'cursor')).toContainText('Restart Cursor to load the reporter.');
+    await expect(editor(page, 'cursor').getByText('installed', { exact: true })).toBeVisible();
+    await expect(editor(page, 'cursor').getByRole('button', { name: 'Install' })).toHaveCount(0);
+  });
+
+  test('leaves the editor that already holds the reporter alone while another is installed', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, editors: { cursor: { onPath: true, reporter: false } } });
+    await page.goto('/sources');
+
+    await editor(page, 'cursor').getByRole('button', { name: 'Install' }).click();
+
+    await expect(editor(page, 'cursor')).toContainText('Restart Cursor');
+    await expect(editor(page, 'code')).not.toContainText('Restart');
+  });
+
+  test("keeps the editor's own wording when the install fails, and offers the button again", async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      editors: { cursor: { onPath: true, reporter: false, installFails: 'Extension is not compatible.' } },
+    });
+    await page.goto('/sources');
+
+    await editor(page, 'cursor').getByRole('button', { name: 'Install' }).click();
+
+    await expect(editor(page, 'cursor')).toContainText('Extension is not compatible.');
+    await expect(editor(page, 'cursor')).toContainText('not installed');
+    await expect(editor(page, 'cursor').getByRole('button', { name: 'Install' })).toBeEnabled();
   });
 
   test('leaves out an editor that is not on the machine, rather than asking for it', async ({ page }) => {

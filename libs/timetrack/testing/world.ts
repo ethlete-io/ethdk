@@ -1,5 +1,5 @@
 import { CollectedEvent, DEFAULT_TIMETRACK_SETTINGS, EditorCli, TimetrackSettings } from '@ethlete/timetrack';
-import { FakeEditorState, FakeEditors } from './backend/editor-cli';
+import { FAKE_REPORTER_VSIX, FakeEditorState, FakeEditors } from './backend/editor-cli';
 import { FakeGitHubState } from './backend/gh';
 import { FakeGlabState } from './backend/glab';
 import {
@@ -70,6 +70,8 @@ export type TimetrackWorldSeed = {
   gh?: Partial<FakeGitHubState>;
   /** The editor clients on the seeded machine. Only `code`, holding the reporter, by default. */
   editors?: Partial<Record<EditorCli, Partial<FakeEditorState>>>;
+  /** The reporter `.vsix` this build ships. `null` seeds a build that shipped none. */
+  reporterVsix?: string | null;
   git?: Partial<FakeGitState>;
   windowSource?: Partial<FakeWindowSourceStatus>;
   faults?: FakeFault[];
@@ -80,6 +82,7 @@ export type FakeWorld = {
   glab: FakeGlabState;
   gh: FakeGitHubState;
   editors: FakeEditors;
+  reporterVsix: string | null;
   settings: TimetrackSettings;
   agentLogs: FakeAgentLog[];
   codexLogs: FakeAgentLog[];
@@ -285,6 +288,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   glab: { ...defaultGlab(), ...seed.glab },
   gh: { ...defaultGh(), ...seed.gh },
   editors: seedEditors(seed.editors),
+  reporterVsix: seed.reporterVsix === undefined ? FAKE_REPORTER_VSIX : seed.reporterVsix,
   backend: {
     jira: { ...defaultJira(), ...seed.jira },
     tempo: { ...defaultTempo(), ...seed.tempo },

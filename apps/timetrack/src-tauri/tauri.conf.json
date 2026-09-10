@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../../../dist/apps/timetrack/browser",
     "devUrl": "http://localhost:4210",
-    "beforeDevCommand": "npx nx serve timetrack-app",
-    "beforeBuildCommand": "npx nx build timetrack-app"
+    "beforeDevCommand": "npx nx stage-reporter timetrack-app && npx nx serve timetrack-app",
+    "beforeBuildCommand": "npx nx stage-reporter timetrack-app && npx nx build timetrack-app"
   },
   "app": {
     "windows": [
@@ -33,6 +33,7 @@
   },
   "bundle": {
     "active": true,
+    "resources": ["resources/"],
     "targets": ["deb", "rpm", "appimage", "dmg", "app"],
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
     "linux": {

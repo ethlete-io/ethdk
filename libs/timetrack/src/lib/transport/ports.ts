@@ -69,6 +69,16 @@ export type TimetrackProcessRunner = {
   run$(spec: ProcessSpec): Observable<ProcessResult>;
 };
 
+/**
+ * The reporter extension this build ships, so an editor can be given it without a checkout.
+ *
+ * `vsix$` answers `null` when the bundle holds none, which is what a build that skipped the staging
+ * step produces. That is a state to report, not a failure.
+ */
+export type TimetrackReporterBundle = {
+  vsix$(): Observable<string | null>;
+};
+
 export type TimetrackPorts = {
   transport: TimetrackTransport;
   secrets: TimetrackSecretStore;
@@ -79,4 +89,5 @@ export type TimetrackPorts = {
   settings: TimetrackSettingsStore;
   timers: TimetrackTimerStore;
   processes: TimetrackProcessRunner;
+  reporter: TimetrackReporterBundle;
 };

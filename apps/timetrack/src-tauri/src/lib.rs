@@ -25,6 +25,7 @@ mod oauth;
 mod pause;
 mod placement;
 mod process;
+mod reporter;
 mod samples;
 mod secrets;
 mod state;
@@ -139,6 +140,7 @@ pub fn run() {
             pause::collection_set_paused,
             pause::collection_state,
             process::run_process,
+            reporter::reporter_vsix_path,
             secrets::secret_delete,
             secrets::secret_has,
             secrets::secret_read,

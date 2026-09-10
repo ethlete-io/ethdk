@@ -56,6 +56,14 @@
         }
       }
     },
+    "stage-reporter": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["timetrack-vscode:package"],
+      "outputs": ["{projectRoot}/src-tauri/resources"],
+      "options": {
+        "command": "node tools/scripts/stage-vscode-extension.mjs"
+      }
+    },
     "format-rust": {
       "executor": "nx:run-commands",
       "cache": true,

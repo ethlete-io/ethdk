@@ -2800,8 +2800,27 @@ once it names a date and a decision; the rest are undesigned.
   rather than "not installed" - the e2e fake had hidden it by rejecting with an `Error`. Both the check
   and the fake now use the host's real shape.
 
-  Installing from a button, with the `.vsix` shipped inside the
-  app bundle, is the step after - it is a build change and a permission change, so it is its own task.
+  **Installing from a button is built (2026-09-10).** The `.vsix` ships inside the app bundle, and an
+  editor missing the reporter is offered an Install button rather than a command. The button runs
+  `<editor> --install-extension <vsix> --force` through the same process runner every other CLI source
+  uses, then asks all five editors again, so the badge and the install cannot disagree. A failure keeps
+  the editor's own wording and offers the button again. A successful install says the editor needs a
+  restart, because the extension host loads an extension once.
+
+  **The build wiring is a directory resource, not a glob.** `bundle.resources` holds
+  `resources/`, and `tools/scripts/stage-vscode-extension.mjs` copies the packaged extension into
+  `apps/timetrack/src-tauri/resources/timetrack-vscode.vsix` under a version-free name, from the
+  `stage-reporter` target both `beforeDevCommand` and `beforeBuildCommand` run first. A glob was tried
+  and rejected: `resources/*.vsix` fails the **Rust** build outright when it matches nothing
+  (`glob pattern resources/*.vsix path not found or didn't match any files`), which would have made
+  `cargo check`, `clippy` and `cargo test` all depend on a packaged extension. A directory that holds
+  only its own `.gitignore` compiles fine, so the Rust build never depends on the staging step.
+
+  **No permission change was needed after all.** The five editor clients were already in
+  `ALLOWED_COMMANDS` for the listing, and `run_process` does not restrict arguments. The only new host
+  command is `reporter_vsix_path`, which resolves the bundled file and answers `None` when the build
+  ships none - a state the Sources view reports by falling back to the checkout command, rather than a
+  failure.
 
 - **A browser reporter over the ingest seam** (decided 2026-09-09, not built)**.** It sends the **origin** of the focused tab, plus a
   Jira key or a merge request number when a known host's path holds one. Never a full path, never a

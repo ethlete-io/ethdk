@@ -13,6 +13,7 @@ export * from './nudge';
 export * from './oauth';
 export * from './ports';
 export * from './process-runner';
+export * from './reporter-bundle';
 export * from './review-store';
 export * from './secrets';
 export * from './settings-store';

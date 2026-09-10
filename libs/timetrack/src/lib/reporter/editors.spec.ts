@@ -4,7 +4,9 @@ import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport
 import {
   EDITOR_CLIS,
   EditorReporter,
+  EditorInstall,
   editorInstallCommand,
+  installEditorReporter$,
   listingHoldsReporter,
   probeEditorReporter$,
   probeEditorReporters$,
@@ -93,5 +95,48 @@ describe('probeEditorReporters$', () => {
 describe('editorInstallCommand', () => {
   it('names the one editor it installs into, so a second one is not touched by accident', () => {
     expect(editorInstallCommand('cursor')).toBe('TIMETRACK_VSCODE_CLI=cursor npx nx install timetrack-vscode');
+  });
+});
+
+describe('installEditorReporter$', () => {
+  const install = (answer: Observable<ProcessResult>) => {
+    const run$ = vi.fn(() => answer);
+    const seen = vi.fn();
+
+    installEditorReporter$({ runner: { run$ }, cli: 'cursor', vsix: '/bundle/timetrack-vscode.vsix' }).subscribe(seen);
+
+    return {
+      spec: run$.mock.calls[0]?.[0] as ProcessSpec | undefined,
+      result: seen.mock.calls[0]?.[0] as EditorInstall,
+    };
+  };
+
+  it('hands the editor the bundled file, and forces it over whatever is already there', () => {
+    const { spec } = install(of(ran({})));
+
+    expect(spec?.command).toBe('cursor');
+    expect(spec?.args).toEqual(['--install-extension', '/bundle/timetrack-vscode.vsix', '--force']);
+  });
+
+  it('waits longer than a listing, because unpacking an extension is slower than printing a list', () => {
+    const { spec } = install(of(ran({})));
+
+    expect(spec?.timeoutMs).toBeGreaterThan(30_000);
+  });
+
+  it('reads an exit code of zero as installed', () => {
+    expect(install(of(ran({}))).result).toEqual({ ok: true });
+  });
+
+  it("carries the editor's own wording out of a failing exit code", () => {
+    const { result } = install(of(ran({ code: 1, stderr: 'Extension is not compatible.' })));
+
+    expect(result).toEqual({ ok: false, detail: '`cursor --install-extension` failed: Extension is not compatible.' });
+  });
+
+  it('reports a rejected host call rather than failing the screen', () => {
+    const { result } = install(throwError(() => 'not installed: cursor'));
+
+    expect(result).toEqual({ ok: false, detail: 'not installed: cursor' });
   });
 });

@@ -43,7 +43,7 @@ export type EditorReporter = {
   detail: string | null;
 };
 
-/** What the user runs to put the reporter into one editor. */
+/** What the user runs to put the reporter into one editor, when this build ships no `.vsix` to install. */
 export const editorInstallCommand = (cli: EditorCli) => `TIMETRACK_VSCODE_CLI=${cli} npx nx install timetrack-vscode`;
 
 export const editorName = (cli: EditorCli) => EDITOR_NAMES[cli];
@@ -87,3 +87,37 @@ export const probeEditorReporter$ = (options: {
 /** Every editor, in the order they are listed, so a screen reads the same on two machines. */
 export const probeEditorReporters$ = (options: { runner: TimetrackProcessRunner }): Observable<EditorReporter[]> =>
   forkJoin(EDITOR_CLIS.map((cli) => probeEditorReporter$({ runner: options.runner, cli })));
+
+/** What one install attempt ended as. A failure carries the editor's own wording, never a code. */
+export type EditorInstall = { ok: true } | { ok: false; detail: string };
+
+/**
+ * An editor unpacks the extension and rewrites its own registry, which on a cold client is slower than
+ * a listing. The runner's 30 s default would report a timeout for an install that was still working.
+ */
+const INSTALL_TIMEOUT_MS = 120_000;
+
+/**
+ * Puts the reporter into one editor from the `.vsix` this build ships.
+ *
+ * `--force` is what makes the button repeatable: without it a client refuses an already-installed
+ * version, and reinstalling over a broken one is the repair this button exists for.
+ */
+export const installEditorReporter$ = (options: {
+  runner: TimetrackProcessRunner;
+  cli: EditorCli;
+  vsix: string;
+}): Observable<EditorInstall> => {
+  const { runner, cli, vsix } = options;
+
+  return runner
+    .run$({ command: cli, args: ['--install-extension', vsix, '--force'], timeoutMs: INSTALL_TIMEOUT_MS })
+    .pipe(
+      map((result): EditorInstall =>
+        result.code === 0
+          ? { ok: true }
+          : { ok: false, detail: `\`${cli} --install-extension\` failed: ${result.stderr.trim()}` },
+      ),
+      catchError((error: unknown) => of<EditorInstall>({ ok: false, detail: hostFailureMessage(error) })),
+    );
+};

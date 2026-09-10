@@ -11,6 +11,7 @@ import { createTauriLedgerStore } from './ledger-store';
 import { TauriNudge, createTauriNudge } from './nudge';
 import { TauriOAuth, createTauriOAuth } from './oauth';
 import { createTauriProcessRunner } from './process-runner';
+import { createTauriReporterBundle } from './reporter-bundle';
 import { createTauriReviewStore } from './review-store';
 import { createTauriSecretStore } from './secrets';
 import { createTauriSettingsStore } from './settings-store';
@@ -51,6 +52,7 @@ export const createHostPorts = (): HostPorts => ({
   settings: createTauriSettingsStore(),
   timers: createTauriTimerStore(),
   processes: createTauriProcessRunner(),
+  reporter: createTauriReporterBundle(),
   agentLogs: createTauriAgentSessionLogReader(),
   codexLogs: createTauriAgentSessionLogReader({ provider: 'codex' }),
   git: createTauriGitSource(),

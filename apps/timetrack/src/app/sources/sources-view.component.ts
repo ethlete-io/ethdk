@@ -1,8 +1,9 @@
-import { Component, DestroyRef, ViewEncapsulation, computed, inject } from '@angular/core';
+import { Component, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, BadgeVariant } from '@ethlete/components';
 import {
   EditorCli,
+  EditorInstall,
   EditorReporter,
   EditorReporterState,
   GITHUB_HOST,
@@ -10,9 +11,10 @@ import {
   formatDurationMs,
   forgeHostname,
   forgeLoginFor,
+  installEditorReporter$,
   probeEditorReporters$,
 } from '@ethlete/timetrack';
-import { catchError, of, switchMap } from 'rxjs';
+import { catchError, of, switchMap, tap } from 'rxjs';
 import {
   injectAgentSessionCollector,
   injectAgentPromptBackfill,
@@ -113,8 +115,17 @@ type ReporterRow = {
   color: string;
   variant: BadgeVariant;
   detail: string | null;
-  /** What to run to put the reporter in, and `null` once it is in. */
+  /** What to run to put the reporter in from a checkout, and `null` unless this build ships no `.vsix`. */
   command: string | null;
+  /** Whether the button that installs the shipped `.vsix` into this editor is offered. */
+  install: boolean;
+  installing: boolean;
+  /** Whether any editor is being installed into, which is what takes every button out of reach. */
+  busy: boolean;
+  /** Whether this editor was installed into in this visit, so it holds the reporter but has not loaded it. */
+  restart: boolean;
+  /** Why the last install into this editor failed, and `null` when none did. */
+  failure: string | null;
 };
 
 /** What the source reads about the focused window on this machine, as the row renders it. */
@@ -242,10 +253,32 @@ type SourceRow = {
                             {{ reporter.label }}
                           </et-badge>
                           <span class="text-small">{{ reporter.name }}</span>
+
+                          @if (reporter.install) {
+                            <button
+                              [disabled]="reporter.busy"
+                              (click)="installReporter(reporter.cli)"
+                              et-button
+                              variant="outline"
+                              size="sm"
+                            >
+                              {{ reporter.installing ? 'Installing…' : 'Install' }}
+                            </button>
+                          }
                         </div>
 
                         @if (reporter.detail) {
                           <p class="text-small text-et-surface-subtle">{{ reporter.detail }}</p>
+                        }
+
+                        @if (reporter.restart) {
+                          <p class="text-small text-et-surface-subtle">
+                            Restart {{ reporter.name }} to load the reporter.
+                          </p>
+                        }
+
+                        @if (reporter.failure) {
+                          <p class="text-small text-et-error">{{ reporter.failure }}</p>
                         }
 
                         @if (reporter.command) {
@@ -331,13 +364,30 @@ export class SourcesViewComponent {
   );
 
   /**
-   * Asked once, when this screen is created. Nothing installs an extension while it is open, and the
-   * next visit asks again — so a run of five processes on a timer would buy nothing.
+   * Asked when this screen is created, and again after an install. Nothing else changes an editor
+   * while it is open, so a run of five processes on a timer would buy nothing.
    */
+  private probed = signal(0);
+
   private editors = toSignal(
-    probeEditorReporters$({ runner: this.ports.processes }).pipe(catchError(() => of<EditorReporter[]>([]))),
+    toObservable(this.probed).pipe(
+      switchMap(() =>
+        probeEditorReporters$({ runner: this.ports.processes }).pipe(catchError(() => of<EditorReporter[]>([]))),
+      ),
+    ),
     { initialValue: null },
   );
+
+  /** The reporter this build ships, and `null` when it ships none. */
+  private vsix = toSignal(this.ports.reporter.vsix$().pipe(catchError(() => of(null))), { initialValue: null });
+
+  /** The editor an install is running against, and `null` while none is. Only one runs at a time. */
+  public installing = signal<EditorCli | null>(null);
+
+  /** The editors installed into in this visit, which hold the reporter but have not loaded it yet. */
+  private installed = signal<readonly EditorCli[]>([]);
+
+  private installFailures = signal<Partial<Record<EditorCli, string>>>({});
 
   protected pausedFor = computed(() => formatDurationMs(this.pause.pausedForMs()));
 
@@ -368,6 +418,42 @@ export class SourcesViewComponent {
 
   protected grantAccessibility() {
     this.windows.requestAccessibility$().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+  }
+
+  /**
+   * Puts the shipped reporter into one editor, then asks every editor again.
+   *
+   * The re-probe is what flips the badge, so the install and the row it changes cannot disagree. An
+   * editor that already loaded an older build still needs a restart, which the row then says.
+   */
+  protected installReporter(cli: EditorCli) {
+    const vsix = this.vsix();
+
+    if (!vsix || this.installing()) return;
+
+    this.installing.set(cli);
+    this.installFailures.update((failures) => ({ ...failures, [cli]: undefined }));
+
+    installEditorReporter$({ runner: this.ports.processes, cli, vsix })
+      .pipe(
+        tap((result) => this.recordInstall({ cli, result })),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private recordInstall(options: { cli: EditorCli; result: EditorInstall }) {
+    const { cli, result } = options;
+
+    this.installing.set(null);
+
+    if (result.ok) {
+      this.installed.update((held) => (held.includes(cli) ? held : [...held, cli]));
+    } else {
+      this.installFailures.update((failures) => ({ ...failures, [cli]: result.detail }));
+    }
+
+    this.probed.update((count) => count + 1);
   }
 
   /**
@@ -530,10 +616,15 @@ export class SourcesViewComponent {
 
     if (!found) return null;
 
+    const vsix = this.vsix();
+    const installing = this.installing();
+    const failures = this.installFailures();
+
     return found
       .filter((editor) => editor.state !== 'not-on-path')
       .map((editor): ReporterRow => {
         const state = editor.state as ShownReporterState;
+        const missing = state === 'not-installed';
 
         return {
           cli: editor.cli,
@@ -542,7 +633,12 @@ export class SourcesViewComponent {
           color: REPORTER_COLOR[state],
           variant: REPORTER_VARIANT[state],
           detail: editor.detail,
-          command: state === 'not-installed' ? editorInstallCommand(editor.cli) : null,
+          command: missing && !vsix ? editorInstallCommand(editor.cli) : null,
+          install: missing && !!vsix,
+          installing: installing === editor.cli,
+          busy: installing !== null,
+          restart: this.installed().includes(editor.cli),
+          failure: failures[editor.cli] ?? null,
         };
       });
   }
