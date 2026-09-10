@@ -814,7 +814,10 @@ export const streamDay = (options: {
     // focus time of every stream sums to presence exactly and the concurrency ratio has one meaning.
     if (next) {
       draftFor(drafts, context).focus.push({ from: sample.at, to: next.at });
-      focusSpans.push({ from: sample.at, to: next.at, context });
+      // A stretch naming neither a checkout nor an application is the app's own window. It holds
+      // presence, and it is reported in the other-applications line, but it is not work to book: as a
+      // block it is drawn on the timeline as a band asking which ticket the review belongs to.
+      if (holder || appId) focusSpans.push({ from: sample.at, to: next.at, context });
     }
     if (next && !holder) {
       const draft = unnamedDraftFor(unnamedReason);

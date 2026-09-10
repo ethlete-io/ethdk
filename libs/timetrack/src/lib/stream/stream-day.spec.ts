@@ -833,6 +833,19 @@ describe('streamDay, on the app reading the day', () => {
     expect(folded?.evidence).toEqual([]);
   });
 
+  it('draws no band for its own window, so a review never asks which ticket it books to', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'timetrack', title: 'Timetrack' }),
+        ...focusRun({ from: 10, to: 20, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+      ],
+      options: { repoRoots: [SDK], ownAppIds: ['timetrack'] },
+    });
+
+    expect(day.rows.unnamed.map((row) => row.laneKey)).toEqual([`repo:${SDK}`]);
+    expect(day.presenceMs).toBe(20 * MINUTE);
+  });
+
   it('matches an application id whatever its case', () => {
     const day = streamDay({
       events: focusRun({ from: 0, to: 10, appId: 'io.ethlete.Timetrack', title: 'Timetrack' }),
