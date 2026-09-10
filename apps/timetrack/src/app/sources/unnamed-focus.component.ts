@@ -19,6 +19,7 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { injectCallCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
+import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { streamDayOptionsOf } from '../stream-day-options';
 import { formatShare } from './format';
 
@@ -186,6 +187,7 @@ export class UnnamedFocusComponent {
   private calls = injectCallCollector();
   private git = injectGitCollector();
   private settings = injectTimetrackSettings();
+  private recurring = injectRecurringPatterns();
 
   protected span = signal<Span>('today');
   protected opened = signal<ReadonlySet<string>>(new Set());
@@ -198,6 +200,7 @@ export class UnnamedFocusComponent {
     day: localDayKey(new Date(), dayBoundaryOf(this.settings.settings())),
     repoRoots: this.git.discovery()?.repos ?? [],
     settings: this.settings.settings(),
+    patterns: this.recurring.patterns(),
     windows: this.windows.lastRun(),
     calls: this.calls.lastRun(),
     git: this.git.lastRun(),
@@ -213,6 +216,7 @@ export class UnnamedFocusComponent {
         const options = streamDayOptionsOf({
           repoRoots: current.repoRoots,
           settings: current.settings,
+          patterns: current.patterns,
           windowsSeenThroughMs: current.windows?.at.getTime(),
         });
 

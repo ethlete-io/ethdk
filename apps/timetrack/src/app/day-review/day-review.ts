@@ -80,6 +80,7 @@ import {
 } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
+import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { dayRowsOptionsOf, streamDayOptionsOf } from '../stream-day-options';
 import { injectTimer } from '../timer';
 import { readViewState, rememberViewState } from '../view-state';
@@ -150,6 +151,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const git = injectGitCollector();
   const timers = injectTimer();
   const settings = injectTimetrackSettings();
+  const recurring = injectRecurringPatterns();
 
   const boundary = computed(() => dayBoundaryOf(settings.settings()));
   const day = signal(readViewState().day ?? localDayKey(new Date(), dayBoundaryOf(settings.settings())));
@@ -302,7 +304,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const edits = computed(() => local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS);
 
   const rowOptions = computed(() => ({
-    ...dayRowsOptionsOf(settings.settings()),
+    ...dayRowsOptionsOf({ settings: settings.settings(), patterns: recurring.patterns() }),
     timerRuns: evidence()?.runs ?? [],
     pauses: evidence()?.pauses ?? [],
   }));
@@ -324,6 +326,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           options: streamDayOptionsOf({
             repoRoots: git.discovery()?.repos ?? [],
             settings: settings.settings(),
+            patterns: recurring.patterns(),
             windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
             rows: rowOptions(),
           }),

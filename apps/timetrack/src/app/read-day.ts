@@ -2,6 +2,7 @@ import {
   CollectedEvent,
   DayReview,
   EMPTY_DAY_REVIEW_EDITS,
+  RecurringPattern,
   StreamDay,
   TimetrackSettings,
   closeTimerRun,
@@ -31,6 +32,8 @@ export type DayReadOptions = {
   ports: HostPorts;
   settings: TimetrackSettings;
   repoRoots: readonly string[];
+  /** The standing commitments the user's Tempo history holds, from `injectRecurringPatterns`. */
+  patterns?: readonly RecurringPattern[];
   /**
    * The instant the window source has reported through, which is its last drain rather than now.
    *
@@ -67,6 +70,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
         options: streamDayOptionsOf({
           repoRoots: options.repoRoots,
           settings,
+          patterns: options.patterns,
           windowsSeenThroughMs: options.windowsSeenThroughMs,
           rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
         }),

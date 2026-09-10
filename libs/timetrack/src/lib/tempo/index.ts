@@ -4,6 +4,7 @@ export * from './coverage';
 export * from './diff';
 export * from './execute';
 export * from './fetch-coverage';
+export * from './fetch-patterns';
 export * from './marker';
 export * from './preview';
 export * from './subtract';

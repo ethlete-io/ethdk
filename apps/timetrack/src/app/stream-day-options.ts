@@ -1,5 +1,6 @@
 import {
   BuildRowsOptions,
+  RecurringPattern,
   StreamDayOptions,
   TimetrackSettings,
   effectiveNoWorkContextApps,
@@ -20,16 +21,25 @@ export const OWN_APP_IDS = ['io.ethlete.timetrack', 'timetrack'];
  * already classified the day's calls, and a second copy of either would let the streams and the rows
  * disagree about a minute neither is wrong about.
  */
-export const dayRowsOptionsOf = (settings: TimetrackSettings): Omit<BuildRowsOptions, 'links' | 'calls'> => ({
-  config: gitFlowConfigFor(settings),
-  rules: settings.attributionRules,
-  fill: { maxFillGapMs: settings.gapFillMs },
-  meetings: { defaultIssueKey: settings.meetingIssueKey || undefined },
-  noWorkContext: {
-    apps: effectiveNoWorkContextApps(settings),
-    transientApps: effectiveTransientApps(settings),
-  },
-});
+export const dayRowsOptionsOf = (options: {
+  settings: TimetrackSettings;
+  /** The standing commitments the user's Tempo history holds, from `injectRecurringPatterns`. */
+  patterns?: readonly RecurringPattern[];
+}): Omit<BuildRowsOptions, 'links' | 'calls'> => {
+  const { settings } = options;
+
+  return {
+    config: gitFlowConfigFor(settings),
+    rules: settings.attributionRules,
+    patterns: [...(options.patterns ?? [])],
+    fill: { maxFillGapMs: settings.gapFillMs },
+    meetings: { defaultIssueKey: settings.meetingIssueKey || undefined },
+    noWorkContext: {
+      apps: effectiveNoWorkContextApps(settings),
+      transientApps: effectiveTransientApps(settings),
+    },
+  };
+};
 
 /**
  * The options every reader of a stream day passes.
@@ -41,6 +51,8 @@ export const dayRowsOptionsOf = (settings: TimetrackSettings): Omit<BuildRowsOpt
 export const streamDayOptionsOf = (options: {
   repoRoots: readonly string[];
   settings: TimetrackSettings;
+  /** The standing commitments the user's Tempo history holds, from `injectRecurringPatterns`. */
+  patterns?: readonly RecurringPattern[];
   /** The instant the window source has reported through, which is its last drain. */
   windowsSeenThroughMs?: number;
   /** What this reader adds to the shared row options: the day's timer runs, pauses and edits. */
@@ -54,5 +66,5 @@ export const streamDayOptionsOf = (options: {
   noWorkContextApps: effectiveNoWorkContextApps(options.settings),
   transientApps: effectiveTransientApps(options.settings),
   minBreakMs: options.settings.gapFillMs,
-  rows: { ...dayRowsOptionsOf(options.settings), ...options.rows },
+  rows: { ...dayRowsOptionsOf({ settings: options.settings, patterns: options.patterns }), ...options.rows },
 });
