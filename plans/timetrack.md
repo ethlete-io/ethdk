@@ -1591,13 +1591,18 @@ Code` says which checkout is in front of you. Consequences worth keeping: a focu
    `maxSpreadMinutes` (120) is a weekly habit, not a slot, and yields no pattern at all. Distinct
    weeks are counted by date, so one busy Monday is one occurrence, not four.
 
-5. ~~**Merge and split.**~~ **Built** - `merge.ts`. Consecutive blocks on the same issue become one
-   row, a context switch stays its own row however short it was, and blocks nothing attributed never
-   merge with anything - each is a separate question for the reasoning provider, and merging them
-   would destroy the evidence that tells them apart. The row cap is a second, more aggressive stage:
-   only when a day exceeds `maxRowsPerDay` (12) does every row on one issue collapse into one,
-   ignoring the gaps. That is why `WorkGroup.observedMs` exists beside `from`/`to` - a collapsed row
-   spans lunch on the clock while its duration still counts only observed time.
+5. ~~**Merge and split.**~~ **Built** - `merge.ts`. Blocks merge per track: the same issue, or the
+   same context while nothing has named it. Two blocks of one track join while two things hold. The
+   gap between them is no wider than `maxMergeGapMs` (15 minutes), and the idle the row would then
+   have absorbed is no longer than the time it observed. Idle is the part of a gap no other block of
+   the day covered, so a switch to another context costs nothing and a break costs its full length.
+   Both tests are needed: the gap test alone let a day of one-minute samples ten minutes apart draw
+   one band across nine hours, and the idle test alone would split a day that flaps between three
+   checkouts into hundreds of rows. The rectangle a screen draws for a row is therefore never more
+   than twice the work behind it. The row cap is a second, more aggressive stage: above
+   `maxRowsPerDay` (12) the day is merged again with no gap limit at all, while the idle rule still
+   holds. That is why `WorkGroup.observedMs` exists beside `from`/`to` - a row spans a context switch
+   on the clock while its duration still counts only observed time.
 
    A merged row's confidence is the tier holding **most of its time**, ties to the weaker tier.
    Neither extreme survives review: taking the strongest lets a long weakly-evidenced stretch sync

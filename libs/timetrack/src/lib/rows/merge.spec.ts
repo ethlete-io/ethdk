@@ -106,6 +106,31 @@ describe('mergeBlocks', () => {
     expect(rows).toHaveLength(2);
   });
 
+  it('does not draw a band across the idle between two short touches of one context', () => {
+    const blocks = Array.from({ length: 36 }, (_, index) =>
+      attributed({ fromMinute: index * 15, toMinute: index * 15 + 1, confidence: 'weak', repoPath: '/a' }),
+    );
+
+    const rows = mergeBlocks({ blocks });
+
+    for (const row of rows) {
+      expect(row.to.getTime() - row.from.getTime()).toBeLessThanOrEqual(2 * row.observedMs);
+    }
+  });
+
+  it('joins one context across the two other contexts that interleaved with it', () => {
+    const blocks = Array.from({ length: 20 }, (_, index) => [
+      attributed({ fromMinute: index * 3, toMinute: index * 3 + 1, confidence: 'weak', repoPath: '/a' }),
+      attributed({ fromMinute: index * 3 + 1, toMinute: index * 3 + 2, confidence: 'weak', repoPath: '/b' }),
+      attributed({ fromMinute: index * 3 + 2, toMinute: index * 3 + 3, confidence: 'weak', repoPath: '/c' }),
+    ]).flat();
+
+    const rows = mergeBlocks({ blocks });
+
+    expect(rows).toHaveLength(3);
+    expect(rows.map((row) => row.observedMs)).toEqual([20 * 60_000, 20 * 60_000, 20 * 60_000]);
+  });
+
   it('does not merge one context across a break wider than the threshold', () => {
     const rows = mergeBlocks({
       blocks: [
