@@ -1,5 +1,19 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.15
+
+### Minor Changes
+
+- [`2178b4f`](https://github.com/ethlete-io/ethdk/commit/2178b4f10c55b0aa624afd1e33685b7d697283c4) Three skills vendored from mattpocock/skills: `grilling`, `domain-modeling`, and the `grill-with-docs` entry point that runs both.
+- [`2178b4f`](https://github.com/ethlete-io/ethdk/commit/2178b4f10c55b0aa624afd1e33685b7d697283c4) New opt-in `subagent-model-policy` hook: a Claude Code subagent call must name its `model`, and `fable` asks the user first. The new `subagent-models` rule says which model fits which task.
+
+### Patch Changes
+
+- [`5e44c17`](https://github.com/ethlete-io/ethdk/commit/5e44c17597068a84603e2ab400b6c8c53eaaac43) The `handoff` skill now tells the agent to name only its own invocation form, so a saved handoff no longer reports the Claude Code and Codex commands side by side.
+- [`b9ec4bf`](https://github.com/ethlete-io/ethdk/commit/b9ec4bf5debcaaade9588d61406fd59051d01084) A handoff is now written only when work is actually left: the `handoff` skill tests for it first, and the `context-warning` hook's auto-mode escalation no longer forces a file.
+- [`848482e`](https://github.com/ethlete-io/ethdk/commit/848482e9ebdbcbd21ed257886e18c86935d56eef) `context-warning` hook: the critical tier now asks the agent to finish or hand off instead of forcing a handoff, and every later prompt repeats the remaining budget.
+- [`e7e4604`](https://github.com/ethlete-io/ethdk/commit/e7e4604629b3b0362996c228d581c915bbf795c0) Context warnings now distinguish sub-agent pressure from the main session and track each thread independently.
+
 ## 0.1.0-next.14
 
 ### Minor Changes
