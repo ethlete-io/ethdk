@@ -77,10 +77,14 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           class="min-h-0 grow px-6"
         />
 
-        <div class="flex shrink-0 flex-col gap-2 px-6 py-3">
-          <ethlete-day-streams [day]="store.day()" [headBranches]="store.headBranches()" />
+        <div class="flex shrink-0 flex-wrap items-start gap-2 px-6 py-3">
+          <ethlete-day-streams
+            [day]="store.day()"
+            [headBranches]="store.headBranches()"
+            class="block has-[details[open]]:w-full"
+          />
 
-          <details class="rounded-md border border-et-surface-border" data-waiting>
+          <details class="rounded-md border border-et-surface-border open:w-full" data-waiting>
             <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">{{ waitingLabel() }}</summary>
 
             <div class="flex max-h-96 flex-col gap-3 overflow-y-auto px-3 pb-3">
@@ -172,7 +176,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
             </div>
           </details>
 
-          <details class="rounded-md border border-et-surface-border" data-logged>
+          <details class="rounded-md border border-et-surface-border open:w-full" data-logged>
             <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">{{ loggedLabel() }}</summary>
 
             <div class="flex max-h-96 flex-col gap-3 overflow-y-auto px-3 pb-3">
@@ -188,7 +192,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
             </div>
           </details>
 
-          <details class="rounded-md border border-et-surface-border" data-notes>
+          <details class="rounded-md border border-et-surface-border open:w-full" data-notes>
             <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">Day notes</summary>
 
             <div class="px-3 pb-3">
