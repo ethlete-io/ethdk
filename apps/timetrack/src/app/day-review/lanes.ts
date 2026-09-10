@@ -1,11 +1,27 @@
 import { SchedulerTimeGridBlock } from '@ethlete/components';
-import { ReviewedRow, streamKeyLabel } from '@ethlete/timetrack';
+import { BreakWindow, ReviewedRow, streamKeyLabel } from '@ethlete/timetrack';
 import { TimelineEntry, rowEntryOf } from './row-edit/row-appointment';
 
 /** The lane a row with no checkout and no application behind it falls into. */
 export const NO_LANE_KEY = 'lane:none';
 
 const NO_LANE_LABEL = 'No checkout';
+
+/** The lane the day's breaks are drawn in. */
+export const BREAK_LANE_KEY = 'lane:break';
+
+const BREAK_LANE_LABEL = 'Break';
+
+const DAY_MS = 24 * 60 * 60_000;
+
+/** One break, placed on the day axis the same way the grid places a block. */
+export type BreakBand = {
+  window: BreakWindow;
+  /** Percent of the day the break starts at. */
+  offset: number;
+  /** Percent of the day it holds. */
+  span: number;
+};
 
 /** A block placed in its lane: the grid's own vertical geometry, with the inline geometry re-read. */
 export type LaneBlock = {
@@ -21,6 +37,8 @@ export type DayLane = {
   key: string;
   label: string;
   blocks: LaneBlock[];
+  /** The day's breaks. Only the break lane holds any; every other lane holds work. */
+  breaks: BreakBand[];
 };
 
 export const laneKeyOfRow = (row: ReviewedRow) => row.laneKey ?? NO_LANE_KEY;
@@ -78,17 +96,30 @@ const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): Lan
   return placed;
 };
 
+const breakBandsOf = (options: { breaks: readonly BreakWindow[]; dayStart: Date }): BreakBand[] =>
+  options.breaks.map((window) => ({
+    window,
+    offset: ((window.from.getTime() - options.dayStart.getTime()) / DAY_MS) * 100,
+    span: ((window.to.getTime() - window.from.getTime()) / DAY_MS) * 100,
+  }));
+
 /**
- * The day's blocks as one lane per checkout, in the order the checkouts were first touched. A row
- * nothing could place goes into a last lane of its own rather than into somebody else's.
+ * The day's blocks as one lane per checkout, in the order the checkouts were first touched, with the
+ * day's breaks in a leading lane of their own. A row nothing could place goes into a last lane rather
+ * than into somebody else's.
  *
  * A lane is fixed by the checkout and never by who overlaps whom, so a band's width says which
  * checkout it is and a busy hour narrows nothing.
  */
-export const lanesOf = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): DayLane[] => {
+export const lanesOf = (options: {
+  blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[];
+  breaks: readonly BreakWindow[];
+  /** Midnight of the day on screen, which the break geometry is measured from. */
+  dayStart: Date;
+}): DayLane[] => {
   const byLane = new Map<string, SchedulerTimeGridBlock<TimelineEntry>[]>();
 
-  for (const block of blocks) {
+  for (const block of options.blocks) {
     const key = laneKeyOfBlock(block);
 
     byLane.set(key, [...(byLane.get(key) ?? []), block]);
@@ -96,7 +127,7 @@ export const lanesOf = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]
 
   const startOf = (lane: SchedulerTimeGridBlock<TimelineEntry>[]) => Math.min(...lane.map((block) => block.offset));
 
-  return [...byLane]
+  const work = [...byLane]
     .sort(([aKey, a], [bKey, b]) => {
       if (aKey === NO_LANE_KEY) return 1;
       if (bKey === NO_LANE_KEY) return -1;
@@ -107,5 +138,10 @@ export const lanesOf = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]
       key,
       label: key === NO_LANE_KEY ? NO_LANE_LABEL : streamKeyLabel(key),
       blocks: packLane(laneBlocks),
+      breaks: [],
     }));
+
+  if (!options.breaks.length) return work;
+
+  return [{ key: BREAK_LANE_KEY, label: BREAK_LANE_LABEL, blocks: [], breaks: breakBandsOf(options) }, ...work];
 };

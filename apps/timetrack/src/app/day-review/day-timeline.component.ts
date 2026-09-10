@@ -22,10 +22,10 @@ import {
   countDescendants,
 } from '@ethlete/components';
 import { DragGestureEvent, ProvideColorDirective, dragGestureFrom } from '@ethlete/core';
-import { DEFAULT_ROUND_OPTIONS, ReviewedRow } from '@ethlete/timetrack';
+import { BreakWindow, DEFAULT_ROUND_OPTIONS, ReviewedRow, formatDurationMs } from '@ethlete/timetrack';
 import { tap } from 'rxjs';
 import { formatClockTime } from './format';
-import { DayLane, lanesOf, laneKeyOfRow } from './lanes';
+import { BREAK_LANE_KEY, BreakBand, DayLane, lanesOf, laneKeyOfRow } from './lanes';
 import {
   TimelineEntry,
   UNNAMED_LABEL,
@@ -64,6 +64,9 @@ const STRIP_ROW_REM = 2;
  * checkouts scrolls sideways rather than shrinking every lane to a sliver.
  */
 const LANE_MIN_REM = 14;
+
+/** How wide the break lane is. It carries no ticket and no gesture, so it stays narrow. */
+const BREAK_LANE_REM = 6;
 
 const HOUR_MS = 60 * 60_000;
 const DAY_MS = 24 * HOUR_MS;
@@ -119,9 +122,10 @@ type RowDrag = {
 
             @for (lane of lanes(); track lane.key) {
               <div
-                [style.minWidth.rem]="LANE_MIN_REM"
+                [style.flexGrow]="growOf(lane)"
+                [style.minWidth.rem]="minRemOf(lane)"
                 [title]="lane.key"
-                class="grow basis-0 truncate border-b border-l border-et-surface-border px-2 py-1 text-small text-et-surface-muted"
+                class="basis-0 truncate border-b border-l border-et-surface-border px-2 py-1 text-small text-et-surface-muted"
                 data-lane-header
               >
                 {{ lane.label }}
@@ -165,9 +169,10 @@ type RowDrag = {
               @for (lane of lanes(); track lane.key) {
                 <div
                   #column
-                  [style.minWidth.rem]="LANE_MIN_REM"
+                  [style.flexGrow]="growOf(lane)"
+                  [style.minWidth.rem]="minRemOf(lane)"
                   (pointerdown)="startDraw({ event: $event, column, lane })"
-                  class="relative grow basis-0 touch-none border-l border-et-surface-border"
+                  class="relative basis-0 touch-none border-l border-et-surface-border"
                   data-lane
                 >
                   @if (draftIn(lane); as draft) {
@@ -176,6 +181,20 @@ type RowDrag = {
                       [style.height.%]="draft.span"
                       class="pointer-events-none absolute inset-x-0 rounded-sm border border-dashed border-et-brand-ink bg-et-brand-ink/10"
                     ></div>
+                  }
+
+                  @for (band of lane.breaks; track band.window.from) {
+                    <div
+                      [style.top.%]="band.offset"
+                      [style.height.%]="band.span"
+                      [title]="breakTitle(band)"
+                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-interaction px-2 py-1 text-small text-et-surface-muted"
+                      data-break
+                    >
+                      @if (labelled(band.span)) {
+                        <span class="block truncate">{{ breakLabel(band) }}</span>
+                      }
+                    </div>
                   }
 
                   @for (laid of lane.blocks; track laid.block.node.appointment.id) {
@@ -254,6 +273,8 @@ export class DayTimelineComponent {
 
   public focusedDate = input.required<Date>();
   public rows = input.required<readonly ReviewedRow[]>();
+  /** The day's breaks, from `StreamDay.breaks`. They get a lane of their own, and no gesture. */
+  public breaks = input<readonly BreakWindow[]>([]);
 
   /** Where two adjacent rows should meet instead. */
   public boundaryMove = output<BoundaryMove>();
@@ -276,14 +297,15 @@ export class DayTimelineComponent {
 
   protected readonly HOUR_REM = HOUR_REM;
   protected readonly STRIP_ROW_REM = STRIP_ROW_REM;
-  protected readonly LANE_MIN_REM = LANE_MIN_REM;
   protected readonly HOURS = Array.from({ length: 25 }, (_, hour) => hour);
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
   protected readonly PAINT_OF = appointmentPaint;
 
   /** The day as one lane per checkout. The grid supplies the vertical geometry; the lane the inline. */
-  protected lanes = computed<DayLane[]>(() => lanesOf(this.grid()?.days()[0]?.blocks ?? []));
+  protected lanes = computed<DayLane[]>(() =>
+    lanesOf({ blocks: this.grid()?.days()[0]?.blocks ?? [], breaks: this.breaks(), dayStart: this.focusedDate() }),
+  );
 
   /**
    * The pairs of rows that meet at one instant, by the lane they are in. A pair too short to keep a
@@ -424,6 +446,24 @@ export class DayTimelineComponent {
     return this.drawLane() === lane.key ? this.grid()?.draftBlock() : null;
   }
 
+  protected minRemOf(lane: DayLane) {
+    return lane.key === BREAK_LANE_KEY ? BREAK_LANE_REM : LANE_MIN_REM;
+  }
+
+  protected growOf(lane: DayLane) {
+    return lane.key === BREAK_LANE_KEY ? 0 : 1;
+  }
+
+  protected breakLabel(band: BreakBand) {
+    return formatDurationMs(band.window.to.getTime() - band.window.from.getTime());
+  }
+
+  protected breakTitle(band: BreakBand) {
+    const clock = `${formatClockTime(band.window.from)} - ${formatClockTime(band.window.to)}`;
+
+    return band.window.locked ? `${clock} - the screen was locked` : clock;
+  }
+
   protected stripHeight(rowCount: number) {
     return Math.max(1, rowCount) * STRIP_ROW_REM;
   }
@@ -518,7 +558,7 @@ export class DayTimelineComponent {
   protected startDraw(options: { event: PointerEvent; column: HTMLElement; lane: DayLane }) {
     const { event, column, lane } = options;
 
-    if (event.button !== 0) return;
+    if (event.button !== 0 || lane.key === BREAK_LANE_KEY) return;
 
     this.drawLane.set(lane.key);
 
