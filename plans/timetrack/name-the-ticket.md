@@ -131,11 +131,15 @@ before booking rather than with it.
 1. **What tells one meeting group from another when both are calls.** Monday 09:15 is Meet and
    09:30 is Discord, so the application would work today and break the first time a fifagg call runs
    on Meet.
-2. **Whether a standing rule expires, or only warns.** See the `BD-2049` trap above.
-3. **Whether the epic rung reads the slug or the sibling.** The slug is a string operation with no
+2. **Whether the fifagg meetings go into the calendar.** This is a question about Tom's habits, not
+   about code, and it decides how much the application rule has to carry. If those calls get
+   calendar entries, the series mechanism names all three meetings and the application rule becomes
+   a fallback. If they never do, the application rule is the primary mechanism for two of the three.
+3. **Whether a standing rule expires, or only warns.** See the `BD-2049` trap above.
+4. **Whether the epic rung reads the slug or the sibling.** The slug is a string operation with no
    lookup. The sibling needs the other checkout's own answer, which exists only after that checkout
    was named once.
-4. **What a stream shows when two rungs disagree.** The ladder returns the first hit today, and this
+5. **What a stream shows when two rungs disagree.** The ladder returns the first hit today, and this
    slice adds rungs above and below the existing ones.
 
 ## Not in this slice
