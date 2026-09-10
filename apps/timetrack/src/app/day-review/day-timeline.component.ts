@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   Appointment,
+  MENU_IMPORTS,
   SCHEDULER_IMPORTS,
   SchedulerAppointmentDragMode,
   SchedulerAppointmentReschedule,
@@ -32,6 +33,7 @@ import {
   appointmentLabel,
   appointmentOf,
   appointmentPaint,
+  rowEntryOf,
 } from './row-edit/row-appointment';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 
@@ -211,9 +213,20 @@ type RowDrag = {
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
                       class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[dragging]:opacity-70"
+                      etMenu
+                      etMenuContextTrigger
                       role="button"
                       tabindex="0"
                     >
+                      @if (rowOf(laid.block.node.appointment); as row) {
+                        <ng-template etMenuSurface>
+                          <et-menu>
+                            <button (click)="rowHide.emit(row)" et-menu-item type="button">Hide this row</button>
+                            <button (click)="splitInHalf(row)" et-menu-item type="button">Split in half</button>
+                          </et-menu>
+                        </ng-template>
+                      }
+
                       @for (paint of PAINT_OF(laid.block.node.appointment); track paint.offset) {
                         <div
                           [style.top.%]="paint.offset"
@@ -264,7 +277,7 @@ type RowDrag = {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [ProvideColorDirective, SCHEDULER_IMPORTS],
+  imports: [MENU_IMPORTS, ProvideColorDirective, SCHEDULER_IMPORTS],
   host: { class: 'flex min-h-0 flex-col' },
 })
 export class DayTimelineComponent {
@@ -280,6 +293,12 @@ export class DayTimelineComponent {
   public boundaryMove = output<BoundaryMove>();
   /** Where a row was dragged to, whole or by one end. */
   public rowReschedule = output<RowReschedule>();
+
+  /** A row the reviewer took off the timeline through the band's own menu. */
+  public rowHide = output<ReviewedRow>();
+
+  /** Where a row is to be cut, from the band's own menu. */
+  public rowSplit = output<{ row: ReviewedRow; at: Date }>();
 
   private body = viewChild.required<ElementRef<HTMLElement>>('body');
   private dayColumn = viewChild<ElementRef<HTMLElement>>('dayColumn');
@@ -484,6 +503,14 @@ export class DayTimelineComponent {
 
   protected kindOf(appointment: Appointment<TimelineEntry>) {
     return appointment.extra?.kind ?? 'row';
+  }
+
+  protected rowOf(appointment: Appointment<TimelineEntry>) {
+    return rowEntryOf(appointment)?.row ?? null;
+  }
+
+  protected splitInHalf(row: ReviewedRow) {
+    this.rowSplit.emit({ row, at: new Date((row.from.getTime() + row.to.getTime()) / 2) });
   }
 
   protected dragging(appointment: Appointment<TimelineEntry>) {

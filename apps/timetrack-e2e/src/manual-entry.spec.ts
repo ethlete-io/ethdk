@@ -68,6 +68,35 @@ test.describe('a row taken off the timeline', () => {
   });
 });
 
+test.describe("the band's own menu", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/day');
+
+    const surface = await addAnEntry(page);
+
+    await pickIssue(page, surface, /ABC-2000/);
+    await saveSurface(page);
+  });
+
+  test('hides the row a right click was aimed at', async ({ page }) => {
+    await manualBand(page).click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Hide this row' }).click();
+
+    await expect(manualBand(page)).toHaveCount(0);
+    await expect(page.locator('[data-hidden] summary')).toContainText('1 row(s)');
+  });
+
+  test('cuts the row a right click was aimed at in two', async ({ page }) => {
+    const bands = page.locator('[data-kind="row"]');
+    const before = await bands.count();
+
+    await manualBand(page).click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Split in half' }).click();
+
+    await expect(bands).toHaveCount(before + 1);
+  });
+});
+
 const hideTheBand = async (page: Page) => {
   const title = await manualBand(page).getAttribute('title');
 
