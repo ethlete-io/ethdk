@@ -15,6 +15,22 @@ export type PresenceSample = ActivityEvent | AgentPromptEvent | AgentUsageEvent;
  */
 const isPresent = (sample: PresenceSample) => sample.kind === 'window-focus' || sample.kind === 'agent-prompt';
 
+/**
+ * The index of the last sample that resumes presence, or -1 for a day that holds none.
+ *
+ * A stretch away before it is one the idle source closed itself, and only such a stretch may refuse
+ * the fallback below.
+ */
+const lastResumeIndex = (samples: readonly PresenceSample[]) => {
+  for (let index = samples.length - 1; index >= 0; index -= 1) {
+    const sample = samples[index];
+
+    if (sample && sample.source === 'idle' && resumesPresence(sample.kind)) return index;
+  }
+
+  return -1;
+};
+
 /** Whether the sample is an agent's, which is what the wider of the two gaps applies to. */
 const isAgents = (sample: PresenceSample) => sample.kind === 'agent-prompt' || sample.kind === 'agent-usage';
 
@@ -67,6 +83,9 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
   let current: TimeWindow | null = null;
   let away = opensAway(options.samples);
   let mark: { at: Date; gapMs: number } | null = null;
+  const resumeIndex = lastResumeIndex(options.samples);
+  /** Whether the stretch away now running ends in a resume of its own, so nothing else may end it. */
+  let awaited = away;
 
   const close = (at: Date) => {
     if (!current) return;
@@ -79,10 +98,14 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
   /** The silence two marks tolerate: the shorter of what each of them allows. */
   const gapMs = (sample: PresenceSample) => Math.min(mark?.gapMs ?? Infinity, isAgents(sample) ? agentGapMs : Infinity);
 
-  for (const sample of options.samples) {
+  for (const [index, sample] of options.samples.entries()) {
     if (sample.source === 'idle') {
       if (endsPresence(sample.kind)) {
         away = true;
+        // A stretch a later `idle-end` or `unlock` closes needs no help from the fallback below, and
+        // must refuse it: the window source emits a focus event for a title change too, so an agent
+        // working in the window the user left focused would otherwise read as the user returning.
+        awaited = index < resumeIndex;
         close(sample.at);
       }
 
@@ -103,7 +126,7 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
 
     // Input the idle notifier may have missed the resume of. A focus change and a typed prompt each
     // need somebody at the keyboard, so either ends being away on its own.
-    if (isPresent(sample)) away = false;
+    if (!awaited && isPresent(sample)) away = false;
 
     if (away) continue;
 

@@ -7,12 +7,12 @@ const AT = (minutes: number) => new Date(new Date(2026, 7, 12, 9, 0, 0).getTime(
 
 const MINUTE = 60_000;
 
-const focus = (minutes: number): ActivityEvent => ({
+const focus = (minutes: number, title = 'code'): ActivityEvent => ({
   at: AT(minutes),
   source: 'window',
   kind: 'window-focus',
   appId: 'code',
-  title: 'code',
+  title,
 });
 
 const session = (minutes: number): ActivityEvent => ({
@@ -87,6 +87,22 @@ describe('presenceWindows', () => {
     expect(found).toEqual([
       { from: AT(0), to: AT(5) },
       { from: AT(20), to: AT(30) },
+    ]);
+  });
+
+  it('takes the titles an agent changed through a stretch the idle notifier did close as no resume', () => {
+    const found = windows([
+      focus(0, 'lanes.ts'),
+      presence(5, 'idle-start'),
+      focus(20, 'presence.ts'),
+      focus(30, 'breaks.ts'),
+      presence(60, 'idle-end'),
+      focus(61, 'stream-day.ts'),
+    ]);
+
+    expect(found).toEqual([
+      { from: AT(0), to: AT(5) },
+      { from: AT(61), to: AT(61) },
     ]);
   });
 

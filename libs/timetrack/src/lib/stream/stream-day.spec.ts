@@ -424,6 +424,24 @@ describe('streamDay', () => {
     expect(day.unattendedMs).toBe(50 * MINUTE);
   });
 
+  it('keeps the break whole when the agent kept changing the title of the window the user left', () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 60, appId: 'code', title: 'presence.ts - ethlete-sdk - Code' }),
+        commit(0, 'feat(bracket): Add the resolver'),
+        presence(61, 'idle-start'),
+        ...sessionRun({ from: 65, to: 115, cwd: SDK }),
+        focus(90, 'code', 'breaks.ts - ethlete-sdk - Code'),
+        focus(95, 'code', 'stream-day.ts - ethlete-sdk - Code'),
+        presence(120, 'idle-end'),
+        ...focusRun({ from: 120, to: 180, appId: 'code', title: 'lanes.ts - ethlete-sdk - Code' }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.breaks).toEqual([{ from: AT(61), to: AT(120), locked: false }]);
+  });
+
   it('splits one agent run into the attended part and the unattended part, and counts each minute once', () => {
     const day = streamDay({
       events: [
