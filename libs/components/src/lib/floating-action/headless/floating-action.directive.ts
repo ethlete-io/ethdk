@@ -8,7 +8,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { RuntimeError, injectStyleManager } from '@ethlete/core';
+import { RuntimeError, injectStyleManager, mountEasingTokens } from '@ethlete/core';
 import { FLOATING_ACTION_ERROR_CODES } from '../floating-action-errors';
 import { FloatingActionStylesComponent } from '../floating-action-styles.component';
 import { FLOATING_ACTION_STATES, FloatingActionState } from '../floating-action.types';
@@ -102,6 +102,7 @@ export class FloatingActionDirective {
   public isFloating = computed(() => this.state() === FLOATING_ACTION_STATES.FLOATING);
 
   constructor() {
+    mountEasingTokens();
     // The floating itself is CSS, and it is mechanism rather than decoration, so a hand-built composition has to
     // get it too. De-duplicated by the style manager.
     this.styleManager.mount(FloatingActionStylesComponent);

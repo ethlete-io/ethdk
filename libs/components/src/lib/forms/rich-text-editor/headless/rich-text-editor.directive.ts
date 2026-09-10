@@ -1,7 +1,14 @@
 import { DOCUMENT } from '@angular/common';
 import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { htmlToMarkdown, injectRenderer, injectStyleManager, markdownToHtml, RuntimeError } from '@ethlete/core';
+import {
+  htmlToMarkdown,
+  injectRenderer,
+  injectStyleManager,
+  markdownToHtml,
+  mountEasingTokens,
+  RuntimeError,
+} from '@ethlete/core';
 import {
   AccessibleNameControlDirective,
   FORM_FIELD_CONTROL_TYPES,
@@ -262,6 +269,7 @@ export class RichTextEditorDirective
   public linkEditorOpen = signal(false);
 
   constructor() {
+    mountEasingTokens();
     super();
 
     injectStyleManager().mount(FormFieldRichTextStylesComponent);

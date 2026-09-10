@@ -32,6 +32,7 @@ import {
   RuntimeError,
   signalDeferredLoading,
   signalHostElementDimensions,
+  mountEasingTokens,
 } from '@ethlete/core';
 import { ARROW_UP_ICON } from '../icon/headless/arrow-up-icon';
 import { provideIcons } from '../icon/headless/icon-provider';
@@ -1136,6 +1137,7 @@ export class TableComponent<T> {
   private pointerGestureClaims = new Map<number, string>();
 
   constructor() {
+    mountEasingTokens();
     const styleManager = injectStyleManager();
 
     // The row box layout, the card row's surface/ring/corner chrome and the row-link anchor do nothing

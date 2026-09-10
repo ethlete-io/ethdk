@@ -9,7 +9,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { injectStyleManager } from '@ethlete/core';
+import { injectStyleManager, mountEasingTokens } from '@ethlete/core';
 import { IconButtonComponent } from '../button';
 import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
 import { CalendarCellDirective, CalendarDirective, CalendarGridDirective } from './headless';
@@ -138,6 +138,7 @@ export class CalendarComponent {
   });
 
   constructor() {
+    mountEasingTokens();
     effect(() => {
       // gated on whether a coarser view is reachable at all, not on `calendar.view()` having
       // already left the day grid - mounting on that transition would paint the first drilled-out

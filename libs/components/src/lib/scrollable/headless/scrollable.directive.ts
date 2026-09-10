@@ -27,6 +27,7 @@ import {
   signalHostClasses,
   signalHostStyles,
   typedBreakpointTransform,
+  mountEasingTokens,
 } from '@ethlete/core';
 import { ResolvedScrollableChrome, ScrollableChrome } from './scrollable-chrome';
 import { SCROLLABLE_ERROR_CODES } from './scrollable-errors';
@@ -260,6 +261,7 @@ export class ScrollableDirective {
   });
 
   constructor() {
+    mountEasingTokens();
     if (ngDevMode) {
       afterNextRender(() => {
         if (!this.scrollContainerRef()) {

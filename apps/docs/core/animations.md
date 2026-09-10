@@ -77,6 +77,25 @@ just made started an animation, use `getRunningAnimations()`: reading it flushes
 so the answer holds even when the browser has not committed yet. `AnimatedLifecycleDirective` ends
 its transitions on that reading.
 
+## Easing tokens
+
+Every animated stylesheet in the SDK transitions with an `--ease-*` custom property - `--ease-out-5`, `--ease-spring-2` and the rest of the [Open Props](https://github.com/argyleink/open-props) set. `EasingTokensStylesComponent` declares all of them on `:where(html)`, and `mountEasingTokens()` mounts it through the style manager, so however many owners ask for it the declarations reach the document once.
+
+`AnimatableDirective` mounts them, which covers everything `AnimatedLifecycleDirective` drives - the whole overlay system included. Mount them yourself from any component or directive whose own CSS reads one:
+
+```ts
+import { mountEasingTokens } from '@ethlete/core';
+
+@Directive({ selector: '[myThing]' })
+export class MyThingDirective {
+  constructor() {
+    mountEasingTokens();
+  }
+}
+```
+
+Without the declaration the whole `transition` shorthand is invalid at computed-value time and computes to `all 0s`, so the element snaps instead of animating. An application that declares its own `--ease-*` unlayered still wins, because the token sheet sits in `@layer components`.
+
 ## FLIP animations
 
 `createFlipAnimation({ element, originElement?, duration?, easing?, ignoreReducedMotion? })` animates an element from a measured previous position/size to its current one using the Web Animations API - the tab bar underline is built on it. Defaults: `duration: 250`, `easing: 'cubic-bezier(0.4, 0, 0.2, 1)'`, `originElement` = the element itself, and reduced motion respected. Returns `{ updateInit, play, cancel, onStart$, onFinish$, onCancel$ }`. `createFlipAnimationGroup` runs several in lockstep and exposes the same three outputs for the group as a whole: `onStart$` once every element has started, then exactly one of `onFinish$` (all finished) or `onCancel$` (at least one was cancelled) per `play()`. `matchesReducedMotion(element)` is available when a custom animation needs the same check.

@@ -13,6 +13,7 @@ import {
   tap,
 } from 'rxjs';
 import { animationDebugLog } from './animation-debug';
+import { mountEasingTokens } from './easing-tokens-styles.component';
 
 export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATABLE_DIRECTIVE_TOKEN');
 
@@ -56,6 +57,8 @@ export class AnimatableDirective {
   isAnimating$ = this.totalActiveAnimationCount$.pipe(map((count) => count > 0));
 
   constructor() {
+    mountEasingTokens();
+
     let didEmitStart = false;
     const el = this.elementRef.nativeElement;
 

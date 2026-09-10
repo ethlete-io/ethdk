@@ -9,7 +9,13 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { RuntimeError, injectHostElement, injectPrefersReducedMotion, injectStyleManager } from '@ethlete/core';
+import {
+  RuntimeError,
+  injectHostElement,
+  injectPrefersReducedMotion,
+  injectStyleManager,
+  mountEasingTokens,
+} from '@ethlete/core';
 import { ScrollableDirective, ScrollableItemSize } from '../../scrollable';
 import { CAROUSEL_ERROR_CODES } from '../carousel-errors';
 import { CarouselLabels, injectCarouselLabels } from '../carousel-labels';
@@ -339,6 +345,7 @@ export class CarouselDirective {
   });
 
   constructor() {
+    mountEasingTokens();
     // The active slide is read off the child intersections, which the scrollable only observes on demand.
     effect(() => this.scrollable()?.activateChildIntersections());
 

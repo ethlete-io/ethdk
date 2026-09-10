@@ -7,6 +7,7 @@ import {
   signalElementChildren,
   signalElementMutations,
   signalHostElementDimensions,
+  mountEasingTokens,
 } from '@ethlete/core';
 import { sortByDomOrder } from '../../internals/dom-order';
 import { MASONRY_ERROR_CODES } from '../masonry-errors';
@@ -206,6 +207,7 @@ export class MasonryDirective {
   public isResizing = useMasonryResizeSettled(this.containerInlineSize);
 
   constructor() {
+    mountEasingTokens();
     // Structural CSS is mounted rather than shipped on a component, so the directive works standalone -
     // absolute positioning is this layout's mechanism, not its decoration, and a headless composition has to
     // get it too. The style manager de-duplicates, so many masonries inject one <style>.
