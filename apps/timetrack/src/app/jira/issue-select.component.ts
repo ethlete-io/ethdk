@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, computed, input, output } from '@angular/core';
 import { SELECT_IMPORTS } from '@ethlete/components';
-import { JiraIssue } from '@ethlete/timetrack';
+import { JiraIssue, projectKeyOf } from '@ethlete/timetrack';
 import { injectJiraCatalog } from './jira-catalog';
 
 /** How long a summary may read in one line. Past this the key stops being the first thing seen. */
@@ -27,13 +27,17 @@ type IssueOption = {
  *
  * The list is read when a picker is first opened rather than on mount, because a day has one of these
  * per row. `ethlete-issue-filter` is where its scope is narrowed, once, for all of them.
+ *
+ * `projectKey` narrows one picker further, to the project the row's own checkout is logged into. An
+ * empty list then means no issue of that project was read, which is why the placeholder names the
+ * project: an empty picker that says nothing reads as a defect.
  */
 @Component({
   selector: 'ethlete-issue-select',
   template: `
     <et-select
       [value]="value() || null"
-      [placeholder]="placeholder()"
+      [placeholder]="placeholderText()"
       [loading]="catalog.isLoadingIssues()"
       [error]="catalog.issueFailure()"
       [aria-label]="ariaLabel()"
@@ -43,7 +47,7 @@ type IssueOption = {
     >
       <!-- a single select with an inline search shows its value in that input, so its placeholder is
            the one the closed field reads -->
-      <input [placeholder]="placeholder()" etSelectSearch />
+      <input [placeholder]="placeholderText()" etSelectSearch />
 
       @for (option of options(); track option.key) {
         <et-select-option [value]="option.key" [label]="option.label">
@@ -64,13 +68,26 @@ type IssueOption = {
 export class IssueSelectComponent {
   protected catalog = injectJiraCatalog();
   public value = input('');
-  public placeholder = input('Pick an issue');
+  public placeholder = input('');
+  /** Offers only this project's issues. Empty offers every project the catalog read. */
+  public projectKey = input('');
   public ariaLabel = input<string | null>(null);
 
   /** The key that was picked or typed. Empty when the field was cleared. */
   public valueChange = output<string>();
 
-  protected options = computed(() => this.catalog.issues().map(toOption));
+  public scope = computed(() => this.projectKey().trim().toUpperCase());
+
+  protected placeholderText = computed(
+    () => this.placeholder() || (this.scope() ? `Pick a ${this.scope()} issue` : 'Pick an issue'),
+  );
+
+  protected options = computed(() => {
+    const scope = this.scope();
+    const issues = this.catalog.issues();
+
+    return (scope ? issues.filter((issue) => projectKeyOf(issue.key) === scope) : issues).map(toOption);
+  });
 
   protected opened(open: boolean) {
     if (open) this.catalog.loadIssues();

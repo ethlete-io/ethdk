@@ -1,4 +1,18 @@
-import { expect, openWaitingForAName, test } from './support';
+import {
+  E2E_ISSUE_ID,
+  E2E_ISSUE_KEY,
+  E2E_PARENT_ID,
+  E2E_PARENT_KEY,
+  E2E_REPO,
+  FakeJiraIssue,
+  defaultSettings,
+} from '@ethlete/timetrack/testing';
+import { E2E_DAY_KEY, E2E_NOW, addAnEntry, expect, openBand, openWaitingForAName, seedWorld, test } from './support';
+
+const ABC = { key: 'ABC', name: 'Alpha' };
+
+/** A second project the user picked, which the linked checkout must keep out of its picker. */
+const BETA = { key: 'XYZ', name: 'Beta' };
 
 test.describe('the day view', () => {
   test.beforeEach(async ({ page }) => {
@@ -70,5 +84,53 @@ test.describe('the day view', () => {
 
     await expect(description).toHaveValue(/Try pdfkit for the invoice export/);
     await expect(description).not.toHaveValue(/pdf-export\.ts/);
+  });
+});
+
+/**
+ * A row's checkout is what decides which project its picker offers, so the fixture holds an issue of
+ * a second picked project: without the scope, the picker would offer it too.
+ */
+test.describe('the day view, with the checkout linked to one project', () => {
+  const UPDATED = `${E2E_DAY_KEY}T08:00:00.000Z`;
+
+  const ISSUES: FakeJiraIssue[] = [
+    { id: E2E_ISSUE_ID, key: E2E_ISSUE_KEY, summary: 'User management', issueType: 'Task', updated: UPDATED },
+    { id: E2E_PARENT_ID, key: E2E_PARENT_KEY, summary: 'Member onboarding', issueType: 'Story', updated: UPDATED },
+    { id: '10400', key: 'XYZ-4200', summary: 'Invoice run', issueType: 'Task', updated: UPDATED },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      jira: { issues: ISSUES, projects: [ABC, BETA] },
+      settings: {
+        ...defaultSettings(),
+        favoriteProjects: [ABC, BETA],
+        projectLinks: [
+          { id: 'link-fut', path: E2E_REPO, target: { kind: 'project', projectKey: ABC.key }, createdAt: new Date(0) },
+        ],
+      },
+    });
+    await page.goto('/day');
+  });
+
+  test('offers only the linked project on a row the checkout is behind', async ({ page }) => {
+    const surface = await openBand(page, 'ABC-3010 · 1h 30m');
+
+    await surface.locator('ethlete-issue-select et-select').click();
+
+    await expect(page.getByRole('option')).toHaveCount(2);
+    await expect(page.getByRole('option', { name: /ABC-3010/ })).toBeVisible();
+    await expect(page.getByRole('option', { name: /XYZ-4200/ })).toHaveCount(0);
+  });
+
+  test('offers every picked project on a row no checkout is behind', async ({ page }) => {
+    const surface = await addAnEntry(page);
+
+    await surface.locator('ethlete-issue-select et-select').click();
+
+    await expect(page.getByRole('option', { name: /ABC-3010/ })).toBeVisible();
+    await expect(page.getByRole('option', { name: /XYZ-4200/ })).toBeVisible();
   });
 });

@@ -8,8 +8,10 @@ import {
   UnnamedContext,
   describeAttributionRule,
   formatDurationMs,
+  projectKeyFor,
 } from '@ethlete/timetrack';
 import { IssueSelectComponent } from '../jira';
+import { injectTimetrackSettings } from '../settings/settings';
 import { formatClockTime } from './format';
 
 export type ContextNaming = { context: UnnamedContext; target: AttributionTarget };
@@ -86,6 +88,7 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
           } @else {
             <ethlete-issue-select
               [value]="draftFor(entry.id)"
+              [projectKey]="entry.projectKey"
               [ariaLabel]="'Issue for ' + entry.label"
               (valueChange)="setDraft(entry.id, $event)"
               class="w-42 shrink-0"
@@ -114,6 +117,7 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
   imports: [BANNER_IMPORTS, BUTTON_IMPORTS, IssueSelectComponent, SpinnerComponent],
 })
 export class UnnamedWorkComponent {
+  private settings = injectTimetrackSettings();
   public contexts = input.required<readonly UnnamedContext[]>();
   /** What the reasoning provider proposed, by context id. Empty until the user asks for it. */
   public suggestions = input<ReadonlyMap<string, InferredAttribution>>(new Map());
@@ -146,6 +150,7 @@ export class UnnamedWorkComponent {
   protected listed = computed(() => {
     const suggestions = this.suggestions();
     const rules = this.rules();
+    const links = this.settings.settings().projectLinks;
 
     return this.contexts().map((context) => ({
       id: context.id,
@@ -156,6 +161,7 @@ export class UnnamedWorkComponent {
       path: context.suggestion.repoPath,
       suggestion: suggestions.get(context.id),
       answered: answeredBy(rules.get(context.id)),
+      projectKey: projectKeyFor({ context: context.context, links }) ?? '',
     }));
   });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contextKey, streamKey } from './block';
+import { contextKey, streamKey, streamKeyRepoPath } from './block';
 
 describe('streamKey', () => {
   it('gives one checkout one key, whatever branch is checked out', () => {
@@ -21,5 +21,16 @@ describe('streamKey', () => {
     expect(contextKey({ repoPath: '/home/tom/dev/a', branch: 'main' })).not.toBe(
       contextKey({ repoPath: '/home/tom/dev/a', branch: 'next' }),
     );
+  });
+});
+
+describe('streamKeyRepoPath', () => {
+  it('reads the checkout back out of the key `streamKey` wrote', () => {
+    expect(streamKeyRepoPath(streamKey({ repoPath: '/home/tom/dev/a', branch: 'next' }))).toBe('/home/tom/dev/a');
+  });
+
+  it('names nothing for a key that names an application', () => {
+    expect(streamKeyRepoPath(streamKey({ appId: 'discord' }))).toBeUndefined();
+    expect(streamKeyRepoPath(streamKey({}))).toBeUndefined();
   });
 });
