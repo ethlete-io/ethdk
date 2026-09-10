@@ -106,8 +106,8 @@ const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
 
 /**
  * The encrypted store, plus the one thing the port cannot express: appending a collector's events
- * and moving its cursors in a single transaction. A cursor that is lost re-reads its whole log and
- * appends every sample in it a second time, so the agent-session collector must use
+ * and moving its cursors in a single transaction. A cursor that moves without the events it covers
+ * takes the next read past samples nothing stored, so the agent-session collector must use
  * `appendWithCursors$` and never `append$`.
  */
 export type TauriEventStore = TimetrackEventStore &

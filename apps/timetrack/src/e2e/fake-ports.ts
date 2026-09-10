@@ -72,7 +72,7 @@ export const createFakePorts = (): HostPorts => {
   const world = createFakeWorld(seedFromWindow());
   const { backend } = world;
   const events = [...world.events];
-  const dedupeKeys = new Set(events.map(dedupeKeyOf).filter((key): key is string => key !== null));
+  const dedupeKeys = new Set(events.map(dedupeKeyOf));
   const cursorsByPass = new Map<AgentLogPass, Map<string, AgentSessionCursor>>();
   const ledger = new Map<string, SyncedWorklog[]>();
   const edits = new Map<string, DayReviewEdits>();
@@ -101,9 +101,9 @@ export const createFakePorts = (): HostPorts => {
     for (const event of appended) {
       const key = dedupeKeyOf(event);
 
-      if (key !== null && dedupeKeys.has(key)) continue;
-      if (key !== null) dedupeKeys.add(key);
+      if (dedupeKeys.has(key)) continue;
 
+      dedupeKeys.add(key);
       events.push(event);
       added += 1;
     }

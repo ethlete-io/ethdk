@@ -6,8 +6,8 @@ const PART_SEPARATOR = '\u001f';
 const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
 
 /**
- * The identity a re-collected event is recognised by, or `null` for an event only its collector can
- * have observed.
+ * The identity a re-collected event is recognised by. Every kind has one, so a new kind has to declare
+ * what makes two of its observations the same one.
  *
  * A git scan reads a window of history rather than a stream, so overlapping runs — the periodic
  * reconcile, a run the watcher triggered, the wide scan after the app was closed — see the same
@@ -25,10 +25,14 @@ const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
  * would have to put its host in the key. A GitHub event keys by its source and its id.
  *
  * A sample the host buffered — a focus change, a presence transition, a microphone edge — keys by the
- * instant it was taken at and the state it reports. The host holds such a sample until the collector
+ * instant it was taken at and the process it names. The host holds such a sample until the collector
  * acknowledges it, so a webview that reloads between reading and storing drains it a second time, and
  * the key is what makes that repeat free. Two samples of the same window a minute apart are two real
  * observations and both still store, because their instants differ.
+ *
+ * No key holds a title. `repairStoredTitles$` rewrites a stored title to apply a redaction rule that
+ * did not exist when the row was written, and it reaches the payload only — a key built from a title
+ * would keep the raw one, which is the very thing the redaction takes out of the database.
  *
  * An editor heartbeat keys by its reporter and its instant, which is what makes a reporter's retry
  * free: a POST whose response was lost is sent again, and one editor cannot have been in two states
@@ -38,8 +42,11 @@ const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
  * a session log be read again from the top — which `resyncAgentSessionCursors` does whenever the user
  * links a checkout — without the day's spend doubling. A typed prompt keys the same way, on the id of
  * the record that holds it, so the pass that rebuilds a day from the top is free to re-read too.
+ *
+ * A session sample keys by its session and its instant. One session cannot have been in two states at
+ * one millisecond, so a log read from the top again lands on the samples it already produced.
  */
-export const dedupeKeyOf = (event: CollectedEvent): string | null => {
+export const dedupeKeyOf = (event: CollectedEvent) => {
   switch (event.kind) {
     case 'git-commit':
       return keyOf([event.kind, event.repoPath, event.sha]);
@@ -53,7 +60,7 @@ export const dedupeKeyOf = (event: CollectedEvent): string | null => {
       // already holds. GitHub's carries the source, because two forges can issue the same id.
       return keyOf(event.source === 'gitlab' ? [event.kind, event.eventId] : [event.kind, event.source, event.eventId]);
     case 'window-focus':
-      return keyOf([event.kind, event.at.toISOString(), event.appId, event.title]);
+      return keyOf([event.kind, event.at.toISOString(), event.appId]);
     case 'call-start':
     case 'call-end':
       return keyOf([event.kind, event.at.toISOString(), event.appId]);
@@ -70,7 +77,7 @@ export const dedupeKeyOf = (event: CollectedEvent): string | null => {
       return keyOf([event.kind, event.provider, event.turnId]);
     case 'agent-prompt':
       return keyOf([event.kind, event.provider, event.promptId]);
-    default:
-      return null;
+    case 'agent-session':
+      return keyOf([event.kind, event.sessionId, event.at.toISOString()]);
   }
 };

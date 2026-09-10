@@ -40,7 +40,7 @@ export type AgentSessionCollection = {
   prompts: AgentPromptEvent[];
   /**
    * The cursors to persist, including the ones for logs this run did not list. Store them together with
-   * the events: a cursor that goes missing re-reads its log from the top and appends every sample twice.
+   * the events: a cursor that moves without them takes the next read past samples nothing stored.
    */
   cursors: AgentSessionCursor[];
   /** Lines that were not JSON, across every log this run read. A growing count means a corrupt log. */

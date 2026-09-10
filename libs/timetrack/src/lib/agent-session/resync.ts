@@ -10,9 +10,9 @@ import { UnlinkedAgentSessions } from './linked';
  * nothing else brings it back: the cursor moved anyway, because the line was read and re-reading it
  * would only have dropped it a second time.
  *
- * Which is also why the rewind is per log rather than wholesale. An agent session has no dedupe key, so
- * a log that is read again without cause appends a second copy of every sample in it. A cursor written
- * before the checkout was recorded has no `cwd`, and is never rewound for the same reason.
+ * The rewind stays per log rather than wholesale. A dedupe key makes a re-read store nothing twice, but
+ * not free: every line of every log is parsed again for the sessions of one checkout. A cursor written
+ * before the checkout was recorded has no `cwd`, so no path can match it and it is never rewound.
  */
 export const resyncAgentSessionCursors = (options: {
   cursors: readonly AgentSessionCursor[];
@@ -33,8 +33,8 @@ export const resyncAgentSessionCursors = (options: {
  * for each log it reaches, and a rewound log it does not reach in the same run has to keep its cleared
  * cursor in the store or the next run would skip it again.
  *
- * A re-read is free here, unlike the collector's: every event a backfill pass stores keys on the
- * provider and the provider's own id, so appending it twice stores it once. See ADR 0003.
+ * Every event a backfill pass stores keys on the provider and the provider's own id, so a re-read of a
+ * log it already covered appends nothing. See ADR 0003.
  */
 export const rewindAgentBackfillCursors = (options: {
   cursors: readonly AgentSessionCursor[];

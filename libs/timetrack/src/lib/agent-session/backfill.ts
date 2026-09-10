@@ -92,8 +92,8 @@ const cwdOf = (read: LogBackfill) => {
  *
  * Both the token counts and the user's own prompts were collected only after months of logs had been
  * read, so the stored days hold neither. This reads each log from the top and keeps only those two —
- * never an activity sample, which has no dedupe key, so a re-read would append every one of them a
- * second time. See ADR 0003. The caller stores whichever of the two its pass is for.
+ * an activity sample is the collector's to store, and this pass exists for the spend the stored days
+ * never got. See ADR 0003. The caller stores whichever of the two its pass is for.
  *
  * The pass converges: a log read to its end is never read again, and everything the log gains after
  * that is the collector's to store. A run reads `logsPerRun` logs, so a machine with hundreds of them

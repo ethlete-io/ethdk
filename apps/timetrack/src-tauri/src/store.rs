@@ -15,7 +15,8 @@ pub struct StoredEvent {
     pub kind: String,
     pub payload: serde_json::Value,
     /// What the core's `dedupeKeyOf` made of the event, so a rescan of the same history appends
-    /// nothing. `None` for an observation that has no identity beyond having been made.
+    /// nothing. `None` on the way out, where `events_between` does not read the column, and on a row
+    /// written before its kind was keyed.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dedupe_key: Option<String>,
 }
@@ -82,8 +83,8 @@ pub async fn events_between(db: State<'_, Db>, from_ms: i64, to_ms: i64) -> Time
 
 /// Appends what a collector produced and moves its cursors in the same transaction.
 ///
-/// The two must commit together: a cursor that goes missing re-reads its log from the top and
-/// appends every sample in it a second time.
+/// The two must commit together: a cursor that moves without the events it covers takes the next read
+/// past samples nothing stored.
 ///
 /// An event whose `dedupe_key` is already stored is skipped rather than inserted, which is what lets
 /// the git collector rescan a window it has already read. The count that comes back is the rows that

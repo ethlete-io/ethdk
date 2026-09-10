@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   AgentPromptEvent,
+  AgentSessionEvent,
   AgentUsageEvent,
   CalendarOccurrenceEvent,
   CallEvent,
-  CollectedEvent,
   EditorHeartbeatEvent,
   GitCheckoutEvent,
   GitCommitEvent,
@@ -102,9 +102,12 @@ describe('dedupeKeyOf', () => {
     expect(dedupeKeyOf(focus({ at: new Date(2026, 7, 11, 9, 31) }))).not.toBe(dedupeKeyOf(focus()));
   });
 
-  it('separates two windows sampled at the same instant', () => {
+  it('separates two applications sampled at the same instant', () => {
     expect(dedupeKeyOf(focus({ appId: 'google-chrome' }))).not.toBe(dedupeKeyOf(focus()));
-    expect(dedupeKeyOf(focus({ title: 'event.ts - ethlete-sdk' }))).not.toBe(dedupeKeyOf(focus()));
+  });
+
+  it('keys a focus sample without its title, so a redaction repair cannot invalidate a stored key', () => {
+    expect(dedupeKeyOf(focus({ title: 'app.com/in?code=secret' }))).toBe(dedupeKeyOf(focus({ title: 'app.com/in' })));
   });
 
   it('keys a presence transition by its kind and its instant', () => {
@@ -125,16 +128,21 @@ describe('dedupeKeyOf', () => {
     expect(dedupeKeyOf(start)).not.toBe(dedupeKeyOf({ ...start, kind: 'call-end' }));
   });
 
-  it('leaves an agent session unkeyed, so a log is only re-read on purpose', () => {
-    const session: CollectedEvent = {
+  it('keys a session sample by its session and its instant, so a log read again stores it once', () => {
+    const session = (overrides: Partial<AgentSessionEvent> = {}): AgentSessionEvent => ({
       at: new Date(2026, 7, 11, 9, 30),
       source: 'agent-session',
       kind: 'agent-session',
       sessionId: '154009aa-3442-401d-852b-07a0d5156e97',
       cwd: '/home/tom/dev/fut-frontend',
-    };
+      ...overrides,
+    });
 
-    expect(dedupeKeyOf(session)).toBeNull();
+    expect(dedupeKeyOf(session({ title: 'Add the invite flow' }))).toBe(dedupeKeyOf(session()));
+    expect(dedupeKeyOf(session({ at: new Date(2026, 7, 11, 9, 31) }))).not.toBe(dedupeKeyOf(session()));
+    expect(dedupeKeyOf(session({ sessionId: 'b9c1e0d4-0000-4000-8000-000000000000' }))).not.toBe(
+      dedupeKeyOf(session()),
+    );
   });
 
   it('keys a heartbeat by its reporter and its instant, so a retry stores it once', () => {
