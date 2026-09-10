@@ -2804,8 +2804,16 @@ once it names a date and a decision; the rest are undesigned.
   editor missing the reporter is offered an Install button rather than a command. The button runs
   `<editor> --install-extension <vsix> --force` through the same process runner every other CLI source
   uses, then asks all five editors again, so the badge and the install cannot disagree. A failure keeps
-  the editor's own wording and offers the button again. A successful install says the editor needs a
-  restart, because the extension host loads an extension once.
+  the editor's own wording and offers the button again.
+
+  **Verified on the real machine (2026-09-10), and it corrected the wording.** Tom removed the
+  reporter from VS Code, opened Sources, and the row read "not installed" with the Install button
+  beside it; pressing it put `ethlete.timetrack-vscode@0.1.0` back on disk. **A restart was not
+  needed.** The button renders only for an editor that reports no reporter, so no older build is
+  loaded to shadow the new one, and the editor activates it on install - the extension declares
+  `onStartupFinished`, an event that has already fired in a running window. The row said "Restart
+  VS Code to load the reporter"; it now says the editor loads it by itself, and names a restart only
+  as the repair if no heartbeat arrives.
 
   **The build wiring is a directory resource, not a glob.** `bundle.resources` holds
   `resources/`, and `tools/scripts/stage-vscode-extension.mjs` copies the packaged extension into

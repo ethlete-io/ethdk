@@ -122,8 +122,8 @@ type ReporterRow = {
   installing: boolean;
   /** Whether any editor is being installed into, which is what takes every button out of reach. */
   busy: boolean;
-  /** Whether this editor was installed into in this visit, so it holds the reporter but has not loaded it. */
-  restart: boolean;
+  /** Whether this editor was installed into in this visit, so the row can say the reporter is live. */
+  installedNow: boolean;
   /** Why the last install into this editor failed, and `null` when none did. */
   failure: string | null;
 };
@@ -271,9 +271,9 @@ type SourceRow = {
                           <p class="text-small text-et-surface-subtle">{{ reporter.detail }}</p>
                         }
 
-                        @if (reporter.restart) {
+                        @if (reporter.installedNow) {
                           <p class="text-small text-et-surface-subtle">
-                            Restart {{ reporter.name }} to load the reporter.
+                            {{ reporter.name }} loads the reporter by itself. If no heartbeat arrives, restart it.
                           </p>
                         }
 
@@ -423,8 +423,9 @@ export class SourcesViewComponent {
   /**
    * Puts the shipped reporter into one editor, then asks every editor again.
    *
-   * The re-probe is what flips the badge, so the install and the row it changes cannot disagree. An
-   * editor that already loaded an older build still needs a restart, which the row then says.
+   * The re-probe is what flips the badge, so the install and the row it changes cannot disagree. The
+   * button renders only for an editor that reports no reporter, so nothing older is loaded to shadow
+   * the new build, and the editor activates it without a restart.
    */
   protected installReporter(cli: EditorCli) {
     const vsix = this.vsix();
@@ -637,7 +638,7 @@ export class SourcesViewComponent {
           install: missing && !!vsix,
           installing: installing === editor.cli,
           busy: installing !== null,
-          restart: this.installed().includes(editor.cli),
+          installedNow: this.installed().includes(editor.cli),
           failure: failures[editor.cli] ?? null,
         };
       });

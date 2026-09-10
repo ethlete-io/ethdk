@@ -281,7 +281,7 @@ test.describe('the editor row, which reports which editors hold the reporter', (
     await expect(editor(page, 'cursor').getByRole('button', { name: 'Install' })).toHaveCount(0);
   });
 
-  test('installs the shipped extension into one editor, and says that editor needs a restart', async ({ page }) => {
+  test('installs the shipped extension into one editor, and says that editor loads it by itself', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, editors: { cursor: { onPath: true, reporter: false } } });
     await page.goto('/sources');
 
@@ -290,7 +290,9 @@ test.describe('the editor row, which reports which editors hold the reporter', (
 
     await editor(page, 'cursor').getByRole('button', { name: 'Install' }).click();
 
-    await expect(editor(page, 'cursor')).toContainText('Restart Cursor to load the reporter.');
+    await expect(editor(page, 'cursor')).toContainText(
+      'Cursor loads the reporter by itself. If no heartbeat arrives, restart it.',
+    );
     await expect(editor(page, 'cursor').getByText('installed', { exact: true })).toBeVisible();
     await expect(editor(page, 'cursor').getByRole('button', { name: 'Install' })).toHaveCount(0);
   });
@@ -301,8 +303,8 @@ test.describe('the editor row, which reports which editors hold the reporter', (
 
     await editor(page, 'cursor').getByRole('button', { name: 'Install' }).click();
 
-    await expect(editor(page, 'cursor')).toContainText('Restart Cursor');
-    await expect(editor(page, 'code')).not.toContainText('Restart');
+    await expect(editor(page, 'cursor')).toContainText('Cursor loads the reporter by itself');
+    await expect(editor(page, 'code')).not.toContainText('loads the reporter by itself');
   });
 
   test("keeps the editor's own wording when the install fails, and offers the button again", async ({ page }) => {
