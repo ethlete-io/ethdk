@@ -1,4 +1,5 @@
 export * from './blocks';
+export * from './breaks';
 export * from './calls';
 export * from './pauses';
 export * from './presence';

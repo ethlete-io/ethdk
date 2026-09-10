@@ -53,5 +53,6 @@ export const streamDayOptionsOf = (options: {
   callRules: options.settings.callRules,
   noWorkContextApps: effectiveNoWorkContextApps(options.settings),
   transientApps: effectiveTransientApps(options.settings),
+  minBreakMs: options.settings.gapFillMs,
   rows: { ...dayRowsOptionsOf(options.settings), ...options.rows },
 });

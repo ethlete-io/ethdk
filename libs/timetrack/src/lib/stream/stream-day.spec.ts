@@ -493,6 +493,8 @@ describe('streamDay', () => {
       namedApps: [],
       concurrency: 0,
       unattendedMs: 0,
+      breaks: [],
+      breakMs: 0,
       rebuiltMs: 0,
       streams: [],
       blocks: [],

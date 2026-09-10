@@ -17,6 +17,7 @@ import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } fro
 import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
+import { BreakWindow, breakMs, breakWindows } from './breaks';
 import { classifyCalls } from './calls';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
@@ -94,6 +95,11 @@ export type StreamDayOptions = {
    * Reported with their own cause, for the same reason and to the same effect.
    */
   transientApps?: readonly string[];
+  /**
+   * The shortest gap in presence that is a break. Kept at `maxFillGapMs`, so a gap `fillGaps` gives to
+   * the work around it is not also drawn as time away from it.
+   */
+  minBreakMs?: number;
   /**
    * What the day's blocks are turned into rows with — see `buildRows`.
    *
@@ -208,6 +214,13 @@ export type StreamDay = {
   rows: DayRows;
   /** Every stream's unattended time summed. Outside both `presenceMs` and `engagedMs`. */
   unattendedMs: number;
+  /**
+   * The stretches nobody was at the machine and nothing ran, in order. Outside `presenceMs`, and
+   * outside `unattendedMs` too — a gap the agent worked through is that number and not this one.
+   */
+  breaks: BreakWindow[];
+  /** How long those breaks held. */
+  breakMs: number;
   /**
    * The part of `presenceMs` that no window and no idle transition observed. It is presence the
    * prompts and commits of the day rebuilt, and it is inside `presenceMs` rather than beside it — a
@@ -878,6 +891,8 @@ export const streamDay = (options: {
   });
 
   const streams: Stream[] = [];
+  /** Every stream's agent time outside presence, which a break must not also claim. */
+  const unattendedAll: TimeWindow[] = [];
   let focusMs = 0;
 
   for (const draft of drafts.values()) {
@@ -889,6 +904,8 @@ export const streamDay = (options: {
     const blocks = mergeWindows([...focus, ...claimed, ...clipWindows({ windows: agent, within: presence })]);
     const unattended = subtractWindows({ windows: agent, without: presence });
     const span = mergeWindows([...blocks, ...unattended]);
+
+    unattendedAll.push(...unattended);
 
     const first = span[0];
     const last = span[span.length - 1];
@@ -960,6 +977,13 @@ export const streamDay = (options: {
 
   const presenceMs = windowsMs(presence);
   const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);
+  const breaks = breakWindows({
+    presence,
+    events: options.events,
+    unattended: mergeWindows(unattendedAll),
+    pauses: config.rows?.pauses,
+    minBreakMs: config.minBreakMs,
+  });
 
   return {
     presenceMs,
@@ -971,6 +995,8 @@ export const streamDay = (options: {
     blocks,
     rows,
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
+    breaks,
+    breakMs: breakMs(breaks),
     rebuiltMs: windowsMs(rebuilt),
     streams,
     spend,

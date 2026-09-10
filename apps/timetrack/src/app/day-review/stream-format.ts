@@ -43,10 +43,14 @@ export const formatBranches = (options: { stream: Stream; headBranches: Record<s
 };
 
 /**
- * Agent time nobody was at the machine for. Anything under a rounded minute reads as nothing at all,
- * so an ordinary day gains no extra number.
+ * Agent time nobody was at the machine for. It names the agent rather than the absence, because the
+ * number beside it is the break — the hour nobody was there and nothing ran — and the two were read
+ * for each other. Anything under a rounded minute reads as nothing at all.
  */
-export const formatUnattended = (ms: number) => (ms >= READABLE_MS ? `${formatDurationMs(ms)} unattended` : '');
+export const formatUnattended = (ms: number) => (ms >= READABLE_MS ? `${formatDurationMs(ms)} agent alone` : '');
+
+/** Time nobody was at the machine and nothing ran. Under a rounded minute it reads as nothing at all. */
+export const formatBreak = (ms: number) => (ms >= READABLE_MS ? `${formatDurationMs(ms)} break` : '');
 
 /**
  * Presence nothing watched, rebuilt from what the day left behind. Anything under a rounded minute

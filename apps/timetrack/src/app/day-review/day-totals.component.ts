@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation, computed, input } from '@angular/core';
 import { StreamDay, formatDurationMs } from '@ethlete/timetrack';
 import { readHeat } from './heat';
-import { formatRebuilt, formatUnattended } from './stream-format';
+import { formatBreak, formatRebuilt, formatUnattended } from './stream-format';
 
 /**
  * What the day totalled, above the timeline: wall-clock presence, every stream's time summed, and the
@@ -37,6 +37,9 @@ import { formatRebuilt, formatUnattended } from './stream-format';
       @if (unattended(); as unattended) {
         <span class="text-small text-et-surface-subtle" data-unattended-total>+ {{ unattended }}</span>
       }
+      @if (away(); as away) {
+        <span class="text-small text-et-surface-subtle" data-break-total>{{ away }}</span>
+      }
       @if (rebuilt(); as rebuilt) {
         <span class="text-small text-et-brand-ink" data-rebuilt-total>{{ rebuilt }}</span>
       }
@@ -52,5 +55,6 @@ export class DayTotalsComponent {
   protected concurrency = computed(() => `${(this.day()?.concurrency ?? 0).toFixed(1)}×`);
   protected heat = computed(() => readHeat(this.day()?.concurrency ?? 0));
   protected unattended = computed(() => formatUnattended(this.day()?.unattendedMs ?? 0));
+  protected away = computed(() => formatBreak(this.day()?.breakMs ?? 0));
   protected rebuilt = computed(() => formatRebuilt(this.day()?.rebuiltMs ?? 0));
 }

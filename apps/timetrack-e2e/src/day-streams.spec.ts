@@ -334,9 +334,7 @@ test.describe('the day view, as streams', () => {
     await expect(page.locator('[data-unattributed]')).toHaveCount(0);
   });
 
-  test('books what an agent spent while nobody was at the machine, and calls that time unattended', async ({
-    page,
-  }) => {
+  test('books what an agent spent while nobody was at the machine, and names the agent for it', async ({ page }) => {
     // The machine locks at noon and the agent works on in the SDK checkout for another hour. The
     // customer pays for that hour's turns, so the checkout books them; the day does not call it presence.
     await seedWorld(page, {
@@ -365,10 +363,10 @@ test.describe('the day view, as streams', () => {
 
     const agentOnly = stream(page, `repo:${SDK}`);
 
-    await expect(agentOnly.locator('[data-unattended]')).toHaveText('1h 0m unattended');
+    await expect(agentOnly.locator('[data-unattended]')).toHaveText('1h 0m agent alone');
     await expect(agentOnly.locator('[data-engaged]')).toHaveText('1h 0m engaged');
     await expect(agentOnly.locator('[data-spend]')).toContainText('2 turns');
-    await expect(page.locator('[data-totals]')).toContainText('+ 1h 0m unattended');
+    await expect(page.locator('[data-totals]')).toContainText('+ 1h 0m agent alone');
     await expect(page.locator('[data-unattributed]')).toHaveCount(0);
   });
 
