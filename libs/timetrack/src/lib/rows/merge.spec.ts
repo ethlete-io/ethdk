@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { Confidence } from '../model/evidence';
 import { AttributedBlock } from './attribute';
-import { mergeBlocks } from './merge';
+import { DEFAULT_MERGE_OPTIONS, mergeBlocks } from './merge';
 
 const AT = (minutes: number) => new Date(new Date(2026, 7, 11, 8, 0, 0).getTime() + minutes * 60_000);
 
@@ -174,7 +174,56 @@ describe('mergeBlocks', () => {
     expect(rows.filter((row) => row.issueKey === 'FIP-2177').length).toBeLessThan(6);
 
     for (const row of rows) {
-      expect(row.to.getTime() - row.from.getTime()).toBeLessThanOrEqual(2 * row.observedMs);
+      expect(row.to.getTime() - row.from.getTime()).toBeLessThanOrEqual(
+        DEFAULT_MERGE_OPTIONS.maxLaneSpanRatio * row.observedMs,
+      );
+    }
+  });
+
+  it('joins short touches of one lane that the shared span cap would have kept apart', () => {
+    const blocks = Array.from({ length: 12 }, (_, index) =>
+      attributed({ fromMinute: index * 8, toMinute: index * 8 + 3, confidence: 'weak', repoPath: '/a' }),
+    );
+
+    const laned = mergeBlocks({ blocks });
+    const shared = mergeBlocks({ blocks, options: { maxLaneSpanRatio: DEFAULT_MERGE_OPTIONS.maxSpanRatio } });
+
+    expect(laned).toHaveLength(1);
+    expect(shared.length).toBeGreaterThan(3);
+  });
+
+  it('holds a band of two lanes to the shared span cap', () => {
+    const blocks = Array.from({ length: 12 }, (_, index) =>
+      attributed({
+        fromMinute: index * 8,
+        toMinute: index * 8 + 3,
+        issueKey: 'FIP-2177',
+        repoPath: index % 2 ? '/a' : '/b',
+      }),
+    );
+
+    const rows = mergeBlocks({ blocks });
+
+    for (const row of rows) {
+      expect(row.to.getTime() - row.from.getTime()).toBeLessThanOrEqual(
+        DEFAULT_MERGE_OPTIONS.maxSpanRatio * row.observedMs,
+      );
+    }
+  });
+
+  it('gives no lane cap to a band whose blocks name no checkout and no application', () => {
+    const blocks = Array.from({ length: 12 }, (_, index) => {
+      const entry = attributed({ fromMinute: index * 8, toMinute: index * 8 + 3, issueKey: 'FIP-2177' });
+
+      return { ...entry, block: { ...entry.block, context: {} } };
+    });
+
+    const rows = mergeBlocks({ blocks });
+
+    for (const row of rows) {
+      expect(row.to.getTime() - row.from.getTime()).toBeLessThanOrEqual(
+        DEFAULT_MERGE_OPTIONS.maxSpanRatio * row.observedMs,
+      );
     }
   });
 

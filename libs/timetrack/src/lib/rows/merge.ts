@@ -1,4 +1,4 @@
-import { ActivityBlock, blockDurationMs, contextKey } from '../model/block';
+import { ActivityBlock, blockDurationMs, contextKey, streamKey } from '../model/block';
 import { Confidence, Evidence, compareConfidence } from '../model/evidence';
 import { AttributedBlock } from './attribute';
 
@@ -28,6 +28,16 @@ export type MergeOptions = {
    * the work happened.
    */
   maxSpanRatio: number;
+  /**
+   * The same limit for a band whose blocks are all one checkout. It is looser than `maxSpanRatio`
+   * because the day screen draws each checkout its own lane: no other checkout is drawn behind such a
+   * band, so the gap it spans is that lane's own idle rather than time it took from another lane.
+   *
+   * It is still a limit, not `Infinity`. A band is at most four times its own work either way, so a
+   * lane touched twenty times across a whole day is still several bands and not one that claims the
+   * day.
+   */
+  maxLaneSpanRatio: number;
   /** Above this many rows, the day is merged again with no gap limit, so one track is fewer rows. */
   maxRowsPerDay: number;
 };
@@ -35,6 +45,7 @@ export type MergeOptions = {
 export const DEFAULT_MERGE_OPTIONS: MergeOptions = {
   maxMergeGapMs: 15 * 60_000,
   maxSpanRatio: 2,
+  maxLaneSpanRatio: 4,
   maxRowsPerDay: 12,
 };
 
@@ -110,16 +121,30 @@ const trackOf = (group: WorkGroup) => {
 };
 
 /**
- * One merge over the day's blocks. A band joins the block after it while two things hold: the gap is
- * no wider than `maxGapMs`, and the band would still span no more than `maxSpanRatio` times the time
- * it observed.
- *
- * The span test is what keeps the picture honest. Without it a band of one-minute samples ten minutes
- * apart, or one whose gaps another checkout filled, is drawn as a rectangle across the whole day while
- * its label says fifteen minutes.
+ * Whether every block behind a band is one checkout, which is one lane on the day screen. A block with
+ * no context at all is in no lane, so a band holding one is not.
  */
-const mergePass = (options: { ordered: readonly AttributedBlock[]; maxGapMs: number; maxSpanRatio: number }) => {
-  const { ordered, maxGapMs, maxSpanRatio } = options;
+const oneLane = (group: WorkGroup) => {
+  const keys = new Set(group.blocks.map((block) => streamKey(block.context)));
+
+  return keys.size === 1 && !keys.has('app:');
+};
+
+/**
+ * One merge over the day's blocks. A band joins the block after it while two things hold: the gap is
+ * no wider than `maxGapMs`, and the band would still span no more than its own span ratio times the
+ * time it observed - `maxLaneSpanRatio` while every block is one checkout, `maxSpanRatio` otherwise.
+ *
+ * The span test is what keeps the picture honest. Without it a band whose gaps another checkout filled
+ * is drawn as a rectangle across the whole day while its label says fifteen minutes.
+ */
+const mergePass = (options: {
+  ordered: readonly AttributedBlock[];
+  maxGapMs: number;
+  maxSpanRatio: number;
+  maxLaneSpanRatio: number;
+}) => {
+  const { ordered, maxGapMs, maxSpanRatio, maxLaneSpanRatio } = options;
   const rows: WorkGroup[] = [];
   const lastOfTrack = new Map<string, number>();
 
@@ -133,8 +158,9 @@ const mergePass = (options: { ordered: readonly AttributedBlock[]; maxGapMs: num
       const joined = join(previous, group);
       const gap = group.from.getTime() - previous.to.getTime();
       const span = joined.to.getTime() - joined.from.getTime();
+      const ratio = oneLane(joined) ? maxLaneSpanRatio : maxSpanRatio;
 
-      if (gap <= maxGapMs && span <= joined.observedMs * maxSpanRatio) {
+      if (gap <= maxGapMs && span <= joined.observedMs * ratio) {
         rows[at] = joined;
         continue;
       }
@@ -155,7 +181,9 @@ const mergePass = (options: { ordered: readonly AttributedBlock[]; maxGapMs: num
  *
  * A real break is longer than the gap, so it still ends a row and the timeline still shows when the
  * work happened. A row is never drawn more than `maxSpanRatio` times the work behind it either, so a
- * band whose gaps another checkout filled is split rather than stretched across the day.
+ * band whose gaps another checkout filled is split rather than stretched across the day. A band of
+ * one checkout is held to `maxLaneSpanRatio` instead, which is looser: it has its own lane on the day
+ * screen, so twenty short touches of a browser read as a few bands rather than twenty bars.
  *
  * Above `maxRowsPerDay` the day is merged again with no gap limit at all, which is the last resort
  * for a day nobody would review row by row. The span rule holds in that pass too, so a day of short
@@ -164,7 +192,7 @@ const mergePass = (options: { ordered: readonly AttributedBlock[]; maxGapMs: num
 export const mergeBlocks = (options: { blocks: AttributedBlock[]; options?: Partial<MergeOptions> }): WorkGroup[] => {
   const config = { ...DEFAULT_MERGE_OPTIONS, ...options.options };
   const ordered = options.blocks.slice().sort((a, b) => a.block.from.getTime() - b.block.from.getTime());
-  const pass = { ordered, maxSpanRatio: config.maxSpanRatio };
+  const pass = { ordered, maxSpanRatio: config.maxSpanRatio, maxLaneSpanRatio: config.maxLaneSpanRatio };
   const rows = mergePass({ ...pass, maxGapMs: config.maxMergeGapMs });
 
   return rows.length > config.maxRowsPerDay ? mergePass({ ...pass, maxGapMs: Infinity }) : rows;
