@@ -10,6 +10,7 @@ This directory holds the per-feature plans that came after it.
 | [`roadmap.md`](./roadmap.md)                           | The order of the rest of the work: the milestones, and what ends each one.              |
 | [`time-and-token-spend.md`](./time-and-token-spend.md) | The model: concurrent work streams, and the token spend collected per stream.           |
 | [`vertical-slices.md`](./vertical-slices.md)           | Where the v2 core lives, and what slice 1 does. Read this second.                       |
+| [`draw-the-day.md`](./draw-the-day.md)                 | M2, slices 2a and 4: one day screen, the pipeline under it, and what a band is.         |
 | [`name-the-ticket.md`](./name-the-ticket.md)           | M3, slice 2b: which ticket a band books to, which epic, and how a meeting is named.     |
 | [`e2e-strategy.md`](./e2e-strategy.md)                 | How every flow is proven: the fake backend, the seed, the clock, and what stays manual. |
 | [`name-the-window.md`](./name-the-window.md)           | How a terminal and a dev-server tab get named. Hardens slice 1; it is not a slice.      |

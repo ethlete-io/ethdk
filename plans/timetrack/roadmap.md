@@ -31,7 +31,7 @@ up, whatever position the roadmap gives it.
 | Providers: Jira, Tempo, GitLab, GitHub, Google      | Built, and verified against the real instances.                       |
 | `streamDay` and the Today screen                    | Built. Slice 1 is on screen.                                          |
 | Naming the unnamed window                           | Two rungs built. The rest waits on five more workdays of measurement. |
-| Slices 2a to 2c                                     | Planned. M2 needs its own document; M4 does too.                      |
+| Slices 2a to 2c                                     | M2 and M3 planned in full. M4 needs its own document.                 |
 | Slices 5, 6, 9 to 12                                | One paragraph of outline each.                                        |
 | A production Tempo worklog                          | **Never written.** No day has left this machine.                      |
 | A day that spans two machines                       | **Not built.** Each machine reports only what it saw.                 |
@@ -98,7 +98,7 @@ rule is one of them. That plan holds the reading it waits for. Do not pick a run
 
 ## M2: The day, drawn
 
-**Slices 2a and 4.** The screen Tom described: "a clear timeline of what i did and when i did it".
+**Slices 2a and 4.** Planned in [`draw-the-day.md`](./draw-the-day.md). The screen Tom described: "a clear timeline of what i did and when i did it".
 
 Today shows streams in an accordion with no time axis. Day Review draws a real 24-hour axis beside a
 table of bookable rows. Two screens mean he reads the same day twice in two shapes, so they merge.
@@ -123,11 +123,11 @@ It writes local edits to `day_review` and never reaches Tempo.
 
 Exit test: Tom reads a real day on one screen, and cuts it where he wants it cut.
 
-To decide before it is planned, both carried over from the dissolved slice 4:
-
-- Is a meeting presence when the machine is idle? Slice 1 gates everything on presence, so a meeting
-  away from the keyboard books nothing today. That rule has to change here.
-- How is a meeting that overlaps a coding stream counted? This is the change that can inflate a day.
+Both questions this milestone inherited from the dissolved slice 4 are now answered, in
+[`draw-the-day.md`](./draw-the-day.md). A call is presence, and the exception is a record that marks
+a room as not presence. Two bands over the same hour both book in full, and the overlap is marked
+rather than resolved. Two decisions were added: the screen is built on `streamDay` and `correlate/`
+is deleted (ADR 0014), and a day starts at a configured hour rather than at midnight (ADR 0015).
 
 ## M3: The day, named
 
@@ -207,7 +207,12 @@ holds a build.
 
 **Slice 3.** This is the milestone the current phase ends on: no worklog typed by hand.
 
-M3 named the day, and M4 filled its gaps with tickets. This slice books it. Tempo sync for accepted rows only, one day at a time, through the `tempo/`
+M3 named the day, and M4 filled its gaps with tickets.
+
+**No gate on a day that sums past its wall clock.** Concurrent work books in full on every band, so a
+day may legitimately hold more booked hours than it has clock hours. Tom, on 2026-09-10: "both
+parties need to pay for the work that got done. everything else makes no sense." The sync must not
+refuse such a day. This slice books it. Tempo sync for accepted rows only, one day at a time, through the `tempo/`
 module that is already built and already idempotent. It deletes `day-review/`.
 
 Exit test: one real week reaches Tempo through the app. Tom types no worklog by hand for code
