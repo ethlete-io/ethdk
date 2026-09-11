@@ -24,9 +24,16 @@ still loses to the `certain` a branch parse gives.
 
 ## Consequences
 
-- Rung 7 reads `RecurringPattern` and is dead code today: nothing passes `patterns` to
-  `correlateDay`. Wiring it is what makes the store say anything on the first run, before the app
-  has been used at all.
+- The Tempo seed is wired: `injectRecurringPatterns` reads it and the day store passes it as
+  `MeetingOptions.patterns`, which is what makes the store say something on the first run, before the
+  app has been used at all.
+- **A naming of the user's is keyed on the calendar series, not on the feature set above.**
+  `meetingSeriesKey` reads the provider's `recurringEventId`, and folds the title for a one-off
+  event. That keeps the answer through a rename and asks once per series, which is what ADR 0010
+  needs. The application, weekday, duration band and preceding event this ADR describes are what a
+  call with no occurrence would need, and that key is not built — see ADR 0010's last consequence.
+- The writer is `DayReview.setIssue`: naming a row in the meeting lane traces the row back to its
+  occurrence through `meetingBehindRow` and writes the naming. Naming any other row writes nothing.
 - A remembered naming ages the same way a hand-written rule ages. `BD-2049` is called "Intern:
   Meeting 2025" and it is still current in 2026, so the app warns when the ticket a record names
   stops being touched. A record never expires on a date.

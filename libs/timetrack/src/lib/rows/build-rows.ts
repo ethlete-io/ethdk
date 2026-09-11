@@ -104,9 +104,9 @@ export type DayRows = {
  * keep their time; what a break denies is one band drawn across it.
  *
  * A block that names nothing but an application on `noWorkContext` is dropped before it is
- * attributed, so a media player proposes no time and gets no lane. Meetings, calls and timer runs are
- * matched against the unfiltered blocks, so a call held in one of those applications keeps the
- * activity observed during it.
+ * attributed, so a media player proposes no time and gets no lane. Which meeting a call was is read
+ * off the unfiltered blocks, so a call held in one of those applications is still named by its own
+ * window title.
  *
  * Which builder produced the blocks is not its business, which is what lets the two day pipelines
  * share one ladder, one merge and one rounding rather than drifting apart on all three.
@@ -120,7 +120,11 @@ export const buildRows = (
   // Before anything else is cut: a call's own window is the call, and a band of it beside the call row
   // would claim the same minutes twice.
   const heard = dropCallWindows({ blocks, calls: options.calls ?? [] });
-  const reconstructed = clipBlocks({ blocks: heard, windows: [...timers.map((timer) => timer.run), ...pauses] });
+  const unwatched = [...timers.map((timer) => timer.run), ...pauses];
+  const reconstructed = clipBlocks({ blocks: heard, windows: unwatched });
+  // The same day with the call's own windows still in it. Their titles are what say which meeting the
+  // call was, and `heard` has just cut every one of them out.
+  const titled = clipBlocks({ blocks, windows: unwatched });
   // The GitLab rung is derived here rather than passed in: the day's events already hold it, and a
   // caller that had to remember to fetch it would be a caller that forgets on one of the four screens.
   const activity = [
@@ -149,16 +153,22 @@ export const buildRows = (
   const donated = donateBlocks({ blocks: working, rules: options.rules, options: options.donate });
   const naming = { ...options.meetings, config: options.config, patterns: options.patterns };
   const occurrences = calendarOccurrences(options.events);
-  const claimed = [...timers.map((timer) => timer.run), ...pauses];
   // `nameable` rather than `blocks`: `overlapMs` is the time the day proposes twice, and a block no
   // row is built from proposes nothing. A call held in one of those applications would otherwise warn
   // that the reviewer has to look at an hour nothing else claims.
-  const calls = matchCalls({ calls: options.calls ?? [], blocks: nameable, claimed, occurrences, meetings: naming });
+  const calls = matchCalls({
+    calls: options.calls ?? [],
+    blocks: nameable,
+    titled,
+    claimed: unwatched,
+    occurrences,
+    meetings: naming,
+  });
   const unobserved = unobservedOccurrences({ occurrences, calls: options.calls ?? [], meetings: naming });
   const filled = fillGaps({
     blocks: donated,
     events: options.events,
-    claimed: [...claimed, ...calls.map((call) => call.group)],
+    claimed: [...unwatched, ...calls.map((call) => call.group)],
     options: options.fill,
   });
   const groups = [

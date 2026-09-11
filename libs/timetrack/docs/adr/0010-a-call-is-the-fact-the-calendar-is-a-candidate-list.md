@@ -26,5 +26,8 @@ honest answer for a meeting held in a room or on a telephone.
 - The decisive title is the one seen **during** the call, from `titlesDuring`. `CallWindow.title` is
   the title the application held _before_ the call opened, and for a browser that is the application
   name, not the meeting name.
-- A call with no calendar occurrence at all can still be named, but only by a remembered naming
-  (ADR 0012). Two of Tom's four weekly meetings are of that kind.
+- A call with no calendar occurrence at all is **not** reached by a remembered naming. A naming is
+  keyed on a calendar series (`meetingSeriesKey`), so a meeting the calendar never held has no key to
+  be remembered under. Such a call is named by Tempo history alone, through `patternIssueKey`, which
+  names a time of day rather than a meeting and never returns better than `weak`. Two of Tom's four
+  weekly meetings are of that kind, so a store keyed on the call itself is still owed.

@@ -276,7 +276,7 @@ window title, never a file path. A suggestion never syncs on its own.`;
                         <button
                           (click)="store.forgetMeetingNaming(naming.seriesKey)"
                           et-button
-                          variant="ghost"
+                          variant="transparent"
                           size="sm"
                         >
                           Forget

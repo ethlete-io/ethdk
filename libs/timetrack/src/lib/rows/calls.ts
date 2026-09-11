@@ -76,12 +76,13 @@ const matchOne = (options: {
   call: CallWindow;
   window: TimeWindow;
   blocks: readonly ActivityBlock[];
+  titled: readonly ActivityBlock[];
   occurrences: readonly CalendarOccurrenceEvent[];
   meetings: MeetingOptions;
 }): CallMatch => {
   const { call, window, blocks, meetings } = options;
   const candidates = candidatesFor({ occurrences: options.occurrences, window });
-  const meeting = pickCandidate({ call, window, candidates, blocks });
+  const meeting = pickCandidate({ call, window, candidates, blocks: options.titled });
   const key = meeting
     ? occurrenceIssueKey({ event: meeting.event, meetings })
     : patternIssueKey({ at: window.from, meetings });
@@ -181,6 +182,13 @@ export const dropCallWindows = (options: {
 export const matchCalls = (options: {
   calls: readonly CallWindow[];
   blocks: readonly ActivityBlock[];
+  /**
+   * The blocks the meeting is named out of: the same day before the call's own windows were cut and
+   * before an application no rule counts as work was dropped. The title of the browser tab holding a
+   * Meet is the one string that says *which* meeting the call was, and both of those cuts remove it.
+   * Defaults to `blocks`.
+   */
+  titled?: readonly ActivityBlock[];
   /** Time the day already proposes: a timer run, a pause. A call proposes no row over it. */
   claimed: readonly TimeWindow[];
   /** The day's calendar occurrences, from `calendarOccurrences`. Each call is named out of these. */
@@ -198,6 +206,7 @@ export const matchCalls = (options: {
             call,
             window,
             blocks: options.blocks,
+            titled: options.titled ?? options.blocks,
             occurrences: options.occurrences ?? [],
             meetings: options.meetings ?? {},
           }),
