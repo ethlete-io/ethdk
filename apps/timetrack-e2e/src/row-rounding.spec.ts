@@ -1,3 +1,4 @@
+import { Locator } from '@playwright/test';
 import { CollectedEvent } from '@ethlete/timetrack';
 import { E2E_ISSUE_BRANCH, E2E_REPO } from '@ethlete/timetrack/testing';
 import {
@@ -61,3 +62,34 @@ test.describe('a row between the quarters', () => {
     ]);
   });
 });
+
+/**
+ * The clock the timeline draws, as against the clock a row stores. A band is placed by a percentage
+ * of the day column, and an hour rule by a rem offset into the same column, so the two can disagree
+ * without either number being wrong on its own. This reads both off the rendered page.
+ */
+test.describe('the band a row draws', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: offGrid() });
+    await page.goto('/day');
+  });
+
+  test('starts on the hour rule it is logged against', async ({ page }) => {
+    const band = await boxOf(page.locator('[data-kind="row"][title="ABC-3010 · 1h 15m"]'));
+    const nine = await boxOf(page.locator('[data-hour="9"]'));
+    const ten = await boxOf(page.locator('[data-hour="10"]'));
+    const pxPerHour = ten.y - nine.y;
+
+    expect(pxPerHour).toBeGreaterThan(0);
+    expect(Math.abs(band.y - nine.y)).toBeLessThan(1.5);
+    expect(Math.abs(band.y + band.height - (ten.y + pxPerHour / 4))).toBeLessThan(1.5);
+  });
+});
+
+const boxOf = async (locator: Locator) => {
+  const box = await locator.boundingBox();
+
+  if (!box) throw new Error('the element is not rendered');
+
+  return box;
+};

@@ -155,12 +155,15 @@ type RowDrag = {
 
           <div #dayColumn [style.height.rem]="24 * HOUR_REM" class="relative">
             @for (hour of HOURS; track hour) {
-              <div [style.top.rem]="hour * HOUR_REM" class="absolute inset-x-0 flex items-center gap-2">
+              <div
+                [style.top.rem]="hour * HOUR_REM"
+                class="absolute inset-x-0 flex -translate-y-1/2 items-center gap-2"
+              >
                 <span
                   class="sticky left-0 z-10 w-11 shrink-0 bg-et-surface-bg text-right text-mono text-et-surface-subtle"
                   >{{ labelFor(hour) }}</span
                 >
-                <span class="h-px grow bg-et-surface-border"></span>
+                <span [attr.data-hour]="hour" class="h-px grow bg-et-surface-border"></span>
               </div>
             }
 
