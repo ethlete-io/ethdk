@@ -1,6 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import '../../../test-helpers';
 import { SpinnerComponent } from './spinner.component';
+
+// jsdom drops the component stylesheet whole (`@layer`, nesting) and vitest stubs CSS imports to an empty
+// string, so the source text is the only place an animation duration is observable from a spec.
+const spinnerCss = readFileSync(fileURLToPath(import.meta.url).replace(/[^/]+$/, 'spinner.component.css'), 'utf8');
 
 describe('SpinnerComponent', () => {
   let fixture: ComponentFixture<SpinnerComponent>;
@@ -134,5 +140,33 @@ describe('SpinnerComponent', () => {
       fixture.detectChanges();
       expect(host.style.getPropertyValue('--et-spinner-size')).toBe('48px');
     });
+  });
+});
+
+describe('SpinnerComponent styles', () => {
+  it('lets the duration token reach the animated descendants', () => {
+    const rule = /@property --et-spinner-duration \{([^}]*)\}/.exec(spinnerCss)?.[1];
+
+    expect(rule).toContain('inherits: true');
+  });
+
+  it('times the sweep from the duration token', () => {
+    expect(spinnerCss).toContain('animation: et-spinner-left-spin var(--et-spinner-duration)');
+    expect(spinnerCss).toContain('animation: et-spinner-right-spin var(--et-spinner-duration)');
+  });
+
+  it('keeps the container rotation at 1568/1333 of the duration token', () => {
+    expect(spinnerCss).toContain('animation: et-spinner-rotate calc(var(--et-spinner-duration) * 1568 / 1333)');
+  });
+
+  it('keeps the layer rotation at four times the duration token', () => {
+    expect(spinnerCss).toContain('animation: et-spinner-layer-rotate calc(var(--et-spinner-duration) * 4)');
+  });
+
+  it('hardcodes no animation duration', () => {
+    const durations = [...spinnerCss.matchAll(/animation: \S+ (\S+)/g)].map(([, duration]) => duration ?? '');
+
+    expect(durations).not.toHaveLength(0);
+    expect(durations.filter((duration) => /^[\d.]+m?s$/.test(duration))).toEqual([]);
   });
 });
