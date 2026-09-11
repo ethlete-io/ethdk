@@ -1062,7 +1062,13 @@ export class SelectDirective
         return;
       }
       case 'Tab': {
-        // no preventDefault - focus moves on naturally, the popup just closes
+        // a Tab out of a panel-hosted control must reach the panel controller's tab-out close,
+        // which defers the close past the browser's focus move and reports it as a focus leave.
+        // Closing here would tear the pane down first and hand focus back to the field.
+        if (this.isEventInsideThePane(event)) {
+          return;
+        }
+
         this.hide();
 
         return;
@@ -1297,6 +1303,13 @@ export class SelectDirective
     if (target) {
       this.setActiveItem(target);
     }
+  }
+
+  private isEventInsideThePane(event: Event) {
+    const pane = this.overlayRef()?.elements?.paneElement;
+    const target = event.target;
+
+    return !!pane && target instanceof Node && pane.contains(target);
   }
 
   // inside a form field, the visible box is the field's control frame, not the trigger

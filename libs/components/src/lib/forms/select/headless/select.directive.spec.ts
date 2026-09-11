@@ -1374,6 +1374,50 @@ describe('SelectDirective (panel-hosted search)', () => {
   });
 });
 
+describe('SelectDirective (tabbing out of a panel-hosted search)', () => {
+  let driver: SelectDriver<PanelSearchTestHost>;
+
+  beforeEach(() => {
+    // jsdom lays nothing out, and `getFocusableElements` reads a client rect to tell a rendered
+    // control apart from a hidden one
+    vi.spyOn(Element.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
+    driver = mountSelect(PanelSearchTestHost);
+  });
+
+  afterEach(async () => {
+    await driver.close();
+    vi.restoreAllMocks();
+  });
+
+  it('closes the panel on a Tab out of the search', async () => {
+    await driver.open();
+
+    const input = driver.searchInput();
+
+    input.focus();
+    pressKey(input, 'Tab');
+
+    await driver.settle();
+    await driver.settle();
+
+    expect(driver.select.open()).toBe(false);
+  });
+
+  it('does not hand focus back to the trigger on a Tab out of the search', async () => {
+    await driver.open();
+
+    const input = driver.searchInput();
+
+    input.focus();
+    pressKey(input, 'Tab');
+
+    await driver.settle();
+    await driver.settle();
+
+    expect(document.activeElement).not.toBe(driver.trigger());
+  });
+});
+
 describe('SelectDirective (tabbing out of the panel)', () => {
   let driver: SelectDriver<PanelActionsTestHost>;
 
