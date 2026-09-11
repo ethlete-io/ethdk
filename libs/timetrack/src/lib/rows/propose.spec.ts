@@ -191,4 +191,29 @@ describe('propose, the work nothing named', () => {
 
     expect(unnamed[0]?.laneKey).toBe('repo:/dev/a');
   });
+
+  it('puts a row on an increment boundary at both ends', () => {
+    const { proposals } = propose({
+      groups: [group({ fromMinute: 38, observedMinutes: 23, issueKey: 'FIP-2178' })],
+      config: FIP,
+    });
+
+    expect(proposals[0]?.from).toEqual(AT(30));
+    expect(proposals[0]?.to).toEqual(AT(60));
+    expect(proposals[0]?.observedMs).toBe(23 * MINUTE);
+    expect(proposals[0]?.durationMs).toBe(30 * MINUTE);
+  });
+
+  it('snaps a named row and an unnamed one against each other, so neither invents an overlap', () => {
+    const { proposals, unnamed } = propose({
+      groups: [
+        group({ fromMinute: 38, observedMinutes: 30, issueKey: 'FIP-2178' }),
+        group({ fromMinute: 68, observedMinutes: 22 }),
+      ],
+      config: FIP,
+    });
+
+    expect(proposals[0]?.to).toEqual(AT(60));
+    expect(unnamed[0]?.from).toEqual(AT(60));
+  });
 });

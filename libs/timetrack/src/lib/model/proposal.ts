@@ -11,7 +11,10 @@ export type WorklogProposal = {
   storyKey?: string;
   from: Date;
   to: Date;
-  /** Kept separate from `to - from`: rounding moves the duration without moving the clock times. */
+  /**
+   * Kept separate from `to - from`: a row that spans a gap between its blocks books less than the
+   * clock window it is drawn in. The window never books less than this, only more.
+   */
   durationMs: number;
   /** The evidence-backed duration behind `durationMs`, so review can show what rounding did. */
   observedMs: number;

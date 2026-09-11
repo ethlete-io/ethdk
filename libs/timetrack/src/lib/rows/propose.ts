@@ -5,6 +5,7 @@ import { DescribeOptions, describeWork } from './describe';
 import { laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
 import { RoundOptions, roundDurationUp } from './round';
+import { snapRowBounds } from './snap';
 import { stretchesOf } from './stretches';
 
 /**
@@ -28,6 +29,11 @@ type AttributedGroup = WorkGroup & { issueKey: string };
 
 const isAttributed = (group: WorkGroup): group is AttributedGroup => !!group.issueKey;
 
+/** A group with the bounds and the booked time its row will carry. */
+type BoundGroup = { group: WorkGroup; from: Date; to: Date; durationMs: number };
+
+const isAttributedRow = (row: BoundGroup): row is BoundGroup & { group: AttributedGroup } => isAttributed(row.group);
+
 /** Stable across re-runs of a day, so an already-synced row is recognised rather than duplicated. */
 const proposalId = (group: AttributedGroup) => `${group.issueKey}@${group.from.toISOString()}`;
 
@@ -48,7 +54,8 @@ const unnamedId = (group: WorkGroup) => {
  *
  * A group with no issue becomes a row too, in `unnamed`, and books the same way. A band reads the
  * length it would be written for from the moment it is drawn, so naming it never changes its size.
- * The raw time each row observed stays on `observedMs`.
+ * The raw time each row observed stays on `observedMs`, and the raw clock times it ran on are gone
+ * once `snapRowBounds` has put them on an increment boundary.
  */
 export const propose = (options: {
   groups: WorkGroup[];
@@ -56,17 +63,26 @@ export const propose = (options: {
   round?: Partial<RoundOptions>;
   describe?: Partial<DescribeOptions>;
 }): ProposeResult => {
-  const attributed = options.groups.filter(isAttributed);
-  const unattributed = options.groups.filter((group) => !isAttributed(group));
-
-  return {
-    proposals: attributed.map((group) => ({
-      id: proposalId(group),
-      issueKey: group.issueKey,
-      storyKey: group.storyKey,
+  const rows = snapRowBounds({
+    rows: options.groups.map((group) => ({
+      group,
       from: group.from,
       to: group.to,
       durationMs: roundDurationUp(group.observedMs, options.round),
+    })),
+    options: options.round,
+  });
+  const attributed = rows.filter(isAttributedRow);
+  const unattributed = rows.filter((row) => !isAttributedRow(row));
+
+  return {
+    proposals: attributed.map(({ group, from, to, durationMs }) => ({
+      id: proposalId(group),
+      issueKey: group.issueKey,
+      storyKey: group.storyKey,
+      from,
+      to,
+      durationMs,
       observedMs: group.observedMs,
       stretches: stretchesOf(group.blocks),
       laneKey: group.laneKey ?? laneKeyOf(group.blocks),
@@ -75,12 +91,12 @@ export const propose = (options: {
       evidence: group.evidence,
       state: 'suggested',
     })),
-    unattributed,
-    unnamed: unattributed.map((group) => ({
+    unattributed: unattributed.map((row) => row.group),
+    unnamed: unattributed.map(({ group, from, to, durationMs }) => ({
       id: unnamedId(group),
-      from: group.from,
-      to: group.to,
-      durationMs: roundDurationUp(group.observedMs, options.round),
+      from,
+      to,
+      durationMs,
       observedMs: group.observedMs,
       stretches: stretchesOf(group.blocks),
       laneKey: group.laneKey ?? laneKeyOf(group.blocks),
