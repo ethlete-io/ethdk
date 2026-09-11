@@ -1,4 +1,5 @@
-import { CollectedEvent, E2E_PARENT_KEY, defaultSettings } from '@ethlete/timetrack/testing';
+import { CollectedEvent } from '@ethlete/timetrack';
+import { E2E_PARENT_KEY, defaultSettings } from '@ethlete/timetrack/testing';
 import { E2E_DAY_KEY, E2E_NOW, expect, saveSurface, seedWorld, test } from './support';
 
 /** Two in the afternoon on the seeded day. The browser is pinned to UTC, so this is 14:00 on screen. */
