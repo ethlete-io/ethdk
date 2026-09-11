@@ -634,6 +634,15 @@ single-domain reach.
   rather than after render, which is fine for a pure input check but would not suit a guard that needs
   the DOM.
 
+- **A field panel stays open when Tab leaves the last tab stop on the page** — the shared
+  `createAnchoredPanelController` (`libs/components/src/lib/forms/form-field/headless/anchored-panel-controller.ts`)
+  closes on a `focusin` on an outside element, so a Tab past the panel's last control leaves select,
+  cascader and the date/time pickers open whenever focus lands on `document.body`. The color-input
+  fix (`3b068eb50`) watches `keydown` on the pane and closes one task after a Tab on the last
+  focusable element or a Shift+Tab on the first, but it is local to that control. Lift it into the
+  controller, drop the color-input copy, and let the shared "How a field panel closes" paragraph in
+  `apps/docs/components/forms.md` state Tab and Shift+Tab for all four. M
+
 ## Improvements worth scheduling
 
 Deduplicated across all 22 batches; several batches independently proposed the same work.

@@ -38,6 +38,13 @@ against the static build instead: `npx nx build-storybook storybook`, then run P
 `.nx/`, so every test failure and every lint run rebuilds Storybook. Concurrent runs delete each
 other's results; pass `--output=apps/storybook-e2e/test-results/<domain>` per run.
 
+Run Playwright in the foreground - a background run ends a subagent's turn and loses the report.
+When several agents share one static build, only the coordinator rebuilds it and runs the full
+project; each agent scopes its run to its own suite against the build it was given.
+
+Chromium only, in the two projects `desktop` and `touch`. The `verify-on-apple-devices` skill covers
+real iOS Safari.
+
 ## Layout
 
 ```
@@ -46,7 +53,8 @@ apps/storybook-e2e/src/
   <domain>/<domain>.e2e.ts
 ```
 
-One file per component domain. Three describe blocks where they apply:
+One file per component domain - every domain in `libs/components` that ships a story has one, so a
+new domain needs a new file. Three describe blocks where they apply:
 
 ```ts
 test.describe('menu / keyboard', () => {
@@ -83,9 +91,37 @@ test.describe('menu / touch', () => {
    in a named helper above the describe blocks, or in `support/` when a second domain needs it.
    An asserting helper needs a name that starts with `expect`, so `expect-expect` counts it.
 6. When the component contradicts its docs, keep the test and mark it
-   `test.fail()` with a one-line reason. Report it; do not bend the assertion.
+   `test.fail()` with a one-line reason. Report it; do not bend the assertion, and do not fix
+   `libs/components` in the same pass.
 7. Format and lint: `npx prettier --write <files>`, then `npx nx lint storybook-e2e` without
    `--fix` (the Playwright autofixer mangles code). Fix findings by hand.
+
+## Browser realities a naive test trips over
+
+- A programmatic `focus()` after a pointer interaction is never `:focus-visible` in Chromium. Reach
+  the element with Tab, or assert focus alone.
+- Overlays render outside `#storybook-root`. Query them with `page.getByRole`, not the root locator.
+- Wait for `et-animation-enter-done` before an Escape or a click inside an overlay that just opened.
+- A select panel with a search takes focus only after its enter transition. Wait for the search
+  input to be focused, then type, then wait for the filtered option count.
+- A `click` fails when the overlay under test covers the target - pick a story whose panel drops
+  away from the control the test needs.
+- `test.use({ reducedMotion: 'reduce' })` at describe level does not reach the page in this config.
+  Call `page.emulateMedia({ reducedMotion: 'reduce' })` inside the test.
+- Some components paint the ring somewhere other than the focused element: menu items carry
+  `[data-active]` with `outline: none`, the rating ring sits on `.et-rating-icons`, a calendar
+  cell's on a nested span. Write a file-local `expect…FocusVisible` for those, and keep a helper
+  file-local until a third suite needs it.
+- A suite whose component embeds a third party must intercept every request leaving the Storybook
+  origin (see `src/stream/`), so it never depends on YouTube or Twitch being reachable.
+
+## When a suite finds a defect
+
+The fix is a separate pass: a jsdom spec in `libs/components` that fails without it, a changeset, the
+docs page if the contract moves, then flip `test.fail(` back to `test(` and rerun against a fresh
+build. Run one spec with `npx vitest run --config libs/components/vite.config.mts <file>` - the
+components vitest project has no `--project` name. Never check a fix by `git checkout HEAD -- <file>`
+while it is uncommitted; `HEAD` is the state without it. Copy the file aside instead.
 
 ## What belongs here, what does not
 
