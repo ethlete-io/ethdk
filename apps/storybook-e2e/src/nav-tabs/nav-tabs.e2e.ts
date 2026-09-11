@@ -323,9 +323,7 @@ test.describe('nav-tabs / keyboard', () => {
     await expectRoute(page, root, 'One', 'Route One Content');
   });
 
-  // Contradicts the docs: `disabled` on an anchor is inert, and the roving tab index still hands the
-  // selected link a `tabindex="0"`, so a fully disabled bar keeps a tab stop.
-  test.fail('a fully disabled bar is skipped in the tab order', async ({ page }) => {
+  test('a fully disabled bar is skipped in the tab order', async ({ page }) => {
     await openStory(page, DISABLED_STORY_ID);
 
     await pressKey(page, 'Tab');

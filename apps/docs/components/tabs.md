@@ -84,7 +84,7 @@ Both flavors accept the shared tab-bar inputs:
 
 ## Accessibility
 
-Standard tabs semantics out of the box: `role="tablist"` / `role="tab"` / `role="tabpanel"` with `aria-selected`, `aria-labelledby` and roving tabindex. Arrow keys move orientation-aware (wrapping, skipping disabled), <kbd>Home</kbd>/<kbd>End</kbd> jump, <kbd>Enter</kbd> activates (nav links also on <kbd>Space</kbd>).
+Standard tabs semantics out of the box: `role="tablist"` / `role="tab"` / `role="tabpanel"` with `aria-selected`, `aria-labelledby` and roving tabindex. Arrow keys move orientation-aware (wrapping, skipping disabled), <kbd>Home</kbd>/<kbd>End</kbd> jump, <kbd>Enter</kbd> activates (nav links also on <kbd>Space</kbd>). A disabled tab never holds the tab stop - it sits on the first enabled one instead, and a bar whose tabs are all disabled is skipped in the tab order.
 
 ## Theming
 

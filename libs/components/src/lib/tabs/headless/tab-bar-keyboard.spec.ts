@@ -41,6 +41,23 @@ describe('TabBarDirective keyboard model', () => {
     expect(driver.triggers().map((el) => el.getAttribute('tabindex'))).toEqual(['0', '-1', '-1']);
   });
 
+  it('moves the tab stop to the first enabled trigger when the selected one is disabled', () => {
+    const driver = mount([{ label: 'One', disabled: true }, { label: 'Two' }, { label: 'Three' }]);
+
+    expect(driver.tabbableTrigger()).toBe(driver.trigger(1));
+  });
+
+  it('leaves the bar without a tab stop when every trigger is disabled', () => {
+    const driver = mount([
+      { label: 'One', disabled: true },
+      { label: 'Two', disabled: true },
+      { label: 'Three', disabled: true },
+    ]);
+
+    expect(driver.tabbableTrigger()).toBeNull();
+    expect(driver.triggers().map((el) => el.getAttribute('tabindex'))).toEqual(['-1', '-1', '-1']);
+  });
+
   it('moves the roving tab stop forward on ArrowRight without changing the selection', () => {
     const driver = mount();
 

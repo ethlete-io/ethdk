@@ -73,6 +73,19 @@ export class TabBarDirective {
     return all[idx] ?? null;
   });
 
+  /** @internal The bar's tab stop while nothing in it has focus, or `-1` when every trigger is disabled. */
+  public tabStopIndex = computed(() => {
+    const all = this.triggers();
+    const selected = this.selectedIndex();
+    const selectedTrigger = all[selected];
+
+    if (selectedTrigger && !selectedTrigger.disabled()) {
+      return selected;
+    }
+
+    return all.findIndex((trigger) => !trigger.disabled());
+  });
+
   constructor() {
     afterNextRender(() => {
       timer(0)
