@@ -30,7 +30,9 @@ import { tap } from 'rxjs';
 import { formatClockTime } from './format';
 import { BREAK_LANE_KEY, BreakBand, DayLane, lanesOf, laneKeyOfRow } from './lanes';
 import { TimelineEntry, UNNAMED_LABEL, appointmentLabel, appointmentOf, rowEntryOf } from './row-edit/row-appointment';
+import { rowActionsFor } from './row-edit/row-actions';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
+import { injectDayReview } from './day-review';
 
 const markIntentOf = (event: Event) => {
   if (!(event instanceof MouseEvent)) return 'open';
@@ -267,8 +269,16 @@ type RowDrag = {
 
                         <ng-template etMenuSurface>
                           <et-menu>
-                            <button (click)="rowHide.emit(row)" et-menu-item type="button">Hide this row</button>
-                            <button (click)="splitInHalf(row)" et-menu-item type="button">Split in half</button>
+                            @for (action of actionsFor(row); track action.order) {
+                              <button
+                                [variant]="action.destructive ? 'destructive' : 'default'"
+                                (click)="action.run()"
+                                et-menu-item
+                                type="button"
+                              >
+                                {{ action.label }}
+                              </button>
+                            }
 
                             @if (isMarked(row) && markedCount() > 1) {
                               <et-menu-separator />
@@ -351,6 +361,7 @@ type RowDrag = {
 export class DayTimelineComponent {
   private destroyRef = inject(DestroyRef);
   private surface = injectRowEditSurface();
+  private store = injectDayReview();
 
   public focusedDate = input.required<Date>();
   public rows = input.required<readonly ReviewedRow[]>();
@@ -361,15 +372,6 @@ export class DayTimelineComponent {
   public boundaryMove = output<BoundaryMove>();
   /** Where a row was dragged to, whole or by one end. */
   public rowReschedule = output<RowReschedule>();
-
-  /** A row the reviewer took off the timeline through the band's own menu. */
-  public rowHide = output<ReviewedRow>();
-
-  /** Where a row is to be cut, from the band's own menu. */
-  public rowSplit = output<{ row: ReviewedRow; at: Date }>();
-
-  /** The marked bands, earliest first, which the band menu offers to fold into one row. */
-  public rowsMerge = output<readonly ReviewedRow[]>();
 
   private body = viewChild.required<ElementRef<HTMLElement>>('body');
   private dayColumn = viewChild<ElementRef<HTMLElement>>('dayColumn');
@@ -633,8 +635,9 @@ export class DayTimelineComponent {
     return !!row && this.isMarked(row);
   }
 
-  protected splitInHalf(row: ReviewedRow) {
-    this.rowSplit.emit({ row, at: new Date((row.from.getTime() + row.to.getTime()) / 2) });
+  /** What a band's own context menu offers, which is the list the edit surface offers as well. */
+  protected actionsFor(row: ReviewedRow) {
+    return rowActionsFor({ store: this.store, row, rows: this.rows() });
   }
 
   protected dragging(appointment: Appointment<TimelineEntry>) {
@@ -680,7 +683,7 @@ export class DayTimelineComponent {
     if (rows.length < 2) return;
 
     this.clearMarks();
-    this.rowsMerge.emit(rows);
+    this.store.mergeRows(rows);
   }
 
   /** Moves a row to another time, or drags one of its ends. */

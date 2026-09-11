@@ -12,6 +12,7 @@ const HEADINGS: Record<DayWarningKind, string> = {
   'filled-time': 'Short pauses were logged as the work around them',
   'paused-time': 'You stopped collection for part of this day',
   'edited-row-drift': 'New evidence landed under a row you edited',
+  'stale-edit': 'A row you edited no longer matches the day',
 };
 
 /**
