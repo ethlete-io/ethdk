@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { injectStyleManager } from '@ethlete/core';
-import { mountTabUnderlineStyles } from '../tab-underline-styles.component';
+import { mountTabBarStyles } from '../tab-bar-styles.component';
 
 /** @internal */
 @Component({
@@ -13,7 +13,7 @@ export class NavTabLinkStylesComponent {}
 
 /** @internal */
 export const mountNavTabLinkStyles = () => {
-  mountTabUnderlineStyles();
+  mountTabBarStyles();
 
   return injectStyleManager().mount(NavTabLinkStylesComponent);
 };
