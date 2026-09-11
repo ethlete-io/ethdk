@@ -65,10 +65,13 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           <span class="text-base">Reading the day…</span>
         </div>
       } @else if (store.review(); as day) {
-        <div class="flex shrink-0 flex-wrap items-baseline gap-x-8 gap-y-2 border-b border-et-surface-border px-6 pb-3">
-          <ethlete-day-totals [day]="store.day()" />
-          <ethlete-day-warnings [warnings]="day.check.warnings" class="min-w-0 grow" />
-        </div>
+        @if (day.check.warnings.length) {
+          <div
+            class="flex shrink-0 flex-wrap items-baseline gap-x-8 gap-y-2 border-b border-et-surface-border px-6 pb-3"
+          >
+            <ethlete-day-warnings [warnings]="day.check.warnings" class="min-w-0 grow" />
+          </div>
+        }
 
         <ethlete-day-timeline
           [breaks]="store.breaks()"
@@ -83,6 +86,8 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
         />
 
         <div class="flex shrink-0 flex-wrap items-start gap-2 px-6 py-3">
+          <ethlete-day-totals [day]="store.day()" class="block has-[details[open]]:w-full" />
+
           <ethlete-day-streams
             [day]="store.day()"
             [headBranches]="store.headBranches()"

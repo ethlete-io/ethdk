@@ -199,6 +199,14 @@ test.describe('the day view, as streams', () => {
     await expect(totals).toContainText('1.5× at once');
   });
 
+  test('keeps what was measured closed, so it is never read against the bands', async ({ page }) => {
+    await expect(page.locator('[data-presence]')).toBeHidden();
+
+    await page.locator('[data-totals] > summary').click();
+
+    await expect(page.locator('[data-presence]')).toBeVisible();
+  });
+
   test('marks a day that ran something beside you with a fire', async ({ page }) => {
     // 1.5× reaches the first tier and no further, so the readout carries one flame.
     await expect(page.locator('[data-heat]')).toHaveAttribute('data-heat', 'warm');

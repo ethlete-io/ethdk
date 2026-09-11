@@ -4,46 +4,54 @@ import { readHeat } from './heat';
 import { formatBreak, formatRebuilt, formatUnattended } from './stream-format';
 
 /**
- * What the day totalled, above the timeline: wall-clock presence, every stream's time summed, and the
- * ratio between them. The ratio is the number a concurrent day is read by — one hour at the machine
- * that booked three is not a broken reading, it is what running agents beside you looks like.
+ * What the day totalled: wall-clock presence, every stream's time summed, and the ratio between them.
+ * The ratio is the number a concurrent day is read by — one hour at the machine that booked three is
+ * not a broken reading, it is what running agents beside you looks like.
+ *
+ * Every number here is measured, and no number the day books is. Read beside the bands the two
+ * disagree by whatever the rounding moved, so this stays closed: a reviewer reads the footer for what
+ * the day writes, and opens this only to ask what the collectors saw.
  */
 @Component({
   selector: 'ethlete-day-totals',
   template: `
-    <div class="flex flex-wrap items-baseline gap-x-8 gap-y-2" data-totals>
-      <span class="text-large" data-presence>{{ presence() }} present</span>
-      <span class="text-large" data-engaged>{{ engaged() }} engaged</span>
-      <span class="flex items-baseline gap-2">
-        <span class="text-small text-et-surface-muted" data-concurrency>{{ concurrency() }} at once</span>
+    <details class="rounded-md border border-et-surface-border" data-totals>
+      <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">What was measured</summary>
 
-        @if (heat(); as heat) {
-          <span
-            [attr.data-heat]="heat.level"
-            [style.--_et-heat]="heat.glow"
-            [title]="heat.hint"
-            class="inline-flex items-baseline gap-0.5 text-small leading-none"
-          >
-            @for (flame of heat.flames; track flame) {
-              <span [style.animation-delay.ms]="flame * 240" class="inline-block" aria-hidden="true" data-heat-flame>
-                🔥
-              </span>
-            }
-            <span class="sr-only">{{ heat.hint }}</span>
-          </span>
+      <div class="flex flex-wrap items-baseline gap-x-8 gap-y-2 px-3 pb-3">
+        <span class="text-large" data-presence>{{ presence() }} present</span>
+        <span class="text-large" data-engaged>{{ engaged() }} engaged</span>
+        <span class="flex items-baseline gap-2">
+          <span class="text-small text-et-surface-muted" data-concurrency>{{ concurrency() }} at once</span>
+
+          @if (heat(); as heat) {
+            <span
+              [attr.data-heat]="heat.level"
+              [style.--_et-heat]="heat.glow"
+              [title]="heat.hint"
+              class="inline-flex items-baseline gap-0.5 text-small leading-none"
+            >
+              @for (flame of heat.flames; track flame) {
+                <span [style.animation-delay.ms]="flame * 240" class="inline-block" aria-hidden="true" data-heat-flame>
+                  🔥
+                </span>
+              }
+              <span class="sr-only">{{ heat.hint }}</span>
+            </span>
+          }
+        </span>
+
+        @if (unattended(); as unattended) {
+          <span class="text-small text-et-surface-subtle" data-unattended-total>+ {{ unattended }}</span>
         }
-      </span>
-
-      @if (unattended(); as unattended) {
-        <span class="text-small text-et-surface-subtle" data-unattended-total>+ {{ unattended }}</span>
-      }
-      @if (away(); as away) {
-        <span class="text-small text-et-surface-subtle" data-break-total>{{ away }}</span>
-      }
-      @if (rebuilt(); as rebuilt) {
-        <span class="text-small text-et-brand-ink" data-rebuilt-total>{{ rebuilt }}</span>
-      }
-    </div>
+        @if (away(); as away) {
+          <span class="text-small text-et-surface-subtle" data-break-total>{{ away }}</span>
+        }
+        @if (rebuilt(); as rebuilt) {
+          <span class="text-small text-et-brand-ink" data-rebuilt-total>{{ rebuilt }}</span>
+        }
+      </div>
+    </details>
   `,
   encapsulation: ViewEncapsulation.None,
 })
