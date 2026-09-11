@@ -1,6 +1,10 @@
 import { FieldContext, LogicFn, validate } from '@angular/forms/signals';
 import { FieldWarning, warn } from '../form-field/headless';
+import { COLOR_NOTATIONS } from './color-input.types';
 import { parseColorToRgb } from './headless/internals/color-convert';
+
+const HEX_NOTATIONS = [COLOR_NOTATIONS.HEX] as const;
+const RGB_NOTATIONS = [COLOR_NOTATIONS.RGB] as const;
 
 /** The path type `validate` accepts for a color field. Derived so we don't depend on a non-exported
  *  path type name from `@angular/forms/signals`. */
@@ -42,33 +46,14 @@ export type ColorContrastOptions = {
   message?: string;
 };
 
-const HEX_PATTERNS = {
-  strict: /^#[0-9a-f]{6}$/i,
-  shorthand: /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i,
-  alpha: /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/i,
-  shorthandAlpha: /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i,
-};
-
-// Both the legacy comma form and the modern space form, since either is what a user pastes out of
-// devtools. Alpha may be a number or a percentage; the channels are range-checked below, because a
-// pattern that also enforced 0-255 would be unreadable.
-const RGB_PATTERN = /^rgba?\(\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/i;
-
 const isBlank = (value: string | null): value is null => value === null || value.trim().length === 0;
 
 type RgbChannels = readonly [red: number, green: number, blue: number];
 
-// getColorContrastRatio's documented contract (below) covers hex and rgb()/rgba() only, so hsl()
-// is rejected explicitly rather than falling through to parseColorToRgb, which the picker itself
-// uses and which does read it.
+const CONTRAST_NOTATIONS = [COLOR_NOTATIONS.HEX, COLOR_NOTATIONS.RGB] as const;
+
 const parseColor = (value: string | null): RgbChannels | null => {
-  if (isBlank(value)) return null;
-
-  const raw = value.trim();
-
-  if (raw.toLowerCase().startsWith('hsl')) return null;
-
-  const rgb = parseColorToRgb(raw);
+  const rgb = parseColorToRgb(value, { notations: CONTRAST_NOTATIONS });
 
   return rgb ? [rgb.red, rgb.green, rgb.blue] : null;
 };
@@ -142,15 +127,13 @@ export const hexColor = (path: ColorFieldPath, { allowShorthand, allowAlpha, mes
 
     if (isBlank(raw)) return undefined;
 
-    const pattern = allowShorthand
-      ? allowAlpha
-        ? HEX_PATTERNS.shorthandAlpha
-        : HEX_PATTERNS.shorthand
-      : allowAlpha
-        ? HEX_PATTERNS.alpha
-        : HEX_PATTERNS.strict;
+    const parsed = parseColorToRgb(raw, {
+      notations: HEX_NOTATIONS,
+      hexShorthand: !!allowShorthand,
+      alpha: !!allowAlpha,
+    });
 
-    if (pattern.test(raw.trim())) return undefined;
+    if (parsed) return undefined;
 
     const expected = [
       '#rrggbb',
@@ -187,17 +170,9 @@ export const rgbColor = (path: ColorFieldPath, { allowAlpha, message }: RgbColor
       message: message ?? `Enter a color as ${allowAlpha ? 'rgb(r g b) or rgba(r g b / a)' : 'rgb(r g b)'}`,
     };
 
-    const match = RGB_PATTERN.exec(raw.trim());
+    const parsed = parseColorToRgb(raw, { notations: RGB_NOTATIONS, alpha: !!allowAlpha });
 
-    if (!match) return fail;
-
-    const [, red, green, blue, alpha] = match;
-
-    if (alpha !== undefined && !allowAlpha) return fail;
-
-    const inRange = [red, green, blue].every((channel) => Number(channel) <= 255);
-
-    return inRange ? undefined : fail;
+    return parsed ? undefined : fail;
   });
 
 /**

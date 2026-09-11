@@ -1,4 +1,4 @@
-import { COLOR_NOTATIONS, ColorNotation } from '../../color-input.types';
+import { COLOR_NOTATION_ORDER, COLOR_NOTATIONS, ColorNotation } from '../../color-input.types';
 
 /** An sRGB color. Channels are 0-255 integers; `alpha` is 0-1. */
 export type RgbColor = {
@@ -24,7 +24,20 @@ export type HsvColor = {
   alpha: number;
 };
 
-const HEX_PATTERN = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const HEX_PATTERNS = {
+  strict: /^#[0-9a-f]{6}$/i,
+  shorthand: /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i,
+  alpha: /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/i,
+  shorthandAlpha: /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i,
+};
+
+const hexPatternFor = (shorthand: boolean, alpha: boolean) => {
+  if (shorthand) {
+    return alpha ? HEX_PATTERNS.shorthandAlpha : HEX_PATTERNS.shorthand;
+  }
+
+  return alpha ? HEX_PATTERNS.alpha : HEX_PATTERNS.strict;
+};
 
 // Both the comma form and the space form, because either is what a user pastes out of devtools.
 // The channels are range-checked below rather than in the pattern, which would be unreadable.
@@ -63,7 +76,7 @@ const parseHex = (raw: string): RgbColor => {
   };
 };
 
-const parseFunctionalRgb = (raw: string): RgbColor | null => {
+const parseFunctionalRgb = (raw: string, allowAlpha: boolean): RgbColor | null => {
   const match = RGB_PATTERN.exec(raw);
 
   if (!match) {
@@ -71,6 +84,11 @@ const parseFunctionalRgb = (raw: string): RgbColor | null => {
   }
 
   const [, rawRed, rawGreen, rawBlue, rawAlpha] = match;
+
+  if (rawAlpha !== undefined && !allowAlpha) {
+    return null;
+  }
+
   const red = Number(rawRed);
   const green = Number(rawGreen);
   const blue = Number(rawBlue);
@@ -88,7 +106,7 @@ const parseFunctionalRgb = (raw: string): RgbColor | null => {
   return { red, green, blue, alpha };
 };
 
-const parseFunctionalHsl = (raw: string): RgbColor | null => {
+const parseFunctionalHsl = (raw: string, allowAlpha: boolean): RgbColor | null => {
   const match = HSL_PATTERN.exec(raw);
 
   if (!match) {
@@ -96,6 +114,11 @@ const parseFunctionalHsl = (raw: string): RgbColor | null => {
   }
 
   const [, rawHue, rawSaturation, rawLightness, rawAlpha] = match;
+
+  if (rawAlpha !== undefined && !allowAlpha) {
+    return null;
+  }
+
   const saturation = Number(rawSaturation) / 100;
   const lightness = Number(rawLightness) / 100;
 
@@ -112,12 +135,23 @@ const parseFunctionalHsl = (raw: string): RgbColor | null => {
   return hslToRgb({ hue: Number(rawHue), saturation, lightness, alpha });
 };
 
+/** Narrows what {@link parseColorToRgb} reads, for a caller that accepts less than the picker does. */
+export type ColorParseOptions = {
+  /** The notations to read; anything else is rejected. @default every notation */
+  notations?: readonly ColorNotation[];
+  /** Read the three- and four-digit hex forms (`#f00`, `#f00c`). @default true */
+  hexShorthand?: boolean;
+  /** Read an alpha component (`#rrggbbaa`, `rgb(r g b / a)`). @default true */
+  alpha?: boolean;
+};
+
 /**
- * Reads any notation the color validators accept - `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, plus
- * `rgb()`/`rgba()` and `hsl()`/`hsla()` in the comma or the space form - into channels plus alpha.
- * Returns `null` for a blank or unparseable value.
+ * Reads a color - `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, plus `rgb()`/`rgba()` and
+ * `hsl()`/`hsla()` in the comma or the space form - into channels plus alpha. Whitespace is
+ * trimmed and channels are range-checked; `null` comes back for a blank value, a value in a
+ * notation `options` excludes, and anything unreadable.
  */
-export const parseColorToRgb = (value: string | null | undefined): RgbColor | null => {
+export const parseColorToRgb = (value: string | null | undefined, options: ColorParseOptions = {}): RgbColor | null => {
   if (value === null || value === undefined) {
     return null;
   }
@@ -128,13 +162,21 @@ export const parseColorToRgb = (value: string | null | undefined): RgbColor | nu
     return null;
   }
 
-  if (HEX_PATTERN.test(raw)) {
-    return parseHex(raw);
+  const { notations = COLOR_NOTATION_ORDER, hexShorthand = true, alpha = true } = options;
+
+  if (raw.startsWith('#')) {
+    const readable = notations.includes(COLOR_NOTATIONS.HEX) && hexPatternFor(hexShorthand, alpha).test(raw);
+
+    return readable ? parseHex(raw) : null;
   }
 
   const lowered = raw.toLowerCase();
 
-  return lowered.startsWith('hsl') ? parseFunctionalHsl(lowered) : parseFunctionalRgb(lowered);
+  if (lowered.startsWith('hsl')) {
+    return notations.includes(COLOR_NOTATIONS.HSL) ? parseFunctionalHsl(lowered, alpha) : null;
+  }
+
+  return notations.includes(COLOR_NOTATIONS.RGB) ? parseFunctionalRgb(lowered, alpha) : null;
 };
 
 /** Which notation a raw entry is written in, or `null` when nothing can read it. */
