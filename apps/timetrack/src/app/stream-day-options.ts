@@ -31,6 +31,7 @@ export const dayRowsOptionsOf = (options: {
   return {
     config: gitFlowConfigFor(settings),
     rules: settings.attributionRules,
+    cut: { backgroundProjects: settings.backgroundProjects },
     patterns: [...(options.patterns ?? [])],
     fill: { maxFillGapMs: settings.gapFillMs },
     meetings: { namings: settings.meetingNamings, callNamings: settings.callNamings },
