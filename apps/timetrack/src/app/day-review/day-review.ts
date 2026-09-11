@@ -28,6 +28,8 @@ import {
   localDayKey,
   localDayRange,
   matchAttributionRule,
+  callBehindRow,
+  callLabel,
   meetingBehindRow,
   mergeRows,
   moveRowBoundary,
@@ -663,15 +665,27 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }),
 
     /**
-     * Names a row, and — when the row is a meeting the calendar named — remembers the answer against
-     * that meeting's series, so every later occurrence of it is named without being asked again.
+     * Names a row, and remembers the answer for the call behind it, so the same call next week is named
+     * without being asked again. A meeting the calendar named is remembered against its series; a call
+     * the calendar never held is remembered against the call's own features instead.
      */
     setIssue: (row: ReviewedRow, issueKey: string) => {
       apply(setRowIssue({ edits: edits(), row, issueKey }));
 
-      const event = issueKey ? meetingBehindRow({ row, calls: reasonedRows()?.calls ?? [] }) : undefined;
+      if (!issueKey) return;
 
-      if (event) settings.nameMeeting({ event, issueKey });
+      const calls = reasonedRows()?.calls ?? [];
+      const event = meetingBehindRow({ row, calls });
+
+      if (event) {
+        settings.nameMeeting({ event, issueKey });
+
+        return;
+      }
+
+      const call = callBehindRow({ row, calls });
+
+      if (call) settings.nameCall({ features: call.features, label: callLabel(call.call), issueKey });
     },
     setDescription: (row: ReviewedRow, description: string) =>
       apply(setRowDescription({ edits: edits(), row, description })),

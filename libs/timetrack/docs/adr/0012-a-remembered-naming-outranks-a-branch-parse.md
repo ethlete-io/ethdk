@@ -30,10 +30,15 @@ still loses to the `certain` a branch parse gives.
 - **A naming of the user's is keyed on the calendar series, not on the feature set above.**
   `meetingSeriesKey` reads the provider's `recurringEventId`, and folds the title for a one-off
   event. That keeps the answer through a rename and asks once per series, which is what ADR 0010
-  needs. The application, weekday, duration band and preceding event this ADR describes are what a
-  call with no occurrence would need, and that key is not built — see ADR 0010's last consequence.
+  needs. The application, weekday, duration band and preceding event this ADR describes are the
+  **second** key, for a call the calendar never held: `CallFeatures` and `matchCallNaming`. The
+  application and `after` ended up as gates rather than scores, because a record about the call that
+  follows one thing says nothing about a call that follows another. The clock is a scored feature as
+  well as the tiebreak, which is what names a call that always stands alone and has no `after` to be
+  keyed on.
 - The writer is `DayReview.setIssue`: naming a row in the meeting lane traces the row back to its
-  occurrence through `meetingBehindRow` and writes the naming. Naming any other row writes nothing.
+  occurrence through `meetingBehindRow`, and naming a row in the call lane traces it back to the call
+  through `callBehindRow`. Naming any other row writes nothing.
 - A remembered naming ages the same way a hand-written rule ages. `BD-2049` is called "Intern:
   Meeting 2025" and it is still current in 2026, so the app warns when the ticket a record names
   stops being touched. A record never expires on a date.

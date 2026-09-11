@@ -1,5 +1,6 @@
 import { ProjectLinkTarget, TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule, AttributionTarget } from '../model/attribution';
+import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { REASONING_COMMANDS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
@@ -22,6 +23,9 @@ const asRecord = (value: unknown) =>
   typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
 
 const asText = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+
+const asWholeNumber = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value) ? Math.trunc(value) : undefined;
 
 const asTarget = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value)
@@ -164,6 +168,35 @@ const asMeetingNaming = (value: unknown): MeetingNaming | null => {
 const asMeetingNamings = (value: unknown) =>
   Array.isArray(value) ? value.flatMap((entry) => asMeetingNaming(entry) ?? []) : [];
 
+/**
+ * A call naming with no application or no issue is dropped: the application is the gate
+ * `matchCallNaming` reads first, and a record without one would name a call in any product at all.
+ */
+const asCallNaming = (value: unknown): CallNaming | null => {
+  const raw = asRecord(value);
+  const appId = asText(raw['appId']).toLowerCase();
+  const issueKey = asText(raw['issueKey']).toUpperCase();
+
+  if (!appId || !issueKey) return null;
+
+  const createdAt = new Date(typeof raw['createdAt'] === 'number' ? raw['createdAt'] : asText(raw['createdAt']));
+  const after = asText(raw['after']);
+
+  return {
+    appId,
+    weekday: asWholeNumber(raw['weekday']) ?? 0,
+    durationBand: asText(raw['durationBand']),
+    ...(after ? { after } : {}),
+    startMinute: asWholeNumber(raw['startMinute']) ?? 0,
+    issueKey,
+    label: asText(raw['label']),
+    createdAt: Number.isNaN(createdAt.getTime()) ? new Date(0) : createdAt,
+  };
+};
+
+const asCallNamings = (value: unknown) =>
+  Array.isArray(value) ? value.flatMap((entry) => asCallNaming(entry) ?? []) : [];
+
 const asNudge = (value: unknown): TimetrackNudgeSettings => {
   const raw = asRecord(value);
   const atMinute = raw['atMinute'];
@@ -289,6 +322,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     gitScanRoots: asTextList(document['gitScanRoots']),
     favoriteProjects: asFavoriteProjects(document),
     meetingNamings: asMeetingNamings(document['meetingNamings']),
+    callNamings: asCallNamings(document['callNamings']),
     attributionRules: asAttributionRules(document['attributionRules']),
     projectLinks: asProjectLinks(document['projectLinks']),
     lockWindow: document['lockWindow'] !== false,

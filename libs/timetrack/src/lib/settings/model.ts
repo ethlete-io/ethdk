@@ -1,5 +1,6 @@
 import { TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule } from '../model/attribution';
+import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { JiraParenting } from '../jira/hierarchy';
 import { DEFAULT_REASONING_OPTIONS } from '../reason/model';
@@ -250,6 +251,11 @@ export type TimetrackSettings = {
    */
   meetingNamings: MeetingNaming[];
   /**
+   * The same answers for a call the calendar never held, which has no series to be remembered under.
+   * It is recognised by the call's own features instead — see `matchCallNaming`.
+   */
+  callNamings: CallNaming[];
+  /**
    * What the user decided a context belongs to, for repositories the branch grammar cannot name an
    * issue in. A setting rather than a table of its own: it is a handful of statements the user wrote,
    * and it is read and written whole exactly like the rest of this document.
@@ -305,6 +311,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   gitScanRoots: [],
   favoriteProjects: [],
   meetingNamings: [],
+  callNamings: [],
   attributionRules: [],
   projectLinks: [],
   lockWindow: true,

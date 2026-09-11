@@ -12,6 +12,7 @@ import {
   SpinnerComponent,
   TAB_IMPORTS,
 } from '@ethlete/components';
+import { callNamingKey } from '@ethlete/timetrack';
 import {
   injectAgentSessionCollector,
   injectAgentSpendBackfill,
@@ -74,10 +75,17 @@ It is off by default because the feed is account-wide: it reports every public a
 you touched, not only the ones you work in. GitHub's feed also stops at 300 events and takes no date
 range, so a first run may not reach back a full month. It says so when that happens.`;
 
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 const MEETING_WHY = `A meeting whose own title names an issue is logged against it, and one that repeats at
 a time Tempo already holds an issue for follows that history. This is the answer for every other meeting.
 
 Leave it unset and such a meeting stays unattributed, which means the review asks about it every day.`;
+
+const CALL_NAMING_WHY = `A call the calendar never held has no series to be remembered under, so your answer is
+remembered against the call itself: the application, the weekday, roughly how long it ran and what ran before it.
+
+That last one is what names a call with no fixed start - one that begins when the meeting before it ends.`;
 
 const LOCK_WHY = `The window starts locked and locks itself again once you have been idle long enough. Your own
 account password opens it - the check is the operating system's, through PAM on Linux and the system's own
@@ -287,6 +295,32 @@ window title, never a file path. A suggestion never syncs on its own.`;
                 } @else {
                   <span class="text-small text-et-surface-subtle">
                     Nothing yet. Name a meeting on a day and every later one of that series is named from your answer.
+                  </span>
+                }
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-1">
+                  <h3 class="text-h4">Calls</h3>
+                  <ethlete-explain [text]="CALL_NAMING_WHY" label="a remembered call" />
+                </div>
+
+                @if (store.settings().callNamings.length) {
+                  <ul class="flex max-w-150 list-none flex-col gap-1">
+                    @for (naming of callNamings(); track naming.key) {
+                      <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-small" data-call-naming>
+                        <span class="min-w-40 grow truncate">{{ naming.label }}</span>
+                        <span class="text-et-surface-muted">{{ naming.when }}</span>
+                        <span class="text-mono text-et-surface-muted">{{ naming.issueKey }}</span>
+                        <button (click)="store.forgetCallNaming(naming.key)" et-button variant="transparent" size="sm">
+                          Forget
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <span class="text-small text-et-surface-subtle">
+                    Nothing yet. Name a call the calendar never held and the next one like it is named from your answer.
                   </span>
                 }
               </div>
@@ -518,6 +552,17 @@ export class SettingsViewComponent {
   protected readonly GITLAB_WHY = GITLAB_WHY;
   protected readonly GITHUB_WHY = GITHUB_WHY;
   protected readonly MEETING_WHY = MEETING_WHY;
+  protected readonly CALL_NAMING_WHY = CALL_NAMING_WHY;
+
+  /** The call namings with the key the Forget button needs and a line saying when the call runs. */
+  protected callNamings = computed(() =>
+    this.store.settings().callNamings.map((naming) => ({
+      key: callNamingKey(naming),
+      label: naming.label,
+      issueKey: naming.issueKey,
+      when: `${WEEKDAYS[naming.weekday] ?? ''} ${naming.durationBand} min`.trim(),
+    })),
+  );
   protected readonly SUGGESTIONS_WHY = SUGGESTIONS_WHY;
   protected readonly LOCK_WHY = LOCK_WHY;
   protected readonly LOCK_WAIT_WHY = LOCK_WAIT_WHY;

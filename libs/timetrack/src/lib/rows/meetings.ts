@@ -1,6 +1,7 @@
 import { DEFAULT_GIT_FLOW_CONFIG, GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { ActivityBlock } from '../model/block';
 import { CallWindow } from '../model/call';
+import { CallNaming } from '../model/call-naming';
 import { CalendarOccurrenceEvent, CollectedEvent } from '../model/event';
 import { Evidence } from '../model/evidence';
 import { MeetingNaming, namedIssueFor } from '../model/meeting-naming';
@@ -9,13 +10,19 @@ import { windowsOverlap } from '../model/time-window';
 import { issueKeyInText } from './attribute';
 
 /** Where a meeting's or a call's issue key came from, which is what its confidence is computed from. */
-export type MeetingKeySource = 'event-title' | 'remembered' | 'tempo-history';
+export type MeetingKeySource = 'event-title' | 'remembered' | 'remembered-call' | 'tempo-history';
 
 /** The issue a call was named from, and the observation that named it. */
 export type NamedIssue = {
   issueKey: string;
   keySource: MeetingKeySource;
   evidence?: Evidence;
+  /**
+   * How well the source fits this call, for a source that matches rather than observes. Only
+   * `remembered-call` sets it; everything else either names the occurrence outright or names a time
+   * of day, and `confidenceOf` reads those from the meeting instead.
+   */
+  strength?: 'likely' | 'weak';
 };
 
 export type MeetingOptions = {
@@ -23,6 +30,8 @@ export type MeetingOptions = {
   patterns?: RecurringPattern[];
   /** What the user already answered when a meeting of this series asked which issue it belongs to. */
   namings?: readonly MeetingNaming[];
+  /** The same, for a call the calendar never held, which has no series to be remembered under. */
+  callNamings?: readonly CallNaming[];
   config?: GitFlowConfig;
 };
 

@@ -1,7 +1,9 @@
 import { ActivityBlock } from '../model/block';
 import { CallWindow, callLabel } from '../model/call';
+import { CallFeatures, DEFAULT_CALL_AFTER_GAP_MS, callFeaturesOf, matchCallNaming } from '../model/call-naming';
 import { CalendarOccurrenceEvent } from '../model/event';
 import { Confidence, Evidence } from '../model/evidence';
+import { meetingSeriesKey } from '../model/meeting-naming';
 import { TimeWindow, subtractWindows } from '../model/time-window';
 import { CALL_LANE_KEY, MEETING_LANE_KEY } from './lane';
 import {
@@ -33,6 +35,11 @@ export type CallMatch = {
   candidates: CalendarCandidate[];
   /** The reviewable row. Carries no `issueKey` when nothing named one, which leaves it unattributed. */
   group: WorkGroup;
+  /**
+   * What this call is recognised by when no occurrence names it. It is what naming its row writes to
+   * the store, so an answer given once reaches the same call next week.
+   */
+  features: CallFeatures;
 };
 
 /**
@@ -62,19 +69,79 @@ const callEvidence = (options: { call: CallWindow; window: TimeWindow }): Eviden
  * How sure the row is about which work the call was.
  *
  * The call itself is never in doubt — the microphone opened. What the confidence measures is the
- * naming, so only a meeting the call itself confirmed may reach `certain`. A call with no meeting
- * behind it stays `weak` however plausible the pattern that named it, and so never syncs unreviewed.
+ * naming, so only a meeting the call itself confirmed may reach `certain`. With no meeting behind it a
+ * call reaches `likely` at best, and only on the user's own remembered answer: a Tempo pattern names a
+ * time of day rather than a call, so it stays `weak` and never syncs unreviewed.
  */
 const confidenceOf = (options: { meeting?: PickedCandidate; key?: NamedIssue }): Confidence => {
   if (!options.key) return 'weak';
-  if (!options.meeting) return 'weak';
+  if (!options.meeting) return options.key.strength ?? 'weak';
 
   return options.meeting.match === 'certain' ? 'certain' : 'likely';
+};
+
+/**
+ * The answer the user already gave for a call like this one — same application, and enough of the
+ * weekday, the length and what ran before it. It is what names a call the calendar never held, which
+ * has no series to be remembered under. See ADR 0012.
+ */
+export const rememberedCallIssueKey = (options: {
+  features: CallFeatures;
+  meetings: MeetingOptions;
+}): NamedIssue | undefined => {
+  const found = matchCallNaming({ features: options.features, namings: options.meetings.callNamings ?? [] });
+
+  if (!found) return undefined;
+
+  return {
+    issueKey: found.naming.issueKey,
+    keySource: 'remembered-call',
+    strength: found.match,
+    evidence: {
+      kind: 'call',
+      at: found.naming.createdAt,
+      detail: `you named _${found.naming.label}_ ${found.naming.issueKey}, and this call is like it`,
+      summary: found.naming.label,
+    },
+  };
+};
+
+/**
+ * What ran immediately before a call: the calendar series of the call before it, or that call's
+ * application when the calendar named none.
+ *
+ * A gap past {@link DEFAULT_CALL_AFTER_GAP_MS} makes the earlier call no longer the thing that ran
+ * before this one, so a morning meeting cannot key an evening call that merely follows it in the day.
+ */
+const afterOf = (options: {
+  call: CallWindow;
+  previous: CallWindow | undefined;
+  occurrences: readonly CalendarOccurrenceEvent[];
+  titled: readonly ActivityBlock[];
+}) => {
+  const { call, previous } = options;
+
+  if (!previous) return undefined;
+
+  const gap = call.from.getTime() - previous.to.getTime();
+
+  if (gap < 0 || gap > DEFAULT_CALL_AFTER_GAP_MS) return undefined;
+
+  const window = { from: previous.from, to: previous.to };
+  const picked = pickCandidate({
+    call: previous,
+    window,
+    candidates: candidatesFor({ occurrences: options.occurrences, window }),
+    blocks: options.titled,
+  });
+
+  return picked ? `series:${meetingSeriesKey(picked.event)}` : `app:${previous.appId.trim().toLowerCase()}`;
 };
 
 const matchOne = (options: {
   call: CallWindow;
   window: TimeWindow;
+  after?: string;
   blocks: readonly ActivityBlock[];
   titled: readonly ActivityBlock[];
   occurrences: readonly CalendarOccurrenceEvent[];
@@ -83,15 +150,21 @@ const matchOne = (options: {
   const { call, window, blocks, meetings } = options;
   const candidates = candidatesFor({ occurrences: options.occurrences, window });
   const meeting = pickCandidate({ call, window, candidates, blocks: options.titled });
+  const features = callFeaturesOf({ appId: call.appId, from: window.from, to: window.to, after: options.after });
+  /**
+   * The user's own answer is read before the history: a remembered naming is a statement about this
+   * call, and a pattern is a statement about this time of day. See ADR 0012.
+   */
   const key = meeting
     ? occurrenceIssueKey({ event: meeting.event, meetings })
-    : patternIssueKey({ at: window.from, meetings });
+    : (rememberedCallIssueKey({ features, meetings }) ?? patternIssueKey({ at: window.from, meetings }));
 
   return {
     call,
     overlapMs: blocks.reduce((sum, block) => sum + overlapMs({ block, window }), 0),
     ...(meeting ? { meeting } : {}),
     candidates,
+    features,
     group: {
       ...(key ? { issueKey: key.issueKey } : {}),
       from: window.from,
@@ -131,6 +204,27 @@ export const meetingBehindRow = (options: {
     )
     .filter((entry) => entry.sharedMs > 0)
     .sort((a, b) => b.sharedMs - a.sharedMs)[0]?.event;
+};
+
+/**
+ * The call a row was named from when no calendar occurrence named it, or nothing.
+ *
+ * It is the counterpart of {@link meetingBehindRow} for the call lane: a call the calendar never held
+ * has no series to be remembered under, so its answer is remembered against the call's own features
+ * instead. A row in the meeting lane is left to `meetingBehindRow`, and a call an occurrence named is
+ * skipped here, so one answer never writes into both stores.
+ */
+export const callBehindRow = (options: {
+  row: { from: Date; to: Date; laneKey?: string };
+  calls: readonly CallMatch[];
+}): CallMatch | undefined => {
+  if (options.row.laneKey !== CALL_LANE_KEY) return undefined;
+
+  return options.calls
+    .filter((match) => !match.meeting)
+    .map((match) => ({ match, sharedMs: sharedMs(options.row, match.group) }))
+    .filter((entry) => entry.sharedMs > 0)
+    .sort((a, b) => b.sharedMs - a.sharedMs)[0]?.match;
 };
 
 /**
@@ -195,8 +289,20 @@ export const matchCalls = (options: {
   occurrences?: readonly CalendarOccurrenceEvent[];
   /** How a call is named: the user's remembered answers, Tempo history and the branch grammar. */
   meetings?: MeetingOptions;
-}): CallMatch[] =>
-  options.calls
+}): CallMatch[] => {
+  const titled = options.titled ?? options.blocks;
+  const occurrences = options.occurrences ?? [];
+  /**
+   * Every call of the day in start order, not only the ones a rule counted as work. A voice room the
+   * attendance gate dropped still ran before the call that follows it, and `after` asks what ran
+   * before rather than what books.
+   */
+  const inOrder = [...options.calls].sort((left, right) => left.from.getTime() - right.from.getTime());
+  const after = new Map<CallWindow, string | undefined>(
+    inOrder.map((call, index) => [call, afterOf({ call, previous: inOrder[index - 1], occurrences, titled })]),
+  );
+
+  return inOrder
     .filter((call) => call.countsAsWork)
     .flatMap((call) =>
       subtractWindows({ windows: [{ from: call.from, to: call.to }], without: options.claimed })
@@ -205,11 +311,13 @@ export const matchCalls = (options: {
           matchOne({
             call,
             window,
+            after: after.get(call),
             blocks: options.blocks,
-            titled: options.titled ?? options.blocks,
-            occurrences: options.occurrences ?? [],
+            titled,
+            occurrences,
             meetings: options.meetings ?? {},
           }),
         ),
     )
     .sort((left, right) => left.group.from.getTime() - right.group.from.getTime());
+};

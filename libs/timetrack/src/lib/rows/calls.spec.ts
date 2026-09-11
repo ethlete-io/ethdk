@@ -3,7 +3,8 @@ import { ActivityBlock } from '../model/block';
 import { CallWindow } from '../model/call';
 import { CalendarOccurrenceEvent } from '../model/event';
 import { TimeWindow } from '../model/time-window';
-import { CallMatch, dropCallWindows, matchCalls, meetingBehindRow } from './calls';
+import { CallNaming, callFeaturesOf } from '../model/call-naming';
+import { CallMatch, callBehindRow, dropCallWindows, matchCalls, meetingBehindRow } from './calls';
 import { CALL_LANE_KEY, MEETING_LANE_KEY } from './lane';
 import { MeetingOptions } from './meetings';
 import { RecurringPattern } from '../model/recurrence';
@@ -251,5 +252,79 @@ describe('meetingBehindRow', () => {
     expect(meetingBehindRow({ row: row({ from: at(10, 50), to: at(12) }), calls })?.occurrenceId).toBe(
       'occ-refinement',
     );
+  });
+});
+
+describe('a call the calendar never held', () => {
+  const room = call({ appId: 'com.hnc.Discord', from: at(10, 30), to: at(11), title: 'Open Room #1' });
+  const meeting = call({ appId: 'com.google.Chrome', from: at(9, 45), to: at(10, 15), title: 'Meet' });
+  const meetingOccurrence = occurrence({
+    at: at(9, 45),
+    until: at(10, 15),
+    title: 'Weekly',
+    recurringEventId: 'weekly',
+  });
+
+  const naming = (overrides: Partial<CallNaming> = {}): CallNaming => ({
+    ...callFeaturesOf({ appId: room.appId, from: room.from, to: room.to, after: 'series:weekly' }),
+    issueKey: 'ABC-7',
+    label: 'Open Room #1',
+    createdAt: at(9),
+    ...overrides,
+  });
+
+  it('names it from the answer the user gave for a call like it', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      occurrences: [meetingOccurrence],
+      meetings: { callNamings: [naming()] },
+    });
+
+    expect(second?.group.issueKey).toBe('ABC-7');
+    expect(second?.group.laneKey).toBe(CALL_LANE_KEY);
+    expect(second?.group.confidence).toBe('likely');
+  });
+
+  it('reads the user answer before the Tempo history', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      occurrences: [meetingOccurrence],
+      meetings: { callNamings: [naming()], patterns: PATTERNS },
+    });
+
+    expect(second?.group.issueKey).toBe('ABC-7');
+  });
+
+  it('keys it on the meeting that ran before it, not on the clock', () => {
+    const [only] = match({ calls: [room], meetings: { callNamings: [naming()] } });
+
+    expect(only?.group.issueKey).toBeUndefined();
+  });
+
+  it('forgets the preceding call once the gap is long enough', () => {
+    const late = call({ ...room, from: at(11, 45), to: at(12, 15) });
+    const [, second] = match({
+      calls: [meeting, late],
+      occurrences: [meetingOccurrence],
+      meetings: { callNamings: [naming()] },
+    });
+
+    expect(second?.group.issueKey).toBeUndefined();
+  });
+
+  it('carries the features naming its row would remember', () => {
+    const [, second] = match({ calls: [meeting, room], occurrences: [meetingOccurrence] });
+
+    expect(second?.features.after).toBe('series:weekly');
+    expect(second?.features.appId).toBe('com.hnc.discord');
+  });
+
+  it('hands a call row to callBehindRow and a meeting row to nobody', () => {
+    const matches = match({ calls: [meeting, room], occurrences: [meetingOccurrence] });
+    const callRow = matches[1]?.group as { from: Date; to: Date; laneKey?: string };
+    const meetingRow = matches[0]?.group as { from: Date; to: Date; laneKey?: string };
+
+    expect(callBehindRow({ row: callRow, calls: matches })?.call).toBe(room);
+    expect(callBehindRow({ row: meetingRow, calls: matches })).toBeUndefined();
   });
 });

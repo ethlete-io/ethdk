@@ -1,6 +1,7 @@
 export * from './attribution';
 export * from './block';
 export * from './call';
+export * from './call-naming';
 export * from './context';
 export * from './duration';
 export * from './event';

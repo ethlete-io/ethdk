@@ -3,6 +3,9 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   CalendarOccurrenceEvent,
+  CallFeatures,
+  callNamingKey,
+  rememberCallNaming,
   rememberMeetingNaming,
   AttributionRule,
   DEFAULT_TIMETRACK_SETTINGS,
@@ -268,6 +271,18 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     forgetMeetingNaming: (seriesKey: string) =>
       patch({ meetingNamings: settings().meetingNamings.filter((naming) => naming.seriesKey !== seriesKey) }),
+
+    /**
+     * The same, for a call the calendar never held. It is remembered against the call's own features
+     * rather than a series, because there is no series to key it on.
+     */
+    nameCall: (options: { features: CallFeatures; label: string; issueKey: string }) =>
+      patch({
+        callNamings: rememberCallNaming({ namings: settings().callNamings, ...options, at: new Date() }),
+      }),
+
+    forgetCallNaming: (key: string) =>
+      patch({ callNamings: settings().callNamings.filter((naming) => callNamingKey(naming) !== key) }),
 
     /**
      * Writes the projects a picker chose. It is one write of the whole list rather than an add and a

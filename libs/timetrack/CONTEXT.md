@@ -78,6 +78,13 @@ key, a count and the date it was last seen. Seeded from Tempo history, written b
 user's, and never written by a model. See ADR 0012.
 _Avoid_: rule (a rule is hand-written and matches a context, not a call), pattern, learning
 
+A naming has one of two keys, and which one it has depends on whether the calendar held the meeting.
+A meeting the calendar held is keyed on its **series** (`meetingSeriesKey`), so a rename keeps the
+answer. A call the calendar never held has no series, so it is keyed on the **call features**
+(`CallFeatures`): the application, the weekday, a duration band and what ran before it. The
+application, and `after` when the record carries one, are gates rather than scores — see
+`matchCallNaming`.
+
 ### Time
 
 **Presence**:
