@@ -641,7 +641,10 @@ single-domain reach.
   fix (`3b068eb50`) watches `keydown` on the pane and closes one task after a Tab on the last
   focusable element or a Shift+Tab on the first, but it is local to that control. Lift it into the
   controller, drop the color-input copy, and let the shared "How a field panel closes" paragraph in
-  `apps/docs/components/forms.md` state Tab and Shift+Tab for all four. M
+  `apps/docs/components/forms.md` state Tab and Shift+Tab for all four. M — **DONE 2026-09-12**
+  `fix(components): Close every field panel on a Tab out of its last control`. Open follow-up: the
+  select's own synchronous Tab close in `handleTriggerKeydown` does not report a focus leave, so a Tab
+  out of a panel-hosted search can still refocus the trigger when the field is the page's last tab stop.
 
 ## Improvements worth scheduling
 
