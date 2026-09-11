@@ -1,8 +1,27 @@
 import { Component, ViewEncapsulation, computed, input } from '@angular/core';
-import { CallWindow, READABLE_MS, StreamDay, callLabel, formatDurationMs, unnamedFocusMs } from '@ethlete/timetrack';
+import { BUTTON_IMPORTS } from '@ethlete/components';
+import {
+  CallWindow,
+  READABLE_MS,
+  StreamDay,
+  UnobservedOccurrence,
+  callLabel,
+  formatDurationMs,
+  unnamedFocusMs,
+} from '@ethlete/timetrack';
 import { injectWindowCollector } from '../../collectors';
+import { injectDayReview } from './day-review';
 import { formatClockTime } from './format';
 import { formatRebuilt, formatSpend } from './stream-format';
+
+type OccurrenceOffer = {
+  id: string;
+  title: string;
+  clock: string;
+  issueKey: string;
+  from: Date;
+  to: Date;
+};
 
 const NAMES_NONE =
   'A window whose title holds no checkout names none, and its time folds into Other applications. Sources says which applications this is.';
@@ -12,8 +31,8 @@ const NO_DIRECTORY =
 
 /**
  * What the day holds that is neither a row nor a stream: the part nothing watched, the calls, the
- * checkout names that were ambiguous, the window time no checkout took, and the turns no checkout can
- * carry.
+ * meetings the calendar named that no call was heard over, the checkout names that were ambiguous, the
+ * window time no checkout took, and the turns no checkout can carry.
  *
  * Each of them is a number the timeline cannot show and the day does not reconcile without. A folded
  * Other applications line with nothing saying what it is made of reads as a fault the user cannot act
@@ -63,6 +82,38 @@ const NO_DIRECTORY =
       </div>
     }
 
+    @if (unobserved().length) {
+      <div
+        class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2"
+        data-unobserved
+      >
+        <span class="text-base" data-unobserved-label>The calendar also said</span>
+
+        <ul class="flex list-none flex-col gap-1">
+          @for (offer of unobserved(); track offer.id) {
+            <li [attr.data-unobserved-occurrence]="offer.id" class="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span class="shrink-0 text-mono text-small text-et-surface-muted">{{ offer.clock }}</span>
+              <span [title]="offer.title" class="min-w-40 grow truncate text-small">{{ offer.title }}</span>
+
+              @if (offer.issueKey) {
+                <button (click)="add(offer)" et-button variant="outline" size="sm" data-unobserved-add>
+                  Add {{ offer.issueKey }}
+                </button>
+              } @else {
+                <span class="text-small text-et-surface-subtle" data-unobserved-unnamed>names no issue</span>
+              }
+            </li>
+          }
+        </ul>
+
+        <span class="text-small text-et-surface-subtle">
+          No call was heard over these, so the day proposes no row for them. An invitation is an intention, and a
+          meeting held in a room or on a telephone leaves no evidence at all. Add the one that happened. Leave the one
+          that did not. A meeting the calendar names no issue for takes its time from the add-entry panel instead.
+        </span>
+      </div>
+    }
+
     @if (ambiguous(); as names) {
       <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -101,10 +152,12 @@ const NO_DIRECTORY =
     }
   `,
   encapsulation: ViewEncapsulation.None,
+  imports: [BUTTON_IMPORTS],
   host: { class: 'contents' },
 })
 export class DayNotesComponent {
   private windows = injectWindowCollector();
+  private store = injectDayReview();
   public day = input.required<StreamDay | null>();
 
   /** Absent while nothing is watching, which is when no capability may be claimed either way. */
@@ -116,6 +169,7 @@ export class DayNotesComponent {
 
   protected rebuilt = computed(() => formatRebuilt(this.day()?.rebuiltMs ?? 0));
   protected calls = computed(() => this.day()?.calls ?? []);
+  protected unobserved = computed(() => this.store.meetings().map(offerOf));
 
   /**
    * How much of the Other applications line no checkout could be named for, and why. Which
@@ -145,6 +199,10 @@ export class DayNotesComponent {
 
   protected readonly CALL_LABEL_OF = callLabel;
 
+  protected add(offer: OccurrenceOffer) {
+    this.store.addRow({ issueKey: offer.issueKey, description: offer.title, from: offer.from, to: offer.to });
+  }
+
   protected CALL_SPAN_OF(call: CallWindow) {
     return `${formatClockTime(call.from)} – ${formatClockTime(call.to)}`;
   }
@@ -157,3 +215,12 @@ export class DayNotesComponent {
     return formatDurationMs(call.attendedMs);
   }
 }
+
+const offerOf = (occurrence: UnobservedOccurrence): OccurrenceOffer => ({
+  id: `${occurrence.event.at.getTime()}|${occurrence.event.title}`,
+  title: occurrence.event.title,
+  clock: `${formatClockTime(occurrence.event.at)} \u2013 ${formatClockTime(occurrence.event.until)}`,
+  issueKey: occurrence.issueKey ?? '',
+  from: occurrence.event.at,
+  to: occurrence.event.until,
+});

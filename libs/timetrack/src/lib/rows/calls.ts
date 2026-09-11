@@ -42,6 +42,9 @@ export type CallMatch = {
  */
 const MIN_PROPOSED_CALL_MS = 5 * 60_000;
 
+const sharedMs = (left: TimeWindow, right: TimeWindow) =>
+  Math.max(0, Math.min(left.to.getTime(), right.to.getTime()) - Math.max(left.from.getTime(), right.from.getTime()));
+
 const pad = (value: number) => String(value).padStart(2, '0');
 
 const timeOfDay = (date: Date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -105,6 +108,28 @@ const matchOne = (options: {
       laneKey: meeting ? MEETING_LANE_KEY : CALL_LANE_KEY,
     },
   };
+};
+
+/**
+ * The calendar occurrence a row was named from, or nothing.
+ *
+ * A naming is remembered against a calendar series, so naming a row only teaches the day something
+ * when the row can be traced back to an occurrence. The lane and the clock are that link: a meeting
+ * row keeps the meeting lane, and an edit moves its ends without making it a different meeting. The
+ * call sharing the most time with the row wins, so two meetings in one hour still name one each.
+ */
+export const meetingBehindRow = (options: {
+  row: { from: Date; to: Date; laneKey?: string };
+  calls: readonly CallMatch[];
+}): CalendarOccurrenceEvent | undefined => {
+  if (options.row.laneKey !== MEETING_LANE_KEY) return undefined;
+
+  return options.calls
+    .flatMap((match) =>
+      match.meeting ? [{ event: match.meeting.event, sharedMs: sharedMs(options.row, match.group) }] : [],
+    )
+    .filter((entry) => entry.sharedMs > 0)
+    .sort((a, b) => b.sharedMs - a.sharedMs)[0]?.event;
 };
 
 /**

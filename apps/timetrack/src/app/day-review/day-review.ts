@@ -27,6 +27,7 @@ import {
   localDayKey,
   localDayRange,
   matchAttributionRule,
+  meetingBehindRow,
   mergeRows,
   moveRowBoundary,
   pauseWindows,
@@ -657,7 +658,17 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       );
     }),
 
-    setIssue: (row: ReviewedRow, issueKey: string) => apply(setRowIssue({ edits: edits(), row, issueKey })),
+    /**
+     * Names a row, and — when the row is a meeting the calendar named — remembers the answer against
+     * that meeting's series, so every later occurrence of it is named without being asked again.
+     */
+    setIssue: (row: ReviewedRow, issueKey: string) => {
+      apply(setRowIssue({ edits: edits(), row, issueKey }));
+
+      const event = issueKey ? meetingBehindRow({ row, calls: reasonedRows()?.calls ?? [] }) : undefined;
+
+      if (event) settings.nameMeeting({ event, issueKey });
+    },
     setDescription: (row: ReviewedRow, description: string) =>
       apply(setRowDescription({ edits: edits(), row, description })),
     setDuration: (row: ReviewedRow, durationMs: number) => apply(setRowDuration({ edits: edits(), row, durationMs })),

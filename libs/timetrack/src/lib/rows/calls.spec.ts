@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { CallWindow } from '../model/call';
+import { CalendarOccurrenceEvent } from '../model/event';
 import { TimeWindow } from '../model/time-window';
-import { CallMatch, dropCallWindows, matchCalls } from './calls';
-import { CALL_LANE_KEY } from './lane';
+import { CallMatch, dropCallWindows, matchCalls, meetingBehindRow } from './calls';
+import { CALL_LANE_KEY, MEETING_LANE_KEY } from './lane';
 import { MeetingOptions } from './meetings';
 import { RecurringPattern } from '../model/recurrence';
 
@@ -26,16 +27,30 @@ const block = (options: { from: Date; to: Date }): ActivityBlock => ({
   evidence: [],
 });
 
+const occurrence = (overrides: Partial<CalendarOccurrenceEvent> = {}): CalendarOccurrenceEvent => ({
+  at: at(10),
+  source: 'calendar',
+  kind: 'calendar-event',
+  occurrenceId: 'occ-standup',
+  recurringEventId: 'series-standup',
+  until: at(11),
+  title: 'Daily Standup',
+  accepted: true,
+  ...overrides,
+});
+
 const match = (options: {
   calls?: CallWindow[];
   blocks?: ActivityBlock[];
   claimed?: TimeWindow[];
+  occurrences?: CalendarOccurrenceEvent[];
   meetings?: MeetingOptions;
 }): CallMatch[] =>
   matchCalls({
     calls: options.calls ?? [call()],
     blocks: options.blocks ?? [],
     claimed: options.claimed ?? [],
+    occurrences: options.occurrences,
     meetings: options.meetings,
   });
 
@@ -188,5 +203,53 @@ describe('dropCallWindows', () => {
     const blocks = [app({ from: at(10, 30), to: at(10, 50), appId: 'com.hnc.Discord' })];
 
     expect(dropCallWindows({ blocks, calls: [call({ countsAsWork: false })] })).toEqual(blocks);
+  });
+});
+
+describe('meetingBehindRow', () => {
+  const row = (overrides: { from?: Date; to?: Date; laneKey?: string } = {}) => ({
+    from: at(10),
+    to: at(11),
+    laneKey: MEETING_LANE_KEY,
+    ...overrides,
+  });
+
+  it('names the occurrence the row was built from', () => {
+    const calls = match({ occurrences: [occurrence()] });
+
+    expect(meetingBehindRow({ row: row(), calls })?.occurrenceId).toBe('occ-standup');
+  });
+
+  it('names nothing for a row outside the meeting lane', () => {
+    const calls = match({ occurrences: [occurrence()] });
+
+    expect(meetingBehindRow({ row: row({ laneKey: CALL_LANE_KEY }), calls })).toBeUndefined();
+  });
+
+  it('names nothing for a call the calendar could not name', () => {
+    expect(meetingBehindRow({ row: row(), calls: match({}) })).toBeUndefined();
+  });
+
+  it('names nothing for a row no meeting call shares time with', () => {
+    const calls = match({ occurrences: [occurrence()] });
+
+    expect(meetingBehindRow({ row: row({ from: at(14), to: at(15) }), calls })).toBeUndefined();
+  });
+
+  it('picks the meeting the row shares the most time with', () => {
+    const calls = [
+      ...match({
+        calls: [call({ from: at(10), to: at(11), appId: 'com.hnc.Discord' })],
+        occurrences: [occurrence()],
+      }),
+      ...match({
+        calls: [call({ from: at(11), to: at(12), appId: 'com.hnc.Discord' })],
+        occurrences: [occurrence({ at: at(11), until: at(12), occurrenceId: 'occ-refinement' })],
+      }),
+    ];
+
+    expect(meetingBehindRow({ row: row({ from: at(10, 50), to: at(12) }), calls })?.occurrenceId).toBe(
+      'occ-refinement',
+    );
   });
 });
