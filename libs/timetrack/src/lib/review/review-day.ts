@@ -148,7 +148,44 @@ export const reviewDay = (options: {
     options: { ...dayCheckOptions(options.rows), ...options.check },
   });
 
-  return { rows, hidden, check: withDrift({ check, unreconciledMs, options: options.check }), unreconciledMs };
+  return {
+    rows,
+    hidden,
+    check: withStaleEdits({
+      check: withDrift({ check, unreconciledMs, options: options.check }),
+      rows: options.rows,
+      edits,
+    }),
+    unreconciledMs,
+  };
+};
+
+/**
+ * Warns about an edited row the engine can no longer reconcile, which a change to the row pipeline
+ * leaves behind: a pinned row names the proposals it consumed by id, and an id holds the issue key and
+ * the start those proposals had. Once the engine cuts the day differently, none of them exist, so the
+ * reviewer's row and the new proposal are both shown and the day silently books the time twice.
+ *
+ * Only a pinned row that lost every source is reported. One that kept one still reconciles.
+ */
+const withStaleEdits = (options: { check: DayCheck; rows: DayRows; edits: DayReviewEdits }): DayCheck => {
+  const known = new Set([...options.rows.proposals.map((row) => row.id), ...options.rows.unnamed.map((row) => row.id)]);
+  const stale = options.edits.pinned.filter(
+    (row) => row.replaces.length > 0 && row.replaces.every((id) => !known.has(id)),
+  );
+
+  if (!stale.length) return options.check;
+
+  return {
+    ...options.check,
+    warnings: [
+      ...options.check.warnings,
+      {
+        kind: 'stale-edit',
+        detail: `${stale.length} row${stale.length === 1 ? '' : 's'} you edited no longer match what the day proposes; reset to take the new rows`,
+      },
+    ],
+  };
 };
 
 const withDrift = (options: { check: DayCheck; unreconciledMs: number; options?: CheckDayOptions }): DayCheck => {

@@ -86,7 +86,9 @@ export type DayWarningKind =
   /** Collection was stopped for part of the day, so the day is short by design. */
   | 'paused-time'
   /** Raised by `reviewDay`, not here: new evidence under a row a reviewer had already edited. */
-  | 'edited-row-drift';
+  | 'edited-row-drift'
+  /** Raised by `reviewDay`, not here: an edited row whose proposals the engine no longer builds. */
+  | 'stale-edit';
 
 export type DayWarning = {
   kind: DayWarningKind;

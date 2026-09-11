@@ -192,6 +192,37 @@ describe('reviewDay', () => {
     expect(review.check.warnings.map((warning) => warning.kind)).toContain('edited-row-drift');
   });
 
+  it('reports an edited row whose proposals the engine no longer builds', () => {
+    const before = dayRows({
+      proposals: [
+        proposal({ issueKey: 'ABC-1', from: '08:00', to: '09:00' }),
+        proposal({ issueKey: 'ABC-2', from: '09:00', to: '10:00' }),
+      ],
+    });
+    const edits = mergeRows({ edits: EMPTY_DAY_REVIEW_EDITS, rows: reviewDay({ rows: before }).rows });
+
+    const after = dayRows({
+      proposals: [proposal({ issueKey: 'ABC-3', from: '08:00', to: '10:00', minutes: 120 })],
+    });
+    const review = reviewDay({ rows: after, edits });
+
+    expect(review.check.warnings.map((warning) => warning.kind)).toContain('stale-edit');
+  });
+
+  it('leaves an edited row alone while one of its proposals survives', () => {
+    const before = dayRows({
+      proposals: [
+        proposal({ issueKey: 'ABC-1', from: '08:00', to: '09:00' }),
+        proposal({ issueKey: 'ABC-2', from: '09:00', to: '10:00' }),
+      ],
+    });
+    const edits = mergeRows({ edits: EMPTY_DAY_REVIEW_EDITS, rows: reviewDay({ rows: before }).rows });
+
+    const review = reviewDay({ rows: before, edits });
+
+    expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('stale-edit');
+  });
+
   it('leaves drift below the tolerance unreported', () => {
     const before = dayRows({
       proposals: [proposal({ issueKey: 'ABC-1', from: '08:00', to: '10:00', minutes: 120 })],

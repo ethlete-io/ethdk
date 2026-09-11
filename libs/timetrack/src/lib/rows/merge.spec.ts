@@ -385,11 +385,34 @@ describe('mergeBlocks and an unobserved branch', () => {
     expect(rows[0]?.observedMs).toBe(40 * 60_000);
   });
 
-  it('keeps two branches the day did observe apart', () => {
+  it('folds two branches of one checkout that nothing named into one band', () => {
     const rows = mergeBlocks({
       blocks: [
         attributed({ fromMinute: 0, toMinute: 20, confidence: 'weak', repoPath: '/a', branch: 'feat/x' }),
         attributed({ fromMinute: 20, toMinute: 40, confidence: 'weak', repoPath: '/a', branch: 'feat/y' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.observedMs).toBe(40 * 60_000);
+  });
+
+  it('keeps two branches apart once one of them names an issue', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 20, repoPath: '/a', branch: 'feat/x', issueKey: 'FIP-1' }),
+        attributed({ fromMinute: 20, toMinute: 40, confidence: 'weak', repoPath: '/a', branch: 'feat/y' }),
+      ],
+    });
+
+    expect(rows.map((row) => row.issueKey)).toEqual(['FIP-1', undefined]);
+  });
+
+  it('leaves two checkouts alone, whatever branch each is on', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 20, confidence: 'weak', repoPath: '/a', branch: 'feat/x' }),
+        attributed({ fromMinute: 20, toMinute: 40, confidence: 'weak', repoPath: '/b', branch: 'feat/y' }),
       ],
     });
 

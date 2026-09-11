@@ -173,9 +173,6 @@ const checkoutOf = (group: WorkGroup) => {
   return context?.repoPath ? streamKey(context) : undefined;
 };
 
-/** Whether no block behind a band names a branch, which is what lets another branch continue it. */
-const branchless = (group: WorkGroup) => group.blocks.every((block) => !block.context.branch);
-
 /**
  * Whether every block behind a band is one checkout, which is one lane on the day screen. A block with
  * no context at all is in no lane, so a band holding one is not.
@@ -222,10 +219,9 @@ const joinable = (options: { joined: WorkGroup; gap: TimeWindow; pass: PassOptio
 /**
  * One merge over the day's blocks, each joining the band its own track left open.
  *
- * A checkout whose branch nothing observed continues that checkout's band whatever branch it was on,
- * and a named branch continues a band of the same checkout that named none: an unknown branch is not
- * another branch. A focus flash into the editor reports no branch at all, so without this the same
- * checkout's own work is two tracks and the flash can never rejoin it.
+ * Every unnamed band of one checkout is one band, whatever branch each was on. A checkout holds one
+ * branch at a time, so a second branch there is a swap rather than a second effort, and nothing has
+ * yet said the two deserve tickets of their own. Splitting such a row back apart is one press.
  *
  * An issue the day can name also continues the unnamed band of its own checkout, which is the branch
  * somebody worked on before they created the one that names the issue. Only in that direction: a
@@ -248,9 +244,8 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
     const candidate = streamAt === undefined ? undefined : rows[streamAt];
 
     if (!candidate || candidate.issueKey) return undefined;
-    if (group.issueKey) return streamAt;
 
-    return branchless(group) || branchless(candidate) ? streamAt : undefined;
+    return streamAt;
   };
 
   const open = (group: WorkGroup, at: number) => {
