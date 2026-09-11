@@ -337,8 +337,9 @@ Two of them do the composing, and they are where you change phrasing rather than
   names the winner, `"FC Berlin won"`, or says `"Draw"`.
 - **`matchName({ home, away, result, resultKind, winner, startTime, status, label })`** composes the card's
   whole accessible name, taking `resultName`'s output as `result`. The default reads
-  `"Grand Final: FC Berlin vs. Neon Esports, 2 : 1, Finished"` - which match, who is playing, how it stands,
-  whether it is still going.
+  `"Grand Final: FC Berlin vs. Neon Esports, 2 : 1, 05/02/2026 8:30 PM, Finished"` - which match, who is
+  playing, how it stands, when it kicks off, whether it is still going. The kick-off is in the name wherever
+  the card draws it, which is every status but `live`, where the badge takes its place.
 
 ## Build your own card
 

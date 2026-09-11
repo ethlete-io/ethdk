@@ -104,15 +104,12 @@ export const DEFAULT_MATCH_LABELS: MatchLabels = {
   outcomeDraw: 'D',
   emblemAlt: (participant) => `${participant} emblem`,
   seed: (seed) => `Seed ${seed}`,
-  // The order matters more than the punctuation: which match this is, who is playing, then how it
-  // stands, then whether it is still going - which is how someone scanning a page of these actually
-  // reads them.
   matchName: ({ home, away, result, startTime, status, label }) => {
-    const outcome = result ?? startTime;
+    const kickOff = status === 'live' ? null : startTime;
     const state = status === 'live' ? 'Live' : status === 'finished' ? 'Finished' : null;
     const matchUp = label ? `${label}: ${home} vs. ${away}` : `${home} vs. ${away}`;
 
-    return [matchUp, outcome, state].filter(Boolean).join(', ');
+    return [matchUp, result, kickOff, state].filter(Boolean).join(', ');
   },
   gameScores: 'Games',
   gameScore: (game, score) => `Game ${game}: ${score}`,

@@ -103,7 +103,25 @@ describe('MatchCardComponent', () => {
 
   describe('the composed name', () => {
     it('is one string on the card itself, so a screen reader reads the match', () => {
-      expect(create().card().getAttribute('aria-label')).toBe('Match 3: FC Berlin vs. Neon Esports, 2 : 1, Finished');
+      expect(create().card().getAttribute('aria-label')).toBe(
+        'Match 3: FC Berlin vs. Neon Esports, 2 : 1, 2026, Finished',
+      );
+    });
+
+    it('keeps the kick-off a finished card still draws', () => {
+      const driver = create();
+
+      expect(driver.text('.et-match-card-time')).toBe('2026');
+      expect(driver.card().getAttribute('aria-label')).toContain('2026');
+    });
+
+    it('drops the kick-off a live card replaces with its badge', () => {
+      const driver = create();
+
+      driver.host.match.set({ ...FINISHED, status: 'live' });
+      driver.detectChanges();
+
+      expect(driver.card().getAttribute('aria-label')).toBe('Match 3: FC Berlin vs. Neon Esports, 2 : 1, Live');
     });
 
     it('names the kick-off instead of a score while the match is scheduled', () => {
