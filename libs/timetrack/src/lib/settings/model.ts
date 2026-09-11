@@ -1,5 +1,6 @@
 import { TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule } from '../model/attribution';
+import { MeetingNaming } from '../model/meeting-naming';
 import { JiraParenting } from '../jira/hierarchy';
 import { DEFAULT_REASONING_OPTIONS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
@@ -243,10 +244,11 @@ export type TimetrackSettings = {
    */
   favoriteProjects: TimetrackFavoriteProject[];
   /**
-   * The issue a meeting is logged against when neither its own title nor Tempo history names one.
-   * Empty leaves such a meeting unattributed, which is a question the review then asks every day.
+   * What the user answered when a meeting asked which issue it belongs to, by calendar series. The app
+   * asks once and names every later occurrence of that series from the answer, rather than logging
+   * every meeting on one standing issue.
    */
-  meetingIssueKey: string;
+  meetingNamings: MeetingNaming[];
   /**
    * What the user decided a context belongs to, for repositories the branch grammar cannot name an
    * issue in. A setting rather than a table of its own: it is a handful of statements the user wrote,
@@ -302,7 +304,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   keepDefaultExclusionRules: true,
   gitScanRoots: [],
   favoriteProjects: [],
-  meetingIssueKey: '',
+  meetingNamings: [],
   attributionRules: [],
   projectLinks: [],
   lockWindow: true,

@@ -10,7 +10,7 @@ import { CallMatch, dropCallWindows, matchCalls } from './calls';
 import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { FillOptions, fillGaps } from './fill';
-import { MeetingMatch, MeetingOptions, matchMeetings } from './meetings';
+import { MeetingOptions, UnobservedOccurrence, calendarOccurrences, unobservedOccurrences } from './meetings';
 import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, mergeBlocks } from './merge';
 import { mergeRequestActivity } from './merge-request-activity';
 import { NoWorkContextOptions, dropNoWorkContext } from './no-work-context';
@@ -37,7 +37,7 @@ export type BuildRowsOptions = {
   donate?: Partial<DonateOptions>;
   /** The longest idle gap that joins the work before it. `maxFillGapMs: 0` fills nothing. */
   fill?: Partial<FillOptions>;
-  /** Meeting handling. `config` and `patterns` are taken from the day's own, not repeated here. */
+  /** How a meeting is named. `config` and `patterns` are taken from the day's own, not repeated here. */
   meetings?: Omit<MeetingOptions, 'config' | 'patterns'>;
   /**
    * The applications that can name no work, from `effectiveNoWorkContextApps` and
@@ -71,9 +71,12 @@ export type DayRows = {
   unattributed: WorkGroup[];
   /** The unattributed work as rows, for the day screen to draw and the reviewer to cut and name. */
   unnamed: UnnamedProposal[];
-  /** What the calendar contributed, with how much of each meeting the machine actually saw. */
-  meetings: MeetingMatch[];
-  /** The calls a rule counted as work, with how much activity was observed during each. */
+  /**
+   * The occurrences the day heard no call over. They are questions the review asks, never rows: an
+   * invitation records an intention, and only the microphone records that a meeting happened.
+   */
+  unobserved: UnobservedOccurrence[];
+  /** The calls a rule counted as work, each named from the calendar, with the activity seen during it. */
   calls: CallMatch[];
   /** What the user timed by hand, with how much activity was observed inside each run. */
   timers: TimerMatch[];
@@ -145,12 +148,13 @@ export const buildRows = (
   const working = attributed.filter((entry) => !entry.privateLink);
   const donated = donateBlocks({ blocks: working, rules: options.rules, options: options.donate });
   const naming = { ...options.meetings, config: options.config, patterns: options.patterns };
-  const meetings = matchMeetings({ events: options.events, blocks, meetings: naming });
-  const claimed = [...timers.map((timer) => timer.run), ...meetings.map((meeting) => meeting.group), ...pauses];
+  const occurrences = calendarOccurrences(options.events);
+  const claimed = [...timers.map((timer) => timer.run), ...pauses];
   // `nameable` rather than `blocks`: `overlapMs` is the time the day proposes twice, and a block no
   // row is built from proposes nothing. A call held in one of those applications would otherwise warn
   // that the reviewer has to look at an hour nothing else claims.
-  const calls = matchCalls({ calls: options.calls ?? [], blocks: nameable, claimed, meetings: naming });
+  const calls = matchCalls({ calls: options.calls ?? [], blocks: nameable, claimed, occurrences, meetings: naming });
+  const unobserved = unobservedOccurrences({ occurrences, calls: options.calls ?? [], meetings: naming });
   const filled = fillGaps({
     blocks: donated,
     events: options.events,
@@ -159,7 +163,6 @@ export const buildRows = (
   });
   const groups = [
     ...mergeBlocks({ blocks: filled.blocks, barriers: options.breaks, options: options.merge }),
-    ...meetings.map((meeting) => meeting.group),
     ...calls.map((call) => call.group),
     ...timers.map((timer) => timer.group),
   ].sort((a, b) => a.from.getTime() - b.from.getTime());
@@ -175,7 +178,7 @@ export const buildRows = (
     proposals,
     unattributed,
     unnamed,
-    meetings,
+    unobserved,
     calls,
     timers,
     filledMs: filled.filledMs,
@@ -192,9 +195,7 @@ export const buildRows = (
  */
 export const dayCheckOptions = (rows: DayRows): CheckDayOptions => ({
   maxRowsPerDay: DEFAULT_MERGE_OPTIONS.maxRowsPerDay,
-  meetingOverlapMs:
-    rows.meetings.reduce((sum, meeting) => sum + meeting.overlapMs, 0) +
-    rows.calls.reduce((sum, call) => sum + call.overlapMs, 0),
+  meetingOverlapMs: rows.calls.reduce((sum, call) => sum + call.overlapMs, 0),
   timerUnobservedMs: rows.timers.reduce(
     (sum, timer) => sum + Math.max(0, timerRunDurationMs(timer.run) - timer.observedMs),
     0,

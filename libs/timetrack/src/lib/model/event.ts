@@ -171,6 +171,11 @@ export type CalendarOccurrenceEvent = CollectedEventBase<'calendar', 'calendar-e
    * windows, so this is what keeps the same meeting from being stored on every run.
    */
   occurrenceId: string;
+  /**
+   * The provider's id for the series this occurrence belongs to, absent on a one-off event. It is what
+   * a remembered naming is keyed on, so that naming one Monday names every Monday.
+   */
+  recurringEventId?: string;
   until: Date;
   title: string;
   accepted: boolean;

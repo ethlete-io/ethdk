@@ -536,7 +536,7 @@ describe('streamDay', () => {
         proposals: [],
         unattributed: [],
         unnamed: [],
-        meetings: [],
+        unobserved: [],
         calls: [],
         timers: [],
         filledMs: 0,

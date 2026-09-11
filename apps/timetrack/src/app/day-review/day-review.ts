@@ -652,8 +652,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     meetings: computed(() => {
       const claimed = new Set(rows().map((row) => `${row.from.getTime()}|${row.to.getTime()}`));
 
-      return (reasonedRows()?.meetings ?? []).filter(
-        (meeting) => !claimed.has(`${meeting.event.at.getTime()}|${meeting.event.until.getTime()}`),
+      return (reasonedRows()?.unobserved ?? []).filter(
+        (entry) => !claimed.has(`${entry.event.at.getTime()}|${entry.event.until.getTime()}`),
       );
     }),
 

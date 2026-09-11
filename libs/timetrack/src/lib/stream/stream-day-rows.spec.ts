@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
 import { WorklogProposal } from '../model/proposal';
 import { ClosedTimerRun } from '../model/timer';
-import { classifyCalls } from './calls';
 import { pauseWindows } from './pauses';
 import { streamDay } from './stream-day';
 
@@ -77,6 +76,13 @@ const QUIET_DAY: CollectedEvent[] = [
 ];
 
 /** The same day, with a meeting the calendar knew about opening a browser right after the editor. */
+const call = (minute: number, kind: 'call-start' | 'call-end', appId = 'firefox'): CollectedEvent => ({
+  at: AT(minute),
+  source: 'call',
+  kind,
+  appId,
+});
+
 const MEETING_DAY: CollectedEvent[] = [
   checkout(0, BRANCH),
   ...focusRun({ from: 0, to: 60, appId: 'code', title: 'pack.ts - fut-frontend - Code' }),
@@ -84,6 +90,9 @@ const MEETING_DAY: CollectedEvent[] = [
   ...focusRun({ from: 61, to: 90, appId: 'firefox', title: 'Sprint planning - Google Meet' }),
   ...focusRun({ from: 91, to: 140, appId: 'code', title: 'pack.ts - fut-frontend - Code' }),
 ];
+
+/** The same day with the microphone open over the meeting, which is what makes it a row at all. */
+const ATTENDED_MEETING_DAY: CollectedEvent[] = [...MEETING_DAY, call(60, 'call-start'), call(90, 'call-end')];
 
 const RUNS: ClosedTimerRun[] = [{ id: 'run-1', from: AT(215), to: AT(245), issueKey: 'FIP-2200', note: 'whiteboard' }];
 
@@ -93,16 +102,19 @@ const optionsFor = (events: readonly CollectedEvent[]) => ({
   config: FIP,
   timerRuns: RUNS,
   pauses: pauseWindows({ events, window: { from: AT(0), to: AT(600) }, through: READ_THROUGH }),
-  calls: classifyCalls({ events, rules: { countsAsWork: [], neverCountsAsWork: [] }, until: READ_THROUGH }),
 });
 
-const rowsOf = (events: CollectedEvent[], workApps?: readonly string[]) =>
+const rowsOf = (
+  events: CollectedEvent[],
+  options: { workApps?: readonly string[]; callRules?: readonly string[] } = {},
+) =>
   streamDay({
     events,
     options: {
       repoRoots: [REPO],
       windowsSeenThroughMs: READ_THROUGH.getTime(),
-      rows: { ...optionsFor(events), noWorkContext: { workApps } },
+      callRules: { countsAsWork: [...(options.callRules ?? [])], neverCountsAsWork: [] },
+      rows: { ...optionsFor(events), noWorkContext: { workApps: options.workApps } },
     },
   }).rows;
 
@@ -136,7 +148,7 @@ describe('the rows a quiet day produces', () => {
   });
 
   it('leaves that browsing waiting as one band once a rule says the browser holds work', () => {
-    const named = rowsOf(QUIET_DAY, ['firefox']);
+    const named = rowsOf(QUIET_DAY, { workApps: ['firefox'] });
 
     expect(named.unattributed.map((group) => group.observedMs)).toEqual([44 * MINUTE]);
     expect(named.unnamed.map((row) => row.observedMs)).toEqual([44 * MINUTE]);
@@ -146,12 +158,25 @@ describe('the rows a quiet day produces', () => {
 describe('the rows a day with a meeting produces', () => {
   const rows = rowsOf(MEETING_DAY);
 
-  it('reads the meeting off the calendar', () => {
-    expect(rows.meetings.map((meeting) => meeting.event.title)).toEqual(['Sprint planning']);
+  it('proposes no row for a meeting the microphone never heard, and asks about it instead', () => {
+    expect(rows.unobserved.map((entry) => entry.event.title)).toEqual(['Sprint planning']);
+    expect(rows.calls).toEqual([]);
+    expect(rows.unnamed).toEqual([]);
   });
 
-  it('gives the meeting a band of its own, since no setting names an issue for one', () => {
-    expect(rows.unnamed.map((row) => [row.description, row.observedMs])).toEqual([['Sprint planning', 30 * MINUTE]]);
+  it('reads the meeting off the calendar once a call was heard over it', () => {
+    const attended = rowsOf(ATTENDED_MEETING_DAY, { callRules: ['firefox'] });
+
+    expect(attended.unobserved).toEqual([]);
+    expect(attended.calls.map((entry) => entry.meeting?.event.title)).toEqual(['Sprint planning']);
+  });
+
+  it('gives that call a band of its own, since no setting names an issue for one', () => {
+    const attended = rowsOf(ATTENDED_MEETING_DAY, { callRules: ['firefox'] });
+
+    expect(attended.unnamed.map((row) => [row.description, row.observedMs])).toEqual([
+      ['Sprint planning', 30 * MINUTE],
+    ]);
   });
 
   /**

@@ -1,9 +1,19 @@
 import { ActivityBlock } from '../model/block';
 import { CallWindow, callLabel } from '../model/call';
-import { CALL_LANE_KEY } from './lane';
-import { Evidence } from '../model/evidence';
+import { CalendarOccurrenceEvent } from '../model/event';
+import { Confidence, Evidence } from '../model/evidence';
 import { TimeWindow, subtractWindows } from '../model/time-window';
-import { MeetingOptions, patternIssueKey } from './meetings';
+import { CALL_LANE_KEY, MEETING_LANE_KEY } from './lane';
+import {
+  CalendarCandidate,
+  MeetingOptions,
+  NamedIssue,
+  PickedCandidate,
+  candidatesFor,
+  occurrenceIssueKey,
+  patternIssueKey,
+  pickCandidate,
+} from './meetings';
 import { WorkGroup } from './merge';
 import { clipBlocks, overlapMs } from './overlap';
 
@@ -14,6 +24,13 @@ export type CallMatch = {
    * once as whatever the user was typing during it — so a reviewer has to see it.
    */
   overlapMs: number;
+  /** The meeting this call was, when one of the day's occurrences could be picked for it. */
+  meeting?: PickedCandidate;
+  /**
+   * Every occurrence that overlaps the call, whether one was picked or not. It is what the review
+   * offers when nothing decided, so the user answers from a list rather than from memory.
+   */
+  candidates: CalendarCandidate[];
   /** The reviewable row. Carries no `issueKey` when nothing named one, which leaves it unattributed. */
   group: WorkGroup;
 };
@@ -38,18 +55,39 @@ const callEvidence = (options: { call: CallWindow; window: TimeWindow }): Eviden
   summary: callLabel(options.call),
 });
 
+/**
+ * How sure the row is about which work the call was.
+ *
+ * The call itself is never in doubt — the microphone opened. What the confidence measures is the
+ * naming, so only a meeting the call itself confirmed may reach `certain`. A call with no meeting
+ * behind it stays `weak` however plausible the pattern that named it, and so never syncs unreviewed.
+ */
+const confidenceOf = (options: { meeting?: PickedCandidate; key?: NamedIssue }): Confidence => {
+  if (!options.key) return 'weak';
+  if (!options.meeting) return 'weak';
+
+  return options.meeting.match === 'certain' ? 'certain' : 'likely';
+};
+
 const matchOne = (options: {
   call: CallWindow;
   window: TimeWindow;
   blocks: readonly ActivityBlock[];
+  occurrences: readonly CalendarOccurrenceEvent[];
   meetings: MeetingOptions;
 }): CallMatch => {
   const { call, window, blocks, meetings } = options;
-  const key = patternIssueKey({ at: window.from, meetings });
+  const candidates = candidatesFor({ occurrences: options.occurrences, window });
+  const meeting = pickCandidate({ call, window, candidates, blocks });
+  const key = meeting
+    ? occurrenceIssueKey({ event: meeting.event, meetings })
+    : patternIssueKey({ at: window.from, meetings });
 
   return {
     call,
     overlapMs: blocks.reduce((sum, block) => sum + overlapMs({ block, window }), 0),
+    ...(meeting ? { meeting } : {}),
+    candidates,
     group: {
       ...(key ? { issueKey: key.issueKey } : {}),
       from: window.from,
@@ -57,12 +95,14 @@ const matchOne = (options: {
       // The microphone's own span, which is time it observed rather than time it reconstructed. A call
       // produces no input at all, so the blocks under it account for almost none of it.
       observedMs: window.to.getTime() - window.from.getTime(),
-      // Always weak, however sure the rules are that the call was work: which work it was is a
-      // question nothing on this machine can answer, so no call ever syncs unreviewed.
-      confidence: 'weak' as const,
-      evidence: [callEvidence({ call, window }), ...(key?.evidence ? [key.evidence] : [])],
+      confidence: confidenceOf({ meeting, key }),
+      evidence: [
+        callEvidence({ call, window }),
+        ...(meeting?.evidence ?? []),
+        ...(key?.evidence ? [key.evidence] : []),
+      ],
       blocks: [],
-      laneKey: CALL_LANE_KEY,
+      laneKey: meeting ? MEETING_LANE_KEY : CALL_LANE_KEY,
     },
   };
 };
@@ -96,26 +136,31 @@ export const dropCallWindows = (options: {
 };
 
 /**
- * Turns the calls the rules counted as work into reviewable rows of their own.
+ * Turns the calls the rules counted as work into reviewable rows of their own, and names each from the
+ * day's calendar.
  *
  * A call is the one thing the microphone observed directly and the reconstruction cannot see. Sitting
  * in one produces no input, `streamDay` builds no block from a call event on purpose, and without
  * this the day counts the hour as presence and proposes nothing for it.
  *
- * Time the day already claims is cut out of a call first, and each stretch that is left becomes a row.
- * A calendar occurrence over the same minutes names that meeting itself, so proposing the call over it
- * would bill the hour twice — and a microphone held through a meeting is no evidence of which meeting
- * it was, so the call must not raise the calendar row's confidence either.
+ * The calendar contributes no row of its own. It is a candidate list: every occurrence that overlaps
+ * the call is offered, one is picked from the call's own evidence, and the meeting's name and issue
+ * come from the picked one. So the real start is the microphone's, and a meeting nobody attended is
+ * never billed.
  *
- * Rows come back in start order, and a call nothing could name an issue for comes back without one,
- * which lands it in the day's unattributed groups rather than on a guessed ticket.
+ * Time the day already claims — a timer run, a pause — is cut out of a call first, and each stretch
+ * that is left becomes a row. Rows come back in start order, and a call nothing could name an issue
+ * for comes back without one, which lands it in the day's unattributed groups rather than on a
+ * guessed ticket.
  */
 export const matchCalls = (options: {
   calls: readonly CallWindow[];
   blocks: readonly ActivityBlock[];
-  /** Time the day already proposes: a meeting, a timer run, a pause. A call proposes no row over it. */
+  /** Time the day already proposes: a timer run, a pause. A call proposes no row over it. */
   claimed: readonly TimeWindow[];
-  /** How a call is named. A meeting's options, less the default issue: only history may name a call. */
+  /** The day's calendar occurrences, from `calendarOccurrences`. Each call is named out of these. */
+  occurrences?: readonly CalendarOccurrenceEvent[];
+  /** How a call is named: the user's remembered answers, Tempo history and the branch grammar. */
   meetings?: MeetingOptions;
 }): CallMatch[] =>
   options.calls
@@ -123,6 +168,14 @@ export const matchCalls = (options: {
     .flatMap((call) =>
       subtractWindows({ windows: [{ from: call.from, to: call.to }], without: options.claimed })
         .filter((window) => window.to.getTime() - window.from.getTime() >= MIN_PROPOSED_CALL_MS)
-        .map((window) => matchOne({ call, window, blocks: options.blocks, meetings: options.meetings ?? {} })),
+        .map((window) =>
+          matchOne({
+            call,
+            window,
+            blocks: options.blocks,
+            occurrences: options.occurrences ?? [],
+            meetings: options.meetings ?? {},
+          }),
+        ),
     )
     .sort((left, right) => left.group.from.getTime() - right.group.from.getTime());

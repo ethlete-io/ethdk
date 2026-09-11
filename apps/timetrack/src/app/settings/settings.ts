@@ -2,6 +2,8 @@ import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
+  CalendarOccurrenceEvent,
+  rememberMeetingNaming,
   AttributionRule,
   DEFAULT_TIMETRACK_SETTINGS,
   ProjectLinkTarget,
@@ -255,7 +257,17 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     removeGitScanRoot: (root: string) =>
       patch({ gitScanRoots: settings().gitScanRoots.filter((existing) => existing !== root) }),
 
-    setMeetingIssueKey: (issueKey: string) => patch({ meetingIssueKey: issueKey.trim().toUpperCase() }),
+    /**
+     * Remembers which issue a meeting belongs to, against the calendar series it repeats in. Every
+     * later occurrence of that series is named from this, which is what the app asks once for.
+     */
+    nameMeeting: (options: { event: CalendarOccurrenceEvent; issueKey: string }) =>
+      patch({
+        meetingNamings: rememberMeetingNaming({ namings: settings().meetingNamings, ...options, at: new Date() }),
+      }),
+
+    forgetMeetingNaming: (seriesKey: string) =>
+      patch({ meetingNamings: settings().meetingNamings.filter((naming) => naming.seriesKey !== seriesKey) }),
 
     /**
      * Writes the projects a picker chose. It is one write of the whole list rather than an add and a

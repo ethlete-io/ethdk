@@ -9,7 +9,7 @@ import {
   input,
 } from '@angular/core';
 import { Appointment, BUTTON_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
-import { MeetingMatch } from '@ethlete/timetrack';
+import { UnobservedOccurrence } from '@ethlete/timetrack';
 import { injectDayReview } from '../day-review';
 import { formatClockTime } from '../format';
 
@@ -82,11 +82,11 @@ export class EditMeetingDirective {
   }
 }
 
-const offerOf = (meeting: MeetingMatch): MeetingOffer => ({
+const offerOf = (meeting: UnobservedOccurrence): MeetingOffer => ({
   id: `${meeting.event.at.getTime()}|${meeting.event.title}`,
   title: meeting.event.title,
   clock: `${formatClockTime(meeting.event.at)} – ${formatClockTime(meeting.event.until)}`,
-  issueKey: meeting.group.issueKey ?? '',
+  issueKey: meeting.issueKey ?? '',
   from: meeting.event.at,
   to: meeting.event.until,
 });

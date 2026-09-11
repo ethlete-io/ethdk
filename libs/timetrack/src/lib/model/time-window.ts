@@ -32,6 +32,10 @@ export const clipWindows = (options: { windows: readonly TimeWindow[]; within: r
   );
 
 /** How long the windows are in total. Overlapping windows are counted twice — merge them first. */
+/** Whether two windows share any instant. Touching ends do not: one ends where the other begins. */
+export const windowsOverlap = (left: TimeWindow, right: TimeWindow) =>
+  left.from.getTime() < right.to.getTime() && right.from.getTime() < left.to.getTime();
+
 export const windowsMs = (windows: readonly TimeWindow[]) =>
   windows.reduce((sum, window) => sum + Math.max(0, window.to.getTime() - window.from.getTime()), 0);
 

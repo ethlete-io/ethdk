@@ -5,6 +5,7 @@ import { GoogleCalendarCredentials, GoogleCalendarPagingOptions, googleCalendarP
 
 export type GoogleCalendarEventResource = {
   id?: string;
+  recurringEventId?: string;
   status?: string;
   summary?: string;
   eventType?: string;
@@ -74,6 +75,7 @@ const toOccurrence = (resource: GoogleCalendarEventResource): CalendarOccurrence
     source: 'calendar',
     kind: 'calendar-event',
     occurrenceId: resource.id ?? `${at.toISOString()}|${resource.summary ?? ''}`,
+    ...(resource.recurringEventId ? { recurringEventId: resource.recurringEventId } : {}),
     until,
     title: resource.summary?.trim() || 'untitled event',
     accepted: acceptedBySelf(resource),

@@ -1,5 +1,6 @@
 import { ProjectLinkTarget, TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule, AttributionTarget } from '../model/attribution';
+import { MeetingNaming } from '../model/meeting-naming';
 import { REASONING_COMMANDS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
 import {
@@ -139,6 +140,30 @@ const asProjectLink = (value: unknown, index: number): TimetrackProjectLink | nu
 const asProjectLinks = (value: unknown) =>
   Array.isArray(value) ? value.flatMap((entry, index) => asProjectLink(entry, index) ?? []) : [];
 
+/**
+ * A naming with no series key or no issue is dropped rather than read as an answer about every
+ * meeting, which is the shape the removed standing meeting issue had.
+ */
+const asMeetingNaming = (value: unknown): MeetingNaming | null => {
+  const raw = asRecord(value);
+  const seriesKey = asText(raw['seriesKey']);
+  const issueKey = asText(raw['issueKey']).toUpperCase();
+
+  if (!seriesKey || !issueKey) return null;
+
+  const createdAt = new Date(typeof raw['createdAt'] === 'number' ? raw['createdAt'] : asText(raw['createdAt']));
+
+  return {
+    seriesKey,
+    issueKey,
+    title: asText(raw['title']),
+    createdAt: Number.isNaN(createdAt.getTime()) ? new Date(0) : createdAt,
+  };
+};
+
+const asMeetingNamings = (value: unknown) =>
+  Array.isArray(value) ? value.flatMap((entry) => asMeetingNaming(entry) ?? []) : [];
+
 const asNudge = (value: unknown): TimetrackNudgeSettings => {
   const raw = asRecord(value);
   const atMinute = raw['atMinute'];
@@ -263,7 +288,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,
     gitScanRoots: asTextList(document['gitScanRoots']),
     favoriteProjects: asFavoriteProjects(document),
-    meetingIssueKey: asText(document['meetingIssueKey']).toUpperCase(),
+    meetingNamings: asMeetingNamings(document['meetingNamings']),
     attributionRules: asAttributionRules(document['attributionRules']),
     projectLinks: asProjectLinks(document['projectLinks']),
     lockWindow: document['lockWindow'] !== false,

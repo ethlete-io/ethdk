@@ -1,48 +1,28 @@
 import { DEFAULT_GIT_FLOW_CONFIG, GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { ActivityBlock } from '../model/block';
+import { CallWindow } from '../model/call';
 import { CalendarOccurrenceEvent, CollectedEvent } from '../model/event';
-import { Confidence, Evidence } from '../model/evidence';
-import { issueKeyInText } from './attribute';
-import { MEETING_LANE_KEY } from './lane';
-import { WorkGroup } from './merge';
-import { overlapMs } from './overlap';
+import { Evidence } from '../model/evidence';
+import { MeetingNaming, namedIssueFor } from '../model/meeting-naming';
 import { RecurringPattern, patternAt } from '../model/recurrence';
+import { windowsOverlap } from '../model/time-window';
+import { issueKeyInText } from './attribute';
 
-/**
- * How much the machine saw of a meeting. `confirmed` means a window title named the conference or the
- * event while it was running; `observed` means the user was at the machine but doing something else;
- * `unobserved` means nothing was collected, which is what a meeting away from the desk looks like.
- */
-export type MeetingAttendance = 'confirmed' | 'observed' | 'unobserved';
+/** Where a meeting's or a call's issue key came from, which is what its confidence is computed from. */
+export type MeetingKeySource = 'event-title' | 'remembered' | 'tempo-history';
 
-/** Where a meeting's issue key came from, which is what its confidence is computed from. */
-export type MeetingKeySource = 'event-title' | 'tempo-history' | 'default';
-
-/** The issue a meeting or a call was named from, and the observation that named it. */
+/** The issue a call was named from, and the observation that named it. */
 export type NamedIssue = {
   issueKey: string;
   keySource: MeetingKeySource;
   evidence?: Evidence;
 };
 
-export type MeetingMatch = {
-  event: CalendarOccurrenceEvent;
-  attendance: MeetingAttendance;
-  keySource?: MeetingKeySource;
-  /**
-   * Activity time observed inside the meeting. It is time the day now proposes twice — once as the
-   * meeting and once as whatever the user was typing during it — so a reviewer has to see it.
-   */
-  overlapMs: number;
-  /** The reviewable row. Carries no `issueKey` when nothing could name one, which leaves it unattributed. */
-  group: WorkGroup;
-};
-
 export type MeetingOptions = {
-  /** The ticket meetings land on when nothing else names one — an internal "Meetings" issue. */
-  defaultIssueKey?: string;
   /** Standing commitments read out of Tempo history, the same ones the attribution ladder uses. */
   patterns?: RecurringPattern[];
+  /** What the user already answered when a meeting of this series asked which issue it belongs to. */
+  namings?: readonly MeetingNaming[];
   config?: GitFlowConfig;
 };
 
@@ -50,12 +30,18 @@ const pad = (value: number) => String(value).padStart(2, '0');
 
 const timeOfDay = (date: Date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 
+/** The day's calendar occurrences, in start order. */
+export const calendarOccurrences = (events: readonly CollectedEvent[]): CalendarOccurrenceEvent[] =>
+  events
+    .filter((event): event is CalendarOccurrenceEvent => event.kind === 'calendar-event')
+    .sort((a, b) => a.at.getTime() - b.at.getTime());
+
 /**
  * The conference's own identifier — `abc-defg-hij` for Meet, the numeric id for Zoom. It is what a
  * browser puts in the window title, so it is the one string that ties a window to *this* meeting
  * rather than to any meeting.
  */
-const conferenceIdOf = (event: CalendarOccurrenceEvent) => {
+export const conferenceIdOf = (event: CalendarOccurrenceEvent) => {
   if (!event.conferenceUrl) return undefined;
 
   const path = event.conferenceUrl.replace(/^https?:\/\/[^/]+\/?/, '').split(/[?#]/)[0] ?? '';
@@ -64,14 +50,32 @@ const conferenceIdOf = (event: CalendarOccurrenceEvent) => {
   return segment && segment.length >= 4 ? segment.toLowerCase() : undefined;
 };
 
-const titlesDuring = (options: { blocks: readonly ActivityBlock[]; event: CalendarOccurrenceEvent }) =>
+/**
+ * The conferencing products the machine can tell apart, by the word both an application identifier and
+ * a conference link carry. A call held in one of these was not a meeting held in another, and that is
+ * the only way an application rules a candidate out.
+ *
+ * It names products, never the user's own applications or meetings: an identifier this does not know
+ * rules nothing out, which leaves every candidate standing.
+ */
+const CONFERENCE_SERVICES = ['meet', 'zoom', 'teams', 'discord', 'slack', 'webex', 'whereby', 'jitsi', 'gather'];
+
+const serviceIn = (value: string | undefined) => {
+  if (!value) return undefined;
+
+  const text = value.toLowerCase();
+
+  return CONFERENCE_SERVICES.find((service) => text.includes(service));
+};
+
+const titlesDuring = (options: { blocks: readonly ActivityBlock[]; window: { from: Date; to: Date } }) =>
   options.blocks
     .flatMap((block) => block.evidence)
     .filter(
       (entry) =>
         entry.kind === 'window-title' &&
-        entry.at.getTime() >= options.event.at.getTime() &&
-        entry.at.getTime() <= options.event.until.getTime(),
+        entry.at.getTime() >= options.window.from.getTime() &&
+        entry.at.getTime() <= options.window.to.getTime(),
     );
 
 /**
@@ -80,7 +84,46 @@ const titlesDuring = (options: { blocks: readonly ActivityBlock[]; event: Calend
  */
 const MIN_TITLE_MATCH_LENGTH = 6;
 
-const confirmingTitle = (options: { blocks: readonly ActivityBlock[]; event: CalendarOccurrenceEvent }) => {
+/** How sure the candidate picking is that this call was this occurrence. */
+export type CandidateMatch = 'certain' | 'likely';
+
+/** One calendar occurrence a call may have been, with what the machine saw of it. */
+export type CalendarCandidate = {
+  event: CalendarOccurrenceEvent;
+  /** How much of the call the occurrence covers. */
+  overlapMs: number;
+};
+
+/** The occurrence a call was, how sure that is, and the observation that decided it. */
+export type PickedCandidate = {
+  event: CalendarOccurrenceEvent;
+  match: CandidateMatch;
+  evidence: Evidence[];
+};
+
+/** Every occurrence that overlaps this window at all, longest overlap first. */
+export const candidatesFor = (options: {
+  occurrences: readonly CalendarOccurrenceEvent[];
+  window: { from: Date; to: Date };
+}): CalendarCandidate[] =>
+  options.occurrences
+    .flatMap((event) => {
+      const from = Math.max(event.at.getTime(), options.window.from.getTime());
+      const to = Math.min(event.until.getTime(), options.window.to.getTime());
+
+      return to > from ? [{ event, overlapMs: to - from }] : [];
+    })
+    .sort((left, right) => right.overlapMs - left.overlapMs);
+
+/**
+ * The window title seen during the call that names this occurrence and no other meeting: its
+ * conference id, or its own name when that is distinctive enough to mean something.
+ */
+const decisiveTitle = (options: {
+  blocks: readonly ActivityBlock[];
+  window: { from: Date; to: Date };
+  event: CalendarOccurrenceEvent;
+}) => {
   const conferenceId = conferenceIdOf(options.event);
   const title = options.event.title.toLowerCase();
   const matchesTitle = title.length >= MIN_TITLE_MATCH_LENGTH;
@@ -92,86 +135,6 @@ const confirmingTitle = (options: { blocks: readonly ActivityBlock[]; event: Cal
   });
 };
 
-const attendanceOf = (options: {
-  blocks: readonly ActivityBlock[];
-  event: CalendarOccurrenceEvent;
-  overlapMs: number;
-}): { attendance: MeetingAttendance; evidence?: Evidence } => {
-  const found = confirmingTitle(options);
-
-  if (found) return { attendance: 'confirmed', evidence: found };
-
-  return { attendance: options.overlapMs > 0 ? 'observed' : 'unobserved' };
-};
-
-/**
- * A key read out of the event's own name is as good as one read off a branch, so a confirmed meeting
- * on `FIP-2177 refinement` is `certain`. Everything else is a guess about which ticket a meeting
- * belongs to, however sure we are that it happened — and an invitation the user never answered is not
- * evidence they attended, whatever its title says.
- */
-const confidenceOf = (options: {
-  attendance: MeetingAttendance;
-  keySource: MeetingKeySource;
-  accepted: boolean;
-}): Confidence => {
-  const { attendance, keySource, accepted } = options;
-
-  if (!accepted) return attendance === 'confirmed' ? 'likely' : 'weak';
-  if (keySource === 'event-title') return attendance === 'confirmed' ? 'certain' : 'likely';
-
-  return attendance === 'confirmed' ? 'likely' : 'weak';
-};
-
-/**
- * The issue the user's own Tempo history says a commitment at this instant lands on, and nothing else.
- *
- * A call is named from this alone. A microphone that opened says a call happened, never which one, so
- * a call the history cannot place stays unattributed and the review asks about it.
- */
-export const patternIssueKey = (options: { at: Date; meetings: MeetingOptions }): NamedIssue | undefined => {
-  const { at, meetings } = options;
-  const pattern = meetings.patterns?.length ? patternAt({ patterns: meetings.patterns, at }) : undefined;
-
-  if (pattern) {
-    return {
-      issueKey: pattern.issueKey,
-      keySource: 'tempo-history',
-      evidence: {
-        kind: 'tempo-history',
-        at,
-        detail: `${pattern.issueKey} logged at this time on ${pattern.occurrences} earlier weeks`,
-      },
-    };
-  }
-
-  return undefined;
-};
-
-/**
- * The issue a meeting at this instant lands on when its own title names none: a standing pattern read
- * out of Tempo history, else the internal meetings issue.
- *
- * Only a meeting may fall back to that default. A calendar occurrence is a meeting by definition, so
- * naming it after the internal meetings issue is a statement about a known thing.
- */
-export const standingIssueKey = (options: { at: Date; meetings: MeetingOptions }): NamedIssue | undefined =>
-  patternIssueKey(options) ??
-  (options.meetings.defaultIssueKey ? { issueKey: options.meetings.defaultIssueKey, keySource: 'default' } : undefined);
-
-const resolveKey = (options: {
-  event: CalendarOccurrenceEvent;
-  config: GitFlowConfig;
-  meetings: MeetingOptions;
-}): NamedIssue | undefined => {
-  const { event, config, meetings } = options;
-  const titleKey = issueKeyInText({ text: event.title, config });
-
-  if (titleKey) return { issueKey: titleKey, keySource: 'event-title' };
-
-  return standingIssueKey({ at: event.at, meetings });
-};
-
 const calendarEvidence = (event: CalendarOccurrenceEvent): Evidence => ({
   kind: 'calendar',
   at: event.at,
@@ -181,61 +144,160 @@ const calendarEvidence = (event: CalendarOccurrenceEvent): Evidence => ({
   summary: event.title,
 });
 
-const matchOne = (options: {
-  event: CalendarOccurrenceEvent;
+/**
+ * Which of the day's meetings a call was, from the call itself.
+ *
+ * A window title seen while the call ran that names the occurrence, or its conference id, is decisive
+ * and returns `certain`. Otherwise the call's own application rules candidates out: a call held in a
+ * conferencing service was not a meeting held in a different one. One accepted candidate left returns
+ * `likely`, and anything else decides nothing, which leaves the call unnamed with its candidates
+ * still listed.
+ */
+export const pickCandidate = (options: {
+  call: CallWindow;
+  window: { from: Date; to: Date };
+  candidates: readonly CalendarCandidate[];
   blocks: readonly ActivityBlock[];
-  meetings: MeetingOptions;
-}): MeetingMatch => {
-  const { event, blocks, meetings } = options;
-  const config = meetings.config ?? DEFAULT_GIT_FLOW_CONFIG;
-  const window = { from: event.at, to: event.until };
-  const observed = blocks.reduce((sum, block) => sum + overlapMs({ block, window }), 0);
-  const { attendance, evidence } = attendanceOf({ blocks, event, overlapMs: observed });
-  const key = resolveKey({ event, config, meetings });
-  const evidenceChain = [
-    calendarEvidence(event),
-    ...(evidence ? [evidence] : []),
-    ...(key?.evidence ? [key.evidence] : []),
-  ];
+}): PickedCandidate | undefined => {
+  const { call, window, candidates, blocks } = options;
+
+  for (const candidate of candidates) {
+    const found = decisiveTitle({ blocks, window, event: candidate.event });
+
+    if (found)
+      return { event: candidate.event, match: 'certain', evidence: [calendarEvidence(candidate.event), found] };
+  }
+
+  // Only a call the machine can place in a conferencing product may rule anything out. A browser names
+  // no product, and a call in a browser could have been any of the candidates.
+  const service = serviceIn(call.appId);
+  const possible = service
+    ? candidates.filter((candidate) => {
+        const held = serviceIn(candidate.event.conferenceUrl);
+
+        return !held || held === service;
+      })
+    : [...candidates];
+  const accepted = possible.filter((candidate) => candidate.event.accepted);
+
+  if (accepted.length !== 1) return undefined;
+
+  const only = accepted[0] as CalendarCandidate;
 
   return {
-    event,
-    attendance,
-    keySource: key?.keySource,
-    overlapMs: observed,
-    group: {
-      issueKey: key?.issueKey,
-      from: event.at,
-      to: event.until,
-      // The calendar's own duration, never the time the collectors saw. Clipping a meeting to its
-      // observed samples loses almost all of it: the collectors are edge-triggered, so sitting in
-      // one Meet window for an hour emits a single focus event.
-      observedMs: event.until.getTime() - event.at.getTime(),
-      confidence: key ? confidenceOf({ attendance, keySource: key.keySource, accepted: event.accepted }) : 'weak',
-      evidence: evidenceChain,
-      blocks: [],
-      laneKey: MEETING_LANE_KEY,
-    },
+    event: only.event,
+    match: 'likely',
+    evidence: [
+      calendarEvidence(only.event),
+      {
+        kind: 'call',
+        at: window.from,
+        detail: `the only meeting you accepted over this call, ${timeOfDay(only.event.at)}-${timeOfDay(
+          only.event.until,
+        )}`,
+        summary: only.event.title,
+      },
+    ],
   };
 };
 
 /**
- * Turns calendar occurrences into reviewable rows of their own. A meeting is the one kind of work the
- * machine cannot observe directly — the evidence that it happened is the invitation, and the evidence
- * that the user attended is a window title naming the conference while it ran.
+ * The issue the user's own Tempo history says a commitment at this instant lands on, and nothing else.
  *
- * Rows come back in calendar order, and a meeting nothing could name an issue for comes back without
- * one, which lands it in the day's unattributed groups rather than on a guessed ticket.
+ * A call with no calendar candidate is named from this alone: a microphone that opened says a call
+ * happened, never which one, so a call the history cannot place stays unattributed and the review
+ * asks about it.
  */
-export const matchMeetings = (options: {
-  events: readonly CollectedEvent[];
-  blocks: readonly ActivityBlock[];
+export const patternIssueKey = (options: { at: Date; meetings: MeetingOptions }): NamedIssue | undefined => {
+  const { at, meetings } = options;
+  const pattern = meetings.patterns?.length ? patternAt({ patterns: meetings.patterns, at }) : undefined;
+
+  if (!pattern) return undefined;
+
+  return {
+    issueKey: pattern.issueKey,
+    keySource: 'tempo-history',
+    evidence: {
+      kind: 'tempo-history',
+      at,
+      detail: `${pattern.issueKey} logged at this time on ${pattern.occurrences} earlier weeks`,
+    },
+  };
+};
+
+/** The issue the user already answered for this occurrence's series, and the answer as evidence. */
+export const rememberedIssueKey = (options: {
+  event: CalendarOccurrenceEvent;
+  meetings: MeetingOptions;
+}): NamedIssue | undefined => {
+  const naming = namedIssueFor({ event: options.event, namings: options.meetings.namings ?? [] });
+
+  if (!naming) return undefined;
+
+  return {
+    issueKey: naming.issueKey,
+    keySource: 'remembered',
+    evidence: {
+      kind: 'calendar',
+      at: naming.createdAt,
+      detail: `you named _${naming.title}_ ${naming.issueKey}, and this is the same meeting`,
+      summary: naming.title,
+    },
+  };
+};
+
+/** A calendar occurrence the day observed no call for. It is a question the review asks, never a row. */
+export type UnobservedOccurrence = {
+  event: CalendarOccurrenceEvent;
+  /** The issue its own title or a remembered naming gives it, for the card to offer with one press. */
+  issueKey?: string;
+  keySource?: MeetingKeySource;
+};
+
+/**
+ * The occurrences no call was heard over.
+ *
+ * An invitation is an intention, and only the microphone records that a meeting happened, so one of
+ * these proposes no row. It becomes a question the day asks instead, which is also the honest answer
+ * for a meeting held in a room or on a telephone.
+ *
+ * Every call counts here, not only the ones a rule counted as work: a call the attendance gate
+ * dropped still says the user was in something at that hour.
+ */
+export const unobservedOccurrences = (options: {
+  occurrences: readonly CalendarOccurrenceEvent[];
+  calls: readonly CallWindow[];
   meetings?: MeetingOptions;
-}): MeetingMatch[] => {
+}): UnobservedOccurrence[] => {
   const meetings = options.meetings ?? {};
 
-  return options.events
-    .filter((event): event is CalendarOccurrenceEvent => event.kind === 'calendar-event')
-    .sort((a, b) => a.at.getTime() - b.at.getTime())
-    .map((event) => matchOne({ event, blocks: options.blocks, meetings }));
+  return options.occurrences
+    .filter(
+      (event) =>
+        !options.calls.some((call) =>
+          windowsOverlap({ from: call.from, to: call.to }, { from: event.at, to: event.until }),
+        ),
+    )
+    .map((event) => {
+      const key = occurrenceIssueKey({ event, meetings });
+
+      return { event, ...(key ? { issueKey: key.issueKey, keySource: key.keySource } : {}) };
+    });
+};
+
+/**
+ * The issue an occurrence names on its own: a key written into its title, else the answer the user
+ * already gave for its series. Tempo history is not read here — it names a time of day rather than a
+ * meeting, and a call is what asks it.
+ */
+export const occurrenceIssueKey = (options: {
+  event: CalendarOccurrenceEvent;
+  meetings: MeetingOptions;
+}): NamedIssue | undefined => {
+  const { event, meetings } = options;
+  const titleKey = issueKeyInText({ text: event.title, config: meetings.config ?? DEFAULT_GIT_FLOW_CONFIG });
+
+  if (titleKey) return { issueKey: titleKey, keySource: 'event-title' };
+
+  return rememberedIssueKey({ event, meetings });
 };

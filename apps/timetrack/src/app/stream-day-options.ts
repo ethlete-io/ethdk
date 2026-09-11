@@ -33,7 +33,7 @@ export const dayRowsOptionsOf = (options: {
     rules: settings.attributionRules,
     patterns: [...(options.patterns ?? [])],
     fill: { maxFillGapMs: settings.gapFillMs },
-    meetings: { defaultIssueKey: settings.meetingIssueKey || undefined },
+    meetings: { namings: settings.meetingNamings },
     noWorkContext: {
       apps: effectiveNoWorkContextApps(settings),
       workApps: [...settings.holdsWorkApps],

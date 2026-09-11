@@ -19,7 +19,6 @@ import {
   injectCodexSpendBackfill,
   injectGitCollector,
 } from '../../collectors';
-import { IssueSelectComponent } from '../jira';
 import { injectDayNudge } from '../day-nudge';
 import { injectWindowLock } from '../window-lock';
 import { AgentSessionResyncComponent } from './agent-session-resync.component';
@@ -268,15 +267,28 @@ window title, never a file path. A suggestion never syncs on its own.`;
                   <ethlete-explain [text]="MEETING_WHY" label="the meeting issue" />
                 </div>
 
-                <div class="flex max-w-100 flex-col gap-1">
-                  <span class="text-small text-et-surface-muted">Log a meeting nothing else names against</span>
-                  <ethlete-issue-select
-                    [value]="store.settings().meetingIssueKey"
-                    (valueChange)="store.setMeetingIssueKey($event)"
-                    placeholder="Leave it unattributed"
-                    ariaLabel="The issue a meeting is logged against"
-                  />
-                </div>
+                @if (store.settings().meetingNamings.length) {
+                  <ul class="flex max-w-150 list-none flex-col gap-1">
+                    @for (naming of store.settings().meetingNamings; track naming.seriesKey) {
+                      <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-small" data-meeting-naming>
+                        <span class="min-w-40 grow truncate">{{ naming.title }}</span>
+                        <span class="text-mono text-et-surface-muted">{{ naming.issueKey }}</span>
+                        <button
+                          (click)="store.forgetMeetingNaming(naming.seriesKey)"
+                          et-button
+                          variant="ghost"
+                          size="sm"
+                        >
+                          Forget
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <span class="text-small text-et-surface-subtle">
+                    Nothing yet. Name a meeting on a day and every later one of that series is named from your answer.
+                  </span>
+                }
               </div>
             </div>
           </et-tab>
@@ -475,7 +487,6 @@ window title, never a file path. A suggestion never syncs on its own.`;
     FavoriteProjectsComponent,
     GoogleConnectionComponent,
     INPUT_IMPORTS,
-    IssueSelectComponent,
     ProjectLinksComponent,
     RepoProjectsComponent,
     SWITCH_IMPORTS,

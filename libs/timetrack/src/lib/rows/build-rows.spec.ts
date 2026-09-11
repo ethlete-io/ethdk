@@ -83,16 +83,27 @@ describe('buildRows with a transient window over the work', () => {
     expect(laneKeys(rows)).not.toContain(`app:${POPUP}`);
   });
 
-  it('gives it no lane when a meeting runs over it either', () => {
+  it('gives it no lane when a call over a meeting runs over it either', () => {
+    const rows = buildRows({
+      blocks: [block({ from: at(10, 10), to: at(10, 11), context: { appId: POPUP } })],
+      events: [OCCURRENCE],
+      calls: [HUDDLE],
+      noWorkContext: { transientApps: [POPUP] },
+    });
+
+    expect(rows.calls[0]?.meeting?.event.title).toBe('weekly');
+    expect(laneKeys(rows)).not.toContain(`app:${POPUP}`);
+  });
+
+  it('asks about the meeting rather than billing it when no call was heard', () => {
     const rows = buildRows({
       blocks: [block({ from: at(10, 10), to: at(10, 11), context: { appId: POPUP } })],
       events: [OCCURRENCE],
       noWorkContext: { transientApps: [POPUP] },
-      meetings: { defaultIssueKey: 'ABC-1' },
     });
 
-    expect(rows.meetings).toHaveLength(1);
-    expect(laneKeys(rows)).not.toContain(`app:${POPUP}`);
+    expect(rows.unobserved.map((entry) => entry.event.title)).toEqual(['weekly']);
+    expect(rows.calls).toEqual([]);
   });
 
   it('gives it no lane when a timer runs over it either', () => {

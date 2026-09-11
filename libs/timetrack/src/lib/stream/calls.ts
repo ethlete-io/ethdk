@@ -1,6 +1,6 @@
 import { CallWindow } from '../model/call';
-import { CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
-import { TimeWindow, clipWindows, windowsMs } from '../model/time-window';
+import { CalendarOccurrenceEvent, CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
+import { TimeWindow, clipWindows, windowsMs, windowsOverlap } from '../model/time-window';
 import { TimetrackCallRules } from '../settings/model';
 
 export type ClassifyCallsOptions = {
@@ -17,7 +17,8 @@ export type ClassifyCallsOptions = {
   glueMs?: number;
   /**
    * How long the call's own application must hold the focus inside the call before the call can count
-   * as work. Defaults to {@link DEFAULT_MIN_ATTENDED_MS}.
+   * as work. Defaults to {@link DEFAULT_MIN_ATTENDED_MS}. A call over a meeting the user accepted is
+   * not held to it.
    */
   minAttendedMs?: number;
 };
@@ -188,6 +189,9 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
 
   const held = focusHeld(focus, options.until);
   const minAttendedMs = options.minAttendedMs ?? DEFAULT_MIN_ATTENDED_MS;
+  const invited = options.events.filter(
+    (event): event is CalendarOccurrenceEvent => event.kind === 'calendar-event' && event.accepted,
+  );
 
   const toWindow = (call: PairedCall): CallWindow => {
     const title = titleAt(focus, { appId: call.appId, at: call.from });
@@ -195,13 +199,18 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     // A day with no window-focus event at all cannot be judged on attendance, and must not be gated on
     // it: a platform whose window source is off would otherwise lose every call it ever recorded.
     const readable = focus.length > 0;
+    // A meeting the user accepted over the same minutes is the evidence the focus gate stands in for,
+    // so it is read instead of the gate. Without this a meeting the user only listened to is dropped,
+    // and after the calendar stopped proposing rows of its own nothing else would propose it.
+    const expected = invited.some((event) => windowsOverlap(call, { from: event.at, to: event.until }));
 
     return {
       ...call,
       title,
       attendedMs: attended,
       countsAsWork:
-        (!readable || attended >= minAttendedMs) && countsAsWork(options.rules, { appId: call.appId, title }),
+        (!readable || expected || attended >= minAttendedMs) &&
+        countsAsWork(options.rules, { appId: call.appId, title }),
     };
   };
 
