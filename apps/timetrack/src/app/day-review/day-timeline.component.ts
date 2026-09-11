@@ -247,6 +247,15 @@ type RowDrag = {
                         </ng-template>
                       }
 
+                      @for (swap of swapsIn(laid.block.node.appointment); track swap.offset) {
+                        <span
+                          [style.top.%]="swap.offset"
+                          [title]="swap.detail"
+                          class="absolute inset-x-0 border-t border-dashed border-t-et-theme"
+                          data-swap
+                        ></span>
+                      }
+
                       @if (labelled(laid.block.span)) {
                         <span class="block truncate">{{ LABEL_OF(laid.block.node.appointment) }}</span>
                       }
@@ -541,6 +550,23 @@ export class DayTimelineComponent {
 
   protected rowOf(appointment: Appointment<TimelineEntry>) {
     return rowEntryOf(appointment)?.row ?? null;
+  }
+
+  /**
+   * Where a band's own checkout swapped branch, as a percent of the band's height. The instant is the
+   * one the swap was observed at, while the band is drawn on the increment its row snapped to, so the
+   * mark says where the work changed hands and not where a row starts.
+   */
+  protected swapsIn(appointment: Appointment<TimelineEntry>) {
+    const row = this.rowOf(appointment);
+    const span = row ? row.to.getTime() - row.from.getTime() : 0;
+
+    if (!row || span <= 0) return [];
+
+    return row.evidence
+      .filter((entry) => entry.kind === 'branch-swap')
+      .map((entry) => ({ detail: entry.detail, offset: ((entry.at.getTime() - row.from.getTime()) / span) * 100 }))
+      .filter((swap) => swap.offset > 0 && swap.offset < 100);
   }
 
   protected marks(appointment: Appointment<TimelineEntry>) {

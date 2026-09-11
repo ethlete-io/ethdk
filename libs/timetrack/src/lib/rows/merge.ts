@@ -1,4 +1,5 @@
 import { ActivityBlock, blockDurationMs, contextKey, streamKey } from '../model/block';
+import { formatDurationMs } from '../model/duration';
 import { Confidence, Evidence, compareConfidence } from '../model/evidence';
 import { TimeWindow } from '../model/time-window';
 import { AttributedBlock } from './attribute';
@@ -108,17 +109,40 @@ const groupFrom = (attributed: AttributedBlock): WorkGroup => ({
   blocks: [attributed.block],
 });
 
-const join = (into: WorkGroup, next: WorkGroup): WorkGroup => ({
-  ...into,
-  storyKey: into.storyKey ?? next.storyKey,
-  taskKey: into.taskKey ?? next.taskKey,
-  from: into.from <= next.from ? into.from : next.from,
-  to: into.to >= next.to ? into.to : next.to,
-  observedMs: into.observedMs + next.observedMs,
-  confidence: dominantConfidence([into, next]),
-  evidence: mergeEvidence([into.evidence, next.evidence]),
-  blocks: [...into.blocks, ...next.blocks],
-});
+const branchOf = (group: WorkGroup) => group.blocks.find((block) => block.context.branch)?.context.branch;
+
+/**
+ * What a row says when it takes the stretch its own checkout worked before anything could name it.
+ * The band books time nothing named on its own, so the chain carries how much it was and where it
+ * came from, and the day screen draws a mark at `at`.
+ */
+const swapEvidence = (unnamed: WorkGroup, named: WorkGroup): Evidence => {
+  const left = branchOf(unnamed);
+  const entered = branchOf(named);
+
+  return {
+    kind: 'branch-swap',
+    at: named.from,
+    detail: `${formatDurationMs(unnamed.observedMs)} ${left ? `on \`${left}\`` : 'in this checkout'} before it swapped to ${entered ? `\`${entered}\`` : named.issueKey}`,
+  };
+};
+
+const join = (into: WorkGroup, next: WorkGroup): WorkGroup => {
+  const swapped = !into.issueKey && !!next.issueKey;
+
+  return {
+    ...into,
+    issueKey: into.issueKey ?? next.issueKey,
+    storyKey: into.storyKey ?? next.storyKey,
+    taskKey: into.taskKey ?? next.taskKey,
+    from: into.from <= next.from ? into.from : next.from,
+    to: into.to >= next.to ? into.to : next.to,
+    observedMs: into.observedMs + next.observedMs,
+    confidence: dominantConfidence([into, next]),
+    evidence: mergeEvidence([into.evidence, next.evidence, swapped ? [swapEvidence(into, next)] : []]),
+    blocks: [...into.blocks, ...next.blocks],
+  };
+};
 
 /**
  * Which row a block continues: the issue a rule named, or the context behind a block nothing could
@@ -140,12 +164,13 @@ const trackOf = (group: WorkGroup) => {
  * The checkout an unnamed band belongs to, which is the lane it is drawn in. A named band has none:
  * its issue is its track, and reaching across a checkout would join two lanes into one row.
  */
-const streamOf = (group: WorkGroup) => {
+const streamOf = (group: WorkGroup) => (group.issueKey ? undefined : checkoutOf(group));
+
+/** The checkout behind a band, whether or not anything has named the band's work. */
+const checkoutOf = (group: WorkGroup) => {
   const context = group.blocks[0]?.context;
 
-  if (group.issueKey || !context?.repoPath) return undefined;
-
-  return streamKey(context);
+  return context?.repoPath ? streamKey(context) : undefined;
 };
 
 /** Whether no block behind a band names a branch, which is what lets another branch continue it. */
@@ -201,6 +226,10 @@ const joinable = (options: { joined: WorkGroup; gap: TimeWindow; pass: PassOptio
  * and a named branch continues a band of the same checkout that named none: an unknown branch is not
  * another branch. A focus flash into the editor reports no branch at all, so without this the same
  * checkout's own work is two tracks and the flash can never rejoin it.
+ *
+ * An issue the day can name also continues the unnamed band of its own checkout, which is the branch
+ * somebody worked on before they created the one that names the issue. Only in that direction: a
+ * named band is continued by its own issue alone, so no key ever takes another key's minutes.
  */
 const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOptions) => {
   const { ordered, ...pass } = options;
@@ -214,11 +243,12 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
 
     if (at !== undefined) return at;
 
-    const stream = streamOf(group);
+    const stream = checkoutOf(group);
     const streamAt = stream === undefined ? undefined : lastOfStream.get(stream);
     const candidate = streamAt === undefined ? undefined : rows[streamAt];
 
-    if (!candidate) return undefined;
+    if (!candidate || candidate.issueKey) return undefined;
+    if (group.issueKey) return streamAt;
 
     return branchless(group) || branchless(candidate) ? streamAt : undefined;
   };

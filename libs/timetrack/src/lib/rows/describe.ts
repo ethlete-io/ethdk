@@ -31,8 +31,20 @@ const summariesOf = (group: WorkGroup, kind: EvidenceKind) => {
   return found;
 };
 
+/**
+ * The branch that describes the row, which is the one naming its issue where a swap left two behind.
+ * The first block's branch is where a checkout started, and that is what it left rather than did.
+ */
+const branchOf = (group: WorkGroup, config: GitFlowConfig) => {
+  const branches = group.blocks.flatMap((block) => (block.context.branch ? [block.context.branch] : []));
+
+  if (!group.issueKey) return branches[0];
+
+  return branches.find((branch) => parseBranch({ branch, config }).issueKey === group.issueKey) ?? branches[0];
+};
+
 const fromBranch = (group: WorkGroup, config: GitFlowConfig) => {
-  const branch = group.blocks.find((block) => block.context.branch)?.context.branch;
+  const branch = branchOf(group, config);
 
   if (!branch) return undefined;
 

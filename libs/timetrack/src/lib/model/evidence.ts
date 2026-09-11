@@ -1,6 +1,8 @@
 export type EvidenceKind =
   | 'branch'
   | 'inherited-branch'
+  /** An unnamed stretch of a checkout, folded into the branch it swapped to with no break between. */
+  | 'branch-swap'
   | 'commit'
   | 'agent-session'
   /** A prompt the user typed at an agent. It carries no text, so its instant is the whole observation. */

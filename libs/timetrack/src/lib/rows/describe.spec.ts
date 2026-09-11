@@ -81,6 +81,19 @@ describe('describeWork', () => {
     expect(text).toBe('user management');
   });
 
+  it('reads the branch that names the row, not the one its checkout started on', () => {
+    const swapped = group({ issueKey: 'FIP-2177', branch: 'next' });
+
+    swapped.blocks.push({
+      from: AT,
+      to: AT,
+      context: { branch: 'feat/FIP-2177-user-management' },
+      evidence: [],
+    });
+
+    expect(describeWork({ group: swapped, config: FIP })).toBe('user management');
+  });
+
   it('uses the whole branch name when the grammar finds no subject', () => {
     const text = describeWork({ group: group({ branch: 'main' }), config: FIP });
 

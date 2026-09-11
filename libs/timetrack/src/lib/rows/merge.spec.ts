@@ -59,6 +59,54 @@ describe('mergeBlocks', () => {
     expect(rows[1]?.observedMs).toBe(2 * 60_000);
   });
 
+  it('gives the unnamed work of a checkout to the branch it swapped to', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 30, repoPath: '/dev/app', branch: 'next' }),
+        attributed({
+          fromMinute: 30,
+          toMinute: 60,
+          repoPath: '/dev/app',
+          branch: 'feat/FIP-2177',
+          issueKey: 'FIP-2177',
+        }),
+      ],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.issueKey).toBe('FIP-2177');
+    expect(rows[0]?.observedMs).toBe(60 * 60_000);
+    expect(rows[0]?.evidence.map((entry) => entry.kind)).toContain('branch-swap');
+  });
+
+  it('leaves the two rows alone when each branch names an issue of its own', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 30, repoPath: '/dev/app', branch: 'feat/FIP-1', issueKey: 'FIP-1' }),
+        attributed({ fromMinute: 30, toMinute: 60, repoPath: '/dev/app', branch: 'feat/FIP-2', issueKey: 'FIP-2' }),
+      ],
+    });
+
+    expect(rows.map((row) => row.issueKey)).toEqual(['FIP-1', 'FIP-2']);
+  });
+
+  it('leaves the unnamed work of another checkout alone', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 30, repoPath: '/dev/other', branch: 'next' }),
+        attributed({
+          fromMinute: 30,
+          toMinute: 60,
+          repoPath: '/dev/app',
+          branch: 'feat/FIP-2177',
+          issueKey: 'FIP-2177',
+        }),
+      ],
+    });
+
+    expect(rows.map((row) => row.issueKey)).toEqual([undefined, 'FIP-2177']);
+  });
+
   it('does not merge the same issue across a gap wider than the threshold', () => {
     const rows = mergeBlocks({
       blocks: [
