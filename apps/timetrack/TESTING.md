@@ -20,13 +20,14 @@ in-memory fakes. There is no Tauri, no network and no keychain in that run. Ever
 To look at the fake app yourself, run `npx nx serve timetrack-app --configuration=e2e` and open
 `http://localhost:4211`.
 
-**Pass:** 1481 unit tests and 122 e2e tests pass.
+**Pass:** 1510 unit tests and 146 e2e tests pass.
 
 The e2e suite covers the day reconstruction, the unnamed-work card, the create-ticket draft, the row a
 reviewer adds by hand, the meeting the calendar named and no call was heard over, the sync preview
-against time already in Tempo, the week view reading that time back, the branch repair and the
-start-work plan. It does not cover any pointer gesture on the timeline or the agent call. Those still
-need sections 5, 6 and 17.
+against time already in Tempo, the week view reading that time back, the branch repair, the start-work
+plan, and the marking of a run of bands for a merge together with the cursor each zone of the grid
+wears. It does not cover a drawn range, a dragged band or the agent call. Those still need sections 5,
+6 and 17.
 
 ## 1. Start the app
 

@@ -7,6 +7,7 @@ import {
   computed,
   inject,
   input,
+  linkedSignal,
   output,
   signal,
   viewChild,
@@ -14,6 +15,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   Appointment,
+  BUTTON_IMPORTS,
   MENU_IMPORTS,
   SCHEDULER_IMPORTS,
   SchedulerAppointmentDragMode,
@@ -30,9 +32,12 @@ import { BREAK_LANE_KEY, BreakBand, DayLane, lanesOf, laneKeyOfRow } from './lan
 import { TimelineEntry, UNNAMED_LABEL, appointmentLabel, appointmentOf, rowEntryOf } from './row-edit/row-appointment';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 
-/** Whether the click asked to mark the band rather than to open it. */
-const withModifier = (event: Event) =>
-  event instanceof MouseEvent && (event.ctrlKey || event.metaKey || event.shiftKey);
+const markIntentOf = (event: Event) => {
+  if (!(event instanceof MouseEvent)) return 'open';
+  if (event.shiftKey) return 'extend';
+
+  return event.ctrlKey || event.metaKey ? 'toggle' : 'open';
+};
 
 /** Two rows that meet at one instant. Dragging that instant is what places a cut exactly. */
 export type TimelineBoundary = { id: string; before: ReviewedRow; after: ReviewedRow };
@@ -93,6 +98,14 @@ const DEFAULT_DRAFT_MS = 4 * SNAP_MS;
 const EDGE_FRACTION = 0.25;
 const MAX_EDGE_PX = 12;
 
+type Marking = {
+  ids: ReadonlySet<string>;
+  /** The row an extend measures its run from: the last one a modifier-click marked. */
+  anchor: string | null;
+};
+
+const NOTHING_MARKED: Marking = { ids: new Set(), anchor: null };
+
 type RowDrag = {
   row: ReviewedRow;
   mode: SchedulerAppointmentDragMode;
@@ -120,10 +133,25 @@ type RowDrag = {
       [appointments]="appointments()"
       [focusedDate]="focusedDate()"
       (appointmentReschedule)="reschedule($event)"
-      class="flex min-h-0 grow flex-col"
+      class="relative flex min-h-0 grow flex-col"
       etScheduler
       view="day"
     >
+      @if (markedCount(); as count) {
+        <div
+          class="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-md border border-et-surface-border bg-et-surface-bg px-3 py-2 text-small shadow-lg"
+          data-marked-bar
+        >
+          <span>{{ count }} marked for a merge</span>
+
+          @if (count > 1) {
+            <button (click)="mergeMarked()" et-button variant="outline" size="sm">Merge into one row</button>
+          }
+
+          <button (click)="clearMarks()" et-button variant="transparent" size="sm">Clear</button>
+        </div>
+      }
+
       <div #body #grid="etSchedulerTimeGrid" class="min-h-0 grow overflow-auto pb-6" etSchedulerTimeGrid>
         <div class="min-w-max">
           <div class="sticky top-0 z-20 flex bg-et-surface-bg">
@@ -152,7 +180,7 @@ type RowDrag = {
                   [style.width.%]="entry.inlineSize"
                   [title]="entry.node.appointment.title"
                   (click)="select(entry.node.appointment, $event)"
-                  class="absolute flex items-center gap-2 truncate rounded-sm border-l-2 border-l-et-theme bg-et-theme/10 px-2 text-left text-small"
+                  class="absolute flex cursor-pointer items-center gap-2 truncate rounded-sm border-l-2 border-l-et-theme bg-et-theme/10 px-2 text-left text-small outline-none hover:bg-et-theme/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink"
                   style="height: 1.6rem"
                   type="button"
                 >
@@ -181,10 +209,11 @@ type RowDrag = {
               @for (lane of lanes(); track lane.key) {
                 <div
                   #column
+                  [attr.data-drawable]="drawable(lane) || null"
                   [style.flexGrow]="growOf(lane)"
                   [style.minWidth.rem]="minRemOf(lane)"
                   (pointerdown)="startDraw({ event: $event, column, lane })"
-                  class="relative basis-0 touch-none border-l border-et-surface-border"
+                  class="relative basis-0 touch-none border-l border-et-surface-border data-[drawable]:cursor-cell"
                   data-lane
                 >
                   @if (draftIn(lane); as draft) {
@@ -225,19 +254,23 @@ type RowDrag = {
                       (pointerdown)="startDrag({ event: $event, appointment: laid.block.node.appointment, column })"
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
-                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset"
                       etMenu
                       etMenuContextTrigger
                       role="button"
                       tabindex="0"
                     >
                       @if (rowOf(laid.block.node.appointment); as row) {
+                        @if (isMarked(row)) {
+                          <span class="sr-only">Marked for a merge</span>
+                        }
+
                         <ng-template etMenuSurface>
                           <et-menu>
                             <button (click)="rowHide.emit(row)" et-menu-item type="button">Hide this row</button>
                             <button (click)="splitInHalf(row)" et-menu-item type="button">Split in half</button>
 
-                            @if (markedCount() > 1) {
+                            @if (isMarked(row) && markedCount() > 1) {
                               <et-menu-separator />
                               <button (click)="mergeMarked()" et-menu-item type="button">
                                 Merge the {{ markedCount() }} marked rows
@@ -246,6 +279,19 @@ type RowDrag = {
                           </et-menu>
                         </ng-template>
                       }
+
+                      <!-- These carry the resize cursor over the zone modeAt reads as an end, and nothing
+                      else: the press is handled on the band, so they must let it through. -->
+                      <span
+                        [style.height.%]="EDGE_PERCENT"
+                        [style.maxHeight.px]="MAX_EDGE_PX"
+                        class="absolute inset-x-0 top-0 cursor-ns-resize"
+                      ></span>
+                      <span
+                        [style.height.%]="EDGE_PERCENT"
+                        [style.maxHeight.px]="MAX_EDGE_PX"
+                        class="absolute inset-x-0 bottom-0 cursor-ns-resize"
+                      ></span>
 
                       @for (swap of swapsIn(laid.block.node.appointment); track swap.offset) {
                         <span
@@ -299,8 +345,8 @@ type RowDrag = {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [MENU_IMPORTS, ProvideColorDirective, SCHEDULER_IMPORTS],
-  host: { class: 'flex min-h-0 flex-col' },
+  imports: [BUTTON_IMPORTS, MENU_IMPORTS, ProvideColorDirective, SCHEDULER_IMPORTS],
+  host: { class: 'flex min-h-0 flex-col', '(keydown.escape)': 'clearMarks()' },
 })
 export class DayTimelineComponent {
   private destroyRef = inject(DestroyRef);
@@ -330,8 +376,11 @@ export class DayTimelineComponent {
   public grid = viewChild(SchedulerTimeGridDirective);
   private scheduler = viewChild.required<SchedulerDirective<TimelineEntry>>(SchedulerDirective);
 
-  /** The rows a modifier-click marked, by id. A plain click anywhere on a band clears them. */
-  private marked = signal<ReadonlySet<string>>(new Set());
+  /**
+   * The bands marked for a merge. A plain click anywhere on a band clears them, and so does a step to
+   * another day: the ids belong to one day's rows and name nothing on the next.
+   */
+  private marking = linkedSignal<Date, Marking>({ source: this.focusedDate, computation: () => NOTHING_MARKED });
 
   /** The instant a boundary is being dragged to, until the pointer settles on it. */
   private boundaryDrag = signal<{ boundary: TimelineBoundary; at: Date } | null>(null);
@@ -344,6 +393,8 @@ export class DayTimelineComponent {
 
   protected readonly HOUR_REM = HOUR_REM;
   protected readonly STRIP_ROW_REM = STRIP_ROW_REM;
+  protected readonly EDGE_PERCENT = EDGE_FRACTION * 100;
+  protected readonly MAX_EDGE_PX = MAX_EDGE_PX;
   protected readonly HOURS = Array.from({ length: 25 }, (_, hour) => hour);
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
@@ -462,9 +513,11 @@ export class DayTimelineComponent {
    * issue, description and lane — which is what `mergeRows` reads off the first row it is given.
    */
   private markedRows = computed(() => {
-    const ids = this.marked();
+    const { ids } = this.marking();
 
-    return this.rows().filter((row) => ids.has(row.id));
+    return this.rows()
+      .filter((row) => ids.has(row.id))
+      .sort((a, b) => a.from.getTime() - b.from.getTime());
   });
 
   protected markedCount = computed(() => this.markedRows().length);
@@ -497,6 +550,11 @@ export class DayTimelineComponent {
 
   protected detailed(span: number) {
     return remOf(span) >= DETAIL_MIN_REM;
+  }
+
+  /** Whether a press on the lane draws a range. The break lane holds no work, so it draws none. */
+  protected drawable(lane: DayLane) {
+    return lane.key !== BREAK_LANE_KEY;
   }
 
   protected boundariesIn(lane: DayLane) {
@@ -595,20 +653,25 @@ export class DayTimelineComponent {
     const entry = appointment.extra;
     const origin = event.currentTarget as HTMLElement;
 
-    if (entry?.kind === 'row' && withModifier(event)) {
-      this.toggleMark(entry.row);
+    if (entry?.kind === 'row') {
+      const intent = markIntentOf(event);
 
-      return;
+      if (intent === 'toggle') return this.toggleMark(entry.row);
+      if (intent === 'extend') return this.extendMark(entry.row);
     }
 
-    this.marked.set(new Set());
+    this.clearMarks();
 
     if (entry?.kind === 'row') this.openFor(entry.row, origin);
     else if (entry?.kind === 'story') this.openFirstUnder(entry.issueKey, origin);
   }
 
-  public isMarked(row: ReviewedRow) {
-    return this.marked().has(row.id);
+  protected isMarked(row: ReviewedRow) {
+    return this.marking().ids.has(row.id);
+  }
+
+  protected clearMarks() {
+    this.marking.set(NOTHING_MARKED);
   }
 
   protected mergeMarked() {
@@ -616,7 +679,7 @@ export class DayTimelineComponent {
 
     if (rows.length < 2) return;
 
-    this.marked.set(new Set());
+    this.clearMarks();
     this.rowsMerge.emit(rows);
   }
 
@@ -672,7 +735,7 @@ export class DayTimelineComponent {
   protected startDraw(options: { event: PointerEvent; column: HTMLElement; lane: DayLane }) {
     const { event, column, lane } = options;
 
-    if (event.button !== 0 || lane.key === BREAK_LANE_KEY) return;
+    if (event.button !== 0 || !this.drawable(lane)) return;
 
     this.drawLane.set(lane.key);
 
@@ -778,13 +841,33 @@ export class DayTimelineComponent {
   }
 
   private toggleMark(row: ReviewedRow) {
-    this.marked.update((ids) => {
+    this.marking.update(({ ids }) => {
       const next = new Set(ids);
 
       if (!next.delete(row.id)) next.add(row.id);
 
-      return next;
+      return { ids: next, anchor: next.has(row.id) ? row.id : null };
     });
+  }
+
+  /**
+   * Marks the run of bands from the last one marked through the one clicked, inside the lane the two
+   * share. Across two lanes the bands between them are another checkout's work, so a shift-click in
+   * a lane the anchor is not in marks the band it landed on and nothing else.
+   */
+  private extendMark(row: ReviewedRow) {
+    const { ids, anchor } = this.marking();
+    const lane = this.rows()
+      .filter((other) => laneKeyOfRow(other) === laneKeyOfRow(row))
+      .sort((a, b) => a.from.getTime() - b.from.getTime());
+    const from = lane.findIndex((other) => other.id === anchor);
+    const to = lane.findIndex((other) => other.id === row.id);
+
+    if (from === -1 || to === -1) return this.toggleMark(row);
+
+    const run = lane.slice(Math.min(from, to), Math.max(from, to) + 1);
+
+    this.marking.set({ ids: new Set([...ids, ...run.map((other) => other.id)]), anchor });
   }
 
   private openFor(row: ReviewedRow, origin: HTMLElement) {
