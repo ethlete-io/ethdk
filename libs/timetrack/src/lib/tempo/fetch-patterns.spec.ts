@@ -45,6 +45,14 @@ const patternTransport = (options: { worklogs?: unknown[]; issuesById?: unknown[
   return { transport, requests };
 };
 
+const readHistory = (source: Observable<TempoHistory>) => {
+  let history: TempoHistory = { patterns: [], loggedIssues: [] };
+
+  source.subscribe((value) => (history = value));
+
+  return history;
+};
+
 const readInto = (source: Observable<RecurringPattern[]>) => {
   let patterns: RecurringPattern[] = [];
 
@@ -113,20 +121,16 @@ describe('fetchTempoHistory$', () => {
       ],
     });
 
-    let history: TempoHistory | null = null;
+    const history = readHistory(fetchTempoHistory$({ transport, jira: JIRA, tempo: TEMPO, until: UNTIL }));
 
-    fetchTempoHistory$({ transport, jira: JIRA, tempo: TEMPO, until: UNTIL }).subscribe((value) => (history = value));
-
-    expect(history?.loggedIssues.map((issue) => issue.issueKey)).toEqual(['ET-772', 'BD-2049']);
+    expect(history.loggedIssues.map((issue) => issue.issueKey)).toEqual(['ET-772', 'BD-2049']);
     expect(requests.filter((request) => request.url.includes('/worklogs/user/'))).toHaveLength(1);
   });
 
   it('names nothing when the history is empty, and asks Jira nothing either', () => {
     const { transport } = patternTransport();
 
-    let history: TempoHistory | null = null;
-
-    fetchTempoHistory$({ transport, jira: JIRA, tempo: TEMPO, until: UNTIL }).subscribe((value) => (history = value));
+    const history = readHistory(fetchTempoHistory$({ transport, jira: JIRA, tempo: TEMPO, until: UNTIL }));
 
     expect(history).toEqual({ patterns: [], loggedIssues: [] });
   });
