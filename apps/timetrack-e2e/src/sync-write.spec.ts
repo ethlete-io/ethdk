@@ -28,7 +28,12 @@ test.describe('writing the day to tempo', () => {
       { kind: 'create', worklogId: expect.any(String), issueId: E2E_ISSUE_ID, timeSpentSeconds: 5400 },
     ]);
     expect(backend.tempo.worklogs).toEqual([
-      expect.objectContaining({ issueId: E2E_ISSUE_ID, startDate: '2026-08-12', timeSpentSeconds: 5400 }),
+      expect.objectContaining({
+        issueId: E2E_ISSUE_ID,
+        startDate: '2026-08-12',
+        startTime: '09:00:00',
+        timeSpentSeconds: 5400,
+      }),
     ]);
   });
 
