@@ -719,7 +719,9 @@ Deduplicated across all 22 batches; several batches independently proposed the s
 11. **Comment-policy cleanup where it is dense** (table — 34 % of non-spec TS — plus carousel, grid,
     bracket, calendar, scheduler, selection-controls). Not urgent, except the comments the scan proved
     _wrong_: the table keyboard-nav comment, the cascader column comment, `pruneEmptyInline`'s "three
-    inline tags", the control-suffix spec comment. Fix those with whatever change touches the file. M
+    inline tags", the control-suffix spec comment. Fix those with whatever change touches the file. M — **Wrong comments DONE 2026-09-12**: the table keyboard-nav comment went in
+    `chore(components): Drop the table keyboard-nav comment the code outgrew`; the RTE, control-suffix and
+    cascader ones were already removed by `56d0d3ddb`. The density pass stays opportunistic.
 12. **Docs corrections** (~40 across batches): option tables omitting real inputs (select, cascader,
     date-time, otp, tag, dropzone, slider), token tables missing live tokens, the bracket migration row
     pointing at an unexported symbol, `match.md`'s `NormalizedMatch` snippet, and the pages that state
