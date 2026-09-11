@@ -284,3 +284,67 @@ describe('mergeBlocks across a break', () => {
     expect(mergeBlocks({ blocks: work, barriers: [{ from: AT(0), to: AT(20) }] })).toHaveLength(1);
   });
 });
+
+describe('mergeBlocks and a sliver', () => {
+  it('folds the focus flashes of one lane into the band they belong to', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 0.1, confidence: 'weak', repoPath: '/a' }),
+        attributed({ fromMinute: 6, toMinute: 6.1, confidence: 'weak', repoPath: '/a' }),
+        attributed({ fromMinute: 8, toMinute: 23, confidence: 'weak', repoPath: '/a' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.from).toEqual(AT(0));
+    expect(rows[0]?.observedMs).toBe(15.2 * 60_000);
+  });
+
+  it('leaves the one short touch of a lane that holds nothing else', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 0.5, confidence: 'weak', repoPath: '/a' }),
+        attributed({ fromMinute: 8, toMinute: 23, confidence: 'weak', repoPath: '/b' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.observedMs).toBe(0.5 * 60_000);
+  });
+
+  it('leaves a sliver an hour away from the work of its own lane', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 0.5, confidence: 'weak', repoPath: '/a' }),
+        attributed({ fromMinute: 120, toMinute: 150, confidence: 'weak', repoPath: '/a' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(2);
+  });
+});
+
+describe('mergeBlocks and an unobserved branch', () => {
+  it('continues the checkout it belongs to, whatever branch the band names', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 20, confidence: 'weak', repoPath: '/a' }),
+        attributed({ fromMinute: 20, toMinute: 40, confidence: 'weak', repoPath: '/a', branch: 'feat/x' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.observedMs).toBe(40 * 60_000);
+  });
+
+  it('keeps two branches the day did observe apart', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 20, confidence: 'weak', repoPath: '/a', branch: 'feat/x' }),
+        attributed({ fromMinute: 20, toMinute: 40, confidence: 'weak', repoPath: '/a', branch: 'feat/y' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(2);
+  });
+});
