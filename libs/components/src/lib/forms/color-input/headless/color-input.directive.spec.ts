@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { pressKey } from '../../../testing/driver-core';
 import { ColorInputDriver, mountColorInput } from '../../testing/color-input-driver';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
@@ -85,6 +86,21 @@ class ColorInputComponentTestHost {
   mixed = signal(false);
   notations = signal<readonly ColorNotation[]>(COLOR_NOTATION_ORDER);
 }
+
+@Component({
+  template: `
+    <div etColorInput>
+      <button class="open-picker" etColorPickerTrigger>open</button>
+
+      <ng-template etColorPickerSurface>
+        <button class="first-control" type="button">first</button>
+        <button class="last-control" type="button">last</button>
+      </ng-template>
+    </div>
+  `,
+  imports: [ColorInputDirective, ColorPickerSurfaceDirective, ColorPickerTriggerDirective],
+})
+class ColorInputTabOutTestHost {}
 
 describe('ColorInputDirective', () => {
   describe('inside form field', () => {
@@ -470,6 +486,65 @@ describe('ColorInputDirective', () => {
 
       expect(driver.host.value()).toBe('#3366ff');
       expect(driver.hexValue()).toBe('#3366ff');
+    });
+  });
+  describe('tabbing out of the panel', () => {
+    let driver: ColorInputDriver<ColorInputTabOutTestHost>;
+
+    const firstControl = () => driver.paneEl<HTMLButtonElement>('.first-control')!;
+    const lastControl = () => driver.paneEl<HTMLButtonElement>('.last-control')!;
+
+    beforeEach(() => {
+      // jsdom lays nothing out, and `getFocusableElements` reads a client rect to tell a rendered
+      // control apart from a hidden one
+      vi.spyOn(Element.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
+      driver = mountColorInput(ColorInputTabOutTestHost, { triggerSelector: '.open-picker' });
+    });
+
+    afterEach(async () => {
+      await driver.close();
+      vi.restoreAllMocks();
+    });
+
+    it('closes the picker on a Tab past the last control', async () => {
+      await driver.open();
+      lastControl().focus();
+      pressKey(lastControl(), 'Tab');
+
+      await driver.settle();
+
+      expect(driver.colorInput.pickerOpen()).toBe(false);
+    });
+
+    it('closes the picker on a Shift+Tab off the first control', async () => {
+      await driver.open();
+      firstControl().focus();
+      pressKey(firstControl(), 'Tab', { shiftKey: true });
+
+      await driver.settle();
+
+      expect(driver.colorInput.pickerOpen()).toBe(false);
+    });
+
+    it('does not hand focus back to the field on a tab out', async () => {
+      await driver.open();
+      lastControl().focus();
+      pressKey(lastControl(), 'Tab');
+
+      await driver.settle();
+      await driver.settle();
+
+      expect(document.activeElement).not.toBe(driver.trigger());
+    });
+
+    it('keeps the picker open while Tab moves between controls inside the panel', async () => {
+      await driver.open();
+      firstControl().focus();
+      pressKey(firstControl(), 'Tab');
+
+      await driver.settle();
+
+      expect(driver.colorInput.pickerOpen()).toBe(true);
     });
   });
 });

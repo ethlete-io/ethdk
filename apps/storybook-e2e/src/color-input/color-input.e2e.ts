@@ -126,9 +126,7 @@ test.describe('color-input / keyboard', () => {
     await expect(trigger(root).first()).toHaveAttribute('aria-expanded', 'false');
   });
 
-  // Contradicts the docs: when the field is the page's last tab stop, the Tab past the panel's last
-  // control leaves focus on the body and the panel stays open.
-  test.fail('a Tab past the panel last control closes the picker', async ({ page }) => {
+  test('a Tab past the panel last control closes the picker', async ({ page }) => {
     await openStory(page, DEFAULT_ID);
 
     await openPickerWithKeyboard(page);
