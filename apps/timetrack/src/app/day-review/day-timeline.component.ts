@@ -217,7 +217,7 @@ type RowDrag = {
                       (pointerdown)="startDrag({ event: $event, appointment: laid.block.node.appointment, column })"
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
-                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/5 px-2 py-1 text-left text-small data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme"
                       etMenu
                       etMenuContextTrigger
                       role="button"
@@ -243,7 +243,7 @@ type RowDrag = {
                         <div
                           [style.top.%]="paint.offset"
                           [style.height.%]="paint.span"
-                          class="pointer-events-none absolute inset-x-0 bg-et-theme/20"
+                          class="pointer-events-none absolute inset-x-0 bg-et-theme/25"
                         ></div>
                       }
                       @if (labelled(laid.block.span)) {

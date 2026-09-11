@@ -89,7 +89,9 @@ export const appointmentLabel = (appointment: Appointment) => {
  * theirs.
  *
  * A band spans the gaps between its stretches, so painting only the stretches is what keeps it from
- * claiming hours another checkout held.
+ * claiming hours another checkout held. The band's own fill has to stay faint for that: paint over a
+ * fill of the same colour and a gap reads as a lighter bar inside a solid band rather than as time
+ * the band never held.
  */
 export const appointmentPaint = (appointment: Appointment) => {
   const stretches = rowEntryOf(appointment)?.row.stretches;
