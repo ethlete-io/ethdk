@@ -310,14 +310,24 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   },
 });
 
-/** Revives the seed `seedWorld` left on `window`. Only `event.at` survives JSON as a string. */
+/** Revives the seed `seedWorld` left on `window`. Every event date crosses JSON as a string. */
 export const parseWorldSeed = (raw: string | null | undefined): TimetrackWorldSeed => {
   if (!raw) return {};
 
-  const seed = JSON.parse(raw) as TimetrackWorldSeed & { events?: (CollectedEvent & { at: string | Date })[] };
+  const seed = JSON.parse(raw) as TimetrackWorldSeed & { events?: SeededEvent[] };
 
   return {
     ...seed,
-    ...(seed.events ? { events: seed.events.map((event) => ({ ...event, at: new Date(event.at) })) } : {}),
+    ...(seed.events ? { events: seed.events.map(reviveEvent) } : {}),
   };
 };
+
+/** One seeded event as JSON carries it: `at`, and a calendar occurrence's `until`, are strings. */
+type SeededEvent = CollectedEvent & { at: string | Date; until?: string | Date };
+
+const reviveEvent = (event: SeededEvent): CollectedEvent =>
+  ({
+    ...event,
+    at: new Date(event.at),
+    ...(event.until === undefined ? {} : { until: new Date(event.until) }),
+  }) as CollectedEvent;

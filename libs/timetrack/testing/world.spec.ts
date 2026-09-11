@@ -41,6 +41,24 @@ describe('parseWorldSeed', () => {
     expect(seed.events?.[0]?.at).toEqual(at);
   });
 
+  it('revives a calendar occurrence at both of its ends', () => {
+    const at = e2eAt(14, 0);
+    const until = e2eAt(15, 0);
+    const event = {
+      at,
+      until,
+      source: 'calendar',
+      kind: 'calendar-event',
+      occurrenceId: 'o-1',
+      title: 'Standup',
+      accepted: true,
+    };
+
+    const seed = parseWorldSeed(JSON.stringify({ events: [event] }));
+
+    expect(seed.events?.[0]).toMatchObject({ at, until });
+  });
+
   it('keeps the rest of the seed as it crossed', () => {
     const seed = parseWorldSeed(JSON.stringify({ faults: [{ url: '/worklogs', status: 401 }] }));
 
