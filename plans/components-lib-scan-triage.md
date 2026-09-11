@@ -679,7 +679,8 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    controls at once), and a "wrapper exposes its base's inputs" loop. Proposed by the date-time,
    select/cascader, selection-controls, form-field and phone/otp/tag batches. M
 6. **Duplicated CSS/logic pairs worth collapsing:** tooltip + toggletip + menu animation blocks (three
-   copies of one structure), `et-tab-group` vs `et-nav-tabs` (~120 lines), the two date/time range
+   copies of one structure), `et-tab-group` vs `et-nav-tabs` (~120 lines; **DONE 2026-09-12**
+   `refactor(components): Share the tab bar trigger chrome between tab group and nav tabs`), the two date/time range
    shells (byte-identical bar a threshold), `et-pip-player` rules in two sheets, the three stream
    overlay cards, `select`/`cascader` panel animations, the button/fab/icon-button opacity ramps, the
    three class-list normalizers in overlay, the two color parsers in color-input. M
