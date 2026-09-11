@@ -303,7 +303,7 @@ describe('attribute', () => {
     expect(result.issueKey).toBe('ABC-3010');
   });
 
-  it('takes a repository-wide rule weakly, and above a recurring pattern', () => {
+  it('takes a repository-wide rule above a recurring pattern, and as a statement the user made', () => {
     const result = attribute({
       block: localBlock({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'next' }),
       config: CONFIG,
@@ -312,7 +312,7 @@ describe('attribute', () => {
     });
 
     expect(result.issueKey).toBe('ABC-100');
-    expect(result.confidence).toBe('weak');
+    expect(result.confidence).toBe('likely');
   });
 
   it('leaves a donating context for the day to place, rather than reading a browser tab', () => {
