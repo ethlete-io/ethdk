@@ -677,11 +677,17 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    (would have caught all four date-time Highs), `describeOverlayControlContract` (would have caught
    the cascader `touched` divergence), an `aria-describedby`-resolves assertion (four to seven
    controls at once), and a "wrapper exposes its base's inputs" loop. Proposed by the date-time,
-   select/cascader, selection-controls, form-field and phone/otp/tag batches. M
+   select/cascader, selection-controls, form-field and phone/otp/tag batches. M — **Helpers DONE
+   2026-09-03** in `bb3ab336e test(components): Strengthen form control test drivers`:
+   `picker-commit-contract.ts` (six specs), `overlay-control-contract.ts` (select, cascader),
+   `described-by.ts` (`expectDescribedByResolves`; form-field, selection-list) and
+   `wrapper-inputs.ts` (one spec). Still open: adopt `expectDescribedByResolves` in the other
+   support-region controls (checkbox-group, radio-group, rating, slider, otp, dropzone).
 6. **Duplicated CSS/logic pairs worth collapsing:** tooltip + toggletip + menu animation blocks (three
    copies of one structure), `et-tab-group` vs `et-nav-tabs` (~120 lines; **DONE 2026-09-12**
    `refactor(components): Share the tab bar trigger chrome between tab group and nav tabs`), the two date/time range
-   shells (byte-identical bar a threshold), `et-pip-player` rules in two sheets, the three stream
+   shells (byte-identical bar a threshold; **DONE 2026-08-28** `d64f32a9b perf(components): Share the
+date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the three stream
    overlay cards, `select`/`cascader` panel animations, the button/fab/icon-button opacity ramps, the
    three class-list normalizers in overlay, the two color parsers in color-input. M
 7. **Bundle-size wins, each behind a treeshake golden.** `@defer` the color picker panel; make the
