@@ -49,8 +49,15 @@ export type RowReschedule = { row: ReviewedRow; from: Date; to: Date };
  */
 const HOUR_REM = 8;
 
-/** A block shorter than one line of text renders as a bare bar; its hover title is where it reads. */
+/** The least a block can be and still hold a padded line of text. */
 const LABEL_MIN_REM = 2.2;
+
+/**
+ * The least a block can be and still hold a label at all. One increment is 2rem at `HOUR_REM`, which
+ * fits a single unpadded line and nothing more - and every row is at least one increment wide, so a
+ * quarter-hour band reads as itself rather than as a bar the pointer has to hover to identify.
+ */
+const COMPACT_MIN_REM = 1.9;
 
 /** Two lines of text plus the block's own padding. Below this the description would clip mid-line. */
 const DETAIL_MIN_REM = 5;
@@ -66,6 +73,9 @@ const LANE_MIN_REM = 14;
 
 /** How wide the break lane is. It carries no ticket and no gesture, so it stays narrow. */
 const BREAK_LANE_REM = 6;
+
+/** `span` is a percentage of the day, so this is the height a block renders at, in rem. */
+const remOf = (span: number) => (span / 100) * 24 * HOUR_REM;
 
 const HOUR_MS = 60 * 60_000;
 const DAY_MS = 24 * HOUR_MS;
@@ -190,7 +200,8 @@ type RowDrag = {
                       [style.top.%]="band.offset"
                       [style.height.%]="band.span"
                       [title]="breakTitle(band)"
-                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-interaction px-2 py-1 text-small text-et-surface-muted"
+                      [attr.data-compact]="compact(band.span) || null"
+                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-interaction px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
                       data-break
                     >
                       @if (labelled(band.span)) {
@@ -202,6 +213,7 @@ type RowDrag = {
                   @for (laid of lane.blocks; track laid.block.node.appointment.id) {
                     <div
                       [attr.data-kind]="kindOf(laid.block.node.appointment)"
+                      [attr.data-compact]="compact(laid.block.span) || null"
                       [attr.data-dragging]="dragging(laid.block.node.appointment) || null"
                       [attr.data-marked]="marks(laid.block.node.appointment) || null"
                       [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
@@ -213,7 +225,7 @@ type RowDrag = {
                       (pointerdown)="startDrag({ event: $event, appointment: laid.block.node.appointment, column })"
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
-                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme"
                       etMenu
                       etMenuContextTrigger
                       role="button"
@@ -465,13 +477,17 @@ export class DayTimelineComponent {
     });
   }
 
-  /** `span` is a percentage of the day, so this is the height the block actually renders at. */
   protected labelled(span: number) {
-    return (span / 100) * 24 * HOUR_REM >= LABEL_MIN_REM;
+    return remOf(span) >= COMPACT_MIN_REM;
+  }
+
+  /** Whether the block has to give up its padding to fit the one line it gets. */
+  protected compact(span: number) {
+    return remOf(span) < LABEL_MIN_REM;
   }
 
   protected detailed(span: number) {
-    return (span / 100) * 24 * HOUR_REM >= DETAIL_MIN_REM;
+    return remOf(span) >= DETAIL_MIN_REM;
   }
 
   protected boundariesIn(lane: DayLane) {

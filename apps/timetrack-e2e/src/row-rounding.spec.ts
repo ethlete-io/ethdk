@@ -86,6 +86,30 @@ test.describe('the band a row draws', () => {
   });
 });
 
+/** A morning of a few minutes, which books the one increment it reached into and no more. */
+const aShortMorning = (): CollectedEvent[] => [
+  { at: at('09:07'), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: E2E_ISSUE_BRANCH },
+  ...['09:07', '09:12'].map(editing),
+];
+
+test.describe('a band one increment tall', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: aShortMorning() });
+    await page.goto('/day');
+  });
+
+  /**
+   * 2rem at `HOUR_REM`, which is one padded line of `text-small` short of fitting its label. Without
+   * the compact tier the band renders as a bare bar and the only place it reads is its hover title.
+   */
+  test('reads as itself rather than as a bar with a hover title', async ({ page }) => {
+    const band = page.locator('[data-kind="row"][data-compact]').first();
+
+    await expect(band).toBeVisible();
+    await expect(band).toContainText('ABC-3010');
+  });
+});
+
 const boxOf = async (locator: Locator) => {
   const box = await locator.boundingBox();
 
