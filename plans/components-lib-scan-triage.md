@@ -715,7 +715,10 @@ Deduplicated across all 22 batches; several batches independently proposed the s
     once instead of once per element. Duplicate registration for the split button was already done in
     `45e1f169a`. Still open for a later batch: `registerScrollContainer`, the four-of-six picker host
     names, `etRatingIcon` and the range-field duplicate guards (scrollable/forms — held by other
-    agents), and the calendar's per-cell `afterNextRender` structural throws.
+    agents), and the calendar's per-cell `afterNextRender` structural throws. **Batch 2 done 2026-09-12**: `registerScrollContainer`, the
+    `etRatingIcon` guard and the calendar cell guard had already landed in `88000992a`; the calendar grid
+    guard moved to the constructor in `fix(components): Throw the calendar grid guard at construction`.
+    Still open: the four-of-six picker host names and the range-field duplicate guards.
 11. **Comment-policy cleanup where it is dense** (table — 34 % of non-spec TS — plus carousel, grid,
     bracket, calendar, scheduler, selection-controls). Not urgent, except the comments the scan proved
     _wrong_: the table keyboard-nav comment, the cascader column comment, `pruneEmptyInline`'s "three
