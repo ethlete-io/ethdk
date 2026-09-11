@@ -180,11 +180,16 @@ export abstract class DatePickerInputDirective
     surface: this.registeredSurface,
     anchor: () => this.resolveAnchorElement(),
     context: () => ({ $implicit: this, close: () => this.closePicker() }),
-    onAfterClosed: ({ byOutsidePointer, fromBottomSheet }) => {
+    onAfterClosed: ({ byOutsidePointer, byFocusLeave, fromBottomSheet }) => {
       // focus fell to <body> with the pane's removal - hand it back to the field, except for
-      // outside closes (the user deliberately went elsewhere) and bottom-sheet closes
+      // closes where the user moved on (a pointer or a tab out) and bottom-sheet closes
       // (refocusing would pop the soft keyboard)
-      if (!byOutsidePointer && !fromBottomSheet && this.document.activeElement === this.document.body) {
+      if (
+        !byOutsidePointer &&
+        !byFocusLeave &&
+        !fromBottomSheet &&
+        this.document.activeElement === this.document.body
+      ) {
         this.activate();
       }
     },

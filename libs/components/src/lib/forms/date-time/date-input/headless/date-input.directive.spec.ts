@@ -582,3 +582,52 @@ describe('DateInputDirective commit contract', () => {
     };
   });
 });
+
+describe('DateInputDirective (tabbing out of the picker)', () => {
+  let driver: DatePickerDriver<DateInputTestHost, DateInputDirective>;
+
+  const pickButton = () => driver.paneEl<HTMLButtonElement>('.pick-date')!;
+
+  beforeEach(() => {
+    // jsdom lays nothing out, and `getFocusableElements` reads a client rect to tell a rendered
+    // control apart from a hidden one
+    vi.spyOn(Element.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
+    driver = mountDatePicker(DateInputTestHost, DateInputDirective);
+  });
+
+  afterEach(async () => {
+    await driver.close();
+    vi.restoreAllMocks();
+  });
+
+  it('closes the picker on a Tab past the last control', async () => {
+    await driver.open();
+    pickButton().focus();
+    pressKey(pickButton(), 'Tab');
+
+    await driver.settle();
+
+    expect(driver.control.pickerOpen()).toBe(false);
+  });
+
+  it('closes the picker on a Shift+Tab off the first control', async () => {
+    await driver.open();
+    pickButton().focus();
+    pressKey(pickButton(), 'Tab', { shiftKey: true });
+
+    await driver.settle();
+
+    expect(driver.control.pickerOpen()).toBe(false);
+  });
+
+  it('does not hand focus back to the field on a tab out', async () => {
+    await driver.open();
+    pickButton().focus();
+    pressKey(pickButton(), 'Tab');
+
+    await driver.settle();
+    await driver.settle();
+
+    expect(document.activeElement).not.toBe(driver.field());
+  });
+});

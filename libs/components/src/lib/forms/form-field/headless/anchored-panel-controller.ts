@@ -1,8 +1,8 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, effect, inject, Signal, untracked, WritableSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { isOnHigherOverlayLayer, resolveOverlayLayer } from '@ethlete/core';
-import { fromEvent, Subscription, take, tap } from 'rxjs';
+import { getFocusableElements, isOnHigherOverlayLayer, resolveOverlayLayer } from '@ethlete/core';
+import { delay, filter, fromEvent, Subscription, take, tap } from 'rxjs';
 import { isTargetInsideOverlayTree } from '../../../overlay/get-closest-overlay';
 import { OverlayConfig } from '../../../overlay/overlay-config';
 import { injectOverlayManager } from '../../../overlay/overlay-manager';
@@ -14,7 +14,7 @@ export type AnchoredPanelSurfaceLike = { templateRef: unknown };
 export type AnchoredPanelCloseInfo = {
   /** A deliberate pointerdown outside the panel and anchor closed it. */
   byOutsidePointer: boolean;
-  /** Focus moved to an element outside the panel and anchor, which closed it. */
+  /** Focus left the panel and anchor - moved outside, or tabbed past the pane's edge - which closed it. */
   byFocusLeave: boolean;
   /** The pane was presented as a bottom sheet (small viewport) when it closed. */
   fromBottomSheet: boolean;
@@ -59,7 +59,8 @@ export type CreateAnchoredPanelControllerOptions = {
  * overlay from a trigger (`select`, `cascader`; the date pickers use the sibling
  * `createDatePickerOverlay`). It owns the overlay ref, the disabled/open reconciliation effect,
  * the outside-pointer close (so a pointerdown on the anchor toggles instead of close-and-reopen),
- * the close when focus leaves the pane (these panes are non-modal, so nothing traps Tab), and the
+ * the close when focus leaves the pane - either onto another element or by tabbing past the pane's
+ * first/last control, which lands nowhere when the field is the page's last tab stop - and the
  * model sync on every interactive close. Everything control-specific - the overlay config
  * and the mount/close side effects - is supplied via the hooks. Call in an injection context.
  */
@@ -105,6 +106,17 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
     }
   };
 
+  const isTabPastThePaneEdge = (event: KeyboardEvent, pane: HTMLElement) => {
+    if (event.key !== 'Tab' || event.defaultPrevented) {
+      return false;
+    }
+
+    const focusable = getFocusableElements(pane, documentRef);
+    const edge = event.shiftKey ? focusable[0] : focusable[focusable.length - 1];
+
+    return !!edge && event.target === edge;
+  };
+
   const attachInteractionListeners = () => {
     detachInteractionListeners();
 
@@ -137,6 +149,25 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
 
     if (options.onDocumentKeydown) {
       subscriptions.push(fromEvent<KeyboardEvent>(documentRef, 'keydown').subscribe(options.onDocumentKeydown));
+    }
+
+    const pane = overlayRef()?.elements?.paneElement;
+
+    if (pane) {
+      subscriptions.push(
+        fromEvent<KeyboardEvent>(pane, 'keydown')
+          .pipe(
+            filter((event) => isTabPastThePaneEdge(event, pane)),
+            // one task later: closing inside the keydown would tear the pane down before the browser
+            // performs the Tab, and focus would fall to the document instead of the next tab stop
+            delay(0),
+            tap(() => {
+              closedByFocusLeave = true;
+              requestClose();
+            }),
+          )
+          .subscribe(),
+      );
     }
 
     interactionListenersCleanup = () => subscriptions.forEach((subscription) => subscription.unsubscribe());

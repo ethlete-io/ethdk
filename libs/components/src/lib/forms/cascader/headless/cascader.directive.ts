@@ -387,11 +387,11 @@ export class CascaderDirective<T = unknown>
     },
     onMounted: () => this.afterOpen.emit(),
     onDocumentKeydown: (event) => this.handlePanelKeydown(event),
-    onAfterClosed: ({ byOutsidePointer }) => {
+    onAfterClosed: ({ byOutsidePointer, byFocusLeave }) => {
       this.focusInside.set(false);
       this.afterClose.emit();
 
-      if (!byOutsidePointer && this.document.activeElement === this.document.body) {
+      if (!byOutsidePointer && !byFocusLeave && this.document.activeElement === this.document.body) {
         this.activate();
       }
     },

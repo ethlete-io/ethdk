@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormField, form, required } from '@angular/forms/signals';
 import '../../../../test-helpers';
-import { flushFrames, focusEvent, textOf, tick } from '../../../testing/driver-core';
+import { flushFrames, focusEvent, pressKey, textOf, tick } from '../../../testing/driver-core';
 import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { describeOverlayControlContract } from '../../testing/overlay-control-contract';
@@ -206,6 +206,25 @@ class SearchSelectTestHost {
 })
 class SearchPlaceholderTestHost {
   value = signal<unknown>(null);
+}
+
+@Component({
+  template: `
+    <div [value]="value()" (valueChange)="value.set($event)" etSelect placeholder="Pick a fruit">
+      <button etSelectTrigger type="button">Open</button>
+      <ng-template etSelectSurface>
+        <et-select-panel>
+          <button class="first-action" type="button">first</button>
+          <div etSelectOption value="apple">Apple</div>
+          <button class="last-action" type="button">last</button>
+        </et-select-panel>
+      </ng-template>
+    </div>
+  `,
+  imports: [SELECT_IMPORTS],
+})
+class PanelActionsTestHost {
+  value = signal<unknown>('apple');
 }
 
 @Component({
@@ -1352,6 +1371,66 @@ describe('SelectDirective (panel-hosted search)', () => {
     driver.type('');
 
     expect(driver.host.value()).toBe('apple');
+  });
+});
+
+describe('SelectDirective (tabbing out of the panel)', () => {
+  let driver: SelectDriver<PanelActionsTestHost>;
+
+  const firstAction = () => driver.paneEl<HTMLButtonElement>('.first-action')!;
+  const lastAction = () => driver.paneEl<HTMLButtonElement>('.last-action')!;
+
+  beforeEach(() => {
+    // jsdom lays nothing out, and `getFocusableElements` reads a client rect to tell a rendered
+    // control apart from a hidden one
+    vi.spyOn(Element.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
+    driver = mountSelect(PanelActionsTestHost);
+  });
+
+  afterEach(async () => {
+    await driver.close();
+    vi.restoreAllMocks();
+  });
+
+  it('closes the panel on a Tab past the last control', async () => {
+    await driver.open();
+    lastAction().focus();
+    pressKey(lastAction(), 'Tab');
+
+    await driver.settle();
+
+    expect(driver.select.open()).toBe(false);
+  });
+
+  it('closes the panel on a Shift+Tab off the first control', async () => {
+    await driver.open();
+    firstAction().focus();
+    pressKey(firstAction(), 'Tab', { shiftKey: true });
+
+    await driver.settle();
+
+    expect(driver.select.open()).toBe(false);
+  });
+
+  it('does not hand focus back to the trigger on a tab out', async () => {
+    await driver.open();
+    lastAction().focus();
+    pressKey(lastAction(), 'Tab');
+
+    await driver.settle();
+    await driver.settle();
+
+    expect(document.activeElement).not.toBe(driver.trigger());
+  });
+
+  it('keeps the panel open while Tab moves between controls inside it', async () => {
+    await driver.open();
+    firstAction().focus();
+    pressKey(firstAction(), 'Tab');
+
+    await driver.settle();
+
+    expect(driver.select.open()).toBe(true);
   });
 });
 

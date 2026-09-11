@@ -337,10 +337,10 @@ export class SelectDirective
     },
     onMounted: (overlayRef) => this.handlePanelMounted(overlayRef),
     onBeforeClosed: () => this.handlePanelBeforeClosed(),
-    onAfterClosed: ({ byOutsidePointer }) => {
-      // focus that sat inside the pane fell to <body> with the pane's removal - hand it
-      // back to the field, except for outside closes (the user deliberately went elsewhere)
-      if (!byOutsidePointer && this.document.activeElement === this.document.body) {
+    onAfterClosed: ({ byOutsidePointer, byFocusLeave }) => {
+      // focus that sat inside the pane fell to <body> with the pane's removal - hand it back to
+      // the field, except for closes where the user moved on (a pointer or a tab out)
+      if (!byOutsidePointer && !byFocusLeave && this.document.activeElement === this.document.body) {
         this.activate();
       }
     },

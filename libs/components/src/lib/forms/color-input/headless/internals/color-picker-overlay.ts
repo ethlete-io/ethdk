@@ -1,8 +1,5 @@
-import { DOCUMENT } from '@angular/common';
-import { DestroyRef, ModelSignal, Signal, inject, inputBinding, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RuntimeError, getFocusableElements } from '@ethlete/core';
-import { delay, filter, fromEvent, takeUntil, tap } from 'rxjs';
+import { ModelSignal, Signal, inputBinding, signal } from '@angular/core';
+import { RuntimeError } from '@ethlete/core';
 import {
   AnchoredPanelCloseInfo,
   AnchoredPanelOverlayRef,
@@ -31,45 +28,7 @@ export type CreateColorPickerOverlayOptions = {
  */
 export const createColorPickerOverlay = (options: CreateColorPickerOverlayOptions) => {
   const bottomSheetStrategy = injectBottomSheetStrategy();
-  const documentRef = inject(DOCUMENT);
-  const destroyRef = inject(DestroyRef);
   const overlayRef = signal<AnchoredPanelOverlayRef | null>(null);
-
-  let closedByTabOut = false;
-
-  const isTabOutOfPane = (event: KeyboardEvent, pane: HTMLElement) => {
-    if (event.key !== 'Tab' || event.defaultPrevented) {
-      return false;
-    }
-
-    const focusable = getFocusableElements(pane, documentRef);
-    const edge = event.shiftKey ? focusable[0] : focusable[focusable.length - 1];
-
-    return !!edge && event.target === edge;
-  };
-
-  const watchForTabOut = (mountedRef: AnchoredPanelOverlayRef) => {
-    const pane = mountedRef.elements?.paneElement;
-
-    if (!pane) {
-      return;
-    }
-
-    fromEvent<KeyboardEvent>(pane, 'keydown')
-      .pipe(
-        filter((event) => isTabOutOfPane(event, pane)),
-        // one task later: closing inside the keydown would tear the pane down before the browser
-        // performs the Tab, and focus would fall to the document instead of the next tab stop
-        delay(0),
-        tap(() => {
-          closedByTabOut = true;
-          panel.close();
-        }),
-        takeUntil(mountedRef.afterClosed()),
-        takeUntilDestroyed(destroyRef),
-      )
-      .subscribe();
-  };
 
   const panel = createAnchoredPanelController({
     canOpen: options.interactive,
@@ -103,15 +62,7 @@ export const createColorPickerOverlay = (options: CreateColorPickerOverlayOption
         })().map((entry) => ({ ...entry, breakpoint: 'md' as const })),
       ],
     }),
-    onMounted: watchForTabOut,
-    onAfterClosed: (info) => {
-      // a tab out is a focus leave even when the browser focused nothing, so the field must not
-      // pull focus back out from under the user
-      const byFocusLeave = info.byFocusLeave || closedByTabOut;
-
-      closedByTabOut = false;
-      options.onAfterClosed?.({ ...info, byFocusLeave });
-    },
+    onAfterClosed: (info) => options.onAfterClosed?.(info),
     onMissingSurface: () => {
       if (ngDevMode) {
         throw new RuntimeError(

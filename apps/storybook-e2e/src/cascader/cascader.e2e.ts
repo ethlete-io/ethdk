@@ -95,6 +95,20 @@ test.describe('cascader / keyboard', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect(trigger).toContainText('UEFA Euro / Group stage / Group A');
   });
+
+  test('a Tab past the panel last node closes the panel', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('combobox');
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Enter');
+    await expect(page.getByRole('treeitem', { name: 'UEFA Euro' })).toBeFocused();
+
+    await pressKey(page, 'Tab');
+
+    await expect(page.getByRole('tree')).toHaveCount(0);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
 });
 
 test.describe('cascader / touch', () => {
