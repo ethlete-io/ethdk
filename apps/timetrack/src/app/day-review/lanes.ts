@@ -73,9 +73,16 @@ const laneKeyOfBlock = (block: SchedulerTimeGridBlock<TimelineEntry>) => {
  * Packs one lane's blocks into the fewest overlap-free columns, the same way a calendar packs a day.
  * One checkout rarely holds two rows at once, so an equal split of the lane is enough — a block never
  * widens into a free column beside it.
+ *
+ * Whether two blocks overlap is read off the clock and never off `offset` and `span`. The end of one
+ * row and the start of the next are the same instant, but the two percentages of the day computed
+ * for it differ in the last bit often enough that two rows meeting at 16:30 would each be drawn at
+ * half the lane's width.
  */
 const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): LaneBlock[] => {
-  const sorted = [...blocks].sort((a, b) => a.offset - b.offset || a.span - b.span);
+  const startOfBlock = (block: SchedulerTimeGridBlock<TimelineEntry>) => block.node.appointment.start.getTime();
+  const endOfBlock = (block: SchedulerTimeGridBlock<TimelineEntry>) => block.node.appointment.end.getTime();
+  const sorted = [...blocks].sort((a, b) => startOfBlock(a) - startOfBlock(b) || endOfBlock(a) - endOfBlock(b));
   const placed: LaneBlock[] = [];
 
   let cluster: { block: SchedulerTimeGridBlock<TimelineEntry>; column: number }[] = [];
@@ -95,14 +102,15 @@ const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): Lan
   const endsPerColumn: number[] = [];
 
   for (const block of sorted) {
-    const end = block.offset + block.span;
+    const start = startOfBlock(block);
+    const end = endOfBlock(block);
 
-    if (block.offset >= clusterEnd && cluster.length) {
+    if (start >= clusterEnd && cluster.length) {
       flush();
       endsPerColumn.length = 0;
     }
 
-    let column = endsPerColumn.findIndex((taken) => taken <= block.offset);
+    let column = endsPerColumn.findIndex((taken) => taken <= start);
 
     if (column === -1) column = endsPerColumn.length;
 

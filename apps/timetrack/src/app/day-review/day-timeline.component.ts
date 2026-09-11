@@ -345,8 +345,8 @@ export class DayTimelineComponent {
   );
 
   /**
-   * The pairs of rows that meet at one instant, by the lane they are in. A pair too short to keep a
-   * step on either side of its boundary gets no handle: there is nowhere left to drag it to.
+   * The pairs of rows that meet at one instant, by the lane they are in. A pair of two increments
+   * gets no handle: `limitsOf` then puts the boundary's only legal instant where it already is.
    *
    * Only rows of one checkout pair up. Dragging a boundary moves a slice of time from one row to the
    * other, and across two checkouts that would book one checkout's minutes to another.
@@ -367,7 +367,7 @@ export class DayTimelineComponent {
         const after = ordered[index + 1];
 
         if (!after || before.to.getTime() !== after.from.getTime()) return [];
-        if (after.to.getTime() - before.from.getTime() < 2 * SNAP_MS) return [];
+        if (after.to.getTime() - before.from.getTime() < 3 * SNAP_MS) return [];
 
         return [{ id: `${before.id}|${after.id}`, before, after }];
       });
