@@ -66,6 +66,21 @@ describe('fetchJiraIssuePicks$', () => {
     expect(requests).toHaveLength(1);
   });
 
+  it('reads a typed key as that one key, because `text ~` never matches a key', () => {
+    expect(pick({ projectKeys: ['ABC'], text: ' et-772 ' }).jql).toBe('key in (ET-772)');
+  });
+
+  it('reads a typed key outside every other clause, so a closed issue is still reachable', () => {
+    const { jql } = pick({ projectKeys: ['ABC'], text: 'XYZ-1' });
+
+    expect(jql).not.toContain('statusCategory');
+    expect(jql).not.toContain('project in');
+  });
+
+  it('searches the wording for text that is not yet a whole key', () => {
+    expect(pick({ text: 'ET-' }).jql).toBe('statusCategory != Done AND text ~ "ET-*" ORDER BY updated DESC');
+  });
+
   it('drops an issue Jira answered without a key or an id', () => {
     const { found } = pick({}, [
       { id: '1', key: 'ABC-1', fields: { summary: 'Alpha', issuetype: { name: 'Task' } } },
