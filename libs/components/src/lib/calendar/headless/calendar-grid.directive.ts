@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, computed, inject } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { CALENDAR_ERROR_CODES } from '../calendar-errors';
 import { CalendarDirective } from './calendar.directive';
@@ -32,16 +32,12 @@ export class CalendarGridDirective {
   constructor() {
     inject(DestroyRef).onDestroy(() => this.releaseFocus());
 
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.calendar) {
-          throw new RuntimeError(
-            CALENDAR_ERROR_CODES.GRID_OUTSIDE_CALENDAR,
-            'An [etCalendarGrid] must be placed inside an [etCalendar].',
-            { element: this.elementRef.nativeElement },
-          );
-        }
-      });
+    if (ngDevMode && !this.calendar) {
+      throw new RuntimeError(
+        CALENDAR_ERROR_CODES.GRID_OUTSIDE_CALENDAR,
+        'An [etCalendarGrid] must be placed inside an [etCalendar].',
+        { element: this.elementRef.nativeElement },
+      );
     }
   }
 

@@ -109,6 +109,12 @@ class HostComponent {
 })
 class OrphanCalendarCellTestHost {}
 
+@Component({
+  template: `<div etCalendarGrid></div>`,
+  imports: [CalendarGridDirective],
+})
+class OrphanCalendarGridTestHost {}
+
 describe('CalendarDirective', () => {
   let fixture: ComponentFixture<HostComponent>;
   let host: HostComponent;
@@ -1062,6 +1068,16 @@ describe('CalendarCellDirective errors', () => {
 
     expect(() => TestBed.createComponent(OrphanCalendarCellTestHost)).toThrow(
       `ET${CALENDAR_ERROR_CODES.CELL_OUTSIDE_CALENDAR}`,
+    );
+  });
+});
+
+describe('CalendarGridDirective errors', () => {
+  it('rejects a grid outside a calendar while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanCalendarGridTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanCalendarGridTestHost)).toThrow(
+      `ET${CALENDAR_ERROR_CODES.GRID_OUTSIDE_CALENDAR}`,
     );
   });
 });
