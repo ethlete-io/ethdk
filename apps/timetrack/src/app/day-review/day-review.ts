@@ -371,7 +371,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ? reasoningPlan({
           contexts: unnamed(),
           unattributed: rows.unattributed,
-          candidates: reasoningCandidates({ proposals: rows.proposals }),
+          candidates: reasoningCandidates({ proposals: rows.proposals, logged: recurring.loggedIssues() }),
         })
       : null;
   });

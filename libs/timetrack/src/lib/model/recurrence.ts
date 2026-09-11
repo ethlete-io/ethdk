@@ -5,6 +5,13 @@ export type HistoricalWorklog = {
   durationMs: number;
 };
 
+/** An issue the user's own history logged against, with the last line they wrote for it. */
+export type LoggedIssue = {
+  issueKey: string;
+  /** The newest worklog description the span holds for the issue. Empty when every one was blank. */
+  summary: string;
+};
+
 /** A ticket the user's own history puts on the same weekday at the same time, week after week. */
 export type RecurringPattern = {
   issueKey: string;

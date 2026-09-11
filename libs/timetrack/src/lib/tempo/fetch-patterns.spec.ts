@@ -4,7 +4,7 @@ import { JiraCredentials } from '../jira/client';
 import { RecurringPattern } from '../model/recurrence';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
-import { fetchRecurringPatterns$ } from './fetch-patterns';
+import { TempoHistory, fetchRecurringPatterns$, fetchTempoHistory$ } from './fetch-patterns';
 
 const HOUR = 3_600_000;
 const JIRA: JiraCredentials = { host: 'team.atlassian.net', email: 'me@example.com', token: 'j' };
@@ -97,5 +97,37 @@ describe('fetchRecurringPatterns$', () => {
     });
 
     expect(readInto(fetchRecurringPatterns$({ transport, jira: JIRA, tempo: TEMPO, until: UNTIL }))).toEqual([]);
+  });
+});
+
+describe('fetchTempoHistory$', () => {
+  it('names every issue the span logged against, out of the same read the patterns come from', () => {
+    const { transport, requests } = patternTransport({
+      worklogs: [
+        worklogResource({ id: 1, issueId: 10100, day: '2026-08-17', time: '09:15:00', hours: 1 }),
+        worklogResource({ id: 2, issueId: 10200, day: '2026-09-07', time: '13:00:00', hours: 2 }),
+      ],
+      issuesById: [
+        { id: '10100', key: 'BD-2049', fields: {} },
+        { id: '10200', key: 'ET-772', fields: {} },
+      ],
+    });
+
+    let history: TempoHistory | null = null;
+
+    fetchTempoHistory$({ transport, jira: JIRA, tempo: TEMPO, until: UNTIL }).subscribe((value) => (history = value));
+
+    expect(history?.loggedIssues.map((issue) => issue.issueKey)).toEqual(['ET-772', 'BD-2049']);
+    expect(requests.filter((request) => request.url.includes('/worklogs/user/'))).toHaveLength(1);
+  });
+
+  it('names nothing when the history is empty, and asks Jira nothing either', () => {
+    const { transport } = patternTransport();
+
+    let history: TempoHistory | null = null;
+
+    fetchTempoHistory$({ transport, jira: JIRA, tempo: TEMPO, until: UNTIL }).subscribe((value) => (history = value));
+
+    expect(history).toEqual({ patterns: [], loggedIssues: [] });
   });
 });
