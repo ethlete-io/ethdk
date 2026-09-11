@@ -287,7 +287,7 @@ export class DayTimelineComponent {
 
   public focusedDate = input.required<Date>();
   public rows = input.required<readonly ReviewedRow[]>();
-  /** The day's breaks, from `StreamDay.breaks`. They get a lane of their own, and no gesture. */
+  /** The day's breaks, as the rows leave them. They get a lane of their own, and no gesture. */
   public breaks = input<readonly BreakWindow[]>([]);
 
   /** Where two adjacent rows should meet instead. */

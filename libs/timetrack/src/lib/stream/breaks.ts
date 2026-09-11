@@ -1,5 +1,5 @@
 import { CollectedEvent, PresenceEvent } from '../model/event';
-import { TimeWindow } from '../model/time-window';
+import { TimeWindow, mergeWindows, subtractWindows, windowsOverlap } from '../model/time-window';
 
 /**
  * The longest gap in presence that is not a break yet. It is `maxFillGapMs` on purpose: a gap short
@@ -94,3 +94,37 @@ export const breakWindows = (options: {
 /** How long a day's breaks held. They never overlap, so this is a plain sum. */
 export const breakMs = (breaks: readonly TimeWindow[]) =>
   breaks.reduce((sum, window) => sum + Math.max(0, window.to.getTime() - window.from.getTime()), 0);
+
+/**
+ * The breaks as the rows leave them: every stretch between two rows that a measured break falls in.
+ *
+ * A measured break runs from the last sample of presence to the next, so it lands on the minute the
+ * user got up, while every row around it is on a quarter hour. Drawing both puts a break of 1h 21m
+ * between two bands that stand 1h 30m apart, and no reviewer can act on that number. The rows are
+ * what the day books, so the rows are what a break is long: the measured window says *that* somebody
+ * was away, and the gap between the rows says for how long.
+ *
+ * A measured break that no gap holds is dropped - the rounding gave that time to the work around it.
+ * With no rows at all there is nothing to read a gap from, so the measured breaks are returned as
+ * they are.
+ */
+export const breaksBetweenRows = (options: {
+  breaks: readonly BreakWindow[];
+  rows: readonly TimeWindow[];
+}): BreakWindow[] => {
+  const covered = mergeWindows(options.rows);
+  const first = covered[0];
+  const last = covered[covered.length - 1];
+
+  if (!first || !last) return [...options.breaks];
+
+  const gaps = subtractWindows({ windows: [{ from: first.from, to: last.to }], without: covered });
+
+  return gaps.flatMap((gap) => {
+    const held = options.breaks.filter((window) => windowsOverlap(gap, window));
+
+    if (!held.length) return [];
+
+    return [{ ...gap, locked: held.some((window) => window.locked) }];
+  });
+};

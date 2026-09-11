@@ -20,6 +20,7 @@ import {
   classifyCalls,
   closeTimerRun,
   buildRows,
+  breaksBetweenRows,
   coveredMsOf,
   dayBoundaryOf,
   fetchTempoDayCoverage$,
@@ -452,6 +453,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const rows = computed(() => review()?.rows ?? []);
   const hiddenRows = computed(() => review()?.hidden ?? []);
+  const breaks = computed(() => breaksBetweenRows({ breaks: streamed()?.breaks ?? [], rows: rows() }));
 
   // The whole day's ledger, not the rows': an entry no row claims is a worklog the sync has to delete,
   // and a read by row id can never return it. The failure stays inside the switch, or one failed read
@@ -565,6 +567,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     rows,
     /** The rows taken off the timeline. Neither written nor unattributed — this is where their time went. */
     hiddenRows,
+    /** The day's breaks as the rows leave them, which is the only place a break is drawn. */
+    breaks,
     review,
     /** The day as its streams: presence, concurrency, the agents' spend and the blocks behind the rows. */
     day: streamed,

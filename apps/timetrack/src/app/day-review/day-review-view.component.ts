@@ -71,7 +71,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
         </div>
 
         <ethlete-day-timeline
-          [breaks]="store.day()?.breaks ?? []"
+          [breaks]="store.breaks()"
           [focusedDate]="focusedDate()"
           [rows]="store.rows()"
           (boundaryMove)="store.moveBoundary($event)"
