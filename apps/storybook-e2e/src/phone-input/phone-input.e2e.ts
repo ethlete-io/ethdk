@@ -37,8 +37,7 @@ test.describe('phone-input / focus', () => {
     expect(at(stops, 1).tag).toBe('INPUT');
   });
 
-  // SelectTriggerDirective's own host `[attr.aria-label]` overwrites the template's countryLabel binding with null
-  test.fail('the country trigger carries the documented countryLabel as its accessible name', async ({ page }) => {
+  test('the country trigger carries the documented countryLabel as its accessible name', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
 
     await expect(countryTrigger(root)).toHaveAttribute('aria-label', 'Select country');

@@ -1,5 +1,6 @@
 <!-- headless select composition: compact flag trigger, searchable country panel -->
 <div
+  [aria-label]="resolvedCountryLabel()"
   [value]="phone.country()"
   [readonly]="phone.readonly()"
   (valueChange)="handleCountryChange($event)"
@@ -8,13 +9,7 @@
   etFormFieldBarrier
   etSelect
 >
-  <button
-    [attr.aria-label]="resolvedCountryLabel()"
-    [disabled]="phone.disabled()"
-    class="et-phone-input-country-trigger"
-    etSelectTrigger
-    type="button"
-  >
+  <button [disabled]="phone.disabled()" class="et-phone-input-country-trigger" etSelectTrigger type="button">
     <span class="et-phone-input-country-flag" aria-hidden="true">
       @if (phone.registeredFlagTemplate(); as flagTemplate) {
         <ng-template [ngTemplateOutlet]="flagTemplate.templateRef" [ngTemplateOutletContext]="activeFlagContext()" />

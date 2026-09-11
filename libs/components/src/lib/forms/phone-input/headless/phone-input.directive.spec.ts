@@ -1,5 +1,7 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { flushFrames, latestPane } from '../../../testing/driver-core';
+import { resolveAccessibleName } from '../../testing/accessible-name';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { mountPhoneInput, PhoneInputDriver } from '../../testing/phone-input-driver';
 import { PHONE_INPUT_IMPORTS } from '../phone-input.imports';
@@ -192,6 +194,21 @@ describe('PhoneInputDirective', () => {
 
     driver.type('1234567');
     expect(driver.phone.isPlausible()).toBe(true);
+  });
+
+  it('names the country trigger with countryLabel, closed and with the panel open', async () => {
+    const trigger = driver.query('.et-phone-input-country-trigger')!;
+
+    expect(resolveAccessibleName(trigger)).toBe('Select country');
+
+    driver.click(trigger);
+    await flushFrames();
+    driver.tick();
+    await flushFrames();
+    driver.tick();
+
+    expect(latestPane()?.querySelector('input[etselectsearch]')).not.toBeNull();
+    expect(resolveAccessibleName(trigger)).toBe('Select country');
   });
 
   describe('mixed', () => {
