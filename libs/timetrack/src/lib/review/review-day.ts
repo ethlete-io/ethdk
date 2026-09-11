@@ -5,7 +5,7 @@ import {
   DayCheck,
   RoundOptions,
   checkDay,
-  roundDurations,
+  roundDurationUp,
 } from '../rows/round';
 import { formatDurationMs } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
@@ -72,11 +72,9 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
 });
 
 /**
- * Rounds the rows a sync would write, as a day, so the increments land only on work somebody has
- * named. A band with no issue keeps its observed time — a band nothing named is not a worklog, and
- * spreading a day's increments over thirty of them is what makes each one read `15m`.
+ * Guarantees that every row a sync would write books a whole increment, whatever built it.
  *
- * A duration the reviewer typed is theirs and is left alone. A row `propose` already rounded is a
+ * A duration the reviewer typed is theirs and is left alone. A row `propose` already booked is a
  * whole number of increments, so it comes back out of this unchanged.
  */
 const withRounding = (options: {
@@ -93,8 +91,7 @@ const withRounding = (options: {
   const writes = options.rows.filter(
     (row) => isNamedRow(row) && syncsInState(row.state) && !byHand.has(row.id) && row.durationMs > 0,
   );
-  const rounded = roundDurations({ durationsMs: writes.map((row) => row.durationMs), options: options.round });
-  const byId = new Map(writes.map((row, index) => [row.id, rounded[index] ?? row.durationMs]));
+  const byId = new Map(writes.map((row) => [row.id, roundDurationUp(row.durationMs, options.round)]));
 
   return options.rows.map((row) => {
     const durationMs = byId.get(row.id);

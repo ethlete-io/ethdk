@@ -4,7 +4,7 @@ import { WorklogProposal } from '../model/proposal';
 import { DescribeOptions, describeWork } from './describe';
 import { laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
-import { RoundOptions, roundDurations } from './round';
+import { RoundOptions, roundDurationUp } from './round';
 import { stretchesOf } from './stretches';
 
 /**
@@ -42,14 +42,13 @@ const unnamedId = (group: WorkGroup) => {
 };
 
 /**
- * Turns merged groups into reviewable rows: rounded as a day so the total survives, described from
- * their own evidence, and carrying that evidence and their confidence so a reviewer can see why each
- * row exists.
+ * Turns merged groups into reviewable rows: booked in whole increments, described from their own
+ * evidence, and carrying that evidence and their confidence so a reviewer can see why each row
+ * exists.
  *
- * A group with no issue becomes a row too, in `unnamed`, and carries its observed time. Rounding
- * spreads a day's increments over its rows, so rounding a band that is not a worklog yet is what
- * makes a band holding two hours read `15m`. `reviewDay` rounds it once naming it makes it a
- * proposal.
+ * A group with no issue becomes a row too, in `unnamed`, and books the same way. A band reads the
+ * length it would be written for from the moment it is drawn, so naming it never changes its size.
+ * The raw time each row observed stays on `observedMs`.
  */
 export const propose = (options: {
   groups: WorkGroup[];
@@ -59,18 +58,15 @@ export const propose = (options: {
 }): ProposeResult => {
   const attributed = options.groups.filter(isAttributed);
   const unattributed = options.groups.filter((group) => !isAttributed(group));
-  const rounded = roundDurations({
-    durationsMs: attributed.map((group) => group.observedMs),
-    options: options.round,
-  });
+
   return {
-    proposals: attributed.map((group, index) => ({
+    proposals: attributed.map((group) => ({
       id: proposalId(group),
       issueKey: group.issueKey,
       storyKey: group.storyKey,
       from: group.from,
       to: group.to,
-      durationMs: rounded[index] ?? group.observedMs,
+      durationMs: roundDurationUp(group.observedMs, options.round),
       observedMs: group.observedMs,
       stretches: stretchesOf(group.blocks),
       laneKey: group.laneKey ?? laneKeyOf(group.blocks),
@@ -84,7 +80,7 @@ export const propose = (options: {
       id: unnamedId(group),
       from: group.from,
       to: group.to,
-      durationMs: group.observedMs,
+      durationMs: roundDurationUp(group.observedMs, options.round),
       observedMs: group.observedMs,
       stretches: stretchesOf(group.blocks),
       laneKey: group.laneKey ?? laneKeyOf(group.blocks),

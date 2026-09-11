@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { WorklogProposal } from '../model/proposal';
 import { WorkGroup } from './merge';
-import { checkDay, roundDurations } from './round';
+import { checkDay, roundDurationUp, roundDurations } from './round';
 
 const MINUTE = 60_000;
 const minutes = (values: number[]) => values.map((value) => value * MINUTE);
@@ -27,6 +27,27 @@ const group = (observedMinutes: number): WorkGroup => ({
   confidence: 'weak',
   evidence: [],
   blocks: [],
+});
+
+describe('roundDurationUp', () => {
+  it('books any part of an increment as the whole of it', () => {
+    expect(roundDurationUp(1 * MINUTE) / MINUTE).toBe(15);
+    expect(roundDurationUp(16 * MINUTE) / MINUTE).toBe(30);
+    expect(roundDurationUp(47 * MINUTE) / MINUTE).toBe(60);
+  });
+
+  it('leaves a whole increment where it is', () => {
+    expect(roundDurationUp(15 * MINUTE) / MINUTE).toBe(15);
+    expect(roundDurationUp(105 * MINUTE) / MINUTE).toBe(105);
+  });
+
+  it('books nothing for a row that observed nothing', () => {
+    expect(roundDurationUp(0)).toBe(0);
+  });
+
+  it('takes the increment from the caller', () => {
+    expect(roundDurationUp(11 * MINUTE, { incrementMs: 5 * MINUTE }) / MINUTE).toBe(15);
+  });
 });
 
 describe('roundDurations', () => {

@@ -691,13 +691,13 @@ describe('reviewDay, a band nothing named', () => {
     expect(review.check.proposedMs).toBe(60 * MINUTE);
   });
 
-  it('reads its observed time while nothing has named it', () => {
+  it('leaves a band alone while nothing has named it, because no sync would write it', () => {
     const odd = dayRows({ proposals: [], unnamed: [band({ from: '08:00', to: '09:00', minutes: 47 })] });
 
     expect(reviewDay({ rows: odd }).rows[0]?.durationMs).toBe(47 * MINUTE);
   });
 
-  it('rounds to whole increments once it is named', () => {
+  it('books a whole increment once it is named', () => {
     const odd = dayRows({ proposals: [], unnamed: [band({ from: '08:00', to: '09:00', minutes: 47 })] });
     const edits = setRowIssue({
       edits: EMPTY_DAY_REVIEW_EDITS,
@@ -705,7 +705,7 @@ describe('reviewDay, a band nothing named', () => {
       issueKey: 'ABC-9',
     });
 
-    expect(reviewDay({ rows: odd, edits }).rows[0]?.durationMs).toBe(45 * MINUTE);
+    expect(reviewDay({ rows: odd, edits }).rows[0]?.durationMs).toBe(60 * MINUTE);
   });
 
   it('keeps a duration typed by hand', () => {
@@ -724,7 +724,7 @@ describe('reviewDay, a band nothing named', () => {
     expect(reviewDay({ rows: odd, edits }).rows[0]?.durationMs).toBe(20 * MINUTE);
   });
 
-  it('leaves a rounded proposal beside it untouched', () => {
+  it('leaves a whole proposal beside it untouched', () => {
     const mixed = dayRows({
       proposals: [proposal({ issueKey: 'ABC-1', from: '09:00', to: '10:00', minutes: 60 })],
       unnamed: [band({ from: '08:00', to: '09:00', minutes: 47 })],
@@ -737,7 +737,7 @@ describe('reviewDay, a band nothing named', () => {
     const review = reviewDay({ rows: mixed, edits });
 
     expect(rowFor(review, 'ABC-1').durationMs).toBe(60 * MINUTE);
-    expect(rowFor(review, 'ABC-9').durationMs).toBe(45 * MINUTE);
+    expect(rowFor(review, 'ABC-9').durationMs).toBe(60 * MINUTE);
   });
 });
 

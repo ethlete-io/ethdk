@@ -76,7 +76,7 @@ describe('propose', () => {
     expect(propose({ groups: day }).proposals[0]?.id).toBe(propose({ groups: day }).proposals[0]?.id);
   });
 
-  it('rounds the day as a whole and keeps the observed time beside it', () => {
+  it('books each row up to a whole increment and keeps the observed time beside it', () => {
     const { proposals } = propose({
       groups: [
         group({ fromMinute: 0, observedMinutes: 50, issueKey: 'FIP-2177' }),
@@ -85,7 +85,7 @@ describe('propose', () => {
       ],
     });
 
-    expect(proposals.map((proposal) => proposal.durationMs / MINUTE)).toEqual([45, 45, 30]);
+    expect(proposals.map((proposal) => proposal.durationMs / MINUTE)).toEqual([60, 45, 30]);
     expect(proposals.map((proposal) => proposal.observedMs / MINUTE)).toEqual([50, 40, 30]);
   });
 
@@ -102,7 +102,7 @@ describe('propose', () => {
     expect(unattributed[0]?.observedMs).toBe(20 * MINUTE);
   });
 
-  it('does not let unattributed time affect the rounding of the rest', () => {
+  it('books a row from its own time alone, whatever else the day holds', () => {
     const { proposals } = propose({
       groups: [
         group({ fromMinute: 0, observedMinutes: 50, issueKey: 'FIP-2177' }),
@@ -110,7 +110,7 @@ describe('propose', () => {
       ],
     });
 
-    expect(proposals[0]?.durationMs).toBe(45 * MINUTE);
+    expect(proposals[0]?.durationMs).toBe(60 * MINUTE);
   });
 
   it('carries the evidence chain onto the proposal', () => {
@@ -152,19 +152,20 @@ describe('propose, the work nothing named', () => {
     expect(new Set(unnamed.map((row) => row.id)).size).toBe(2);
   });
 
-  it('carries its observed time, not a rounded one', () => {
+  it('books a whole increment too, so naming it never changes its size', () => {
     const { unnamed } = propose({ groups: [group({ fromMinute: 0, observedMinutes: 47 })] });
 
-    expect(unnamed[0]?.durationMs).toBe(47 * MINUTE);
+    expect(unnamed[0]?.durationMs).toBe(60 * MINUTE);
+    expect(unnamed[0]?.observedMs).toBe(47 * MINUTE);
   });
 
-  it('does not spread a day of increments over the other bands', () => {
+  it('books every short band its own increment rather than sharing a day of them out', () => {
     const minutes = [7, 7, 7, 105];
     const { unnamed } = propose({
       groups: minutes.map((observedMinutes, index) => group({ fromMinute: index * 180, observedMinutes })),
     });
 
-    expect(unnamed.map((row) => row.durationMs / MINUTE)).toEqual(minutes);
+    expect(unnamed.map((row) => row.durationMs / MINUTE)).toEqual([15, 15, 15, 105]);
   });
 
   it(`leaves a proposal's duration where it was`, () => {
