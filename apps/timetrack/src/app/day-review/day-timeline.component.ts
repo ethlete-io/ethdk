@@ -27,14 +27,7 @@ import { BreakWindow, DEFAULT_ROUND_OPTIONS, ReviewedRow, formatDurationMs } fro
 import { tap } from 'rxjs';
 import { formatClockTime } from './format';
 import { BREAK_LANE_KEY, BreakBand, DayLane, lanesOf, laneKeyOfRow } from './lanes';
-import {
-  TimelineEntry,
-  UNNAMED_LABEL,
-  appointmentLabel,
-  appointmentOf,
-  appointmentPaint,
-  rowEntryOf,
-} from './row-edit/row-appointment';
+import { TimelineEntry, UNNAMED_LABEL, appointmentLabel, appointmentOf, rowEntryOf } from './row-edit/row-appointment';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 
 /** Whether the click asked to mark the band rather than to open it. */
@@ -217,7 +210,7 @@ type RowDrag = {
                       (pointerdown)="startDrag({ event: $event, appointment: laid.block.node.appointment, column })"
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
-                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/5 px-2 py-1 text-left text-small data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme"
                       etMenu
                       etMenuContextTrigger
                       role="button"
@@ -239,18 +232,11 @@ type RowDrag = {
                         </ng-template>
                       }
 
-                      @for (paint of PAINT_OF(laid.block.node.appointment); track paint.offset) {
-                        <div
-                          [style.top.%]="paint.offset"
-                          [style.height.%]="paint.span"
-                          class="pointer-events-none absolute inset-x-0 bg-et-theme/25"
-                        ></div>
-                      }
                       @if (labelled(laid.block.span)) {
-                        <span class="relative block truncate">{{ LABEL_OF(laid.block.node.appointment) }}</span>
+                        <span class="block truncate">{{ LABEL_OF(laid.block.node.appointment) }}</span>
                       }
                       @if (detailed(laid.block.span) && descriptionOf(laid.block.node.appointment); as description) {
-                        <span class="relative block truncate text-et-surface-muted">{{ description }}</span>
+                        <span class="block truncate text-et-surface-muted">{{ description }}</span>
                       }
                     </div>
                   }
@@ -337,7 +323,6 @@ export class DayTimelineComponent {
   protected readonly HOURS = Array.from({ length: 25 }, (_, hour) => hour);
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
-  protected readonly PAINT_OF = appointmentPaint;
 
   /** The day as one lane per checkout. The grid supplies the vertical geometry; the lane the inline. */
   protected lanes = computed<DayLane[]>(() =>
