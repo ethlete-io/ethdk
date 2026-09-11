@@ -7,6 +7,7 @@ import {
   checkDay,
   roundDurationUp,
 } from '../rows/round';
+import { snapRowBounds } from '../rows/snap';
 import { formatDurationMs } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
@@ -130,7 +131,10 @@ export const reviewDay = (options: {
   const hidden = reviewed.filter((row) => row.hidden);
   // Rounding spreads a day's increments over the rows a sync writes, so a hidden row has to be out of
   // it before it runs: leaving one in would move minutes onto rows the reviewer can still see.
-  const rows = withRounding({ rows: reviewed.filter((row) => !row.hidden), edits, round: options.round });
+  const rows = snapRowBounds({
+    rows: withRounding({ rows: reviewed.filter((row) => !row.hidden), edits, round: options.round }),
+    options: options.round,
+  });
 
   const replacedMs = options.rows.proposals
     .filter((proposal) => consumed.has(proposal.id))
