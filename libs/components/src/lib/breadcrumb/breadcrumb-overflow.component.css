@@ -4,12 +4,8 @@
   }
 
   .et-breadcrumb-overflow-trigger {
-    /* A round pill would be the one circle in a row of text; match the trail's own rounding. */
     --et-icon-button-border-radius: var(--et-breadcrumb-radius);
 
-    /* Its box carries ~5px of padding around the glyph, so the *visual* gap to the neighbouring
-       chevrons would read as twice the gap between the text crumbs. Pull it back in without giving up
-       any of the hit area. */
     margin-inline: -4px;
   }
 
@@ -17,14 +13,10 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    /* The rows carry their own padding; pulling the list out by that much lets a row's hover fill reach
-       towards the panel edge like a menu row, while the labels stay aligned with the panel's padding. */
     margin: -4px -8px;
     padding: 0;
     list-style: none;
 
-    /* Same crumb template as the trail, but here each one is a row: full-width, so the whole strip is
-       the target, with the fill doing the work the underline does inline. */
     .et-breadcrumb-item {
       display: block;
       padding: 4px 8px;

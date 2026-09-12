@@ -1,14 +1,9 @@
-<!-- `max-content` so the list keeps its natural width instead of letting flex squeeze the crumbs: the
-     host clips the overflow, which is what makes "doesn't fit" measurable at all (see the directive). -->
 <ol class="et-breadcrumb-list">
   @for (slot of breadcrumb.renderedItems(); track $index) {
     <li [attr.data-type]="slot.type" class="et-breadcrumb-slot">
       @if (slot.type === 'item') {
         <ng-container [ngTemplateOutlet]="crumb" [ngTemplateOutletContext]="{ $implicit: slot.item }" />
       } @else {
-        <!-- Rendered dynamically so the collapse affordance - a toggletip, and with it the overlay
-             runtime - is only in the bundle of an app that imports BREADCRUMB_COLLAPSE_IMPORTS. The
-             breadcrumb only ever produces an overflow slot when that import supplied the component. -->
         <ng-container
           [ngComponentOutlet]="breadcrumb.overflowComponent"
           [ngComponentOutletInputs]="{ items: slot.items, crumbTemplate: crumb }"
@@ -28,7 +23,6 @@
   }
 </ol>
 
-<!-- One place decides what a crumb looks like, so an overflowed crumb renders exactly like an inline one. -->
 <ng-template #crumb let-item>
   @if (item.loading()) {
     <et-skeleton class="et-breadcrumb-loading">

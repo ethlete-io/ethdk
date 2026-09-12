@@ -5,10 +5,6 @@ import { ProvideSurfaceDirective } from '@ethlete/core';
 import { tap, timer } from 'rxjs';
 import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from '../breadcrumb.imports';
 
-/**
- * The app shell: it renders the outlet without knowing what any view's trail says, and contributes the
- * root crumb itself.
- */
 @Component({
   selector: 'et-sb-breadcrumb-routed',
   template: `
@@ -22,8 +18,6 @@ import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from '../breadcrumb.i
 
       <et-breadcrumb-outlet etBreadcrumbCollapse />
 
-      <!-- The shell's own crumb: the root, which is a route of its own - so following it actually goes
-           somewhere and the trail shortens to just this crumb. -->
       <ng-template etBreadcrumbSegment>
         <ng-template etBreadcrumbItemTemplate>
           <a etBreadcrumbItem routerLink="/">Home</a>
@@ -40,7 +34,6 @@ export class BreadcrumbRoutedStorybookComponent {
   public surface = input('dark');
 }
 
-/** A layout route: contributes its own crumb and hosts the child routes. Nothing else. */
 @Component({
   selector: 'et-sb-breadcrumb-teams-layout',
   template: `
@@ -64,7 +57,6 @@ export class BreadcrumbTeamsLayoutComponent {}
 })
 export class BreadcrumbTeamsPageComponent {}
 
-/** The root view: it contributes no crumb of its own, so the shell's "Home" is the whole trail here. */
 @Component({
   selector: 'et-sb-breadcrumb-page-home',
   template: `<h2 class="m-0">Home</h2>`,
@@ -72,7 +64,6 @@ export class BreadcrumbTeamsPageComponent {}
 })
 export class BreadcrumbHomePageComponent {}
 
-/** A detail route: contributes exactly one crumb - the record's name, which only it can know. */
 @Component({
   selector: 'et-sb-breadcrumb-page-team',
   template: `
@@ -90,7 +81,6 @@ export class BreadcrumbHomePageComponent {}
   imports: [BREADCRUMB_IMPORTS, RouterLink, RouterOutlet],
 })
 export class BreadcrumbTeamPageComponent {
-  // The crumb only this view can fill in: a placeholder holds its slot until the name is there.
   protected isLoadingName = signal(true);
   protected name = signal('…');
 

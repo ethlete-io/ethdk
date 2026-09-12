@@ -19,11 +19,8 @@ export default {
     applicationConfig({
       providers: [
         provideBreadcrumbManager(),
-        // The hierarchy the composed trail needs: a layout route per level, each contributing its own
-        // crumb, with the leaf views adding only theirs.
         provideRouter(
           [
-            // A root route of its own, so the shell's "Home" crumb has somewhere to go.
             { path: '', pathMatch: 'full', component: BreadcrumbHomePageComponent },
             {
               path: 'teams',

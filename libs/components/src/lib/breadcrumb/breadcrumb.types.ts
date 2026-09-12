@@ -1,10 +1,6 @@
 import { Signal, TemplateRef, WritableSignal } from '@angular/core';
 
-/**
- * What the breadcrumb needs from a crumb - implemented by `etBreadcrumbItemTemplate`. It is a
- * structural type so the manager and the breadcrumb can pass crumbs around without importing the
- * directive that produces them.
- */
+/** What the breadcrumb needs from a crumb - implemented by `etBreadcrumbItemTemplate`. */
 export type BreadcrumbCrumb = {
   /** The crumb's content, rendered wherever the trail decides it goes (inline or in the overflow). */
   templateRef: TemplateRef<unknown>;
@@ -13,9 +9,8 @@ export type BreadcrumbCrumb = {
   loading: Signal<boolean>;
 
   /**
-   * Plain-text name for structured data, when the crumb states one - see `etBreadcrumbSeo`. Optional
-   * so a hand-rolled crumb object stays as small as it was; a crumb without it is left out of the
-   * emitted `BreadcrumbList`.
+   * Plain-text name for structured data, when the crumb states one - see `etBreadcrumbSeo`. A crumb
+   * without it is left out of the emitted `BreadcrumbList`.
    */
   name?: Signal<string | null>;
 

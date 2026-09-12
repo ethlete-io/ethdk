@@ -21,17 +21,12 @@ import { BreadcrumbCrumb, BreadcrumbRenderItem } from '../breadcrumb.types';
 import { BREADCRUMB_COLLAPSE_TOKEN, BREADCRUMB_TOKEN } from './breadcrumb.tokens';
 import { BreadcrumbItemTemplateDirective, BreadcrumbSeparatorDirective } from './breadcrumb-templates.directive';
 
-/** Below this many crumbs there is nothing worth hiding: first + overflow + last is the collapsed shape. */
 const MIN_COLLAPSIBLE_ITEMS = 3;
 
 /**
  * Headless breadcrumb: owns the trail, decides how much of it fits, and exposes the slots to render. It
  * is the navigation landmark itself (`role="navigation"` + a label), so the element you put it on is the
  * `<nav>`.
- *
- * The trail comes from crumb templates declared inside it, or - in the shell's outlet - from the `crumbs`
- * input, which the breadcrumb manager composes out of every registered segment. When the trail is wider
- * than the space available, the middle crumbs move into an overflow slot; first and last stay visible.
  *
  * @example
  * <nav etBreadcrumb>
@@ -61,8 +56,7 @@ export class BreadcrumbDirective {
    * trail be clipped (or wrapped, or scrolled) by your own CSS instead.
    *
    * Only has an effect where the collapse affordance is present: apply `etBreadcrumbCollapse` from
-   * `BREADCRUMB_COLLAPSE_IMPORTS` to the breadcrumb (or any ancestor, e.g. the app shell). Without it
-   * there is no control to move the crumbs into, and the trail is clipped. @default true
+   * `BREADCRUMB_COLLAPSE_IMPORTS` to the breadcrumb (or any ancestor, e.g. the app shell). @default true
    */
   public collapse = input(true, { transform: booleanAttribute });
 
@@ -72,54 +66,35 @@ export class BreadcrumbDirective {
    */
   public labels = input<Partial<BreadcrumbLabels> | null>(null);
 
-  /**
-   * The trail, supplied from outside. This is how `<et-breadcrumb-outlet>` renders a trail composed from
-   * the registered segments: those crumb templates are declared in views this element doesn't contain, so
-   * no content query could reach them. `null` (the default) uses the crumbs declared inside instead.
-   */
+  /** The trail, supplied from outside. `null` (the default) uses the crumbs declared inside instead. */
   public crumbs = input<readonly BreadcrumbCrumb[] | null>(null);
 
-  /** Crumbs declared as content of this element - the direct, non-routed way to build a trail. */
   private declaredCrumbs = contentChildren(BreadcrumbItemTemplateDirective, { descendants: true });
 
-  /** @internal The `etBreadcrumbSeparator` slot, when one is projected. */
+  /** @internal */
   public separatorTemplate = contentChild(BreadcrumbSeparatorDirective, { descendants: true });
 
-  /** Whether collapsing is both wanted and possible - the affordance is an opt-in import. */
   private canCollapse = computed(() => this.collapse() && !!this.collapseAffordance);
 
-  /** @internal The component the overflow slot renders, supplied by `etBreadcrumbCollapse`. */
+  /** @internal */
   public overflowComponent = this.collapseAffordance?.overflowComponent ?? null;
 
   /** The trail this breadcrumb renders, from whichever of the two sources is in play. */
   public items = computed<readonly BreadcrumbCrumb[]>(() => this.crumbs() ?? this.declaredCrumbs());
 
-  // Watches the host: `scroll.width > client.width` is the "doesn't fit" signal, and it re-measures on
-  // resize *and* on DOM mutations - which is what makes a crumb's label arriving late trigger a recheck.
   private scrollState = signalHostElementScrollState();
 
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */
   public resolvedLabels = computed<BreadcrumbLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
-  /**
-   * The width the full trail needs, measured the one time it didn't fit. Kept as state rather than
-   * derived, because it can only be measured while the trail *is* fully rendered - once collapsed, the
-   * host measures the collapsed width and says nothing about what the full trail would need. Reset
-   * whenever the crumb array changes, since new crumbs mean a new width.
-   */
+  /** The width the full trail needs, measured the one time it didn't fit. */
   private fullTrailWidth = linkedSignal<readonly BreadcrumbCrumb[], number | null>({
     source: () => this.items(),
     computation: () => null,
   });
 
-  /** The space the trail has, from the reactive host dimensions (not a `clientWidth` read at call time). */
   private availableWidth = computed(() => this.scrollState().elementDimensions.client?.width ?? 0);
 
-  /**
-   * Whether the trail has been measured at least once. Sticky: a later change to the crumb array
-   * re-measures, but un-painting an already visible trail to do so would be a worse flash than the one
-   * this avoids.
-   */
   private hasMeasured = signal(false);
 
   /** Whether the middle crumbs are currently hidden behind the overflow control. */
@@ -134,27 +109,15 @@ export class BreadcrumbDirective {
   });
 
   /**
-   * Whether a measurement taken while the trail was expanded showed it fitting. A crumb's label is
-   * template content, so an async title arriving while the trail is collapsed makes the full trail wider
-   * without producing a new `items()` - and {@link fullTrailWidth} then remembers a width that is too
-   * small. Cleared on every change of the collapsed state, so re-expanding always has to prove the fit
-   * again rather than trusting that number.
+   * Whether a measurement taken while the trail was expanded showed it fitting. Cleared on every change
+   * of the collapsed state, so re-expanding always has to prove the fit again.
    */
   private fitConfirmed = linkedSignal<boolean, boolean>({
     source: () => this.isCollapsed(),
     computation: () => false,
   });
 
-  /**
-   * Nothing can be known about whether the trail fits before it has been measured, and rendering the full
-   * trail on that guess is the flash on load: the browser paints the overflowing trail, then swaps it for
-   * the collapsed one. The same holds for a re-expansion decided on a remembered width, until
-   * {@link fitConfirmed} backs it. While this is true the trail takes its space but isn't painted - see
-   * the `[data-measuring]` rule in the CSS. Only while collapsing is possible at all; otherwise there is
-   * no decision pending and nothing to wait for.
-   *
-   * @internal
-   */
+  /** @internal */
   public isMeasuring = computed(() => {
     if (!this.canCollapse() || this.items().length < MIN_COLLAPSIBLE_ITEMS) return false;
     if (!this.hasMeasured()) return true;
@@ -182,8 +145,6 @@ export class BreadcrumbDirective {
   });
 
   constructor() {
-    // A crumb can't tell where it sits in a trail that may be composed from several segments, so the one
-    // place that knows the whole trail marks its end - that is what carries `aria-current="page"`.
     effect(() => {
       const items = this.items();
 
@@ -224,11 +185,6 @@ export class BreadcrumbDirective {
     }
   }
 
-  /**
-   * Takes one pair of host measurements as the trail's state: that it has been measured, and - if the full
-   * trail didn't fit - how wide it wants to be. Zero width means the element isn't laid out yet (or sits in
-   * something hidden), which is not a measurement of anything.
-   */
   private recordMeasurement(client: number, scroll: number) {
     if (client === 0) return;
 

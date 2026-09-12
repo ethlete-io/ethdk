@@ -7,12 +7,7 @@ import { BreadcrumbSeoDirective } from '../seo';
   selector: 'et-sb-breadcrumb',
   template: `
     <div [etProvideSurface]="surface()" class="text-medium flex flex-col gap-8 p-8 font-sans">
-      <!-- The box is what the breadcrumb measures itself against: narrow it past the trail's natural
-           width and the middle crumbs move into the overflow control. -->
       <div [style.max-inline-size.px]="width()">
-        <!-- name/url are read only by etBreadcrumbSeo, never rendered: a crumb's content is a template
-             with no single text form, and schema.org wants a plain name and an absolute URL. The last
-             crumb states no url - it is the page the markup is on. -->
         <et-breadcrumb [collapse]="collapse()" [etBreadcrumbSeo]="seo()" etBreadcrumbCollapse>
           <ng-template etBreadcrumbItemTemplate name="Home" url="https://example.com/">
             <a (click)="stayHere($event)" etBreadcrumbItem href="#">Home</a>
@@ -71,15 +66,12 @@ export class BreadcrumbStorybookComponent {
 
   private seoDirective = viewChild(BreadcrumbSeoDirective);
 
-  /** Exactly what the directive puts in the document, read off it rather than rebuilt here. */
   protected emittedJsonLd = computed(() => {
     const data = this.seoDirective()?.structuredData() ?? null;
 
     return data ? JSON.stringify(data, null, 2) : 'nothing emitted';
   });
 
-  // Real crumbs are `routerLink`s (see the routed story); these are hrefs only so they behave like links
-  // without a route to go to, so the demo swallows the navigation.
   protected stayHere(event: Event) {
     event.preventDefault();
   }

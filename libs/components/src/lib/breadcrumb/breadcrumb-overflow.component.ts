@@ -9,10 +9,6 @@ import { BreadcrumbDirective } from './headless';
 /**
  * The control the collapsed middle crumbs live behind. Rendered by the breadcrumb in the overflow slot -
  * you never place it yourself; apply `etBreadcrumbCollapse` and the breadcrumb takes it from there.
- *
- * A toggletip, not a menu: the hidden crumbs are links and headings of the consumer's making, and a
- * `role="menu"` may only contain menu items. This keeps them a plain list of links, reachable with Tab
- * and dismissed with Escape.
  */
 @Component({
   selector: 'et-breadcrumb-overflow',

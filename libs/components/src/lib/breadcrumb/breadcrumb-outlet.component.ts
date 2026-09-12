@@ -9,9 +9,8 @@ import { BreadcrumbComponent } from './breadcrumb.component';
  * order. Put one in the app shell; the views below contribute their own crumbs and never restate their
  * ancestors'.
  *
- * Renders nothing while no view has contributed a crumb, so the shell needs to know nothing about which
- * routes have breadcrumbs. Anything you project into it lands inside the breadcrumb - which is how a
- * shell-wide `<ng-template etBreadcrumbSeparator>` is set.
+ * Renders nothing while no view has contributed a crumb. Anything you project into it lands inside the
+ * breadcrumb - which is how a shell-wide `<ng-template etBreadcrumbSeparator>` is set.
  *
  * @example
  * <et-breadcrumb-outlet />
