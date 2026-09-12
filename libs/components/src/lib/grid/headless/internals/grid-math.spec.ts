@@ -15,9 +15,6 @@ import {
   spanWidth,
 } from './grid-math';
 
-// 12 columns, 1216px content, 16px gap, 100px rows → cellWidth = (1216 - 176) / 12 = 86.666…
-// Use a friendlier setup for exact assertions: 10 columns, 1090px → cellWidth = (1090 - 144) / 10
-// Simplest exact numbers: 4 columns, gap 10, contentWidth 430 → cellWidth = (430 - 30) / 4 = 100.
 const geometry = computeGeometry({ contentWidth: 430, columns: 4, gap: 10, rowHeight: 50 });
 
 const constraints: GridItemConstraints = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxRowSpan: 24 };
@@ -113,19 +110,16 @@ describe('grid-math', () => {
     });
 
     it('should not advance until past the shifted boundary when moving up', () => {
-      // boundary from 1 to 2 sits at 1.5 + 0.1
       expect(hysteresisRound(1.55, 1)).toBe(1);
       expect(hysteresisRound(1.61, 1)).toBe(2);
     });
 
     it('should not retreat until past the shifted boundary when moving down', () => {
-      // boundary from 2 to 1 sits at 1.5 - 0.1
       expect(hysteresisRound(1.45, 2)).toBe(2);
       expect(hysteresisRound(1.39, 2)).toBe(1);
     });
 
     it('should never overshoot back past the last value', () => {
-      // raw above last but rounding with -h would drop below last
       expect(hysteresisRound(2.05, 2)).toBe(2);
       expect(hysteresisRound(1.95, 2)).toBe(2);
     });
@@ -234,7 +228,6 @@ describe('grid-math', () => {
     const bounds = resizeSpanBounds({ edge: 'se', start, constraints, columns: 4 });
 
     it('should keep the span while the edge is under the midpoint', () => {
-      // width for a snap to 2 needs (rect.width + gap) / strideX ≥ 1.5+h → width ≥ 166
       const rect = { x: 110, y: 60, width: 160, height: 50 };
       const snap = snapResizeSpan({ edge: 'e', rect, start, bounds, geometry, lastSnap: start });
       expect(snap.colSpan).toBe(1);
@@ -274,8 +267,6 @@ describe('grid-math', () => {
 
   describe('projectDragCell', () => {
     it('should be independent of the grab point by construction', () => {
-      // the caller passes the item's own top-left; two different grab points on the
-      // same item produce the same float rect and therefore the same cell
       const cell = projectDragCell({ float: { x: 115, y: 62 }, colSpan: 1, geometry, lastTarget: null });
       expect(cell).toEqual({ col: 1, row: 1 });
     });
@@ -296,7 +287,6 @@ describe('grid-math', () => {
     });
 
     it('should apply hysteresis at the cell boundary', () => {
-      // midpoint between col 0 and 1 is x = 55; with h=0.1 the up-boundary shifts to x = 66
       expect(
         projectDragCell({ float: { x: 60, y: 0 }, colSpan: 1, geometry, lastTarget: { col: 0, row: 0 } }).col,
       ).toBe(0);

@@ -5,10 +5,6 @@ import { GridComponent } from '../../grid.component';
 import { createGridAdapter, fromGridPosition, mapGridLayout, toGridPosition } from '../../headless/grid-adapter';
 import { GridItemConfig, GridSerializedState } from '../../headless/grid.types';
 
-// ---------------------------------------------------------------------------
-// Typed data contracts for each widget type
-// ---------------------------------------------------------------------------
-
 export type KpiData = {
   label: string;
   value: number;
@@ -28,12 +24,6 @@ export type NotesData = {
   author: string;
 };
 
-// ---------------------------------------------------------------------------
-// Backend API shape - matches the WidgetView contract from the backend.
-// In a real app this is what GET /partners/dashboards returns and what
-// POST/PATCH /partners/dashboard expects.
-// ---------------------------------------------------------------------------
-
 type BreakpointLayout = { x: number; y: number; cols: number; rows: number };
 
 type MockWidgetData = KpiData | ChartData | NotesData;
@@ -42,15 +32,8 @@ type MockWidgetView = {
   uuid: string;
   type: string;
   layout: { sm: BreakpointLayout; md: BreakpointLayout; lg: BreakpointLayout };
-  // In reality, widget-specific data is managed by separate PUT endpoints.
-  // We inline it here to keep the demo self-contained.
   data: MockWidgetData;
 };
-
-// ---------------------------------------------------------------------------
-// Adapter - bridges MockWidgetView ↔ GridItemConfig.
-// In a real app this lives next to the component that talks to the API.
-// ---------------------------------------------------------------------------
 
 const adapter = createGridAdapter({
   breakpoints: {
@@ -71,10 +54,6 @@ const adapter = createGridAdapter({
     data: item.data,
   }),
 });
-
-// ---------------------------------------------------------------------------
-// KPI widget
-// ---------------------------------------------------------------------------
 
 @Component({
   selector: 'et-sb-kpi-widget',
@@ -103,10 +82,6 @@ const adapter = createGridAdapter({
 export class KpiWidgetComponent {
   public data = input.required<KpiData>();
 }
-
-// ---------------------------------------------------------------------------
-// Chart widget
-// ---------------------------------------------------------------------------
 
 @Component({
   selector: 'et-sb-chart-widget',
@@ -148,10 +123,6 @@ export class ChartWidgetComponent {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Notes widget
-// ---------------------------------------------------------------------------
-
 @Component({
   selector: 'et-sb-notes-widget',
   template: `
@@ -172,10 +143,6 @@ export class ChartWidgetComponent {
 export class NotesWidgetComponent {
   public data = input.required<NotesData>();
 }
-
-// ---------------------------------------------------------------------------
-// Initial grid items (internal GridItemConfig format)
-// ---------------------------------------------------------------------------
 
 const INITIAL_ITEMS: GridItemConfig<string, MockWidgetData>[] = [
   {
@@ -256,10 +223,6 @@ const CONSTRAINTS: Record<string, { minColSpan: number; maxColSpan: number; minR
   };
 
 const DEFAULT_CONSTRAINTS = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxRowSpan: 4 };
-
-// ---------------------------------------------------------------------------
-// Storybook host component
-// ---------------------------------------------------------------------------
 
 @Component({
   selector: 'et-sb-grid-data',
@@ -488,7 +451,6 @@ export class GridDataStorybookComponent {
     return CONSTRAINTS[type] ?? DEFAULT_CONSTRAINTS;
   }
 
-  // Safe casts - template-only, types are always correct by construction
   public asKpi(data: unknown): KpiData {
     return data as KpiData;
   }
@@ -505,9 +467,6 @@ export class GridDataStorybookComponent {
     this.selectedId.update((prev) => (prev === id ? null : id));
   }
 
-  // Keep gridItems in sync with positions after drag/resize/add/remove.
-  // The grid emits the full updated layout; we merge new positions into our signal
-  // while preserving each item's data (which the grid doesn't touch).
   public syncGridItemsWithLayout(state: GridSerializedState<MockWidgetData>) {
     this.gridItems.update((current) =>
       current.map((item) => {
@@ -517,8 +476,6 @@ export class GridDataStorybookComponent {
     );
   }
 
-  // Converts current gridItems to the backend API format via the adapter and shows it.
-  // This is the payload you would send to PATCH /partners/dashboard/:uuid.
   public showApiPayload() {
     this.apiPayloadJson.set(JSON.stringify(adapter.toExternal(this.gridItems()), null, 2));
   }
@@ -557,7 +514,6 @@ export class GridDataStorybookComponent {
       notes: { title: 'New Note', author: 'You', body: 'Write something here…' } satisfies NotesData,
     };
 
-    // layout: {} - grid will auto-place the new item and emit layoutChange with its real position
     this.gridItems.update((items) => [...items, { id, type, data: defaultData[type], layout: {} }]);
   }
 }

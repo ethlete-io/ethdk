@@ -3,10 +3,6 @@ import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 /**
  * Every string the grid announces. It renders no text of its own - the items are yours - so these are
  * all accessible labels.
- *
- * They used to live on `GridConfig` next to a `transformer(text, locale)` hook, which asked an app to
- * translate *by matching the English string*. `GridConfig` keeps the registrations and the actions
- * component; the wording lives here, like every other label in this library.
  */
 export type GridLabels = {
   /** Accessible label for a grid whose items can be moved and resized. */

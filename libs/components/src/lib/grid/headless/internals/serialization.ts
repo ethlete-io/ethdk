@@ -31,7 +31,6 @@ export const serializeGridLayout = <TData>(options: SerializeOptions<TData>): Gr
 
 /**
  * Deserializes a stored grid state back into working configuration.
- * Returns breakpoint configs and item configs.
  */
 export const deserializeGridLayout = <TData>(
   state: GridSerializedState<TData>,

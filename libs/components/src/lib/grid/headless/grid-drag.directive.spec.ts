@@ -42,7 +42,6 @@ describe('GridDragDirective', () => {
 
   const itemEl = () => query(fixture, 'et-grid-item')!;
 
-  /** Grabs the item and drags it one and a half cells right - past the commit threshold. */
   const dragRight = () => {
     pointerEvent(itemEl(), 'pointerdown', { button: 0, clientX: 10, clientY: 10, pointerId: 1 });
     pointerEvent(document, 'pointermove', { clientX: 400, clientY: 10, pointerId: 1 });

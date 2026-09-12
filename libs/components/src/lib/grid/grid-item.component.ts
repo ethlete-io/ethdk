@@ -55,8 +55,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
   },
   styles: `
     .et-grid-item {
-      /* The gap is dead space, so the hit strips grow out into it rather than eating content area.
-         Never past half of it: adjacent items are siblings at one z-index, so overlapping strips
+      /* Never past half the gap: adjacent items are siblings at one z-index, so overlapping strips
          would be resolved by DOM order and the later item would swallow its neighbour's handle. */
       --et-resize-handles-outset: min(8px, calc(var(--et-grid-gap, 16px) / 2));
 

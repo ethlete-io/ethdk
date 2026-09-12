@@ -7,7 +7,6 @@ import { posEq, posLabel } from './grid-partner-storybook.data';
 
 type BreakpointLayout = { x: number; y: number; cols: number; rows: number };
 
-/** What the widgets in this demo carry - the type `et-grid` hands back on `layoutChange`. */
 type PartnerWidgetData = {
   title: string;
   items: unknown[];

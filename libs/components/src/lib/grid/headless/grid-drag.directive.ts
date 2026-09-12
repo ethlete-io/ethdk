@@ -28,9 +28,8 @@ import {
     class: 'et-grid-drag',
     '[class.et-grid-drag--active]': '!grid?.readOnly() && dragHandle.isDragging()',
     '[attr.aria-grabbed]': '!grid?.readOnly() && dragHandle.isDragging()',
-    // Re-states the drag handle's touch-action lock with read-only awareness: a read-only grid
-    // is plain scrollable content. Must bind a concrete value in both states - this binding
-    // outranks the host directive's, and a null here clears the property instead of delegating.
+    // Must bind a concrete value in both states - this binding outranks the host directive's, and a
+    // null here clears the property instead of delegating.
     '[style.touch-action]': "grid?.readOnly() ? 'auto' : 'none'",
   },
 })
@@ -113,8 +112,6 @@ export class GridDragDirective {
       });
     });
 
-    // A plain width change (e.g. a scrollbar appearing because the grid grew) keeps the
-    // breakpoint - re-anchor and re-project instead of cancelling.
     effect(() => {
       this.grid?.containerWidth();
 
@@ -143,9 +140,8 @@ export class GridDragDirective {
 
     if (!origin) return;
 
-    // Measure the VISUAL rect (translate included) - correct even when the item is
-    // grabbed mid-settle. Between pointerdown and the commit threshold nothing moves,
-    // so pointerdown coords against this rect give the exact grab offset.
+    // Measure the VISUAL rect (translate included) - correct even when the item is grabbed
+    // mid-settle.
     const itemRect = this.elementRef.nativeElement.getBoundingClientRect();
 
     this.grabOffset = {
@@ -188,10 +184,9 @@ export class GridDragDirective {
       y: pointer.clientY - containerOrigin.top,
     };
 
-    // Clamp the float to the grid bounds. Horizontally the item can never leave the
-    // container; vertically its top can reach the current content bottom (so it can
-    // still be dropped onto a new last row). Without this the floating item creates
-    // page overflow, which feeds the auto-scroller ever more room to scroll into.
+    // Horizontally the item can never leave the container; vertically its top can reach the current
+    // content bottom (so it can still be dropped onto a new last row). Without this the floating item
+    // creates page overflow, which feeds the auto-scroller ever more room to scroll into.
     const contentHeight = rowsToPixelHeight(computeGridHeight(grid.layout()), geometry);
     const maxX = geometry.originX + Math.max(0, geometry.contentWidth - size.width);
     const maxY = geometry.originY + contentHeight;

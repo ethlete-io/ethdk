@@ -61,9 +61,6 @@ type AutoPlaceForMappingOptions = {
   columns: number;
 };
 
-/**
- * Internal auto-placement used during breakpoint mapping.
- */
 const autoPlaceForMapping = (options: AutoPlaceForMappingOptions): GridItemPosition => {
   const { placed, colSpan, rowSpan, columns } = options;
 

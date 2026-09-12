@@ -104,7 +104,6 @@ describe('layout-engine', () => {
     });
 
     it('should clamp horizontally out-of-bounds positions into the grid', () => {
-      // colSpan 12 / col 8 are 12-column values rendered in a 6-column grid (stale breakpoint data).
       const entries: GridLayoutEntry[] = [
         { id: 'opportunities', position: { col: 8, row: 2, colSpan: 4, rowSpan: 3 } },
       ];
@@ -118,8 +117,6 @@ describe('layout-engine', () => {
     });
 
     it('should never produce overlaps when clamping drops an item onto an occupied cell', () => {
-      // Reproduces the resize bug: in a 6-col grid, opportunities sits at col 8 (out of bounds).
-      // Clamping alone would slide it to col 2 - straight on top of contacts at col 0.
       const entries: GridLayoutEntry[] = [
         { id: 'managers', position: { col: 0, row: 0, colSpan: 6, rowSpan: 2 } },
         { id: 'contacts', position: { col: 0, row: 2, colSpan: 6, rowSpan: 3 } },
@@ -128,7 +125,6 @@ describe('layout-engine', () => {
 
       const result = compactLayout({ entries, columns: 6 });
 
-      // No pair of items may overlap, and every item stays in bounds.
       for (const entry of result) {
         expect(entry.position.col + entry.position.colSpan).toBeLessThanOrEqual(6);
 
@@ -147,7 +143,6 @@ describe('layout-engine', () => {
 
       const result = compactLayout({ entries, columns: 12, rowFloors: new Map([['1', 1]]) });
 
-      // Item 1 is floored at row 1; item 2 has no floor and stops right below it.
       expect(result.find((e) => e.id === '1')?.position.row).toBe(1);
       expect(result.find((e) => e.id === '2')?.position.row).toBe(2);
     });
@@ -268,8 +263,6 @@ describe('layout-engine', () => {
 
     describe('moving down over other items (escape upward)', () => {
       it('lets a smaller collider escape into the vacated origin instead of undoing the move', () => {
-        // A tall item dragged down onto a shorter one below it: previously the short item was
-        // pushed down and compaction pulled the tall one straight back to its origin (no-op).
         const entries: GridLayoutEntry[] = [
           { id: 'tall', position: { col: 0, row: 2, colSpan: 4, rowSpan: 2 } },
           { id: 'short', position: { col: 0, row: 2, colSpan: 4, rowSpan: 1 } },
@@ -287,7 +280,6 @@ describe('layout-engine', () => {
       });
 
       it('resolves the dashboard scenario: a wide item dropped onto a row with two colliders', () => {
-        // The default-story layout (12 cols): chart-1 dragged down onto the text/chart-2 row.
         const entries: GridLayoutEntry[] = [
           { id: 'chart-1', position: { col: 0, row: 2, colSpan: 8, rowSpan: 2 } },
           { id: 'table-1', position: { col: 8, row: 0, colSpan: 4, rowSpan: 2 } },
@@ -302,8 +294,6 @@ describe('layout-engine', () => {
           originPosition: { col: 0, row: 0, colSpan: 8, rowSpan: 2 },
         });
 
-        // text-1 escapes up into the vacated origin, chart-1 keeps the dropped row,
-        // chart-2 (blocked above by table-1) is pushed below.
         expect(result.find((e) => e.id === 'text-1')?.position).toMatchObject({ col: 0, row: 0 });
         expect(result.find((e) => e.id === 'chart-1')?.position).toMatchObject({ col: 0, row: 2 });
         expect(result.find((e) => e.id === 'chart-2')?.position).toMatchObject({ col: 5, row: 4 });
@@ -311,8 +301,6 @@ describe('layout-engine', () => {
       });
 
       it('still pushes down when nothing fits above the moved item', () => {
-        // Moved only one row down: the collider (rowSpan 2) has no room above row 1,
-        // so the previous push-down + compaction behavior applies unchanged.
         const entries: GridLayoutEntry[] = [
           { id: 'tall', position: { col: 0, row: 1, colSpan: 4, rowSpan: 2 } },
           { id: 'other', position: { col: 0, row: 2, colSpan: 4, rowSpan: 2 } },
@@ -354,7 +342,6 @@ describe('layout-engine', () => {
 
         const result = resolveCollisions({ entries, movedId: 'a', columns: 12 });
 
-        // plain push-down + compaction: a first, b below
         expect(result.find((e) => e.id === 'a')?.position.row).toBe(0);
         expect(result.find((e) => e.id === 'b')?.position.row).toBe(1);
       });

@@ -21,7 +21,6 @@ import { PixelRect, pixelRectsEqual, positionsEqual, positionToPixelRect } from 
 
 const SETTLE_FALLBACK_MS = 350;
 
-/** An unset span input stays unset; anything else goes through Angular's own number coercion. */
 const optionalNumberAttribute = (value: unknown) =>
   value === undefined || value === null || value === '' ? undefined : numberAttribute(value);
 
@@ -137,10 +136,8 @@ export class GridItemDirective {
       onCleanup(() => this.grid?.unregisterConstraints(id));
     });
 
-    // Items mounted mid-session (addItem) scale/fade in: they mount with the
-    // entering styles already applied (CSS transitions never run on insertion),
-    // then the class is cleared one frame later and transitions to the resting
-    // state. Items mounted during initial load appear in place.
+    // Items mounted mid-session (addItem) mount with the entering styles already applied - CSS
+    // transitions never run on insertion - and the class is cleared one frame later.
     if (untracked(() => this.grid?.animationsEnabled())) {
       this.enteringSignal.set(true);
       afterNextRender(() => this.enteringSignal.set(false), { injector: this.injector });
