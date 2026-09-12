@@ -45,17 +45,14 @@ export class SchedulerMonthViewComponent {
   private cells = viewChildren<ElementRef<HTMLElement>>('cell');
   public draftAnchor = viewChild<ElementRef<HTMLElement>>('draftAnchor');
 
-  /** Whether the `etSchedulerAppointmentDrag` feature is present and on - see that directive. */
   protected canDragAppointments = computed(() => this.appointmentDrag?.isEnabled() ?? false);
 
-  /** Whether the press now ending moved a badge, rather than being a click on it - see {@link select}. */
   private hasDragged = false;
 
   constructor() {
     injectStyleManager().mount(SchedulerAppointmentStylesComponent);
   }
 
-  /** UI contributed by badge features (title, time range, …) - see `registerBadgeAdornment`. */
   protected badgeAdornments() {
     return this.featureHost?.badgeAdornments() ?? [];
   }
@@ -87,22 +84,12 @@ export class SchedulerMonthViewComponent {
     return this.scheduler?.appointmentDrag()?.appointment.id === appointment.id;
   }
 
-  /**
-   * The cells a dragged appointment would land on. Needed on top of the badge's own preview: a target
-   * cell already at `maxVisiblePerCell` collapses the badge into its overflow menu, leaving the drag
-   * with no feedback at all.
-   */
   protected isDropTarget(date: Date) {
     const drag = this.scheduler?.appointmentDrag();
 
     return !!drag && date >= startOfDay(drag.start) && date <= drag.end;
   }
 
-  /**
-   * Moves an appointment to another day cell, keeping its time of day and its duration - the month
-   * works in whole days, so a badge has no edge to resize by. Touch arms on a long press, same as
-   * drawing a range does; see `startSchedulerDragGesture`.
-   */
   protected startAppointmentDrag(event: PointerEvent, target: { appointment: Appointment; weeks: HTMLElement }) {
     // a press on a badge must not also draw a fresh range across the cells underneath it
     event.stopPropagation();
@@ -130,7 +117,6 @@ export class SchedulerMonthViewComponent {
 
         const to = this.dateAt(weeks, { clientX, clientY });
 
-        // dragged off the grid: leave it on the last cell it was over rather than snapping home
         if (!to) return;
 
         const days = differenceInCalendarDays(to, grab);
@@ -142,10 +128,6 @@ export class SchedulerMonthViewComponent {
     });
   }
 
-  /**
-   * Drags an all-day appointment's day span across the month grid. Whole days, so the range covers
-   * every cell between the one pressed and the one under the pointer, in either direction.
-   */
   protected startDraftRange(event: PointerEvent, weeks: HTMLElement) {
     const scheduler = this.scheduler;
 
@@ -169,7 +151,6 @@ export class SchedulerMonthViewComponent {
       settle: () => {
         const draft = scheduler.draftRange();
 
-        // a click made while a surface is open is dismissing it, not asking for another appointment
         if (!draft && !scheduler.selectedAppointmentId()) {
           scheduler.setDraftRange({ start: startOfDay(anchor), end: endOfDay(anchor), allDay: true });
         } else if (draft?.phase !== 'dragging') {
@@ -186,8 +167,6 @@ export class SchedulerMonthViewComponent {
   private coverDraftRange(weeks: HTMLElement): HTMLElement | null {
     const anchor = this.draftAnchor()?.nativeElement;
     const rows = this.month.weeks();
-    // only the first week row the range touches: a range that wraps spans every column, so covering
-    // all of it would center the surface on the grid rather than on what was drawn
     const rowIndex = rows.findIndex((week) => week.some((cell) => this.isDrafted(cell.date)));
     const row = rows[rowIndex];
 
@@ -215,11 +194,6 @@ export class SchedulerMonthViewComponent {
     return anchor;
   }
 
-  /**
-   * The day cell under a pointer position. Columns are a uniform seventh of the row, but week rows
-   * grow with their busiest cell, so the row is found by hit-testing the rendered rows rather than
-   * dividing the grid's height.
-   */
   private dateAt(weeks: HTMLElement, at: { clientX: number; clientY: number }): Date | null {
     const rows = this.weekRows();
     const weekIndex = rows.findIndex((row) => {

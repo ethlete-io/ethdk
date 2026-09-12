@@ -37,11 +37,9 @@ export type SchedulerTimeGridAllDayEntry<TExtra = unknown> = {
   row: number;
 };
 
-/** The full time grid: one column per visible day, plus the all-day entries spanning across them. */
 export type SchedulerTimeGrid<TExtra = unknown> = {
   days: SchedulerTimeGridDay<TExtra>[];
   allDay: SchedulerTimeGridAllDayEntry<TExtra>[];
-  /** How many stacking rows the all-day lane needs - callers size its reserved space from this. */
   allDayRowCount: number;
 };
 
@@ -56,17 +54,6 @@ const coversDay = (appointment: Appointment, day: { start: Date; end: Date }) =>
 
 type ClippedEntry<TExtra> = { node: AppointmentTreeNode<TExtra>; start: number; end: number };
 
-/**
- * Packs one day's timed appointments into the fewest overlap-free columns: appointments are
- * grouped into clusters transitively connected by overlap, then within each cluster assigned the
- * first column whose previous occupant already ended. `inlineOffset`/`inlineSize` are then derived
- * from `column`/`columnCount` as percentages of the day column's width.
- *
- * A block then widens into the columns to its right that nothing overlapping it occupies. Without
- * that, one short overlap in the morning makes every block in the cluster - which is transitive, so
- * often the whole day - as thin as the widest moment of it, and a day with one two-way overlap reads
- * as a day of half-width blocks.
- */
 const packColumns = <TExtra>(
   entries: readonly ClippedEntry<TExtra>[],
   day: { startMs: number; ms: number },
@@ -138,11 +125,6 @@ const packColumns = <TExtra>(
 
 type DaySpan<TExtra> = { node: AppointmentTreeNode<TExtra>; startIndex: number; endIndex: number };
 
-/**
- * Assigns each all-day entry the first stacking row whose last occupant ends before it starts -
- * the day-axis equivalent of {@link packColumns}'s column assignment, so entries whose day ranges
- * overlap stack into separate rows instead of drawing on top of each other.
- */
 const packAllDayRows = <TExtra>(
   spans: readonly DaySpan<TExtra>[],
 ): { rowByAppointmentId: Map<AppointmentId, number>; rowCount: number } => {
@@ -161,16 +143,6 @@ const packAllDayRows = <TExtra>(
   return { rowByAppointmentId, rowCount: rowEnds.length };
 };
 
-/**
- * Lays out a time grid: timed appointments packed into overlap-free columns per day
- * ({@link packColumns}) with `offset`/`span` as percentages of the day, and all-day appointments
- * as entries spanning the visible days they cover, stacked into rows ({@link packAllDayRows}).
- * Every percentage is exposed as a unitless CSS custom property and resolved with
- * `calc(var(...) * 1%)` against a CSS-controlled size - no pixel math here, same as the slider's
- * thumb-position percent. A timed appointment spanning midnight is clipped to each day it
- * touches; an all-day appointment outside the visible range is clipped to its first/last visible
- * day, same as the month grid's "every day it spans" rule.
- */
 export const buildSchedulerTimeGrid = <TExtra>(
   options: SchedulerTimeGridOptions<TExtra>,
 ): SchedulerTimeGrid<TExtra> => {
@@ -233,12 +205,6 @@ export const buildSchedulerTimeGrid = <TExtra>(
   return { days: dayColumns, allDay, allDayRowCount: rowCount };
 };
 
-/**
- * Which hour the time grid's scrollable body should open scrolled to, so day/week view never
- * starts on an empty screen scrolled to midnight: the current hour (with an hour of lead-in) when
- * today is one of the visible days, else the earliest timed appointment's hour (same lead-in),
- * else a business-hours default.
- */
 export const computeInitialScrollHour = <TExtra>(grid: SchedulerTimeGrid<TExtra>, now: Date) => {
   if (grid.days.some((day) => day.today)) {
     return Math.max(0, now.getHours() - 1);

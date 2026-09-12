@@ -10,7 +10,6 @@ const COLOR_TOKENS = ['brand', 'success', 'warning', 'danger'];
 const titleAt = (index: number) => TITLES[index % TITLES.length] ?? 'Meeting';
 const colorAt = (index: number) => COLOR_TOKENS[index % COLOR_TOKENS.length] ?? 'brand';
 
-/** A stand-in for a paged appointment endpoint: the same days always yield the same appointments. */
 export const generateAgendaAppointments = (from: Date, dayCount: number): Appointment[] => {
   const appointments: Appointment[] = [];
 

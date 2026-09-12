@@ -26,7 +26,6 @@ export class SchedulerEditTimeRangeDirective {
   private host = injectSchedulerEditSurfaceHost('etSchedulerEditTimeRange');
   private surface = inject(SchedulerEditSurfaceDirective);
 
-  /** See {@link SchedulerEditTimeRangeConfig}. */
   public config = input({} as SchedulerEditTimeRangeConfig, {
     alias: 'etSchedulerEditTimeRange',
     transform: schedulerFeatureConfig<SchedulerEditTimeRangeConfig>,

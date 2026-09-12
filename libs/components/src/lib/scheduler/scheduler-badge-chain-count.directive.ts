@@ -20,7 +20,6 @@ export type SchedulerBadgeChainCountConfig = SchedulerFeatureConfig;
 export class SchedulerBadgeChainCountDirective {
   private host = injectSchedulerFeatureHost('etSchedulerBadgeChainCount');
 
-  /** See {@link SchedulerBadgeChainCountConfig}. */
   public config = input({} as SchedulerBadgeChainCountConfig, {
     alias: 'etSchedulerBadgeChainCount',
     transform: schedulerFeatureConfig<SchedulerBadgeChainCountConfig>,

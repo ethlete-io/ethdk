@@ -14,6 +14,5 @@ import { AppointmentTreeNode } from './headless';
   encapsulation: ViewEncapsulation.None,
 })
 export class SchedulerBadgeColorDotComponent {
-  /** The tree node this badge renders - unused here, present to satisfy `SchedulerBadgeAdornment`. */
   public node = input.required<AppointmentTreeNode>();
 }

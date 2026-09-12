@@ -1,18 +1,11 @@
 import { Appointment, AppointmentId } from '../../scheduler.types';
 
-/** One node of the tree {@link buildAppointmentTree} produces - an appointment, its nesting depth, and its direct children, arbitrarily deep. */
 export type AppointmentTreeNode<TExtra = unknown> = {
   appointment: Appointment<TExtra>;
   depth: number;
   children: AppointmentTreeNode<TExtra>[];
 };
 
-/**
- * Builds the sub-appointment tree from a flat list, keyed by {@link Appointment.parentId}. An
- * appointment whose `parentId` names an id that isn't in the list comes back at the top level,
- * rather than being dropped - a chain that lost its root during filtering still renders. Order
- * within a level follows the input list's order, not start time.
- */
 export const buildAppointmentTree = <TExtra>(
   appointments: readonly Appointment<TExtra>[],
 ): AppointmentTreeNode<TExtra>[] => {
@@ -40,16 +33,13 @@ export const buildAppointmentTree = <TExtra>(
   return buildLevel(null, 0);
 };
 
-/** Flattens a tree depth-first, a parent immediately followed by its children - what the agenda view renders. */
 export const flattenAppointmentTree = <TExtra>(
   nodes: readonly AppointmentTreeNode<TExtra>[],
 ): AppointmentTreeNode<TExtra>[] => nodes.flatMap((node) => [node, ...flattenAppointmentTree(node.children)]);
 
-/** Every descendant a node has, at any depth - what the chain-count badge adornment shows. */
 export const countDescendants = (node: Pick<AppointmentTreeNode, 'children'>): number =>
   node.children.reduce((count, child) => count + 1 + countDescendants(child), 0);
 
-/** Finds the tree node for an appointment id, searching every chain at any depth. */
 export const findAppointmentNode = <TExtra>(
   nodes: readonly AppointmentTreeNode<TExtra>[],
   id: AppointmentId,
@@ -69,6 +59,5 @@ export const findAppointmentNode = <TExtra>(
   return null;
 };
 
-/** Every descendant id a node has, at any depth - what "delete (with descendants)" removes in one pass. */
 export const collectDescendantIds = (node: Pick<AppointmentTreeNode, 'children'>): AppointmentId[] =>
   node.children.flatMap((child) => [child.appointment.id, ...collectDescendantIds(child)]);

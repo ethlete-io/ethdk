@@ -45,9 +45,6 @@
     }
   }
 
-  /* Shared by every badge/block-shaped button a view renders, so the title adornment's own class
-     lays out the same way whether it's stamped into `.et-scheduler-appointment` (month, agenda,
-     all-day) or `.et-scheduler-time-grid-block` (the time grid). */
   .et-scheduler-appointment-title {
     overflow: hidden;
     min-inline-size: 0;
@@ -56,8 +53,6 @@
     white-space: nowrap;
   }
 
-  /* The theme's full-strength accent, against the badge's own tinted background - shared by every
-     view that mounts this stylesheet (see `registerBadgeAdornment`'s color-dot adornment). */
   .et-scheduler-appointment-dot {
     flex-shrink: 0;
     inline-size: 6px;

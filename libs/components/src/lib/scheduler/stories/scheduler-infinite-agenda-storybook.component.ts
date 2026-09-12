@@ -56,7 +56,6 @@ export class SchedulerInfiniteAgendaStorybookComponent {
 
   protected focusedDate = signal(startOfToday());
 
-  /** Stepping the period is a new window, so the pages loaded into the old one are gone with it. */
   protected loadedDays = linkedSignal({ source: this.focusedDate, computation: () => PAGE_DAYS });
 
   protected loading = signal(false);

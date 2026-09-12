@@ -49,7 +49,6 @@ export class SchedulerEditTimeRangeComponent {
   protected updateRange(value: DateTimeRangeValue) {
     this.draft().update((appointment) => ({
       ...appointment,
-      // a cleared side keeps the appointment's own timestamp - the surface has no empty state
       start: value.start === null ? appointment.start : parse(value.start, this.dateFormat, appointment.start),
       end: value.end === null ? appointment.end : parse(value.end, this.dateFormat, appointment.end),
     }));

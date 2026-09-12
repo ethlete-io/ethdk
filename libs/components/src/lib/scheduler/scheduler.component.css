@@ -14,9 +14,6 @@
     gap: 8px;
   }
 
-  /* Mobile-first: the view switch always gets its own full-width row below the nav row, and the
-     spacer that would otherwise push it to the end of a single row is dropped. A wide-enough
-     container restores the single-row layout the switch was designed for. */
   .et-scheduler-view-switch {
     flex-basis: 100%;
   }
@@ -26,10 +23,6 @@
     gap: 8px;
   }
 
-  /* At the same width Today drops its text and becomes a round icon button the size of the nav
-     buttons beside it. Both shapes carry the same aria-label on the button, so the accessible name
-     never changes; the two-class selectors are what beat the button's own `:where()`-weighted
-     size rules. */
   @container et-scheduler not (min-inline-size: 480px) {
     .et-scheduler .et-scheduler-today-button {
       --et-button-padding: 0;
@@ -86,10 +79,6 @@
     flex: 1;
   }
 
-  /* Gives the view switch an accessible name via a real projected <et-label> (the group's own
-     accessible-name check only recognizes that, not a plain aria-label) without showing "Switch
-     view" as visible toolbar text. There is no shared visually-hidden class in this library, so
-     the clip trick lives here too. */
   .et-scheduler-view-switch-label {
     position: absolute;
     inline-size: 1px;

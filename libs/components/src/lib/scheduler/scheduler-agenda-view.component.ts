@@ -34,10 +34,7 @@ export class SchedulerAgendaViewComponent {
 
       return {
         ...day,
-        // no heading on the first day: the toolbar's own label already names the period it starts in
         month: previous && !isSameMonth(previous.date, day.date) ? this.monthLabel(day.date) : null,
-        // deeper chains keep the last four levels rather than indenting off the edge - the elbow is
-        // always the innermost guide, so slicing from the end keeps the row readable
         rows: day.nodes.map((node, index) => ({ node, guides: (guides[index] ?? []).slice(-4) })),
       };
     });
@@ -47,7 +44,6 @@ export class SchedulerAgendaViewComponent {
     injectStyleManager().mount(SchedulerAppointmentStylesComponent);
   }
 
-  /** UI contributed by badge features (title, time range, …) - see `registerBadgeAdornment`. */
   protected badgeAdornments() {
     return this.featureHost?.badgeAdornments() ?? [];
   }

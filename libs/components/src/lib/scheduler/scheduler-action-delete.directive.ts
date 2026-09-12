@@ -27,7 +27,6 @@ export class SchedulerActionDeleteDirective {
   private surface = inject(SchedulerEditSurfaceDirective);
   private labels = injectSchedulerLabels();
 
-  /** See {@link SchedulerActionDeleteConfig}. */
   public config = input({} as SchedulerActionDeleteConfig, {
     alias: 'etSchedulerActionDelete',
     transform: schedulerFeatureConfig<SchedulerActionDeleteConfig>,

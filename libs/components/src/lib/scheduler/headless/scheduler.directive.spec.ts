@@ -51,7 +51,6 @@ describe('SchedulerDirective', () => {
     host.view.set('month');
     fixture.detectChanges();
 
-    // July 2026: 1st is a Wednesday, 31st a Friday - the Monday-based grid runs June 29 to Aug 2
     expect(directive.visibleRange()).toEqual({
       start: new Date(2026, 5, 29),
       end: new Date(2026, 7, 2, 23, 59, 59, 999),

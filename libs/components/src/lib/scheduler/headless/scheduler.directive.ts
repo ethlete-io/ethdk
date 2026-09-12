@@ -190,7 +190,6 @@ export class SchedulerDirective<TExtra = unknown> {
    */
   public surfaceAnchor = signal<HTMLElement | null>(null);
 
-  /** Where the current drag started, so extending backwards past it flips the range. */
   private draftAnchor: Date | null = null;
 
   /**

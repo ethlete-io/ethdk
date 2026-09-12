@@ -23,12 +23,6 @@ export type SchedulerMonthGridOptions<TExtra> = {
 const appointmentCoversDay = (appointment: Appointment, day: { start: Date; end: Date }) =>
   appointment.start <= day.end && appointment.end >= day.start;
 
-/**
- * Buckets a sub-appointment tree into a month grid: full weeks padded with the leading/trailing
- * days of adjacent months, each day capped to `maxVisiblePerCell` appointments (chain order
- * preserved, depth-first) with the rest counted as overflow for a "+N more" affordance. An
- * appointment appears on every day it spans, not just the day it starts.
- */
 export const buildSchedulerMonthGrid = <TExtra>(
   options: SchedulerMonthGridOptions<TExtra>,
 ): SchedulerMonthDayCell<TExtra>[][] => {

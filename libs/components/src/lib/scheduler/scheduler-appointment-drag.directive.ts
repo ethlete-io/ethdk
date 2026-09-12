@@ -27,7 +27,6 @@ export class SchedulerAppointmentDragDirective {
   private scheduler = inject(SchedulerDirective, { optional: true });
   private styleManager = injectStyleManager();
 
-  /** See {@link SchedulerAppointmentDragConfig}. */
   public config = input({} as SchedulerAppointmentDragConfig, {
     alias: 'etSchedulerAppointmentDrag',
     transform: schedulerFeatureConfig<SchedulerAppointmentDragConfig>,
