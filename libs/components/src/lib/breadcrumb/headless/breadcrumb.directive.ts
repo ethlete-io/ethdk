@@ -2,6 +2,7 @@ import {
   Directive,
   ElementRef,
   afterNextRender,
+  afterRenderEffect,
   booleanAttribute,
   computed,
   contentChild,
@@ -104,7 +105,7 @@ export class BreadcrumbDirective {
    * The width the full trail needs, measured the one time it didn't fit. Kept as state rather than
    * derived, because it can only be measured while the trail *is* fully rendered - once collapsed, the
    * host measures the collapsed width and says nothing about what the full trail would need. Reset
-   * whenever the trail changes, since new crumbs mean a new width.
+   * whenever the crumb array changes, since new crumbs mean a new width.
    */
   private fullTrailWidth = linkedSignal<readonly BreadcrumbCrumb[], number | null>({
     source: () => this.items(),
@@ -115,23 +116,11 @@ export class BreadcrumbDirective {
   private availableWidth = computed(() => this.scrollState().elementDimensions.client?.width ?? 0);
 
   /**
-   * Whether the trail has been measured at least once. Sticky: a later trail change re-measures, but
-   * un-painting an already visible trail to do so would be a worse flash than the one this avoids.
+   * Whether the trail has been measured at least once. Sticky: a later change to the crumb array
+   * re-measures, but un-painting an already visible trail to do so would be a worse flash than the one
+   * this avoids.
    */
   private hasMeasured = signal(false);
-
-  /**
-   * Nothing can be known about whether the trail fits before it has been measured, and rendering the full
-   * trail on that guess is the flash on load: the browser paints the overflowing trail, then swaps it for
-   * the collapsed one. While this is true the trail takes its space but isn't painted - see the
-   * `[data-measuring]` rule in the CSS. Only while collapsing is possible at all; otherwise there is no
-   * decision pending and nothing to wait for.
-   *
-   * @internal
-   */
-  public isMeasuring = computed(
-    () => this.canCollapse() && this.items().length >= MIN_COLLAPSIBLE_ITEMS && !this.hasMeasured(),
-  );
 
   /** Whether the middle crumbs are currently hidden behind the overflow control. */
   public isCollapsed = computed(() => {
@@ -142,6 +131,35 @@ export class BreadcrumbDirective {
     if (fullTrailWidth === null) return false;
 
     return this.availableWidth() < fullTrailWidth;
+  });
+
+  /**
+   * Whether a measurement taken while the trail was expanded showed it fitting. A crumb's label is
+   * template content, so an async title arriving while the trail is collapsed makes the full trail wider
+   * without producing a new `items()` - and {@link fullTrailWidth} then remembers a width that is too
+   * small. Cleared on every change of the collapsed state, so re-expanding always has to prove the fit
+   * again rather than trusting that number.
+   */
+  private fitConfirmed = linkedSignal<boolean, boolean>({
+    source: () => this.isCollapsed(),
+    computation: () => false,
+  });
+
+  /**
+   * Nothing can be known about whether the trail fits before it has been measured, and rendering the full
+   * trail on that guess is the flash on load: the browser paints the overflowing trail, then swaps it for
+   * the collapsed one. The same holds for a re-expansion decided on a remembered width, until
+   * {@link fitConfirmed} backs it. While this is true the trail takes its space but isn't painted - see
+   * the `[data-measuring]` rule in the CSS. Only while collapsing is possible at all; otherwise there is
+   * no decision pending and nothing to wait for.
+   *
+   * @internal
+   */
+  public isMeasuring = computed(() => {
+    if (!this.canCollapse() || this.items().length < MIN_COLLAPSIBLE_ITEMS) return false;
+    if (!this.hasMeasured()) return true;
+
+    return this.fullTrailWidth() !== null && !this.isCollapsed() && !this.fitConfirmed();
   });
 
   /** The slots to render: every crumb, or first + overflow + last once collapsed. */
@@ -176,26 +194,19 @@ export class BreadcrumbDirective {
       });
     });
 
-    effect(() => {
-      const dimensions = this.scrollState().elementDimensions;
-
-      untracked(() => {
-        const client = dimensions.client?.width ?? 0;
-        const scroll = dimensions.scroll?.width ?? 0;
-
-        this.recordMeasurement(client, scroll);
-      });
-    });
-
-    // The resize observer behind the signal above only delivers its first measurement after the trail has
-    // been laid out, which is a frame too late to decide what to paint. So take that first measurement
-    // here: a render hook runs after change detection but before the browser paints, so the collapsed
-    // trail is what gets painted rather than a corrected version of the full one.
-    afterNextRender({
+    // Every measurement has to be read here rather than out of the observers: a render hook runs after
+    // change detection but before the browser paints, so it sees the trail that is about to be painted,
+    // while the observers report the DOM as it was before the collapsed and full trail were swapped. The
+    // two reads below are the dependencies that re-run it - the host's dimensions or content changed, and
+    // a measuring pass opened - and nothing else may be read reactively, or recording the result loops.
+    afterRenderEffect({
       earlyRead: () => {
+        this.scrollState();
+        this.isMeasuring();
+
         const element = this.elementRef.nativeElement;
 
-        this.recordMeasurement(element.clientWidth, element.scrollWidth);
+        untracked(() => this.recordMeasurement(element.clientWidth, element.scrollWidth));
       },
     });
 
@@ -227,8 +238,11 @@ export class BreadcrumbDirective {
     // remembered full width - that is the number the trail is re-expanded against.
     if (!this.canCollapse() || this.isCollapsed()) return;
 
-    // anything that still fits says nothing about the width the full trail needs
-    if (scroll <= client) return;
+    if (scroll <= client) {
+      this.fitConfirmed.set(true);
+
+      return;
+    }
 
     this.fullTrailWidth.set(scroll);
   }

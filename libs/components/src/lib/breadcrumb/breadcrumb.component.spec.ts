@@ -7,6 +7,7 @@ import { provideBreadcrumbManager } from './breadcrumb-manager';
 import { BreadcrumbComponent } from './breadcrumb.component';
 import { BreadcrumbOverflowComponent } from './breadcrumb-overflow.component';
 import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from './breadcrumb.imports';
+import { fakeLayout, fakeResizeObserver } from '../testing/fake-layout';
 import { BreadcrumbDirective } from './headless';
 import { BreadcrumbSeoDirective } from './seo/breadcrumb-seo.directive';
 
@@ -260,5 +261,108 @@ describe('BreadcrumbSeoDirective on the outlet', () => {
     const data = fixture.componentInstance.seo().structuredData();
 
     expect(data?.itemListElement.map((item) => item.name)).toEqual(['Home', 'Teams']);
+  });
+});
+
+const COLLAPSED_TRAIL_WIDTH = 150;
+
+@Component({
+  selector: 'et-test-breadcrumb-growing-crumb-host',
+  template: `
+    <et-breadcrumb etBreadcrumbCollapse>
+      <ng-template etBreadcrumbItemTemplate><a etBreadcrumbItem href="#">Home</a></ng-template>
+      <ng-template etBreadcrumbItemTemplate><a etBreadcrumbItem href="#">Teams</a></ng-template>
+      <ng-template etBreadcrumbItemTemplate
+        ><span etBreadcrumbItem>{{ title() }}</span></ng-template
+      >
+    </et-breadcrumb>
+  `,
+  imports: [BREADCRUMB_IMPORTS, BREADCRUMB_COLLAPSE_IMPORTS],
+})
+class BreadcrumbGrowingCrumbHostComponent {
+  public breadcrumb = viewChild.required(BreadcrumbComponent, { read: BreadcrumbDirective });
+  public title = signal('Chemie');
+}
+
+/**
+ * The breadcrumb's own `scrollWidth`, which jsdom reports as `0`: the collapsed trail is a fixed width,
+ * the full one is whatever the test currently says the trail needs.
+ */
+const fakeTrailWidth = (fullWidth: () => number) => {
+  const original = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollWidth');
+
+  Object.defineProperty(Element.prototype, 'scrollWidth', {
+    configurable: true,
+    get(this: Element) {
+      if (!this.matches('et-breadcrumb')) return (original?.get?.call(this) as number | undefined) ?? 0;
+
+      return this.hasAttribute('data-collapsed') ? COLLAPSED_TRAIL_WIDTH : fullWidth();
+    },
+  });
+
+  onTestFinished(() => {
+    if (original) Object.defineProperty(Element.prototype, 'scrollWidth', original);
+    else Reflect.deleteProperty(Element.prototype, 'scrollWidth');
+  });
+};
+
+describe('breadcrumb re-expansion', () => {
+  it('re-measures a trail whose crumb grew while collapsed instead of expanding on the remembered width', () => {
+    const resizeObserver = fakeResizeObserver();
+
+    let availableWidth = 200;
+    let fullTrailWidth = 260;
+
+    fakeLayout([{ match: 'et-breadcrumb', clientWidth: () => availableWidth }]);
+    fakeTrailWidth(() => fullTrailWidth);
+
+    const fixture = TestBed.createComponent(BreadcrumbGrowingCrumbHostComponent);
+    fixture.detectChanges();
+    TestBed.tick();
+
+    const breadcrumb = fixture.componentInstance.breadcrumb();
+
+    expect(breadcrumb.isCollapsed()).toBe(true);
+
+    fixture.componentInstance.title.set('Chemie Leverkusen U19');
+    fullTrailWidth = 410;
+    fixture.detectChanges();
+    TestBed.tick();
+
+    expect(breadcrumb.isCollapsed()).toBe(true);
+
+    availableWidth = 300;
+    resizeObserver.fire();
+    fixture.detectChanges();
+    TestBed.tick();
+
+    expect(breadcrumb.isCollapsed()).toBe(true);
+  });
+
+  it('expands again, and paints, once a measurement proves the full trail fits', () => {
+    const resizeObserver = fakeResizeObserver();
+
+    let availableWidth = 200;
+    const fullTrailWidth = 260;
+
+    fakeLayout([{ match: 'et-breadcrumb', clientWidth: () => availableWidth }]);
+    fakeTrailWidth(() => fullTrailWidth);
+
+    const fixture = TestBed.createComponent(BreadcrumbGrowingCrumbHostComponent);
+    fixture.detectChanges();
+    TestBed.tick();
+
+    const breadcrumb = fixture.componentInstance.breadcrumb();
+
+    expect(breadcrumb.isCollapsed()).toBe(true);
+
+    availableWidth = 400;
+    resizeObserver.fire();
+    fixture.detectChanges();
+    TestBed.tick();
+    fixture.detectChanges();
+
+    expect(breadcrumb.isCollapsed()).toBe(false);
+    expect(breadcrumb.isMeasuring()).toBe(false);
   });
 });

@@ -85,10 +85,12 @@ If even the collapsed trail is too wide (a long title on a phone), the current p
 ellipsis rather than being clipped mid-word.
 
 The first measurement happens before the browser paints, so a trail that loads collapsed is painted
-collapsed - you never see the full trail flash and then be replaced. Until that measurement exists the
-trail holds its space without painting, which is what removes the flash if it can't be taken in time
-(the element isn't laid out yet, for instance). Nothing to do for it; it only applies while `collapse`
-is on and there are enough crumbs to collapse.
+collapsed - you never see the full trail flash and then be replaced. Re-expanding on the remembered
+width is verified the same way, laid out but unpainted, so a crumb that grew while the trail was
+collapsed - an async title arriving, say - can never paint an overflowing row. Until that measurement
+exists the trail holds its space without painting, which is what removes the flash if it can't be
+taken in time (the element isn't laid out yet, for instance). Nothing to do for it; it only applies
+while `collapse` is on and there are enough crumbs to collapse.
 
 <StoryEmbed id="components-navigation-breadcrumb--collapsed" height="320px" />
 
