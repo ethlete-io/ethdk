@@ -7,7 +7,6 @@ export type TimeFormatSpec = {
 };
 
 export type DeriveTimeFormatSpecOptions = {
-  /** date-fns format string the picker's columns should match. */
   format: string;
   locale?: Locale | null;
 };
@@ -16,11 +15,6 @@ export type DeriveTimeFormatSpecOptions = {
 // are shown; the other parts avoid those digit pairs
 const PROBE_DATE = /* @__PURE__ */ new Date(2000, 0, 1, 13, 35, 57);
 
-/**
- * Derives the column layout (12/24-hour cycle, seconds) from a date-fns time
- * format by rendering a probe date - localized tokens like `p`/`pp` expand
- * per locale, so scanning the format string itself would miss them.
- */
 export const deriveTimeFormatSpec = (options: DeriveTimeFormatSpecOptions): TimeFormatSpec => {
   const rendered = formatDateValue(PROBE_DATE, options) ?? '';
 
@@ -31,14 +25,11 @@ export const deriveTimeFormatSpec = (options: DeriveTimeFormatSpecOptions): Time
 };
 
 export type SteppedValuesOptions = {
-  /** Exclusive upper bound (`60` for minutes/seconds, `24` for hours). */
   end: number;
   step: number;
-  /** An off-step value (the current selection) spliced in at its sorted position. */
   include?: number | null;
 };
 
-/** `0, step, 2·step …` below `end`, keeping an off-step selection visible. */
 export const generateSteppedValues = (options: SteppedValuesOptions): number[] => {
   const values: number[] = [];
 
@@ -61,11 +52,9 @@ export type TimeParts = {
   hour: number;
   minute: number;
   second: number;
-  /** `0` = AM, `1` = PM. */
   period: 0 | 1;
 };
 
-/** Splits a `Date`'s time of day into the picker's column values. */
 export const getTimeParts = (date: Date, hourCycle: 12 | 24): TimeParts => ({
   hour: hourCycle === 12 ? date.getHours() % 12 : date.getHours(),
   minute: date.getMinutes(),

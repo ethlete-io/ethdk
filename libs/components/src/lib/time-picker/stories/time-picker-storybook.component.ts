@@ -5,7 +5,6 @@ import { TimePickerMode, TimePickerTimeFilterFn, TimeRange } from '../headless';
 import { TIME_PICKER_IMPORTS } from '../time-picker.imports';
 import { TimeFilterPreset, parseTimeOfDay, resolveTimeFilterPreset } from './time-filter-presets';
 
-/** `'endAfterStart'` is the one only a range can express; the others come from the shared presets. */
 export type TimePickerFilterPreset = TimeFilterPreset | 'endAfterStart';
 
 @Component({
@@ -46,11 +45,9 @@ export class TimePickerStorybookComponent {
   public minuteStep = input(5);
   public secondStep = input(1);
   public locale = input<'default' | 'de'>('default');
-  /** `HH:mm` bounds - the story turns them into the `Date`s the picker takes. */
   public minTime = input<string | null>(null);
   public maxTime = input<string | null>(null);
   public filter = input<TimePickerFilterPreset>('none');
-  /** `HH:mm` starting values for `range` mode. */
   public start = input<string | null>(null);
   public end = input<string | null>(null);
   public startLabel = input<string | null>(null);
@@ -78,7 +75,6 @@ export class TimePickerStorybookComponent {
           return true;
         }
 
-        // read inside the closure, so the end re-filters when the start moves
         const start = this.rangeValue().start;
 
         return start === null || candidate > start;

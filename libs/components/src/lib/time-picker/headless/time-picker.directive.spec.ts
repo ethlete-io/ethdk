@@ -80,7 +80,6 @@ describe('TimePickerDirective', () => {
     option(fixture, 'minute', 30)?.click();
     tick();
 
-    // a minute alone is not a time; committing one would invent the hour
     expect(host.value()).toBeNull();
     expect(selectedIn('minute')?.dataset['value']).toBe('30');
     expect(selectedIn('hour')).toBeNull();
@@ -177,7 +176,6 @@ describe('TimePickerDirective', () => {
     tick();
 
     expect(host.value()).toBeNull();
-    // the half-day still reads as picked, and no other column claims a value
     expect(selectedIn('period')?.dataset['value']).toBe('1');
     expect(selectedIn('hour')).toBeNull();
     expect(selectedIn('minute')).toBeNull();
@@ -191,7 +189,6 @@ describe('TimePickerDirective', () => {
     option(fixture, 'minute', 30)?.click();
     tick();
 
-    // an hour is always in some half-day, so an untouched AM/PM column holds nothing up
     expect(host.value()?.getHours()).toBe(new Date().getHours() < 12 ? 9 : 21);
     expect(host.value()?.getMinutes()).toBe(30);
     expect(selectedIn('period')).not.toBeNull();
@@ -207,7 +204,6 @@ describe('TimePickerDirective', () => {
     option(fixture, 'hour', 9)?.click();
     tick();
 
-    // an hour on top of a half-day is still not a time - the minute is nobody's pick yet
     expect(host.value()).toBeNull();
     expect(selectedIn('hour')?.dataset['value']).toBe('9');
     expect(selectedIn('minute')).toBeNull();
@@ -299,10 +295,8 @@ describe('TimePickerDirective', () => {
       ]);
       expect(option(fixture, 'hour', 8)?.getAttribute('aria-disabled')).toBe('true');
 
-      // the noon selection is inside the bounds, so every minute of it is open
       expect(disabledIn('minute')).toEqual([]);
 
-      // …at the boundary hour only the minutes at or after 09:30 are
       host.value.set(new Date(2026, 6, 17, 9, 30));
       tick();
 
@@ -310,7 +304,6 @@ describe('TimePickerDirective', () => {
     });
 
     it('disables an hour only when no minute inside it is selectable', () => {
-      // 14:00–14:59 stays open through its later minutes
       host.max.set(new Date(2026, 6, 17, 14, 20));
       tick();
 
@@ -346,7 +339,6 @@ describe('TimePickerDirective', () => {
       host.max.set(new Date(2026, 6, 17, 18, 10));
       tick();
 
-      // 09:00 is out of bounds, so the hour pick lands on the first open minute
       option(fixture, 'hour', 9)?.click();
       tick();
 
@@ -391,7 +383,6 @@ describe('TimePickerDirective', () => {
       press(fixture, 'hour', '1');
       tick();
 
-      // hour 1 is out of bounds, so the query falls through to the next match
       expect(host.value()?.getHours()).toBe(10);
     });
 
@@ -399,7 +390,6 @@ describe('TimePickerDirective', () => {
       host.min.set(new Date(2026, 6, 17, 10));
       tick();
 
-      // "4" matches hour 4 alone - 14 and 24 read as "14"/"24", not "4"
       press(fixture, 'hour', '4');
       tick();
 
@@ -413,7 +403,6 @@ describe('TimePickerDirective', () => {
       tick();
       await fixture.whenStable();
 
-      // 10 PM is closed, so the pick lands on the closest open PM hour instead of doing nothing
       option(fixture, 'period', 1)?.click();
       tick();
 
@@ -422,7 +411,6 @@ describe('TimePickerDirective', () => {
       option(fixture, 'period', 0)?.click();
       tick();
 
-      // 4 AM is closed too - back to the closest open AM hour
       expect(host.value()?.getHours()).toBe(9);
     });
 

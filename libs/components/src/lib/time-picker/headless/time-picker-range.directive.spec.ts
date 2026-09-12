@@ -86,7 +86,6 @@ describe('TimePickerDirective - range mode', () => {
 
     expect(host.rangeValue().start).toBeNull();
     expect(host.rangeValue().end?.getHours()).toBe(17);
-    // only the pick that completed the time reports - the held one is not a pick of a time
     expect(host.picks.map((pick) => pick.side)).toEqual(['end']);
 
     host.activeSide.set('start');
@@ -97,7 +96,6 @@ describe('TimePickerDirective - range mode', () => {
     tick();
 
     expect(host.rangeValue().start?.getHours()).toBe(9);
-    // the end must survive a pick on the other side
     expect(host.rangeValue().end?.getHours()).toBe(17);
     expect(host.picks.map((pick) => pick.side)).toEqual(['end', 'start']);
   });
@@ -106,7 +104,6 @@ describe('TimePickerDirective - range mode', () => {
     option(fixture, 'hour', 9)?.click();
     tick();
 
-    // a held part is not a committed start: the columns must not move away mid-pick
     expect(host.rangeValue().start).toBeNull();
     expect(host.activeSide()).toBe('start');
 
@@ -123,7 +120,6 @@ describe('TimePickerDirective - range mode', () => {
     expect(host.rangeValue().end?.getHours()).toBe(17);
     expect(host.activeSide()).toBe('end');
 
-    // back on the start deliberately: refining it must not yank the columns away again
     host.activeSide.set('start');
     tick();
 
@@ -148,11 +144,9 @@ describe('TimePickerDirective - range mode', () => {
     host.activeSide.set('end');
     tick();
 
-    // at :30, 09:30 through 17:30 are the hours inside 09:00-17:30
     expect(labelsWith('hour', "data-band='start'")).toEqual(['09']);
     expect(labelsWith('hour', "data-band='end'")).toEqual(['17']);
     expect(labelsWith('hour', "data-band='middle'")).toEqual(['10', '11', '12', '13', '14', '15', '16']);
-    // the start's option is the one that still needs drawing - the end is the selection
     expect(labelsWith('hour', 'data-range-start')).toEqual(['09']);
     expect(labelsWith('hour', 'data-range-end')).toEqual(['17']);
   });
@@ -162,7 +156,6 @@ describe('TimePickerDirective - range mode', () => {
     host.activeSide.set('end');
     tick();
 
-    // on hour 17, every minute up to :45 is inside the range - :50 and :55 are past its end
     expect(labelsWith('minute', "data-band='start'")).toEqual(['00']);
     expect(labelsWith('minute', "data-band='end'")).toEqual(['45']);
     expect(labelsWith('minute', "data-band='middle'")).toEqual(['05', '10', '15', '20', '25', '30', '35', '40']);
@@ -176,13 +169,11 @@ describe('TimePickerDirective - range mode', () => {
     host.activeSide.set('end');
     tick();
 
-    // editing 3:40 PM: on PM, 12:40 through 3:40 stay inside 12:00 AM - 3:40 PM
     expect(labelsWith('hour', "data-band='start'")).toEqual(['12']);
     expect(labelsWith('hour', "data-band='end'")).toEqual(['3']);
     expect(labelsWith('hour', "data-band='middle'")).toEqual(['1', '2']);
     expect(labelsWith('minute', "data-band='start'")).toEqual(['00']);
     expect(labelsWith('minute', "data-band='end'")).toEqual(['40']);
-    // 3:40 AM and 3:40 PM both sit inside the range
     expect(labelsWith('period', "data-band='start'")).toEqual(['AM']);
     expect(labelsWith('period', "data-band='end'")).toEqual(['PM']);
   });
@@ -193,7 +184,6 @@ describe('TimePickerDirective - range mode', () => {
     host.activeSide.set('end');
     tick();
 
-    // editing 11:50 PM: 12:50 PM through 11:50 PM are all inside 7:50 AM - 11:50 PM
     expect(labelsWith('hour', "data-band='start'")).toEqual(['12']);
     expect(labelsWith('hour', "data-band='end'")).toEqual(['11']);
     expect(labelsWith('hour', 'data-band').length).toBe(12);
@@ -208,7 +198,6 @@ describe('TimePickerDirective - range mode', () => {
     host.activeSide.set('end');
     tick();
 
-    // 17:08-17:10 leaves each column exactly one option that stays inside it
     expect(labelsWith('hour', "data-band='single'")).toEqual(['17']);
     expect(labelsWith('minute', "data-band='single'")).toEqual(['10']);
   });
@@ -227,13 +216,11 @@ describe('TimePickerDirective - range mode', () => {
     tick();
 
     expect(labelsWith('hour', 'data-band')).toEqual([]);
-    // the committed start still shows where it sits
     expect(labelsWith('hour', 'data-range-start')).toEqual(['09']);
   });
 
   it('passes the active end to the filter, so one end can be bounded by the other', () => {
     host.rangeValue.set({ start: at(9, 0), end: null });
-    // only the end is gated: nothing at or before the committed start
     host.timeFilter.set((candidate, side) => side === 'start' || candidate.getHours() > 9);
     tick();
 

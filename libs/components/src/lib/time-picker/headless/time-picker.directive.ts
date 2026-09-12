@@ -35,15 +35,14 @@ export type TimeRangePick = {
 
 /**
  * Rejects individual times. The candidate is the picked time of day on the current day, so opening
- * hours can differ per weekday. `side` is the range end being filled - the hook for "the end must be
- * after the start", which no single-value bound can express - and is meaningless in `single` mode.
+ * hours can differ per weekday. `side` is the range end being filled, and is meaningless in
+ * `single` mode.
  */
 export type TimePickerTimeFilterFn = (date: Date, side: TimeRangeSide) => boolean;
 
 /**
  * Where an option sits in the band its column draws over the range. `'start'` and `'end'` are the
- * band's first and last option, not the range's start and end - a range whose end precedes its
- * start still bands between them - and `'single'` is both at once.
+ * band's first and last option, not the range's start and end, and `'single'` is both at once.
  */
 export type TimePickerBandPosition = 'start' | 'middle' | 'end' | 'single' | null;
 
@@ -81,7 +80,6 @@ export type TimePickerSide = {
   active: boolean;
 };
 
-/** The column picks made against an end whose value is still empty - a part of a time, not a time. */
 type PendingTimeParts = Partial<Record<TimePickerUnit, number>>;
 
 const NO_PENDING_PARTS: PendingTimeParts = {};
@@ -89,7 +87,6 @@ const NO_PENDING_PARTS: PendingTimeParts = {};
 const secondsOfDay = (parts: Pick<TimeParts, 'hour' | 'minute' | 'second'>) =>
   parts.hour * 3600 + parts.minute * 60 + parts.second;
 
-/** The next option a `±1` keyboard step lands on, wrapping and skipping disabled ones. */
 const nextEnabledIndex = (options: readonly TimePickerOption[], walk: { from: number; step: number }) => {
   for (let offset = 1; offset <= options.length; offset++) {
     const index = (((walk.from + walk.step * offset) % options.length) + options.length) % options.length;
@@ -107,10 +104,6 @@ const nextEnabledIndex = (options: readonly TimePickerOption[], walk: { from: nu
  * date-fns `format` - hours, minutes, optional seconds and AM/PM), selection
  * per column committing into a single `Date` value. Operates on `Date` objects
  * only - string parsing/formatting belongs to the input directives.
- *
- * In `range` mode the same columns hold a `rangeValue`, one end at a time:
- * `activeSide` says which, the columns show and a pick writes that end, and the
- * other end still reads out of them as `rangeStart`/`rangeEnd` and a `band`.
  */
 @Directive({
   selector: '[etTimePicker]',
@@ -164,33 +157,25 @@ export class TimePickerDirective {
   /** `range` mode: the end the columns show, and the one a pick writes. */
   public activeSide = model<TimeRangeSide>('start');
 
-  /** `range` mode: an end became a whole time. The side is what a range-valued consumer cannot infer. */
+  /** `range` mode: an end became a whole time. */
   public timeSelect = output<TimeRangePick>();
 
-  /** The string in effect: this instance's `hoursLabel`, else the domain's label set. */
   public resolvedHoursLabel = computed(() => this.hoursLabel() ?? this.timePickerLabels().hours);
 
-  /** The string in effect: this instance's `minutesLabel`, else the domain's label set. */
   public resolvedMinutesLabel = computed(() => this.minutesLabel() ?? this.timePickerLabels().minutes);
 
-  /** The string in effect: this instance's `secondsLabel`, else the domain's label set. */
   public resolvedSecondsLabel = computed(() => this.secondsLabel() ?? this.timePickerLabels().seconds);
 
-  /** The string in effect: this instance's `periodLabel`, else the domain's label set. */
   public resolvedPeriodLabel = computed(() => this.periodLabel() ?? this.timePickerLabels().period);
 
-  /** The string in effect: this instance's `startLabel`, else the domain's label set. */
   public resolvedStartLabel = computed(() => this.startLabel() ?? this.timePickerLabels().startTime);
 
-  /** The string in effect: this instance's `endLabel`, else the domain's label set. */
   public resolvedEndLabel = computed(() => this.endLabel() ?? this.timePickerLabels().endTime);
 
-  // the initial focus/scroll anchor while no value exists
   private now = new Date();
 
   private autoAdvanceSpent = signal(false);
 
-  /** Per end, the parts picked while its value is still empty. Held until they add up to a whole time. */
   private pendingParts = signal<Record<TimeRangeSide, PendingTimeParts>>({ start: {}, end: {} });
 
   public effectiveFormat = computed(() => this.format() ?? this.defaultFormat);
@@ -203,11 +188,6 @@ export class TimePickerDirective {
   /** The value the columns show and a pick writes: the whole value, or the range's active end. */
   public activeValue = computed(() => (this.mode() === 'range' ? this.rangeValue()[this.activeSide()] : this.value()));
 
-  /**
-   * A bare time format matching the columns in play, rather than `format` itself - a host that
-   * derives its columns from a *combined* date & time format (the date-time range input passes `Pp`)
-   * still needs the two ends to read as times.
-   */
   private sideFormat = computed(() => {
     const spec = this.formatSpec();
 
@@ -230,15 +210,10 @@ export class TimePickerDirective {
     ];
   });
 
-  /**
-   * The units a whole time needs. AM/PM is deliberately not one of them: every hour already sits in
-   * a half-day, so an unpicked column follows the anchor rather than leaving the time incomplete.
-   */
   private requiredUnits = computed<readonly TimePickerUnit[]>(() =>
     this.formatSpec().showSeconds ? ['hour', 'minute', 'second'] : ['hour', 'minute'],
   );
 
-  /** The parts held for the end the columns edit, empty once that end holds a value. */
   private activePending = computed<PendingTimeParts>(() =>
     this.activeValue() === null ? this.pendingParts()[this.activeSide()] : NO_PENDING_PARTS,
   );
@@ -247,8 +222,6 @@ export class TimePickerDirective {
    * The value, or "now" snapped to the steps and moved onto whichever parts are
    * already held - the time the columns anchor their roving focus and initial
    * scroll position to, and the base the pick that completes a time builds on.
-   * Units without a column are zeroed so a completed anchor never carries an
-   * invisible seconds part.
    */
   public anchorTime = computed<Date>(() => {
     const value = this.activeValue();
@@ -287,14 +260,12 @@ export class TimePickerDirective {
     ];
   });
 
-  /** The active value's column values, or `null` while empty - hours in the format's cycle. */
   private selectedParts = computed(() => {
     const value = this.activeValue();
 
     return value !== null ? getTimeParts(value, this.formatSpec().hourCycle) : null;
   });
 
-  /** Both range ends' column values, `null` outside `range` mode. */
   private rangeParts = computed(() => {
     if (this.mode() !== 'range') {
       return null;
@@ -321,10 +292,8 @@ export class TimePickerDirective {
     generateSteppedValues({ end: 60, step: this.secondStep(), include: this.selectedParts()?.second }),
   );
 
-  /** Whether any bound or filter is in play - the unconstrained picker skips availability work entirely. */
   private constrained = computed(() => this.min() !== null || this.max() !== null || this.timeFilter() !== null);
 
-  /** `timeFilter` with the end it is filling already applied - what the availability layer takes. */
   private boundTimeFilter = computed(() => {
     const filter = this.timeFilter();
 
@@ -346,7 +315,6 @@ export class TimePickerDirective {
       filter: this.boundTimeFilter(),
       day: startOfDay(anchor),
       minuteValues: this.minuteValues(),
-      // without a seconds column the second never moves - the committed one is the only candidate
       secondValues: this.formatSpec().showSeconds ? this.secondValues() : [anchor.getSeconds()],
     };
   });
@@ -361,7 +329,6 @@ export class TimePickerDirective {
     const pending = this.activePending();
 
     const isDisabled = (fixed: PartialTimeCandidate) => constrained && !hasSelectableTime(fixed, availability);
-    // a held part reads as selected too - it is a pick, just not a whole time yet
     const isSelected = (unit: TimePickerUnit, optionValue: number) =>
       selected !== null ? selected[unit] === optionValue : pending[unit] === optionValue;
     const rangeFlagsFor = this.rangeFlagsFactory(anchor24);
@@ -430,7 +397,6 @@ export class TimePickerDirective {
           value: period,
           label: labels[period] ?? '',
           selected: isSelected('period', period),
-          // a half-day is out only when none of its twelve hours has a selectable time
           disabled:
             constrained &&
             !this.hourValues().some((hour) => hasSelectableTime({ hour: hour + period * 12 }, availability)),
@@ -444,15 +410,9 @@ export class TimePickerDirective {
   });
 
   /**
-   * Takes one column's pick. While the end being edited is still empty the pick
-   * is *held*, not committed - a lone hour is no more a time than a lone AM is,
-   * and committing one would put a minute nobody chose into the value. The pick
-   * that supplies the last missing unit commits them all at once; an AM/PM pick
-   * never is that one, since an unpicked half-day still follows the anchor.
-   *
-   * Once a value exists every pick edits it directly. Bounds and filters keep
-   * the result selectable: the picked part stays put and the finer units move to
-   * the first value that works.
+   * Takes one column's pick. While the end being edited is still empty the pick is *held*, not
+   * committed; the pick that supplies the last missing unit commits them all at once. Once a value
+   * exists every pick edits it directly.
    */
   public selectPart(unit: TimePickerUnit, optionValue: number) {
     if (this.optionsOf(unit).find((option) => option.value === optionValue)?.disabled) {
@@ -491,11 +451,7 @@ export class TimePickerDirective {
 
   /**
    * @internal What *activating* an option does (click, Enter, Space): the pick, plus a range's
-   * one-time hop to the other end - the pick that *completes* the start opens the end, the way a
-   * calendar's first pick opens its range. A held part changes no end, so the columns stay put until
-   * the start is a real time. The keyboard model deliberately routes through {@link selectPart}
-   * instead: arrows commit as they move, so hopping there would strand the reader on the other end
-   * halfway through browsing this one.
+   * one-time hop to the other end.
    */
   public activateOption(unit: TimePickerUnit, optionValue: number) {
     const hops = this.mode() === 'range' && this.activeSide() === 'start' && !this.autoAdvanceSpent();
@@ -529,7 +485,6 @@ export class TimePickerDirective {
       0,
     );
 
-    // walk `delta` enabled options; a fully disabled column simply never moves
     let index = from;
 
     for (let taken = 0; taken < Math.abs(delta); taken++) {
@@ -572,7 +527,6 @@ export class TimePickerDirective {
     }
   }
 
-  /** Whether picking `unit` fills the last of the columns a whole time needs. */
   private completesTime(unit: TimePickerUnit) {
     const pending = this.activePending();
 
@@ -595,16 +549,6 @@ export class TimePickerDirective {
     }
   }
 
-  /**
-   * Builds the per-column reader for how an option relates to the *range* - which end it holds, and
-   * whether the time it would pick falls inside the range.
-   *
-   * An option bands when the candidate it produces - itself, with every other unit left at what the
-   * columns currently show - lands within the two ends' times of day. So the band answers "would
-   * picking this stay inside the range", and moves as the other columns do. Candidate time ascends
-   * with option value in every unit, so the banded values are contiguous and the first and last of
-   * them are the band's ends.
-   */
   private rangeFlagsFactory(anchor24: TimeParts) {
     const rangeParts = this.rangeParts();
     const start = rangeParts?.start ?? null;
@@ -661,7 +605,6 @@ export class TimePickerDirective {
     };
   }
 
-  /** Both ends as times of day in ascending order, `null` unless the range holds both. */
   private intervalOfDay(start: Date | null, end: Date | null) {
     if (this.mode() !== 'range' || start === null || end === null) {
       return null;
@@ -673,12 +616,10 @@ export class TimePickerDirective {
     return { from: Math.min(first, second), to: Math.max(first, second) };
   }
 
-  /** The 24-hour value a column option stands for, given the half-day in effect. */
   private toHour24(hour: number, period: 0 | 1) {
     return this.formatSpec().hourCycle === 12 ? (hour % 12) + period * 12 : hour;
   }
 
-  /** The twelve hours of `from`'s half-day, closest to `from` first. */
   private halfDayHours(from: number) {
     const base = from >= 12 ? 12 : 0;
 
@@ -687,7 +628,6 @@ export class TimePickerDirective {
     );
   }
 
-  /** The time a pick aims at: the picked part, with every other part kept from the anchor. */
   private candidateFor(unit: TimePickerUnit, optionValue: number): TimeCandidate {
     const parts = getTimeParts(this.anchorTime(), 24);
 
@@ -707,7 +647,6 @@ export class TimePickerDirective {
     }
   }
 
-  /** The candidate itself when it is selectable, else the same pick with the unpicked units moved. */
   private resolveSelectable(unit: TimePickerUnit, candidate: TimeCandidate) {
     const availability = this.availability();
 
@@ -715,8 +654,6 @@ export class TimePickerDirective {
       return candidate;
     }
 
-    // an AM/PM pick chooses a half-day, not an hour: keeping the clock position (10 AM → 10 PM)
-    // is only the preference, so the hour may move inside the picked half - closest first
     if (unit === 'period') {
       for (const hour of this.halfDayHours(candidate.hour)) {
         const found = findSelectableTime({ hour }, availability);
@@ -729,7 +666,6 @@ export class TimePickerDirective {
       return null;
     }
 
-    // everything the pick did not touch may move; the picked part never does
     const fixed: PartialTimeCandidate =
       unit === 'second'
         ? candidate

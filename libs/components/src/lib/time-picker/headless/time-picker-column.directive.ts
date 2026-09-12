@@ -8,8 +8,7 @@ import { TimePickerColumn, TimePickerDirective } from './time-picker.directive';
  * One unit column (a vertical listbox): routes the keyboard model to the
  * picker - arrows move the selection (selection follows focus, wrapping),
  * typed characters jump to the matching option - and tracks whether focus is
- * inside (options only pull DOM focus along while the user is actually
- * keyboard-navigating the column).
+ * inside.
  */
 @Directive({
   selector: '[etTimePickerColumn]',
