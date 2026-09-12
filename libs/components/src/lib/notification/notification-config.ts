@@ -35,10 +35,9 @@ export type NotificationConfig = {
   /** A second, quieter action rendered next to {@link NotificationConfig.action} (e.g. a cancel next to a confirm). */
   secondaryAction?: NotificationAction;
   /**
-   * Auto-dismiss duration in milliseconds.
-   * `0` or `undefined` uses the manager's `defaultDuration` for the current status.
-   * Set explicitly to override the default (e.g. `duration: 0` to prevent auto-dismiss
-   * for a status that defaults to non-zero).
+   * Auto-dismiss duration in milliseconds. Omit it to use the manager's `defaultDuration`
+   * for the current status; any value set here overrides that default, and `0` means the
+   * notification never auto-dismisses.
    */
   duration?: number;
   /** Optional progress value (0–100). When set, a progress bar is shown below the notification body. */
