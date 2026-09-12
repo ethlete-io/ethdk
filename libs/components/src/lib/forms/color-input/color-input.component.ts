@@ -28,7 +28,6 @@ export class ColorInputComponent {
   protected colorInputDir = inject(ColorInputDirective);
   public labels = injectColorInputLabels();
 
-  /** The accessible name of the trigger, unless the consumer supplied one. */
   protected fallbackTriggerLabel = computed(() =>
     this.colorInputDir.hasCustomAccessibleName() || this.colorInputDir.labelId() ? null : this.labels().pickerTrigger,
   );

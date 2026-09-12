@@ -97,17 +97,13 @@ const kindOf = (token: string): TokenKind => {
     return 'date';
   }
 
-  // `t`/`T` are whole epoch timestamps, and an unknown letter is date-fns' problem, not ours
+  // `t`/`T` are whole epoch timestamps, and an unknown letter is date-fns' problem
   return /[a-zA-Z]/.test(first) ? 'unsplittable' : 'literal';
 };
 
 /**
  * Splits a combined date & time format into the span carrying the time and the date format around
- * it, so one half can be rendered while the other is still missing. Locale formats (`P`, `Pp`, …)
- * are expanded first, exactly as date-fns expands them.
- *
- * `null` when the format has no time half, no date half, or interleaves the two (`h:mm 'on' d MMM
- * HH`) - there is no single span to blank out then.
+ * it. `null` when the format has no time half, no date half, or interleaves the two.
  */
 export const splitDateTimeFormat = (format: string, locale: Locale | null): DateTimeFormatSplit | null => {
   const tokens = expandLongFormats(format, locale ?? enUS).match(TOKEN_PATTERN);

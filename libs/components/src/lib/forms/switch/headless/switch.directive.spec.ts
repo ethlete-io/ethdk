@@ -1,6 +1,10 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { mountControl } from '../../../testing/control-driver';
+import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
+import { expectDescribedByPointsAtErrors } from '../../testing/described-by';
 import { mountSwitch, SwitchDriver } from '../../testing/switch-driver';
+import { SWITCH_IMPORTS } from '../switch.imports';
 import { SwitchDirective } from './switch.directive';
 
 @Component({
@@ -15,6 +19,22 @@ class StandaloneSwitchTestHost {}
 })
 class IndeterminateSwitchTestHost {
   indeterminate = signal(true);
+}
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-label>Notifications</et-label>
+      <et-switch [(touched)]="touched" [errors]="errors" invalid name="notifications" />
+      <et-hint>Sends a daily digest</et-hint>
+    </et-form-field>
+  `,
+  imports: [FORM_FIELD_IMPORTS, SWITCH_IMPORTS],
+})
+class SwitchInFormFieldTestHost {
+  errors = [{ kind: 'required', message: 'Turn notifications on' }];
+
+  touched = signal(true);
 }
 
 describe('SwitchDirective', () => {
@@ -61,6 +81,14 @@ describe('SwitchDirective', () => {
       expect(driver.switch.checked()).toBe(true);
       expect(driver.attr('data-indeterminate')).toBeNull();
       expect(driver.attr('aria-checked')).toBe('true');
+    });
+  });
+
+  describe('in a form field', () => {
+    it('should describe the switch by the rendered error', () => {
+      const host = mountControl(SwitchInFormFieldTestHost).nativeElement as HTMLElement;
+
+      expectDescribedByPointsAtErrors(host);
     });
   });
 });

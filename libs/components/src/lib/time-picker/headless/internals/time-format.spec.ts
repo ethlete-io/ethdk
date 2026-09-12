@@ -15,7 +15,6 @@ describe('deriveTimeFormatSpec', () => {
   });
 
   it('expands localized tokens per locale', () => {
-    // 'p' is locale-defined: 12-hour in the en-US default, 24-hour in de
     expect(deriveTimeFormatSpec({ format: 'p' })).toEqual({ hourCycle: 12, showSeconds: false });
     expect(deriveTimeFormatSpec({ format: 'p', locale: de })).toEqual({ hourCycle: 24, showSeconds: false });
     expect(deriveTimeFormatSpec({ format: 'pp', locale: de })).toEqual({ hourCycle: 24, showSeconds: true });

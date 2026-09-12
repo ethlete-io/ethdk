@@ -8,8 +8,8 @@ import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
 import { TabBarTriggerDirective } from '../headless/tab-bar-trigger.directive';
 import { TabBarUnderlineDirective } from '../headless/tab-bar-underline.directive';
 import { TabBarDirective } from '../headless/tab-bar.directive';
+import { mountTabBarStyles } from '../tab-bar-styles.component';
 import { mountTabScaleStyles } from '../tab-scale-styles.component';
-import { mountTabUnderlineStyles } from '../tab-underline-styles.component';
 import { TAB_SIZES, TabSize } from '../tab-sizes';
 import { TabGroupDirective } from './headless/tab-group.directive';
 import { TabComponent } from './tab.component';
@@ -158,15 +158,14 @@ import { TabComponent } from './tab.component';
         --et-tab-group-underline-size: var(--et-tab-underline-size);
         --et-tab-group-underline-radius: var(--et-tab-underline-radius);
         --et-tab-group-font-size: var(--et-tab-font-size);
+        --et-tab-bar-underline-size: var(--et-tab-group-underline-size);
+        --et-tab-bar-underline-radius: var(--et-tab-group-underline-radius);
 
         &[data-orientation='vertical'] {
           flex-direction: row;
         }
 
-        &:where([data-variant='primary'][data-size='sm']) {
-          --et-tab-group-underline-size: 3px;
-        }
-
+        &:where([data-variant='primary'][data-size='sm']),
         &:where([data-variant='primary'][data-size='md']) {
           --et-tab-group-underline-size: 3px;
         }
@@ -194,43 +193,16 @@ import { TabComponent } from './tab.component';
       }
 
       .et-tab-group__trigger {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
         padding-inline: var(--et-tab-group-trigger-padding-inline);
         padding-block: var(--et-tab-group-trigger-padding-block);
         border: none;
         background: none;
-        color: var(--et-surface-interaction-solid, inherit);
         font: inherit;
         font-size: var(--et-tab-group-font-size);
-        cursor: pointer;
-        position: relative;
-        white-space: nowrap;
-        user-select: none;
-        transition:
-          color 150ms ease,
-          background 150ms ease;
-        outline: none;
-        border-radius: 0.5rem;
 
         .et-tab-group__trigger-content {
           display: flex;
-          align-items: center;
           gap: 8px;
-          border-radius: 0.5rem;
-          padding: 4px 8px;
-          margin: -4px -8px;
-        }
-
-        .et-tab-group__trigger-icon {
-          width: 1.2em;
-          height: 1.2em;
-        }
-
-        [data-variant='primary'] & .et-tab-group__trigger-content {
-          flex-direction: column;
-          gap: 4px;
         }
       }
 
@@ -260,7 +232,7 @@ export class TabGroupComponent {
 
   constructor() {
     mountTabScaleStyles();
-    mountTabUnderlineStyles();
+    mountTabBarStyles();
 
     // the component renders its panels inline instead of registering [etTabPanel] directives
     this.tabGroup.managesPanelsInternally.set(true);

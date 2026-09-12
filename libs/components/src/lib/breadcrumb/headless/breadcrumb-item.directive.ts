@@ -3,12 +3,10 @@ import { BreadcrumbItemTemplateDirective } from './breadcrumb-templates.directiv
 
 /**
  * The crumb itself, inside an `etBreadcrumbItemTemplate` - an anchor, a `<button>`, or a plain `<span>`
- * for the page you're on. It carries the crumb styling and marks the last crumb `aria-current="page"`,
- * which is how a screen reader knows where in the trail the user actually is.
+ * for the page you're on. It carries the crumb styling and marks the last crumb `aria-current="page"`.
  *
  * Optional: a crumb template renders whatever it contains. Use it and you get the default look and the
- * `aria-current` wiring for free - including when the trail is composed from several segments, since the
- * breadcrumb tells each crumb template whether it ended up last.
+ * `aria-current` wiring for free.
  */
 @Directive({
   selector: '[etBreadcrumbItem]',
@@ -19,8 +17,6 @@ import { BreadcrumbItemTemplateDirective } from './breadcrumb-templates.directiv
   },
 })
 export class BreadcrumbItemDirective {
-  // Available because the crumb sits inside the `ng-template[etBreadcrumbItemTemplate]` that declares it,
-  // whose directive is therefore in the element injector chain - wherever the breadcrumb renders it.
   private itemTemplate = inject(BreadcrumbItemTemplateDirective, { optional: true });
 
   protected isCurrent() {

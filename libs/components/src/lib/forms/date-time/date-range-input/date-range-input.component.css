@@ -3,8 +3,6 @@
     --et-range-input-stack-threshold: 13em;
     container: et-date-range-input / inline-size;
 
-    /* Too narrow to show both dates: one per row, top to bottom, instead of clipping both. The
-       separator reads as "between two things on a line" and goes with the line. */
     @container et-date-range-input (inline-size < 13em) {
       .et-date-range-input-field {
         flex-basis: 100%;

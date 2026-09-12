@@ -13,10 +13,6 @@
         </div>
       }
     } @else if (select.multiple() && select.selectedEntries().length) {
-      <!-- display: contents — the chips share the trigger's wrapping flex flow with the
-           inline search input, tag-input style -->
-      <!-- readonly is not disabled: the chips keep their normal look, they just lose the
-           remove affordance -->
       <div class="et-select-chips">
         @for (entry of select.selectedEntries(); track entry.value) {
           <et-chip
@@ -36,13 +32,9 @@
       </span>
     }
 
-    <!-- combobox pattern: the search input sits inline in the field, not in the panel -->
     <ng-content select="input[etSelectSearch]" />
   </div>
 
-  <!-- async option state, surfaced in the field itself (mirrors the menu's search spinner) —
-       only while the panel is closed; open, the panel carries the news. Overlays the value's tail
-       behind a fade instead of claiming a column of its own, so the value never re-wraps for it -->
   @if (select.showLoadingIndicator() && !select.open()) {
     <div class="et-select-trigger-busy" animate.enter="et-select-trigger-busy--enter">
       <et-spinner diameter="16" strokeWidth="2" />
@@ -69,7 +61,6 @@
     </button>
   }
 
-  <!-- pointer-only affordance (keyboard users close via Escape) — kept out of the tab order -->
   <button
     [disabled]="select.disabled()"
     (click)="handleArrowClick($event)"
@@ -99,9 +90,6 @@
 <ng-template etSelectSurface>
   <et-select-panel>
     @if (select.options()) {
-      <!-- data-driven mode: the select owns the option rows and windows the rendering of a long
-           list — only rows near the viewport exist in the DOM; the block paddings stand in for
-           the scroll height of everything outside the window -->
       <div
         [style.padding-block-start.px]="select.virtualWindow.paddingTop()"
         [style.padding-block-end.px]="select.virtualWindow.paddingBottom()"
@@ -116,10 +104,6 @@
 
     <ng-template [ngTemplateOutlet]="optionContent" />
 
-    <!-- a real option (not an action row like add-new): it takes part in virtual focus, so
-         Enter commits it and it is keyboard-reachable while options still match the query.
-         Its label is the candidate itself — that is what commits and what the label cache
-         stores; the "Create" prefix is display-only. -->
     @if (select.customValueCandidate(); as candidate) {
       <et-select-option [value]="candidate" [label]="candidate" class="et-select-create-option" customValueOption>
         <i class="et-select-create-option-icon" etIcon="et-plus" aria-hidden="true"></i>
@@ -127,28 +111,18 @@
       </et-select-option>
     }
 
-    <!-- state rows and action buttons are NOT options — projected outside the listbox element
-         (display: contents, so they still flow within the scrolling panel) -->
     <div class="et-select-panel-extras" etSelectPanelExtras>
-      <!-- Refetching over options that are already on screen: they stay put and a 2px indeterminate
-           bar at the panel's top edge carries the news (the table does the same over its rows). Out
-           of flow on purpose — a bar that took a row's worth of space would resize the panel. -->
       @if (showBusyBar()) {
         <div class="et-select-busy-bar" role="presentation" aria-hidden="true"></div>
       }
 
       @if (showLoadingRow()) {
-        <!-- The row is here from the first frame so the panel opens at the height the options will
-             need, but its content waits for `showLoadingIndicator()`: a response that lands inside
-             that window replaces an empty row rather than a spinner nobody had time to read. -->
         @if (select.registeredLoadingTemplate(); as loadingTemplate) {
           @if (select.showLoadingIndicator()) {
             <ng-template [ngTemplateOutlet]="loadingTemplate.templateRef" />
           }
         } @else {
           <div class="et-select-state et-select-state--loading">
-            <!-- laid out from the first frame and only faded in later, so the row cannot change
-                 height when the spinner arrives; hidden from assistive tech until it does -->
             <span
               [class.et-select-state-content--visible]="select.showLoadingIndicator()"
               [attr.aria-hidden]="!select.showLoadingIndicator() || null"
@@ -180,15 +154,11 @@
 
       @if (select.hasMoreItems() && !showLoadingRow()) {
         @if (showLoadMoreLoading()) {
-          <!-- the control's own box, minus the control: same height, same separator, so the page
-               that is on its way is announced without moving anything -->
           <div class="et-select-load-more et-select-load-more--loading" aria-live="polite">
             <et-spinner class="et-select-state-spinner" diameter="16" strokeWidth="2" />
             {{ selectLabels().loading }}
           </div>
         } @else {
-          <!-- disabled while its page loads: `requestLoadMore` is a no-op until that settles, and a
-               live-looking control that does nothing reads as broken -->
           <button
             [disabled]="select.loading()"
             (click)="select.requestLoadMore()"
@@ -203,8 +173,6 @@
       }
 
       @if (select.allowAddNew() && !showLoadingRow()) {
-        <!-- pointer-only, like the load-more control — keyboard users reach the same flow
-             through the consumer's own UI (e.g. a button next to the field) -->
         <button (click)="select.requestAddNew()" class="et-select-add-new" tabindex="-1" type="button">
           <i class="et-select-add-new-icon" etIcon="et-plus" aria-hidden="true"></i>
           {{ resolvedAddNewLabel() }}

@@ -66,7 +66,7 @@ export class TabBarTriggerDirective {
   public tabIndex = computed(() => {
     const tabBar = this.tabBar;
 
-    if (!tabBar) {
+    if (!tabBar || this.disabled()) {
       return -1;
     }
 
@@ -77,7 +77,7 @@ export class TabBarTriggerDirective {
       return myIndex === focusedIdx ? 0 : -1;
     }
 
-    return this.isSelected() ? 0 : -1;
+    return myIndex === tabBar.tabStopIndex() ? 0 : -1;
   });
 
   constructor() {

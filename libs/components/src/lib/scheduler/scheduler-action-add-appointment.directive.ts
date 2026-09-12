@@ -24,7 +24,6 @@ export class SchedulerActionAddAppointmentDirective {
   private host = injectSchedulerFeatureHost('etSchedulerActionAddAppointment');
   private labels = injectSchedulerLabels();
 
-  /** See {@link SchedulerActionAddAppointmentConfig}. */
   public config = input({} as SchedulerActionAddAppointmentConfig, {
     alias: 'etSchedulerActionAddAppointment',
     transform: schedulerFeatureConfig<SchedulerActionAddAppointmentConfig>,

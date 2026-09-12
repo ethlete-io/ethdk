@@ -27,7 +27,6 @@ export class SchedulerActionAddSubAppointmentDirective {
   private surface = inject(SchedulerEditSurfaceDirective);
   private labels = injectSchedulerLabels();
 
-  /** See {@link SchedulerActionAddSubAppointmentConfig}. */
   public config = input({} as SchedulerActionAddSubAppointmentConfig, {
     alias: 'etSchedulerActionAddSubAppointment',
     transform: schedulerFeatureConfig<SchedulerActionAddSubAppointmentConfig>,

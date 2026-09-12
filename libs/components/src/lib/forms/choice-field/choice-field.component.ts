@@ -1,6 +1,5 @@
-import { Component, effect, ElementRef, input, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, effect, input, ViewEncapsulation } from '@angular/core';
 import {
-  AnimatableDirective,
   ColorInteractiveContainerDirective,
   ColorInteractiveDirective,
   ColorInteractiveExcludeDirective,
@@ -11,10 +10,9 @@ import {
 import { ChoiceFieldCardStylesComponent } from './choice-field-card-styles.component';
 import { SelectionCardStylesComponent } from '../selection-card-styles.component';
 import { SELECTION_CARD_CONTROL_POSITIONS, SelectionCardControlPosition } from '../selection-card.types';
-import { FormErrorComponent } from '../form-field/form-error.component';
-import { FormWarningComponent } from '../form-field/form-warning.component';
+import { FormSupportComponent } from '../form-field/partials/form-support.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../form-field/form-field.variants';
-import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
+import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
 
 /** How a choice field presents itself. See {@link ChoiceFieldComponent.variant}. */
 export const CHOICE_FIELD_VARIANTS = {
@@ -30,13 +28,10 @@ export type ChoiceFieldVariant = (typeof CHOICE_FIELD_VARIANTS)[keyof typeof CHO
   styleUrl: './choice-field.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
-    AnimatableDirective,
     ColorInteractiveContainerDirective,
     ColorInteractiveDirective,
     ColorInteractiveExcludeDirective,
-    FormErrorComponent,
-    FormWarningComponent,
-    ProvideColorDirective,
+    FormSupportComponent,
   ],
   providers: [provideFormSupport()],
   hostDirectives: [FormFieldDirective, { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] }],
@@ -70,12 +65,6 @@ export class ChoiceFieldComponent {
    */
   public controlPosition = input<SelectionCardControlPosition>(SELECTION_CARD_CONTROL_POSITIONS.END);
 
-  private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
-  private warningContentRef = viewChild<ElementRef<HTMLElement>>('warningContent');
-  private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
-  private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
-  private warningAnimatableRef = viewChild<AnimatableDirective>('warningAnimatable');
-  private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
   public canAnimate = createCanAnimateSignal();
 
   constructor() {
@@ -84,15 +73,6 @@ export class ChoiceFieldComponent {
         this.styleManager.mount(SelectionCardStylesComponent);
         this.styleManager.mount(ChoiceFieldCardStylesComponent);
       }
-    });
-
-    wireFormSupport(this.support, {
-      errorContent: this.errorContentRef,
-      warningContent: this.warningContentRef,
-      hintContent: this.hintContentRef,
-      errorAnimatable: this.errorAnimatableRef,
-      warningAnimatable: this.warningAnimatableRef,
-      hintAnimatable: this.hintAnimatableRef,
     });
   }
 }

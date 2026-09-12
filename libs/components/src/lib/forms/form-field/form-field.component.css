@@ -206,18 +206,13 @@
         pointer-events: none;
       }
 
-      /* Dimmed by what it is, not by where it sits: the slot also holds the control's own clear /
-         picker-trigger / reveal buttons, and an affordance is not decoration. A group opacity on
-         the box would catch those too, and no child can raise its way back out of one. */
       > :is([etInputPrefix], [etInputSuffix], .et-form-field-busy-spinner) {
         opacity: 0.78;
         transition: opacity 150ms ease;
       }
 
-      /* an affix holds either a text glyph (`@`, `€`, `.com`) or an icon — an `[etIcon]` has no
-         intrinsic size, so the shell gives it the same size as the other in-field icons (select
-         arrow, clear buttons). Only a *direct* child: an icon nested in an affix control (e.g. an
-         `et-icon-button` suffix) is already sized by that control. */
+      /* Only a *direct* child: an icon nested in an affix control (e.g. an `et-icon-button` suffix)
+         is already sized by that control. */
       > .et-icon {
         flex: none;
         inline-size: var(--et-form-field-affix-icon-size);
@@ -272,7 +267,6 @@
       block-size: 0;
     }
 
-    /* Subtle by design: a pending async validator is background work, not a blocking state. */
     .et-form-field-busy-spinner {
       flex: none;
       color: var(--et-surface-color-muted-solid, currentColor);
@@ -285,8 +279,6 @@
         var(--et-form-field-affix-icon-size) + var(--et-form-field-control-affix-gap)
       );
 
-      /* what the affordances actually cover: the overlap minus the gap the last of them brings, which
-         falls outside the suffix's own box */
       --_et-form-field-suffix-cover: calc(
         var(--_et-form-field-suffix-overlap) - var(--et-form-field-control-affix-gap)
       );
@@ -298,8 +290,7 @@
       }
 
       /* An alpha mask, not a gradient in a background colour: a `transparent` fill shows whatever the
-         consumer painted behind the field, which is not necessarily the surface scope's background - a
-         painted ramp gets that wrong and reads as a block of the wrong colour under the affordance. */
+         consumer painted behind the field. */
       .et-form-field-control-slot {
         mask-image: linear-gradient(
           var(--_et-form-field-suffix-mask-direction),
@@ -310,8 +301,7 @@
 
       /* A caret scrolls to the very end of the control's box, and a value that is not start-aligned
          sits there from the first frame - both would land under the opaque part of the ramp, so the
-         box stops where the ramp starts. Start-aligned text does not move when it narrows, which is
-         why the focus case can afford to. `:last-of-type` keeps a range input's start field - not
+         box stops where the ramp starts. `:last-of-type` keeps a range input's start field - not
          near the suffix anyway - from widening and pushing its own separator along. */
       .et-form-field-control-slot
         :is(input, textarea):last-of-type:is(:focus, [data-text-align='end'], [data-text-align='center']) {
@@ -327,26 +317,17 @@
       );
     }
 
-    /* Transient affordances - the busy spinner, a control's clear button - appear and disappear
-       while the reader is working in the field. Reserving room for them would re-lay out the value
-       on every appearance (a long label re-ellipsising, a caret jumping), so the suffix instead
-       leaves the flex line by exactly what they add - their icon, the gap each brings, and the fade
-       ramp - and sits over the value's tail, which the control slot masks away.
-
-       The overlap is the suffix's, not the item's: cancelling each item on its own would collapse a
+    /* The overlap is the suffix's, not the item's: cancelling each item on its own would collapse a
        clear button and a spinner onto the same spot, since the second one's flow position already
        accounts for the first one's cancelled width. */
     .et-form-field-suffix:is(:has(> .et-input-clear), :has(> .et-form-field-busy-spinner)) {
       position: relative;
-      /* over the floating label, which carries a z-index of its own */
       z-index: 1;
       align-self: stretch;
       padding-inline-start: var(--_et-form-field-suffix-fade);
       margin-inline-start: calc(-1 * (var(--_et-form-field-suffix-fade) + var(--_et-form-field-suffix-overlap)));
     }
 
-    /* Hint/error at the inline-start, counter pinned at the inline-end — the two live in separate
-       boxes because only the former swaps. */
     .et-form-field-support-row {
       display: flex;
       align-items: flex-start;

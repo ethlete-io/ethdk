@@ -1,11 +1,7 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
- * The strings every form control shows, rather than any one control's own. Both are answers a control
- * gives about its *value*, which is why they recur: a bulk edit masks disagreeing values the same way in
- * a text field and in a slider, and a clearable control offers to empty itself the same way everywhere.
- *
- * One set for all of them on purpose - translating "Clear" once should be enough. The per-control inputs
+ * The strings every form control shows, rather than any one control's own. The per-control inputs
  * (`clearLabel`, `mixedLabel`) still win where a specific instance needs different wording.
  */
 export type FormFieldLabels = {

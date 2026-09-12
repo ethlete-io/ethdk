@@ -4,11 +4,7 @@ import { BreadcrumbSegmentDirective } from './breadcrumb-segment.directive';
 
 export const BREADCRUMB_TOKEN = new InjectionToken<BreadcrumbDirective>('BREADCRUMB_TOKEN');
 
-/**
- * What a breadcrumb needs from the collapse affordance: the component that renders the crumbs which
- * didn't fit. The breadcrumb only ever sees this type, which is what keeps the toggletip - and with it
- * the overlay runtime - out of a bundle that never imports `BREADCRUMB_COLLAPSE_IMPORTS`.
- */
+/** What a breadcrumb needs from the collapse affordance: the component that renders the crumbs which didn't fit. */
 export type BreadcrumbCollapseAffordance = {
   /** Rendered in the overflow slot with `items` (the hidden crumbs) and `crumbTemplate` as inputs. */
   overflowComponent: Type<unknown>;

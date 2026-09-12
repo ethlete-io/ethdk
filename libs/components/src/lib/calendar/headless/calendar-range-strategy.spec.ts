@@ -51,7 +51,6 @@ describe('createWeekRangeStrategy', () => {
   const { select, preview } = createWeekRangeStrategy({ weekStartsOn: 1 });
 
   it('opens the range at the start of the week a first pick lands in', () => {
-    // Thursday July 16th 2026 sits in the Monday-13th week
     expect(select(new Date(2026, 6, 16), EMPTY)).toEqual({ start: new Date(2026, 6, 13), end: null });
   });
 
@@ -59,7 +58,6 @@ describe('createWeekRangeStrategy', () => {
     const open = { start: new Date(2026, 6, 13), end: null };
 
     expect(select(new Date(2026, 6, 22), open)).toEqual({ start: new Date(2026, 6, 13), end: new Date(2026, 6, 26) });
-    // the same week twice is a one-week range
     expect(select(new Date(2026, 6, 16), open)).toEqual({ start: new Date(2026, 6, 13), end: new Date(2026, 6, 19) });
   });
 

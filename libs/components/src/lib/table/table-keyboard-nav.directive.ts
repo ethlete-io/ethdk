@@ -175,9 +175,6 @@ export class TableKeyboardNavDirective {
     event.preventDefault();
 
     if (next === 'drill') {
-      // Enter opens whatever the cell holds. Inline editing is offered it first - through the table, so
-      // neither feature references the other - then the first focusable thing in the cell. A cell with
-      // nothing to open hands Enter to the row, which is where a `rowInteractive` table acts on it.
       if (this.table.editCell(hit.position.row, hit.position.column)) return;
       if (this.drillInto(hit.cell)) return;
 

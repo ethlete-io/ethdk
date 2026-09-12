@@ -10,9 +10,6 @@ import { BREADCRUMB_SEGMENT_TOKEN } from './breadcrumb.tokens';
  * registered segments as a single trail - so a deep page contributes one crumb rather than restating
  * the whole path.
  *
- * The segment renders nothing itself; it only declares crumb templates. Registration lasts as long as
- * the declaring view, so navigating away drops exactly that view's crumbs.
- *
  * Trail order is the order segments register, which under the router is view-creation order (outermost
  * route first). Declare the segment **unconditionally** to keep that true - a segment behind an `@if`
  * that flips later registers after its own children. When a crumb's label isn't there yet, mark the

@@ -1,7 +1,4 @@
 @layer components {
-  /* Sized from the option's own tokens rather than the standalone checkbox's, so the row lines up with
-     the options below it under any density — it is one of them visually, even though semantically it is
-     the control over all of them. */
   .et-checkbox-group-select-all {
     display: flex;
     align-items: center;
@@ -24,8 +21,6 @@
       transform var(--et-checkbox-option-transition-duration, 150ms) ease;
   }
 
-  /* Both marks share the one grid cell and cross-fade, so switching between checked and mixed doesn't
-     move anything. */
   .et-checkbox-group-select-all-box > * {
     grid-area: 1 / 1;
     opacity: 0;
@@ -51,7 +46,6 @@
     color: var(--et-surface-color-solid, currentColor);
   }
 
-  /* The filled box is the same for both "all" and "some" — only which mark shows differs. */
   .et-checkbox-group-select-all:where([aria-checked='true'], [aria-checked='mixed']) .et-checkbox-group-select-all-box {
     border-color: var(--et-theme-color-primary-solid, currentColor);
     background-color: var(--et-theme-color-primary-solid, currentColor);
@@ -62,8 +56,6 @@
     opacity: 1;
   }
 
-  /* Hover-capable pointers only — on touch, :hover sticks after a tap. Excluded once the box is filled,
-     where a hover tint would only muddy the accent. */
   @media (hover: hover) {
     .et-checkbox-group-select-all:hover:not([aria-checked='true']):not([aria-checked='mixed']):not(
         [aria-disabled='true']
@@ -90,8 +82,6 @@
     cursor: default;
   }
 
-  /* View-only: the normal look without the interactive affordance — distinct from the dimmed disabled
-     state, the same split the checkbox makes. */
   .et-checkbox-group-select-all:where([aria-readonly='true']) {
     cursor: default;
   }

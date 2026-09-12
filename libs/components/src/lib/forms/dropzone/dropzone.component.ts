@@ -120,16 +120,12 @@ export class DropzoneComponent {
   private browseButton = viewChild<ElementRef<HTMLButtonElement>>('browseButton');
   private entryElements = viewChildren<unknown, ElementRef<HTMLElement>>('entryEl', { read: ElementRef });
 
-  /** The string in effect: this instance's `retryLabel`, else the domain's label set. */
   protected resolvedRetryLabel = computed(() => this.retryLabel() ?? this.dropzoneLabels().retry);
 
-  /** The string in effect: this instance's `removeLabel`, else the domain's label set. */
   protected resolvedRemoveLabel = computed(() => this.removeLabel() ?? this.dropzoneLabels().remove);
 
-  /** The string in effect: this instance's `replaceLabel`, else the domain's label set. */
   protected resolvedReplaceLabel = computed(() => this.replaceLabel() ?? this.dropzoneLabels().replaceFile);
 
-  /** The string in effect: this instance's `uploadErrorLabel`, else the domain's label set. */
   public resolvedUploadErrorLabel = computed(() => this.uploadErrorLabel() ?? this.dropzoneLabels().uploadFailed);
   private removingEntryIds = new Set<string>();
   private filePickerOpen = false;
@@ -146,7 +142,6 @@ export class DropzoneComponent {
     return uploading > 0 ? this.dropzoneLabels().uploading(uploading) : '';
   });
 
-  /** Upload failures, rendered like validation errors below the field. */
   protected internalErrorMessages = computed(() => {
     const messages: string[] = [];
 
@@ -198,7 +193,6 @@ export class DropzoneComponent {
     this.dropzoneDir.touched.set(true);
   }
 
-  /** Called when focus returns to the trigger or the picker dialog is cancelled. */
   protected resetFilePickerState() {
     this.filePickerOpen = false;
   }
@@ -216,7 +210,6 @@ export class DropzoneComponent {
     inputElement.value = '';
   }
 
-  /** Removes an entry, scaling out its element and FLIP-shifting the remaining ones. */
   protected removeEntryAnimated(entry: DropzoneEntry, entryElement: HTMLElement) {
     if (this.removingEntryIds.has(entry.id)) {
       return;

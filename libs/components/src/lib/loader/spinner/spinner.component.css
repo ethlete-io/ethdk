@@ -19,7 +19,7 @@
 
   @property --et-spinner-duration {
     syntax: '<time>';
-    inherits: false;
+    inherits: true;
     initial-value: 1333ms;
   }
 
@@ -144,11 +144,11 @@
       font-size: 0;
       letter-spacing: 0;
       white-space: nowrap;
-      animation: et-spinner-rotate 1568ms linear infinite;
+      animation: et-spinner-rotate calc(var(--et-spinner-duration) * 1568 / 1333) linear infinite;
     }
 
     .et-spinner-layer {
-      animation: et-spinner-layer-rotate 5332ms cubic-bezier(0.4, 0, 0.2, 1) infinite both;
+      animation: et-spinner-layer-rotate calc(var(--et-spinner-duration) * 4) cubic-bezier(0.4, 0, 0.2, 1) infinite both;
     }
 
     .et-spinner-gap-patch {
@@ -184,11 +184,11 @@
     }
 
     .et-spinner-circle-left .et-spinner-circle-graphic {
-      animation: et-spinner-left-spin 1333ms cubic-bezier(0.4, 0, 0.2, 1) infinite both;
+      animation: et-spinner-left-spin var(--et-spinner-duration) cubic-bezier(0.4, 0, 0.2, 1) infinite both;
     }
 
     .et-spinner-circle-right .et-spinner-circle-graphic {
-      animation: et-spinner-right-spin 1333ms cubic-bezier(0.4, 0, 0.2, 1) infinite both;
+      animation: et-spinner-right-spin var(--et-spinner-duration) cubic-bezier(0.4, 0, 0.2, 1) infinite both;
     }
 
     .et-spinner-determinate-graphic {

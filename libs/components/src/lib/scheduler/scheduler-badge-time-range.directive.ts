@@ -19,7 +19,6 @@ export type SchedulerBadgeTimeRangeConfig = SchedulerFeatureConfig;
 export class SchedulerBadgeTimeRangeDirective {
   private host = injectSchedulerFeatureHost('etSchedulerBadgeTimeRange');
 
-  /** See {@link SchedulerBadgeTimeRangeConfig}. */
   public config = input({} as SchedulerBadgeTimeRangeConfig, {
     alias: 'etSchedulerBadgeTimeRange',
     transform: schedulerFeatureConfig<SchedulerBadgeTimeRangeConfig>,

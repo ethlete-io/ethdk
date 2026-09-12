@@ -4,10 +4,6 @@ import { AnyQueryCreator, QueryArgsOf, QueryErrorResponse, RequestArgs, Response
 import { debounceTime as rxDebounceTime } from 'rxjs';
 import { PageState, endsPagination } from './select-options-paging';
 
-// Note: `@ethlete/components` intentionally depends on `@ethlete/query` (the legacy `cdk` does too),
-// so this query-aware convenience factory can live here. It is a standalone function in its own
-// module - selects that don't use it (and apps not using `@ethlete/query`) tree-shake it away.
-
 /** Config for {@link selectOptionsFromQuery}. */
 export type SelectOptionsFromQueryConfig<TCreator extends AnyQueryCreator, TOption> = {
   /**
@@ -16,14 +12,8 @@ export type SelectOptionsFromQueryConfig<TCreator extends AnyQueryCreator, TOpti
    */
   queryCreator: TCreator;
   /**
-   * Builds the request args from the debounced search query and the current `page`. Runs
-   * reactively (like `withArgs`): reading `query()` re-executes as the user types, and reading
-   * `page()` re-executes when `loadMore()` advances the page. Return `null` to skip a request
-   * (e.g. for an empty query) - `options` is empty while skipped.
-   *
-   * `page` starts at `initialPage` and resets there whenever the query changes; `loadMore()`
-   * increments it. Return only that page's slice from `toOptions` - the factory appends each
-   * page to the accumulated `options`.
+   * Builds the request args from the debounced search query and the current `page`. Return `null`
+   * to skip a request (e.g. for an empty query) - `options` is empty while skipped.
    */
   args: (query: Signal<string>, page: Signal<number>) => RequestArgs<QueryArgsOf<TCreator>> | null;
   /**
@@ -101,18 +91,8 @@ const firstErrorMessage = (error: QueryErrorResponse) => {
  * </et-select>
  * ```
  *
- * Pagination is built in: `loadMore()` advances `page` and appends the next page's slice to
- * `options`; the accumulator resets whenever the query changes. Derive `hasMore` from the latest
- * response via `toHasMore` - it also gates `loadMore()`.
- *
  * Call it from a field initializer / constructor (injection context), the same place you'd create
  * a query or a query stack.
- *
- * Pagination is built in: `args` receives a `page` signal (starting at `initialPage`, default `1`)
- * that resets on every query change and advances on `loadMore()`. Return only the current page's
- * slice from `toOptions` - the factory appends each page to the accumulated `options`. Wire
- * `hasMore` (via `toHasMore`) to `hasMoreItems` and `loadMore` to `(loadMore)`; `loadMore`
- * is a no-op while loading, when skipped, or once `hasMore` is false.
  */
 export const selectOptionsFromQuery = <TCreator extends AnyQueryCreator, TOption>(
   config: SelectOptionsFromQueryConfig<TCreator, TOption>,
@@ -128,15 +108,13 @@ export const selectOptionsFromQuery = <TCreator extends AnyQueryCreator, TOption
   const skipped = computed(() => debouncedQuery().trim().length < minQueryLength);
 
   const initialPage = config.initialPage ?? 1;
-  // Resets to `initialPage` whenever the debounced query changes (so the next request starts a
-  // fresh page run), and `loadMore()` bumps it. Keyed off the debounced query - not the raw one -
-  // so the reset lands in the same tick the request re-runs, never firing a spurious page.
+  // Keyed off the debounced query - not the raw one - so the reset lands in the same tick the
+  // request re-runs, never firing a spurious page.
   const page = linkedSignal<string, number>({
     source: debouncedQuery,
     computation: () => initialPage,
   });
 
-  // created once, exactly like a query stack - `withArgs` re-runs as the debounced query or page changes
   const query = config.queryCreator(
     withArgs<TArgs>(() => {
       if (skipped()) {
@@ -149,14 +127,9 @@ export const selectOptionsFromQuery = <TCreator extends AnyQueryCreator, TOption
 
   const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
 
-  // Accumulate the per-page slices, indexed by page offset. `query.response()` only holds the
-  // latest page, so this folds each new response into the slice for the page it was requested for
-  // (`page` read untracked: only a new response, never an in-flight page bump, appends). Slicing to
-  // `index` drops later pages, so a query change (page back to `initialPage`) resets to one page.
-  // It's a `linkedSignal` (not a plain accumulator) so `options` recomputes synchronously on read.
-  //
-  // `ended` is the fold's own verdict on whether the list is exhausted, and it overrules `toHasMore`:
-  // see `endsPagination`.
+  // `query.response()` only holds the latest page, so this folds each new response into the slice
+  // for the page it was requested for (`page` read untracked: only a new response, never an
+  // in-flight page bump, appends).
   const pageState = linkedSignal<ResponseType<TArgs> | null, PageState<TOption>>({
     source: () => query.response(),
     computation: (response, previous) => {
@@ -164,7 +137,6 @@ export const selectOptionsFromQuery = <TCreator extends AnyQueryCreator, TOption
       const slices = (previous?.value?.slices ?? []).slice(0, index);
 
       if (response === null) {
-        // A page is in flight: keep what is accumulated, and keep `ended` unless this is a fresh run.
         return { slices, ended: index === 0 ? false : (previous?.value?.ended ?? false) };
       }
 

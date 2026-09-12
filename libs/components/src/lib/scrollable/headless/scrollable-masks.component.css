@@ -11,8 +11,6 @@
   }
 
   .et-scrollable {
-    /* --- Horizontal (default) --- */
-
     &[direction='horizontal'],
     &:not([direction]) {
       & .et-scrollable-mask {
@@ -33,8 +31,6 @@
       }
     }
 
-    /* --- Vertical --- */
-
     &[direction='vertical'] {
       & .et-scrollable-mask {
         block-size: var(--mask-size);
@@ -54,8 +50,6 @@
       }
     }
 
-    /* --- State-driven visibility --- */
-
     &.et-scrollable--can-scroll.et-scrollable--has-partial-items:not(.et-scrollable--is-at-start) {
       & .et-scrollable-masks .et-scrollable-mask--start {
         opacity: 1;
@@ -70,15 +64,11 @@
       }
     }
 
-    /* --- Animations --- */
-
     &.et-scrollable--can-animate.et-scrollable--can-scroll {
       & .et-scrollable-mask {
         transition: opacity 300ms var(--ease-5);
       }
     }
-
-    /* --- Mask variant: border --- */
 
     &[mask-variant='border'] {
       & .et-scrollable-mask {

@@ -15,8 +15,8 @@
     display: inline-flex;
     flex-direction: column;
     align-items: center;
-    /* a host that stretches the picker to a taller row (the date-time pickers' panels) keeps the
-       columns on its vertical center, which is what the row's height-change compensation assumes */
+    /* DateTimePickerPanesDirective compensates a panel height change by half the delta, which is
+       only right while the stretched picker keeps its columns vertically centered. */
     justify-content: center;
     gap: 10px;
     user-select: none;
@@ -26,7 +26,6 @@
       gap: 8px;
     }
 
-    /* the range's side switch, styled as the segmented control it behaves like */
     .et-time-picker-sides {
       display: flex;
       align-self: stretch;
@@ -38,8 +37,6 @@
 
     .et-time-picker-side {
       display: flex;
-      /* `auto` basis, not `0`: the switch has to carry its own labels into the picker's intrinsic
-         width, or a two-column picker comes out narrower than "Start time" and ellipsises it */
       flex: 1 1 auto;
       flex-direction: column;
       align-items: center;
@@ -52,7 +49,6 @@
       font: inherit;
       color: var(--et-surface-color-muted-solid, currentColor);
       cursor: pointer;
-      /* no double-tap-zoom wait on touch — taps switch ends immediately */
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
       transition:
@@ -71,8 +67,6 @@
         outline-offset: -2px;
       }
 
-      /* the end being edited: a tonal fill rather than a solid one — the columns below already
-         carry a solid primary pill, and two of them would compete for the same emphasis */
       &[aria-pressed='true'] {
         background-color: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 14%, transparent);
         color: var(--et-theme-color-ink-solid, currentColor);
@@ -99,8 +93,6 @@
       color: var(--et-surface-color-subtle-solid, currentColor);
     }
 
-    /* the column's own scrollbar has to hang outside the scrollport: an absolute child of the
-       column would scroll away with the options */
     .et-time-picker-column-wrapper {
       --et-scrollbar-thickness: 8px;
       --et-scrollbar-thumb-thickness: 4px;
@@ -113,18 +105,12 @@
       flex-direction: column;
       gap: 2px;
       block-size: var(--et-time-picker-column-size);
-      /* room for the first/last option to reach the scrollport center */
       padding-block: calc((var(--et-time-picker-column-size) - var(--et-time-picker-option-size)) / 2);
       overflow-y: auto;
       scroll-snap-type: y proximity;
-      /* with the 240px column and 36px options, the row cut by each edge stays
-         ~2/3 visible and fades out exactly across that visible part — the
-         half-faded numbers are the scrollability cue */
       mask-image: linear-gradient(transparent, black 10%, black 90%, transparent);
     }
 
-    /* the separator sits on the masked column, not on its wrapper, so the mask fades it out toward
-       the column ends with the options */
     .et-time-picker-column-wrapper + .et-time-picker-column-wrapper .et-time-picker-column {
       border-inline-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.08));
       padding-inline-start: 8px;
@@ -148,15 +134,11 @@
       font-variant-numeric: tabular-nums;
       color: var(--et-surface-color-muted-solid);
       cursor: pointer;
-      /* keep column panning, drop the double-tap-zoom wait */
       touch-action: pan-y;
       transition:
         background-color 150ms ease,
         color 150ms ease;
 
-      /* The range band, behind the option's own fill: a negative z-index keeps it there without an
-         `isolation: isolate` that would lift it back in front. It bleeds half the column's 2px gap at
-         each end so consecutive banded options read as one strip rather than a dotted line. */
       &::before {
         content: '';
         position: absolute;
@@ -171,8 +153,6 @@
         display: block;
       }
 
-      /* the strip runs through its outer options rather than stopping at their centers, and rounds
-         off there — the column runs top to bottom, so those are its first and last rows */
       &:where([data-band='start'], [data-band='single'])::before {
         border-start-start-radius: 8px;
         border-start-end-radius: 8px;
@@ -183,15 +163,13 @@
         border-end-end-radius: 8px;
       }
 
-      /* the roving target ("now" while empty) reads as the current position */
       &:where([data-focused]) {
         background: color-mix(in srgb, var(--et-surface-interaction-solid) 8%, transparent);
         color: var(--et-surface-color-solid);
       }
 
-      /* out of bounds or filtered out — still focusable (roving tabindex), just not pickable.
-         Ordered before the selected state so a value that later falls out of bounds still
-         reads as the current selection instead of vanishing into the dimmed rows. */
+      /* Ordered before the selected rule: same single-class weight, so source order is what keeps a
+         selection that later falls out of bounds reading as selected instead of dimmed. */
       &:where([data-disabled]) {
         background: transparent;
         color: var(--et-surface-color-subtle-solid);
@@ -206,9 +184,6 @@
         opacity: 1;
       }
 
-      /* The range end the columns are *not* editing: outlined instead of filled, so both ends stay
-         readable while only one of them is being changed. After the selected rule, which it excludes
-         anyway, so the active end always wins the filled treatment. */
       &:where([data-range-start], [data-range-end]):where(:not([data-selected])) {
         color: var(--et-surface-color-solid);
         font-weight: 600;
@@ -222,13 +197,11 @@
           color: var(--et-surface-color-solid);
         }
 
-        /* a disabled option must not light up under the pointer */
         &:hover:where([data-disabled]:not([data-selected])) {
           background: transparent;
           color: var(--et-surface-color-subtle-solid);
         }
 
-        /* hovering the selected option keeps its filled state */
         &:hover:where([data-selected]) {
           background: var(--et-theme-color-primary-solid);
           color: var(--et-theme-color-on-primary);

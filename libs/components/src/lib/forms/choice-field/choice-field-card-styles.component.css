@@ -58,14 +58,6 @@
       color: var(--et-surface-color-solid, currentColor);
     }
 
-    /* The plain variant indents its support text to clear the leading control. A card has no leading control
-       to clear — the indent just detached the hint from the panel it describes, so it goes flush with the
-       panel's edge (same as the hint under a group of cards). */
-    .et-choice-field-errors,
-    .et-choice-field-hint {
-      padding-inline-start: 0;
-    }
-
     /* Opacity on top of the shared border/background transition, for the one-unit dim above. */
     &[data-can-animate] .et-choice-field-control {
       transition:

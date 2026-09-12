@@ -20,9 +20,8 @@ export type ScrollableButtonsConfig = {
 };
 
 /**
- * Adds the previous/next scroll buttons to an `<et-scrollable>`. Opt-in: they are the reason a scrollable
- * would otherwise pull in the icon button and its spinner, so a track nobody scrolls with buttons pays
- * nothing for them. Ships in `SCROLLABLE_NAVIGATION_IMPORTS`.
+ * Adds the previous/next scroll buttons to an `<et-scrollable>`. Opt-in, applied on the `<et-scrollable>`
+ * itself. Ships in `SCROLLABLE_NAVIGATION_IMPORTS`.
  *
  * The buttons are decorative - `aria-hidden`, not tabbable - because a scroll container is already
  * keyboard-operable. Controls that must be reachable belong to the consumer.

@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, effect, inject, input } from '@angular/core';
+import { Directive, ElementRef, effect, inject, input } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { TIME_PICKER_ERROR_CODES } from '../time-picker-errors';
 import { TimePickerColumnDirective } from './time-picker-column.directive';
@@ -10,8 +10,7 @@ import { TimePickerOption, TimePickerDirective } from './time-picker.directive';
  * column scrolled to the focused option.
  *
  * In the picker's `range` mode it also mirrors the option's relation to the
- * range: `data-range-start` / `data-range-end` for the two ends' own options
- * (the end that is not selected is the one worth drawing differently) and
+ * range: `data-range-start` / `data-range-end` for the two ends' own options and
  * `data-band` for its position in the band between them.
  */
 @Directive({
@@ -41,26 +40,20 @@ export class TimePickerOptionDirective {
   public option = input.required<TimePickerOption>();
 
   constructor() {
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.timePicker || !this.column) {
-          throw new RuntimeError(
-            TIME_PICKER_ERROR_CODES.OPTION_OUTSIDE_COLUMN,
-            'An [etTimePickerOption] must be placed inside an [etTimePickerColumn].',
-            { element: this.elementRef.nativeElement },
-          );
-        }
-      });
+    if (ngDevMode && (!this.timePicker || !this.column)) {
+      throw new RuntimeError(
+        TIME_PICKER_ERROR_CODES.OPTION_OUTSIDE_COLUMN,
+        'An [etTimePickerOption] must be placed inside an [etTimePickerColumn].',
+        { element: this.elementRef.nativeElement },
+      );
     }
 
-    // pull DOM focus along while the user keyboard-navigates the column
     effect(() => {
       if (this.option().focused && this.column?.focusIsInside()) {
         this.elementRef.nativeElement.focus({ preventScroll: true });
       }
     });
 
-    // keep the roving target (selection, or the initial anchor) centered
     effect(() => {
       if (this.option().focused && this.column) {
         this.column.scrollOptionIntoView(this.elementRef.nativeElement);

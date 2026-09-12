@@ -14,12 +14,9 @@
     flex: none;
     font-size: var(--et-form-field-hint-font-size);
     color: var(--et-surface-color-muted-solid, currentColor);
-    /* digits keep a constant width so the count doesn't jitter as it grows */
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 
-    /* The count is the one part of the support row that must not move as digits change, so it never
-       animates with the hint/error swap and never wraps. */
     &:where([data-over-limit]) {
       color: var(--et-theme-color-primary-solid);
       font-weight: var(--et-form-field-counter-over-limit-font-weight, 600);

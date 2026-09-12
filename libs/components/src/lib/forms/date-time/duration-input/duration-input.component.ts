@@ -47,10 +47,8 @@ export class DurationInputComponent {
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
 
-  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  // only while the field is in use - mirrors the select's clear affordance
   protected showClear = computed(
     () =>
       this.clearable() &&

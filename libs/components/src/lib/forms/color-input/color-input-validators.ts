@@ -1,9 +1,11 @@
 import { FieldContext, LogicFn, validate } from '@angular/forms/signals';
 import { FieldWarning, warn } from '../form-field/headless';
+import { COLOR_NOTATIONS } from './color-input.types';
 import { parseColorToRgb } from './headless/internals/color-convert';
 
-/** The path type `validate` accepts for a color field. Derived so we don't depend on a non-exported
- *  path type name from `@angular/forms/signals`. */
+const HEX_NOTATIONS = [COLOR_NOTATIONS.HEX] as const;
+const RGB_NOTATIONS = [COLOR_NOTATIONS.RGB] as const;
+
 type ColorFieldPath = Parameters<typeof validate<string | null>>[0];
 
 export type HexColorOptions = {
@@ -26,9 +28,8 @@ export type ColorContrastOptions = {
   /** The color to measure against: another color field's path, or a fixed color string. */
   against: ColorFieldPath | string;
   /**
-   * The contrast ratio the pair has to reach, as the `n` in `n:1`, or a function returning it - the
-   * same shape signal forms' own `min()` takes, so the requirement can follow another field (a
-   * "large text" switch relaxing 4.5 to 3). See {@link WCAG_CONTRAST_RATIOS}.
+   * The contrast ratio the pair has to reach, as the `n` in `n:1`, or a function returning it.
+   * See {@link WCAG_CONTRAST_RATIOS}.
    * @default 4.5
    */
   min?: number | LogicFn<string | null, number>;
@@ -42,33 +43,14 @@ export type ColorContrastOptions = {
   message?: string;
 };
 
-const HEX_PATTERNS = {
-  strict: /^#[0-9a-f]{6}$/i,
-  shorthand: /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i,
-  alpha: /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/i,
-  shorthandAlpha: /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i,
-};
-
-// Both the legacy comma form and the modern space form, since either is what a user pastes out of
-// devtools. Alpha may be a number or a percentage; the channels are range-checked below, because a
-// pattern that also enforced 0-255 would be unreadable.
-const RGB_PATTERN = /^rgba?\(\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/i;
-
 const isBlank = (value: string | null): value is null => value === null || value.trim().length === 0;
 
 type RgbChannels = readonly [red: number, green: number, blue: number];
 
-// getColorContrastRatio's documented contract (below) covers hex and rgb()/rgba() only, so hsl()
-// is rejected explicitly rather than falling through to parseColorToRgb, which the picker itself
-// uses and which does read it.
+const CONTRAST_NOTATIONS = [COLOR_NOTATIONS.HEX, COLOR_NOTATIONS.RGB] as const;
+
 const parseColor = (value: string | null): RgbChannels | null => {
-  if (isBlank(value)) return null;
-
-  const raw = value.trim();
-
-  if (raw.toLowerCase().startsWith('hsl')) return null;
-
-  const rgb = parseColorToRgb(raw);
+  const rgb = parseColorToRgb(value, { notations: CONTRAST_NOTATIONS });
 
   return rgb ? [rgb.red, rgb.green, rgb.blue] : null;
 };
@@ -82,7 +64,7 @@ const linearize = (channel: number) => {
 const relativeLuminance = ([red, green, blue]: RgbChannels) =>
   0.2126 * linearize(red) + 0.7152 * linearize(green) + 0.0722 * linearize(blue);
 
-/** The ratios WCAG 2.2 asks for, so a call site can name the rule instead of repeating the number. */
+/** The ratios WCAG 2.2 asks for. */
 export const WCAG_CONTRAST_RATIOS = {
   /** 1.4.3 Contrast (Minimum), text under 18.66px / 24px bold. */
   aaNormal: 4.5,
@@ -102,8 +84,7 @@ export const WCAG_CONTRAST_RATIOS = {
  * `rgb()`/`rgba()` in either the comma or the space form, and returns `null` if either color is
  * blank or unparseable.
  *
- * **Alpha is ignored**: the result is for the two colors at full opacity, because compositing a
- * translucent color needs a backdrop this function is not given.
+ * **Alpha is ignored**: the result is for the two colors at full opacity.
  *
  * ```ts
  * getColorContrastRatio('#767676', '#ffffff'); // 4.54
@@ -124,8 +105,7 @@ export const getColorContrastRatio = (color: string | null, other: string | null
 
 /**
  * Signal-forms validator: fails the field unless the value is a hex color. Strict `#rrggbb` by
- * default - the notation `et-color-input` itself produces and documents - so a value that arrived
- * from an API or a `patchValue` rather than the picker still has to meet the contract.
+ * default.
  *
  * An empty or `null` value passes; pair it with `required()` if the field is mandatory.
  *
@@ -142,15 +122,13 @@ export const hexColor = (path: ColorFieldPath, { allowShorthand, allowAlpha, mes
 
     if (isBlank(raw)) return undefined;
 
-    const pattern = allowShorthand
-      ? allowAlpha
-        ? HEX_PATTERNS.shorthandAlpha
-        : HEX_PATTERNS.shorthand
-      : allowAlpha
-        ? HEX_PATTERNS.alpha
-        : HEX_PATTERNS.strict;
+    const parsed = parseColorToRgb(raw, {
+      notations: HEX_NOTATIONS,
+      hexShorthand: !!allowShorthand,
+      alpha: !!allowAlpha,
+    });
 
-    if (pattern.test(raw.trim())) return undefined;
+    if (parsed) return undefined;
 
     const expected = [
       '#rrggbb',
@@ -164,9 +142,7 @@ export const hexColor = (path: ColorFieldPath, { allowShorthand, allowAlpha, mes
 
 /**
  * Signal-forms validator: fails the field unless the value is a functional `rgb()` color, in either
- * the comma or the space form, with each channel in 0-255. For a control or an API that hands you
- * `rgb(255 0 0)` rather than hex - `et-color-input`'s own value is hex, so reach for
- * {@link hexColor} there.
+ * the comma or the space form, with each channel in 0-255.
  *
  * An empty or `null` value passes; pair it with `required()` if the field is mandatory.
  *
@@ -187,31 +163,21 @@ export const rgbColor = (path: ColorFieldPath, { allowAlpha, message }: RgbColor
       message: message ?? `Enter a color as ${allowAlpha ? 'rgb(r g b) or rgba(r g b / a)' : 'rgb(r g b)'}`,
     };
 
-    const match = RGB_PATTERN.exec(raw.trim());
+    const parsed = parseColorToRgb(raw, { notations: RGB_NOTATIONS, alpha: !!allowAlpha });
 
-    if (!match) return fail;
-
-    const [, red, green, blue, alpha] = match;
-
-    if (alpha !== undefined && !allowAlpha) return fail;
-
-    const inRange = [red, green, blue].every((channel) => Number(channel) <= 255);
-
-    return inRange ? undefined : fail;
+    return parsed ? undefined : fail;
   });
 
 /**
  * Signal-forms rule: reports the field while its color does not reach `min` contrast against
  * another color - a second field of the same form (`against: s.background`) or a fixed color
- * (`against: '#ffffff'`). The one cross-field rule the library ships; `validate`'s context resolves
- * the other path, so the two fields need no wiring beyond sharing a `form()`.
+ * (`against: '#ffffff'`).
  *
  * `severity: 'warning'` routes the same check through {@link warn} instead, which leaves the field
- * valid and lets `submit()` through - the right choice when the color is a brand decision rather
- * than a rule. Either way it reports `kind: 'colorContrast'`.
+ * valid and lets `submit()` through. Either way it reports `kind: 'colorContrast'`.
  *
- * Passes while **either** color is blank or unparseable, so it never doubles up on `required()` or
- * on {@link hexColor}. Alpha is ignored - see {@link getColorContrastRatio}.
+ * Passes while **either** color is blank or unparseable. Alpha is ignored - see
+ * {@link getColorContrastRatio}.
  *
  * ```ts
  * form(model, (s) => {
@@ -236,7 +202,6 @@ export const colorContrast = (
 
     if (ratio === null || ratio >= required) return null;
 
-    // Floored, not rounded: a 4.49 reported as "4.5:1, needs at least 4.5:1" reads as a bug.
     const measured = Math.floor(ratio * 100) / 100;
 
     return { kind: 'colorContrast', message: message ?? `Contrast is ${measured}:1, needs at least ${required}:1` };

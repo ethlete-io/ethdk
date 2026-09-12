@@ -9,36 +9,6 @@ import { FormFieldComponent } from './form-field.component';
 import { LabelDirective } from './headless';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 
-const ensureResizeObserverMock = () => {
-  if (globalThis.ResizeObserver) {
-    return;
-  }
-
-  class ResizeObserverMock {
-    constructor(callback: ResizeObserverCallback) {
-      void callback;
-    }
-
-    observe() {
-      return undefined;
-    }
-
-    unobserve() {
-      return undefined;
-    }
-
-    disconnect() {
-      return undefined;
-    }
-  }
-
-  Object.defineProperty(globalThis, 'ResizeObserver', {
-    configurable: true,
-    value: ResizeObserverMock,
-    writable: true,
-  });
-};
-
 @Component({
   template: `
     <et-form-field>
@@ -54,8 +24,6 @@ describe('FormFieldComponent', () => {
   let fixture: ComponentFixture<CheckboxFormFieldTestHost>;
 
   beforeEach(() => {
-    ensureResizeObserverMock();
-
     TestBed.configureTestingModule({
       imports: [CheckboxFormFieldTestHost],
       providers: [provideColorThemes([...TEST_COLOR_THEMES])],
@@ -89,8 +57,6 @@ describe('FormFieldComponent disabled state', () => {
   let fixture: ComponentFixture<InputFormFieldTestHost>;
 
   beforeEach(() => {
-    ensureResizeObserverMock();
-
     TestBed.configureTestingModule({
       imports: [InputFormFieldTestHost],
       providers: [provideColorThemes([...TEST_COLOR_THEMES])],
@@ -99,9 +65,6 @@ describe('FormFieldComponent disabled state', () => {
     fixture.detectChanges();
   });
 
-  // The disabled treatment is driven by the registered control's state (data-disabled), NOT by
-  // :has(:disabled) - a composite control (e.g. the rich text editor) legitimately disables
-  // individual toolbar buttons while fully enabled, and :has would dim the whole field over it.
   it('sets data-disabled from the registered control, not from arbitrary disabled descendants', () => {
     const field = fixture.nativeElement.querySelector('et-form-field') as HTMLElement;
 
@@ -129,8 +92,6 @@ describe('FormFieldComponent control frame pointerdown', () => {
   let fixture: ComponentFixture<PasswordFormFieldTestHost>;
 
   beforeEach(() => {
-    ensureResizeObserverMock();
-
     TestBed.configureTestingModule({
       imports: [PasswordFormFieldTestHost],
       providers: [provideColorThemes([...TEST_COLOR_THEMES])],

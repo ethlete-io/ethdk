@@ -7,6 +7,7 @@ import { provideBreadcrumbManager } from './breadcrumb-manager';
 import { BreadcrumbComponent } from './breadcrumb.component';
 import { BreadcrumbOverflowComponent } from './breadcrumb-overflow.component';
 import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from './breadcrumb.imports';
+import { fakeLayout, fakeResizeObserver } from '../testing/fake-layout';
 import { BreadcrumbDirective } from './headless';
 import { BreadcrumbSeoDirective } from './seo/breadcrumb-seo.directive';
 
@@ -260,5 +261,153 @@ describe('BreadcrumbSeoDirective on the outlet', () => {
     const data = fixture.componentInstance.seo().structuredData();
 
     expect(data?.itemListElement.map((item) => item.name)).toEqual(['Home', 'Teams']);
+  });
+});
+
+const COLLAPSED_TRAIL_WIDTH = 150;
+
+@Component({
+  selector: 'et-test-breadcrumb-growing-crumb-host',
+  template: `
+    <et-breadcrumb etBreadcrumbCollapse>
+      <ng-template etBreadcrumbItemTemplate><a etBreadcrumbItem href="#">Home</a></ng-template>
+      <ng-template etBreadcrumbItemTemplate><a etBreadcrumbItem href="#">Teams</a></ng-template>
+      <ng-template etBreadcrumbItemTemplate
+        ><span etBreadcrumbItem>{{ title() }}</span></ng-template
+      >
+    </et-breadcrumb>
+  `,
+  imports: [BREADCRUMB_IMPORTS, BREADCRUMB_COLLAPSE_IMPORTS],
+})
+class BreadcrumbGrowingCrumbHostComponent {
+  public breadcrumb = viewChild.required(BreadcrumbComponent, { read: BreadcrumbDirective });
+  public title = signal('Chemie');
+}
+
+/**
+ * The breadcrumb's own `scrollWidth`, which jsdom reports as `0`: the collapsed trail is a fixed width,
+ * the full one is whatever the test currently says the trail needs.
+ *
+ * `measurementPasses()` counts the directive's render effect: the scroll state reads `scrollWidth` and
+ * `scrollHeight` together, the render effect reads `scrollWidth` alone, so the difference is its pass count.
+ */
+const fakeTrailWidth = (fullWidth: () => number) => {
+  const reads = { scrollHeight: 0, scrollWidth: 0 };
+
+  const patch = (property: 'scrollHeight' | 'scrollWidth', value: (element: Element) => number) => {
+    const original = Object.getOwnPropertyDescriptor(Element.prototype, property);
+
+    Object.defineProperty(Element.prototype, property, {
+      configurable: true,
+      get(this: Element) {
+        if (!this.matches('et-breadcrumb')) return (original?.get?.call(this) as number | undefined) ?? 0;
+
+        reads[property]++;
+
+        return value(this);
+      },
+    });
+
+    onTestFinished(() => {
+      if (original) Object.defineProperty(Element.prototype, property, original);
+      else Reflect.deleteProperty(Element.prototype, property);
+    });
+  };
+
+  patch('scrollWidth', (element) => (element.hasAttribute('data-collapsed') ? COLLAPSED_TRAIL_WIDTH : fullWidth()));
+  patch('scrollHeight', () => 0);
+
+  return { measurementPasses: () => reads.scrollWidth - reads.scrollHeight };
+};
+
+describe('breadcrumb re-expansion', () => {
+  it('re-measures a trail whose crumb grew while collapsed instead of expanding on the remembered width', () => {
+    const resizeObserver = fakeResizeObserver();
+
+    let availableWidth = 200;
+    let fullTrailWidth = 260;
+
+    fakeLayout([{ match: 'et-breadcrumb', clientWidth: () => availableWidth }]);
+    fakeTrailWidth(() => fullTrailWidth);
+
+    const fixture = TestBed.createComponent(BreadcrumbGrowingCrumbHostComponent);
+    fixture.detectChanges();
+    TestBed.tick();
+
+    const breadcrumb = fixture.componentInstance.breadcrumb();
+
+    expect(breadcrumb.isCollapsed()).toBe(true);
+
+    fixture.componentInstance.title.set('Chemie Leverkusen U19');
+    fullTrailWidth = 410;
+    fixture.detectChanges();
+    TestBed.tick();
+
+    expect(breadcrumb.isCollapsed()).toBe(true);
+
+    availableWidth = 300;
+    resizeObserver.fire();
+    fixture.detectChanges();
+    TestBed.tick();
+
+    expect(breadcrumb.isCollapsed()).toBe(true);
+  });
+
+  it('expands again, and paints, once a measurement proves the full trail fits', () => {
+    const resizeObserver = fakeResizeObserver();
+
+    let availableWidth = 200;
+    const fullTrailWidth = 260;
+
+    fakeLayout([{ match: 'et-breadcrumb', clientWidth: () => availableWidth }]);
+    fakeTrailWidth(() => fullTrailWidth);
+
+    const fixture = TestBed.createComponent(BreadcrumbGrowingCrumbHostComponent);
+    fixture.detectChanges();
+    TestBed.tick();
+
+    const breadcrumb = fixture.componentInstance.breadcrumb();
+
+    expect(breadcrumb.isCollapsed()).toBe(true);
+
+    availableWidth = 400;
+    resizeObserver.fire();
+    fixture.detectChanges();
+    TestBed.tick();
+    fixture.detectChanges();
+
+    expect(breadcrumb.isCollapsed()).toBe(false);
+    expect(breadcrumb.isMeasuring()).toBe(false);
+  });
+});
+
+describe('breadcrumb measurement passes', () => {
+  it('re-expands in a single measurement pass', () => {
+    const resizeObserver = fakeResizeObserver();
+
+    let availableWidth = 200;
+
+    fakeLayout([{ match: 'et-breadcrumb', clientWidth: () => availableWidth }]);
+
+    const trail = fakeTrailWidth(() => 260);
+
+    const fixture = TestBed.createComponent(BreadcrumbGrowingCrumbHostComponent);
+    fixture.detectChanges();
+    TestBed.tick();
+
+    const breadcrumb = fixture.componentInstance.breadcrumb();
+
+    expect(breadcrumb.isCollapsed()).toBe(true);
+
+    const settled = trail.measurementPasses();
+
+    availableWidth = 400;
+    resizeObserver.fire();
+    fixture.detectChanges();
+    TestBed.tick();
+
+    expect(breadcrumb.isCollapsed()).toBe(false);
+    expect(breadcrumb.isMeasuring()).toBe(false);
+    expect(trail.measurementPasses() - settled).toBe(1);
   });
 });

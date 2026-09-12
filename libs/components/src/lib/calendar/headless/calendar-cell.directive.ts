@@ -41,10 +41,6 @@ export class CalendarCellDirective {
 
   public cell = input.required<CalendarCellBase>();
 
-  /**
-   * `dateClass`'s classes, as a map rather than a list so the element's static classes survive the
-   * binding - and so a class the hook stops returning is taken back off.
-   */
   protected dynamicClasses = computed(() => {
     const classes = this.cell().classes;
 
@@ -60,7 +56,6 @@ export class CalendarCellDirective {
       );
     }
 
-    // pull DOM focus along while the user keyboard-navigates the grid
     effect(() => {
       if (this.cell().focused && this.grid?.focusIsInside()) {
         this.elementRef.nativeElement.focus();
@@ -69,8 +64,6 @@ export class CalendarCellDirective {
   }
 
   protected handlePointerEnter() {
-    // only the grid that selects previews a range - anywhere coarser, a cell is a place to look
-    // rather than an endpoint
     if (
       this.calendar?.mode() === 'range' &&
       this.calendar.view() === this.calendar.selectionView() &&

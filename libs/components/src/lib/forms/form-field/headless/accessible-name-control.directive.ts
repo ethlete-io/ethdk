@@ -11,9 +11,7 @@ export const ACCESSIBLE_NAME_INPUTS = ['aria-label', 'aria-labelledby'] as const
 /**
  * The author-supplied accessible name every form-field control accepts: `aria-label` /
  * `aria-labelledby` written on the control itself, for a control named by something outside its
- * field - a shared caption over a filter row, a dense table cell, a page-size select. Without them
- * the attribute lands on the role-less wrapper element (where no assistive tech reads it) and the
- * field's dev-time labelling guard (ET2201) fires on a control that *is* labelled.
+ * field - a shared caption over a filter row, a dense table cell, a page-size select.
  *
  * A control extending this still has to render the name: bind `aria-label` onto whatever element
  * carries its role (the native input, the trigger, the editable), and `aria-labelledby` off

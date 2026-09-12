@@ -1,5 +1,5 @@
 import { setHours, setMinutes, setSeconds, startOfDay } from 'date-fns';
 
-/** The day of `day` carrying the time of day of `time` - how the date-time controls merge a pick. */
+/** The day of `day` carrying the time of day of `time`. */
 export const withTimeOfDay = (day: Date, time: Date) =>
   setSeconds(setMinutes(setHours(startOfDay(day), time.getHours()), time.getMinutes()), time.getSeconds());

@@ -44,7 +44,6 @@ describe('SelectOptionGroupDirective', () => {
     await driver.open();
 
     expect(driver.optionGroups().length).toBe(2);
-    // aria-labelledby points at the visible header
     expect(driver.groupLabel(0)).toBe('Forwards');
     expect(driver.groupOptionCounts()).toEqual([2, 1]);
   });
@@ -52,7 +51,6 @@ describe('SelectOptionGroupDirective', () => {
   it('keeps keyboard navigation flat across groups', async () => {
     await driver.open();
 
-    // three options total, registered flat in DOM order regardless of grouping
     expect(driver.select.visibleItems().map((item) => item.value())).toEqual(['mbappe', 'haaland', 'bellingham']);
     expect(driver.options().length).toBe(3);
   });
@@ -62,7 +60,6 @@ describe('SelectOptionGroupDirective', () => {
     driver.type('bell');
     await driver.settle();
 
-    // "Forwards" has no match → hidden; "Midfielders" keeps Bellingham
     expect(driver.groupsHidden()).toEqual([true, false]);
   });
 

@@ -1,7 +1,5 @@
 @layer components {
   et-date-time-input {
-    /* rows, not a flex line: the second reading stacks under the field text, and a field without
-       one lays out exactly as a single-row grid */
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-content: center;
@@ -43,34 +41,25 @@
       color: var(--et-surface-interaction-disabled-solid, currentColor);
     }
 
-    /* an unresolved bulk-edit value reads as provisional: the field stays empty and the
-       mixed label shows through its placeholder — stronger than a regular hint (72% vs
-       46%). Consumers restyle via [data-mixed]. */
     &[data-mixed] .et-date-time-input-field::placeholder {
       font-style: italic;
       color: color-mix(in srgb, currentColor 72%, transparent);
     }
   }
 
-  /* the picker panel renders inside a detached overlay pane, not the host */
   .et-date-time-input-panel {
-    /* desktop (anchored panel): calendar and time picker side by side, no tabs */
     .et-date-time-input-panel-tabs {
       display: none;
     }
 
-    /* top-anchored row: the calendar alone defines the height */
     .et-date-time-input-panel-panes {
       display: flex;
       align-items: start;
       gap: 12px;
     }
 
-    /* stretch wrapper that absorbs the time picker's animated block-size
-       (etDateTimePickerPanes): while the animation makes the time picker
-       taller than the row, the overflow stays out of layout — the panel body
-       snaps once and the panel's own resize animation runs in sync, instead
-       of chasing a frame-by-frame moving target */
+    /* absorbs etDateTimePickerPanes' animated block-size: the overflow stays out of layout, so the
+       panel body snaps once instead of chasing a frame-by-frame moving target */
     .et-date-time-input-panel-time-pane {
       align-self: stretch;
       display: flex;
@@ -83,14 +72,11 @@
     }
   }
 
-  /* below the md breakpoint the picker mounts as a bottom sheet: one pane at a
-     time, switched by the tab bar */
   .et-overlay.et-date-picker-sheet .et-date-time-input-panel {
     .et-date-time-input-panel-tabs {
       display: block;
       margin-block-end: 12px;
 
-      /* full-width segmented track, tabs sharing it equally */
       .et-segmented-button-group-buttons {
         display: flex;
         align-self: stretch;
@@ -101,8 +87,6 @@
       }
     }
 
-    /* both panes stacked in one grid cell: the sheet keeps the taller pane's
-       height across tab switches instead of resizing */
     .et-date-time-input-panel-panes {
       display: grid;
       justify-content: center;
@@ -123,7 +107,6 @@
     .et-time-picker {
       border-inline-start: none;
       padding-inline-start: 0;
-      /* touch-sized columns fitting the sheet's reserved calendar height */
       --et-time-picker-column-size: 300px;
     }
 
@@ -135,10 +118,8 @@
       visibility: hidden;
     }
 
-    /* the incoming pane slides in from the travel direction, like the
-       calendar's month navigation; `data-nav` is unset on open, so the first
-       render does not animate. The selector stops matching while a pane is
-       inactive, which restarts the animation on every re-activation. */
+    /* `data-nav` is unset on open, so the first render does not animate; the selector stops
+       matching while a pane is inactive, which restarts the animation on every re-activation */
     .et-date-time-input-panel-panes[data-nav='forward'][data-active-pane='time'] > .et-date-time-input-panel-time-pane {
       animation: et-date-time-input-pane-in-forward 200ms ease;
     }

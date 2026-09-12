@@ -261,8 +261,10 @@ The controls that open a panel from the field share one set of close rules: the
 [date and time pickers](/components/date-time-inputs) and the
 [color input](/components/text-inputs#color-input). A panel closes on <kbd>Escape</kbd>, on a
 pointer down outside the panel and the field, and as soon as focus lands on an element outside
-both. A <kbd>Tab</kbd> past the last control in the panel therefore closes it, and focus stays
-where it went. An <kbd>Escape</kbd> close hands focus back to the field instead.
+both. A <kbd>Tab</kbd> past the panel's last control - or a <kbd>Shift</kbd>+<kbd>Tab</kbd>
+before its first - closes it too, even when the field is the page's last tab stop and focus lands
+nowhere; focus stays where it went. An <kbd>Escape</kbd> close hands focus back to the field
+instead.
 
 These panels are not modal, so nothing traps <kbd>Tab</kbd> inside them. A pointer down or a
 focus move into a popover the panel itself opened - a nested select, a menu, a tooltip - does

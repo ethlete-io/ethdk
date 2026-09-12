@@ -12,7 +12,6 @@ const COMMON_PASSWORDS = ['hunter22', 'password1', 'letmein12'];
   selector: 'et-sb-form-field-warning',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-8 p-8 font-sans">
-      <!-- Warned and valid at once: type fewer than 8 characters and the error takes the slot back. -->
       <et-form-field>
         <et-label>Password</et-label>
         <et-input [formField]="signupForm.password" type="password" />
@@ -25,7 +24,6 @@ const COMMON_PASSWORDS = ['hunter22', 'password1', 'letmein12'];
         <et-hint>We usually keep {{ STOCK }} in stock.</et-hint>
       </et-form-field>
 
-      <!-- Controls that render their own support region show warnings in the same place. -->
       <et-slider [formField]="signupForm.budget" [max]="200">
         <et-label>Budget</et-label>
         <et-hint>Anything up to 150 is typical.</et-hint>

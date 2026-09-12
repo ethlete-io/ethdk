@@ -16,7 +16,7 @@ import { SelectDirective } from './select.directive';
     '[attr.aria-required]': 'hasSearch() ? null : select?.required() || null',
     '[attr.aria-invalid]': 'hasSearch() ? null : select?.shouldDisplayError() || null',
     '[attr.aria-describedby]': 'hasSearch() ? null : select?.describedBy() || null',
-    '[attr.aria-label]': 'hasSearch() ? null : select?.ariaLabel() || null',
+    '[attr.aria-label]': 'select?.ariaLabel() || null',
     '[attr.aria-labelledby]': 'labelledBy()',
     '[attr.aria-disabled]': 'select?.disabled() || null',
     '[attr.data-disabled]': 'select?.disabled() || null',
@@ -34,8 +34,6 @@ export class SelectTriggerDirective {
   public select = inject(SelectDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  // with an inline search input, the input is the combobox and the tab stop -
-  // the trigger element becomes a plain container
   protected hasSearch = computed(() => !!this.select?.registeredSearch());
 
   protected role = computed(() => (this.hasSearch() ? null : 'combobox'));
@@ -45,8 +43,6 @@ export class SelectTriggerDirective {
     !this.hasSearch() && this.select?.open() ? this.select.activeId() : null,
   );
 
-  // non-button hosts (a chips trigger must not be a native <button> - chips contain remove
-  // buttons, and buttons cannot nest) need their focusability managed explicitly
   private readonly IS_NATIVELY_FOCUSABLE = ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'].includes(
     this.elementRef.nativeElement.tagName,
   );
@@ -99,8 +95,6 @@ export class SelectTriggerDirective {
     const search = this.select?.registeredSearch();
 
     if (search) {
-      // clicking anywhere in the field focuses the inline search input; clicks inside the
-      // input itself must never close the panel - the chevron's own handler toggles instead
       this.select?.show();
       search.focus();
 
@@ -111,7 +105,6 @@ export class SelectTriggerDirective {
   }
 
   protected handleKeydown(event: KeyboardEvent) {
-    // an inline search input forwards its own relevant keys - don't double-handle them
     if (this.select?.registeredSearch()?.isFocused()) {
       return;
     }
@@ -126,7 +119,6 @@ export class SelectTriggerDirective {
   protected handleBlur() {
     this.select?.triggerFocused.set(false);
 
-    // focus moving into the panel (the search input) is not "leaving the field"
     if (!this.select?.open()) {
       this.select?.touched.set(true);
     }

@@ -17,15 +17,10 @@ export type CreateColorPickerOverlayOptions = {
   surface: Signal<AnchoredPanelSurfaceLike | null>;
   anchor: () => HTMLElement | null | undefined;
   context: () => unknown;
-  /** Runs once the pane is gone. */
   onAfterClosed?: (closeInfo: ColorPickerOverlayCloseInfo) => void;
 };
 
-/**
- * The picker overlay for the color input - a thin binding of the shared
- * `createAnchoredPanelController` to the color picker config: a bottom sheet below `md`, an anchored
- * pane above it, the same way the date and cascader pickers present. Call in an injection context.
- */
+/** Call in an injection context. */
 export const createColorPickerOverlay = (options: CreateColorPickerOverlayOptions) => {
   const bottomSheetStrategy = injectBottomSheetStrategy();
   const overlayRef = signal<AnchoredPanelOverlayRef | null>(null);
@@ -51,7 +46,6 @@ export const createColorPickerOverlay = (options: CreateColorPickerOverlayOption
       panelClass: 'et-color-input-overlay-pane',
       strategies: () => [
         {
-          // small viewports: backdropped bottom sheet with drag-to-dismiss
           strategy: bottomSheetStrategy.build({ hasBackdrop: true, containerClass: 'et-color-picker-sheet' }),
         },
         ...anchoredOverlayStrategy({

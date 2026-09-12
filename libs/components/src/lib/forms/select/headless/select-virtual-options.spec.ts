@@ -102,8 +102,6 @@ describe('SelectDirective (data-driven options)', () => {
   it('keyboard-navigates the full data set, not just the rendered window', async () => {
     await driver.open();
 
-    // dispatched through the trigger handler: with an inline search input, End/Home stay
-    // native caret editing on the input, but search-less selects reach this path directly
     driver.select.handleTriggerKeydown(new KeyboardEvent('keydown', { key: 'End' }));
     driver.tick();
 
@@ -161,7 +159,6 @@ describe('SelectDirective (data-driven options)', () => {
     await driver.open();
     driver.type('item 19');
 
-    // "Item 19" and "Item 190"–"Item 199"
     expect(driver.select.visibleItems().length).toBe(11);
     expect(driver.options().length).toBe(11);
 
@@ -182,7 +179,6 @@ describe('SelectDirective (data-driven options)', () => {
 
     expect(driver.select.selection.items().length).toBe(1);
     expect(driver.select.selection.items()[0]!.label()).toBe('First (renamed)');
-    // the selected value's option is gone - its label survives via the label cache
     expect(driver.select.displayValue()).toBe('Item 2');
   });
 

@@ -19,7 +19,6 @@ export type SchedulerBadgeColorDotConfig = SchedulerFeatureConfig;
 export class SchedulerBadgeColorDotDirective {
   private host = injectSchedulerFeatureHost('etSchedulerBadgeColorDot');
 
-  /** See {@link SchedulerBadgeColorDotConfig}. */
   public config = input({} as SchedulerBadgeColorDotConfig, {
     alias: 'etSchedulerBadgeColorDot',
     transform: schedulerFeatureConfig<SchedulerBadgeColorDotConfig>,

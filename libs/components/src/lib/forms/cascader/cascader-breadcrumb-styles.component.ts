@@ -1,11 +1,5 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 
-/**
- * The breadcrumb row shown once a deep drill collapses levels out of the column window, as a
- * styles-only component mounted the first time a cascader has a breadcrumb path to render.
- *
- * @internal
- */
 @Component({
   selector: 'et-cascader-breadcrumb-styles',
   template: '',

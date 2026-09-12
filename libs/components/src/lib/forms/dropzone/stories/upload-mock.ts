@@ -9,11 +9,6 @@ const PROGRESS_INTERVAL_MS = 250;
 
 const failedOnce = new Set<string>();
 
-/**
- * Story-only interceptor that simulates a multipart upload endpoint including
- * upload progress events. Requests to the `/upload-flaky` route fail on the
- * first attempt per file name and succeed on retries.
- */
 export const mockUploadInterceptor: HttpInterceptorFn = (request, next) => {
   if (!request.url.startsWith(MOCK_UPLOAD_BASE_URL)) {
     return next(request);
@@ -27,7 +22,6 @@ export const mockUploadInterceptor: HttpInterceptorFn = (request, next) => {
     failedOnce.add(file.name);
   }
 
-  // pretend a decent file size so the progress animation is visible
   const total = Math.max(file?.size ?? 0, 400_000);
 
   return concat(

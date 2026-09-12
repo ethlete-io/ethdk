@@ -14,22 +14,15 @@ import { CalendarComponent } from '../../../calendar';
 const COMPENSATION_DURATION = 160;
 const COMPENSATION_EASING = 'ease';
 
-/** The time picker's own rows: its columns, and a range picker's side switch above them. */
 const PICKER_ROWS = '.et-time-picker-sides, .et-time-picker-columns';
 
 /**
  * @internal Applied to the pane row of a date-time picker panel: when month navigation changes the
- * calendar height, the stretched time picker follows instantly and its vertically centered content
- * jumps by half the delta. This slides that content from its old visual position to the new one with
- * a `translateY` compensation.
+ * calendar height, the stretched time picker's vertically centered content jumps by half the delta,
+ * and this slides it from its old visual position to the new one.
  *
- * Deliberately a transform, never an animated `block-size`: transforms stay
- * out of layout, so the panel body still changes in a single snap and the
- * panel's own resize animation (`et-date-picker-panel`, which observes the
- * body) plays one clean run alongside this one. Animating the time picker's
- * height instead would feed every animation frame back into the row height -
- * on shrink the panel would chase a per-frame moving target and finish long
- * after the columns settled.
+ * Must stay a transform, never an animated `block-size`: animating the height would feed every
+ * frame back into the row height this observes, so the panel would chase a moving target.
  */
 @Directive({
   selector: '[etDateTimePickerPanes]',
@@ -48,10 +41,9 @@ export class DateTimePickerPanesDirective {
   private animations: Animation[] = [];
 
   constructor() {
-    // starts synchronously inside the resize-observer callback - after layout,
-    // before paint - so the columns never paint a frame at the jumped position.
-    // A signal-routed observer would fire one change-detection cycle (= one
-    // painted frame) late - same constraint as core's injectAnimatedBlockSize.
+    // runs synchronously inside the resize-observer callback - after layout, before paint - so the
+    // columns never paint a frame at the jumped position; a signal-routed observer would be one
+    // painted frame late
     // eslint-disable-next-line ethlete/no-native-observers -- pre-paint timing, see above
     const observer = new ResizeObserver(() => {
       if (this.ready) {
@@ -86,7 +78,6 @@ export class DateTimePickerPanesDirective {
   private compensate() {
     const blockSize = this.measure();
 
-    // never record or compensate a zero / pre-layout height
     if (blockSize === null || blockSize === 0) {
       return;
     }
@@ -107,8 +98,6 @@ export class DateTimePickerPanesDirective {
       return;
     }
 
-    // the centered content moved by half the height delta; continue from the
-    // current visual offset when interrupting a running compensation
     const offset = (previous - blockSize) / 2 + this.currentOffset(firstRow);
 
     this.cancelAnimations();

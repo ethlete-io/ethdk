@@ -18,7 +18,6 @@
       transition: opacity var(--et-dropzone-transition-duration) ease;
     }
 
-    /* keep the failure message readable no matter what the preview shows */
     &[data-status='error'] > .et-dropzone-preview-image {
       opacity: 0.15;
     }
@@ -41,9 +40,6 @@
       }
     }
 
-    /* the band covers the bottom of the image for as long as a file is picked, so it slides out
-       under its own edge while the preview is being looked at. It translates rather than fades:
-       a half-transparent band with a backdrop blur reads as a smear mid-transition. */
     @media (hover: hover) {
       &:hover .et-dropzone-preview-info {
         translate: 0 100%;
@@ -54,9 +50,7 @@
       translate: 0 100%;
     }
 
-    /* the two states where the band says something the image cannot: it holds the only progress
-       indicator of the single-file preview, and on error it is the failure message the dimmed
-       image exists to keep readable. Both pin it, and must stay after the reveal rules to win. */
+    /* must stay after the reveal rules above to win */
     &[data-status='error'] .et-dropzone-preview-info,
     &:has(.et-dropzone-entry-progress[data-active]) .et-dropzone-preview-info {
       translate: 0;

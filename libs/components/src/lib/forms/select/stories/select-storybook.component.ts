@@ -155,7 +155,6 @@ export class FormFieldSelectAsyncStorybookComponent {
   private shownCount = this.PAGE_SIZE;
 
   constructor() {
-    // preload the first page so the popup has options on first open
     this.request();
   }
 
@@ -289,7 +288,6 @@ export class FormFieldSelectAddNewStorybookComponent {
   public demoForm = form(this.formModel);
 
   protected createProject(query: string) {
-    // a real app would open a creation dialog here - the emitted query prefills it.
     // Deliberately not a template literal: an interpolated one above the inline template of the
     // component below breaks Angular language service completions there. See the
     // `ethlete/no-template-literal-before-inline-template` lint rule.

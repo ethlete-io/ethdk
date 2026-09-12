@@ -3,8 +3,8 @@ import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { ScrollableButtonsDirective } from '../../scrollable/headless/scrollable-buttons.directive';
 import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
 import { TabBarDirective } from '../headless/tab-bar.directive';
+import { mountTabBarStyles } from '../tab-bar-styles.component';
 import { mountTabScaleStyles } from '../tab-scale-styles.component';
-import { mountTabUnderlineStyles } from '../tab-underline-styles.component';
 import { TAB_SIZES, TabSize } from '../tab-sizes';
 import { NavTabsDirective } from './headless/nav-tabs.directive';
 
@@ -78,11 +78,10 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
         --et-nav-tabs-underline-size: var(--et-tab-underline-size);
         --et-nav-tabs-underline-radius: var(--et-tab-underline-radius);
         --et-nav-tabs-font-size: var(--et-tab-font-size);
+        --et-tab-bar-underline-size: var(--et-nav-tabs-underline-size);
+        --et-tab-bar-underline-radius: var(--et-nav-tabs-underline-radius);
 
-        &:where([data-variant='primary'][data-size='sm']) {
-          --et-nav-tabs-underline-size: 3px;
-        }
-
+        &:where([data-variant='primary'][data-size='sm']),
         &:where([data-variant='primary'][data-size='md']) {
           --et-nav-tabs-underline-size: 3px;
         }
@@ -118,6 +117,6 @@ export class NavTabsComponent {
 
   constructor() {
     mountTabScaleStyles();
-    mountTabUnderlineStyles();
+    mountTabBarStyles();
   }
 }

@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, effect, inject } from '@angular/core';
+import { Directive, ElementRef, effect, inject } from '@angular/core';
 import { registerSingleton } from '../../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { DURATION_INPUT_ERROR_CODES } from '../duration-input-errors';
@@ -36,8 +36,7 @@ export class DurationInputFieldDirective {
   constructor() {
     registerSingleton(this.durationInput?.registeredField, this);
 
-    // while unfocused the element mirrors the committed value (or the kept unparseable
-    // text); mid-typing rewrites would fight the caret
+    // mid-typing rewrites would fight the caret, so the element only mirrors while unfocused
     effect(() => {
       const durationInput = this.durationInput;
 
@@ -52,16 +51,12 @@ export class DurationInputFieldDirective {
       }
     });
 
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.durationInput) {
-          throw new RuntimeError(
-            DURATION_INPUT_ERROR_CODES.FIELD_OUTSIDE_DURATION_INPUT,
-            '[DurationInputFieldDirective] etDurationInputField must be placed inside an [etDurationInput] element.',
-            { element: this.elementRef.nativeElement },
-          );
-        }
-      });
+    if (ngDevMode && !this.durationInput) {
+      throw new RuntimeError(
+        DURATION_INPUT_ERROR_CODES.FIELD_OUTSIDE_DURATION_INPUT,
+        '[DurationInputFieldDirective] etDurationInputField must be placed inside an [etDurationInput] element.',
+        { element: this.elementRef.nativeElement },
+      );
     }
   }
 
@@ -99,7 +94,7 @@ export class DurationInputFieldDirective {
 
     durationInput.commitInput(this.elementRef.nativeElement.value);
 
-    // a successful commit reformats in place (the display effect only runs unfocused)
+    // the display effect only runs unfocused, so a successful commit reformats in place here
     if (!durationInput.parseError()) {
       this.elementRef.nativeElement.value = durationInput.displayValue();
     }

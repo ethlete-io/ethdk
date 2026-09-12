@@ -61,20 +61,12 @@ export class ColorPickerPanelComponent {
 
   protected showEyeDropper = isEyeDropperSupported(this.documentRef);
 
-  /** The picked color in the notation the control emits - what the field shows and the swatch paints. */
   protected canonicalHex = computed(() =>
     formatHsvToHex(this.colorInput.picker.hsv(), { alpha: this.colorInput.alpha() }),
   );
 
-  /** The picked color at full opacity - the area thumb and the alpha gradient both need it. */
   protected opaqueHex = computed(() => formatHsvToHex({ ...this.colorInput.picker.hsv(), alpha: 1 }));
 
-  /**
-   * The notation the entry field displays. It starts on the notation the bound value is written in
-   * when the panel offers that one, so opening the picker over an `rgb()` value shows `rgb()`.
-   * Only the offered set re-seeds it - committing writes hex back to the value, which would
-   * otherwise pull the display back to hex after every entry.
-   */
   protected notation = linkedSignal<readonly [ColorNotation, ...ColorNotation[]], ColorNotation>({
     source: () => this.colorInput.resolvedNotations(),
     // untracked: a linkedSignal computation tracks what it reads, and committing writes hex back to
@@ -86,31 +78,19 @@ export class ColorPickerPanelComponent {
     },
   });
 
-  /** The picked color in the notation the field displays. */
   private displayColor = computed(() =>
     formatHsvToNotation(this.colorInput.picker.hsv(), { notation: this.notation(), alpha: this.colorInput.alpha() }),
   );
 
-  /**
-   * What the entry field shows: the picked color in the displayed notation, except while the user
-   * types in it. Every pick elsewhere in the panel resets it, so the field follows the area, the
-   * tracks and the swatches.
-   */
   protected colorDraft = linkedSignal(() => this.displayColor());
 
-  /**
-   * The advisory under the entry field after an entry in a notation the panel does not offer was
-   * converted. Any later change to the picked color drops it.
-   */
   protected notationWarning = linkedSignal<HsvColor, string | null>({
     source: () => this.colorInput.picker.hsv(),
     computation: () => null,
   });
 
-  /** The name the switch shows, and the accessible name of the entry field's notation. */
   protected notationLabel = computed(() => this.labels()[this.notation()]);
 
-  /** Whether the panel offers a choice at all - one notation pins the field and needs no switch. */
   protected canSwitchNotation = computed(() => this.colorInput.resolvedNotations().length > 1);
 
   protected huePercent = computed(() => (this.colorInput.picker.hsv().hue / 360) * 100);
@@ -118,8 +98,6 @@ export class ColorPickerPanelComponent {
   protected alphaPercent = computed(() => this.colorInput.picker.hsv().alpha * 100);
 
   constructor() {
-    // this panel IS the overlay's own surface - paint the overlay's registered elevation exactly,
-    // don't stack a level above it (the tracker is authoritative; content inside elevates off it)
     inject(AutoSurfaceDirective).matchOverlaySurface();
 
     injectOverlaySurfaceContext({ panelBody: this.panelBody, resizingClass: 'et-color-picker-panel--resizing' });
@@ -146,16 +124,12 @@ export class ColorPickerPanelComponent {
       }
     }
 
-    // Both outcomes end here: a read entry is rewritten to the displayed notation, and one the
-    // picker could not read reverts. A field disagreeing with the swatch above it reads as a
-    // broken control.
     this.colorDraft.set(this.displayColor());
   }
 
   protected handleDraftInput(draft: string) {
     this.colorDraft.set(draft);
 
-    // the advisory described the last entry - the next keystroke is a new one
     this.notationWarning.set(null);
   }
 
@@ -174,8 +148,6 @@ export class ColorPickerPanelComponent {
       return;
     }
 
-    // the picker commits live, so Enter has nothing left to submit - and letting it through would
-    // submit the form the field sits in
     event.preventDefault();
     this.commitColorDraft();
   }

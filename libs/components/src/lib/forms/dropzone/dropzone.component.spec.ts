@@ -1,6 +1,9 @@
 import { Component, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import '../../../test-helpers';
+import { expectDescribedByPointsAtErrors } from '../testing/described-by';
+import { HintComponent } from '../form-field/hint.component';
+import { mountControl } from '../../testing/control-driver';
 import { LabelDirective } from '../form-field/headless';
 import { MountedDropzoneDriver, mountDropzone } from '../testing/dropzone-driver';
 import { provideDropzoneLabels } from './dropzone-labels';
@@ -121,7 +124,6 @@ describe('DropzoneComponent', () => {
 
     expect(driver.previewEl()).toBeTruthy();
     expect(driver.areaEl().getAttribute('data-has-preview')).toBe('true');
-    // the preview is an absolutely positioned overlay inside the area - the trigger keeps its box
     expect(driver.previewEl()!.parentElement).toBe(driver.areaEl());
     expect(driver.previewImage()).toBeTruthy();
     expect(driver.listEl()).toBe(null);
@@ -136,7 +138,6 @@ describe('DropzoneComponent', () => {
     expect(driver.itemEls().length).toBe(2);
     expect(driver.itemStatuses()).toEqual(['uploading', 'uploading']);
 
-    // no progress events flushed yet → indeterminate
     expect(driver.itemProgressBar(0)?.classList.contains('et-progress-bar--indeterminate')).toBe(true);
 
     const requests = driver.query.httpTesting.match(UPLOAD_URL);
@@ -173,7 +174,6 @@ describe('DropzoneComponent', () => {
     driver.tick();
 
     expect(driver.itemStatuses()).toEqual(['error']);
-    // the error message renders below the field, not inside the entry
     expect(driver.itemInternalErrors(0)).toBe(null);
     expect(driver.internalErrorsText()).toContain('a.png');
 
@@ -268,5 +268,36 @@ describe('DropzoneComponent with schema constraints', () => {
 
     driver.fixture.destroy();
     driver.query.httpTesting.verify();
+  });
+});
+
+@Component({
+  template: `
+    <et-dropzone [(touched)]="touched" [upload]="upload" [errors]="errors" invalid name="attachments">
+      <et-label>Attachments</et-label>
+      <et-hint>Images up to 5 MB</et-hint>
+    </et-dropzone>
+  `,
+  imports: [DropzoneComponent, HintComponent, LabelDirective],
+})
+class DropzoneWithErrorTestHost {
+  errors = [{ kind: 'required', message: 'Attach at least one file' }];
+
+  touched = signal(true);
+
+  upload: AnyDropzoneUploadConfig<string> = {
+    selectValue: (response: unknown) => String(response),
+    createUploadHandle: () => {
+      throw new Error('the support-region test never uploads');
+    },
+    deleteIncludesExisting: false,
+  };
+}
+
+describe('dropzone support region', () => {
+  it('should describe the trigger by the rendered error', () => {
+    const host = mountControl(DropzoneWithErrorTestHost).nativeElement as HTMLElement;
+
+    expectDescribedByPointsAtErrors(host);
   });
 });

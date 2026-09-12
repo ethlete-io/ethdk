@@ -60,11 +60,6 @@ export const deriveDurationFormatSpec = (format: string): DurationFormatSpec => 
   return { segments, separators };
 };
 
-/**
- * Splits `ms` into the per-unit integer values the spec's segments display. Processing
- * largest→smallest and subtracting each time gives the first (largest) unit the full,
- * unbounded quotient and every smaller unit its natural remainder (e.g. seconds 0–59).
- */
 const splitUnits = (ms: number, spec: DurationFormatSpec): Record<DurationUnit, number> => {
   const result: Record<DurationUnit, number> = { h: 0, m: 0, s: 0, ms: 0 };
   let remaining = Math.max(0, Math.round(ms));
@@ -118,7 +113,6 @@ export const parseDuration = (value: string, spec: DurationFormatSpec): number |
   let unitValues: number[];
 
   if (groups.length > 1) {
-    // explicit separators: map digit groups left-to-right onto the trailing segments
     if (groups.length > spec.segments.length) {
       return null;
     }
@@ -127,7 +121,6 @@ export const parseDuration = (value: string, spec: DurationFormatSpec): number |
 
     unitValues = spec.segments.map((_, position) => (position < offset ? 0 : Number(groups[position - offset])));
   } else {
-    // one digit run: consume from the right, smallest unit first
     let digits = groups[0] ?? '';
 
     unitValues = spec.segments
@@ -143,7 +136,6 @@ export const parseDuration = (value: string, spec: DurationFormatSpec): number |
       })
       .reverse();
 
-    // leftover digits pile onto the largest unit (e.g. `123456` under mm:ss → 1234 min)
     if (digits.length) {
       unitValues[0] = Number(digits + String(unitValues[0]).padStart(spec.segments[0]?.width ?? 0, '0'));
     }

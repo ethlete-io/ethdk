@@ -6,8 +6,6 @@
   }
 
   .et-calendar {
-    /* a real extra column rather than a zero-width one in every calendar: a 0px track still counts,
-       so the days would land one column short of their own and the first of each row would collapse */
     &:where([data-week-numbers]) {
       --_et-calendar-week-column: var(--et-calendar-week-number-size);
 
@@ -17,8 +15,6 @@
       }
     }
 
-    /* quieter than the days it labels, and set apart by a rule rather than by weight so it cannot be
-       mistaken for a date */
     .et-calendar-week-number {
       display: inline-flex;
       align-items: center;

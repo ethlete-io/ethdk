@@ -63,7 +63,6 @@ import { CalendarWeekNumbersStylesComponent } from './calendar-week-numbers-styl
     class: 'et-calendar',
     '[attr.data-view]': 'calendar.view()',
     '[attr.data-week-numbers]': "weekNumbers() ? '' : null",
-    // the grid widths are CSS, and the count they have to agree on is state
     '[style.--_et-calendar-months]': 'calendar.monthsShown()',
   },
 })
@@ -87,12 +86,10 @@ export class CalendarComponent {
   public previousMonthLabel = input<string | null>(null);
   public nextMonthLabel = input<string | null>(null);
 
-  /** A projected header template, which replaces the default one. */
   protected headerTemplate = contentChild(CalendarHeaderDirective);
 
   protected calendar = this.headless;
 
-  /** The step-back button's label for the view on show; this instance's `previousMonthLabel` wins in the day grid. */
   protected resolvedPreviousLabel = computed(() => {
     const labels = this.calendarLabels();
 
@@ -106,7 +103,6 @@ export class CalendarComponent {
     }
   });
 
-  /** The step-forward button's label for the view on show. */
   protected resolvedNextLabel = computed(() => {
     const labels = this.calendarLabels();
 
@@ -120,10 +116,8 @@ export class CalendarComponent {
     }
   });
 
-  /** Names the week-number column, and prefixes each row's own number. */
   protected weekLabel = computed(() => this.calendarLabels().week);
 
-  /** The header button's label: where it takes the reader from the view on show. */
   protected resolvedZoomLabel = computed(() => {
     const labels = this.calendarLabels();
 
@@ -142,8 +136,7 @@ export class CalendarComponent {
     effect(() => {
       // gated on whether a coarser view is reachable at all, not on `calendar.view()` having
       // already left the day grid - mounting on that transition would paint the first drilled-out
-      // frame before the styles land. The default header always offers a zoom-out control, so this
-      // is true from construction for every calendar that uses it.
+      // frame before the styles land
       const canReachCoarseGrid =
         !this.headerTemplate() || this.calendar.view() !== 'month' || this.calendar.selectionView() !== 'month';
 

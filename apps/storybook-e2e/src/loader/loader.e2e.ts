@@ -219,9 +219,7 @@ test.describe('loader / structure', () => {
     expect(duration).toBe('1.333s');
   });
 
-  // `--et-spinner-duration` is registered but never read by a rule, so the sweep keeps its hardcoded 1333ms -
-  // `et-button` sets it to 700ms for its loading spinner and gets nothing.
-  test.fail('--et-spinner-duration retimes the sweep', async ({ page }) => {
+  test('--et-spinner-duration retimes the sweep', async ({ page }) => {
     const root = await openStory(page, SPINNER_STORY_ID);
 
     await setToken(root.locator(SPINNER), '--et-spinner-duration', '500ms');

@@ -376,14 +376,33 @@ raw string.
 | `masked`  | `boolean`                               | `false`     | Renders dots instead of characters (PIN entry); the value stays real.                             |
 | `color`   | registered color theme name             | -           | Scopes a [color theme](/core/theming) to the input - tints the active segment's border and caret. |
 
-The `complete` output emits the value each time it reaches the full length, no
-matter who wrote it - typing, paste, SMS autofill or a programmatic write into
-the bound field. Pastes strip separators (`123-456` → `123456`) and truncate.
+| Output     | Type     | Emits                                             |
+| ---------- | -------- | ------------------------------------------------- |
+| `complete` | `string` | The value each time it reaches the full `length`. |
+
+Plus the shared control members every control on this page has: the `value`
+(`string`, `''`) and `touched` models and the `disabled`, `readonly`, `invalid`,
+`errors`, `required`, `name` and `aria-label`/`aria-labelledby` inputs - see the
+[Forms overview](/components/forms).
+
+`complete` fires no matter who wrote the value - typing, paste, SMS autofill or a
+programmatic write into the bound field. Pastes strip separators (`123-456` → `123456`) and truncate.
 Editing is append/delete-at-end (the caret is pinned to the end), with the active
 segment marked visually. A `charset` RegExp is tested per character, so its `g`
 and `y` flags are ignored. Narrowing `charset` or shrinking `length` at runtime
-re-sanitizes the value that is already in the field. Tokens: `--et-otp-input-segment-size` (`44px`),
-`--et-otp-input-segment-gap` (`8px`), `--et-otp-input-segment-radius` (`8px`).
+re-sanitizes the value that is already in the field.
+
+| Token                              | Default |
+| ---------------------------------- | ------- |
+| `--et-otp-input-segment-size`      | `44px`  |
+| `--et-otp-input-segment-gap`       | `8px`   |
+| `--et-otp-input-segment-radius`    | `8px`   |
+| `--et-otp-input-label-font-size`   | `13px`  |
+| `--et-otp-input-support-duration`  | `180ms` |
+| `--et-otp-input-support-offset`    | `4px`   |
+| `--et-otp-input-error-font-size`   | `12px`  |
+| `--et-otp-input-warning-font-size` | `12px`  |
+| `--et-otp-input-hint-font-size`    | `12px`  |
 
 ::: warning Verify autofill on real devices
 SMS autofill behavior cannot be emulated headlessly - test `one-time-code` flows
@@ -409,12 +428,21 @@ panel at all.
 </et-form-field>
 ```
 
-| Input             | Type                              | Default          | Description                                                                                                               |
-| ----------------- | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `separators`      | `string[]`                        | `['Enter', ',']` | What commits the pending text: multi-character entries are key names, single characters commit as typed and split pastes. |
-| `allowDuplicates` | `boolean`                         | `false`          | Rejected duplicates keep the text in the field for editing.                                                               |
-| `normalizeTag`    | `(raw: string) => string \| null` | trim             | Maps raw text to the stored tag - return `null` to reject.                                                                |
-| `maxTags`         | `number \| undefined`             | `undefined`      | Further adds are ignored once reached, and the field locks - unless it still holds text.                                  |
+| Input             | Type                              | Default              | Description                                                                                                               |
+| ----------------- | --------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `separators`      | `string[]`                        | `['Enter', ',']`     | What commits the pending text: multi-character entries are key names, single characters commit as typed and split pastes. |
+| `allowDuplicates` | `boolean`                         | `false`              | Rejected duplicates keep the text in the field for editing.                                                               |
+| `normalizeTag`    | `(raw: string) => string \| null` | trim, empty → `null` | Maps raw text to the stored tag - return `null` to reject.                                                                |
+| `maxTags`         | `number \| undefined`             | `undefined`          | Further adds are ignored once reached, and the field locks - unless it still holds text.                                  |
+| `placeholder`     | `string`                          | `''`                 | Placeholder of the inline text field, shown while no tag is being typed.                                                  |
+| `mixedLabel`      | `string \| null`                  | `null`               | Placeholder shown in place of the value while `mixed` - see [Bulk editing](#bulk-editing).                                |
+
+Plus the shared control members: the `value` (`string[]`, `[]`), `mixed` and
+`touched` models, the `disabled`, `readonly`, `invalid`, `errors`, `required`,
+`name` and `aria-label`/`aria-labelledby` inputs, and the `maxLength` / `pending`
+inputs signal forms binds from the schema (see
+[the counter](/components/forms#character-counter) and
+[the busy state](/components/forms#busy-state)).
 
 Pending text also commits on blur; <kbd>Backspace</kbd> on the empty field
 removes the last tag - and writes nothing at all when there is no tag left to

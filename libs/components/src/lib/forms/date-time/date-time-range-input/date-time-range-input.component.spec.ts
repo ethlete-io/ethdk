@@ -43,7 +43,6 @@ describe('DateTimeRangeInputComponent - picker panes', () => {
 
     driver.clickDayCell('16');
 
-    // one day is not a range yet - the second is still to come on this pane
     expect(activePane()).toBe('dates');
 
     driver.clickDayCell('18');

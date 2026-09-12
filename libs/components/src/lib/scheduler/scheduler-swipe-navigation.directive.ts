@@ -3,13 +3,10 @@ import { createSwipeTracker, injectRenderer, RuntimeError, SwipeTracker } from '
 import { SchedulerDirective, SchedulerFeatureConfig, schedulerFeatureConfig } from './headless';
 import { SCHEDULER_ERROR_CODES } from './scheduler-errors';
 
-/** Distance along the inline axis at which the gesture stops being a tap and becomes the scheduler's. */
 const COMMIT_THRESHOLD_PX = 16;
 
-/** How far a deliberate, unhurried swipe has to travel to step a period. */
 const MIN_SWIPE_DISTANCE_PX = 56;
 
-/** A flick steps a period on speed instead of distance, but still has to be a stroke rather than a twitch. */
 const MIN_FLICK_DISTANCE_PX = 32;
 const MIN_FLICK_VELOCITY = 300;
 
@@ -36,7 +33,6 @@ export class SchedulerSwipeNavigationDirective {
   private destroyRef = inject(DestroyRef);
   private scheduler = inject(SchedulerDirective, { optional: true });
 
-  /** See {@link SchedulerSwipeNavigationConfig}. */
   public config = input({} as SchedulerSwipeNavigationConfig, {
     alias: 'etSchedulerSwipeNavigation',
     transform: schedulerFeatureConfig<SchedulerSwipeNavigationConfig>,
@@ -75,7 +71,6 @@ export class SchedulerSwipeNavigationDirective {
   private startGesture(event: TouchEvent) {
     if (!this.isEnabled() || this.tracker) return;
 
-    // A second finger is a pinch or a zoom, neither of which is a period step.
     if (event.touches.length !== 1) return;
 
     this.tracker = createSwipeTracker(event);
@@ -122,8 +117,6 @@ export class SchedulerSwipeNavigationDirective {
 
     if (!isSwipe) return;
 
-    // Dragging the period away to the inline start pulls the next one in, so the physical direction
-    // flips with the writing direction.
     const isRtl = getComputedStyle(this.elementRef.nativeElement).direction === 'rtl';
     const isForwards = isRtl ? movementX > 0 : movementX < 0;
 

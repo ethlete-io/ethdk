@@ -299,11 +299,12 @@ stop). Value is `number | null` - `null` means no rating.
 
 <StoryEmbed id="components-forms-rating--default" height="220px" />
 
-| Input       | Type                  | Default | Description                                                                              |
-| ----------- | --------------------- | ------- | ---------------------------------------------------------------------------------------- |
-| `max`       | `number \| undefined` | `5`     | Number of steps. Reserved by signal forms - a schema `max(...)` validator binds into it. |
-| `allowHalf` | `boolean`             | `false` | Half-star steps for pointer, keyboard and rendering.                                     |
-| `readonly`  | `boolean`             | `false` | Display-only (still focusable, e.g. for review averages).                                |
+| Input        | Type                  | Default | Description                                                                                                               |
+| ------------ | --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `max`        | `number \| undefined` | `5`     | Number of steps. Reserved by signal forms - a schema `max(...)` validator binds into it.                                  |
+| `allowHalf`  | `boolean`             | `false` | Half-star steps for pointer, keyboard and rendering.                                                                      |
+| `readonly`   | `boolean`             | `false` | Display-only (still focusable, e.g. for review averages).                                                                 |
+| `mixedLabel` | `string \| null`      | `null`  | The `aria-valuetext` announced while [`mixed`](#bulk-editing) is set; falls back to the `FORM_FIELD_LABELS` mixed string. |
 
 Interaction: hovering previews without committing, clicking commits (clicking the
 current value **clears** to `null`), and **dragging/swiping across the stars**
@@ -327,9 +328,10 @@ Tokens: `--et-rating-icon-size` (`24px`), `--et-rating-gap` (`4px`).
 
 These controls implement the SDK-wide
 [mixed state contract](/components/mixed-state), but express it through
-ARIA/visual masking only (no `mixedLabel`): `et-rating` masks its
-`aria-valuetext`, and the selection groups (`et-radio-group`, `et-checkbox-group`,
-`et-segmented-button-group`) render nothing as `aria-checked`. `et-checkbox` and
+ARIA/visual masking rather than a placeholder: `et-rating` drops `aria-valuenow`
+and announces its `mixedLabel` as the `aria-valuetext`, and the selection groups
+(`et-radio-group`, `et-checkbox-group`, `et-segmented-button-group`) render
+nothing as `aria-checked` and take no `mixedLabel` of their own. `et-checkbox` and
 `et-switch` carry this concept as their platform-named `indeterminate` input
 rather than `mixed` - reach for `et-checkbox` when the state itself must reach
 assistive tech (it reflects `aria-checked="mixed"`; the switch keeps

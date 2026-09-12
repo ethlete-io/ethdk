@@ -36,10 +36,7 @@ export type DropzoneExistingFileInfo = {
   size?: number | null;
 };
 
-/**
- * The upload error of a failed entry. Either the new query's `QueryErrorResponse` or the
- * legacy v2 client's `RequestError`, depending on which upload flavor created the entry.
- */
+/** The upload error of a failed entry. */
 export type DropzoneUploadError = QueryErrorResponse | RequestError;
 
 /** The lifecycle state of a single file upload, abstracted away from the query flavor. */
@@ -49,16 +46,15 @@ export type DropzoneUploadState = 'uploading' | 'success' | 'error';
  * @internal
  * A per-file upload handle. It hides which query system runs the upload (the new
  * `@ethlete/query` API or the legacy `V2QueryClient`) behind a uniform set of signals plus
- * `execute`/`dispose`, so the dropzone directive and entry work the same for both flavors.
+ * `execute`/`dispose`.
  */
 export type DropzoneUploadHandle<TValue> = {
-  /** Current upload lifecycle state. */
   state: Signal<DropzoneUploadState>;
 
   /** Upload progress in percent. `null` when indeterminate (or not uploading). */
   progress: Signal<number | null>;
 
-  /** The raw upload error of the last failed attempt, kept for `uploadFail` consumers. */
+  /** The raw upload error of the last failed attempt. */
   error: Signal<DropzoneUploadError | null>;
 
   /** The first human readable error message, normalized across query flavors. */
@@ -67,20 +63,20 @@ export type DropzoneUploadHandle<TValue> = {
   /** The resolved form control value. `null` until the upload succeeded. */
   value: Signal<TValue | null>;
 
-  /** (Re)runs the upload with the frozen request args. Used for the initial upload and retries. */
+  /** (Re)runs the upload with the frozen request args. */
   execute: () => void;
 
   /** Releases the underlying query (aborts an in-flight request). */
   dispose: () => void;
 };
 
-/** @internal Options passed to a config's `createUploadHandle`. */
+/** @internal */
 export type DropzoneUploadHandleOptions = {
   file: File;
   injector: Injector;
 };
 
-/** @internal Options passed to a config's `executeDelete`. */
+/** @internal */
 export type DropzoneDeleteOptions<TValue> = {
   value: TValue;
   injector: Injector;
@@ -88,8 +84,7 @@ export type DropzoneDeleteOptions<TValue> = {
 
 /**
  * The resolved upload config the dropzone directive consumes. Both `createDropzoneUpload` (new
- * query) and `createV2DropzoneUpload` (legacy v2) produce this shape - the query flavor lives
- * entirely inside `createUploadHandle` / `executeDelete`.
+ * query) and `createV2DropzoneUpload` (legacy v2) produce this shape.
  */
 export type ResolvedDropzoneUploadConfig<TValue = unknown> = {
   /**
@@ -108,13 +103,12 @@ export type ResolvedDropzoneUploadConfig<TValue = unknown> = {
    */
   resolveExisting?: (value: TValue) => DropzoneExistingFileInfo;
 
-  /** @internal Creates a per-file upload handle. Set by `createDropzoneUpload` / `createV2DropzoneUpload`. */
+  /** @internal Creates a per-file upload handle. */
   createUploadHandle: (options: DropzoneUploadHandleOptions) => DropzoneUploadHandle<TValue>;
 
   /**
-   * @internal Fires the delete request for an already-persisted value being removed. Unset when
-   * the upload config was created without a `delete` option. Resolves with the request error, or
-   * `null` on success.
+   * @internal Fires the delete request for an already-persisted value being removed. Resolves
+   * with the request error, or `null` on success.
    */
   executeDelete?: (options: DropzoneDeleteOptions<TValue>) => Promise<DropzoneUploadError | null>;
 
@@ -127,9 +121,7 @@ export type AnyDropzoneUploadConfig<TValue = unknown> = ResolvedDropzoneUploadCo
 /**
  * The authoring config for a delete request run when an entry uploaded in this session is removed
  * - e.g. a `DELETE` route that cleans up the uploaded file server-side. Nest it under
- * `DropzoneUploadConfig.delete` / `V2DropzoneUploadConfig.delete`. Removing a still-uploading entry
- * only cancels its upload; nothing was persisted yet, so no delete request is made. A value the
- * control started with is left alone unless `includeExisting` says otherwise.
+ * `DropzoneUploadConfig.delete` / `V2DropzoneUploadConfig.delete`.
  */
 export type DropzoneDeleteConfig<TArgs extends QueryArgs, TValue> = {
   /** The query creator used to delete one value (e.g. a `DELETE /media/:id` route). */
@@ -140,9 +132,7 @@ export type DropzoneDeleteConfig<TArgs extends QueryArgs, TValue> = {
 
   /**
    * Whether removing a value the control started with - one resolved through `resolveExisting`,
-   * rather than uploaded in this session - also deletes it server-side. Off by default: an edit
-   * form is usually detaching a record something else owns, not cleaning up after itself. Turn it
-   * on where the control owns every value it shows.
+   * rather than uploaded in this session - also deletes it server-side.
    *
    * @default false
    */
@@ -225,8 +215,7 @@ export type V2DropzoneUploadConfig<
 > = {
   /**
    * The legacy query creator used to upload a single file (from `V2QueryClient`'s `post`/`put`,
-   * or a `createLegacyQueryCreator` interop wrapper). A fresh query is prepared and executed per
-   * file, and re-prepared on retry.
+   * or a `createLegacyQueryCreator` interop wrapper).
    *
    * For per-file upload progress, create it with `reportProgress: true` and make sure the app
    * uses the XHR `HttpClient` backend. Without progress information the dropzone falls back to an
@@ -353,7 +342,6 @@ const createV2QueryUploadHandle = <TCreator extends AnyV2QueryCreator | AnyLegac
   },
 ): DropzoneUploadHandle<TValue> =>
   // `queryStateSignal` sets up a `toObservable` subscription and thus needs an injection context.
-  // The handle is created lazily per file (outside the directive's constructor), so wrap it here.
   runInInjectionContext(options.injector, () => {
     const { file, injector, queryCreator, createArgs, selectValue } = options;
 
@@ -362,7 +350,6 @@ const createV2QueryUploadHandle = <TCreator extends AnyV2QueryCreator | AnyLegac
     const state = queryStateSignal(currentQuery);
 
     const releaseCurrent = () => {
-      // `abort()` cancels an in-flight request (both a genuine `V2Query` and the legacy interop query).
       // We deliberately do not call the legacy `destroy()` - it re-enters through the underlying query's
       // own `destroyRef` hook and double-destroys the injector (NG0205). The child injector is released
       // when the owning component injector is torn down.

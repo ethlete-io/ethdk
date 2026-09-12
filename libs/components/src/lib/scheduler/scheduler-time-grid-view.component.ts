@@ -30,16 +30,13 @@ import { Appointment, SchedulerAppointmentDragMode } from './scheduler.types';
 const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
 
 const MINUTES_PER_DAY = 24 * 60;
-/** What every range on the time axis snaps to, whether it is being drawn, moved or resized. */
 const SLOT_MINUTES = 15;
 const MINIMUM_DURATION = SLOT_MINUTES * 60 * 1000;
-/** What a press that never drags creates - a click, or a long press released where it landed. */
 const DEFAULT_DRAFT_MINUTES = 60;
 const DEFAULT_DRAFT_DURATION = DEFAULT_DRAFT_MINUTES * 60 * 1000;
 
 type SchedulerTimeGridColumn = { element: HTMLElement; day: Date };
 
-/** What a press on a block hands the drag: which appointment, which end of it, and from which day. */
 type SchedulerTimeGridDragTarget = {
   appointment: Appointment;
   mode: SchedulerAppointmentDragMode;
@@ -47,11 +44,9 @@ type SchedulerTimeGridDragTarget = {
 };
 
 type SchedulerTimeGridDrag = SchedulerTimeGridDragTarget & {
-  /** How far into the day the pointer grabbed the block, so a move keeps that grip on it. */
   grabMinutes: number;
 };
 
-/** What a press on an all-day entry hands the drag: which appointment, which end of it, and the strip it sits on. */
 type SchedulerTimeGridAllDayDragTarget = {
   appointment: Appointment;
   mode: SchedulerAppointmentDragMode;
@@ -59,7 +54,6 @@ type SchedulerTimeGridAllDayDragTarget = {
 };
 
 type SchedulerTimeGridAllDayDrag = Omit<SchedulerTimeGridAllDayDragTarget, 'lane'> & {
-  /** Which day the pointer grabbed the entry on, so a move keeps that grip on it. */
   grabDay: Date;
 };
 
@@ -94,10 +88,8 @@ export class SchedulerTimeGridViewComponent {
   private dayColumns = viewChildren<ElementRef<HTMLElement>>('dayColumn');
   public draftBlock = viewChild<ElementRef<HTMLElement>>('draftBlock');
 
-  /** Whether the `etSchedulerAppointmentDrag` feature is present and on - see that directive. */
   protected canDragAppointments = computed(() => this.appointmentDrag?.isEnabled() ?? false);
 
-  /** Whether the press now ending moved a block, rather than being a click on it - see {@link select}. */
   private hasDragged = false;
 
   protected hours = computed(() => {
@@ -127,7 +119,6 @@ export class SchedulerTimeGridViewComponent {
     });
   }
 
-  /** UI contributed by badge features (title, time range, …) - see `registerBadgeAdornment`. */
   protected badgeAdornments() {
     return this.featureHost?.badgeAdornments() ?? [];
   }
@@ -155,11 +146,6 @@ export class SchedulerTimeGridViewComponent {
     this.scheduler?.selectedAppointmentId.set(appointment.id);
   }
 
-  /**
-   * Moves a block to another time or day, or drags one of its edges to resize it - the block's own
-   * press moves it, its two edge handles resize it. Touch arms on a long press, same as drawing a
-   * range does; see `startSchedulerDragGesture`.
-   */
   protected startAppointmentDrag(event: PointerEvent, target: SchedulerTimeGridDragTarget) {
     // a press on a block must not also draw a fresh range down the column underneath it
     event.stopPropagation();
@@ -193,11 +179,6 @@ export class SchedulerTimeGridViewComponent {
     });
   }
 
-  /**
-   * Moves an all-day entry to other days, or drags one of its inline edges to change which days it
-   * spans - the strip works in whole days, so both gestures are horizontal and a move keeps the
-   * appointment's own times of day. Touch arms on a long press, same as a timed block does.
-   */
   protected startAllDayDrag(event: PointerEvent, target: SchedulerTimeGridAllDayDragTarget) {
     // a press on an edge handle must not also start the entry moving
     event.stopPropagation();
@@ -227,7 +208,6 @@ export class SchedulerTimeGridViewComponent {
 
         const to = this.columnAt(clientX)?.day;
 
-        // dragged off the strip: leave it on the last day it was over rather than snapping home
         if (!to) return;
 
         const { start, end } = this.allDayRange(drag, to);
@@ -239,12 +219,6 @@ export class SchedulerTimeGridViewComponent {
     });
   }
 
-  /**
-   * Drags a new appointment's time range out of an empty part of a day column. With a mouse the
-   * gesture's own commit threshold separates a drag from a click, so a click on empty grid drafts
-   * an hour instead of a drawn range; a finger has to long-press first - see
-   * `startSchedulerDraftGesture`.
-   */
   protected startDraftRange(event: PointerEvent, column: SchedulerTimeGridColumn) {
     const scheduler = this.scheduler;
 
@@ -278,7 +252,6 @@ export class SchedulerTimeGridViewComponent {
     });
   }
 
-  /** The appointment shifted by whole day columns across, and by however far the pointer fell down. */
   private movedRange(drag: SchedulerTimeGridDrag, at: { clientX: number; clientY: number }) {
     const { appointment, column, grabMinutes } = drag;
     const target = this.columnAt(at.clientX) ?? column;
@@ -289,7 +262,6 @@ export class SchedulerTimeGridViewComponent {
     return { start, end: new Date(start.getTime() + (appointment.end.getTime() - appointment.start.getTime())) };
   }
 
-  /** One edge dragged to the pointer, stopping a slot short of the other so the block keeps a size. */
   private resizedRange(drag: SchedulerTimeGridDrag, clientY: number) {
     const { appointment, column } = drag;
     const at = this.snapToSlot(addMinutes(startOfDay(column.day), this.minutesAt(column.element, clientY)));
@@ -305,11 +277,6 @@ export class SchedulerTimeGridViewComponent {
     return { start: appointment.start, end: at < earliest ? earliest : at };
   }
 
-  /**
-   * The all-day entry shifted to `to`, or one of its ends dragged there - whole days either way,
-   * applied as a day offset so whatever times of day the appointment carries survive the drag. An
-   * end stops on the other end's day rather than crossing it, leaving a one-day entry.
-   */
   private allDayRange(drag: SchedulerTimeGridAllDayDrag, to: Date) {
     const { appointment, mode, grabDay } = drag;
     const span = differenceInCalendarDays(appointment.end, appointment.start);
@@ -333,7 +300,6 @@ export class SchedulerTimeGridViewComponent {
     }
   }
 
-  /** The day column a pointer is over, or `null` past the grid's last column on either side. */
   private columnAt(clientX: number): SchedulerTimeGridColumn | null {
     const columns = this.dayColumns();
     const index = columns.findIndex((column) => {
@@ -348,16 +314,13 @@ export class SchedulerTimeGridViewComponent {
     return element && day ? { element, day: day.date } : null;
   }
 
-  /** A click on empty grid: an hour starting where it landed, snapped like a drawn range is. */
   private draftHourAt(column: SchedulerTimeGridColumn, clientY: number) {
     const scheduler = this.scheduler;
 
-    // a click made while a surface is open is dismissing it, not asking for another appointment
     if (!scheduler || scheduler.selectedAppointmentId()) return;
 
     scheduler.beginDraftRange(this.draftTimeAt(column, clientY), DEFAULT_DRAFT_DURATION);
 
-    // unlike a drag, nothing has drawn the preview yet - it is only there to anchor to a pass later
     afterNextRender(
       () => {
         scheduler.surfaceAnchor.set(this.draftBlock()?.nativeElement ?? null);
@@ -367,19 +330,16 @@ export class SchedulerTimeGridViewComponent {
     );
   }
 
-  /** The time a pointer at `clientY` sits at in `column`, snapped to the grid's slot size. */
   private draftTimeAt(column: SchedulerTimeGridColumn, clientY: number) {
     return this.snapToSlot(addMinutes(startOfDay(column.day), this.minutesAt(column.element, clientY)));
   }
 
-  /** How far into its day a pointer at `clientY` sits, in minutes, within a day column. */
   private minutesAt(element: HTMLElement, clientY: number) {
     const { top, height } = element.getBoundingClientRect();
 
     return Math.min(Math.max((clientY - top) / height, 0), 1) * MINUTES_PER_DAY;
   }
 
-  /** `at` on the nearest slot boundary, so every range lands on the same grid the hour rows draw. */
   private snapToSlot(at: Date) {
     const dayStart = startOfDay(at);
     const minutes = differenceInMinutes(at, dayStart);

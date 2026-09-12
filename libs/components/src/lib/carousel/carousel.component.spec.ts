@@ -38,8 +38,6 @@ class CarouselHostComponent {
   public slides = signal<Slide[]>([{ title: 'one' }, { title: 'two' }, { title: 'three' }]);
   public autoplay = signal(false);
   public autoplayTime = signal(5000);
-  // off by default here so the plain cases see three slides and not three plus their clones; the looping
-  // block below turns it on deliberately
   public loop = signal(false);
   public itemSize = signal('full');
   public slideAlign = signal<'start' | 'center'>('start');
@@ -72,7 +70,6 @@ const settleChildren = async (fixture: ComponentFixture<CarouselHostComponent>) 
 
 const SLIDE_SIZE = 300;
 
-/** The track's slides laid out in a row, inside a viewport exactly one slide wide. */
 const CAROUSEL_LAYOUT: LayoutRule[] = [
   stackedChildren('.et-carousel-item', SLIDE_SIZE),
   { match: '.et-scrollable-container', clientWidth: SLIDE_SIZE },
@@ -86,7 +83,6 @@ describe('CarouselComponent', () => {
     expect(carousel?.getAttribute('role')).toBe('region');
     expect(carousel?.getAttribute('aria-roledescription')).toBe('carousel');
     expect(carousel?.getAttribute('aria-label')).toBe('Carousel');
-    // the controls live inside the region, so they are part of what it labels
     expect(carousel?.querySelector('[etCarouselNext]')).toBeTruthy();
   });
 
@@ -150,8 +146,6 @@ describe('CarouselComponent', () => {
   });
 
   it('does not autoplay unless asked to', () => {
-    // `<et-carousel>` always carries the autoplay directive, whose own `enabled` defaults to true because
-    // putting it on an element is the opt-in. The component has to override that, or every carousel plays.
     TestBed.resetTestingModule();
 
     @Component({
@@ -175,7 +169,6 @@ describe('CarouselComponent', () => {
 
     expect(fixture.componentInstance.autoplayDirective().isEnabled()).toBe(false);
     expect(fixture.componentInstance.autoplayDirective().pauseReason()).toBe('disabled');
-    // and so no pause control is required, and none is rendered
     expect((fixture.nativeElement as HTMLElement).querySelector('[etCarouselPlayToggle]')).toBeNull();
   });
 
@@ -242,7 +235,6 @@ describe('CarouselComponent', () => {
     expect(toggle?.getAttribute('data-playing')).toBe('');
     expect(toggle?.getAttribute('aria-pressed')).toBe('true');
 
-    // hovering a *slide* pauses without stopping - the rendered icon flips, so the label and aria must too
     autoplay.isHovered.set(true);
     fixture.detectChanges();
 
@@ -252,7 +244,6 @@ describe('CarouselComponent', () => {
     expect(toggle?.getAttribute('aria-pressed')).toBe('false');
     expect(toggle?.getAttribute('aria-label')).toBe('Start automatic slide show');
 
-    // and a control offering "play" must not stop autoplay when it is pressed
     (toggle as HTMLButtonElement).click();
     fixture.detectChanges();
 
@@ -268,7 +259,6 @@ describe('CarouselComponent', () => {
     const autoplay = fixture.componentInstance.autoplayDirective();
     const toggle = host(fixture).querySelector('[etCarouselPlayToggle]') as HTMLButtonElement;
 
-    // pressing the control leaves the pointer on it and focus in it - the state a real click produces
     autoplay.isHovered.set(true);
     autoplay.isFocusWithin.set(true);
     autoplay.isPointerOnPauseControl.set(true);
@@ -281,11 +271,9 @@ describe('CarouselComponent', () => {
     toggle.click();
     fixture.detectChanges();
 
-    // hover and focus are still on the control, and must not stand in for the pause it just cleared
     expect(autoplay.pauseReason()).toBeNull();
     expect(autoplay.isPlaying()).toBe(true);
 
-    // moving onto a slide is a different matter: that pause is what it is for
     autoplay.isPointerOnPauseControl.set(false);
     expect(autoplay.pauseReason()).toBe('hover');
   });
@@ -313,8 +301,28 @@ describe('CarouselComponent', () => {
     fixture.componentInstance.slides.set([{ title: 'only one' }]);
     fixture.detectChanges();
 
-    // a single slide has nowhere to advance to
     expect(autoplay.pauseReason()).toBe('no-slides');
+  });
+
+  it('reports a reason while the duration is zero, from the carousel and from the active slide', async () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+    fixture.componentInstance.autoplayTime.set(0);
+    fixture.detectChanges();
+
+    const autoplay = fixture.componentInstance.autoplayDirective();
+
+    expect(autoplay.duration()).toBe(0);
+    expect(autoplay.isPlaying()).toBe(false);
+    expect(autoplay.pauseReason()).toBe('no-duration');
+
+    fixture.componentInstance.autoplayTime.set(5000);
+    fixture.componentInstance.autoplayTimeFor.set(() => 0);
+    await settleChildren(fixture);
+
+    expect(autoplay.duration()).toBe(0);
+    expect(autoplay.isPlaying()).toBe(false);
+    expect(autoplay.pauseReason()).toBe('no-duration');
   });
 
   it('falls back to the carousel’s autoplayTime when no slide overrides it', () => {
@@ -341,7 +349,6 @@ describe('CarouselComponent', () => {
   describe('looping', () => {
     const FOUR_SLIDES: Slide[] = [{ title: 'one' }, { title: 'two' }, { title: 'three' }, { title: 'four' }];
 
-    /** The host keeps `loop` off, so the looping cases turn it on along with the slides they need. */
     const createLoopingHost = async (slides: Slide[] = FOUR_SLIDES) => {
       const fixture = createHost();
 
@@ -361,15 +368,12 @@ describe('CarouselComponent', () => {
 
       expect(carousel.cloneCount()).toBe(2);
       expect(carousel.domCount()).toBe(8);
-      // a carousel in a hidden tab panel or a collapsed accordion: nothing to measure, so nowhere to go
       expect(scroll.calls()).toEqual([]);
 
       fakeLayout(CAROUSEL_LAYOUT);
       resizeObserver.fire();
       fixture.detectChanges();
 
-      // the track opens parked on child 0, which is a clone - the real child for the same slide sits a
-      // whole clone run further in, and that is where a looping carousel has to be put before it is seen
       const restingOffset = (carousel.cloneCount() + carousel.activeIndex()) * SLIDE_SIZE;
 
       expect(restingOffset).toBeGreaterThan(0);
@@ -391,14 +395,12 @@ describe('CarouselComponent', () => {
       const cloneCount = carousel.cloneCount();
       const trackLength = carousel.count() * SLIDE_SIZE;
 
-      // resting on the leading clone run - the far side of the seam from the real run
       container.scrollLeft = 0;
       container.dispatchEvent(new Event('scrollend'));
       fixture.detectChanges();
 
       expect(scroll.lastCall()?.options).toEqual({ left: trackLength, behavior: 'instant' });
 
-      // and the same holds crossing the trailing seam, in the other direction
       const trailingOffset = (cloneCount + carousel.count()) * SLIDE_SIZE;
 
       container.scrollLeft = trailingOffset;
@@ -421,7 +423,6 @@ describe('CarouselComponent', () => {
       const container = host(fixture).querySelector('.et-scrollable-container') as HTMLElement;
       const callsBeforeSettle = scroll.calls().length;
 
-      // the first real slide, not a clone - nothing to correct
       container.scrollLeft = SLIDE_SIZE * 2;
       container.dispatchEvent(new Event('scrollend'));
       fixture.detectChanges();
@@ -434,7 +435,6 @@ describe('CarouselComponent', () => {
       const carousel = fixture.componentInstance.carousel();
       const cloneCount = carousel.cloneCount();
 
-      // one slide per view, so a clone run is two slides long
       expect(cloneCount).toBe(2);
       expect(carousel.count()).toBe(4);
       expect(carousel.isLooping()).toBe(true);
@@ -447,10 +447,8 @@ describe('CarouselComponent', () => {
       expect(clones.length).toBe(4);
       expect(clones.every((clone) => clone.getAttribute('aria-hidden') === 'true')).toBe(true);
       expect(clones.every((clone) => clone.hasAttribute('inert'))).toBe(true);
-      // a clone announces nothing: it is a slide the reader has already been told about
       expect(clones.every((clone) => !clone.hasAttribute('aria-label'))).toBe(true);
 
-      // the dots and the `N of M` labels count the real slides only
       expect(host(fixture).querySelectorAll('.et-carousel-dot').length).toBe(4);
       expect(slides[cloneCount]?.getAttribute('aria-label')).toBe('1 of 4');
     });
@@ -459,7 +457,6 @@ describe('CarouselComponent', () => {
       const fixture = await createLoopingHost();
       const text = slideElements(fixture).map((slide) => slide.textContent?.trim());
 
-      // [3, 4] [1, 2, 3, 4] [1, 2] - so scrolling off either end lands on content, not on a wall
       expect(text).toEqual(['3. three', '4. four', '1. one', '2. two', '3. three', '4. four', '1. one', '2. two']);
     });
 
@@ -468,13 +465,10 @@ describe('CarouselComponent', () => {
       const carousel = fixture.componentInstance.carousel();
       const cloneCount = carousel.cloneCount();
 
-      // the leading clones are the tail of the run, the trailing clones its head
       expect(carousel.slideIndexOf(0)).toBe(2);
       expect(carousel.slideIndexOf(1)).toBe(3);
-      // the real slides map to themselves
       expect(carousel.slideIndexOf(cloneCount)).toBe(0);
       expect(carousel.slideIndexOf(cloneCount + 3)).toBe(3);
-      // and past them it wraps round again
       expect(carousel.slideIndexOf(cloneCount + 4)).toBe(0);
       expect(carousel.slideIndexOf(cloneCount + 5)).toBe(1);
     });
@@ -486,7 +480,6 @@ describe('CarouselComponent', () => {
       expect(carousel.cloneCount()).toBe(0);
       expect(carousel.isLooping()).toBe(false);
       expect(slideElements(fixture).length).toBe(1);
-      // and a lone slide has nowhere to go, `loop` or not
       expect(carousel.canGoNext()).toBe(false);
     });
 
@@ -512,7 +505,6 @@ describe('CarouselComponent', () => {
 
       expect(carousel.count()).toBe(5);
       expect(carousel.domCount()).toBe(5 + carousel.cloneCount() * 2);
-      // the trailing clones still mirror the head of the run
       expect(slideElements(fixture).at(-1)?.textContent?.trim()).toBe('2. two');
     });
 
@@ -523,13 +515,11 @@ describe('CarouselComponent', () => {
       fixture.componentInstance.itemSize.set('third');
       await settleChildren(fixture);
 
-      // three per view plus one, so the seam is never in shot when the offset is shifted
       expect(carousel.cloneCount()).toBe(4);
 
       fixture.componentInstance.slides.set(FOUR_SLIDES);
       await settleChildren(fixture);
 
-      // never more clones than there are slides to clone
       expect(carousel.cloneCount()).toBe(4);
       expect(carousel.domCount()).toBe(12);
     });
@@ -540,7 +530,6 @@ describe('CarouselComponent', () => {
       const fixture = createHost();
       const carousel = host(fixture).querySelector('et-carousel');
 
-      // nothing asked for, nothing running
       expect(carousel?.getAttribute('data-transition')).toBe('none');
       expect(carousel?.getAttribute('data-transition-driver')).toBe('none');
 
@@ -556,14 +545,12 @@ describe('CarouselComponent', () => {
       const fixture = createHost();
       const track = host(fixture).querySelector('et-scrollable');
 
-      // the snapping is CSS reading these attributes, so they are the whole of the wiring
       expect(track?.hasAttribute('snap')).toBe(true);
       expect(track?.getAttribute('snap-origin')).toBe('start');
 
       fixture.componentInstance.slideAlign.set('center');
       fixture.detectChanges();
 
-      // the alignment is the carousel's, and the track has to snap the same way or the two would fight
       expect(fixture.componentInstance.carousel().slideAlign()).toBe('center');
       expect(track?.getAttribute('snap-origin')).toBe('center');
     });
@@ -577,7 +564,6 @@ describe('CarouselComponent', () => {
       const carousel = host(fixture).querySelector('et-carousel');
 
       expect(carousel?.getAttribute('data-transition')).toBe('custom');
-      // a driver has to be running, or nothing would fill the property
       expect(fixture.componentInstance.carousel().resolvedTransitionDriver()).not.toBe('none');
     });
 
@@ -589,7 +575,6 @@ describe('CarouselComponent', () => {
       fixture.detectChanges();
 
       expect(fixture.componentInstance.carousel().resolvedTransitionDriver()).toBe('none');
-      // the effect is still reported, so a consumer's own CSS can still hang off it
       expect(host(fixture).querySelector('et-carousel')?.getAttribute('data-transition')).toBe('wipe');
     });
   });
@@ -608,7 +593,6 @@ describe('CarouselComponent', () => {
 
       const slides = slideElements(fixture);
 
-      // slide 0 fills the viewport exactly (0), slide 1 sits just past it (-1, clamped), and so does 2
       expect(progressOf(slides[0])).toBe('0.000');
       expect(progressOf(slides[1])).toBe('-1.000');
       expect(progressOf(slides[2])).toBe('-1.000');
@@ -629,13 +613,11 @@ describe('CarouselComponent', () => {
       container.dispatchEvent(new Event('scroll'));
       await flushFrames();
 
-      // slide 1 is now exactly where slide 0 was - centred in the viewport
       expect(progressOf(slides[1])).toBe('0.000');
 
       fixture.componentInstance.transitionDriver.set('none');
       fixture.detectChanges();
 
-      // nothing is filling the property any more, so it must not be left behind stale
       expect(progressOf(slides[1])).toBe('');
     });
   });

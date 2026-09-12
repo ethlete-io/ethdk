@@ -24,7 +24,6 @@ class EditColorHostComponent {
   public draft: WritableSignal<Appointment> = signal(appointment('brand'));
 }
 
-// the palette's tokens are theme names, so this spec needs its own set rather than TEST_COLOR_THEMES
 const TEST_PALETTE_THEMES: ColorTheme[] = [
   { name: 'brand', isDefault: true, primary: testColorSwatch('0 255 161') },
   { name: 'success', primary: testColorSwatch('22 163 74') },

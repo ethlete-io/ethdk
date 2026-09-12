@@ -69,11 +69,7 @@
     }
   }
 
-  /* below the md breakpoint the picker mounts as a bottom sheet: the panel becomes
-     the full-width sheet surface, draws its own drag handle (the runtime's sits
-     outside the panel background) and centers the hosted picker */
   .et-overlay.et-date-picker-sheet {
-    /* touch-sized calendar cells / time options — the tokens inherit into the content */
     --et-calendar-cell-size: 44px;
     --et-time-picker-option-size: 44px;
 
@@ -107,12 +103,8 @@
       justify-content: center;
     }
 
-    /* A month spans 4–6 week rows and the coarser grids have their own row counts, so a height that
-       followed its content would move on every page and every drill. The anchored panel is welcome to:
-       it grows downwards from a field and resizing is what it has always done. A sheet grows *upwards*
-       from the bottom of the screen, so the same change slides its top edge — and everything under the
-       reader's thumb with it. Hence the tallest case reserved here and nowhere else: the day grid stays
-       top-aligned in the box and the month and year grids centre in it (see calendar.component.css). */
+    /* the tallest case, reserved here and nowhere else: a sheet grows upwards, so a height that
+       followed its content would slide the sheet's top edge under the reader's thumb */
     .et-calendar-grid {
       min-block-size: calc(32px + 6 * var(--et-calendar-cell-size));
     }

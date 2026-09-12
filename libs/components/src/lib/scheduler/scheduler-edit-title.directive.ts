@@ -26,7 +26,6 @@ export class SchedulerEditTitleDirective {
   private host = injectSchedulerEditSurfaceHost('etSchedulerEditTitle');
   private surface = inject(SchedulerEditSurfaceDirective);
 
-  /** See {@link SchedulerEditTitleConfig}. */
   public config = input({} as SchedulerEditTitleConfig, {
     alias: 'etSchedulerEditTitle',
     transform: schedulerFeatureConfig<SchedulerEditTitleConfig>,

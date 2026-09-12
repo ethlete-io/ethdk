@@ -15,21 +15,7 @@ const SETTLE_TIMEOUT = 700;
  * Makes the track come to rest on a child rather than wherever the gesture ran out.
  *
  * The snapping is **native CSS scroll snap** - `scroll-snap-type` on the container, `scroll-snap-align` on the
- * children, driven by the attributes this directive puts on the scrollable. That is not just a tidier
- * implementation, it is the only one that can feel right on a touch screen: the browser folds the snap into
- * the fling itself, on the compositor, so a swipe decelerates straight onto a child and stops. It cannot be
- * late, because there is no "after" for it to be late in.
- *
- * It used to be JavaScript throughout - wait for the scrolling to go quiet for 150ms, work out the nearest
- * child, then animate there - and that is what made a carousel feel broken on a phone. The gesture ended, the
- * track sat still, and *then* a second ~200ms animation ran to correct it, sometimes by three pixels. Every
- * swipe visibly stopped twice, and at a looping carousel's seam that late correction raced the loop teleport,
- * both acting on the same quiet stretch from measurements a frame or two stale.
- *
- * Native snap alone is not the whole answer either, because `mandatory` overrules a *programmatic* offset
- * outright and silently - which is why the scrollable can hold it off (see
- * `ScrollableDirective.suspendSnap`), and why the one thing still settled in JavaScript is a cursor drag:
- * releasing a mouse button produces no fling, so there is nothing for the platform to decelerate into.
+ * children, driven by the attributes this directive puts on the scrollable.
  *
  * Opt-in, applied on the `<et-scrollable>` itself. Ships in `SCROLLABLE_DRAG_IMPORTS`.
  */
@@ -98,7 +84,6 @@ export class ScrollableSnapDirective {
     this.destroyRef.onDestroy(() => releaseSnap?.());
   }
 
-  /** Scroll to the child the drag ended nearest, and hand snapping back once it has arrived. */
   private glideToNearestChild(release: () => void) {
     const scrollElement = this.scrollable.getScrollContainerRef()()?.nativeElement;
     const target = scrollElement
@@ -114,7 +99,6 @@ export class ScrollableSnapDirective {
         )
       : null;
 
-    // Already within a pixel of a child, so there is nothing to glide to and snapping can come straight back.
     if (!scrollElement || !target) {
       release();
 
@@ -127,8 +111,6 @@ export class ScrollableSnapDirective {
       ignoreForcedOrigin: true,
     });
 
-    // `scrollend` is the arrival; the pointer is a reader grabbing the track again mid-glide, who should get
-    // native snapping back at once; the timer covers a browser with no `scrollend`.
     merge(
       fromEvent(scrollElement, 'scrollend'),
       fromEvent(scrollElement, 'pointerdown', { passive: true }),

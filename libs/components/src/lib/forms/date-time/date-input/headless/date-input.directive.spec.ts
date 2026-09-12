@@ -10,6 +10,7 @@ import { describePickerCommitContract } from '../../../testing/picker-commit-con
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateInputFieldDirective } from './date-input-field.directive';
+import { DATE_INPUT_ERROR_CODES } from '../date-input-errors';
 import { DateInputDirective } from './date-input.directive';
 import { CalendarPrecision } from '../../../../calendar/headless';
 
@@ -107,7 +108,6 @@ describe('DateInputDirective', () => {
     expect(driver.control.inputText()).toBe('');
     expect(driver.control.parseError()).toBe(false);
     expect(driver.control.hasValue()).toBe(false);
-    // the field only mirrors state while unfocused - the clear resets it directly
     expect(driver.field().value).toBe('');
   });
 
@@ -239,7 +239,6 @@ describe('DateInputDirective', () => {
 
       driver.typeAndBlur('07/2026');
 
-      // the 1st, not today's day of July - a coarse format cannot say which day it meant
       expect(driver.host.value()).toBe('2026-07-01');
       expect(driver.control.parseError()).toBe(false);
       expect(driver.field().value).toBe('07/2026');
@@ -421,7 +420,6 @@ describe('DateInputDirective with the opt-in typing mask', () => {
     await type('1807');
 
     expect(field.value).toBe('18.07.____');
-    // masked typing must feed hasValue like native typing (the clear button depends on it)
     expect(dateInput.inputText()).toBe('18.07.');
     expect(dateInput.hasValue()).toBe(true);
 
@@ -443,7 +441,6 @@ describe('DateInputDirective with the opt-in typing mask', () => {
 
     expect(host.value()).toBeNull();
     expect(dateInput.parseError()).toBe(true);
-    // the kept text is the display-shaped entry, not `18.07.____`
     expect(dateInput.inputText()).toBe('18.07.');
     expect(field.value).toBe('18.07.');
   });
@@ -546,7 +543,6 @@ describe('DateInputDirective with the opt-in typing mask', () => {
       el.value = '07/16/2026';
     }, 'insertText');
 
-    // no mask: arbitrary text stays, native input sync tracks it
     expect(field.value).toBe('07/16/2026');
     expect(dateInput.inputText()).toBe('07/16/2026');
 
@@ -558,8 +554,6 @@ describe('DateInputDirective with the opt-in typing mask', () => {
 
 describe('DateInputDirective commit contract', () => {
   describePickerCommitContract(() => {
-    // a wire format carrying a time against the date-only display default is what makes an
-    // unedited blur observable: re-parsing "07/20/2026" would write back midnight
     const driver = mountDatePicker(DateInputTestHost, DateInputDirective);
 
     driver.host.valueFormat.set('yyyy-MM-dd HH:mm');
@@ -580,5 +574,116 @@ describe('DateInputDirective commit contract', () => {
         tick();
       },
     };
+  });
+});
+
+describe('DateInputDirective (tabbing out of the picker)', () => {
+  let driver: DatePickerDriver<DateInputTestHost, DateInputDirective>;
+
+  const pickButton = () => driver.paneEl<HTMLButtonElement>('.pick-date')!;
+
+  beforeEach(() => {
+    // jsdom lays nothing out, and `getFocusableElements` reads a client rect to tell a rendered
+    vi.spyOn(Element.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
+    driver = mountDatePicker(DateInputTestHost, DateInputDirective);
+  });
+
+  afterEach(async () => {
+    await driver.close();
+    vi.restoreAllMocks();
+  });
+
+  it('closes the picker on a Tab past the last control', async () => {
+    await driver.open();
+    pickButton().focus();
+    pressKey(pickButton(), 'Tab');
+
+    await driver.settle();
+
+    expect(driver.control.pickerOpen()).toBe(false);
+  });
+
+  it('closes the picker on a Shift+Tab off the first control', async () => {
+    await driver.open();
+    pickButton().focus();
+    pressKey(pickButton(), 'Tab', { shiftKey: true });
+
+    await driver.settle();
+
+    expect(driver.control.pickerOpen()).toBe(false);
+  });
+
+  it('does not hand focus back to the field on a tab out', async () => {
+    await driver.open();
+    pickButton().focus();
+    pressKey(pickButton(), 'Tab');
+
+    await driver.settle();
+    await driver.settle();
+
+    expect(document.activeElement).not.toBe(driver.field());
+  });
+});
+
+@Component({
+  template: `<input etDateInputField />`,
+  imports: [DateInputFieldDirective],
+})
+class OrphanDateInputFieldTestHost {}
+
+@Component({
+  template: `<button etDatePickerTrigger>open</button>`,
+  imports: [DatePickerTriggerDirective],
+})
+class OrphanDatePickerTriggerTestHost {}
+
+@Component({
+  template: `<ng-template etDatePickerSurface />`,
+  imports: [DatePickerSurfaceDirective],
+})
+class OrphanDatePickerSurfaceTestHost {}
+
+const EVERY_PICKER_HOST =
+  '[etDateInput], [etDateRangeInput], [etTimeInput], [etDateTimeInput], [etTimeRangeInput] or [etDateTimeRangeInput]';
+
+describe('DateInputFieldDirective errors', () => {
+  it('rejects a field outside a date input while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDateInputFieldTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDateInputFieldTestHost)).toThrow(
+      `ET${DATE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_INPUT}`,
+    );
+  });
+});
+
+describe('DatePickerTriggerDirective errors', () => {
+  it('rejects a trigger outside a picker host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDatePickerTriggerTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDatePickerTriggerTestHost)).toThrow(
+      `ET${DATE_INPUT_ERROR_CODES.TRIGGER_OUTSIDE_DATE_INPUT}`,
+    );
+  });
+
+  it('names every picker host in the message', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDatePickerTriggerTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDatePickerTriggerTestHost)).toThrow(EVERY_PICKER_HOST);
+  });
+});
+
+describe('DatePickerSurfaceDirective errors', () => {
+  it('rejects a surface outside a picker host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDatePickerSurfaceTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDatePickerSurfaceTestHost)).toThrow(
+      `ET${DATE_INPUT_ERROR_CODES.SURFACE_OUTSIDE_DATE_INPUT}`,
+    );
+  });
+
+  it('names every picker host in the message', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDatePickerSurfaceTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDatePickerSurfaceTestHost)).toThrow(EVERY_PICKER_HOST);
   });
 });

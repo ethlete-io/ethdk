@@ -24,10 +24,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   /** The field's own element, chrome included - what scrolling to this field targets. */
   public element = injectHostElement();
 
-  // the `warn()` rules live on the signal-forms field, so the warnings come from wherever
-  // `[formField]` is bound: on the control this field wraps (`et-form-field`), or on this very host
-  // when the control renders its own support region (`et-slider`, `et-rating`, …). Reading both here
-  // means no control has to forward them. `self` matters - without it an outer binding would leak in.
+  // `self` matters - without it an outer `[formField]` binding would leak in.
   private ownFieldBinding = inject(FORM_FIELD, { optional: true, self: true });
   private wrappedFieldBindings = contentChildren(FORM_FIELD, { descendants: true });
 
@@ -75,7 +72,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   /**
    * The non-blocking advisories to show under the field: what the bound field's `warn()` rules
    * produced, plus what the registered control was given through its own `warnings` input. They
-   * never touch validity - the field stays valid and submittable while one is shown.
+   * never touch validity.
    */
   public warnings = computed<readonly FieldWarning[]>(() => {
     const bindings = this.ownFieldBinding
@@ -110,7 +107,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
   public controlType = computed(() => this.registeredControl()?.controlType() ?? FORM_FIELD_CONTROL_TYPES.TEXT_INPUT);
 
-  /** The registered control's value - the counter measures this. */
+  /** The registered control's value. */
   public controlValue = computed<unknown>(() => this.registeredControl()?.value?.() ?? null);
 
   /** The bound field's schema `maxLength()`, when signal forms bound one into the control. */
@@ -156,7 +153,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
   public shouldFloatLabel = computed(() => this.focused() || this.expanded() || this.hasValue());
 
-  /** Whether the field is showing an error message - which a warning gives the slot up to. */
+  /** Whether the field is showing an error message. */
   public displaysErrorMessage = computed(
     () => this.shouldDisplayError() && (this.errors().length > 0 || this.parseError()),
   );

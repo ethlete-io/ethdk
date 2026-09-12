@@ -131,6 +131,19 @@ test.describe('date-inputs / date input keyboard', () => {
     await expect(field).toHaveValue('');
     await expect(root.getByText('Form value: null')).toBeVisible();
   });
+
+  test('a Tab past the calendar closes the picker', async ({ page }) => {
+    const root = await openStory(page, DATE_INPUT_ID);
+    const cell = page.locator(FOCUSED_CELL);
+
+    await root.locator('.et-input-picker-trigger').click();
+    await waitForPickerEntered(page);
+    await tabUntilFocused(page, cell);
+
+    await pressKey(page, 'Tab');
+
+    await expect(page.locator(DIALOG)).toHaveCount(0);
+  });
 });
 
 test.describe('date-inputs / date input touch', () => {

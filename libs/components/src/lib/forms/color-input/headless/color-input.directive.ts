@@ -57,15 +57,14 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
   /**
    * The notations the picker's entry field offers, in the order its switch cycles through them.
    * More than one shows the switch; exactly one pins the field to that notation, and an entry in
-   * another notation is converted to it with an advisory under the field. The emitted `value` is
-   * always hex, whatever the field displays.
+   * another notation is converted to it with an advisory under the field.
    */
   public notations = input<readonly ColorNotation[]>(COLOR_NOTATION_ORDER);
 
   /** Whether the picker overlay is open. */
   public pickerOpen = model(false);
 
-  /** @internal Keeps the form field in its focused style while the picker overlay is open. */
+  /** @internal */
   public expanded = computed(() => this.pickerOpen());
 
   public hasValue = computed(() => this.mixed() || !!this.value());
@@ -73,22 +72,16 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
   /** Whether the control accepts a new color - the picker refuses to open while it does not. */
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
-  /**
-   * The color the picker and the field preview paint - black until a value is picked, and while
-   * mixed (the picker must not preselect and thereby reveal the hidden raw color).
-   */
+  /** The color the picker and the field preview paint - black until a value is picked, and while mixed. */
   public resolvedColor = computed(() => (this.mixed() ? '#000000' : (this.value() ?? '#000000')));
 
-  /** The color the swatch paints - `null` while mixed so the CSS neutral treatment takes over. */
+  /** The color the swatch paints - `null` while mixed. */
   public swatchColor = computed(() => (this.mixed() ? null : this.resolvedColor()));
 
-  /** The text the value slot renders - `mixedLabel` while mixed, never the hidden raw color. */
+  /** The text the value slot renders - `mixedLabel` while mixed. */
   public displayValue = computed(() => (this.mixed() ? this.resolvedMixedLabel() : (this.value() ?? '')));
 
-  /**
-   * The presets that could be read, as canonical hex - so a color given twice in two notations
-   * renders one swatch, and the panel can compare a swatch against the current value directly.
-   */
+  /** The presets that could be read, as canonical hex. */
   public resolvedSwatches = computed(() => {
     const withAlpha = this.alpha();
     const seen = new Set<string>();
@@ -124,7 +117,7 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
   /** @internal */
   public registeredSurface = signal<ColorInputSurfaceBase | null>(null);
 
-  /** @internal The picker's working color. See {@link createColorPickerState} for why it exists. */
+  /** @internal */
   public picker = createColorPickerState({
     value: this.value,
     mixed: this.mixed,
@@ -141,8 +134,6 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
     onAfterClosed: (info) => {
       this.touched.set(true);
 
-      // a deliberate click elsewhere, a tab out, and a swiped-away sheet are the user moving on -
-      // only a close from inside an anchored panel (Escape, or the pane itself) hands focus back
       if (!info.byOutsidePointer && !info.byFocusLeave && !info.fromBottomSheet) {
         this.focus();
       }
@@ -171,10 +162,6 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
     this.openPicker();
   }
 
-  /**
-   * The pane anchors to the whole field, not to the trigger inside it - otherwise it opens over the
-   * field's own lower edge. It doubles as the region whose pointerdowns toggle instead of close.
-   */
   private resolveAnchorElement() {
     return this.ownFormField?.controlFrameElement() ?? this.registeredTrigger()?.elementRef.nativeElement;
   }

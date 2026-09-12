@@ -2,8 +2,7 @@ import { Signal, WritableSignal } from '@angular/core';
 
 /**
  * One entry of the select's `options` input (data-driven mode). Values must be unique -
- * a duplicate value cannot be represented as a distinct choice and is skipped. Extra
- * fields are kept and handed to `etSelectOptionTemplate` via the template context.
+ * a duplicate value cannot be represented as a distinct choice and is skipped.
  */
 export type SelectOptionData<TValue = unknown> = {
   value: TValue;

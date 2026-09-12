@@ -59,7 +59,6 @@ export class ColorPickerTriggerDirective {
   protected handleBlur() {
     this.colorInput?.focused.set(false);
 
-    // focus moving into the panel is not leaving the field
     if (!this.colorInput?.pickerOpen()) {
       this.colorInput?.touched.set(true);
     }

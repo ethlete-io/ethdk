@@ -29,12 +29,10 @@ let localReadingIdCounter = 0;
  * against the combined `displayFormat` on blur/Enter, then leniently (date and
  * time split at any separator, bare dates commit at midnight); the anchored
  * picker overlay hosts a calendar and a time picker side by side and stays open
- * across picks. String↔`Date` conversion happens exclusively here - calendar
- * and time picker only ever see `Date` objects.
+ * across picks.
  *
- * Picking is two half-picks: whichever half lands first is held (the field renders it against
- * placeholders for the other) and the value stays `null` until the second one arrives, so a day
- * never invents a midnight nobody chose.
+ * Picking is two half-picks: whichever half lands first is held and the value stays `null` until
+ * the second one arrives.
  */
 @Directive({
   selector: '[etDateTimeInput]',
@@ -54,8 +52,8 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   /**
    * IANA name of the zone the field's wall clock stands for - `'Asia/Tokyo'` makes the field, the
-   * calendar and the time picker all read in Tokyo, and writes the value with Tokyo's offset. The
-   * value stays an instant either way. `null` keeps the runtime's own zone.
+   * calendar and the time picker all read in Tokyo, and writes the value with Tokyo's offset.
+   * `null` keeps the runtime's own zone.
    */
   public timeZone = input<string | null>(null);
 
@@ -81,18 +79,14 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   /**
    * Forwarded to the picker's time picker. Only the time of day of `minTime`/`maxTime`
    * is read, so the bound applies on every day; `timeFilter` receives the full candidate
-   * timestamp (the picked time of day on the committed day), so opening hours can differ
-   * per weekday. Bounds shape the picker - validate typed entry with a schema validator,
-   * exactly like `minDate`/`maxDate`.
+   * timestamp. Bounds shape the picker - validate typed entry with a schema validator.
    */
   public minTime = input<Date | null>(null);
   public maxTime = input<Date | null>(null);
   public timeFilter = input<((date: Date) => boolean) | null>(null);
 
-  /** No precision to derive from here - the input is the format in effect. */
   public effectiveDisplayFormat = this.displayFormat;
 
-  /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDateTime);
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DATE_TIME_INPUT);
@@ -113,10 +107,6 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   /** The current value as a `Date` (what the picker calendar and time picker bind to). */
   public dateTime = computed(() => {
-    // masking: while mixed the hidden raw value is neither rendered in the field
-    // (displayValue derives from here) nor highlighted in the calendar/time picker.
-    // selectDate/selectTime read this too, so a resolving pick starts from scratch
-    // (replace semantics) instead of merging with the hidden date or time of day
     if (this.mixed()) {
       return null;
     }
@@ -132,11 +122,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   private halfPick = createPendingDateTime();
 
-  /**
-   * The committed value as the calendar and the time picker see it: a plain `Date` whose local wall
-   * clock is the zone's, so both keep doing local arithmetic. Highlighting only - a committed value
-   * is always derived from the instant, never from this. See `zonedProxy`.
-   */
+  /** Highlighting only - a committed value is always derived from the instant, never from this. */
   private pickerDateTime = computed(() => {
     const dateTime = this.dateTime();
     const timeZone = this.effectiveTimeZone();
@@ -183,8 +169,6 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
       );
     }
 
-    // a typing mask owns the field text and draws its own guides - a second set of placeholders
-    // would not survive its reconciliation anyway
     if (this.maskPattern() !== null) {
       return '';
     }
@@ -203,7 +187,6 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     super();
 
     if (ngDevMode) {
-      // an unknown zone name silently behaving like no zone at all would be a head-scratcher
       effect(() => {
         const timeZone = this.timeZone();
 
@@ -231,7 +214,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   /**
    * Commits a calendar-picked day onto the committed time of day, or holds it until a time is
-   * picked. The picker stays open - the user likely still wants to pick that time.
+   * picked. The picker stays open.
    */
   public selectDate(date: Date | null) {
     if (date === null || !this.interactive()) {
@@ -254,7 +237,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   /**
    * Commits a picker-selected time onto the committed day, or holds it until a day is picked. The
-   * picker stays open - a time takes one selection per column.
+   * picker stays open.
    */
   public selectTime(time: Date | null) {
     if (time === null || !this.interactive()) {
@@ -275,24 +258,20 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     this.resolvePick(this.holdHalfPick(this.halfPick.holdTime(time)));
   }
 
-  /** Drops a held half along with the value - the two are one control state. */
+  /** Drops a held half along with the value. */
   public override clearValue() {
     super.clearValue();
     this.halfPick.clear();
   }
 
-  /** A completed half-pick carries the wall clock the user picked, so it is read in the field's zone. */
   private holdHalfPick(merged: Date | null) {
     return merged === null ? null : reinterpretInZone(merged, this.effectiveTimeZone());
   }
 
-  /** Commits a completed pick, or settles the control around a half that is still waiting. */
   private resolvePick(instant: Date | null) {
     if (instant !== null) {
       this.commitInstant(instant);
     } else if (this.mixed()) {
-      // a half-pick resolves the bulk-edit mask like any other pick: replace, never merge into
-      // the hidden raw value
       this.value.set(null);
       this.mixed.set(false);
     }

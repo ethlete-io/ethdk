@@ -7,7 +7,6 @@ import { setHours, setMinutes, startOfDay } from 'date-fns';
  */
 export type TimeFilterPreset = 'none' | 'noLunchBreak' | 'weekdayHours';
 
-/** `'09:30'` → today at 09:30. Anything else (including an empty control) is no bound at all. */
 export const parseTimeOfDay = (value: string | null) => {
   const match = /^(\d{1,2}):(\d{2})$/.exec(value?.trim() ?? '');
 
@@ -23,7 +22,6 @@ export const resolveTimeFilterPreset = (preset: TimeFilterPreset): ((date: Date)
     case 'noLunchBreak':
       return (date) => date.getHours() !== 12;
     case 'weekdayHours': {
-      // the filter sees the full timestamp, so the open hours can differ per weekday
       return (date) => {
         const isWeekend = date.getDay() === 0 || date.getDay() === 6;
         const hour = date.getHours();

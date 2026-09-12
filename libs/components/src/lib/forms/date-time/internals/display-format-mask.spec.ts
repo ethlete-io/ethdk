@@ -15,9 +15,7 @@ describe('maskPatternFromDisplayFormat', () => {
 
   it('renders quoted sections as literals', () => {
     expect(maskPatternFromDisplayFormat("yyyy-MM-dd'T'HH:mm")).toBe('0000-00-00T00:00');
-    // quoted characters that mean something in the pattern language get escaped
     expect(maskPatternFromDisplayFormat("HH'a'mm")).toBe('00\\a00');
-    // '' is date-fns for one literal apostrophe
     expect(maskPatternFromDisplayFormat("HH''mm")).toBe("00'00");
   });
 

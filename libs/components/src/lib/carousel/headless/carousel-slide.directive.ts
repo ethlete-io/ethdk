@@ -59,9 +59,6 @@ export class CarouselSlideDirective<T> {
    * How long autoplay rests on a given slide, overriding the carousel's `autoplayTime` - for the one
    * slide carrying a paragraph rather than a picture. Return `null` to use the carousel's duration.
    *
-   * It lives here rather than on `<et-carousel>` because this is where the slide type is: the callback's
-   * argument is your slide, inferred from the same binding as `let-slide`.
-   *
    * @example
    * <ng-template [etCarouselSlide]="teams()" [autoplayTimeFor]="restLongerOnText" let-team>
    */

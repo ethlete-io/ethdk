@@ -7,9 +7,7 @@ import { CascaderDirective } from './cascader.directive';
 /**
  * Opts a cascader into flat search. While the (trimmed) query is non-empty the panel swaps its
  * columns for a flat result list fed by the data source's `search` hook - each result is a full
- * root → node path, so a known leaf can be jumped to without drilling. The input takes initial
- * focus on open; ArrowDown moves roving focus into the results (or the tree while browsing),
- * and the first Escape clears the query instead of closing the panel.
+ * root → node path, so a known leaf can be jumped to without drilling.
  */
 @Directive({
   selector: 'input[etCascaderSearch]',
@@ -93,8 +91,6 @@ export class CascaderSearchDirective {
       return;
     }
 
-    // Escape is owned by the cascader's document-level handler (clear first, close second);
-    // printable keys, Home/End and ArrowLeft/Right stay native input editing
     switch (event.key) {
       case 'ArrowDown': {
         event.preventDefault();

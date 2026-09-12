@@ -34,8 +34,6 @@ export class CascaderColumnDirective {
   });
 
   constructor() {
-    // a keydown that bubbled up from a node without being handled (rare) is ignored here;
-    // navigation lives on the nodes so roving focus stays exact
     void this.destroyRef;
 
     if (ngDevMode) {

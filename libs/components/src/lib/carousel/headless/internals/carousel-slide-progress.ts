@@ -4,25 +4,18 @@ import { clamp, injectRenderer } from '@ethlete/core';
 import { EMPTY, fromEvent, switchMap, tap } from 'rxjs';
 import { ScrollableDirective } from '../../../scrollable';
 
-/**
- * The one number every slide transition reads: `-1` just before the slide enters the track's viewport,
- * `0` centred, `1` just after it has left. Registered in `CarouselTransitionStylesComponent`.
- */
 export const CAROUSEL_SLIDE_PROGRESS_PROPERTY = '--et-carousel-slide-progress';
 
-/** Below this much change the write would not be visible, so it is skipped. */
 const WRITE_THRESHOLD = 0.004;
 
 type SlideMetrics = {
   element: HTMLElement;
-  /** Layout offset within the scroll content - unaffected by a transition's own scaling. */
   offset: number;
   size: number;
 };
 
 export type CarouselSlideProgressConfig = {
   scrollable: Signal<ScrollableDirective | null | undefined>;
-  /** Whether this driver is the one filling the property. Off for the scroll-driven timeline. */
   enabled: Signal<boolean>;
 };
 
@@ -31,10 +24,6 @@ export type CarouselSlideProgressConfig = {
  * the fallback for browsers without scroll-driven animations (Firefox, as of this writing). It produces
  * the same numbers over the same range as the `view(inline)` timeline does, so every effect is one piece
  * of CSS either way and neither driver is the "real" one.
- *
- * A scroll does not change layout, so the slides are measured once per layout change and a frame then
- * costs one `scrollLeft` read for the whole track. Slides whose progress has settled - anything off
- * screen sits at ±1 - stop being written at all.
  *
  * @internal
  */
@@ -91,8 +80,6 @@ export const useCarouselSlideProgress = (config: CarouselSlideProgressConfig) =>
     const scroll = horizontal ? container.scrollLeft : container.scrollTop;
 
     for (const [index, { element, offset, size }] of metrics.entries()) {
-      // The slide's whole pass across the viewport, which is the range `view()` covers too: it opens one
-      // viewport-length before the slide's leading edge and closes one slide-length past its trailing one.
       const span = viewport + size;
 
       if (span <= 0) continue;
@@ -140,7 +127,6 @@ export const useCarouselSlideProgress = (config: CarouselSlideProgressConfig) =>
       switchMap((element) => {
         if (!element) return EMPTY;
 
-        // the raw offset every frame is the whole point here; the scroll-state utility reports edges only
         // eslint-disable-next-line ethlete/prefer-scroll-state
         return fromEvent(element, 'scroll', { passive: true }).pipe(tap(() => schedule()));
       }),

@@ -114,7 +114,6 @@ export const createSelectionState = <
     const syncEntries = currentItems.map((item) => ({ item, itemValue: item.value() }));
 
     untracked(() => {
-      // mixed masks: the raw value is preserved but no item may report it as checked
       if (isMixed) {
         for (const { item } of syncEntries) {
           item.checked.set(false);
@@ -174,8 +173,6 @@ export const createSelectionState = <
       return;
     }
 
-    // the first commit over a mixed value REPLACES - checked states are recomputed from
-    // scratch (never toggled against the hidden raw value) and the flag resolves
     if (config.mixed?.()) {
       for (const i of items()) {
         i.checked.set(i === item);
@@ -208,8 +205,6 @@ export const createSelectionState = <
       return;
     }
 
-    // over a mixed value "select all" is a REPLACE commit: check every enabled item outright
-    // (nothing counts as selected while mixed) and resolve the flag
     if (config.mixed?.()) {
       for (const item of items()) {
         item.checked.set(!item.disabled());

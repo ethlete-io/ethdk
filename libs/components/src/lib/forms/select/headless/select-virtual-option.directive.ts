@@ -42,8 +42,6 @@ export class SelectVirtualOptionDirective {
   protected activeSource = computed(() => (this.active() ? (this.select?.activeItemSource() ?? null) : null));
 
   constructor() {
-    // the row adopts its item for the time it is rendered - the item's `element` feeds
-    // active-item scrolling (scrollIntoView vs. window scroll) and row-height measurement
     effect((onCleanup) => {
       const item = this.item();
       const select = this.select;
@@ -83,7 +81,6 @@ export class SelectVirtualOptionDirective {
   }
 
   protected handleMousedown(event: MouseEvent) {
-    // DOM focus stays on the trigger - options only ever hold virtual focus
     event.preventDefault();
   }
 

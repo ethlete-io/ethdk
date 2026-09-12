@@ -132,6 +132,20 @@ test.describe('select / keyboard', () => {
     await expect(page.getByRole('option', { name: 'Banana' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByRole('option', { name: 'Apple' })).toHaveAttribute('aria-selected', 'false');
   });
+
+  test('a Tab past the panel last control closes the listbox', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('combobox');
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Enter');
+    await expect(page.getByRole('listbox')).toBeVisible();
+
+    await pressKey(page, 'Tab');
+
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
 });
 
 test.describe('select / touch', () => {

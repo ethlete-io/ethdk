@@ -25,43 +25,57 @@ import { SELECT_IMPORTS } from '@ethlete/components';
 
 On `et-select` (forwarded from the headless `[etSelect]` directive), plus the standard form-field contract set (`disabled`, `readonly`, `invalid`, `errors`, `required`, `name`, `touched`):
 
-| Input               | Type                                 | Default      | Description                                                                                                                                                                                                                   |
-| ------------------- | ------------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `value`             | `unknown \| unknown[] \| null`       | `null`       | The selected option's value. Two-way bindable.                                                                                                                                                                                |
-| `open`              | `boolean`                            | `false`      | Whether the panel is open. Two-way bindable.                                                                                                                                                                                  |
-| `mixed`             | `boolean`                            | `false`      | Presents an unresolved bulk-edit selection independently of `value`. Two-way bindable; a user commit or clear resolves it to `false`.                                                                                         |
-| `mixedLabel`        | `string \| null`                     | `null` ¹     | Value text shown while `mixed` is true.                                                                                                                                                                                       |
-| `placeholder`       | `string`                             | `''`         | Shown while nothing is selected - in the trigger, or on a projected inline search input that brings no placeholder of its own.                                                                                                |
-| `options`           | `SelectOptionData[] \| null`         | `null`       | Data-driven options (`{ value, label, disabled? }`) - the select renders the rows itself, virtualizing long lists. See [large option lists](#large-option-lists-virtualization).                                              |
-| `multiple`          | `boolean`                            | `false`      | Multi-select: `value` is an array, options toggle (the panel stays open) and the trigger renders removable chips.                                                                                                             |
-| `filterMode`        | `'none' \| 'internal' \| 'external'` | `'internal'` | How a search query filters: `internal` hides non-matching options, `external` leaves the option list to you (react to `queryChange`), `none` never filters.                                                                   |
-| `allowCustomValues` | `boolean`                            | `false`      | Enter with a query that matches no option commits the raw string as the value.                                                                                                                                                |
-| `pickOnly`          | `boolean`                            | `false`      | Command picker: committing an option emits `pickOption` and never writes `value`, and the field displays no value of its own. With `multiple` the panel stays open for repeated picks. See [command picker](#command-picker). |
-| `allowAddNew`       | `boolean`                            | `false`      | Renders an "Add new" action row at the end of the panel that emits `addNew` (label via `addNewLabel`, else [`SELECT_LABELS.addNew`](/components/localization)).                                                               |
-| `loading`           | `boolean`                            | `false`      | Reports the wait: a spinner in the field while closed, and in the panel a loading row, a busy bar or a loading load-more row depending on what is on screen ([how a wait is reported](#how-a-wait-is-reported)).              |
-| `error`             | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                                                                                          |
-| `hasMoreItems`      | `boolean`                            | `false`      | Shows a load-more control emitting `loadMore` (label via `loadMoreLabel`, else [`SELECT_LABELS.loadMore`](/components/localization)).                                                                                         |
-| `mirrorPanelWidth`  | `boolean`                            | `true`       | Panel matches the field's width. Set `false` for a compact trigger (page size, country code) whose option rows need more room than the field - the panel then sizes to its content, capped at `min(400px, 100vw - 24px)`.     |
-| `clearable`         | `boolean`                            | `true`       | Shows a clear (×) button while a value is selected and the field is focused.                                                                                                                                                  |
-| `clearLabel`        | `string \| null`                     | `null`       | Accessible label for the clear button.                                                                                                                                                                                        |
+| Input                      | Type                                 | Default      | Description                                                                                                                                                                                                                   |
+| -------------------------- | ------------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`                    | `unknown \| unknown[] \| null`       | `null`       | The selected option's value. Two-way bindable.                                                                                                                                                                                |
+| `open`                     | `boolean`                            | `false`      | Whether the panel is open. Two-way bindable.                                                                                                                                                                                  |
+| `mixed`                    | `boolean`                            | `false`      | Presents an unresolved bulk-edit selection independently of `value`. Two-way bindable; a user commit or clear resolves it to `false`.                                                                                         |
+| `mixedLabel`               | `string \| null`                     | `null` ¹     | Value text shown while `mixed` is true.                                                                                                                                                                                       |
+| `placeholder`              | `string`                             | `''`         | Shown while nothing is selected - in the trigger, or on a projected inline search input that brings no placeholder of its own.                                                                                                |
+| `options`                  | `SelectOptionData[] \| null`         | `null`       | Data-driven options (`{ value, label, disabled? }`) - the select renders the rows itself, virtualizing long lists. See [large option lists](#large-option-lists-virtualization).                                              |
+| `multiple`                 | `boolean`                            | `false`      | Multi-select: `value` is an array, options toggle (the panel stays open) and the trigger renders removable chips.                                                                                                             |
+| `filterMode`               | `'none' \| 'internal' \| 'external'` | `'internal'` | How a search query filters: `internal` hides non-matching options, `external` leaves the option list to you (react to `queryChange`), `none` never filters.                                                                   |
+| `allowCustomValues`        | `boolean`                            | `false`      | Enter with a query that matches no option commits the raw string as the value.                                                                                                                                                |
+| `customValueSeparators`    | `string[]`                           | `[]`         | Single characters that commit the pending query as a custom value the moment they are typed, and split pasted text in multi mode. Only with `allowCustomValues`.                                                              |
+| `normalizeCustomValue`     | `(raw: string) => string \| null`    | trims        | Maps raw text to the stored custom value - return `null` to reject. The default trims and rejects empty text.                                                                                                                 |
+| `commitCustomValueOnClose` | `boolean`                            | `false`      | A pending query commits as a custom value when the panel closes via Tab or an outside click, instead of being discarded.                                                                                                      |
+| `maxSelection`             | `number \| undefined`                | `undefined`  | Caps the number of selected values (multi mode); at the cap the search input locks and every still-unselected option renders disabled.                                                                                        |
+| `pickOnly`                 | `boolean`                            | `false`      | Command picker: committing an option emits `pickOption` and never writes `value`, and the field displays no value of its own. With `multiple` the panel stays open for repeated picks. See [command picker](#command-picker). |
+| `allowAddNew`              | `boolean`                            | `false`      | Renders an "Add new" action row at the end of the panel that emits `addNew` (label via `addNewLabel`, else [`SELECT_LABELS.addNew`](/components/localization)).                                                               |
+| `loading`                  | `boolean`                            | `false`      | Reports the wait: a spinner in the field while closed, and in the panel a loading row, a busy bar or a loading load-more row depending on what is on screen ([how a wait is reported](#how-a-wait-is-reported)).              |
+| `error`                    | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                                                                                          |
+| `hasMoreItems`             | `boolean`                            | `false`      | Shows a load-more control emitting `loadMore` (label via `loadMoreLabel`, else [`SELECT_LABELS.loadMore`](/components/localization)).                                                                                         |
+| `mirrorPanelWidth`         | `boolean`                            | `true`       | Panel matches the field's width. Set `false` for a compact trigger (page size, country code) whose option rows need more room than the field - the panel then sizes to its content, capped at `min(400px, 100vw - 24px)`.     |
+| `loadMoreLabel`            | `string \| null`                     | `null` ²     | Text of the load-more control.                                                                                                                                                                                                |
+| `addNewLabel`              | `string \| null`                     | `null` ²     | Text of the add-new action row.                                                                                                                                                                                               |
+| `createLabel`              | `string \| null`                     | `null` ²     | Leading text of the "Create …" custom-value row.                                                                                                                                                                              |
+| `clearable`                | `boolean`                            | `true`       | Shows a clear (×) button while a value is selected and the field is focused (never while `disabled` or `readonly`).                                                                                                           |
+| `clearLabel`               | `string \| null`                     | `null` ²     | Accessible label for the clear button.                                                                                                                                                                                        |
+| `aria-label`               | `string \| null`                     | `null`       | Names the combobox when no `et-label` is projected.                                                                                                                                                                           |
+| `aria-labelledby`          | `string \| null`                     | `null`       | Ids naming the combobox. Takes precedence over a projected `et-label`.                                                                                                                                                        |
 
 ¹ `null` falls through to [`FORM_FIELD_LABELS.mixed`](/components/localization) (`'Mixed'`) - set it only for one-off wording.
+² `null` falls through to the domain's label set - [`SELECT_LABELS`](/components/localization) for `loadMoreLabel`, `addNewLabel` and `createLabel`, [`FORM_FIELD_LABELS.clear`](/components/localization) for `clearLabel`, both overridable for a whole subtree with `provideSelectLabels({ … })` / `provideFormFieldLabels({ … })`.
 
-| Output        | Payload   | Emitted when                                                                                                                                                               |
-| ------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mixedChange` | `boolean` | A user commit or clear resolves the controlled mixed state.                                                                                                                |
-| `queryChange` | `string`  | The search query changes (every keystroke).                                                                                                                                |
-| `loadMore`    | `void`    | The load-more control is activated.                                                                                                                                        |
-| `addNew`      | `string`  | The add-new row is picked; the payload is the current search query (prefill your dialog).                                                                                  |
-| `pickOption`  | `unknown` | A single-select - or `pickOnly` multi-select - option is committed; the payload is the picked value. With `pickOnly` this is the only pick signal (`value` never changes). |
+| Output          | Payload                        | Emitted when                                                                                                                                                               |
+| --------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `valueChange`   | `unknown \| unknown[] \| null` | The value changes - user commits, clears and programmatic writes alike (the `value` model's change output).                                                                |
+| `mixedChange`   | `boolean`                      | A user commit or clear resolves the controlled mixed state.                                                                                                                |
+| `openChange`    | `boolean`                      | The panel opens or closes (the `open` model's change output).                                                                                                              |
+| `touchedChange` | `boolean`                      | The field is blurred for the first time (the `touched` model's change output).                                                                                             |
+| `queryChange`   | `string`                       | The search query changes (every keystroke).                                                                                                                                |
+| `loadMore`      | `void`                         | The load-more control is activated.                                                                                                                                        |
+| `addNew`        | `string`                       | The add-new row is picked; the payload is the current search query (prefill your dialog).                                                                                  |
+| `pickOption`    | `unknown`                      | A single-select - or `pickOnly` multi-select - option is committed; the payload is the picked value. With `pickOnly` this is the only pick signal (`value` never changes). |
 
 On `et-select-option`:
 
-| Input      | Type      | Default | Description                                                                   |
-| ---------- | --------- | ------- | ----------------------------------------------------------------------------- |
-| `value`    | `unknown` | -       | Required. The value this option commits.                                      |
-| `label`    | `string`  | `''`    | Display label for the trigger and typeahead; falls back to the rendered text. |
-| `disabled` | `boolean` | `false` | Skipped by keyboard navigation, not committable.                              |
+| Input               | Type      | Default | Description                                                                                                                                                                                         |
+| ------------------- | --------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`             | `unknown` | -       | Required. The value this option commits.                                                                                                                                                            |
+| `label`             | `string`  | `''`    | Display label for the trigger and typeahead; falls back to the rendered text.                                                                                                                       |
+| `disabled`          | `boolean` | `false` | Skipped by keyboard navigation, not committable.                                                                                                                                                    |
+| `customValueOption` | `boolean` | `false` | Marks the row as the "Create …" option for the current custom-value candidate, so the candidate doesn't hide itself as a duplicate label. Headless compositions only - `et-select` renders its own. |
 
 The trigger resolves the selected value's label from the options - including a preselected value that was set programmatically before the panel ever opened. Values are compared with reference equality; for object values, bind the same instances you set as `value`.
 
@@ -132,6 +146,16 @@ The Tier 3 component wires `[etSelect]` + `[etSelectTrigger]` + `ng-template[etS
   </ng-template>
 </div>
 ```
+
+`[etSelectTrigger]`, `ng-template[etSelectSurface]`, `[etSelectListbox]`, `[etSelectViewport]`, `ng-template[etSelectValue]` and the state templates (`etSelectLoading`, `etSelectError`, `etSelectEmpty`) take no inputs. `[etSelectOption]` takes the same four inputs as `et-select-option`. The rest:
+
+| Directive                             | Input                   | Type                              | Default     | Description                                                                                                            |
+| ------------------------------------- | ----------------------- | --------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `[etSelectOptionGroup]`               | `label`                 | `string`                          | `''`        | Section label - used as the group's `aria-label` when no header element registers.                                     |
+| `input[etSelectSearch]`               | `query`                 | `string`                          | `''`        | The search query. Two-way bindable.                                                                                    |
+| `ng-template[etSelectOptionTemplate]` | `options`               | `readonly TOption[] \| undefined` | `undefined` | Type witness only - bind the same array as the select's `options` to carry its element type into the template context. |
+| `[etSelectOptions]`                   | `etSelectOptions`       | `SelectOptionsFromQuery<T>`       | -           | Required. The bundle from `selectOptionsFromQuery` / `selectOptionsFromV2Query` - see [async options](#async-options). |
+| `[etSelectVirtualOption]`             | `etSelectVirtualOption` | `SelectItem`                      | -           | Required. The windowed item this row renders - see [large option lists](#large-option-lists-virtualization).           |
 
 `et-select-panel` provides the styled panel chrome (it carries the `[etSelectListbox]` role and re-applies the surface/color theme context inside the detached overlay pane). One caveat for fully custom surfaces: options inside a lazy `ng-template` only bind once rendered, so a preselected value's label resolves after the first open. `et-select` avoids this by keeping the projected options rendered (hidden) while closed.
 
@@ -374,16 +398,17 @@ The clear button and the chevron render in the form field's [suffix slot](/compo
 
 Public design tokens:
 
-| Token                               | Default | Purpose                                                                   |
-| ----------------------------------- | ------- | ------------------------------------------------------------------------- |
-| `--et-select-panel-max-height`      | `40vh`  | Panel max height (scrolls); capped further by the space next to the field |
-| `--et-select-panel-padding`         | `6px`   | Panel inner padding                                                       |
-| `--et-select-option-height`         | `36px`  | Option row min height                                                     |
-| `--et-select-option-padding-inline` | `10px`  | Option horizontal padding                                                 |
-| `--et-select-option-gap`            | `8px`   | Gap between check icon and label                                          |
-| `--et-select-option-border-radius`  | `6px`   | Option row corner radius                                                  |
-| `--et-select-option-font-size`      | `14px`  | Option font size                                                          |
-| `--et-select-option-check-size`     | `16px`  | Selected check icon size                                                  |
+| Token                                      | Default | Purpose                                                                   |
+| ------------------------------------------ | ------- | ------------------------------------------------------------------------- |
+| `--et-select-panel-max-height`             | `40vh`  | Panel max height (scrolls); capped further by the space next to the field |
+| `--et-select-panel-padding`                | `6px`   | Panel inner padding                                                       |
+| `--et-select-option-height`                | `36px`  | Option row min height                                                     |
+| `--et-select-option-padding-inline`        | `10px`  | Option horizontal padding                                                 |
+| `--et-select-option-gap`                   | `8px`   | Gap between check icon and label                                          |
+| `--et-select-option-border-radius`         | `6px`   | Option row corner radius                                                  |
+| `--et-select-option-font-size`             | `14px`  | Option font size                                                          |
+| `--et-select-option-check-size`            | `16px`  | Selected check icon size                                                  |
+| `--et-select-option-group-label-font-size` | `12px`  | [Option group](#option-groups) header font size                           |
 
 ## Error codes
 

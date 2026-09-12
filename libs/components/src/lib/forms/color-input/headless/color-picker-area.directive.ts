@@ -10,7 +10,7 @@ import { fractionFromPointer } from './internals/color-picker-engine';
 /**
  * The two-dimensional saturation and brightness surface of a color picker: saturation along the
  * inline axis, brightness up the block axis. Owns the pointer drag; the keyboard path belongs to the
- * two range inputs the panel places inside it, which is also what makes the surface accessible.
+ * two range inputs the panel places inside it.
  */
 @Directive({
   selector: '[etColorPickerArea]',
@@ -27,7 +27,7 @@ export class ColorPickerAreaDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
 
-  /** The fully saturated color at the current hue - the gradient's own corner stop. */
+  /** The fully saturated color at the current hue. */
   public hueColor = computed(() => hueToCssColor(this.colorInput?.picker.hsv().hue ?? 0));
 
   public saturationPercent = computed(() => (this.colorInput?.picker.hsv().saturation ?? 0) * 100);
@@ -57,8 +57,6 @@ export class ColorPickerAreaDirective {
 
     this.commitFromPosition(event.clientX, event.clientY);
 
-    // the surface follows the pointer from the first pixel, so there is no threshold below which
-    // the press is still only a click
     event.preventDefault();
 
     dragGestureFrom(event, this.elementRef.nativeElement, { commitThreshold: 0 })

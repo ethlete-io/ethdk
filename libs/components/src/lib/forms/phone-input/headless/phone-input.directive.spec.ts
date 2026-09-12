@@ -1,5 +1,10 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { expectDescribedByPointsAtErrors } from '../../testing/described-by';
+import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
+import { mountControl } from '../../../testing/control-driver';
+import { flushFrames, latestPane } from '../../../testing/driver-core';
+import { resolveAccessibleName } from '../../testing/accessible-name';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { mountPhoneInput, PhoneInputDriver } from '../../testing/phone-input-driver';
 import { PHONE_INPUT_IMPORTS } from '../phone-input.imports';
@@ -194,6 +199,21 @@ describe('PhoneInputDirective', () => {
     expect(driver.phone.isPlausible()).toBe(true);
   });
 
+  it('names the country trigger with countryLabel, closed and with the panel open', async () => {
+    const trigger = driver.query('.et-phone-input-country-trigger')!;
+
+    expect(resolveAccessibleName(trigger)).toBe('Select country');
+
+    driver.click(trigger);
+    await flushFrames();
+    driver.tick();
+    await flushFrames();
+    driver.tick();
+
+    expect(latestPane()?.querySelector('input[etselectsearch]')).not.toBeNull();
+    expect(resolveAccessibleName(trigger)).toBe('Select country');
+  });
+
   describe('mixed', () => {
     const enterMixed = (raw: string) => {
       driver.host.value.set(raw);
@@ -305,5 +325,29 @@ describe('PhoneInputDirective (contract)', () => {
       clear: () => driver.clearValue(),
       emptyValue: () => '',
     };
+  });
+});
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-label>Phone</et-label>
+      <et-phone-input [(touched)]="touched" [errors]="errors" invalid name="phone" />
+      <et-hint>Include the area code</et-hint>
+    </et-form-field>
+  `,
+  imports: [FORM_FIELD_IMPORTS, PHONE_INPUT_IMPORTS],
+})
+class PhoneInputInFormFieldTestHost {
+  errors = [{ kind: 'required', message: 'Enter a phone number' }];
+
+  touched = signal(true);
+}
+
+describe('phone input support region', () => {
+  it('should describe the phone input by the rendered error', () => {
+    const host = mountControl(PhoneInputInFormFieldTestHost).nativeElement as HTMLElement;
+
+    expectDescribedByPointsAtErrors(host);
   });
 });

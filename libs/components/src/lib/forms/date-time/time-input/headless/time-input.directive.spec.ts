@@ -10,6 +10,7 @@ import { TimePickerDirective } from '../../../../time-picker/headless/time-picke
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { TimeInputFieldDirective } from './time-input-field.directive';
+import { TIME_INPUT_ERROR_CODES } from '../time-input-errors';
 import { TimeInputDirective } from './time-input.directive';
 import { DatePickerDriver, mountDatePicker, typeMasked } from '../../../testing/date-picker-driver';
 import { pressKey, tick } from '../../../../testing/driver-core';
@@ -149,7 +150,6 @@ describe('TimeInputDirective', () => {
 
     pickOption('hour', 9);
 
-    // the hour alone is held by the picker - no minute nobody picked reaches the field
     expect(driver.host.value()).toBeNull();
     expect(driver.control.pickerOpen()).toBe(true);
 
@@ -249,7 +249,6 @@ describe('TimeInputDirective', () => {
       pickOption('minute', 30);
 
       expect(driver.host.mixed()).toBe(false);
-      // replace semantics: the hidden 14:20 does not leak into the picked time
       expect(driver.host.value()).toBe('09:30');
     });
   });
@@ -344,8 +343,6 @@ describe('TimeInputDirective with the opt-in typing mask', () => {
 
 describe('TimeInputDirective commit contract', () => {
   describePickerCommitContract(() => {
-    // a wire format carrying seconds against an HH:mm display is what makes an unedited blur
-    // observable: re-parsing "14:30" would write back a zeroed second
     const driver = mountDatePicker(TimeInputTestHost, TimeInputDirective);
 
     driver.host.valueFormat.set('HH:mm:ss');
@@ -366,5 +363,21 @@ describe('TimeInputDirective commit contract', () => {
         tick();
       },
     };
+  });
+});
+
+@Component({
+  template: `<input etTimeInputField />`,
+  imports: [TimeInputFieldDirective],
+})
+class OrphanTimeInputFieldTestHost {}
+
+describe('TimeInputFieldDirective errors', () => {
+  it('rejects a field outside its host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanTimeInputFieldTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanTimeInputFieldTestHost)).toThrow(
+      `ET${TIME_INPUT_ERROR_CODES.FIELD_OUTSIDE_TIME_INPUT}`,
+    );
   });
 });

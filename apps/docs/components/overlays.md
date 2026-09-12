@@ -264,7 +264,7 @@ The sheet keeps its full size at every snap point - only its offset changes, so 
 
 ### Responsive (transforming) strategies
 
-`strategies` is an array of `{ breakpoint?, strategy }` entries - the controller picks the entry matching the current `min-width` and **switches live on resize without remounting** the content. Breakpoint names come from the app's [viewport config](/core/providers#breakpoint-observer) (Tailwind-style `xs`–`2xl` by default). Presets cover the common pairs:
+`strategies` is an array of `{ breakpoint?, strategy }` entries - the controller picks the entry matching the current `min-width` and **switches live on resize without remounting** the content. Breakpoint names come from the app's [viewport config](/core/providers#breakpoint-observer) (Tailwind-style `xs`–`2xl` by default). An entry without a `breakpoint` is the base one that matches at every width; give the array one, or nothing matches below its smallest breakpoint and the smallest entry is used as a fallback (with a dev-mode warning). An empty array throws [`ET1210`](/components/error-codes#overlay-et12xx). Presets cover the common pairs:
 
 ```ts
 import { transformingBottomSheetToDialogOverlayStrategy } from '@ethlete/components';

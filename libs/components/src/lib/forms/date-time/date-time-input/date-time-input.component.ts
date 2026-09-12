@@ -95,23 +95,19 @@ export class DateTimeInputComponent {
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
 
-  /** The string in effect: this instance's `pickerTriggerLabel`, else the domain's label set. */
   protected resolvedPickerTriggerLabel = computed(
     () => this.pickerTriggerLabel() ?? this.dateTimeLabels().openDateTimePicker,
   );
 
-  /** The string in effect: this instance's `dateTabLabel`, else the domain's label set. */
   protected resolvedDateTabLabel = computed(() => this.dateTabLabel() ?? this.dateTimeLabels().dateTab);
 
-  /** The string in effect: this instance's `timeTabLabel`, else the domain's label set. */
   protected resolvedTimeTabLabel = computed(() => this.timeTabLabel() ?? this.dateTimeLabels().timeTab);
 
-  /** The string in effect: this instance's `dialogLabel`, else the domain's label set. */
   protected resolvedDialogLabel = computed(() => this.dialogLabel() ?? this.dateTimeLabels().chooseDateTime);
 
   /**
    * The second reading shown under the field: the zone the field is in, and the same moment in the
-   * reader's own zone. `null` whenever the two agree - one clock is better than two that match.
+   * reader's own zone. `null` whenever the two agree.
    */
   protected localReadingText = computed(() => {
     const reading = this.dateTimeInput.localReading();
@@ -124,10 +120,8 @@ export class DateTimeInputComponent {
     return this.dateTimeLabels().timeZoneReading(timeZone, reading);
   });
 
-  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  // only while the field is in use - mirrors the select's clear affordance
   protected showClear = computed(
     () =>
       this.clearable() &&
@@ -136,20 +130,17 @@ export class DateTimeInputComponent {
       this.dateTimeInput.interactive(),
   );
 
-  /** Which pane the bottom-sheet tabs show (both panes render side by side on desktop). */
   protected activePane = signal<'date' | 'time'>('date');
 
   /**
-   * Direction of the last pane switch - the incoming pane slides in from the
-   * travel direction, like the calendar's month navigation. `null` while
-   * untouched, so opening the picker does not animate.
+   * Direction of the last pane switch. `null` while untouched, so opening the picker does not
+   * animate.
    */
   protected paneNav = signal<'forward' | 'backward' | null>(null);
 
   private paneAdvanceSpent = signal(false);
 
   constructor() {
-    // every picker open starts back on the calendar pane, without a slide
     effect(() => {
       if (this.dateTimeInput.pickerOpen()) {
         this.activePane.set('date');
@@ -166,9 +157,8 @@ export class DateTimeInputComponent {
   }
 
   /**
-   * A day is only half of a date & time, so the first one picked carries the tabs on to the time
-   * pane - the bottom sheet's version of the desktop panel showing both at once. Once only: after
-   * that the tabs stay where they are put, so going back to correct the day is never interrupted.
+   * The first day picked carries the tabs on to the time pane. Once only: after that the tabs stay
+   * where they are put.
    */
   protected handleDateSelect(date: Date | null) {
     this.dateTimeInput.selectDate(date);

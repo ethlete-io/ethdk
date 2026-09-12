@@ -14,11 +14,6 @@ import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectOptionGroupDirective } from './select-option-group.directive';
 import { SelectDirective } from './select.directive';
 
-/**
- * Placeholder an option's value resolves to while its required `value` input has not been
- * bound yet (projected content whose view has not rendered). Never matches a consumer value,
- * so unbound options simply cannot be selected until their bindings run.
- */
 const UNBOUND_VALUE = /* @__PURE__ */ Symbol('et-select-option-unbound');
 
 @Directive({

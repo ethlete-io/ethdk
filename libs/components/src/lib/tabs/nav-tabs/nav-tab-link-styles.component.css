@@ -15,42 +15,15 @@
     --et-nav-tab-link-padding-inline: var(--et-tab-padding-inline);
     --et-nav-tab-link-padding-block: var(--et-tab-padding-block);
 
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     gap: 8px;
     padding-inline: var(--et-nav-tab-link-padding-inline);
     padding-block: var(--et-nav-tab-link-padding-block);
     text-decoration: none;
-    color: var(--et-surface-interaction-solid, inherit);
     font-size: var(--et-nav-tabs-font-size, inherit);
-    cursor: pointer;
-    position: relative;
-    white-space: nowrap;
-    user-select: none;
-    transition:
-      color 150ms ease,
-      background 150ms ease;
-    outline: none;
-    border-radius: 0.5rem;
-
-    [data-variant='primary'] & {
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    [etIcon] {
-      width: 1.2em;
-      height: 1.2em;
-    }
 
     .et-nav-tab-link__content {
       display: inline-flex;
-      align-items: center;
       gap: inherit;
-      border-radius: 0.5rem;
-      padding: 4px 8px;
-      margin: -4px -8px;
     }
   }
 

@@ -139,7 +139,6 @@ describe('TimeRangeInputDirective', () => {
     driver.clickInPane('.pick-end-time');
 
     expect(driver.host.value()).toEqual({ start: '09:15', end: '21:45' });
-    // one end filled is only half a range - the other is still to come
     expect(driver.control.pickerOpen()).toBe(true);
     expect(driver.control.touched()).toBe(true);
 
@@ -253,7 +252,6 @@ describe('TimeRangeInputDirective mixed state', () => {
       },
       mixedLabel: () => 'Mixed',
       mixedDisplayText: () => driver.field('.start').placeholder,
-      // replace semantics: the resolving commit starts a fresh range - no merge with the hidden end
       commit: () => driver.typeAndBlur('14:30', '.start'),
       committedValue: () => ({ start: '14:30', end: null }),
       assertMasked: () => {
@@ -301,5 +299,21 @@ describe('TimeRangeInputDirective errors', () => {
       const fixture = TestBed.createComponent(DuplicateTimeRangeInputFieldTestHost);
       fixture.detectChanges();
     }).toThrow(`ET${TIME_RANGE_INPUT_ERROR_CODES.DUPLICATE_FIELD}`);
+  });
+});
+
+@Component({
+  template: `<input side="start" etTimeRangeInputField />`,
+  imports: [TimeRangeInputFieldDirective],
+})
+class OrphanTimeRangeInputFieldTestHost {}
+
+describe('TimeRangeInputFieldDirective errors', () => {
+  it('rejects a field outside its host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanTimeRangeInputFieldTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanTimeRangeInputFieldTestHost)).toThrow(
+      `ET${TIME_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_TIME_RANGE_INPUT}`,
+    );
   });
 });

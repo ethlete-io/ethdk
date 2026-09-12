@@ -7,7 +7,6 @@ import { Observable, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { CascaderDataSource, CascaderNode } from '../headless';
 
-// competition → stage → tournament → match, a static tree used by the sync story
 export const TREE: Record<string, CascaderNode<string>[]> = {
   root: [
     { value: 'euro', label: 'UEFA Euro' },
@@ -53,13 +52,11 @@ export const syncSource: CascaderDataSource<string> = {
   loadChildren: (parent) => TREE[parent ? parent.value : 'root'] ?? [],
 };
 
-// same tree, but each level resolves over the wire (Observable with latency)
 export const asyncSource: CascaderDataSource<string> = {
   loadChildren: (parent): Observable<CascaderNode<string>[]> =>
     of(TREE[parent ? parent.value : 'root'] ?? []).pipe(delay(600)),
 };
 
-// flat search over the static tree: a depth-first walk collecting every matching path
 const searchTree = (query: string): CascaderNode<string>[][] => {
   const results: CascaderNode<string>[][] = [];
   const needle = query.toLowerCase();
@@ -81,14 +78,11 @@ const searchTree = (query: string): CascaderNode<string>[][] => {
   return results;
 };
 
-// the sync tree plus a `search` hook - its presence is what enables the panel's search input
 export const searchableSource: CascaderDataSource<string> = {
   loadChildren: syncSource.loadChildren,
   search: (query) => of(searchTree(query)).pipe(delay(400)),
 };
 
-// a generated six-level hierarchy (region → … → player) for the deep-nesting story - deeper
-// than maxVisibleColumns, so older levels collapse into the breadcrumb row
 const DEEP_LEVEL_NAMES = ['Region', 'Country', 'League', 'Club', 'Team', 'Player'];
 
 export const deepSource: CascaderDataSource<string> = {

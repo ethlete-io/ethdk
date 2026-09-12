@@ -283,7 +283,6 @@ describe('formatHsvToNotation', () => {
     expect(formatHsvToNotation(red, { notation })).toBe(expected);
   });
 
-  // hsl() rounds its three channels to integers, so a round trip lands within a channel step
   it('reads back what it wrote in every notation', () => {
     const color = { hue: 220, saturation: 0.8, value: 0.9, alpha: 1 };
     const expected = hsvToRgb(color);

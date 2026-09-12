@@ -18,7 +18,6 @@ import { DateRangePickerInputDirective, DateRangeSide } from './date-range-picke
  * Shared text field for the range picker inputs' two sides (`input[etDateRangeInputField]`,
  * `input[etDateTimeRangeInputField]`): shows the committed side value in the display format, commits
  * typed text on blur/Enter, keeps unparseable text visible, and opens the picker on Alt+ArrowDown.
- * Each side is its own `INPUT_MASK_HOST`, so a typing mask's guide only shows on the focused one.
  *
  * Must be extended by an `@Directive` - subclasses inject their range directive into `rangeInput` and
  * provide `INPUT_MASK_HOST` via `useExisting`.
@@ -58,9 +57,7 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
 
   /**
    * This side's field text as an attached mask sees it (`InputMaskHost.value`):
-   * display-shaped, never containing guide placeholders. Mask edits write it while
-   * typing; every commit resets it to the committed display text (or the kept
-   * unparseable text), which also carries the committed value into a focus.
+   * display-shaped, never containing guide placeholders.
    */
   public value = linkedSignal(() => {
     const rangeInput = this.rangeInput;
@@ -95,9 +92,8 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
       onCleanup(() => rangeInput.unregisterField(side, this));
     });
 
-    // while unfocused the element mirrors the committed side value (or the kept
-    // unparseable text); mid-typing rewrites would fight the caret. An attached
-    // mask owns the element text instead and renders the same mirror itself
+    // mid-typing rewrites would fight the caret, so the element only mirrors while unfocused; an
+    // attached mask owns the element text instead
     effect(() => {
       const rangeInput = this.rangeInput;
 
@@ -112,9 +108,7 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
       }
     });
 
-    // masked typing bypasses handleInput, so mirror the mask-written text into
-    // the side's inputText - hasValue (and the clear affordance) must react like
-    // native typing
+    // masked typing bypasses handleInput, so mirror the mask-written text into the side's inputText
     effect(() => {
       if (!this.maskAttached()) {
         return;
@@ -168,7 +162,6 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
       return '';
     }
 
-    // while mixed both fields render empty and the mixed label shows through the placeholder
     if (rangeInput.mixed()) {
       return rangeInput.resolvedMixedLabel();
     }
@@ -177,7 +170,6 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
   }
 
   protected handleInput() {
-    // the mask reconciles the edit and writes `value` (and thereby `inputText`) itself
     if (this.maskAttached()) {
       return;
     }
@@ -215,8 +207,7 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
     if (event.key === 'Enter') {
       rangeInput.commitSide(this.side(), this.commitText());
 
-      // a successful commit reformats in place (the display effect only runs
-      // unfocused); a mask re-renders the element from the reset `value` instead
+      // the display effect only runs unfocused, so a successful commit reformats in place here
       if (!rangeInput.sideParseError(this.side()) && !this.maskAttached()) {
         this.elementRef.nativeElement.value = rangeInput.displayValue(this.side());
       }
@@ -230,14 +221,12 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
     }
   }
 
-  /** The committed display text, or the unparseable text this side is holding on to. */
   private mirrorText(rangeInput: DateRangePickerInputDirective) {
     const side = this.side();
 
     return rangeInput.sideParseError(side) ? rangeInput.inputText(side) : rangeInput.displayValue(side);
   }
 
-  /** What a blur/Enter commit parses - the mask's value, since the element text may hold guide placeholders. */
   private commitText() {
     return this.maskAttached() ? this.value() : this.elementRef.nativeElement.value;
   }

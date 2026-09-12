@@ -19,7 +19,6 @@ export type SchedulerBadgeLocationConfig = SchedulerFeatureConfig;
 export class SchedulerBadgeLocationDirective {
   private host = injectSchedulerFeatureHost('etSchedulerBadgeLocation');
 
-  /** See {@link SchedulerBadgeLocationConfig}. */
   public config = input({} as SchedulerBadgeLocationConfig, {
     alias: 'etSchedulerBadgeLocation',
     transform: schedulerFeatureConfig<SchedulerBadgeLocationConfig>,

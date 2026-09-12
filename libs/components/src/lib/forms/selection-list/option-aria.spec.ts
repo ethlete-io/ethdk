@@ -25,11 +25,6 @@ import { RADIO_GROUP_IMPORTS, SEGMENTED_BUTTON_IMPORTS } from './selection-list.
 })
 class OptionAriaTestHost {}
 
-/**
- * An option pins its accessible name to its label span so a projected `<et-description>` cannot
- * fold into the name. That only works when the two ids the mechanism depends on exist: the label
- * span's, and the description's - each one missing loses the text it stands for entirely.
- */
 describe('selection option aria', () => {
   const mount = () => {
     TestBed.configureTestingModule({

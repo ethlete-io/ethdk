@@ -1,4 +1,4 @@
-import { Directive, afterNextRender, inject } from '@angular/core';
+import { Directive, inject } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { INPUT_MASK_HOST } from '../../../masked-input/headless/input-mask-host';
 import { DateRangePickerInputFieldDirective } from '../../internals/date-range-picker-input-field.directive';
@@ -8,9 +8,7 @@ import { DateRangeInputDirective } from './date-range-input.directive';
 /**
  * One side of a date range input: shows the committed side value in the
  * display format, commits typed text strictly on blur/Enter, keeps
- * unparseable text visible, and opens the picker on Alt+ArrowDown. Hosts the
- * range input's opt-in typing mask (`INPUT_MASK_HOST`) - each side is its own
- * mask host.
+ * unparseable text visible, and opens the picker on Alt+ArrowDown.
  */
 @Directive({
   selector: 'input[etDateRangeInputField]',
@@ -24,16 +22,12 @@ export class DateRangeInputFieldDirective extends DateRangePickerInputFieldDirec
   constructor() {
     super();
 
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.rangeInput) {
-          throw new RuntimeError(
-            DATE_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_RANGE_INPUT,
-            '[DateRangeInputFieldDirective] etDateRangeInputField must be placed inside an [etDateRangeInput] element.',
-            { element: this.elementRef.nativeElement },
-          );
-        }
-      });
+    if (ngDevMode && !this.rangeInput) {
+      throw new RuntimeError(
+        DATE_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_RANGE_INPUT,
+        '[DateRangeInputFieldDirective] etDateRangeInputField must be placed inside an [etDateRangeInput] element.',
+        { element: this.elementRef.nativeElement },
+      );
     }
   }
 

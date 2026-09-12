@@ -19,16 +19,15 @@
     </div>
 
     <div class="et-form-field-affix et-form-field-suffix">
-      <!-- Before the consumer's suffix: a control's own clear / picker-trigger / reveal buttons hug
-       the field they belong to, and nothing may come between them and it. -->
+      <!-- Before the consumer's suffix: nothing may come between a control's own affordances and
+       the field they belong to. -->
       @if (formFieldDir.registeredControlSuffix(); as controlSuffix) {
         <ng-template [ngTemplateOutlet]="controlSuffix.templateRef" />
       }
 
       <ng-content select="[etInputSuffix]" />
 
-      <!-- After the consumer's own suffix, never instead of it — a pending async validator must not
-       displace a clear button or a reveal toggle. -->
+      <!-- After the consumer's own suffix, never instead of it. -->
       @if (showBusySpinner()) {
         <et-spinner class="et-form-field-busy-spinner" diameter="16" strokeWidth="2" />
       }
@@ -99,10 +98,8 @@
         }
       </div>
 
-      <!-- Persistent, and outside the swapping stack: a reader who just crossed the limit needs the
-       error and the count that caused it at the same time. Carries the error theme so the counter's
-       own over-limit styling can reach the semantic error color even before the field shows an
-       error (an untouched field is not yet in its error state). -->
+      <!-- Carries the error theme so the counter's own over-limit styling can reach the semantic
+       error color even before the field shows an error. -->
       <div
         #counterContent
         [etProvideColor]="support.errorColorTheme"

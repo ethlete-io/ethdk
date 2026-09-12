@@ -8,6 +8,7 @@ import { CHECKBOX_IMPORTS } from '../checkbox/checkbox.imports';
 import { FORM_FIELD_CONTROL_TYPES } from '../form-field/headless';
 import { warn } from '../form-field/headless/field-warnings';
 import { SelectionCardControlPosition } from '../selection-card.types';
+import { expectDescribedByPointsAtErrors, expectDescribedByResolves } from '../testing/described-by';
 import { mountChoiceField } from '../testing/choice-field-driver';
 import { ChoiceFieldVariant } from './choice-field.component';
 import { CHOICE_FIELD_IMPORTS } from './choice-field.imports';
@@ -20,16 +21,24 @@ const choiceFieldCss = readFileSync(
 );
 
 describe('ChoiceFieldComponent styles', () => {
-  it('drives the support region transition from the duration token', () => {
-    expect(choiceFieldCss).toContain('transition: block-size var(--et-choice-field-support-duration) ease');
+  it('feeds the shared support region from its own public tokens', () => {
+    expect(choiceFieldCss).toContain('--et-form-support-duration: var(--et-choice-field-support-duration)');
+    expect(choiceFieldCss).toContain('--et-form-support-offset: var(--et-choice-field-support-offset)');
+    expect(choiceFieldCss).toContain('--et-form-support-error-font-size: var(--et-choice-field-error-font-size)');
+    expect(choiceFieldCss).toContain('--et-form-support-warning-font-size: var(--et-choice-field-warning-font-size)');
+    expect(choiceFieldCss).toContain('--et-form-support-hint-font-size: var(--et-choice-field-hint-font-size)');
   });
 
-  it('collapses the support region motion under prefers-reduced-motion', () => {
-    const reduced = /@media \(prefers-reduced-motion: reduce\) \{([^}]*)\}/.exec(choiceFieldCss)?.[1];
+  it('indents the support text past the leading control, and not on a card', () => {
+    expect(choiceFieldCss).toContain(
+      'padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px))',
+    );
+    const cardBlock = choiceFieldCss.slice(choiceFieldCss.indexOf("&:where([data-variant='card'])"));
 
-    expect(reduced).toBeDefined();
-    expect(reduced).toContain('--et-choice-field-support-duration: 1ms');
-    expect(reduced).toContain('--et-choice-field-support-offset: 0px');
+    expect(choiceFieldCss).toContain("&:where([data-variant='card'])");
+    expect(cardBlock).toContain('.et-form-support-errors');
+    expect(cardBlock).toContain('.et-form-support-warnings');
+    expect(cardBlock).toContain('.et-form-support-hint');
   });
 });
 
@@ -122,31 +131,48 @@ describe('ChoiceFieldComponent', () => {
     expect(driver.labelArea().textContent?.trim()).toBe('Accept terms');
   });
 
-  it('renders support transitions in severity order', () => {
+  it('shows one support severity at a time', () => {
     const driver = mountChoiceField(ChoiceFieldSupportTestHost);
 
-    const warning = () => driver.query('.et-choice-field-warnings');
-    const hint = () => driver.query('.et-choice-field-hint');
-    const error = () => driver.query('.et-choice-field-errors');
+    const warning = () => driver.query('.et-form-support-warnings');
+    const hint = () => driver.query('.et-form-support-hint');
+    const error = () => driver.query('.et-form-support-errors');
 
-    expect(warning()?.getAttribute('data-direction')).toBe('from-below');
-    expect(warning()?.getAttribute('data-state')).toBe('active');
+    expect(warning()?.getAttribute('data-active')).toBe('true');
+    expect(hint()).toBeNull();
 
     driver.host.model.set({ acceptTerms: true });
     driver.detectChanges();
 
-    expect(hint()?.getAttribute('data-direction')).toBe('from-above');
-    expect(hint()?.getAttribute('data-state')).toBe('active');
-    expect(warning()?.getAttribute('data-direction')).toBe('to-below');
-    expect(warning()?.getAttribute('data-state')).toBe('leaving');
+    expect(hint()?.getAttribute('data-active')).toBe('true');
+    expect(warning()?.getAttribute('data-active')).toBeNull();
 
     driver.host.model.set({ acceptTerms: false });
     driver.host.choiceForm.acceptTerms().markAsTouched();
     driver.detectChanges();
 
-    expect(error()?.getAttribute('data-direction')).toBe('from-below');
-    expect(error()?.getAttribute('data-state')).toBe('active');
-    expect(hint()?.getAttribute('data-direction')).toBe('to-above');
-    expect(hint()?.getAttribute('data-state')).toBe('leaving');
+    expect(error()?.getAttribute('data-active')).toBe('true');
+    expect(hint()?.getAttribute('data-active')).toBeNull();
+  });
+
+  it('renders the shared support region and keeps aria-describedby resolving', () => {
+    const driver = mountChoiceField(ChoiceFieldSupportTestHost);
+
+    expect(driver.query('.et-form-support')).not.toBeNull();
+
+    driver.host.model.set({ acceptTerms: true });
+    driver.detectChanges();
+
+    expect(driver.query('.et-form-support-hint')).not.toBeNull();
+
+    for (const described of driver.queryAll('[aria-describedby]')) {
+      expectDescribedByResolves(described);
+    }
+
+    driver.host.model.set({ acceptTerms: false });
+    driver.host.choiceForm.acceptTerms().markAsTouched();
+    driver.detectChanges();
+
+    expectDescribedByPointsAtErrors(driver.choiceFieldEl());
   });
 });

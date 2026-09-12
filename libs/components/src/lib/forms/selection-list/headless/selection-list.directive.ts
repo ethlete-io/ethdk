@@ -63,11 +63,7 @@ export class SelectionListDirective
     value: this.value,
     multiple: this.multiple,
     disabled: this.disabled,
-    // every option is rendered, so a destroyed checked option is genuinely gone - drop its
-    // stranded value from the model (the select family renders lazily and must not prune)
     pruneValueOnUnregister: true,
-    // masking + first-commit-replaces live in the selection state, so aria-checked and all
-    // styled visuals (which key off the options' checked state) follow automatically
     mixed: this.mixed,
   });
 

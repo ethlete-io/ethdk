@@ -29,10 +29,7 @@ export const TEXT_FIELD_CONTROL_INPUTS = [
 
 /**
  * Shared wiring for the native-input-backed controls that render inside the text-field shell
- * (`et-input`, `et-number-input`, `et-password-input`, `et-color-input`, `et-textarea`). It owns
- * the pieces those directives copy-pasted verbatim: the standard form-control inputs, the
- * form-field registration, the `describedBy`/`focused`/`focusTarget`/`labelId` plumbing, the
- * `touched && invalid` error gate, and the focus-target `focus()`/`activate()`.
+ * (`et-input`, `et-number-input`, `et-password-input`, `et-color-input`, `et-textarea`).
  *
  * Subclasses add their own `value` model, `controlType`, `hasValue`, and any control-specific
  * surface (placeholder, native element wiring, etc.). Must be extended by an `@Directive` - Angular
@@ -69,7 +66,7 @@ export abstract class TextFieldControlDirective extends AccessibleNameControlDir
   /**
    * Non-blocking advisories to show under the field, for a control that is not bound to a
    * signal-forms field (which would carry them through `warn()` rules instead). A bare string is
-   * one advisory; `null` is none. They never reach validity - the field stays valid and submittable.
+   * one advisory; `null` is none. They never reach validity.
    */
   public warnings = input<FieldWarningResult>(null);
   public required = input(false, { transform: booleanAttribute });
@@ -79,15 +76,14 @@ export abstract class TextFieldControlDirective extends AccessibleNameControlDir
    * The bound field's `maxLength()` limit, bound automatically by signal forms because this input
    * exists - so `<et-counter />` needs no `[max]` for a schema-validated field.
    *
-   * Deliberately **not** forwarded to the native `maxlength` attribute: hard-truncating typed input
-   * would stop the validator from ever reporting the over-limit error the counter exists to surface.
-   * Set `maxlength` yourself on the control if you want the browser to clamp instead.
+   * Deliberately **not** forwarded to the native `maxlength` attribute. Set `maxlength` yourself on
+   * the control if you want the browser to clamp instead.
    */
   public maxLength = input<number | undefined>(undefined);
 
   /**
    * True while an async validator is in flight for the bound field - bound automatically by signal
-   * forms because this input exists. The field shell surfaces it as its busy state.
+   * forms because this input exists.
    */
   public pending = input(false, { transform: booleanAttribute });
 

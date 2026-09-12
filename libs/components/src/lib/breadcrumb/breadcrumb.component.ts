@@ -10,10 +10,10 @@ import { BreadcrumbDirective } from './headless';
  *
  * Add `etBreadcrumbCollapse` from `BREADCRUMB_COLLAPSE_IMPORTS` and the middle crumbs move into an
  * overflow control when the trail runs out of room (first and last always stay); without it the trail is
- * clipped, and the overlay runtime that control needs stays out of your bundle.
+ * clipped.
  *
- * The crumbs are `<ng-template etBreadcrumbItemTemplate>`s you declare - see the headless directive for
- * why. For a routed app, don't place this yourself: let each view contribute an
+ * The crumbs are `<ng-template etBreadcrumbItemTemplate>`s you declare. For a routed app, don't place
+ * this yourself: let each view contribute an
  * `<ng-template etBreadcrumbSegment>` and put one `<et-breadcrumb-outlet>` in the shell, which renders
  * the composed trail through this component.
  *

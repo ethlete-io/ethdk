@@ -18,8 +18,8 @@ const client = createQueryClient({ baseUrl: MOCK_UPLOAD_BASE_URL, name: 'dropzon
 const uploadMedia = createPostQuery(client)<UploadMediaArgs>('/upload', { reportProgress: true });
 const uploadMediaFlaky = createPostQuery(client)<UploadMediaArgs>('/upload-flaky', { reportProgress: true });
 
-// Legacy v2 counterpart. The legacy client issues raw XHRs (bypassing Angular interceptors), so the
-// demo drives it through the built-in `mock` mechanism instead of the story's HTTP interceptor.
+// the legacy client issues raw XHRs (bypassing Angular interceptors), so the demo drives it
+// through the built-in `mock` mechanism instead of the story's HTTP interceptor
 const v2Client = new V2QueryClient({ baseRoute: MOCK_UPLOAD_BASE_URL });
 const uploadMediaV2 = v2Client.post({
   route: '/upload',

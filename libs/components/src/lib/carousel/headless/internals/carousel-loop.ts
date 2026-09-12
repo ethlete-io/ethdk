@@ -7,9 +7,7 @@ export type CarouselLoopConfig = {
   cloneCount: Signal<number>;
   count: Signal<number>;
   domCount: Signal<number>;
-  /** Where a slide comes to rest, which is what a scroll offset has to be read against. */
   slideAlign: Signal<CarouselSlideAlign>;
-  /** The current real slide, so re-cloning (a breakpoint change) lands back on it. */
   activeIndex: Signal<number>;
 };
 
@@ -17,11 +15,8 @@ type LoopGeometry = {
   scrollable: ScrollableDirective;
   container: HTMLElement;
   horizontal: boolean;
-  /** The track's children, clones included, so a scroll offset can be read as a position among them. */
   children: HTMLElement[];
-  /** The real slides' combined length, gaps included - `0` when there are no clones, so no seam to cross. */
   trackLength: number;
-  /** The scroll offset at which a child sits where `slideAlign` says it should. */
   restingOffsetOf: (child: HTMLElement) => number;
 };
 
@@ -89,8 +84,6 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
   // because by then the DOM has already changed under the old index.
   let lastRealIndex = 0;
 
-  // Which `cloneCount:count` shape has been aligned, so the carousel is put onto a real slide once per
-  // shape rather than every time the children signal fires.
   let alignedShape: string | null = null;
 
   const readGeometry = (): LoopGeometry | null => {
@@ -108,16 +101,11 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
 
     const horizontal = scrollable.direction() !== 'vertical';
 
-    // Centred slides rest half a viewport earlier than start-aligned ones, and by a different amount per
-    // slide when `itemSize="auto"` makes them different widths - so it is a function of the child, not a
-    // constant.
     const viewport = horizontal ? scrollContainer.clientWidth : scrollContainer.clientHeight;
     const centred = config.slideAlign() === 'center';
     const restingOffsetOf = (child: HTMLElement) =>
       centred ? offsetOf(child, horizontal) - (viewport - sizeOf(child, horizontal)) / 2 : offsetOf(child, horizontal);
 
-    // Without clones there is no seam to cross, but the resting child is still worth knowing - it is how the
-    // carousel tells its own navigation's arrival apart from any other settling of the scroll.
     const firstReal = children[cloneCount];
     const firstTrailing = children[cloneCount + count];
     const trackLength =
@@ -135,14 +123,6 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
     };
   };
 
-  /**
-   * The state of the track at rest, read in one pass.
-   *
-   * One pass matters because the caller needs two things from it - which child the track landed on, and then
-   * whether to cross the seam - and every read of it is a forced layout plus an `offsetLeft` for every child,
-   * clones included. Asking twice measured the same unchanged geometry twice, at the one moment in a gesture
-   * where the main thread is least free: the frame the scrolling stops.
-   */
   const readSettled = () => {
     const geometry = readGeometry();
 
@@ -151,16 +131,11 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
     const resting = restingChildIndex(geometry);
 
     return {
-      /** Which child of the track, clones included, the scroll offset is nearest. */
       resting,
 
       /**
        * Shift the scroll offset a whole track's length if it has come to rest in the clones - the one way to
        * cross the seam on a native scroller without showing it. Never call it mid-scroll.
-       *
-       * One shift is always enough: the clones on either side never span more than a full track, so adding or
-       * subtracting one lands back inside the real run. And it lands on the *same picture*: the track repeats
-       * every `count` slides, so a child and the clone a track away are the same slide at the same size.
        */
       crossSeam: () => {
         const { container: scrollContainer, horizontal, trackLength } = geometry;
@@ -192,9 +167,6 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
     if (activeIndex >= 0) lastRealIndex = activeIndex;
   });
 
-  // A looping track starts scrolled to its first *clone*, which is not where slide 1 is - so the carousel
-  // has to be put onto the real run before it is seen, and put back there whenever the clones are rebuilt
-  // (a breakpoint change alters how many there are).
   effect(() => {
     const cloneCount = config.cloneCount();
     const count = config.count();
@@ -221,8 +193,6 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
       const geometry = readGeometry();
       const target = geometry?.children[cloneCount + Math.min(lastRealIndex, count - 1)];
 
-      // No measurable track length with clones present means the slides have no layout yet - every offset
-      // reads as 0, so there is no resting place to put the carousel on.
       if (!geometry || !geometry.trackLength || !target) return;
 
       scrollTo(geometry, geometry.restingOffsetOf(target));

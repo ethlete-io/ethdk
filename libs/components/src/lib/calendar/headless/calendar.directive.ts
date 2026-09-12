@@ -55,14 +55,11 @@ import {
 export type { CalendarInterval, CalendarPrecision, CalendarView } from './internals/calendar-view';
 export type { CalendarRange, CalendarRangeSelectionStrategy } from './calendar-range-strategy';
 export type { CalendarBandPosition, CalendarSelectionFlags } from './internals/calendar-selection';
-// public because a control that writes dates at a precision needs the same normalization the
-// calendar applies - the date inputs use it to make a typed month and a picked month one value
 export { startOfCalendarUnit } from './internals/calendar-view';
 
 /**
  * How much a calendar can hold: one date, a range, or any number of unrelated ones. Each mode reads
- * and writes its own model - {@link CalendarDirective.value}, `rangeValue`, `multipleValue` - so
- * switching mode never has to reinterpret the other's value.
+ * and writes its own model - {@link CalendarDirective.value}, `rangeValue`, `multipleValue`.
  */
 export type CalendarMode = 'single' | 'range' | 'multiple';
 
@@ -315,9 +312,7 @@ export class CalendarDirective {
   public hoveredDate = signal<Date | null>(null);
 
   /**
-   * The grid DOM focus is in, or `null` while focus is outside all of them. Identity only - a grid
-   * claims it on `focusin` and hands it back on `focusout`, and nothing here reads anything off it
-   * beyond whether keyboard focus is real.
+   * The grid DOM focus is in, or `null` while focus is outside all of them.
    *
    * @internal
    */
@@ -367,7 +362,6 @@ export class CalendarDirective {
     return format(this.visibleMonth(), 'LLLL yyyy', locale ? { locale } : undefined);
   });
 
-  /** Reused per coarse cell, so the day scan reads the bounds and the filter from one place. */
   private availability = computed<CalendarAvailability>(() => ({
     min: this.min(),
     max: this.max(),
@@ -375,8 +369,7 @@ export class CalendarDirective {
   }));
 
   /**
-   * Every month on show, first to last - one unless {@link monthsShown} says otherwise. One selection
-   * reader serves all of them, which is what carries a range band across the seam between two months.
+   * Every month on show, first to last - one unless {@link monthsShown} says otherwise.
    */
   public monthPages = computed<CalendarMonthPage[]>(() => {
     const firstMonth = this.visibleMonth();
@@ -418,10 +411,7 @@ export class CalendarDirective {
 
   /**
    * The week number of each row of {@link weeks}, by the same index - every month on show carries its
-   * own on {@link monthPages}. Localized rather than always ISO: which week is the year's first depends
-   * on the locale's `firstWeekContainsDate`, and the rows themselves start on
-   * {@link effectiveFirstDayOfWeek}, so the numbering has to follow both or it would name rows the
-   * calendar is not showing.
+   * own on {@link monthPages}.
    */
   public weekNumbers = computed<number[]>(() => this.monthPages()[0]?.weekNumbers ?? []);
 
@@ -453,8 +443,6 @@ export class CalendarDirective {
           return this.visibleMonthLabel();
         }
 
-        // "July – August 2026" while one year covers the span, "December 2026 – January 2027" once it
-        // does not: naming the year twice for two months of the same one is noise
         return isSameYear(first, last)
           ? `${format(first, 'LLLL', options)} – ${format(last, 'LLLL yyyy', options)}`
           : `${format(first, 'LLLL yyyy', options)} – ${format(last, 'LLLL yyyy', options)}`;
@@ -526,21 +514,13 @@ export class CalendarDirective {
    */
   public canZoomOut = computed(() => this.view() !== 'multiYear');
 
-  /** The strategy in play: the consumer's, else the calendar's own rule. */
   private effectiveRangeStrategy = computed(() => this.rangeSelectionStrategy() ?? DEFAULT_CALENDAR_RANGE_STRATEGY);
 
-  /**
-   * What the band should promise while the reader is only hovering (or has moved keyboard focus).
-   * A strategy that does not say gets what its own `select` would produce, which is the honest
-   * default: the preview shows what the pick would do.
-   */
   private previewRange = computed<CalendarRange>(() => {
     if (this.mode() !== 'range' || this.view() !== this.selectionView()) {
       return { start: null, end: null };
     }
 
-    // the roving target exists from first render, so it may only anchor a preview once focus is
-    // really in a grid - otherwise a strategy without a `preview` bands an untouched calendar
     const at = this.hoveredDate() ?? (this.focusedGrid() === null ? null : this.focusedDate());
 
     if (at === null) {
@@ -724,11 +704,6 @@ export class CalendarDirective {
     this.moveFocus(target);
   }
 
-  /**
-   * Reads how a cell relates to the selection, comparing at the unit the given view's cells hold.
-   * One implementation for all three grids, which is what makes a month- or year-precision range
-   * band its own cells.
-   */
   private selectionReader(view: CalendarView) {
     return createCalendarSelectionReader({
       mode: this.mode(),
@@ -744,12 +719,6 @@ export class CalendarDirective {
     });
   }
 
-  /**
-   * Writes a pick, whatever unit it names. Range mode: the first pick starts the range, a
-   * later-or-equal second completes it, an earlier one restarts it - compared at the precision's
-   * unit, so picking the range's own start month again completes a one-month range rather than
-   * restarting it.
-   */
   private commitSelection(date: Date) {
     const precision = this.precision();
     const unitStart = startOfCalendarUnit(date, precision);
@@ -771,7 +740,6 @@ export class CalendarDirective {
 
     const current = this.rangeValue();
     const next = this.effectiveRangeStrategy().select(unitStart, current);
-    // a strategy works in days; the calendar's precision is what the value has to land on
     const resolved = {
       start: next.start === null ? null : startOfCalendarUnit(next.start, precision),
       end: next.end === null ? null : startOfCalendarUnit(next.end, precision),
@@ -784,11 +752,6 @@ export class CalendarDirective {
     }
   }
 
-  /**
-   * Adds a date to the `multiple` set, or takes it out again when it is already in - a second pick of
-   * the same cell is how a reader unpicks it. Kept ascending, so a consumer never has to sort by hand
-   * and the calendar's own anchor is the earliest date.
-   */
   private toggleMultiple(unitStart: Date) {
     const isSameUnit = CALENDAR_UNIT_IS_SAME[this.precision()];
     const current = this.multipleValue();
@@ -803,7 +766,6 @@ export class CalendarDirective {
     this.multipleValue.set([...current, unitStart].sort((left, right) => left.getTime() - right.getTime()));
   }
 
-  /** `dateClass`'s classes for one cell, normalized to a list. `null` when there is no hook. */
   private resolveCellClasses(date: Date, view: CalendarView) {
     const classes = this.dateClass()?.(date, view) ?? null;
 
@@ -814,7 +776,6 @@ export class CalendarDirective {
     return Array.isArray(classes) ? classes : [classes];
   }
 
-  /** Moves the visible unit by `step` of whatever the current view pages by, keeping the month within a year. */
   private stepUnit(step: 1 | -1) {
     const month = this.visibleMonth();
 
@@ -828,10 +789,6 @@ export class CalendarDirective {
     }
   }
 
-  /**
-   * The unit one step away in the current view - what the nav guards test against the bounds. With
-   * several months on show, a step off the end leaves from the last of them, not the first.
-   */
   private adjacentUnit(step: 1 | -1) {
     const month = this.visibleMonth();
 
@@ -855,9 +812,6 @@ export class CalendarDirective {
   private moveFocus(date: Date) {
     const day = startOfDay(date);
 
-    // The span follows the roving focus out of itself - in every view, since the focused date stays a
-    // full date and only the step size differs. Where several months are on show it shifts by as little
-    // as it takes to cover the new focus, so the reader keeps the months either side of it.
     if (!this.isInVisibleUnit(day)) {
       const month = startOfMonth(day);
 
@@ -871,7 +825,6 @@ export class CalendarDirective {
     this.focusedDate.set(day);
   }
 
-  /** Whether a date falls inside what the current view is showing - the whole span in the day grid. */
   private isInVisibleUnit(date: Date) {
     switch (this.view()) {
       case 'year':

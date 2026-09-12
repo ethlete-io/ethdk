@@ -1,7 +1,7 @@
 import { resolveCalendarKeyboardDate } from './calendar-keyboard';
 import { CalendarWeekStartsOn } from './calendar-month';
 
-const FOCUSED = new Date(2026, 6, 16); // Thursday
+const FOCUSED = new Date(2026, 6, 16);
 
 const resolve = (key: string, shiftKey = false, weekStartsOn: CalendarWeekStartsOn = 1) =>
   resolveCalendarKeyboardDate(key, { shiftKey, focusedDate: FOCUSED, weekStartsOn });

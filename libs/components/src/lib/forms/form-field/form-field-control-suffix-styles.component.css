@@ -52,11 +52,8 @@
     margin: 0;
     cursor: pointer;
     appearance: none;
-    /* no double-tap-zoom wait on touch — the picker opens on the first tap */
     touch-action: manipulation;
 
-    /* invisible hit-area extension — the icon-sized box alone is far below
-       a comfortable tap target */
     &::after {
       content: '';
       position: absolute;
@@ -85,11 +82,7 @@
     }
   }
 
-  /* A readonly field's suffix affordances are inert: the picker cannot open and the value cannot be
-     cleared. `not-allowed` is the disabled cursor and would say the field is broken, so readonly
-     keeps the plain arrow, answers no hover, and holds the muted colour - a date control marks its
-     own trigger `disabled` while readonly, and the subtle `:disabled` colour would dim it alone.
-     Placed after both blocks above so the equal-weight `:disabled` / `:hover` rules lose on source
+  /* Placed after both blocks above so the equal-weight `:disabled` / `:hover` rules lose on source
      order; the second selector is the same rule at one class more, to outweigh the field shell's
      `.et-form-field-affix button { cursor: pointer }`. */
   :where([data-readonly]:not([data-disabled])) :is(.et-input-picker-trigger, .et-input-clear),

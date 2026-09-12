@@ -90,7 +90,7 @@ competitions = cascaderFromQuery({
 });
 ```
 
-Call it from a field initializer / constructor (injection context) - the same place you'd create a query - and bind the result to `[dataSource]`. `args` builds the request for a `parent` (the root when `null`; return `null` to skip and show the level as empty), `toNodes` maps the response to the level's nodes. The optional `search` block wires the [flat search](#flat-search) the same way (`toResults` maps to root → match path chains) and debounces requests (`debounceTime`, default 300ms; `minQueryLength`, default 1). A failed request surfaces as the column's (or the result list's) error row with **Retry** - the text comes from `toErrorMessage` (default: the response's first error message). A `resolvePath` implementation passes straight through to the data source.
+Call it from a field initializer / constructor (injection context) - the same place you'd create a query - and bind the result to `[dataSource]`. `args` builds the request for a `parent` (the root when `null`; return `null` to skip and show the level as empty), `toNodes(response, parent)` maps the response to the level's nodes. The optional `search` block wires the [flat search](#flat-search) the same way (`toResults` maps to root → match path chains) and debounces requests (`debounceTime`, default 300ms; `minQueryLength`, default 1). A failed request surfaces as the column's (or the result list's) error row with **Retry** - the text comes from `toErrorMessage` (default: the response's first error message). A `resolvePath` implementation passes straight through to the data source.
 
 ## Multi-select
 
@@ -130,10 +130,12 @@ Treat `mixed` as explicitly controlled state. Updating the raw form value from a
 
 ## Options
 
-On `et-cascader` (forwarded from the headless `[etCascader]` directive):
+On `et-cascader` (forwarded from the headless `[etCascader]` directive), plus the standard form-field contract set (`disabled`, `readonly`, `invalid`, `errors`, `required`, `name`, `touched`):
 
 | Input               | Type                            | Default  | Description                                                                                                                                                                            |
 | ------------------- | ------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`             | `T \| T[] \| null`              | `null`   | The committed node's value (a `T[]` with [`multiple`](#multi-select)). Two-way bindable.                                                                                               |
+| `open`              | `boolean`                       | `false`  | Whether the panel is open. Two-way bindable.                                                                                                                                           |
 | `dataSource`        | `CascaderDataSource<T> \| null` | `null`   | The hierarchy to browse (required to open).                                                                                                                                            |
 | `multiple`          | `boolean`                       | `false`  | [Multi-select](#multi-select): activations toggle values, the form value is a `T[]`.                                                                                                   |
 | `selectableLevels`  | `'leaf' \| 'any'`               | `'leaf'` | `'leaf'` commits only terminal nodes; `'any'` also commits intermediate branches (see below).                                                                                          |
@@ -151,9 +153,15 @@ On `et-cascader` (forwarded from the headless `[etCascader]` directive):
 | `aria-label`        | `string \| null`                | `null`   | Names the trigger when no `et-label` is projected.                                                                                                                                     |
 | `aria-labelledby`   | `string \| null`                | `null`   | Ids naming the trigger. Takes precedence over a projected `et-label`.                                                                                                                  |
 
-¹ `null` falls through to the domain's label set - [`FORM_FIELD_LABELS.mixed`](/components/localization) for `mixedLabel`, [`CASCADER_LABELS`](/components/localization) for `searchPlaceholder`, `backLabel` and the panel's loading/empty/retry states.
+¹ `null` falls through to the domain's label set - [`FORM_FIELD_LABELS.mixed`](/components/localization) for `mixedLabel`, [`CASCADER_LABELS`](/components/localization) for `searchPlaceholder`, `backLabel` and the panel's loading/empty/retry states, all overridable for a subtree with `provideCascaderLabels({ … })`.
 
-The `value` model is the selected node's `value` (`T | null`; a `T[]` with [`multiple`](#multi-select)). The full chosen chain is exposed as `path` (`CascaderNode<T>[]`) and `pathValue` (`T[]`) computeds, and the trigger shows the breadcrumb (`Euro / Knockout stage / Final`) - or the joined labels in multi mode.
+| Output       | Payload   | Emitted when                                                  |
+| ------------ | --------- | ------------------------------------------------------------- |
+| `afterOpen`  | `void`    | The panel (or bottom sheet) has finished mounting.            |
+| `afterClose` | `void`    | The panel has finished closing.                               |
+| `openChange` | `boolean` | The panel opens or closes (the `open` model's change output). |
+
+The full chosen chain is exposed as `path` (a `WritableSignal<CascaderNode<T>[]>`) and the derived `pathValue` (`T[]`) computed, and the trigger shows the breadcrumb (`Euro / Knockout stage / Final`) - or the joined labels in multi mode.
 
 ## Selectable levels
 
@@ -219,6 +227,15 @@ For [flat search](#flat-search), place an `input[etCascaderSearch]` in the surfa
 } }
 ```
 
+`[etCascaderTrigger]`, `[etCascaderSurface]` and `[etCascaderSearch]` take no inputs. The rest:
+
+| Directive                  | Input              | Type                | Description                                                   |
+| -------------------------- | ------------------ | ------------------- | ------------------------------------------------------------- |
+| `[etCascaderColumn]`       | `etCascaderColumn` | `number`            | Required. The column's zero-based level - `0` shows the root. |
+| `[etCascaderNode]`         | `node`             | `CascaderNode<T>`   | Required. The node this element represents.                   |
+| `[etCascaderSearchOption]` | `path`             | `CascaderNode<T>[]` | Required. The root → match chain this result represents.      |
+| `[etCascaderSearchOption]` | `index`            | `number`            | Required. The result's position in the flat list.             |
+
 ## Accessibility
 
 - The trigger is a `role="combobox"` with `aria-haspopup="tree"`, `aria-expanded`, and `aria-controls` pointing at the open tree panel; the panel is a `role="tree"` of `role="group"` columns and `role="treeitem"` nodes carrying `aria-level`, `aria-selected`, and `aria-expanded` on branches.
@@ -249,6 +266,7 @@ Public design tokens:
 | `--et-cascader-column-inline-size`   | `220px` | Width of one Miller column                                                                                                                |
 | `--et-cascader-panel-max-block-size` | `320px` | Max height of the panel/columns; capped further by the space next to the field ([as with the select](/components/select#panel-placement)) |
 | `--et-cascader-node-height`          | `36px`  | Min height of a node row                                                                                                                  |
+| `--et-cascader-back-slot`            | `4em`   | Room the bottom sheet's title shifts by to clear the back control (font-relative, so a tiny root font size can't collapse it)             |
 
 ## Scope
 

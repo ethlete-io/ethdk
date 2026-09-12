@@ -50,9 +50,8 @@
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    /* offscreen options skip layout and paint entirely — this is what keeps panels with
-       thousands of options scrollable. The intrinsic size must stay 0: it sizes the content box, so
-       a row height here stacks on top of a consumer's padding and the panel opens too tall. */
+    /* The intrinsic size must stay 0: it sizes the content box, so a row height here stacks on
+       top of a consumer's padding and the panel opens too tall. */
     content-visibility: auto;
     contain-intrinsic-block-size: auto 0;
     transition:
@@ -60,9 +59,6 @@
       color 120ms ease,
       opacity 120ms ease;
 
-    /* a pointer-set active option only highlights while actually hovered (leaving the list
-       drops the highlight, like in the menu); a keyboard-set one stays visible without hover —
-       options never hold DOM focus, so :focus-visible can't do this job here */
     &:where([data-active][data-active-source='keyboard']) {
       background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
     }
@@ -117,9 +113,6 @@
       min-inline-size: 0;
     }
 
-    /* the select's own "Create …" row: a real option (virtual focus, Enter commit), but
-       visually an action like add-new — accent ink and a leading plus icon in place of
-       the check slot (a create row is never in the selected state) */
     &.et-select-create-option {
       color: var(--et-theme-color-ink-solid, currentColor);
 

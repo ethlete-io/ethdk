@@ -67,8 +67,6 @@
     min-inline-size: 0;
   }
 
-  /* one column per ancestor level, drawing the chain a nested appointment hangs off. The lines
-     overhang the row by the list's 2px gap so consecutive rows read as one continuous trunk. */
   .et-scheduler-agenda-view-guide {
     position: relative;
     flex: none;
@@ -83,7 +81,6 @@
       background: var(--et-surface-border-solid, currentColor);
     }
 
-    /* an elbow: the trunk stops at the row's middle, where the connector turns into the appointment */
     &:where([data-guide='last-branch'])::before {
       inset-block: -1px 50%;
     }

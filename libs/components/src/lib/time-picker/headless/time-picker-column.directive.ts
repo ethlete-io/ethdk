@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, inject, input, signal } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, inject, input, signal } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { createTypeahead } from '../../internals/typeahead';
 import { TIME_PICKER_ERROR_CODES } from '../time-picker-errors';
@@ -8,8 +8,7 @@ import { TimePickerColumn, TimePickerDirective } from './time-picker.directive';
  * One unit column (a vertical listbox): routes the keyboard model to the
  * picker - arrows move the selection (selection follows focus, wrapping),
  * typed characters jump to the matching option - and tracks whether focus is
- * inside (options only pull DOM focus along while the user is actually
- * keyboard-navigating the column).
+ * inside.
  */
 @Directive({
   selector: '[etTimePickerColumn]',
@@ -39,16 +38,12 @@ export class TimePickerColumnDirective {
   constructor() {
     this.destroyRef.onDestroy(() => this.typeahead.destroy());
 
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.timePicker) {
-          throw new RuntimeError(
-            TIME_PICKER_ERROR_CODES.COLUMN_OUTSIDE_TIME_PICKER,
-            'An [etTimePickerColumn] must be placed inside an [etTimePicker].',
-            { element: this.elementRef.nativeElement },
-          );
-        }
-      });
+    if (ngDevMode && !this.timePicker) {
+      throw new RuntimeError(
+        TIME_PICKER_ERROR_CODES.COLUMN_OUTSIDE_TIME_PICKER,
+        'An [etTimePickerColumn] must be placed inside an [etTimePicker].',
+        { element: this.elementRef.nativeElement },
+      );
     }
   }
 

@@ -33,7 +33,6 @@ const create = () => {
   return fixture;
 };
 
-/** The emitted JSON-LD, parsed - the store appends one script per binding. */
 const emitted = (): { itemListElement: { position: number; name: string; item?: string }[] } | null => {
   const script = document.querySelector('script[type="application/ld+json"]');
 
@@ -58,7 +57,6 @@ describe('BreadcrumbSeoDirective', () => {
     expect(data?.itemListElement).toEqual([
       { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://example.com/' },
       { '@type': 'ListItem', position: 2, name: 'Teams', item: 'https://example.com/teams' },
-      // No `item` on the last crumb: it is the page the markup is on.
       { '@type': 'ListItem', position: 3, name: 'Rockets' },
     ]);
   });

@@ -29,8 +29,6 @@ import { SelectionListOrientation } from '../../selection-list.types';
         <et-label>{{ label() }}</et-label>
 
         @if (groupControl()) {
-          <!-- The prebuilt select-all row: the tri-state logic and the mixed mark come with it, so the
-               demo no longer hand-rolls either. -->
           <et-checkbox-group-select-all />
         }
 

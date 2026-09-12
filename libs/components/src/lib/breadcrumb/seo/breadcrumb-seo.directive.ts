@@ -10,9 +10,7 @@ import { BREADCRUMB_TOKEN } from '../headless/breadcrumb.tokens';
  * `<script>` describing the trail, which is what gets a site the breadcrumb line in a search result
  * instead of a bare URL.
  *
- * It reads the `name` and `url` each crumb states - not the rendered DOM. A crumb's content is a
- * template that may hold an icon or markup with no single text form, and its `routerLink` is a path
- * where `schema.org` wants an absolute URL; both are things only the app can say:
+ * It reads the `name` and `url` each crumb states - not the rendered DOM:
  *
  * ```html
  * <ng-template etBreadcrumbItemTemplate name="Teams" url="https://example.com/teams">
@@ -20,12 +18,8 @@ import { BREADCRUMB_TOKEN } from '../headless/breadcrumb.tokens';
  * </ng-template>
  * ```
  *
- * Crumbs still **loading** are skipped, and so are crumbs with no `name` - a `BreadcrumbList` with a
- * placeholder in it is worse than a shorter one. Nothing is emitted at all until at least two named
- * crumbs exist, since a one-item trail tells a crawler nothing it doesn't already know.
- *
- * Separate from the breadcrumb itself so an app that does no head management never pulls the
- * structured-data store into its bundle - the same split as `etPaginationSeo`.
+ * Crumbs still **loading** are skipped, and so are crumbs with no `name`. Nothing is emitted at all
+ * until at least two named crumbs exist.
  *
  * @example
  * <et-breadcrumb etBreadcrumbSeo>…</et-breadcrumb>
@@ -45,11 +39,7 @@ export class BreadcrumbSeoDirective {
    */
   public enabled = input(true, { transform: booleanAttribute, alias: 'etBreadcrumbSeo' });
 
-  /**
-   * The trail as a `BreadcrumbList`, or `null` when there isn't enough of one to describe. Built from
-   * `items()` rather than `renderedItems()`: collapsing is a layout decision, and a crawler should see
-   * the whole trail whether or not it currently fits on screen.
-   */
+  /** The trail as a `BreadcrumbList`, or `null` when there isn't enough of one to describe. */
   public structuredData = computed<JsonLD.WithContext<JsonLD.BreadcrumbList> | null>(() => {
     if (!this.enabled()) return null;
 

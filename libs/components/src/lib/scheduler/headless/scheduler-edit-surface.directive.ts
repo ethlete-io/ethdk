@@ -29,7 +29,6 @@ export class SchedulerEditSurfaceDirective<TExtra = unknown> {
 
   public appointmentTree = computed(() => buildAppointmentTree(this.appointments()));
 
-  /** A synthesized appointment not yet in `appointments()` - set while "add sub-appointment" is in progress. */
   private pendingAppointment = signal<Appointment<TExtra> | null>(null);
 
   /**

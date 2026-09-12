@@ -50,7 +50,7 @@ Anchors + router instead of an index - active state comes from `RouterLinkActive
 import { NAV_TAB_IMPORTS } from '@ethlete/components';
 ```
 
-`a[et-nav-tab-link]` forwards the usual `RouterLink` inputs (`queryParams`, `fragment`, `relativeTo`, …) and supports `disabled` just like content tabs. The optional `et-nav-tabs-outlet` wrapper gives the routed region proper `role="tabpanel"` semantics - place it as a sibling of `et-nav-tabs` (as above); it finds the bar that labels it automatically.
+`a[et-nav-tab-link]` forwards the usual `RouterLink` inputs (`queryParams`, `fragment`, `relativeTo`, …) and supports `disabled` just like content tabs - a disabled link keeps `aria-disabled` but drops its `href`, so it cannot be followed. The optional `et-nav-tabs-outlet` wrapper gives the routed region proper `role="tabpanel"` semantics - place it as a sibling of `et-nav-tabs` (as above); it finds the bar that labels it automatically.
 
 <StoryEmbed id="components-navigation-tabs-nav-tabs--default" height="380px" />
 
@@ -84,7 +84,7 @@ Both flavors accept the shared tab-bar inputs:
 
 ## Accessibility
 
-Standard tabs semantics out of the box: `role="tablist"` / `role="tab"` / `role="tabpanel"` with `aria-selected`, `aria-labelledby` and roving tabindex. Arrow keys move orientation-aware (wrapping, skipping disabled), <kbd>Home</kbd>/<kbd>End</kbd> jump, <kbd>Enter</kbd> activates (nav links also on <kbd>Space</kbd>).
+Standard tabs semantics out of the box: `role="tablist"` / `role="tab"` / `role="tabpanel"` with `aria-selected`, `aria-labelledby` and roving tabindex. Arrow keys move orientation-aware (wrapping, skipping disabled), <kbd>Home</kbd>/<kbd>End</kbd> jump, <kbd>Enter</kbd> activates (nav links also on <kbd>Space</kbd>). A disabled tab never holds the tab stop - it sits on the first enabled one instead, and a bar whose tabs are all disabled is skipped in the tab order. A disabled nav tab link has no `href`, so focusing it programmatically and pressing <kbd>Enter</kbd> navigates nowhere.
 
 ## Theming
 

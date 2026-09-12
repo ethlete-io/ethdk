@@ -634,6 +634,18 @@ single-domain reach.
   rather than after render, which is fine for a pure input check but would not suit a guard that needs
   the DOM.
 
+- **A field panel stays open when Tab leaves the last tab stop on the page** — the shared
+  `createAnchoredPanelController` (`libs/components/src/lib/forms/form-field/headless/anchored-panel-controller.ts`)
+  closes on a `focusin` on an outside element, so a Tab past the panel's last control leaves select,
+  cascader and the date/time pickers open whenever focus lands on `document.body`. The color-input
+  fix (`3b068eb50`) watches `keydown` on the pane and closes one task after a Tab on the last
+  focusable element or a Shift+Tab on the first, but it is local to that control. Lift it into the
+  controller, drop the color-input copy, and let the shared "How a field panel closes" paragraph in
+  `apps/docs/components/forms.md` state Tab and Shift+Tab for all four. M — **DONE 2026-09-12**
+  `fix(components): Close every field panel on a Tab out of its last control`. Open follow-up: the
+  select's own synchronous Tab close in `handleTriggerKeydown` does not report a focus leave, so a Tab
+  out of a panel-hosted search can still refocus the trigger when the field is the page's last tab stop.
+
 ## Improvements worth scheduling
 
 Deduplicated across all 22 batches; several batches independently proposed the same work.
@@ -643,6 +655,7 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    in checkbox-group, radio-group, segmented-button-group, rating, choice-field, slider, dropzone and
    otp — eight-plus copies, and the drift is what produced _Fix now_ #4 and the missing exit animation.
    Proposed independently by the selection-controls, slider/dropzone/color and phone/otp/tag batches. L
+   — **DONE 2026-08-22** in `a1a775764 refactor(components): Share one support region across the controls that copied it` (eight controls onto `<et-form-support>` + `form-support-styles.component.css`); the last holdout `et-choice-field` followed **2026-09-12** in `36cc73491 refactor(components): Render the shared support region in the choice field`, which also restored `unicode-bidi: isolate` on the shared region. `et-form-field` keeps its own support markup on purpose (text-control host with the counter row). Known leftover: on `variant="card"` a choice-field warning still carries the 28px indent while error and hint go flush.
 2. **Cross-domain test drivers.** Twelve batches ask for one: overlay (plain dialogs/openers, not just
    overlay-backed form controls), table, bracket, scheduler, stream, carousel/scrollable/scrollbar,
    calendar/time-picker, grid/masonry, tabs, notification, RTE, `et-input`/`et-form-field`,
@@ -653,7 +666,7 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    it the highest-leverage single piece), the `ResizeObserver`/`IntersectionObserver`/`clientWidth`
    shims that six grid/masonry specs and three tab specs each hand-roll, a breakpoint fake (nothing can
    currently test the cascader bottom sheet at all), and **wiring `onfinish`/`oncancel` into
-   `test-helpers.ts`'s `AnimationMock`** — a hard prerequisite for testing any animated PiP path. M
+   `test-helpers.ts`'s `AnimationMock`** — a hard prerequisite for testing any animated PiP path. — **Mostly DONE by 2026-09-12**: `fake-match-media.ts`, `fake-layout.ts`, the observer shims and the `AnimationMock` `onfinish`/`oncancel` all live in `libs/components/src/lib/testing/` and `libs/components/src/test-helpers.ts`. The breakpoint fake exists too (`forms/cascader/cascader-sheet.spec.ts` mounts through `FakeMatchMedia`), so the item is DONE. M — **Remnants verified 2026-09-12** (Codex coordinator): 3a already landed in `38505e708 test(components): Share the layout, observer and scroll fakes the carousel spec owned`, 3b in `4e5c41fc9 test(components): Fire the animation mock's finish and cancel handlers`, 3c in `81866a93a test(components): Promote the matchMedia fake into a shared viewport-width control`; tooltip, notification, masonry, PiP and overlay-strategy focused specs green. Nothing left.
 4. **Stylesheet splits, ranked by bytes × reach.** Worth doing: `table.component.css` (1166 lines,
    ~40 % minority features — sticky columns is the clean win), `scrollable.component.css` (472, ~half
    opt-in chrome), `menu` (search header + scroll fade), `overlay-container` (arrow + content chrome),
@@ -665,12 +678,19 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    (would have caught all four date-time Highs), `describeOverlayControlContract` (would have caught
    the cascader `touched` divergence), an `aria-describedby`-resolves assertion (four to seven
    controls at once), and a "wrapper exposes its base's inputs" loop. Proposed by the date-time,
-   select/cascader, selection-controls, form-field and phone/otp/tag batches. M
+   select/cascader, selection-controls, form-field and phone/otp/tag batches. M — **Helpers DONE
+   2026-09-03** in `bb3ab336e test(components): Strengthen form control test drivers`:
+   `picker-commit-contract.ts` (six specs), `overlay-control-contract.ts` (select, cascader),
+   `described-by.ts` (`expectDescribedByResolves`; form-field, selection-list) and
+   `wrapper-inputs.ts` (one spec). Adoption **DONE 2026-09-12** in `test(components): Assert aria-describedby resolves on every support-region control` (slider, range slider, tag input, phone input, switch, rating, otp, dropzone, checkbox).
 6. **Duplicated CSS/logic pairs worth collapsing:** tooltip + toggletip + menu animation blocks (three
-   copies of one structure), `et-tab-group` vs `et-nav-tabs` (~120 lines), the two date/time range
-   shells (byte-identical bar a threshold), `et-pip-player` rules in two sheets, the three stream
+   copies of one structure), `et-tab-group` vs `et-nav-tabs` (~120 lines; **DONE 2026-09-12**
+   `refactor(components): Share the tab bar trigger chrome between tab group and nav tabs`), the two date/time range
+   shells (byte-identical bar a threshold; **DONE 2026-08-28** `d64f32a9b perf(components): Share the
+date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the three stream
    overlay cards, `select`/`cascader` panel animations, the button/fab/icon-button opacity ramps, the
-   three class-list normalizers in overlay, the two color parsers in color-input. M
+   three class-list normalizers in overlay, the two color parsers in color-input. The tooltip/toggletip/menu animation blocks and the select/cascader panel animations were **DONE** earlier in `ca7ca9127` and `72087d46a`; the three overlay class-list normalizers are one `normalize-class-list.ts`; the stream overlay cards share `stream-overlay-card-styles.component.css`; the color parsers **DONE 2026-09-12** in `refactor(components): Parse colors once for the color input validators and picker`. Still open: `et-pip-player` rules in two sheets (small), the button/fab/icon-button opacity ramps (in progress). M
+   The button/fab/icon-button opacity ramps **DONE 2026-09-12** in `2bf2e27bf`. The `et-pip-player` rules were re-checked 2026-09-12: `pip-chrome.component.css` and `pip-player.component.css` hold different, complementary rules, so there is nothing left to share — item closed. **Verified 2026-09-12** (Codex coordinator): the three stream overlay cards already share one mounted sheet and the three overlay class-list normalizers already use one table-covered helper (13 specs). The only remnant, the floating-panel content-root reset (6c), is in progress on the Codex track.
 7. **Bundle-size wins, each behind a treeshake golden.** `@defer` the color picker panel; make the
    stream PiP slice opt-in by import graph (~1.5k lines reachable today from one YouTube slot); defer
    the scheduler edit surface (it drags five form-control families into a read-only month grid); pack
@@ -706,15 +726,22 @@ Deduplicated across all 22 batches; several batches independently proposed the s
     once instead of once per element. Duplicate registration for the split button was already done in
     `45e1f169a`. Still open for a later batch: `registerScrollContainer`, the four-of-six picker host
     names, `etRatingIcon` and the range-field duplicate guards (scrollable/forms — held by other
-    agents), and the calendar's per-cell `afterNextRender` structural throws.
+    agents), and the calendar's per-cell `afterNextRender` structural throws. **Batch 2 done 2026-09-12**: `registerScrollContainer`, the
+    `etRatingIcon` guard and the calendar cell guard had already landed in `88000992a`; the calendar grid
+    guard moved to the constructor in `fix(components): Throw the calendar grid guard at construction`.
+    **Batch 3 done 2026-09-12**: the host names and the range-field duplicate guards (`ET3011`/`ET3061`/`ET3071`) had already landed in `88000992a`; the nine structural date-time guards moved to the constructor in `fix(components): Throw the date-time structural guards at construction`. The time picker's `ET3020`/`ET3021` moved to the constructor 2026-09-12 in `bae50018b fix(components): Throw the time picker structural guards at construction`. Still open, and a human design call: a duplicate-registration guard in the shared `register-singleton.ts` (26 callers in 8 domains; conditional templates swap legally, so a throw is not obviously right).
 11. **Comment-policy cleanup where it is dense** (table — 34 % of non-spec TS — plus carousel, grid,
     bracket, calendar, scheduler, selection-controls). Not urgent, except the comments the scan proved
     _wrong_: the table keyboard-nav comment, the cascader column comment, `pruneEmptyInline`'s "three
-    inline tags", the control-suffix spec comment. Fix those with whatever change touches the file. M
+    inline tags", the control-suffix spec comment. Fix those with whatever change touches the file. M — **Wrong comments DONE 2026-09-12**: the table keyboard-nav comment went in
+    `chore(components): Drop the table keyboard-nav comment the code outgrew`; the RTE, control-suffix and
+    cascader ones were already removed by `56d0d3ddb`. The density pass stays opportunistic.
+    **Carousel DONE 2026-09-12** in `a1514226c chore(components): Cut the carousel comments the policy does not allow` (delete-only, 722 → 498 comment lines; what remains is mostly case-4 JSDoc on exported directives). Table stays deprioritized per the section below; grid, bracket, calendar, scheduler, selection-controls remain opportunistic. **Calendar DONE 2026-09-12** in `fe847cd59 chore(components): Cut the calendar comments the policy does not allow` (454 → 277). **Selection controls DONE 2026-09-12** in `b477498ce chore(components): Cut the selection list comments the policy does not allow` (243 → 140, `forms/selection-list`). **Breadcrumb DONE 2026-09-12** in `94a08ed3a chore(components): Cut the breadcrumb comments the policy does not allow` (364 → 249; the reviewer restored the `[data-measuring]` CSS warning as case 2). **Time picker DONE 2026-09-12** in `7ea1221ae chore(components): Cut the time picker comments the policy does not allow` (228 → 119; the reviewer restored the disabled-before-selected CSS order note and the vertical-centering invariant `DateTimePickerPanesDirective` depends on). **Form field DONE 2026-09-12** in `1a5fa559e chore(components): Cut the form field comments the policy does not allow` (486 → 384; two case-2 CSS notes restored). **Select DONE 2026-09-12** in `d7e7fa1d6 chore(components): Cut the select comments the policy does not allow` (746 → 478; eight case 1/2 notes restored, all rule-order or cross-file invariants). **Scheduler DONE 2026-09-12** in `ebbfa7843 chore(components): Cut scheduler comments the policy does not allow` (303 comment lines over 46 files, on the Codex track before it closed). **Dropzone DONE 2026-09-12** in `84a798410 chore(components): Cut the dropzone comments the policy does not allow` (323 → 267). **Color input DONE 2026-09-12** in `3e041f26b chore(components): Cut the color input comments the policy does not allow` (301 → 189; two case-2 CSS notes restored). **Date-time DONE 2026-09-12** in `96530bc88 chore(components): Cut the date-time comments the policy does not allow` (1082 → 713, 75 files). **Cascader DONE 2026-09-12** in `4ed3f4ba9 chore(components): Cut the cascader comments the policy does not allow` (426 → 281; two case-2 CSS notes restored). Grid and scrollable passes are in flight; rich-text-editor queued.
 12. **Docs corrections** (~40 across batches): option tables omitting real inputs (select, cascader,
     date-time, otp, tag, dropzone, slider), token tables missing live tokens, the bracket migration row
     pointing at an unexported symbol, `match.md`'s `NormalizedMatch` snippet, and the pages that state
-    the opposite of the code. Part of whichever fix touches the API, per AGENTS.md. M
+    the opposite of the code. Part of whichever fix touches the API, per AGENTS.md. M — **Option/output/token tables DONE 2026-09-12** for select (`00bedef8a`), cascader + slider (`da278a043`), otp + tag input + dropzone (`593253b1c`) and date-time inputs + time picker (`276e7f591`). Still open: the bracket migration row, `match.md`'s `NormalizedMatch` snippet, and any remaining "opposite of the code" sentences outside those domains.
+    **Batch 2 DONE 2026-09-12** in `319601831 docs(components): Correct the overlay strategies, stream theming, rating mixedLabel, chip color and notification duration docs`; the bracket migration row and the `match.md` snippet were already correct. Re-checked and consistent: carousel play/pause ARIA, nav-tab-link `disabled`, tree tab stop, breadcrumb SEO outlet, toolbar nesting. Code findings from the re-check: breadcrumb stale full width while collapsed (fixed 2026-09-12, see git log for `breadcrumb`), carousel `pauseReason()` is `null` while `isPlaying()` is `false` with `autoplayTime="0"` (`carousel-autoplay.directive.ts:161-183`, open), a disabled `a[et-nav-tab-link]` keeps its `href` so programmatic focus + Enter still navigates (open). **Code findings from the re-check DONE 2026-09-12**: carousel `pauseReason()` now reports `no-duration` in `980384b81 fix(components): Report no-duration as the carousel autoplay pause reason`; the disabled nav tab link drops its `href` in `650a0ff86 fix(components): Drop the href from a disabled nav tab link`; the breadcrumb render effect no longer schedules itself in `7b0babe8d fix(components): Stop the breadcrumb render effect from scheduling itself`. The bracket migration row and the `match.md` snippet were re-confirmed correct by the Codex coordinator (no defect, `3b6e16aae`). Item closed.
 
 ## Explicitly deprioritized
 
@@ -770,7 +797,7 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
    `generateBracketRoundSwissGroupMaps` + `createSwissGrid` end to end (bracket), `deserializeTableState`
    → `restoreState` with a junk entry (table), `reduceSupportPresentation`'s 12 state pairs
    (form-field — ~110 shared lines, zero tests), `resolvePath` + direction resolution (overlay router),
-   `sortByDomOrder` and `createTypeahead` (internals, five-plus consumers each, no direct spec).
+   `sortByDomOrder` and `createTypeahead` (internals, five-plus consumers each, no direct spec). **DONE 2026-09-12**: every function listed has a direct spec; the last one, `createSwissGrid`, landed in `a6646918e test(bracket): Pin the swiss grid geometry end to end`.
 6. **A11y-structure assertions per domain** — walk `grid`→`rowgroup`→`row`→`gridcell` (calendar,
    scheduler, table's two layouts), `menu`→owned roles, `tablist`→`tab`, and a uniform cell count per
    row. Would have caught four Mediums and one High, and guards the docs' explicit claims.
@@ -791,7 +818,7 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
    one spec each), the tab-bar keyboard model (96 a11y-critical lines the docs sell in full),
    `notification-swipe-to-dismiss.directive.ts` (279 lines), `floating-action`,
    `filterOverlayPreviewFromQuery`, `multi-language-rich-text-editor`, `skeleton` (last four: no spec
-   file at all).
+   file at all). **DONE by 2026-09-12**: every surface listed now has a spec file (`table-reorder.directive.spec.ts`, `stream-manager.spec.ts`, `pip-manager.spec.ts`, the four `scheduler/headless/internals/*.spec.ts`, `tabs/headless/tab-bar-keyboard.spec.ts`, `notification-swipe-to-dismiss.directive.spec.ts`, `floating-action.directive.spec.ts`, `filter-overlay-preview.spec.ts`, `multi-language-rich-text-editor.component.spec.ts`, `skeleton.component.spec.ts`).
 10. **Specs that currently assert the wrong thing** — fix these while fixing their defects:
     `command-palette.component.spec.ts:188` (Escape), `notification.component.spec.ts:93-101`
     (unbalanced pause/resume), `table-page-sticky-header.directive.spec.ts:60-63` (locks in the broken
@@ -868,3 +895,4 @@ Promise<void>` union, so wrapping each in a block body fixed it with no behavior
     the `children[0]!` idiom already established across the suite (tree, calendar, forms, dropzone, etc.)
     rather than inventing a new guard. No `as any`/`as unknown as X`/`@ts-expect-error` anywhere in this
     slice; the only casts are the pre-existing `RuntimeError<number>` idiom and the `instanceof` narrowing.
+    **Burn-down complete 2026-09-12**: `tsc -p libs/components/tsconfig.spec.json --noEmit` reports 0 errors, and the `typecheck` target in `libs/components/project.json` already runs exactly that command, which CI runs through `yarn nx run-many -t typecheck`.

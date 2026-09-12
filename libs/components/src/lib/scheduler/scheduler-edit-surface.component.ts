@@ -76,10 +76,6 @@ export type { SchedulerEditSurfaceResult } from './scheduler-edit-surface.token'
   hostDirectives: [
     OverlayMainDirective,
     { directive: SchedulerEditSurfaceDirective, inputs: ['appointment', 'appointments'] },
-    // The built-in edit fields and appointment actions, bundled by default so
-    // `<et-scheduler-edit-surface>` renders a full surface zero-config - each forwards its own
-    // config input, so e.g. `[etSchedulerEditLocation]="{ enabled: false }"` disables just that
-    // one piece without dropping to headless composition.
     { directive: SchedulerEditTitleDirective, inputs: ['etSchedulerEditTitle'] },
     { directive: SchedulerEditTimeRangeDirective, inputs: ['etSchedulerEditTimeRange'] },
     { directive: SchedulerEditLocationDirective, inputs: ['etSchedulerEditLocation'] },
@@ -110,8 +106,6 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
 
   public headerLabel = computed(() => this.surface.currentAppointment().title || this.untitledLabel());
 
-  // UI contributed by edit-field/action features - see SCHEDULER_EDIT_SURFACE_HOST. The built-ins
-  // above are features too, registering the same way a consumer's own field/action would.
   private editFieldList = signal<SchedulerEditField[]>([]);
   private appointmentActionList = signal<SchedulerAppointmentAction[]>([]);
 
@@ -127,7 +121,6 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   );
 
-  /** Gates the save button - every currently-enabled field must report itself valid. */
   public canSave = computed(() => this.editFields().every((field) => field.valid?.() ?? true));
 
   protected childEntries = computed(() => {
@@ -160,27 +153,22 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
       .subscribe();
   }
 
-  /** Part of the feature contract - see `SchedulerEditSurfaceHost`. */
   public get element(): HTMLElement {
     return this.elementRef.nativeElement;
   }
 
-  /** Part of the feature contract - see `SchedulerEditSurfaceHost`. */
   public get appointment() {
     return this.surface.currentAppointment;
   }
 
-  /** Part of the feature contract - see `SchedulerEditSurfaceHost`. */
   public get appointmentTree() {
     return this.surface.appointmentTree;
   }
 
-  /** Part of the feature contract - see `SchedulerEditSurfaceHost`. */
   public registerEditField(field: SchedulerEditField) {
     this.editFieldList.update((list) => [...list, field]);
   }
 
-  /** Part of the feature contract - see `SchedulerEditSurfaceHost`. */
   public registerAppointmentAction(action: SchedulerAppointmentAction) {
     this.appointmentActionList.update((list) => [...list, action]);
   }
@@ -211,8 +199,6 @@ export const SCHEDULER_EDIT_SURFACE_OVERLAY = /* @__PURE__ */ defineOverlay<
         breakpoint: 'md',
         strategy: anchoredDialogStrategy.build({
           maxWidth: '520px',
-          // centered rather than the anchored dialog's edge-aligned default: the origin is as often
-          // a dragged-out range as a single appointment, and a range wants its surface over its middle
           positionStrategy: buildAnchoredRuntimePositionStrategy({
             placement: 'bottom',
             fallbackPlacements: ['top', 'right', 'left', 'bottom-end', 'top-end', 'right-start', 'left-start'],

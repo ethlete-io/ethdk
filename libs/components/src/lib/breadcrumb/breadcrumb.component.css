@@ -11,15 +11,12 @@
     initial-value: 12px;
   }
 
-  /* The rounding shared by every hit area in the trail: the overflow trigger and the rows inside it. */
   @property --et-breadcrumb-radius {
     syntax: '<length>';
     inherits: true;
     initial-value: 6px;
   }
 
-  /* The placeholder a `loading` crumb renders. A fixed width, because there is no label yet to size it
-     from and a zero-width crumb would make the trail jump when the name arrives. */
   @property --et-breadcrumb-loading-width {
     syntax: '<length>';
     inherits: true;
@@ -53,17 +50,14 @@
     white-space: nowrap;
   }
 
-  /* Laid out but not painted, for the one frame before the trail has been measured — see `isMeasuring` in
-     the directive. It keeps its space, so this reserves the row instead of flashing the full trail and
-     then replacing it with the collapsed one. */
+  /* Hidden but still laid out: the directive measures the host's `clientWidth` and ignores a zero, so
+     `display: none` here would stop the measurement that clears this state. */
   .et-breadcrumb:where([data-measuring]) {
     visibility: hidden;
   }
 
-  /* Collapsed and *still* too narrow (a long title on a phone): there is nothing left to move into the
-     overflow, so the current page truncates rather than being clipped mid-word. The list may drop its
-     natural width here because the full-trail width is already remembered — the directive stops
-     measuring while collapsed, so this can't feed back into the collapse decision. */
+  /* The list may drop its natural width here: the directive stops measuring while collapsed, so this
+     can't feed back into the collapse decision. */
   .et-breadcrumb:where([data-collapsed]) {
     .et-breadcrumb-list {
       inline-size: auto;
@@ -84,8 +78,6 @@
   .et-breadcrumb-item {
     color: inherit;
     border-radius: var(--et-breadcrumb-radius);
-    /* The underline is there from the start but invisible, so it can fade in with the colour instead of
-       snapping into existence under the pointer — and it never shifts the text either way. */
     text-decoration: underline transparent;
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
@@ -93,7 +85,6 @@
       color 120ms ease,
       text-decoration-color 120ms ease;
 
-    /* Only the crumbs that go somewhere react to the pointer; the current page is text. */
     &:where(a, button):hover {
       color: var(--et-surface-color-solid, CanvasText);
       text-decoration-color: currentColor;
@@ -104,7 +95,6 @@
       outline-offset: 2px;
     }
 
-    /* The page you are on: the one crumb that is not a link, so it carries the emphasis. */
     &:where([aria-current='page']) {
       color: var(--et-surface-color-solid, CanvasText);
       font-weight: 500;
@@ -119,7 +109,6 @@
   }
 
   .et-breadcrumb-chevron {
-    /* The chevron icon points up; a trail separator points along the reading direction. */
     rotate: 90deg;
     inline-size: var(--et-breadcrumb-separator-size);
     block-size: var(--et-breadcrumb-separator-size);

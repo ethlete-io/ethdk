@@ -7,7 +7,6 @@
 </div>
 
 <div #weeks (pointerdown)="startDraftRange($event, weeks)" class="et-scheduler-month-view-weeks" role="rowgroup">
-  <!-- stretched over the drawn range on release, so the create surface can anchor to the whole of it -->
   <div #draftAnchor class="et-scheduler-month-view-draft-anchor" aria-hidden="true"></div>
 
   @for (week of month.weeks(); track $index) {

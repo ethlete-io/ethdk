@@ -11,8 +11,7 @@ export type SelectOptionGroupItem = {
 /**
  * Groups a set of `[etSelectOption]`s under a labelled `role="group"` section. Purely
  * presentational - options still register flat with the select, so keyboard navigation and
- * typeahead run across the whole list. With internal filtering the group hides itself once
- * all of its options are filtered out.
+ * typeahead run across the whole list.
  */
 @Directive({
   selector: '[etSelectOptionGroup]',
@@ -36,7 +35,6 @@ export class SelectOptionGroupDirective {
   /** @internal Set by the rendered label element so `aria-labelledby` points at it. */
   public labelledById = signal<string | null>(null);
 
-  /** Options that registered themselves with this group. */
   private options = signal<readonly SelectOptionGroupItem[]>([]);
 
   /** Whether any of the group's options are currently shown (false hides the whole group). */

@@ -43,8 +43,6 @@
       padding: var(--_et-select-panel-padding);
     }
 
-    /* applied while the block size animates after a content change (filtering, async
-       options arriving), so content outside the animated size stays hidden */
     &.et-select-panel--resizing .et-select-panel-scroller {
       overflow: clip;
     }

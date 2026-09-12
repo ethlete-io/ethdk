@@ -1,9 +1,8 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
- * Every string the breadcrumb announces. It renders no text of its own - the crumbs are yours - so
- * these are all accessible labels. Defaults are English ({@link DEFAULT_BREADCRUMB_LABELS}); override
- * them app-wide with {@link provideBreadcrumbLabels} or per instance via the `labels` input.
+ * Every string the breadcrumb announces. Defaults are English ({@link DEFAULT_BREADCRUMB_LABELS});
+ * override them app-wide with {@link provideBreadcrumbLabels} or per instance via the `labels` input.
  */
 export type BreadcrumbLabels = {
   /** Accessible label for the navigation landmark. */
@@ -26,7 +25,7 @@ const BREADCRUMB_LABELS_DEF = /* @__PURE__ */ defineLabels<BreadcrumbLabels>(
 /**
  * Localize the breadcrumb's strings for everything below this injector, and read the set in effect
  * here as a signal. Partial - whatever you leave out keeps its {@link DEFAULT_BREADCRUMB_LABELS}
- * value. See {@link defineLabels} for the shape, which every domain in this library shares.
+ * value.
  *
  * @example
  * provideBreadcrumbLabels({ navigation: 'Brotkrumen', overflow: 'Ausgeblendete Ebenen anzeigen' });

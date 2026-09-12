@@ -90,7 +90,7 @@ export class MyTagList {}
 
 ## Theming
 
-Colors come from the app-registered [surface theme](/core/theming) (`--et-surface-interaction-solid` tint for the background, `--et-surface-color-*` for text) - there is nothing color-related to override per chip. Public design tokens:
+A plain chip takes its colors from the app-registered [surface theme](/core/theming) (`--et-surface-interaction-solid` tint for the background, `--et-surface-color-*` for text) - there is nothing color-related to override on it. A **selected** filter chip is the exception: its tonal fill and text come from the ambient [color theme](/core/theming) (`--et-theme-color-primary-solid` / `--et-theme-color-ink-solid`), so wrapping the selection list in `[etProvideColor]` re-tints the selected state. Public design tokens:
 
 | Token                        | Default | Purpose                             |
 | ---------------------------- | ------- | ----------------------------------- |

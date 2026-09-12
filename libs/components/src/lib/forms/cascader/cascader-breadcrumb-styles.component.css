@@ -1,10 +1,7 @@
 @layer components {
   .et-cascader-panel {
-    /* deep hierarchies: the levels collapsed out of the column window, as clickable crumbs.
-       Sits below the columns so mounting/unmounting never shifts them (the panel's animated
-       block size transitions the height change). The row follows the columns' width instead
-       of contributing its own to the panel's max-content measurement (a long path would
-       otherwise stretch the panel). */
+    /* the row follows the columns' width instead of contributing its own to the panel's
+       max-content measurement (a long path would otherwise stretch the panel) */
     .et-cascader-breadcrumbs {
       display: flex;
       align-items: center;
@@ -17,8 +14,6 @@
       overflow: hidden;
     }
 
-    /* one crumb + its separator — enters from the right (where its column slid away toward)
-       and leaves the same way when the column returns */
     .et-cascader-crumb {
       display: flex;
       align-items: center;
@@ -67,8 +62,6 @@
         color: var(--et-surface-color-solid, currentColor);
       }
 
-      /* the crumbs whose columns are currently in the window read at full strength — the
-         muted rest are the levels a click would bring back */
       &[data-current] {
         color: var(--et-surface-color-solid, currentColor);
       }
@@ -79,12 +72,10 @@
       inline-size: 10px;
       block-size: 10px;
       color: var(--et-surface-color-subtle-solid, currentColor);
-      /* chevron points up natively — rotate to read as a path separator */
       rotate: 90deg;
     }
   }
 
-  /* a breadcrumb entering/leaving mirrors its column's travel on the track above */
   @keyframes et-cascader-crumb-in {
     from {
       opacity: 0;

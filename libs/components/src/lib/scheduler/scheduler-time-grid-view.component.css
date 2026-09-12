@@ -32,9 +32,6 @@
     display: flex;
   }
 
-  /* Bounded and internally scrollable so the day header and all-day strip above it (both plain
-     flow siblings, not sticky) stay fully visible instead of scrolling away with 24 hours of
-     mostly-empty grid. `SchedulerTimeGridViewComponent` scrolls this to a relevant hour on mount. */
   .et-scheduler-time-grid-body {
     overflow-y: auto;
     max-block-size: var(--et-scheduler-time-grid-body-max-height);
@@ -191,8 +188,6 @@
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
 
-    /* Aligned to the first text line's cap-height rather than centered on the row, since a
-       long appointment's row can stretch far past this dot's own size. */
     .et-scheduler-appointment-dot {
       margin-block-start: 4px;
     }

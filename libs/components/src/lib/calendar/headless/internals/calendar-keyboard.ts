@@ -2,16 +2,13 @@ import { addDays, addMonths, addYears, setMonth, setYear, startOfWeek } from 'da
 import { CalendarWeekStartsOn } from './calendar-month';
 import { CALENDAR_COARSE_COLUMNS, CALENDAR_MULTI_YEAR_PAGE_SIZE, CalendarView } from './calendar-view';
 
-/** How many units Shift+PageUp/PageDown covers, in each view's own unit. */
 const BIG_JUMP_UNITS = 10;
 
 export type ResolveCalendarKeyboardDateOptions = {
   shiftKey: boolean;
   focusedDate: Date;
   weekStartsOn: CalendarWeekStartsOn;
-  /** Which grid the keys apply to. Defaults to the day grid. */
   view?: CalendarView;
-  /** First year of the visible year-grid page - where `Home`/`End` go in `multiYear`. */
   multiYearPageStart?: Date;
 };
 
@@ -40,7 +37,6 @@ const resolveMonthViewDate = (key: string, options: ResolveCalendarKeyboardDateO
   }
 };
 
-/** The month grid: cells are months, so a row step is {@link CALENDAR_COARSE_COLUMNS} months. */
 const resolveYearViewDate = (key: string, options: ResolveCalendarKeyboardDateOptions): Date | null => {
   const { shiftKey, focusedDate } = options;
 
@@ -66,7 +62,6 @@ const resolveYearViewDate = (key: string, options: ResolveCalendarKeyboardDateOp
   }
 };
 
-/** The year grid: cells are years, and a page is {@link CALENDAR_MULTI_YEAR_PAGE_SIZE} of them. */
 const resolveMultiYearViewDate = (key: string, options: ResolveCalendarKeyboardDateOptions): Date | null => {
   const { shiftKey, focusedDate, multiYearPageStart } = options;
   const page = CALENDAR_MULTI_YEAR_PAGE_SIZE;
@@ -95,16 +90,6 @@ const resolveMultiYearViewDate = (key: string, options: ResolveCalendarKeyboardD
   }
 };
 
-/**
- * ARIA grid key → target date, relative to the currently focused date and in the unit the given view's
- * cells hold: a day in the day grid, a month in the month grid, a year in the year grid. Returns `null`
- * for keys that view does not handle (selection is left to the native button activation of the focused
- * cell).
- *
- * The focused date stays a full date in every view - only the step size changes - so drilling in and back
- * out keeps the day the reader had, and a coarse cell can tell it is the focused one by comparing at its
- * own granularity.
- */
 export const resolveCalendarKeyboardDate = (key: string, options: ResolveCalendarKeyboardDateOptions): Date | null => {
   switch (options.view ?? 'month') {
     case 'year':

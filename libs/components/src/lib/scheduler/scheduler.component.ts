@@ -75,9 +75,6 @@ const NARROW_CONTAINER_WIDTH = 480;
       ],
       outputs: ['viewChange', 'focusedDateChange', 'selectedAppointmentIdChange', 'appointmentReschedule'],
     },
-    // The built-in badge adornments, bundled by default so `<et-scheduler>` renders a full badge
-    // zero-config - each forwards its own config input, so e.g. `[etSchedulerBadgeLocation]="{
-    // enabled: false }"` disables just that one piece without dropping to headless composition.
     { directive: SchedulerBadgeColorDotDirective, inputs: ['etSchedulerBadgeColorDot'] },
     { directive: SchedulerBadgeTitleDirective, inputs: ['etSchedulerBadgeTitle'] },
     { directive: SchedulerBadgeTimeRangeDirective, inputs: ['etSchedulerBadgeTimeRange'] },
@@ -111,11 +108,6 @@ export class SchedulerComponent implements SchedulerFeatureHost {
 
   private dimensions = signalHostElementDimensions();
 
-  /**
-   * Whether the scheduler has so little room that the toolbar has to give up its text buttons - the
-   * same width the `et-scheduler` container query in `scheduler.component.css` reflows the header
-   * at, so the two must move together.
-   */
   protected isNarrow = computed(() => (this.dimensions().client?.width ?? Infinity) < NARROW_CONTAINER_WIDTH);
 
   public previousLabel = computed(() => this.labels().previous);
@@ -153,9 +145,6 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     return format(this.headless.focusedDate(), 'LLLL yyyy', options);
   });
 
-  // UI contributed by badge features (title, time range, location, …), rendered in every
-  // appointment badge/block by every view. Features register themselves (see
-  // SCHEDULER_FEATURE_HOST) rather than being queried - the built-ins above are features too.
   private badgeAdornmentList = signal<SchedulerBadgeAdornment[]>([]);
 
   public badgeAdornments = computed(() =>
@@ -164,8 +153,6 @@ export class SchedulerComponent implements SchedulerFeatureHost {
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   );
 
-  // UI contributed by toolbar features (just "Add appointment" today) - rendered in the header
-  // alongside the built-in nav controls. Same registration story as the badge adornments above.
   private toolbarActionList = signal<SchedulerToolbarAction[]>([]);
 
   public toolbarActions = computed(() =>
@@ -176,12 +163,6 @@ export class SchedulerComponent implements SchedulerFeatureHost {
 
   private editSurfaceRef: OverlayRef<object, SchedulerEditSurfaceResult> | null = null;
 
-  /**
-   * Opens `<et-scheduler-edit-surface>` for the selected appointment - covers the zero-config
-   * case (no feature directives applied) per the plan. Its result bubbles as `appointmentSave` /
-   * `appointmentsDelete`, and closing always clears `selectedAppointmentId` back to `null` so
-   * clicking the same appointment again reopens a fresh surface.
-   */
   private editSurfaceOpener = this.editSurface
     ? createOverlayOpener(this.editSurface.editOverlay, {
         afterClosed: (result) => {
@@ -196,7 +177,6 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   // every time, and re-opening on that stacks a second surface over the open one.
   private handledSelectionId: AppointmentId | null = null;
 
-  /** The toolbar's add has no appointment to anchor to, so it opens a plain dialog instead. */
   private addSurfaceOpener = this.editSurface
     ? createOverlayOpener(this.editSurface.addOverlay, {
         afterClosed: (result) => this.handleEditSurfaceResult(result),
@@ -205,7 +185,6 @@ export class SchedulerComponent implements SchedulerFeatureHost {
 
   private openedDraftRange: SchedulerDraftRange | null = null;
 
-  /** A range dragged out on a view opens over the range itself - see {@link SchedulerDraftRange}. */
   private draftSurfaceOpener = this.editSurface
     ? createOverlayOpener(this.editSurface.editOverlay, {
         afterClosed: (result) => {
@@ -241,7 +220,6 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     });
   }
 
-  /** Bound to the view-switch's `(valueChange)` - safe to cast since every `<et-segmented-button>` below carries a `SchedulerView` literal. */
   public setView(value: unknown) {
     this.headless.view.set(value as SchedulerView);
   }
@@ -261,17 +239,14 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     this.openAddSurface({ id: randomId(), parentId: null, title: '', start, end: addHours(start, 1) });
   }
 
-  /** The scheduler's own element. Part of the feature contract (a feature is a directive on it). */
   public get element(): HTMLElement {
     return this.elementRef.nativeElement;
   }
 
-  /** Part of the feature contract - see `SchedulerFeatureHost`. */
   public get appointmentTree() {
     return this.headless.appointmentTree;
   }
 
-  /** Part of the feature contract - see `SchedulerFeatureHost`. */
   public get selectedAppointment() {
     return this.headless.selectedAppointment;
   }
@@ -280,12 +255,10 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     return this.headless.visibleAppointments();
   }
 
-  /** Part of the feature contract - see `SchedulerFeatureHost`. */
   public registerBadgeAdornment(adornment: SchedulerBadgeAdornment) {
     this.badgeAdornmentList.update((list) => [...list, adornment]);
   }
 
-  /** Part of the feature contract - see `SchedulerFeatureHost`. */
   public registerToolbarAction(action: SchedulerToolbarAction) {
     this.toolbarActionList.update((list) => [...list, action]);
   }
@@ -381,11 +354,6 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     });
   }
 
-  /**
-   * The element the view registered for this interaction, cleared as it is read so a later
-   * selection made without one - `selectedAppointmentId` written directly - cannot inherit it and
-   * open anchored to the wrong appointment. Without an anchor the surface centers itself.
-   */
   private takeSurfaceAnchor(): HTMLElement | undefined {
     const anchor = this.headless.surfaceAnchor();
 

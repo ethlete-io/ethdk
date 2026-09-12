@@ -40,7 +40,7 @@ export type FormFieldControl = {
   errors: Signal<readonly ValidationError.WithOptionalFieldTree[]>;
   /**
    * Advisories the control was given directly, for a field with no signal-forms binding to carry
-   * `warn()` rules. The field shows them the same way, and they never reach validity.
+   * `warn()` rules. They never reach validity.
    */
   warnings?: Signal<FieldWarningResult>;
   name: Signal<string>;
@@ -55,8 +55,7 @@ export type FormFieldControl = {
   focused?: Signal<boolean>;
   /**
    * True while the control's own popup (a date picker, select/cascader panel, …) is open. The
-   * field keeps its focused styling while set - focus itself has moved into the detached overlay,
-   * so `:focus-visible` no longer matches the field.
+   * field keeps its focused styling while set.
    */
   expanded?: Signal<boolean>;
   hasValue?: Signal<boolean>;
@@ -69,35 +68,26 @@ export type FormFieldControl = {
   resolvedParseErrorMessage?: Signal<string>;
   /**
    * True when the control carries an author-supplied accessible name (its own `aria-label` /
-   * `aria-labelledby`) independent of a projected `<et-label>`. The field's dev-time labelling
-   * guard treats such a control as named even without an `<et-label>`. Controls that only support
+   * `aria-labelledby`) independent of a projected `<et-label>`. Controls that only support
    * `<et-label>` for labelling leave this unset.
    */
   hasCustomAccessibleName?: Signal<boolean>;
-  /**
-   * The control's current value. `et-counter` derives the length it displays from this - a string's
-   * `length`, an array's/set's element count, or whatever the counter's `lengthOf` says.
-   */
+  /** The control's current value. */
   value?: Signal<unknown>;
   /**
    * The bound field's `maxLength()` limit. Signal forms binds this automatically into any control
-   * that declares a `maxLength` input, so `et-counter` gets its limit from the schema without the
-   * consumer repeating it. Note the controls deliberately do **not** forward it to the native
-   * `maxlength` attribute - hard-truncating input would stop the validator from ever reporting the
-   * over-limit error the counter is there to make visible.
+   * that declares a `maxLength` input.
    */
   maxLength?: Signal<number | undefined>;
   /**
    * True while an async validator is in flight for the bound field - bound automatically by signal
-   * forms into any control declaring a `pending` input. Surfaces as the field's busy state.
+   * forms into any control declaring a `pending` input.
    */
   pending?: Signal<boolean>;
   activate(): void;
   /**
    * Moves focus into the control's focusable element - the native input, the trigger, the first
-   * thumb, whatever the control actually focuses. Implements the optional `focus` member of signal
-   * forms' `FormUiControl`, so `field().focusBoundControl()` reaches a wrapped control instead of
-   * the (unfocusable) element carrying `[formField]`.
+   * thumb, whatever the control actually focuses.
    *
    * Unlike {@link activate}, this only focuses - it never toggles, opens a panel, or selects.
    */
@@ -106,7 +96,7 @@ export type FormFieldControl = {
 
 export type HintComponentBase = object;
 
-/** A projected `et-counter`. The field only needs to know one is present to make room for it. */
+/** A projected `et-counter`. */
 export type CounterComponentBase = object;
 
 /**

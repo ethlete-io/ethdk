@@ -19,7 +19,6 @@ export type SchedulerEditColorConfig = SchedulerFeatureConfig;
 export class SchedulerEditColorDirective {
   private host = injectSchedulerEditSurfaceHost('etSchedulerEditColor');
 
-  /** See {@link SchedulerEditColorConfig}. */
   public config = input({} as SchedulerEditColorConfig, {
     alias: 'etSchedulerEditColor',
     transform: schedulerFeatureConfig<SchedulerEditColorConfig>,

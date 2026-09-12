@@ -4,8 +4,7 @@ import { injectStyleManager } from '@ethlete/core';
 /**
  * The support region under a form control - the clipped, height-animated box and the error, warning
  * and hint blocks that cross-fade inside it - as a styles-only component. Mounted once per document
- * by `FormSupportComponent`, so the controls that render a region share one stylesheet instead of
- * each carrying a near-identical copy.
+ * by `FormSupportComponent`.
  *
  * A control keeps its public `--et-<control>-support-*` tokens and aliases them onto the
  * `--et-form-support-*` tokens this sheet reads.

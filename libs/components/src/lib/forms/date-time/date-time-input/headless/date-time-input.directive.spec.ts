@@ -7,6 +7,7 @@ import { describePickerCommitContract } from '../../../testing/picker-commit-con
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateTimeInputFieldDirective } from './date-time-input-field.directive';
+import { DATE_TIME_INPUT_ERROR_CODES } from '../date-time-input-errors';
 import { DateTimeInputDirective } from './date-time-input.directive';
 import { DatePickerDriver, mountDatePicker } from '../../../testing/date-picker-driver';
 import { pressKey, tick } from '../../../../testing/driver-core';
@@ -201,7 +202,6 @@ describe('DateTimeInputDirective', () => {
 
     driver.clickInPane('.pick-time');
 
-    // the typed day won, so the time lands on it rather than completing the dropped half
     expect(driver.host.value()).toBe('2026-12-24 21:45');
   });
 
@@ -289,7 +289,6 @@ describe('DateTimeInputDirective', () => {
       driver.clickInPane('.pick-date');
 
       expect(driver.host.mixed()).toBe(false);
-      // the hidden 08:15 must not leak into the fresh pick - replace semantics
       expect(driver.host.value()).toBeNull();
       expect(driver.control.displayValue()).toBe('07/16/2026, __:__');
       expect(driver.control.pickerOpen()).toBe(true);
@@ -306,7 +305,6 @@ describe('DateTimeInputDirective', () => {
       driver.clickInPane('.pick-time');
 
       expect(driver.host.mixed()).toBe(false);
-      // the hidden 2026-03-05 must not leak into the fresh pick - replace semantics
       expect(driver.host.value()).toBeNull();
       expect(driver.control.displayValue()).toBe('__/__/____, 21:45');
     });
@@ -504,5 +502,21 @@ describe('DateTimeInputDirective commit contract', () => {
         tick();
       },
     };
+  });
+});
+
+@Component({
+  template: `<input etDateTimeInputField />`,
+  imports: [DateTimeInputFieldDirective],
+})
+class OrphanDateTimeInputFieldTestHost {}
+
+describe('DateTimeInputFieldDirective errors', () => {
+  it('rejects a field outside its host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDateTimeInputFieldTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDateTimeInputFieldTestHost)).toThrow(
+      `ET${DATE_TIME_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_TIME_INPUT}`,
+    );
   });
 });

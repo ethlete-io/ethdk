@@ -11,15 +11,6 @@ import { injectFormSupport, wireFormSupport } from '../headless';
  * `injectFormSupport`. Project the control's `et-hint` into it - the hint slot has to stay
  * selector-less, because a re-projected `<ng-content>` never matches a `select`.
  *
- * Render it behind the region gate the support state machine provides, so the box only exists while
- * it has something to show:
- *
- * ```html
- * @if (support.shouldRenderSupport()) {
- *   <et-form-support><ng-content select="et-hint" /></et-form-support>
- * }
- * ```
- *
  * @internal
  */
 @Component({

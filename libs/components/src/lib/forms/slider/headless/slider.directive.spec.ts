@@ -1,5 +1,8 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { expectDescribedByPointsAtErrors } from '../../testing/described-by';
+import { HintComponent } from '../../form-field/hint.component';
+import { mountControl } from '../../../testing/control-driver';
 import { LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { mountSlider, SliderDriver } from '../../testing/slider-driver';
@@ -448,5 +451,28 @@ describe('SliderDirective (mixed contract)', () => {
         expect(driver.thumbPosition()).toBe('0');
       },
     };
+  });
+});
+
+@Component({
+  template: `
+    <et-slider [(touched)]="touched" [errors]="errors" invalid name="volume">
+      <et-label>Volume</et-label>
+      <et-hint>Drag or use the arrow keys</et-hint>
+    </et-slider>
+  `,
+  imports: [SLIDER_IMPORTS, HintComponent, LabelDirective],
+})
+class SliderWithErrorTestHost {
+  errors = [{ kind: 'required', message: 'Pick a volume' }];
+
+  touched = signal(true);
+}
+
+describe('slider support region', () => {
+  it('should describe the thumb by the rendered error', () => {
+    const host = mountControl(SliderWithErrorTestHost).nativeElement as HTMLElement;
+
+    expectDescribedByPointsAtErrors(host);
   });
 });

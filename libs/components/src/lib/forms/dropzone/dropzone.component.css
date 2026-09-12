@@ -96,7 +96,6 @@
     --et-form-support-hint-font-size: var(--et-dropzone-hint-font-size);
 
     .et-form-support {
-      /* pull the hint/error region closer to the control than the flex gap */
       margin-block-start: calc(4px - var(--et-dropzone-gap));
     }
 
@@ -201,7 +200,6 @@
       color: var(--et-theme-color-primary-solid, currentColor);
     }
 
-    /* collapses smoothly when the upload finishes so the file name doesn't jump */
     .et-dropzone-entry-progress {
       display: grid;
       grid-template-rows: 0fr;

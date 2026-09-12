@@ -7,7 +7,6 @@ import { TAG_INPUT_IMPORTS } from '../../tag-input';
 import { TEXTAREA_IMPORTS } from '../../textarea';
 import { FORM_FIELD_IMPORTS } from '../form-field.imports';
 
-/** How long the fake "checking the handle" async validator takes. */
 const HANDLE_CHECK_MS = 1200;
 const TAKEN_HANDLES = ['admin', 'root', 'ethlete'];
 
@@ -15,7 +14,6 @@ const TAKEN_HANDLES = ['admin', 'root', 'ethlete'];
   selector: 'et-sb-form-field-counter',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-8 p-8 font-sans">
-      <!-- The limit comes from the schema's maxLength() - the counter needs no [max] at all. -->
       <et-form-field>
         <et-label>Bio</et-label>
         <et-textarea [formField]="bioForm.bio" placeholder="Tell us about yourself…" />
@@ -25,7 +23,6 @@ const TAKEN_HANDLES = ['admin', 'root', 'ethlete'];
         <et-counter />
       </et-form-field>
 
-      <!-- An explicit soft limit, on a field the schema doesn't length-validate. -->
       <et-form-field>
         <et-label>Tagline</et-label>
         <et-input [formField]="bioForm.tagline" placeholder="One line about you" />
@@ -33,14 +30,12 @@ const TAKEN_HANDLES = ['admin', 'root', 'ethlete'];
         <et-counter [max]="40" />
       </et-form-field>
 
-      <!-- Array values count their elements, so the same counter works for tags. -->
       <et-form-field>
         <et-label>Tags</et-label>
         <et-tag-input [formField]="bioForm.tags" placeholder="Add a tag…" />
         <et-counter [max]="5" />
       </et-form-field>
 
-      <!-- Pending async validator → the field's busy spinner, no wiring required. -->
       <et-form-field>
         <et-label>Handle</et-label>
         <et-input [formField]="handleForm.handle" placeholder="pick-a-handle" />
@@ -48,7 +43,6 @@ const TAKEN_HANDLES = ['admin', 'root', 'ethlete'];
         <et-counter [max]="20" />
       </et-form-field>
 
-      <!-- The manual override, for work the form knows nothing about. -->
       <et-form-field busy>
         <et-label>Manually busy</et-label>
         <et-input [formField]="bioForm.tagline" />
@@ -85,7 +79,6 @@ export class FormFieldCounterStorybookComponent {
     validateAsync(s.handle, {
       params: ({ value }) => value().trim().toLowerCase() || undefined,
       debounce: 300,
-      // stands in for a server round-trip, so the field's busy spinner is visible for a real interval
       factory: (params) =>
         resource({
           params: () => params(),

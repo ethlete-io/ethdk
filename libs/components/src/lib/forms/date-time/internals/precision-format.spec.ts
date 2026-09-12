@@ -13,7 +13,6 @@ describe('displayFormatForPrecision', () => {
   });
 
   it('drops the day out of the locale short date at month precision', () => {
-    // de: dd.MM.y · en-GB: dd/MM/y · en-US: MM/dd/y · ja: y/MM/dd
     expect(displayFormatForPrecision('month', de)).toBe('MM.yyyy');
     expect(displayFormatForPrecision('month', enGB)).toBe('MM/yyyy');
     expect(displayFormatForPrecision('month', enUS)).toBe('MM/yyyy');

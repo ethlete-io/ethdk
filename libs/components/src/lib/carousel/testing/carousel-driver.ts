@@ -11,7 +11,6 @@ export const settleCarouselChildren = async <T>(fixture: ComponentFixture<T>) =>
   fixture.detectChanges();
 };
 
-/** Slides, dots and controls of an `<et-carousel>` (or a headless `etCarousel` composition) under `fixture`. */
 export const createCarouselDriver = <T>(fixture: ComponentFixture<T>) => ({
   fixture,
 

@@ -75,13 +75,9 @@ export class CascaderStorybookComponent {
   public placeholder = input('Browse competitions');
   public selectableLevels = input<CascaderSelectableLevels>('leaf');
   public async = input(false);
-  /** Adds a `search` hook to the data source, enabling the panel's flat search input. */
   public searchable = input(false);
-  /** Swaps in the generated six-level hierarchy to demo the breadcrumb collapse. */
   public deep = input(false);
-  /** Multi-select: activations toggle values, parents show indeterminate states. */
   public multiple = input(false);
-  /** Fails the first load of each level and recovers on Retry - demonstrates the error state. */
   public errorMode = input(false);
   public value = input<string | string[] | null>(null);
   public mixed = input(false);
@@ -89,7 +85,6 @@ export class CascaderStorybookComponent {
   public showMixedState = input(false);
   public color = input('brand');
 
-  // per-level attempt tracking: the first load of a level fails, a Retry (second load) succeeds
   private flakyAttempts = new Map<string, number>();
 
   private flakySource: CascaderDataSource<string> = {
