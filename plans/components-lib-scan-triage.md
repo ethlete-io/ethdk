@@ -665,7 +665,7 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    it the highest-leverage single piece), the `ResizeObserver`/`IntersectionObserver`/`clientWidth`
    shims that six grid/masonry specs and three tab specs each hand-roll, a breakpoint fake (nothing can
    currently test the cascader bottom sheet at all), and **wiring `onfinish`/`oncancel` into
-   `test-helpers.ts`'s `AnimationMock`** — a hard prerequisite for testing any animated PiP path. M
+   `test-helpers.ts`'s `AnimationMock`** — a hard prerequisite for testing any animated PiP path. — **Mostly DONE by 2026-09-12**: `fake-match-media.ts`, `fake-layout.ts`, the observer shims and the `AnimationMock` `onfinish`/`oncancel` all live in `libs/components/src/lib/testing/` and `libs/components/src/test-helpers.ts`. Open: a breakpoint fake for the cascader bottom sheet. M
 4. **Stylesheet splits, ranked by bytes × reach.** Worth doing: `table.component.css` (1166 lines,
    ~40 % minority features — sticky columns is the clean win), `scrollable.component.css` (472, ~half
    opt-in chrome), `menu` (search header + scroll fade), `overlay-container` (arrow + content chrome),
@@ -681,15 +681,14 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    2026-09-03** in `bb3ab336e test(components): Strengthen form control test drivers`:
    `picker-commit-contract.ts` (six specs), `overlay-control-contract.ts` (select, cascader),
    `described-by.ts` (`expectDescribedByResolves`; form-field, selection-list) and
-   `wrapper-inputs.ts` (one spec). Still open: adopt `expectDescribedByResolves` in the other
-   support-region controls (checkbox-group, radio-group, rating, slider, otp, dropzone).
+   `wrapper-inputs.ts` (one spec). Adoption **DONE 2026-09-12** in `test(components): Assert aria-describedby resolves on every support-region control` (slider, range slider, tag input, phone input, switch, rating, otp, dropzone, checkbox).
 6. **Duplicated CSS/logic pairs worth collapsing:** tooltip + toggletip + menu animation blocks (three
    copies of one structure), `et-tab-group` vs `et-nav-tabs` (~120 lines; **DONE 2026-09-12**
    `refactor(components): Share the tab bar trigger chrome between tab group and nav tabs`), the two date/time range
    shells (byte-identical bar a threshold; **DONE 2026-08-28** `d64f32a9b perf(components): Share the
 date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the three stream
    overlay cards, `select`/`cascader` panel animations, the button/fab/icon-button opacity ramps, the
-   three class-list normalizers in overlay, the two color parsers in color-input. M
+   three class-list normalizers in overlay, the two color parsers in color-input. The tooltip/toggletip/menu animation blocks and the select/cascader panel animations were **DONE** earlier in `ca7ca9127` and `72087d46a`; the three overlay class-list normalizers are one `normalize-class-list.ts`; the stream overlay cards share `stream-overlay-card-styles.component.css`; the color parsers **DONE 2026-09-12** in `refactor(components): Parse colors once for the color input validators and picker`. Still open: `et-pip-player` rules in two sheets (small), the button/fab/icon-button opacity ramps (in progress). M
 7. **Bundle-size wins, each behind a treeshake golden.** `@defer` the color picker panel; make the
    stream PiP slice opt-in by import graph (~1.5k lines reachable today from one YouTube slot); defer
    the scheduler edit surface (it drags five form-control families into a read-only month grid); pack
@@ -728,7 +727,7 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
     agents), and the calendar's per-cell `afterNextRender` structural throws. **Batch 2 done 2026-09-12**: `registerScrollContainer`, the
     `etRatingIcon` guard and the calendar cell guard had already landed in `88000992a`; the calendar grid
     guard moved to the constructor in `fix(components): Throw the calendar grid guard at construction`.
-    Still open: the four-of-six picker host names and the range-field duplicate guards.
+    **Batch 3 done 2026-09-12**: the host names and the range-field duplicate guards (`ET3011`/`ET3061`/`ET3071`) had already landed in `88000992a`; the nine structural date-time guards moved to the constructor in `fix(components): Throw the date-time structural guards at construction`. Still open: the time picker's `ET3020`/`ET3021` (after first render) and a duplicate-registration guard in the shared `register-singleton.ts`, which silently replaces.
 11. **Comment-policy cleanup where it is dense** (table — 34 % of non-spec TS — plus carousel, grid,
     bracket, calendar, scheduler, selection-controls). Not urgent, except the comments the scan proved
     _wrong_: the table keyboard-nav comment, the cascader column comment, `pruneEmptyInline`'s "three
