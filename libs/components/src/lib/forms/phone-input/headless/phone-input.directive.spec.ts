@@ -1,5 +1,8 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { expectDescribedByResolves } from '../../testing/described-by';
+import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
+import { mountControl } from '../../../testing/control-driver';
 import { flushFrames, latestPane } from '../../../testing/driver-core';
 import { resolveAccessibleName } from '../../testing/accessible-name';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
@@ -322,5 +325,36 @@ describe('PhoneInputDirective (contract)', () => {
       clear: () => driver.clearValue(),
       emptyValue: () => '',
     };
+  });
+});
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-label>Phone</et-label>
+      <et-phone-input [(touched)]="touched" [errors]="errors" invalid name="phone" />
+      <et-hint>Include the area code</et-hint>
+    </et-form-field>
+  `,
+  imports: [FORM_FIELD_IMPORTS, PHONE_INPUT_IMPORTS],
+})
+class PhoneInputInFormFieldTestHost {
+  errors = [{ kind: 'required', message: 'Enter a phone number' }];
+
+  touched = signal(true);
+}
+
+describe('phone input support region', () => {
+  it('should describe the phone input by the rendered error', () => {
+    const host = mountControl(PhoneInputInFormFieldTestHost).nativeElement as HTMLElement;
+    const error = host.querySelector('.et-form-field-errors')!;
+    const described = Array.from(host.querySelectorAll('[aria-describedby]'));
+
+    expect(described.length).toBeGreaterThan(0);
+
+    for (const element of described) {
+      expect(element.getAttribute('aria-describedby')).toBe(error.id);
+      expectDescribedByResolves(element);
+    }
   });
 });

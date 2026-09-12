@@ -1,5 +1,8 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { expectDescribedByResolves } from '../../testing/described-by';
+import { HintComponent } from '../../form-field/hint.component';
+import { mountControl } from '../../../testing/control-driver';
 import { LabelDirective } from '../../form-field/headless';
 import { mountOtpInput, OtpInputDriver } from '../../testing/otp-input-driver';
 import { OTP_INPUT_IMPORTS } from '../otp-input.imports';
@@ -170,5 +173,35 @@ describe('OtpInputDirective', () => {
 
     driver.blur();
     expect(driver.segmentCarets()).toEqual([false, false, false, false]);
+  });
+});
+
+@Component({
+  template: `
+    <et-otp-input [(touched)]="touched" [errors]="errors" invalid name="otp">
+      <et-label>Code</et-label>
+      <et-hint>Six digits from the email</et-hint>
+    </et-otp-input>
+  `,
+  imports: [OTP_INPUT_IMPORTS, HintComponent, LabelDirective],
+})
+class OtpInputWithErrorTestHost {
+  errors = [{ kind: 'required', message: 'Enter the code' }];
+
+  touched = signal(true);
+}
+
+describe('otp input support region', () => {
+  it('should describe the native input by the rendered error', () => {
+    const host = mountControl(OtpInputWithErrorTestHost).nativeElement as HTMLElement;
+    const error = host.querySelector('.et-form-support-errors')!;
+    const described = Array.from(host.querySelectorAll('[aria-describedby]'));
+
+    expect(described.length).toBeGreaterThan(0);
+
+    for (const element of described) {
+      expect(element.getAttribute('aria-describedby')).toBe(error.id);
+      expectDescribedByResolves(element);
+    }
   });
 });

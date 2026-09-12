@@ -1,6 +1,9 @@
 import { Component, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import '../../../test-helpers';
+import { expectDescribedByResolves } from '../testing/described-by';
+import { HintComponent } from '../form-field/hint.component';
+import { mountControl } from '../../testing/control-driver';
 import { LabelDirective } from '../form-field/headless';
 import { MountedDropzoneDriver, mountDropzone } from '../testing/dropzone-driver';
 import { provideDropzoneLabels } from './dropzone-labels';
@@ -268,5 +271,43 @@ describe('DropzoneComponent with schema constraints', () => {
 
     driver.fixture.destroy();
     driver.query.httpTesting.verify();
+  });
+});
+
+@Component({
+  template: `
+    <et-dropzone [(touched)]="touched" [upload]="upload" [errors]="errors" invalid name="attachments">
+      <et-label>Attachments</et-label>
+      <et-hint>Images up to 5 MB</et-hint>
+    </et-dropzone>
+  `,
+  imports: [DropzoneComponent, HintComponent, LabelDirective],
+})
+class DropzoneWithErrorTestHost {
+  errors = [{ kind: 'required', message: 'Attach at least one file' }];
+
+  touched = signal(true);
+
+  upload: AnyDropzoneUploadConfig<string> = {
+    selectValue: (response: unknown) => String(response),
+    createUploadHandle: () => {
+      throw new Error('the support-region test never uploads');
+    },
+    deleteIncludesExisting: false,
+  };
+}
+
+describe('dropzone support region', () => {
+  it('should describe the trigger by the rendered error', () => {
+    const host = mountControl(DropzoneWithErrorTestHost).nativeElement as HTMLElement;
+    const error = host.querySelector('.et-form-support-errors')!;
+    const described = Array.from(host.querySelectorAll('[aria-describedby]'));
+
+    expect(described.length).toBeGreaterThan(0);
+
+    for (const element of described) {
+      expect(element.getAttribute('aria-describedby')).toBe(error.id);
+      expectDescribedByResolves(element);
+    }
   });
 });

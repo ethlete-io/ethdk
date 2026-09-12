@@ -1,5 +1,9 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { expectDescribedByResolves } from '../../testing/described-by';
+import { HintComponent } from '../../form-field/hint.component';
+import { LabelDirective } from '../../form-field/headless';
+import { mountControl } from '../../../testing/control-driver';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { mountRangeSlider, RangeSliderDriver } from '../../testing/slider-driver';
 import { SLIDER_IMPORTS } from '../slider.imports';
@@ -278,5 +282,35 @@ describe('RangeSliderDirective (mixed contract)', () => {
         expect(driver.thumbPositions()).toEqual(['0', '0']);
       },
     };
+  });
+});
+
+@Component({
+  template: `
+    <et-range-slider [(touched)]="touched" [errors]="errors" invalid name="price">
+      <et-label>Price</et-label>
+      <et-hint>Set both ends</et-hint>
+    </et-range-slider>
+  `,
+  imports: [SLIDER_IMPORTS, HintComponent, LabelDirective],
+})
+class RangeSliderWithErrorTestHost {
+  errors = [{ kind: 'required', message: 'Pick a price range' }];
+
+  touched = signal(true);
+}
+
+describe('range slider support region', () => {
+  it('should describe the thumbs by the rendered error', () => {
+    const host = mountControl(RangeSliderWithErrorTestHost).nativeElement as HTMLElement;
+    const error = host.querySelector('.et-form-support-errors')!;
+    const described = Array.from(host.querySelectorAll('[aria-describedby]'));
+
+    expect(described.length).toBeGreaterThan(0);
+
+    for (const element of described) {
+      expect(element.getAttribute('aria-describedby')).toBe(error.id);
+      expectDescribedByResolves(element);
+    }
   });
 });

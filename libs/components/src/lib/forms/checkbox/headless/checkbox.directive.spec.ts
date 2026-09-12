@@ -1,5 +1,9 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { CHECKBOX_IMPORTS } from '../checkbox.imports';
+import { expectDescribedByResolves } from '../../testing/described-by';
+import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
+import { mountControl } from '../../../testing/control-driver';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { CheckboxDriver, mountCheckbox } from '../../testing/checkbox-driver';
 import { CheckboxDirective } from './checkbox.directive';
@@ -127,5 +131,36 @@ describe('CheckboxDirective', () => {
 
       expect(driver.checkbox.checked()).toBe(true);
     });
+  });
+});
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-label>Accept terms</et-label>
+      <et-checkbox [(touched)]="touched" [errors]="errors" invalid name="terms" />
+      <et-hint>You can withdraw consent later</et-hint>
+    </et-form-field>
+  `,
+  imports: [FORM_FIELD_IMPORTS, CHECKBOX_IMPORTS],
+})
+class CheckboxWithErrorTestHost {
+  errors = [{ kind: 'required', message: 'Accept the terms to continue' }];
+
+  touched = signal(true);
+}
+
+describe('checkbox support region', () => {
+  it('should describe the checkbox by the rendered error', () => {
+    const host = mountControl(CheckboxWithErrorTestHost).nativeElement as HTMLElement;
+    const error = host.querySelector('.et-form-field-errors')!;
+    const described = Array.from(host.querySelectorAll('[aria-describedby]'));
+
+    expect(described.length).toBeGreaterThan(0);
+
+    for (const element of described) {
+      expect(element.getAttribute('aria-describedby')).toBe(error.id);
+      expectDescribedByResolves(element);
+    }
   });
 });

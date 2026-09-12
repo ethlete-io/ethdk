@@ -2,6 +2,9 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { expectDescribedByResolves } from '../../testing/described-by';
+import { HintComponent } from '../../form-field/hint.component';
+import { mountControl } from '../../../testing/control-driver';
 import { LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { mountRating, RatingDriver } from '../../testing/rating-driver';
@@ -324,5 +327,35 @@ describe('RatingDirective errors', () => {
     expect(() => TestBed.createComponent(DuplicateRatingIconTestHost)).toThrow(
       `ET${RATING_ERROR_CODES.DUPLICATE_ICON_TEMPLATE}`,
     );
+  });
+});
+
+@Component({
+  template: `
+    <et-rating [(touched)]="touched" [errors]="errors" invalid name="rating">
+      <et-label>Rating</et-label>
+      <et-hint>One to five stars</et-hint>
+    </et-rating>
+  `,
+  imports: [RATING_IMPORTS, HintComponent, LabelDirective],
+})
+class RatingWithErrorTestHost {
+  errors = [{ kind: 'required', message: 'Rate the product' }];
+
+  touched = signal(true);
+}
+
+describe('rating support region', () => {
+  it('should describe the rating by the rendered error', () => {
+    const host = mountControl(RatingWithErrorTestHost).nativeElement as HTMLElement;
+    const error = host.querySelector('.et-form-support-errors')!;
+    const described = Array.from(host.querySelectorAll('[aria-describedby]'));
+
+    expect(described.length).toBeGreaterThan(0);
+
+    for (const element of described) {
+      expect(element.getAttribute('aria-describedby')).toBe(error.id);
+      expectDescribedByResolves(element);
+    }
   });
 });
