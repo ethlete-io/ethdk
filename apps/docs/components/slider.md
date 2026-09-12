@@ -19,24 +19,26 @@ import { SLIDER_IMPORTS } from '@ethlete/components';
 
 ## Options
 
-On `et-slider` (forwarded from the headless `[etSlider]` directive):
+On `et-slider` (forwarded from the headless `[etSlider]` directive), plus the standard form-field contract set (`disabled`, `readonly`, `invalid`, `errors`, `required`, `name`, `touched`):
 
-| Input         | Type                             | Default        | Description                                                                                              |
-| ------------- | -------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------- |
-| `min`         | `number \| undefined`            | `undefined`    | Lower bound; `undefined` means `0`. A schema `min(...)` validator binds into this input automatically.   |
-| `max`         | `number \| undefined`            | `undefined`    | Upper bound; `undefined` means `100`. A schema `max(...)` validator binds into this input automatically. |
-| `step`        | `number`                         | `1`            | Snap grid, anchored at `min`. Keyboard steps, pointer commits and the displayed value all snap to it.    |
-| `orientation` | `'horizontal' \| 'vertical'`     | `'horizontal'` | Axis the slider runs along - see [orientation](#orientation).                                            |
-| `marks`       | `boolean \| { value, label? }[]` | `false`        | Tick marks on the track - see [tick marks](#tick-marks).                                                 |
-| `snapToMarks` | `boolean`                        | `false`        | Snaps values onto the marks instead of the `step` grid.                                                  |
-| `disabled`    | `boolean`                        | `false`        | Blocks all interaction and removes the thumb from the tab order.                                         |
-| `readonly`    | `boolean`                        | `false`        | Focusable but not adjustable (`aria-readonly`).                                                          |
-| `mixedLabel`  | `string \| null`                 | `null` ¹       | `aria-valuetext` the thumb announces while `mixed` is true.                                              |
-| `color`       | registered color theme name      | -              | Scopes a [color theme](/core/theming) to the fill and thumb(s).                                          |
+| Input         | Type                             | Default        | Description                                                                                                                                               |
+| ------------- | -------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`       | `number`                         | `0`            | The picked number. Two-way bindable.                                                                                                                      |
+| `mixed`       | `boolean`                        | `false`        | Presents an [unresolved bulk-edit value](#mixed-values-in-bulk-editors) independently of `value`. Two-way bindable; a user commit resolves it to `false`. |
+| `min`         | `number \| undefined`            | `undefined`    | Lower bound; `undefined` means `0`. A schema `min(...)` validator binds into this input automatically.                                                    |
+| `max`         | `number \| undefined`            | `undefined`    | Upper bound; `undefined` means `100`. A schema `max(...)` validator binds into this input automatically.                                                  |
+| `step`        | `number`                         | `1`            | Snap grid, anchored at `min`. Keyboard steps, pointer commits and the displayed value all snap to it.                                                     |
+| `orientation` | `'horizontal' \| 'vertical'`     | `'horizontal'` | Axis the slider runs along - see [orientation](#orientation).                                                                                             |
+| `marks`       | `boolean \| { value, label? }[]` | `false`        | Tick marks on the track - see [tick marks](#tick-marks).                                                                                                  |
+| `snapToMarks` | `boolean`                        | `false`        | Snaps values onto the marks instead of the `step` grid.                                                                                                   |
+| `disabled`    | `boolean`                        | `false`        | Blocks all interaction and removes the thumb from the tab order.                                                                                          |
+| `readonly`    | `boolean`                        | `false`        | Focusable but not adjustable (`aria-readonly`).                                                                                                           |
+| `mixedLabel`  | `string \| null`                 | `null` ¹       | `aria-valuetext` the thumb announces while `mixed` is true.                                                                                               |
+| `color`       | registered color theme name      | -              | Scopes a [color theme](/core/theming) to the fill and thumb(s).                                                                                           |
 
 ¹ `null` falls through to [`FORM_FIELD_LABELS.mixed`](/components/localization) (`'Mixed'`).
 
-The `value` model is a plain `number` (default `0`). Values outside the bounds or off the step grid are displayed clamped and snapped, but the model is only rewritten when the user interacts.
+Values outside the bounds or off the step grid are displayed clamped and snapped, but the model is only rewritten when the user interacts.
 
 ## Range slider
 
@@ -44,6 +46,7 @@ The `value` model is a plain `number` (default `0`). Values outside the bounds o
 
 | Input                     | Type                        | Default     | Description                                                                          |
 | ------------------------- | --------------------------- | ----------- | ------------------------------------------------------------------------------------ |
+| `value`                   | `[number, number]`          | `[0, 100]`  | The picked range. Two-way bindable.                                                  |
 | `minValue` / `maxValue`   | `number`                    | `0` / `100` | Track bounds.                                                                        |
 | `step`                    | `number`                    | `1`         | Snap grid.                                                                           |
 | `minDistance`             | `number`                    | `0`         | Minimum gap kept between the thumbs - use a multiple of `step`. `0` lets them touch. |
@@ -52,9 +55,9 @@ The `value` model is a plain `number` (default `0`). Values outside the bounds o
 | `color`                   | registered color theme name | -           | Scopes a [color theme](/core/theming) to the fill and thumbs.                        |
 
 ¹ `null` falls through to [`FORM_FIELD_LABELS.mixed`](/components/localization) (`'Mixed'`).
-² `null` falls through to [`SLIDER_LABELS`](/components/localization) (`'Minimum'` / `'Maximum'`).
+² `null` falls through to [`SLIDER_LABELS`](/components/localization) (`'Minimum'` / `'Maximum'`), which `provideSliderLabels({ minimum, maximum })` overrides for a whole subtree.
 
-`orientation`, `marks` and `snapToMarks` behave exactly as they do on `et-slider`.
+`orientation`, `marks`, `snapToMarks`, `mixed` and the form-field contract set behave exactly as they do on `et-slider`.
 
 A reversed tuple is normalized for display (`[80, 20]` renders as 20–80). Dragging or stepping a thumb never lets it cross its sibling; each thumb's `aria-valuemin`/`aria-valuemax` shrink to the sibling's position (± `minDistance`), so assistive tech announces the real limits.
 
@@ -128,7 +131,7 @@ Project an `ng-template[etSliderThumbLabel]` to render a value bubble above each
 
 Try it live in Storybook: `Components/Forms/Slider` → `Mixed` / `Components/Forms/Range slider` → `Mixed`.
 
-Use `mixed` when one slider edits several records whose current values differ - both slider components implement the SDK-wide [mixed state contract](/components/mixed-state). A slider has no text display slot, so the state is expressed through ARIA and visual masking: while mixed, the rail switches to a dashed treatment and the thumb(s) park dimmed at the track start (the position reads as "provisional / values differ", not "minimum"), the fill collapses, any value-label bubble is hidden, `aria-valuenow` is removed (the ARIA-sanctioned indeterminate value) and `aria-valuetext` announces `mixedLabel`. The raw form value stays unchanged and is not readable from the DOM.
+Use `mixed` when one slider edits several records whose current values differ - both slider components implement the SDK-wide [mixed state contract](/components/mixed-state). A slider has no text display slot, so the state is expressed through ARIA and visual masking: while mixed, the rail switches to a dashed accent treatment and the thumb(s) park at the track start with their elevation shadow removed (the position reads as "provisional / values differ", not "minimum"), the fill collapses, any value-label bubble is hidden, `aria-valuenow` is removed (the ARIA-sanctioned indeterminate value) and `aria-valuetext` announces `mixedLabel`. The raw form value stays unchanged and is not readable from the DOM.
 
 ```html
 <et-slider [(mixed)]="volumeIsMixed" [formField]="form.volume" mixedLabel="Different volumes">
@@ -157,6 +160,12 @@ Treat `mixed` as explicitly controlled state. Updating the raw form value from a
 ```
 
 Position thumbs from `percent()` (0–100, already RTL-agnostic when applied via `inset-inline-start`); the host exposes `thumbPercents()` for track fills. Both directives provide the shared `SLIDER_TOKEN`, so the sub-directives compose with either.
+
+`[etSliderTrack]` and `ng-template[etSliderThumbLabel]` take no inputs. On `[etSliderThumb]`:
+
+| Input   | Type     | Default | Description                                                                                                          |
+| ------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------- |
+| `label` | `string` | `''`    | Accessible name (`aria-label`) of the thumb - give each range thumb one; empty falls back to the field's `et-label`. |
 
 All of the behavior above lives in the headless tier - the default components only add visuals. Useful pieces when building your own:
 
@@ -196,6 +205,7 @@ The rail is a neutral `--et-surface-interaction-solid` tint; the fill and thumbs
 | `--et-slider-label-font-size`       | `13px`  | Projected `et-label`           |
 | `--et-slider-thumb-value-font-size` | `12px`  | Value-label bubble             |
 | `--et-slider-error-font-size`       | `12px`  | Error messages                 |
+| `--et-slider-warning-font-size`     | `12px`  | Warning messages               |
 | `--et-slider-hint-font-size`        | `12px`  | Hint text                      |
 | `--et-slider-support-duration`      | `180ms` | Error/hint transition duration |
 | `--et-slider-support-offset`        | `4px`   | Error/hint slide-in offset     |
