@@ -11,8 +11,6 @@
   }
 
   .et-scrollable {
-    /* --- Horizontal (default) --- */
-
     &[direction='horizontal'],
     &:not([direction]) {
       & .et-scrollable-button--start {
@@ -35,8 +33,6 @@
         }
       }
     }
-
-    /* --- Vertical --- */
 
     &[direction='vertical'] {
       & .et-scrollable-button--start {
@@ -64,8 +60,6 @@
       color: var(--et-surface-interaction-solid, currentColor);
     }
 
-    /* --- State-driven visibility --- */
-
     &.et-scrollable--can-scroll:not(.et-scrollable--is-at-start) {
       & .et-scrollable-buttons .et-scrollable-button--start {
         opacity: 1;
@@ -82,8 +76,6 @@
       }
     }
 
-    /* --- Animations --- */
-
     &.et-scrollable--can-animate.et-scrollable--can-scroll {
       & .et-scrollable-button {
         transition:
@@ -91,8 +83,6 @@
           transform 300ms var(--ease-5);
       }
     }
-
-    /* --- Sticky buttons --- */
 
     &.et-scrollable--sticky-buttons {
       --_sticky-margin: 10%;

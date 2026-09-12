@@ -45,7 +45,6 @@ const isScrollableChildIgnored = (el: HTMLElement) => {
   return attr === 'true' || attr === '';
 };
 
-// Thresholds for the intersection observer.
 const ELEMENT_INTERSECTION_THRESHOLD = [
   .../* @__PURE__ */ Array.from({ length: 21 }, (_, i) => i * 0.05),
   0.01,
@@ -67,8 +66,6 @@ const ELEMENT_INTERSECTION_THRESHOLD = [
 export class ScrollableDirective {
   private hostElement = injectHostElement();
 
-  // --- Inputs ---
-
   public itemSize = input('auto', { transform: typedBreakpointTransform<ScrollableItemSize>('auto') });
   public direction = input('horizontal', {
     transform: typedBreakpointTransform<ScrollableDirection>('horizontal'),
@@ -80,27 +77,19 @@ export class ScrollableDirective {
   public scrollMargin = input(0, { transform: numberAttribute });
   public renderScrollbars = input(false, { transform: booleanAttribute });
 
-  // --- Internal template refs (set by Tier 3 template) ---
-
   /** @internal */
   public scrollContainerRef = signal<ElementRef<HTMLElement> | null>(null);
 
-  // --- Lazy intersection ---
-
   private childIntersectionsActivated = signal(false);
 
-  // --- Child tracking ---
-
-  // The mutations are narrowed to the one attribute this actually reads. Left broad, every inline style
-  // written anywhere inside the track re-runs it - and a carousel's JS transition driver writes one per
-  // slide per animation frame, so a scroll cost a change detection tick a frame for nothing.
+  // Left broad, every inline style written anywhere inside the track re-runs it - and a carousel's JS
+  // transition driver writes one per slide per animation frame, so a scroll cost a change detection tick a
+  // frame for nothing.
   private allScrollableChildren = signalElementChildren(this.scrollContainerRef, {
     mutations: { childList: true, subtree: true, attributeFilter: [SCROLLABLE_IGNORE_CHILD_ATTRIBUTE] },
   });
 
   public scrollableChildren = computed(() => this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)));
-
-  // --- Active children (self-registration) ---
 
   private activeChildren = signal<ScrollableActiveChildRef[]>([]);
 
@@ -116,18 +105,13 @@ export class ScrollableDirective {
     return position.left === undefined && position.top === undefined ? null : position;
   });
 
-  // --- Scroll state ---
-
   /** @internal */
   public scrollObserverRef = signal<ScrollObserverDirective | null>(null);
 
-  // Narrowed like the children observer above, and for the same reason - but not as far, because this one is
-  // asking "might the content have changed size?", which an attribute genuinely can. `class` and `hidden` are
-  // the attributes that plausibly resize something; `style` is left out deliberately, because it is the one
-  // written per animation frame (a carousel's JS transition driver, any inline-style animation) and every such
-  // write re-measured `scrollWidth`, which is a forced layout, and ran a change detection tick with it. The gap
-  // it leaves is a descendant resized by an inline style with no DOM change alongside it - rare, and the
-  // container's own ResizeObserver still covers everything about the viewport.
+  // `class` and `hidden` are the attributes that plausibly resize something; `style` is left out deliberately:
+  // it is the one written per animation frame (a carousel's JS transition driver, any inline-style animation)
+  // and every such write re-measured `scrollWidth`, which is a forced layout, and ran a change detection tick
+  // with it.
   public containerScrollState = signalElementScrollState(this.scrollContainerRef, {
     mutations: { childList: true, subtree: true, attributeFilter: ['class', 'hidden'] },
     initialScrollPosition: this.initialActiveChildScrollPosition,
@@ -142,26 +126,18 @@ export class ScrollableDirective {
       : this.containerScrollState().canScrollVertically,
   );
 
-  // --- Lazy child intersections ---
-
   public childIntersections = signalElementIntersection(this.scrollableChildren, {
     root: this.scrollContainerRef,
     threshold: ELEMENT_INTERSECTION_THRESHOLD,
     enabled: this.childIntersectionsActivated,
   });
 
-  // --- Container dimensions (always available, cheap) ---
-
   public scrollableDimensions = signalElementDimensions(this.scrollContainerRef);
-
-  // --- Loading template (self-registration) ---
 
   /** @internal */
   public loadingTemplateRef = signal<ScrollableLoadingTemplateRef | null>(null);
 
   public loadingTemplate = this.loadingTemplateRef.asReadonly();
-
-  // --- Sub-directive registrations ---
 
   /** @internal */
   public masksDirective = signal<unknown | null>(null);
@@ -169,8 +145,7 @@ export class ScrollableDirective {
   public snapDirective = signal<unknown | null>(null);
   /**
    * @internal Where a snapped child comes to rest, or `null` when nothing is snapping. Set by
-   * `etScrollableSnap`; the snapping itself is CSS reading the attributes this drives, so this is the whole
-   * of the wiring.
+   * `etScrollableSnap`.
    */
   public activeSnapOrigin = signal<ScrollableScrollOrigin | null>(null);
 
@@ -179,22 +154,12 @@ export class ScrollableDirective {
 
   private snapSuspensions = signal(0);
 
-  /**
-   * Whether CSS snap is being held off. See {@link suspendSnap}.
-   *
-   * @internal
-   */
+  /** @internal */
   public isSnapSuspended = computed(() => this.snapSuspensions() > 0);
-
-  // --- Chrome contributed by opt-in features ---
 
   private registeredChrome = signal<readonly ScrollableChrome[]>([]);
 
-  /**
-   * The chrome to stamp right now, slots and inputs read, disabled contributions dropped.
-   *
-   * @internal
-   */
+  /** @internal */
   public activeChrome = computed<readonly ResolvedScrollableChrome[]>(() =>
     this.registeredChrome()
       .filter((chrome) => chrome.enabled?.() ?? true)
@@ -207,8 +172,6 @@ export class ScrollableDirective {
         injector: chrome.injector,
       })),
   );
-
-  // --- Host bindings ---
 
   /** @internal */
   public hostAttributeBindings = signalHostAttributes({
@@ -225,17 +188,12 @@ export class ScrollableDirective {
     'et-scrollable--can-scroll': this.canScroll,
     'et-scrollable--is-at-start': this.isAtStart,
     'et-scrollable--is-at-end': this.isAtEnd,
-    // Only the edge masks read this, and it flips as often as a scroll crosses an item boundary - so a
-    // scrollable without masks would pay a class change, and a restyle of the whole track with it, for a
-    // selector nothing matches.
     'et-scrollable--has-partial-items': computed(
       () =>
         !!this.masksDirective() &&
         this.childIntersections().some((i) => i.intersectionRatio > 0 && i.intersectionRatio < 1),
     ),
   });
-
-  // --- Computed ---
 
   public gapValue = computed(() => {
     this.scrollableDimensions();
@@ -276,8 +234,6 @@ export class ScrollableDirective {
     }
   }
 
-  // --- Registration API ---
-
   /**
    * Contribute a component to the scrollable's own DOM. Call once, from an opt-in feature's constructor -
    * see {@link ScrollableChrome}.
@@ -308,14 +264,12 @@ export class ScrollableDirective {
   /**
    * Hold CSS snap off until the returned function is called.
    *
-   * For anything that moves the scroll offset *itself* rather than by gesture. `scroll-snap-type: mandatory`
-   * does not merely influence where a scroll comes to rest - it overrules a programmatic offset outright, and
-   * silently: `container.scroll({ left: 950, behavior: 'instant' })` on a track whose snap positions are 306
-   * apart lands at 918 and reports 918, and `container.scrollLeft = 1260` lands at 1224. Any code that means
-   * a specific offset therefore has to take snapping off the table while it writes one.
+   * `scroll-snap-type: mandatory` does not merely influence where a scroll comes to rest - it overrules a
+   * programmatic offset outright, and silently. Any code that means a specific offset therefore has to take
+   * snapping off the table while it writes one.
    *
-   * Ref-counted, because two of them can overlap - a carousel crossing its loop seam on the frame a drag is
-   * being settled - and whichever finishes first must not hand snapping back to the other.
+   * Ref-counted: two of them can overlap, and whichever finishes first must not hand snapping back to the
+   * other.
    *
    * @internal
    */
@@ -333,9 +287,7 @@ export class ScrollableDirective {
   }
 
   /**
-   * Write a scroll offset that CSS snap cannot overrule - see {@link suspendSnap}. The offset is applied
-   * synchronously, so snapping is handed back on the next frame, by which point the browser has nothing left
-   * to argue with.
+   * Write a scroll offset that CSS snap cannot overrule - see {@link suspendSnap}.
    *
    * @internal
    */
@@ -350,8 +302,6 @@ export class ScrollableDirective {
 
     requestAnimationFrame(release);
   }
-
-  // --- Scroll methods ---
 
   public scrollOneContainerSize(scrollDirection: 'start' | 'end') {
     const scrollElement = this.scrollContainerRef()?.nativeElement;

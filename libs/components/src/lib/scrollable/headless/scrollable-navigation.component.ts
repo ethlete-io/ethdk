@@ -133,7 +133,7 @@ export class ScrollableNavigationComponent {
           scrollContainerRef$.pipe(
             switchMap((ref) => {
               if (!ref) return EMPTY;
-              // FIXME: eslint prefers signalElementScrollState but this pattern is intentional for debouncing
+              // eslint prefers signalElementScrollState but this pattern is intentional for debouncing
               // eslint-disable-next-line ethlete/prefer-scroll-state
               return fromEvent(ref.nativeElement, 'scroll');
             }),
