@@ -82,7 +82,6 @@
     position: relative;
     aspect-ratio: 1;
     border-radius: 8px;
-    /* the saturation ramp runs to the current hue, the brightness ramp darkens it to black */
     background-image:
       linear-gradient(to top, #000, transparent),
       linear-gradient(to right, #fff, var(--_et-color-picker-area-hue, #f00));
@@ -167,9 +166,6 @@
     translate: -50% -50%;
   }
 
-  /* the real slider behind every surface: it keeps the keyboard, the touch handling and the
-     accessible name, and hands the picture to the element around it. On a track it also takes the
-     pointer; on the area it must not, because two channels cannot share one pointer. */
   .et-color-picker-channel {
     position: absolute;
     inset: 0;
@@ -226,8 +222,6 @@
     }
   }
 
-  /* the color is a gradient layer, not `background-color`: a background image paints over the
-     background color, so a checkerboard declared that way would sit on top of an opaque color */
   .et-color-picker-preview {
     --_et-color-picker-checker: color-mix(in srgb, currentColor 18%, transparent);
     --_et-color-picker-preview-color: transparent;
@@ -308,9 +302,6 @@
     }
   }
 
-  /* below the md breakpoint the picker mounts as a bottom sheet: the panel becomes the full-width
-     sheet surface, draws its own drag handle (the runtime's sits outside the panel background) and
-     centers the picker, matching how the date and cascader pickers present */
   .et-overlay.et-color-picker-sheet {
     --et-color-picker-area-size: min(320px, calc(100vw - 48px));
     --et-color-picker-track-size: 16px;

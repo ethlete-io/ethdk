@@ -3,13 +3,10 @@ export type PointerFractionOptions = {
   position: number;
   /** The axis start, in client coordinates. */
   start: number;
-  /** The axis length. */
   size: number;
 };
 
 /**
- * Where a pointer sits along one axis of a picker surface, as a 0-1 fraction from the axis start.
- *
  * Deliberately not mirrored for RTL, unlike the slider: the gradients paint left to right in every
  * direction, so mirroring the reading would put the value and the picture it is read off at odds.
  */

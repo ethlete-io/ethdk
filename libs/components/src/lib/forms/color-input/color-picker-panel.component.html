@@ -8,8 +8,6 @@
       aria-hidden="true"
     ></span>
 
-    <!-- two real sliders, one per axis: they carry the keyboard story the surface itself cannot,
-         and the area's own drag handles the pointer (see etColorPickerChannel) -->
     <input [attr.aria-label]="labels().saturation" etColorPickerChannel="saturation" />
     <input [attr.aria-label]="labels().brightness" etColorPickerChannel="brightness" />
   </div>
@@ -55,9 +53,6 @@
     </div>
   }
 
-  <!-- one field carries the whole footer: the preview as a prefix, the notation switch and the
-       eyedropper as suffixes - so every part sits on the field's own baseline and height, and the
-       conversion advisory spans the row it belongs to -->
   <et-form-field class="et-color-picker-value" size="sm">
     <span
       [style.--_et-color-picker-preview-color]="canonicalHex()"
@@ -66,8 +61,6 @@
       aria-hidden="true"
     ></span>
 
-    <!-- committed on change, not on input: a half-typed color is unreadable, and rewriting the
-         field to the displayed notation on every keystroke would fight the typing -->
     <et-input
       [value]="colorDraft()"
       [warnings]="notationWarning()"

@@ -38,15 +38,11 @@
       cursor: not-allowed;
     }
 
-    /* the picker cannot open while readonly - the swatch stays legible, the pointer goes away */
     &[data-readonly] {
       cursor: default;
     }
   }
 
-  /* the color is a gradient layer, not `background-color`: a background image paints over the
-     background color, so the checkerboard a translucent value is read against would otherwise sit
-     on top of it */
   .et-color-input-swatch {
     --_et-color-input-checker: color-mix(in srgb, currentColor 18%, transparent);
     --_et-color-input-swatch-color: transparent;
@@ -95,9 +91,6 @@
     }
   }
 
-  /* an unresolved bulk-edit value: the swatch must not reveal the hidden raw color, so it
-     renders neutral — transparent with a diagonal strike — and the value slot shows the
-     mixed label in the same provisional treatment the text fields use */
   et-color-input[data-mixed] .et-color-input-swatch {
     background: linear-gradient(
       to top right,

@@ -39,8 +39,6 @@ const hexPatternFor = (shorthand: boolean, alpha: boolean) => {
   return alpha ? HEX_PATTERNS.alpha : HEX_PATTERNS.strict;
 };
 
-// Both the comma form and the space form, because either is what a user pastes out of devtools.
-// The channels are range-checked below rather than in the pattern, which would be unreadable.
 const RGB_PATTERN = /^rgba?\(\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/i;
 
 const HSL_PATTERN =
@@ -135,22 +133,12 @@ const parseFunctionalHsl = (raw: string, allowAlpha: boolean): RgbColor | null =
   return hslToRgb({ hue: Number(rawHue), saturation, lightness, alpha });
 };
 
-/** Narrows what {@link parseColorToRgb} reads, for a caller that accepts less than the picker does. */
 export type ColorParseOptions = {
-  /** The notations to read; anything else is rejected. @default every notation */
   notations?: readonly ColorNotation[];
-  /** Read the three- and four-digit hex forms (`#f00`, `#f00c`). @default true */
   hexShorthand?: boolean;
-  /** Read an alpha component (`#rrggbbaa`, `rgb(r g b / a)`). @default true */
   alpha?: boolean;
 };
 
-/**
- * Reads a color - `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, plus `rgb()`/`rgba()` and
- * `hsl()`/`hsla()` in the comma or the space form - into channels plus alpha. Whitespace is
- * trimmed and channels are range-checked; `null` comes back for a blank value, a value in a
- * notation `options` excludes, and anything unreadable.
- */
 export const parseColorToRgb = (value: string | null | undefined, options: ColorParseOptions = {}): RgbColor | null => {
   if (value === null || value === undefined) {
     return null;
@@ -179,7 +167,6 @@ export const parseColorToRgb = (value: string | null | undefined, options: Color
   return notations.includes(COLOR_NOTATIONS.RGB) ? parseFunctionalRgb(lowered, alpha) : null;
 };
 
-/** Which notation a raw entry is written in, or `null` when nothing can read it. */
 export const detectColorNotation = (value: string | null | undefined): ColorNotation | null => {
   if (!parseColorToRgb(value)) {
     return null;
@@ -195,9 +182,9 @@ export const detectColorNotation = (value: string | null | undefined): ColorNota
 };
 
 /**
- * Converts to HSV. **A grey returns `hue` 0 and a black returns `saturation` 0**: those readings do
- * not exist in the source color, so a caller that round-trips through this loses the hue the user
- * was on. Hold the HSV state yourself for as long as the user is dragging, and convert one way only.
+ * **A grey returns `hue` 0 and a black returns `saturation` 0**, so a caller that round-trips through
+ * this loses the hue the user was on. Hold the HSV state yourself for as long as the user is
+ * dragging, and convert one way only.
  */
 export const rgbToHsv = (rgb: RgbColor): HsvColor => {
   const red = rgb.red / 255;
@@ -268,10 +255,6 @@ const toHexPair = (channel: number) =>
     .toString(16)
     .padStart(2, '0');
 
-/**
- * Formats as lowercase `#rrggbb`, or `#rrggbbaa` when `alpha` is on - the notation the control
- * emits and the strict `hexColor()` validator accepts.
- */
 export const formatRgbToHex = (rgb: RgbColor, options?: { alpha?: boolean }) => {
   const base = `#${toHexPair(rgb.red)}${toHexPair(rgb.green)}${toHexPair(rgb.blue)}`;
 
@@ -286,7 +269,6 @@ export const parseColorToHsv = (value: string | null | undefined): HsvColor | nu
 
 export const formatHsvToHex = (hsv: HsvColor, options?: { alpha?: boolean }) => formatRgbToHex(hsvToRgb(hsv), options);
 
-/** The fully saturated, fully bright color at `hue`, for a picker track or area gradient stop. */
 export const hueToCssColor = (hue: number) => `hsl(${((hue % 360) + 360) % 360} 100% 50%)`;
 
 const normalizeHue = (hue: number) => ((hue % 360) + 360) % 360;
@@ -349,14 +331,12 @@ export const rgbToHsl = (rgb: RgbColor): HslColor => {
 
 const formatAlphaComponent = (alpha: number) => Math.round(clamp01(alpha) * 100) / 100;
 
-/** Formats as `rgb(r g b)`, or `rgb(r g b / a)` when `alpha` is on. */
 export const formatRgb = (rgb: RgbColor, options?: { alpha?: boolean }) => {
   const channels = `${Math.round(rgb.red)} ${Math.round(rgb.green)} ${Math.round(rgb.blue)}`;
 
   return options?.alpha ? `rgb(${channels} / ${formatAlphaComponent(rgb.alpha)})` : `rgb(${channels})`;
 };
 
-/** Formats as `hsl(h s% l%)`, or `hsl(h s% l% / a)` when `alpha` is on. */
 export const formatHsl = (rgb: RgbColor, options?: { alpha?: boolean }) => {
   const hsl = rgbToHsl(rgb);
   const channels = `${Math.round(hsl.hue)} ${Math.round(hsl.saturation * 100)}% ${Math.round(hsl.lightness * 100)}%`;
@@ -364,7 +344,6 @@ export const formatHsl = (rgb: RgbColor, options?: { alpha?: boolean }) => {
   return options?.alpha ? `hsl(${channels} / ${formatAlphaComponent(hsl.alpha)})` : `hsl(${channels})`;
 };
 
-/** Formats an HSV working color in one of the notations the picker offers. */
 export const formatHsvToNotation = (hsv: HsvColor, options: { notation: ColorNotation; alpha?: boolean }) => {
   const rgb = hsvToRgb(hsv);
 

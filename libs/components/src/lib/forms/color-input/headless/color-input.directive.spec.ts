@@ -319,8 +319,6 @@ describe('ColorInputDirective', () => {
         commit: () => pick('#123456'),
         committedValue: () => '#123456',
         assertMasked: async () => {
-          // the value slot shows the mixed label, the swatch drops its inline color (the CSS neutral
-          // treatment takes over) and the picker opens on black, not on the hidden raw color
           expect(driver.valueText()).toBe('Mixed colors');
           expect(driver.swatchColor()).toBe('');
 

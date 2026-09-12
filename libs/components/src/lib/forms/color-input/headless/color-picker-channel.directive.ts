@@ -20,7 +20,7 @@ const CHANNEL_CONFIGS: Record<ColorPickerChannel, ChannelConfig> = {
 /**
  * Binds a native range input to one channel of the picker's color. The input carries the whole
  * keyboard and touch story - arrow keys, `Home`, `End`, page keys and the platform's own touch
- * handling - which is why every picker surface is built around one instead of a custom widget.
+ * handling.
  *
  * Stretch the input over its track and hide it visually, and the same input becomes the track's
  * pointer handling too. The area is the exception: two channels cannot share one pointer, so its
