@@ -51,8 +51,6 @@
     border-radius: var(--et-segmented-button-border-radius);
     cursor: pointer;
 
-    /* view-only: keeps the normal look, drops the interactive affordance (distinct from
-       the dimmed disabled state) */
     &[data-readonly] {
       cursor: default;
     }
@@ -65,8 +63,6 @@
     white-space: nowrap;
     user-select: none;
 
-    /* the option's aria-labelledby points at this span, so it wraps the content without
-       becoming a flex item of its own */
     .et-segmented-button-label {
       display: contents;
     }
@@ -86,7 +82,6 @@
       cursor: default;
     }
 
-    /* hover-capable pointers only — on touch, :hover sticks after a tap */
     @media (hover: hover) {
       &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) {
         color: var(--et-surface-color-solid, currentColor);
@@ -124,10 +119,6 @@
       --et-segmented-button-transition-duration: 1ms;
     }
 
-    /* Tabs variant: the same element the FLIP animation moves becomes an underline instead of a pill, so the
-       selection still slides between segments — only its shape changes. The metrics come from the shared tab
-       scale; the three neutralised tokens below are what a tab bar does *not* do — fill a segment on hover,
-       shrink it on press — so don't read them as leftovers. */
     :where(et-segmented-button-group[data-variant='tabs']) & {
       --et-segmented-button-hover-fill: transparent;
       --et-segmented-button-press-scale: 1;
@@ -136,8 +127,6 @@
       border-radius: 0.5rem;
       color: var(--et-surface-interaction-solid, currentColor);
 
-      /* a tab trigger takes the app's text rhythm (`font: inherit`), not the heavier control type a pill
-         uses - without this the two rows differ in height */
       font-weight: inherit;
       line-height: inherit;
 

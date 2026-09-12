@@ -11,9 +11,6 @@ import { SelectionListControlDirective } from '../headless';
  * [`etSelectionListControl`](/components/choice-inputs#select-all)'s, which this composes - the
  * component exists so the row doesn't have to be hand-rolled with its own markup and CSS every time.
  *
- * It is a real `role="checkbox"` with `aria-checked="mixed"`, not an option: a listbox option has no
- * mixed state, and "some of these are on" is exactly what this control has to be able to say.
- *
  * @example
  * <et-checkbox-group [formField]="form.toppings">
  *   <et-label>Toppings</et-label>
@@ -36,8 +33,6 @@ import { SelectionListControlDirective } from '../headless';
           stroke-linejoin="round"
         />
       </svg>
-      <!-- The mixed mark. A dash rather than a second glyph, so the three states read as one control
-           changing rather than three different controls. -->
       <span class="et-checkbox-group-select-all-dash" aria-hidden="true"></span>
     </span>
     <span class="et-checkbox-group-select-all-label">{{ resolvedLabel() }}</span>

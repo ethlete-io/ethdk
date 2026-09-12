@@ -184,7 +184,6 @@ describe('SelectionListDirective', () => {
     it('reflects readonly on the radiogroup and blocks selection', () => {
       expect(driver.attr('aria-readonly')).toBe('true');
       expect(driver.attr('data-readonly')).toBe('true');
-      // options keep their normal focusable, non-dimmed state
       expect(driver.optionAttr(0, 'aria-disabled')).toBeNull();
       expect(driver.optionAttr(0, 'data-readonly')).toBe('true');
 
@@ -278,7 +277,6 @@ describe('SelectionListDirective (single, mixed contract)', () => {
       assertMasked: () => {
         expect(driver.optionAttrs('aria-checked')).toEqual(['false', 'false', 'false']);
       },
-      // no clear affordance - selection lists have no empty-shape control of their own
     };
   });
 });
@@ -306,11 +304,9 @@ describe('SelectionListDirective (multiple, mixed contract)', () => {
         driver.host.mixed.set(false);
         driver.tick();
       },
-      // Space on an option - a real keyboard commit
       commit: () => {
         driver.pressOption(0, ' ');
       },
-      // replace semantics: a fresh array around the committed option, not a toggle
       committedValue: () => ['a'],
       assertMasked: () => {
         expect(driver.optionAttrs('aria-checked')).toEqual(['false', 'false', 'false']);
@@ -339,7 +335,6 @@ describe('SelectionListDirective (mixed specifics)', () => {
     });
 
     it('resolves mixed through radio arrow-selection', () => {
-      // raw 'c' so the committed 'b' provably comes from the arrow target, not the hidden value
       driver.host.value.set('c');
       driver.tick();
 
@@ -376,7 +371,6 @@ describe('SelectionListDirective (mixed specifics)', () => {
     });
 
     it('replaces with a fresh array on first commit - even for a value inside the hidden raw array', () => {
-      // 'a' is part of the hidden raw value; toggling against it would remove it instead
       driver.selectOption(0);
 
       expect(driver.host.mixed()).toBe(false);
@@ -390,7 +384,6 @@ describe('SelectionListDirective (mixed specifics)', () => {
 
       driver.selectOption(0);
 
-      // the group recomputes the array in option (registry) order, not click order
       expect(driver.host.value()).toEqual(['a', 'b']);
       expect(driver.host.mixed()).toBe(false);
     });
