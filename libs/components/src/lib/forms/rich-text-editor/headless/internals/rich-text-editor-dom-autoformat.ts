@@ -2,14 +2,6 @@ import { HEADING_SELECTOR, RichTextEditorDomCore, HeadingTag, InlineTag } from '
 import { RichTextEditorDomFeatures } from './rich-text-editor-dom-features';
 import { RichTextEditorDomLists } from './rich-text-editor-dom-lists';
 
-/**
- * Markdown-as-you-type: block prefixes (`- `, `1. `, `# `, `> `, ```` ``` ````) convert the line,
- * and completed inline delimiter runs (`**bold**`, `` `code` ``, …) convert into their mark. Both
- * respect characters reserved by the token-trigger system.
- *
- * A block prefix only converts when the domain it converts into was provided - `# ` stays literal
- * text in an editor without the heading tool - so every block rule resolves its domain per keypress.
- */
 export const createRichTextEditorAutoformat = (
   core: RichTextEditorDomCore,
   deps: {
@@ -31,15 +23,7 @@ export const createRichTextEditorAutoformat = (
   const { toggleList } = deps.lists;
   const { features } = deps;
 
-  /**
-   * Markdown block autoformat: typing a space right after a line-start markdown prefix converts the
-   * block - `-`/`*`/`+` into a bulleted list, `1.` into a numbered list, `#`–`###` into a heading.
-   * Only fires when the prefix is the entire line before the caret, and never inside contexts the
-   * block tools don't apply to (list items, table cells, code, headings). `isReserved` marks
-   * characters claimed by the token-trigger system - a reserved prefix never converts, so e.g. a
-   * `#` trigger keeps opening its autocomplete instead of becoming a heading.
-   * Returns `true` when it converted (the caller must then swallow the typed space).
-   */
+  /** Returns `true` when it converted, and the caller must then swallow the typed space. */
   const applyBlockAutoformat = (isReserved: (char: string) => boolean) => {
     const editable = getSelection();
     const el = root();
@@ -50,9 +34,8 @@ export const createRichTextEditorAutoformat = (
 
     if (closestWithin(range.startContainer, `li, td, th, pre, code, ${HEADING_SELECTOR}`)) return false;
 
-    // The line starts at the caret's paragraph - a browser-created <div> line counts too (Chrome
-    // inserts <div>s on Enter; the serializer maps them to paragraphs) - or at the editor root for
-    // the loose first line a contenteditable holds before any block exists.
+    // A browser-created <div> line counts as the caret's block too (Chrome inserts <div>s on Enter),
+    // and the root stands in for the loose first line a contenteditable holds before any block exists.
     const container = closestWithin(range.startContainer, 'p, div') ?? el;
     const probe = doc.createRange();
 
@@ -74,7 +57,6 @@ export const createRichTextEditorAutoformat = (
     } else if (codeBlock && prefix === '```') {
       action = codeBlock.toggleCodeBlock;
     } else if (blockquote && prefix === '>' && !isReserved('>') && !closestWithin(range.startContainer, 'blockquote')) {
-      // inside a quote the same prefix would toggle it back off, so it only starts one
       action = blockquote.toggleBlockquote;
     }
 
@@ -85,10 +67,7 @@ export const createRichTextEditorAutoformat = (
     collapseInto(container === el ? el : container, 0);
     action();
 
-    // The consumed prefix usually leaves the converted block empty - give it a line box and a
-    // clean collapsed caret so typing continues inside it.
     const editableAfter = getSelection();
-    // descend from the restored selection's boundary (e.g. the <ul> after toggleList) to the leaf
     const landed = editableAfter
       ? closestWithin(resolveStartNode(editableAfter.range), `li, ${HEADING_SELECTOR}`)
       : null;
@@ -104,8 +83,7 @@ export const createRichTextEditorAutoformat = (
     return true;
   };
 
-  /** The inline autoformat rules: markdown delimiter runs completed by the typed closing char.
-   *  Longer delimiters come first so `**` wins over `*` (and `__` over `_`). */
+  /** Longer delimiters must come first so `**` wins over `*`, and `__` over `_`. */
   const inlineAutoformatRules: { char: string; tag: InlineTag; re: RegExp }[] = [
     { char: '*', tag: 'strong', re: /\*\*([^\s*](?:[^*]*[^\s*])?)\*\*$/ },
     { char: '*', tag: 'em', re: /(?<!\*)\*([^\s*](?:[^*]*[^\s*])?)\*$/ },
@@ -115,13 +93,7 @@ export const createRichTextEditorAutoformat = (
     { char: '_', tag: 'em', re: /(?<![\w_])_([^\s_](?:[^_]*[^\s_])?)_$/ },
   ];
 
-  /**
-   * Markdown inline autoformat: typing the closing delimiter of `**bold**`, `*italic*`,
-   * `` `code` ``, `~~strike~~`, `__bold__` or `_italic_` converts the run into its mark, with the
-   * caret placed after the mark so typing continues unformatted. The whole run must live in the
-   * caret's text node (marks already applied inside it keep it from matching - a v1 limit).
-   * `typed` is the char about to be inserted; returns `true` when it consumed it.
-   */
+  /** `typed` is the char about to be inserted; returns `true` when it consumed it. */
   const applyInlineAutoformat = (typed: string, isReserved: (char: string) => boolean) => {
     const editable = getSelection();
     const el = root();
@@ -133,7 +105,6 @@ export const createRichTextEditorAutoformat = (
 
     if (!(node instanceof Text)) return false;
 
-    // backticks & co. are literal inside code spans/blocks
     if (closestWithin(node, 'code, pre')) return false;
 
     const text = (node.textContent ?? '').slice(0, range.startOffset) + typed;
@@ -160,9 +131,8 @@ export const createRichTextEditorAutoformat = (
       insertAt.collapse(true);
       insertAt.insertNode(mark);
 
-      // Land the caret in a real text node after the mark (a zero-width space when nothing
-      // follows - stripped on serialize), mirroring codeExit: a bare element boundary doesn't
-      // stick and the browser would snap the caret back inside the mark.
+      // The caret has to land in a real text node: a bare element boundary does not stick and the
+      // browser snaps it back inside the mark. The zero-width space is stripped on serialize.
       let target = mark.nextSibling;
       let offset = 0;
 

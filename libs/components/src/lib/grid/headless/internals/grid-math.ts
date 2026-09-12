@@ -92,11 +92,9 @@ export const positionsEqual = (a: GridItemPosition | null, b: GridItemPosition |
 export const SNAP_HYSTERESIS = 0.1;
 
 /**
- * Rounds a raw cell-unit value to the nearest integer with a hysteresis margin
- * relative to the last snapped value: the rounding boundary is shifted by
- * SNAP_HYSTERESIS against the direction of travel, so a pointer jittering exactly
- * on a cell midpoint cannot flap the snap back and forth (each flap would
- * re-trigger a full neighbour reflow).
+ * Rounds a raw cell-unit value to the nearest integer with a hysteresis margin relative to the last
+ * snapped value: the rounding boundary is shifted by SNAP_HYSTERESIS against the direction of travel,
+ * so a pointer jittering exactly on a cell midpoint cannot flap the snap back and forth.
  */
 export const hysteresisRound = (raw: number, last: number | null) => {
   if (last === null) return Math.round(raw);

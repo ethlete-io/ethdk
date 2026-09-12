@@ -1,29 +1,15 @@
 import { RichTextEditorTrigger } from '../../rich-text-editor-trigger';
 
-/** A trigger that is currently active at the caret, with everything needed to anchor and insert. */
 export type RichTextEditorTriggerMatch = {
   trigger: RichTextEditorTrigger;
-  /** The text node the trigger char lives in. */
   textNode: Text;
-  /** Index of the trigger char within `textNode`. */
   charOffset: number;
-  /** Caret index within `textNode`. */
   caretOffset: number;
-  /** Text typed between the trigger char and the caret. */
   query: string;
 };
 
-/** A trigger char only opens the popup at a word boundary: line/node start or after whitespace. */
 const isWordBoundary = (text: string, index: number) => index === 0 || /\s/.test(text[index - 1] ?? '');
 
-/**
- * Resolves the trigger active at a collapsed caret, or `null`. Reads the DOM directly so it stays
- * correct across typing, Backspace, caret jumps and paste without intercepting keystrokes.
- *
- * The trigger char is never consumed here - it stays in the text; only picking an item replaces it.
- * Requiring a word boundary means `user@domain` in an email never opens the popup (the `@` follows
- * a letter); the query cancels on whitespace unless the trigger opts into `allowSpaces`.
- */
 export type ResolveTriggerMatchOptions = {
   triggers: readonly RichTextEditorTrigger[];
   root: HTMLElement;
@@ -45,9 +31,8 @@ export const resolveTriggerMatch = ({
   const caretOffset = range.startOffset;
   const text = textNode.data;
 
-  // `lastIndexOf` clamps a negative `fromIndex` to 0, so a caret parked at a node's start would
-  // match the trigger char it stands in front of - and the replacement range an insert then builds
-  // is collapsed, so picking an item would add the chip without consuming the literal text.
+  // `lastIndexOf` clamps a negative `fromIndex` to 0, so a caret at a node's start would match the
+  // trigger char in front of it and picking an item would add a chip without consuming the text.
   if (caretOffset === 0) return null;
 
   let best: RichTextEditorTriggerMatch | null = null;
@@ -59,11 +44,8 @@ export const resolveTriggerMatch = ({
 
     const query = text.slice(charOffset + 1, caretOffset);
 
-    // Cancel once the query runs into whitespace (unless the trigger allows it) - this is what
-    // lets the user keep typing past the popup, e.g. an email, without it hijacking the text.
     if (!(trigger.allowSpaces ?? false) && /\s/.test(query)) continue;
 
-    // Nearest qualifying char to the caret wins when several triggers could match.
     if (!best || charOffset > best.charOffset) {
       best = { trigger, textNode, charOffset, caretOffset, query };
     }
@@ -72,7 +54,6 @@ export const resolveTriggerMatch = ({
   return best;
 };
 
-/** Bounding rect of the trigger char, for anchoring the popup. Falls back to a collapsed caret rect. */
 export const triggerCharRect = (doc: Document, match: RichTextEditorTriggerMatch): DOMRect => {
   const range = doc.createRange();
 
@@ -83,7 +64,6 @@ export const triggerCharRect = (doc: Document, match: RichTextEditorTriggerMatch
 
   if (rect.width > 0 || rect.height > 0) return rect;
 
-  // Empty rect (e.g. a zero-width node): fall back to the collapsed caret position.
   range.collapse(true);
 
   return range.getBoundingClientRect();

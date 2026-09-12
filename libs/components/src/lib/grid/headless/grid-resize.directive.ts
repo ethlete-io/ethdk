@@ -34,10 +34,9 @@ export class GridResizeDirective {
   public isResizing = signal(false);
 
   /**
-   * Only the edges that can actually change a span at the active breakpoint. A strip whose axis is
-   * pinned - a column span at a one-column breakpoint, a fixed row span - would still swallow the
-   * `pointerdown` that started on it, so dropping it is what hands that part of the item's perimeter
-   * back to dragging.
+   * Only the edges that can actually change a span at the active breakpoint. A pinned strip would
+   * still swallow the `pointerdown` that started on it, so dropping it is what hands that part of the
+   * item's perimeter back to dragging.
    */
   public resizeEdges = computed((): ResizeEdge[] => {
     const itemId = this.gridItem?.itemId();
@@ -96,8 +95,6 @@ export class GridResizeDirective {
       });
     });
 
-    // A same-breakpoint width change re-derives everything (the start rect is computed
-    // analytically from the live geometry), so just re-anchor and re-apply.
     effect(() => {
       this.grid?.containerWidth();
 
@@ -209,9 +206,8 @@ export class GridResizeDirective {
   }
 
   private attachGestureListeners() {
-    // Captures scroll on any ancestor during an active drag-resize gesture to recompute the
-    // container origin - this is document-wide gesture tracking, not a component scroll container,
-    // so signalElementScrollState / signalHostElementScrollState don't apply.
+    // Document-wide gesture tracking, not a component scroll container, so
+    // signalElementScrollState / signalHostElementScrollState don't apply.
     // eslint-disable-next-line ethlete/prefer-scroll-state
     const scroll$ = fromEvent(this.document, 'scroll', { capture: true, passive: true }).pipe(
       tap(() => {

@@ -46,15 +46,9 @@ import {
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { FormFieldRichTextStylesComponent } from '../../form-field/form-field-rich-text-styles.component';
 
-/** Elements that carry no meaning once empty, so serialization drops them instead of emitting the
- *  raw tag into the Markdown value. Every inline mark plus the anchor, which has no mark tag. */
 const EMPTY_INLINE_SWEEP_SELECTOR = /* @__PURE__ */ [...INLINE_TAGS, 'a'].join(', ');
 
-/**
- * Calling a command whose DOM domain was never provided is a wiring mistake, so it throws - but only
- * in dev: every construction of this message sits inside an `ngDevMode` branch, which is what keeps
- * the strings out of a production bundle. Without them the command is a silent no-op.
- */
+/** Every call must sit inside an `ngDevMode` branch - that is what keeps these strings out of a production bundle. */
 const missingDomFeature = (method: string, provider: string) =>
   new RuntimeError(
     RICH_TEXT_EDITOR_ERROR_CODES.DOM_FEATURE_NOT_PROVIDED,
@@ -77,7 +71,6 @@ export class RichTextEditorDirective
   private toolsConfig = injectRichTextEditorTools();
   private injectedLabels = injectRichTextEditorLabels();
 
-  /** Opt-in tools, for their content normalizers - see {@link RichTextEditorToolDefinition.normalize}. */
   private registeredTools = inject(RICH_TEXT_EDITOR_TOOL, { optional: true });
 
   /** @internal */
@@ -112,18 +105,9 @@ export class RichTextEditorDirective
    */
   public labels = input<Partial<RichTextEditorLabels> | null>(null);
 
-  /**
-   * Snapshot undo/redo over the Markdown value. The native `contenteditable` stack is deliberately
-   * never used - see {@link createRichTextEditorHistory}.
-   */
   private history = createRichTextEditorHistory();
 
-  /**
-   * @internal Every tool that can render, by token: the always-built-in buttons plus whatever was
-   * registered through {@link RICH_TEXT_EDITOR_TOOL}. Both toolbars read this, so a token in
-   * `resolvedTools()` with no entry here renders nothing - which is how an opt-in tool stays absent
-   * until its provider is added.
-   */
+  /** @internal */
   public toolDefs = ((): ReadonlyMap<string, RichTextEditorToolDefinition> => {
     const defs = new Map<string, RichTextEditorToolDefinition>();
 
@@ -138,8 +122,7 @@ export class RichTextEditorDirective
 
   /**
    * Resolved toolbar tools: the `tools` input if set, otherwise the provided/default config, with
-   * every token that has no definition dropped. A divider only survives between two tools that
-   * render, so leaving an opt-in tool unprovided cannot strand a doubled or dangling separator.
+   * every token that has no definition dropped, and no doubled or dangling divider left behind.
    */
   public resolvedTools = computed(() => {
     const configured = this.tools() ?? this.toolsConfig.tools;
@@ -158,18 +141,10 @@ export class RichTextEditorDirective
     return rendered;
   });
 
-  /**
-   * The strings in effect here: the injected label set with this instance's `labels` applied. Every part
-   * of the editor reads it through this - the toolbars, the link editor and the opt-in tools all reach
-   * the editor already.
-   */
+  /** The strings in effect here: the injected label set with this instance's `labels` applied. */
   public resolvedLabels = computed<RichTextEditorLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
-  /**
-   * @internal Codec that (de)serializes `{{type:id}}` token chips. Installed by
-   * `[etRichTextEditorTriggers]` or a render-only provider; `null` when the building-block
-   * feature isn't used, in which case token markdown is treated as plain text.
-   */
+  /** @internal `null` when no codec is installed, in which case token markdown stays plain text. */
   public tokenCodec = signal<RichTextEditorTokenCodec | null>(inject(RICH_TEXT_EDITOR_TOKEN_CODEC, { optional: true }));
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
@@ -196,20 +171,14 @@ export class RichTextEditorDirective
   public linkActive = signal(false);
   public blockquoteActive = signal(false);
 
-  /** Whether the caret sits in a fenced code block, where the value is literal text: no inline
-   *  marks, no block structure and no autoformat apply there, so those tools disable themselves. */
+  /** Whether the caret sits in a fenced code block, where the value is literal text. */
   public codeBlockActive = signal(false);
 
   public headingLevel = signal<number | null>(null);
 
-  /** Whether the selection sits inside a table cell. Block tools (heading menu, lists) disable
-   *  themselves on it - a GFM table cell can only hold single-line inline content, so block
-   *  markup inside one would not survive serialization. */
+  /** Whether the selection sits inside a table cell. */
   public inTableCell = signal(false);
 
-  /** The heading (block-style) tool is unavailable where a heading can't apply: inside table
-   *  cells (no GFM form), inside list items (a heading would not survive list serialization), and
-   *  inside a quote or code block (which serialize as lines of text). */
   public headingToolDisabled = computed(
     () =>
       this.inTableCell() ||
@@ -221,51 +190,31 @@ export class RichTextEditorDirective
 
   private inList = computed(() => this.unorderedListActive() || this.orderedListActive());
 
-  /** Lists have no serialized form inside a table cell (inline content only) or inside a quote or
-   *  code block (both serialize as lines of text). */
   public listToolDisabled = computed(() => this.inTableCell() || this.blockquoteActive() || this.codeBlockActive());
 
-  /** The quote tool applies to plain blocks - and to an existing quote, to lift it back out. */
   public blockquoteToolDisabled = computed(() => this.inTableCell() || this.codeBlockActive() || this.inList());
 
-  /** Same rule as the quote tool: a fence can neither hold another block nor live inside one. */
   public codeBlockToolDisabled = computed(() => this.inTableCell() || this.blockquoteActive() || this.inList());
 
-  /**
-   * @internal Inline marks queued for the next typed text while the selection is collapsed ("stored
-   * marks"). `null` means "follow the caret"; a list means the next input is wrapped in exactly these.
-   */
+  /** @internal `null` means "follow the caret"; a list means the next typed text is wrapped in exactly these marks. */
   public pendingMarks = signal<InlineTag[] | null>(null);
 
-  /**
-   * @internal Characters claimed by the token-trigger system (set by `[etRichTextEditorTriggers]`).
-   * Autoformat rules keyed on these characters never fire, so a `#` trigger keeps opening its
-   * autocomplete instead of becoming a heading.
-   */
+  /** @internal Autoformat rules keyed on these characters never fire, so a `#` trigger keeps opening its autocomplete instead of becoming a heading. */
   public autoformatReservedChars = signal<readonly string[]>([]);
 
   /** @internal `true` while a token-trigger popup run is active - suspends all autoformat. */
   public autoformatSuppressed = signal(false);
 
-  /**
-   * @internal Whether pasted text that spells a token out (`#User Name`) is turned back into a chip.
-   * Set from `[etRichTextEditorTriggers]`'s `parsePastedTokens` input; on by default.
-   */
+  /** @internal */
   public parsePastedTokens = signal(true);
 
   /** @internal */
   public lastEmittedMarkdown: string | null = null;
 
-  /**
-   * @internal Opens the link editor popover, registered by `[etRichTextEditorLinkEditor]` (mounted by
-   * the default `et-rich-text-editor`). `null` for a bare `[etRichTextEditor]` with no popover, where
-   * {@link promptForLink} falls back to a native prompt.
-   */
+  /** @internal `null` for a bare `[etRichTextEditor]` with no popover, where {@link promptForLink} falls back to a native prompt. */
   public openLinkEditor = signal<(() => void) | null>(null);
 
-  /** @internal Whether the link editor popover is currently open. Kept so the mobile docked toolbar
-   *  stays visible through the link flow (focus is temporarily inside the popover) and so the link
-   *  toolbar button shows its pressed state while the popover is open. */
+  /** @internal */
   public linkEditorOpen = signal(false);
 
   constructor() {
@@ -298,7 +247,7 @@ export class RichTextEditorDirective
 
   /**
    * Reads the DOM back into `value` and refreshes the toolbar state - the single point every edit
-   * funnels through, which is also where the undo entry is recorded.
+   * funnels through.
    *
    * @param opts.boundary Commit as its own history entry instead of extending the running typing
    *   burst. Every programmatic rewrite (paste, autoformat, a tool, a token insert) passes `true`,
@@ -318,8 +267,7 @@ export class RichTextEditorDirective
 
     const markdown = htmlToMarkdown(this.serializeCleanHtml(root));
 
-    // Value-neutral structure a tool needs back (image blocks are atoms, and cannot end the
-    // document) - applied after reading, so it can never change what was read.
+    // Applied after reading, so it can never change what was read.
     this.normalizeContent(root);
 
     this.lastEmittedMarkdown = markdown;
@@ -328,11 +276,7 @@ export class RichTextEditorDirective
     this.refreshActiveMarks();
   }
 
-  /**
-   * @internal Keeps the newest history entry's caret current while the content doesn't change, so
-   * undoing an edit made after clicking elsewhere returns the caret to where the user actually was.
-   * A selection outside the editor is ignored rather than recorded as "no caret".
-   */
+  /** @internal */
   public recordHistorySelection() {
     const offsets = this.editorDom.readSelectionOffsets();
 
@@ -357,12 +301,7 @@ export class RichTextEditorDirective
     this.applyHistoryEntry(this.history.redo());
   }
 
-  /**
-   * @internal Renders a value the editor did not produce itself - a programmatic `value` write, a
-   * form reset, the multi-language switcher moving to another language - into the editable, and
-   * restarts the history from it: an outside write is a new document, so undo must not reach back
-   * into the previous one's states.
-   */
+  /** @internal Restarts the history: an outside write is a new document, so undo must not reach back into the previous one's states. */
   public renderExternalValue(markdown = this.value()) {
     if (!this.writeValueToDom(markdown)) return;
 
@@ -370,8 +309,6 @@ export class RichTextEditorDirective
   }
 
   public refreshActiveMarks() {
-    // While a stored-mark toggle is pending, keep the toolbar showing that pending state rather than
-    // the caret's actual marks (the pending set is cleared on navigation or once consumed by typing).
     const pending = this.pendingMarks();
 
     if (pending !== null) {
@@ -417,9 +354,8 @@ export class RichTextEditorDirective
   }
 
   /**
-   * Runs markdown autoformat for a single typed character (called from `beforeinput`): a space may
-   * convert a line-start prefix into a list/heading, a delimiter char may close an inline run into
-   * its mark. Returns `true` when the character was consumed by a conversion.
+   * Runs markdown autoformat for a single typed character (called from `beforeinput`). Returns `true`
+   * when the character was consumed by a conversion.
    */
   public handleAutoformat(data: string) {
     const autoformat = this.editorDom.autoformat;
@@ -490,9 +426,8 @@ export class RichTextEditorDirective
     this.runCommand(() => blockquote.toggleBlockquote());
   }
 
-  /** Turns the selected blocks into a fenced code block, or a code block back into paragraphs. Only
-   *  the text survives either way - a fence is literal, so it carries no inline markup. Needs
-   *  `provideRichTextEditorCodeBlockTool()`. */
+  /** Turns the selected blocks into a fenced code block, or a code block back into paragraphs - only
+   *  the text survives either way. Needs `provideRichTextEditorCodeBlockTool()`. */
   public toggleCodeBlock() {
     const { codeBlock } = this.editorDom;
 
@@ -524,8 +459,7 @@ export class RichTextEditorDirective
 
     if (level === current) return;
 
-    // `toggleHeading` re-levels a heading to any other level, and turns a heading back into a
-    // paragraph only when handed its own level - which is exactly the "make it normal" case.
+    // `toggleHeading` turns a heading back into a paragraph only when handed its own level.
     const tagLevel = level ?? current;
 
     if (tagLevel === null) return;
@@ -581,7 +515,6 @@ export class RichTextEditorDirective
       return;
     }
 
-    // Fallback for a bare [etRichTextEditor] with no link-editor popover mounted.
     if (this.linkActive()) {
       this.removeLink();
 
@@ -642,9 +575,8 @@ export class RichTextEditorDirective
 
   /**
    * Inserts plain clipboard text, recognizing tokens written the way they read - `#User Name` - and
-   * turning them back into chips. Everything else stays literal (Markdown in plain text is never
-   * interpreted), and with nothing to recognize this returns `false` so the browser inserts the
-   * text itself, exactly as before.
+   * turning them back into chips. Everything else stays literal; with nothing to recognize this
+   * returns `false` so the browser inserts the text itself.
    */
   public pasteText(text: string) {
     const codec = this.tokenCodec();
@@ -678,14 +610,12 @@ export class RichTextEditorDirective
 
   /**
    * Inserts a `{{type:id}}` token chip at the caret - the same result as picking it from the `#`/`@`
-   * trigger popup - resolving its label via the matching trigger's `resolveItem`. Lets a consumer
-   * wire a click-to-insert palette (their own placeholder/merge-field buttons) in a single call,
-   * reusing the editor's codec and label resolution instead of appending token markdown to the value.
+   * trigger popup - resolving its label via the matching trigger's `resolveItem`.
    *
    * Inserts at the current caret, or - if the editor isn't focused - at the position it last held,
    * falling back to the end of the content. The caret is left after the chip. A token codec must be
    * installed (by `[etRichTextEditorTriggers]` or `provideRichTextEditorTokenRendering`); without one
-   * token markdown can't round-trip, so this throws in dev and no-ops in production.
+   * this throws in dev and no-ops in production.
    *
    * @param opts.focus Focus the editor after inserting so the user can keep typing. @default true
    */
@@ -696,14 +626,12 @@ export class RichTextEditorDirective
     if (!codec) return;
     if (ngDevMode) assertValidToken(type, id);
 
-    // resolveChip resolves the label synchronously (id fallback); hydrate patches async resolvers.
     this.insertChip(codec.resolveChip(type, id), { focus: opts?.focus, hydrate: true });
   }
 
   /**
    * Like {@link insertToken}, but for when the app already holds the resolved `{ id, label }` item
-   * (e.g. the row a palette button represents) - the label is used as-is, skipping resolution. The
-   * trigger-char prefix still comes from the installed codec, so the chip matches the popup's.
+   * (e.g. the row a palette button represents) - the label is used as-is, skipping resolution.
    *
    * @param opts.focus Focus the editor after inserting so the user can keep typing. @default true
    */
@@ -714,11 +642,9 @@ export class RichTextEditorDirective
     if (!codec || item.disabled) return;
     if (ngDevMode) assertValidToken(type, item.id);
 
-    // Keep the codec's trigger-char prefix, but honor the caller's already-resolved label (no hydrate).
     this.insertChip({ ...codec.resolveChip(type, item.id), label: item.label }, { focus: opts?.focus, hydrate: false });
   }
 
-  /** Token text (`#User Name`) → `{{type:id}}`, unless the app turned the recognition off. */
   private parseTokenText(text: string) {
     if (!this.parsePastedTokens()) return text;
 
@@ -746,9 +672,8 @@ export class RichTextEditorDirective
     if (!root || !this.editorDom.ensureCaret()) return;
 
     this.editorDom.insertToken(buildChipElement(this.renderer, chip));
-    // Trailing no-break space so the caret escapes the chip and the next word doesn't hug it - same
-    // treatment as the trigger popup (a plain trailing space is CSS-collapsed and dropped by Chrome;
-    // serialization normalizes the nbsp back to a plain space).
+    // A plain trailing space is CSS-collapsed and dropped by Chrome, so park a no-break space after
+    // the chip instead; serialization normalizes it back to a plain space.
     this.editorDom.insertToken(this.renderer.createText(' '));
 
     if (hydrate) this.tokenCodec()?.hydrate(root);
@@ -760,7 +685,6 @@ export class RichTextEditorDirective
     if ((focus ?? true) && root.ownerDocument.activeElement !== root) root.focus();
   }
 
-  /** Runs the provided tools' content normalizers over the editable. */
   private normalizeContent(root: HTMLElement) {
     for (const tool of this.registeredTools ?? []) tool.normalize?.(root);
   }
@@ -768,8 +692,7 @@ export class RichTextEditorDirective
   private serializeCleanHtml(root: HTMLElement) {
     const clone = root.cloneNode(true) as HTMLElement;
 
-    // Turn atomic token chips back into their `{{type:id}}` markdown form before the standard
-    // HTML→markdown pass strips unknown tags (chips would otherwise be flattened to their label).
+    // Must run before the HTML→markdown pass strips unknown tags, which would flatten a chip to its label.
     this.tokenCodec()?.serialize(clone);
 
     let removed = true;
@@ -798,7 +721,6 @@ export class RichTextEditorDirective
   private toggleMark(tag: InlineTag) {
     if (this.disabled() || this.readonly()) return;
 
-    // a tap on the (docked) toolbar can move focus off the editor on touch; restore the selection
     this.editorDom.restoreSelection();
 
     // inside a fenced code block every mark would be literal text - read it off the DOM rather
@@ -821,8 +743,6 @@ export class RichTextEditorDirective
     this.reflectMarks(next);
   }
 
-  /** The block context the caret sits in - read the same way whether or not stored marks are
-   *  pending, since a pending mark only ever changes the inline state. */
   private reflectBlockStates(states: RichTextMarkStates | null) {
     this.blockquoteActive.set(states?.blockquote ?? false);
     this.codeBlockActive.set(states?.codeBlock ?? false);
@@ -841,11 +761,9 @@ export class RichTextEditorDirective
   private runCommand(command: () => void) {
     if (!this.canEdit()) return;
 
-    // restore the pre-tap selection when a toolbar interaction moved focus off the editor
     this.editorDom.restoreSelection();
 
     command();
-    // a command is a programmatic rewrite: one undo step, never merged into a typing burst
     this.syncFromDom({ boundary: true });
   }
 
@@ -853,7 +771,6 @@ export class RichTextEditorDirective
     return !this.disabled() && !this.readonly() && !!this.editorDom.root();
   }
 
-  /** Restores a snapshot: the value into the DOM, then the caret it was taken with. */
   private applyHistoryEntry(entry: RichTextEditorHistoryEntry | null) {
     if (!entry) return;
 
@@ -864,7 +781,6 @@ export class RichTextEditorDirective
     this.refreshActiveMarks();
   }
 
-  /** Writes Markdown into the editable, replacing its content. Returns `false` without a root. */
   private writeValueToDom(markdown: string) {
     const root = this.editorDom.root();
 

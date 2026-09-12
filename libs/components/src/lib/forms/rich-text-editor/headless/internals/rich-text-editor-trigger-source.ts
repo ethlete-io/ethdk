@@ -14,7 +14,6 @@ import {
 } from 'rxjs';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../../rich-text-editor-trigger';
 
-/** Reactive result of requesting a trigger's items for a query. */
 export type RichTextEditorTriggerItemsState = {
   items: RichTextEditorTriggerItem[];
   loading: boolean;
@@ -33,19 +32,14 @@ const matchesQuery = (item: RichTextEditorTriggerItem, query: string) => {
   return haystack.includes(needle);
 };
 
-/** Client-side filtering applied to static (array) sources; function sources filter themselves. */
 export const filterStaticItems = (
   items: readonly RichTextEditorTriggerItem[],
   query: string,
 ): RichTextEditorTriggerItem[] => items.filter((item) => matchesQuery(item, query));
 
 /**
- * Resolves a trigger's items for `query` as an Observable, normalizing the sync array / function
- * (sync, `Promise`, or `Observable`) source forms. Static arrays are filtered client-side; function
- * sources receive the query and own their filtering. Emits `[]` below `minQueryLength`.
- *
- * Callers pipe this through `switchMap`, which unsubscribes stale requests - RxJS guarantees a
- * superseded Promise/Observable can no longer emit, so no manual generation guard is needed.
+ * Callers must pipe this through `switchMap`: that unsubscribes stale requests, which is why a
+ * superseded Promise/Observable needs no manual generation guard.
  */
 export const resolveTriggerItems = (
   trigger: RichTextEditorTrigger,
@@ -69,30 +63,19 @@ export const resolveTriggerItems = (
   return of(result);
 };
 
-/** Internal state carrying the originating trigger so `scan` can reset items on a trigger switch. */
 type InternalState = RichTextEditorTriggerItemsState & { trigger: RichTextEditorTrigger | null };
 
 const EMPTY_STATE: InternalState = { items: [], loading: false, error: null, trigger: null };
 
-/** A trigger + the query typed after its char, or `null` when no trigger is active. */
 export type RichTextEditorTriggerRequest = { trigger: RichTextEditorTrigger; query: string } | null;
 
-/**
- * Turns a stream of active requests into a stream of item states. Identical requests are ignored,
- * `switchMap` cancels superseded ones (so a stale async result can't emit), and function sources
- * are debounced with an immediate `loading` state. Static sources resolve synchronously.
- *
- * While an async source is loading, the previous results stay visible (menu-like) instead of
- * blanking - `scan` keeps them, but resets when the active trigger changes.
- */
 export const trackTriggerItems = (
   request$: Observable<RichTextEditorTriggerRequest>,
 ): Observable<RichTextEditorTriggerItemsState> =>
   request$.pipe(
     distinctUntilChanged((a, b) => a?.trigger === b?.trigger && a?.query === b?.query),
     switchMap((request): Observable<InternalState> => {
-      // Deactivated (trigger char removed / caret left): don't emit an empty state - the popup is
-      // closing, so freeze on the last results and let it fade out instead of flashing "No results".
+      // Emitting an empty state here would flash "No results" through the closing popup's fade-out.
       if (!request) return EMPTY;
 
       const trigger = request.trigger;
@@ -109,7 +92,6 @@ export const trackTriggerItems = (
       );
     }),
     scan((previous, next): InternalState => {
-      // keep the last results visible while a same-trigger request is still loading
       const keepPrevious = next.loading && next.items.length === 0 && previous.trigger === next.trigger;
 
       return { ...next, items: keepPrevious ? previous.items : next.items };
@@ -117,7 +99,6 @@ export const trackTriggerItems = (
     map(({ items, loading, error }): RichTextEditorTriggerItemsState => ({ items, loading, error })),
   );
 
-/** Debounces a function source's fetch (the immediate `loading` state above is emitted first). */
 const delayFetch =
   (trigger: RichTextEditorTrigger) =>
   (source$: Observable<InternalState>): Observable<InternalState> =>

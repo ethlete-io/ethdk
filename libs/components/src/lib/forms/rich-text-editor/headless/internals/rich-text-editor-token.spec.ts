@@ -77,7 +77,6 @@ describe('rich text editor token codec', () => {
     ];
     const parser = createRichTextEditorTokenCodec(() => [
       { char: '#', type: 'block', items: MERGE_FIELDS },
-      // a search source has no list to match against
       { char: '@', type: 'mention', items: () => [{ id: 'u1', label: 'Someone' }] },
     ]);
 

@@ -12,8 +12,5 @@ export const GRID_IMPORTS = [
   GridItemDefaultActionsComponent,
 ] as const;
 
-/**
- * The development-only debug overlay (`<et-grid-debug [grid]="…" />`). Separate so it never reaches a
- * production bundle - the `et-grid-debug` localStorage flag only gates it at runtime.
- */
+/** The development-only debug overlay (`<et-grid-debug [grid]="…" />`). */
 export const GRID_DEBUG_IMPORTS = [GridDebugComponent] as const;

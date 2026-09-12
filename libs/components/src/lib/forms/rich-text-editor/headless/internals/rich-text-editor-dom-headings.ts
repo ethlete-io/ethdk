@@ -1,9 +1,5 @@
 import { BLOCK_SELECTOR, HEADING_SELECTOR, RichTextEditorDomCore, HeadingTag } from './rich-text-editor-dom-core';
 
-/**
- * Heading toggling (re-tagging blocks in place, preserving alignment and inline marks) and the
- * Enter-at-heading-edge behavior that starts a plain paragraph instead of continuing the heading.
- */
 export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
   const {
     doc,
@@ -19,12 +15,10 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
     isBlockEmpty,
   } = core;
 
-  // Re-tag a block-level element in place, carrying its children (including any inline marks)
-  // into the new element. Used to turn a paragraph into a heading and back.
   const replaceBlockTag = (block: HTMLElement, tag: HeadingTag | 'p'): HTMLElement => {
     const replacement = renderer.createElement(tag);
 
-    // alignment survives the re-tag - it's the one style the editor persists on blocks
+    // Alignment is the one style the editor persists on blocks, so it has to survive the re-tag.
     if (block.style.textAlign) {
       renderer.setStyle(replacement, { textAlign: block.style.textAlign });
     }
@@ -47,16 +41,12 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
     }
 
     const rawBlocks = blocksInRange(editable.range);
-    // Headings can't wrap a table (and wrapping the whole table would style every cell) - a caret
-    // inside one makes the heading a no-op, matching how it leaves lists untouched.
     const blocks = rawBlocks.filter((block) => !(block instanceof HTMLElement && block.tagName === 'TABLE'));
 
     if (rawBlocks.length > 0 && blocks.length === 0) {
       return;
     }
 
-    // An empty editor has no block to convert - start a fresh heading with an empty line box so
-    // the caret has somewhere to land, mirroring toggleList's empty-editor branch.
     if (blocks.length === 0) {
       const heading = renderer.createElement(tag);
       renderer.appendChild(heading, renderer.createElement('br'));
@@ -69,8 +59,7 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
     const produced: Node[] = [];
 
     blocks.forEach((block) => {
-      // A heading cannot contain list items, so leave lists untouched - the heading button is a
-      // no-op over a selected list rather than producing invalid markup.
+      // A heading cannot contain list items, so a selected list is left untouched.
       if (block instanceof HTMLElement && (block.tagName === 'UL' || block.tagName === 'OL')) {
         produced.push(block);
 
@@ -78,7 +67,6 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
       }
 
       if (block instanceof HTMLElement && block.matches(HEADING_SELECTOR)) {
-        // Same level toggles back to a paragraph; a different level re-levels the heading.
         produced.push(replaceBlockTag(block, block.tagName.toLowerCase() === tag ? 'p' : tag));
 
         return;
@@ -90,9 +78,8 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
         return;
       }
 
-      // A bare text node, <br>, or bare inline element (e.g. <strong> before any paragraph exists)
-      // sitting directly under the root has no wrapping block - move it into a fresh heading in the
-      // same position, preserving its inline markup.
+      // A bare text node or inline element directly under the root has no wrapping block, so it must
+      // be moved into a fresh heading rather than re-tagged, which would drop its inline markup.
       const heading = renderer.createElement(tag);
       const ref = block.nextSibling;
 
@@ -116,10 +103,6 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
     el.normalize();
   };
 
-  /** Enter at the edge of a root-level heading starts a plain paragraph instead of letting the
-   *  browser continue the heading: at the end, an empty paragraph follows and receives the caret;
-   *  at the start, an empty paragraph is inserted above and the heading keeps the caret.
-   *  Mid-heading Enter stays native (splitting into two headings, like every editor). */
   const headingEnter = () => {
     const editable = getSelection();
     const el = root();

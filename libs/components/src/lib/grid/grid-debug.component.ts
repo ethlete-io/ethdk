@@ -20,9 +20,8 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
  * <et-grid-debug [grid]="myGrid" [externalItems]="items()" />
  * ```
  *
- * Pass `externalItems` to detect divergence between the host signal
- * and the grid's internal itemConfigs. The **Copy JSON** button writes
- * a full diagnostic snapshot to the clipboard without any console output.
+ * Pass `externalItems` to detect divergence between the host signal and the grid's internal
+ * itemConfigs.
  */
 @Component({
   selector: 'et-grid-debug',

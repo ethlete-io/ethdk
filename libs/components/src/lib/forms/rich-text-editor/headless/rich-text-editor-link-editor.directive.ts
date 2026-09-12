@@ -20,10 +20,7 @@ import { rangeTextBoundingRect } from './internals/rich-text-editor-dom';
 import { RichTextEditorDirective } from './rich-text-editor.directive';
 
 /**
- * Registers the link editor popover on `editor`: the link tool opens it instead of falling back to
- * `window.prompt`, anchored to the selection (a top sheet below `md`). Must run in an injection
- * context tied to the editor's lifetime - `provideRichTextEditorLinkEditor()` and
- * `[etRichTextEditorLinkEditor]` are the two ways in.
+ * Must run in an injection context tied to the editor's lifetime.
  *
  * @internal
  */
@@ -90,14 +87,12 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
     queueMicrotask(() => editor.activate());
   };
 
-  /** The popover's own close button - an explicit dismiss, so focus goes back to the editor. */
   const dismiss = () => {
     close();
     queueMicrotask(() => editor.activate());
   };
 
   const open = () => {
-    // clicking the link button while the popover is open toggles it shut
     if (overlayRef()) {
       close();
 
@@ -119,9 +114,8 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
 
     const config: OverlayConfig = {
       mode: 'non-modal',
-      // focus the URL field on open (the overlay does this at the right time and within the opening
-      // tap's user-activation window, so the mobile keyboard opens); closing hands focus back to the
-      // editor via activate()
+      // the overlay focuses this within the opening tap's user-activation window, so the mobile
+      // keyboard opens
       autoFocus: 'input[type="url"]',
       restoreFocus: false,
       closeOnEscape: true,
@@ -139,9 +133,6 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
         outputBinding<void>('removeLink', () => remove()),
         outputBinding<void>('dismiss', () => dismiss()),
       ],
-      // Responsive: on phones (< md) an anchored popover would be cramped against the on-screen
-      // keyboard and the native selection menu, so use a top sheet (pinned above the keyboard). On
-      // wider screens keep the anchored popover with an arrow pointing at the selection.
       strategies: () => {
         const topSheet = injectTopSheetStrategy();
         const anchoredDialog = injectAnchoredDialogStrategy();

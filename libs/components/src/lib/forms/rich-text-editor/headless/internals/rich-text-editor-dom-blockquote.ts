@@ -1,13 +1,11 @@
 import { RichTextEditorDomCore } from './rich-text-editor-dom-core';
 
-/** Blocks a quote can't take in: their Markdown form doesn't survive inside `> ` lines. */
 const NOT_QUOTABLE = /* @__PURE__ */ new Set(['TABLE', 'UL', 'OL', 'PRE']);
 
 /**
- * Block quotes. A quote's lines are `<br>`-separated inline content inside one `<blockquote>` -
- * the shape `markdownToHtml` produces for `> ` lines, so a quote survives being re-rendered from
- * the value (undo, an external write) unchanged. Nesting is a `<blockquote>` inside a
- * `<blockquote>` (`>>`), adjusted with Tab / Shift+Tab.
+ * A quote's lines must stay `<br>`-separated inline content inside one `<blockquote>` - the shape
+ * `markdownToHtml` produces for `> ` lines, and so the only one that survives a re-render from the
+ * value (undo, an external write) unchanged.
  */
 export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
   const {
@@ -29,8 +27,6 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
     return editable ? closestWithin(editable.range.startContainer, 'blockquote') : null;
   };
 
-  /** Lifts one nesting level out: the quote's content takes its place, as paragraphs split on the
-   *  `<br>` line breaks (a nested quote inside it stays a quote). */
   const unwrapQuote = (quote: HTMLElement) => {
     const parent = quote.parentNode;
 
@@ -56,7 +52,6 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
         continue;
       }
 
-      // A nested quote (or any block) can't live inside the paragraph - emit it on its own.
       if (child instanceof HTMLElement && (child.tagName === 'BLOCKQUOTE' || child.tagName === 'P')) {
         if (current.firstChild) flush();
 
@@ -80,10 +75,6 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
     if (first) collapseInto(first, 0);
   };
 
-  /**
-   * Quotes the selected blocks, or lifts the caret's quote out one level when it already is one.
-   * A selection holding something a quote can't serialize (list, table, code block) is left alone.
-   */
   const toggleBlockquote = () => {
     const editable = getSelection();
     const el = root();
@@ -105,8 +96,6 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
 
     const quote = renderer.createElement('blockquote');
 
-    // An empty editor has no block to quote - start an empty one, the <br> giving it a line box
-    // for the caret (same treatment as toggleList / toggleHeading).
     if (blocks.length === 0) {
       renderer.appendChild(quote, renderer.createElement('br'));
       renderer.appendChild(el, quote);
@@ -116,7 +105,6 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
     }
 
     blocks.forEach((block, index) => {
-      // every block becomes one quoted line
       if (index > 0) renderer.appendChild(quote, renderer.createElement('br'));
 
       if (block.nodeType === Node.TEXT_NODE) {
@@ -128,7 +116,6 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
       while (block.firstChild) renderer.appendChild(quote, block.firstChild);
     });
 
-    // the quoted blocks may all have been empty - the <br> keeps a line box for the caret
     if (!quote.firstChild) renderer.appendChild(quote, renderer.createElement('br'));
 
     renderer.insertBefore(el, quote, blocks[0] ?? null);
@@ -140,7 +127,6 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
     el.normalize();
   };
 
-  /** Tab inside a quote: nest it one level deeper (`>` → `>>`). Returns `true` when handled. */
   const indentBlockquote = () => {
     const editable = getSelection();
     const quote = quoteAtCaret();
@@ -157,8 +143,6 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
     return true;
   };
 
-  /** Shift+Tab inside a quote: lift it one level (`>>` → `>`), or out of the quote at the top
-   *  level. Returns `true` when handled. */
   const outdentBlockquote = () => {
     const editable = getSelection();
     const quote = quoteAtCaret();
@@ -171,7 +155,6 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
       const { startContainer, startOffset } = editable.range;
       const ref = quote.nextSibling;
 
-      // the lifted lines become the outer quote's own - kept apart from what sits above them
       if (
         quote.previousSibling &&
         !(quote.previousSibling instanceof HTMLElement && quote.previousSibling.tagName === 'BR')
@@ -192,8 +175,6 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
     return true;
   };
 
-  /** Whether the caret sits at the start of a quoted line - nothing but a line break (or the start
-   *  of the quote) before it. */
   const atLineStart = (quote: HTMLElement, range: Range) => {
     const { startContainer, startOffset } = range;
     const isBreak = (node: Node | null) => !node || (node instanceof HTMLElement && node.tagName === 'BR');
@@ -205,10 +186,8 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
   };
 
   /**
-   * Enter inside a quote: a line break within the same `<blockquote>` - left to the browser it
-   * would split the quote into two instead, which is neither the shape the value round-trips to nor
-   * what the user asked for. On the quote's already-empty last line it leaves the quote, the way
-   * out that lists and headings have. Returns `true` when handled.
+   * Left to the browser, Enter splits the quote into two `<blockquote>`s instead of breaking the
+   * line inside one - a shape the value does not round-trip to.
    */
   const blockquoteEnter = () => {
     const editable = getSelection();
@@ -223,14 +202,12 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
     const atQuoteEnd = toEnd.toString().trim().length === 0;
 
     if (atQuoteEnd && atLineStart(quote, range)) {
-      // the outermost wrapper is what the new paragraph goes after
       let outermost = quote;
 
       while (outermost.parentElement && outermost.parentElement !== el) outermost = outermost.parentElement;
 
-      // Drop the empty last line. Alongside its break that means the empty text nodes
-      // `Range.insertNode` leaves behind when it splits a text node - they are invisible in the
-      // markup but would keep the loop from reaching the break.
+      // `Range.insertNode` leaves empty text nodes behind when it splits a text node: they are
+      // invisible in the markup, but the loop below would stop at one before reaching the break.
       const isTrailingBlank = (node: ChildNode | null) =>
         !!node &&
         ((node instanceof HTMLElement && node.tagName === 'BR') ||
@@ -242,7 +219,6 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
       renderer.appendChild(paragraph, renderer.createElement('br'));
       renderer.insertBefore(el, paragraph, outermost.nextSibling);
 
-      // a quote emptied by the line that left it goes away with it
       if (!quote.firstChild && quote.parentNode) renderer.removeChild(quote.parentNode, quote);
       if (!outermost.firstChild && outermost.parentNode) renderer.removeChild(el, outermost);
 
@@ -268,10 +244,9 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
   };
 
   /**
-   * Removes a quote the browser emptied: selecting a quote's whole content and deleting it leaves
-   * the `<blockquote>` behind, which would go on serializing an empty `>` line (and swallow what is
-   * typed next). An empty quote the editor itself made always holds the `<br>` that gives it a line
-   * box, so a childless one is only ever that leftover. Returns `true` when it removed one.
+   * Deleting a quote's whole content leaves the browser's empty `<blockquote>` behind. An empty
+   * quote the editor itself made always holds a `<br>`, so a childless one is only ever that
+   * leftover.
    */
   const repairEmptyQuotes = () => {
     const el = root();

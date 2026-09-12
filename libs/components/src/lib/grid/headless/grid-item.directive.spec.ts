@@ -66,8 +66,6 @@ describe('GridItemDirective', () => {
     fixture.detectChanges();
     measureGrid();
 
-    // Simulate what the registration effect does when minColSpan input changes:
-    // the effect calls registerConstraints with the new constraints.
     getGridDirective().registerConstraints('item-1', { minColSpan: 4, maxColSpan: 6, minRowSpan: 1, maxRowSpan: 3 });
 
     expect(getGridDirective().getConstraints('item-1').minColSpan).toBe(4);
@@ -121,7 +119,6 @@ describe('GridItemDirective', () => {
 
     item.updateDirectRect({ x: 123, y: 45, width: 200, height: 100 });
     expect(item.renderedRect()).toEqual({ x: 123, y: 45, width: 200, height: 100 });
-    // layout-driven slot is untouched by direct control
     expect(item.slotRect()).toEqual(slot);
 
     item.stopDirectControl();

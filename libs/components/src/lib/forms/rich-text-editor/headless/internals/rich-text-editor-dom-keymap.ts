@@ -2,15 +2,7 @@ import { RichTextEditorDomCore } from './rich-text-editor-dom-core';
 import { RichTextEditorDomFeatures } from './rich-text-editor-dom-features';
 import { RichTextEditorDomLists } from './rich-text-editor-dom-lists';
 
-/**
- * Key behaviors that need editor-schema awareness beyond the browser's contenteditable defaults:
- * Backspace on empty blocks (list exit, merge into a previous list, table-adjacent first line,
- * empty code block), Enter on empty list items / heading edges / the last line of a quote or code
- * block, newlines inside a code block, and arrow keys stepping out of inline code.
- *
- * The quote, fenced-code and heading parts only apply where those domains were provided, so every
- * one of them is read off `features` per event rather than bound up front.
- */
+/** Every optional domain is read off `features` per event, never bound up front. */
 export const createRichTextEditorKeymap = (
   core: RichTextEditorDomCore,
   deps: {
@@ -45,8 +37,7 @@ export const createRichTextEditorKeymap = (
     const paragraph = closestWithin(node, 'p');
 
     if (paragraph && isBlockEmpty(paragraph)) {
-      // an empty first line sitting directly above a table can't merge upward - remove it and drop
-      // the caret into the table so an unneeded exit line can be deleted
+      // An empty first line sitting directly above a table cannot merge upward.
       const next = paragraph.nextElementSibling;
 
       if (!paragraph.previousElementSibling && next instanceof HTMLTableElement) {
@@ -78,14 +69,9 @@ export const createRichTextEditorKeymap = (
     return false;
   };
 
-  /** Enter on an empty list item steps it out one nesting level (or leaves the list at the top),
-   *  instead of inserting another empty item; inside a code block it inserts a newline (and on the
-   *  empty last line leaves the block), on a quote's empty last line it leaves the quote, and at a
-   *  heading's edge it starts a paragraph. Returns `true` when handled. */
   const handleEnter = () => {
     const editable = getSelection();
 
-    // a code block owns Enter outright - a fence holds newlines, not blocks
     if (features.codeBlock?.codeBlockEnter()) {
       return true;
     }
@@ -105,10 +91,6 @@ export const createRichTextEditorKeymap = (
     return (features.blockquote?.blockquoteEnter() || features.headings?.headingEnter()) ?? false;
   };
 
-  /**
-   * ArrowRight at the end of an inline `<code>` span (or ArrowLeft at its start) steps the caret
-   * just outside the code element, so continuing to type isn't code. Returns `true` when handled.
-   */
   const codeExit = (key: string) => {
     if (key !== 'ArrowRight' && key !== 'ArrowLeft') return false;
 
@@ -119,7 +101,6 @@ export const createRichTextEditorKeymap = (
     const { range } = editable;
     const code = closestWithin(range.startContainer, 'code');
 
-    // inline code only - leave fenced code blocks (`<pre><code>`) alone
     if (!code || closestWithin(range.startContainer, 'pre')) return false;
 
     const emptyToward = (side: 'start' | 'end') => {
@@ -134,9 +115,8 @@ export const createRichTextEditorKeymap = (
     let target: Node;
     let offset: number;
 
-    // Just moving the caret past the code's boundary doesn't stick - the browser snaps it back
-    // inside. Land it in a real text node outside the code instead, inserting a zero-width-space
-    // node when there's nothing adjacent (stripped on serialize).
+    // Moving the caret past the code's boundary does not stick - the browser snaps it back inside.
+    // It has to land in a real text node; the zero-width space is stripped on serialize.
     if (key === 'ArrowRight' && emptyToward('end')) {
       const next = code.nextSibling;
 

@@ -145,9 +145,9 @@ export class GridComponent<TData = unknown> {
   // that split.
   private projectedItems = contentChildren(GridItemDirective, { descendants: true });
 
-  // The one seam where the item type is re-attached: a host directive cannot be parameterized by its
-  // component's generic, so the component owns the typed input/output pair above and hands them to
-  // the directive, which is the same instance - only with `TData` spelled out.
+  // A host directive cannot be parameterized by its component's generic, so the component owns the
+  // typed input/output pair above and hands them to the directive, which is the same instance - only
+  // with `TData` spelled out.
   public grid = inject(GridDirective) as GridDirective<TData>;
 
   protected actionsComponent = computed(() => {

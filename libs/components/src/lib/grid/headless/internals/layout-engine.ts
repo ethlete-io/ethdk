@@ -28,10 +28,8 @@ export type ResolveCollisionsOptions = {
 };
 
 /**
- * Per-item lower bound (in rows) for the upward compaction pass. An item with a
- * floor is never pulled above it - used during live resize gestures to keep
- * unrelated items from collapsing into freshly vacated space while the pointer
- * is still down. Items without an entry compact all the way up (floor 0).
+ * Per-item lower bound (in rows) for the upward compaction pass. An item with a floor is never pulled
+ * above it; items without an entry compact all the way up (floor 0).
  */
 export type RowFloors = ReadonlyMap<string, number>;
 
@@ -41,9 +39,6 @@ export type CompactLayoutOptions = {
   rowFloors?: RowFloors;
 };
 
-/**
- * Checks whether two grid items overlap.
- */
 export const itemsCollide = (a: GridItemPosition, b: GridItemPosition) => {
   if (a.col + a.colSpan <= b.col) return false;
   if (b.col + b.colSpan <= a.col) return false;
@@ -52,16 +47,9 @@ export const itemsCollide = (a: GridItemPosition, b: GridItemPosition) => {
   return true;
 };
 
-/**
- * Returns the first item that collides with the given position, or undefined if none.
- */
 export const findCollision = (options: FindCollisionOptions) =>
   options.entries.find((entry) => entry.id !== options.excludeId && itemsCollide(entry.position, options.position));
 
-/**
- * Clamps a position so it fits horizontally within the given column count.
- * Reduces an over-wide span and slides an out-of-bounds column back in range.
- */
 const clampToColumns = (position: GridItemPosition, columns: number): GridItemPosition => {
   const colSpan = Math.max(1, Math.min(position.colSpan, columns));
   const col = Math.max(0, Math.min(position.col, columns - colSpan));
@@ -70,14 +58,8 @@ const clampToColumns = (position: GridItemPosition, columns: number): GridItemPo
 };
 
 /**
- * Compacts the layout vertically (moves items up as far as possible without collision).
- *
- * Also acts as a self-healing normaliser: positions that overflow the grid horizontally
- * (e.g. stale data from a wider breakpoint clamped into a narrower one - a colSpan of 12
- * or a col of 8 in a 6-column grid) are first clamped back into bounds, then any items
- * left overlapping are pushed down before the upward compaction runs. This guarantees the
- * returned layout is always in-bounds and overlap-free regardless of the input - clamping
- * a column alone is not enough, because it can drop an item on top of an existing one.
+ * Compacts the layout vertically (moves items up as far as possible without collision). The returned
+ * layout is always in-bounds and overlap-free regardless of the input.
  */
 export const compactLayout = (options: CompactLayoutOptions) => {
   const { entries, columns, rowFloors } = options;
@@ -95,7 +77,6 @@ export const compactLayout = (options: CompactLayoutOptions) => {
       candidate.position.row += 1;
     }
 
-    // Then pull up as far as possible without colliding (never above the item's floor).
     const floor = rowFloors?.get(entry.id) ?? 0;
 
     while (candidate.position.row > floor) {
@@ -151,7 +132,6 @@ export const clampPosition = (options: ClampPositionOptions) => {
 /**
  * Resolves collisions by pushing items down when a moved/resized item overlaps others.
  * If exactly one item of the same size collides, they swap positions instead.
- * Cascades: if pushed items collide with others, those are pushed down too.
  */
 export const resolveCollisions = (options: ResolveCollisionsOptions) => {
   const { entries, movedId, columns, originPosition, rowFloors } = options;
@@ -163,11 +143,9 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const movedEntry = result.find((e) => e.id === movedId)!;
 
-  // Detect swap candidates: exactly one colliding item
   const colliding = result.filter((e) => e.id !== movedId && itemsCollide(movedEntry.position, e.position));
   const swapTarget = colliding.length === 1 ? colliding[0] : undefined;
 
-  // Same-position same-size swap - only when origin was immediately adjacent to the target.
   // Without the adjacency guard a far-away drag (e.g. 4 rows up) would teleport the collider
   // back to the drag origin instead of simply pushing it out of the way.
   if (
@@ -194,8 +172,6 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
     }
   }
 
-  // Horizontal same-row swap for different-size items: when the dragged item moved
-  // sideways within the same row and its single collider fits in the vacated origin space.
   if (swapTarget && originPosition) {
     const sameRowBand =
       originPosition.row === movedEntry.position.row &&
@@ -204,7 +180,6 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
 
     const movedDir = Math.sign(movedEntry.position.col - originPosition.col);
 
-    // Log whenever a single-collision drag is evaluated so we can see why the swap does/doesn't fire
     if (sameRowBand && movedDir !== 0) {
       const proposedCol =
         movedDir > 0 ? originPosition.col : originPosition.col + originPosition.colSpan - swapTarget.position.colSpan;
@@ -214,7 +189,6 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
       const fits =
         proposedCol >= 0 &&
         proposedCol + swapTarget.position.colSpan <= columns &&
-        // The two items must not overlap after the swap
         (movedEntry.position.col >= proposedCol + swapTarget.position.colSpan ||
           proposedCol >= movedEntry.position.col + movedEntry.position.colSpan);
 
@@ -232,12 +206,8 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
     }
   }
 
-  // Moving an item DOWN over others used to feel dead: colliders were pushed below the moved
-  // item and the closing compaction pulled the moved item straight back into its vacated
-  // origin, undoing the move until the drag had cleared the collider's full height. Instead,
-  // each direct collider first tries to escape UPWARD into the topmost space that fits it
-  // (typically the vacated origin) - the swap the gesture implies. Whatever finds no room
-  // above the moved item falls through to the push-down cascade below.
+  // Without this escape-upward pass the closing compaction pulls the moved item straight back into
+  // its vacated origin, undoing the move until the drag has cleared the collider's full height.
   if (originPosition && movedEntry.position.row > originPosition.row) {
     for (const collider of colliding) {
       const highestFit = movedEntry.position.row - collider.position.rowSpan;
@@ -253,10 +223,8 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
     }
   }
 
-  // Sort non-moved items by row so we cascade downward
   const others = result.filter((e) => e.id !== movedId).sort((a, b) => a.position.row - b.position.row);
 
-  // Items that need their collisions checked (start with the moved item)
   const toCheck = [movedEntry];
 
   while (toCheck.length > 0) {
@@ -279,9 +247,7 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
   return compactLayout({ entries: result, columns, rowFloors });
 };
 
-/**
- * Computes the total number of rows occupied by the layout.
- */
+/** The total number of rows the layout occupies. */
 export const computeGridHeight = (entries: GridLayoutEntry[]) => {
   if (entries.length === 0) return 0;
 

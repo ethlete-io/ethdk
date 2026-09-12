@@ -102,19 +102,12 @@ const DEFAULT_CONSTRAINTS: GridItemConstraints = {
   maxRowSpan: 24,
 };
 
-/**
- * Column spans are declared once per item but the column count is per breakpoint, so a
- * `minColSpan: 2` reaches a one-column breakpoint as a span wider than the grid. Both bounds are
- * capped here, at the single point every consumer of a constraint reads, rather than at each of the
- * places that place, resize or clamp a position.
- */
 const fitConstraintsToColumns = (constraints: GridItemConstraints, columns: number): GridItemConstraints => {
   const maxColSpan = Math.min(constraints.maxColSpan, columns);
 
   return { ...constraints, minColSpan: Math.min(constraints.minColSpan, maxColSpan), maxColSpan };
 };
 
-/** The base bounds of one config with that config's overrides for `breakpoint` merged over them. */
 const flattenConstraintsConfig = (
   config: GridItemConstraintsConfig | undefined,
   breakpoint: GridBreakpointName,
@@ -126,12 +119,6 @@ const flattenConstraintsConfig = (
   return { ...base, ...perBreakpoint?.[breakpoint] };
 };
 
-/**
- * Narrowest last: the defaults, the registration for the item's `type`, then whatever the item's own
- * `et-grid-item` inputs set - and within each of those two sources, its base bounds first and its
- * override for `breakpoint` after. Every layer above the defaults is a partial, so refining one bound
- * at one breakpoint does not silently reset the other three.
- */
 const resolveItemConstraints = (
   id: string,
   context: {
@@ -184,8 +171,7 @@ export class GridDirective<TData = unknown> {
   /**
    * The items to render. Every change is reconciled against what the grid holds - added ids are
    * placed, missing ids are removed, an empty array clears the grid, and the same ids with different
-   * positions restore those positions. A host can therefore keep feeding its own signal in, including
-   * a saved snapshot after cancelled edits, without rebuilding the grid.
+   * positions restore those positions.
    */
   public items = input<GridItemConfig<string, TData>[]>([]);
   public readOnly = input(false, { transform: booleanAttribute });
@@ -197,12 +183,7 @@ export class GridDirective<TData = unknown> {
    */
   public layoutChange = output<GridSerializedState<TData>>();
 
-  /**
-   * @internal
-   * The items input of the `et-grid` around this directive, handed over rather than bound: a host
-   * directive cannot be parameterized by its component's generic, so the component declares the typed
-   * input and points this at it.
-   */
+  /** @internal */
   public hostItems = signal<Signal<GridItemConfig<string, TData>[]> | null>(null);
 
   private incomingItems = computed(() => this.hostItems()?.() ?? this.items());
@@ -390,9 +371,6 @@ export class GridDirective<TData = unknown> {
         const newItems = initial.filter((item) => !currentById.has(item.id));
         const removedIds = current.filter((c) => !initialIds.has(c.id)).map((c) => c.id);
 
-        // Pure layout update - same item set but positions changed (e.g. the host
-        // reset its signal to a saved snapshot after the user cancelled edits).
-        // A structural add/remove takes precedence and is handled below.
         if (newItems.length === 0 && removedIds.length === 0) {
           const anyLayoutChanged = initial.some((incoming) => {
             const existing = currentById.get(incoming.id);
@@ -400,12 +378,8 @@ export class GridDirective<TData = unknown> {
           });
 
           if (anyLayoutChanged) {
-            // Restore itemConfigs from the incoming snapshot.
             this.itemConfigs.set(initial);
 
-            // Rebuild layoutOverrides for every breakpoint that has already been
-            // visited so the grid renders the restored positions immediately without
-            // waiting for a breakpoint switch.
             const visitedBps = Object.keys(this.layoutOverrides());
             if (visitedBps.length > 0) {
               const columnsByBp = new Map(this.breakpoints().map((bp) => [bp.name, bp.columns]));
@@ -425,10 +399,8 @@ export class GridDirective<TData = unknown> {
             return;
           }
 
-          // Same items in the same places, but the host refreshed their `data` - a re-fetch landing
-          // new widget contents, say. Copy `data` alone: an existing config's `layout` holds what
-          // `moveItem` last wrote, which is ahead of the host's snapshot, so setting `initial`
-          // wholesale here would revert the moves.
+          // Copy `data` alone: an existing config's `layout` holds what `moveItem` last wrote, which is
+          // ahead of the host's snapshot, so setting `initial` wholesale here would revert the moves.
           const changedData = initial.filter((incoming) => currentById.get(incoming.id)?.data !== incoming.data);
 
           if (changedData.length > 0) {
@@ -528,9 +500,8 @@ export class GridDirective<TData = unknown> {
 
       if (!isFirstRegistration) return;
 
-      // On first registration the item may have been auto-placed with 1×1 defaults
-      // (because addItem runs before the GridItemDirective initialises). If so,
-      // re-place it now at the correct minimum size.
+      // On first registration the item may have been auto-placed with 1×1 defaults, because addItem
+      // runs before the GridItemDirective initialises.
       const breakpoint = this.activeBreakpoint();
       const existing = this.layoutOverrides()[breakpoint];
       if (!existing) return;
@@ -607,8 +578,6 @@ export class GridDirective<TData = unknown> {
 
     const targetPosition: GridItemPosition = { ...drag.originPosition, col: cell.col, row: cell.row };
 
-    // Gate here (not in the gesture directive) so a no-op target never re-runs
-    // collision resolution or touches any item's slot.
     if (positionsEqual(drag.targetPosition, targetPosition)) return;
 
     this.dragState.set({ ...drag, targetPosition });
@@ -619,7 +588,6 @@ export class GridDirective<TData = unknown> {
 
     if (!drag) return null;
 
-    // Commit the full resolved layout (includes swaps and collision resolution)
     const resolvedLayout = this.layout();
     this.updateLayoutForCurrentBreakpoint(resolvedLayout);
 
@@ -674,7 +642,6 @@ export class GridDirective<TData = unknown> {
     const columns = this.activeColumns();
     const clamped = clampPosition({ position: target, constraints: this.getConstraints(itemId), columns });
 
-    // Try to shrink horizontal neighbors before pushing them down
     const currentLayout = base.map((e) => (e.id === itemId ? { ...e, position: clamped } : e));
 
     const withShrunk = this.shrinkNeighbors({
@@ -770,9 +737,8 @@ export class GridDirective<TData = unknown> {
       return;
     }
 
-    // Mark the item as leaving - its directive plays the scale/opacity-out transition -
-    // then actually remove it once the animation has finished. Neighbours retarget
-    // automatically when the layout compacts.
+    // Mark the item as leaving - its directive plays the scale/opacity-out transition - then actually
+    // remove it once the animation has finished.
     this.leavingIds.update((ids) => new Set(ids).add(id));
 
     timer(LEAVE_ANIMATION_MS)
@@ -812,9 +778,7 @@ export class GridDirective<TData = unknown> {
     const overrides = this.layoutOverrides();
 
     // layoutOverrides is the authoritative source for any breakpoint that has been visited.
-    // itemConfigs.layout[bp] lags behind for breakpoints that haven't been written back
-    // yet (e.g. items pushed by moveItem/resizeItem collision resolution, or items whose
-    // non-current-breakpoint positions haven't been visited since the last change).
+    // itemConfigs.layout[bp] lags behind for breakpoints that haven't been written back yet.
     const items = this.itemConfigs().map((item) => {
       const layout: Record<string, GridItemPosition> = { ...item.layout };
 
@@ -873,10 +837,6 @@ export class GridDirective<TData = unknown> {
     return this.breakpoints().find((b) => b.name === breakpoint)?.columns ?? 12;
   }
 
-  /**
-   * Dev-mode-only: rejects consumer-provided item configs whose ids are not unique, and warns about
-   * layouts that do not line up with the configured breakpoints.
-   */
   private assertValidItemConfigs(items: GridItemConfig[]) {
     const seen = new Set<string>();
 
@@ -895,13 +855,6 @@ export class GridDirective<TData = unknown> {
     this.warnAboutUncoveredBreakpoints(items);
   }
 
-  /**
-   * A layout key that is not a configured breakpoint is never read, and a breakpoint a *partially*
-   * positioned layout omits is auto-placed in item order rather than mirroring the arrangement the
-   * other breakpoints spell out - both read as the grid having lost part of the layout. An entirely
-   * empty layout is the documented "place this for me" input (`addItem` emits exactly that), so it
-   * is not a problem and stays silent.
-   */
   private warnAboutUncoveredBreakpoints(items: GridItemConfig[]) {
     const configured = this.breakpoints().map((b) => b.name);
     const quote = (names: string[]) => names.map((name) => `"${name}"`).join(', ');
@@ -939,11 +892,10 @@ export class GridDirective<TData = unknown> {
   }
 
   /**
-   * A stored position refitted to the bounds one breakpoint gives the item. A minimum only grows an
-   * item whose `GridItemDirective` has registered: an item added mid-session sits in the layout at
-   * 1×1 until it does, and growing it here would fight `registerConstraints()` and overlap its
-   * neighbours. Callers pass the result through `compactLayout()`, which resolves the overlaps
-   * growing can still introduce.
+   * A minimum only grows an item whose `GridItemDirective` has registered: an item added mid-session
+   * sits in the layout at 1×1 until it does, and growing it here would fight `registerConstraints()`
+   * and overlap its neighbours. Callers pass the result through `compactLayout()`, which resolves the
+   * overlaps growing can still introduce.
    */
   private fitPositionToBreakpoint(options: {
     id: string;
@@ -963,11 +915,6 @@ export class GridDirective<TData = unknown> {
     return { col: Math.max(0, Math.min(position.col, columns - colSpan)), row: position.row, colSpan, rowSpan };
   }
 
-  /**
-   * The layout entries of `items` for one breakpoint. An item the breakpoint has no position for is
-   * auto-placed against the entries built before it, so a partial layout spreads out instead of
-   * stacking every unpositioned item on the grid origin.
-   */
   private entriesForBreakpoint(options: {
     items: readonly GridItemConfig<string, TData>[];
     breakpoint: string;
@@ -1011,7 +958,6 @@ export class GridDirective<TData = unknown> {
     const overrides = this.layoutOverrides();
     const existingItems = this.itemConfigs();
 
-    // Start from any layouts already in the config (e.g. when re-adding from API data).
     const layout: Record<string, GridItemPosition> = { ...config.layout };
 
     // Place on the active breakpoint first so other breakpoints can use it as a reference.
@@ -1025,14 +971,11 @@ export class GridDirective<TData = unknown> {
       });
     layout[activeBp] = position;
 
-    // Auto-place on every other breakpoint that has no position yet.
-    // This ensures the emitted layoutChange always carries all breakpoints so
-    // the host's gridItems signal never loses sm/md positions for new items.
+    // The emitted layoutChange always carries all breakpoints so the host's gridItems signal never
+    // loses sm/md positions for new items.
     for (const bp of allBreakpoints) {
       if (bp.name === activeBp || layout[bp.name]) continue;
 
-      // Effective layout for this breakpoint: prefer layoutOverrides (already visited),
-      // fall back to itemConfigs.layout[bp] (original API positions).
       const bpEntries: GridLayoutEntry[] =
         overrides[bp.name] ??
         this.entriesForBreakpoint({ items: existingItems, breakpoint: bp.name, columns: bp.columns });
@@ -1062,7 +1005,6 @@ export class GridDirective<TData = unknown> {
   }): GridLayoutEntry[] {
     const { layout, resizedId, resizedPos, originalPos, columns } = options;
 
-    // Compute candidate shrunk positions
     const candidates = layout.map((entry) => {
       if (entry.id === resizedId) return entry;
 
@@ -1082,8 +1024,6 @@ export class GridDirective<TData = unknown> {
 
       if (neighborIsRight) {
         const newCol = resizedPos.col + resizedPos.colSpan;
-        // Prefer sliding the neighbor right over shrinking it - only shrink if its
-        // full colSpan no longer fits within the grid at the new column.
         if (newCol + pos.colSpan <= columns) {
           shrunkPos.col = newCol;
         } else {
@@ -1099,12 +1039,9 @@ export class GridDirective<TData = unknown> {
         }
       } else {
         const maxRight = resizedPos.col;
-        // Prefer sliding the neighbor left over shrinking it - only shrink if its
-        // full colSpan would go below column 0 at the new position.
         if (maxRight - pos.colSpan >= 0) {
           shrunkPos.col = maxRight - pos.colSpan;
         } else {
-          // Compute reduction from the max-slide position (col 0), not from the base col.
           const newColSpan = Math.max(minColSpan, maxRight);
           shrunkPos.col = 0;
           shrunkPos.colSpan = newColSpan;
@@ -1114,18 +1051,14 @@ export class GridDirective<TData = unknown> {
       return { ...entry, position: shrunkPos };
     });
 
-    // Validate: revert any shrunk item that now collides with another non-resized item
     return candidates.map((entry, idx) => {
       if (entry.id === resizedId) return entry;
 
       const original = layout[idx] as GridLayoutEntry;
 
-      // Only check items that actually changed
       if (entry.position.col === original.position.col && entry.position.colSpan === original.position.colSpan)
         return entry;
 
-      // If the shrunk position still overlaps the resized item (couldn't be shrunk enough to
-      // fit alongside it), revert to the original so resolveCollisions can push it to another row.
       const resizedEntry = candidates.find((c) => c.id === resizedId);
       if (
         resizedEntry &&
@@ -1137,7 +1070,6 @@ export class GridDirective<TData = unknown> {
         return original;
       }
 
-      // Check if the new position collides with any other non-resized item
       const collides = candidates.some(
         (other) =>
           other.id !== entry.id &&
@@ -1152,7 +1084,6 @@ export class GridDirective<TData = unknown> {
     });
   }
 
-  /** Compact all visited breakpoints (layoutOverrides entries) after an item is removed. */
   private compactOtherBreakpoints(removedId: string) {
     const activeBp = this.activeBreakpoint();
     const bpColumns = new Map(this.breakpoints().map((b) => [b.name, b.columns]));

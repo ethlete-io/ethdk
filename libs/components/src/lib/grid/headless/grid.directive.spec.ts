@@ -498,9 +498,6 @@ describe('GridDirective', () => {
   });
 
   describe('resize compaction', () => {
-    // Row 0 holds a half-width item (its right half is free); rows 1 and 2 hold
-    // full-width items. Shrinking b onto the right half frees space b could
-    // compact into - but that must not happen until the gesture ends.
     beforeEach(() => {
       fixture.componentRef.setInput('items', [
         { id: 'a', type: 'test', data: undefined, layout: everyBreakpoint({ col: 0, row: 0, colSpan: 6, rowSpan: 1 }) },
@@ -525,8 +522,6 @@ describe('GridDirective', () => {
       const start = getDirective().beginResize('b');
       expect(start).toEqual({ col: 0, row: 1, colSpan: 12, rowSpan: 1 });
 
-      // Shrink b from the left so it only covers the right half of row 1. The slot
-      // above it (row 0, cols 6-11) is now free, but nothing may move up yet.
       getDirective().updateResize('b', { col: 6, row: 1, colSpan: 6, rowSpan: 1 });
 
       const during = getDirective().layout();
@@ -548,13 +543,11 @@ describe('GridDirective', () => {
     it('lets items pushed down by the resize return to their start row mid-gesture', () => {
       getDirective().beginResize('a');
 
-      // Grow a to full width - b and c get pushed down one row each.
       getDirective().updateResize('a', { col: 0, row: 0, colSpan: 12, rowSpan: 2 });
       let layout = getDirective().layout();
       expect(layout.find((e) => e.id === 'b')?.position.row).toBe(2);
       expect(layout.find((e) => e.id === 'c')?.position.row).toBe(3);
 
-      // Shrink back - they return to their gesture-start rows, not above them.
       getDirective().updateResize('a', { col: 0, row: 0, colSpan: 6, rowSpan: 1 });
       layout = getDirective().layout();
       expect(layout.find((e) => e.id === 'b')?.position.row).toBe(1);

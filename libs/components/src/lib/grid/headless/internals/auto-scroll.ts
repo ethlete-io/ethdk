@@ -3,7 +3,6 @@ export type AutoScrollPointer = { clientX: number; clientY: number };
 export type AutoScroller = {
   /** Begin the edge-proximity loop. No-op if already running. */
   start: (pointer: AutoScrollPointer) => void;
-  /** Feed the latest pointer position. */
   update: (pointer: AutoScrollPointer) => void;
   stop: () => void;
 };
