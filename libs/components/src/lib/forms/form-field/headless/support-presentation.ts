@@ -5,15 +5,6 @@ import { AnimatableDirective } from '@ethlete/core';
 import { EMPTY, filter, switchMap, tap } from 'rxjs';
 import { FieldWarning } from './field-warnings';
 
-/**
- * The support region under a form control shows at most one of an error, a warning or a hint at a
- * time, with an animated cross-fade/slide when it switches. This module owns that little state
- * machine so the text-field shell (`form-field.component`) and the headless `injectFormSupport`
- * (rating, otp, slider, selection groups, dropzone, choice-field, …) share one implementation
- * instead of two that drift. Callers keep their own view-child wiring, error source, and derived
- * signals - only the reducer, state shape, and enum constants live here.
- */
-
 export const SUPPORT_CONTENT_STATE = {
   NONE: 'none',
   HINT: 'hint',
@@ -62,11 +53,6 @@ export const INITIAL_SUPPORT_PRESENTATION_STATE: SupportPresentationState = {
   },
 };
 
-/**
- * Severity order, and what the motion means: a more severe message always slides in from below and
- * pushes the less severe one up, whichever pair swaps. Entering from - or leaving to - nothing uses
- * the state's own side instead.
- */
 const SUPPORT_STATE_SEVERITY: Record<SupportSwappingState, number> = {
   [SUPPORT_CONTENT_STATE.HINT]: 0,
   [SUPPORT_CONTENT_STATE.WARNING]: 1,
@@ -137,7 +123,6 @@ export const supportPresentationIncludesState = ({
   return presentation.renderedState === state || presentation.leavingState === state;
 };
 
-/** The message currently occupying the region, whether it is settled in or already animating out. */
 const occupyingState = ({
   presentation,
   except,

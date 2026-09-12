@@ -1,11 +1,6 @@
 import { Component, computed, DestroyRef, inject, input, ViewEncapsulation } from '@angular/core';
 import { CounterComponentBase, FORM_FIELD_TOKEN } from './headless';
 
-/**
- * How a value's "length" is measured when the consumer doesn't say. Strings and array-likes cover
- * every control that can meaningfully be counted (`et-input`/`et-textarea` and `et-tag-input`
- * respectively); anything else falls back to its string form so a number input still reads sensibly.
- */
 const defaultLengthOf = (value: unknown) => {
   if (value === null || value === undefined) {
     return 0;
@@ -22,15 +17,10 @@ const defaultLengthOf = (value: unknown) => {
   return String(value).length;
 };
 
-/** Fraction of the limit at which the counter starts announcing how much room is left. */
 const ANNOUNCE_FROM_FRACTION = 0.9;
 
 /**
  * The `x / N` character counter in a form field's support region.
- *
- * It sits at the inline-end of the support row and is **persistent** - unlike the hint, it does not
- * swap out when an error appears, because a reader who just crossed the limit needs to see both the
- * error and the count that caused it.
  *
  * The limit comes from `[max]` if given, otherwise from the bound field's schema `maxLength()`
  * (signal forms binds that into the control automatically). With neither, the counter renders the
@@ -38,9 +28,6 @@ const ANNOUNCE_FROM_FRACTION = 0.9;
  */
 @Component({
   selector: 'et-counter',
-  // The visible count is hidden from assistive tech and mirrored by a live region that stays empty
-  // except at the thresholds that carry information - announcing every keystroke would make typing
-  // unusable with a screen reader.
   template: `
     <span aria-hidden="true">{{ current() }}{{ limitSuffix() }}</span>
     <span [attr.aria-live]="announcement() ? 'polite' : null" class="et-counter-announcement">
@@ -74,9 +61,7 @@ export class CounterComponent implements CounterComponentBase {
 
   /**
    * Whether the value is past the limit. With a schema `maxLength()` this is the control's own
-   * validation error - re-measuring the value here would be a second length check that can disagree
-   * with the one the field actually reports. An explicit `[max]` has no validator behind it, so that
-   * case still compares.
+   * validation error.
    */
   public isOverLimit = computed(() => {
     const explicitMax = this.max();

@@ -12,8 +12,7 @@
     }
 
     /* `data-size` is a host binding, so a field the router just created paints one frame without it.
-       The default size must therefore also match a field that has no attribute yet, or the frame
-       grows 10px between that frame and the bound one. */
+       The default size must therefore also match a field that has no attribute yet. */
     &:where([data-size='md'], :not([data-size])) {
       --et-form-field-gap: 5px;
       --et-form-field-control-border-radius: 5px;
@@ -48,7 +47,6 @@
        *before* the base sheet and lose every source-order tie against the base frame/label rules. */
     &[data-text-shell] {
       &[data-label-mode='static'] {
-        /* only reserve the label band when a label is actually projected */
         &[data-has-label] .et-form-field-shell {
           padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
         }
@@ -116,7 +114,6 @@
           transition: color 150ms ease;
         }
 
-        /* the select renders its placeholder as a span, not a native ::placeholder */
         .et-select-value[data-placeholder] {
           transition: color 150ms ease;
         }
@@ -141,7 +138,6 @@
           inset-inline-start: 0;
         }
 
-        /* only reserve the label band when a label is actually projected */
         &[data-has-label] .et-form-field-shell {
           padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
         }
@@ -191,10 +187,8 @@
         white-space: nowrap;
       }
 
-      /* Hover follows the FRAME and the label — the two boxes that activate the control — not the host.
-         The host's box also spans the label band, the `--et-form-field-gap` between frame and support, and
-         the whole hint/counter row, so keying on `:hover` lit the frame up while the pointer was resting
-         visibly outside it (next to the counter, most obviously). Readonly and disabled get no hover
+      /* Hover follows the FRAME and the label — the two boxes that activate the control — not the host,
+         whose box also spans the label band and the support row. Readonly and disabled get no hover
          feedback at all: the frame's `pointer-events: none` (disabled) does not stop an ancestor from
          matching `:hover`, so it has to be excluded here. */
       @media (hover: hover) {
@@ -214,8 +208,6 @@
         }
       }
 
-      /* an open popup keeps the field in its focused look: focus has moved into the detached
-         overlay, so `:focus-visible` no longer matches — `[data-expanded]` stands in for it */
       &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-control-frame,
       &:where([data-expanded]:not([data-readonly])) .et-form-field-control-frame,
       &:where([data-focused]:not([data-readonly])) .et-form-field-control-frame {
@@ -233,9 +225,6 @@
       }
 
       &[data-readonly] {
-        /* the shell is the label + frame row (the support row is its sibling). The frame's own
-           cursor covers the frame; the shell covers the gaps around it, and is the element the
-           pointer actually hits once a disabled frame drops out of hit-testing. */
         .et-form-field-shell {
           cursor: default;
         }
@@ -244,8 +233,6 @@
           cursor: default;
         }
 
-        /* the label activates the control by click, so it carries the control's own I-beam —
-           readonly has nothing to activate */
         .et-form-field-label-area {
           cursor: default;
         }
@@ -295,11 +282,8 @@
 
       &[data-appearance='underline'] {
         /* An underline field is text with a rule beneath it — there is no box to fill, so it must not
-           reserve the box height the filled/box skins need. With the shared per-size min-height a `sm`
-           field left ~12px of dead space between its value and the underline (very visible in a table
-           footer's page-size select). Sizing the floor to the control's own line box puts the rule
-           `--et-form-field-control-padding-block` under the text instead. A floating label still grows
-           the frame past this floor — it adds its own padding-block-start on top. */
+           reserve the box height the filled/box skins need. A floating label still grows the frame
+           past this floor — it adds its own padding-block-start on top. */
         --et-form-field-control-min-height: calc(
           var(--et-form-field-control-font-size) * var(--et-form-field-control-line-height) +
             var(--et-form-field-control-padding-block) * 2

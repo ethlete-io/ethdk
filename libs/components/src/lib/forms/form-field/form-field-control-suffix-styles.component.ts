@@ -3,8 +3,7 @@ import { injectStyleManager } from '@ethlete/core';
 
 /**
  * The in-field affordances a text-shell control hands to the field's suffix slot - the clear button
- * and the picker trigger - as a styles-only component (see `FormFieldTextShellStylesComponent` for
- * the pattern). Referenced only from the controls that render them.
+ * and the picker trigger - as a styles-only component.
  *
  * @internal
  */

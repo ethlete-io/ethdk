@@ -77,7 +77,6 @@ import { LabelDirective } from './headless';
 class SupportRegionTestHost {
   errors = [{ kind: 'required', message: 'Pick a delivery option' }];
   touched = signal(true);
-  // nothing here uploads - the dropzone only needs its required input to be readable
   upload: AnyDropzoneUploadConfig<string> = {
     selectValue: (response: unknown) => String(response),
     createUploadHandle: () => {
@@ -87,11 +86,6 @@ class SupportRegionTestHost {
   };
 }
 
-/**
- * Every control that renders its own support region has to put the form field's ids on it. The
- * shared `aria-describedby` machinery names those ids blind - nothing else notices when the
- * element they point at does not exist, and the hint or error simply goes unannounced.
- */
 describe('support region ids', () => {
   it('resolves aria-describedby on every control that renders its own support region', () => {
     TestBed.configureTestingModule({

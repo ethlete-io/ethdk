@@ -101,7 +101,7 @@
   }
 
   /* On the region, not on the control host: a control aliases these two from its own public
-     `--et-<control>-support-*` tokens on the host, and the closer declaration has to win. */
+     tokens on the host, and the closer declaration has to win. */
   @media (prefers-reduced-motion: reduce) {
     .et-form-support {
       --et-form-support-duration: 1ms;

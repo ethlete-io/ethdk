@@ -68,8 +68,6 @@ import {
   ],
   host: {
     class: 'et-form-field',
-    // a signal-forms schema-hidden control removes the whole field (inline style beats the
-    // component's own `display`); the field also drops out of the a11y tree, as `hidden` intends
     '[style.display]': 'formFieldDir.isHidden() ? "none" : null',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-control-type]': 'formFieldDir.controlType()',
@@ -78,9 +76,8 @@ import {
     '[attr.aria-busy]': 'isBusy() ? "true" : null',
     '[attr.data-busy]': 'isBusy() || null',
     '[attr.data-expanded]': 'formFieldDir.usesTextFieldShell() && formFieldDir.expanded() ? "" : null',
-    // stands in for `:focus-visible` when the focused element is a non-editable trigger (a
-    // tabindex div opened by pointer never matches `:focus-visible`), keeping the focused frame
-    // and the clear affordance - both keyed on the control's `focused()` - in agreement
+    // stands in for `:focus-visible` when the focused element is a non-editable trigger - a
+    // tabindex div opened by pointer never matches `:focus-visible`
     '[attr.data-focused]': 'formFieldDir.usesTextFieldShell() && formFieldDir.focused() ? "" : null',
     '[attr.data-readonly]': 'formFieldDir.usesTextFieldShell() && formFieldDir.isReadonly() ? "" : null',
     '[attr.data-disabled]': 'formFieldDir.usesTextFieldShell() && formFieldDir.isDisabled() ? "" : null',
@@ -127,10 +124,6 @@ export class FormFieldComponent {
   /** Whether the field is busy - a pending async validator, or `[busy]`. */
   public isBusy = computed(() => this.busy() || this.formFieldDir.isPending());
 
-  /**
-   * The spinner follows `isBusy()` late: a validator that settles in a few dozen milliseconds would
-   * otherwise flash one. `aria-busy` still reports the real state from the first moment.
-   */
   protected showBusySpinner = signalDeferredLoading(this.isBusy);
 
   private prefixDimensions = signalElementDimensions(this.prefixEl);

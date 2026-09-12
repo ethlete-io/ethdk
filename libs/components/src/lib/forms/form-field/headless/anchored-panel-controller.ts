@@ -23,16 +23,11 @@ export type AnchoredPanelCloseInfo = {
 export type AnchoredPanelOverlayRef = OverlayRef<OverlayTemplateHostComponent, unknown>;
 
 export type CreateAnchoredPanelControllerOptions = {
-  /**
-   * Reconcile gate - while `false`, any mounted panel closes and `open` is forced `false`.
-   * (Typically `!disabled`; `readonly` is enforced by the caller's `show()`, not here, so a panel
-   * already open when the control turns read-only stays open, matching the pre-extraction behavior.)
-   */
+  /** Reconcile gate - while `false`, any mounted panel closes and `open` is forced `false`. */
   canOpen: Signal<boolean>;
   /** The open model the panel mirrors; the controller drives it to `false` on every close. */
   open: WritableSignal<boolean>;
-  /** The caller-owned overlay-ref signal the controller writes on mount/close (so the directive
-   * can keep exposing its own `overlayRef`/`isMounted`). */
+  /** The caller-owned overlay-ref signal the controller writes on mount/close. */
   overlayRef: WritableSignal<AnchoredPanelOverlayRef | null>;
   /** The registered surface template to project into the pane. */
   surface: Signal<AnchoredPanelSurfaceLike | null>;
@@ -57,12 +52,8 @@ export type CreateAnchoredPanelControllerOptions = {
 /**
  * The anchored/bottom-sheet panel machinery shared by the field controls that open a templated
  * overlay from a trigger (`select`, `cascader`; the date pickers use the sibling
- * `createDatePickerOverlay`). It owns the overlay ref, the disabled/open reconciliation effect,
- * the outside-pointer close (so a pointerdown on the anchor toggles instead of close-and-reopen),
- * the close when focus leaves the pane - either onto another element or by tabbing past the pane's
- * first/last control, which lands nowhere when the field is the page's last tab stop - and the
- * model sync on every interactive close. Everything control-specific - the overlay config
- * and the mount/close side effects - is supplied via the hooks. Call in an injection context.
+ * `createDatePickerOverlay`). Everything control-specific - the overlay config and the mount/close
+ * side effects - is supplied via the hooks. Call in an injection context.
  */
 export const createAnchoredPanelController = (options: CreateAnchoredPanelControllerOptions) => {
   const overlayManager = injectOverlayManager();
@@ -278,7 +269,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
   });
 
   return {
-    /** Closes the pane (the reconcile effect and close hooks handle the rest). */
+    /** Closes the pane. */
     close: () => overlayRef()?.close(),
   };
 };

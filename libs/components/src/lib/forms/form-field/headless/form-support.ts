@@ -49,9 +49,6 @@ const formSupportFactory = () => {
   const hintDimensions = signalElementDimensions(hintContent);
   const counterDimensions = signalElementDimensions(counterContent);
 
-  // real validation errors, or - when the control only has an unparseable committed value - a
-  // synthetic one carrying its parse message, so a parse error renders like any other error
-  // (accent styling + a message + aria-describedby) instead of a silent `aria-invalid`
   const effectiveErrors = computed<readonly ValidationError.WithOptionalFieldTree[]>(() => {
     const errors = formFieldDir.errors();
 
@@ -83,16 +80,11 @@ const formSupportFactory = () => {
   const displaysError = computed(() => semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR);
   const displaysWarning = computed(() => semanticSupportState() === SUPPORT_CONTENT_STATE.WARNING);
 
-  // the enter/leave state machine is shared with the text-field shell - see
-  // `support-presentation.ts`. This holds only the presentation state; the derived render flags
-  // below read it alongside the live `semanticSupportState`.
   const supportPresentation = signal(INITIAL_SUPPORT_PRESENTATION_STATE);
 
   const shouldRenderSupport = computed(() => {
     const presentation = supportPresentation();
 
-    // A counter alone is reason enough to open the region - it is persistent, so unlike the hint
-    // and the error it isn't part of the swapping state machine.
     return (
       !!formFieldDir.registeredCounter() ||
       semanticSupportState() !== SUPPORT_CONTENT_STATE.NONE ||
@@ -172,8 +164,6 @@ const formSupportFactory = () => {
       }
     })();
 
-    // The region animates its own height, so a counter with no hint or error still has to
-    // contribute one - otherwise the row it sits in would be clipped to zero.
     const counterHeight = formFieldDir.registeredCounter() ? (counterDimensions().offset?.height ?? 0) : 0;
 
     return Math.max(stackHeight, counterHeight);
@@ -217,8 +207,6 @@ const formSupportFactory = () => {
     errorColorTheme,
     warningColorTheme,
     formFieldDir,
-    // the support region a control's `aria-describedby` points at has to carry the matching id,
-    // or the message it names resolves to nothing and is never announced
     errorId: formFieldDir.errorId,
     warningId: formFieldDir.warningId,
     hintId: formFieldDir.hintId,
@@ -264,8 +252,8 @@ export type FormSupport = ReturnType<typeof formSupportFactory>;
 /**
  * Forwards a support-region view children into its `FormSupport`, and drops them again when the
  * region is torn down. The `viewChild` queries themselves must stay as class fields (`NG8110` - the
- * compiler only accepts them in direct field initializers); this owns the wiring so the mapping
- * lives in one place. Call from the constructor (needs an injection context for the effect).
+ * compiler only accepts them in direct field initializers). Call from the constructor (needs an
+ * injection context for the effect).
  */
 export const wireFormSupport = (
   support: FormSupport,

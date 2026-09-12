@@ -29,7 +29,6 @@ import { FORM_FIELD_IMPORTS } from './form-field.imports';
 
 const query = (selector: string) => (host: HTMLElement) => host.querySelector(selector);
 
-/** A control the consumer wraps in an `<et-form-field>` themselves. */
 const inField = (selector: string, extra = ''): AccessibleNameCase['template'] => {
   return (naming) => `<et-form-field><${selector} ${extra} ${naming} /></et-form-field>`;
 };
@@ -163,7 +162,6 @@ const CASES: AccessibleNameCase[] = [
     template: (naming) => `<et-dropzone [upload]="upload" ${naming} />`,
     namedElement: query('.et-dropzone-trigger'),
     state: {
-      // nothing here uploads - the dropzone only needs its required input to be readable
       upload: {
         selectValue: (response: unknown) => String(response),
         createUploadHandle: () => {
