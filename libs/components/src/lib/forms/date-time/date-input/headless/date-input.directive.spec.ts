@@ -10,6 +10,7 @@ import { describePickerCommitContract } from '../../../testing/picker-commit-con
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateInputFieldDirective } from './date-input-field.directive';
+import { DATE_INPUT_ERROR_CODES } from '../date-input-errors';
 import { DateInputDirective } from './date-input.directive';
 import { CalendarPrecision } from '../../../../calendar/headless';
 
@@ -629,5 +630,68 @@ describe('DateInputDirective (tabbing out of the picker)', () => {
     await driver.settle();
 
     expect(document.activeElement).not.toBe(driver.field());
+  });
+});
+
+@Component({
+  template: `<input etDateInputField />`,
+  imports: [DateInputFieldDirective],
+})
+class OrphanDateInputFieldTestHost {}
+
+@Component({
+  template: `<button etDatePickerTrigger>open</button>`,
+  imports: [DatePickerTriggerDirective],
+})
+class OrphanDatePickerTriggerTestHost {}
+
+@Component({
+  template: `<ng-template etDatePickerSurface />`,
+  imports: [DatePickerSurfaceDirective],
+})
+class OrphanDatePickerSurfaceTestHost {}
+
+const EVERY_PICKER_HOST =
+  '[etDateInput], [etDateRangeInput], [etTimeInput], [etDateTimeInput], [etTimeRangeInput] or [etDateTimeRangeInput]';
+
+describe('DateInputFieldDirective errors', () => {
+  it('rejects a field outside a date input while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDateInputFieldTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDateInputFieldTestHost)).toThrow(
+      `ET${DATE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_INPUT}`,
+    );
+  });
+});
+
+describe('DatePickerTriggerDirective errors', () => {
+  it('rejects a trigger outside a picker host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDatePickerTriggerTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDatePickerTriggerTestHost)).toThrow(
+      `ET${DATE_INPUT_ERROR_CODES.TRIGGER_OUTSIDE_DATE_INPUT}`,
+    );
+  });
+
+  it('names every picker host in the message', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDatePickerTriggerTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDatePickerTriggerTestHost)).toThrow(EVERY_PICKER_HOST);
+  });
+});
+
+describe('DatePickerSurfaceDirective errors', () => {
+  it('rejects a surface outside a picker host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDatePickerSurfaceTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDatePickerSurfaceTestHost)).toThrow(
+      `ET${DATE_INPUT_ERROR_CODES.SURFACE_OUTSIDE_DATE_INPUT}`,
+    );
+  });
+
+  it('names every picker host in the message', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDatePickerSurfaceTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDatePickerSurfaceTestHost)).toThrow(EVERY_PICKER_HOST);
   });
 });

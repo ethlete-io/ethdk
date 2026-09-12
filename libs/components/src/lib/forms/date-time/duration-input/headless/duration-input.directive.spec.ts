@@ -1,8 +1,11 @@
 import { Component, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../../form-field/headless';
 import { DurationInputDriver, mountDurationInput } from '../../../testing/duration-input-driver';
 import { DURATION_INPUT_IMPORTS } from '../duration-input.imports';
+import { DURATION_INPUT_ERROR_CODES } from '../duration-input-errors';
+import { DurationInputFieldDirective } from './duration-input-field.directive';
 
 @Component({
   template: `
@@ -148,5 +151,21 @@ describe('DurationInputDirective', () => {
 
     driver.durationInput.commitInput('130');
     expect(driver.host.value()).toBeNull();
+  });
+});
+
+@Component({
+  template: `<input etDurationInputField />`,
+  imports: [DurationInputFieldDirective],
+})
+class OrphanDurationInputFieldTestHost {}
+
+describe('DurationInputFieldDirective errors', () => {
+  it('rejects a field outside its host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDurationInputFieldTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDurationInputFieldTestHost)).toThrow(
+      `ET${DURATION_INPUT_ERROR_CODES.FIELD_OUTSIDE_DURATION_INPUT}`,
+    );
   });
 });

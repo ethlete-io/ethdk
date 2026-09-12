@@ -103,6 +103,8 @@ Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web so
 
 The date input, date range input, [time picker](/components/time-picker), time input, time range input and date-time input share this block (the picker trigger/surface pieces work with any of the input hosts).
 
+Checked in dev mode only. Every check throws while the directive is constructed, except `ET3003` (thrown when the picker is opened), `ET3011` / `ET3061` / `ET3071` (thrown when the duplicate field registers) and the time picker's `ET3020` / `ET3021` (after the first render).
+
 | Code     | Cause                                                                          | Fix                                                                                                                                                    |
 | -------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `ET3000` | `etDateInputField` is not inside an `[etDateInput]` element.                   | Move the field inside the date input root.                                                                                                             |

@@ -1,4 +1,4 @@
-import { Directive, afterNextRender, inject } from '@angular/core';
+import { Directive, inject } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { registerSingleton } from '../../../form-field/headless';
 import { INPUT_MASK_HOST } from '../../../masked-input/headless/input-mask-host';
@@ -26,16 +26,12 @@ export class TimeInputFieldDirective extends DatePickerInputFieldDirective {
 
     registerSingleton(this.pickerInput?.registeredField, this);
 
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.pickerInput) {
-          throw new RuntimeError(
-            TIME_INPUT_ERROR_CODES.FIELD_OUTSIDE_TIME_INPUT,
-            '[TimeInputFieldDirective] etTimeInputField must be placed inside an [etTimeInput] element.',
-            { element: this.elementRef.nativeElement },
-          );
-        }
-      });
+    if (ngDevMode && !this.pickerInput) {
+      throw new RuntimeError(
+        TIME_INPUT_ERROR_CODES.FIELD_OUTSIDE_TIME_INPUT,
+        '[TimeInputFieldDirective] etTimeInputField must be placed inside an [etTimeInput] element.',
+        { element: this.elementRef.nativeElement },
+      );
     }
   }
 }

@@ -7,6 +7,7 @@ import { describePickerCommitContract } from '../../../testing/picker-commit-con
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateTimeInputFieldDirective } from './date-time-input-field.directive';
+import { DATE_TIME_INPUT_ERROR_CODES } from '../date-time-input-errors';
 import { DateTimeInputDirective } from './date-time-input.directive';
 import { DatePickerDriver, mountDatePicker } from '../../../testing/date-picker-driver';
 import { pressKey, tick } from '../../../../testing/driver-core';
@@ -504,5 +505,21 @@ describe('DateTimeInputDirective commit contract', () => {
         tick();
       },
     };
+  });
+});
+
+@Component({
+  template: `<input etDateTimeInputField />`,
+  imports: [DateTimeInputFieldDirective],
+})
+class OrphanDateTimeInputFieldTestHost {}
+
+describe('DateTimeInputFieldDirective errors', () => {
+  it('rejects a field outside its host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDateTimeInputFieldTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDateTimeInputFieldTestHost)).toThrow(
+      `ET${DATE_TIME_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_TIME_INPUT}`,
+    );
   });
 });

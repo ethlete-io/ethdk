@@ -639,3 +639,19 @@ describe('DateRangeInputDirective errors', () => {
     expect(buildDuplicateFieldError).not.toHaveBeenCalled();
   });
 });
+
+@Component({
+  template: `<input side="start" etDateRangeInputField />`,
+  imports: [DateRangeInputFieldDirective],
+})
+class OrphanDateRangeInputFieldTestHost {}
+
+describe('DateRangeInputFieldDirective errors', () => {
+  it('rejects a field outside its host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDateRangeInputFieldTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDateRangeInputFieldTestHost)).toThrow(
+      `ET${DATE_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_RANGE_INPUT}`,
+    );
+  });
+});

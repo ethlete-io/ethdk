@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, effect, inject } from '@angular/core';
+import { Directive, ElementRef, effect, inject } from '@angular/core';
 import { registerSingleton } from '../../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { DURATION_INPUT_ERROR_CODES } from '../duration-input-errors';
@@ -52,16 +52,12 @@ export class DurationInputFieldDirective {
       }
     });
 
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.durationInput) {
-          throw new RuntimeError(
-            DURATION_INPUT_ERROR_CODES.FIELD_OUTSIDE_DURATION_INPUT,
-            '[DurationInputFieldDirective] etDurationInputField must be placed inside an [etDurationInput] element.',
-            { element: this.elementRef.nativeElement },
-          );
-        }
-      });
+    if (ngDevMode && !this.durationInput) {
+      throw new RuntimeError(
+        DURATION_INPUT_ERROR_CODES.FIELD_OUTSIDE_DURATION_INPUT,
+        '[DurationInputFieldDirective] etDurationInputField must be placed inside an [etDurationInput] element.',
+        { element: this.elementRef.nativeElement },
+      );
     }
   }
 

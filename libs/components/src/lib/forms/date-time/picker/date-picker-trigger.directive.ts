@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, inject } from '@angular/core';
+import { Directive, ElementRef, inject } from '@angular/core';
 import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { DATE_INPUT_ERROR_CODES } from '../date-input/date-input-errors';
@@ -27,16 +27,12 @@ export class DatePickerTriggerDirective {
   constructor() {
     registerSingleton(this.host?.registeredTrigger, this);
 
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.host) {
-          throw new RuntimeError(
-            DATE_INPUT_ERROR_CODES.TRIGGER_OUTSIDE_DATE_INPUT,
-            '[DatePickerTriggerDirective] etDatePickerTrigger must be placed inside a date picker host ([etDateInput], [etDateRangeInput], [etTimeInput], [etDateTimeInput], [etTimeRangeInput] or [etDateTimeRangeInput]).',
-            { element: this.elementRef.nativeElement },
-          );
-        }
-      });
+    if (ngDevMode && !this.host) {
+      throw new RuntimeError(
+        DATE_INPUT_ERROR_CODES.TRIGGER_OUTSIDE_DATE_INPUT,
+        '[DatePickerTriggerDirective] etDatePickerTrigger must be placed inside a date picker host ([etDateInput], [etDateRangeInput], [etTimeInput], [etDateTimeInput], [etTimeRangeInput] or [etDateTimeRangeInput]).',
+        { element: this.elementRef.nativeElement },
+      );
     }
   }
 }

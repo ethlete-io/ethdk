@@ -1,4 +1,4 @@
-import { Directive, afterNextRender, inject } from '@angular/core';
+import { Directive, inject } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { INPUT_MASK_HOST } from '../../../masked-input/headless/input-mask-host';
 import { DateRangePickerInputFieldDirective } from '../../internals/date-range-picker-input-field.directive';
@@ -23,16 +23,12 @@ export class DateTimeRangeInputFieldDirective extends DateRangePickerInputFieldD
   constructor() {
     super();
 
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.rangeInput) {
-          throw new RuntimeError(
-            DATE_TIME_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_TIME_RANGE_INPUT,
-            '[DateTimeRangeInputFieldDirective] etDateTimeRangeInputField must be placed inside an [etDateTimeRangeInput] element.',
-            { element: this.elementRef.nativeElement },
-          );
-        }
-      });
+    if (ngDevMode && !this.rangeInput) {
+      throw new RuntimeError(
+        DATE_TIME_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_TIME_RANGE_INPUT,
+        '[DateTimeRangeInputFieldDirective] etDateTimeRangeInputField must be placed inside an [etDateTimeRangeInput] element.',
+        { element: this.elementRef.nativeElement },
+      );
     }
   }
 

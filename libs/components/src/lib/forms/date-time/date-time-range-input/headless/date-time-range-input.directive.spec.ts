@@ -541,3 +541,19 @@ describe('DateTimeRangeInputDirective errors', () => {
     }).toThrow(`ET${DATE_TIME_RANGE_INPUT_ERROR_CODES.DUPLICATE_FIELD}`);
   });
 });
+
+@Component({
+  template: `<input side="start" etDateTimeRangeInputField />`,
+  imports: [DateTimeRangeInputFieldDirective],
+})
+class OrphanDateTimeRangeInputFieldTestHost {}
+
+describe('DateTimeRangeInputFieldDirective errors', () => {
+  it('rejects a field outside its host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanDateTimeRangeInputFieldTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanDateTimeRangeInputFieldTestHost)).toThrow(
+      `ET${DATE_TIME_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_TIME_RANGE_INPUT}`,
+    );
+  });
+});

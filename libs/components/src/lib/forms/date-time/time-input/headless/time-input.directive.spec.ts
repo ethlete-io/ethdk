@@ -10,6 +10,7 @@ import { TimePickerDirective } from '../../../../time-picker/headless/time-picke
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { TimeInputFieldDirective } from './time-input-field.directive';
+import { TIME_INPUT_ERROR_CODES } from '../time-input-errors';
 import { TimeInputDirective } from './time-input.directive';
 import { DatePickerDriver, mountDatePicker, typeMasked } from '../../../testing/date-picker-driver';
 import { pressKey, tick } from '../../../../testing/driver-core';
@@ -366,5 +367,21 @@ describe('TimeInputDirective commit contract', () => {
         tick();
       },
     };
+  });
+});
+
+@Component({
+  template: `<input etTimeInputField />`,
+  imports: [TimeInputFieldDirective],
+})
+class OrphanTimeInputFieldTestHost {}
+
+describe('TimeInputFieldDirective errors', () => {
+  it('rejects a field outside its host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanTimeInputFieldTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanTimeInputFieldTestHost)).toThrow(
+      `ET${TIME_INPUT_ERROR_CODES.FIELD_OUTSIDE_TIME_INPUT}`,
+    );
   });
 });

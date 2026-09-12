@@ -303,3 +303,19 @@ describe('TimeRangeInputDirective errors', () => {
     }).toThrow(`ET${TIME_RANGE_INPUT_ERROR_CODES.DUPLICATE_FIELD}`);
   });
 });
+
+@Component({
+  template: `<input side="start" etTimeRangeInputField />`,
+  imports: [TimeRangeInputFieldDirective],
+})
+class OrphanTimeRangeInputFieldTestHost {}
+
+describe('TimeRangeInputFieldDirective errors', () => {
+  it('rejects a field outside its host while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanTimeRangeInputFieldTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanTimeRangeInputFieldTestHost)).toThrow(
+      `ET${TIME_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_TIME_RANGE_INPUT}`,
+    );
+  });
+});

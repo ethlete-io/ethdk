@@ -1,4 +1,4 @@
-import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { Directive, TemplateRef, inject } from '@angular/core';
 import { registerSingleton } from '../../form-field/headless';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { DATE_INPUT_ERROR_CODES } from '../date-input/date-input-errors';
@@ -17,16 +17,12 @@ export class DatePickerSurfaceDirective {
   constructor() {
     registerSingleton(this.host?.registeredSurface, this);
 
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.host) {
-          throw new RuntimeError(
-            DATE_INPUT_ERROR_CODES.SURFACE_OUTSIDE_DATE_INPUT,
-            '[DatePickerSurfaceDirective] etDatePickerSurface must be placed inside a date picker host ([etDateInput], [etDateRangeInput], [etTimeInput], [etDateTimeInput], [etTimeRangeInput] or [etDateTimeRangeInput]).',
-            { element: this.hostElement },
-          );
-        }
-      });
+    if (ngDevMode && !this.host) {
+      throw new RuntimeError(
+        DATE_INPUT_ERROR_CODES.SURFACE_OUTSIDE_DATE_INPUT,
+        '[DatePickerSurfaceDirective] etDatePickerSurface must be placed inside a date picker host ([etDateInput], [etDateRangeInput], [etTimeInput], [etDateTimeInput], [etTimeRangeInput] or [etDateTimeRangeInput]).',
+        { element: this.hostElement },
+      );
     }
   }
 }
