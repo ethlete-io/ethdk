@@ -55,6 +55,12 @@ all, because this machine held no agent events to read — the second is what re
   terminal-only afternoon. What the second rule does is stop a pulled commit from _booking_ anything.
   Recording when this machine first saw a commit, beside when it was authored, is the fix for the
   bands themselves, and it is not built yet.
+- **Donation is not covered yet, and it is a hole.** `donateBlocks` runs in `buildRows` _before_
+  `markAttendance`, so a band nobody was at can still give its hours to the attended band beside it —
+  past the barrier this ADR builds. A donate rule on a long-lived branch is the shape that hits it:
+  `ethlete-sdk @ next` donates, so a morning the user worked and an afternoon an agent ran alone fold
+  into one row. Attendance has to be known before donation, and unattended time must donate to
+  nothing. Found on 2026-09-12, after the rest of this ADR shipped.
 - **This changes what M7 has to carry.** A cross-machine merge may not send presence alone. It has to
   send the attendance verdict: a minute is attended if any of the user's machines saw attendance in
   it, and unattended if work ran and none did. A merge that drops unattended time would make a real
