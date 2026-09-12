@@ -16,8 +16,6 @@ export type ViewState = {
   day?: string;
   /** The Monday the week view was on, as `YYYY-MM-DD`. */
   weekStart?: string;
-  /** Whether the issue pickers were narrowed to the account's own issues. */
-  assignedToMe?: boolean;
 };
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -55,7 +53,6 @@ export const readViewState = (): ViewState => {
       view: view && VIEW_PATH.test(view) ? view : undefined,
       day: dayAt(state, 'day'),
       weekStart: dayAt(state, 'weekStart'),
-      assignedToMe: state['assignedToMe'] === true,
     };
   } catch {
     return {};

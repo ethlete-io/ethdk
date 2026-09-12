@@ -3,6 +3,7 @@ import { UnnamedContext } from '../model/attribution';
 import { contextKey } from '../model/block';
 import { QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
+import { LoggedIssue } from '../model/recurrence';
 import {
   DEFAULT_MAX_NOTES_PER_CONTEXT,
   DEFAULT_MIN_REASONING_MS,
@@ -52,8 +53,23 @@ const hashOf = (text: string) => {
   return (hash >>> 0).toString(36);
 };
 
-/** The issues the day already reached, newest first, so the provider picks one it can justify. */
-export const reasoningCandidates = (options: { proposals: readonly WorklogProposal[] }): ReasoningCandidate[] => {
+/** How many issues the provider chooses from. Past this the prompt costs more than the answer gains. */
+export const DEFAULT_REASONING_CANDIDATE_LIMIT = 20;
+
+/**
+ * The issues the provider may choose from: the ones the day itself already reached, then the ones the
+ * user's recent Tempo history names.
+ *
+ * The day's own issues come first and are never cut, because the work that has a name on this day is
+ * the likeliest name for the work beside it. The history fills what is left of the cap, most recently
+ * logged first — it is what lets a day whose every context is unnamed still be answered at all.
+ */
+export const reasoningCandidates = (options: {
+  proposals: readonly WorklogProposal[];
+  /** From `fetchTempoHistory$`. Absent on a machine with no Tempo token, which changes nothing else. */
+  logged?: readonly LoggedIssue[];
+  limit?: number;
+}): ReasoningCandidate[] => {
   const found = new Map<string, ReasoningCandidate>();
 
   for (const proposal of options.proposals) {
@@ -62,6 +78,13 @@ export const reasoningCandidates = (options: { proposals: readonly WorklogPropos
     const candidate = found.get(proposal.issueKey);
 
     if (candidate && !candidate.summary) candidate.summary = proposal.description;
+  }
+
+  const limit = options.limit ?? DEFAULT_REASONING_CANDIDATE_LIMIT;
+
+  for (const issue of options.logged ?? []) {
+    if (found.size >= limit) break;
+    if (!found.has(issue.issueKey)) found.set(issue.issueKey, { ...issue });
   }
 
   return [...found.values()];

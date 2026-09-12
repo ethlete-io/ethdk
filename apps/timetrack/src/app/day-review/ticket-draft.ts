@@ -50,6 +50,12 @@ export type TicketForm = {
   parentKey: string | null;
 };
 
+/** What the new-parent form holds. Its type is one of the instance's own parent types. */
+export type ParentForm = {
+  summary: string;
+  issueTypeName: string;
+};
+
 /** The project's open issues: the ones a ticket may roll up to, and every one it could already be. */
 type ProjectIssues = {
   parents: JiraIssue[];
@@ -97,12 +103,18 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const searches$ = new Subject<string>();
   const writes$ = new Subject<TicketWritingRequest>();
   const creations$ = new Subject<TicketForm>();
+  const parentForm = signal<ParentForm | null>(null);
+  const parentCreations$ = new Subject<ParentForm>();
+  /** Parents filed from this form, which the project's own read does not hold yet. */
+  const createdParents = signal<JiraIssue[]>([]);
 
   const update = (change: Partial<TicketForm>) => {
     const current = form();
 
     if (current) form.set({ ...current, ...change });
   };
+
+  const parentTypeNames = () => settings.settings().ticket.parentIssueTypeNames;
 
   // Two reads rather than one filtered afterwards: the parent list is the most recent 30 of the
   // parent types, and narrowing a window of open issues to those types would offer fewer parents the
@@ -199,6 +211,57 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
+  const parentStatus = signal<CreateStatus>(IDLE);
+
+  // The same `exhaustMap` guard, for the same reason: Jira has no idempotency key, so a second press
+  // while the first call is in flight would file a second epic.
+  parentCreations$
+    .pipe(
+      exhaustMap((draft) => {
+        const ticket = settings.settings().ticket;
+        const projectKey = form()?.projectKey ?? '';
+
+        return readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
+          switchMap((credentials) =>
+            credentials
+              ? createJiraIssue$({
+                  transport: ports.transport,
+                  credentials,
+                  input: {
+                    projectKey,
+                    issueTypeName: draft.issueTypeName,
+                    summary: draft.summary,
+                    description: '',
+                    parenting: ticket.parenting,
+                    parentLinkType: ticket.parentLinkType,
+                    subjectField: ticket.subjectField || undefined,
+                    subject: ticketSubjectOf(draft.summary),
+                  },
+                })
+              : throwError(() => new Error(NO_JIRA)),
+          ),
+          map((created): CreateStatus => {
+            // Offered by the select straight away: the project's own read does not hold it yet, and
+            // re-reading the project to find the issue this very form just filed is a round trip for
+            // something already known.
+            createdParents.update((held) => [
+              { key: created.key, id: created.id, summary: draft.summary, issueType: draft.issueTypeName },
+              ...held,
+            ]);
+            update({ parentKey: created.key });
+            parentForm.set(null);
+
+            return { kind: 'created', issueKey: created.key };
+          }),
+          catchError((error: unknown) => of<CreateStatus>({ kind: 'failed', message: messageOf(error) })),
+          startWith<CreateStatus>({ kind: 'creating' }),
+        );
+      }),
+      tap((status) => parentStatus.set(status)),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
   // `exhaustMap`, not `switchMap`: a second press while the first call is in flight must not start a
   // second issue. Jira has no idempotency key, so two calls are two tickets.
   creations$
@@ -248,6 +311,8 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     createStatus.set(IDLE);
     writeStatus.set(IDLE);
     agentMatch.set(null);
+    parentForm.set(null);
+    createdParents.set([]);
   };
 
   const writingRequestNow = (): TicketWritingRequest | null => {
@@ -267,10 +332,9 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Re-ranked as the summary is typed, so editing the draft re-orders the parents under it. */
     candidates: computed((): ParentCandidate[] => {
       const status = candidateStatus();
+      const read = status.kind === 'ready' ? status.parents : [];
 
-      return status.kind === 'ready'
-        ? rankParentCandidates({ summary: form()?.summary ?? '', issues: status.parents })
-        : [];
+      return rankParentCandidates({ summary: form()?.summary ?? '', issues: [...createdParents(), ...read] });
     }),
     /**
      * Open issues whose wording says this work may already be tracked, best first. Ranked here as the
@@ -317,6 +381,22 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       return !!draft?.projectKey && !!draft.summary && !!settings.settings().ticket.issueTypeName;
     }),
 
+    /** The open new-parent form, or nothing while it is closed. */
+    parentForm: parentForm.asReadonly(),
+    /** The levels a parent may be filed at, from the instance's own hierarchy in Settings. */
+    parentTypeNames: computed(() => [...settings.settings().ticket.parentIssueTypeNames]),
+    isCreatingParent: computed(() => parentStatus().kind === 'creating'),
+    createParentFailure: computed(() => {
+      const status = parentStatus();
+
+      return status.kind === 'failed' ? status.message : null;
+    }),
+    canCreateParent: computed(() => {
+      const draft = parentForm();
+
+      return !!form()?.projectKey && !!draft?.summary.trim() && !!draft.issueTypeName;
+    }),
+
     open: (unnamed: UnnamedContext) => {
       const drafted = draftTicket({
         context: unnamed,
@@ -361,11 +441,32 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       const key = projectKey.trim().toUpperCase();
 
       update({ projectKey: key, parentKey: null });
+      parentForm.set(null);
+      createdParents.set([]);
       searches$.next(key);
     },
     setSummary: (summary: string) => update({ summary }),
     setDescription: (description: string) => update({ description }),
     setParentKey: (parentKey: string | null) => update({ parentKey }),
+
+    /**
+     * Opens the form that files the parent itself, for work whose epic does not exist yet. It starts
+     * from the ticket's own summary and the first of the instance's parent levels, because a parent
+     * filed here is nearly always the wider name for the very work below it.
+     */
+    openParentForm: () => {
+      parentStatus.set(IDLE);
+      parentForm.set({ summary: form()?.summary ?? '', issueTypeName: parentTypeNames()[0] ?? '' });
+    },
+    closeParentForm: () => parentForm.set(null),
+    setParentSummary: (summary: string) => parentForm.update((draft) => (draft ? { ...draft, summary } : draft)),
+    setParentIssueTypeName: (issueTypeName: string) =>
+      parentForm.update((draft) => (draft ? { ...draft, issueTypeName } : draft)),
+    createParent: () => {
+      const draft = parentForm();
+
+      if (draft) parentCreations$.next(draft);
+    },
 
     /** Re-reads the parents for whatever project the form now names. */
     findParents: () => searches$.next(form()?.projectKey ?? ''),

@@ -16,7 +16,7 @@ import {
   formatDurationMs,
 } from '@ethlete/timetrack';
 import { ProjectSelectComponent } from '../jira';
-import { AgentMatch, TicketForm } from './ticket-draft';
+import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
 
 /**
  * The create form for work no issue covers. It writes to Jira, so it shows the whole ticket before it
@@ -121,7 +121,7 @@ import { AgentMatch, TicketForm } from './ticket-draft';
         </et-form-field>
 
         <div class="flex flex-col gap-2">
-          <et-form-field appearance="underline" size="sm">
+          <et-form-field class="grow" appearance="underline" size="sm">
             <et-label>Parent</et-label>
             <et-select
               [value]="draft.parentKey"
@@ -156,6 +156,65 @@ import { AgentMatch, TicketForm } from './ticket-draft';
           @if (searchFailure(); as failure) {
             <et-banner [description]="failure" type="warning" heading="The parents could not be read" />
             <button (click)="findParents.emit()" et-button variant="outline" size="sm">Read them again</button>
+          }
+
+          @if (parentForm(); as parent) {
+            <div class="flex flex-col gap-3 rounded-md border border-et-surface-border p-3">
+              <div class="flex flex-wrap items-end gap-3">
+                <et-form-field class="min-w-40" appearance="underline" size="sm">
+                  <et-label>Level</et-label>
+                  <et-select
+                    [value]="parent.issueTypeName"
+                    (valueChange)="pickParentType($event)"
+                    aria-label="The level the parent is filed at"
+                  >
+                    @for (name of parentTypeNames(); track name) {
+                      <et-select-option [value]="name" [label]="name">{{ name }}</et-select-option>
+                    }
+                  </et-select>
+                </et-form-field>
+
+                <et-form-field class="min-w-60 grow" appearance="underline" size="sm">
+                  <et-label>Summary</et-label>
+                  <et-input [value]="parent.summary" (valueChange)="parentSummaryChange.emit($event)" />
+                </et-form-field>
+              </div>
+
+              @if (createParentFailure(); as failure) {
+                <et-banner [description]="failure" type="warning" heading="The parent could not be filed" />
+              }
+
+              <div class="flex items-center gap-3">
+                <button
+                  [disabled]="!canCreateParent() || isCreatingParent()"
+                  (click)="createParent.emit()"
+                  et-button
+                  variant="filled"
+                  size="sm"
+                >
+                  @if (isCreatingParent()) {
+                    <et-spinner size="sm" />
+                  }
+                  File the {{ parent.issueTypeName || 'parent' }}
+                </button>
+
+                <button (click)="closeParentForm.emit()" et-button variant="transparent" size="sm">Cancel</button>
+
+                <span class="text-small text-et-surface-muted">It is filed with no parent of its own.</span>
+              </div>
+            </div>
+          } @else if (parentTypeNames().length) {
+            <div>
+              <button
+                [disabled]="!draft.projectKey"
+                (click)="openParentForm.emit()"
+                et-button
+                variant="outline"
+                size="sm"
+              >
+                New parent
+              </button>
+            </div>
           }
         </div>
 
@@ -203,6 +262,13 @@ export class CreateTicketComponent {
   /** Exactly what a writing run would send, shown here so it can be read before it leaves the machine. */
   public payload = input<TicketWritingRequest | null>(null);
   public isSearching = input(false);
+  /** The open new-parent form, or nothing while it is closed. */
+  public parentForm = input<ParentForm | null>(null);
+  /** The levels a parent may be filed at, from the instance's own hierarchy. */
+  public parentTypeNames = input<readonly string[]>([]);
+  public canCreateParent = input(false);
+  public isCreatingParent = input(false);
+  public createParentFailure = input<string | null>(null);
   public canWrite = input(false);
   public isWriting = input(false);
   public isCreating = input(false);
@@ -217,6 +283,11 @@ export class CreateTicketComponent {
   public descriptionChange = output<string>();
   public parentKeyChange = output<string | null>();
   public findParents = output<void>();
+  public openParentForm = output<void>();
+  public closeParentForm = output<void>();
+  public parentSummaryChange = output<string>();
+  public parentIssueTypeNameChange = output<string>();
+  public createParent = output<void>();
   public write = output<void>();
   /** The key of an issue that already tracks this work, taken instead of filing a new ticket. */
   public useExisting = output<string>();
@@ -240,5 +311,9 @@ export class CreateTicketComponent {
 
   protected pickParent(value: unknown) {
     this.parentKeyChange.emit(typeof value === 'string' ? value : null);
+  }
+
+  protected pickParentType(value: unknown) {
+    if (typeof value === 'string') this.parentIssueTypeNameChange.emit(value);
   }
 }

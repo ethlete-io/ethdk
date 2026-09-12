@@ -65,7 +65,7 @@ const dayRows = (options: {
   proposals: options.proposals,
   unattributed: options.unattributed ?? [],
   unnamed: options.unnamed ?? [],
-  meetings: [],
+  unobserved: [],
   calls: [],
   timers: [],
   filledMs: 0,

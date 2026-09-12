@@ -2,7 +2,7 @@ import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
-import { TempoWorklog, fetchTempoWorklogs$, toHistoricalWorklogs } from './worklogs';
+import { TempoWorklog, fetchTempoWorklogs$, toHistoricalWorklogs, toLoggedIssues } from './worklogs';
 
 const CREDENTIALS: TempoCredentials = { token: 't' };
 
@@ -152,5 +152,56 @@ describe('toHistoricalWorklogs', () => {
     });
 
     expect(history).toEqual([]);
+  });
+});
+
+describe('toLoggedIssues', () => {
+  const worklog = (overrides: Partial<TempoWorklog>): TempoWorklog => ({
+    id: '1',
+    issueId: '10100',
+    authorAccountId: 'acc:123',
+    from: new Date(2026, 7, 3, 9, 0),
+    durationMs: 1_800_000,
+    billableMs: 0,
+    description: '',
+    attributes: {},
+    ...overrides,
+  });
+
+  const KEYS = new Map([
+    ['10100', 'FIP-3010'],
+    ['10200', 'ET-772'],
+  ]);
+
+  it('names each issue once, most recently logged first', () => {
+    const issues = toLoggedIssues({
+      worklogs: [
+        worklog({ issueId: '10100', from: new Date(2026, 7, 1, 9, 0), description: 'Club pack' }),
+        worklog({ issueId: '10200', from: new Date(2026, 7, 5, 9, 0), description: 'Collector' }),
+        worklog({ issueId: '10100', from: new Date(2026, 7, 3, 9, 0), description: 'Club pack again' }),
+      ],
+      keysByIssueId: KEYS,
+    });
+
+    expect(issues).toEqual([
+      { issueKey: 'ET-772', summary: 'Collector' },
+      { issueKey: 'FIP-3010', summary: 'Club pack again' },
+    ]);
+  });
+
+  it('falls back to an older line when the newest worklog wrote none', () => {
+    const issues = toLoggedIssues({
+      worklogs: [
+        worklog({ from: new Date(2026, 7, 1, 9, 0), description: 'Club pack' }),
+        worklog({ from: new Date(2026, 7, 5, 9, 0), description: '   ' }),
+      ],
+      keysByIssueId: KEYS,
+    });
+
+    expect(issues).toEqual([{ issueKey: 'FIP-3010', summary: 'Club pack' }]);
+  });
+
+  it('drops a worklog whose issue id jira could not resolve', () => {
+    expect(toLoggedIssues({ worklogs: [worklog({ issueId: '99999' })], keysByIssueId: KEYS })).toEqual([]);
   });
 });

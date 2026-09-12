@@ -321,6 +321,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,
     gitScanRoots: asTextList(document['gitScanRoots']),
     favoriteProjects: asFavoriteProjects(document),
+    backgroundProjects: asTextList(document['backgroundProjects']).map((key) => key.toUpperCase()),
     meetingNamings: asMeetingNamings(document['meetingNamings']),
     callNamings: asCallNamings(document['callNamings']),
     attributionRules: asAttributionRules(document['attributionRules']),

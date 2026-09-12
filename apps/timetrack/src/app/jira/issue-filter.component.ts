@@ -1,34 +1,29 @@
 import { Component, ViewEncapsulation, computed } from '@angular/core';
-import { BUTTON_IMPORTS, CHOICE_FIELD_IMPORTS, SWITCH_IMPORTS, SpinnerComponent } from '@ethlete/components';
+import { BUTTON_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import { injectJiraCatalog } from './jira-catalog';
 import { injectTimetrackSettings } from '../settings/settings';
 
 /**
- * What every issue picker in the window offers: which projects, and whose issues.
+ * What the issue pickers of the window are reading, and the one control that reads it again.
  *
- * One control rather than one per picker, because the scope is one question. A day has an issue picker
- * per row, and asking it on each of them would be the same switch a dozen times over.
+ * One line rather than one per picker: a day has an issue picker per row, and each of them would
+ * otherwise repeat the same sentence about the same list.
  */
 @Component({
   selector: 'ethlete-issue-filter',
   template: `
     <div class="flex flex-wrap items-center gap-3">
-      <et-choice-field>
-        <et-switch [checked]="catalog.assignedToMe()" (checkedChange)="catalog.setAssignedToMe($event)" />
-        <et-label>Only issues assigned to me</et-label>
-      </et-choice-field>
-
       <span class="text-small text-et-surface-muted">{{ scope() }}</span>
 
-      @if (catalog.isLoadingIssues()) {
+      @if (catalog.isLoadingIssuesFor('')) {
         <et-spinner size="sm" />
       } @else {
-        <button (click)="catalog.reloadIssues()" et-button variant="transparent" size="sm">Read them again</button>
+        <button (click)="catalog.reloadIssues('')" et-button variant="transparent" size="sm">Read them again</button>
       }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, CHOICE_FIELD_IMPORTS, SWITCH_IMPORTS, SpinnerComponent],
+  imports: [BUTTON_IMPORTS, SpinnerComponent],
 })
 export class IssueFilterComponent {
   protected catalog = injectJiraCatalog();
@@ -43,7 +38,7 @@ export class IssueFilterComponent {
 
     if (!projects.length) return 'No project is picked yet, so there is nothing to offer. Settings has the list.';
 
-    const count = this.catalog.issues().length;
+    const count = this.catalog.issuesFor('').length;
 
     return `${count} open issue(s) in ${projects.map((project) => project.key).join(', ')}`;
   });

@@ -1,5 +1,5 @@
 import { Observable, map } from 'rxjs';
-import { HistoricalWorklog } from '../model/recurrence';
+import { HistoricalWorklog, LoggedIssue } from '../model/recurrence';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials, TempoPagingOptions, tempoPaged$ } from './client';
 import { parseTempoWallClock, tempoDay } from './wall-clock';
@@ -95,3 +95,30 @@ export const toHistoricalWorklogs = (options: {
 
     return issueKey ? [{ issueKey, from: worklog.from, durationMs: worklog.durationMs }] : [];
   });
+
+/**
+ * Every issue the span logged against, most recently logged first.
+ *
+ * The order is what makes a cap on the list mean something: the issues a user logged this week are
+ * the ones today's work most often belongs to, and the ones from two months ago rarely are.
+ */
+export const toLoggedIssues = (options: {
+  worklogs: TempoWorklog[];
+  keysByIssueId: Map<string, string>;
+}): LoggedIssue[] => {
+  const found = new Map<string, LoggedIssue>();
+  const newestFirst = [...options.worklogs].sort((a, b) => b.from.getTime() - a.from.getTime());
+
+  for (const worklog of newestFirst) {
+    const issueKey = options.keysByIssueId.get(worklog.issueId);
+
+    if (!issueKey) continue;
+
+    const entry = found.get(issueKey);
+
+    if (!entry) found.set(issueKey, { issueKey, summary: worklog.description.trim() });
+    else if (!entry.summary) entry.summary = worklog.description.trim();
+  }
+
+  return [...found.values()];
+};

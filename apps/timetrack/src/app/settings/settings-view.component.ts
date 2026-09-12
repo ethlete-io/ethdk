@@ -27,6 +27,7 @@ import { AttributionRulesComponent } from './attribution-rules.component';
 import { CallRulesComponent } from './call-rules.component';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { ExplainComponent } from './explain.component';
+import { BackgroundProjectsComponent } from './background-projects.component';
 import { FavoriteProjectsComponent } from './favorite-projects.component';
 import { GoogleConnectionComponent } from './google-connection.component';
 import { ProjectLinksComponent } from './project-links.component';
@@ -334,6 +335,12 @@ window title, never a file path. A suggestion never syncs on its own.`;
                 (projectsChange)="store.setFavoriteProjects($event)"
               />
 
+              <ethlete-background-projects
+                [projects]="store.settings().favoriteProjects"
+                [keys]="store.settings().backgroundProjects"
+                (keysChange)="store.setBackgroundProjects($event)"
+              />
+
               <ethlete-repo-projects
                 [repoPaths]="repoPaths()"
                 [links]="store.settings().projectLinks"
@@ -518,6 +525,7 @@ window title, never a file path. A suggestion never syncs on its own.`;
     ExclusionRulesComponent,
     ExplainComponent,
     FORM_FIELD_IMPORTS,
+    BackgroundProjectsComponent,
     FavoriteProjectsComponent,
     GoogleConnectionComponent,
     INPUT_IMPORTS,

@@ -102,6 +102,11 @@ test.describe('the merge', () => {
 test.describe('hovering a band', () => {
   test('changes its fill, so the pointer has an answer on the band itself', async ({ page }) => {
     const target = band(page, 2);
+
+    // The split leaves the pointer on the band the menu item covered, so the resting fill is only
+    // readable once the pointer is off the grid.
+    await page.mouse.move(5, 5);
+
     const resting = await backgroundOf(target);
 
     await target.hover();

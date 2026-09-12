@@ -7,6 +7,7 @@ import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
 import { TimeWindow } from '../model/time-window';
 import { AttributeOptions, attribute } from './attribute';
 import { CallMatch, dropCallWindows, matchCalls } from './calls';
+import { CutOptions, cutBackground } from './cut';
 import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { FillOptions, fillGaps } from './fill';
@@ -35,6 +36,8 @@ export type BuildRowsOptions = {
   inferred?: AttributeOptions['inferred'];
   /** How far a donating repository's time looks for the work it was done for. */
   donate?: Partial<DonateOptions>;
+  /** Which projects run behind the day, and the focus that ranks two of them — see `cutBackground`. */
+  cut?: CutOptions;
   /** The longest idle gap that joins the work before it. `maxFillGapMs: 0` fills nothing. */
   fill?: Partial<FillOptions>;
   /** How a meeting is named. `config` and `patterns` are taken from the day's own, not repeated here. */
@@ -89,9 +92,9 @@ export type DayRows = {
 };
 
 /**
- * Turns a day's blocks into the rows a review books from — attribute, donate, merge, round, describe
- * — and adds the rows nothing observed as blocks at all: the meetings, the calls a rule counted and
- * the runs the user timed. Pure: no network, no clock, no filesystem.
+ * Turns a day's blocks into the rows a review books from — attribute, donate, cut, merge, round,
+ * describe — and adds the rows nothing observed as blocks at all: the meetings, the calls a rule
+ * counted and the runs the user timed. Pure: no network, no clock, no filesystem.
  *
  * A timer run displaces the reconstruction underneath it. Whatever the collectors saw while it ran
  * describes the work the run already claims, so those blocks are cut out before anything is proposed
@@ -151,6 +154,9 @@ export const buildRows = (
   );
   const working = attributed.filter((entry) => !entry.privateLink);
   const donated = donateBlocks({ blocks: working, rules: options.rules, options: options.donate });
+  // Before the gaps are filled rather than after: a filled minute is idle time joined to the work
+  // around it, and cutting one away afterwards would leave `filledMs` claiming time no row holds.
+  const cut = cutBackground({ blocks: donated, ...options.cut });
   const naming = { ...options.meetings, config: options.config, patterns: options.patterns };
   const occurrences = calendarOccurrences(options.events);
   // `nameable` rather than `blocks`: `overlapMs` is the time the day proposes twice, and a block no
@@ -166,7 +172,7 @@ export const buildRows = (
   });
   const unobserved = unobservedOccurrences({ occurrences, calls: options.calls ?? [], meetings: naming });
   const filled = fillGaps({
-    blocks: donated,
+    blocks: cut,
     events: options.events,
     claimed: [...unwatched, ...calls.map((call) => call.group)],
     options: options.fill,

@@ -1,7 +1,8 @@
 import { Observable, map } from 'rxjs';
+import { projectKeyOf } from '../ticket/project';
 import { TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
-import { JiraIssue, toJiraIssue } from './issue';
+import { JiraIssue, fetchJiraIssues$, toJiraIssue } from './issue';
 import { searchJiraIssues$ } from './search';
 
 /** How many issues a picker reads. A list longer than this is one nobody scrolls to the end of. */
@@ -11,7 +12,7 @@ export const DEFAULT_JIRA_PICKER_LIMIT = 100;
 export type JiraIssuePickerFilter = {
   /** The projects to read. Empty reads every project the token can see, which is rarely what a user wants. */
   projectKeys?: readonly string[];
-  /** Free text, matched against the issues' own wording. A key is not text — type it instead. */
+  /** Free text, matched against the issues' own wording. Text that is an issue key reads that key. */
   text?: string;
   /** Only the issues the token's own account is assigned. */
   assignedToMe?: boolean;
@@ -40,15 +41,25 @@ const jqlFor = (filter: JiraIssuePickerFilter) => {
 };
 
 /**
+ * A typed issue key. Jira's `text ~` reads the wording and never the key, so `ET-772` typed into a
+ * picker matches nothing at all unless the key is read on its own.
+ */
+const typedKeyIn = (text: string | undefined) => {
+  const key = text?.trim().toUpperCase() ?? '';
+
+  return projectKeyOf(key) ? key : null;
+};
+
+/**
  * The issues a picker offers, most recently worked in first.
  *
  * One read for every issue field a picker shows, narrowed by whatever the user asked for. The recency
  * ordering is what makes the first page useful without any typing at all: the issue today's work
  * belongs to is nearly always one the account touched this week.
  *
- * A key the list does not hold is not this function's problem to solve. A picker that accepts a typed
- * key can always reach an issue nobody has touched in months, and searching for one by key is how a
- * text search over a hundred thousand issues turns into a call that times out.
+ * Text that reads as an issue key is answered by that one key instead of by a search, and the key is
+ * read outside every other clause: the escape hatch exists for the ticket no list holds, which is
+ * regularly one that is closed, or one of a project nobody picked.
  */
 export const fetchJiraIssuePicks$ = (options: {
   transport: TimetrackTransport;
@@ -57,6 +68,17 @@ export const fetchJiraIssuePicks$ = (options: {
   subjectField?: string;
 }): Observable<JiraIssue[]> => {
   const filter = options.filter ?? {};
+  const typedKey = typedKeyIn(filter.text);
+
+  if (typedKey) {
+    return fetchJiraIssues$({
+      transport: options.transport,
+      credentials: options.credentials,
+      keys: [typedKey],
+      subjectField: options.subjectField,
+    });
+  }
+
   const jql = jqlFor(filter);
 
   return searchJiraIssues$({

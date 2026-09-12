@@ -979,7 +979,25 @@ export const streamDay = (options: {
     work: blocks,
     minBreakMs: config.minBreakMs,
   });
-  const rows = buildRows({ ...config.rows, blocks, events: options.events, links, calls, breaks });
+  // The focus ranks two background bands against each other. It is derived here because only this
+  // pass holds it, and `buildRows` takes blocks that no longer say which stream they came from.
+  const focusMsByStream: Record<string, number> = {};
+
+  for (const span of clipSpans({ spans: focusSpans, within: seen })) {
+    const key = streamKey(span.context);
+
+    focusMsByStream[key] = (focusMsByStream[key] ?? 0) + (span.to.getTime() - span.from.getTime());
+  }
+
+  const rows = buildRows({
+    ...config.rows,
+    blocks,
+    events: options.events,
+    links,
+    calls,
+    breaks,
+    cut: { ...config.rows?.cut, focusMsByStream },
+  });
 
   const presenceMs = windowsMs(presence);
   const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);

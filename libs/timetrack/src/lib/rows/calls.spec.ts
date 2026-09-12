@@ -79,19 +79,19 @@ describe('matchCalls', () => {
   });
 
   it('never proposes better than weak, however well the call is named', () => {
-    const [found] = match({ meetings: { defaultIssueKey: 'ABC-1', patterns: PATTERNS } });
+    const [found] = match({ meetings: { patterns: PATTERNS } });
 
     expect(found?.group.confidence).toBe('weak');
   });
 
   it('never lands a call on the meetings issue, which says nothing about which call it was', () => {
-    const [found] = match({ meetings: { defaultIssueKey: 'ABC-1' } });
+    const [found] = match({ meetings: {} });
 
     expect(found?.group.issueKey).toBeUndefined();
   });
 
   it('names a call from a standing commitment in Tempo history', () => {
-    const [found] = match({ meetings: { defaultIssueKey: 'ABC-1', patterns: PATTERNS } });
+    const [found] = match({ meetings: { patterns: PATTERNS } });
 
     expect(found?.group.issueKey).toBe('ABC-9');
     expect(found?.group.evidence.map((entry) => entry.kind)).toEqual(['call', 'tempo-history']);

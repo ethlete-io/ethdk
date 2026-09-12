@@ -183,6 +183,11 @@ const ruleAttribution = (options: {
  * says only which project the time belongs to, which a merge request opened for this very branch
  * beats. Collapsing them into one rung would make either the narrow rule too weak or the broad one
  * too strong.
+ *
+ * Both of them are `likely` though, and that is about the reviewer rather than the ladder: a rule
+ * exists because the user wrote it, so a row it names is a row they already answered once. Only a
+ * donating rule stays `weak` — it names no issue at all, and which work it joins is a guess the day
+ * makes for it.
  */
 export const attribute = (options: { block: ActivityBlock } & AttributeOptions): AttributedBlock => {
   const config = options.config ?? DEFAULT_GIT_FLOW_CONFIG;
@@ -248,7 +253,7 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
     return { block, issueKey: entry.issueKey, confidence: activity.confidence, evidence };
   }
 
-  if (rule) return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'weak' });
+  if (rule) return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'likely' });
 
   /**
    * A donating context leaves the ladder here, so that `donateBlocks` still sees it. The rungs below

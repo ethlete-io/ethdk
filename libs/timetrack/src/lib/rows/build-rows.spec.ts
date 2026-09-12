@@ -111,7 +111,7 @@ describe('buildRows with a transient window over the work', () => {
       blocks: [block({ from: at(10, 10), to: at(10, 11), context: { appId: POPUP } })],
       events: [],
       noWorkContext: { transientApps: [POPUP] },
-      timerRuns: [{ id: 'run', issueKey: 'ABC-1', from: at(10), to: at(11), description: 'timed' }],
+      timerRuns: [{ id: 'run', issueKey: 'ABC-1', from: at(10), to: at(11) }],
     });
 
     expect(rows.timers).toHaveLength(1);

@@ -1,6 +1,6 @@
-import { Component, ViewEncapsulation, computed, input, output } from '@angular/core';
+import { Component, ViewEncapsulation, computed, effect, input, output, signal, untracked } from '@angular/core';
 import { SELECT_IMPORTS } from '@ethlete/components';
-import { JiraIssue, projectKeyOf } from '@ethlete/timetrack';
+import { JiraIssue } from '@ethlete/timetrack';
 import { injectJiraCatalog } from './jira-catalog';
 
 /** How long a summary may read in one line. Past this the key stops being the first thing seen. */
@@ -21,16 +21,17 @@ type IssueOption = {
  * between a list somebody reads and every issue an instance has ever held. One line per issue: the key
  * first, because that is what a reviewer recognises, then as much of the summary as fits on the line.
  *
- * A typed key is still accepted. The list is the hundred most recently touched issues, so the one
- * exception — logging against something nobody has opened in months — has to stay possible, and a
- * picker that refuses a key the user knows is a picker they work around.
+ * Typing searches Jira rather than the list in hand, because the list is one page of it. A whole issue
+ * key is answered by that one issue, whatever its project and whether or not it is closed — logging
+ * against something nobody has opened in months has to stay possible, and a picker that refuses a key
+ * the user knows is a picker they work around.
  *
  * The list is read when a picker is first opened rather than on mount, because a day has one of these
- * per row. `ethlete-issue-filter` is where its scope is narrowed, once, for all of them.
+ * per row, and every picker of one project shares the read.
  *
- * `projectKey` narrows one picker further, to the project the row's own checkout is logged into. An
- * empty list then means no issue of that project was read, which is why the placeholder names the
- * project: an empty picker that says nothing reads as a defect.
+ * `projectKey` narrows one picker to the project the row's own checkout is logged into. An empty list
+ * then means no issue of that project was read, which is why the placeholder names the project: an
+ * empty picker that says nothing reads as a defect.
  */
 @Component({
   selector: 'ethlete-issue-select',
@@ -38,12 +39,14 @@ type IssueOption = {
     <et-select
       [value]="value() || null"
       [placeholder]="placeholderText()"
-      [loading]="catalog.isLoadingIssues()"
-      [error]="catalog.issueFailure()"
+      [loading]="catalog.isLoadingIssuesFor(scope())"
+      [error]="catalog.issueFailureFor(scope())"
       [aria-label]="ariaLabel()"
       (valueChange)="pick($event)"
-      (openChange)="opened($event)"
+      (openChange)="open.set($event)"
+      (queryChange)="query.set($event)"
       allowCustomValues
+      filterMode="external"
     >
       <!-- a single select with an inline search shows its value in that input, so its placeholder is
            the one the closed field reads -->
@@ -82,15 +85,20 @@ export class IssueSelectComponent {
     () => this.placeholder() || (this.scope() ? `Pick a ${this.scope()} issue` : 'Pick an issue'),
   );
 
-  protected options = computed(() => {
-    const scope = this.scope();
-    const issues = this.catalog.issues();
+  protected open = signal(false);
+  protected query = signal('');
 
-    return (scope ? issues.filter((issue) => projectKeyOf(issue.key) === scope) : issues).map(toOption);
-  });
+  protected options = computed(() => this.catalog.issuesFor(this.scope()).map(toOption));
 
-  protected opened(open: boolean) {
-    if (open) this.catalog.loadIssues();
+  constructor() {
+    effect(() => {
+      const scope = this.scope();
+      const text = this.query();
+
+      if (!this.open()) return;
+
+      untracked(() => this.catalog.askForIssues({ scope, text }));
+    });
   }
 
   protected pick(value: unknown) {

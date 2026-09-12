@@ -43,10 +43,43 @@ export const withFavoriteProjects = (options: {
     if (favorite && !found.has(favorite.key)) found.set(favorite.key, favorite);
   }
 
-  return { ...options.settings, favoriteProjects: [...found.values()] };
+  const favoriteProjects = [...found.values()];
+
+  return { ...options.settings, favoriteProjects, ...backgroundWithin(options.settings, favoriteProjects) };
 };
 
-export const withoutFavoriteProject = (options: { settings: TimetrackSettings; key: string }): TimetrackSettings => ({
-  ...options.settings,
-  favoriteProjects: options.settings.favoriteProjects.filter((project) => project.key !== normalizeKey(options.key)),
-});
+export const withoutFavoriteProject = (options: { settings: TimetrackSettings; key: string }): TimetrackSettings => {
+  const favoriteProjects = options.settings.favoriteProjects.filter(
+    (project) => project.key !== normalizeKey(options.key),
+  );
+
+  return { ...options.settings, favoriteProjects, ...backgroundWithin(options.settings, favoriteProjects) };
+};
+
+/**
+ * The background list is a subset of the picked projects, and this is what keeps it one. A key naming
+ * a project nobody picked any more cuts nothing and no control in the app can show it, so unpicking a
+ * project has to take it out here too.
+ */
+const backgroundWithin = (settings: TimetrackSettings, favorites: readonly TimetrackFavoriteProject[]) => {
+  const picked = new Set(favorites.map((project) => project.key));
+
+  return { backgroundProjects: settings.backgroundProjects.filter((key) => picked.has(key)) };
+};
+
+/** Replaces the background projects with what a picker chose, keeping only keys naming picked projects. */
+export const withBackgroundProjects = (options: {
+  settings: TimetrackSettings;
+  keys: readonly string[];
+}): TimetrackSettings => {
+  const picked = new Set(favoriteProjectKeys(options.settings));
+  const found = new Set<string>();
+
+  for (const key of options.keys) {
+    const normalized = normalizeKey(key);
+
+    if (picked.has(normalized)) found.add(normalized);
+  }
+
+  return { ...options.settings, backgroundProjects: [...found] };
+};

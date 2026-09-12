@@ -31,6 +31,7 @@ const row = (options: { issueKey: string; from: string; minutes: number; state: 
     evidence: [],
     state: options.state,
     edited: false,
+    hidden: false,
   };
 };
 
@@ -39,6 +40,7 @@ const review = (options: { rows: ReviewedRow[]; unattributedMs?: number }): DayR
 
   return {
     rows: options.rows,
+    hidden: [],
     check: {
       proposedMs,
       coveredMs: 0,

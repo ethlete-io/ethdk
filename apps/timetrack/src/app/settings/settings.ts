@@ -27,6 +27,7 @@ import {
   clampMinuteOfDay,
   timetrackCredentialStatus,
   withAttributionRule,
+  withBackgroundProjects,
   withFavoriteProjects,
   withProjectLink,
   withoutAttributionRule,
@@ -292,6 +293,8 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       apply(withFavoriteProjects({ settings: settings(), projects })),
 
     removeFavoriteProject: (key: string) => apply(withoutFavoriteProject({ settings: settings(), key })),
+
+    setBackgroundProjects: (keys: readonly string[]) => apply(withBackgroundProjects({ settings: settings(), keys })),
 
     addAttributionRule: (rule: AttributionRule) => apply(withAttributionRule({ settings: settings(), rule })),
     removeAttributionRule: (id: string) => apply(withoutAttributionRule({ settings: settings(), id })),

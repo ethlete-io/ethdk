@@ -1,19 +1,16 @@
 import { computed, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import {
-  RecurringPattern,
-  fetchRecurringPatterns$,
-  readJiraCredentials$,
-  readTempoCredentials$,
-} from '@ethlete/timetrack';
+import { TempoHistory, fetchTempoHistory$, readJiraCredentials$, readTempoCredentials$ } from '@ethlete/timetrack';
 import { catchError, combineLatest, of, switchMap } from 'rxjs';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 
+const NOTHING: TempoHistory = { patterns: [], loggedIssues: [] };
+
 /**
- * The standing commitments the user's own Tempo history holds, for the recurrence rung of the
- * attribution ladder.
+ * What the user's own Tempo history holds: the standing commitments the recurrence rung attributes
+ * from, and the issues the last weeks logged against at all.
  *
  * One reader for the whole window, read once and held for the session. The provider is lazy, so the
  * read runs when the first screen that needs a name injects it and never at start-up. It is a read
@@ -37,19 +34,19 @@ const RECURRING_PATTERNS_DEF = /* @__PURE__ */ defineRootProvider(() => {
           tempo: readTempoCredentials$({ secrets: ports.secrets }),
         }).pipe(
           switchMap(({ jira, tempo }) =>
-            jira && tempo
-              ? fetchRecurringPatterns$({ transport: ports.transport, jira, tempo })
-              : of<RecurringPattern[]>([]),
+            jira && tempo ? fetchTempoHistory$({ transport: ports.transport, jira, tempo }) : of(NOTHING),
           ),
-          catchError(() => of<RecurringPattern[]>([])),
+          catchError(() => of(NOTHING)),
         ),
       ),
     ),
-    { initialValue: [] as RecurringPattern[] },
+    { initialValue: NOTHING },
   );
 
   return {
-    patterns: computed(() => read()),
+    patterns: computed(() => read().patterns),
+    /** Every issue the last weeks logged against, most recently logged first. */
+    loggedIssues: computed(() => read().loggedIssues),
     /** Reads it again, for a user who has just logged the week they want it to learn from. */
     reload: () => revision.update((count) => count + 1),
   };

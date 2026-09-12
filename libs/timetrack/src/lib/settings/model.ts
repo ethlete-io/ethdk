@@ -245,6 +245,15 @@ export type TimetrackSettings = {
    */
   favoriteProjects: TimetrackFavoriteProject[];
   /**
+   * The projects whose work runs behind the day rather than being it — the checkout you sit in all day
+   * while the work you book happens elsewhere. A band of one of these keeps only the minutes no other
+   * band claims; see `cutBackground`.
+   *
+   * It has to be said rather than read off a day. The same repository is the background of one day and
+   * the whole of the work on the next, and no rule can tell the two apart.
+   */
+  backgroundProjects: string[];
+  /**
    * What the user answered when a meeting asked which issue it belongs to, by calendar series. The app
    * asks once and names every later occurrence of that series from the answer, rather than logging
    * every meeting on one standing issue.
@@ -310,6 +319,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   keepDefaultExclusionRules: true,
   gitScanRoots: [],
   favoriteProjects: [],
+  backgroundProjects: [],
   meetingNamings: [],
   callNamings: [],
   attributionRules: [],
