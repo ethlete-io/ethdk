@@ -54,12 +54,32 @@ class NavTabsTestHost {
 })
 class SiblingOutletTestHost {}
 
+@Component({
+  template: `
+    <et-nav-tabs>
+      <a et-nav-tab-link="/two" queryParamsHandling="preserve">Two</a>
+    </et-nav-tabs>
+  `,
+  imports: [NavTabsComponent, NavTabLinkComponent],
+})
+class PreservedQueryParamsTestHost {}
+
 describe('NavTabsComponent', () => {
   let fixture: ComponentFixture<NavTabsTestHost>;
   let router: Router;
 
   const getLinks = () =>
     Array.from(fixture.nativeElement.querySelectorAll('.et-nav-tab-link') as NodeListOf<HTMLAnchorElement>);
+
+  // jsdom runs no activation behavior: an anchor only turns Enter into a click while it has an href.
+  const pressEnter = (link: HTMLAnchorElement) => {
+    link.focus();
+    link.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    if (link.hasAttribute('href')) {
+      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }
+  };
 
   const navigateTo = (url: string) => {
     return router.navigateByUrl(url).then(() => {
@@ -77,7 +97,13 @@ describe('NavTabsComponent', () => {
     fakeElementScroll();
 
     TestBed.configureTestingModule({
-      imports: [NavTabsRouteOneComponent, NavTabsRouteTwoComponent, NavTabsTestHost, SiblingOutletTestHost],
+      imports: [
+        NavTabsRouteOneComponent,
+        NavTabsRouteTwoComponent,
+        NavTabsTestHost,
+        SiblingOutletTestHost,
+        PreservedQueryParamsTestHost,
+      ],
       providers: [
         provideRouter([
           { path: 'one', component: NavTabsRouteOneComponent },
@@ -137,6 +163,59 @@ describe('NavTabsComponent', () => {
     const [, secondLink] = getLinks();
 
     secondLink?.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(router.url).toBe('/one');
+  });
+
+  it('drops the href from a disabled link', async () => {
+    fixture.componentInstance.secondDisabled = true;
+    fixture.detectChanges();
+    await navigateTo('/one');
+
+    const [firstLink, secondLink] = getLinks();
+
+    expect(firstLink?.getAttribute('href')).toBe('/one');
+    expect(secondLink?.hasAttribute('href')).toBe(false);
+    expect(secondLink?.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('keeps the href of an enabled link up to date', async () => {
+    fixture.destroy();
+
+    const preservedFixture = TestBed.createComponent(PreservedQueryParamsTestHost);
+
+    await router.navigateByUrl('/one?page=1');
+    preservedFixture.detectChanges();
+    await preservedFixture.whenStable();
+    preservedFixture.detectChanges();
+
+    const link = preservedFixture.nativeElement.querySelector('.et-nav-tab-link') as HTMLAnchorElement;
+
+    expect(link.getAttribute('href')).toBe('/two?page=1');
+
+    await router.navigateByUrl('/one?page=2');
+    preservedFixture.detectChanges();
+    await preservedFixture.whenStable();
+    preservedFixture.detectChanges();
+
+    expect(link.getAttribute('href')).toBe('/two?page=2');
+
+    preservedFixture.destroy();
+  });
+
+  it('does not navigate when a disabled link is activated with Enter', async () => {
+    fixture.componentInstance.secondDisabled = true;
+    fixture.detectChanges();
+    await navigateTo('/one');
+
+    const [, secondLink] = getLinks();
+
+    if (secondLink) {
+      pressEnter(secondLink);
+    }
+
     fixture.detectChanges();
     await fixture.whenStable();
 

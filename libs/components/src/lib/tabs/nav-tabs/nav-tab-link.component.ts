@@ -41,12 +41,14 @@ import { mountNavTabLinkStyles } from './nav-tab-link-styles.component';
     class: 'et-nav-tab-link',
     '[class.et-nav-tab-link--active]': 'navTabLink.isActive()',
     '[class.et-nav-tab-link--disabled]': 'navTabLink.trigger.disabled()',
+    '[attr.href]': 'navTabLink.trigger.disabled() ? null : routerLink.href',
     '(keydown.space)': 'handleSpace($event)',
   },
 })
 export class NavTabLinkComponent {
   protected navTabLink = inject(NavTabLinkDirective);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected routerLink = inject(RouterLink, { self: true });
 
   constructor() {
     mountNavTabLinkStyles();
