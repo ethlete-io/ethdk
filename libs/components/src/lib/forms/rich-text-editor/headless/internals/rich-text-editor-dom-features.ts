@@ -8,9 +8,8 @@ import { RichTextEditorDomHeadings } from './rich-text-editor-dom-headings';
 import { RichTextEditorDomLinks } from './rich-text-editor-dom-links';
 
 /**
- * The DOM domains an editor only has when something provided them. Every slot is absent unless the
- * matching provider is registered, which is what keeps the domain's code out of a bundle that never
- * asks for it - so nothing outside a provider may import the implementations, only these types.
+ * Nothing outside a provider may import these implementations, only these types: an eager import
+ * pulls the domain's code into a bundle that never asks for it.
  */
 export type RichTextEditorDomFeatures = {
   headings?: RichTextEditorDomHeadings;
@@ -21,9 +20,8 @@ export type RichTextEditorDomFeatures = {
 };
 
 /**
- * What a feature factory gets. `features` is the editor's **live** feature record, so a feature that
- * builds on others (autoformat needs the block domains) must read it when it runs, never destructure
- * it at construction - registration order is a consumer's provider order, not something to rely on.
+ * `features` is the editor's **live** record, so a feature that builds on others must read it when
+ * it runs, never destructure it at construction - registration order is the consumer's provider order.
  */
 export type RichTextEditorDomFeatureContext = {
   core: RichTextEditorDomCore;
@@ -31,7 +29,6 @@ export type RichTextEditorDomFeatureContext = {
   features: RichTextEditorDomFeatures;
 };
 
-/** One registered domain: which slot it fills, and how to build it for an editor instance. */
 export type RichTextEditorDomFeature = {
   [K in keyof RichTextEditorDomFeatures]-?: {
     key: K;
@@ -39,5 +36,4 @@ export type RichTextEditorDomFeature = {
   };
 }[keyof RichTextEditorDomFeatures];
 
-/** Multi-provider token the opt-in DOM domains register through. */
 export const RICH_TEXT_EDITOR_DOM_FEATURE = new InjectionToken<RichTextEditorDomFeature[]>('RichTextEditorDomFeature');

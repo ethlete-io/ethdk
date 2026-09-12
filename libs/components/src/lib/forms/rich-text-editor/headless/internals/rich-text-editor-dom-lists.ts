@@ -1,9 +1,5 @@
 import { RichTextEditorDomCore, ListTag } from './rich-text-editor-dom-core';
 
-/**
- * Bulleted/numbered list handling: toggling (including type switching and cross-block wrapping),
- * Tab/Shift+Tab nesting, and the empty-item exit used by Enter/Backspace.
- */
 export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
   const {
     doc,
@@ -50,7 +46,6 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
       return;
     }
 
-    // A nested item steps out one level at a time; only a top-level item leaves the list entirely.
     if (list.parentElement instanceof HTMLElement && list.parentElement.tagName === 'LI') {
       outdentListItem();
 
@@ -59,7 +54,6 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
 
     const tag = list.tagName.toLowerCase() as ListTag;
 
-    // Element siblings after the empty item move into a continuation list of the same type.
     const trailing: HTMLElement[] = [];
     let sibling = li.nextElementSibling;
 
@@ -71,9 +65,8 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
     const paragraph = renderer.createElement('p');
     const refAfterList = list.nextSibling;
 
-    // Carry over whatever the (empty) item held - typically the <br> a browser inserts so an
-    // empty line still has a caret-able line box. Without one, a bare <p> can end up with no
-    // line box at all, and the caret falls through to the next focusable position instead.
+    // Carry over the <br> a browser inserts in an empty item: without one a bare <p> gets no line
+    // box, and the caret falls through to the next focusable position.
     while (li.firstChild) {
       renderer.appendChild(paragraph, li.firstChild);
     }
@@ -151,9 +144,8 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
       return;
     }
 
-    // Caret inside a list of the other type: switch the list's type in place. Falling through to
-    // the block-wrapping path below would treat the whole list as one block and nest its <li>s
-    // inside a new <li>, going one level deeper on every toggle.
+    // Must switch the list's type in place: falling through to the block-wrapping path below would
+    // nest the list's <li>s inside a new <li>, going one level deeper on every toggle.
     const otherList = closestWithin(editable.range.startContainer, listTag === 'ul' ? 'ol' : 'ul');
 
     if (otherList) {
@@ -171,7 +163,6 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
     }
 
     const rawBlocks = blocksInRange(editable.range);
-    // A list can't wrap a table - a caret inside one makes the command a no-op.
     const blocks = rawBlocks.filter((block) => !(block instanceof HTMLElement && block.tagName === 'TABLE'));
 
     if (rawBlocks.length > 0 && blocks.length === 0) {
@@ -180,8 +171,6 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
 
     const list = renderer.createElement(listTag);
 
-    // An empty editor has no blocks to wrap - start a fresh list with one empty item instead.
-    // The <br> gives the item a line box so the caret has somewhere to land (see exitListItem).
     if (blocks.length === 0) {
       const li = renderer.createElement('li');
       renderer.appendChild(li, renderer.createElement('br'));
@@ -193,8 +182,8 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
     }
 
     blocks.forEach((block) => {
-      // A block that is itself a list (a selection spanning a paragraph and a list of the other
-      // type) contributes its items directly - wrapping it would nest its <li>s inside a new <li>.
+      // A block that is itself a list contributes its items directly - wrapping it would nest its
+      // <li>s inside a new <li>.
       if (block instanceof HTMLElement && (block.tagName === 'UL' || block.tagName === 'OL')) {
         childrenByTag(block, 'li').forEach((item) => renderer.appendChild(list, item));
 
@@ -231,8 +220,6 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
     return editable ? closestWithin(editable.range.startContainer, 'li') : null;
   };
 
-  /** Tab in a list: nest the current item into a sublist under the previous item. No-op for the
-   *  first item (nothing to nest under). Returns `true` when handled. */
   const indentListItem = () => {
     const editable = getSelection();
     const li = listItemAtCaret();
@@ -261,8 +248,6 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
     return true;
   };
 
-  /** Shift+Tab in a list: lift the current item out one nesting level. No-op at the top level.
-   *  Returns `true` when handled. */
   const outdentListItem = () => {
     const editable = getSelection();
     const li = listItemAtCaret();

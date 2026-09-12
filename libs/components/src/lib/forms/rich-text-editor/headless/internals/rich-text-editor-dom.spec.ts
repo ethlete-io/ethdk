@@ -13,8 +13,6 @@ describe('RichTextEditorDom', () => {
   let setup: (html: string) => RichTextEditorDomHarness;
 
   beforeEach(() => {
-    // Every optional DOM domain is provided here: this spec covers the DOM layer itself, and what
-    // happens without a domain is covered by the directive spec.
     setup = richTextEditorDomHarness([provideRichTextEditorDefaultTools()]).setup;
   });
 
@@ -204,7 +202,6 @@ describe('RichTextEditorDom', () => {
     it('excludes trailing whitespace from a new mark', () => {
       const { root, dom } = setup('A short intro');
 
-      // Selects "A short " - including the space before "intro" as the last character.
       selectRange(root.firstChild as Node, 0, root.firstChild as Node, 8);
 
       dom.toggleInline('strong');
@@ -215,7 +212,6 @@ describe('RichTextEditorDom', () => {
     it('excludes leading whitespace from a new mark', () => {
       const { root, dom } = setup('intro A short');
 
-      // Selects " A short" - including the space after "intro" as the first character.
       selectRange(root.firstChild as Node, 5, root.firstChild as Node, 13);
 
       dom.toggleInline('strong');
@@ -237,13 +233,10 @@ describe('RichTextEditorDom', () => {
     it('does not leave a whitespace-only mark behind when unwrapping a partial selection', () => {
       const { root, dom } = setup('A short intro');
 
-      // Bold "A short " including the trailing space, exactly like a real drag selection would.
       selectRange(root.firstChild as Node, 0, root.firstChild as Node, 8);
       dom.toggleInline('strong');
       expect(root.innerHTML).toBe('<strong>A short</strong> intro');
 
-      // Now select just "A short" (excluding the space, which was never marked to begin with -
-      // trimming above already dropped it) and remove bold.
       const strongText = (root.querySelector('strong') as HTMLElement).firstChild as Node;
       selectRange(strongText, 0, strongText, 7);
       dom.toggleInline('strong');
@@ -253,8 +246,6 @@ describe('RichTextEditorDom', () => {
     });
 
     it('drops a pre-existing trailing whitespace-only mark segment when splitting instead of re-wrapping it', () => {
-      // A mark already containing trailing whitespace (e.g. from data authored elsewhere) - the
-      // split for a partial unwrap must not preserve that whitespace inside its own <strong>.
       const { root, dom } = setup('<strong>A short </strong>intro');
       const text = (root.querySelector('strong') as HTMLElement).firstChild as Node;
 
@@ -268,9 +259,6 @@ describe('RichTextEditorDom', () => {
     it('produces clean markup with no empty shells across bold → italic → strike → remove-bold with an imprecise first selection', () => {
       const { root, dom } = setup('A short');
 
-      // Bold only "A shor", leaving the trailing "t" out - mimics a real, slightly-off drag
-      // selection - then re-select the full word (now split across the <strong> boundary) for
-      // each subsequent toggle, as a user re-dragging over the already-formatted text would.
       selectText(root, 0, 6);
       dom.toggleInline('strong');
 
@@ -294,7 +282,6 @@ describe('RichTextEditorDom', () => {
       const textA = root.firstChild as Node;
       const strongText = (root.lastChild as HTMLElement).firstChild as Node;
 
-      // Selects "A shor", leaving the trailing "t" of the already-bold word outside the selection.
       selectRange(textA, 0, strongText, 4);
 
       dom.toggleInline('strong');
@@ -367,7 +354,6 @@ describe('RichTextEditorDom', () => {
       selectRange(text, 2, text, 2); // collapsed at end, inside <code>
 
       expect(dom.codeExit('ArrowRight')).toBe(true);
-      // caret now sits outside the code, in a following text node
       const range = document.getSelection()!.getRangeAt(0);
       expect(dom.closestWithin(range.startContainer, 'code')).toBeNull();
     });
@@ -737,7 +723,6 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<pre><code>one\ntwo</code></pre>');
       const code = root.querySelector('code') as HTMLElement;
 
-      // on the first line: nothing below to reach for, and vice versa
       selectRange(code.firstChild as Node, 3, code.firstChild as Node, 3);
       expect(dom.codeBlock!.codeBlockArrowStep('ArrowDown')).toBe(false);
 
@@ -802,7 +787,6 @@ describe('RichTextEditorDom', () => {
     it('does not add a trailing space when the link is mid-line', () => {
       const { root, dom } = setup('one two three');
       const text = root.firstChild as Node;
-      // select "two"
       selectRange(text, 4, text, 7);
 
       dom.links!.applyLink('https://example.com');
@@ -813,7 +797,6 @@ describe('RichTextEditorDom', () => {
     it('keeps whitespace at the selection edges outside the anchor', () => {
       const { root, dom } = setup('hello world');
       const text = root.firstChild as Node;
-      // select "hello " - a word selection often includes the trailing space
       selectRange(text, 0, text, 6);
 
       dom.links!.applyLink('https://example.com');
@@ -1116,7 +1099,6 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>**bold</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      // first closing star: `**bold*` - must wait for the second one
       expect(dom.autoformat!.applyInlineAutoformat('*', noneReserved)).toBe(false);
     });
 
@@ -1228,7 +1210,6 @@ describe('RichTextEditorDom without the block domains', () => {
   let setup: (html: string) => RichTextEditorDomHarness;
 
   beforeEach(() => {
-    // Autoformat on, but no heading / quote / fenced-code domain to convert into.
     setup = richTextEditorDomHarness([provideRichTextEditorAutoformat()]).setup;
   });
 

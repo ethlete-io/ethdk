@@ -70,7 +70,6 @@ export class RichTextEditorTriggersDirective {
    *  `noResults` label. */
   public emptyLabel = input<string | null>(null);
 
-  /** The string in effect: this instance's `emptyLabel`, else the editor's label set. */
   private resolvedEmptyLabel = computed(
     () => this.emptyLabel() ?? this.editor?.resolvedLabels().noResults ?? DEFAULT_RICH_TEXT_EDITOR_LABELS.noResults,
   );
@@ -113,7 +112,6 @@ export class RichTextEditorTriggersDirective {
 
     const editor = this.editor;
 
-    // Install the codec so token chips (de)serialize even before any picker interaction.
     editor.tokenCodec.set(createRichTextEditorTokenCodec(() => this.triggers()));
 
     // Reserve the trigger chars so markdown autoformat never converts what may start a token run
@@ -138,7 +136,6 @@ export class RichTextEditorTriggersDirective {
       effect(() => this.assertUniqueTriggers(this.triggers()));
     }
 
-    // Attach DOM listeners once the contenteditable exists.
     effect(() => {
       const root = editor.editorDom.root();
 
@@ -148,7 +145,6 @@ export class RichTextEditorTriggersDirective {
       this.attachListeners(root);
     });
 
-    // Keep the active row within range as the item list changes.
     effect(() => {
       const length = this.itemsState().items.length;
 
@@ -157,7 +153,6 @@ export class RichTextEditorTriggersDirective {
       });
     });
 
-    // aria-activedescendant follows the active row while the popup is open.
     effect(() => {
       const root = editor.editorDom.root();
       const open = !!this.overlayRef();
@@ -233,7 +228,6 @@ export class RichTextEditorTriggersDirective {
       return;
     }
 
-    // The char moved to a new spot → this is a fresh run, clear any prior dismissal.
     if (this.dismissed && (this.dismissed.node !== match.textNode || this.dismissed.offset !== match.charOffset)) {
       this.dismissed = null;
     }
@@ -250,7 +244,6 @@ export class RichTextEditorTriggersDirective {
   }
 
   private interceptPopupKeys(event: KeyboardEvent) {
-    // Delete a token chip as a single unit when the caret sits right after it.
     if (event.key === 'Backspace' && this.deletePrecedingChip()) {
       event.preventDefault();
       event.stopPropagation();
@@ -283,7 +276,6 @@ export class RichTextEditorTriggersDirective {
         this.selectActive();
         break;
       case 'Escape':
-        // Dismiss but keep the literal text so the user can keep typing (e.g. an email address).
         event.preventDefault();
         event.stopPropagation();
         this.dismiss();
@@ -315,7 +307,6 @@ export class RichTextEditorTriggersDirective {
 
     if (ngDevMode) assertValidToken(type, item.id);
 
-    // Select the trigger char + query so inserting the token replaces it.
     const range = this.document.createRange();
 
     range.setStart(match.textNode, match.charOffset);
@@ -440,7 +431,6 @@ export class RichTextEditorTriggersDirective {
 
           this.overlayRef.set(null);
           this.setAriaExpanded(false);
-          // Closed by an outside pointer while a match was still active - end the run cleanly.
           if (this.activeMatch()) this.dismiss();
         }),
       )

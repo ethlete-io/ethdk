@@ -1,10 +1,5 @@
 import { INLINE_TAGS, RichTextEditorDomCore, InlineTag } from './rich-text-editor-dom-core';
 
-/**
- * Inline mark (bold/italic/strike/underline/code) toggling over arbitrary selections - including
- * cross-block slicing, nested-mark preservation on unwrap, and the collapsed-caret "stored marks"
- * insertion flow.
- */
 export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => {
   const {
     doc,
@@ -21,15 +16,10 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
     resolveBoundaryNode,
   } = core;
 
-  // An inline wrapper must stay inside its block: extracting a range that crosses <li>/<p>
-  // boundaries clones the partially covered blocks into the wrapper (an <em> holding <li>s inside
-  // the list), which is invalid markup and serializes to broken markdown. Split such a range into
-  // one slice per covered block so each slice can be wrapped within its own block. Whitespace-only
-  // slices (e.g. an empty <li> swept up by an imprecise drag) are dropped entirely.
+  // An inline wrapper must stay inside its block: a range crossing <li>/<p> boundaries would clone
+  // the partially covered blocks into the wrapper, which serializes to broken markdown.
   const blockSlices = (range: Range): Range[] => {
     const el = root();
-    // Boundaries resolving to no block are root-level inline flow - the root is their block, so
-    // two null boundaries count as the same block just like two boundaries in the same <li>/<p>/cell.
     const startBlock = closestWithin(range.startContainer, 'li, p, td, th');
     const endBlock = closestWithin(range.endContainer, 'li, p, td, th');
 
@@ -51,8 +41,6 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
           }
         });
       } else if (child instanceof HTMLTableElement) {
-        // a selection spanning table cells must wrap each cell's content within that cell - never
-        // across cell boundaries, which would tear the table apart
         for (const section of child.children) {
           if (!(section instanceof HTMLTableSectionElement)) continue;
 
@@ -121,10 +109,8 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
       return;
     }
 
-    // Anchor the restored selection inside the first/last wrapper rather than before/after them
-    // (selectAcross) - markStates() resolves the active marks from the selection's start
-    // container, so a boundary outside the wrapper would leave the toolbar button unpressed
-    // until the user re-selects.
+    // markStates() reads the active marks off the selection's start container, so the restored
+    // selection must start inside the first wrapper rather than before it (selectAcross).
     const selection = doc.getSelection();
 
     if (!selection) {
@@ -173,10 +159,7 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
   };
 
   // `range.cloneContents()` collapses to plain text whenever the range's start and end share a
-  // container (the common case when the whole marked run is selected) - it can't reconstruct any
-  // ancestor elements in that situation, so nested marks (e.g. an <em> inside the <strong> being
-  // unbolded) would be silently dropped. Work around it by trimming a clone of `markEl` down to
-  // the selected span instead, which preserves every nested element other than `markEl` itself.
+  // container, silently dropping nested marks; trim a clone of `markEl` down to the span instead.
   const extractMarkedMiddle = (markEl: HTMLElement, range: Range): Node[] => {
     const startPath = pathFromAncestor(markEl, range.startContainer);
     const endPath = pathFromAncestor(markEl, range.endContainer);
@@ -206,9 +189,8 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
     return Array.from(clone.childNodes);
   };
 
-  // A mark wrapping nothing but whitespace has no markdown representation (`** **` isn't valid
-  // CommonMark emphasis), so a before/after split must never leave one behind - fall through to
-  // plain, unwrapped text for a whitespace-only slice instead of re-wrapping it in `tag`.
+  // A mark wrapping nothing but whitespace has no markdown representation (`** **` is not valid
+  // CommonMark emphasis), so a split must never leave one behind.
   const markSegmentNodes = (frag: DocumentFragment, tag: InlineTag): Node[] => {
     const text = frag.textContent ?? '';
 
@@ -278,10 +260,8 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
     affected.forEach((marked) => unwrapElement(marked));
   };
 
-  // wrapInline's surroundContents fallback can leave behind an untouched sibling with the same
-  // tag right next to the new wrapper (e.g. selecting partway into an already-bold word produces
-  // two adjacent `<strong>` elements). Left unmerged, markdown serialization emits a delimiter per
-  // element (duplicated `**` markers), so collapse adjacent same-tag runs back into one.
+  // wrapInline's surroundContents fallback can leave an untouched same-tag sibling next to the new
+  // wrapper; left unmerged, markdown serialization emits a duplicated `**` delimiter per element.
   const mergeAdjacentSameTag = (tag: InlineTag) => {
     const el = root();
 
@@ -325,14 +305,13 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
 
       for (const t of INLINE_TAGS) {
         for (const node of collectDescendants(el, t)) {
-          // A <code> directly inside a <pre> is a fenced code block emptied of its text, not a
-          // stranded mark shell - removing it leaves a bare <pre> the Markdown pipeline cannot
-          // round-trip (repairCodeBlock turns that into a paragraph instead).
+          // A <code> directly inside a <pre> is an emptied fenced code block, not a stranded mark
+          // shell - removing it leaves a bare <pre> the Markdown pipeline cannot round-trip.
           if (t === 'code' && node.parentElement?.tagName === 'PRE') continue;
 
-          // extractContents() fully drains a wholly-selected text node's data via replaceData
-          // rather than removing the node, so an "empty" shell can still hold a zero-length
-          // Text child - check textContent, not childNodes.length, to catch that case too.
+          // extractContents() drains a wholly-selected text node via replaceData rather than removing
+          // it, so an "empty" shell still holds a zero-length Text child: test textContent, not
+          // childNodes.length.
           if ((node.textContent ?? '').length === 0) {
             renderer.removeChild(node.parentNode as Node, node);
             removed = true;
@@ -357,8 +336,6 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
     }
 
     const { range } = editable;
-    // Resolve to the leaf boundary nodes so a range that wraps a whole block (its child carrying the
-    // mark) is still detected as marked - otherwise the first toggle wrongly re-adds the mark.
     const startLeaf = resolveBoundaryNode(range.startContainer, range.startOffset);
     const endLeaf = resolveBoundaryNode(range.endContainer, range.endOffset);
     const fullyMarked = !!closestWithin(startLeaf, tag) && !!closestWithin(endLeaf, tag);
@@ -374,10 +351,8 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
     el.normalize();
   };
 
-  // The inline mark elements a caret can sit inside; used for the collapsed-caret "stored marks" flow.
   const inlineMarkTags = new Set<string>(INLINE_TAGS.map((tag) => tag.toUpperCase()));
 
-  /** The inline mark tags wrapping the collapsed caret (innermost-first). */
   const activeInlineTags = (): InlineTag[] => {
     const editable = getSelection();
     const el = root();
@@ -396,7 +371,6 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
     return tags;
   };
 
-  /** Splits every inline-mark ancestor at the collapsed caret so it ends up outside all of them. */
   const splitInlineAncestorsAtCaret = (range: Range) => {
     const el = root();
 
@@ -413,7 +387,6 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
 
       if (!mark || mark === el || !inlineMarkTags.has(mark.tagName)) return;
 
-      // Move the content after the caret (within this mark) into a same-tag clone placed after it.
       const tail = doc.createRange();
       tail.setStart(range.startContainer, range.startOffset);
       tail.setEnd(mark, mark.childNodes.length);
@@ -430,11 +403,6 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
     }
   };
 
-  /**
-   * Inserts `text` at the collapsed caret carrying exactly `tags` as inline marks - breaking out of
-   * whatever marks currently wrap the caret first. Drives "stored marks": toggling a mark with no
-   * selection changes what the next typed text is wrapped in.
-   */
   const insertInlineText = (text: string, tags: InlineTag[]) => {
     const editable = getSelection();
     const el = root();
@@ -458,10 +426,8 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
     let deepest: Node = content;
     while (deepest.firstChild) deepest = deepest.firstChild;
 
-    // A plain trailing space at the end of a line is CSS-collapsed, and Chrome removes it from the
-    // text node on the next keystroke - the caret would snap back inside the very mark it just
-    // escaped, silently undoing the toggle (same trap as collapseAfterInline). Use a no-break
-    // space there; serialization normalizes it back to a plain space.
+    // Chrome removes a CSS-collapsed trailing space from the text node on the next keystroke, which
+    // snaps the caret back inside the mark it just escaped; a no-break space survives that.
     const next = content.nextSibling;
     const endsLine = !next || (next instanceof Text && next.data.length === 0);
 
@@ -469,8 +435,6 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
       deepest.data = deepest.data.replace(/ +$/, (spaces) => '\u00a0'.repeat(spaces.length));
     }
 
-    // Caret to the end of the inserted text (inside the innermost mark when there is one) so native
-    // typing continues in the right formatting context.
     const caret = doc.createRange();
     caret.setStart(deepest, (deepest.textContent ?? '').length);
     caret.collapse(true);

@@ -31,7 +31,6 @@ class EditorInFormFieldTestHost {}
 })
 class StandaloneEditorTestHost {}
 
-/** No opt-in DOM domain at all - the floor a marks-and-lists editor ships. */
 @Component({
   template: `<div etRichTextEditor placeholder="minimal"></div>`,
   imports: [RichTextEditorDirective],
@@ -196,8 +195,6 @@ describe('RichTextEditorDirective', () => {
     let dir: RichTextEditorDirective;
     let editable: HTMLElement;
 
-    /** Stands in for typing: rewrite the content, park the caret in it, then commit like the
-     *  editor's own `input` handler does. */
     const write = (html: string, opts: { boundary?: boolean; caretAt?: number } = {}) => {
       driver.setHtml(html);
 
@@ -380,7 +377,6 @@ describe('RichTextEditorDirective', () => {
       const chip = editable.querySelector('[data-et-token]');
       expect(chip?.getAttribute('data-token-type')).toBe('block');
       expect(chip?.getAttribute('data-token-id')).toBe('firstName');
-      // label resolved synchronously via the trigger's resolveItem
       expect(chip?.textContent).toContain('First name');
       expect(dir.value()).toContain('{{block:firstName}}');
     });
@@ -402,7 +398,6 @@ describe('RichTextEditorDirective', () => {
 
       dir.insertToken('block', 'company');
 
-      // chip landed after the existing content, not before it
       const chip = editable.querySelector('[data-et-token]');
       const paragraph = editable.querySelector('p');
       expect(chip).not.toBeNull();

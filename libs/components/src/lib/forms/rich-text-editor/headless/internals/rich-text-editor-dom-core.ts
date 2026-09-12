@@ -1,7 +1,6 @@
 import { signal } from '@angular/core';
 import { injectRenderer } from '@ethlete/core';
 
-/** The Ethlete renderer wrapper returned by `injectRenderer()`. */
 export type EditorRenderer = NonNullable<ReturnType<typeof injectRenderer>>;
 
 export const INLINE_TAGS = ['strong', 'em', 'del', 'u', 'code'] as const;
@@ -10,9 +9,8 @@ export type ListTag = 'ul' | 'ol';
 export type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 export const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6';
-/** Block-level containers that can be re-tagged as a heading in place. An inline element sitting
- *  directly under the root (e.g. bare `<strong>` before any paragraph exists) is NOT one - it must
- *  be wrapped by the heading, not turned into it (which would drop the inline mark). */
+/** Must list only block-level containers: an inline element re-tagged in place loses its mark, so a
+ *  bare `<strong>` under the root has to be wrapped by the heading rather than turned into one. */
 export const BLOCK_SELECTOR = 'p, div, blockquote, pre, li, figure, section, article';
 
 export type EditableSelection = {
@@ -30,30 +28,15 @@ export type RichTextMarkStates = {
   unorderedList: boolean;
   orderedList: boolean;
   link: boolean;
-  /** Whether the selection starts inside a block quote (at any nesting level). */
   blockquote: boolean;
-  /** Whether the selection starts inside a fenced code block, where the value is literal text -
-   *  no inline marks, no block structure, and no autoformat. */
   codeBlock: boolean;
-  /** Heading level of the block the selection starts in, or `null` when it is not a heading. */
   heading: number | null;
-  /** Whether the selection starts inside a table cell - where block tools (headings, lists) have
-   *  no GFM representation and are disabled. */
   tableCell: boolean;
 };
 
-/**
- * The always-shipped foundation the rich text editor DOM modules build on: the root element
- * signal, selection read/restore, caret placement, and generic node traversal/mutation helpers.
- * Domain modules (inline marks, lists, headings, links, autoformat, keymap, paste) receive this
- * core and stay independent of each other unless composed explicitly in `rich-text-editor-dom.ts`.
- */
 export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRenderer) => {
-  /** The contenteditable element, set by the owning directive once its view exists. */
   const root = signal<HTMLElement | null>(null);
 
-  /** The last selection that was inside the editor. Kept so a tap on the docked mobile toolbar - which
-   *  can move focus out of the contenteditable on touch - can restore what was selected before acting. */
   let lastRange: Range | null = null;
 
   const getSelection = (): EditableSelection | null => {
@@ -80,8 +63,6 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     return { selection, range };
   };
 
-  /** Re-applies {@link lastRange} when the live selection has left the editor (e.g. a toolbar tap
-   *  moved focus). No-op when the selection is already inside the editor. */
   const restoreSelection = () => {
     if (getSelection()) return;
 
@@ -127,7 +108,6 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     selection.addRange(range);
   };
 
-  /** Collapses the caret to just after `node`, so typing continues after it (not inside/over it). */
   const collapseAfter = (node: Node) => {
     const selection = doc.getSelection();
 
@@ -142,13 +122,9 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     selection.addRange(range);
   };
 
-  /** Places the caret after an inserted inline `node`. When the inline ends its line (nothing after),
-   *  a single space is added first so the caret isn't glued to it and typing continues as plain text
-   *  - but a mid-text inline (followed by more content) is left untouched so it isn't split from the
-   *  following words/punctuation. Reusable for links, tokens and other atomic inline inserts.
-   *  The space must be a no-break space: a plain trailing space at the end of a line is
-   *  CSS-collapsed, and Chrome drops it from the text node on the next keystroke - the word would
-   *  end up glued to the inline after all. Serialization normalizes `&nbsp;` back to a plain space. */
+  /** The added space must be a no-break space: a plain trailing space at the end of a line is
+   *  CSS-collapsed and Chrome drops it from the text node on the next keystroke, gluing the word to
+   *  the inline after all. Serialization normalizes `&nbsp;` back to a plain space. */
   const collapseAfterInline = (node: Node) => {
     const parent = node.parentNode;
     const next = node.nextSibling;
@@ -261,9 +237,8 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
 
   const isBlockEmpty = (el: HTMLElement) => (el.textContent ?? '').trim().length === 0;
 
-  // A mark applied to whitespace at the very edge of the selection is invisible and has no
-  // markdown representation, so shrink the range inward past any leading/trailing whitespace
-  // before (un)marking it - matching how most rich text editors ignore edge whitespace on toggle.
+  // A mark applied to whitespace at the edge of the selection is invisible and has no markdown
+  // representation, so the range is shrunk inward past it before (un)marking.
   const trimRangeWhitespace = (range: Range) => {
     if (range.collapsed) {
       return;
@@ -300,14 +275,9 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     }
   };
 
-  // The selection may be anchored on an element boundary rather than in a text node - e.g. the
-  // restored selection after a cross-block wrap starts at (wrapper, 0). Marks *below* such an
-  // anchor (a <strong> inside the <em> wrapper) are invisible to an ancestor walk, so descend to
-  // the deepest node at the selection's start position first.
-  // Descend from a range boundary (container + offset) to the leaf node it actually points at, so
-  // callers see the innermost text/element rather than a block container. Essential for mark
-  // detection when the range wraps a whole block (e.g. selectNodeContents(<h2>) whose child is a
-  // <strong>) - the raw container is the block, but the marked content is a descendant.
+  // A selection can be anchored on an element boundary rather than in a text node, and marks below
+  // such an anchor are invisible to an ancestor walk - so mark detection must resolve the leaf here
+  // first rather than read the raw container.
   const resolveBoundaryNode = (container: Node, offset: number): Node => {
     let node: Node = container;
     let o = offset;
@@ -349,10 +319,6 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     };
   };
 
-  /** Ensures there is a caret to act on for a programmatic insert, preferring (in order) the live
-   *  in-editor selection, the last known in-editor range (e.g. before a palette button stole focus),
-   *  then the end of the content. Does not move focus. Returns `false` only when the editor has no
-   *  root or no usable selection object. */
   const ensureCaret = () => {
     const el = root();
 
@@ -360,7 +326,6 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
       return false;
     }
 
-    // Live selection already inside the editor - insert exactly where the caret sits.
     if (getSelection()) {
       return true;
     }
@@ -374,11 +339,9 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     const range = doc.createRange();
 
     if (lastRange && el.contains(lastRange.commonAncestorContainer)) {
-      // Restore the caret the editor last held (focus moved to a palette/toolbar control).
       range.setStart(lastRange.startContainer, lastRange.startOffset);
       range.collapse(true);
     } else {
-      // Never focused: append at the end of the content.
       range.selectNodeContents(el);
       range.collapse(false);
     }

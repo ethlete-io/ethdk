@@ -18,9 +18,8 @@ export type {
   RichTextMarkStates,
 } from './rich-text-editor-dom-core';
 
-/** A caret at an element boundary (empty paragraph, empty editor) has no client rect at all - an
- *  all-zero rect reads as "reference hidden" to the overlay and instantly closes it. Approximate
- *  the visible caret instead: the element's content-box top-left, one line high. */
+/** A caret at an element boundary has no client rect at all, and an all-zero rect reads as
+ *  "reference hidden" to the overlay, which then closes instantly. */
 const caretRectFallback = (range: Range): DOMRect => {
   const container = range.startContainer;
   const el = container instanceof HTMLElement ? container : container.parentElement;
@@ -44,13 +43,9 @@ const caretRectFallback = (range: Range): DOMRect => {
 const hasNoRect = (rect: DOMRect) => rect.x === 0 && rect.y === 0 && rect.width === 0 && rect.height === 0;
 
 /**
- * The rect selection popovers (link editor, floating toolbar) anchor to. A range whose boundaries
- * sit outside the text - a triple-click selects the whole `<li>`/`<p>` element - reports the
- * block's full-width border box from `getBoundingClientRect()`, which would center the popover's
- * arrow on the block instead of on the text. Clamping both boundaries into the first/last text
- * nodes inside the range keeps the rect on the rendered text. Collapsed ranges (carets) and
- * text-free ranges fall back to the plain bounding rect, and a rectless boundary caret to
- * {@link caretRectFallback}.
+ * A range whose boundaries sit outside the text - a triple-click selects the whole `<li>`/`<p>` -
+ * reports the block's full-width border box, which would center a popover's arrow on the block
+ * instead of on the text, so both boundaries are clamped into the text nodes inside the range.
  */
 export const rangeTextBoundingRect = (range: Range): DOMRect => {
   const doc = range.commonAncestorContainer.ownerDocument;
@@ -89,13 +84,8 @@ export const rangeTextBoundingRect = (range: Range): DOMRect => {
 };
 
 /**
- * Composes the DOM modules into the single per-editor service the directive injects. The domains
- * every editor has (selection, inline marks, lists, paste, history and the key handling over them)
- * are built here; the ones an editor only has when it asked for them - headings, links, quotes,
- * fenced code, markdown autoformat - arrive through {@link RICH_TEXT_EDITOR_DOM_FEATURE} and are
- * reachable under {@link RichTextEditorDomFeatures}, `null` when their provider is absent. That
- * indirection is the point: nothing here references those implementations, so they only reach a
- * bundle that provides them.
+ * The opt-in domains must keep arriving through {@link RICH_TEXT_EDITOR_DOM_FEATURE}: nothing here
+ * may reference their implementations, or they reach a bundle that never provides them.
  */
 const richTextEditorDomFactory = () => {
   const renderer = injectRenderer();
@@ -106,14 +96,10 @@ const richTextEditorDomFactory = () => {
   const marks = createRichTextEditorInlineMarks(core);
   const lists = createRichTextEditorLists(core);
 
-  // Filled below, and handed to the factories as it is: a feature built on other features reads it
-  // when it runs, so the consumer's provider order never matters.
   const features: RichTextEditorDomFeatures = {};
   const ctx = { core, lists, features };
 
   for (const feature of registered ?? []) {
-    // The mapped-type union guarantees create() returns what its own key holds; TS cannot follow
-    // that through the erased key here.
     (features[feature.key] as unknown) = feature.create(ctx);
   }
 
@@ -142,19 +128,10 @@ const richTextEditorDomFactory = () => {
     readSelectionOffsets: history.readSelectionOffsets,
     restoreSelectionOffsets: history.restoreSelectionOffsets,
 
-    /** The block-style domain, from `provideRichTextEditorHeadingTool()`. */
     headings: features.headings ?? null,
-
-    /** The link domain, from `provideRichTextEditorLinkTool()`. */
     links: features.links ?? null,
-
-    /** The quote domain, from `provideRichTextEditorBlockquoteTool()`. */
     blockquote: features.blockquote ?? null,
-
-    /** The fenced-code domain, from `provideRichTextEditorCodeBlockTool()`. */
     codeBlock: features.codeBlock ?? null,
-
-    /** Markdown-as-you-type, from `provideRichTextEditorAutoformat()`. */
     autoformat: features.autoformat ?? null,
   };
 };
