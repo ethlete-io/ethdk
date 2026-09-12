@@ -1,12 +1,19 @@
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { projectKeyOf } from '../ticket/project';
 import { TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
 import { JiraIssue, fetchJiraIssues$, toJiraIssue } from './issue';
+import { JiraProject, fetchJiraProjects$ } from './projects';
 import { searchJiraIssues$ } from './search';
 
 /** How many issues a picker reads. A list longer than this is one nobody scrolls to the end of. */
 export const DEFAULT_JIRA_PICKER_LIMIT = 100;
+
+/**
+ * How many pages of projects a typed number is read against, most recently worked in first. Two pages
+ * of fifty is every project anybody still books against, and one more call on a rare kind of search.
+ */
+const NUMBER_PROJECT_PAGES = 2;
 
 /** What narrows the issues a picker offers. Everything is optional, and each part narrows further. */
 export type JiraIssuePickerFilter = {
@@ -51,6 +58,67 @@ const typedKeyIn = (text: string | undefined) => {
 };
 
 /**
+ * A typed number, which is an issue key with the project left off — `2049` for `BD-2049`. People say
+ * and paste a key that way, and `text ~` reads a key's number as little as it reads the key itself.
+ */
+const typedNumberIn = (text: string | undefined) => {
+  const number = text?.trim() ?? '';
+
+  return /^\d+$/.test(number) ? number : null;
+};
+
+const uniqueKeys = (keys: readonly string[]) => [
+  ...new Set(keys.map((key) => key.trim().toUpperCase()).filter(Boolean)),
+];
+
+/** The issues answer in the order their keys were asked for, so the picker's own projects read first. */
+const inAskedOrder = (issues: JiraIssue[], keys: string[]) => {
+  const rank = new Map(keys.map((key, index) => [key, index]));
+
+  return [...issues].sort((a, b) => (rank.get(a.key) ?? keys.length) - (rank.get(b.key) ?? keys.length));
+};
+
+/**
+ * The issues one typed number could name, read as a key against the picker's projects first and the
+ * instance's active ones after. A key Jira does not know costs nothing: the search endpoint answers
+ * an unknown key with no issue rather than with an error.
+ */
+const numberedIssues$ = (options: {
+  transport: TimetrackTransport;
+  credentials: JiraCredentials;
+  number: string;
+  projectKeys: readonly string[];
+  subjectField?: string;
+}) =>
+  fetchJiraProjects$({
+    transport: options.transport,
+    credentials: options.credentials,
+    maxPages: NUMBER_PROJECT_PAGES,
+  }).pipe(
+    catchError(() => of<JiraProject[]>([])),
+    map((projects) =>
+      uniqueKeys([...options.projectKeys, ...projects.map((project) => project.key)]).map(
+        (projectKey) => `${projectKey}-${options.number}`,
+      ),
+    ),
+    switchMap((keys) =>
+      fetchJiraIssues$({
+        transport: options.transport,
+        credentials: options.credentials,
+        keys,
+        subjectField: options.subjectField,
+      }).pipe(map((issues) => inAskedOrder(issues, keys))),
+    ),
+  );
+
+/** The keyed issues first, then whatever the wording search found that they do not already hold. */
+const withoutRepeats = (keyed: JiraIssue[], found: JiraIssue[]) => {
+  const seen = new Set(keyed.map((issue) => issue.key));
+
+  return [...keyed, ...found.filter((issue) => !seen.has(issue.key))];
+};
+
+/**
  * The issues a picker offers, most recently worked in first.
  *
  * One read for every issue field a picker shows, narrowed by whatever the user asked for. The recency
@@ -60,6 +128,10 @@ const typedKeyIn = (text: string | undefined) => {
  * Text that reads as an issue key is answered by that one key instead of by a search, and the key is
  * read outside every other clause: the escape hatch exists for the ticket no list holds, which is
  * regularly one that is closed, or one of a project nobody picked.
+ *
+ * Text that is only a number is read as a key too, against every project rather than one, and the
+ * wording search still runs beside it — `2049` names `BD-2049` to the person typing it, and `2026`
+ * names a year to the person typing that.
  */
 export const fetchJiraIssuePicks$ = (options: {
   transport: TimetrackTransport;
@@ -80,8 +152,7 @@ export const fetchJiraIssuePicks$ = (options: {
   }
 
   const jql = jqlFor(filter);
-
-  return searchJiraIssues$({
+  const found$ = searchJiraIssues$({
     transport: options.transport,
     credentials: options.credentials,
     jql: `${jql ? `${jql} ` : ''}ORDER BY updated DESC`,
@@ -89,4 +160,19 @@ export const fetchJiraIssuePicks$ = (options: {
     describe: 'issues to pick from',
     options: { pageSize: filter.limit ?? DEFAULT_JIRA_PICKER_LIMIT, maxPages: 1 },
   }).pipe(map((resources) => resources.flatMap((resource) => toJiraIssue(resource, options.subjectField) ?? [])));
+
+  const typedNumber = typedNumberIn(filter.text);
+
+  if (!typedNumber) return found$;
+
+  return forkJoin([
+    numberedIssues$({
+      transport: options.transport,
+      credentials: options.credentials,
+      number: typedNumber,
+      projectKeys: filter.projectKeys ?? [],
+      subjectField: options.subjectField,
+    }),
+    found$,
+  ]).pipe(map(([keyed, found]) => withoutRepeats(keyed, found)));
 };

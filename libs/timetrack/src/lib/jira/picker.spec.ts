@@ -6,13 +6,18 @@ import { JiraIssuePickerFilter, fetchJiraIssuePicks$ } from './picker';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
 
-const fakeTransport = (issues: unknown[]) => {
+const fakeTransport = (issues: unknown[], projects: unknown[] = [], keyed?: unknown[]) => {
   const requests: TimetrackRequest[] = [];
   const transport: TimetrackTransport = {
     request$: vi.fn((request: TimetrackRequest) => {
       requests.push(request);
 
-      return of({ status: 200, headers: {}, body: { issues } }) as never;
+      const isKeyRead = queryOf(request, 'jql').startsWith('key in');
+      const body = request.url.includes('/project/search')
+        ? { values: projects, isLast: true }
+        : { issues: isKeyRead ? (keyed ?? issues) : issues };
+
+      return of({ status: 200, headers: {}, body }) as never;
     }),
   };
 
@@ -22,14 +27,22 @@ const fakeTransport = (issues: unknown[]) => {
 const queryOf = (request: TimetrackRequest | undefined, key: string) =>
   decodeURIComponent(new URL(request?.url ?? 'https://x').searchParams.get(key) ?? '');
 
-const pick = (filter?: JiraIssuePickerFilter, issues: unknown[] = []) => {
-  const { transport, requests } = fakeTransport(issues);
+const pick = (filter?: JiraIssuePickerFilter, issues: unknown[] = [], projects: unknown[] = [], keyed?: unknown[]) => {
+  const { transport, requests } = fakeTransport(issues, projects, keyed);
   const found: unknown[] = [];
 
   fetchJiraIssuePicks$({ transport, credentials: CREDENTIALS, filter }).subscribe((issue) => found.push(issue));
 
   return { jql: queryOf(requests[0], 'jql'), requests, found };
 };
+
+/** Every JQL the picker sent. A typed number sends one for the keys and one for the wording. */
+const jqlsOf = (requests: TimetrackRequest[]) =>
+  requests.map((request) => queryOf(request, 'jql')).filter((jql) => !!jql);
+
+const keyJqlOf = (requests: TimetrackRequest[]) => jqlsOf(requests).find((jql) => jql.startsWith('key in'));
+
+const textJqlOf = (requests: TimetrackRequest[]) => jqlsOf(requests).find((jql) => jql.includes('text ~'));
 
 describe('fetchJiraIssuePicks$', () => {
   it('reads the open issues of the projects it was given, most recent first', () => {
@@ -79,6 +92,55 @@ describe('fetchJiraIssuePicks$', () => {
 
   it('searches the wording for text that is not yet a whole key', () => {
     expect(pick({ text: 'ET-' }).jql).toBe('statusCategory != Done AND text ~ "ET-*" ORDER BY updated DESC');
+  });
+
+  it('reads a typed number as a key, against the picker’s projects and the instance’s own', () => {
+    const { requests } = pick({ projectKeys: ['ABC'], text: ' 2049 ' }, [], [{ key: 'BD' }, { key: 'ABC' }]);
+
+    expect(keyJqlOf(requests)).toBe('key in (ABC-2049,BD-2049)');
+  });
+
+  it('still searches the wording beside a typed number, because a number is also a year', () => {
+    const { requests } = pick({ projectKeys: ['ABC'], text: '2049' });
+
+    expect(textJqlOf(requests)).toBe(
+      'project in ("ABC") AND statusCategory != Done AND text ~ "2049*" ORDER BY updated DESC',
+    );
+  });
+
+  it('offers the numbered issue before the wording matches, and offers neither twice', () => {
+    const numbered = { id: '1', key: 'ABC-2049', fields: { summary: 'Alpha', issuetype: { name: 'Task' } } };
+    const { found } = pick(
+      { projectKeys: ['ABC'], text: '2049' },
+      [{ id: '2', key: 'ABC-7', fields: { summary: 'Beta', issuetype: { name: 'Task' } } }, numbered],
+      [],
+      [numbered],
+    );
+
+    expect((found[0] as { key: string }[]).map((issue) => issue.key)).toEqual(['ABC-2049', 'ABC-7']);
+  });
+
+  it('reads the number against the picker’s projects when the instance’s list fails', () => {
+    const requests: TimetrackRequest[] = [];
+    const transport: TimetrackTransport = {
+      request$: vi.fn((request: TimetrackRequest) => {
+        requests.push(request);
+
+        return of({
+          status: request.url.includes('/project/search') ? 500 : 200,
+          headers: {},
+          body: { issues: [] },
+        }) as never;
+      }),
+    };
+
+    fetchJiraIssuePicks$({
+      transport,
+      credentials: CREDENTIALS,
+      filter: { projectKeys: ['ABC'], text: '2049' },
+    }).subscribe();
+
+    expect(keyJqlOf(requests)).toBe('key in (ABC-2049)');
   });
 
   it('drops an issue Jira answered without a key or an id', () => {
