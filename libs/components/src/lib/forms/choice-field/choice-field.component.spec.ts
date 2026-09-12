@@ -33,7 +33,12 @@ describe('ChoiceFieldComponent styles', () => {
     expect(choiceFieldCss).toContain(
       'padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px))',
     );
+    const cardBlock = choiceFieldCss.slice(choiceFieldCss.indexOf("&:where([data-variant='card'])"));
+
     expect(choiceFieldCss).toContain("&:where([data-variant='card'])");
+    expect(cardBlock).toContain('.et-form-support-errors');
+    expect(cardBlock).toContain('.et-form-support-warnings');
+    expect(cardBlock).toContain('.et-form-support-hint');
   });
 });
 

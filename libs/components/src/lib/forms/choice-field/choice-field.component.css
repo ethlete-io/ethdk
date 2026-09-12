@@ -171,6 +171,7 @@
     /* Must stay after the rule above: same specificity, so source order is what makes it win. */
     &:where([data-variant='card']) {
       .et-form-support-errors,
+      .et-form-support-warnings,
       .et-form-support-hint {
         padding-inline-start: 0;
       }
