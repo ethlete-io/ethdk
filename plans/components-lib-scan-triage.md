@@ -655,6 +655,7 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    in checkbox-group, radio-group, segmented-button-group, rating, choice-field, slider, dropzone and
    otp — eight-plus copies, and the drift is what produced _Fix now_ #4 and the missing exit animation.
    Proposed independently by the selection-controls, slider/dropzone/color and phone/otp/tag batches. L
+   — **DONE 2026-08-22** in `a1a775764 refactor(components): Share one support region across the controls that copied it` (eight controls onto `<et-form-support>` + `form-support-styles.component.css`); the last holdout `et-choice-field` followed **2026-09-12** in `36cc73491 refactor(components): Render the shared support region in the choice field`, which also restored `unicode-bidi: isolate` on the shared region. `et-form-field` keeps its own support markup on purpose (text-control host with the counter row). Known leftover: on `variant="card"` a choice-field warning still carries the 28px indent while error and hint go flush.
 2. **Cross-domain test drivers.** Twelve batches ask for one: overlay (plain dialogs/openers, not just
    overlay-backed form controls), table, bracket, scheduler, stream, carousel/scrollable/scrollbar,
    calendar/time-picker, grid/masonry, tabs, notification, RTE, `et-input`/`et-form-field`,
@@ -689,6 +690,7 @@ Deduplicated across all 22 batches; several batches independently proposed the s
 date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the three stream
    overlay cards, `select`/`cascader` panel animations, the button/fab/icon-button opacity ramps, the
    three class-list normalizers in overlay, the two color parsers in color-input. The tooltip/toggletip/menu animation blocks and the select/cascader panel animations were **DONE** earlier in `ca7ca9127` and `72087d46a`; the three overlay class-list normalizers are one `normalize-class-list.ts`; the stream overlay cards share `stream-overlay-card-styles.component.css`; the color parsers **DONE 2026-09-12** in `refactor(components): Parse colors once for the color input validators and picker`. Still open: `et-pip-player` rules in two sheets (small), the button/fab/icon-button opacity ramps (in progress). M
+   The button/fab/icon-button opacity ramps **DONE 2026-09-12** in `2bf2e27bf`. The `et-pip-player` rules were re-checked 2026-09-12: `pip-chrome.component.css` and `pip-player.component.css` hold different, complementary rules, so there is nothing left to share — item closed.
 7. **Bundle-size wins, each behind a treeshake golden.** `@defer` the color picker panel; make the
    stream PiP slice opt-in by import graph (~1.5k lines reachable today from one YouTube slot); defer
    the scheduler edit surface (it drags five form-control families into a read-only month grid); pack
@@ -734,10 +736,12 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
     inline tags", the control-suffix spec comment. Fix those with whatever change touches the file. M — **Wrong comments DONE 2026-09-12**: the table keyboard-nav comment went in
     `chore(components): Drop the table keyboard-nav comment the code outgrew`; the RTE, control-suffix and
     cascader ones were already removed by `56d0d3ddb`. The density pass stays opportunistic.
+    **Carousel DONE 2026-09-12** in `a1514226c chore(components): Cut the carousel comments the policy does not allow` (delete-only, 722 → 498 comment lines; what remains is mostly case-4 JSDoc on exported directives). Table stays deprioritized per the section below; grid, bracket, calendar, scheduler, selection-controls remain opportunistic.
 12. **Docs corrections** (~40 across batches): option tables omitting real inputs (select, cascader,
     date-time, otp, tag, dropzone, slider), token tables missing live tokens, the bracket migration row
     pointing at an unexported symbol, `match.md`'s `NormalizedMatch` snippet, and the pages that state
     the opposite of the code. Part of whichever fix touches the API, per AGENTS.md. M — **Option/output/token tables DONE 2026-09-12** for select (`00bedef8a`), cascader + slider (`da278a043`), otp + tag input + dropzone (`593253b1c`) and date-time inputs + time picker (`276e7f591`). Still open: the bracket migration row, `match.md`'s `NormalizedMatch` snippet, and any remaining "opposite of the code" sentences outside those domains.
+    **Batch 2 DONE 2026-09-12** in `319601831 docs(components): Correct the overlay strategies, stream theming, rating mixedLabel, chip color and notification duration docs`; the bracket migration row and the `match.md` snippet were already correct. Re-checked and consistent: carousel play/pause ARIA, nav-tab-link `disabled`, tree tab stop, breadcrumb SEO outlet, toolbar nesting. Code findings from the re-check: breadcrumb stale full width while collapsed (fixed 2026-09-12, see git log for `breadcrumb`), carousel `pauseReason()` is `null` while `isPlaying()` is `false` with `autoplayTime="0"` (`carousel-autoplay.directive.ts:161-183`, open), a disabled `a[et-nav-tab-link]` keeps its `href` so programmatic focus + Enter still navigates (open).
 
 ## Explicitly deprioritized
 
