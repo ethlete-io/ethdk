@@ -196,13 +196,13 @@ export class BreadcrumbDirective {
 
     // Every measurement has to be read here rather than out of the observers: a render hook runs after
     // change detection but before the browser paints, so it sees the trail that is about to be painted,
-    // while the observers report the DOM as it was before the collapsed and full trail were swapped. The
-    // two reads below are the dependencies that re-run it - the host's dimensions or content changed, and
-    // a measuring pass opened - and nothing else may be read reactively, or recording the result loops.
+    // while the observers report the DOM as it was before the collapsed and full trail were swapped.
+    // `scrollState` - the host's dimensions or content changed - is the only thing that may be read
+    // reactively: every other signal in play is one `recordMeasurement` writes, so reading it here would
+    // make the effect schedule itself.
     afterRenderEffect({
       earlyRead: () => {
         this.scrollState();
-        this.isMeasuring();
 
         const element = this.elementRef.nativeElement;
 

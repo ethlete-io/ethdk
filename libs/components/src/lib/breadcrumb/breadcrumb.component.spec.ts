@@ -287,23 +287,37 @@ class BreadcrumbGrowingCrumbHostComponent {
 /**
  * The breadcrumb's own `scrollWidth`, which jsdom reports as `0`: the collapsed trail is a fixed width,
  * the full one is whatever the test currently says the trail needs.
+ *
+ * `measurementPasses()` counts the directive's render effect: the scroll state reads `scrollWidth` and
+ * `scrollHeight` together, the render effect reads `scrollWidth` alone, so the difference is its pass count.
  */
 const fakeTrailWidth = (fullWidth: () => number) => {
-  const original = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollWidth');
+  const reads = { scrollHeight: 0, scrollWidth: 0 };
 
-  Object.defineProperty(Element.prototype, 'scrollWidth', {
-    configurable: true,
-    get(this: Element) {
-      if (!this.matches('et-breadcrumb')) return (original?.get?.call(this) as number | undefined) ?? 0;
+  const patch = (property: 'scrollHeight' | 'scrollWidth', value: (element: Element) => number) => {
+    const original = Object.getOwnPropertyDescriptor(Element.prototype, property);
 
-      return this.hasAttribute('data-collapsed') ? COLLAPSED_TRAIL_WIDTH : fullWidth();
-    },
-  });
+    Object.defineProperty(Element.prototype, property, {
+      configurable: true,
+      get(this: Element) {
+        if (!this.matches('et-breadcrumb')) return (original?.get?.call(this) as number | undefined) ?? 0;
 
-  onTestFinished(() => {
-    if (original) Object.defineProperty(Element.prototype, 'scrollWidth', original);
-    else Reflect.deleteProperty(Element.prototype, 'scrollWidth');
-  });
+        reads[property]++;
+
+        return value(this);
+      },
+    });
+
+    onTestFinished(() => {
+      if (original) Object.defineProperty(Element.prototype, property, original);
+      else Reflect.deleteProperty(Element.prototype, property);
+    });
+  };
+
+  patch('scrollWidth', (element) => (element.hasAttribute('data-collapsed') ? COLLAPSED_TRAIL_WIDTH : fullWidth()));
+  patch('scrollHeight', () => 0);
+
+  return { measurementPasses: () => reads.scrollWidth - reads.scrollHeight };
 };
 
 describe('breadcrumb re-expansion', () => {
@@ -364,5 +378,36 @@ describe('breadcrumb re-expansion', () => {
 
     expect(breadcrumb.isCollapsed()).toBe(false);
     expect(breadcrumb.isMeasuring()).toBe(false);
+  });
+});
+
+describe('breadcrumb measurement passes', () => {
+  it('re-expands in a single measurement pass', () => {
+    const resizeObserver = fakeResizeObserver();
+
+    let availableWidth = 200;
+
+    fakeLayout([{ match: 'et-breadcrumb', clientWidth: () => availableWidth }]);
+
+    const trail = fakeTrailWidth(() => 260);
+
+    const fixture = TestBed.createComponent(BreadcrumbGrowingCrumbHostComponent);
+    fixture.detectChanges();
+    TestBed.tick();
+
+    const breadcrumb = fixture.componentInstance.breadcrumb();
+
+    expect(breadcrumb.isCollapsed()).toBe(true);
+
+    const settled = trail.measurementPasses();
+
+    availableWidth = 400;
+    resizeObserver.fire();
+    fixture.detectChanges();
+    TestBed.tick();
+
+    expect(breadcrumb.isCollapsed()).toBe(false);
+    expect(breadcrumb.isMeasuring()).toBe(false);
+    expect(trail.measurementPasses() - settled).toBe(1);
   });
 });
