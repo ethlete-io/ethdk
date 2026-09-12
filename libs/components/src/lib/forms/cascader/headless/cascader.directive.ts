@@ -129,8 +129,7 @@ export class CascaderDirective<T = unknown>
 
   /**
    * How many columns the browse view shows side by side before older levels collapse into the
-   * breadcrumb row (min 1). Deep hierarchies would otherwise grow the panel a column-width per
-   * level until it hits the viewport edge.
+   * breadcrumb row (min 1).
    */
   public maxVisibleColumns = input(3, { transform: (value: number) => Math.max(1, Math.floor(value)) });
 
@@ -158,7 +157,7 @@ export class CascaderDirective<T = unknown>
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.CASCADER);
 
-  /** @internal Set by the trigger. The field also counts as focused while the panel is open. */
+  /** @internal Set by the trigger. */
   public triggerFocused = signal(false);
   public focused = computed(() => this.triggerFocused() || this.open());
 
@@ -181,9 +180,8 @@ export class CascaderDirective<T = unknown>
   private openPath = signal<CascaderNode<T>[]>([]);
 
   /**
-   * Raw left edge of the browse window, moved by `revealColumn`. Deliberately unclamped - columns
-   * load and truncate asynchronously, so the clamp lives in `visibleColumnStart` where it tracks
-   * the current column count instead of going stale.
+   * Deliberately unclamped - columns load and truncate asynchronously, so the clamp lives in
+   * `visibleColumnStart` where it tracks the current column count instead of going stale.
    */
   private columnWindowStart = signal(0);
 
@@ -224,15 +222,9 @@ export class CascaderDirective<T = unknown>
    */
   public selectedPaths = signal<CascaderNode<T>[][]>([]);
 
-  /**
-   * Every child list loaded so far, keyed by parent (`null` = root). Unlike `columns`, entries
-   * survive navigating away - multi mode needs them to promote a branch to fully selected once
-   * all of its descendants are checked (a subtree that was never loaded stays indeterminate,
-   * since "all" can't be answered for it).
-   */
+  /** Every child list loaded so far, keyed by parent (`null` = root). */
   private knownChildren = signal<{ parent: CascaderNode<T> | null; children: CascaderNode<T>[] }[]>([]);
 
-  /** The label of the current value, or `null` (show the placeholder). */
   public displayPath = computed(() => this.path().map((node) => node.label));
   public displayValue = computed(() => {
     if (this.mixed()) {
@@ -240,7 +232,6 @@ export class CascaderDirective<T = unknown>
     }
 
     if (this.multiple()) {
-      // one label per selected node (not the full breadcrumb - several would not scan)
       const compareWith = this.compareWith();
       const paths = this.selectedPaths();
       const labels = this.values()
@@ -268,10 +259,7 @@ export class CascaderDirective<T = unknown>
   public focusedColumn = signal(0);
   /** @internal Whether DOM focus is inside the panel - gates the roving-focus DOM moves. */
   public focusInside = signal(false);
-  /**
-   * @internal Bumped after the panel settles to (re-)pull DOM focus onto the active node -
-   * the opening pointer click focuses the trigger a frame after the node's focus effect runs.
-   */
+  /** @internal Bumped after the panel settles to (re-)pull DOM focus onto the active node. */
   public focusPulse = signal(0);
 
   /** @internal */
@@ -348,8 +336,6 @@ export class CascaderDirective<T = unknown>
     onBeforeMount: () => {
       this.resetBrowseState();
 
-      // a tree popup takes focus on open (menu pattern): mark focus as inside so the seeded
-      // roving node pulls DOM focus once it renders, and keyboard navigation works immediately
       this.focusInside.set(true);
 
       // the opening pointer click focuses the trigger one frame *after* the node's focus effect
@@ -367,9 +353,8 @@ export class CascaderDirective<T = unknown>
           return;
         }
 
-        // with a search box the input takes initial focus (menu pattern): typing filters
-        // immediately, ArrowDown moves roving focus into the tree. The pane may not be
-        // focusable while its enter transition settles - retry until the focus sticks.
+        // the pane may not be focusable while its enter transition settles - retry until the
+        // focus sticks
         const attempt = (remaining: number) => {
           if (!this.overlayRef()) {
             return;
@@ -413,8 +398,6 @@ export class CascaderDirective<T = unknown>
    */
   public titleAnimation = signal<'slide' | 'fade'>('slide');
 
-  // type-to-search within the focused column (long columns can't be navigated by name otherwise);
-  // the buffer resets when focus moves to a different column so queries don't leak across levels
   private typeahead = createTypeahead();
   private typeaheadColumn = -1;
 
@@ -435,10 +418,6 @@ export class CascaderDirective<T = unknown>
       untracked(() => this.knownChildren.set([]));
     });
 
-    // drop the committed chain whenever the value stops matching its tail (an external reset or
-    // patch), so the trigger shows the placeholder instead of the previous value's breadcrumb
-    // and a reopened panel starts at the root - and in multi mode, prune the chains of values
-    // that were removed from outside
     effect(() => {
       const value = this.value();
 
@@ -480,18 +459,12 @@ export class CascaderDirective<T = unknown>
       });
     });
 
-    // rebuild the breadcrumb when the value is set from outside (form patch/restore): `commit()`
-    // already sets `path` alongside the value, so an internal commit's path ends at the value and
-    // is skipped here. Only a value the panel didn't pick reaches `resolvePath` - an optional
-    // data-source hook, since the cascader can't reverse a lazy tree on its own.
     toObservable(this.value)
       .pipe(
         switchMap((value) => {
           const compareWith = this.compareWith();
           const resolvePath = this.dataSource()?.resolvePath;
 
-          // multi mode: resolve the chain of every value that wasn't picked in the panel
-          // (a form patch/restore), so labels and indeterminate parents work for them too
           if (this.multiple()) {
             const missing = this.values().filter(
               (candidate) =>
@@ -510,7 +483,6 @@ export class CascaderDirective<T = unknown>
               ...missing.map((candidate) =>
                 toPathObservable(resolvePath(candidate)).pipe(
                   tap((resolved) => {
-                    // the value may have been deselected while resolving - drop the late chain
                     const stillSelected = this.values().some((current) => compareWith(current, candidate));
                     const resolvedLast = resolved?.[resolved.length - 1];
 
@@ -540,7 +512,6 @@ export class CascaderDirective<T = unknown>
           const currentPath = this.path();
           const last = currentPath[currentPath.length - 1];
 
-          // the committed path already ends at this value - nothing to resolve
           if (last && compareWith(last.value, value)) {
             return EMPTY;
           }
@@ -551,7 +522,6 @@ export class CascaderDirective<T = unknown>
 
           return toPathObservable(resolvePath(value)).pipe(
             tap((resolved) => {
-              // a later value change / clear superseded this (async) resolve - drop it
               const currentValue = this.value();
 
               if (
@@ -578,8 +548,6 @@ export class CascaderDirective<T = unknown>
       )
       .subscribe();
 
-    // run the flat search as the (trimmed) query changes: switchMap cancels a stale in-flight
-    // search, and each emission of a live source refreshes the result list
     toObservable(this.searchRequest)
       .pipe(
         switchMap((request) => {
@@ -611,7 +579,6 @@ export class CascaderDirective<T = unknown>
       )
       .subscribe();
 
-    // a click anywhere on the field's control frame opens the panel, like on the trigger
     toObservable(computed(() => this.formField?.controlFrameElement() ?? null))
       .pipe(
         switchMap((frame) => (frame ? fromEvent<MouseEvent>(frame, 'click') : EMPTY)),
@@ -702,7 +669,6 @@ export class CascaderDirective<T = unknown>
 
   /** Multi mode: whether a node that isn't (fully) selected has a selected descendant (the dash state). */
   public isIndeterminate(node: CascaderNode<T>) {
-    // the hidden mixed selection must not leak through partial-branch dashes either
     if (!this.multiple() || this.mixed() || this.isSelected(node)) {
       return false;
     }
@@ -811,7 +777,6 @@ export class CascaderDirective<T = unknown>
   public focusNode(node: CascaderNode<T>, columnIndex: number) {
     this.focusedNode.set(node);
     this.focusedColumn.set(columnIndex);
-    // focus in a collapsed column (ArrowLeft past the window edge) slides the window to it
     this.revealColumn(columnIndex);
   }
 
@@ -819,8 +784,6 @@ export class CascaderDirective<T = unknown>
    * Slides the browse window to `columnIndex` and moves roving focus onto its drilled node - a
    * breadcrumb activation. The window is anchored AT the column (not minimally revealed), so
    * every crumb maps to a distinct view and stays clickable however the window was slid before.
-   * Purely navigational: no columns are truncated, so the deeper levels stay drilled until a
-   * node in the revealed column is activated.
    */
   public showColumn(columnIndex: number) {
     this.columnWindowStart.set(columnIndex);
@@ -831,7 +794,6 @@ export class CascaderDirective<T = unknown>
       this.focusNode(node, columnIndex);
     }
 
-    // pull DOM focus onto the node - the crumb keeps DOM focus otherwise while its column shows
     this.focusPulse.update((pulse) => pulse + 1);
   }
 
@@ -907,7 +869,6 @@ export class CascaderDirective<T = unknown>
       return;
     }
 
-    // with a search input registered, typing on a node routes into the flat search instead
     const search = this.registeredSearch();
 
     if (search) {
@@ -917,7 +878,6 @@ export class CascaderDirective<T = unknown>
       return;
     }
 
-    // type-to-search the focused column by node label (mirrors the select's typeahead)
     if (columnIndex !== this.typeaheadColumn) {
       this.typeahead.reset();
       this.typeaheadColumn = columnIndex;
@@ -942,7 +902,6 @@ export class CascaderDirective<T = unknown>
     }
 
     this.navigationDirection.set('backward');
-    // returning to the root hides the Back bar (title shifts back to flush) - fade, not slide
     this.titleAnimation.set(path.length === 1 ? 'fade' : 'slide');
     this.openPath.update((current) => current.slice(0, -1));
     this.truncateColumns(this.openPath().length + 1);
@@ -976,7 +935,6 @@ export class CascaderDirective<T = unknown>
     const search = this.registeredSearch();
 
     if (search) {
-      // clear() empties the input element and routes back through setSearchQuery('')
       search.clear();
     } else {
       this.searchQuery.set('');
@@ -998,7 +956,6 @@ export class CascaderDirective<T = unknown>
       return;
     }
 
-    // a branch match in leaf mode can't commit - re-root the columns onto it instead
     if (canHaveChildren(node) && this.selectableLevels() !== CASCADER_SELECTABLE_LEVELS.ANY) {
       this.browseToPath(path);
       this.clearSearch();
@@ -1006,16 +963,12 @@ export class CascaderDirective<T = unknown>
       return;
     }
 
-    // multi mode: toggle the match and stay in the result list, so several hits of the same
-    // search can be picked without retyping
     if (this.multiple()) {
       this.toggleValue(path);
 
       return;
     }
 
-    // search is "jump straight to it": committing from a result always closes, including a
-    // branch commit in any-level mode (unlike a browse click, which stays open to drill)
     this.path.set([...path]);
     this.value.set(node.value);
     this.mixed.set(false);
@@ -1045,7 +998,6 @@ export class CascaderDirective<T = unknown>
       return;
     }
 
-    // browsing: hand DOM focus back to the roving tree node
     this.focusPulse.update((pulse) => pulse + 1);
   }
 
@@ -1070,8 +1022,6 @@ export class CascaderDirective<T = unknown>
       case 'ArrowDown': {
         event.preventDefault();
 
-        // moving below the last result cycles back to the search input (mirrors ArrowUp
-        // above the first one)
         if (index === this.searchState().results.length - 1 && search) {
           this.focusedSearchIndex.set(-1);
           search.focus();
@@ -1086,7 +1036,6 @@ export class CascaderDirective<T = unknown>
       case 'ArrowUp': {
         event.preventDefault();
 
-        // moving above the first result returns focus to the search input
         if (index === 0 && search) {
           this.focusedSearchIndex.set(-1);
           search.focus();
@@ -1112,7 +1061,6 @@ export class CascaderDirective<T = unknown>
       }
     }
 
-    // typing continues the query - focus returns to the input and the character lands there
     if (event.key.length === 1 && search) {
       event.preventDefault();
       this.focusedSearchIndex.set(-1);
@@ -1120,9 +1068,8 @@ export class CascaderDirective<T = unknown>
     }
   }
 
-  // exactly selected, or a branch whose known children are all fully selected. Disabled children
-  // are skipped - they can't be toggled, so requiring them would lock the branch out of the full
-  // state. `visited` breaks recursion on a (malformed) cyclic source.
+  // Disabled children are skipped - they can't be toggled, so requiring them would lock the branch
+  // out of the full state. `visited` breaks recursion on a (malformed) cyclic source.
   private isFullySelected(node: CascaderNode<T>, visited: CascaderNode<T>[]): boolean {
     const compareWith = this.compareWith();
 
@@ -1153,7 +1100,6 @@ export class CascaderDirective<T = unknown>
   }
 
   private focusFirstOfColumn(columnIndex: number) {
-    // the column may still be loading - retry on the next frame until it has nodes
     const attempt = (remaining: number) => {
       // the panel was closed/unmounted while the column was loading - stop, or we'd pull focus
       // into a node that is animating away
@@ -1190,7 +1136,6 @@ export class CascaderDirective<T = unknown>
     });
   }
 
-  /** Re-roots the browse state onto `path`, loading every column along it (its children get focus). */
   private browseToPath(path: CascaderNode<T>[]) {
     this.cancelLoads();
     this.openPath.set([...path]);
@@ -1201,10 +1146,7 @@ export class CascaderDirective<T = unknown>
     this.loadColumn(0, null);
     path.forEach((node, index) => this.loadColumn(index + 1, node));
 
-    // anchor the browse window at the deep end of the jumped-to branch
     this.columnWindowStart.set(path.length);
-
-    // land keyboard focus on the first child of the branch that was jumped to
     this.focusFirstOfColumn(path.length);
   }
 
@@ -1218,8 +1160,6 @@ export class CascaderDirective<T = unknown>
     }
 
     this.navigationDirection.set('forward');
-    // crossing the root boundary (Back bar appears) shifts the title as the bar grows - fade
-    // instead of a competing slide; deeper drills keep the directional cross-slide
     this.titleAnimation.set(columnIndex === 0 ? 'fade' : 'slide');
     this.openPath.update((path) => [...path.slice(0, columnIndex), node]);
     this.truncateColumns(columnIndex + 1);
@@ -1228,7 +1168,6 @@ export class CascaderDirective<T = unknown>
     this.focusFirstOfColumn(columnIndex + 1);
   }
 
-  /** Slides the browse window the minimal distance that brings `columnIndex` into view. */
   private revealColumn(columnIndex: number) {
     const start = this.visibleColumnStart();
     const end = start + this.maxVisibleColumns() - 1;
@@ -1291,7 +1230,6 @@ export class CascaderDirective<T = unknown>
             this.setColumn(columnIndex, { parent, status: 'loaded', nodes, error: null });
             this.rememberChildren(parent, nodes);
 
-            // once the root column arrives, seed roving focus so keyboard navigation has a target
             if (columnIndex === 0 && !this.focusedNode() && nodes[0]) {
               this.focusNode(nodes[0], 0);
             }
@@ -1335,9 +1273,6 @@ export class CascaderDirective<T = unknown>
     this.loadSubscriptions.clear();
   }
 
-  // Escape is handled here instead of by the overlay runtime: with a search input the first
-  // Escape only clears the query (the runtime's capture-phase handler would close before the
-  // input ever saw the key).
   private handlePanelKeydown(event: KeyboardEvent) {
     if (event.key !== 'Escape' || event.defaultPrevented) {
       return;
@@ -1349,7 +1284,6 @@ export class CascaderDirective<T = unknown>
 
     if (search && this.searchQuery()) {
       this.clearSearch();
-      // the cleared result list may have held focus - hand it back to the input
       search.focus();
 
       return;
@@ -1363,24 +1297,18 @@ export class CascaderDirective<T = unknown>
     this.openPath.set([]);
     this.columns.set([]);
     this.focusedColumn.set(0);
-    // a query kept from the last open would filter the fresh panel - reset to browse mode
     this.searchQuery.set('');
     this.focusedSearchIndex.set(-1);
-    // no slide animation for the columns present when the panel first opens
     this.navigationDirection.set(null);
 
-    // seed focus to the committed root before loading - a set value re-opens where it left off,
-    // and the guard in the root load skips its own seed. An empty value leaves focus null so the
-    // root load seeds it to the first node instead. Multi re-opens onto the first known chain.
-    // While mixed, the raw value is masked - opening at its branch would reveal it, so the
-    // panel starts at the root like an empty control.
+    // seed focus to the committed root before loading - the guard in the root load skips its
+    // own seed
     const committed = this.mixed() ? [] : this.multiple() ? (this.selectedPaths()[0] ?? []) : this.path();
 
     this.focusedNode.set(committed[0] ?? null);
 
     this.loadColumn(0, null);
 
-    // re-open the committed branch so the panel lands where the value already is
     committed.forEach((node, index) => {
       if (canHaveChildren(node)) {
         this.openPath.update((path) => [...path, node]);
@@ -1388,7 +1316,6 @@ export class CascaderDirective<T = unknown>
       }
     });
 
-    // anchor the browse window at the deep end of the re-opened branch (clamped once loaded)
     this.columnWindowStart.set(this.openPath().length);
   }
 

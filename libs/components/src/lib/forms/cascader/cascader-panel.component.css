@@ -47,10 +47,9 @@
       overflow: clip;
     }
 
-    /* Anchored presentation: the body is content-sized so the width animation can measure the
-       natural target width — a plain block child would just mirror the host's animated width
-       back into the ResizeObserver (feedback loop). The sheet stays full-width (its body must
-       follow the pane). */
+    /* the body is content-sized so the width animation can measure the natural target width — a
+       plain block child would just mirror the host's animated width back into the ResizeObserver
+       (feedback loop) */
     &:not([data-sheet]) > .et-cascader-panel-body {
       inline-size: max-content;
     }
@@ -59,9 +58,8 @@
       display: flex;
       max-block-size: var(--_et-cascader-panel-max-block-size);
 
-      /* the carousel viewport: exactly the windowed columns wide. `clip`, not `hidden` —
-         a focused node's scrollIntoView must never desync the track transform below with
-         a stray programmatic scrollLeft. */
+      /* `clip`, not `hidden` — a focused node's scrollIntoView must never desync the track
+         transform below with a stray programmatic scrollLeft */
       &:not([data-sheet]) {
         display: block;
         inline-size: calc(var(--_et-cascader-visible-columns, 1) * var(--et-cascader-column-inline-size));
@@ -79,9 +77,6 @@
         }
       }
 
-      /* drill mode: one full-width column at a time, flexing to fill the fixed-height sheet
-         body — the sheet never resizes as levels (or the loading spinner, or the Back bar
-         appearing) change; the column scrolls internally and slides within the area */
       &[data-sheet] {
         display: block;
         flex: 1;
@@ -105,8 +100,6 @@
           border-inline-end: none;
         }
 
-        /* a column showing only a loading / empty / error state centers it in the tall
-           fixed area instead of leaving a lonely top-left spinner */
         .et-cascader-column:has(.et-cascader-state) {
           display: flex;
           align-items: center;
@@ -115,8 +108,6 @@
       }
     }
 
-    /* every drilled level rides this flex track; sliding the window (a level collapsing
-       into a breadcrumb, or a crumb bringing it back) is one coordinated transform */
     .et-cascader-columns-track {
       display: flex;
       max-block-size: inherit;
@@ -130,7 +121,6 @@
       padding: 6px;
       border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
 
-      /* mirrors the menu's search field (input[etmenusearch] in menu.component.css) */
       input[etcascadersearch] {
         inline-size: 100%;
         block-size: 36px;
@@ -166,8 +156,6 @@
     .et-cascader-results {
       display: block;
       box-sizing: border-box;
-      /* fixed width — with content-derived sizing, every keystroke would resize the panel
-         horizontally (the widest visible result keeps changing) */
       inline-size: min(320px, calc(100vw - 24px));
       max-block-size: var(--_et-cascader-panel-max-block-size);
       overflow-y: auto;
@@ -176,8 +164,6 @@
       padding: 6px;
     }
 
-    /* the column's scrollbar has to hang outside its scrollport, so this wrapper - not the column -
-       is what the track lays out */
     .et-cascader-column-wrapper {
       position: relative;
       flex: none;
@@ -200,8 +186,6 @@
       border-inline-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     }
 
-    /* Sheet (one visible column): it slides in from the travel direction, both ways — the
-       calendar month-nav pattern (keyed re-creation re-fires the animation). */
     .et-cascader-columns[data-sheet] .et-cascader-column {
       &:where([data-nav='forward']) {
         animation: et-cascader-column-in-forward 200ms ease;
@@ -212,11 +196,6 @@
       }
     }
 
-    /* Desktop (Miller columns, side by side): the panel's width animation sweeps the trailing
-       edge outward when a column is drilled in (and back over it when one is removed), so the
-       new column fades in with a slight slide matching that growth direction. Going back removes
-       a column and relies on the edge sweep alone (only forward carries a nav on a freshly
-       created element). */
     .et-cascader-columns:not([data-sheet]) .et-cascader-column:where([data-nav='forward']) {
       animation: et-cascader-column-grow-in 180ms ease;
     }
@@ -275,12 +254,10 @@
       text-overflow: ellipsis;
     }
 
-    /* the ancestor part of a result's breadcrumb recedes so the matching node stands out */
     .et-cascader-search-option-ancestor {
       color: var(--et-surface-color-muted-solid, currentColor);
     }
 
-    /* multi mode: a leading check square, driven by the row's data-selected / data-indeterminate */
     .et-cascader-check {
       position: relative;
       flex: none;
@@ -306,7 +283,6 @@
       background: var(--et-theme-color-primary-solid, currentColor);
     }
 
-    /* checkmark: a rotated border L — offsets center the rotated ink in the 12px padding box */
     [data-selected] > .et-cascader-check::after {
       inset-inline-start: 4px;
       inset-block-start: 1px;
@@ -318,7 +294,6 @@
       opacity: 1;
     }
 
-    /* indeterminate: a centered dash */
     [data-indeterminate] > .et-cascader-check::after {
       inset-inline-start: 2px;
       inset-block-start: 5px;
@@ -333,7 +308,6 @@
       inline-size: 12px;
       block-size: 12px;
       color: var(--et-surface-color-muted-solid, currentColor);
-      /* chevron points up natively — rotate to point into the next column */
       rotate: 90deg;
     }
 
@@ -350,13 +324,10 @@
       &.et-cascader-state--error {
         flex-direction: column;
         gap: 8px;
-        /* matches the select/menu error text size */
         font-size: 12px;
       }
     }
 
-    /* the loading row is laid out from the first frame, and only becomes visible once the wait is
-       worth reporting (see the template) - fading it in place keeps the column's height fixed */
     .et-cascader-state-content {
       display: flex;
       align-items: center;
@@ -375,8 +346,6 @@
       }
     }
 
-    /* only the message is error-inked (the error theme scope sits on it) — the Retry button
-       keeps the ambient color scope so it reads as an action instead of more error text */
     .et-cascader-state-error-message {
       color: var(--et-theme-color-primary-solid, rgb(248 113 113));
     }
@@ -396,7 +365,6 @@
     }
   }
 
-  /* desktop: a drilled-in column fades in sliding with the panel's outward growth */
   @keyframes et-cascader-column-grow-in {
     from {
       opacity: 0;

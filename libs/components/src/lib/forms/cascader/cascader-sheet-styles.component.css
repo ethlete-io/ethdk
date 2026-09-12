@@ -1,8 +1,5 @@
 @layer components {
-  /* below the md breakpoint the cascader mounts as a bottom sheet: the panel becomes the
-     full-width sheet surface (drops its floating-card chrome) and draws its own drag handle */
   .et-overlay.et-cascader-sheet {
-    /* comfortable touch targets — the token inherits into the panel content */
     --et-cascader-node-height: 52px;
 
     border-radius: 16px 16px 0 0;
@@ -18,14 +15,12 @@
       display: none;
     }
 
-    /* roomier, more tappable rows on mobile */
     .et-cascader-node,
     .et-cascader-search-option {
       font-size: 16px;
       padding-inline: 14px;
     }
 
-    /* aligned with the sheet header's content inset (20px), not the 6px desktop-card padding */
     .et-cascader-search {
       padding-inline: 20px;
     }
@@ -62,9 +57,6 @@
   }
 
   .et-cascader-panel {
-    /* persistent nav bar: fixed height, always present — nothing here animates its layout, so
-       the column list never reflows. Matches the option rows (same height; the Back chevron —
-       text button has no padding — lines up with the option label inset). */
     .et-cascader-sheet-header {
       position: relative;
       display: flex;
@@ -78,9 +70,6 @@
       border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     }
 
-    /* Back is an absolute overlay at the leading edge — it never affects the title's layout, so
-       the title's shift is a pure transform (below) instead of a flex reflow that jumps. It just
-       fades + slides in when there is a level to return to. */
     .et-cascader-back {
       position: absolute;
       inset-block: 0;
@@ -99,7 +88,6 @@
     }
 
     .et-cascader-back-icon {
-      /* chevron points up natively — rotate counter-clockwise to point left ("back") */
       rotate: -90deg;
     }
 
@@ -140,9 +128,8 @@
       color: var(--et-surface-color-solid, currentColor);
     }
 
-    /* 'slide' (deeper level changes, Back bar stable): directional cross-slide. Direction comes
-       from the persistent slot, so the leaving title (kept mounted by animate.leave, still a
-       child of the slot) reads the current travel direction too. */
+    /* Direction comes from the persistent slot, so the leaving title (kept mounted by
+       animate.leave, still a child of the slot) reads the current travel direction too. */
     .et-cascader-sheet-title-slot[data-anim='slide'][data-nav='forward'] .et-cascader-sheet-title--enter {
       animation: et-cascader-title-enter-forward 200ms ease;
     }
@@ -159,8 +146,6 @@
       animation: et-cascader-title-leave-backward 180ms ease forwards;
     }
 
-    /* 'fade' (root boundary, Back bar appears/disappears): the title already shifts horizontally
-       as the Back bar's width animates, so just crossfade — no competing transform slide */
     .et-cascader-sheet-title-slot[data-anim='fade'] .et-cascader-sheet-title--enter {
       animation: et-cascader-title-fade-in 180ms ease;
     }
@@ -177,7 +162,6 @@
       block-size: min(60vh, 480px);
     }
 
-    /* sheet: the result list fills the fixed-height body like a drilled column */
     .et-cascader-sheet-body .et-cascader-results-wrapper,
     .et-cascader-sheet-columns-wrapper {
       position: relative;
@@ -204,8 +188,6 @@
     }
   }
 
-  /* header title cross-slide on a level change: new comes from the travel direction, old
-     leaves the opposite way (forward = advance left; backward = retreat right) */
   @keyframes et-cascader-title-enter-forward {
     from {
       opacity: 0;
@@ -234,8 +216,6 @@
     }
   }
 
-  /* root-boundary title change: crossfade only (the horizontal shift comes from the Back bar's
-     width animation, which slides the title's slot) */
   @keyframes et-cascader-title-fade-in {
     from {
       opacity: 0;

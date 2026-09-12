@@ -8,7 +8,6 @@ import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
 import { CASCADER_IMPORTS } from '../cascader.imports';
 import { CascaderDataSource, CascaderNode } from './internals/cascader-tree';
 
-// competition → stage → tournament, three levels, synchronous
 const TREE: Record<string, CascaderNode<string>[]> = {
   __root__: [
     { value: 'euro', label: 'Euro' },
@@ -31,7 +30,6 @@ const syncSource: CascaderDataSource<string> = {
   loadChildren: (parent) => TREE[parent ? parent.value : '__root__'] ?? [],
 };
 
-// flat search over the static tree: a depth-first walk collecting every matching path
 const searchTree = (query: string): CascaderNode<string>[][] => {
   const results: CascaderNode<string>[][] = [];
   const needle = query.toLowerCase();
@@ -58,7 +56,6 @@ const searchableSource: CascaderDataSource<string> = {
   search: (query) => searchTree(query),
 };
 
-// a generated six-level hierarchy, deeper than the default column window
 const DEEP_LEVEL_NAMES = ['Region', 'Country', 'League', 'Club', 'Team', 'Player'];
 
 const deepSource: CascaderDataSource<string> = {
@@ -147,7 +144,6 @@ describe('CascaderDirective', () => {
       'World Cup',
       'Empty competition',
     ]);
-    // branch nodes advertise their expandability
     expect(driver.nodesIn(0)[0]!.getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -158,7 +154,6 @@ describe('CascaderDirective', () => {
     expect(driver.columns().length).toBe(2);
     expect(driver.nodesIn(1).map((node) => node.textContent?.trim())).toEqual(['Group stage', 'Knockout']);
     expect(driver.nodeByLabel('Euro')!.getAttribute('aria-expanded')).toBe('true');
-    // a branch click does not commit in leaf mode
     expect(driver.host.value()).toBeNull();
   });
 
@@ -190,7 +185,6 @@ describe('CascaderDirective', () => {
     driver.clickNode('Group stage');
     expect(driver.columns().length).toBe(3);
 
-    // drilling a different root branch collapses back to two columns
     driver.clickNode('World Cup');
 
     expect(driver.columns().length).toBe(2);
@@ -220,11 +214,9 @@ describe('CascaderDirective', () => {
     driver.host.dataSource.set(outOfOrderSource);
     driver.detectChanges();
 
-    // re-opening onto the committed branch starts all three levels at once
     await driver.open();
     await flushFrames();
 
-    // the deepest level answers first, the root last
     await settle('euro-group');
     await settle('euro');
     await settle('__root__');
@@ -277,7 +269,6 @@ describe('CascaderDirective', () => {
     driver.pressOnNode('Euro', 'ArrowUp');
     expect(driver.cascader.focusedNode()?.value).toBe('euro');
 
-    // ArrowRight drills into the focused branch
     driver.pressOnNode('Euro', 'ArrowRight');
     await flushFrames();
     expect(driver.columns().length).toBe(2);
@@ -328,7 +319,6 @@ describe('CascaderDirective', () => {
 
       expect(driver.host.value()).toEqual(['euro-group-a', 'euro-group-b']);
 
-      // a second activation of a selected node deselects it
       driver.clickNode('Group A');
 
       expect(driver.host.value()).toEqual(['euro-group-b']);
@@ -346,7 +336,6 @@ describe('CascaderDirective', () => {
       expect(driver.nodeByLabel('Euro')!.hasAttribute('data-selected')).toBe(false);
       expect(driver.nodeByLabel('World Cup')!.hasAttribute('data-indeterminate')).toBe(false);
 
-      // deselecting removes the ancestors' dash again
       driver.clickNode('Group A');
 
       expect(driver.nodeByLabel('Group stage')!.hasAttribute('data-indeterminate')).toBe(false);
@@ -360,18 +349,14 @@ describe('CascaderDirective', () => {
       driver.clickNode('Group A');
       driver.clickNode('Group B');
 
-      // every leaf under "Group stage" is checked - full check, not the dash
       expect(driver.nodeByLabel('Group stage')!.getAttribute('data-selected')).toBe('true');
       expect(driver.nodeByLabel('Group stage')!.hasAttribute('data-indeterminate')).toBe(false);
 
-      // "Euro" also holds the (unselected) "Knockout" branch - still just indeterminate
       expect(driver.nodeByLabel('Euro')!.getAttribute('data-indeterminate')).toBe('true');
       expect(driver.nodeByLabel('Euro')!.hasAttribute('data-selected')).toBe(false);
 
-      // the promotion is display-only - the value stays the exact leaves
       expect(driver.host.value()).toEqual(['euro-group-a', 'euro-group-b']);
 
-      // unchecking a leaf drops the ancestor back to the dash
       driver.clickNode('Group A');
 
       expect(driver.nodeByLabel('Group stage')!.hasAttribute('data-selected')).toBe(false);
@@ -386,8 +371,6 @@ describe('CascaderDirective', () => {
       expect(driver.nodeByLabel('World Cup')!.getAttribute('data-selected')).toBe('true');
       expect(driver.nodeByLabel('World Cup')!.hasAttribute('data-indeterminate')).toBe(false);
 
-      // drilling into another branch truncates the columns, but the loaded child lists are
-      // remembered - "World Cup" must not fall back to indeterminate
       driver.clickNode('Euro');
 
       expect(driver.nodeByLabel('World Cup')!.getAttribute('data-selected')).toBe('true');
@@ -464,7 +447,6 @@ describe('CascaderDirective', () => {
 
       await driver.type('group');
 
-      // result 0 is the "Group stage" branch (re-roots in leaf mode) - toggle the "Group A" leaf
       const leafOption = driver.results().find((option) => option.textContent!.includes('Group A'))!;
 
       driver.click(leafOption);
@@ -507,7 +489,6 @@ describe('CascaderDirective', () => {
       expect(driver.columns().length).toBe(0);
       expect(driver.results().length).toBe(1);
       expect(driver.results()[0]!.textContent?.replace(/\s+/g, ' ').trim()).toBe('Euro / Group stage / Group A');
-      // the panel reports itself as the listbox owning the options
       expect(driver.panel()?.getAttribute('role')).toBe('listbox');
 
       await driver.type('');
@@ -536,7 +517,6 @@ describe('CascaderDirective', () => {
       expect(driver.host.value()).toBeNull();
       expect(driver.cascader.open()).toBe(true);
       expect(driver.cascader.searchQuery()).toBe('');
-      // root, Euro's children, Knockout's (empty) children
       expect(driver.columns().length).toBe(3);
       expect(driver.nodeByLabel('Knockout')!.getAttribute('aria-expanded')).toBe('true');
     });
@@ -650,11 +630,9 @@ describe('CascaderDirective', () => {
     it('collapses older levels into breadcrumbs once the drill exceeds the window', async () => {
       driver.drillTo(['Region 1', 'Country 1', 'League 1']);
 
-      // four levels are drilled - all stay mounted on the track, the root slides offstage
       expect(driver.cascader.columns().length).toBe(4);
       expect(driver.columns().length).toBe(4);
       expect(driver.cascader.visibleColumnStart()).toBe(1);
-      // the row shows the FULL drilled trail, not just the levels hidden on the left
       expect(driver.crumbLabels()).toEqual(['Region 1', 'Country 1', 'League 1']);
       expect([offstage(0), offstage(1), offstage(2), offstage(3)]).toEqual([true, false, false, false]);
       expect(trackStyle()).toContain('--_et-cascader-column-window-start: 1');
@@ -667,10 +645,8 @@ describe('CascaderDirective', () => {
 
       expect(driver.cascader.columns().length).toBe(4);
       expect(driver.cascader.visibleColumnStart()).toBe(0);
-      // the crumb row mirrors the drill, not the window - sliding back must not rebuild it
       expect(driver.crumbLabels()).toEqual(['Region 1', 'Country 1', 'League 1']);
       expect(driver.cascader.focusedNode()?.label).toBe('Region 1');
-      // the deepest column slid offstage instead of being truncated
       expect([offstage(0), offstage(3)]).toEqual([false, true]);
       expect(trackStyle()).toContain('--_et-cascader-column-window-start: 0');
     });
@@ -679,7 +655,6 @@ describe('CascaderDirective', () => {
       driver.drillTo(['Region 1', 'Country 1', 'League 1']);
       driver.clickCrumb(0);
 
-      // League 1 is still expanded - activating it reveals its children instead of reloading
       driver.clickNode('League 1');
 
       expect(driver.cascader.columns().length).toBe(4);
@@ -691,7 +666,6 @@ describe('CascaderDirective', () => {
     it('slides the window when ArrowLeft moves focus past its edge', async () => {
       driver.drillTo(['Region 1', 'Country 1', 'League 1']);
 
-      // Country 1 sits in the leftmost visible column - ArrowLeft targets the collapsed root
       driver.pressOnNode('Country 1', 'ArrowLeft');
 
       expect(driver.cascader.focusedNode()?.label).toBe('Region 1');
@@ -708,7 +682,6 @@ describe('CascaderDirective', () => {
 
       expect(driver.cascader.columns().length).toBe(2);
       expect(driver.cascader.visibleColumnStart()).toBe(0);
-      // the drill changed - now the crumb row updates (and empties, everything fits again)
       expect(driver.crumbs().length).toBe(0);
       expect([offstage(0), offstage(1)]).toEqual([false, false]);
     });
@@ -716,7 +689,6 @@ describe('CascaderDirective', () => {
     it('keeps every crumb clickable - each anchors the window at its own column', async () => {
       driver.drillTo(['Region 1', 'Country 1', 'League 1', 'Club 1', 'Team 1']);
 
-      // six columns: the row lists the whole drilled trail and never rebuilds on slides
       expect(driver.crumbLabels()).toEqual(['Region 1', 'Country 1', 'League 1', 'Club 1', 'Team 1']);
 
       driver.clickCrumb(0);
@@ -725,7 +697,6 @@ describe('CascaderDirective', () => {
       driver.clickCrumb(2);
       expect(driver.cascader.visibleColumnStart()).toBe(2);
 
-      // the deepest crumbs clamp to the deep end of the window
       driver.clickCrumb(4);
       expect(driver.cascader.visibleColumnStart()).toBe(3);
       expect(driver.cascader.focusedNode()?.label).toBe('Team 1');
@@ -733,7 +704,6 @@ describe('CascaderDirective', () => {
       driver.clickCrumb(1);
       expect(driver.cascader.visibleColumnStart()).toBe(1);
       expect(driver.cascader.focusedNode()?.label).toBe('Country 1');
-      // the drill never changed, so neither did the crumbs
       expect(driver.cascader.columns().length).toBe(6);
       expect(driver.crumbLabels()).toEqual(['Region 1', 'Country 1', 'League 1', 'Club 1', 'Team 1']);
     });
@@ -775,7 +745,6 @@ describe('CascaderDirective', () => {
     driver.detectChanges();
 
     await driver.open();
-    // the column shows a loading state until the promise resolves
     await flushFrames();
     await Promise.resolve();
     tick();
@@ -826,13 +795,11 @@ describe('CascaderDirective', () => {
 
       expect(driver.cascader.displayValue()).toBe('Mixed');
       expect(driver.trigger().textContent).toContain('Mixed');
-      // the raw value and its chain survive masking untouched
       expect(driver.host.value()).toBe('euro-group-a');
       expect(driver.cascader.pathValue()).toEqual(['euro', 'euro-group', 'euro-group-a']);
 
       await driver.open();
 
-      // the hidden branch is not re-opened, and nothing reports selected
       expect(driver.columns().length).toBe(1);
       expect(driver.nodeByLabel('Euro')!.getAttribute('aria-selected')).toBe('false');
       expect(driver.paneEls('[data-selected]').length).toBe(0);
@@ -857,7 +824,6 @@ describe('CascaderDirective', () => {
       expect(driver.nodeByLabel('Group stage')!.hasAttribute('data-indeterminate')).toBe(false);
       expect(driver.nodeByLabel('Euro')!.hasAttribute('data-indeterminate')).toBe(false);
       expect(driver.cascader.displayValue()).toBe('Mixed');
-      // masking is presentation only - the raw array is preserved
       expect(driver.host.value()).toEqual(['euro-group-a']);
     });
 
@@ -870,15 +836,12 @@ describe('CascaderDirective', () => {
       await driver.open();
       driver.clickNode('Euro');
       driver.clickNode('Group stage');
-      // "Group A" is part of the hidden raw selection - the first commit must still SELECT it
-      // into a fresh array, never toggle it away against the hidden value
       driver.clickNode('Group A');
 
       expect(driver.host.value()).toEqual(['euro-group-a']);
       expect(driver.host.mixed()).toBe(false);
       expect(driver.nodeByLabel('Group A')!.getAttribute('data-selected')).toBe('true');
 
-      // later commits behave normally again
       driver.clickNode('Group B');
 
       expect(driver.host.value()).toEqual(['euro-group-a', 'euro-group-b']);
@@ -898,7 +861,6 @@ describe('CascaderDirective', () => {
       expect(driver.results().length).toBe(1);
       expect(driver.host.mixed()).toBe(true);
 
-      // deleting the query (keyboard erase) never mass-clears the hidden value
       await driver.type('');
 
       expect(driver.host.mixed()).toBe(true);
@@ -920,7 +882,6 @@ const setupContract = (multiple: boolean) => {
   driver.host.multiple.set(multiple);
   driver.detectChanges();
 
-  // a real pointer commit: open the panel, drill Euro → Group stage, pick the "Group A" leaf
   const commitGroupA = async () => {
     await driver.open();
     driver.drillTo(['Euro', 'Group stage', 'Group A']);
@@ -995,8 +956,6 @@ describe('CascaderDirective (multiple, mixed contract)', () => {
       },
       mixedLabel: () => 'Mixed',
       mixedDisplayText: () => driver.valueText() ?? '',
-      // "Group A" is inside the hidden raw array - replace semantics must still yield a fresh
-      // one-entry array instead of toggling it away
       commit: commitGroupA,
       committedValue: () => ['euro-group-a'],
       assertMasked: () => {

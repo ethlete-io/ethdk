@@ -48,8 +48,6 @@ export class CascaderSearchOptionDirective<T = unknown> {
   protected focused = computed(() => this.cascader?.focusedSearchIndex() === this.index());
 
   constructor() {
-    // pull DOM focus along with roving focus while the user is navigating inside the panel -
-    // mirrors the node directive (results live in the same focus model)
     effect(() => {
       if (this.focused() && this.cascader?.focusInside()) {
         this.elementRef.nativeElement.focus({ preventScroll: true });

@@ -11,10 +11,6 @@ import {
 import { Observable, defer, filter, finalize, map, switchMap, take, timer } from 'rxjs';
 import { CascaderDataSource, CascaderNode } from './headless';
 
-// Note: `@ethlete/components` intentionally depends on `@ethlete/query` (the legacy `cdk` does too),
-// so this query-aware convenience factory can live here. It is a standalone function in its own
-// module - cascaders that don't use it (and apps not using `@ethlete/query`) tree-shake it away.
-
 /** The optional flat-search half of {@link cascaderFromQuery} - providing it enables the panel's search input. */
 export type CascaderFromQuerySearchConfig<TSearchCreator extends AnyQueryCreator, TValue> = {
   /** The query creator behind the flat search (e.g. a backend search endpoint). */
@@ -66,10 +62,7 @@ const firstErrorMessage = (error: QueryErrorResponse) => {
 
 /**
  * Builds a `CascaderDataSource` whose levels (and, optionally, flat search) are fed by
- * `@ethlete/query` queries. Mirroring `createQueryStack`, each level load creates its own query -
- * the cascader loads several levels concurrently (e.g. re-opening onto a committed branch), so one
- * reactive query can't serve them; the client's dedup and caching still coalesce repeated loads.
- * A failed load surfaces as the column's error row (with Retry); the error text comes from
+ * `@ethlete/query` queries. A failed load surfaces as the column's error row (with Retry); the error text comes from
  * `toErrorMessage` and is shown verbatim by `et-cascader`'s default `toErrorMessage`.
  *
  * ```ts
@@ -98,9 +91,6 @@ export const cascaderFromQuery = <
   const injector = inject(Injector);
   const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
 
-  // one query per load, the query-stack pattern: created with static args (auto-executes), read
-  // until the execution settles, then destroyed. Unsubscribing early (a collapsed column, a newer
-  // search) destroys it mid-flight.
   const runQuery = <TRunCreator extends AnyQueryCreator, TResult>(options: {
     creator: TRunCreator;
     requestArgs: RequestArgs<QueryArgsOf<TRunCreator>>;

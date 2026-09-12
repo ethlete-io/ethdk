@@ -39,10 +39,8 @@ import { CascaderDirective } from './headless';
   host: {
     class: 'et-cascader-panel',
     // a "columnar tree": each level is a sibling `role="group"` related by `aria-level`, not by
-    // `aria-owns` back to its parent node. This is a deliberate deviation from a strict single-root
-    // tree - the column layout is the whole point - and node keyboard nav bridges the levels.
-    // While a flat search is active the columns are replaced by a flat result list, so the panel
-    // reports itself as the listbox owning those options instead.
+    // `aria-owns` back to its parent node - a deliberate deviation from a strict single-root tree,
+    // with node keyboard nav bridging the levels
     '[attr.role]': 'role()',
     '[attr.aria-multiselectable]': 'multiselectable()',
     '[attr.data-sheet]': 'isSheet() || null',
@@ -85,12 +83,8 @@ export class CascaderPanelComponent {
       this.styleManager.mount(CascaderBreadcrumbStylesComponent);
     });
 
-    // this panel IS the overlay's own surface - paint the overlay's registered elevation exactly,
-    // don't stack a level above it (the tracker is authoritative; content inside elevates off it)
     inject(AutoSurfaceDirective).matchOverlaySurface();
 
-    // give the tree a stable id and hand it to the cascader so the trigger's `aria-controls`
-    // resolves to a real element (the overlay pane itself is never assigned an id)
     const element = this.hostRef.nativeElement;
 
     if (!element.id) {
@@ -105,9 +99,8 @@ export class CascaderPanelComponent {
       }
     });
 
-    // Desktop (anchored) presentation animates width too - columns drilling in/out and the
-    // search-mode swap grow/shrink the panel instead of jumping. The sheet is viewport-wide,
-    // so its width must keep following the pane (animating it would feed back into itself).
+    // the sheet is viewport-wide, so its width must keep following the pane - animating it would
+    // feed back into itself
     injectOverlaySurfaceContext({
       panelBody: this.panelBody,
       resizingClass: 'et-cascader-panel--resizing',

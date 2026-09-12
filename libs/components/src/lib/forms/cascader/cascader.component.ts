@@ -97,13 +97,10 @@ export class CascaderComponent {
   /** Placeholder of the panel's search input (shown when the data source has a `search` hook). */
   public searchPlaceholder = input<string | null>(null);
 
-  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  /** The string in effect: this instance's `backLabel`, else the domain's label set. */
   protected resolvedBackLabel = computed(() => this.backLabel() ?? this.cascaderLabels().back);
 
-  /** The string in effect: this instance's `searchPlaceholder`, else the domain's label set. */
   protected resolvedSearchPlaceholder = computed(() => this.searchPlaceholder() ?? this.cascaderLabels().search);
 
   protected showClear = computed(
@@ -117,14 +114,8 @@ export class CascaderComponent {
 
   private columnLoading = computed(() => this.cascader.columns().some((column) => column.status === 'loading'));
 
-  /**
-   * A level's own spinner arrives late, while the state row it sits in is there from the first frame:
-   * a data source that answers in a few dozen milliseconds fills a blank column instead of trading a
-   * spinner for its nodes. One flag covers every column - only the level being drilled into loads.
-   */
   protected showColumnSpinner = signalDeferredLoading(this.columnLoading);
 
-  /** Same treatment for the search results, which replace the columns while a query is in flight. */
   protected showSearchSpinner = signalDeferredLoading(() => this.cascader.searchState().status === 'loading');
 
   constructor() {
@@ -149,17 +140,12 @@ export class CascaderComponent {
     return path[path.length - 1]?.disabled ?? false;
   }
 
-  /**
-   * Whether a column sits outside the browse window. It stays mounted (the carousel track
-   * slides it out of the clipped viewport) but must not contribute its height to the panel.
-   */
   protected isColumnOffstage(columnIndex: number) {
     const start = this.cascader.visibleColumnStart();
 
     return columnIndex < start || columnIndex >= start + this.cascader.maxVisibleColumns();
   }
 
-  /** Whether a breadcrumb's column is currently inside the window (its level is on screen). */
   protected isCrumbCurrent(columnIndex: number) {
     return !this.isColumnOffstage(columnIndex);
   }

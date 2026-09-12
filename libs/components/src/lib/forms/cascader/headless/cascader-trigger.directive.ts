@@ -35,8 +35,8 @@ export class CascaderTriggerDirective {
   public readonly id: string;
   public readonly isNativeButton: boolean;
 
-  // point at the tree panel's own stable id (the overlay runtime never ids the pane element, so
-  // reading `paneElement.id` yielded an empty `aria-controls` the whole time the panel was open)
+  // the overlay runtime never ids the pane element, so `aria-controls` has to point at the tree
+  // panel's own stable id
   protected controlledId = computed(() => (this.cascader?.open() ? this.cascader.panelId() : null));
 
   constructor() {
@@ -99,7 +99,6 @@ export class CascaderTriggerDirective {
         return;
       }
       case 'Escape': {
-        // handled by the overlay runtime while open
         return;
       }
     }

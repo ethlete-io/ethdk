@@ -1,7 +1,5 @@
 @layer components {
   et-cascader {
-    /* a flex row, not a block: without a form field to hand them to, the control's own suffix
-       affordances render at the end of the host rather than in the field's suffix slot */
     display: flex;
     align-items: center;
     gap: 4px;
@@ -23,7 +21,6 @@
       cursor: not-allowed;
     }
 
-    /* the panel cannot open while readonly - a pointer would promise a menu that never appears */
     &[data-readonly] .et-cascader-trigger {
       cursor: default;
     }
@@ -41,8 +38,6 @@
       }
     }
 
-    /* an unresolved bulk-edit selection reads as provisional — between a committed value
-       (full strength) and the placeholder (46%). Consumers restyle via [data-mixed]. */
     &[data-mixed] .et-cascader-value {
       font-style: italic;
       color: color-mix(in srgb, currentColor 72%, transparent);
@@ -50,10 +45,8 @@
   }
 
   /* outside the `et-cascader` block on purpose: the chevron renders in the form field's suffix slot,
-     which is not a descendant of the host. Only its direction is cascader-specific - the rest of the
-     button comes from the shared picker-trigger sheet. */
+     which is not a descendant of the host */
   .et-cascader-arrow .et-icon {
-    /* the registered chevron points up; the trigger shows it pointing down */
     rotate: 180deg;
   }
 }
