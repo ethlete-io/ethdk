@@ -33,6 +33,8 @@
     display: block;
     overflow: clip;
     block-size: 0;
+    /* a custom element misses the UA `unicode-bidi: isolate` the HTML rendering rules give a `<div>` */
+    unicode-bidi: isolate;
   }
 
   .et-form-support-stack {
