@@ -209,7 +209,6 @@ describe('DropzoneDirective', () => {
       const requests = driver.query.httpTesting.match(UPLOAD_URL);
       expect(requests.length).toBe(2);
 
-      // resolve out of order - the value order must follow the entry order
       requests[1]!.flush({ uuid: 'uuid-b' });
       driver.tick();
       expect(driver.host.value()).toEqual(['uuid-b']);

@@ -4,13 +4,6 @@ import { FILE_ICON, IconDirective, provideIcons, ROTATE_RIGHT_ICON, TIMES_ICON }
 import { ProgressBarComponent } from '../../loader/progress-bar/progress-bar.component';
 import { DropzoneEntry, formatFileSize } from './headless/dropzone-entry';
 
-/**
- * One entry in a multiple-mode dropzone's file list - its own component so that the list rules and
- * the retry/remove icons travel with it. A dropzone that never turns `multiple` never creates one,
- * so neither reaches the document.
- *
- * @internal
- */
 @Component({
   selector: 'et-dropzone-item',
   templateUrl: './dropzone-item.component.html',

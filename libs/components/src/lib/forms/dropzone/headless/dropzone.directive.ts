@@ -100,7 +100,6 @@ export class DropzoneDirective<TValue = unknown>
   /** Emits when the upload of an entry succeeded (after the control value was updated). */
   public uploadSucceed = output<DropzoneEntry<TValue>>();
 
-  /** Emits when the upload of an entry failed. */
   public uploadFail = output<DropzoneEntry<TValue>>();
 
   /**
@@ -129,10 +128,6 @@ export class DropzoneDirective<TValue = unknown>
   /** The rejections of the most recent file selection. Reset by the next selection, removal or clear. */
   public lastRejections = this.internalLastRejections.asReadonly();
 
-  /**
-   * The file validation channel of the bound form field, if its schema uses the
-   * `dropzoneFiles()` rule. Provides the constraints and receives the rejections.
-   */
   private fileValidation = computed(() => {
     const state = this.signalFormField?.state();
 
@@ -142,7 +137,6 @@ export class DropzoneDirective<TValue = unknown>
   /** The `accept` constraint of the bound field's `dropzoneFiles()` rule. Empty accepts everything. */
   public accept = computed(() => this.fileValidation()?.constraints()?.accept ?? '');
 
-  /** Whether a files drag is currently hovering the dropzone. */
   public isDragOver = computed(() => this.dragDepth() > 0);
 
   public anyUploading = computed(() =>
@@ -423,7 +417,6 @@ export class DropzoneDirective<TValue = unknown>
     disposeDropzoneEntry(entry);
   }
 
-  /** The persisted value a dropped entry should have deleted server-side, or `null` for none. */
   private deletableValueOf(entry: DropzoneEntry<TValue>) {
     if (!isValueInControl(entry)) {
       return null;

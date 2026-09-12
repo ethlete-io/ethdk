@@ -124,7 +124,6 @@ describe('DropzoneComponent', () => {
 
     expect(driver.previewEl()).toBeTruthy();
     expect(driver.areaEl().getAttribute('data-has-preview')).toBe('true');
-    // the preview is an absolutely positioned overlay inside the area - the trigger keeps its box
     expect(driver.previewEl()!.parentElement).toBe(driver.areaEl());
     expect(driver.previewImage()).toBeTruthy();
     expect(driver.listEl()).toBe(null);
@@ -139,7 +138,6 @@ describe('DropzoneComponent', () => {
     expect(driver.itemEls().length).toBe(2);
     expect(driver.itemStatuses()).toEqual(['uploading', 'uploading']);
 
-    // no progress events flushed yet → indeterminate
     expect(driver.itemProgressBar(0)?.classList.contains('et-progress-bar--indeterminate')).toBe(true);
 
     const requests = driver.query.httpTesting.match(UPLOAD_URL);
@@ -176,7 +174,6 @@ describe('DropzoneComponent', () => {
     driver.tick();
 
     expect(driver.itemStatuses()).toEqual(['error']);
-    // the error message renders below the field, not inside the entry
     expect(driver.itemInternalErrors(0)).toBe(null);
     expect(driver.internalErrorsText()).toContain('a.png');
 

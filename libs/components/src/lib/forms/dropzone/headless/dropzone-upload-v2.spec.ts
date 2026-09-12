@@ -24,8 +24,8 @@ const mockError: RequestError = {
 
 const settle = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// each state change hops through the debounced query observable and the mock timer, so - like the
-// select v2 spec - flush twice: once for the query to reach the state signal, once for it to settle.
+// each state change hops through the debounced query observable and the mock timer, so flush
+// twice: once for the query to reach the state signal, once for it to settle.
 const flush = async () => {
   TestBed.tick();
   await settle();
@@ -102,7 +102,7 @@ describe('createV2DropzoneUpload', () => {
 
     it('re-prepares and succeeds on retry', async () => {
       // the mock object is captured in the frozen args - mutating it before re-execute lets the
-      // retry resolve differently, exactly like a flaky endpoint that succeeds the second time.
+      // retry resolve differently
       const mock: QueryMockConfig<UploadResponse> = { delay: 0, error: mockError };
       const handle = createHandle({ mock });
 
@@ -122,8 +122,6 @@ describe('createV2DropzoneUpload', () => {
     });
 
     it('reports upload progress while loading', async () => {
-      // interval-based mock: emits a progress event every `delay` ms (the first at 0%), then
-      // resolves after `eventCount` events. Sample partway through to catch a non-zero percentage.
       const handle = createHandle({
         mock: { delay: 10, progress: { eventCount: 6, fileSize: 100 } },
       });
@@ -154,7 +152,6 @@ describe('createV2DropzoneUpload', () => {
       await settle(30);
       TestBed.tick();
 
-      // the disposed query no longer feeds the handle - no late success leaks in
       expect(handle.value()).toBeNull();
     });
   });
@@ -217,11 +214,8 @@ describe('createV2DropzoneUpload', () => {
       injector = TestBed.inject(EnvironmentInjector);
     });
 
-    // `AnyLegacyQueryCreator` (a `createLegacyQueryCreator` interop wrapper) is accepted by the same
-    // config union as a genuine `V2QueryClient` creator. We only assert the config builds - executing
-    // an interop upload to teardown trips a re-entrant `LegacyQuery.destroy()` (NG0205), a known
-    // limitation of the legacy interop query itself, not of this adapter. Apps mid-migration should
-    // prefer a genuine v2 creator; the select v2 adapter carries the same caveat.
+    // only assert the config builds - executing an interop upload to teardown trips a re-entrant
+    // `LegacyQuery.destroy()` (NG0205), a known limitation of the legacy interop query itself.
     it('accepts a legacy interop creator', () => {
       const uploadMedia = createLegacyQueryCreator({
         creator: setup.createPost<{ response: UploadResponse; body: FormData }>('/upload'),
@@ -235,7 +229,6 @@ describe('createV2DropzoneUpload', () => {
       expect(typeof upload.createUploadHandle).toBe('function');
       expect(typeof upload.selectValue).toBe('function');
 
-      // build a handle (no execute → no interop query is prepared, so no teardown re-entrancy)
       const handle = upload.createUploadHandle({ file: createFile(), injector });
       expect(handle.state()).toBe('uploading');
     });
