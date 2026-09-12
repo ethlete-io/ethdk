@@ -87,6 +87,32 @@ import { de } from 'date-fns/locale';
 providers: [provideDateFormat('yyyy-MM-dd'), provideTimeFormat('HH:mm:ss'), provideDateLocale(de)];
 ```
 
+`DATE_FORMAT`, `TIME_FORMAT` and `DATE_LOCALE` are the tokens behind those three; read the
+value in effect with `injectDateFormat()`, `injectTimeFormat()` and `injectDateLocale()`.
+
+### The shared contract set {#shared-contract}
+
+All seven controls take the same form-field contract on top of their own options, so the
+per-control tables below list only what is specific to each:
+
+| Input                            | Type                                      | Default | Description                                                                                                                                          |
+| -------------------------------- | ----------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`                          | per control (see each section)            | `null`  | The wire value - `{ start: null, end: null }` on the three ranges. Two-way bindable, and what a `[formField]` binding drives.                        |
+| `mixed`                          | `boolean`                                 | `false` | [Bulk-edit](#bulk-editing) masking of the value. Two-way bindable; the raw value stays untouched.                                                    |
+| `mixedLabel`                     | `string \| null`                          | `null`  | Placeholder shown in place of the value while `mixed`; falls through to `FORM_FIELD_LABELS.mixed`.                                                   |
+| `touched`                        | `boolean`                                 | `false` | Two-way bindable. A parse error is only announced once this is set.                                                                                  |
+| `disabled` / `readonly`          | `boolean`                                 | `false` | Neither commits anything - tabbing through one leaves its value untouched.                                                                           |
+| `invalid` / `required`           | `boolean`                                 | `false` | Validity flags the field shell renders.                                                                                                              |
+| `errors`                         | `ValidationError.WithOptionalFieldTree[]` | `[]`    | Errors the field shell renders.                                                                                                                      |
+| `name`                           | `string`                                  | `''`    | Native `name` of the field(s).                                                                                                                       |
+| `placeholder`                    | `string`                                  | `''`    | Single-value controls only - the three ranges take `startPlaceholder` / `endPlaceholder` instead.                                                    |
+| `dialogLabel`                    | `string \| null`                          | `null`  | Accessible name of the picker dialog; falls through to `DATE_TIME_LABELS.chooseDate` and friends. Absent on the duration input, which has no picker. |
+| `clearLabel`                     | `string \| null`                          | `null`  | `aria-label` of the clear (×) button; falls through to `FORM_FIELD_LABELS.clear` (`'Clear'`).                                                        |
+| `aria-label` / `aria-labelledby` | `string \| null`                          | `null`  | Name the control where no `et-label` is projected - see [accessibility](#accessibility).                                                             |
+
+Each model's change output comes with it: `valueChange`, `mixedChange`, `touchedChange`
+and - everywhere but the duration input - `pickerOpenChange`.
+
 ## Date input - `et-date-input` {#date-input}
 
 A date control combining typed entry with an anchored
@@ -100,6 +126,9 @@ A date control combining typed entry with an anchored
 ```
 
 <StoryEmbed id="components-forms-date-input--default" height="560px" />
+
+The value is a `string | null`. On `et-date-input` (forwarded from the headless
+`[etDateInput]` directive), on top of the [shared contract set](#shared-contract):
 
 | Input                 | Type                                         | Default             | Description                                                                  |
 | --------------------- | -------------------------------------------- | ------------------- | ---------------------------------------------------------------------------- |
@@ -119,10 +148,11 @@ A date control combining typed entry with an anchored
 | `clearable`           | `boolean`                                    | `true`              | Clear (×) button while the focused field has a value (label: `clearLabel`).  |
 | `mask`                | `boolean`                                    | `false`             | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.       |
 
-¹ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Open calendar'`, and the matching `openTimePicker` / `openDateTimePicker` for the other controls).
-² `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - `invalidDate` here, and the matching `invalidTime` / `invalidDateTime` / `invalidDateRange` / `invalidDateTimeRange` / `invalidDuration` for the other controls.
-³ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Date'` / `'Time'`, and `'Dates'` / `'Start time'` / `'End time'` on the range picker).
+¹ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Open calendar'`, and the matching `openTimePicker` / `openDateTimePicker` for the other controls), which `provideDateTimeLabels({ … })` overrides for a whole subtree.
+² `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - `invalidDate` here, and the matching `invalidTime` / `invalidDateTime` / `invalidDateRange` / `invalidTimeRange` / `invalidDateTimeRange` / `invalidDuration` for the other controls.
+³ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - the range fields' `startDate`/`endDate` (`'Start date'` / `'End date'`), `startTime`/`endTime`, `startDateTime`/`endDateTime`, and the bottom sheet's `dateTab`/`timeTab` (`'Date'` / `'Time'`) and `datesTab`/`timesTab` (`'Dates'` / `'Times'`).
 ⁴ `null` derives the format from `precision`: the locale's short date (`'P'`) at day precision, that same pattern without its day at month precision, `'yyyy'` at year precision.
+⁵ `null` falls through to [`TIME_PICKER_LABELS`](/components/localization) (`'Start time'` / `'End time'`). These name the [time picker's own side switch](/components/time-picker#range-picker), not the control's two fields - that is what `startAriaLabel`/`endAriaLabel` do.
 
 Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Picking
 a day writes `format(date, valueFormat)` and closes the picker (a named
@@ -230,17 +260,35 @@ commits exactly like the single date input.
 </et-form-field>
 ```
 
-Options mirror the date input (`valueFormat`, `displayFormat`, `locale`, `mask`,
-`minDate`/`maxDate`/`dateFilter`, `startAt`, `startView`, `dateClass`, `precision`,
-`weekNumbers`, `pickerOpen`), plus `comparisonStart`/`comparisonEnd` for the picker's
-[comparison band](/components/calendar#comparison-ranges) and `rangeSelectionStrategy`
-for [snapping picks](/components/calendar#range-selection-strategies), with
-`startPlaceholder`/`endPlaceholder` and per-field `startAriaLabel`/`endAriaLabel`
-(defaults `'Start date'`/`'End date'`; the host is a `role="group"` labelled by
-the field label). The opt-in typing mask applies to both fields - each side is
-its own mask host, so the guide only shows on the focused side. In the picker,
-the first click starts the range and a completed range closes it; a partial pick
-keeps it open. See the `Masked` story.
+On `et-date-range-input` (forwarded from the headless `[etDateRangeInput]` directive), on
+top of the [shared contract set](#shared-contract):
+
+| Input                                 | Type                                         | Default             | Description                                                                             |
+| ------------------------------------- | -------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------- |
+| `valueFormat`                         | `string`                                     | `DATE_FORMAT` token | date-fns format of both string values (token default: ISO 8601 with offset).            |
+| `displayFormat`                       | `string \| null`                             | `null` ⁴            | date-fns format shown in and parsed from both fields (locale-aware).                    |
+| `precision`                           | `'day' \| 'month' \| 'year'`                 | `'day'`             | [Which unit](#precision) both ends name - `'month'` makes this a month-range picker.    |
+| `weekNumbers`                         | `boolean`                                    | `false`             | Renders the picker calendar's week-number column.                                       |
+| `locale`                              | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Display/parse locale.                                                                   |
+| `minDate` / `maxDate`                 | `Date \| null`                               | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).            |
+| `dateFilter`                          | `((date: Date) => boolean) \| null`          | `null`              | Forwarded to the picker calendar.                                                       |
+| `startAt`                             | `Date \| null`                               | `null`              | Month the picker calendar opens at while the range is empty.                            |
+| `startView`                           | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the picker calendar opens on.                                                |
+| `dateClass`                           | `(date, view) => string \| string[] \| null` | `null`              | Per-cell classes for the picker calendar.                                               |
+| `rangeSelectionStrategy`              | `CalendarRangeSelectionStrategy \| null`     | `null`              | What a pick means - [snapping picks](/components/calendar#range-selection-strategies).  |
+| `comparisonStart` / `comparisonEnd`   | `Date \| null`                               | `null`              | The picker's [comparison band](/components/calendar#comparison-ranges). Presentational. |
+| `startPlaceholder` / `endPlaceholder` | `string`                                     | `''`                | Placeholders of the two fields.                                                         |
+| `startAriaLabel` / `endAriaLabel`     | `string \| null`                             | `null` ³            | `aria-label`s of the two fields (`'Start date'` / `'End date'`).                        |
+| `pickerOpen`                          | `boolean` (model)                            | `false`             | The picker overlay's open state.                                                        |
+| `pickerTriggerLabel`                  | `string \| null`                             | `null` ¹            | `aria-label` of the suffix calendar button.                                             |
+| `parseErrorMessage`                   | `string \| null`                             | `null` ²            | Message shown below the field when either side's text can't be parsed.                  |
+| `clearable`                           | `boolean`                                    | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).                       |
+| `mask`                                | `boolean`                                    | `false`             | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.                  |
+
+The host is a `role="group"` labelled by the field label. The opt-in typing mask applies
+to both fields - each side is its own mask host, so the guide only shows on the focused
+side. In the picker, the first click starts the range and a completed range closes it; a
+partial pick keeps it open. See the `Masked` story.
 
 **Validation:** child-path errors (e.g. `required(s.range.start)`) show in the
 field's single error area alongside errors on the range path itself:
@@ -266,6 +314,9 @@ with an anchored [time picker](/components/time-picker) overlay.
   <et-time-input [formField]="demoForm.time" />
 </et-form-field>
 ```
+
+The value is a `string | null`. On `et-time-input` (forwarded from the headless
+`[etTimeInput]` directive), on top of the [shared contract set](#shared-contract):
 
 | Input                       | Type                                | Default             | Description                                                                                 |
 | --------------------------- | ----------------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
@@ -317,6 +368,9 @@ daily window - instead of pairing two `et-time-input`s.
 
 <StoryEmbed id="components-forms-time-range-input--prefilled" height="560px" />
 
+On `et-time-range-input` (forwarded from the headless `[etTimeRangeInput]` directive), on
+top of the [shared contract set](#shared-contract):
+
 | Input                                 | Type                                                        | Default             | Description                                                            |
 | ------------------------------------- | ----------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------- |
 | `valueFormat`                         | `string`                                                    | `TIME_FORMAT` token | date-fns format of both string values (token default: `HH:mm`).        |
@@ -327,7 +381,7 @@ daily window - instead of pairing two `et-time-input`s.
 | `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the end being filled.               |
 | `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                        |
 | `startAriaLabel` / `endAriaLabel`     | `string \| null`                                            | `null` ³            | `aria-label`s of the two fields (`'Start time'` / `'End time'`).       |
-| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ³            | Names of the two ends on the picker's own side switch.                 |
+| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ends on the picker's own side switch.                 |
 | `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                       |
 | `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix clock button.                               |
 | `parseErrorMessage`                   | `string \| null`                                            | `null` ²            | Message shown below the field when either side's text can't be parsed. |
@@ -380,6 +434,9 @@ correct the day is never interrupted.
 
 <StoryEmbed id="components-forms-date-time-input--default" height="560px" />
 
+The value is a `string | null`. On `et-date-time-input` (forwarded from the headless
+`[etDateTimeInput]` directive), on top of the [shared contract set](#shared-contract):
+
 | Input                           | Type                                         | Default             | Description                                                                                 |
 | ------------------------------- | -------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
 | `valueFormat`                   | `string`                                     | `DATE_FORMAT` token | date-fns format of the string value (token default: ISO 8601 with offset).                  |
@@ -392,6 +449,7 @@ correct the day is never interrupted.
 | `startAt`                       | `Date \| null`                               | `null`              | Month the picker calendar opens at while the value is empty.                                |
 | `startView`                     | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the picker calendar opens on.                                                    |
 | `dateClass`                     | `(date, view) => string \| string[] \| null` | `null`              | Per-cell classes for the picker calendar.                                                   |
+| `weekNumbers`                   | `boolean`                                    | `false`             | Renders the picker calendar's week-number column.                                           |
 | `minuteStep` / `secondStep`     | `number`                                     | `5` / `1`           | Forwarded to the time picker columns, clamped to at least 1.                                |
 | `minTime` / `maxTime`           | `Date \| null`                               | `null`              | Bound the time pane's time of day (see the time input).                                     |
 | `timeFilter`                    | `((date: Date) => boolean) \| null`          | `null`              | Rejects individual times; receives the full candidate timestamp.                            |
@@ -462,16 +520,37 @@ appointment - instead of pairing two `et-date-time-input`s.
 
 <StoryEmbed id="components-forms-date-time-range-input--prefilled" height="620px" />
 
-Options are the union of the two: everything the date range input forwards to the
-calendar (`minDate`/`maxDate`/`dateFilter`, `startAt`, `startView`, `dateClass`,
-`weekNumbers`) plus everything the date-time input forwards to a time picker
-(`minuteStep`, `secondStep`, `minTime`, `maxTime`, `timeFilter`) plus
-`timeZone`/`timeZoneLabel` (see [time zones](#value-time-zone) - one second reading
-covers both ends), with
-`startPlaceholder`/`endPlaceholder` and `startAriaLabel`/`endAriaLabel` (defaults
-`'Start date and time'`/`'End date and time'`; the host is a `role="group"`
-labelled by the field label). `precision` is absent, as on the single date-time
-input - both ends carry a time. It does **not** take the date range input's
+On `et-date-time-range-input` (forwarded from the headless `[etDateTimeRangeInput]`
+directive), on top of the [shared contract set](#shared-contract):
+
+| Input                                 | Type                                                        | Default             | Description                                                                           |
+| ------------------------------------- | ----------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------- |
+| `valueFormat`                         | `string`                                                    | `DATE_FORMAT` token | date-fns format of both string values (token default: ISO 8601 with offset).          |
+| `displayFormat`                       | `string`                                                    | `'Pp'`              | Combined date-fns format shown in and parsed from both fields (locale-aware).         |
+| `timeZone`                            | `string \| null`                                            | `null`              | IANA zone both fields' wall clock stands for - see [time zones](#value-time-zone).    |
+| `timeZoneLabel`                       | `string \| null`                                            | `null`              | Name shown for `timeZone`. Defaults to the IANA name's last segment.                  |
+| `locale`                              | `Locale \| null` (date-fns)                                 | `DATE_LOCALE` token | Display/parse locale (also decides the time picker's 12/24-hour layout).              |
+| `minDate` / `maxDate`                 | `Date \| null`                                              | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).          |
+| `dateFilter`                          | `((date: Date) => boolean) \| null`                         | `null`              | Forwarded to the picker calendar.                                                     |
+| `startAt`                             | `Date \| null`                                              | `null`              | Month the picker calendar opens at while the range is empty.                          |
+| `startView`                           | `'month' \| 'year' \| 'multiYear'`                          | `'month'`           | Which grid the picker calendar opens on.                                              |
+| `dateClass`                           | `(date, view) => string \| string[] \| null`                | `null`              | Per-cell classes for the picker calendar.                                             |
+| `weekNumbers`                         | `boolean`                                                   | `false`             | Renders the picker calendar's week-number column.                                     |
+| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the time picker columns, clamped to at least 1.                          |
+| `minTime` / `maxTime`                 | `Date \| null`                                              | `null`              | Bound the times pane's time of day, for both ends.                                    |
+| `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the full candidate timestamp and the end it fills. |
+| `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                                       |
+| `startAriaLabel` / `endAriaLabel`     | `string \| null`                                            | `null` ³            | `aria-label`s of the two fields (`'Start date and time'` / `'End date and time'`).    |
+| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ends on the time picker's own side switch.                           |
+| `datesTabLabel` / `timesTabLabel`     | `string \| null`                                            | `null` ³            | Labels of the pane tabs in the bottom sheet.                                          |
+| `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                                      |
+| `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix calendar button.                                           |
+| `parseErrorMessage`                   | `string \| null`                                            | `null` ²            | Message shown below the field when either side's text can't be parsed.                |
+| `clearable`                           | `boolean`                                                   | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).                     |
+| `mask`                                | `boolean`                                                   | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`.     |
+
+The host is a `role="group"` labelled by the field label. `precision` is absent, as on the
+single date-time input - both ends carry a time. It does **not** take the date range input's
 `rangeSelectionStrategy` or `comparisonStart`/`comparisonEnd`: week snapping and
 comparison bands belong to reporting filters, not to appointments.
 
@@ -492,8 +571,6 @@ Below the `md` breakpoint the picker opens as a bottom sheet with **Dates / Time
 tabs**; on the anchored panel the calendar and the time picker sit side by side.
 Completing the two days carries the tabs on to the times pane - **once**, so going
 back to correct them is never interrupted.
-`datesTabLabel`/`timesTabLabel` relabel the two tabs, and
-`startTimeLabel`/`endTimeLabel` the time picker's own start/end switch.
 
 Because two `Pp` values are long, give the field room - roughly twice a date
 range's width - or name a compact `displayFormat` such as `dd.MM.yy HH:mm`.
@@ -537,14 +614,14 @@ times, race durations, effort windows), so it stays out of the calendar/time
 </et-form-field>
 ```
 
+On `et-duration-input` (forwarded from the headless `[etDurationInput]` directive), on top
+of the [shared contract set](#shared-contract), minus the `dialogLabel` a picker would need:
+
 | Input               | Type             | Default   | Description                                                                                 |
 | ------------------- | ---------------- | --------- | ------------------------------------------------------------------------------------------- |
 | `durationFormat`    | `string`         | `'mm:ss'` | Segment layout - runs of `h`/`m`/`s`/`S` (millis) plus separators.                          |
-| `placeholder`       | `string`         | `''`      | Shown on the empty field.                                                                   |
 | `parseErrorMessage` | `string \| null` | `null` ²  | Message shown below the field when typed text can't be parsed.                              |
 | `clearable`         | `boolean`        | `true`    | Clear (×) button while the focused field has a value or pending text (label: `clearLabel`). |
-| `aria-label`        | `string \| null` | `null`    | Names the field when no `et-label` is projected.                                            |
-| `aria-labelledby`   | `string \| null` | `null`    | Ids naming the field. Takes precedence over a projected `et-label`.                         |
 
 The format is any arrangement of unit-token runs and separators: `mm:ss`,
 `hh:mm:ss`, `hh:mm:ss.SSS`, `h m`. Typed text commits on blur/Enter with a
@@ -561,6 +638,18 @@ and that's deliberate: its first segment is unbounded, so a fixed slot layout
 would block valid entries (`100:00`), and its lenient parse fills from the
 _smallest_ unit up (`130` → `01:30`) while a mask fills slots left-to-right
 (`130` → `13:0…`), silently changing what an established entry habit means.
+
+## Picker parts
+
+Every control mounts its picker out of the same exported pieces. The trigger
+(`button[etDatePickerTrigger]`) and the surface (`ng-template[etDatePickerSurface]`) take
+no inputs, and so do the four single-value field directives (`input[etDateInputField]`,
+`etTimeInputField`, `etDateTimeInputField`, `etDurationInputField`). The rest:
+
+| Directive / component                                                                              | Input         | Type               | Description                                                                                   |
+| -------------------------------------------------------------------------------------------------- | ------------- | ------------------ | --------------------------------------------------------------------------------------------- |
+| `input[etDateRangeInputField]`, `input[etTimeRangeInputField]`, `input[etDateTimeRangeInputField]` | `side`        | `'start' \| 'end'` | Required. Which end of the range this field edits.                                            |
+| `et-date-picker-panel`                                                                             | `dialogLabel` | `string \| null`   | Accessible name of the `role="dialog"` panel; falls through to `DATE_TIME_LABELS.chooseDate`. |
 
 ## Bulk editing
 
@@ -600,7 +689,19 @@ These controls render entirely through the [`et-form-field` shell](/components/f
 the [calendar](/components/calendar#theming) and the
 [time picker](/components/time-picker#theming) - see those guides for their
 tokens. All colors resolve through the app-registered
-[surface/color theme systems](/core/theming).
+[surface/color theme systems](/core/theming): the range shell, the picker panel and the
+time-zone reading read `--et-surface-background-solid`, `--et-surface-border-solid`,
+`--et-surface-color-solid`, `--et-surface-color-muted-solid`,
+`--et-surface-interaction-disabled-solid` and `--et-theme-color-primary-solid`. The sizing
+tokens this domain reads itself:
+
+| Token                              | Default                    | Purpose                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--et-range-input-stack-threshold` | `13em` / `11em` / `22em`   | The inline size a date / time / date-time range asks for, below which it [stacks](#shared-behavior) its two fields. A container query cannot read a custom property, so each host repeats the value as a literal in its own `@container` condition - overriding the token alone moves the requested width, not the stacking point. |
+| `--et-calendar-cell-size`          | `44px` in the bottom sheet | The [calendar](/components/calendar#theming) token, raised to touch size while the picker is a sheet (and what the sheet reserves six rows of, so its height never moves between views).                                                                                                                                           |
+| `--et-time-picker-option-size`     | `44px` in the bottom sheet | The [time picker](/components/time-picker#theming) token, raised the same way.                                                                                                                                                                                                                                                     |
+| `--et-form-field-hint-font-size`   | the form field's           | Size of the [time-zone](#value-time-zone) reading under a date-time field.                                                                                                                                                                                                                                                         |
+| `--et-overlay-anchored-x` / `-y`   | set by the runtime         | The anchored offset the panel's enter/leave transform is composed on top of - see [overlays](/components/overlays#anchored-overlays-and-the-arrow).                                                                                                                                                                                |
 
 ## Error codes
 

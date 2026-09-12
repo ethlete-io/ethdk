@@ -28,11 +28,13 @@ On `et-time-picker` (forwarded from the headless `[etTimePicker]` directive):
 | `max`        | `Date \| null`                      | `null`              | Latest selectable time, same reading.                                                                                    |
 | `timeFilter` | `((date: Date) => boolean) \| null` | `null`              | Return `false` to make a time unselectable. Receives the full candidate timestamp.                                       |
 
-| Model   | Type           | Description                                                                   |
-| ------- | -------------- | ----------------------------------------------------------------------------- |
-| `value` | `Date \| null` | The selected time of day, carried on a `Date`. `null` until a part is picked. |
+The four columns' `aria-label`s are inputs of their own - `hoursLabel`, `minutesLabel`, `secondsLabel` and `periodLabel`, all `string | null` and `null` by default, falling through to [`TIME_PICKER_LABELS`](/components/localization) (`'Hours'`, `'Minutes'`, `'Seconds'`, `'AM/PM'`), which `provideTimePickerLabels({ … })` overrides for a whole subtree.
 
-The component also takes `hoursLabel` / `minutesLabel` / `secondsLabel` / `periodLabel` for the columns' `aria-label`s; unset, they read [`TIME_PICKER_LABELS`](/components/localization).
+| Model   | Type           | Default | Description                                                                   |
+| ------- | -------------- | ------- | ----------------------------------------------------------------------------- |
+| `value` | `Date \| null` | `null`  | The selected time of day, carried on a `Date`. `null` until a part is picked. |
+
+[`mode`, `rangeValue`, `activeSide`, `startLabel`/`endLabel` and the `timeSelect` output](#range-picker) belong to range mode.
 
 The format decides the columns, not just their labels: `HH:mm` renders hour + minute columns, `HH:mm:ss` adds seconds, `h:mm a` switches to a 12-hour cycle with an AM/PM column. Localized tokens work too - `p` resolves per locale (12-hour in en-US, 24-hour in de).
 
@@ -105,6 +107,11 @@ Disabled options are skipped by all of these - arrows walk to the next selectabl
   }
 </div>
 ```
+
+| Directive              | Input    | Type               | Description                                   |
+| ---------------------- | -------- | ------------------ | --------------------------------------------- |
+| `[etTimePickerColumn]` | `column` | `TimePickerColumn` | Required. The column this element renders.    |
+| `[etTimePickerOption]` | `option` | `TimePickerOption` | Required. The option this element represents. |
 
 Each `TimePickerOption` carries `selected` / `focused` / `disabled` flags the option directive mirrors as `data-*` attributes for styling; the column keeps the focused option centered in its scrollport. In `range` mode it also carries `rangeStart` / `rangeEnd` / `band` (`data-range-start`, `data-range-end`, `data-band`), and `picker.sides()` gives you the two ends - name, formatted value, which is active - to build your own side switch out of.
 
