@@ -2,8 +2,7 @@ import { InjectionToken, Signal, TemplateRef, WritableSignal } from '@angular/co
 
 /**
  * The contract a control must fulfil to host the shared date picker pieces
- * (`etDatePickerTrigger`, `etDatePickerSurface`). Implemented by the date
- * input, the date range input, the time input and the date-time input.
+ * (`etDatePickerTrigger`, `etDatePickerSurface`).
  */
 export type DatePickerHost = {
   pickerOpen: Signal<boolean>;

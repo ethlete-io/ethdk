@@ -150,7 +150,6 @@ describe('TimeInputDirective', () => {
 
     pickOption('hour', 9);
 
-    // the hour alone is held by the picker - no minute nobody picked reaches the field
     expect(driver.host.value()).toBeNull();
     expect(driver.control.pickerOpen()).toBe(true);
 
@@ -250,7 +249,6 @@ describe('TimeInputDirective', () => {
       pickOption('minute', 30);
 
       expect(driver.host.mixed()).toBe(false);
-      // replace semantics: the hidden 14:20 does not leak into the picked time
       expect(driver.host.value()).toBe('09:30');
     });
   });
@@ -345,8 +343,6 @@ describe('TimeInputDirective with the opt-in typing mask', () => {
 
 describe('TimeInputDirective commit contract', () => {
   describePickerCommitContract(() => {
-    // a wire format carrying seconds against an HH:mm display is what makes an unedited blur
-    // observable: re-parsing "14:30" would write back a zeroed second
     const driver = mountDatePicker(TimeInputTestHost, TimeInputDirective);
 
     driver.host.valueFormat.set('HH:mm:ss');

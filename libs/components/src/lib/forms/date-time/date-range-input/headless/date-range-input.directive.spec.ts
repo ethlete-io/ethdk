@@ -345,9 +345,7 @@ describe('DateRangeInputDirective descendant (subfield) errors', () => {
     const formField = fixture.debugElement.children[0]!.injector.get(FormFieldDirective);
     const rangeInput = fixture.debugElement.children[0]!.children[1]!.injector.get(DateRangeInputDirective);
 
-    // the range field itself carries no own error - `required` targets the `start` subfield
     expect(rangeInput.errors()).toEqual([]);
-    // the form field's single error area still shows it, via the field's error summary
     expect(formField.errors().length).toBeGreaterThan(0);
   });
 });
@@ -377,7 +375,6 @@ describe('DateRangeInputDirective mixed state', () => {
       },
       mixedLabel: () => 'Mixed',
       mixedDisplayText: () => driver.field('.start').placeholder,
-      // replace semantics: the resolving commit starts a fresh range - no merge with the hidden end
       commit: () => driver.typeAndBlur('07/20/2026', '.start'),
       committedValue: () => ({ start: '2026-07-20', end: null }),
       assertMasked: () => {
@@ -487,13 +484,11 @@ describe('DateRangeInputDirective with the opt-in typing mask', () => {
     await focus(startField);
 
     expect(startField.value).toBe('__.__.____');
-    // the other side stays untouched - each field is its own mask host
     expect(endField.value).toBe('');
 
     await type(startField, '0807');
 
     expect(startField.value).toBe('08.07.____');
-    // masked typing must feed hasValue like native typing (the clear affordance depends on it)
     expect(rangeInput.inputText('start')).toBe('08.07.');
     expect(rangeInput.hasValue()).toBe(true);
 
@@ -519,7 +514,6 @@ describe('DateRangeInputDirective with the opt-in typing mask', () => {
     expect(host.value()).toEqual({ start: null, end: null });
     expect(rangeInput.endParseError()).toBe(true);
     expect(rangeInput.startParseError()).toBe(false);
-    // the kept text is the display-shaped entry, not `23.07.____`
     expect(rangeInput.inputText('end')).toBe('23.07.');
     expect(endField.value).toBe('23.07.');
   });
@@ -582,7 +576,6 @@ describe('DateRangeInputDirective with the opt-in typing mask', () => {
     startField.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
     await fixture.whenStable();
 
-    // no mask: arbitrary text stays, native input sync tracks it
     expect(startField.value).toBe('07/16/2026');
     expect(rangeInput.inputText('start')).toBe('07/16/2026');
 
@@ -596,8 +589,6 @@ describe('DateRangeInputDirective commit contract', () => {
   describePickerCommitContract(() => {
     const driver = mountDatePicker(DateRangeInputTestHost, DateRangeInputDirective);
 
-    // a wire format carrying a time against the date-only display default is what makes an
-    // unedited blur observable: re-parsing "07/20/2026" would write back midnight
     driver.host.valueFormat.set('yyyy-MM-dd HH:mm');
     driver.host.value.set({ start: '2026-07-20 14:30', end: null });
     tick();

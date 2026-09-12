@@ -28,8 +28,7 @@ let localReadingIdCounter = 0;
 
 /**
  * Rejects individual times in the picker. The candidate is the picked time of day on the side's
- * committed day, and `side` says which end is being filled - the hook for "the end must be after
- * the start", which no single-value bound can express.
+ * committed day, and `side` says which end is being filled.
  */
 export type DateTimeRangeTimeFilterFn = (date: Date, side: DateRangeSide) => boolean;
 
@@ -40,10 +39,8 @@ export type DateTimeRangeTimeFilterFn = (date: Date, side: DateRangeSide) => boo
  * strictly against the combined `displayFormat` on blur/Enter, then leniently, exactly like the
  * single date-time input.
  *
- * The picker never closes on its own - a completed day range is only half the range, so the reader
- * still has both times to set. Each side is picked in two halves: whichever half lands first is
- * held (the field renders it against placeholders for the other) and that side's value stays `null`
- * until the second one arrives, so a day never invents a midnight nobody chose.
+ * The picker never closes on its own. Each side is picked in two halves: whichever half lands first
+ * is held and that side's value stays `null` until the second one arrives.
  */
 @Directive({
   selector: '[etDateTimeRangeInput]',
@@ -66,8 +63,8 @@ export class DateTimeRangeInputDirective
 
   /**
    * IANA name of the zone both fields' wall clock stands for - `'Asia/Tokyo'` makes the fields, the
-   * calendar and the time pickers all read in Tokyo, and writes both ends with Tokyo's offset. The
-   * values stay instants either way. `null` keeps the runtime's own zone.
+   * calendar and the time pickers all read in Tokyo, and writes both ends with Tokyo's offset.
+   * `null` keeps the runtime's own zone.
    */
   public timeZone = input<string | null>(null);
 
@@ -93,17 +90,14 @@ export class DateTimeRangeInputDirective
   /**
    * Forwarded to both of the picker's time pickers. Only the time of day of `minTime`/`maxTime` is
    * read, so the bound applies on every day; `timeFilter` receives the full candidate timestamp and
-   * the side it belongs to. Bounds shape the picker - validate typed entry with a schema validator,
-   * exactly like `minDate`/`maxDate`.
+   * the side it belongs to. Bounds shape the picker - validate typed entry with a schema validator.
    */
   public minTime = input<Date | null>(null);
   public maxTime = input<Date | null>(null);
   public timeFilter = input<DateTimeRangeTimeFilterFn | null>(null);
 
-  /** No precision to derive from here - both ends carry a time. */
   public effectiveDisplayFormat = this.displayFormat;
 
-  /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(
     () => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDateTimeRange,
   );
@@ -151,7 +145,6 @@ export class DateTimeRangeInputDirective
     super();
 
     if (ngDevMode) {
-      // an unknown zone name silently behaving like no zone at all would be a head-scratcher
       effect(() => {
         const timeZone = this.timeZone();
 
@@ -173,7 +166,7 @@ export class DateTimeRangeInputDirective
 
   /**
    * Commits a picker day range onto each side's committed time of day, holding the days whose time
-   * is still missing. The picker stays open - those times are still to come.
+   * is still missing. The picker stays open.
    */
   public selectCalendarRange(range: { start: Date | null; end: Date | null }) {
     if (!this.interactive()) {
@@ -187,8 +180,7 @@ export class DateTimeRangeInputDirective
 
   /**
    * Commits a picker-selected time onto one side's day. While that side has no day yet the *other*
-   * side's is used - setting the end time of an appointment whose start day is known means that day
-   * - and while the range is empty the time is held until a day is picked.
+   * side's is used, and while the range is empty the time is held until a day is picked.
    */
   public selectTime(side: DateRangeSide, time: Date | null) {
     if (time === null || !this.interactive()) {
@@ -202,8 +194,6 @@ export class DateTimeRangeInputDirective
       this.resolvePendingMixed();
     } else {
       this.halfPicks[side].clear();
-      // the whole time of day comes from `time`, so the day carrier only has to supply a date -
-      // which a zone proxy always reads correctly
       this.commitSideDate(side, reinterpretInZone(withTimeOfDay(day, time), this.effectiveTimeZone()));
     }
 
@@ -214,8 +204,6 @@ export class DateTimeRangeInputDirective
   public override displayValue(side: DateRangeSide) {
     const committed = super.displayValue(side);
 
-    // a typing mask owns the field text and draws its own guides - a second set of placeholders
-    // would not survive its reconciliation anyway
     if (committed !== '' || this.maskPattern() !== null) {
       return committed;
     }
@@ -235,7 +223,7 @@ export class DateTimeRangeInputDirective
     this.halfPicks[side].clear();
   }
 
-  /** Drops both held halves along with the range - they are one control state. */
+  /** Drops both held halves along with the range. */
   public override clearRange() {
     super.clearRange();
     this.halfPicks.start.clear();
@@ -250,7 +238,6 @@ export class DateTimeRangeInputDirective
     });
   }
 
-  /** The day one side stands on: its committed one, else a day picked while its time is still missing. */
   private sideDay(side: DateRangeSide) {
     return this.pickerSideDate(side) ?? this.halfPicks[side].day();
   }
@@ -278,10 +265,6 @@ export class DateTimeRangeInputDirective
     return merged === null ? null : reinterpretInZone(merged, timeZone);
   }
 
-  /**
-   * A half-pick resolves the bulk-edit mask like any other pick: replace, never merge into the
-   * hidden raw range. `writeRange` already does this for a calendar pick.
-   */
   private resolvePendingMixed() {
     if (this.mixed()) {
       this.value.set({ start: null, end: null });

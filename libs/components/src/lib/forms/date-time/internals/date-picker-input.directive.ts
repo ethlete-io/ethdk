@@ -33,9 +33,8 @@ import { mountControlSuffixStyles } from '../../form-field/form-field-control-su
 export type DatePickerInputFieldBase = {
   focus(options?: FocusOptions): void;
   /**
-   * Blanks the field text, including an attached mask's own copy of it. The field only mirrors
-   * control state while unfocused (mid-typing rewrites would fight the caret) and a mask owns the
-   * element text outright, so a clear has to reach both directly.
+   * Blanks the field text, including an attached mask's own copy of it - the field only mirrors
+   * control state while unfocused and a mask owns the element text, so a clear has to reach both.
    */
   resetText(): void;
   elementRef: ElementRef<HTMLInputElement>;
@@ -43,13 +42,10 @@ export type DatePickerInputFieldBase = {
 
 /**
  * Shared host for the three `Date`-string picker inputs (`et-date-input`, `et-time-input`,
- * `et-date-time-input`). They copy-pasted the same plumbing verbatim: the standard control
- * inputs, the picker overlay wiring + open/close/toggle, the `interactive`/`hasValue`/
- * `shouldDisplayError`/`labelId` computeds, the field/trigger/surface registration, and the
- * form-field registration. Subclasses add their own `value`↔`Date` conversion, `displayFormat`,
- * `controlType`, `defaultValueFormat`, commit/select logic, and (date + date-time) the calendar
- * bounds. Must be extended by an `@Directive` - Angular only surfaces inherited inputs from a
- * decorated base.
+ * `et-date-time-input`): the standard control inputs, the picker overlay, the field/trigger/surface
+ * registration and the form-field registration.
+ *
+ * Must be extended by an `@Directive` - Angular only surfaces inherited inputs from a decorated base.
  */
 @Directive({
   host: {
@@ -70,12 +66,9 @@ export abstract class DatePickerInputDirective
   protected abstract defaultValueFormat: string;
   /** The form-field control-type tag (date-input / time-input / date-time-input). */
   public abstract controlType: Signal<FormFieldControlType>;
-  /**
-   * The date-fns format in effect for the field - declared per control. Usually its own
-   * `displayFormat` input; the date input derives one from `precision` when that is unset.
-   */
+  /** The date-fns format in effect for the field - declared per control. */
   public abstract effectiveDisplayFormat: Signal<string>;
-  /** The committed value rendered in `displayFormat` - computed per control from its own value conversion. */
+  /** The committed value rendered in `displayFormat`. */
   public abstract displayValue: Signal<string>;
 
   /**
@@ -100,9 +93,8 @@ export abstract class DatePickerInputDirective
   public name = input('');
   public placeholder = input('');
   /**
-   * Field placeholder shown while `mixed` is set. Presentation only - a masked
-   * date field cannot render arbitrary text, so the field stays empty and the
-   * label shows through the placeholder slot; it never enters the form value.
+   * Field placeholder shown while `mixed` is set. Presentation only - it never enters the form
+   * value.
    */
   public mixedLabel = input<string | null>(null);
 
@@ -115,14 +107,12 @@ export abstract class DatePickerInputDirective
    * `HH:mm`), typing gets guide placeholders (`__.__.____`), auto-inserted
    * separators, and paste filtering. Formats the mask cannot represent - locale
    * formats like the defaults `P`/`p`/`Pp`, variable-width or text tokens - are
-   * refused and typing stays unmasked. Commit parsing is identical either way:
-   * the lenient blur/Enter parsers stay authoritative.
+   * refused and typing stays unmasked.
    */
   public mask = input(false, { transform: booleanAttribute });
 
   public pickerOpen = model(false);
 
-  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
   public effectiveValueFormat = computed(() => this.valueFormat() ?? this.defaultValueFormat);
@@ -140,7 +130,7 @@ export abstract class DatePickerInputDirective
 
   /**
    * @internal Ids the control contributes to `aria-describedby` itself, on top of the one the form
-   * field sets. Overridden by a control that renders describing text of its own.
+   * field sets.
    */
   public ownDescribedBy: Signal<string | null> = signal(null);
 
@@ -159,8 +149,6 @@ export abstract class DatePickerInputDirective
   public registeredSurface = signal<DatePickerSurfaceBase | null>(null);
 
   public interactive = computed(() => !this.disabled() && !this.readonly());
-  // `displayValue` is what the field actually renders, which outlives the value itself: the
-  // date-time input draws a half-pick there while its value is still null
   public hasValue = computed(
     () => this.mixed() || this.value() !== null || this.inputText().length > 0 || this.displayValue().length > 0,
   );
@@ -181,9 +169,6 @@ export abstract class DatePickerInputDirective
     anchor: () => this.resolveAnchorElement(),
     context: () => ({ $implicit: this, close: () => this.closePicker() }),
     onAfterClosed: ({ byOutsidePointer, byFocusLeave, fromBottomSheet }) => {
-      // focus fell to <body> with the pane's removal - hand it back to the field, except for
-      // closes where the user moved on (a pointer or a tab out) and bottom-sheet closes
-      // (refocusing would pop the soft keyboard)
       if (
         !byOutsidePointer &&
         !byFocusLeave &&
@@ -207,7 +192,6 @@ export abstract class DatePickerInputDirective
     destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
 
     if (ngDevMode) {
-      // a refused format silently behaving like `mask: false` would be a head-scratcher
       effect(() => {
         if (this.mask() && this.maskPattern() === null) {
           console.warn(
@@ -224,8 +208,7 @@ export abstract class DatePickerInputDirective
 
   /**
    * @internal Commits typed field text: empty clears, a successful parse writes the value,
-   * anything else keeps the raw text and raises `parseError`. A disabled or readonly control and
-   * a field nobody typed in commit nothing.
+   * anything else keeps the raw text and raises `parseError`.
    */
   public commitInput(raw: string) {
     const outcome = resolvePickerCommit(raw, {
@@ -250,13 +233,12 @@ export abstract class DatePickerInputDirective
       return;
     }
 
-    // a cleared or unparseable field resolves nothing: while mixed the hidden raw value survives
     if (!this.mixed() && this.value() !== null) {
       this.value.set(null);
     }
   }
 
-  /** @internal Runs once a commit is known to apply - the date-time input drops its held half here. */
+  /** @internal Runs once a commit is known to apply. */
   public beforeCommit() {
     return;
   }
@@ -306,7 +288,6 @@ export abstract class DatePickerInputDirective
     }
   }
 
-  // the field is the anchor inside a form field so the panel lines up with the visible box
   public resolveAnchorElement() {
     return (
       this.formField?.controlFrameElement() ??

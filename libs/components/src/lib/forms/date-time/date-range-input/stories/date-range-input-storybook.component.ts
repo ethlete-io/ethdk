@@ -73,8 +73,6 @@ export class DateRangeInputStorybookComponent {
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
     readonly(s.range, () => this.readonly());
-    // range-level validation surfaces in the field's error area (child-path
-    // validators only flip the invalid state - their messages stay on the sub-fields)
     validate(s.range, ({ value }) => {
       const { start, end } = value();
 

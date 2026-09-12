@@ -108,7 +108,6 @@ describe('DateInputDirective', () => {
     expect(driver.control.inputText()).toBe('');
     expect(driver.control.parseError()).toBe(false);
     expect(driver.control.hasValue()).toBe(false);
-    // the field only mirrors state while unfocused - the clear resets it directly
     expect(driver.field().value).toBe('');
   });
 
@@ -240,7 +239,6 @@ describe('DateInputDirective', () => {
 
       driver.typeAndBlur('07/2026');
 
-      // the 1st, not today's day of July - a coarse format cannot say which day it meant
       expect(driver.host.value()).toBe('2026-07-01');
       expect(driver.control.parseError()).toBe(false);
       expect(driver.field().value).toBe('07/2026');
@@ -422,7 +420,6 @@ describe('DateInputDirective with the opt-in typing mask', () => {
     await type('1807');
 
     expect(field.value).toBe('18.07.____');
-    // masked typing must feed hasValue like native typing (the clear button depends on it)
     expect(dateInput.inputText()).toBe('18.07.');
     expect(dateInput.hasValue()).toBe(true);
 
@@ -444,7 +441,6 @@ describe('DateInputDirective with the opt-in typing mask', () => {
 
     expect(host.value()).toBeNull();
     expect(dateInput.parseError()).toBe(true);
-    // the kept text is the display-shaped entry, not `18.07.____`
     expect(dateInput.inputText()).toBe('18.07.');
     expect(field.value).toBe('18.07.');
   });
@@ -547,7 +543,6 @@ describe('DateInputDirective with the opt-in typing mask', () => {
       el.value = '07/16/2026';
     }, 'insertText');
 
-    // no mask: arbitrary text stays, native input sync tracks it
     expect(field.value).toBe('07/16/2026');
     expect(dateInput.inputText()).toBe('07/16/2026');
 
@@ -559,8 +554,6 @@ describe('DateInputDirective with the opt-in typing mask', () => {
 
 describe('DateInputDirective commit contract', () => {
   describePickerCommitContract(() => {
-    // a wire format carrying a time against the date-only display default is what makes an
-    // unedited blur observable: re-parsing "07/20/2026" would write back midnight
     const driver = mountDatePicker(DateInputTestHost, DateInputDirective);
 
     driver.host.valueFormat.set('yyyy-MM-dd HH:mm');
@@ -591,7 +584,6 @@ describe('DateInputDirective (tabbing out of the picker)', () => {
 
   beforeEach(() => {
     // jsdom lays nothing out, and `getFocusableElements` reads a client rect to tell a rendered
-    // control apart from a hidden one
     vi.spyOn(Element.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
     driver = mountDatePicker(DateInputTestHost, DateInputDirective);
   });

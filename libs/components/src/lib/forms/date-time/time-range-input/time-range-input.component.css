@@ -3,8 +3,6 @@
     --et-range-input-stack-threshold: 11em;
     container: et-time-range-input / inline-size;
 
-    /* Too narrow to show both times: one per row, top to bottom, instead of clipping both. The
-       separator reads as "between two things on a line" and goes with the line. */
     @container et-time-range-input (inline-size < 11em) {
       .et-time-range-input-field {
         flex-basis: 100%;

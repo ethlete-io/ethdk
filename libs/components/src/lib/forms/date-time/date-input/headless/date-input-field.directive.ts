@@ -9,8 +9,7 @@ import { DateInputDirective } from './date-input.directive';
 /**
  * The text field of a date input: shows the committed value in the display
  * format, commits typed text strictly on blur/Enter, keeps unparseable text
- * visible, and opens the picker on Alt+ArrowDown. Hosts the date input's opt-in
- * typing mask (`INPUT_MASK_HOST`).
+ * visible, and opens the picker on Alt+ArrowDown.
  */
 @Directive({
   selector: 'input[etDateInputField]',

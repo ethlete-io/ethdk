@@ -14,9 +14,8 @@ import { mountTextFieldShellStyles } from '../../../form-field/form-field-text-s
 
 /**
  * A duration form control whose value is a **total elapsed time in milliseconds**
- * (`number | null`), not a `Date` - a duration is a distinct scalar quantity, so it
- * stays out of the calendar/time `Date` system. Typed entry parses leniently on
- * blur/Enter against a configurable segment layout (`130` → `1:30` under `mm:ss`).
+ * (`number | null`), not a `Date`. Typed entry parses leniently on blur/Enter against a
+ * configurable segment layout (`130` → `1:30` under `mm:ss`).
  */
 @Directive({
   selector: '[etDurationInput]',
@@ -48,10 +47,7 @@ export class DurationInputDirective
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
   public placeholder = input('');
-  /**
-   * Field placeholder shown while `mixed` is set. Presentation only - the field stays
-   * empty and the label shows through the placeholder slot; it never enters the form value.
-   */
+  /** Field placeholder shown while `mixed` is set. Presentation only - it never enters the form value. */
   public mixedLabel = input<string | null>(null);
 
   /** Message the form field shows when typed text can't be parsed as a duration. */
@@ -60,10 +56,8 @@ export class DurationInputDirective
   /** The segment layout: `h`/`m`/`s`/`S` token runs plus separators. @default `'mm:ss'` */
   public durationFormat = input('mm:ss');
 
-  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
-  /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDuration);
 
   public spec = computed(() => deriveDurationFormatSpec(this.durationFormat()));
@@ -123,8 +117,7 @@ export class DurationInputDirective
     this.inputText.set('');
     this.parseError.set(false);
 
-    // the field only mirrors state while unfocused (mid-typing rewrites would fight the
-    // caret) - a clear happens while focused, so reset the element text directly
+    // the field only mirrors state while unfocused, and a clear happens while focused
     const field = this.registeredField();
 
     if (field) {
@@ -145,8 +138,6 @@ export class DurationInputDirective
     if (!trimmed) {
       this.parseError.set(false);
 
-      // while mixed the field is empty anyway - a blank commit is a plain blur, not a user
-      // clear, so the hidden raw value survives (the clear affordance resolves instead)
       if (!this.mixed()) {
         this.value.set(null);
       }
@@ -159,9 +150,6 @@ export class DurationInputDirective
     if (parsed === null) {
       this.parseError.set(true);
 
-      // drop the now-stale value so the wire model can't disagree with the unparseable
-      // text on screen - mirrors date/time/date-time, which all null on a bad commit.
-      // A failed parse resolves nothing while mixed: the masked raw value stays untouched
       if (!this.mixed() && this.value() !== null) {
         this.value.set(null);
       }

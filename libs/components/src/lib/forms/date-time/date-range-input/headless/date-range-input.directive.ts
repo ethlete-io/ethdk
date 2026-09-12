@@ -45,9 +45,8 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
   public displayFormat = input<string | null>(null);
 
   /**
-   * How precise the two dates are - `'month'` makes this a month range (`07/2025 – 03/2026`), a
-   * real reporting filter. Both ends are the start of their unit, and the picker calendar selects
-   * and bands in the grid holding it.
+   * How precise the two dates are - `'month'` makes this a month range (`07/2025 – 03/2026`). Both
+   * ends are the start of their unit, and the picker calendar selects and bands in the grid holding it.
    */
   public precision = input<CalendarPrecision>('day');
 
@@ -80,7 +79,6 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
   /** Renders the picker calendar's week-number column. */
   public weekNumbers = input(false, { transform: booleanAttribute });
 
-  /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDateRange);
 
   /** The format in effect: this instance's `displayFormat`, else the one `precision` implies. */
@@ -108,8 +106,8 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
   }
 
   public parseSideCommit(raw: string) {
-    // reference midnight so a date-only `displayFormat` doesn't fold the current wall-clock
-    // time into a time-bearing `valueFormat` - see the note in date-input's `commitInput`.
+    // reference midnight so a date-only `displayFormat` doesn't fold the current wall-clock time
+    // into a time-bearing `valueFormat`
     const parsed = parseDateValue(raw, {
       format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),
@@ -120,7 +118,6 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
       return null;
     }
 
-    // the unit start, so a typed month and a picked month are one value - see date-input's `writeDate`
     return startOfCalendarUnit(parsed, this.precision());
   }
 }

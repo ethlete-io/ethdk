@@ -36,8 +36,7 @@ export class DurationInputFieldDirective {
   constructor() {
     registerSingleton(this.durationInput?.registeredField, this);
 
-    // while unfocused the element mirrors the committed value (or the kept unparseable
-    // text); mid-typing rewrites would fight the caret
+    // mid-typing rewrites would fight the caret, so the element only mirrors while unfocused
     effect(() => {
       const durationInput = this.durationInput;
 
@@ -95,7 +94,7 @@ export class DurationInputFieldDirective {
 
     durationInput.commitInput(this.elementRef.nativeElement.value);
 
-    // a successful commit reformats in place (the display effect only runs unfocused)
+    // the display effect only runs unfocused, so a successful commit reformats in place here
     if (!durationInput.parseError()) {
       this.elementRef.nativeElement.value = durationInput.displayValue();
     }

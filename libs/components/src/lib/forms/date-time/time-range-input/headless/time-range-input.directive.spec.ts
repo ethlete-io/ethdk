@@ -139,7 +139,6 @@ describe('TimeRangeInputDirective', () => {
     driver.clickInPane('.pick-end-time');
 
     expect(driver.host.value()).toEqual({ start: '09:15', end: '21:45' });
-    // one end filled is only half a range - the other is still to come
     expect(driver.control.pickerOpen()).toBe(true);
     expect(driver.control.touched()).toBe(true);
 
@@ -253,7 +252,6 @@ describe('TimeRangeInputDirective mixed state', () => {
       },
       mixedLabel: () => 'Mixed',
       mixedDisplayText: () => driver.field('.start').placeholder,
-      // replace semantics: the resolving commit starts a fresh range - no merge with the hidden end
       commit: () => driver.typeAndBlur('14:30', '.start'),
       committedValue: () => ({ start: '14:30', end: null }),
       assertMasked: () => {

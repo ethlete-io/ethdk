@@ -4,7 +4,6 @@ import { formatDateValue } from './date-value';
 import { withTimeOfDay } from './date-time-merge';
 import { splitDateTimeFormat } from './date-time-format-split';
 
-/** Every letter and digit blanked out, separators left standing: `12:00 AM` → `__:__ __`. */
 const blankOut = (text: string, placeholderChar: string) => text.replace(/[\p{L}\p{N}]/gu, placeholderChar);
 
 export type RenderPartialDateTimeOptions = {
@@ -15,11 +14,6 @@ export type RenderPartialDateTimeOptions = {
   placeholderChar?: string;
 };
 
-/**
- * The field text for a half-picked date & time: the picked half rendered in `format`, the missing
- * one blanked to placeholders (`08/13/2026, __:__ __`). `null` when nothing is picked yet, or when
- * the format cannot be split into a date and a time half.
- */
 export const renderPartialDateTime = (options: RenderPartialDateTimeOptions) => {
   const reference = options.day ?? options.time;
 
@@ -51,16 +45,12 @@ export const renderPartialDateTime = (options: RenderPartialDateTimeOptions) => 
 };
 
 /**
- * One date-time slot's half-picked state. A combined value is a single string, so a day picked
- * before a time (or the other way round) cannot be committed yet - it is held here until its other
- * half arrives, and the control's value stays `null` in the meantime.
+ * One date-time slot's half-picked state: a day picked before a time (or the other way round) is
+ * held here until its other half arrives.
  */
 export type PendingDateTime = {
-  /** The day picked while no time exists yet. */
   day: Signal<Date | null>;
-  /** The time picked while no day exists yet. */
   time: Signal<Date | null>;
-  /** Whether a half is being held. */
   active: Signal<boolean>;
   /** Takes a picked day: the completed date-time when a time was already held, else `null`. */
   holdDay: (day: Date) => Date | null;

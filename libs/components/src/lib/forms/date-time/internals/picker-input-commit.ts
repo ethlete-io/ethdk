@@ -1,4 +1,3 @@
-/** What the control knows about its own field when a commit arrives. */
 export type PickerCommitOptions = {
   /** The committed value as the field renders it, or `''` while there is none. */
   displayValue: string;
@@ -12,8 +11,7 @@ export type PickerCommitOptions = {
 
 /**
  * What one resolved commit writes. `parsed` is the instant to commit; while it is `null` the
- * control keeps `text` in the field instead - `''` for a cleared field, the unparseable text
- * for a parse error.
+ * control keeps `text` in the field instead.
  */
 export type PickerCommitOutcome = {
   parsed: Date | null;

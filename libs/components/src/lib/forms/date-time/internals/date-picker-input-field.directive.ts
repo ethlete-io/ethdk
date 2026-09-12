@@ -5,11 +5,9 @@ import { DatePickerInputDirective } from './date-picker-input.directive';
 /**
  * Shared text-field host for the three `Date`-string picker inputs' fields
  * (`input[etDateInputField]`, `input[etTimeInputField]`, `input[etDateTimeInputField]`).
- * Owns the common host bindings, the unfocused display mirror, the blur/Enter
- * commits, the Alt+ArrowDown picker shortcut, and the `INPUT_MASK_HOST` adapter
- * behind the inputs' opt-in typing masks. Must be extended by an `@Directive` -
- * subclasses inject their input directive into `pickerInput`, register themselves
- * as the field, and provide `INPUT_MASK_HOST` via `useExisting`.
+ *
+ * Must be extended by an `@Directive` - subclasses inject their input directive into `pickerInput`,
+ * register themselves as the field, and provide `INPUT_MASK_HOST` via `useExisting`.
  */
 @Directive({
   host: {
@@ -42,9 +40,7 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
 
   /**
    * The field text as an attached mask sees it (`InputMaskHost.value`):
-   * display-shaped, never containing guide placeholders. Mask edits write it while
-   * typing; every commit resets it to the committed display text (or the kept
-   * unparseable text), which also carries the committed value into a focus.
+   * display-shaped, never containing guide placeholders.
    */
   public value = linkedSignal(() => {
     const input = this.pickerInput;
@@ -65,9 +61,8 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
   constructor() {
     this.nativeControl.set(this.elementRef.nativeElement);
 
-    // while unfocused the element mirrors the committed value (or the kept
-    // unparseable text); mid-typing rewrites would fight the caret. An attached
-    // mask owns the element text instead and renders the same mirror itself
+    // mid-typing rewrites would fight the caret, so the element only mirrors while unfocused; an
+    // attached mask owns the element text instead
     effect(() => {
       const input = this.pickerInput;
 
@@ -82,8 +77,7 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
       }
     });
 
-    // masked typing bypasses handleInput, so mirror the mask-written text into
-    // `inputText` - hasValue (and the clear button) must react like native typing
+    // masked typing bypasses handleInput, so mirror the mask-written text into `inputText`
     effect(() => {
       if (!this.maskAttached()) {
         return;
@@ -124,7 +118,6 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
   }
 
   protected handleInput() {
-    // the mask reconciles the edit and writes `value` (and thereby `inputText`) itself
     if (this.maskAttached()) {
       return;
     }
@@ -158,8 +151,7 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
     if (event.key === 'Enter') {
       input.commitInput(this.commitText());
 
-      // a successful commit reformats in place (the display effect only runs
-      // unfocused); a mask re-renders the element from the reset `value` instead
+      // the display effect only runs unfocused, so a successful commit reformats in place here
       if (!input.parseError() && !this.maskAttached()) {
         this.elementRef.nativeElement.value = input.displayValue();
       }
@@ -173,7 +165,6 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
     }
   }
 
-  /** What a blur/Enter commit parses - the mask's value, since the element text may hold guide placeholders. */
   private commitText() {
     return this.maskAttached() ? this.value() : this.elementRef.nativeElement.value;
   }

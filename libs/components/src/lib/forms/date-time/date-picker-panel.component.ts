@@ -24,19 +24,16 @@ import { injectDateTimeLabels } from '../../forms/date-time/date-time-labels';
 export class DatePickerPanelComponent {
   private dateTimeLabels = injectDateTimeLabels();
 
-  /** Accessible name of the picker dialog - set per control (date / time / range / date-time). */
+  /** Accessible name of the picker dialog. */
   public dialogLabel = input<string | null>(null);
 
-  // observed instead of the host: the host's used size is overridden by the resize
-  // animation itself, so observing it directly would feed the animation back
+  // observed instead of the host: the resize animation overrides the host's used size, so
+  // observing it would feed the animation back
   private panelBody = viewChild<ElementRef<HTMLElement>>('panelBody');
 
-  /** The string in effect: this instance's `dialogLabel`, else the domain's label set. */
   protected resolvedDialogLabel = computed(() => this.dialogLabel() ?? this.dateTimeLabels().chooseDate);
 
   constructor() {
-    // this panel IS the overlay's own surface - paint the overlay's registered elevation exactly,
-    // don't stack a level above it (the tracker is authoritative; content inside elevates off it)
     inject(AutoSurfaceDirective).matchOverlaySurface();
 
     injectOverlaySurfaceContext({ panelBody: this.panelBody, resizingClass: 'et-date-picker-panel--resizing' });

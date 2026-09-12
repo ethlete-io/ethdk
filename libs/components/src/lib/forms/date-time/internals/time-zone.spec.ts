@@ -151,8 +151,6 @@ describe('localReading day handling', () => {
   });
 
   it('keeps the date once the reader is on another day', () => {
-    // whichever zone the runtime is in, some hour of the day puts it on a different date than the
-    // field's zone - that is the hour the date has to survive on
     const base = new Date('2026-08-18T00:00:00.000Z').getTime();
     const crossing = Array.from({ length: 24 }, (_, hour) => new Date(base + hour * 3_600_000)).find(
       (candidate) => zonedFields(candidate, options.timeZone).day !== candidate.getDate(),

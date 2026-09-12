@@ -73,11 +73,8 @@ const parseLenient = (raw: string, referenceDate: Date): Date | null => {
 };
 
 /**
- * Parses typed time text: strictly against the display format first, then
- * leniently - bare digit runs (`930` → 09:30, `0930`, `93015`), loose
- * separators (`9:5`, `9.30`, `9 30`) and meridiem suffixes (`930pm`, `9 a.m.`),
- * always validating part ranges. Returns the time of day on `referenceDate`
- * (its start of day), or `null` when nothing parses.
+ * Parses typed time text: strictly against the display format first, then leniently (`930` → 09:30,
+ * `9 30`, `930pm`). Returns the time of day on `referenceDate`, or `null` when nothing parses.
  */
 export const parseTimeText = (value: string, options: ParseDateValueOptions): Date | null => {
   const strict = parseDateValue(value, options);

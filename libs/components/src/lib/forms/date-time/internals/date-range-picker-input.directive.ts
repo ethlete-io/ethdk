@@ -45,7 +45,6 @@ export type DateRangeSide = 'start' | 'end';
 export const DATE_RANGE_SIDES = ['start', 'end'] as const;
 
 type SideState = {
-  /** Uncommitted field text - kept visible when it fails to parse. */
   inputText: WritableSignal<string>;
   parseError: WritableSignal<boolean>;
   field: WritableSignal<DatePickerInputFieldBase | null>;
@@ -60,10 +59,7 @@ type RegisterFieldOptions = {
 /**
  * Shared host for the two-sided range picker inputs (`et-date-range-input`, `et-time-range-input`,
  * `et-date-time-range-input`): one registered field-control containing two text inputs that share a
- * single range-mode picker. Owns the per-side text/parse state, the field registration, the standard
- * control inputs, the picker overlay, the typing mask and the form-field registration. Subclasses add
- * their own `displayFormat`, `controlType`, `defaultValueFormat`, parse normalization
- * (`parseSideCommit`), picker-selection semantics and (date + date-time) the calendar bounds.
+ * single range-mode picker.
  *
  * Must be extended by an `@Directive` - Angular only surfaces inherited inputs from a decorated base.
  */
@@ -79,7 +75,6 @@ export abstract class DateRangePickerInputDirective
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
-  /** Only present under a signal-forms `[field]` binding - unset in manual `[value]`/`[errors]` use. */
   private ngFormField = inject(FORM_FIELD, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
@@ -90,18 +85,14 @@ export abstract class DateRangePickerInputDirective
   protected abstract defaultValueFormat: string;
   /** The form-field control-type tag (date-range-input / time-range-input / date-time-range-input). */
   public abstract controlType: Signal<FormFieldControlType>;
-  /**
-   * The date-fns format in effect for both fields - declared per control. Usually its own
-   * `displayFormat` input; the date range input derives one from `precision` when that is unset.
-   */
+  /** The date-fns format in effect for both fields - declared per control. */
   public abstract effectiveDisplayFormat: Signal<string>;
   /** The message the form field shows when either side's typed text does not parse. */
   public abstract resolvedParseErrorMessage: Signal<string>;
 
   /**
    * @internal Parses one side's typed text into the `Date` that should be committed, or `null` when
-   * nothing parses. Subclasses own both the parse rules and any normalization the value needs (the
-   * date range input snaps to the start of its precision's unit).
+   * nothing parses.
    */
   public abstract parseSideCommit(raw: string): Date | null;
 
@@ -109,7 +100,7 @@ export abstract class DateRangePickerInputDirective
   public value = model<DateRangeValue>({ start: null, end: null });
   /**
    * View state for a field whose source values disagree (bulk edit). One flag masks
-   * the whole range value - not per side. The raw form value stays untouched.
+   * the whole range value - not per side.
    */
   public mixed = model(false);
   public touched = model(false);
@@ -124,16 +115,14 @@ export abstract class DateRangePickerInputDirective
 
   /**
    * Accessible name of the start field, which is the named widget - the group around both fields
-   * takes the projected `<et-label>` (or the control's own `aria-label`) instead. Defaults to the
-   * domain's label set.
+   * takes the projected `<et-label>` (or the control's own `aria-label`) instead.
    */
   public startAriaLabel = input<string | null>(null);
   /** Accessible name of the end field. See {@link startAriaLabel}. */
   public endAriaLabel = input<string | null>(null);
   /**
-   * Placeholder both fields show while `mixed` is set. Presentation only - a masked
-   * date field cannot render arbitrary text, so the fields stay empty and the label
-   * shows through the placeholder slot; it never enters the form value.
+   * Placeholder both fields show while `mixed` is set. Presentation only - it never enters the form
+   * value.
    */
   public mixedLabel = input<string | null>(null);
 
@@ -146,26 +135,21 @@ export abstract class DateRangePickerInputDirective
    * both fields get guide placeholders (`__.__.____`), auto-inserted separators,
    * and paste filtering. Formats the mask cannot represent - locale formats like
    * `P`/`Pp`, variable-width or text tokens - are refused and typing stays
-   * unmasked. Commit parsing is identical either way: the blur/Enter parsers stay
-   * authoritative.
+   * unmasked.
    */
   public mask = input(false, { transform: booleanAttribute });
 
   public pickerOpen = model(false);
 
-  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
   public effectiveValueFormat = computed(() => this.valueFormat() ?? this.defaultValueFormat);
 
-  /**
-   * The IANA zone both fields' wall clock stands for. Only the date & time range control offers
-   * one; the date-only and time-only ranges leave it `null` and stay in the runtime's own zone.
-   */
+  /** The IANA zone both fields' wall clock stands for, or `null` to stay in the runtime's own zone. */
   public effectiveTimeZone: Signal<string | null> = signal(null);
   public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);
 
-  /** The side the focused field edits - the picker previews from here too. */
+  /** The side the focused field edits. */
   public focusedSide = signal<DateRangeSide | null>(null);
 
   private sides: Record<DateRangeSide, SideState> = {
@@ -173,8 +157,6 @@ export abstract class DateRangePickerInputDirective
     end: { inputText: signal(''), parseError: signal(false), field: signal(null) },
   };
 
-  // masking: while mixed the hidden raw range is neither rendered in the fields
-  // (displayValue derives from here) nor highlighted in the picker calendar
   public startDate = computed(() => (this.mixed() ? null : this.parseSide(this.value().start)));
   public endDate = computed(() => (this.mixed() ? null : this.parseSide(this.value().end)));
 
@@ -189,7 +171,7 @@ export abstract class DateRangePickerInputDirective
 
   /**
    * @internal Ids the control contributes to `aria-describedby` itself, on top of the one the form
-   * field sets. Overridden by a control that renders describing text of its own.
+   * field sets.
    */
   public ownDescribedBy: Signal<string | null> = signal(null);
 
@@ -222,8 +204,6 @@ export abstract class DateRangePickerInputDirective
       end !== null ||
       this.sides.start.inputText().length > 0 ||
       this.sides.end.inputText().length > 0 ||
-      // what a field renders outlives the value itself: the date-time range input draws a
-      // half-pick there while that side's value is still null
       this.displayValue('start') !== '' ||
       this.displayValue('end') !== ''
     );
@@ -233,7 +213,7 @@ export abstract class DateRangePickerInputDirective
 
   /**
    * A range is named as a group: by the author's `aria-label`/`aria-labelledby` on the control, or
-   * by naming both of its fields - either way the field's labelling guard has a name to find.
+   * by naming both of its fields.
    */
   public override hasCustomAccessibleName = computed(
     () =>
@@ -247,14 +227,6 @@ export abstract class DateRangePickerInputDirective
     this.mask() ? maskPatternFromDisplayFormat(this.effectiveDisplayFormat()) : null,
   );
 
-  /**
-   * `errors` is the `FormValueControl` input signal-forms writes the range field's *own* errors
-   * into (e.g. a whole-range `customError`) - it never carries a descendant's, because a `Field`
-   * directive only ever binds a control's own errors, not its children's (`schema.start.required()`
-   * lands on the `start` subfield, not here). What the form field renders is a separate view that
-   * prefers the bound field's `errorSummary` (own + descendants) and falls back to `errors` for
-   * manual, schema-less use.
-   */
   private formFieldControlView: FormFieldControl = {
     touched: this.touched,
     invalid: this.invalid,
@@ -283,9 +255,6 @@ export abstract class DateRangePickerInputDirective
     anchor: () => this.resolveAnchorElement(),
     context: () => ({ $implicit: this, close: () => this.closePicker() }),
     onAfterClosed: ({ byOutsidePointer, fromBottomSheet }) => {
-      // focus fell to <body> with the pane's removal - hand it back to the fields,
-      // except for outside closes (the user deliberately went elsewhere) and
-      // bottom-sheet closes (refocusing would pop the soft keyboard)
       if (!byOutsidePointer && !fromBottomSheet && this.document.activeElement === this.document.body) {
         this.activate();
       }
@@ -302,7 +271,6 @@ export abstract class DateRangePickerInputDirective
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this.formFieldControlView));
 
     if (ngDevMode) {
-      // a refused format silently behaving like `mask: false` would be a head-scratcher
       effect(() => {
         if (this.mask() && this.maskPattern() === null) {
           console.warn(
@@ -363,8 +331,6 @@ export abstract class DateRangePickerInputDirective
       return;
     }
 
-    // the first empty side, else start - mirrors where the next interaction lands.
-    // While mixed both fields read as empty, so a fresh entry starts at the start side
     const target = this.mixed() || this.value().start === null || this.value().end !== null ? 'start' : 'end';
 
     this.sides[target].field()?.focus(options);
@@ -402,7 +368,6 @@ export abstract class DateRangePickerInputDirective
   /**
    * @internal Commits one side's typed text, with the subclass's parse rules: empty clears that
    * side, a successful parse writes it, anything else keeps the raw text and raises `parseError`.
-   * A disabled or readonly control and a field nobody typed in commit nothing.
    */
   public commitSide(side: DateRangeSide, raw: string) {
     const outcome = resolvePickerCommit(raw, {
@@ -429,16 +394,12 @@ export abstract class DateRangePickerInputDirective
       return;
     }
 
-    // a cleared or unparseable side resolves nothing: while mixed the hidden raw range survives
     if (!this.mixed()) {
       this.writeSide(side, null);
     }
   }
 
-  /**
-   * @internal Runs once a side's commit is known to apply - the date-time range drops that side's
-   * held half here.
-   */
+  /** @internal Runs once a side's commit is known to apply. */
   public beforeCommitSide(side: DateRangeSide) {
     void side;
   }
@@ -486,10 +447,7 @@ export abstract class DateRangePickerInputDirective
     });
   }
 
-  /**
-   * @internal Commits one side's `Date` - a picker selection that resolves a single end, dropping
-   * that side's pending field text.
-   */
+  /** @internal Commits one side's `Date`, dropping that side's pending field text. */
   public commitSideDate(side: DateRangeSide, instant: Date) {
     this.clearSideText(side);
     this.commitSideValue(side, this.formatSide(instant));
@@ -497,7 +455,7 @@ export abstract class DateRangePickerInputDirective
 
   /**
    * @internal Writes one resolving side value. While mixed, replace semantics apply: the hidden raw
-   * range is dropped rather than merged into, so the other side cannot leak into the new value.
+   * range is dropped rather than merged into.
    */
   public commitSideValue(side: DateRangeSide, sideValue: string | null) {
     if (this.mixed()) {
@@ -512,8 +470,7 @@ export abstract class DateRangePickerInputDirective
 
   /**
    * @internal Writes a picker-selected range: both sides at once, any pending field text dropped,
-   * and the masked bulk-edit state resolved. What the picker does about focus and about staying open
-   * is the subclass's call.
+   * and the masked bulk-edit state resolved.
    */
   public writeRange(range: { start: Date | null; end: Date | null }) {
     for (const side of DATE_RANGE_SIDES) {
@@ -524,8 +481,6 @@ export abstract class DateRangePickerInputDirective
       start: range.start === null ? null : this.formatSide(range.start),
       end: range.end === null ? null : this.formatSide(range.end),
     });
-    // the calendar showed no selection while mixed, so this is the normal range-building
-    // flow starting fresh - the first pick already replaces the whole hidden range
     this.mixed.set(false);
   }
 
@@ -551,7 +506,6 @@ export abstract class DateRangePickerInputDirective
     }
   }
 
-  // inside a form field the visible box is the control frame - anchor the panel there
   private resolveAnchorElement() {
     return (
       this.formField?.controlFrameElement() ??

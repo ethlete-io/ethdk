@@ -8,8 +8,7 @@ import { TimeRangeInputDirective } from './time-range-input.directive';
 /**
  * One side of a time range input: shows the committed side value in the display format, commits typed
  * text (strict-then-lenient) on blur/Enter, keeps unparseable text visible, and opens the picker on
- * Alt+ArrowDown. Hosts the range input's opt-in typing mask (`INPUT_MASK_HOST`) - each side is its own
- * mask host.
+ * Alt+ArrowDown.
  */
 @Directive({
   selector: 'input[etTimeRangeInputField]',

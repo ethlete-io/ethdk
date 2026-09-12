@@ -17,8 +17,7 @@ export type { DateRangeValue as TimeRangeValue } from '../../internals/date-rang
 
 /**
  * Rejects individual times in the picker. The candidate is the picked time of day, and `side` says
- * which end is being filled - the hook for "the end must be after the start", which no single-value
- * bound can express.
+ * which end is being filled.
  */
 export type TimeRangeTimeFilterFn = (date: Date, side: DateRangeSide) => boolean;
 
@@ -28,7 +27,7 @@ export type TimeRangeTimeFilterFn = (date: Date, side: DateRangeSide) => boolean
  * by default); each side parses leniently on blur/Enter (`930` → 09:30), exactly like the single time
  * input.
  *
- * The picker never closes on its own - filling one end still leaves the other to set.
+ * The picker never closes on its own.
  */
 @Directive({
   selector: '[etTimeRangeInput]',
@@ -49,17 +48,14 @@ export class TimeRangeInputDirective extends DateRangePickerInputDirective imple
   /**
    * Forwarded to the picker's time picker. (`min`/`max` are reserved by signal forms.) Only the time
    * of day of `minTime`/`maxTime` is read; `timeFilter` receives the candidate together with the side
-   * it belongs to. Bounds shape the picker - validate typed entry with a schema validator, exactly
-   * like the date inputs' `minDate`/`maxDate`.
+   * it belongs to. Bounds shape the picker - validate typed entry with a schema validator.
    */
   public minTime = input<Date | null>(null);
   public maxTime = input<Date | null>(null);
   public timeFilter = input<TimeRangeTimeFilterFn | null>(null);
 
-  /** No precision to derive from here - the input is the format in effect. */
   public effectiveDisplayFormat = this.displayFormat;
 
-  /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidTimeRange);
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TIME_RANGE_INPUT);
@@ -68,7 +64,7 @@ export class TimeRangeInputDirective extends DateRangePickerInputDirective imple
   // land on the same day and a consumer `timeFilter` can compare them
   private referenceDate = startOfDay(new Date());
 
-  /** Commits a picker-selected time onto one end. The picker stays open - the other end may follow. */
+  /** Commits a picker-selected time onto one end. The picker stays open. */
   public selectTime(side: DateRangeSide, time: Date | null) {
     if (time === null || !this.interactive()) {
       return;

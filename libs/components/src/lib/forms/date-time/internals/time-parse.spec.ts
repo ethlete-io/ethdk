@@ -53,7 +53,6 @@ describe('parseTimeText', () => {
   });
 
   it('zeroes units the entry does not carry', () => {
-    // the reference date's own time of day must not leak into the result
     expect(parse('9:30')?.getSeconds()).toBe(0);
   });
 

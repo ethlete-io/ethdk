@@ -36,7 +36,6 @@ describe('parseDateTimeText', () => {
   });
 
   it('zeroes units the entry does not carry', () => {
-    // "now" (the default reference date) must not leak into the result
     expect(parse('07/16/2026 9:30')?.getSeconds()).toBe(0);
     expect(parse('07/16/2026 9:30')?.getMilliseconds()).toBe(0);
   });

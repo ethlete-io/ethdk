@@ -15,7 +15,6 @@ import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.direct
 import { DateTimeRangeInputDirective, DateTimeRangeInputFieldDirective } from './headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
 
-/** Which pane the bottom-sheet tabs show; the desktop panel renders both side by side. */
 type DateTimeRangePane = 'dates' | 'times';
 
 const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
@@ -109,30 +108,25 @@ export class DateTimeRangeInputComponent {
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
 
-  /** The string in effect: this instance's `startAriaLabel`, else the domain's label set. */
   protected resolvedStartAriaLabel = computed(
     () => this.rangeInput.startAriaLabel() ?? this.dateTimeLabels().startDateTime,
   );
 
-  /** The string in effect: this instance's `endAriaLabel`, else the domain's label set. */
   protected resolvedEndAriaLabel = computed(() => this.rangeInput.endAriaLabel() ?? this.dateTimeLabels().endDateTime);
 
-  /** The string in effect: this instance's `pickerTriggerLabel`, else the domain's label set. */
   protected resolvedPickerTriggerLabel = computed(
     () => this.pickerTriggerLabel() ?? this.dateTimeLabels().openDateTimePicker,
   );
 
-  /** The string in effect: this instance's `dialogLabel`, else the domain's label set. */
   protected resolvedDialogLabel = computed(() => this.dialogLabel() ?? this.dateTimeLabels().chooseDateTimeRange);
 
-  /** The strings in effect: this instance's tab labels, else the domain's label set. */
   protected resolvedDatesTabLabel = computed(() => this.datesTabLabel() ?? this.dateTimeLabels().datesTab);
 
   protected resolvedTimesTabLabel = computed(() => this.timesTabLabel() ?? this.dateTimeLabels().timesTab);
 
   /**
    * The second reading shown under the fields: the zone they are in, and the same moments in the
-   * reader's own zone. `null` whenever the two agree - one clock is better than two that match.
+   * reader's own zone. `null` whenever the two agree.
    */
   protected localReadingText = computed(() => {
     const timeZone = this.rangeInput.resolvedTimeZoneLabel();
@@ -143,16 +137,13 @@ export class DateTimeRangeInputComponent {
       return null;
     }
 
-    // the same en dash the two fields are separated by, so the second reading lines up with them
     const reading = start !== null && end !== null ? `${start} – ${end}` : ((start ?? end) as string);
 
     return this.dateTimeLabels().timeZoneReading(timeZone, reading);
   });
 
-  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  // only while the field is in use - mirrors the date-time input's clear affordance
   protected showClear = computed(
     () =>
       this.clearable() &&
@@ -164,16 +155,14 @@ export class DateTimeRangeInputComponent {
   protected activePane = signal<DateTimeRangePane>('dates');
 
   /**
-   * Direction of the last pane switch - the incoming pane slides in from the
-   * travel direction, like the calendar's month navigation. `null` while
-   * untouched, so opening the picker does not animate.
+   * Direction of the last pane switch. `null` while untouched, so opening the picker does not
+   * animate.
    */
   protected paneNav = signal<'forward' | 'backward' | null>(null);
 
   private paneAdvanceSpent = signal(false);
 
   constructor() {
-    // every picker open starts back on the calendar pane, without a slide
     effect(() => {
       if (this.rangeInput.pickerOpen()) {
         this.activePane.set('dates');
@@ -190,10 +179,8 @@ export class DateTimeRangeInputComponent {
   }
 
   /**
-   * Two days are only half of a date & time range, so completing them carries the tabs on to the
-   * times pane - the bottom sheet's version of the desktop panel showing both at once. Once only:
-   * after that the tabs stay where they are put, so going back to correct the days is never
-   * interrupted.
+   * Completing the two days carries the tabs on to the times pane. Once only: after that the tabs
+   * stay where they are put.
    */
   protected handleRangeSelect(range: { start: Date | null; end: Date | null }) {
     this.rangeInput.selectCalendarRange(range);

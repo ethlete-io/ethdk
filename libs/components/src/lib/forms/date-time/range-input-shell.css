@@ -9,12 +9,9 @@
     align-items: center;
     gap: 2px 8px;
     flex: 1 1 auto;
-    /* The formatted values plus the separator and gaps, in `em` so it tracks the field's size
-       variant. Doubles as the width the control asks a shrink-to-fit parent for - `container-type`
-       leaves it no intrinsic width of its own - so it has to stay an `inline-size`, not a
-       `min-inline-size`, which would stop the fields shrinking below it. Each host sets its own
-       `--et-range-input-stack-threshold` here, then repeats that value as a literal in its own
-       `@container` condition - container query conditions cannot reference custom properties. */
+    /* Must stay an `inline-size`, not a `min-inline-size`, which would stop the fields shrinking
+       below it. Each host repeats this value as a literal in its own `@container` condition -
+       container query conditions cannot reference custom properties. */
     inline-size: var(--et-range-input-stack-threshold);
     min-inline-size: 0;
     color: inherit;
@@ -43,9 +40,6 @@
     }
   }
 
-  /* an unresolved bulk-edit range reads as provisional: both fields stay empty and the
-     mixed label shows through their placeholders - stronger than a regular hint (72% vs
-     46%). Consumers restyle via [data-mixed]. */
   et-date-range-input[data-mixed] .et-date-range-input-field::placeholder,
   et-time-range-input[data-mixed] .et-time-range-input-field::placeholder,
   et-date-time-range-input[data-mixed] .et-date-time-range-input-field::placeholder {

@@ -19,8 +19,6 @@ import { displayFormatForPrecision } from '../../internals/precision-format';
  * A date form control with a `string | null` value (a date-fns `valueFormat`
  * wire string, ISO by default). Typed entry parses strictly against
  * `displayFormat` on blur/Enter; the anchored picker overlay hosts a calendar.
- * String↔`Date` conversion happens exclusively here - the calendar itself
- * only ever sees `Date` objects.
  */
 @Directive({
   selector: '[etDateInput]',
@@ -72,15 +70,12 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
     () => this.displayFormat() ?? displayFormatForPrecision(this.precision(), this.effectiveLocale()),
   );
 
-  /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDate);
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DATE_INPUT);
 
   /** The current value as a `Date` (what the picker calendar binds to). */
   public date = computed(() => {
-    // masking: while mixed the hidden raw value is neither rendered in the field
-    // (displayValue derives from here) nor highlighted in the picker calendar
     if (this.mixed()) {
       return null;
     }
@@ -107,10 +102,9 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
   /** @internal A strict parse against `displayFormat`. */
   public parseCommitText(raw: string) {
-    // reference midnight, not `new Date()`: a date-only `displayFormat` leaves date-fns to
-    // fill H/M/S from the reference, so without this a typed day would carry the current
-    // wall-clock time into a time-bearing `valueFormat` while the same day picked in the
-    // calendar (startOfDay) would not - two entry paths, two wire values for one date.
+    // reference midnight, not `new Date()`: a date-only `displayFormat` leaves date-fns to fill
+    // H/M/S from the reference, so a typed day would otherwise carry the current wall-clock time
+    // into a time-bearing `valueFormat`.
     return parseDateValue(raw, {
       format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),
@@ -132,10 +126,8 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
   }
 
   /**
-   * Writes the wire value, at the start of `precision`'s unit. A coarse format cannot say which day
-   * it meant, so date-fns fills the missing units from the reference date - parsing `07.2026`
-   * against `MM.yyyy` yields *today's* day of July. Normalizing here is what makes a typed month and
-   * a picked month the same value.
+   * Writes the wire value, at the start of `precision`'s unit - a coarse format cannot say which day
+   * it meant, so normalizing here makes a typed month and a picked month the same value.
    */
   public writeCommitted(date: Date) {
     const unitStart = startOfCalendarUnit(date, this.precision());

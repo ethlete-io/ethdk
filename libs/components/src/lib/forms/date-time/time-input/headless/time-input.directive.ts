@@ -13,8 +13,7 @@ import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labe
  * A time form control with a `string | null` value (a date-fns `valueFormat`
  * wire string, `HH:mm` by default). Typed entry parses leniently on blur/Enter
  * (`930` → 09:30); the anchored picker overlay hosts a time picker and stays
- * open across part picks. String↔`Date` conversion happens exclusively here -
- * the time picker itself only ever sees `Date` objects.
+ * open across part picks.
  */
 @Directive({
   selector: '[etTimeInput]',
@@ -35,17 +34,14 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
   /**
    * Forwarded to the picker's time picker. (`min`/`max` are reserved by signal forms.)
    * Only the time of day of `minTime`/`maxTime` is read; `timeFilter` receives the full
-   * candidate timestamp. Bounds shape the picker - validate typed entry with a schema
-   * validator, exactly like the date inputs' `minDate`/`maxDate`.
+   * candidate timestamp. Bounds shape the picker - validate typed entry with a schema validator.
    */
   public minTime = input<Date | null>(null);
   public maxTime = input<Date | null>(null);
   public timeFilter = input<((date: Date) => boolean) | null>(null);
 
-  /** No precision to derive from here - the input is the format in effect. */
   public effectiveDisplayFormat = this.displayFormat;
 
-  /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidTime);
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TIME_INPUT);
@@ -55,8 +51,6 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
 
   /** The current value as a `Date` (what the picker binds to). */
   public time = computed(() => {
-    // masking: while mixed the hidden raw value is neither rendered in the field
-    // (displayValue derives from here) nor highlighted in the time picker
     if (this.mixed()) {
       return null;
     }
@@ -100,10 +94,7 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
     this.mixed.set(false);
   }
 
-  /**
-   * Commits a picker-selected time. The picker stays open - picking a time
-   * takes one selection per column.
-   */
+  /** Commits a picker-selected time. The picker stays open. */
   public selectTime(time: Date | null) {
     if (time === null || !this.interactive()) {
       return;

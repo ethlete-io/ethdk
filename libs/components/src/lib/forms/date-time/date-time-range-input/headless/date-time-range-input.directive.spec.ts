@@ -153,7 +153,6 @@ describe('DateTimeRangeInputDirective', () => {
     driver.clickInPane('.pick-both-days');
 
     expect(driver.host.value()).toEqual({ start: '2026-07-08 09:15', end: '2026-07-23 18:00' });
-    // a complete day range is only half a date-time range - the times are still to come
     expect(driver.control.pickerOpen()).toBe(true);
     expect(driver.control.touched()).toBe(true);
   });
@@ -221,7 +220,6 @@ describe('DateTimeRangeInputDirective', () => {
 
     driver.clickInPane('.pick-end-time');
 
-    // the end time of an appointment whose start day is known means that day, not today
     expect(driver.host.value()).toEqual({ start: '2026-07-08 09:00', end: '2026-07-08 21:45' });
   });
 
@@ -236,7 +234,6 @@ describe('DateTimeRangeInputDirective', () => {
 
     driver.clickInPane('.pick-both-days');
 
-    // the held start time completes on the day it was waiting for; the end has none yet
     expect(driver.host.value()).toEqual({ start: '2026-07-08 21:45', end: null });
     expect(driver.control.displayValue('end')).toBe('07/23/2026, __:__');
   });
@@ -246,7 +243,6 @@ describe('DateTimeRangeInputDirective', () => {
 
     driver.clickInPane('.pick-end-time');
 
-    // the calendar reports `end: null` for its whole first click - that says nothing about the time
     driver.clickInPane('.pick-start-day');
 
     expect(driver.control.displayValue('end')).toBe('__/__/____, 21:45');
@@ -331,7 +327,6 @@ describe('DateTimeRangeInputDirective', () => {
       driver.clickInPane('.pick-start-time');
 
       expect(driver.host.mixed()).toBe(false);
-      // neither the hidden 2026-03-01 nor the hidden end may survive the fresh pick
       expect(driver.host.value()).toEqual({ start: null, end: null });
       expect(driver.control.displayValue('start')).toBe('__/__/____, 21:45');
       expect(driver.control.displayValue('end')).toBe('');
@@ -376,7 +371,6 @@ describe('DateTimeRangeInputDirective mixed state', () => {
       },
       mixedLabel: () => 'Mixed',
       mixedDisplayText: () => driver.field('.start').placeholder,
-      // replace semantics: the resolving commit starts a fresh range - no merge with the hidden end
       commit: () => driver.typeAndBlur('07/20/2026, 14:30', '.start'),
       committedValue: () => ({ start: '2026-07-20 14:30', end: null }),
       assertMasked: () => {

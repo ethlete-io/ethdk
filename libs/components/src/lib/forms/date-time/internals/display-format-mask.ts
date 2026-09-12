@@ -1,10 +1,6 @@
 /**
- * The date-fns tokens a typing mask can represent: fixed-width, purely numeric.
- * Keyed by token letter, listing the run lengths that are fixed-width (each
- * letter maps to exactly one digit). Everything else - locale formats (`P`/`p`),
- * variable-width tokens (`d`, `M`, `H`), text tokens (`MMM`, `EEEE`, `a`) -
- * cannot be masked: the mask's positional slots need every character to have a
- * fixed place.
+ * The date-fns tokens a typing mask can represent, keyed by token letter and listing the run
+ * lengths that are fixed-width (each letter maps to exactly one digit).
  */
 const FIXED_WIDTH_TOKEN_RUNS: Record<string, readonly number[]> = {
   y: [2, 4],
