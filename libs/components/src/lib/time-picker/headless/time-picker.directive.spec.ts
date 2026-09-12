@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import { tick } from '../../testing/driver-core';
 import { column, columns, option, press } from '../testing/time-picker-driver';
+import { TIME_PICKER_ERROR_CODES } from '../time-picker-errors';
 import { TimePickerColumnDirective } from './time-picker-column.directive';
 import { TimePickerOptionDirective } from './time-picker-option.directive';
 import { TimePickerDirective } from './time-picker.directive';
@@ -449,5 +450,37 @@ describe('TimePickerDirective', () => {
 
     expect(option(fixture, 'hour', 9)?.tabIndex).toBe(-1);
     expect(option(fixture, 'hour', 10)?.tabIndex).toBe(0);
+  });
+});
+
+@Component({
+  template: `<div etTimePickerColumn></div>`,
+  imports: [TimePickerColumnDirective],
+})
+class OrphanTimePickerColumnTestHost {}
+
+@Component({
+  template: `<button etTimePickerOption>9</button>`,
+  imports: [TimePickerOptionDirective],
+})
+class OrphanTimePickerOptionTestHost {}
+
+describe('TimePickerColumnDirective errors', () => {
+  it('rejects a column outside a time picker while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanTimePickerColumnTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanTimePickerColumnTestHost)).toThrow(
+      `ET${TIME_PICKER_ERROR_CODES.COLUMN_OUTSIDE_TIME_PICKER}`,
+    );
+  });
+});
+
+describe('TimePickerOptionDirective errors', () => {
+  it('rejects an option outside a column while the directive is constructed', () => {
+    TestBed.configureTestingModule({ imports: [OrphanTimePickerOptionTestHost] });
+
+    expect(() => TestBed.createComponent(OrphanTimePickerOptionTestHost)).toThrow(
+      `ET${TIME_PICKER_ERROR_CODES.OPTION_OUTSIDE_COLUMN}`,
+    );
   });
 });

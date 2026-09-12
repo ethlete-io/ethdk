@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, effect, inject, input } from '@angular/core';
+import { Directive, ElementRef, effect, inject, input } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { TIME_PICKER_ERROR_CODES } from '../time-picker-errors';
 import { TimePickerColumnDirective } from './time-picker-column.directive';
@@ -41,16 +41,12 @@ export class TimePickerOptionDirective {
   public option = input.required<TimePickerOption>();
 
   constructor() {
-    if (ngDevMode) {
-      afterNextRender(() => {
-        if (!this.timePicker || !this.column) {
-          throw new RuntimeError(
-            TIME_PICKER_ERROR_CODES.OPTION_OUTSIDE_COLUMN,
-            'An [etTimePickerOption] must be placed inside an [etTimePickerColumn].',
-            { element: this.elementRef.nativeElement },
-          );
-        }
-      });
+    if (ngDevMode && (!this.timePicker || !this.column)) {
+      throw new RuntimeError(
+        TIME_PICKER_ERROR_CODES.OPTION_OUTSIDE_COLUMN,
+        'An [etTimePickerOption] must be placed inside an [etTimePickerColumn].',
+        { element: this.elementRef.nativeElement },
+      );
     }
 
     // pull DOM focus along while the user keyboard-navigates the column
