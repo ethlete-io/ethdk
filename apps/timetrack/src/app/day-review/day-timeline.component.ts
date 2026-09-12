@@ -29,7 +29,14 @@ import { BreakWindow, DEFAULT_ROUND_OPTIONS, ReviewedRow, formatDurationMs } fro
 import { tap } from 'rxjs';
 import { formatClockTime } from './format';
 import { BREAK_LANE_KEY, BreakBand, DayLane, lanesOf, laneKeyOfRow } from './lanes';
-import { TimelineEntry, UNNAMED_LABEL, appointmentLabel, appointmentOf, rowEntryOf } from './row-edit/row-appointment';
+import {
+  TimelineEntry,
+  UNATTENDED_LABEL,
+  UNNAMED_LABEL,
+  appointmentLabel,
+  appointmentOf,
+  rowEntryOf,
+} from './row-edit/row-appointment';
 import { rowActionsFor } from './row-edit/row-actions';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 import { injectDayReview } from './day-review';
@@ -780,7 +787,7 @@ export class DayTimelineComponent {
   }
 
   protected labelOf(boundary: TimelineBoundary) {
-    const named = (row: ReviewedRow) => row.issueKey ?? UNNAMED_LABEL;
+    const named = (row: ReviewedRow) => row.issueKey ?? (row.unattended ? UNATTENDED_LABEL : UNNAMED_LABEL);
 
     return `Boundary between ${named(boundary.before)} and ${named(boundary.after)}`;
   }

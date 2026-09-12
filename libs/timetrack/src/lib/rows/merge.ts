@@ -24,6 +24,12 @@ export type WorkGroup = {
    * blocks, so nothing else can say where they belong.
    */
   laneKey?: string;
+  /**
+   * Whether anybody was at the machine for this band, from `markAttendance`. `false` is a band the
+   * machine worked alone, and `propose` refuses to make a Tempo row of one. Absent means the question
+   * was not asked, which every caller that builds a group by hand is.
+   */
+  attended?: boolean;
 };
 
 export type MergeOptions = {

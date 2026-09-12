@@ -24,19 +24,20 @@ up, whatever position the roadmap gives it.
 
 ## Where the work stands, on 2026-09-10
 
-| Part                                                | State                                                                  |
-| --------------------------------------------------- | ---------------------------------------------------------------------- |
-| Rust host, keychain, encrypted store, tray, widget  | Built. Proven on Linux and macOS.                                      |
-| Collectors: window, idle, git, agent sessions, call | Built. Being hardened now.                                             |
-| Providers: Jira, Tempo, GitLab, GitHub, Google      | Built, and verified against the real instances.                        |
-| `streamDay` and the one day screen                  | Built. Slices 1 and 2a are on screen.                                  |
-| Naming the unnamed window                           | Two rungs built. The rest waits on five more workdays of measurement.  |
-| Slices 2a to 2c                                     | M2 built, its exit test unread. M3 planned. M4 needs its own document. |
-| Slices 5, 6, 9 to 12                                | One paragraph of outline each.                                         |
-| A production Tempo worklog                          | **Never written.** No day has left this machine.                       |
-| A day that spans two machines                       | **Not built.** Each machine reports only what it saw.                  |
-| Autostart, an updater, a packaged build             | Not built. `tauri:build` runs by hand.                                 |
-| `correlate/` and the v1 screens                     | Deleted. One day screen, on `streamDay`. See ADR 0016.                 |
+| Part                                                | State                                                                    |
+| --------------------------------------------------- | ------------------------------------------------------------------------ |
+| Rust host, keychain, encrypted store, tray, widget  | Built. Proven on Linux and macOS.                                        |
+| Collectors: window, idle, git, agent sessions, call | Built. Being hardened now.                                               |
+| Providers: Jira, Tempo, GitLab, GitHub, Google      | Built, and verified against the real instances.                          |
+| `streamDay` and the one day screen                  | Built. Slices 1 and 2a are on screen.                                    |
+| Naming the unnamed window                           | Two rungs built. The rest waits on five more workdays of measurement.    |
+| Slices 2a to 2c                                     | M2 built, its exit test unread. M3 planned. M4 needs its own document.   |
+| Slices 5, 6, 9 to 12                                | One paragraph of outline each.                                           |
+| A production Tempo worklog                          | **Never written.** No day has left this machine.                         |
+| A day that spans two machines                       | **Not built.** Each machine reports only what it saw.                    |
+| A commit's provenance                               | **Not built.** A commit a `git pull` brought in still reads as presence. |
+| Autostart, an updater, a packaged build             | Not built. `tauri:build` runs by hand.                                   |
+| `correlate/` and the v1 screens                     | Deleted. One day screen, on `streamDay`. See ADR 0016.                   |
 
 ## The seven answers this plan is built on
 
@@ -278,6 +279,12 @@ is written. A window title, a prompt and a checkout name all leave one machine u
 - A per-pair secret, held in each machine's keychain, and an encrypted transport.
 - The merge: presence unions with every overlap counted once, engaged time sums per stream, and
   spend stays with the machine that spent it.
+- **Attendance travels, not presence alone.** A minute is attended if any of Tom's machines saw
+  attendance in it, and unattended if work ran and none did — see
+  [ADR 0018](../../libs/timetrack/docs/adr/0018-a-prompt-nobody-asked-for-is-not-presence.md). A merge
+  that dropped unattended time would make a real day on the second machine book short again, which is
+  the failure this slice exists to remove. A merge that sent it as presence would book a night nobody
+  worked, which is what 2026-09-12 did on one machine.
 - Exactly one machine books a day.
 - A machine that is off, said out loud. An incomplete day reads as incomplete rather than as a
   short one.

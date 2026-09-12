@@ -94,12 +94,16 @@ export type AgentUsageEvent = CollectedEventBase<'agent-usage', 'agent-usage'> &
   agentId?: string;
 };
 
+/** Who asked for a prompt. A machine prompt is a schedule, a task notification or another session. */
+export type PromptAskedBy = 'human' | 'machine';
+
 /**
- * One prompt the user typed at an agent: its instant, its session and the checkout it was typed in.
+ * One prompt an agent was given: its instant, its session and the checkout it was given in.
  *
- * A turn says the machine worked, and this says a person was at the keyboard. That difference is why
- * it is the only agent evidence a day nothing observed may rebuild presence from — see ADR 0006. It
- * carries no text, which is what lets it outlive the raw samples the way spend does (ADR 0002).
+ * A turn says the machine worked, and a *human* prompt says a person was at the keyboard. That
+ * difference is why it is the only agent evidence a day nothing observed may rebuild presence from —
+ * see ADR 0006. It carries no text, which is what lets it outlive the raw samples the way spend does
+ * (ADR 0002).
  *
  * It is no `ActivityEvent`: on an observed day the focused window says where the person was, and a
  * prompt at 09:00 would otherwise open a block in a checkout nobody had in front of them.
@@ -112,6 +116,13 @@ export type AgentPromptEvent = CollectedEventBase<'agent-prompt', 'agent-prompt'
   promptId: string;
   cwd: string;
   gitBranch?: string;
+  /**
+   * Who asked, where the log says so. `machine` is a scheduled run, a task notification or a message
+   * from another session, and it is the one value that denies presence — nobody was at the keyboard
+   * for it. Absent means the log did not say, which every event collected before this field and every
+   * Codex prompt is, and those keep counting as a person.
+   */
+  askedBy?: PromptAskedBy;
 };
 
 /**

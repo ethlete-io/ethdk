@@ -1,4 +1,4 @@
-import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent, TokenUsage } from '../model/event';
+import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent, PromptAskedBy, TokenUsage } from '../model/event';
 import { asJsonObject, countAt, objectAt, stringAt } from './record';
 import { AgentSessionLogParseOptions, AgentSessionLogParser, DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS } from './source';
 
@@ -83,13 +83,40 @@ const usageOf = (record: Record<string, unknown>): AgentUsageEvent | null => {
   };
 };
 
+/** The `promptSource` values a person is behind. Anything else the agent wrote for itself. */
+const HUMAN_PROMPT_SOURCES = ['typed', 'queued', 'suggestion_accepted'];
+
 /**
- * The prompt the user typed, or `null` for every other record.
+ * Who asked for this prompt, or `undefined` where the record does not say.
  *
- * A user record whose content is a plain string is what the person sent; a tool result arrives as the
- * same type with `toolUseResult` beside it, and a content array is never typed by hand. A sidechain
- * record is a subagent's instructions written by the model, so it is nobody at a keyboard — which is
- * the one thing this event exists to state.
+ * `origin.kind` is read first and answers alone: the agent states it, and `human` is the only value
+ * that means a person. `promptSource` is the older field and is read only as a fallback, where
+ * `system` is the agent writing to itself — a scheduled run, a task notification, a message from
+ * another session. A record carrying neither is from a version that recorded neither, so it stays
+ * unanswered rather than guessed at.
+ */
+const askedByOf = (record: Record<string, unknown>): PromptAskedBy | undefined => {
+  const origin = objectAt(record, 'origin');
+  const kind = origin ? stringAt(origin, 'kind') : undefined;
+
+  if (kind) return kind === 'human' ? 'human' : 'machine';
+
+  const source = stringAt(record, 'promptSource');
+
+  if (!source) return undefined;
+
+  return HUMAN_PROMPT_SOURCES.includes(source) ? 'human' : 'machine';
+};
+
+/**
+ * The prompt an agent was given, or `null` for every other record.
+ *
+ * A user record whose content is a plain string is what was sent; a tool result arrives as the same
+ * type with `toolUseResult` beside it, and a content array is never typed by hand. A sidechain record
+ * is a subagent's instructions written by the model, so it is nobody at a keyboard.
+ *
+ * A prompt nobody asked for is still emitted, with `askedBy: 'machine'`. It is what the session ran
+ * on, so the day needs it to say what happened; it simply may not say that a person was there.
  */
 const promptOf = (record: Record<string, unknown>): AgentPromptEvent | null => {
   if (stringAt(record, 'type') !== 'user') return null;
@@ -102,6 +129,8 @@ const promptOf = (record: Record<string, unknown>): AgentPromptEvent | null => {
 
   if (!message || !activity || !promptId || typeof message['content'] !== 'string') return null;
 
+  const askedBy = askedByOf(record);
+
   return {
     at: activity.at,
     source: 'agent-prompt',
@@ -111,6 +140,7 @@ const promptOf = (record: Record<string, unknown>): AgentPromptEvent | null => {
     promptId,
     cwd: activity.cwd,
     gitBranch: activity.gitBranch,
+    ...(askedBy ? { askedBy } : {}),
   };
 };
 

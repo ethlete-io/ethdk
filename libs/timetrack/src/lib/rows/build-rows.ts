@@ -5,6 +5,7 @@ import { CollectedEvent } from '../model/event';
 import { WorklogProposal } from '../model/proposal';
 import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
 import { TimeWindow } from '../model/time-window';
+import { attendedAt, markAttendance } from './attended';
 import { AttributeOptions, attribute } from './attribute';
 import { CallMatch, dropCallWindows, matchCalls } from './calls';
 import { CutOptions, cutBackground } from './cut';
@@ -177,11 +178,18 @@ export const buildRows = (
     claimed: [...unwatched, ...calls.map((call) => call.group)],
     options: options.fill,
   });
-  const groups = [
-    ...mergeBlocks({ blocks: filled.blocks, barriers: options.breaks, options: options.merge }),
-    ...calls.map((call) => call.group),
-    ...timers.map((timer) => timer.group),
-  ].sort((a, b) => a.from.getTime() - b.from.getTime());
+  // Attendance is marked after the merge and before the proposal: a band is the unit the user books,
+  // so it is the unit the question "was anybody here" has to be answered for. A call and a timed run
+  // are the user's own acts, so they answer it themselves.
+  const groups = markAttendance({
+    groups: [
+      ...mergeBlocks({ blocks: filled.blocks, barriers: options.breaks, options: options.merge }),
+      ...calls.map((call) => call.group),
+      ...timers.map((timer) => timer.group),
+    ],
+    at: attendedAt(options.events),
+    claimed: [...unwatched, ...calls.map((call) => ({ from: call.group.from, to: call.group.to }))],
+  }).sort((a, b) => a.from.getTime() - b.from.getTime());
   const { proposals, unattributed, unnamed } = propose({
     groups,
     config: options.config,

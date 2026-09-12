@@ -39,6 +39,12 @@ const typed = (minutes: number, cwd = '/home/tom/dev/fifagg/fifagg-frontend'): A
   cwd,
 });
 
+/** A prompt nobody was there for: a schedule, a task notification, another session. */
+const scheduled = (minutes: number, cwd = '/home/tom/dev/fifagg/fifagg-frontend'): AgentPromptEvent => ({
+  ...typed(minutes, cwd),
+  askedBy: 'machine',
+});
+
 const turn = (minutes: number): AgentUsageEvent => ({
   at: AT(minutes),
   source: 'agent-usage',
@@ -178,5 +184,40 @@ describe('presenceWindows, rebuilding a day nothing observed', () => {
       { from: AT(20), to: AT(20) },
     ]);
     expect(rebuilt([focus(0), focus(20)])).toEqual([{ from: AT(0), to: AT(20) }]);
+  });
+});
+
+describe('presenceWindows, on an agent nobody asked for', () => {
+  it('opens no stretch at all for a scheduled run', () => {
+    expect(rebuilt([scheduled(0), turn(10), turn(20), scheduled(25)])).toEqual([]);
+  });
+
+  it('opens one for the same shape of run when a person asked', () => {
+    expect(rebuilt([typed(0), turn(10), turn(20), typed(25)])).toEqual([{ from: AT(0), to: AT(25) }]);
+  });
+
+  it('ends the stretch where the person left, when a schedule took the session over', () => {
+    const day = [typed(0), presence(5, 'idle-start'), scheduled(10), turn(20), scheduled(30)];
+
+    expect(rebuilt(day)).toEqual([{ from: AT(0), to: AT(5) }]);
+  });
+
+  it('refuses the whole wait as presence when the resume comes and only a schedule worked', () => {
+    const day = [typed(0), presence(5, 'idle-start'), scheduled(10), turn(20), presence(25, 'idle-end'), focus(26)];
+
+    expect(rebuilt(day)).toEqual([
+      { from: AT(0), to: AT(5) },
+      { from: AT(26), to: AT(26) },
+    ]);
+  });
+
+  it('starts counting where the person takes a scheduled session over', () => {
+    expect(rebuilt([scheduled(0), turn(10), typed(20), turn(30)])).toEqual([{ from: AT(20), to: AT(20) }]);
+  });
+
+  it('counts a prompt the log named no origin for as a person, as it always did', () => {
+    expect(rebuilt([{ ...typed(0), askedBy: 'human' }, turn(10), turn(20), typed(25)])).toEqual([
+      { from: AT(0), to: AT(25) },
+    ]);
   });
 });

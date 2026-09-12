@@ -163,6 +163,17 @@ describe('checkDay', () => {
     expect(check.warnings.map((warning) => warning.kind)).toEqual(['unattributed-time']);
   });
 
+  it('counts a band nobody was at apart from the time waiting for a name', () => {
+    const check = checkDay({
+      proposals: [proposal({ issueKey: 'FIP-2177', durationMinutes: 240 })],
+      unattributed: [group(45), { ...group(90), attended: false }],
+    });
+
+    expect(check.unattributedMs).toBe(45 * MINUTE);
+    expect(check.unattendedMs).toBe(90 * MINUTE);
+    expect(check.warnings.map((warning) => warning.kind)).toEqual(['unattributed-time', 'unattended-time']);
+  });
+
   it('warns when a day is still above the row cap after consolidation', () => {
     const check = checkDay({
       proposals: Array.from({ length: 5 }, (_, index) => proposal({ issueKey: `FIP-${index}`, durationMinutes: 30 })),

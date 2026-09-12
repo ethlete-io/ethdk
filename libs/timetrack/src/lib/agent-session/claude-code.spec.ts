@@ -498,6 +498,38 @@ describe('parseClaudeCodeSessionLog prompts', () => {
     expect(parse([prompt({ minute: 5 })], { resume: { after: at(9) } }).prompts).toHaveLength(1);
   });
 
+  it('says a human asked, when the record names the origin', () => {
+    const result = parse([prompt({ minute: 5, extra: { origin: { kind: 'human' }, promptSource: 'typed' } })]);
+
+    expect(result.prompts[0]?.askedBy).toBe('human');
+  });
+
+  it('says the machine asked for a task notification', () => {
+    const result = parse([
+      prompt({ minute: 5, extra: { origin: { kind: 'task-notification' }, promptSource: 'system' } }),
+    ]);
+
+    expect(result.prompts[0]?.askedBy).toBe('machine');
+  });
+
+  it('says the machine asked, for a message from another session', () => {
+    const result = parse([prompt({ minute: 5, extra: { origin: { kind: 'peer' } } })]);
+
+    expect(result.prompts[0]?.askedBy).toBe('machine');
+  });
+
+  it('reads promptSource where the record names no origin', () => {
+    expect(parse([prompt({ minute: 5, extra: { promptSource: 'system' } })]).prompts[0]?.askedBy).toBe('machine');
+    expect(parse([prompt({ minute: 6, extra: { promptSource: 'queued' } })]).prompts[0]?.askedBy).toBe('human');
+    expect(parse([prompt({ minute: 7, extra: { promptSource: 'suggestion_accepted' } })]).prompts[0]?.askedBy).toBe(
+      'human',
+    );
+  });
+
+  it('leaves askedBy unanswered for a log that records neither field', () => {
+    expect(parse([prompt({ minute: 5 })]).prompts[0]?.askedBy).toBeUndefined();
+  });
+
   it('keeps one copy of a prompt whose record repeats', () => {
     expect(parse([prompt({ minute: 5 }), prompt({ minute: 5 })]).prompts).toHaveLength(1);
   });

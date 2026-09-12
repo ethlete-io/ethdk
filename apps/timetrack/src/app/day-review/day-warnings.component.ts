@@ -5,6 +5,7 @@ const HEADINGS: Record<DayWarningKind, string> = {
   'under-target': 'The day is short of its target',
   'over-target': 'The day is over its target',
   'unattributed-time': 'Some time matched no issue',
+  'unattended-time': 'An agent worked while nobody was here',
   'too-many-rows': 'This day fragmented',
   'zero-duration': 'A row rounded away to nothing',
   'meeting-overlap': 'A meeting and observed work claim the same time',

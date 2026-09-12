@@ -10,8 +10,11 @@ export type PresenceSample = ActivityEvent | AgentPromptEvent | AgentUsageEvent;
 /**
  * Whether a sample is the user at the machine, rather than something the machine did on its own.
  *
- * A typed prompt is one of them: a person pressed the keys, at the instant the log records. A turn is
- * not, and neither is a session — those are the machine working, whoever started it.
+ * A prompt a person gave is one of them: they pressed the keys, at the instant the log records. A turn
+ * is not, and neither is a session — those are the machine working, whoever started it.
+ *
+ * Whether anybody asked for that prompt is `attended`'s question, and a sample that fails it never
+ * reaches this one.
  */
 const isPresent = (sample: PresenceSample) => sample.kind === 'window-focus' || sample.kind === 'agent-prompt';
 
@@ -33,6 +36,30 @@ const lastResumeIndex = (samples: readonly PresenceSample[]) => {
 
 /** Whether the sample is an agent's, which is what the wider of the two gaps applies to. */
 const isAgents = (sample: PresenceSample) => sample.kind === 'agent-prompt' || sample.kind === 'agent-usage';
+
+/**
+ * The session ids whose work nobody asked for, at each point of the day.
+ *
+ * A turn carries no `askedBy` of its own, so the session is what answers for it: a turn is the machine
+ * working on whatever it was last asked for. A session that opens on a schedule and that the user then
+ * types into is attended from that prompt onwards, which is why this is read as the day runs rather
+ * than decided for the whole session in advance.
+ */
+type SessionAttendance = Map<string, 'human' | 'machine'>;
+
+/**
+ * Whether anybody is behind this sample. Only an agent's samples can answer `false`.
+ *
+ * This is the difference between a person who waits on an agent and an agent that runs alone, and
+ * nothing else in the day can tell the two apart — the turns, the sessions and the commits are
+ * identical either way.
+ */
+const attended = (sample: PresenceSample, asked: SessionAttendance) => {
+  if (sample.kind === 'agent-prompt') return sample.askedBy !== 'machine';
+  if (sample.kind === 'agent-usage') return asked.get(sample.sessionId) !== 'machine';
+
+  return true;
+};
 
 const endsPresence = (kind: PresenceEvent['kind']) =>
   kind === 'idle-start' || kind === 'lock' || kind === 'pause-start';
@@ -94,8 +121,9 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
   let awaited = away;
   /** The `idle-start` an agent is still working through, and where the stretch closes if it stops too. */
   let bridged: Date | null = null;
-  /** When the agent last did anything, which is what says whether one is still working. */
+  /** When the agent last did anything *for the user*, which is what says whether one is still working. */
   let lastAgent: Date | null = null;
+  const asked: SessionAttendance = new Map();
 
   const close = (at: Date) => {
     if (!current) return;
@@ -110,11 +138,20 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
   const gapMs = (sample: PresenceSample) => Math.min(mark?.gapMs ?? Infinity, isAgents(sample) ? agentGapMs : Infinity);
 
   for (const [index, sample] of options.samples.entries()) {
+    // Before the sample is read: a prompt states who asked, and every turn after it in the same session
+    // is that answer until the next prompt changes it.
+    if (sample.kind === 'agent-prompt') asked.set(sample.sessionId, sample.askedBy ?? 'human');
+
     // The agent stopped as well, so the wait it held open was an absence after all. This has to run
     // before the branches below, or the resume that ends the idleness would close it as presence.
     const agentWorks = !!lastAgent && sample.at.getTime() - lastAgent.getTime() < agentGapMs;
 
     if (bridged && current && !agentWorks) close(current.to);
+
+    // An agent nobody asked for says nothing about the day: it may not open a stretch, extend one,
+    // hold one open across an idle-start, or end a stretch away. It is still the machine at work, and
+    // `unattendedMs` is where that is reported.
+    if (!attended(sample, asked)) continue;
 
     if (isAgents(sample)) lastAgent = sample.at;
 

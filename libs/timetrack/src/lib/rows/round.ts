@@ -76,6 +76,8 @@ export type DayWarningKind =
   | 'under-target'
   | 'over-target'
   | 'unattributed-time'
+  /** Part of the day an agent worked alone, which is the machine's time rather than the user's. */
+  | 'unattended-time'
   | 'too-many-rows'
   | 'zero-duration'
   | 'meeting-overlap'
@@ -102,8 +104,14 @@ export type DayCheck = {
   coveredMs: number;
   /** What the day is logged for in total: the proposals plus what Tempo already holds. */
   loggedMs: number;
-  /** Observed time nothing could attribute. Never folded into the proposals. */
+  /**
+   * Observed time nothing could attribute, and that a person was there for. Never folded into the
+   * proposals. Time nobody was there for is `unattendedMs` instead: it is not work waiting for a name,
+   * so counting it here would read as a question the reviewer has to answer.
+   */
   unattributedMs: number;
+  /** Observed time an agent worked alone. Drawn, counted, and never proposed. */
+  unattendedMs: number;
   targetMs?: number;
   /** Logged minus target. Positive is over. */
   deltaMs?: number;
@@ -148,7 +156,11 @@ export const checkDay = (options: {
   const proposedMs = options.proposals.reduce((sum, proposal) => sum + proposal.durationMs, 0);
   const coveredMs = options.options?.coveredMs ?? 0;
   const loggedMs = proposedMs + coveredMs;
-  const unattributedMs = unattributed.reduce((sum, group) => sum + group.observedMs, 0);
+  const unattributedMs = unattributed
+    .filter((group) => group.attended !== false)
+    .reduce((sum, group) => sum + group.observedMs, 0);
+  const unattended = unattributed.filter((group) => group.attended === false);
+  const unattendedMs = unattended.reduce((sum, group) => sum + group.observedMs, 0);
   const tolerance = toleranceMs ?? DEFAULT_ROUND_OPTIONS.incrementMs;
   const warnings: DayWarning[] = [];
 
@@ -165,9 +177,18 @@ export const checkDay = (options: {
   }
 
   if (unattributedMs > 0) {
+    const named = unattributed.length - unattended.length;
+
     warnings.push({
       kind: 'unattributed-time',
-      detail: `${formatDurationMs(unattributedMs)} across ${unattributed.length} block(s) matched no issue`,
+      detail: `${formatDurationMs(unattributedMs)} across ${named} block(s) matched no issue`,
+    });
+  }
+
+  if (unattendedMs > 0) {
+    warnings.push({
+      kind: 'unattended-time',
+      detail: `${formatDurationMs(unattendedMs)} across ${unattended.length} block(s) ran with nobody at the machine`,
     });
   }
 
@@ -219,6 +240,7 @@ export const checkDay = (options: {
     coveredMs,
     loggedMs,
     unattributedMs,
+    unattendedMs,
     targetMs,
     deltaMs: targetMs === undefined ? undefined : loggedMs - targetMs,
     warnings,

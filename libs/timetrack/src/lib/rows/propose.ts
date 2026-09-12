@@ -9,7 +9,7 @@ import { snapRowBounds } from './snap';
 import { stretchesOf } from './stretches';
 
 /**
- * A band of work the day could not name. It is drawn, split and merged like any other row, and it
+ * A band of work the day will not book. It is drawn, split and merged like any other row, and it
  * never reaches Tempo — naming it is what turns it into a proposal.
  */
 export type UnnamedProposal = Omit<WorklogProposal, 'issueKey' | 'storyKey'>;
@@ -27,7 +27,15 @@ export type ProposeResult = {
 
 type AttributedGroup = WorkGroup & { issueKey: string };
 
-const isAttributed = (group: WorkGroup): group is AttributedGroup => !!group.issueKey;
+/**
+ * Whether the group becomes a Tempo row.
+ *
+ * An issue is not enough. A band the machine worked alone is refused here rather than at sync time,
+ * because a proposal is the thing a reviewer accepts, and nothing the user has to notice may be the
+ * only guard against booking an hour nobody was there for. Such a band is still drawn, in `unnamed`,
+ * and the user can still name it by hand — which is a deliberate act rather than an oversight.
+ */
+const isAttributed = (group: WorkGroup): group is AttributedGroup => !!group.issueKey && group.attended !== false;
 
 /** A group with the bounds and the booked time its row will carry. */
 type BoundGroup = { group: WorkGroup; from: Date; to: Date; durationMs: number };
@@ -94,6 +102,7 @@ export const propose = (options: {
     unattributed: unattributed.map((row) => row.group),
     unnamed: unattributed.map(({ group, from, to, durationMs }) => ({
       id: unnamedId(group),
+      ...(group.attended === false ? { unattended: true } : {}),
       from,
       to,
       durationMs,

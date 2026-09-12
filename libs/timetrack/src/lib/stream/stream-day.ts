@@ -308,7 +308,7 @@ const addSpend = (into: StreamSpend, turn: AgentUsageEvent) => {
 const promptEvidence = (prompt: AgentPromptEvent): Evidence => ({
   kind: 'prompt',
   at: prompt.at,
-  detail: 'prompts you typed here',
+  detail: prompt.askedBy === 'machine' ? 'prompts an agent gave itself here' : 'prompts you typed here',
 });
 
 const evidenceFor = (sample: ActivityEvent): Evidence | null => {

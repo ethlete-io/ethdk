@@ -33,6 +33,15 @@ export type WorklogProposal = {
   confidence: Confidence;
   evidence: Evidence[];
   state: WorklogProposalState;
+  /**
+   * True where nothing said a person was at the machine for this band: no window came to the front, no
+   * idle transition fired, and every prompt in it was one an agent gave itself. An agent worked and
+   * nobody watched.
+   *
+   * It is the machine's time rather than the user's, so `propose` never makes a Tempo row of such a
+   * band — it is drawn, its tokens are counted, and naming it stays a deliberate act of the user's.
+   */
+  unattended?: boolean;
 };
 
 /**

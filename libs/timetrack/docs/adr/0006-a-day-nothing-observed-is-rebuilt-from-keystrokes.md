@@ -1,5 +1,9 @@
 # A day nothing observed is rebuilt from the keys the user pressed, and a turn only bridges
 
+> **Amended by [ADR 0018](./0018-a-prompt-nobody-asked-for-is-not-presence.md).** "A prompt the user
+> typed" now means a prompt `askedBy` says a person gave. A prompt an agent gave itself — a scheduled
+> run, a task notification, a message from another session — is presence in none of the ways below.
+
 Presence is built from `window-focus` and the idle transitions, and presence gates every block. Both
 are edge-triggered and exist only while the application runs, so a day it did not run reports almost
 nothing however much work the day held. Measured on 2026-09-07: the screen read 21 minutes and one

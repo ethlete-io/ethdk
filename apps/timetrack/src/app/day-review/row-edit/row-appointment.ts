@@ -5,6 +5,13 @@ import { Confidence, ReviewedRow, formatDurationMs, isManualRow, syncsInState } 
 export const UNNAMED_LABEL = 'Not yet named';
 
 /**
+ * What a band with no issue is called when nobody was at the machine for it. It is a different answer
+ * from {@link UNNAMED_LABEL}: the day is not waiting to be told what this work was, it is saying that
+ * an agent did it alone and that its hours are not the user's to book.
+ */
+export const UNATTENDED_LABEL = 'Nobody was here';
+
+/**
  * The theme each confidence tier paints in. Registered theme names, not colours — the scheduler reads
  * `colorToken` as `[etProvideColor]`.
  */
@@ -78,7 +85,8 @@ export const appointmentLabel = (appointment: Appointment) => {
 
   if (!entry) return appointment.title;
 
-  const named = entry.row.issueKey ?? UNNAMED_LABEL;
+  const named = entry.row.issueKey ?? (entry.row.unattended ? UNATTENDED_LABEL : UNNAMED_LABEL);
+  const alone = entry.row.issueKey && entry.row.unattended ? ' · nobody was here' : '';
 
-  return `${named} · ${formatDurationMs(entry.durationMs)}${isManualRow(entry.row) ? ' · by hand' : ''}`;
+  return `${named} · ${formatDurationMs(entry.durationMs)}${alone}${isManualRow(entry.row) ? ' · by hand' : ''}`;
 };
