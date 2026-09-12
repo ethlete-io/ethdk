@@ -665,7 +665,7 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    it the highest-leverage single piece), the `ResizeObserver`/`IntersectionObserver`/`clientWidth`
    shims that six grid/masonry specs and three tab specs each hand-roll, a breakpoint fake (nothing can
    currently test the cascader bottom sheet at all), and **wiring `onfinish`/`oncancel` into
-   `test-helpers.ts`'s `AnimationMock`** — a hard prerequisite for testing any animated PiP path. — **Mostly DONE by 2026-09-12**: `fake-match-media.ts`, `fake-layout.ts`, the observer shims and the `AnimationMock` `onfinish`/`oncancel` all live in `libs/components/src/lib/testing/` and `libs/components/src/test-helpers.ts`. Open: a breakpoint fake for the cascader bottom sheet. M
+   `test-helpers.ts`'s `AnimationMock`** — a hard prerequisite for testing any animated PiP path. — **Mostly DONE by 2026-09-12**: `fake-match-media.ts`, `fake-layout.ts`, the observer shims and the `AnimationMock` `onfinish`/`oncancel` all live in `libs/components/src/lib/testing/` and `libs/components/src/test-helpers.ts`. The breakpoint fake exists too (`forms/cascader/cascader-sheet.spec.ts` mounts through `FakeMatchMedia`), so the item is DONE. M
 4. **Stylesheet splits, ranked by bytes × reach.** Worth doing: `table.component.css` (1166 lines,
    ~40 % minority features — sticky columns is the clean win), `scrollable.component.css` (472, ~half
    opt-in chrome), `menu` (search header + scroll fade), `overlay-container` (arrow + content chrome),
@@ -727,7 +727,7 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
     agents), and the calendar's per-cell `afterNextRender` structural throws. **Batch 2 done 2026-09-12**: `registerScrollContainer`, the
     `etRatingIcon` guard and the calendar cell guard had already landed in `88000992a`; the calendar grid
     guard moved to the constructor in `fix(components): Throw the calendar grid guard at construction`.
-    **Batch 3 done 2026-09-12**: the host names and the range-field duplicate guards (`ET3011`/`ET3061`/`ET3071`) had already landed in `88000992a`; the nine structural date-time guards moved to the constructor in `fix(components): Throw the date-time structural guards at construction`. Still open: the time picker's `ET3020`/`ET3021` (after first render) and a duplicate-registration guard in the shared `register-singleton.ts`, which silently replaces.
+    **Batch 3 done 2026-09-12**: the host names and the range-field duplicate guards (`ET3011`/`ET3061`/`ET3071`) had already landed in `88000992a`; the nine structural date-time guards moved to the constructor in `fix(components): Throw the date-time structural guards at construction`. The time picker's `ET3020`/`ET3021` moved to the constructor 2026-09-12 in `bae50018b fix(components): Throw the time picker structural guards at construction`. Still open, and a human design call: a duplicate-registration guard in the shared `register-singleton.ts` (26 callers in 8 domains; conditional templates swap legally, so a throw is not obviously right).
 11. **Comment-policy cleanup where it is dense** (table — 34 % of non-spec TS — plus carousel, grid,
     bracket, calendar, scheduler, selection-controls). Not urgent, except the comments the scan proved
     _wrong_: the table keyboard-nav comment, the cascader column comment, `pruneEmptyInline`'s "three
@@ -737,7 +737,7 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
 12. **Docs corrections** (~40 across batches): option tables omitting real inputs (select, cascader,
     date-time, otp, tag, dropzone, slider), token tables missing live tokens, the bracket migration row
     pointing at an unexported symbol, `match.md`'s `NormalizedMatch` snippet, and the pages that state
-    the opposite of the code. Part of whichever fix touches the API, per AGENTS.md. M
+    the opposite of the code. Part of whichever fix touches the API, per AGENTS.md. M — **Option/output/token tables DONE 2026-09-12** for select (`00bedef8a`), cascader + slider (`da278a043`), otp + tag input + dropzone (`593253b1c`) and date-time inputs + time picker (`276e7f591`). Still open: the bracket migration row, `match.md`'s `NormalizedMatch` snippet, and any remaining "opposite of the code" sentences outside those domains.
 
 ## Explicitly deprioritized
 
@@ -793,7 +793,7 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
    `generateBracketRoundSwissGroupMaps` + `createSwissGrid` end to end (bracket), `deserializeTableState`
    → `restoreState` with a junk entry (table), `reduceSupportPresentation`'s 12 state pairs
    (form-field — ~110 shared lines, zero tests), `resolvePath` + direction resolution (overlay router),
-   `sortByDomOrder` and `createTypeahead` (internals, five-plus consumers each, no direct spec).
+   `sortByDomOrder` and `createTypeahead` (internals, five-plus consumers each, no direct spec). **DONE 2026-09-12**: every function listed has a direct spec; the last one, `createSwissGrid`, landed in `a6646918e test(bracket): Pin the swiss grid geometry end to end`.
 6. **A11y-structure assertions per domain** — walk `grid`→`rowgroup`→`row`→`gridcell` (calendar,
    scheduler, table's two layouts), `menu`→owned roles, `tablist`→`tab`, and a uniform cell count per
    row. Would have caught four Mediums and one High, and guards the docs' explicit claims.
@@ -814,7 +814,7 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
    one spec each), the tab-bar keyboard model (96 a11y-critical lines the docs sell in full),
    `notification-swipe-to-dismiss.directive.ts` (279 lines), `floating-action`,
    `filterOverlayPreviewFromQuery`, `multi-language-rich-text-editor`, `skeleton` (last four: no spec
-   file at all).
+   file at all). **DONE by 2026-09-12**: every surface listed now has a spec file (`table-reorder.directive.spec.ts`, `stream-manager.spec.ts`, `pip-manager.spec.ts`, the four `scheduler/headless/internals/*.spec.ts`, `tabs/headless/tab-bar-keyboard.spec.ts`, `notification-swipe-to-dismiss.directive.spec.ts`, `floating-action.directive.spec.ts`, `filter-overlay-preview.spec.ts`, `multi-language-rich-text-editor.component.spec.ts`, `skeleton.component.spec.ts`).
 10. **Specs that currently assert the wrong thing** — fix these while fixing their defects:
     `command-palette.component.spec.ts:188` (Escape), `notification.component.spec.ts:93-101`
     (unbalanced pause/resume), `table-page-sticky-header.directive.spec.ts:60-63` (locks in the broken
@@ -891,3 +891,4 @@ Promise<void>` union, so wrapping each in a block body fixed it with no behavior
     the `children[0]!` idiom already established across the suite (tree, calendar, forms, dropzone, etc.)
     rather than inventing a new guard. No `as any`/`as unknown as X`/`@ts-expect-error` anywhere in this
     slice; the only casts are the pre-existing `RuntimeError<number>` idiom and the `instanceof` narrowing.
+    **Burn-down complete 2026-09-12**: `tsc -p libs/components/tsconfig.spec.json --noEmit` reports 0 errors, and the `typecheck` target in `libs/components/project.json` already runs exactly that command, which CI runs through `yarn nx run-many -t typecheck`.
