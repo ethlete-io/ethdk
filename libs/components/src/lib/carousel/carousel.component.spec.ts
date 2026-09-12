@@ -304,6 +304,27 @@ describe('CarouselComponent', () => {
     expect(autoplay.pauseReason()).toBe('no-slides');
   });
 
+  it('reports a reason while the duration is zero, from the carousel and from the active slide', async () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+    fixture.componentInstance.autoplayTime.set(0);
+    fixture.detectChanges();
+
+    const autoplay = fixture.componentInstance.autoplayDirective();
+
+    expect(autoplay.duration()).toBe(0);
+    expect(autoplay.isPlaying()).toBe(false);
+    expect(autoplay.pauseReason()).toBe('no-duration');
+
+    fixture.componentInstance.autoplayTime.set(5000);
+    fixture.componentInstance.autoplayTimeFor.set(() => 0);
+    await settleChildren(fixture);
+
+    expect(autoplay.duration()).toBe(0);
+    expect(autoplay.isPlaying()).toBe(false);
+    expect(autoplay.pauseReason()).toBe('no-duration');
+  });
+
   it('falls back to the carousel’s autoplayTime when no slide overrides it', () => {
     const fixture = createHost();
     fixture.componentInstance.autoplay.set(true);

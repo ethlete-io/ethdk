@@ -26,7 +26,15 @@ import { CAROUSEL_AUTOPLAY_TOKEN, CAROUSEL_TOKEN } from './carousel.tokens';
 
 /** Why autoplay isn't running, in the order the reasons are checked. `null` while it is running. */
 export type CarouselAutoplayPauseReason =
-  'disabled' | 'stopped' | 'reduced-motion' | 'page-hidden' | 'off-screen' | 'hover' | 'focus' | 'no-slides';
+  | 'disabled'
+  | 'stopped'
+  | 'reduced-motion'
+  | 'page-hidden'
+  | 'off-screen'
+  | 'hover'
+  | 'focus'
+  | 'no-slides'
+  | 'no-duration';
 
 /**
  * Advances the carousel on its own. Opt-in - put it on the same element as `[etCarousel]` - so a carousel
@@ -171,12 +179,13 @@ export class CarouselAutoplayDirective {
 
     if (this.pauseOnHover() && this.isHovered() && !this.isPointerOnPauseControl()) return 'hover';
     if (this.pauseOnFocus() && this.isFocusWithin() && !this.isFocusOnPauseControl()) return 'focus';
+    if (this.duration() <= 0) return 'no-duration';
 
     return null;
   });
 
   /** Whether autoplay is counting down right now. */
-  public isPlaying = computed(() => this.pauseReason() === null && this.duration() > 0);
+  public isPlaying = computed(() => this.pauseReason() === null);
 
   constructor() {
     let hasMountedStyles = false;

@@ -276,6 +276,7 @@ happening via `pauseReason()`:
 | `reduced-motion` | the reader asked for reduced motion - autoplay then never starts |
 | `stopped`        | the pause control (or `stop()`) was used                         |
 | `no-slides`      | there are fewer than two slides, so there is nowhere to advance  |
+| `no-duration`    | the duration is `0`, on the carousel or on the active slide      |
 | `disabled`       | `autoplay` is off                                                |
 
 `page-hidden` and `off-screen` are separate checks because they are separate questions: an
