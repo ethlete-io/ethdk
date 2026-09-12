@@ -1,5 +1,3 @@
-<!-- the header is replaceable wholesale: a projected `ng-template etCalendarHeader` gets the
-     headless directive and renders instead of this, keeping the grid below -->
 @if (headerTemplate(); as header) {
   <ng-container *ngTemplateOutlet="header.templateRef; context: { $implicit: calendar }" />
 } @else {
@@ -16,16 +14,12 @@
       <i etIcon="et-chevron"></i>
     </button>
 
-    <!-- the label is the zoom-out control: day grid → month grid → year grid, and back to the day grid
-         from there. It is the aria-live region, so stepping and drilling are both announced. -->
     <button
       [attr.aria-label]="resolvedZoomLabel()"
       (click)="calendar.zoomOut()"
       class="et-calendar-header-label"
       type="button"
     >
-      <!-- one of two identical branches, flipped on every change: re-creating the value is what runs
-           its enter transition. See `transitionParity`. -->
       <span class="et-calendar-header-label-text" aria-live="polite">
         @if (calendar.transitionParity()) {
           <ng-container *ngTemplateOutlet="headerValue" />
@@ -52,17 +46,10 @@
 }
 
 <div class="et-calendar-grid" etCalendarGrid>
-  <!-- One month keeps its day names above the transition, so navigating slides the weeks under a
-       heading that holds still. Several months each carry their own inside their column, where the
-       whole span transitions together. -->
   @if (calendar.view() === 'month' && calendar.monthsShown() === 1) {
     <ng-container *ngTemplateOutlet="weekdayRow" />
   }
 
-  <!-- Whichever grid is showing, rendered through one of two identical branches so that a change
-       re-creates it and its enter transition runs (see `transitionParity`). Both grids share the
-       viewport's single grid area for the length of the transition, which is what lets the outgoing
-       one fade out under the incoming one rather than disappear a frame before it arrives. -->
   <div class="et-calendar-weeks-viewport" role="presentation">
     @if (calendar.transitionParity()) {
       <ng-container *ngTemplateOutlet="weeks" />
@@ -109,7 +96,6 @@
             @for (page of calendar.monthPages(); track page.key) {
               <div class="et-calendar-month" role="presentation">
                 @if (calendar.monthsShown() > 1) {
-                  <!-- the span's own header cannot name each month, so each column says which it is -->
                   <div class="et-calendar-month-label">{{ page.label }}</div>
 
                   <ng-container *ngTemplateOutlet="weekdayRow" />
@@ -128,8 +114,6 @@
 
                     @for (cell of week; track cell.date.getTime()) {
                       @if (cell.outsideMonth && calendar.monthsShown() > 1) {
-                        <!-- the neighbouring month renders this day itself: two cells for one date would
-                             be two ways to pick it, and two claims on the roving focus -->
                         <span class="et-calendar-cell et-calendar-cell--empty" aria-hidden="true"></span>
                       } @else {
                         <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
@@ -160,8 +144,6 @@
 <ng-template #weekdayRow>
   <div class="et-calendar-weekdays" role="row">
     @if (weekNumbers()) {
-      <!-- the column's own heading: named for assistive tech, blank on screen, which is what the
-           corner of a week-numbered calendar looks like everywhere -->
       <span [attr.aria-label]="weekLabel()" class="et-calendar-week-number-heading" role="columnheader"></span>
     }
 

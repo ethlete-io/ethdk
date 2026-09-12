@@ -81,7 +81,6 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           (yearSelect)="lastDrill.set('year ' + $event.toDateString())"
         >
           @if (customHeader()) {
-            <!-- a header of the consumer's own: same state, own layout and wording -->
             <ng-template etCalendarHeader let-calendar>
               <div class="et-sb-calendar-header">
                 <button [disabled]="!calendar.canGoPrev()" (click)="calendar.previous()" type="button">Back</button>
@@ -106,8 +105,6 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [...CALENDAR_IMPORTS, ProvideColorDirective],
-  // Consumer CSS, which is what `dateClass` returns: unlayered, so it wins over the component's own
-  // styles without any escalation.
   styles: `
     .et-sb-calendar-busy .et-calendar-cell-content {
       box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--et-theme-color-primary-solid) 60%, transparent);
@@ -147,18 +144,13 @@ export class CalendarStorybookComponent {
   public mode = input<CalendarMode>('single');
   public constrained = input(false);
   public disableWeekends = input(false);
-  /** Months from today the empty calendar should open at - the story turns it into a `Date`. */
   public startAtMonthOffset = input<number | null>(null);
   public precision = input<CalendarPrecision>('day');
   public startView = input<CalendarView>('month');
-  /** Turns on a `dateClass` hook marking the 1st of each month and every 13th - the story owns the CSS. */
   public markDates = input(false);
   public weekNumbers = input(false);
-  /** Bands the seven days before the month's 10th as a comparison period. */
   public showComparison = input(false);
-  /** Which range-selection strategy the range calendar uses. */
   public rangeStrategy = input<'default' | 'week' | 'fixed7'>('default');
-  /** Swaps the calendar's own header for a projected one. */
   public customHeader = input(false);
   public monthsShown = input(1);
   public locale = input<'default' | 'de'>('default');
@@ -195,7 +187,6 @@ export class CalendarStorybookComponent {
     }
   });
 
-  /** The seven days running up to the visible month's 10th - a stand-in for "the previous period". */
   protected comparisonStart = computed(() => (this.showComparison() ? startOfDay(new Date(2026, 6, 3)) : null));
 
   protected comparisonEnd = computed(() => (this.showComparison() ? startOfDay(new Date(2026, 6, 9)) : null));
@@ -211,7 +202,6 @@ export class CalendarStorybookComponent {
       return null;
     }
 
-    // the same hook serves every view, which is what the second argument is for
     return (date, view) => {
       if (view === 'multiYear') {
         return date.getFullYear() % 5 === 0 ? 'et-sb-calendar-holiday' : null;

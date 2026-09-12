@@ -56,7 +56,6 @@ describe('CalendarComponent', () => {
 
     expect(query(fixture, '.et-calendar-header')).toBeNull();
     expect(query(fixture, '.own-label')?.textContent?.trim()).toBe('July 2026');
-    // the grid is untouched by the swap
     expect(queryAll(fixture, '[etcalendarcell]').length).toBe(35);
 
     query(fixture, '.own-previous')?.click();

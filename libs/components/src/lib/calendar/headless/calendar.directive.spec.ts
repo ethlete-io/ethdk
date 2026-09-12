@@ -132,7 +132,6 @@ describe('CalendarDirective', () => {
   it('renders the weeks covering the active month', () => {
     expect(calendar.weeks()).toHaveLength(5);
     expect(cells(fixture)).toHaveLength(35);
-    // Monday-based July 2026 starts with June 29th from the outside month
     expect(cells(fixture)[0]?.textContent?.trim()).toBe('29');
     expect(cells(fixture)[0]?.hasAttribute('data-outside-month')).toBe(true);
   });
@@ -262,7 +261,6 @@ describe('CalendarDirective', () => {
 
     expect(cell(fixture, 9)?.hasAttribute('data-disabled')).toBe(true);
     expect(cell(fixture, 21)?.hasAttribute('data-disabled')).toBe(true);
-    // July 12th 2026 is a Sunday inside min/max
     expect(cell(fixture, 12)?.hasAttribute('data-disabled')).toBe(true);
     expect(cell(fixture, 15)?.hasAttribute('data-disabled')).toBe(false);
 
@@ -319,7 +317,6 @@ describe('CalendarDirective', () => {
 
     it('zooms out through the views and back to the day grid from the last', () => {
       expect(calendar.headerLabel()).toBe('July 2026');
-      // read once first: the direction is history, which only starts where a template's first render does
       expect(calendar.navigationDirection()).toBeNull();
 
       calendar.zoomOut();
@@ -362,7 +359,6 @@ describe('CalendarDirective', () => {
 
       expect(host.yearSelect()).toEqual(new Date(2031, 0, 1));
       expect(calendar.view()).toBe('year');
-      // July, which the day grid was on before the reader drilled out
       expect(calendar.visibleMonth()).toEqual(new Date(2031, 6, 1));
       expect(host.value()).toBeNull();
     });
@@ -379,7 +375,6 @@ describe('CalendarDirective', () => {
       expect(calendar.view()).toBe('month');
       expect(host.activeMonth()).toEqual(new Date(2026, 2, 1));
       expect(host.value()).toBeNull();
-      // the roving focus follows into the month it drilled into, keeping its day
       expect(calendar.focusedDate()).toEqual(new Date(2026, 2, 16));
     });
 
@@ -415,7 +410,6 @@ describe('CalendarDirective', () => {
       host.startView.set('multiYear');
       fixture.detectChanges();
 
-      // pages tile from min's year, so the bound opens one rather than sitting inside it
       expect(calendar.headerLabel()).toBe('2026 – 2049');
       expect(cellWithText('2026')?.hasAttribute('data-disabled')).toBe(false);
       expect(cellWithText('2035')?.hasAttribute('data-disabled')).toBe(false);
@@ -433,7 +427,6 @@ describe('CalendarDirective', () => {
       press(fixture, 'ArrowDown');
       expect(focusedCell(fixture)?.textContent?.trim()).toBe('Dec');
 
-      // out of the visible year, which follows along
       press(fixture, 'ArrowRight');
       expect(calendar.visibleYear()).toEqual(new Date(2027, 0, 1));
       expect(focusedCell(fixture)?.textContent?.trim()).toBe('Jan');
@@ -467,7 +460,6 @@ describe('CalendarDirective', () => {
       fixture.detectChanges();
 
       expect(calendar.headerLabel()).toBe('2027');
-      // the month survives a year step, so drilling back in lands where it left
       expect(calendar.visibleMonth()).toEqual(new Date(2027, 6, 1));
 
       calendar.previous();
@@ -515,7 +507,6 @@ describe('CalendarDirective', () => {
       cell(fixture, 16)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
       fixture.detectChanges();
 
-      // the whole Monday-13th week bands before anything is picked at all
       expect(cell(fixture, 13)?.getAttribute('data-band')).toBe('start');
       expect(cell(fixture, 19)?.getAttribute('data-band')).toBe('end');
       expect(cell(fixture, 20)?.getAttribute('data-band')).toBeNull();
@@ -599,7 +590,6 @@ describe('CalendarDirective', () => {
       monthCell('Mar')?.click();
       fixture.detectChanges();
 
-      // March 1st plus 39 days is April 9th, which at month precision is April
       expect(host.rangeValue()).toEqual({ start: new Date(2026, 2, 1), end: new Date(2026, 3, 1) });
     });
 
@@ -624,7 +614,6 @@ describe('CalendarDirective', () => {
       expect(cell(fixture, 9)?.getAttribute('data-comparison-band')).toBe('end');
       expect(cell(fixture, 10)?.getAttribute('data-comparison-band')).toBeNull();
 
-      // and it is presentation only: the value is untouched and its cells still select
       expect(host.rangeValue()).toEqual({ start: null, end: null });
 
       cell(fixture, 6)?.click();
@@ -768,10 +757,9 @@ describe('CalendarDirective', () => {
       expect(calendar.headerLabel()).toBe('July – August 2026');
       expect(calendar.lastVisibleMonth()).toEqual(new Date(2026, 7, 1));
 
-      // August 1st belongs to August's grid, and July's own trailing cell for it is not rendered
       const first = cells(fixture).filter((cell) => cell.textContent?.trim() === '1');
 
-      expect(first).toHaveLength(2); // July 1st and August 1st, one each
+      expect(first).toHaveLength(2);
       expect(calendar.weeks()).toEqual(calendar.monthPages()[0]?.weeks);
     });
 
@@ -794,7 +782,6 @@ describe('CalendarDirective', () => {
       host.max.set(new Date(2026, 8, 15));
       fixture.detectChanges();
 
-      // September is still reachable: the span ends in August
       expect(calendar.canGoNext()).toBe(true);
 
       calendar.next();
@@ -819,7 +806,6 @@ describe('CalendarDirective', () => {
 
       press(fixture, 'ArrowRight');
 
-      // August 1st is already on show, so nothing moves
       expect(calendar.visibleMonth()).toEqual(new Date(2026, 6, 1));
       expect(calendar.focusedDate()).toEqual(new Date(2026, 7, 1));
 
@@ -828,7 +814,6 @@ describe('CalendarDirective', () => {
 
       press(fixture, 'ArrowRight');
 
-      // September is not: the span slides by the one month it takes to cover it
       expect(calendar.visibleMonth()).toEqual(new Date(2026, 7, 1));
       expect(calendar.lastVisibleMonth()).toEqual(new Date(2026, 8, 1));
       expect(calendar.focusedDate()).toEqual(new Date(2026, 8, 1));
@@ -851,7 +836,6 @@ describe('CalendarDirective', () => {
       fixture.detectChanges();
 
       expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 28), end: new Date(2026, 7, 3) });
-      // the band runs on through the end of July and into August
       expect(julyCell('30')?.hasAttribute('data-in-range')).toBe(true);
       expect(
         cells(fixture)
@@ -871,7 +855,6 @@ describe('CalendarDirective', () => {
 
   describe('week numbers', () => {
     it('numbers the rows it renders, following the week start', () => {
-      // Monday-based July 2026 covers ISO weeks 27–31, starting with the row that begins June 29th
       expect(calendar.weekNumbers()).toEqual([27, 28, 29, 30, 31]);
       expect(calendar.weekNumbers()).toHaveLength(calendar.weeks().length);
     });
@@ -910,7 +893,6 @@ describe('CalendarDirective', () => {
 
       expect(host.value()).toEqual(new Date(2026, 2, 1));
       expect(host.monthSelect()).toEqual(new Date(2026, 2, 1));
-      // still the month grid: there is nothing finer to drill into
       expect(calendar.view()).toBe('year');
       expect(cellWithText('Mar')?.hasAttribute('data-selected')).toBe(true);
     });
