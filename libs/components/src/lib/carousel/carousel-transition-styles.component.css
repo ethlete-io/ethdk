@@ -89,15 +89,6 @@
     }
   }
 
-  /* `wipe`, part one: the slide's content is translated by the slide's own displacement from centre, which
-     pins it to the *track* while the slide's box keeps scrolling; the box then clips it. What the reader sees
-     is two stationary pictures either side of one moving edge — a wipe — rather than one picture cropped and
-     dragged along, which is all a clip on its own can be.
-
-     `50cqw` is half the track's visible width (hence the container-type below) and `50%` is half the slide's
-     own width, so the displacement needs no per-`itemSize` table. Subtracting the shift makes the two slides
-     drift against each other as the edge passes — cdk's 125px `translateX`, which it applied to the incoming
-     slide and inverted for the outgoing one; here one signed term covers both. */
   @keyframes et-carousel-wipe-content {
     from {
       translate: calc((var(--et-carousel-wipe-shift) - 50cqw - 50%));
@@ -142,9 +133,6 @@
     & .et-carousel-item {
       position: relative;
       overflow: clip;
-
-      /* Paint containment as well as the clip, so a slide moving under its own veil cannot invalidate the
-         track around it. */
       contain: paint;
     }
 
@@ -189,7 +177,6 @@
         animation-fill-mode: both;
       }
 
-      /* Only when asked for: this is the expensive one, and nothing built in reads it. */
       &:where([data-transition='custom']) .et-carousel-item {
         animation-name: et-carousel-slide-progress;
       }
@@ -210,15 +197,8 @@
     }
   }
 
-  /* ─── Driver 2 of 2: the JS fallback ──────────────────────────────────────────────────────────────────
-
-     Firefox, as of this writing. `useCarouselSlideProgress` writes `--et-carousel-slide-progress` from a
-     passive scroll listener batched into a frame, and these rules are the same effects expressed as `calc()`
-     over it. Same numbers over the same range, so an effect looks the same either way — it just cannot be
-     composited, because a custom property is in the path. */
   :where([data-transition-driver='js']) {
     & .et-carousel-item {
-      /* How far off centre the slide is, either side: 0 centred, 1 gone. */
       --_et-carousel-slide-distance: abs(var(--et-carousel-slide-progress));
     }
 

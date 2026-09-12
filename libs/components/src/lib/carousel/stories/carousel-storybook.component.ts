@@ -31,9 +31,6 @@ const SLIDES: Slide[] = [
           [transition]="transition()"
           [transitionDriver]="transitionDriver()"
         >
-          <!-- The slides are data plus this one template: binding them here is what types let-slide as a
-               Slide rather than unknown, and what lets the carousel stamp the clones a seamless loop needs
-               as live views. -->
           <ng-template [etCarouselSlide]="SLIDES" let-slide let-index="index" let-count="count">
             <div
               [style.background]="'var(--et-surface-background-solid)'"
@@ -75,10 +72,6 @@ export class CarouselStorybookComponent {
   protected readonly SLIDES = SLIDES;
 }
 
-/**
- * Full-bleed, obviously different slides - which a wipe needs to be visible at all. Between two dark cards
- * with their text in a corner there is nothing for the sweeping edge to show.
- */
 @Component({
   selector: 'et-sb-carousel-wipe',
   template: `
@@ -122,10 +115,6 @@ export class CarouselWipeStorybookComponent {
   ];
 }
 
-/**
- * Slides of deliberately different widths, so the loop's teleport distance has to be measured rather than
- * computed from `itemSize` - the case `itemSize="auto"` exists for.
- */
 @Component({
   selector: 'et-sb-carousel-variable-widths',
   template: `
@@ -160,9 +149,6 @@ export class CarouselVariableWidthsStorybookComponent {
   selector: 'et-sb-carousel-headless',
   template: `
     <div [etProvideSurface]="surface()" class="text-medium flex flex-col gap-4 p-8 font-sans">
-      <!-- etCarousel wraps the scrollable *and* the controls: everything that needs to find the carousel
-           resolves it from an ancestor, and the region role covers the controls too. A hand-built carousel
-           owns its own DOM, so it renders no clones and loop stays a jump back to the other end. -->
       <div #carousel="etCarousel" class="flex flex-col gap-4" etCarousel>
         <et-scrollable
           [style.max-inline-size.px]="640"

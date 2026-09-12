@@ -3,7 +3,6 @@ import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { CAROUSEL_ERROR_CODES } from '../carousel-errors';
 import { CAROUSEL_AUTOPLAY_TOKEN, CAROUSEL_TOKEN } from './carousel.tokens';
 
-/** `'CarouselNextDirective'` → the `etCarouselNext` selector it is applied with. */
 const selectorOf = (directiveName: string) => `et${directiveName.replace('Directive', '')}`;
 
 const assertInsideCarousel = (hasCarousel: boolean, directiveName: string) => {
@@ -85,9 +84,6 @@ export class CarouselNextDirective {
  *
  * Its label and `aria-pressed` follow whether autoplay is actually running - any `pauseReason()`, not just
  * an explicit `stop()` - so one button covers both directions and says the same thing as the icon it renders.
- *
- * It also tells autoplay when the pointer or focus is on *it*, which is what keeps pressing play from
- * being cancelled by the hover/focus pause it was pressed with - see `isPointerOnPauseControl`.
  */
 @Directive({
   selector: '[etCarouselPlayToggle]',

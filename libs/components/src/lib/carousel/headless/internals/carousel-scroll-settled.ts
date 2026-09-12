@@ -3,7 +3,6 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { EMPTY, debounceTime, fromEvent, merge, switchMap, tap } from 'rxjs';
 import { ScrollableDirective } from '../../../scrollable';
 
-/** How long the scroll has to be quiet before the fallback treats it as finished, in milliseconds. */
 const SCROLL_IDLE_DURATION = 140;
 
 /** In its own function so the `in` check doesn't narrow the element away for everything after it. */
@@ -11,12 +10,7 @@ const supportsScrollEnd = (element: HTMLElement) => 'onscrollend' in element;
 
 export type CarouselScrollSettledConfig = {
   scrollable: Signal<ScrollableDirective | null | undefined>;
-  /**
-   * The scrolling has stopped and no pointer is holding the track. Anything that must not happen
-   * mid-gesture or mid-animation belongs here.
-   */
   onSettled: () => void;
-  /** A pointer has gone down on the track, so the reader is taking over from whatever was in flight. */
   onPointerDown?: () => void;
 };
 

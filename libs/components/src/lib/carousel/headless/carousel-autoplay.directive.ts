@@ -68,10 +68,6 @@ export class CarouselAutoplayDirective {
   /**
    * Turn autoplay off without removing the directive - the same escape hatch `etScrollableSnap` has. A
    * disabled autoplay never plays and never asks for a pause control.
-   *
-   * `true` by default because putting the directive on an element *is* the opt-in. `<et-carousel>` is the
-   * exception - it always carries the directive, so it cannot let this default stand; see
-   * {@link enabledOverride}. Read {@link isEnabled} for what is actually in effect.
    * @default true
    */
   public enabled = input(true, { transform: booleanAttribute });
@@ -183,8 +179,6 @@ export class CarouselAutoplayDirective {
   public isPlaying = computed(() => this.pauseReason() === null && this.duration() > 0);
 
   constructor() {
-    // `<et-carousel>` always carries this directive, so the countdown ring and pause control only reach the
-    // document once autoplay is actually switched on.
     let hasMountedStyles = false;
 
     effect(() => {

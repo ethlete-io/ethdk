@@ -12,7 +12,6 @@ import { RuntimeError } from '@ethlete/core';
 import { CAROUSEL_ERROR_CODES } from '../carousel-errors';
 import { CAROUSEL_TOKEN } from './carousel.tokens';
 
-/** `null` for "use the carousel's duration", a number of milliseconds otherwise. */
 const autoplayTimeAttribute = (value: unknown): number | null => {
   if (value === null || value === undefined || value === '') return null;
 

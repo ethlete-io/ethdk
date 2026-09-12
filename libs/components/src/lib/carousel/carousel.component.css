@@ -32,18 +32,9 @@
   }
 
   .et-carousel-track {
-    /* The slides carry the visuals; the track is just the viewport they scroll through. */
     display: block;
   }
 
-  /* A centred peeking layout always has a slide cut off at each edge — that is what makes it a peek — and a
-     hard cut straight through a card's border, or through a word, reads as broken rather than as "there is
-     more this way". So the track fades its own edges instead.
-
-     An alpha mask rather than the scrollable's edge masks, which are a gradient in a background colour and
-     so only disappear over the one background they were told about. And only where slides can actually be
-     cut: at one slide per view the slide meets the track edges exactly, and a fade there would just dim the
-     current slide for no reason. */
   .et-carousel:where([data-slide-align='center']) .et-carousel-track:not([item-size='full']) {
     mask-image: linear-gradient(
       to right,
@@ -64,8 +55,6 @@
     }
   }
 
-  /* Transparent by default: it exists so a transition has something to move inside the slide, and so a
-     slide's own `height: 100%` still reaches the wrapper the scrollable sizes. */
   .et-carousel-slide-content {
     display: block;
     block-size: 100%;
@@ -79,7 +68,6 @@
   }
 
   .et-carousel-control {
-    /* aria-disabled rather than disabled (the control keeps its tab stop), so the muted look is ours to apply. */
     &:where([aria-disabled='true']) {
       opacity: 0.4;
       cursor: default;
@@ -90,7 +78,6 @@
     inline-size: 14px;
     block-size: 14px;
 
-    /* The chevron points up; the controls point along the track. */
     &:where(.et-carousel-control-icon--previous) {
       rotate: -90deg;
     }
@@ -118,12 +105,6 @@
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
 
-    /* Focus comes from the shared `etFocusRing`, so a dot looks focused the same way everything else does —
-       at its standard offset, which draws the ring outside the autoplay one. It reaches over the neighbouring
-       dots' tap targets, which is harmless: only one dot is ever focused, and their visible discs are far
-       smaller than the target they sit in. */
-
-    /* The dot itself: a small disc in the middle of a target big enough to hit. */
     &::before {
       content: '';
       inline-size: var(--et-carousel-dot-size);
@@ -136,7 +117,6 @@
       background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 55%, transparent);
     }
 
-    /* The current slide's dot takes the accent, at full strength. */
     &:where([data-active])::before {
       background: var(--et-theme-color-primary-solid, currentColor);
     }
@@ -148,10 +128,7 @@
     }
   }
 
-  /* Only once the component has settled, so nothing animates on the first render. */
   .et-carousel:where(.et-carousel--can-animate) {
-    /* The dot's own disc: its colour changes on hover and when it becomes current, and its size when the
-       countdown ring appears beside it. All three in one declaration, or the last one wins.  */
     & .et-carousel-dot::before {
       transition:
         background-color 160ms var(--ease-3, ease-out),
@@ -162,10 +139,4 @@
       transition: outline-color 160ms var(--ease-3, ease-out);
     }
   }
-
-  /* Under reduced motion autoplay never runs (the directive refuses), so the ring never renders — nothing
-     to disable here. The scroll itself follows the platform's own reduced-motion handling. */
-
-  /* The slide transitions are not here: they live in `CarouselTransitionStylesComponent`, mounted only
-     once a carousel actually asks for one. See that file for the progress property and the effects. */
 }

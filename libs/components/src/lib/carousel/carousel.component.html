@@ -1,6 +1,3 @@
-<!-- The track is a scrollable: snapping per slide, one slide per view by default. Its buttons and dots are
-     not imported at all — they are decorative (`aria-hidden`, not tabbable), and a carousel's controls have
-     to be operable, so this component renders labelled ones below instead. -->
 <et-scrollable
   [itemSize]="itemSize()"
   [snapOrigin]="carousel.slideAlign()"
@@ -10,10 +7,6 @@
   etScrollableSnap
   scrollMode="element"
 >
-  <!-- The wrapper is rendered here rather than left to the slide template, so slide semantics, the `N of M`
-       label and the clone marking are guaranteed rather than something to remember. It is also the element
-       the scrollable sizes and the transitions apply to — a known element with a known progress property is
-       what makes the effects reliable. -->
   @for (view of slideViews(); track view.key) {
     <div [isClone]="view.isClone" [autoplayTime]="view.autoplayTime" etCarouselItem>
       <!-- The inner element is what lets an effect move a slide's *content* independently of the slide's
