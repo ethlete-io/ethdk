@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
 import { mountControl } from '../../../testing/control-driver';
 import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
-import { expectDescribedByResolves } from '../../testing/described-by';
+import { expectDescribedByPointsAtErrors } from '../../testing/described-by';
 import { mountSwitch, SwitchDriver } from '../../testing/switch-driver';
 import { SWITCH_IMPORTS } from '../switch.imports';
 import { SwitchDirective } from './switch.directive';
@@ -87,15 +87,8 @@ describe('SwitchDirective', () => {
   describe('in a form field', () => {
     it('should describe the switch by the rendered error', () => {
       const host = mountControl(SwitchInFormFieldTestHost).nativeElement as HTMLElement;
-      const error = host.querySelector('.et-form-field-errors')!;
-      const described = Array.from(host.querySelectorAll('[aria-describedby]'));
 
-      expect(described.length).toBeGreaterThan(0);
-
-      for (const element of described) {
-        expect(element.getAttribute('aria-describedby')).toBe(error.id);
-        expectDescribedByResolves(element);
-      }
+      expectDescribedByPointsAtErrors(host);
     });
   });
 });

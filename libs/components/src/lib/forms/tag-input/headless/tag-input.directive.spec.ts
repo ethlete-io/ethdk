@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
-import { expectDescribedByResolves } from '../../testing/described-by';
+import { expectDescribedByPointsAtErrors } from '../../testing/described-by';
 import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
 import { mountControl } from '../../../testing/control-driver';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
@@ -333,14 +333,7 @@ class TagInputInFormFieldTestHost {
 describe('tag input support region', () => {
   it('should describe the tag input by the rendered error', () => {
     const host = mountControl(TagInputInFormFieldTestHost).nativeElement as HTMLElement;
-    const error = host.querySelector('.et-form-field-errors')!;
-    const described = Array.from(host.querySelectorAll('[aria-describedby]'));
 
-    expect(described.length).toBeGreaterThan(0);
-
-    for (const element of described) {
-      expect(element.getAttribute('aria-describedby')).toBe(error.id);
-      expectDescribedByResolves(element);
-    }
+    expectDescribedByPointsAtErrors(host);
   });
 });

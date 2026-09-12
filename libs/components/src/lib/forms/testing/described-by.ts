@@ -23,3 +23,34 @@ export const expectDescribedByResolves = (element: Element) => {
     expect(target?.textContent?.trim(), `the element "${id}" describes with is empty`).toBeTruthy();
   }
 };
+
+/**
+ * Asserts that the error region a mounted control renders is what describes it: the region under
+ * `root` carries an id, and every `[aria-describedby]` element under `root` names that id and
+ * resolves.
+ *
+ * Pass the mounted host element. Arrange for an error to render first - a control with no error
+ * region fails.
+ */
+export const expectDescribedByPointsAtErrors = (root: Element) => {
+  const errors = root.querySelector('.et-form-field-errors, .et-form-support-errors');
+
+  expect(errors, 'the control renders no error region').not.toBeNull();
+
+  const errorId = errors?.id ?? '';
+
+  expect(errorId, 'the rendered error region has no id for aria-describedby to name').toBeTruthy();
+
+  const described = Array.from(root.querySelectorAll('[aria-describedby]'));
+
+  expect(described.length, 'nothing under the control has an aria-describedby').toBeGreaterThan(0);
+
+  for (const element of described) {
+    const names = element.getAttribute('aria-describedby')?.split(/\s+/).filter(Boolean) ?? [];
+
+    expect(names, `aria-describedby "${names.join(' ')}" does not name the error region "${errorId}"`).toContain(
+      errorId,
+    );
+    expectDescribedByResolves(element);
+  }
+};

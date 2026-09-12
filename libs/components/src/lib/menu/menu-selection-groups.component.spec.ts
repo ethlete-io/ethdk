@@ -53,36 +53,6 @@ class MenuSelectionGroupsTestHost {
 const flushFrames = () =>
   new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
-const ensureResizeObserverMock = () => {
-  if (globalThis.ResizeObserver) {
-    return;
-  }
-
-  class ResizeObserverMock {
-    constructor(callback: ResizeObserverCallback) {
-      void callback;
-    }
-
-    observe() {
-      return undefined;
-    }
-
-    unobserve() {
-      return undefined;
-    }
-
-    disconnect() {
-      return undefined;
-    }
-  }
-
-  Object.defineProperty(globalThis, 'ResizeObserver', {
-    configurable: true,
-    value: ResizeObserverMock,
-    writable: true,
-  });
-};
-
 describe('Menu selection groups with signal forms', () => {
   let fixture: ComponentFixture<MenuSelectionGroupsTestHost>;
   let menu: MenuDirective;
@@ -107,8 +77,6 @@ describe('Menu selection groups with signal forms', () => {
   };
 
   beforeEach(() => {
-    ensureResizeObserverMock();
-
     TestBed.configureTestingModule({
       imports: [MenuSelectionGroupsTestHost],
       providers: [provideColorThemes([...TEST_COLOR_THEMES])],

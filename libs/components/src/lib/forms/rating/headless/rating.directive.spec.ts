@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
-import { expectDescribedByResolves } from '../../testing/described-by';
+import { expectDescribedByPointsAtErrors } from '../../testing/described-by';
 import { HintComponent } from '../../form-field/hint.component';
 import { mountControl } from '../../../testing/control-driver';
 import { LabelDirective } from '../../form-field/headless';
@@ -348,14 +348,7 @@ class RatingWithErrorTestHost {
 describe('rating support region', () => {
   it('should describe the rating by the rendered error', () => {
     const host = mountControl(RatingWithErrorTestHost).nativeElement as HTMLElement;
-    const error = host.querySelector('.et-form-support-errors')!;
-    const described = Array.from(host.querySelectorAll('[aria-describedby]'));
 
-    expect(described.length).toBeGreaterThan(0);
-
-    for (const element of described) {
-      expect(element.getAttribute('aria-describedby')).toBe(error.id);
-      expectDescribedByResolves(element);
-    }
+    expectDescribedByPointsAtErrors(host);
   });
 });

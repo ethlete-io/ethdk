@@ -9,36 +9,6 @@ import { FormFieldComponent } from './form-field.component';
 import { LabelDirective } from './headless';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 
-const ensureResizeObserverMock = () => {
-  if (globalThis.ResizeObserver) {
-    return;
-  }
-
-  class ResizeObserverMock {
-    constructor(callback: ResizeObserverCallback) {
-      void callback;
-    }
-
-    observe() {
-      return undefined;
-    }
-
-    unobserve() {
-      return undefined;
-    }
-
-    disconnect() {
-      return undefined;
-    }
-  }
-
-  Object.defineProperty(globalThis, 'ResizeObserver', {
-    configurable: true,
-    value: ResizeObserverMock,
-    writable: true,
-  });
-};
-
 @Component({
   template: `
     <et-form-field>
@@ -54,8 +24,6 @@ describe('FormFieldComponent', () => {
   let fixture: ComponentFixture<CheckboxFormFieldTestHost>;
 
   beforeEach(() => {
-    ensureResizeObserverMock();
-
     TestBed.configureTestingModule({
       imports: [CheckboxFormFieldTestHost],
       providers: [provideColorThemes([...TEST_COLOR_THEMES])],
@@ -89,8 +57,6 @@ describe('FormFieldComponent disabled state', () => {
   let fixture: ComponentFixture<InputFormFieldTestHost>;
 
   beforeEach(() => {
-    ensureResizeObserverMock();
-
     TestBed.configureTestingModule({
       imports: [InputFormFieldTestHost],
       providers: [provideColorThemes([...TEST_COLOR_THEMES])],
@@ -129,8 +95,6 @@ describe('FormFieldComponent control frame pointerdown', () => {
   let fixture: ComponentFixture<PasswordFormFieldTestHost>;
 
   beforeEach(() => {
-    ensureResizeObserverMock();
-
     TestBed.configureTestingModule({
       imports: [PasswordFormFieldTestHost],
       providers: [provideColorThemes([...TEST_COLOR_THEMES])],

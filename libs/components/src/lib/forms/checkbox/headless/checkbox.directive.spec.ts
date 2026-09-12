@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
 import { CHECKBOX_IMPORTS } from '../checkbox.imports';
-import { expectDescribedByResolves } from '../../testing/described-by';
+import { expectDescribedByPointsAtErrors } from '../../testing/described-by';
 import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
 import { mountControl } from '../../../testing/control-driver';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
@@ -153,14 +153,7 @@ class CheckboxWithErrorTestHost {
 describe('checkbox support region', () => {
   it('should describe the checkbox by the rendered error', () => {
     const host = mountControl(CheckboxWithErrorTestHost).nativeElement as HTMLElement;
-    const error = host.querySelector('.et-form-field-errors')!;
-    const described = Array.from(host.querySelectorAll('[aria-describedby]'));
 
-    expect(described.length).toBeGreaterThan(0);
-
-    for (const element of described) {
-      expect(element.getAttribute('aria-describedby')).toBe(error.id);
-      expectDescribedByResolves(element);
-    }
+    expectDescribedByPointsAtErrors(host);
   });
 });

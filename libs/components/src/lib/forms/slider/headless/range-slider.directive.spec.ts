@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
-import { expectDescribedByResolves } from '../../testing/described-by';
+import { expectDescribedByPointsAtErrors } from '../../testing/described-by';
 import { HintComponent } from '../../form-field/hint.component';
 import { LabelDirective } from '../../form-field/headless';
 import { mountControl } from '../../../testing/control-driver';
@@ -303,14 +303,7 @@ class RangeSliderWithErrorTestHost {
 describe('range slider support region', () => {
   it('should describe the thumbs by the rendered error', () => {
     const host = mountControl(RangeSliderWithErrorTestHost).nativeElement as HTMLElement;
-    const error = host.querySelector('.et-form-support-errors')!;
-    const described = Array.from(host.querySelectorAll('[aria-describedby]'));
 
-    expect(described.length).toBeGreaterThan(0);
-
-    for (const element of described) {
-      expect(element.getAttribute('aria-describedby')).toBe(error.id);
-      expectDescribedByResolves(element);
-    }
+    expectDescribedByPointsAtErrors(host);
   });
 });
