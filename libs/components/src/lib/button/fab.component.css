@@ -77,8 +77,6 @@
       transition: background 120ms ease;
     }
 
-    /* --- Filled (default) --- */
-
     &:where([data-variant='filled']) {
       @media (hover: hover) {
         &:hover::after {
@@ -155,96 +153,26 @@
       pointer-events: none;
     }
 
-    /* --- Outline --- */
-
-    &:where([data-variant='outline']) {
-      --et-theme-color-primary-opacity: 0;
+    &:where([data-variant='outline'], [data-variant='tonal'], [data-variant='transparent']) {
       --et-button-shadow: none;
       background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       color: var(--et-theme-color-ink-solid);
 
-      &::after {
-        border-width: var(--et-button-border-width, 0.1rem);
-        border-color: var(--et-theme-color-ink-solid);
-      }
-
       @media (hover: hover) {
         &:hover {
-          --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
           --et-button-shadow: none;
         }
       }
 
-      &:focus-visible {
-        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-focus-delta);
-      }
-
-      &:active {
-        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-active-delta);
-        --et-button-shadow: none;
-      }
-
+      &:active,
       &:focus-visible:active {
         --et-button-shadow: none;
       }
     }
 
-    /* --- Tonal --- */
-
-    &:where([data-variant='tonal']) {
-      --et-theme-color-primary-opacity: 0.16;
-      --et-button-shadow: none;
-      background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
-      color: var(--et-theme-color-ink-solid);
-
-      @media (hover: hover) {
-        &:hover {
-          --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
-          --et-button-shadow: none;
-        }
-      }
-
-      &:focus-visible {
-        --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-focus-delta));
-      }
-
-      &:active {
-        --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-active-delta));
-        --et-button-shadow: none;
-      }
-
-      &:focus-visible:active {
-        --et-button-shadow: none;
-      }
-    }
-
-    /* --- Transparent --- */
-
-    &:where([data-variant='transparent']) {
-      --et-theme-color-primary-opacity: 0;
-      --et-button-shadow: none;
-      background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
-      color: var(--et-theme-color-ink-solid);
-
-      @media (hover: hover) {
-        &:hover {
-          --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
-          --et-button-shadow: none;
-        }
-      }
-
-      &:focus-visible {
-        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-focus-delta);
-      }
-
-      &:active {
-        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-active-delta);
-        --et-button-shadow: none;
-      }
-
-      &:focus-visible:active {
-        --et-button-shadow: none;
-      }
+    &:where([data-variant='outline'])::after {
+      border-width: var(--et-button-border-width, 0.1rem);
+      border-color: var(--et-theme-color-ink-solid);
     }
 
     &[data-icon-alignment='end'] {

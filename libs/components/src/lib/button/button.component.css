@@ -89,24 +89,9 @@
     }
 
     &:where([data-variant='outline']) {
-      --et-theme-color-primary-opacity: 0;
       --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: var(--et-theme-color-ink-solid);
-
-      @media (hover: hover) {
-        &:hover {
-          --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
-        }
-      }
-
-      &:focus-visible {
-        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-focus-delta);
-      }
-
-      &:active {
-        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-active-delta);
-      }
     }
 
     &[data-pressed='true']:where([data-pressed-variant='outline']) {
@@ -137,45 +122,15 @@
 
     &:where([data-variant='tonal']),
     &[data-pressed='true']:where([data-pressed-variant='tonal']) {
-      --et-theme-color-primary-opacity: 0.16;
       --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: transparent;
-
-      @media (hover: hover) {
-        &:hover {
-          --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
-        }
-      }
-
-      &:focus-visible {
-        --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-focus-delta));
-      }
-
-      &:active {
-        --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-active-delta));
-      }
     }
 
     &:where([data-variant='transparent']) {
-      --et-theme-color-primary-opacity: 0;
       --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: transparent;
-
-      @media (hover: hover) {
-        &:hover {
-          --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
-        }
-      }
-
-      &:focus-visible {
-        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-focus-delta);
-      }
-
-      &:active {
-        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-active-delta);
-      }
     }
 
     &[data-pressed='true']:where([data-pressed-variant='filled']) {

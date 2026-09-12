@@ -71,6 +71,61 @@
     initial-value: 1px;
   }
 
+  :is(.et-button, .et-fab, .et-icon-button):where([data-variant='outline'], [data-variant='transparent']) {
+    --et-theme-color-primary-opacity: 0;
+
+    @media (hover: hover) {
+      &:hover {
+        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
+      }
+    }
+
+    &:focus-visible {
+      --et-theme-color-primary-opacity: var(--et-button-variant-opacity-focus-delta);
+    }
+
+    &:active {
+      --et-theme-color-primary-opacity: var(--et-button-variant-opacity-active-delta);
+    }
+  }
+
+  :is(.et-button, .et-fab, .et-icon-button):where([data-variant='tonal']) {
+    --et-theme-color-primary-opacity: 0.16;
+
+    @media (hover: hover) {
+      &:hover {
+        --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
+      }
+    }
+
+    &:focus-visible {
+      --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-focus-delta));
+    }
+
+    &:active {
+      --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-active-delta));
+    }
+  }
+
+  :is(.et-button, .et-icon-button)[data-pressed='true']:where([data-pressed-variant='tonal']),
+  .et-icon-button[data-pressed='true']:where([data-pressed-variant='transparent']) {
+    --et-theme-color-primary-opacity: 0.16;
+
+    @media (hover: hover) {
+      &:hover {
+        --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
+      }
+    }
+
+    &:focus-visible {
+      --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-focus-delta));
+    }
+
+    &:active {
+      --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-active-delta));
+    }
+  }
+
   .et-button-loader {
     position: absolute;
     inset: 0;
