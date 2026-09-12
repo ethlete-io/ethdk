@@ -17,10 +17,7 @@ import { SelectDirective } from './select.directive';
 
 /**
  * Opts a select into search. `et-select` renders the input inline in the trigger (combobox
- * pattern): typing opens the panel and filters. Filtering behavior is controlled by the
- * select's `filterMode` (`internal` hides non-matching options, `external` leaves the option
- * list to the consumer via `queryChange`). With a search registered, this input *is* the
- * combobox - the trigger element drops its combobox role.
+ * pattern): typing opens the panel and filters.
  */
 @Directive({
   selector: 'input[etSelectSearch]',
@@ -54,14 +51,11 @@ export class SelectSearchDirective {
 
   public query = model('');
 
-  // single select doubles the input as the value display: the selected label shows while
-  // the query is untouched, and the first edit replaces it
   private edited = signal(false);
 
   protected expanded = computed(() => this.select?.open() ?? false);
   protected controls = computed(() => (this.select?.open() ? this.select.listboxId() : null));
   protected activeDescendant = computed(() => (this.select?.open() ? this.select.activeId() : null));
-  // a full selection locks the input like the tag-input field - values leave via chips/Backspace
   protected isFull = computed(() => this.select?.isFull() ?? false);
   protected describedBy = computed(() => {
     const select = this.select;
@@ -83,8 +77,6 @@ export class SelectSearchDirective {
   // consumer (a static attribute or their own binding) and owns it from then on
   private writtenPlaceholder: string | null = null;
 
-  // an inline input replaces the trigger's value display, so it also has to carry the select's
-  // placeholder - the trigger renders none while a search is registered
   private fallbackPlaceholder = computed(() => {
     const select = this.select;
 
@@ -116,11 +108,6 @@ export class SelectSearchDirective {
       const select = this.select;
       let text = query;
 
-      // single select: the input displays the selected value's label until the user edits.
-      // A custom value template owns the resting display (an input cannot render rich HTML),
-      // but while the field is focused it becomes editable text here too - so Backspace edits
-      // the label instead of nuking the whole value (see `handleKeydown`). Panel-hosted search
-      // inputs stay pure query boxes.
       if (
         select &&
         !select.multiple() &&
@@ -224,7 +211,6 @@ export class SelectSearchDirective {
     const value = this.elementRef.nativeElement.value;
     const select = this.select;
 
-    // typing a custom-value separator commits the text before it (tag-input parity)
     if (select?.allowCustomValues()) {
       const lastChar = value.at(-1);
 
@@ -236,8 +222,6 @@ export class SelectSearchDirective {
         this.query.set(pending);
         select.queryChange.emit(pending);
 
-        // a rejected commit (duplicate, normalized away) keeps the pending text for editing -
-        // with the panel open so the user sees why (e.g. the already-selected option)
         if (!pending || !select.commitCustomValue(pending)) {
           select.show();
         }
@@ -250,11 +234,6 @@ export class SelectSearchDirective {
     this.query.set(value);
     select?.queryChange.emit(value);
 
-    // single select: the input doubles as the value display, so the user erasing all of its
-    // text clears the selection (Escape/close clears revert the display instead - they don't
-    // go through this handler). A custom value template shows the editable label here only
-    // while focused, so erasing it deselects the same way. A panel-hosted search input is a
-    // pure query box and clearing it must not deselect.
     if (!value && select && !select.multiple() && select.hasValue() && this.isInlineInTrigger()) {
       if (select.mixed()) {
         select.clearValue();
@@ -263,14 +242,10 @@ export class SelectSearchDirective {
       }
     }
 
-    // typing opens the panel - the combobox pattern
     select?.show();
   }
 
   protected handleKeydown(event: KeyboardEvent) {
-    // Backspace with nothing left to edit deletes from the selection instead: the last
-    // chip in multi mode, the selected value in single mode (a custom value template
-    // keeps the input empty, so this is the only way to delete by keyboard)
     if (event.key === 'Backspace' && !this.elementRef.nativeElement.value) {
       const select = this.select;
 
@@ -278,8 +253,6 @@ export class SelectSearchDirective {
         return;
       }
 
-      // while mixed there is no visible chip to delete - a lone Backspace must not nuke the
-      // hidden raw selection of every edited record; the clear button stays the destructive path
       if (select.mixed()) {
         return;
       }
@@ -294,8 +267,6 @@ export class SelectSearchDirective {
       return;
     }
 
-    // Escape is owned by the select's document-level handler (clear first, close second);
-    // printable keys, Home/End and ArrowLeft/Right stay native input editing
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === 'Tab') {
       this.select?.handleTriggerKeydown(event);
     }
@@ -305,7 +276,6 @@ export class SelectSearchDirective {
     const select = this.select;
     const text = event.clipboardData?.getData('text/plain');
 
-    // splitting only makes sense where several values can land - multi mode with custom values
     if (!select || !text || !select.allowCustomValues() || !select.multiple()) {
       return;
     }
@@ -344,9 +314,6 @@ export class SelectSearchDirective {
     }
   }
 
-  // the input doubles as the value display only while it sits inline in the trigger (the
-  // combobox-in-field pattern) - a search rendered inside the panel instead (e.g. the phone
-  // input's country picker) is a pure query box and always shows its placeholder
   private isInlineInTrigger() {
     const trigger = this.select?.registeredTrigger()?.elementRef.nativeElement;
 

@@ -98,7 +98,6 @@ describe('SelectOptionsDirective', () => {
 
     fixture.destroy();
 
-    // asyncOptions is cleared on destroy, so state falls back to the (default false) input
     expect(select.asyncOptions()).toBeNull();
     expect(select.loading()).toBe(false);
   });

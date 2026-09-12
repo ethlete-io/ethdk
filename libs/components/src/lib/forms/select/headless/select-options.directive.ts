@@ -21,9 +21,6 @@ import { SelectDirective } from './select.directive';
  *   }
  * </et-select>
  * ```
- *
- * Both flavors return the same bundle shape, so one directive serves the current query client and
- * the legacy `V2QueryClient` alike.
  */
 @Directive({
   selector: '[etSelectOptions]',
@@ -44,7 +41,6 @@ export class SelectOptionsDirective implements OnInit {
     if (select) {
       this.destroyRef.onDestroy(() => select.asyncOptions.set(null));
 
-      // Replaces (queryChange)="bundle.setQuery($event)" / (loadMore)="bundle.loadMore()".
       outputToObservable(select.queryChange)
         .pipe(
           tap((query) => this.bundle().setQuery(query)),

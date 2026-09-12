@@ -68,15 +68,12 @@ export const SELECT_FILTER_MODES = {
 
 export type SelectFilterMode = (typeof SELECT_FILTER_MODES)[keyof typeof SELECT_FILTER_MODES];
 
-// Above this many visible data-driven rows the select windows their rendering. Comfortably past
-// what a panel shows at once (its default max height over the row estimate, plus overscan on
-// both sides), so a list that windowing would render in full anyway stays unwindowed.
 const VIRTUALIZATION_MIN_ITEMS = 40;
 
 /**
  * The async option state a source (e.g. the bundle from `selectOptionsFromQuery`) pushes into a
  * select via `[etSelectOptions]`. While one is set it overrides the `loading`/`error`/`hasMoreItems`
- * inputs and forces `filterMode` to `external`. Structurally satisfied by `SelectOptionsFromQuery`.
+ * inputs and forces `filterMode` to `external`.
  */
 export type SelectAsyncOptions = {
   loading: Signal<boolean>;
@@ -127,12 +124,7 @@ export class SelectDirective
 
   /**
    * Data-driven options: the select owns the option rows instead of the consumer projecting
-   * `et-select-option`s. Long lists have their rendering windowed (virtualization) - only rows
-   * near the viewport exist in the DOM, so lists with thousands of entries stay cheap; short
-   * ones render in full. Renders via `virtualizedItems()` between the `virtualWindow` block
-   * paddings; row content is the plain `label` or an `etSelectOptionTemplate`. Values must be
-   * unique. Can be combined
-   * with projected options (e.g. a pinned row), which render normally and are not windowed.
+   * `et-select-option`s. Values must be unique.
    */
   public options = input<readonly SelectOptionData[] | null>(null);
 
@@ -167,8 +159,7 @@ export class SelectDirective
    * Fire-and-forget picker mode: committing an option emits `pickOption` without ever writing
    * `value`, so the field never displays a value of its own (no chips, no label, no clear) and can
    * feed an external list without the set-then-clear dance. Bind `value` to that list to check the
-   * picked options in the panel. Single select closes on pick; multi keeps the panel open for
-   * repeated adds.
+   * picked options in the panel.
    */
   public pickOnly = input(false, { transform: booleanAttribute });
 
@@ -188,8 +179,7 @@ export class SelectDirective
 
   /**
    * An async option source pushed in by `[etSelectOptions]` (from `selectOptionsFromQuery` /
-   * `selectOptionsFromV2Query`). While set it overrides the `loading`/`error`/`hasMoreItems`
-   * inputs and forces `filterMode` to `external`. `null` when the select is wired manually.
+   * `selectOptionsFromV2Query`). `null` when the select is wired manually.
    * @internal
    */
   public asyncOptions = signal<SelectAsyncOptions | null>(null);
@@ -214,11 +204,6 @@ export class SelectDirective
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
-  /**
-   * The raw value normalized to the selection the control currently exposes. Mixed has no effective
-   * selection, and neither has a `pickOnly` picker - its `value` marks the picked options in the
-   * panel without ever becoming the field's own display.
-   */
   private effectiveValues = computed<readonly unknown[]>(() => {
     if (this.mixed() || this.pickOnly()) {
       return [];
@@ -234,11 +219,11 @@ export class SelectDirective
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.SELECT);
 
-  /** @internal Set by the trigger. The field also counts as focused while the panel is open (focus may sit in the search input). */
+  /** @internal */
   public triggerFocused = signal(false);
   public focused = computed(() => this.triggerFocused() || this.open());
 
-  /** @internal Keeps the form field in its focused style while the panel is open. */
+  /** @internal */
   public expanded = computed(() => this.open());
 
   /** @internal */
@@ -251,7 +236,7 @@ export class SelectDirective
   public registeredValueTemplate = signal<SelectValueDirective | null>(null);
   /** @internal */
   public registeredSearch = signal<SelectSearchDirective | null>(null);
-  /** @internal ID of the component-rendered mixed label, when present. */
+  /** @internal */
   public mixedLabelId = signal<string | null>(null);
   /** @internal */
   public registeredLoadingTemplate = signal<SelectLoadingDirective | null>(null);
@@ -265,12 +250,7 @@ export class SelectDirective
   public registeredViewport = signal<SelectViewportDirective | null>(null);
   /** @internal The option that holds virtual focus while the listbox is open. */
   public activeItem = signal<SelectItem | null>(null);
-  /**
-   * @internal How the current active item was set. A pointer-set highlight only paints while
-   * the pointer is actually over the option (mirrors the menu, where leaving the list drops
-   * the highlight) - a keyboard-set one must stay visible without hover, because options
-   * only ever hold virtual focus.
-   */
+  /** @internal How the current active item was set. */
   public activeItemSource = signal<'keyboard' | 'pointer'>('keyboard');
 
   public selection = createSelectionState<unknown, SelectItem>({
@@ -302,8 +282,6 @@ export class SelectDirective
         ],
         mode: 'non-modal',
         hasBackdrop: false,
-        // combobox pattern: DOM focus stays on the trigger (or moves into the search input),
-        // options only get virtual focus
         autoFocus: false,
         restoreFocus: false,
         // both interactive closes are owned by the document-level listeners below: the first
@@ -313,9 +291,6 @@ export class SelectDirective
         closeOnOutsidePointer: false,
         origin,
         panelClass: 'et-select-overlay-pane',
-        // anchored at every breakpoint by design (the cascader swaps to a bottom sheet below `md`):
-        // a select is a single-column listbox that reads fine anchored to the field on mobile, while
-        // the cascader's multi-column drill genuinely needs the sheet's full-width column paging
         strategies: anchoredOverlayStrategy({
           containerClass: [
             'et-overlay--anchored',
@@ -338,8 +313,6 @@ export class SelectDirective
     onMounted: (overlayRef) => this.handlePanelMounted(overlayRef),
     onBeforeClosed: () => this.handlePanelBeforeClosed(),
     onAfterClosed: ({ byOutsidePointer, byFocusLeave }) => {
-      // focus that sat inside the pane fell to <body> with the pane's removal - hand it back to
-      // the field, except for closes where the user moved on (a pointer or a tab out)
       if (!byOutsidePointer && !byFocusLeave && this.document.activeElement === this.document.body) {
         this.activate();
       }
@@ -347,9 +320,6 @@ export class SelectDirective
     onDocumentKeydown: (event) => this.handlePanelKeydown(event),
   });
 
-  // the registered items created from the `options` input, in data order. Registered like
-  // projected options (value↔checked sync, labels, keyboard nav all work over the registry),
-  // but only the rows inside the virtual window are ever rendered.
   private dataItems = signal<SelectItem[]>([]);
   private dataItemRegistry = new Map<
     unknown,
@@ -369,10 +339,6 @@ export class SelectDirective
     // re-evaluate when the panel mounts - that's when the options gain document positions
     this.isMounted();
 
-    // detached options (closed select with projected content) have no meaningful document
-    // position, and comparing them yields arbitrary order - keep registration order instead.
-    // Data-driven items always keep their data order and sort before projected ones (which
-    // render after the windowed rows, e.g. the "Create …" row).
     if (projectedItems.some((item) => !item.element()?.isConnected)) {
       return dataItems.length ? [...dataItems, ...projectedItems] : projectedItems;
     }
@@ -384,15 +350,12 @@ export class SelectDirective
   /** The current search query (empty string when no search is registered). */
   public query = computed(() => this.registeredSearch()?.query() ?? '');
 
-  /** @internal Lower-cased query for option matching. */
+  /** @internal */
   public normalizedQuery = computed(() => this.query().trim().toLowerCase());
 
   /**
    * Whether the request in flight is the next page the reader asked for, rather than a refetch of the
-   * list itself. `et-select` reports the two differently: a load-more turns the control the reader
-   * just clicked into a loading row, everything else runs a busy bar over the options.
-   *
-   * Set by `requestLoadMore()` and cleared as soon as `loading()` drops or the query moves on.
+   * list itself.
    */
   public loadingMore = linkedSignal<{ loading: boolean; query: string }, boolean>({
     source: () => ({ loading: this.loading(), query: this.normalizedQuery() }),
@@ -402,8 +365,7 @@ export class SelectDirective
 
   /**
    * @internal The query the panel filters by. Live while open; frozen at its last value
-   * otherwise - the close-time query clear must not unfilter the options while the panel
-   * is still animating out (the content would visibly resize mid-leave).
+   * otherwise.
    */
   public panelFilterQuery = linkedSignal<{ open: boolean; query: string }, string>({
     source: () => ({ open: this.open(), query: this.normalizedQuery() }),
@@ -433,12 +395,7 @@ export class SelectDirective
   /** @internal The query-visible slice of data-driven options - the virtual window renders these. */
   public visibleDataItems = computed(() => this.visibleItems().filter((item) => !!item.data));
 
-  /**
-   * @internal Whether the data-driven rows are windowed. A list that stays near a panel's
-   * worth of rows renders in full: windowing it would render all of them anyway (viewport
-   * plus overscan) while still costing a scroll listener, per-row mount churn and the
-   * viewport's width floor.
-   */
+  /** @internal Whether the data-driven rows are windowed. */
   public windowsOptions = computed(() => this.visibleDataItems().length > VIRTUALIZATION_MIN_ITEMS);
 
   /**
@@ -447,7 +404,6 @@ export class SelectDirective
    * around the rendered rows.
    */
   public virtualWindow = createVirtualWindow({
-    // only meaningful with enough data-driven options - otherwise don't track the viewport at all
     container: computed(() =>
       this.windowsOptions() ? (this.registeredViewport()?.elementRef.nativeElement ?? null) : null,
     ),
@@ -468,8 +424,6 @@ export class SelectDirective
     return items.slice(start, end);
   });
 
-  // the item whose row must align exactly once it renders: the estimate-based window scroll
-  // can land a few px off (scroller padding, row heights differing from the estimate)
   private pendingActiveScrollItem: SelectItem | null = null;
 
   /** True once `maxSelection` is reached (multi select) - further adds are ignored. */
@@ -493,9 +447,6 @@ export class SelectDirective
    * The normalized custom value the current search query would commit, or `null` when there
    * is nothing to commit: custom values are off, the query is empty/rejected, the value is
    * already selected, a visible option carries the same label, or the selection is full.
-   * `et-select` renders this as a "Create …" listbox row (a real option, so it takes part in
-   * virtual focus) - headless consumers render their own row, marked with `customValueOption`
-   * so it is excluded from the duplicate check here.
    */
   public customValueCandidate = computed(() => {
     if (!this.allowCustomValues() || this.disabled() || this.readonly() || this.isFull()) {
@@ -522,15 +473,13 @@ export class SelectDirective
     return duplicatesOption ? null : candidate;
   });
 
-  // options render lazily inside the surface template, so a value's label must survive
-  // the options unmounting for the trigger to keep displaying it while closed
   private labelCache = signal(new Map<unknown, string>());
 
   /**
    * One entry per selected value, resolved for display: the label comes from the live
    * option, from a previously seen option, or - for string values without any option
    * (custom values) - from the value itself. `item` is `null` when no live option
-   * carries the value. Drives the trigger's chips and label display.
+   * carries the value.
    */
   public selectedEntries = computed<SelectSelectedEntry[]>(() => {
     if (this.mixed()) {
@@ -600,8 +549,6 @@ export class SelectDirective
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
 
-    // reconcile the `options` data with the registered data items: reuse the item of a value
-    // that stays (labels/disabled update in place), register new ones, unregister removed ones
     effect(() => {
       const optionsData = this.options();
 
@@ -611,7 +558,6 @@ export class SelectDirective
         const seenValues = new Set<unknown>();
 
         for (const data of optionsData ?? []) {
-          // a duplicate value cannot be represented as a distinct choice - skip it
           if (seenValues.has(data.value)) {
             continue;
           }
@@ -655,16 +601,11 @@ export class SelectDirective
       });
     });
 
-    // cache labels only for the *selected* values (so the trigger can still show them once the
-    // option unmounts in a lazy/async list) and prune everything else - the old version wrote
-    // every option ever registered and never pruned, so an `external` filter churning through
-    // thousands of options grew the map without bound
     effect(() => {
       const value = this.value();
       const selectedValues = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
       const items = this.selection.items();
 
-      // tracked read: a selected option's label may resolve after it registers
       const liveLabels = new Map<unknown, string>();
 
       for (const item of items) {
@@ -692,10 +633,6 @@ export class SelectDirective
       });
     });
 
-    // a query change can filter the active option away (or, with external filtering,
-    // destroy and recreate the option list entirely) - virtual focus falls back to the
-    // first visible option so arrow keys and Enter keep working mid-search. Initializing
-    // from null prefers the selected option, same as the mount-time initial focus.
     effect(() => {
       const enabled = this.enabledItems();
       const isOpen = this.open();
@@ -722,9 +659,6 @@ export class SelectDirective
       });
     });
 
-    // inside a form field the visible box is the field's control frame, which extends beyond
-    // the trigger (padding, prefix/suffix areas) - a click anywhere on it should open the
-    // panel like a click on the trigger itself, instead of only focusing the control
     toObservable(computed(() => this.formField?.controlFrameElement() ?? null))
       .pipe(
         switchMap((frame) => (frame ? fromEvent<MouseEvent>(frame, 'click') : EMPTY)),
@@ -855,8 +789,6 @@ export class SelectDirective
 
       this.value.set(adding ? [...values, itemValue] : values.filter((candidate) => candidate !== itemValue));
 
-      // adding while searching: clear the query so the full list is back for the next pick
-      // (toggling off keeps it - the user may be pruning several filtered values)
       if (adding) {
         this.registeredSearch()?.clear();
       }
@@ -966,8 +898,6 @@ export class SelectDirective
       return;
     }
 
-    // a data-driven option outside the rendered window - scroll its row into the window,
-    // which renders it (and with it the element `aria-activedescendant` points at)
     const index = this.visibleDataItems().indexOf(item);
 
     if (index !== -1) {
@@ -985,11 +915,8 @@ export class SelectDirective
     }
 
     entry.element.set(element);
-    // rows share one uniform height - any rendered one keeps the window's row height honest
     this.virtualWindow.measureItem(element);
 
-    // the window scroll above was estimate-based and can land a few px short - align the
-    // real row exactly, once, now that it exists (never again on later window re-entries)
     if (this.pendingActiveScrollItem === item) {
       this.pendingActiveScrollItem = null;
       element.scrollIntoView?.({ block: 'nearest' });
@@ -1045,7 +972,6 @@ export class SelectDirective
         return;
       }
       case ' ': {
-        // Space types into a focused search input instead of committing
         if (this.registeredSearch()?.isFocused()) {
           return;
         }
@@ -1108,8 +1034,6 @@ export class SelectDirective
     return committed;
   }
 
-  // single-select commit: fire the pick command, then write the value unless the select is a
-  // fire-and-forget picker (`pickOnly`), in which case it stays valueless
   private pickSingleOption(item: SelectItem) {
     this.pickOption.emit(item.value());
 
@@ -1118,7 +1042,6 @@ export class SelectDirective
     }
   }
 
-  /** Writes the first explicit choice over a mixed value without consulting raw checked state. */
   private commitMixedOption(item: SelectItem) {
     if (this.isFull()) {
       return false;
@@ -1141,8 +1064,6 @@ export class SelectDirective
     const item: SelectItem = {
       value: signal(data.value).asReadonly(),
       checked: signal(false),
-      // mirrors the projected option's behavior: once `maxSelection` is reached, the
-      // remaining unselected options read as unavailable
       disabled: computed(() => disabledInput() || (this.isFull() && !selected())),
       element: element.asReadonly(),
       id: signal(createComponentId('et-select-option')).asReadonly(),
@@ -1159,7 +1080,6 @@ export class SelectDirective
     switch (event.key) {
       case 'Enter':
       case ' ': {
-        // native editing in the search input (Space types, Enter may submit the form)
         if (searchFocused) {
           return;
         }
@@ -1181,7 +1101,6 @@ export class SelectDirective
           return;
         }
 
-        // closed typeahead commits directly, like a native <select>
         const match = this.findTypeaheadMatch(event.key);
 
         if (match) {
@@ -1223,7 +1142,6 @@ export class SelectDirective
       return false;
     }
 
-    // the string is its own label - cache it so the trigger can display it
     this.labelCache.update((cache) => new Map(cache).set(value, value));
 
     if (this.multiple()) {
@@ -1276,7 +1194,6 @@ export class SelectDirective
     const index = current ? items.indexOf(current) : -1;
 
     if (index === -1) {
-      // first arrow press initializes virtual focus: the selected option, else an edge
       const target = this.selectedItems().find((item) => !item.disabled()) ?? null;
 
       if (target) {
@@ -1312,8 +1229,6 @@ export class SelectDirective
     return !!pane && target instanceof Node && pane.contains(target);
   }
 
-  // inside a form field, the visible box is the field's control frame, not the trigger
-  // button - anchor (and width-mirror) the panel to the frame so it lines up with the field
   private resolveAnchorElement() {
     return this.formField?.controlFrameElement() ?? this.registeredTrigger()?.elementRef.nativeElement;
   }
@@ -1326,9 +1241,6 @@ export class SelectDirective
       return;
     }
 
-    // the trigger (and everything inside it - chips, clear, chevron, inline search) already
-    // handles its own clicks; clicks on (or inside) interactive affix content keep their
-    // own behavior too
     if (this.registeredTrigger()?.elementRef.nativeElement.contains(target)) {
       return;
     }
@@ -1340,8 +1252,6 @@ export class SelectDirective
     const search = this.registeredSearch();
 
     if (search) {
-      // same contract as a trigger click: the field click focuses the inline search input
-      // and opens - only the chevron toggles closed
       this.show();
       search.focus();
 
@@ -1352,23 +1262,18 @@ export class SelectDirective
     this.toggle();
   }
 
-  // initial virtual focus: the selected option, else the first enabled one - unless a keydown
-  // right after opening (before this frame) already moved the active item
   private handlePanelMounted(overlayRef: AnchoredPanelOverlayRef) {
     nextFrame(() => {
       if (this.overlayRef() !== overlayRef) {
         return;
       }
 
-      // combobox pattern: DOM focus belongs in the search input while open (already
-      // there when the open came from typing or a field click)
       const search = this.registeredSearch();
 
       if (search && !search.isFocused()) {
         search.focus();
       }
 
-      // a displayed value label gets selected so typing replaces it
       search?.handleOpened();
 
       if (this.activeItem()) {
@@ -1387,8 +1292,6 @@ export class SelectDirective
     this.activeItem.set(null);
     this.pendingActiveScrollItem = null;
 
-    // pending text becomes a value instead of being discarded (tag-input's commit-on-blur).
-    // An Escape close never reaches this with a query - Escape clears it first.
     if (this.allowCustomValues() && this.commitCustomValueOnClose()) {
       this.applyCustomValue(this.query());
     }

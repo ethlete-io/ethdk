@@ -5,8 +5,6 @@ import '../../../../test-helpers';
 import { SELECT_IMPORTS } from '../select.imports';
 import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
-// Outer select whose panel projects a nested select - the Task 4 scenario: a popover opened from
-// inside an anchored panel mounts as a sibling pane, so a pointerdown in it must not close the outer.
 @Component({
   template: `
     <et-select [open]="outerOpen()" (openChange)="outerOpen.set($event)" class="outer" placeholder="Outer">
@@ -63,7 +61,6 @@ describe('Select nested overlay', () => {
     await open(outerTrigger());
     expect(panes().length).toBe(1);
 
-    // open the nested select - its trigger sits inside the outer pane
     const innerTrigger = panes()[0]!.querySelector<HTMLElement>('.inner [role="combobox"], .inner [etselecttrigger]');
     expect(innerTrigger).not.toBeNull();
     await open(innerTrigger!);
@@ -80,8 +77,6 @@ describe('Select nested overlay', () => {
     await flushFrames();
     tick();
 
-    // the nested select committed and closed, but the outer panel must stay open (before the fix
-    // the outer treated the click in the nested pane as an outside-pointer close)
     expect(fixture.componentInstance.innerOpen()).toBe(false);
     expect(fixture.componentInstance.outerOpen()).toBe(true);
   });

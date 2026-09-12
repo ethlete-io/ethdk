@@ -42,8 +42,6 @@ describe('selectOptionsFromQuery', () => {
     );
   };
 
-  // Flush the one pending `/items` request with `body` (or an error). Returns the request's `page`
-  // query param so the caller can respond page-appropriately.
   const respond = (body: ItemsResponse | { error: true }) => {
     const req = httpMock.expectOne((r) => r.url.includes('/items'));
 
@@ -144,22 +142,17 @@ describe('selectOptionsFromQuery', () => {
       expect(source.options()).toEqual([...page1, ...page2]);
       expect(source.hasMore()).toBe(false);
 
-      // a fresh query drops the accumulated pages and starts from page 1 again
       await search(source, 'euro', { items: page1, hasMore: true });
       expect(source.options()).toEqual(page1);
       expect(source.hasMore()).toBe(true);
     });
 
-    // The end-of-list signal a consumer can derive is often inexact ("a full page means there is more"),
-    // and an API asked for a page past the end usually clamps to the last one. Both must dead-end here
-    // rather than duplicating the tail and leaving a load-more control behind.
     it('ends pagination when a page repeats the previous one (a clamped out-of-range page)', async () => {
       const source = createSource();
 
       await search(source, 'eu', { items: page1, hasMore: true });
       expect(source.hasMore()).toBe(true);
 
-      // the API clamps page 2 to the last page and re-serves it
       await loadMore(source, { items: page1, hasMore: true });
 
       expect(source.options()).toEqual(page1);
@@ -191,7 +184,6 @@ describe('selectOptionsFromQuery', () => {
       await search(source, 'eu', { items: page1, hasMore: false });
       expect(source.options()).toEqual(page1);
 
-      // hasMore is false - this must not fire a (non-existent) page 2 request
       source.loadMore();
       TestBed.tick();
       httpMock.expectNone((r) => r.url.includes('/items'));

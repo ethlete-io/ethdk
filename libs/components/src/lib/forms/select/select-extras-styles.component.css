@@ -1,9 +1,5 @@
 @layer components {
   .et-select-panel {
-    /* A refetch over options already on screen: 2px of chrome at the panel's very top edge, clipped
-       by the panel's own radius. Out of flow, so the options neither move nor resize for it. Drawn
-       here rather than with `et-progress-bar` - the same call the table makes for its own bar: the
-       component costs ~1.9 kB gz in every app that has a select, for 2px of chrome. */
     .et-select-busy-bar {
       position: absolute;
       inset-block-start: 0;
@@ -24,15 +20,12 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      /* still visible without motion: a static accent rule across the panel's top edge */
       .et-select-busy-bar::after {
         inline-size: 100%;
         animation: none;
       }
     }
 
-    /* left-aligned like the options themselves; the error text mirrors the menu's
-       .et-menu-search-error styling */
     .et-select-state {
       display: flex;
       align-items: center;
@@ -49,8 +42,6 @@
       }
     }
 
-    /* the loading row's content is laid out with the row but only becomes visible once the wait is
-       worth reporting (see the template) - fading it in place keeps the row's height fixed */
     .et-select-state-content {
       display: flex;
       align-items: center;
@@ -69,8 +60,6 @@
       }
     }
 
-    /* action rows (load more, add new): left-aligned with the options but visually
-       distinct — accent ink color, a leading icon and a full-bleed separator on top */
     .et-select-load-more,
     .et-select-add-new {
       position: relative;
@@ -111,13 +100,11 @@
         background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 20%, transparent);
       }
 
-      /* the page it asked for is on its way - it takes no second click until that lands */
       &:disabled {
         color: var(--et-surface-color-muted-solid, currentColor);
         cursor: default;
       }
 
-      /* the same box reporting that wait instead of offering the click (see the template) */
       &.et-select-load-more--loading {
         color: var(--et-surface-color-muted-solid, currentColor);
         cursor: default;
@@ -131,7 +118,6 @@
       }
     }
 
-    /* adjacent action rows share the first row's separator */
     .et-select-load-more + .et-select-add-new {
       margin-block-start: 2px;
 
@@ -141,7 +127,6 @@
     }
 
     .et-select-load-more-icon {
-      /* the registered chevron icon points up natively — load-more points down */
       rotate: 180deg;
     }
   }

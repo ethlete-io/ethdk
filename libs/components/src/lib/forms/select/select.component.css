@@ -4,8 +4,6 @@
     --_et-select-trigger-busy-cover: 16px;
     --_et-select-trigger-busy-mask-direction: to right;
 
-    /* a flex row, not a block: without a form field to hand them to, the control's own suffix
-       affordances render at the end of the host rather than in the field's suffix slot */
     display: flex;
     align-items: center;
     gap: 6px;
@@ -24,7 +22,6 @@
       text-align: start;
       cursor: pointer;
       user-select: none;
-      /* no double-tap-zoom wait on touch — the panel opens on the first tap */
       touch-action: manipulation;
 
       &[data-disabled] {
@@ -35,8 +32,6 @@
         cursor: default;
       }
 
-      /* the content wraps (chips, inline search) — the chevron stays outside this flow,
-         pinned to the field's end */
       .et-select-trigger-content {
         display: flex;
         flex-wrap: wrap;
@@ -45,9 +40,6 @@
         flex: 1;
         min-inline-size: 0;
 
-        /* single select with a custom value template: value display and query input occupy
-           the same cell — the input overlays it and typing hides the template, so the input
-           never wraps onto a second line */
         &.et-select-trigger-content--stacked {
           display: grid;
           grid-template-columns: minmax(0, 1fr);
@@ -56,9 +48,6 @@
             grid-area: 1 / 1;
           }
 
-          /* while the rich value is displayed under the input, a blinking caret over it
-             (inside a flag, mid-markup) reads as broken — it reappears with the first
-             typed character, when the input's own text takes over */
           &:has(.et-select-value-custom) input[etselectsearch] {
             caret-color: transparent;
           }
@@ -81,9 +70,8 @@
           color: color-mix(in srgb, currentColor 46%, transparent);
         }
 
-        /* nothing can be typed here (readonly, or a full multi selection) - a caret and an
-           I-beam would promise editing. Before the disabled rule: a disabled input is
-           :read-only too, and there not-allowed must win. */
+        /* Before the disabled rule: a disabled input is :read-only too, and there
+           not-allowed must win. */
         &:read-only {
           cursor: default;
           caret-color: transparent;
@@ -94,8 +82,6 @@
         }
       }
 
-      /* an inline search shares the line with the value label — the label shrinks to its
-         content so the caret sits right after it */
       &:has(input[etselectsearch]) .et-select-value {
         flex: 0 1 auto;
       }
@@ -113,9 +99,6 @@
       }
     }
 
-    /* an unresolved bulk-edit selection reads as provisional — between a committed value
-       (full strength) and the placeholder (46%). The focused search input stays plain: its
-       text is about to be replaced by a query. Consumers restyle via [data-mixed]. */
     &[data-mixed] .et-select-value,
     &[data-mixed] input[etselectsearch]:not(:focus) {
       font-style: italic;
@@ -129,8 +112,6 @@
       min-inline-size: 0;
     }
 
-    /* with an inline search input the custom value shares the line with it, and the input's
-       placeholder stays quiet while a value is displayed */
     .et-select-trigger-content:has(input[etselectsearch]) .et-select-value-custom {
       flex: 0 1 auto;
     }
@@ -139,16 +120,10 @@
       color: transparent;
     }
 
-    /* chips join the trigger's own wrapping flex flow (so an inline search input flows
-       after the last chip, tag-input style) */
     .et-select-chips {
       display: contents;
     }
 
-    /* Async option loading, surfaced in the field (mirrors the menu's search spinner). It comes and
-       goes under the reader's hands, so it claims no column of its own: a negative inline margin
-       cancels the space it and its gap would take, and it sits over the value's tail, which the
-       trigger content masks away - the same treatment the field gives its busy spinner. */
     .et-select-trigger-busy {
       position: relative;
       display: flex;
@@ -166,8 +141,6 @@
       --_et-select-trigger-busy-mask-direction: to left;
     }
 
-    /* An alpha mask, not a gradient in a background colour: a transparent field fill shows whatever
-       the consumer painted behind it, which a painted ramp would have to guess. */
     .et-select-trigger:has(> .et-select-trigger-busy) .et-select-trigger-content {
       mask-image: linear-gradient(
         var(--_et-select-trigger-busy-mask-direction),
@@ -188,10 +161,8 @@
   }
 
   /* outside the `et-select` block on purpose: the chevron renders in the form field's suffix slot,
-     which is not a descendant of the host. Only its direction is select-specific - the rest of the
-     button comes from the shared picker-trigger sheet. */
+     which is not a descendant of the host. */
   .et-select-arrow .et-icon {
-    /* the registered chevron icon points up natively - this select always points down */
     rotate: 180deg;
   }
 

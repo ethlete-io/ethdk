@@ -98,21 +98,15 @@ export class SelectComponent {
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
 
-  /** The string in effect: this instance's `loadMoreLabel`, else the domain's label set. */
   protected resolvedLoadMoreLabel = computed(() => this.loadMoreLabel() ?? this.selectLabels().loadMore);
 
-  /** The string in effect: this instance's `addNewLabel`, else the domain's label set. */
   protected resolvedAddNewLabel = computed(() => this.addNewLabel() ?? this.selectLabels().addNew);
 
-  /** The string in effect: this instance's `createLabel`, else the domain's label set. */
   protected resolvedCreateLabel = computed(() => this.createLabel() ?? this.selectLabels().create);
 
-  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
   protected mixedLabelId = createComponentId('et-select-mixed-label');
 
-  // only while the field is in use - `focused` covers the trigger/search input having DOM
-  // focus as well as the panel being open
   protected showClear = computed(
     () =>
       this.clearable() &&
@@ -124,18 +118,8 @@ export class SelectComponent {
 
   public hasSearch = computed(() => !!this.select.registeredSearch());
 
-  /**
-   * Nothing to show yet, so the state row stands in for the options. Keyed on the raw `loading()`,
-   * not the deferred indicator: the row reserves the height its content will need from the first
-   * frame, and it keeps the empty state from claiming the panel while a first page is on its way.
-   */
   protected showLoadingRow = computed(() => this.select.loading() && !this.select.visibleItems().length);
 
-  /**
-   * The next page the reader asked for: the control they clicked becomes a loading row in its own
-   * place, at its own height, and the busy bar stays out of it - one wait, reported once, where they
-   * are looking.
-   */
   protected showLoadMoreLoading = computed(
     () =>
       this.select.hasMoreItems() &&
@@ -144,15 +128,10 @@ export class SelectComponent {
       this.select.showLoadingIndicator(),
   );
 
-  /** Loading over options the reader can already see: they stay, and the busy bar carries the news. */
   protected showBusyBar = computed(
     () => this.select.showLoadingIndicator() && this.select.visibleItems().length > 0 && !this.showLoadMoreLoading(),
   );
 
-  // whether the default value/placeholder span renders - never with an inline search
-  // input: in single mode the input itself displays the selected label, in multi mode
-  // the chips (or the input's placeholder) carry the value display. With a custom value
-  // template it only covers the empty state (placeholder) of search-less selects.
   protected showValueLabel = computed(() => {
     const hasSearch = this.hasSearch();
     const entryCount = this.select.selectedEntries().length;
@@ -177,10 +156,6 @@ export class SelectComponent {
     select: this.select,
   }));
 
-  // the custom value display coexists with an inline search input: while typing in single
-  // mode the query replaces the visual value; in multi mode it stays visible (like chips).
-  // Never rendered without a selection - an empty wrapper would keep the caret/placeholder
-  // CSS rules active and the field would look dead
   protected showCustomValue = computed(() => {
     if (this.select.mixed() || !this.select.registeredValueTemplate() || !this.select.selectedEntries().length) {
       return false;
@@ -190,14 +165,9 @@ export class SelectComponent {
       return true;
     }
 
-    // single select: the rich template is the resting display - while the field is focused it
-    // gives way to the editable label text in the search input (see the search directive)
     return !this.select.query() && !this.select.focused();
   });
 
-  // single select with a custom value template + search: the value display and the query
-  // input stack in the same cell (typing hides the template) - side by side they'd wrap
-  // the input onto a second line on narrow fields
   protected stackedValue = computed(
     () => this.hasSearch() && !this.select.multiple() && !!this.select.registeredValueTemplate(),
   );
@@ -208,15 +178,12 @@ export class SelectComponent {
   }
 
   protected handleClearClick(event: Event) {
-    // clearing must not toggle the panel
     event.stopPropagation();
     this.select.clearValue();
     this.select.activate();
   }
 
   protected handleArrowClick(event: Event) {
-    // the chevron renders in the field's suffix stack, outside the trigger, so its click never
-    // reaches the trigger's own toggle - it owns the whole gesture
     event.stopPropagation();
     this.select.toggle();
     this.select.activate();

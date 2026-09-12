@@ -15,9 +15,6 @@ import { FORM_FIELD_IMPORTS } from '../../form-field';
 import { SELECT_IMPORTS } from '../select.imports';
 import { USERS } from './select-nested-elevation-storybook.data';
 
-// The dialog is modal (has a backdrop) → the overlay container pins it to elevation 1.
-// The select opened inside it is anchored (no backdrop) → one above → elevation 2.
-// The avatar span inside each option opts into auto-surface → should be elevation 3.
 @Component({
   selector: 'et-sb-select-nested-elevation-dialog',
   template: `

@@ -395,7 +395,6 @@ describe('SelectDirective', () => {
   it('moves virtual focus with arrow keys and reflects it in aria-activedescendant', async () => {
     await driver.open();
 
-    // initial virtual focus lands on the first enabled option
     expect(driver.activeLabel()).toBe('Apple');
     expect(driver.trigger().getAttribute('aria-activedescendant')).toBe(driver.activeOption()!.id);
 
@@ -404,7 +403,6 @@ describe('SelectDirective', () => {
     expect(driver.activeLabel()).toBe('Banana');
     expect(driver.trigger().getAttribute('aria-activedescendant')).toBe(driver.activeOption()!.id);
 
-    // the disabled option is skipped and there is no wrap past the last enabled one
     driver.press('ArrowDown');
     expect(driver.activeLabel()).toBe('Banana');
 
@@ -482,7 +480,6 @@ describe('SelectDirective', () => {
     expect(driver.options()[0]!.getAttribute('aria-selected')).toBe('true');
     expect(driver.options()[1]!.getAttribute('aria-selected')).toBe('false');
 
-    // initial virtual focus prefers the selected option
     expect(driver.activeLabel()).toBe('Apple');
   });
 
@@ -556,7 +553,6 @@ describe('SelectDirective (multiple)', () => {
     driver.removeChip(0);
 
     expect(driver.host.value()).toEqual(['banana']);
-    // removing a chip must not toggle the panel
     expect(driver.select.open()).toBe(false);
   });
 
@@ -672,7 +668,6 @@ describe('SelectDirective (search)', () => {
     const input = driver.searchInput();
 
     expect(input.closest('.et-select-trigger')).not.toBeNull();
-    // the input owns the combobox role; the trigger container drops it
     expect(input.getAttribute('role')).toBe('combobox');
     expect(driver.query('.et-select-trigger')?.getAttribute('role')).toBeNull();
 
@@ -732,7 +727,6 @@ describe('SelectDirective (search)', () => {
     expect(mixedLabelId).not.toBe('');
     expect(driver.searchInput().getAttribute('aria-describedby')?.split(' ')).toEqual(['search-hint', mixedLabelId]);
 
-    // no visible chip to delete - Backspace must not silently clear the hidden raw selection
     driver.searchInput().value = '';
     driver.pressInSearch('Backspace');
 
@@ -759,7 +753,6 @@ describe('SelectDirective (search)', () => {
   it('reconciles virtual focus when the active option is filtered away', async () => {
     await driver.open();
 
-    // initial active: Apple
     expect(driver.activeLabel()).toBe('Apple');
 
     driver.type('cher');
@@ -773,7 +766,6 @@ describe('SelectDirective (search)', () => {
     driver.type('ban');
     expect(driver.select.visibleItems().map((item) => item.label())).toEqual(['Banana']);
 
-    // closing clears the query (trigger display) but must NOT unfilter the closing panel
     driver.select.hide();
     tick();
 
@@ -818,7 +810,6 @@ describe('SelectDirective (search)', () => {
     await driver.open();
 
     driver.type('kiwi');
-    // no regular option matches - only the "Create …" row remains, holding virtual focus
     expect(driver.visibleOptions().length).toBe(1);
     expect(driver.visibleOptions()[0]!.classList.contains('et-select-create-option')).toBe(true);
     expect(driver.activeOption()).toBe(driver.visibleOptions()[0]);
@@ -868,7 +859,6 @@ describe('SelectDirective (search)', () => {
 
     await driver.open();
 
-    // "app" matches Apple - previously Enter could only ever commit the option
     driver.type('app');
 
     const visible = driver.visibleOptions();
@@ -878,7 +868,6 @@ describe('SelectDirective (search)', () => {
     expect(visible[1]!.classList.contains('et-select-create-option')).toBe(true);
     expect(visible[1]!.textContent).toContain('app');
 
-    // default virtual focus stays on the real option - Enter would pick Apple
     expect(driver.activeOption()).toBe(visible[0]);
 
     driver.pressInSearch('ArrowDown');
@@ -888,7 +877,6 @@ describe('SelectDirective (search)', () => {
     tick();
 
     expect(driver.host.value()).toEqual(['app']);
-    // the committed value is its own label, resolved through the label cache
     expect(driver.select.displayValue()).toBe('app');
   });
 
@@ -899,12 +887,10 @@ describe('SelectDirective (search)', () => {
 
     await driver.open();
 
-    // exact label match (case-insensitive) - creating "apple" beside Apple is a duplicate
     driver.type('apple');
     expect(driver.visibleOptions().length).toBe(1);
     expect(driver.visibleOptions()[0]!.classList.contains('et-select-create-option')).toBe(false);
 
-    // an already-selected custom value must not be offered again
     driver.type('kiwi');
     driver.pressInSearch('Enter');
     tick();
@@ -926,7 +912,6 @@ describe('SelectDirective (search)', () => {
     expect(driver.searchInput().value).toBe('');
     expect(driver.select.query()).toBe('');
 
-    // a rejected commit (duplicate) keeps the pending text minus the separator for editing
     driver.type('kiwi,');
     expect(driver.host.value()).toEqual(['kiwi']);
     expect(driver.searchInput().value).toBe('kiwi');
@@ -942,7 +927,6 @@ describe('SelectDirective (search)', () => {
 
     driver.paste('kiwi, mango\nkiwi');
 
-    // split on the comma and the newline, trimmed by the normalizer, duplicate dropped
     expect(driver.host.value()).toEqual(['kiwi', 'mango']);
   });
 
@@ -959,7 +943,6 @@ describe('SelectDirective (search)', () => {
 
     expect(driver.host.value()).toEqual(['kiwi']);
 
-    // Escape clears the query before the close - it must never commit
     await driver.open();
     driver.type('mango');
     driver.escape();
@@ -976,8 +959,6 @@ describe('SelectDirective (search)', () => {
 
     await driver.open();
 
-    // "ban" filters to Banana; Enter picks the option - the close must not turn the
-    // leftover "ban" query into a custom value overwriting it
     driver.type('ban');
     driver.pressInSearch('Enter');
     tick();
@@ -1006,13 +987,11 @@ describe('SelectDirective (search)', () => {
     expect(driver.select.isFull()).toBe(true);
     expect(driver.searchInput().readOnly).toBe(true);
 
-    // both the custom path and the option path reject further adds
     expect(driver.select.commitCustomValue('papaya')).toBe(false);
     driver.visibleOptions()[0]!.click();
     tick();
     expect(driver.host.value()).toEqual(['kiwi', 'mango']);
 
-    // deselecting frees a slot and unlocks the input
     driver.select.deselectValue('kiwi');
     tick();
     expect(driver.select.isFull()).toBe(false);
@@ -1033,14 +1012,11 @@ describe('SelectDirective (search)', () => {
     expect(driver.optionByLabel('Cherry')!.getAttribute('aria-disabled')).toBe('true');
     expect(driver.optionByLabel('Apple')!.hasAttribute('aria-disabled')).toBe(false);
 
-    // clicking a full option is a no-op
     driver.clickOptionByLabel('Cherry');
     expect(driver.host.value()).toEqual(['apple', 'banana']);
 
-    // keyboard navigation skips full options like any other disabled option
     expect(driver.select.enabledItems().length).toBe(2);
 
-    // deselecting re-enables the remaining options
     driver.clickOptionByLabel('Apple');
     expect(driver.select.isFull()).toBe(false);
     expect(driver.optionByLabel('Cherry')!.hasAttribute('aria-disabled')).toBe(false);
@@ -1064,7 +1040,6 @@ describe('SelectDirective (search)', () => {
 
     expect(driver.host.value()).toEqual(['kiwi']);
 
-    // rejected by the hook - no create row, Enter commits nothing
     driver.type('xyz');
     expect(driver.visibleOptions().length).toBe(0);
     driver.pressInSearch('Enter');
@@ -1086,7 +1061,6 @@ describe('SelectDirective (search)', () => {
 
     expect(driver.host.value()).toEqual(['kiwi']);
 
-    // pick a regular option from the panel - the custom value must survive
     driver.clickOption(0);
 
     expect(driver.host.value()).toEqual(['kiwi', 'apple']);
@@ -1107,7 +1081,6 @@ describe('SelectDirective (search)', () => {
     backspace();
     expect(driver.host.value()).toEqual([]);
 
-    // nothing selected - backspace is a no-op
     backspace();
     expect(driver.host.value()).toEqual([]);
   });
@@ -1125,7 +1098,6 @@ describe('SelectDirective (search)', () => {
     expect(driver.searchInput().value).toBe('');
     expect(driver.select.query()).toBe('');
 
-    // toggling the same value off while searching keeps the query (pruning flow)
     driver.type('ban');
     driver.clickInPane('[role="option"]:not([data-filtered])');
 
@@ -1137,26 +1109,21 @@ describe('SelectDirective (search)', () => {
     driver.host.value.set('banana');
     driver.detectChanges();
 
-    // closed: the input doubles as the value display
     expect(driver.searchInput().value).toBe('Banana');
 
     await driver.open();
 
-    // open: the label is text-selected so typing replaces it
     const input = driver.searchInput();
     expect(input.value).toBe('Banana');
     expect(input.selectionStart).toBe(0);
     expect(input.selectionEnd).toBe('Banana'.length);
 
-    // editing replaces the display with the query
     driver.type('ap');
     expect(input.value).toBe('ap');
 
-    // Escape reverts the query without touching the selection
     driver.escape();
     expect(driver.host.value()).toBe('banana');
 
-    // closing restores the label display
     await driver.close();
     expect(driver.searchInput().value).toBe('Banana');
   });
@@ -1167,13 +1134,11 @@ describe('SelectDirective (search)', () => {
 
     await driver.open();
 
-    // the user deletes the displayed label entirely
     driver.type('');
 
     expect(driver.host.value()).toBeNull();
     expect(driver.searchInput().value).toBe('');
 
-    // closing shows the placeholder, not a stale label
     await driver.close();
 
     expect(driver.host.value()).toBeNull();
@@ -1183,13 +1148,10 @@ describe('SelectDirective (search)', () => {
   it('holds the loading row empty until the wait is worth reporting', async () => {
     await driver.open();
 
-    // no option matches, so there is nothing on screen the row would replace
     driver.type('zzz');
     driver.host.loading.set(true);
     driver.detectChanges();
 
-    // the row is there from the first frame (it reserves the height the options will need) but says
-    // nothing yet, and it keeps the empty state from claiming the panel
     expect(stateRow()?.classList.contains('et-select-state--loading')).toBe(true);
     expect(loadingContent()?.classList.contains('et-select-state-content--visible')).toBe(false);
     expect(loadingContent()?.getAttribute('aria-hidden')).toBe('true');
@@ -1234,14 +1196,11 @@ describe('SelectDirective (search)', () => {
     driver.host.loading.set(true);
     driver.detectChanges();
 
-    // until the wait is worth reporting the control stays, disabled - a live-looking no-op reads
-    // as broken
     expect(loadMoreButton()?.disabled).toBe(true);
     expect(loadMoreLoading()).toBeNull();
 
     await settleIndicator();
 
-    // the control's own box reports the wait; the busy bar stays out of it
     expect(loadMoreButton()).toBeNull();
     expect(loadMoreLoading()?.textContent?.trim()).toBe('Loading…');
     expect(loadMoreLoading()!.getBoundingClientRect().height).toBe(heightBefore);
@@ -1302,7 +1261,6 @@ describe('SelectDirective (search)', () => {
   it('marks pointer-set virtual focus as such (the highlight only paints while hovered)', async () => {
     await driver.open();
 
-    // initial virtual focus comes from the open logic - keyboard-grade, always highlighted
     expect(driver.activeOption()?.getAttribute('data-active-source')).toBe('keyboard');
 
     const banana = driver.visibleOptions()[1]!;
@@ -1332,7 +1290,6 @@ describe('SelectDirective (search placeholder)', () => {
     driver.detectChanges();
     tick();
 
-    // the input now displays the selected label - a placeholder behind it would be dead weight
     expect(input.value).toBe('Germany');
     expect(input.placeholder).toBe('');
   });
@@ -1362,9 +1319,7 @@ describe('SelectDirective (panel-hosted search)', () => {
 
     const input = driver.searchInput();
 
-    // a trigger-inline search would show "Apple" here (value display); the panel search must not
     expect(input.value).toBe('');
-    // and it does not take over the select's placeholder either - that belongs to the trigger
     expect(input.placeholder).toBe('');
 
     driver.type('ban');
@@ -1515,7 +1470,6 @@ describe('SelectDirective (searchable custom value)', () => {
 
   it('renders the rich value template beside the input instead of the label inside it', () => {
     expect(customValue()?.textContent?.trim()).toBe('🇩🇪 Germany');
-    // the input is a pure query box - the label never gets written into it
     expect(driver.searchInput().value).toBe('');
   });
 
@@ -1531,12 +1485,9 @@ describe('SelectDirective (searchable custom value)', () => {
 
     await driver.close();
 
-    // the combobox keeps focus after the close - still edit mode, so the editable label
-    // (not the query) shows and the rich display stays hidden
     expect(customValue()).toBeNull();
     expect(driver.searchInput().value).toBe('Germany');
 
-    // leaving the field settles the value: the rich template comes back, input goes empty
     focusEvent(driver.searchInput(), 'blur');
 
     expect(customValue()?.textContent?.trim()).toBe('🇩🇪 Germany');
@@ -1544,21 +1495,17 @@ describe('SelectDirective (searchable custom value)', () => {
   });
 
   it('edits the label text on Backspace while focused instead of nuking the value', () => {
-    // focusing enters edit mode: the rich display gives way to the editable label in the input
     focusEvent(driver.searchInput(), 'focus');
 
     expect(driver.searchInput().value).toBe('Germany');
     expect(customValue()).toBeNull();
 
-    // Backspace now has text to delete - it removes a character (native), it does not wipe the
-    // whole option the way a lone Backspace on an empty box would
     driver.pressInSearch('Backspace');
 
     expect(driver.host.value()).toBe('de');
   });
 
   it('renders a clear control while focused that clears the selection', () => {
-    // no focus yet - the control stays hidden despite the value
     expect(driver.query('.et-input-clear')).toBeNull();
 
     focusEvent(driver.searchInput(), 'focus');
@@ -1572,7 +1519,6 @@ describe('SelectDirective (searchable custom value)', () => {
     driver.click(clear);
 
     expect(driver.host.value()).toBeNull();
-    // gone without a value, and the panel did not toggle open
     expect(driver.query('.et-input-clear')).toBeNull();
     expect(driver.select.open()).toBe(false);
   });
@@ -1583,8 +1529,6 @@ describe('SelectDirective (searchable custom value)', () => {
     tick();
     await driver.settle();
 
-    // edit mode shows the editable label; erasing it clears the selection like a plain
-    // searchable single select (the rich display only owns the resting, blurred state)
     driver.type('fr');
     driver.type('');
 
@@ -1617,7 +1561,6 @@ describe('SelectDirective (single)', () => {
       },
       mixedLabel: () => driver.host.mixedLabel(),
       mixedDisplayText: () => driver.select.displayValue() ?? '',
-      // closed typeahead - a real keyboard commit that needs no open panel
       commit: () => {
         driver.press('a');
       },
@@ -1663,7 +1606,6 @@ describe('SelectDirective (multiple, contract)', () => {
       commit: () => {
         driver.press('a');
       },
-      // replace semantics: a fresh array around the committed option, not a toggle
       committedValue: () => ['apple'],
       assertMasked: () => {
         expect(driver.select.displayValue()).toBe('Mixed');

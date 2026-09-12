@@ -178,7 +178,6 @@ describe('selectOptionsFromV2Query', () => {
 
     const createPagedSource = () => {
       const client = new V2QueryClient({ baseRoute: 'https://api.example.com' });
-      // `page` is part of the request args so each page is a distinct query (not a cache hit).
       const searchItems = client.get({
         route: '/items',
         types: {
@@ -229,14 +228,12 @@ describe('selectOptionsFromV2Query', () => {
       expect(source.options()).toEqual([...page1, ...page2]);
       expect(source.hasMore()).toBe(false);
 
-      // a fresh query drops the accumulated pages and starts from page 1 again
       await search(source, 'euro');
       expect(source.options()).toEqual(page1);
       expect(source.hasMore()).toBe(true);
     });
 
     it('ends pagination when a page repeats the previous one or comes back empty', async () => {
-      // page 2 clamps back to page 1's items, as an API asked for a page past the end tends to
       const clampedPages: Record<number, Item[]> = { 1: page1, 2: page1 };
       const source = TestBed.runInInjectionContext(() => {
         const client = new V2QueryClient({ baseRoute: 'https://api.example.com' });
@@ -251,7 +248,6 @@ describe('selectOptionsFromV2Query', () => {
             query()
               ? {
                   queryParams: { q: query(), page: page() },
-                  // claims there is always more, which is what makes the fold's own verdict matter
                   mock: { delay: 0, response: { items: clampedPages[page()] ?? [], hasMore: true } },
                 }
               : null,
@@ -283,7 +279,6 @@ describe('selectOptionsFromV2Query', () => {
       expect(source.options()).toEqual([...page1, ...page2]);
       expect(source.hasMore()).toBe(false);
 
-      // hasMore is false - this must not request a (non-existent) page 3
       source.loadMore();
       await flush();
       expect(source.options()).toEqual([...page1, ...page2]);

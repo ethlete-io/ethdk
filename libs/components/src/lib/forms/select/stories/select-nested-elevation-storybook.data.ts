@@ -6,7 +6,6 @@
 const FIRST = ['Luis', 'Ana', 'John', 'Kim', 'Femi', 'Ines', 'Jona', 'Lior', 'Mara', 'Dana'];
 const LAST = ['Fernández', 'Martín', 'Doe', 'Sørensen', 'Adler', 'Berg', 'Castro', 'Diaz', 'Egede', 'Fuchs'];
 
-// Many options → the select windows its rows (matches the real case: a scrollable listbox).
 export const USERS = Array.from({ length: 500 }, (_, i) => {
   const first = FIRST[i % FIRST.length] ?? '';
   const last = LAST[Math.floor(i / FIRST.length) % LAST.length] ?? '';
