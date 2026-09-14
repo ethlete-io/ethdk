@@ -6,6 +6,7 @@ import {
   AgentApiInstance,
   AgentApiIssue,
   AgentApiRequest,
+  AgentApiRules,
   AgentApiStatus,
   JiraCredentials,
   JiraIssue,
@@ -15,6 +16,7 @@ import {
   fetchJiraFields$,
   fetchJiraIssuePicks$,
   fetchJiraIssues$,
+  issueKeyOf,
   jiraSubjectFieldCandidates,
   dayBoundaryOf,
   localDayKey,
@@ -242,6 +244,42 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       .pipe(map((events) => ({ day: request.day, fromMs: from.getTime(), toMs: to.getTime(), events })));
   };
 
+  /**
+   * The settings that decide what a day's work is named.
+   *
+   * The store is encrypted, so nothing else can read why a band went unnamed. Every field is listed by
+   * hand: the caller may hand what it reads to a hosted model, and a spread of the settings document
+   * would put the Jira host, the account email and a token on that wire the next time one is added.
+   */
+  const rules$ = (): Observable<AgentApiRules> => {
+    const current = settings.settings();
+
+    return of({
+      dayTargetMs: current.dayTargetMs,
+      gapFillMs: current.gapFillMs,
+      dayStartHour: current.dayStartHour,
+      attributionRules: current.attributionRules.map((rule) => ({
+        id: rule.id,
+        repoPath: rule.repoPath,
+        branch: rule.branch,
+        appId: rule.appId,
+        issueKey: issueKeyOf(rule),
+        donates: rule.target.kind === 'donate',
+        createdAtMs: rule.createdAt.getTime(),
+      })),
+      projectLinks: current.projectLinks.map((link) => ({
+        id: link.id,
+        path: link.path,
+        projectKey: link.target.kind === 'project' ? link.target.projectKey : undefined,
+        private: link.target.kind === 'private',
+        createdAtMs: link.createdAt.getTime(),
+      })),
+      backgroundProjects: [...current.backgroundProjects],
+      noWorkContextApps: [...current.noWorkContextApps],
+      holdsWorkApps: [...current.holdsWorkApps],
+    });
+  };
+
   const carryOut$ = (request: AgentApiRequest): Observable<unknown> => {
     switch (request.op) {
       case 'status':
@@ -260,6 +298,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return addWorklog$(request);
       case 'day.events':
         return dayEvents$(request);
+      case 'settings.rules':
+        return rules$();
     }
   };
 

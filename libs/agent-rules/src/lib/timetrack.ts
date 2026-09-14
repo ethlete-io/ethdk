@@ -48,6 +48,40 @@ export type TimetrackRepoProject = {
   suggestedProjectKey?: string;
 };
 
+/** One standing statement about what work in a context is logged against. */
+export type TimetrackAttributionRule = {
+  id: string;
+  repoPath?: string;
+  branch?: string;
+  appId?: string;
+  /** The issue the rule names, or nothing when it donates its time instead. */
+  issueKey?: string;
+  /** Whether the rule donates its time to the work around it rather than naming an issue. */
+  donates: boolean;
+  createdAtMs: number;
+};
+
+/** One standing statement about a path: whether it is work, and which project it files into. */
+export type TimetrackProjectLinkRule = {
+  id: string;
+  path: string;
+  projectKey?: string;
+  private: boolean;
+  createdAtMs: number;
+};
+
+/** The settings that decide what a day's work is named. It holds no host, no account and no token. */
+export type TimetrackRules = {
+  dayTargetMs: number;
+  gapFillMs: number;
+  dayStartHour: number;
+  attributionRules: TimetrackAttributionRule[];
+  projectLinks: TimetrackProjectLinkRule[];
+  backgroundProjects: string[];
+  noWorkContextApps: string[];
+  holdsWorkApps: string[];
+};
+
 /** One day's evidence, straight out of the app's encrypted store. `events` is opaque here on purpose. */
 export type TimetrackDayEvents = {
   day: string;
@@ -198,3 +232,5 @@ export const timetrackAddWorklog = async (options: {
 }) => (await askTimetrack<{ worklog: TimetrackWorklog }>({ op: 'worklog.add', ...options })).worklog;
 
 export const timetrackDayEvents = (day: string) => askTimetrack<TimetrackDayEvents>({ op: 'day.events', day });
+
+export const timetrackRules = () => askTimetrack<TimetrackRules>({ op: 'settings.rules' });

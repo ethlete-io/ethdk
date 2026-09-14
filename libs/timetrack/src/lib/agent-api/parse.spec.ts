@@ -67,6 +67,10 @@ describe('parseAgentRequest', () => {
     });
   });
 
+  it('takes the rules op, which carries no field of its own', () => {
+    expect(parseAgentRequest({ op: 'settings.rules' })).toEqual({ ok: true, request: { op: 'settings.rules' } });
+  });
+
   it('says what it does not know', () => {
     expect(parseAgentRequest({ op: 'jira.delete' })).toEqual({
       ok: false,

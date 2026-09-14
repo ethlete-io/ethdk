@@ -37,6 +37,7 @@ nobody can rotate.
 | `create --summary "…"`            | The work has no ticket and the user asked for one                       |
 | `log --issue <KEY> --minutes <n>` | The user asks to record time that nothing observed                      |
 | `day [YYYY-MM-DD]`                | You need the evidence a day holds, not a screenshot of it               |
+| `rules`                           | You need to know why a band was named, or why it was not                |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
 from a key you typed. Follow the repository's branch workflow when creating a branch.
@@ -53,6 +54,21 @@ npx ethlete-agents timetrack day 2026-09-10 --out /tmp/day.json
 A real day holds thousands of events, so **never print them**. Write them to a file with
 `--out`, then read that file from a test or a script. Without `--out` the command reports
 only the counts, which is what tells you whether a day holds the source you are looking for.
+
+## Why a band carries the name it does
+
+`rules` reads the settings that name a day's work - the attribution rules, the project links,
+the background projects and the applications the user has ruled in or out. It holds no host, no
+account and no token, so it is safe to quote back to the user.
+
+```bash
+npx ethlete-agents timetrack rules            # a summary of the rules
+npx ethlete-agents timetrack rules --json     # the whole answer
+```
+
+Read it before claiming a band should have been named something: a rule that donates its time
+carries no issue key, and a project in `backgroundProjects` keeps only the minutes no other
+band claims.
 
 ## Writes
 

@@ -66,6 +66,53 @@ export type AgentApiRepoProject = {
 
 export type AgentApiCreatedIssue = { key: string; id: string };
 
+/** One standing statement about what work in a context is logged against. */
+export type AgentApiAttributionRule = {
+  id: string;
+  /** The repository the rule applies to, as the absolute path the collectors report. */
+  repoPath?: string;
+  /** The one branch of `repoPath` the rule is restricted to, when it is restricted at all. */
+  branch?: string;
+  /** The application the rule names, for work that has no repository. */
+  appId?: string;
+  /** The issue the rule names, or nothing when it donates its time instead. */
+  issueKey?: string;
+  /** Whether the rule donates its time to the work around it rather than naming an issue. */
+  donates: boolean;
+  createdAtMs: number;
+};
+
+/** One standing statement about a path: whether it is work, and which project it files into. */
+export type AgentApiProjectLink = {
+  id: string;
+  path: string;
+  /** The project the link names, or nothing when it marks the path private instead. */
+  projectKey?: string;
+  private: boolean;
+  createdAtMs: number;
+};
+
+/**
+ * The settings that decide what a day's work is named, with nothing that could identify or
+ * authenticate the user in it.
+ *
+ * A caller reaches this over the loopback endpoint and may hand what it reads to a hosted model, so
+ * the Jira host, the account email and every token stay out of it by construction.
+ */
+export type AgentApiRules = {
+  dayTargetMs: number;
+  gapFillMs: number;
+  dayStartHour: number;
+  attributionRules: AgentApiAttributionRule[];
+  projectLinks: AgentApiProjectLink[];
+  /** The projects whose work runs behind the day rather than being it. */
+  backgroundProjects: string[];
+  /** The applications the user says hold no work context at all. */
+  noWorkContextApps: string[];
+  /** The applications the user says do hold work, which is what gives one a lane of its own. */
+  holdsWorkApps: string[];
+};
+
 /** A row an agent wrote onto a day, as the app stored it. */
 export type AgentApiWorklog = {
   /** The local day it landed on, as `YYYY-MM-DD`. */
@@ -93,7 +140,8 @@ export type AgentApiRequest =
       subject?: string;
     }
   | { op: 'worklog.add'; issueKey: string; description: string; fromMs: number; durationMs: number }
-  | { op: 'day.events'; day: string };
+  | { op: 'day.events'; day: string }
+  | { op: 'settings.rules' };
 
 export type AgentApiOp = AgentApiRequest['op'];
 

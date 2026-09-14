@@ -1,5 +1,6 @@
 import { writeFileSync } from 'fs';
 import {
+  TimetrackAttributionRule,
   TimetrackIssue,
   timetrackAddWorklog,
   timetrackCreateIssue,
@@ -8,6 +9,7 @@ import {
   timetrackInstance,
   timetrackIssue,
   timetrackRepoProject,
+  timetrackRules,
   timetrackSearch,
   timetrackStatus,
 } from './timetrack';
@@ -92,6 +94,14 @@ const countByKind = (events: readonly unknown[]) => {
   return [...counts].sort((left, right) => right[1] - left[1]);
 };
 
+const describeRule = (rule: TimetrackAttributionRule) => {
+  const where = rule.appId
+    ? `app ${rule.appId}`
+    : `${rule.repoPath ?? 'nowhere'}${rule.branch ? ` @ ${rule.branch}` : ''}`;
+
+  return `${where} → ${rule.donates ? 'donate' : (rule.issueKey ?? 'no issue')}`;
+};
+
 const printed = (value: unknown, json: boolean) => {
   if (json) console.log(JSON.stringify(value, null, 2));
 
@@ -111,6 +121,7 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack log --issue <KEY> --minutes <n>
                                 Add a row nothing observed to the day it belongs to
   timetrack day [YYYY-MM-DD]    The evidence a day holds, which the encrypted store hides otherwise
+  timetrack rules               The rules that name a day's work: attribution, project links, apps
 
 Options for search
   --project <KEY>     Search this project instead of the picked ones
@@ -282,6 +293,22 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     return printed(found, json);
+  }
+
+  if (subcommand === 'rules') {
+    const rules = await timetrackRules();
+
+    if (!json) {
+      console.log(`target ${Math.round(rules.dayTargetMs / 60_000)}m  day starts at ${rules.dayStartHour}:00`);
+      console.log(`${rules.attributionRules.length} attribution rule(s)`);
+      rules.attributionRules.forEach((rule) => console.log(`  ${describeRule(rule)}`));
+      console.log(`${rules.projectLinks.length} project link(s)`);
+      rules.projectLinks.forEach((link) =>
+        console.log(`  ${link.path} → ${link.private ? 'private' : (link.projectKey ?? 'no project')}`),
+      );
+    }
+
+    return printed(rules, json);
   }
 
   console.log(USAGE);
