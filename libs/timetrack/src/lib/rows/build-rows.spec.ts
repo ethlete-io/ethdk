@@ -3,6 +3,8 @@ import { ActivityBlock, ActivityContext } from '../model/block';
 import { CallWindow } from '../model/call';
 import { CalendarOccurrenceEvent } from '../model/event';
 import { buildRows } from './build-rows';
+import { CALL_LANE_KEY } from './lane';
+import { checkDay } from './round';
 
 const at = (hour: number, minute = 0) => new Date(2026, 8, 10, hour, minute);
 
@@ -131,5 +133,37 @@ describe('buildRows with a transient window over the work', () => {
     });
 
     expect(laneKeys(rows)).toEqual(['repo:/dev/a']);
+  });
+});
+
+describe('buildRows with a call a rule excluded', () => {
+  const ROOM: CallWindow = { ...HUDDLE, title: 'Open Room #1 | Braune Digital', countsAsWork: false };
+
+  it('draws the room as a row of its own', () => {
+    const rows = buildRows({ blocks: [], events: [], calls: [ROOM] });
+
+    expect(rows.unnamed).toHaveLength(1);
+    expect(rows.unnamed[0]?.laneKey).toBe(CALL_LANE_KEY);
+    expect(rows.unnamed[0]?.description).toContain('Open Room #1');
+    expect(rows.unnamed[0]?.excluded).toBe(true);
+  });
+
+  it('is not time the day reports as waiting for a name', () => {
+    const rows = buildRows({ blocks: [], events: [], calls: [ROOM] });
+    const check = checkDay({ proposals: rows.proposals, unattributed: rows.unattributed });
+
+    expect(check.unattributedMs).toBe(0);
+    expect(check.warnings.map((warning) => warning.kind)).not.toContain('unattributed-time');
+  });
+
+  it('lets an open room say nothing about whether anybody was at the machine', () => {
+    const rows = buildRows({
+      blocks: [block({ from: at(10), to: at(11), context: { repoPath: '/dev/a', branch: 'main' } })],
+      events: [],
+      calls: [ROOM],
+    });
+    const worked = rows.unattributed.find((group) => group.laneKey !== CALL_LANE_KEY);
+
+    expect(worked?.attended).toBe(false);
   });
 });

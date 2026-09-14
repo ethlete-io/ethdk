@@ -42,6 +42,12 @@ export type WorklogProposal = {
    * band — it is drawn, its tokens are counted, and naming it stays a deliberate act of the user's.
    */
   unattended?: boolean;
+  /**
+   * True where a rule said this band is not work: a voice room the call rules exclude. The band is
+   * drawn so the user can still make a row of it on the day it held a meeting, and it books nothing
+   * until they name it themselves. See ADR 0024.
+   */
+  excluded?: boolean;
 };
 
 /**

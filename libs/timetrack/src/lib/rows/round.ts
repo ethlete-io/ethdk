@@ -108,9 +108,12 @@ export type CheckDayOptions = {
  * hour of browsing is asked a question that has no answer.
  *
  * The lane decides it, and not the blocks, so the footer, the warnings and the bands on screen all
- * read the same day.
+ * read the same day. A group that already answered the question itself is taken at its word: a call a
+ * rule excluded is drawn in the call lane and is still not time the day is short of.
  */
 const isBookable = (group: WorkGroup) => {
+  if (group.bookable !== undefined) return group.bookable;
+
   const lane = group.laneKey ?? laneKeyOf(group.blocks);
 
   return lane === CALL_LANE_KEY || (!!lane && !!streamKeyRepoPath(lane));

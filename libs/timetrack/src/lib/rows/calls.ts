@@ -62,9 +62,9 @@ const timeOfDay = (date: Date) => `${pad(date.getHours())}:${pad(date.getMinutes
 const callEvidence = (options: { call: CallWindow; window: TimeWindow }): Evidence => ({
   kind: 'call',
   at: options.window.from,
-  detail: `call in _${callLabel(options.call)}_ ${timeOfDay(options.window.from)}-${timeOfDay(
-    options.window.to,
-  )}, which a rule counts as work`,
+  detail: `call in _${callLabel(options.call)}_ ${timeOfDay(options.window.from)}-${timeOfDay(options.window.to)}, ${
+    options.call.countsAsWork ? 'which a rule counts as work' : 'which no rule counts as work'
+  }`,
   summary: callLabel(options.call),
 });
 
@@ -141,6 +141,24 @@ const afterOf = (options: {
   return picked ? `series:${meetingSeriesKey(picked.event)}` : `app:${previous.appId.trim().toLowerCase()}`;
 };
 
+/**
+ * The row a call a rule excluded leaves behind: the band, its label and nothing else.
+ *
+ * It books no time and asks for no name — it is there so a room the day was told to ignore can still
+ * be turned into a row by hand, on the day something worth logging happened in it. Nothing may be
+ * named for it: an issue on a row a rule excluded is a guess at work the user said is not work.
+ */
+const excludedRow = (options: { call: CallWindow; window: TimeWindow }): WorkGroup => ({
+  from: options.window.from,
+  to: options.window.to,
+  observedMs: options.window.to.getTime() - options.window.from.getTime(),
+  confidence: 'weak',
+  evidence: [callEvidence({ call: options.call, window: options.window })],
+  blocks: [],
+  laneKey: CALL_LANE_KEY,
+  bookable: false,
+});
+
 const matchOne = (options: {
   call: CallWindow;
   window: TimeWindow;
@@ -152,8 +170,14 @@ const matchOne = (options: {
 }): CallMatch => {
   const { call, window, blocks, meetings } = options;
   const candidates = candidatesFor({ occurrences: options.occurrences, window });
-  const picked = pickCandidate({ call, window, candidates, blocks: options.titled });
   const features = callFeaturesOf({ appId: call.appId, from: window.from, to: window.to, after: options.after });
+
+  if (!call.countsAsWork) {
+    // `overlapMs` stays 0: a row that proposes nothing proposes no minute twice either.
+    return { call, overlapMs: 0, candidates, features, group: excludedRow({ call, window }) };
+  }
+
+  const picked = pickCandidate({ call, window, candidates, blocks: options.titled });
   const answered = rememberedCallIssueKey({ features, meetings });
   /**
    * An answer of the user's about this call outranks an occurrence the calendar only guessed at. A
@@ -267,8 +291,12 @@ export const dropCallWindows = (options: {
 };
 
 /**
- * Turns the calls the rules counted as work into reviewable rows of their own, and names each from the
- * day's calendar.
+ * Turns the day's calls into reviewable rows of their own, and names the ones a rule counted as work
+ * from the day's calendar.
+ *
+ * A call a rule excluded is drawn too, as a band that books nothing and carries no name. The rules
+ * say what a room usually is, not what happened in it today, so the day keeps the shape of the room
+ * on screen and lets the user turn it into a row on the day it held a meeting.
  *
  * A call is the one thing the microphone observed directly and the reconstruction cannot see. Sitting
  * in one produces no input, `streamDay` builds no block from a call event on purpose, and without
@@ -314,7 +342,6 @@ export const matchCalls = (options: {
   );
 
   return inOrder
-    .filter((call) => call.countsAsWork)
     .flatMap((call) =>
       subtractWindows({ windows: [{ from: call.from, to: call.to }], without: options.claimed })
         .filter((window) => window.to.getTime() - window.from.getTime() >= MIN_PROPOSED_CALL_MS)

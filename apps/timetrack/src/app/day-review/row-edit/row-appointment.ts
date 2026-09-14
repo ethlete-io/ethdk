@@ -12,6 +12,19 @@ export const UNNAMED_LABEL = 'Not yet named';
 export const UNATTENDED_LABEL = 'Nobody was here';
 
 /**
+ * What a band a call rule excluded is called. It is neither waiting for a name nor a problem: the
+ * rules already answered what this room is, and the band is there for the day they are wrong about it.
+ */
+export const EXCLUDED_LABEL = 'Not counted';
+
+/** What a band with no issue is called, on the timeline and in the label of a boundary beside it. */
+export const unnamedLabelOf = (row: ReviewedRow) => {
+  if (row.excluded) return EXCLUDED_LABEL;
+
+  return row.unattended ? UNATTENDED_LABEL : UNNAMED_LABEL;
+};
+
+/**
  * The theme each confidence tier paints in. Registered theme names, not colours — the scheduler reads
  * `colorToken` as `[etProvideColor]`.
  */
@@ -20,6 +33,9 @@ export const CONFIDENCE_THEME: Record<Confidence, string> = {
   likely: 'brand',
   weak: 'warning',
 };
+
+/** The theme a band a rule excluded paints in. A registered theme name, like {@link CONFIDENCE_THEME}. */
+export const EXCLUDED_THEME = 'neutral';
 
 /**
  * A row as the scheduler carries it.
@@ -70,7 +86,9 @@ export const appointmentOf = (options: {
   description: options.row.description,
   start: options.from ?? options.row.from,
   end: options.to ?? options.row.to,
-  colorToken: CONFIDENCE_THEME[options.row.confidence],
+  // A band a rule excluded is not a weak guess the reviewer has to settle, so it does not take the
+  // warning theme. Naming it is the user overruling the rule, and from then on it reads as any row.
+  colorToken: options.row.excluded && !options.row.issueKey ? EXCLUDED_THEME : CONFIDENCE_THEME[options.row.confidence],
   extra: {
     kind: 'row',
     row: options.row,
@@ -85,7 +103,7 @@ export const appointmentLabel = (appointment: Appointment) => {
 
   if (!entry) return appointment.title;
 
-  const named = entry.row.issueKey ?? (entry.row.unattended ? UNATTENDED_LABEL : UNNAMED_LABEL);
+  const named = entry.row.issueKey ?? unnamedLabelOf(entry.row);
   const alone = entry.row.issueKey && entry.row.unattended ? ' · nobody was here' : '';
 
   return `${named} · ${formatDurationMs(entry.durationMs)}${alone}${isManualRow(entry.row) ? ' · by hand' : ''}`;

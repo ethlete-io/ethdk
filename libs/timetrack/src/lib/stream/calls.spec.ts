@@ -2,17 +2,17 @@ import { CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
 import { TimetrackCallRules } from '../settings/model';
 import { DEFAULT_MIN_ATTENDED_MS, classifyCalls, closeAbandonedCalls } from './calls';
 
-const at = (minute: number) => new Date(Date.UTC(2026, 8, 9, 9, minute));
+const at = (minute: number, second = 0) => new Date(Date.UTC(2026, 8, 9, 9, minute, second));
 
-const call = (minute: number, kind: CallEvent['kind'], appId: string): CallEvent => ({
-  at: at(minute),
+const call = (minute: number, kind: CallEvent['kind'], appId: string, second = 0): CallEvent => ({
+  at: at(minute, second),
   source: 'call',
   kind,
   appId,
 });
 
-const focus = (minute: number, appId: string, title: string): WindowFocusEvent => ({
-  at: at(minute),
+const focus = (minute: number, appId: string, title: string, second = 0): WindowFocusEvent => ({
+  at: at(minute, second),
   source: 'window',
   kind: 'window-focus',
   appId,
@@ -77,7 +77,7 @@ describe('classifyCalls', () => {
     expect(windows[0]!.title).toBe('#divinity-general | Divinity of Thrones');
   });
 
-  it('reads no title from a focus that came after the call opened', () => {
+  it('reads no title from a focus that came long after the call opened', () => {
     const windows = classify([
       call(10, 'call-start', 'com.hnc.Discord.helper.Renderer'),
       focus(20, 'com.hnc.Discord', '#general | Some Server'),
@@ -85,6 +85,32 @@ describe('classifyCalls', () => {
     ]);
 
     expect(windows[0]!.title).toBe('');
+  });
+
+  it('names the call from the channel the join switched to, not the one it left', () => {
+    const windows = classify(
+      [
+        focus(0, 'discord', 'Meeting #1 | Braune Digital - Discord', 27),
+        call(0, 'call-start', 'Discord', 29),
+        focus(0, 'discord', 'Open Room #1 | Braune Digital - Discord', 39),
+        call(12, 'call-end', 'Discord'),
+      ],
+      { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['Open Room'] },
+    );
+
+    expect(windows[0]!.title).toBe('Open Room #1 | Braune Digital - Discord');
+    expect(windows[0]!.countsAsWork).toBe(false);
+  });
+
+  it('keeps the title before the call when the next one lands after the settle window', () => {
+    const windows = classify([
+      focus(0, 'discord', 'Meeting #1 | Braune Digital - Discord', 27),
+      call(0, 'call-start', 'Discord', 29),
+      focus(1, 'discord', 'Open Room #1 | Braune Digital - Discord', 30),
+      call(12, 'call-end', 'Discord'),
+    ]);
+
+    expect(windows[0]!.title).toBe('Meeting #1 | Braune Digital - Discord');
   });
 
   it('never reads a title from an application whose id the holder only starts like', () => {

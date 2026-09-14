@@ -21,6 +21,11 @@ export type ClassifyCallsOptions = {
    * not held to it.
    */
   minAttendedMs?: number;
+  /**
+   * How long after the microphone opens a title still names the call. Defaults to
+   * {@link DEFAULT_CALL_TITLE_SETTLE_MS}.
+   */
+  titleSettleMs?: number;
 };
 
 /**
@@ -40,6 +45,15 @@ export const DEFAULT_CALL_GLUE_MS = 2 * 60_000;
  * sits in that gap with room on both sides.
  */
 export const DEFAULT_MIN_ATTENDED_MS = 2 * 60_000;
+
+/**
+ * How long after the microphone opens a title still names the call.
+ *
+ * The microphone opens before the title catches up: measured on 2026-09-14 a Discord call opened at
+ * 14:00:29, between the title the user was leaving at 14:00:27 and the joined channel's at 14:00:39.
+ * Half a minute covers that lag and stays far below a call in which the user reads another channel.
+ */
+export const DEFAULT_CALL_TITLE_SETTLE_MS = 30_000;
 
 /**
  * Whether the microphone holder belongs to this application.
@@ -106,17 +120,23 @@ const attendedMs = (held: readonly HeldFocus[], call: PairedCall) =>
   windowsMs(clipWindows({ windows: held.filter((window) => belongsTo(call.appId, window.appId)), within: [call] }));
 
 /**
- * The title of the last window that application had in front before the call opened.
+ * The title of the window that application had in front when the call opened.
  *
- * Joining a call means focusing the application, so that event is nearly always there, and it names the
- * channel that was deliberately opened. It is read from the focus history rather than from the
- * compositor because a title read now would name whatever is in front now, and because the window
- * source carries no process id to match a call against on every platform.
+ * A title that arrives inside `settleMs` after the microphone wins over the one before it, because
+ * joining a voice channel opens the microphone before it switches the view — without that, a call was
+ * named after the channel the user was leaving, and a rule read the wrong name.
+ *
+ * Joining a call means focusing the application, so one of the two events is nearly always there, and
+ * it names the channel that was deliberately opened. It is read from the focus history rather than
+ * from the compositor because a title read now would name whatever is in front now, and because the
+ * window source carries no process id to match a call against on every platform.
  */
-const titleAt = (focus: readonly WindowFocusEvent[], call: { appId: string; at: Date }) => {
-  const last = focus.filter((event) => event.at <= call.at && belongsTo(call.appId, event.appId)).at(-1);
+const titleAt = (focus: readonly WindowFocusEvent[], call: { appId: string; at: Date; settleMs: number }) => {
+  const own = focus.filter((event) => belongsTo(call.appId, event.appId));
+  const settled = own.find((event) => event.at > call.at && event.at.getTime() - call.at.getTime() <= call.settleMs);
+  const before = own.filter((event) => event.at <= call.at).at(-1);
 
-  return last?.title ?? '';
+  return (settled ?? before)?.title ?? '';
 };
 
 /** A call, from the edge that opened it to the edge that closed it. */
@@ -193,8 +213,10 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     (event): event is CalendarOccurrenceEvent => event.kind === 'calendar-event' && event.accepted,
   );
 
+  const titleSettleMs = options.titleSettleMs ?? DEFAULT_CALL_TITLE_SETTLE_MS;
+
   const toWindow = (call: PairedCall): CallWindow => {
-    const title = titleAt(focus, { appId: call.appId, at: call.from });
+    const title = titleAt(focus, { appId: call.appId, at: call.from, settleMs: titleSettleMs });
     const attended = attendedMs(held, call);
     // A day with no window-focus event at all cannot be judged on attendance, and must not be gated on
     // it: a platform whose window source is off would otherwise lose every call it ever recorded.

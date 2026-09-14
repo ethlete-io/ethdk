@@ -75,8 +75,39 @@ describe('matchCalls', () => {
     expect(found?.group.laneKey).toBe(CALL_LANE_KEY);
   });
 
-  it('proposes nothing for an unclassified call', () => {
-    expect(match({ calls: [call({ countsAsWork: false })] })).toEqual([]);
+  it('draws a call a rule excluded as a band that books nothing', () => {
+    const [found] = match({ calls: [call({ countsAsWork: false })] });
+
+    expect(found?.group.laneKey).toBe(CALL_LANE_KEY);
+    expect(found?.group.bookable).toBe(false);
+    expect(found?.group.observedMs).toBe(60 * 60_000);
+    expect(found?.group.evidence[0]?.detail).toBe(
+      'call in _#standup | Braune Digital_ 10:00-11:00, which no rule counts as work',
+    );
+  });
+
+  it('names nothing on a call a rule excluded, however well the day could name it', () => {
+    const [found] = match({
+      calls: [call({ countsAsWork: false })],
+      occurrences: [occurrence()],
+      meetings: {
+        patterns: PATTERNS,
+        namings: [{ seriesKey: 'series-standup', issueKey: 'ABC-1', title: 'Daily Standup', createdAt: at(9) }],
+      },
+    });
+
+    expect(found?.group.issueKey).toBeUndefined();
+    expect(found?.group.confidence).toBe('weak');
+    expect(found?.meeting).toBeUndefined();
+  });
+
+  it('counts no double proposal against a call a rule excluded', () => {
+    const [found] = match({
+      calls: [call({ countsAsWork: false })],
+      blocks: [block({ from: at(10), to: at(11) })],
+    });
+
+    expect(found?.overlapMs).toBe(0);
   });
 
   it('never proposes better than weak, however well the call is named', () => {

@@ -111,6 +111,7 @@ export const propose = (options: {
       id: unnamedId(group),
       ...(group.standInId ? { standInId: group.standInId } : {}),
       ...(group.attended === false ? { unattended: true } : {}),
+      ...(group.bookable === false ? { excluded: true } : {}),
       from,
       to,
       durationMs,

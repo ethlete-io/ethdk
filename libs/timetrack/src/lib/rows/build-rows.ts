@@ -80,7 +80,10 @@ export type DayRows = {
    * invitation records an intention, and only the microphone records that a meeting happened.
    */
   unobserved: UnobservedOccurrence[];
-  /** The calls a rule counted as work, each named from the calendar, with the activity seen during it. */
+  /**
+   * Every call of the day as a row: the ones a rule counted as work, named from the calendar and
+   * carrying the activity seen during them, and the ones a rule excluded, which carry neither.
+   */
   calls: CallMatch[];
   /** What the user timed by hand, with how much activity was observed inside each run. */
   timers: TimerMatch[];
@@ -94,8 +97,8 @@ export type DayRows = {
 
 /**
  * Turns a day's blocks into the rows a review books from — attribute, donate, cut, merge, round,
- * describe — and adds the rows nothing observed as blocks at all: the meetings, the calls a rule
- * counted and the runs the user timed. Pure: no network, no clock, no filesystem.
+ * describe — and adds the rows nothing observed as blocks at all: the meetings, the calls and the
+ * runs the user timed. Pure: no network, no clock, no filesystem.
  *
  * A timer run displaces the reconstruction underneath it. Whatever the collectors saw while it ran
  * describes the work the run already claims, so those blocks are cut out before anything is proposed
@@ -172,10 +175,13 @@ export const buildRows = (
     meetings: naming,
   });
   const unobserved = unobservedOccurrences({ occurrences, calls: options.calls ?? [], meetings: naming });
+  // A call a rule excluded claims nothing: it books no time, and a voice room left open is the one
+  // thing that must never stand in for a person being at the machine.
+  const booked = calls.filter((match) => match.call.countsAsWork);
   const filled = fillGaps({
     blocks: cut,
     events: options.events,
-    claimed: [...unwatched, ...calls.map((call) => call.group)],
+    claimed: [...unwatched, ...booked.map((call) => call.group)],
     options: options.fill,
   });
   // Attendance is marked after the merge and before the proposal: a band is the unit the user books,
@@ -188,7 +194,7 @@ export const buildRows = (
       ...timers.map((timer) => timer.group),
     ],
     at: attendedAt(options.events),
-    claimed: [...unwatched, ...calls.map((call) => ({ from: call.group.from, to: call.group.to }))],
+    claimed: [...unwatched, ...booked.map((call) => ({ from: call.group.from, to: call.group.to }))],
   }).sort((a, b) => a.from.getTime() - b.from.getTime());
   const { proposals, unattributed, unnamed } = propose({
     groups,
