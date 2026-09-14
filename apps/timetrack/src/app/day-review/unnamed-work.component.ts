@@ -1,10 +1,17 @@
 import { Component, ViewEncapsulation, computed, input, output, signal } from '@angular/core';
-import { BANNER_IMPORTS, BUTTON_IMPORTS, SpinnerComponent } from '@ethlete/components';
+import {
+  BANNER_IMPORTS,
+  BUTTON_IMPORTS,
+  FORM_FIELD_IMPORTS,
+  SELECT_IMPORTS,
+  SpinnerComponent,
+} from '@ethlete/components';
 import {
   AttributionRule,
   AttributionTarget,
   InferredAttribution,
   ReasoningRequest,
+  StandIn,
   UnnamedContext,
   describeAttributionRule,
   formatDurationMs,
@@ -103,6 +110,26 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
               Create a ticket
             </button>
 
+            <button (click)="openStandIn.emit(entry.context)" et-button variant="transparent" size="sm">
+              Name it myself
+            </button>
+
+            @if (standIns().length) {
+              <et-form-field class="w-42 shrink-0" appearance="underline" size="sm">
+                <et-label>Or a name you gave</et-label>
+                <et-select
+                  [value]="null"
+                  [aria-label]="'A name you already gave, for ' + entry.label"
+                  (valueChange)="takeStandIn(entry.id, $event)"
+                  placeholder="Pick a name"
+                >
+                  @for (standIn of standIns(); track standIn.id) {
+                    <et-select-option [value]="standIn.id" [label]="standIn.name">{{ standIn.name }}</et-select-option>
+                  }
+                </et-select>
+              </et-form-field>
+            }
+
             <button (click)="donate(entry.id)" et-button variant="transparent" size="sm">No tickets here</button>
 
             @if (entry.path; as path) {
@@ -114,7 +141,7 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, IssueSelectComponent, SpinnerComponent],
+  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, FORM_FIELD_IMPORTS, IssueSelectComponent, SELECT_IMPORTS, SpinnerComponent],
 })
 export class UnnamedWorkComponent {
   private settings = injectTimetrackSettings();
@@ -125,6 +152,13 @@ export class UnnamedWorkComponent {
   public payload = input<ReasoningRequest | null>(null);
   /** The standing rule already covering a context, by context id. */
   public rules = input<ReadonlyMap<string, AttributionRule>>(new Map());
+  /**
+   * The names the user has already given work Jira does not hold yet, newest first.
+   *
+   * They are offered beside the issue field because the same unnamed work runs for days: the second
+   * context of the same feature is answered by taking the name, not by typing it again.
+   */
+  public standIns = input<readonly StandIn[]>([]);
   public canAsk = input(false);
   public isAsking = input(false);
   public hasAsked = input(false);
@@ -137,6 +171,13 @@ export class UnnamedWorkComponent {
   public ask = output<void>();
   /** For work no issue covers at all: the answer is a new ticket rather than a key to type. */
   public createTicket = output<UnnamedContext>();
+  /**
+   * For work Jira does not hold yet: the user names it in their own words and the ticket comes later.
+   *
+   * It is one press and no field. The name is drafted from the branch subject, which is what the user
+   * already called the work while doing it, and the settings screen is where it is renamed.
+   */
+  public openStandIn = output<UnnamedContext>();
   /**
    * The repository path a context sits in, to be marked private. Only a context that has one can be:
    * a browser and a chat client are named by the exclusion rules, which read an app rather than a path.
@@ -188,6 +229,13 @@ export class UnnamedWorkComponent {
    */
   protected donate(id: string) {
     this.emitNaming(id, { kind: 'donate' });
+  }
+
+  /** Takes a name the user already gave. The rule it writes points at the stand-in, never at a key. */
+  protected takeStandIn(id: string, value: unknown) {
+    const standInId = typeof value === 'string' ? value : '';
+
+    if (standInId) this.emitNaming(id, { kind: 'stand-in', standInId });
   }
 
   protected askAgain(id: string) {

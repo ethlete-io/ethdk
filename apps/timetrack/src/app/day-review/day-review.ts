@@ -37,6 +37,7 @@ import {
   mergeRows,
   moveRowBoundary,
   openStandIn,
+  openStandIns,
   pauseWindows,
   pausedMs,
   projectKeyFor,
@@ -834,6 +835,12 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           target: { kind: 'issue', issueKey },
         });
     },
+    /** The names the user gave work Jira does not hold yet and has not answered, newest first. */
+    openStandIns: computed(() => openStandIns(settings.settings().standIns)),
+
+    /** Every stand-in, resolved ones included, so a band that names one can still show its name. */
+    allStandIns: computed(() => settings.settings().standIns),
+
     /**
      * Names a row with a stand-in, and remembers the answer for a call behind it the way `setIssue`
      * does for a key. The day is written onto the record as well: a resolve names the days it made

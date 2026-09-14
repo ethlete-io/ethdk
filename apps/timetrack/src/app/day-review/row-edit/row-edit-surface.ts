@@ -13,6 +13,7 @@ import { EditDurationDirective } from './edit-duration.component';
 import { EditEvidenceDirective } from './edit-evidence.component';
 import { EditIssueDirective } from './edit-issue.component';
 import { EditMeetingDirective } from './edit-meeting.component';
+import { EditStandInDirective } from './edit-stand-in.component';
 import { EditStateDirective } from './edit-state.component';
 import { RowActionsDirective } from './row-actions.directive';
 import { appointmentOf, rowEntryOf } from './row-appointment';
@@ -103,6 +104,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         bindings: surfaceBindings(appointmentOf({ row: options.row }), options.appointments),
         directives: [
           EditIssueDirective,
+          EditStandInDirective,
           EditStateDirective,
           EditDurationDirective,
           EditEvidenceDirective,

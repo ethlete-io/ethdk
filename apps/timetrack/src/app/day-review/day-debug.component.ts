@@ -56,9 +56,11 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
                 [hasAsked]="store.hasAsked()"
                 [askFailure]="store.askFailure()"
                 [askedInVain]="store.askedInVain()"
+                [standIns]="store.openStandIns()"
                 (name)="nameContext($event)"
                 (ask)="store.ask()"
                 (createTicket)="tickets.open($event)"
+                (openStandIn)="store.openStandInFor($event)"
                 (markPrivate)="store.markPathPrivate($event)"
                 (forget)="store.forgetRule($event)"
               />
