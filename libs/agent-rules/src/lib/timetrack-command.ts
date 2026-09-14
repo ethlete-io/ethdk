@@ -2,6 +2,7 @@ import { writeFileSync } from 'fs';
 import {
   TimetrackAttributionRule,
   TimetrackIssue,
+  TimetrackStandIn,
   timetrackAddWorklog,
   timetrackCreateIssue,
   timetrackDayEvents,
@@ -11,6 +12,7 @@ import {
   timetrackRepoProject,
   timetrackRules,
   timetrackSearch,
+  timetrackStandIns,
   timetrackStatus,
 } from './timetrack';
 
@@ -99,7 +101,19 @@ const describeRule = (rule: TimetrackAttributionRule) => {
     ? `app ${rule.appId}`
     : `${rule.repoPath ?? 'nowhere'}${rule.branch ? ` @ ${rule.branch}` : ''}`;
 
-  return `${where} → ${rule.donates ? 'donate' : (rule.issueKey ?? 'no issue')}`;
+  if (rule.donates) return `${where} → donate`;
+  if (rule.standInId) return `${where} → stand-in ${rule.standInId}`;
+
+  return `${where} → ${rule.issueKey ?? 'no issue'}`;
+};
+
+const DAY_MS = 24 * 60 * 60_000;
+
+const describeStandIn = (standIn: TimetrackStandIn) => {
+  const days = Math.floor((Date.now() - standIn.createdAtMs) / DAY_MS);
+  const where = standIn.projectKey ? ` in ${standIn.projectKey}` : '';
+
+  return `${standIn.name}${where}  ${days}d old, ${standIn.days.length} day(s) of work`;
 };
 
 const printed = (value: unknown, json: boolean) => {
@@ -122,6 +136,7 @@ The app holds this machine's Jira credentials, so no repository needs a token of
                                 Add a row nothing observed to the day it belongs to
   timetrack day [YYYY-MM-DD]    The evidence a day holds, which the encrypted store hides otherwise
   timetrack rules               The rules that name a day's work: attribution, project links, apps
+  timetrack standins            The names the user gave work Jira does not hold yet, and their age
 
 Options for search
   --project <KEY>     Search this project instead of the picked ones
@@ -309,6 +324,21 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     return printed(rules, json);
+  }
+
+  if (subcommand === 'standins') {
+    const standIns = await timetrackStandIns();
+    const open = standIns
+      .filter((standIn) => standIn.state === 'open')
+      .sort((left, right) => left.createdAtMs - right.createdAtMs);
+
+    if (!json) {
+      console.log(`${open.length} open, ${standIns.length - open.length} resolved`);
+      open.forEach((standIn) => console.log(`  ${describeStandIn(standIn)}`));
+      if (open.length) console.log('Only the app opens or resolves one — report them, do not write one.');
+    }
+
+    return printed(standIns, json);
   }
 
   console.log(USAGE);

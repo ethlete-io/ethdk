@@ -54,8 +54,10 @@ export type TimetrackAttributionRule = {
   repoPath?: string;
   branch?: string;
   appId?: string;
-  /** The issue the rule names, or nothing when it donates its time instead. */
+  /** The issue the rule names, or nothing when it donates its time or names a stand-in instead. */
   issueKey?: string;
+  /** The stand-in the rule names, as an id into what `timetrackStandIns` answers. */
+  standInId?: string;
   /** Whether the rule donates its time to the work around it rather than naming an issue. */
   donates: boolean;
   createdAtMs: number;
@@ -80,6 +82,25 @@ export type TimetrackRules = {
   backgroundProjects: string[];
   noWorkContextApps: string[];
   holdsWorkApps: string[];
+};
+
+/**
+ * One name the user gave work that Jira does not hold yet.
+ *
+ * The list is read only. Nothing in this CLI opens or resolves a stand-in, because the name is the
+ * user's own word for their work and the app is where they give it.
+ */
+export type TimetrackStandIn = {
+  id: string;
+  name: string;
+  projectKey?: string;
+  state: 'open' | 'resolved';
+  /** The issue it resolved to. Absent while it is open. */
+  issueKey?: string;
+  /** The local day keys that hold bands of it, oldest first. */
+  days: string[];
+  author: 'user' | 'agent';
+  createdAtMs: number;
 };
 
 /** One day's evidence, straight out of the app's encrypted store. `events` is opaque here on purpose. */
@@ -234,3 +255,6 @@ export const timetrackAddWorklog = async (options: {
 export const timetrackDayEvents = (day: string) => askTimetrack<TimetrackDayEvents>({ op: 'day.events', day });
 
 export const timetrackRules = () => askTimetrack<TimetrackRules>({ op: 'settings.rules' });
+
+export const timetrackStandIns = async () =>
+  (await askTimetrack<{ standIns: TimetrackStandIn[] }>({ op: 'standIn.list' })).standIns;

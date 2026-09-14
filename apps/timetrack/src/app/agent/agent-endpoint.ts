@@ -7,6 +7,7 @@ import {
   AgentApiIssue,
   AgentApiRequest,
   AgentApiRules,
+  AgentApiStandIn,
   AgentApiStatus,
   JiraCredentials,
   JiraIssue,
@@ -17,6 +18,7 @@ import {
   fetchJiraIssuePicks$,
   fetchJiraIssues$,
   issueKeyOf,
+  standInIdOf,
   jiraSubjectFieldCandidates,
   dayBoundaryOf,
   localDayKey,
@@ -264,6 +266,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         branch: rule.branch,
         appId: rule.appId,
         issueKey: issueKeyOf(rule),
+        standInId: standInIdOf(rule),
         donates: rule.target.kind === 'donate',
         createdAtMs: rule.createdAt.getTime(),
       })),
@@ -279,6 +282,27 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       holdsWorkApps: [...current.holdsWorkApps],
     });
   };
+
+  /**
+   * The names the user gave work Jira does not hold yet.
+   *
+   * Read only. An agent may say that a stand-in has waited five days; it may not open one, because
+   * the name is the user's own word for their work. `resolvedRuleIds` is left out: it is what the
+   * undo of a resolve reads, and no caller outside the app has any use for it.
+   */
+  const standIns$ = (): Observable<{ standIns: AgentApiStandIn[] }> =>
+    of({
+      standIns: settings.settings().standIns.map((standIn) => ({
+        id: standIn.id,
+        name: standIn.name,
+        projectKey: standIn.projectKey,
+        state: standIn.state,
+        issueKey: standIn.issueKey,
+        days: [...standIn.days],
+        author: standIn.author,
+        createdAtMs: standIn.createdAt.getTime(),
+      })),
+    });
 
   const carryOut$ = (request: AgentApiRequest): Observable<unknown> => {
     switch (request.op) {
@@ -300,6 +324,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return dayEvents$(request);
       case 'settings.rules':
         return rules$();
+      case 'standIn.list':
+        return standIns$();
     }
   };
 

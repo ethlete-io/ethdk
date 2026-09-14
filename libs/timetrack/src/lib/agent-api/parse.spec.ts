@@ -71,6 +71,10 @@ describe('parseAgentRequest', () => {
     expect(parseAgentRequest({ op: 'settings.rules' })).toEqual({ ok: true, request: { op: 'settings.rules' } });
   });
 
+  it('takes the stand-in list op, which carries no field of its own', () => {
+    expect(parseAgentRequest({ op: 'standIn.list' })).toEqual({ ok: true, request: { op: 'standIn.list' } });
+  });
+
   it('says what it does not know', () => {
     expect(parseAgentRequest({ op: 'jira.delete' })).toEqual({
       ok: false,

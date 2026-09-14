@@ -1,4 +1,6 @@
 import { JiraParenting } from '../jira/hierarchy';
+import { NamingAuthor } from '../model/attribution';
+import { StandInState } from '../model/stand-in';
 
 /**
  * The contract between the app and a coding agent's CLI, spoken over the host's loopback endpoint.
@@ -75,10 +77,34 @@ export type AgentApiAttributionRule = {
   branch?: string;
   /** The application the rule names, for work that has no repository. */
   appId?: string;
-  /** The issue the rule names, or nothing when it donates its time instead. */
+  /** The issue the rule names, or nothing when it donates its time or names a stand-in instead. */
   issueKey?: string;
+  /** The stand-in the rule names, as an id into the list `standIn.list` answers. */
+  standInId?: string;
   /** Whether the rule donates its time to the work around it rather than naming an issue. */
   donates: boolean;
+  createdAtMs: number;
+};
+
+/**
+ * One name the user gave work that Jira does not hold yet.
+ *
+ * An agent reads this list to say what is still open and how long it has waited. It may not write
+ * one: a stand-in is the user's own word for their work, and an agent that opens one puts a name on
+ * the day the user never chose.
+ */
+export type AgentApiStandIn = {
+  id: string;
+  /** What the user called the work, in their own words. */
+  name: string;
+  /** The Jira project the issue will be filed in, when a link or the user named one. */
+  projectKey?: string;
+  state: StandInState;
+  /** The issue it resolved to. Absent while it is open. */
+  issueKey?: string;
+  /** The local day keys that hold bands of it, oldest first. */
+  days: string[];
+  author: NamingAuthor;
   createdAtMs: number;
 };
 
@@ -141,7 +167,8 @@ export type AgentApiRequest =
     }
   | { op: 'worklog.add'; issueKey: string; description: string; fromMs: number; durationMs: number }
   | { op: 'day.events'; day: string }
-  | { op: 'settings.rules' };
+  | { op: 'settings.rules' }
+  | { op: 'standIn.list' };
 
 export type AgentApiOp = AgentApiRequest['op'];
 
