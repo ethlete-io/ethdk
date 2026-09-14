@@ -132,6 +132,22 @@ row. With `correlate/` deleted there is no second pipeline to compare against, s
 `stream/stream-day-rows.spec.ts` and it pins the same days' numbers directly. The real-day half needs
 the screen: the store is encrypted, so no script outside the app can read a day out of it.
 
+## Open bug: a resize undoes the last one at the other end
+
+Reported by Tom, 2026-09-14. He pressed Reset on the `fifagg-frontend` row, then dragged it larger at
+both ends in turn. **Dragging the end down puts the start back where it was, and dragging the start up
+puts the end back.** Only the end of the most recent drag survives.
+
+The likely cause is in `setRowRange` (`libs/timetrack/src/lib/review/edits.ts`) and `trackPinnedRows`
+(`review/review-day.ts`). A drag pins only the end it moved and leaves the other `tracksFrom` or
+`tracksTo`, so the free end is re-read off the engine's own row on the next pass — which is exactly
+the end the previous drag had moved. A second drag has to pin what the first one pinned as well, so
+the flags have to accumulate rather than be rewritten per drag.
+
+Whatever the fix, it must keep the behaviour `0c94914ac` shipped: a row whose start was dragged still
+follows a day that is still being worked. A test has to fail without the fix — drag one end, then the
+other, and read both bounds back.
+
 ## Not in this milestone
 
 No naming beyond what the ladder already does — that is M3. No ticket drafts, no report, no model
