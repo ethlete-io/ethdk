@@ -30,19 +30,19 @@
      border line where the arrow sits on it — without which that line draws straight through the base. */
     --_et-overlay-arrow-clip: calc(var(--_et-overlay-arrow-base) / 2 - var(--_et-overlay-arrow-pane-border-width, 0px));
 
+    /* priority mirrors the border chain: explicit override → measured pane background →
+     surface theme → static fallback, so the arrow paints whatever the pane actually
+     renders (custom panelClass, themed pane) instead of re-deriving a possibly-divergent color */
+    --_et-overlay-arrow-fill: var(
+      --et-overlay-arrow-background,
+      var(--_et-overlay-arrow-pane-background, var(--et-surface-background-solid, rgb(32 32 32)))
+    );
+
     position: absolute;
     z-index: 1;
     inline-size: var(--_et-overlay-arrow-base);
     block-size: var(--_et-overlay-arrow-base);
     transform: var(--et-floating-arrow-translate, translate3d(0, 0, 0));
-    visibility: hidden;
-    /* priority mirrors the border chain: explicit override → measured pane background →
-     surface theme → static fallback, so the arrow paints whatever the pane actually
-     renders (custom panelClass, themed pane) instead of re-deriving a possibly-divergent color */
-    background-color: var(
-      --et-overlay-arrow-background,
-      var(--_et-overlay-arrow-pane-background, var(--et-surface-background-solid, rgb(32 32 32)))
-    );
     pointer-events: none;
 
     &::before {
@@ -55,19 +55,15 @@
       inline-size: var(--_et-overlay-arrow-size);
       block-size: var(--_et-overlay-arrow-size);
       box-sizing: border-box;
-      visibility: visible;
       border-radius: 2px;
       border: 0 solid var(--_et-overlay-arrow-border-color);
-      background-color: inherit;
+      /* Never paint this box through its parent's own `background-color` plus a `visibility`
+       inversion: WebKit drops a visible `::before` whose parent is both `visibility: hidden`
+       and `clip-path`-clipped, which is every arrow here. */
+      background-color: var(--_et-overlay-arrow-fill);
       box-shadow: var(--et-overlay-arrow-shadow, none);
       transform: rotate(45deg);
     }
-  }
-
-  /* the always-visible ::before punches through an ancestor's visibility: hidden,
-   so it must be re-hidden explicitly while the pane waits for its enter animation */
-  .et-force-invisible .et-overlay-arrow::before {
-    visibility: hidden;
   }
 
   [data-overlay-placement^='top'] > .et-overlay-arrow {
