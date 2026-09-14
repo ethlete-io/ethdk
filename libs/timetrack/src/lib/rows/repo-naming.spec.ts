@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AttributionRule } from '../model/attribution';
 import { TimetrackProjectLink } from '../model/project-link';
 import { HistoricalWorklog } from '../model/recurrence';
-import { NamedCheckout, repoNamingOffers } from './repo-naming';
+import { NamedCheckout, repoNamingDecisions, repoNamingOffers } from './repo-naming';
 
 const SDK = '/home/tom/dev/ethlete-sdk';
 
@@ -215,5 +215,74 @@ describe('repoNamingOffers', () => {
     });
 
     expect(offers).toEqual([]);
+  });
+});
+
+describe('repoNamingDecisions', () => {
+  const reasonFor = (options: Parameters<typeof repoNamingDecisions>[0]) =>
+    repoNamingDecisions(options).declines[0]?.reason;
+
+  it('names the rule that already answered the checkout', () => {
+    expect(
+      reasonFor({
+        checkouts: [checkout()],
+        links: [link()],
+        rules: [rule({ target: { kind: 'issue', issueKey: 'ET-900' } })],
+        worklogs: DOMINANT,
+      }),
+    ).toBe('already-named');
+  });
+
+  it('names the missing link when nothing says which project the checkout files into', () => {
+    expect(reasonFor({ checkouts: [checkout()], links: [], rules: [], worklogs: DOMINANT })).toBe('no-project-link');
+  });
+
+  it('separates a project the span logged nothing for from one it logged too little for', () => {
+    expect(reasonFor({ checkouts: [checkout()], links: [link()], rules: [], worklogs: [] })).toBe('no-history');
+    expect(
+      reasonFor({ checkouts: [checkout()], links: [link()], rules: [], worklogs: [worklog('ET-772', 1, 1)] }),
+    ).toBe('project-too-small');
+  });
+
+  it('names the threshold a project that logged enough still misses', () => {
+    expect(
+      reasonFor({
+        checkouts: [checkout()],
+        links: [link()],
+        rules: [],
+        worklogs: [worklog('ET-772', 1, 5), worklog('ET-772', 2, 5)],
+      }),
+    ).toBe('too-few-days');
+
+    expect(
+      reasonFor({
+        checkouts: [checkout()],
+        links: [link()],
+        rules: [],
+        worklogs: [...DOMINANT.slice(0, 3), worklog('ET-31', 6, 9), worklog('ET-32', 7, 9)],
+      }),
+    ).toBe('share-too-low');
+  });
+
+  it('measures what a decline fell short of, so a reader need not guess', () => {
+    const [decline] = repoNamingDecisions({
+      checkouts: [checkout()],
+      links: [link()],
+      rules: [],
+      worklogs: [...DOMINANT.slice(0, 3), worklog('ET-31', 6, 12)],
+    }).declines;
+
+    expect(decline).toMatchObject({ repoPath: SDK, projectKey: 'ET', issueKey: 'ET-31', days: 1 });
+    expect(decline?.projectMs).toBe(24 * 60 * 60_000);
+  });
+
+  it('reports nothing as declined when the checkout is offered', () => {
+    const decisions = repoNamingDecisions({ checkouts: [checkout()], links: [link()], rules: [], worklogs: DOMINANT });
+
+    expect(decisions.offers).toHaveLength(1);
+    expect(decisions.declines).toHaveLength(0);
+    expect(repoNamingOffers({ checkouts: [checkout()], links: [link()], rules: [], worklogs: DOMINANT })).toEqual(
+      decisions.offers,
+    );
   });
 });

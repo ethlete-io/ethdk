@@ -105,6 +105,24 @@ test.describe('the checkout-wide answer the record already holds', () => {
     await expect(offer(page)).toHaveCount(0);
   });
 
+  /**
+   * The host reads the settings document over IPC, so `settings()` answers with the defaults for the
+   * first moments of a run — and the defaults name no Jira host. A history read that samples them
+   * once resolves to "no token" and never asks again, which leaves the offer and the recurrence rung
+   * empty for the whole session on every real machine.
+   */
+  test('still offers when the settings document arrives after the screen does', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), attributionRules: [DONATING], projectLinks: [LINKED_TO_ABC] },
+      settingsReadDelayMs: 300,
+      tempo: { worklogs: HISTORY },
+    });
+    await page.goto('/day');
+
+    await expect(offer(page)).toContainText(`100% of your ABC time is on ${E2E_PARENT_KEY}`);
+  });
+
   test('offers nothing for a checkout the user already named an issue for', async ({ page }) => {
     await seedWorld(page, {
       now: E2E_NOW,

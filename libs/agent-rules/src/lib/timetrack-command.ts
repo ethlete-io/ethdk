@@ -2,6 +2,7 @@ import { writeFileSync } from 'fs';
 import {
   TimetrackAttributionRule,
   TimetrackIssue,
+  TimetrackNamingDecline,
   TimetrackStandIn,
   timetrackAddWorklog,
   timetrackCreateIssue,
@@ -9,6 +10,7 @@ import {
   timetrackDiscoveryPath,
   timetrackInstance,
   timetrackIssue,
+  timetrackNaming,
   timetrackRepoProject,
   timetrackRules,
   timetrackSearch,
@@ -116,6 +118,27 @@ const describeStandIn = (standIn: TimetrackStandIn) => {
   return `${standIn.name}${where}  ${days}d old, ${standIn.days.length} day(s) of work`;
 };
 
+const HOUR_MS = 60 * 60_000;
+
+const hours = (ms: number) => `${(ms / HOUR_MS).toFixed(1)}h`;
+
+const DECLINE_LINES: Record<TimetrackNamingDecline['reason'], string> = {
+  'already-named': 'a rule already names an issue for it',
+  'no-project-link': 'no project link covers it',
+  'no-history': 'the project holds no Tempo worklog in the span',
+  'project-too-small': 'the project holds too little time to read a habit from',
+  'too-few-days': 'the leading issue spans too few days',
+  'share-too-low': 'the leading issue holds too small a share of the project',
+};
+
+const describeDecline = (decline: TimetrackNamingDecline) => {
+  const measured = decline.issueKey
+    ? `  (${decline.issueKey} ${hours(decline.loggedMs ?? 0)} of ${hours(decline.projectMs ?? 0)}, ${Math.round((decline.share ?? 0) * 100)}%, ${decline.days ?? 0}d)`
+    : '';
+
+  return `${decline.repoPath} — ${DECLINE_LINES[decline.reason]}${measured}`;
+};
+
 const printed = (value: unknown, json: boolean) => {
   if (json) console.log(JSON.stringify(value, null, 2));
 
@@ -137,6 +160,7 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack day [YYYY-MM-DD]    The evidence a day holds, which the encrypted store hides otherwise
   timetrack rules               The rules that name a day's work: attribution, project links, apps
   timetrack standins            The names the user gave work Jira does not hold yet, and their age
+  timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
 
 Options for search
   --project <KEY>     Search this project instead of the picked ones
@@ -182,6 +206,7 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     if (!json) {
       console.log(`Timetrack   ${timetrackDiscoveryPath()}`);
       console.log(`  jira      ${status.jiraReady ? 'configured' : 'not configured — set it in Timetrack Settings'}`);
+      console.log(`  tempo     ${status.tempoReady ? 'configured' : 'not configured — no worklog history is read'}`);
       console.log(`  projects  ${status.projects.map((project) => project.key).join(', ') || '— none picked'}`);
       console.log(`  subject   ${status.subjectField || '— no field configured, the summary is used'}`);
     }
@@ -324,6 +349,27 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     return printed(rules, json);
+  }
+
+  if (subcommand === 'naming') {
+    const day = value && DAY.test(value) ? value : today();
+    const naming = await timetrackNaming(day);
+
+    if (!json) {
+      console.log(`${day}   tempo ${naming.tempoReady ? 'configured' : 'not configured'}`);
+      console.log(`History   ${naming.history}, ${naming.historyWorklogs} worklog(s) in the span`);
+      if (naming.historyMessage) console.log(`          ${naming.historyMessage}`);
+      console.log(`Offered (${naming.offers.length})`);
+      naming.offers.forEach((offer) =>
+        console.log(
+          `  ${offer.repoPath} → ${offer.issueKey}  ${hours(offer.loggedMs)}, ${Math.round(offer.share * 100)}%, ${offer.days}d`,
+        ),
+      );
+      console.log(`Not offered (${naming.declines.length})`);
+      naming.declines.forEach((decline) => console.log(`  ${describeDecline(decline)}`));
+    }
+
+    return printed(naming, json);
   }
 
   if (subcommand === 'standins') {

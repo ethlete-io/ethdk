@@ -5,6 +5,7 @@ import {
   AGENT_API_VERSION,
   AgentApiInstance,
   AgentApiIssue,
+  AgentApiNaming,
   AgentApiRequest,
   AgentApiRules,
   AgentApiStandIn,
@@ -26,11 +27,13 @@ import {
   matchProjectLink,
   parseAgentRequest,
   readJiraCredentials$,
+  readTempoCredentials$,
   suggestProjectForRepo,
 } from '@ethlete/timetrack';
 import { Observable, catchError, forkJoin, map, mergeMap, of, switchMap, throwError } from 'rxjs';
 import { AGENT_REQUEST_EVENT, hostEventWith$, injectHostPorts, invokeHost$ } from '../../host';
 import { injectDayReview } from '../day-review/day-review';
+import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectTimetrackSettings } from '../settings/settings';
 
 /** One request as the host hands it over. What is in `body` is the caller's, uninterpreted. */
@@ -67,6 +70,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
   const review = injectDayReview();
+  const recurring = injectRecurringPatterns();
   const destroyRef = inject(DestroyRef);
 
   /** Runs a read with the configured credentials, or fails with the one message that names the cause. */
@@ -76,10 +80,14 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   const status$ = (): Observable<AgentApiStatus> =>
-    readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
-      map((credentials) => ({
+    forkJoin({
+      jira: readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }),
+      tempo: readTempoCredentials$({ secrets: ports.secrets }),
+    }).pipe(
+      map(({ jira, tempo }) => ({
         version: AGENT_API_VERSION,
-        jiraReady: !!credentials,
+        jiraReady: !!jira,
+        tempoReady: !!tempo,
         projects: settings.settings().favoriteProjects.map((project) => ({ key: project.key, name: project.name })),
         subjectField: settings.settings().ticket.subjectField,
       })),
@@ -247,6 +255,39 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   };
 
   /**
+   * Why the checkout-wide naming offer says what it says, for the checkouts one day saw.
+   *
+   * The card is either there or it is not, and every step that can stop it — the project link, the
+   * Tempo token, the history and the three thresholds — is invisible from the day screen. Without
+   * this, answering "why was this checkout never offered a name" means reading the user's worklogs,
+   * and none of them need leave the app to answer it.
+   */
+  const naming$ = (request: Extract<AgentApiRequest, { op: 'naming.offers' }>): Observable<AgentApiNaming> =>
+    forkJoin({
+      tempo: readTempoCredentials$({ secrets: ports.secrets }),
+      history: recurring.settled$,
+      decisions: review.namingDecisionsOnDay$(request.day),
+    }).pipe(
+      map(({ tempo, history, decisions }) => ({
+        day: request.day,
+        tempoReady: !!tempo,
+        history: history.state,
+        historyWorklogs: recurring.worklogs().length,
+        historyMessage: history.state === 'failed' ? history.message : undefined,
+        offers: decisions.offers.map((offer) => ({
+          repoPath: offer.repoPath,
+          projectKey: offer.projectKey,
+          issueKey: offer.issueKey,
+          summary: offer.summary,
+          days: offer.days,
+          loggedMs: offer.loggedMs,
+          share: offer.share,
+        })),
+        declines: decisions.declines.map((decline) => ({ ...decline })),
+      })),
+    );
+
+  /**
    * The settings that decide what a day's work is named.
    *
    * The store is encrypted, so nothing else can read why a band went unnamed. Every field is listed by
@@ -326,6 +367,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return rules$();
       case 'standIn.list':
         return standIns$();
+      case 'naming.offers':
+        return naming$(request);
     }
   };
 

@@ -40,6 +40,7 @@ nobody can rotate.
 | `day [YYYY-MM-DD]`                | You need the evidence a day holds, not a screenshot of it               |
 | `rules`                           | You need to know why a band was named, or why it was not                |
 | `standins`                        | You need to know which work still waits for a ticket, and for how long  |
+| `naming [YYYY-MM-DD]`             | A checkout was never offered a name and you need the step that stopped  |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
 from a key you typed. Follow the repository's branch workflow when creating a branch.
@@ -85,6 +86,22 @@ npx ethlete-agents timetrack standins --json  # the whole answer, resolved ones 
 Read it, report it, and stop there. **Never open or resolve a stand-in.** The name is the
 user's own word for their work, and the app is the only place they give it. If the user asks
 for a ticket, use `create` and tell them to resolve the stand-in in Timetrack.
+
+## Why a checkout was never offered a name
+
+The day screen offers a whole checkout one issue when the user's own record already answers it. The
+card is either drawn or it is not, and every step that can stop it is invisible from the screen.
+`naming` names the step:
+
+```bash
+npx ethlete-agents timetrack naming              # today
+npx ethlete-agents timetrack naming 2026-09-14
+```
+
+It reports whether a Tempo token is stored, how far the read of the worklog history got, and for each
+checkout the day saw either the offer or the reason there is none - `already-named`,
+`no-project-link`, `no-history`, `project-too-small`, `too-few-days` or `share-too-low`. A `history`
+of `failed` or `no-token` explains every checkout at once, so read that line first.
 
 ## Writes
 

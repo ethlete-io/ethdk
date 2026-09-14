@@ -99,4 +99,16 @@ describe('parseAgentRequest, over a day', () => {
       message: 'day.events needs a day as YYYY-MM-DD.',
     });
   });
+
+  it('holds the naming op to the same day key', () => {
+    expect(parseAgentRequest({ op: 'naming.offers', day: '2026-09-14' })).toEqual({
+      ok: true,
+      request: { op: 'naming.offers', day: '2026-09-14' },
+    });
+
+    expect(parseAgentRequest({ op: 'naming.offers' })).toEqual({
+      ok: false,
+      message: 'naming.offers needs a day as YYYY-MM-DD.',
+    });
+  });
 });

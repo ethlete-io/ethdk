@@ -35,7 +35,7 @@ import {
   runFakeGit,
   runFakeGlab,
 } from '@ethlete/timetrack/testing';
-import { EMPTY, Observable, of, throwError } from 'rxjs';
+import { EMPTY, Observable, delay, of, throwError } from 'rxjs';
 import { HostPorts } from '../host/ports';
 
 const ok = <T>(value: T): Observable<T> => of(value);
@@ -237,7 +237,7 @@ export const createFakePorts = (): HostPorts => {
     },
 
     settings: {
-      read$: () => ok(settings),
+      read$: () => (world.settingsReadDelayMs ? ok(settings).pipe(delay(world.settingsReadDelayMs)) : ok(settings)),
       save$: (next) => {
         settings = next;
 

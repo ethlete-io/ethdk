@@ -1,6 +1,7 @@
 import { JiraParenting } from '../jira/hierarchy';
 import { NamingAuthor } from '../model/attribution';
 import { StandInState } from '../model/stand-in';
+import { RepoNamingDeclineReason } from '../rows/repo-naming';
 
 /**
  * The contract between the app and a coding agent's CLI, spoken over the host's loopback endpoint.
@@ -47,6 +48,11 @@ export type AgentApiStatus = {
   version: number;
   /** Whether a host, an account email and a token are all configured. */
   jiraReady: boolean;
+  /**
+   * Whether a Tempo token is stored. Without one the app reads no worklog history, so the recurrence
+   * rung and the checkout-wide naming offer both stay silent with nothing to report.
+   */
+  tempoReady: boolean;
   /** The projects the user picked, which is every picker's scope and the branch grammar's prefixes. */
   projects: { key: string; name: string }[];
   /** The instance's branch-subject field id, or an empty string when none is configured. */
@@ -139,6 +145,56 @@ export type AgentApiRules = {
   holdsWorkApps: string[];
 };
 
+/**
+ * What the checkout-wide naming offer says about one day, offers and refusals alike.
+ *
+ * A card the day screen never draws is the hardest thing to ask about: the project link, the Tempo
+ * history and the three thresholds are each invisible from the screen, and each of them stops
+ * silently. This names the step that stopped, so an agent can answer "why was this checkout never
+ * offered a name" without reading any of the user's worklogs.
+ */
+export type AgentApiNaming = {
+  day: string;
+  /** Whether a Tempo token is stored. Without one every checkout declines with `no-history`. */
+  tempoReady: boolean;
+  /**
+   * How far the read of the user's Tempo history got. A token that is stored and a history that
+   * arrived are different claims, and `no-history` on every checkout means the second one failed.
+   */
+  history: AgentApiHistoryState;
+  /** How many worklogs the span holds, whatever project they are in. */
+  historyWorklogs: number;
+  /** What the read failed with. Absent unless `history` is `failed`. */
+  historyMessage?: string;
+  offers: AgentApiNamingOffer[];
+  declines: AgentApiNamingDecline[];
+};
+
+export type AgentApiHistoryState = 'loading' | 'no-token' | 'ready' | 'failed';
+
+export type AgentApiNamingOffer = {
+  repoPath: string;
+  projectKey: string;
+  issueKey: string;
+  summary: string;
+  /** Distinct days of the history span that logged against the issue. */
+  days: number;
+  loggedMs: number;
+  /** How much of the project's logged time went to this one issue, from 0 to 1. */
+  share: number;
+};
+
+export type AgentApiNamingDecline = {
+  repoPath: string;
+  reason: RepoNamingDeclineReason;
+  projectKey?: string;
+  issueKey?: string;
+  days?: number;
+  loggedMs?: number;
+  projectMs?: number;
+  share?: number;
+};
+
 /** A row an agent wrote onto a day, as the app stored it. */
 export type AgentApiWorklog = {
   /** The local day it landed on, as `YYYY-MM-DD`. */
@@ -168,7 +224,8 @@ export type AgentApiRequest =
   | { op: 'worklog.add'; issueKey: string; description: string; fromMs: number; durationMs: number }
   | { op: 'day.events'; day: string }
   | { op: 'settings.rules' }
-  | { op: 'standIn.list' };
+  | { op: 'standIn.list' }
+  | { op: 'naming.offers'; day: string };
 
 export type AgentApiOp = AgentApiRequest['op'];
 

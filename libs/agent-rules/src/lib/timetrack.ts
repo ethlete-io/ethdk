@@ -30,6 +30,7 @@ export type TimetrackIssue = {
 export type TimetrackStatus = {
   version: number;
   jiraReady: boolean;
+  tempoReady: boolean;
   projects: { key: string; name: string }[];
   subjectField: string;
 };
@@ -101,6 +102,48 @@ export type TimetrackStandIn = {
   days: string[];
   author: 'user' | 'agent';
   createdAtMs: number;
+};
+
+/**
+ * What the checkout-wide naming offer says about one day, offers and refusals alike.
+ *
+ * A card the day screen never draws is the hardest thing to ask about, because every step that can
+ * stop it is invisible from the screen. `declines` names the step that stopped.
+ */
+export type TimetrackNaming = {
+  day: string;
+  /** Whether a Tempo token is stored. Without one every checkout declines with `no-history`. */
+  tempoReady: boolean;
+  /** How far the read of the user's Tempo history got. */
+  history: 'loading' | 'no-token' | 'ready' | 'failed';
+  /** How many worklogs the span holds, whatever project they are in. */
+  historyWorklogs: number;
+  /** What the read failed with. Absent unless `history` is `failed`. */
+  historyMessage?: string;
+  offers: TimetrackNamingOffer[];
+  declines: TimetrackNamingDecline[];
+};
+
+export type TimetrackNamingOffer = {
+  repoPath: string;
+  projectKey: string;
+  issueKey: string;
+  summary: string;
+  days: number;
+  loggedMs: number;
+  /** How much of the project's logged time went to this one issue, from 0 to 1. */
+  share: number;
+};
+
+export type TimetrackNamingDecline = {
+  repoPath: string;
+  reason: 'already-named' | 'no-project-link' | 'no-history' | 'project-too-small' | 'too-few-days' | 'share-too-low';
+  projectKey?: string;
+  issueKey?: string;
+  days?: number;
+  loggedMs?: number;
+  projectMs?: number;
+  share?: number;
 };
 
 /** One day's evidence, straight out of the app's encrypted store. `events` is opaque here on purpose. */
@@ -220,6 +263,8 @@ export const askTimetrack = async <T>(request: Record<string, unknown> & { op: s
 };
 
 export const timetrackStatus = () => askTimetrack<TimetrackStatus>({ op: 'status' });
+
+export const timetrackNaming = (day: string) => askTimetrack<TimetrackNaming>({ op: 'naming.offers', day });
 
 export const timetrackInstance = () => askTimetrack<TimetrackInstance>({ op: 'jira.instance' });
 

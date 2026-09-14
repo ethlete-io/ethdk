@@ -88,6 +88,50 @@ const dominantIssue = (options: { projectKey: string; worklogs: readonly Histori
 };
 
 /**
+ * Why a checkout the day saw produced no offer.
+ *
+ * A card that is simply absent is the one thing a user cannot act on: the project link, the history
+ * and the three thresholds are all invisible from the day screen, and each of them fails silently.
+ * Naming the step that stopped is what separates "nothing to learn from yet" from "this is set up
+ * wrong", and only the first of those is a reason to wait.
+ */
+export type RepoNamingDeclineReason =
+  /** A rule already names an issue for the checkout, so the answer is given and not ours to overwrite. */
+  | 'already-named'
+  /** No project link covers the checkout, so nothing narrows the history down to one project. */
+  | 'no-project-link'
+  /** The span's worklogs hold nothing at all for the project. */
+  | 'no-history'
+  /** The project holds less than `minProjectMs`, where a single short worklog would be a 100% share. */
+  | 'project-too-small'
+  /** The leading issue holds fewer than `minDays` distinct days, so it is an afternoon, not a habit. */
+  | 'too-few-days'
+  /** The leading issue holds less than `minShare` of the project's time. */
+  | 'share-too-low';
+
+/** One checkout that produced no offer, and how far it got. */
+export type RepoNamingDecline = {
+  repoPath: string;
+  reason: RepoNamingDeclineReason;
+  /** The project the link names. Absent when the reason is `no-project-link`. */
+  projectKey?: string;
+  /** The leading issue of the project, as far as one was found. */
+  issueKey?: string;
+  /** Distinct days the leading issue holds. */
+  days?: number;
+  loggedMs?: number;
+  /** What the project holds in total over the span. */
+  projectMs?: number;
+  share?: number;
+};
+
+/** Every checkout the day saw, split into the ones with an answer and the ones without. */
+export type RepoNamingDecisions = {
+  offers: RepoNamingOffer[];
+  declines: RepoNamingDecline[];
+};
+
+/**
  * Reads the checkout-wide answer out of decisions the user already made, for the checkouts a day saw.
  *
  * A repository whose branches carry no issue key is asked about again on every branch, and answering
@@ -100,7 +144,7 @@ const dominantIssue = (options: { projectKey: string; worklogs: readonly Histori
  * on all of them, and a proposal to overwrite a deliberate answer is not an offer. A checkout whose
  * rules only donate does produce one, and carries the rules it would replace.
  */
-export const repoNamingOffers = (options: {
+export const repoNamingDecisions = (options: {
   checkouts: readonly NamedCheckout[];
   links: readonly TimetrackProjectLink[];
   rules: readonly AttributionRule[];
@@ -109,10 +153,11 @@ export const repoNamingOffers = (options: {
   /** The same span's issues, for the line a card shows under the key. */
   loggedIssues?: readonly LoggedIssue[];
   options?: Partial<RepoNamingOptions>;
-}): RepoNamingOffer[] => {
+}): RepoNamingDecisions => {
   const { minDays, minShare, minProjectMs } = { ...DEFAULT_REPO_NAMING_OPTIONS, ...options.options };
   const summaries = new Map((options.loggedIssues ?? []).map((issue) => [issue.issueKey, issue.summary]));
   const offers: RepoNamingOffer[] = [];
+  const declines: RepoNamingDecline[] = [];
 
   for (const checkout of options.checkouts) {
     const { repoPath } = checkout;
@@ -124,20 +169,51 @@ export const repoNamingOffers = (options: {
       : [{ repoPath }];
     const matched = contexts.flatMap((context) => matchAttributionRule({ context, rules: options.rules })?.rule ?? []);
 
-    if (matched.some((rule) => rule.target.kind !== 'donate')) continue;
+    if (matched.some((rule) => rule.target.kind !== 'donate')) {
+      declines.push({ repoPath, reason: 'already-named' });
+      continue;
+    }
 
     const projectKey = projectKeyFor({ context: { repoPath }, links: options.links });
 
-    if (!projectKey) continue;
+    if (!projectKey) {
+      declines.push({ repoPath, reason: 'no-project-link' });
+      continue;
+    }
 
     const ranked = dominantIssue({ projectKey, worklogs: options.worklogs });
 
-    if (!ranked || ranked.projectMs < minProjectMs) continue;
+    if (!ranked) {
+      declines.push({ repoPath, reason: 'no-history', projectKey, projectMs: 0 });
+      continue;
+    }
 
     const { top, projectMs } = ranked;
     const share = top.loggedMs / projectMs;
+    const measured = {
+      repoPath,
+      projectKey,
+      issueKey: top.issueKey,
+      days: top.days.size,
+      loggedMs: top.loggedMs,
+      projectMs,
+      share,
+    };
 
-    if (top.days.size < minDays || share < minShare) continue;
+    if (projectMs < minProjectMs) {
+      declines.push({ ...measured, reason: 'project-too-small' });
+      continue;
+    }
+
+    if (top.days.size < minDays) {
+      declines.push({ ...measured, reason: 'too-few-days' });
+      continue;
+    }
+
+    if (share < minShare) {
+      declines.push({ ...measured, reason: 'share-too-low' });
+      continue;
+    }
 
     offers.push({
       repoPath,
@@ -152,5 +228,12 @@ export const repoNamingOffers = (options: {
     });
   }
 
-  return offers.sort((a, b) => b.loggedMs - a.loggedMs || a.repoPath.localeCompare(b.repoPath));
+  return {
+    offers: offers.sort((a, b) => b.loggedMs - a.loggedMs || a.repoPath.localeCompare(b.repoPath)),
+    declines,
+  };
 };
+
+/** The offers alone, for a caller that has nothing to say about the checkouts that produced none. */
+export const repoNamingOffers = (options: Parameters<typeof repoNamingDecisions>[0]): RepoNamingOffer[] =>
+  repoNamingDecisions(options).offers;

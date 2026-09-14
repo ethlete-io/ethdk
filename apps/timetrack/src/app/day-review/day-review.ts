@@ -39,9 +39,10 @@ import {
   readJiraCredentials$,
   readTempoCredentials$,
   reasoningCandidates,
+  RepoNamingDecisions,
   RepoNamingOffer,
   reasoningPlan,
-  repoNamingOffers,
+  repoNamingDecisions,
   removeManualRow,
   resetRow,
   reviewDay,
@@ -353,6 +354,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   /**
+   * The checkouts the user turned an offer down for. It lasts the session and no longer: a dismissal
+   * is not a decision about the work, and writing one into the settings would put a standing answer
+   * there that the user never gave.
+   */
+  const declinedOffers = signal<readonly string[]>([]);
+
+  /**
    * The checkout-wide answer the user's own record already contains, for the checkouts the day saw.
    *
    * It reads every checkout rather than only the unnamed ones, because the case it exists for is a
@@ -361,15 +369,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * user made, and this only states what they add up to. Accepting one is still a click. See
    * `repoNamingOffers`.
    */
-  /**
-   * The checkouts the user turned an offer down for. It lasts the session and no longer: a dismissal
-   * is not a decision about the work, and writing one into the settings would put a standing answer
-   * there that the user never gave.
-   */
-  const declinedOffers = signal<readonly string[]>([]);
-
-  const namingOffers = computed(() =>
-    repoNamingOffers({
+  const namingDecisions = computed(() =>
+    repoNamingDecisions({
       checkouts: (streamed()?.streams ?? []).flatMap((stream) =>
         stream.repoPath ? [{ repoPath: stream.repoPath, branches: stream.branches, observedMs: stream.engagedMs }] : [],
       ),
@@ -377,8 +378,30 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       rules: settings.settings().attributionRules,
       worklogs: recurring.worklogs(),
       loggedIssues: recurring.loggedIssues(),
-    }).filter((offer) => !declinedOffers().includes(offer.repoPath)),
+    }),
   );
+
+  const namingOffers = computed(() =>
+    namingDecisions().offers.filter((offer) => !declinedOffers().includes(offer.repoPath)),
+  );
+
+  /**
+   * The same decision for a day that is not necessarily the one on screen — what the agent endpoint
+   * calls. It moves the review to that day and waits for the Tempo history to settle, because a read
+   * taken while the request is still out reports an empty history and every checkout would decline
+   * with `no-history`.
+   */
+  const namingDecisionsOnDay$ = (target: string): Observable<RepoNamingDecisions> =>
+    defer(() => {
+      if (day() !== target) goToDay(target);
+
+      return recurring.settled$.pipe(
+        switchMap(() => evidenceState$),
+        filter((state) => state.day === target && state.ready),
+        take(1),
+        map(() => namingDecisions()),
+      );
+    });
 
   const plan = computed(() => {
     const rows = deterministicRows();
@@ -550,6 +573,15 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     rememberViewState({ day: key });
   };
 
+  /** Whether the day on screen holds its own evidence yet, which is what its streams are built from. */
+  const evidenceState$ = toObservable(
+    computed(() => {
+      const load = evidenceLoad();
+
+      return { day: day(), ready: !!load, failure: load?.failure ?? null };
+    }),
+  );
+
   /** Whether the day on screen holds its own edits yet, and why it never will when a read failed. */
   const editsState$ = toObservable(
     computed(() => {
@@ -620,6 +652,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * Empty without a Tempo history, which is every machine with no token.
      */
     namingOffers,
+    namingDecisionsOnDay$,
     /**
      * Time in a path the user marked private. The day reports it rather than hiding it: a reviewer who
      * cannot see that the app watched has no way to tell a working link from a broken one.

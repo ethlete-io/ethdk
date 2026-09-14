@@ -58,6 +58,13 @@ export type FakeWindowSourceStatus = {
 export type TimetrackWorldSeed = {
   events?: CollectedEvent[];
   settings?: TimetrackSettings;
+  /**
+   * How long the settings document takes to arrive, in milliseconds. Zero, the default, answers
+   * synchronously — which the host never does, because its read is an IPC round trip. A provider that
+   * samples `settings()` while the document is still on its way reads the defaults instead, so a spec
+   * about that has to be able to ask for the slow read.
+   */
+  settingsReadDelayMs?: number;
   /** Claude Code's session logs. Empty by default, so no spec collects an agent it says nothing about. */
   agentLogs?: FakeAgentLog[];
   codexLogs?: FakeAgentLog[];
@@ -84,6 +91,7 @@ export type FakeWorld = {
   editors: FakeEditors;
   reporterVsix: string | null;
   settings: TimetrackSettings;
+  settingsReadDelayMs: number;
   agentLogs: FakeAgentLog[];
   codexLogs: FakeAgentLog[];
   windowSource: FakeWindowSourceStatus;
@@ -298,6 +306,7 @@ const seedEditors = (seed: TimetrackWorldSeed['editors']): FakeEditors => {
 export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   events: seed.events ?? defaultEvents(),
   settings: seed.settings ?? defaultSettings(),
+  settingsReadDelayMs: seed.settingsReadDelayMs ?? 0,
   agentLogs: seed.agentLogs ?? [],
   codexLogs: seed.codexLogs ?? [],
   windowSource: { kind: 'none', detail: null, capabilities: [], ...seed.windowSource },
