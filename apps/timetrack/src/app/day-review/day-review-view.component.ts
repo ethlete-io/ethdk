@@ -202,7 +202,9 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
         >
           <span class="text-large">{{ proposed() }}</span>
           <span class="text-small text-et-surface-muted">of a {{ target() }} target ({{ delta() }})</span>
-          <ethlete-day-concurrency [concurrency]="store.day()?.concurrency ?? 0" />
+          @if (concurrency(); as concurrency) {
+            <ethlete-day-concurrency [concurrency]="concurrency" />
+          }
           @if (covered(); as coveredTime) {
             <span class="text-small text-et-surface-muted">{{ coveredTime }} logged outside this app</span>
           }
@@ -264,6 +266,7 @@ export class DayReviewViewComponent {
     return coveredMs > 0 ? formatDurationMs(coveredMs) : null;
   });
 
+  protected concurrency = computed(() => this.store.day()?.concurrency ?? 0);
   protected target = computed(() => formatDurationMs(this.store.targetMs()));
   protected delta = computed(() => formatSignedDurationMs(this.store.review()?.check.deltaMs ?? 0));
   protected unattributed = computed(() => formatDurationMs(this.store.review()?.check.unattributedMs ?? 0));
