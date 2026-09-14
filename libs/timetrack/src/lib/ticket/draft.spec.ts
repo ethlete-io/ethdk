@@ -4,7 +4,7 @@ import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
 import { ActivityBlock, contextKey } from '../model/block';
 import { Evidence } from '../model/evidence';
-import { draftTicket, standInNameFor } from './draft';
+import { draftParentDescription, draftTicket, standInNameFor } from './draft';
 
 const REPO = '/Users/tom/dev/ea-frontend';
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
@@ -129,6 +129,31 @@ describe('draftTicket', () => {
     });
 
     expect(drafted.notes).toEqual([]);
+  });
+});
+
+describe('draftParentDescription', () => {
+  it('says what the parent gathers and how much time it was recorded from', () => {
+    const body = draftParentDescription(unnamed({ repoPath: REPO, branch: 'feat/user-management-screen' }));
+
+    expect(body).toContain('ea-frontend, on branch feat/user-management-screen');
+    expect(body).toContain('2h 15m');
+  });
+
+  it('quotes none of the child notes, so an epic never restates its first task', () => {
+    const context = { repoPath: REPO, branch: 'feat/user-management-screen' };
+    const child = draftTicket({
+      context: unnamed(context),
+      unattributed: [group([block(context, [evidence('commit', 'x', 'Name the columns of the table')])])],
+      config: CONFIG,
+    });
+
+    expect(child.description).toContain('Name the columns of the table');
+    expect(draftParentDescription(unnamed(context))).not.toContain('Name the columns of the table');
+  });
+
+  it('is never empty, which is what an epic filed with no description was', () => {
+    expect(draftParentDescription(unnamed({ appId: 'com.slack.Slack' })).trim().length).toBeGreaterThan(0);
   });
 });
 

@@ -3,6 +3,7 @@ export * from './adf';
 export * from './candidates';
 export * from './client';
 export * from './create';
+export * from './createmeta';
 export * from './fields';
 export * from './hierarchy';
 export * from './issue';

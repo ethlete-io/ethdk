@@ -101,6 +101,23 @@ const whereFor = (context: UnnamedContext) => {
 };
 
 /**
+ * Drafts the description of the parent a ticket rolls up to.
+ *
+ * It says what the parent gathers and where its time came from, and it deliberately does not repeat
+ * the child's quoted notes: an epic that restates its first task tells a reader nothing the task does
+ * not already, and the notes belong to the stretch of work that produced them.
+ *
+ * An epic filed with no description at all is the thing this exists to stop. It is what somebody
+ * outside the work reads first, and the field is the user's to rewrite before anything is sent.
+ */
+export const draftParentDescription = (context: UnnamedContext) =>
+  [
+    `Gathers the work in ${whereFor(context)} that no issue covered.`,
+    '',
+    `Recorded from ${formatDurationMs(context.observedMs)} of it, on the day it was reviewed. Each child says what its own stretch of work was.`,
+  ].join('\n');
+
+/**
  * Drafts the ticket that a stretch of work nothing could name would be filed as.
  *
  * It quotes only what may leave the machine (`QUOTABLE_EVIDENCE_KINDS`), so a description carries

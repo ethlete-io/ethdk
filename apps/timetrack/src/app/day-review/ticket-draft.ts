@@ -2,16 +2,23 @@ import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
+  JiraCreatableType,
+  JiraCredentials,
   JiraIssue,
   ParentCandidate,
   TicketWording,
   TicketWritingRequest,
   UnnamedContext,
   createJiraIssue$,
+  creatableTypeNames,
+  draftParentDescription,
+  mayCreateType,
   draftTicket,
   favoriteProjectKeys,
+  fetchJiraCreatableTypes$,
   fetchJiraOpenIssues$,
   fetchJiraParentCandidates$,
+  fileTicketOnce$,
   gitFlowConfigFor,
   inferTicketProjectKey,
   matchExistingIssues,
@@ -53,6 +60,7 @@ export type TicketForm = {
 /** What the new-parent form holds. Its type is one of the instance's own parent types. */
 export type ParentForm = {
   summary: string;
+  description: string;
   issueTypeName: string;
 };
 
@@ -60,13 +68,20 @@ export type ParentForm = {
 type ProjectIssues = {
   parents: JiraIssue[];
   open: JiraIssue[];
+  /** What this account may create here. Empty until the read lands, which offers no type at all. */
+  creatable: JiraCreatableType[];
 };
 
 type CandidateStatus =
   typeof IDLE | { kind: 'loading' } | ({ kind: 'ready' } & ProjectIssues) | { kind: 'failed'; message: string };
 
 type CreateStatus =
-  typeof IDLE | { kind: 'creating' } | { kind: 'created'; issueKey: string } | { kind: 'failed'; message: string };
+  | typeof IDLE
+  | { kind: 'creating' }
+  | { kind: 'created'; issueKey: string }
+  /** The project already held an issue with this summary, so nothing new was filed. */
+  | { kind: 'duplicate'; issueKey: string }
+  | { kind: 'failed'; message: string };
 
 type WriteStatus = typeof IDLE | { kind: 'writing' } | { kind: 'failed'; message: string };
 
@@ -114,7 +129,18 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     if (current) form.set({ ...current, ...change });
   };
 
-  const parentTypeNames = () => settings.settings().ticket.parentIssueTypeNames;
+  /**
+   * The levels a parent may be filed at: the ones settings name, narrowed to the ones Jira says this
+   * account may create here. Jira's answer is the gate; settings only say which of them the team uses.
+   */
+  const parentTypeNames = () => {
+    const configured = settings.settings().ticket.parentIssueTypeNames;
+    const status = candidateStatus();
+
+    if (status.kind !== 'ready') return [];
+
+    return creatableTypeNames({ typeNames: configured, types: status.creatable });
+  };
 
   // Two reads rather than one filtered afterwards: the parent list is the most recent 30 of the
   // parent types, and narrowing a window of open issues to those types would offer fewer parents the
@@ -135,6 +161,9 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
                 subjectField,
               }),
               open: fetchJiraOpenIssues$({ transport: ports.transport, credentials, projectKey, subjectField }),
+              // What Jira permits, which decides the buttons. A type the project's scheme holds and
+              // this account may not create is a press that fails after the user wrote a summary.
+              creatable: fetchJiraCreatableTypes$({ transport: ports.transport, credentials, projectKey }),
             })
           : throwError(() => new Error(NO_JIRA)),
       ),
@@ -211,6 +240,26 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
+  /**
+   * Why nothing can be filed in this project, or `null` while it can.
+   *
+   * It reads off `createmeta` and so states what Jira permits this account, never what the team
+   * agreed. It stays silent while the read is in flight: a reason shown and then withdrawn reads as a
+   * problem the user has to do something about.
+   */
+  const createGate = computed(() => {
+    const status = candidateStatus();
+    const typeName = settings.settings().ticket.issueTypeName;
+
+    if (status.kind !== 'ready' || !typeName) return null;
+    if (!status.creatable.length) return `Jira lets this account create nothing in ${form()?.projectKey ?? 'it'}.`;
+    if (!mayCreateType({ typeName, types: status.creatable })) {
+      return `Jira does not let this account create a ${typeName} in ${form()?.projectKey ?? 'it'}.`;
+    }
+
+    return null;
+  });
+
   const parentStatus = signal<CreateStatus>(IDLE);
 
   // The same `exhaustMap` guard, for the same reason: Jira has no idempotency key, so a second press
@@ -231,7 +280,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
                     projectKey,
                     issueTypeName: draft.issueTypeName,
                     summary: draft.summary,
-                    description: '',
+                    description: draft.description,
                     parenting: ticket.parenting,
                     parentLinkType: ticket.parentLinkType,
                     subjectField: ticket.subjectField || undefined,
@@ -262,38 +311,44 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
+  const fileTicket$ = (options: { credentials: JiraCredentials; draft: TicketForm }) => {
+    const ticket = settings.settings().ticket;
+    const { credentials, draft } = options;
+
+    return fileTicketOnce$({
+      transport: ports.transport,
+      credentials,
+      input: {
+        projectKey: draft.projectKey,
+        issueTypeName: ticket.issueTypeName,
+        summary: draft.summary,
+        description: draft.description,
+        parentKey: draft.parentKey ?? undefined,
+        parenting: ticket.parenting,
+        parentLinkType: ticket.parentLinkType,
+        subjectField: ticket.subjectField || undefined,
+        subject: ticketSubjectOf(draft.summary),
+      },
+    });
+  };
+
   // `exhaustMap`, not `switchMap`: a second press while the first call is in flight must not start a
   // second issue. Jira has no idempotency key, so two calls are two tickets.
   creations$
     .pipe(
       exhaustMap((draft) => {
-        const ticket = settings.settings().ticket;
         const named = context();
 
         return readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
           switchMap((credentials) =>
-            credentials
-              ? createJiraIssue$({
-                  transport: ports.transport,
-                  credentials,
-                  input: {
-                    projectKey: draft.projectKey,
-                    issueTypeName: ticket.issueTypeName,
-                    summary: draft.summary,
-                    description: draft.description,
-                    parentKey: draft.parentKey ?? undefined,
-                    parenting: ticket.parenting,
-                    parentLinkType: ticket.parentLinkType,
-                    subjectField: ticket.subjectField || undefined,
-                    subject: ticketSubjectOf(draft.summary),
-                  },
-                })
-              : throwError(() => new Error(NO_JIRA)),
+            credentials ? fileTicket$({ credentials, draft }) : throwError(() => new Error(NO_JIRA)),
           ),
           map((created): CreateStatus => {
-            if (named) dayReview.nameContext(named, { kind: 'issue', issueKey: created.key });
+            if (named) dayReview.nameContext(named, { kind: 'issue', issueKey: created.issueKey });
 
-            return { kind: 'created', issueKey: created.key };
+            return created.duplicate
+              ? { kind: 'duplicate', issueKey: created.issueKey }
+              : { kind: 'created', issueKey: created.issueKey };
           }),
           catchError((error: unknown) => of<CreateStatus>({ kind: 'failed', message: messageOf(error) })),
           startWith<CreateStatus>({ kind: 'creating' }),
@@ -370,6 +425,16 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
       return status.kind === 'created' ? status.issueKey : null;
     }),
+
+    /**
+     * The key the press landed on rather than filing a new one. The rule is written either way, so
+     * the day is named — what differs is that Jira already held the issue.
+     */
+    duplicateKey: computed(() => {
+      const status = createStatus();
+
+      return status.kind === 'duplicate' ? status.issueKey : null;
+    }),
     createFailure: computed(() => {
       const status = createStatus();
 
@@ -378,13 +443,21 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     canCreate: computed(() => {
       const draft = form();
 
-      return !!draft?.projectKey && !!draft.summary && !!settings.settings().ticket.issueTypeName;
+      return !!draft?.projectKey && !!draft.summary && !!settings.settings().ticket.issueTypeName && !createGate();
     }),
+
+    /**
+     * Why this project holds no create, or nothing when it does.
+     *
+     * A disabled button with no reason beside it is the worst of the three states, and the reason is
+     * one Jira alone knows: the account's own permissions in this project.
+     */
+    createGate,
 
     /** The open new-parent form, or nothing while it is closed. */
     parentForm: parentForm.asReadonly(),
-    /** The levels a parent may be filed at, from the instance's own hierarchy in Settings. */
-    parentTypeNames: computed(() => [...settings.settings().ticket.parentIssueTypeNames]),
+    /** The levels a parent may be filed at: what settings name, narrowed to what Jira permits here. */
+    parentTypeNames: computed(() => parentTypeNames()),
     isCreatingParent: computed(() => parentStatus().kind === 'creating'),
     createParentFailure: computed(() => {
       const status = parentStatus();
@@ -455,11 +528,19 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * filed here is nearly always the wider name for the very work below it.
      */
     openParentForm: () => {
+      const named = context();
+
       parentStatus.set(IDLE);
-      parentForm.set({ summary: form()?.summary ?? '', issueTypeName: parentTypeNames()[0] ?? '' });
+      parentForm.set({
+        summary: form()?.summary ?? '',
+        description: named ? draftParentDescription(named) : '',
+        issueTypeName: parentTypeNames()[0] ?? '',
+      });
     },
     closeParentForm: () => parentForm.set(null),
     setParentSummary: (summary: string) => parentForm.update((draft) => (draft ? { ...draft, summary } : draft)),
+    setParentDescription: (description: string) =>
+      parentForm.update((draft) => (draft ? { ...draft, description } : draft)),
     setParentIssueTypeName: (issueTypeName: string) =>
       parentForm.update((draft) => (draft ? { ...draft, issueTypeName } : draft)),
     createParent: () => {

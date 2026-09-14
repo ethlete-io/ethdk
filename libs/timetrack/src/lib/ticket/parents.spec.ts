@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { JiraIssue } from '../jira/issue';
-import { rankParentCandidates, suggestParentKey } from './parents';
+import { alreadyFiled, rankParentCandidates, suggestParentKey } from './parents';
 
 const issue = (key: string, summary: string): JiraIssue => ({ key, id: key, summary, issueType: 'Story' });
 
@@ -71,5 +71,26 @@ describe('suggestParentKey', () => {
 
   it('suggests nothing when there is nothing to suggest', () => {
     expect(suggestParentKey([])).toBeUndefined();
+  });
+});
+
+describe('alreadyFiled', () => {
+  const issues = [issue('FIP-1', 'User management screen'), issue('FIP-2', 'Release tooling')];
+
+  it('finds the issue a second press would file again', () => {
+    expect(alreadyFiled({ summary: 'User management screen', issues })?.key).toBe('FIP-1');
+  });
+
+  it('ignores whitespace and case, which a draft the user retyped differs by', () => {
+    expect(alreadyFiled({ summary: '  user   management  SCREEN ', issues })?.key).toBe('FIP-1');
+  });
+
+  it('finds nothing for a summary that only resembles one, which is the user own question', () => {
+    expect(alreadyFiled({ summary: 'User management screens', issues })).toBeUndefined();
+    expect(alreadyFiled({ summary: 'User management', issues })).toBeUndefined();
+  });
+
+  it('finds nothing for an empty draft, so a blank form never reads as a duplicate', () => {
+    expect(alreadyFiled({ summary: '   ', issues: [issue('FIP-3', '')] })).toBeUndefined();
   });
 });

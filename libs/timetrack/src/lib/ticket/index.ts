@@ -1,4 +1,5 @@
 export * from './draft';
+export * from './file';
 export * from './parents';
 export * from './project';
 export * from './repair';

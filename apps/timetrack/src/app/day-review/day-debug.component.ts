@@ -87,7 +87,9 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
                 [isWriting]="tickets.isWriting()"
                 [isCreating]="tickets.isCreating()"
                 [canCreate]="tickets.canCreate()"
+                [createGate]="tickets.createGate()"
                 [createdKey]="tickets.createdKey()"
+                [duplicateKey]="tickets.duplicateKey()"
                 [searchFailure]="tickets.searchFailure()"
                 [writeFailure]="tickets.writeFailure()"
                 [createFailure]="tickets.createFailure()"
@@ -99,6 +101,7 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
                 (openParentForm)="tickets.openParentForm()"
                 (closeParentForm)="tickets.closeParentForm()"
                 (parentSummaryChange)="tickets.setParentSummary($event)"
+                (parentDescriptionChange)="tickets.setParentDescription($event)"
                 (parentIssueTypeNameChange)="tickets.setParentIssueTypeName($event)"
                 (createParent)="tickets.createParent()"
                 (write)="tickets.writeWithAgent()"
@@ -236,10 +239,11 @@ export class DayDebugComponent {
 
   /**
    * The repair a just-filed ticket makes possible. It appears only once the key exists, because the
-   * whole point of repair is to put that key into the branch name.
+   * whole point of repair is to put that key into the branch name. A key the project already held
+   * counts: the branch needs it in its name either way.
    */
   protected repairOffer = computed(() => {
-    const issueKey = this.tickets.createdKey();
+    const issueKey = this.tickets.createdKey() ?? this.tickets.duplicateKey();
     const context = this.tickets.context()?.context;
 
     if (!issueKey || !context?.repoPath || !this.repair.isRepairable(context.branch) || this.repair.target()) {

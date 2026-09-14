@@ -38,6 +38,15 @@ import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
           type="success"
           heading="Filed"
         />
+      } @else if (duplicateKey(); as key) {
+        <et-banner
+          [description]="
+            key +
+            ' already carried this summary, so nothing new was filed. It now holds this work, here and on every later day this context appears in.'
+          "
+          type="info"
+          heading="Jira already had it"
+        />
       } @else if (form(); as draft) {
         @if (createFailure(); as failure) {
           <et-banner [description]="failure" type="error" heading="Jira did not take the ticket" />
@@ -180,6 +189,17 @@ import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
                 </et-form-field>
               </div>
 
+              <et-form-field appearance="underline" size="sm">
+                <et-label>Description</et-label>
+                <et-textarea
+                  [value]="parent.description"
+                  [minRows]="2"
+                  [maxRows]="8"
+                  (valueChange)="parentDescriptionChange.emit($event)"
+                  autosize
+                />
+              </et-form-field>
+
               @if (createParentFailure(); as failure) {
                 <et-banner [description]="failure" type="warning" heading="The parent could not be filed" />
               }
@@ -217,6 +237,10 @@ import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
             </div>
           }
         </div>
+
+        @if (createGate(); as reason) {
+          <et-banner [description]="reason" type="warning" heading="Jira does not permit this create" />
+        }
 
         <div class="flex items-center gap-3">
           <button
@@ -274,6 +298,10 @@ export class CreateTicketComponent {
   public isCreating = input(false);
   public canCreate = input(false);
   public createdKey = input<string | null>(null);
+  /** Why this project holds no create, from Jira's own permissions. `null` while it holds one. */
+  public createGate = input<string | null>(null);
+  /** The key the press landed on because Jira already held it. See `createdKey` for a new one. */
+  public duplicateKey = input<string | null>(null);
   public searchFailure = input<string | null>(null);
   public writeFailure = input<string | null>(null);
   public createFailure = input<string | null>(null);
@@ -286,6 +314,7 @@ export class CreateTicketComponent {
   public openParentForm = output<void>();
   public closeParentForm = output<void>();
   public parentSummaryChange = output<string>();
+  public parentDescriptionChange = output<string>();
   public parentIssueTypeNameChange = output<string>();
   public createParent = output<void>();
   public write = output<void>();

@@ -88,3 +88,20 @@ export const matchExistingIssues = (options: {
   rankParentCandidates({ summary: options.summary, issues: options.issues })
     .filter((candidate) => candidate.score >= MIN_EXISTING_ISSUE_SCORE)
     .slice(0, options.max ?? DEFAULT_MAX_EXISTING_ISSUES);
+
+const sameSummary = (left: string, right: string) =>
+  left.trim().replace(/\s+/g, ' ').toLowerCase() === right.trim().replace(/\s+/g, ' ').toLowerCase();
+
+/**
+ * The open issue a draft would file a second time, or nothing.
+ *
+ * It matches the summary exactly, once whitespace and case are normalised, rather than by the
+ * similarity {@link matchExistingIssues} ranks. A near match is a question for the user; the same
+ * summary in the same project is the ticket the last press already filed.
+ *
+ * Jira has no idempotency key, so a create whose answer was lost on the wire looks exactly like a
+ * create that never happened. Re-reading the project and asking this is what tells the two apart, and
+ * it is the only thing that stops a second press filing a duplicate nobody asked for.
+ */
+export const alreadyFiled = (options: { summary: string; issues: readonly JiraIssue[] }) =>
+  options.summary.trim() ? options.issues.find((issue) => sameSummary(issue.summary, options.summary)) : undefined;
