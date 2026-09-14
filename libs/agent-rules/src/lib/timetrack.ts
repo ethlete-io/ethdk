@@ -154,6 +154,46 @@ export type TimetrackDayEvents = {
   events: unknown[];
 };
 
+/** One row of a day as the app's own review drew it. Every edit names a row by this `id`. */
+export type TimetrackRow = {
+  id: string;
+  issueKey?: string;
+  standInId?: string;
+  description: string;
+  fromMs: number;
+  toMs: number;
+  durationMs: number;
+  observedMs: number;
+  laneKey?: string;
+  state: string;
+  confidence: string;
+  edited: boolean;
+  hidden: boolean;
+};
+
+/** A day as the screen draws it: the rows, the ones taken off the timeline, and its totals. */
+export type TimetrackDayRows = {
+  day: string;
+  rows: TimetrackRow[];
+  hidden: TimetrackRow[];
+  proposedMs: number;
+  loggedMs: number;
+  targetMs: number;
+  unattributedMs: number;
+  warnings: { kind: string; detail: string }[];
+};
+
+/** One change to one row, named by the id `timetrackDayRows` answered. */
+export type TimetrackRowEdit =
+  | { kind: 'range'; rowId: string; fromMs: number; toMs: number }
+  | { kind: 'issue'; rowId: string; issueKey: string }
+  | { kind: 'description'; rowId: string; description: string }
+  | { kind: 'state'; rowId: string; state: 'accepted' | 'rejected' }
+  | { kind: 'hidden'; rowId: string; hidden: boolean }
+  | { kind: 'reset'; rowId: string };
+
+export type TimetrackEditedDay = TimetrackDayRows & { applied: number };
+
 export type TimetrackWorklog = {
   day: string;
   issueKey: string;
@@ -298,6 +338,17 @@ export const timetrackAddWorklog = async (options: {
 }) => (await askTimetrack<{ worklog: TimetrackWorklog }>({ op: 'worklog.add', ...options })).worklog;
 
 export const timetrackDayEvents = (day: string) => askTimetrack<TimetrackDayEvents>({ op: 'day.events', day });
+
+export const timetrackDayRows = (day: string) => askTimetrack<TimetrackDayRows>({ op: 'day.rows', day });
+
+/**
+ * Makes the stated edits to a day's rows and answers the day as it reads afterwards.
+ *
+ * The app moves its own review to that day, so the user sees what changed. `applied` counts the edits
+ * that found their row: a day the collectors keep changing can drop a row a caller read a moment ago.
+ */
+export const timetrackEditDay = (options: { day: string; edits: readonly TimetrackRowEdit[] }) =>
+  askTimetrack<TimetrackEditedDay>({ op: 'day.edits', ...options });
 
 export const timetrackRules = () => askTimetrack<TimetrackRules>({ op: 'settings.rules' });
 

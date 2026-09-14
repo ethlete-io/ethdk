@@ -5,8 +5,11 @@ import {
   AGENT_API_VERSION,
   AgentApiInstance,
   AgentApiIssue,
+  AgentApiDayRows,
+  AgentApiEditedDay,
   AgentApiNaming,
   AgentApiRequest,
+  AgentApiReviewedRow,
   AgentApiRules,
   AgentApiStandIn,
   AgentApiStatus,
@@ -28,6 +31,7 @@ import {
   parseAgentRequest,
   readJiraCredentials$,
   readTempoCredentials$,
+  ReviewedRow,
   suggestProjectForRepo,
 } from '@ethlete/timetrack';
 import { Observable, catchError, forkJoin, map, mergeMap, of, switchMap, throwError } from 'rxjs';
@@ -246,6 +250,55 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * The store is encrypted, so no shell reads a day. Without this an agent asked to explain what the
    * day screen drew has nothing to read but a screenshot of it.
    */
+  /** The wire shape of a row. A caller in another repository names this `id` in every edit it sends. */
+  const toApiRow = (row: ReviewedRow): AgentApiReviewedRow => ({
+    id: row.id,
+    issueKey: row.issueKey,
+    standInId: row.standInId,
+    description: row.description,
+    fromMs: row.from.getTime(),
+    toMs: row.to.getTime(),
+    durationMs: row.durationMs,
+    observedMs: row.observedMs,
+    laneKey: row.laneKey,
+    state: row.state,
+    confidence: row.confidence,
+    edited: row.edited,
+    hidden: row.hidden,
+  });
+
+  /**
+   * The day as its own review draws it, which is the only place a row's id exists.
+   *
+   * `day.events` answers what the collectors saw; this answers what the screen made of it. An agent
+   * asked to check a day needs the second, because a band that is drawn wrong is drawn wrong after
+   * every rule the app applied, not in the events underneath them.
+   */
+  const dayRows$ = (day: string): Observable<AgentApiDayRows> =>
+    review.reviewOfDay$(day).pipe(
+      map((current) => ({
+        day,
+        rows: current.rows.map(toApiRow),
+        hidden: current.hidden.map(toApiRow),
+        proposedMs: current.check.proposedMs,
+        loggedMs: current.check.loggedMs,
+        targetMs: current.check.targetMs ?? 0,
+        unattributedMs: current.check.unattributedMs,
+        warnings: current.check.warnings,
+      })),
+    );
+
+  /**
+   * Makes the edits a caller stated, then answers the day as it reads afterwards.
+   *
+   * The answer is the whole day rather than a verdict per edit. A reviewer's edit is cut against every
+   * other row of the day, so what an edit did is only legible in the day it left behind.
+   */
+  const editDay$ = (request: Extract<AgentApiRequest, { op: 'day.edits' }>): Observable<AgentApiEditedDay> =>
+    review
+      .editRowsOnDay$({ day: request.day, edits: request.edits })
+      .pipe(mergeMap((applied) => dayRows$(request.day).pipe(map((day) => ({ ...day, applied })))));
+
   const dayEvents$ = (request: Extract<AgentApiRequest, { op: 'day.events' }>) => {
     const { from, to } = localDayRange(request.day, dayBoundaryOf(settings.settings()));
 
@@ -363,6 +416,10 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return addWorklog$(request);
       case 'day.events':
         return dayEvents$(request);
+      case 'day.rows':
+        return dayRows$(request.day);
+      case 'day.edits':
+        return editDay$(request);
       case 'settings.rules':
         return rules$();
       case 'standIn.list':

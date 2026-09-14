@@ -38,6 +38,8 @@ nobody can rotate.
 | `create --summary "…"`            | The work has no ticket and the user asked for one                       |
 | `log --issue <KEY> --minutes <n>` | The user asks to record time that nothing observed                      |
 | `day [YYYY-MM-DD]`                | You need the evidence a day holds, not a screenshot of it               |
+| `rows [YYYY-MM-DD]`               | You need the rows the day drew, and the ids an edit names them by       |
+| `edit <row-id> …`                 | The user asks you to correct one row of a day                           |
 | `rules`                           | You need to know why a band was named, or why it was not                |
 | `standins`                        | You need to know which work still waits for a ticket, and for how long  |
 | `naming [YYYY-MM-DD]`             | A checkout was never offered a name and you need the step that stopped  |
@@ -57,6 +59,32 @@ npx ethlete-agents timetrack day 2026-09-10 --out /tmp/day.json
 A real day holds thousands of events, so **never print them**. Write them to a file with
 `--out`, then read that file from a test or a script. Without `--out` the command reports
 only the counts, which is what tells you whether a day holds the source you are looking for.
+
+## Reading and correcting the rows a day drew
+
+`day` answers what the collectors saw. `rows` answers what the app made of it - the bands on the
+timeline, with the id every edit names a row by, the day's totals and its warnings.
+
+```bash
+npx ethlete-agents timetrack rows                      # today
+npx ethlete-agents timetrack rows 2026-09-10 --json
+```
+
+`edit` changes one row. Pass exactly one change per call:
+
+```bash
+npx ethlete-agents timetrack edit 'ABC-1@2026-09-10T11:00:00.000Z' --day 2026-09-10 \
+  --from 2026-09-10T13:15:00Z --to 2026-09-10T17:00:00Z
+npx ethlete-agents timetrack edit '<row-id>' --issue ABC-2
+npx ethlete-agents timetrack edit '<row-id>' --state rejected
+```
+
+Both commands move the app's own review to that day, so the user sees what you read and what you
+changed. `applied` says how many edits found their row: a running day is re-cut on every collector
+tick, so read `rows` again rather than reusing an id from minutes ago.
+
+An edit may correct a row's times, its name, its note and whether it syncs. It may not split, merge
+or delete one - restructuring a day is the user's own decision, made on the screen.
 
 ## Why a band carries the name it does
 

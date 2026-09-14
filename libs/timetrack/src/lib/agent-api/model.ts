@@ -1,6 +1,9 @@
 import { JiraParenting } from '../jira/hierarchy';
 import { NamingAuthor } from '../model/attribution';
+import { Confidence } from '../model/evidence';
+import { WorklogProposalState } from '../model/proposal';
 import { StandInState } from '../model/stand-in';
+import { DayWarning } from '../rows/round';
 import { RepoNamingDeclineReason } from '../rows/repo-naming';
 
 /**
@@ -206,6 +209,63 @@ export type AgentApiWorklog = {
   durationMs: number;
 };
 
+/** One row of a day as an agent reads it, and the id every edit to that row names it by. */
+export type AgentApiReviewedRow = {
+  id: string;
+  /** Absent on a row nothing has named. Such a row is drawn and never written. */
+  issueKey?: string;
+  /** The stand-in naming the row, while Jira holds no issue for the work. */
+  standInId?: string;
+  description: string;
+  fromMs: number;
+  toMs: number;
+  /** What a sync would write for the row, which is the time its band covers. */
+  durationMs: number;
+  /** What was observed under it. Zero on a row somebody wrote by hand. */
+  observedMs: number;
+  /** The lane the day screen draws it in. Absent for a row no checkout and no call holds. */
+  laneKey?: string;
+  state: WorklogProposalState;
+  confidence: Confidence;
+  /** Whether a reviewer's own edit produced this row. */
+  edited: boolean;
+  /** Whether the row is off the timeline. A hidden row is neither written nor waiting for a name. */
+  hidden: boolean;
+};
+
+/** A day as its review draws it: the rows on the timeline, the ones taken off it, and its totals. */
+export type AgentApiDayRows = {
+  day: string;
+  rows: AgentApiReviewedRow[];
+  hidden: AgentApiReviewedRow[];
+  /** What a sync would write for the day. */
+  proposedMs: number;
+  /** The proposals plus what Tempo already holds. */
+  loggedMs: number;
+  targetMs: number;
+  /** Observed time nothing has named, which is what the day still asks about. */
+  unattributedMs: number;
+  warnings: DayWarning[];
+};
+
+/**
+ * One change to one row of a day, as a CLI in another repository states it.
+ *
+ * The row is named by the id `day.rows` answered and never by its clock, so an edit cannot land on a
+ * band the caller never read. Nothing that restructures the day is here: an agent may correct a row's
+ * times, its name, its note and whether it syncs, and it may not split, merge or delete one.
+ */
+export type AgentApiRowEdit =
+  | { kind: 'range'; rowId: string; fromMs: number; toMs: number }
+  | { kind: 'issue'; rowId: string; issueKey: string }
+  | { kind: 'description'; rowId: string; description: string }
+  | { kind: 'state'; rowId: string; state: 'accepted' | 'rejected' }
+  | { kind: 'hidden'; rowId: string; hidden: boolean }
+  | { kind: 'reset'; rowId: string };
+
+/** What a write of edits reports: how many landed, and the day as it reads afterwards. */
+export type AgentApiEditedDay = AgentApiDayRows & { applied: number };
+
 export type AgentApiRequest =
   | { op: 'status' }
   | { op: 'jira.instance' }
@@ -223,6 +283,8 @@ export type AgentApiRequest =
     }
   | { op: 'worklog.add'; issueKey: string; description: string; fromMs: number; durationMs: number }
   | { op: 'day.events'; day: string }
+  | { op: 'day.rows'; day: string }
+  | { op: 'day.edits'; day: string; edits: AgentApiRowEdit[] }
   | { op: 'settings.rules' }
   | { op: 'standIn.list' }
   | { op: 'naming.offers'; day: string };

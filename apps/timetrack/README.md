@@ -145,7 +145,7 @@ database (mode `0600`), and hands each request to the main window. It interprets
 the Jira client, the settings and the day already live, and a second implementation of any of them in
 Rust would be a second set of rules about what may be written.
 
-Three consequences worth knowing before changing it:
+Four consequences worth knowing before changing it:
 
 - **The window carries out every operation**, and the host addresses it by label. A broadcast would
   make a second window file the same ticket a second time, and no reply can undo that.
@@ -153,6 +153,10 @@ Three consequences worth knowing before changing it:
   succeeded is in the body, because a key Jira does not know says nothing about the endpoint.
 - **`worklog.add` writes a row onto the day**, not a Tempo worklog. It goes through the same review as
   every other row, which is what keeps it from double-booking against what the evidence proposed.
+- **`day.edits` is the only write into the review store from outside the window.** It names rows by
+  the ids `day.rows` answers, and both move the app's own review to that day, so nothing changes a day
+  the user cannot see. It may correct a row's times, its name, its note and whether it syncs; it may
+  not split, merge or delete one.
 
 ## Connecting Google Calendar
 

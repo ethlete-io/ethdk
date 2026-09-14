@@ -6,8 +6,12 @@ import {
   TimetrackStandIn,
   timetrackAddWorklog,
   timetrackCreateIssue,
+  TimetrackRow,
+  TimetrackRowEdit,
   timetrackDayEvents,
+  timetrackDayRows,
   timetrackDiscoveryPath,
+  timetrackEditDay,
   timetrackInstance,
   timetrackIssue,
   timetrackNaming,
@@ -31,6 +35,10 @@ const FLAGS_WITH_VALUE = [
   '--minutes',
   '--at',
   '--out',
+  '--day',
+  '--from',
+  '--to',
+  '--state',
 ];
 
 const positionalArgs = (args: string[]) =>
@@ -139,6 +147,64 @@ const describeDecline = (decline: TimetrackNamingDecline) => {
   return `${decline.repoPath} — ${DECLINE_LINES[decline.reason]}${measured}`;
 };
 
+const MINUTE_MS = 60_000;
+
+const clock = (ms: number) => new Date(ms).toTimeString().slice(0, 5);
+
+const rowLine = (row: TimetrackRow) =>
+  [
+    row.id,
+    `${clock(row.fromMs)}-${clock(row.toMs)}`,
+    `${Math.round(row.durationMs / MINUTE_MS)}m`,
+    row.issueKey ?? row.standInId ?? 'unnamed',
+    row.state,
+    ...(row.edited ? ['edited'] : []),
+    ...(row.hidden ? ['hidden'] : []),
+    row.laneKey ?? 'no lane',
+  ].join('  ');
+
+/** `--from` and `--to` take anything `Date` reads, so a caller may pass an ISO instant or a clock. */
+const instantOf = (flag: string, raw: string) => {
+  const at = new Date(raw);
+
+  if (Number.isNaN(at.getTime())) throw new Error(`${flag} takes a date, not ${raw}.`);
+
+  return at.getTime();
+};
+
+/**
+ * The one edit the flags state, or a refusal naming what they said instead.
+ *
+ * One edit per call, deliberately. A caller that means two changes to one row says so twice, and a
+ * flag combination nobody meant can then never be read as a third thing.
+ */
+const editOf = (options: { argv: string[]; rowId: string }): TimetrackRowEdit => {
+  const { argv, rowId } = options;
+  const from = flagValue(argv, '--from');
+  const to = flagValue(argv, '--to');
+  const issueKey = flagValue(argv, '--issue');
+  const description = flagValue(argv, '--description');
+  const state = flagValue(argv, '--state');
+
+  if (from && to) return { kind: 'range', rowId, fromMs: instantOf('--from', from), toMs: instantOf('--to', to) };
+  if (from || to) throw new Error('Moving a row takes both --from and --to.');
+  if (issueKey) return { kind: 'issue', rowId, issueKey: issueKey.toUpperCase() };
+  if (description !== undefined) return { kind: 'description', rowId, description };
+
+  if (state) {
+    if (state !== 'accepted' && state !== 'rejected')
+      throw new Error(`--state takes accepted or rejected, not ${state}.`);
+
+    return { kind: 'state', rowId, state };
+  }
+
+  if (argv.includes('--hide')) return { kind: 'hidden', rowId, hidden: true };
+  if (argv.includes('--show')) return { kind: 'hidden', rowId, hidden: false };
+  if (argv.includes('--reset')) return { kind: 'reset', rowId };
+
+  throw new Error('Pass one of --from with --to, --issue, --description, --state, --hide, --show or --reset.');
+};
+
 const printed = (value: unknown, json: boolean) => {
   if (json) console.log(JSON.stringify(value, null, 2));
 
@@ -158,6 +224,8 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack log --issue <KEY> --minutes <n>
                                 Add a row nothing observed to the day it belongs to
   timetrack day [YYYY-MM-DD]    The evidence a day holds, which the encrypted store hides otherwise
+  timetrack rows [YYYY-MM-DD]   The rows the day drew, with the ids an edit names them by
+  timetrack edit <row-id> …     Change one row of a day: its times, its name, its note or its state
   timetrack rules               The rules that name a day's work: attribution, project links, apps
   timetrack standins            The names the user gave work Jira does not hold yet, and their age
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
@@ -183,6 +251,17 @@ Options for log
 
 Options for day
   --out <path>        Write the raw answer to a file, and print how many events it holds
+
+Options for edit — pass exactly one change
+  --day <YYYY-MM-DD>  The day the row is on (default: today)
+  --from <date> --to <date>
+                      Move the row, or drag one of its ends
+  --issue <KEY>       Name the row
+  --description <text>
+  --state <accepted|rejected>
+  --hide              Take it off the timeline
+  --show              Put it back
+  --reset             Give the app's own row back
 
 Options everywhere
   --json              Print the raw answer instead of lines
@@ -333,6 +412,40 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     return printed(found, json);
+  }
+
+  if (subcommand === 'rows') {
+    const day = value ?? today();
+
+    if (!DAY.test(day)) throw new Error(`Pass a day as YYYY-MM-DD, not ${day}.`);
+
+    const found = await timetrackDayRows(day);
+
+    if (!json) {
+      console.log(`${found.day}  ${hours(found.loggedMs)} logged of a ${hours(found.targetMs)} target`);
+      found.rows.forEach((row) => console.log(`  ${rowLine(row)}`));
+      found.hidden.forEach((row) => console.log(`  ${rowLine(row)}`));
+      found.warnings.forEach((warning) => console.log(`  ! ${warning.kind}: ${warning.detail}`));
+    }
+
+    return printed(found, json);
+  }
+
+  if (subcommand === 'edit') {
+    const day = flagValue(argv, '--day') ?? today();
+
+    if (!value) throw new Error('Pass the row id to edit, as `timetrack rows` prints it.');
+    if (!DAY.test(day)) throw new Error(`Pass a day as YYYY-MM-DD, not ${day}.`);
+
+    const edited = await timetrackEditDay({ day, edits: [editOf({ argv, rowId: value })] });
+
+    if (!json) {
+      console.log(`${edited.day}  ${edited.applied} of 1 edit landed`);
+      edited.rows.forEach((row) => console.log(`  ${rowLine(row)}`));
+      edited.warnings.forEach((warning) => console.log(`  ! ${warning.kind}: ${warning.detail}`));
+    }
+
+    return printed(edited, json);
   }
 
   if (subcommand === 'rules') {

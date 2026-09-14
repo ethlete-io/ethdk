@@ -112,3 +112,72 @@ describe('parseAgentRequest, over a day', () => {
     });
   });
 });
+
+describe('parseAgentRequest, over a day edit', () => {
+  it('reads a row edit of every kind it makes', () => {
+    const edits = [
+      { kind: 'range', rowId: 'a', fromMs: 10, toMs: 20 },
+      { kind: 'issue', rowId: 'b', issueKey: 'abc-1' },
+      { kind: 'description', rowId: 'c', description: ' a note ' },
+      { kind: 'state', rowId: 'd', state: 'rejected' },
+      { kind: 'hidden', rowId: 'e', hidden: true },
+      { kind: 'reset', rowId: 'f' },
+    ];
+
+    expect(parseAgentRequest({ op: 'day.edits', day: '2026-09-14', edits })).toEqual({
+      ok: true,
+      request: {
+        op: 'day.edits',
+        day: '2026-09-14',
+        edits: [
+          { kind: 'range', rowId: 'a', fromMs: 10, toMs: 20 },
+          { kind: 'issue', rowId: 'b', issueKey: 'ABC-1' },
+          { kind: 'description', rowId: 'c', description: 'a note' },
+          { kind: 'state', rowId: 'd', state: 'rejected' },
+          { kind: 'hidden', rowId: 'e', hidden: true },
+          { kind: 'reset', rowId: 'f' },
+        ],
+      },
+    });
+  });
+
+  it('drops an entry it cannot read, and keeps the ones beside it', () => {
+    const edits = [
+      { kind: 'range', rowId: 'a', fromMs: 20, toMs: 10 },
+      { kind: 'nudge', rowId: 'b' },
+      { kind: 'issue', rowId: '', issueKey: 'ABC-1' },
+      { kind: 'state', rowId: 'd', state: 'maybe' },
+      { kind: 'reset', rowId: 'f' },
+    ];
+    const parsed = parseAgentRequest({ op: 'day.edits', day: '2026-09-14', edits });
+
+    expect(parsed).toEqual({
+      ok: true,
+      request: { op: 'day.edits', day: '2026-09-14', edits: [{ kind: 'reset', rowId: 'f' }] },
+    });
+  });
+
+  it('refuses a write with nothing in it that it makes', () => {
+    expect(parseAgentRequest({ op: 'day.edits', day: '2026-09-14', edits: [{ kind: 'nudge', rowId: 'b' }] })).toEqual({
+      ok: false,
+      message: 'day.edits was given no edit this endpoint makes.',
+    });
+
+    expect(parseAgentRequest({ op: 'day.edits', day: '2026-09-14' })).toEqual({
+      ok: false,
+      message: 'day.edits needs a list of edits.',
+    });
+  });
+
+  it('holds the row read to the same day key', () => {
+    expect(parseAgentRequest({ op: 'day.rows', day: '2026-09-14' })).toEqual({
+      ok: true,
+      request: { op: 'day.rows', day: '2026-09-14' },
+    });
+
+    expect(parseAgentRequest({ op: 'day.rows', day: 'today' })).toEqual({
+      ok: false,
+      message: 'day.rows needs a day as YYYY-MM-DD.',
+    });
+  });
+});

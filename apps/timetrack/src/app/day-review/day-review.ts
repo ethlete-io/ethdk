@@ -2,10 +2,12 @@ import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
+  AgentApiRowEdit,
   AttributionRule,
   AttributionTarget,
   ClosedTimerRun,
   CollectedEvent,
+  DayReview,
   DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
   InferredAttribution,
@@ -597,6 +599,15 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }),
   );
 
+  /** The drawn day, once it is drawn at all, with the read that stopped it being drawn named instead. */
+  const reviewState$ = toObservable(
+    computed(() => ({
+      day: day(),
+      review: review(),
+      failure: evidenceLoad()?.failure ?? editsLoad()?.failure ?? null,
+    })),
+  );
+
   /**
    * Writes a row onto a day that is not necessarily the one on screen — what the agent endpoint calls.
    *
@@ -604,20 +615,93 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * they do would write the row onto an empty document, and the save behind it would take every earlier
    * edit of the day with it.
    */
-  const addRowOnDay$ = (options: { day: string; row: ManualRow }): Observable<void> =>
+  /**
+   * Runs a write against a day that is not necessarily the one on screen.
+   *
+   * It moves the review to that day and waits for that day's stored edits to arrive. Writing before
+   * they do would apply against an empty document, and the save behind it would take every earlier
+   * edit of the day with it.
+   */
+  const onDay$ = <T>(key: string, write: () => T): Observable<T> =>
     defer(() => {
-      if (day() !== options.day) goToDay(options.day);
+      if (day() !== key) goToDay(key);
 
       return editsState$.pipe(
-        filter((state) => state.day === options.day && (state.ready || !!state.failure)),
+        filter((state) => state.day === key && (state.ready || !!state.failure)),
         take(1),
         map((state) => {
-          if (state.failure) throw new Error(`Timetrack cannot read the edits of ${options.day}: ${state.failure}`);
+          if (state.failure) throw new Error(`Timetrack cannot read the edits of ${key}: ${state.failure}`);
 
-          apply(addManualRow({ edits: edits(), row: options.row }));
+          return write();
         }),
       );
     });
+
+  const addRowOnDay$ = (options: { day: string; row: ManualRow }): Observable<void> =>
+    onDay$(options.day, () => {
+      apply(addManualRow({ edits: edits(), row: options.row }));
+    });
+
+  /**
+   * The day as its own review draws it, for a day that is not necessarily the one on screen.
+   *
+   * It moves the review there and waits for the day to be drawn, because a row's id only exists once
+   * it is. A read that failed is reported rather than answered as an empty day.
+   */
+  const reviewOfDay$ = (key: string): Observable<DayReview> =>
+    defer(() => {
+      if (day() !== key) goToDay(key);
+
+      return reviewState$.pipe(
+        filter((state) => state.day === key && (!!state.review || !!state.failure)),
+        take(1),
+        map((state) => {
+          if (!state.review) throw new Error(`Timetrack cannot read the day ${key}: ${state.failure}`);
+
+          return state.review;
+        }),
+      );
+    });
+
+  /** One stated change, against the row of the day it names. Nothing happens where no row holds it. */
+  const applyRowEdit = (edit: AgentApiRowEdit) => {
+    const row = [...rows(), ...hiddenRows()].find((candidate) => candidate.id === edit.rowId);
+
+    if (!row) return false;
+
+    switch (edit.kind) {
+      case 'range':
+        apply(setRowRange({ edits: edits(), row, from: new Date(edit.fromMs), to: new Date(edit.toMs) }));
+        break;
+      case 'issue':
+        apply(setRowIssue({ edits: edits(), row, issueKey: edit.issueKey }));
+        break;
+      case 'description':
+        apply(setRowDescription({ edits: edits(), row, description: edit.description }));
+        break;
+      case 'state':
+        apply(setRowState({ edits: edits(), row, state: edit.state }));
+        break;
+      case 'hidden':
+        apply(edit.hidden ? hideRow({ edits: edits(), row }) : showRow({ edits: edits(), row }));
+        break;
+      case 'reset':
+        apply(resetRow({ edits: edits(), row }));
+        break;
+    }
+
+    return true;
+  };
+
+  /**
+   * Makes the edits an agent's CLI stated against a day, and answers how many of them landed.
+   *
+   * Each is resolved against the day as the ones before it left it, so a caller may name a row and
+   * then move it in one call. An edit naming a row the day no longer holds is counted out rather than
+   * failing the write, because the day it was read from is a day the collectors keep changing.
+   */
+  const editRowsOnDay$ = (options: { day: string; edits: readonly AgentApiRowEdit[] }): Observable<number> =>
+    onDay$(options.day, () => options.edits.filter(applyRowEdit).length);
 
   return {
     dayKey: day.asReadonly(),
@@ -792,6 +876,15 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * the row belongs to, which is also how the reviewer finds out that something was added at all.
      */
     addRowOnDay$,
+
+    /**
+     * The edits an agent's CLI stated against a day. It moves the review to that day for the same
+     * reason `addRowOnDay$` does: the reviewer finds out a row changed by looking at it.
+     */
+    editRowsOnDay$,
+
+    /** The day as the screen draws it, for any day. It is where a row's id comes from. */
+    reviewOfDay$,
 
     /** Where a dragged row now sits. A move keeps its duration; dragging one end re-reads it. */
     rescheduleRow: (move: { row: ReviewedRow; from: Date; to: Date }) =>

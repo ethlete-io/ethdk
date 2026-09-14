@@ -1,4 +1,4 @@
-import { AgentApiRequest } from './model';
+import { AgentApiRequest, AgentApiRowEdit } from './model';
 
 export type AgentApiRequestParse = { ok: true; request: AgentApiRequest } | { ok: false; message: string };
 
@@ -17,6 +17,48 @@ const failed = (message: string): AgentApiRequestParse => ({ ok: false, message 
 const missing = (op: string, field: string) => failed(`${op} needs a ${field}.`);
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Reads one row edit, or nothing where the caller named no row or no change this endpoint makes.
+ *
+ * An entry it refuses is dropped rather than failing the whole write. A caller sends the edits it
+ * read off one day, and `day.edits` answers how many landed, so a dropped entry is visible without
+ * costing the caller the edits beside it.
+ */
+const asRowEdit = (value: unknown): AgentApiRowEdit | undefined => {
+  const raw = asRecord(value);
+  const kind = asText(raw['kind']);
+  const rowId = asText(raw['rowId']);
+
+  if (!rowId) return undefined;
+
+  if (kind === 'range') {
+    const fromMs = asCount(raw['fromMs']);
+    const toMs = asCount(raw['toMs']);
+
+    return fromMs !== undefined && toMs !== undefined && toMs > fromMs ? { kind, rowId, fromMs, toMs } : undefined;
+  }
+
+  if (kind === 'issue') {
+    const issueKey = asText(raw['issueKey']).toUpperCase();
+
+    return issueKey ? { kind, rowId, issueKey } : undefined;
+  }
+
+  if (kind === 'description') return { kind, rowId, description: asText(raw['description']) };
+
+  if (kind === 'state') {
+    const state = asText(raw['state']);
+
+    return state === 'accepted' || state === 'rejected' ? { kind, rowId, state } : undefined;
+  }
+
+  if (kind === 'hidden') return { kind, rowId, hidden: asFlag(raw['hidden']) };
+
+  if (kind === 'reset') return { kind, rowId };
+
+  return undefined;
+};
 
 /**
  * Reads one request off the wire, or says which field is missing.
@@ -85,10 +127,24 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return DAY_KEY.test(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');
   }
 
-  if (op === 'day.events') {
+  if (op === 'day.events' || op === 'day.rows') {
     const day = asText(raw['day']);
 
     return DAY_KEY.test(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');
+  }
+
+  if (op === 'day.edits') {
+    const day = asText(raw['day']);
+    const listed = raw['edits'];
+
+    if (!DAY_KEY.test(day)) return missing(op, 'day as YYYY-MM-DD');
+    if (!Array.isArray(listed)) return missing(op, 'list of edits');
+
+    const edits = listed.map(asRowEdit).filter((edit): edit is AgentApiRowEdit => !!edit);
+
+    return edits.length
+      ? { ok: true, request: { op, day, edits } }
+      : failed('day.edits was given no edit this endpoint makes.');
   }
 
   if (op === 'worklog.add') {
