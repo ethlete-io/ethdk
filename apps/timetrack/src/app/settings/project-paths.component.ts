@@ -1,11 +1,5 @@
 import { Component, ViewEncapsulation, computed, input, output, signal } from '@angular/core';
-import {
-  BADGE_IMPORTS,
-  BUTTON_IMPORTS,
-  EMPTY_STATE_IMPORTS,
-  FORM_FIELD_IMPORTS,
-  INPUT_IMPORTS,
-} from '@ethlete/components';
+import { BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 import {
   ProjectLinkTarget,
   ProjectPathRow,
@@ -46,62 +40,73 @@ export type PathLink = { path: string; target: ProjectLinkTarget };
         <ethlete-explain [text]="WHY" label="paths and projects" />
       </div>
 
-      @for (row of rows(); track row.path) {
-        <div
-          [attr.data-path]="row.path"
-          class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3"
-        >
-          <et-badge size="sm">{{ row.kind }}</et-badge>
+      <ul class="flex flex-col">
+        @for (row of rows(); track row.path) {
+          <li
+            [attr.data-path]="row.path"
+            class="group grid grid-cols-[5rem_minmax(0,1fr)_7rem_13rem_20rem] items-center gap-x-3 rounded-md px-2 text-small hover:bg-et-surface-interaction"
+          >
+            <span class="text-et-surface-subtle">{{ row.kind }}</span>
 
-          <span class="flex min-w-50 grow flex-col">
-            <span class="text-small">{{ row.label }}</span>
-            <span class="break-all text-mono text-small text-et-surface-subtle">{{ row.path }}</span>
-          </span>
+            <span [title]="row.path" class="truncate text-mono">{{ row.path }}</span>
 
-          @if (row.private) {
-            <et-badge color="warning" size="sm">private</et-badge>
-          } @else if (row.inherited) {
-            <et-badge size="sm">from {{ row.link?.path }}</et-badge>
-          }
+            <span class="text-right text-et-surface-subtle">
+              @if (row.inherited) {
+                <span [title]="'Covered by ' + row.link?.path">inherited</span>
+              }
+            </span>
 
-          @if (row.suggestion; as suggestion) {
-            <button (click)="link(row, suggestion.key)" et-button variant="outline" size="sm">
-              Link to {{ suggestion.key }}
-            </button>
-          }
+            <ethlete-project-select
+              [value]="row.projectKey ?? ''"
+              [ariaLabel]="'Project for ' + row.path"
+              [placeholder]="row.private ? 'private' : 'Not linked'"
+              (valueChange)="link(row, $event)"
+              class="w-full"
+              compact
+            />
 
-          <ethlete-project-select
-            [value]="row.projectKey ?? ''"
-            [ariaLabel]="'Project for ' + row.label"
-            [placeholder]="row.private ? 'Never logged' : 'Not linked'"
-            (valueChange)="link(row, $event)"
-            class="w-50"
-          />
+            <span class="flex gap-1">
+              @if (row.suggestion; as suggestion) {
+                <button (click)="link(row, suggestion.key)" et-button variant="outline" size="sm">
+                  Link to {{ suggestion.key }}
+                </button>
+              }
 
-          @if (row.private) {
-            <button (click)="unlink(row)" et-button variant="transparent" size="sm">Make it work again</button>
-          } @else {
-            <button (click)="markPrivate(row)" et-button variant="transparent" size="sm">Mark private</button>
-          }
+              @if (!row.private) {
+                <button
+                  (click)="markPrivate(row)"
+                  class="opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
+                  et-button
+                  variant="transparent"
+                  size="sm"
+                >
+                  Mark private
+                </button>
+              }
 
-          @if (forgettable(row); as linkId) {
-            <button
-              [attr.aria-label]="'Forget what ' + row.path + ' counts as'"
-              (click)="remove.emit(linkId)"
-              et-button
-              variant="transparent"
-              size="sm"
-            >
-              Remove
-            </button>
-          }
-        </div>
-      } @empty {
-        <et-empty-state
-          description="Nothing is being watched yet. Add a directory to look under on the Sources tab, or name a path below."
-          heading="No paths yet"
-        />
-      }
+              @if (forgettable(row); as linkId) {
+                <button
+                  [attr.aria-label]="'Forget what ' + row.path + ' counts as'"
+                  (click)="remove.emit(linkId)"
+                  class="opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
+                  et-button
+                  variant="transparent"
+                  size="sm"
+                >
+                  Remove
+                </button>
+              }
+            </span>
+          </li>
+        } @empty {
+          <li>
+            <et-empty-state
+              description="Nothing is being watched yet. Add a directory to look under on the Sources tab, or name a path below."
+              heading="No paths yet"
+            />
+          </li>
+        }
+      </ul>
 
       <div class="flex flex-wrap items-end gap-3">
         <et-form-field class="min-w-50 grow" appearance="underline" size="sm">
@@ -127,7 +132,6 @@ export type PathLink = { path: string; target: ProjectLinkTarget };
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
-    BADGE_IMPORTS,
     BUTTON_IMPORTS,
     EMPTY_STATE_IMPORTS,
     ExplainComponent,
@@ -179,7 +183,7 @@ export class ProjectPathsComponent {
    * about that directory, and removing it from under a row it merely covers would take every other
    * repository in the folder with it.
    */
-  protected unlink(row: ProjectPathRow) {
+  public unlink(row: ProjectPathRow) {
     if (row.link && !row.inherited) this.remove.emit(row.link.id);
   }
 

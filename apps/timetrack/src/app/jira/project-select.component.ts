@@ -27,6 +27,7 @@ type ProjectOption = { key: string; name: string; label: string };
       [loading]="reads() && catalog.isLoadingProjects()"
       [error]="reads() ? catalog.projectFailure() : null"
       [aria-label]="ariaLabel()"
+      [mirrorPanelWidth]="!compact()"
       (valueChange)="pick($event)"
       (openChange)="opened($event)"
       allowCustomValues
@@ -56,6 +57,8 @@ export class ProjectSelectComponent {
   public ariaLabel = input<string | null>(null);
   /** Offer every project the instance holds rather than only the picked ones. */
   public all = input(false, { transform: booleanAttribute });
+  /** Read the picked project back as its key alone, for a row that has no width for the name. */
+  public compact = input(false, { transform: booleanAttribute });
 
   public valueChange = output<string>();
 
@@ -64,7 +67,11 @@ export class ProjectSelectComponent {
   /** Whether this instance of the picker calls Jira at all, or reads the picked list it already has. */
   protected reads = computed(() => this.all() || this.favorites().length === 0);
 
-  protected options = computed(() => (this.reads() ? this.catalog.projects() : this.favorites()).map(toOption));
+  protected options = computed(() => {
+    const compact = this.compact();
+
+    return (this.reads() ? this.catalog.projects() : this.favorites()).map((project) => toOption(project, compact));
+  });
 
   protected opened(open: boolean) {
     if (open && this.reads()) this.catalog.loadProjects();
@@ -75,8 +82,8 @@ export class ProjectSelectComponent {
   }
 }
 
-const toOption = (project: { key: string; name: string }): ProjectOption => ({
+const toOption = (project: { key: string; name: string }, compact: boolean): ProjectOption => ({
   key: project.key,
   name: project.name,
-  label: `${project.key} ${project.name}`,
+  label: compact ? project.key : `${project.key} ${project.name}`,
 });

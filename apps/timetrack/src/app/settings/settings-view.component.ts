@@ -327,12 +327,13 @@ window title, never a file path. A suggestion never syncs on its own.`;
           </et-tab>
 
           <et-tab label="Projects">
-            <div class="flex max-w-4xl flex-col gap-8 py-6">
+            <div class="flex flex-col gap-8 py-6">
               <ethlete-your-projects
                 [projects]="store.settings().favoriteProjects"
                 [backgroundKeys]="store.settings().backgroundProjects"
                 (projectsChange)="store.setFavoriteProjects($event)"
                 (backgroundKeysChange)="store.setBackgroundProjects($event)"
+                class="max-w-4xl"
               />
 
               <ethlete-project-paths
@@ -348,11 +349,13 @@ window title, never a file path. A suggestion never syncs on its own.`;
                 [links]="store.settings().projectLinks"
                 [busy]="agent.isCollecting()"
                 (resync)="resync($event)"
+                class="max-w-4xl"
               />
 
               <ethlete-attribution-rules
                 [rules]="store.settings().attributionRules"
                 (remove)="store.removeAttributionRule($event)"
+                class="max-w-4xl"
               />
             </div>
           </et-tab>
