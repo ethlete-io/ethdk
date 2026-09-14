@@ -8,7 +8,7 @@ import { TimeWindow } from '../model/time-window';
 import { attendedAt, markAttendance } from './attended';
 import { AttributeOptions, attribute } from './attribute';
 import { CallMatch, dropCallWindows, matchCalls } from './calls';
-import { BehindStretch, CutOptions, cutBackground } from './cut';
+import { BehindStretch, CutOptions, cutBackground, meetLaneRows } from './cut';
 import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { DEFAULT_FILL_OPTIONS, FillOptions, fillGaps } from './fill';
@@ -230,7 +230,11 @@ export const buildRows = (
     calls,
     timers,
     filledMs: filled.filledMs,
-    behind: cut.behind,
+    behind: meetLaneRows({
+      behind: cut.behind,
+      rows: [...proposals, ...unnamed],
+      round: options.round,
+    }),
     private: secludedTime,
     privateMs: secludedTime.reduce((sum, entry) => sum + entry.observedMs, 0),
   };

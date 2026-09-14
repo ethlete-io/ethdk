@@ -231,16 +231,17 @@ describe('buildRows on a day that is still running', () => {
     createdAt: at(8),
   };
 
-  const day = (foregroundEnd: Date) =>
-    buildRows({
-      blocks: [
-        block({ from: at(13), to: at(17), context: { repoPath: SDK, branch: 'next' } }),
-        block({ from: at(13, 30), to: foregroundEnd, context: { repoPath: APP, branch: 'next' } }),
-      ],
-      events: [],
-      rules: [BACKGROUND, FOREGROUND],
-      cut: { backgroundProjects: ['ET'] },
-    });
+  const dayOptions = (foregroundEnd: Date) => ({
+    blocks: [
+      block({ from: at(13), to: at(17), context: { repoPath: SDK, branch: 'next' } }),
+      block({ from: at(13, 30), to: foregroundEnd, context: { repoPath: APP, branch: 'next' } }),
+    ],
+    events: [],
+    rules: [BACKGROUND, FOREGROUND],
+    cut: { backgroundProjects: ['ET'] },
+  });
+
+  const day = (foregroundEnd: Date) => buildRows(dayOptions(foregroundEnd));
 
   const drawn = (foregroundEnd: Date) => {
     const rows = day(foregroundEnd);
@@ -258,5 +259,26 @@ describe('buildRows on a day that is still running', () => {
 
   it('keeps every row id still while the foreground band it was cut against grows', () => {
     expect(drawn(at(16, 23)).map((row) => row.id)).toEqual(drawn(at(16, 22)).map((row) => row.id));
+  });
+
+  const sdkLane = (foregroundEnd: Date) => {
+    const rows = buildRows(dayOptions(foregroundEnd));
+    const lane = rows.behind[0]?.laneKey;
+
+    return [...rows.proposals, ...rows.unnamed]
+      .filter((row) => row.laneKey === lane)
+      .map((row) => ({ from: row.from, to: row.to }))
+      .concat(rows.behind.map((stretch) => ({ from: stretch.from, to: stretch.to })))
+      .sort((a, b) => a.from.getTime() - b.from.getTime());
+  };
+
+  it.each([18, 22, 23, 28, 31, 38])('leaves the lane whole with the foreground band open at 16:%i', (minute) => {
+    const covered = sdkLane(at(16, minute));
+
+    expect(covered[0]?.from).toEqual(at(13));
+    expect(covered[covered.length - 1]?.to).toEqual(at(17));
+    expect(covered.slice(1).map((span, index) => span.from.getTime() - (covered[index]?.to.getTime() ?? 0))).toEqual(
+      covered.slice(1).map(() => 0),
+    );
   });
 });

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ActivityBlock, streamKey } from '../model/block';
 import { Evidence } from '../model/evidence';
 import { AttributedBlock } from './attribute';
-import { cutBackground } from './cut';
+import { cutBackground, meetLaneRows } from './cut';
 
 const SDK = '/home/you/dev/shared-sdk';
 const APP = '/home/you/dev/abc-frontend';
@@ -249,5 +249,46 @@ describe('cutBackground', () => {
       [],
       ['late'],
     ]);
+  });
+});
+
+describe('meetLaneRows', () => {
+  const LANE = streamKey({ repoPath: SDK, branch: 'next' });
+  const stretch = { from: at('13:30'), to: at('16:15'), issueKey: 'ET-772', laneKey: LANE };
+
+  it('pulls the stretch onto the row that follows it in its own lane', () => {
+    const [met] = meetLaneRows({
+      behind: [stretch],
+      rows: [{ laneKey: LANE, from: at('16:30'), to: at('17:00') }],
+    });
+
+    expect(met?.to).toEqual(at('16:30'));
+  });
+
+  it('pulls the stretch onto the row that precedes it the same way', () => {
+    const [met] = meetLaneRows({
+      behind: [{ ...stretch, from: at('13:20') }],
+      rows: [{ laneKey: LANE, from: at('13:00'), to: at('13:30') }],
+    });
+
+    expect(met?.from).toEqual(at('13:30'));
+  });
+
+  it('leaves a gap wider than an increment alone, because the lane really held nothing there', () => {
+    const [met] = meetLaneRows({
+      behind: [stretch],
+      rows: [{ laneKey: LANE, from: at('18:00'), to: at('19:00') }],
+    });
+
+    expect(met?.to).toEqual(at('16:15'));
+  });
+
+  it('ignores a row of another lane, which took the minutes rather than losing them', () => {
+    const [met] = meetLaneRows({
+      behind: [stretch],
+      rows: [{ laneKey: streamKey({ repoPath: APP, branch: 'next' }), from: at('16:20'), to: at('17:00') }],
+    });
+
+    expect(met?.to).toEqual(at('16:15'));
   });
 });

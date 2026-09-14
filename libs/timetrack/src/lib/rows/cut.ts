@@ -77,8 +77,8 @@ const holesOf = (options: { block: ActivityBlock; kept: readonly ActivityBlock[]
  *
  * Both ends round to the nearest, where a row's start floors and its end never falls short of the time
  * it books. A row books time and must never be drawn narrower than its own worklog; a stretch books
- * nothing, so the boundary nearest each raw end is the honest answer and the one that meets the rows
- * either side of it exactly.
+ * nothing, so the boundary nearest each raw end is the honest answer. The two rules can land up to an
+ * increment apart, which is what {@link meetLaneRows} closes afterwards.
  */
 const snapStretches = (stretches: readonly BehindStretch[], options?: Partial<RoundOptions>): BehindStretch[] => {
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options };
@@ -87,6 +87,49 @@ const snapStretches = (stretches: readonly BehindStretch[], options?: Partial<Ro
   return stretches
     .map((stretch) => ({ ...stretch, from: new Date(nearest(stretch.from)), to: new Date(nearest(stretch.to)) }))
     .filter((stretch) => stretch.to.getTime() > stretch.from.getTime());
+};
+
+/** A drawn row, as the lane it sits in and the bounds it was snapped to. A row with no lane is in none. */
+export type LaneRow = { laneKey?: string; from: Date; to: Date };
+
+/**
+ * Puts each end of a reported stretch on the row beside it in its own lane, where the two are within
+ * an increment of each other.
+ *
+ * A stretch and a row are drawn on one grid, and each reaches it by its own rule: the stretch by the
+ * boundary nearest its raw end, a row by the whole increments it books. Where the two disagree the
+ * lane holds a quarter-hour nothing on the screen accounts for, and on a running day that hole opens
+ * and closes as the row beside it grows.
+ *
+ * The reach is one increment because that is the size of the disagreement. A wider gap is time the
+ * lane really held nothing, and a band drawn across it would claim presence there was none of.
+ */
+export const meetLaneRows = (options: {
+  behind: readonly BehindStretch[];
+  rows: readonly LaneRow[];
+  round?: Partial<RoundOptions>;
+}): BehindStretch[] => {
+  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
+  const nearestTo = (at: Date, edges: readonly number[]) =>
+    edges
+      .filter((edge) => Math.abs(edge - at.getTime()) <= incrementMs)
+      .sort((a, b) => Math.abs(a - at.getTime()) - Math.abs(b - at.getTime()))[0] ?? at.getTime();
+
+  return options.behind.map((stretch) => {
+    const lane = options.rows.filter((row) => row.laneKey === stretch.laneKey);
+    const from = nearestTo(
+      stretch.from,
+      lane.map((row) => row.to.getTime()),
+    );
+    const to = nearestTo(
+      stretch.to,
+      lane.map((row) => row.from.getTime()),
+    );
+
+    if (to <= from) return stretch;
+
+    return { ...stretch, from: new Date(from), to: new Date(to) };
+  });
 };
 
 /**
