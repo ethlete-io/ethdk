@@ -24,6 +24,7 @@ import {
   coveredMsOf,
   dayBoundaryOf,
   fetchTempoDayCoverage$,
+  gitFlowConfigFor,
   hideRow,
   localDayKey,
   localDayRange,
@@ -33,8 +34,10 @@ import {
   meetingBehindRow,
   mergeRows,
   moveRowBoundary,
+  openStandIn,
   pauseWindows,
   pausedMs,
+  projectKeyFor,
   readHeadBranches$,
   readJiraCredentials$,
   readTempoCredentials$,
@@ -51,10 +54,12 @@ import {
   setRowDuration,
   setRowIssue,
   setRowRange,
+  setRowStandIn,
   setRowState,
   shiftDayKey,
   showRow,
   splitRow,
+  standInNameFor,
   streamDay,
   unnamedContexts,
 } from '@ethlete/timetrack';
@@ -744,6 +749,28 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           target: { kind: 'issue', issueKey },
         });
     },
+    /**
+     * Names a row with a stand-in, and remembers the answer for a call behind it the way `setIssue`
+     * does for a key. The day is written onto the record as well: a resolve names the days it made
+     * bookable from that list, and a band named here is one of them.
+     */
+    setStandIn: (row: ReviewedRow, standInId: string) => {
+      apply(setRowStandIn({ edits: edits(), row, standInId }));
+
+      if (!standInId) return;
+
+      settings.markStandInDay({ id: standInId, day: day() });
+
+      const call = callBehindRow({ row, calls: reasonedRows()?.calls ?? [] });
+
+      if (call)
+        settings.nameCall({
+          features: call.features,
+          label: callLabel(call.call),
+          target: { kind: 'stand-in', standInId },
+        });
+    },
+
     setDescription: (row: ReviewedRow, description: string) =>
       apply(setRowDescription({ edits: edits(), row, description })),
     setDuration: (row: ReviewedRow, durationMs: number) => apply(setRowDuration({ edits: edits(), row, durationMs })),
@@ -784,10 +811,6 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     labelRun: (id: string, label: { issueKey: string; note: string }) => timers.label(id, label),
 
     /**
-     * Writes the rule that names a context. It is a setting rather than an edit on this day: the same
-     * branch comes back tomorrow, and answering for it once is the whole point.
-     */
-    /**
      * Takes a path out of the working day for good. It is the answer for a side project the collectors
      * cannot tell from a client's checkout, and the day stops asking about it from here on.
      */
@@ -815,14 +838,51 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Turns an offer down for this session. Nothing is written: the rules stay exactly as they were. */
     declineNamingOffer: (offer: RepoNamingOffer) => declinedOffers.update((declined) => [...declined, offer.repoPath]),
 
-    nameContext: (context: UnnamedContext, target: AttributionTarget) =>
+    /**
+     * Writes the rule that names a context. It is a setting rather than an edit on this day: the same
+     * branch comes back tomorrow, and answering for it once is the whole point.
+     */
+    nameContext: (context: UnnamedContext, target: AttributionTarget) => {
       settings.addAttributionRule({
         ...context.suggestion,
         id: `${context.id}#${Date.now()}`,
         target: target.kind === 'issue' ? { kind: 'issue', issueKey: target.issueKey.trim().toUpperCase() } : target,
         author: 'user',
         createdAt: new Date(),
-      }),
+      });
+
+      if (target.kind === 'stand-in') settings.markStandInDay({ id: target.standInId, day: day() });
+    },
+
+    /**
+     * Names a context with a stand-in the app opens for it, drafted from the branch subject.
+     *
+     * One press, because the answer it writes is a name and not a decision about Jira. The record and
+     * the rule are one write: a rule stored without its record names nothing.
+     */
+    openStandInFor: (context: UnnamedContext) => {
+      const current = settings.settings();
+      const now = new Date();
+      const standIn = openStandIn({
+        name: standInNameFor({ context: context.context, config: gitFlowConfigFor(current) }),
+        day: day(),
+        now,
+        projectKey: projectKeyFor({ context: context.context, links: current.projectLinks }),
+      });
+
+      settings.nameWithStandIn({
+        standIn,
+        rule: {
+          ...context.suggestion,
+          id: `${context.id}#${now.getTime()}`,
+          target: { kind: 'stand-in', standInId: standIn.id },
+          author: 'user',
+          createdAt: now,
+        },
+      });
+
+      return standIn;
+    },
   };
 });
 
