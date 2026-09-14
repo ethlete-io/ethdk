@@ -1,5 +1,5 @@
 import { Page } from '@playwright/test';
-import { expect, test } from './support';
+import { expect, goToView, test } from './support';
 
 /**
  * The prospective flow: a ticket, the branch the grammar names for it, and a draft merge request.
@@ -9,7 +9,7 @@ import { expect, test } from './support';
  * a user does, so what the plan promises and what the run reports are checked against each other.
  */
 const openTheForm = async (page: Page) => {
-  await page.getByRole('link', { name: 'Start' }).click();
+  await goToView(page, 'start');
   await page.getByLabel('Repository').click();
   await page.getByRole('option', { name: '/Users/e2e/dev/fut-frontend' }).click();
   // the project field is a picker over the instance's projects, and it takes a typed key too

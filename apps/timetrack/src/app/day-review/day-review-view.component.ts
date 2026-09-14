@@ -1,26 +1,13 @@
 import { Component, ViewEncapsulation, computed } from '@angular/core';
-import {
-  BANNER_IMPORTS,
-  BUTTON_IMPORTS,
-  EMPTY_STATE_IMPORTS,
-  SpinnerComponent,
-  createOverlayOpener,
-} from '@ethlete/components';
+import { BANNER_IMPORTS, BUTTON_IMPORTS, SpinnerComponent, createOverlayOpener } from '@ethlete/components';
 import { DEFAULT_ROUND_OPTIONS, formatDurationMs, localDayRange } from '@ethlete/timetrack';
-import { BranchRepairComponent } from './branch-repair.component';
-import { injectBranchRepair } from './branch-repair';
-import { CreateTicketComponent } from './create-ticket.component';
 import { injectDayReview } from './day-review';
 import { DayConcurrencyComponent } from './day-concurrency.component';
 import { DAY_DEBUG_OVERLAY } from './day-debug.component';
-import { DayNotesComponent } from './day-notes.component';
 import { DayTimelineComponent } from './day-timeline.component';
 import { DayWarningsComponent } from './day-warnings.component';
 import { formatDayLabel, formatSignedDurationMs } from './format';
-import { IssueFilterComponent } from '../jira';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
-import { injectTicketDraft } from './ticket-draft';
-import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
 
 /** What the header's own button drafts: the quarter-hour grid, and the hour that just finished. */
 const ENTRY_STEP_MS = DEFAULT_ROUND_OPTIONS.incrementMs;
@@ -31,8 +18,8 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
  *
  * The timeline is the screen: a band is pressed to name it, dragged to move it and cut at its own
  * boundary, and every edit happens on the scheduler's edit surface rather than in a list beside it.
- * Under it sit the two strips a reviewer still acts in — the work waiting for a name, and the day's
- * notes. Everything that is only a readout is behind the Debug button; see `ethlete-day-debug`.
+ * Nothing sits between the timeline and the footer. The work waiting for a name, the day's notes and
+ * every readout are behind the Debug button; see `ethlete-day-debug`.
  */
 @Component({
   selector: 'ethlete-day-review',
@@ -82,120 +69,8 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           [rows]="store.rows()"
           (boundaryMove)="store.moveBoundary($event)"
           (rowReschedule)="store.rescheduleRow($event)"
-          class="min-h-0 grow px-6"
+          class="min-h-0 grow px-6 pb-3"
         />
-
-        <div class="flex shrink-0 flex-wrap items-start gap-2 px-6 py-3">
-          <details class="rounded-md border border-et-surface-border open:w-full" data-waiting>
-            <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">{{ waitingLabel() }}</summary>
-
-            <div class="flex max-h-96 flex-col gap-3 overflow-y-auto px-3 pb-3">
-              <ethlete-issue-filter />
-
-              @if (store.unnamed().length) {
-                <ethlete-unnamed-work
-                  [contexts]="store.unnamed()"
-                  [rules]="store.rulesByContext()"
-                  [suggestions]="store.inferredByContext()"
-                  [payload]="store.reasoningPayload()"
-                  [canAsk]="store.canAsk()"
-                  [isAsking]="store.isAsking()"
-                  [hasAsked]="store.hasAsked()"
-                  [askFailure]="store.askFailure()"
-                  [askedInVain]="store.askedInVain()"
-                  (name)="nameContext($event)"
-                  (ask)="store.ask()"
-                  (createTicket)="tickets.open($event)"
-                  (markPrivate)="store.markPathPrivate($event)"
-                  (forget)="store.forgetRule($event)"
-                />
-              } @else {
-                <et-empty-state
-                  description="Every band on this day is named, or nothing was observed that a rule could not read."
-                  heading="Nothing is waiting for a name"
-                />
-              }
-
-              @if (tickets.context(); as drafting) {
-                <ethlete-create-ticket
-                  [context]="drafting"
-                  [form]="tickets.form()"
-                  [candidates]="tickets.candidates()"
-                  [existing]="tickets.existing()"
-                  [agentMatch]="tickets.agentMatch()"
-                  [payload]="tickets.writingRequest()"
-                  [isSearching]="tickets.isSearching()"
-                  [parentForm]="tickets.parentForm()"
-                  [parentTypeNames]="tickets.parentTypeNames()"
-                  [canCreateParent]="tickets.canCreateParent()"
-                  [isCreatingParent]="tickets.isCreatingParent()"
-                  [createParentFailure]="tickets.createParentFailure()"
-                  [canWrite]="tickets.canWrite()"
-                  [isWriting]="tickets.isWriting()"
-                  [isCreating]="tickets.isCreating()"
-                  [canCreate]="tickets.canCreate()"
-                  [createdKey]="tickets.createdKey()"
-                  [searchFailure]="tickets.searchFailure()"
-                  [writeFailure]="tickets.writeFailure()"
-                  [createFailure]="tickets.createFailure()"
-                  (projectKeyChange)="tickets.setProjectKey($event)"
-                  (summaryChange)="tickets.setSummary($event)"
-                  (descriptionChange)="tickets.setDescription($event)"
-                  (parentKeyChange)="tickets.setParentKey($event)"
-                  (findParents)="tickets.findParents()"
-                  (openParentForm)="tickets.openParentForm()"
-                  (closeParentForm)="tickets.closeParentForm()"
-                  (parentSummaryChange)="tickets.setParentSummary($event)"
-                  (parentIssueTypeNameChange)="tickets.setParentIssueTypeName($event)"
-                  (createParent)="tickets.createParent()"
-                  (write)="tickets.writeWithAgent()"
-                  (useExisting)="tickets.useExisting($event)"
-                  (create)="tickets.create()"
-                  (dismiss)="tickets.close()"
-                />
-              }
-
-              @if (repairOffer(); as offer) {
-                <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
-                  <span class="grow text-small">
-                    {{ offer.branch }} still names no issue. It can be renamed to carry {{ offer.issueKey }}.
-                  </span>
-                  <button (click)="repair.open(offer)" et-button variant="outline" size="sm">Show me the steps</button>
-                </div>
-              }
-
-              @if (repair.isReading()) {
-                <div class="flex items-center gap-3 text-et-surface-muted">
-                  <et-spinner size="sm" />
-                  <span class="text-small">Reading the repository…</span>
-                </div>
-              }
-
-              @if (repair.readFailure(); as failure) {
-                <et-banner [description]="failure" type="error" heading="The repository could not be read" />
-              }
-
-              @if (repair.plan(); as plan) {
-                <ethlete-branch-repair
-                  [plan]="plan"
-                  [outcome]="repair.outcome()"
-                  [isRunning]="repair.isRunning()"
-                  [canRun]="repair.canRun()"
-                  (run)="repair.run()"
-                  (dismiss)="repair.close()"
-                />
-              }
-            </div>
-          </details>
-
-          <details class="rounded-md border border-et-surface-border open:w-full" data-notes>
-            <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">Day notes</summary>
-
-            <div class="px-3 pb-3">
-              <ethlete-day-notes [day]="store.day()" />
-            </div>
-          </details>
-        </div>
 
         <footer
           class="flex shrink-0 flex-wrap items-baseline gap-x-8 gap-y-2 border-t border-et-surface-border px-6 py-3"
@@ -220,43 +95,20 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
   imports: [
     BANNER_IMPORTS,
     BUTTON_IMPORTS,
-    BranchRepairComponent,
-    CreateTicketComponent,
     DayConcurrencyComponent,
-    DayNotesComponent,
     DayTimelineComponent,
     DayWarningsComponent,
-    EMPTY_STATE_IMPORTS,
-    IssueFilterComponent,
     SpinnerComponent,
-    UnnamedWorkComponent,
   ],
   host: { class: 'flex min-h-0 grow flex-col' },
 })
 export class DayReviewViewComponent {
   protected store = injectDayReview();
-  protected tickets = injectTicketDraft();
-  protected repair = injectBranchRepair();
   private surface = injectRowEditSurface();
   protected debug = createOverlayOpener(DAY_DEBUG_OVERLAY);
 
   protected dayLabel = computed(() => formatDayLabel(this.store.dayKey()));
   protected focusedDate = computed(() => localDayRange(this.store.dayKey(), this.store.boundary()).from);
-
-  /**
-   * The repair a just-filed ticket makes possible. It appears only once the key exists, because the
-   * whole point of repair is to put that key into the branch name.
-   */
-  protected repairOffer = computed(() => {
-    const issueKey = this.tickets.createdKey();
-    const context = this.tickets.context()?.context;
-
-    if (!issueKey || !context?.repoPath || !this.repair.isRepairable(context.branch) || this.repair.target()) {
-      return null;
-    }
-
-    return { repoPath: context.repoPath, branch: context.branch ?? '', issueKey };
-  });
 
   protected proposed = computed(() => formatDurationMs(this.store.review()?.check.proposedMs ?? 0));
 
@@ -271,20 +123,10 @@ export class DayReviewViewComponent {
   protected delta = computed(() => formatSignedDurationMs(this.store.review()?.check.deltaMs ?? 0));
   protected unattributed = computed(() => formatDurationMs(this.store.review()?.check.unattributedMs ?? 0));
 
-  protected waitingLabel = computed(() => {
-    const contexts = this.store.unnamed().length;
-
-    return contexts ? `Waiting for a name — ${contexts} context(s)` : 'Waiting for a name — none';
-  });
-
   /** Drafts a row over the hour the reviewer is most likely to mean: the one that just finished. */
   protected addEntry() {
     const from = new Date(Math.floor(Date.now() / ENTRY_STEP_MS) * ENTRY_STEP_MS - DEFAULT_ENTRY_MS);
 
     this.surface.openDraft({ from, to: new Date(from.getTime() + DEFAULT_ENTRY_MS) });
-  }
-
-  protected nameContext(naming: ContextNaming) {
-    this.store.nameContext(naming.context, naming.target);
   }
 }

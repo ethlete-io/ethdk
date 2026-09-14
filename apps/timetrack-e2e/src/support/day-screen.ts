@@ -35,21 +35,54 @@ export const saveSurface = async (page: Page) => {
 };
 
 /**
- * Opens the strip under the timeline that holds the work still waiting for a name.
+ * Opens the debug panel that holds the work still waiting for a name.
  *
- * It is closed on load, because the timeline is what the screen is for. Everything about naming a
- * context — the suggestions, the ticket draft and the branch repair after it — is inside it.
+ * Everything about naming a context — the suggestions, the ticket draft and the branch repair after
+ * it — is inside this one panel.
  */
-export const openWaitingForAName = (page: Page) => openStrip(page, 'data-waiting');
+export const openWaitingForAName = (page: Page) => openDebugPanel(page, /^Waiting for a name/);
 
-/** The same, for the evidence under the day's bands: one line per checkout. */
-export const openStreams = (page: Page) => openStrip(page, 'data-streams');
+/** The panel holding the day's notes: its calls, what the collectors could not read, and the free text. */
+export const openDayNotes = (page: Page) => openDebugPanel(page, 'Day notes');
 
-/** The same, for the strip holding the time this app will never write. */
-export const openLoggedElsewhere = (page: Page) => openStrip(page, 'data-logged');
+/** The dialog behind the day header's Debug button, which every readout and every naming panel lives in. */
+export const openDebug = async (page: Page) => {
+  const dialog = page.locator('ethlete-day-debug');
 
-/** The same, for the day's notes: its calls, what the collectors could not read, and the free text. */
-export const openDayNotes = (page: Page) => openStrip(page, 'data-notes');
+  if (!(await dialog.isVisible())) {
+    await page.getByRole('button', { name: 'Debug', exact: true }).click();
+    await expect(dialog).toBeVisible();
+  }
+
+  return dialog;
+};
+
+/**
+ * Dismisses the debug dialog. It is modal, so a spec that reads a debug panel and then acts on the
+ * day screen behind it has to close it first.
+ */
+export const closeDebug = async (page: Page) => {
+  const dialog = page.locator('ethlete-day-debug');
+
+  await dialog.getByRole('button', { name: 'Close' }).click();
+  await expect(dialog).toBeHidden();
+};
+
+/** What the day totalled: presence, engaged time and the ratio between them. */
+export const openTotals = (page: Page) => openDebugPanel(page, 'What was measured');
+
+/** The evidence under the day's bands: one line per checkout. */
+export const openStreams = (page: Page) => openDebugPanel(page, /^Streams —/);
+
+/** The panel holding the time this app will never write. */
+export const openLoggedElsewhere = (page: Page) => openDebugPanel(page, /^Logged elsewhere —/);
+
+/** The panel holding the rows taken off the timeline, and the way back for each. */
+export const openHiddenRows = (page: Page) => openDebugPanel(page, /^Hidden —/);
+
+/** The header of the debug panel with the given label, which carries that panel's own counts. */
+export const debugPanelLabel = (page: Page, label: string | RegExp) =>
+  page.locator('ethlete-day-debug').getByRole('button', { name: label });
 
 /** Answers the open surface's "log this time" question, which is what decides whether a sync writes. */
 export const setLogged = async (page: Page, logged: boolean) => {
@@ -69,12 +102,14 @@ export const logTheNamedRow = async (page: Page) => {
   await saveSurface(page);
 };
 
-const openStrip = async (page: Page, marker: string) => {
-  const strip = page.locator(`details[${marker}]`);
+const openDebugPanel = async (page: Page, label: string | RegExp) => {
+  const dialog = await openDebug(page);
+  const trigger = dialog.getByRole('button', { name: label });
 
-  if (!(await strip.evaluate((element: HTMLDetailsElement) => element.open))) {
-    await strip.locator('> summary').click();
-  }
+  if ((await trigger.getAttribute('aria-expanded')) !== 'true') await trigger.click();
 
-  return strip;
+  // `has` is matched inside each candidate, so the trigger has to be named from the page root.
+  const accordion = dialog.locator('et-accordion').filter({ has: page.getByRole('button', { name: label }) });
+
+  return accordion.locator('> .et-accordion-panel');
 };

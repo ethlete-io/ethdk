@@ -1,5 +1,17 @@
 import { Page } from '@playwright/test';
-import { addAnEntry, editSurface, expect, openBand, pickIssue, saveSurface, test } from './support';
+import {
+  addAnEntry,
+  closeDebug,
+  debugPanelLabel,
+  editSurface,
+  expect,
+  openBand,
+  openDebug,
+  openHiddenRows,
+  pickIssue,
+  saveSurface,
+  test,
+} from './support';
 
 test.describe('a row the day did not see', () => {
   test.beforeEach(async ({ page }) => {
@@ -56,15 +68,21 @@ test.describe('a row taken off the timeline', () => {
 
   test('takes the band off the timeline and says where its time went', async ({ page }) => {
     await expect(manualBand(page)).toHaveCount(0);
-    await expect(page.locator('[data-hidden] summary')).toContainText('1 row(s)');
+    await openDebug(page);
+
+    await expect(hiddenLabel(page)).toContainText('1 row(s)');
   });
 
   test('puts the band back where it was', async ({ page }) => {
-    await page.locator('[data-hidden] summary').click();
-    await page.getByRole('button', { name: 'Put back' }).click();
+    const hidden = await openHiddenRows(page);
+
+    await hidden.getByRole('button', { name: 'Put back' }).click();
+
+    await expect(hiddenLabel(page)).toContainText('0 row(s)');
+
+    await closeDebug(page);
 
     await expect(manualBand(page)).toHaveCount(1);
-    await expect(page.locator('[data-hidden]')).toHaveCount(0);
   });
 });
 
@@ -83,7 +101,9 @@ test.describe("the band's own menu", () => {
     await page.getByRole('menuitem', { name: 'Hide this row' }).click();
 
     await expect(manualBand(page)).toHaveCount(0);
-    await expect(page.locator('[data-hidden] summary')).toContainText('1 row(s)');
+    await openDebug(page);
+
+    await expect(hiddenLabel(page)).toContainText('1 row(s)');
   });
 
   test('cuts the row a right click was aimed at in two', async ({ page }) => {
@@ -143,6 +163,9 @@ test.describe('bands marked to be merged', () => {
     await expect(page.getByRole('menuitem', { name: /Merge the/ })).toHaveCount(0);
   });
 });
+
+/** The debug panel's own header, which is where the count of hidden rows is now read. */
+const hiddenLabel = (page: Page) => debugPanelLabel(page, /^Hidden —/);
 
 /** The two bands one cut of the hand-written row left, which both still name its issue. */
 const halves = (page: Page) => page.locator('[data-kind="row"]').filter({ hasText: 'ABC-2000' });

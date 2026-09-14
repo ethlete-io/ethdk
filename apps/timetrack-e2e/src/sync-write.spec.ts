@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 import { E2E_ISSUE_ID } from '@ethlete/timetrack/testing';
-import { E2E_NOW, expect, logTheNamedRow, readBackend, seedWorld, test } from './support';
+import { E2E_NOW, expect, goToView, logTheNamedRow, readBackend, seedWorld, test } from './support';
 
 /**
  * The only flow in the app that writes to somebody else's system. Every assertion here reads the fake
@@ -9,7 +9,7 @@ import { E2E_NOW, expect, logTheNamedRow, readBackend, seedWorld, test } from '.
 const planTheNamedRow = async (page: Page) => {
   await page.goto('/day');
   await logTheNamedRow(page);
-  await page.getByRole('link', { name: 'Sync' }).click();
+  await goToView(page, 'sync');
   await page.getByRole('button', { name: 'Plan this day' }).click();
 };
 

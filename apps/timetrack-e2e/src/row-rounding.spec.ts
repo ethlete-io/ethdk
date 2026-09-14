@@ -5,6 +5,7 @@ import {
   E2E_DAY_KEY,
   E2E_NOW,
   expect,
+  goToView,
   openBand,
   readBackend,
   saveSurface,
@@ -49,7 +50,7 @@ test.describe('a row between the quarters', () => {
     await setLogged(page, true);
     await saveSurface(page);
 
-    await page.getByRole('link', { name: 'Sync' }).click();
+    await goToView(page, 'sync');
     await page.getByRole('button', { name: 'Plan this day' }).click();
     await page.getByRole('button', { name: 'Write 1 change to Tempo' }).click();
 

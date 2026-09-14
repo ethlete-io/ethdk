@@ -50,6 +50,9 @@ body {
   background-color: var(--et-surface-background-solid);
   color: var(--et-surface-color-solid);
   font-family: system-ui, sans-serif;
+  /* 1rem is 10px here, so text that inherits its size would read at 10px without this. */
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
 }
 
 /*
@@ -71,12 +74,10 @@ body {
 @keyframes et-heat-flicker {
   0%,
   100% {
-    transform: translateY(0) scale(1);
     filter: drop-shadow(0 0 calc(0.2rem + var(--_et-heat, 0) * 0.4rem) var(--color-et-warning-ink));
   }
 
   50% {
-    transform: translateY(calc(var(--_et-heat, 0) * -0.2rem)) scale(calc(1 + var(--_et-heat, 0) * 0.16));
     filter: drop-shadow(0 0 calc(0.4rem + var(--_et-heat, 0) * 1rem) var(--color-et-danger-ink));
   }
 }

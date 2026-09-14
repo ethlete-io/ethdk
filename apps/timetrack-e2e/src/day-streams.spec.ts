@@ -1,6 +1,6 @@
 import { CollectedEvent, GIT_FIELD_SEPARATOR } from '@ethlete/timetrack';
 import { defaultSettings } from '@ethlete/timetrack/testing';
-import { E2E_DAY_KEY, E2E_NOW, expect, openDayNotes, openStreams, seedWorld, test } from './support';
+import { E2E_DAY_KEY, E2E_NOW, expect, openDayNotes, openStreams, openTotals, seedWorld, test } from './support';
 
 /** The checkout the fake git backend discovers, so its subdirectories fold into it. */
 const FUT = '/Users/e2e/dev/fut-frontend';
@@ -185,12 +185,12 @@ test.describe('the day view, as streams', () => {
     await page.evaluate(() => localStorage.clear());
     await page.goto('/');
 
-    await expect(page.locator('[data-totals]')).toContainText('present');
+    await expect(await openTotals(page)).toContainText('present');
     expect(new URL(page.url()).hash).toBe('#/day');
   });
 
   test('reports presence, engaged time and the ratio between them', async ({ page }) => {
-    const totals = page.locator('[data-totals]');
+    const totals = await openTotals(page);
 
     // The morning was two hours at the machine. The editor held 90 minutes of it and Slack 30, and
     // the agent's hour ran alongside — so the day was engaged for three hours in two.
@@ -199,21 +199,25 @@ test.describe('the day view, as streams', () => {
     await expect(totals).toContainText('1.5× at once');
   });
 
-  test('keeps what was measured closed, so it is never read against the bands', async ({ page }) => {
-    await expect(page.locator('[data-presence]')).toBeHidden();
+  test('keeps what was measured off the day, so it is never read against the bands', async ({ page }) => {
+    await expect(page.locator('[data-presence]')).toHaveCount(0);
 
-    await page.locator('[data-totals] > summary').click();
+    await openTotals(page);
 
     await expect(page.locator('[data-presence]')).toBeVisible();
   });
 
   test('marks a day that ran something beside you with a fire', async ({ page }) => {
+    const footer = page.locator('ethlete-day-review footer');
+
     // 1.5× reaches the first tier and no further, so the readout carries one flame.
-    await expect(page.locator('[data-heat]')).toHaveAttribute('data-heat', 'warm');
-    await expect(page.locator('[data-heat-flame]')).toHaveCount(1);
+    await expect(footer.locator('[data-heat]')).toHaveAttribute('data-heat', 'warm');
+    await expect(footer.locator('[data-heat-flame]')).toHaveCount(1);
   });
 
   test('shows one line per checkout, ordered by when it started', async ({ page }) => {
+    await openStreams(page);
+
     await expect(page.locator('[data-stream] [data-label]')).toHaveText([
       'fut-frontend',
       'ethlete-sdk',
@@ -374,7 +378,7 @@ test.describe('the day view, as streams', () => {
     await expect(agentOnly.locator('[data-unattended]')).toHaveText('1h 0m agent alone');
     await expect(agentOnly.locator('[data-engaged]')).toHaveText('1h 0m engaged');
     await expect(agentOnly.locator('[data-spend]')).toContainText('2 turns');
-    await expect(page.locator('[data-totals]')).toContainText('+ 1h 0m agent alone');
+    await expect(await openTotals(page)).toContainText('+ 1h 0m agent alone');
     await expect(page.locator('[data-unattributed]')).toHaveCount(0);
   });
 
@@ -420,6 +424,8 @@ test.describe('the day view, as streams', () => {
     });
     await page.goto('/day');
 
+    await openStreams(page);
+
     await expect(page.locator('[data-ambiguous]')).toHaveText('elrond');
     await expect(page.locator('[data-stream="repo:' + ONE + '"]')).toHaveCount(0);
   });
@@ -445,10 +451,14 @@ test.describe('the day view, as streams', () => {
     });
     await page.goto('/day');
 
+    await openDayNotes(page);
+
     await expect(page.locator('[data-unattributed]')).toHaveText('1 turn · 800 k out · 90.0 M cached');
   });
 
   test('shows no unbooked line for a day every turn belongs to a stream', async ({ page }) => {
+    await openDayNotes(page);
+
     await expect(page.locator('[data-unattributed]')).toHaveCount(0);
   });
 
@@ -470,17 +480,20 @@ test.describe('the day view, as streams', () => {
     });
     await page.goto('/day');
 
+    await openDayNotes(page);
+
+    await expect(page.getByText(/Part of this day was rebuilt/)).toBeVisible();
+
     await openStreams(page);
 
     const rebuilt = stream(page, `repo:${SDK}`);
 
     await expect(rebuilt.locator('[data-engaged]')).toHaveText('40m engaged');
     await expect(rebuilt.locator('[data-rebuilt]')).toHaveText('40m rebuilt');
+    await openTotals(page);
+
     await expect(page.locator('[data-presence]')).toHaveText('40m present');
     await expect(page.locator('[data-rebuilt-total]')).toHaveText('40m rebuilt');
-    await openDayNotes(page);
-
-    await expect(page.getByText(/Part of this day was rebuilt/)).toBeVisible();
   });
 
   test('names the checkout from what an editor reported, when no window title could', async ({ page }) => {
@@ -502,6 +515,8 @@ test.describe('the day view, as streams', () => {
 
     await expect(editor.locator('[data-label]')).toHaveText('fut-frontend');
     await expect(editor.locator('[data-engaged]')).toHaveText('30m engaged');
+    await openTotals(page);
+
     await expect(page.locator('[data-presence]')).toHaveText('30m present');
     await expect(page.locator('[data-rebuilt-total]')).toHaveCount(0);
 
@@ -532,7 +547,9 @@ test.describe('the day view, as streams', () => {
     });
     await page.goto('/day');
 
-    await expect(page.locator('[data-totals]')).toContainText('2h 0m present');
+    await openStreams(page);
+
+    await expect(await openTotals(page)).toContainText('2h 0m present');
     await expect(page.locator('[data-rebuilt-total]')).toHaveCount(0);
     await expect(page.locator('[data-rebuilt]')).toHaveCount(0);
     await expect(page.locator('[data-rebuilt-label]')).toHaveCount(0);
@@ -581,6 +598,8 @@ test.describe('the day view, on a day something held the microphone', () => {
       settings: { ...defaultSettings(), callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] } },
     });
     await page.goto('/day');
+
+    await openTotals(page);
 
     await expect(page.locator('[data-presence]')).toHaveText('48m present');
     await expect(page.locator('[data-call-unclassified]')).toHaveCount(0);

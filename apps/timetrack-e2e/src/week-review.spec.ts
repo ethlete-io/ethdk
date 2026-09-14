@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 import { tempoWorklogOn } from '@ethlete/timetrack/testing';
-import { E2E_DAY_KEY, E2E_NOW, expect, logTheNamedRow, seedWorld, test } from './support';
+import { E2E_DAY_KEY, E2E_NOW, expect, goToView, logTheNamedRow, seedWorld, test } from './support';
 
 /** The seeded day's own row. Selected by its day key, because which of the seven it is depends on the weekday. */
 const seededDay = (page: Page) => page.locator(`[data-day="${E2E_DAY_KEY}"]`);
@@ -21,18 +21,18 @@ test.describe('a day logged in tempo by hand', () => {
   });
 
   test('reads what tempo holds after the day review opened the day', async ({ page }) => {
-    await page.getByRole('link', { name: 'Week' }).click();
+    await goToView(page, 'week');
 
     await expect(seededDay(page)).toContainText('1h 0m matched no issue');
     await expect(seededDay(page)).not.toContainText('is not in Tempo yet');
   });
 
   test('stops reading as unsynced once the preview has recorded what tempo holds', async ({ page }) => {
-    await page.getByRole('link', { name: 'Sync' }).click();
+    await goToView(page, 'sync');
     await page.getByRole('button', { name: 'Plan this day' }).click();
     await expect(page.getByText('Counted against this day')).toBeVisible();
 
-    await page.getByRole('link', { name: 'Week' }).click();
+    await goToView(page, 'week');
 
     await expect(seededDay(page)).toContainText('1h 0m matched no issue');
     await expect(seededDay(page)).not.toContainText('is not in Tempo yet');
