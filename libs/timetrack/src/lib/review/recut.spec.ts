@@ -1,0 +1,113 @@
+import { describe, expect, it } from 'vitest';
+import { BehindStretch } from '../rows/cut';
+import { ReviewedRow } from './model';
+import { recutReviewedRows } from './recut';
+
+const at = (time: string) => new Date(`2026-08-11T${time}:00Z`);
+const SDK = 'repo:/dev/sdk';
+
+const row = (options: { issueKey?: string; from: string; to: string; laneKey?: string }): ReviewedRow => ({
+  id: `${options.issueKey ?? 'unnamed'}@${options.from}`,
+  issueKey: options.issueKey,
+  from: at(options.from),
+  to: at(options.to),
+  durationMs: at(options.to).getTime() - at(options.from).getTime(),
+  observedMs: at(options.to).getTime() - at(options.from).getTime(),
+  laneKey: options.laneKey ?? (options.issueKey?.startsWith('ET') ? SDK : 'call'),
+  description: '',
+  confidence: 'certain',
+  evidence: [],
+  state: 'suggested',
+  edited: false,
+  hidden: false,
+});
+
+const spans = (entries: readonly { from: Date; to: Date }[]) =>
+  entries.map((entry) => `${entry.from.toISOString().slice(11, 16)}-${entry.to.toISOString().slice(11, 16)}`);
+
+const recut = (options: { rows: ReviewedRow[]; behind?: BehindStretch[] }) =>
+  recutReviewedRows({ rows: options.rows, behind: options.behind ?? [], backgroundProjects: ['ET'] });
+
+describe('recutReviewedRows', () => {
+  it('shrinks the background row a meeting the reviewer grew now covers', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'FIFAGG-1', from: '13:00', to: '14:15' }),
+        row({ issueKey: 'ET-772', from: '13:45', to: '16:00' }),
+      ],
+    });
+
+    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual(['14:15-16:00']);
+  });
+
+  it('reports what the row gave up as a band in its own lane', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'FIFAGG-1', from: '13:00', to: '14:15' }),
+        row({ issueKey: 'ET-772', from: '13:45', to: '16:00' }),
+      ],
+    });
+
+    expect(spans(result.behind)).toEqual(['13:45-14:15']);
+    expect(result.behind[0]?.laneKey).toBe(SDK);
+  });
+
+  it('joins what it gave up to the band the machine had already drawn beside it', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'FIFAGG-1', from: '13:00', to: '14:15' }),
+        row({ issueKey: 'ET-772', from: '13:45', to: '16:00' }),
+      ],
+      behind: [{ from: at('13:30'), to: at('13:45'), issueKey: 'ET-772', laneKey: SDK }],
+    });
+
+    expect(spans(result.behind)).toEqual(['13:30-14:15']);
+  });
+
+  it('takes the end of the row too, when the meeting grew backwards into it', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'ET-772', from: '13:00', to: '15:00' }),
+        row({ issueKey: 'FIFAGG-1', from: '14:30', to: '16:00' }),
+      ],
+    });
+
+    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual(['13:00-14:30']);
+    expect(spans(result.behind)).toEqual(['14:30-15:00']);
+  });
+
+  it('drops a row a meeting now covers whole, and leaves the band that says the work happened', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'FIFAGG-1', from: '13:00', to: '16:00' }),
+        row({ issueKey: 'ET-772', from: '13:45', to: '15:00' }),
+      ],
+    });
+
+    expect(result.rows.map((entry) => entry.issueKey)).toEqual(['FIFAGG-1']);
+    expect(spans(result.behind)).toEqual(['13:45-15:00']);
+  });
+
+  it('leaves a foreground row alone, however many others overlap it', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'FIFAGG-1', from: '13:00', to: '15:00' }),
+        row({ issueKey: 'BD-9', from: '14:00', to: '16:00' }),
+      ],
+    });
+
+    expect(spans(result.rows)).toEqual(['13:00-15:00', '14:00-16:00']);
+    expect(result.behind).toEqual([]);
+  });
+
+  it('leaves a background row whole when a meeting sits inside it, rather than split it in two', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'ET-772', from: '13:00', to: '16:00' }),
+        row({ issueKey: 'FIFAGG-1', from: '14:00', to: '15:00' }),
+      ],
+    });
+
+    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual(['13:00-16:00']);
+  });
+});

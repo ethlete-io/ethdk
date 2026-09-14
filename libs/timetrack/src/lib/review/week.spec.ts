@@ -42,6 +42,7 @@ const review = (options: { rows: ReviewedRow[]; unattributedMs?: number }): DayR
   return {
     rows: options.rows,
     hidden: [],
+    behind: [],
     check: {
       proposedMs,
       coveredMs: 0,

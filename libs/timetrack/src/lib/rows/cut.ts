@@ -136,7 +136,7 @@ export const meetLaneRows = (options: {
  * Consecutive stretches of one lane and one key as one, so an afternoon behind another checkout is one
  * band rather than one per block the builder happened to cut the presence into.
  */
-const joinTouching = (stretches: readonly BehindStretch[]): BehindStretch[] => {
+export const joinTouching = (stretches: readonly BehindStretch[]): BehindStretch[] => {
   const ordered = [...stretches].sort(
     (a, b) =>
       a.laneKey.localeCompare(b.laneKey) || a.issueKey.localeCompare(b.issueKey) || a.from.getTime() - b.from.getTime(),

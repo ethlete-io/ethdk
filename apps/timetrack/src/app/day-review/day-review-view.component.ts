@@ -75,7 +75,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
         }
 
         <ethlete-day-timeline
-          [behind]="store.reasoned()?.behind ?? []"
+          [behind]="day.behind"
           [breaks]="store.breaks()"
           [focusedDate]="focusedDate()"
           [rows]="store.rows()"

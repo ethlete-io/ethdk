@@ -1,3 +1,4 @@
+import { BehindStretch } from '../rows/cut';
 import { DayCheck } from '../rows/round';
 import { Confidence, Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
@@ -98,6 +99,11 @@ export type DayReview = {
    * deletes a proposal outright.
    */
   hidden: ReviewedRow[];
+  /**
+   * The stretches a background row lost, drawn behind the rows that took them. The machine's own cut
+   * with the reviewer's edits cut into it, so a resized meeting moves the band beside it.
+   */
+  behind: BehindStretch[];
   check: DayCheck;
   /**
    * Observed time inside the proposals a local edit replaced that the edited rows no longer account

@@ -944,3 +944,49 @@ describe('reviewDay, a band the reviewer has answered', () => {
     expect(reviewDay({ rows, edits }).check.unattributedMs).toBe(0);
   });
 });
+
+describe('reviewDay over a background project', () => {
+  const meeting = proposal({ issueKey: 'FIFAGG-12652', from: '13:00', to: '13:30', minutes: 30 });
+  const behind = proposal({ issueKey: 'ET-772', from: '13:30', to: '15:30', minutes: 120 });
+  const day = dayRows({
+    proposals: [
+      { ...meeting, laneKey: 'call' },
+      { ...behind, laneKey: 'repo:/dev/sdk' },
+    ],
+  });
+
+  const reviewed = (edits: DayReviewEdits) => reviewDay({ rows: day, edits, cut: { backgroundProjects: ['ET'] } });
+
+  it('leaves the day alone while nothing overlaps', () => {
+    const review = reviewed(EMPTY_DAY_REVIEW_EDITS);
+
+    expect(rowFor(review, 'ET-772').from).toEqual(at('13:30'));
+    expect(review.behind).toEqual([]);
+  });
+
+  it('shrinks the background row when the reviewer grows a meeting over it', () => {
+    const grown = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewed(EMPTY_DAY_REVIEW_EDITS), 'FIFAGG-12652'),
+      from: at('13:00'),
+      to: at('14:15'),
+    });
+    const review = reviewed(grown);
+
+    expect(rowFor(review, 'ET-772').from).toEqual(at('14:15'));
+    expect(rowFor(review, 'ET-772').durationMs).toBe(75 * MINUTE);
+  });
+
+  it('gives the minutes it took to the band drawn behind the row', () => {
+    const grown = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewed(EMPTY_DAY_REVIEW_EDITS), 'FIFAGG-12652'),
+      from: at('13:00'),
+      to: at('14:15'),
+    });
+    const review = reviewed(grown);
+
+    expect(review.behind.map((stretch) => [stretch.from, stretch.to])).toEqual([[at('13:30'), at('14:15')]]);
+    expect(review.behind[0]?.issueKey).toBe('ET-772');
+  });
+});

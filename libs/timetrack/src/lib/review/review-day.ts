@@ -1,8 +1,10 @@
 import { DayRows, dayCheckOptions } from '../rows/build-rows';
+import { CutOptions } from '../rows/cut';
 import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, RoundOptions, checkDay } from '../rows/round';
 import { storedLaneKey } from '../rows/lane';
 import { unnamedRowId } from '../rows/propose';
 import { snapRowBounds } from '../rows/snap';
+import { recutReviewedRows } from './recut';
 import { formatDurationMs } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
@@ -99,6 +101,8 @@ export const reviewDay = (options: {
   edits?: DayReviewEdits;
   check?: CheckDayOptions;
   round?: Partial<RoundOptions>;
+  /** The same cut the day was built with, so a reviewer's edit is cut by the rule the machine used. */
+  cut?: CutOptions;
 }): DayReview => {
   const edits = options.edits ?? EMPTY_DAY_REVIEW_EDITS;
   const consumed = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
@@ -113,7 +117,15 @@ export const reviewDay = (options: {
   ].sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));
 
   const hidden = reviewed.filter((row) => row.hidden);
-  const rows = bookTheSpan(snapRowBounds({ rows: reviewed.filter((row) => !row.hidden), options: options.round }));
+  // After the snap, so a background row gives up whole increments, and before the span is booked, so
+  // what it gives up leaves its worklog too.
+  const recut = recutReviewedRows({
+    rows: snapRowBounds({ rows: reviewed.filter((row) => !row.hidden), options: options.round }),
+    behind: options.rows.behind,
+    backgroundProjects: options.cut?.backgroundProjects,
+    round: options.round,
+  });
+  const rows = bookTheSpan(recut.rows);
 
   const replacedMs = options.rows.proposals
     .filter((proposal) => consumed.has(proposal.id))
@@ -140,6 +152,7 @@ export const reviewDay = (options: {
   return {
     rows,
     hidden,
+    behind: recut.behind,
     check: withStaleEdits({
       check: withDrift({ check, unreconciledMs, options: options.check }),
       rows: options.rows,
