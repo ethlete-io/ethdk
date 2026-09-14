@@ -153,7 +153,16 @@ describe('checkDay', () => {
     });
 
     expect(check.unattributedMs).toBe(45 * MINUTE);
-    expect(check.warnings[0]?.detail).toContain('across 1 block(s)');
+    expect(check.warnings[0]?.detail).toBe('45m in ethlete-sdk');
+  });
+
+  it('says which lane each band of unnamed work sits in, longest first', () => {
+    const check = checkDay({
+      proposals: [],
+      unattributed: [group(45), { ...group(20), laneKey: CALL_LANE_KEY, blocks: [] }],
+    });
+
+    expect(check.warnings[0]?.detail).toBe('1h 5m: ethlete-sdk 45m, calls 20m');
   });
 
   it('counts a call nothing named, which a worklog can hold', () => {
@@ -209,13 +218,30 @@ describe('checkDay', () => {
     expect(check.warnings.map((warning) => warning.kind)).toEqual(['too-many-rows']);
   });
 
-  it('reports time a meeting and observed activity both claim, above a minute of noise', () => {
+  it('reports time a call and observed activity both claim, above a minute of noise', () => {
     const proposals = [proposal({ issueKey: 'FIP-2177', durationMinutes: 240 })];
+    const overlap = (minutes: number) => [
+      { label: 'FIFAGG-12652', from: new Date('2026-09-14T09:55:00'), overlapMs: minutes * MINUTE },
+    ];
 
     expect(
-      checkDay({ proposals, options: { meetingOverlapMs: 30 * MINUTE } }).warnings.map((warning) => warning.kind),
+      checkDay({ proposals, options: { meetingOverlaps: overlap(30) } }).warnings.map((warning) => warning.kind),
     ).toEqual(['meeting-overlap']);
-    expect(checkDay({ proposals, options: { meetingOverlapMs: MINUTE } }).warnings).toEqual([]);
+    expect(checkDay({ proposals, options: { meetingOverlaps: overlap(1) } }).warnings).toEqual([]);
+  });
+
+  it('names each call the overlap is under, and when it ran', () => {
+    const check = checkDay({
+      proposals: [proposal({ issueKey: 'FIP-2177', durationMinutes: 240 })],
+      options: {
+        meetingOverlaps: [
+          { label: 'BD-2049', from: new Date('2026-09-14T09:21:00'), overlapMs: 5 * MINUTE },
+          { label: 'FIFAGG-12652', from: new Date('2026-09-14T09:55:00'), overlapMs: 17 * MINUTE },
+        ],
+      },
+    });
+
+    expect(check.warnings[0]?.detail).toBe('17m during the 09:55 call FIFAGG-12652, 5m during the 09:21 call BD-2049');
   });
 
   it('names the rows that rounded to nothing', () => {

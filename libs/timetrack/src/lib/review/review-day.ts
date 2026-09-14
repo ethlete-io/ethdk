@@ -1,12 +1,7 @@
 import { DayRows, dayCheckOptions } from '../rows/build-rows';
-import {
-  CheckDayOptions,
-  DEFAULT_ROUND_OPTIONS,
-  DayCheck,
-  RoundOptions,
-  checkDay,
-} from '../rows/round';
+import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, RoundOptions, checkDay } from '../rows/round';
 import { storedLaneKey } from '../rows/lane';
+import { unnamedRowId } from '../rows/propose';
 import { snapRowBounds } from '../rows/snap';
 import { formatDurationMs } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
@@ -126,9 +121,19 @@ export const reviewDay = (options: {
   const pinnedMs = edits.pinned.reduce((sum, row) => sum + row.observedMs, 0);
   const unreconciledMs = Math.max(0, replacedMs - pinnedMs);
 
+  /**
+   * The bands the reviewer has answered: named, given a stand-in, hidden, or consumed by a row they
+   * built. Each is drawn with that answer on it, so counting it as time nothing named would report a
+   * band the screen does not show and book the same minutes twice over.
+   */
+  const settled = new Set([
+    ...consumed,
+    ...reviewed.filter((row) => !!row.issueKey || !!row.standInId || row.hidden).map((row) => row.id),
+  ]);
+
   const check = checkDay({
     proposals: rows.filter(isNamedRow).filter((row) => syncsInState(row.state)),
-    unattributed: options.rows.unattributed,
+    unattributed: options.rows.unattributed.filter((group) => !settled.has(unnamedRowId(group))),
     options: { ...dayCheckOptions(options.rows), ...options.check },
   });
 

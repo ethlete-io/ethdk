@@ -52,10 +52,14 @@ const isAttributedRow = (row: BoundGroup): row is BoundGroup & { group: Attribut
 const proposalId = (group: AttributedGroup) => `${group.issueKey}@${group.from.toISOString()}`;
 
 /**
- * Stable the same way, by the context behind the band rather than by an issue. Two contexts can hold
- * the same minute, so the instant alone would give a concurrent day two rows with one id.
+ * The id the row of an unnamed band carries. Stable the same way {@link proposalId} is, by the context
+ * behind the band rather than by an issue: two contexts can hold the same minute, so the instant alone
+ * would give a concurrent day two rows with one id.
+ *
+ * Exported because a review answers a band through its row, and `reviewDay` needs the group that row
+ * came from to stop counting it as time nothing named.
  */
-const unnamedId = (group: WorkGroup) => {
+export const unnamedRowId = (group: WorkGroup) => {
   const context = group.blocks[0]?.context;
 
   return `unnamed:${context ? contextKey(context) : ''}@${group.from.toISOString()}`;
@@ -108,7 +112,7 @@ export const propose = (options: {
     })),
     unattributed: unattributed.map((row) => row.group),
     unnamed: unnamed.map(({ group, from, to, durationMs }) => ({
-      id: unnamedId(group),
+      id: unnamedRowId(group),
       ...(group.standInId ? { standInId: group.standInId } : {}),
       ...(group.attended === false ? { unattended: true } : {}),
       ...(group.bookable === false ? { excluded: true } : {}),

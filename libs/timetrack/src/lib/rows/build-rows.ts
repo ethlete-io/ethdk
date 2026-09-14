@@ -1,6 +1,6 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { ActivityBlock } from '../model/block';
-import { CallWindow } from '../model/call';
+import { CallWindow, callLabel } from '../model/call';
 import { CollectedEvent } from '../model/event';
 import { WorklogProposal } from '../model/proposal';
 import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
@@ -28,6 +28,8 @@ export type BuildRowsOptions = {
   activity?: AttributeOptions['activity'];
   patterns?: AttributeOptions['patterns'];
   rules?: AttributeOptions['rules'];
+  /** The stand-ins the rules point at. Without them a stand-in rule names nothing. */
+  standIns?: AttributeOptions['standIns'];
   /** The user's path-to-project links. A private one takes its context out of the day entirely. */
   links?: AttributeOptions['links'];
   /**
@@ -147,6 +149,7 @@ export const buildRows = (
       activity,
       patterns: options.patterns,
       rules: options.rules,
+      standIns: options.standIns,
       links: options.links,
       inferred: options.inferred,
     }),
@@ -225,7 +228,11 @@ export const buildRows = (
  */
 export const dayCheckOptions = (rows: DayRows): CheckDayOptions => ({
   maxRowsPerDay: DEFAULT_MERGE_OPTIONS.maxRowsPerDay,
-  meetingOverlapMs: rows.calls.reduce((sum, call) => sum + call.overlapMs, 0),
+  meetingOverlaps: rows.calls.map((call) => ({
+    label: call.group.issueKey ?? callLabel(call.call),
+    from: call.group.from,
+    overlapMs: call.overlapMs,
+  })),
   timerUnobservedMs: rows.timers.reduce(
     (sum, timer) => sum + Math.max(0, timerRunDurationMs(timer.run) - timer.observedMs),
     0,

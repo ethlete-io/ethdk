@@ -3,7 +3,7 @@ import { DayRows } from '../rows/build-rows';
 import { WorkGroup } from '../rows/merge';
 import { Confidence, Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
-import { UnnamedProposal } from '../rows/propose';
+import { UnnamedProposal, unnamedRowId } from '../rows/propose';
 import {
   ManualRow,
   addManualRow,
@@ -750,7 +750,7 @@ describe('reviewDay, a band nothing named', () => {
     expect(reviewDay({ rows: odd, edits }).rows[0]?.durationMs).toBe(60 * MINUTE);
   });
 
-  it('moves the band\'s end to the duration typed by hand', () => {
+  it("moves the band's end to the duration typed by hand", () => {
     const odd = dayRows({ proposals: [], unnamed: [band({ from: '08:00', to: '09:00', minutes: 47 })] });
     const named = setRowIssue({
       edits: EMPTY_DAY_REVIEW_EDITS,
@@ -871,5 +871,75 @@ describe('hideRow and showRow', () => {
 
     expect(shown.hidden).toEqual([]);
     expect(shown.rows).toHaveLength(3);
+  });
+});
+
+describe('reviewDay, a band the reviewer has answered', () => {
+  const group = (options: { from: string; to: string; minutes: number }): WorkGroup => ({
+    from: at(options.from),
+    to: at(options.to),
+    observedMs: options.minutes * MINUTE,
+    confidence: 'weak',
+    evidence: [],
+    blocks: [
+      {
+        from: at(options.from),
+        to: at(options.to),
+        context: { repoPath: '/w/app' },
+        evidence: [],
+      },
+    ],
+    laneKey: 'repo:/w/app',
+  });
+
+  const day = () => {
+    const band = group({ from: '08:00', to: '09:00', minutes: 60 });
+
+    return dayRows({
+      proposals: [],
+      unattributed: [band],
+      unnamed: [
+        {
+          id: unnamedRowId(band),
+          from: band.from,
+          to: band.to,
+          durationMs: 60 * MINUTE,
+          observedMs: 60 * MINUTE,
+          laneKey: band.laneKey,
+          description: 'work on /w/app',
+          confidence: 'weak',
+          evidence: [],
+          state: 'suggested',
+        },
+      ],
+    });
+  };
+
+  it('counts it as time nothing named while it is still unanswered', () => {
+    const check = reviewDay({ rows: day() }).check;
+
+    expect(check.unattributedMs).toBe(60 * MINUTE);
+    expect(check.warnings.map((warning) => warning.kind)).toContain('unattributed-time');
+  });
+
+  it('stops counting it once the reviewer names it', () => {
+    const rows = day();
+    const edits = setRowIssue({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows }).rows[0]!,
+      issueKey: 'ABC-9',
+    });
+    const check = reviewDay({ rows, edits }).check;
+
+    expect(check.proposedMs).toBe(60 * MINUTE);
+    expect(check.unattributedMs).toBe(0);
+    expect(check.warnings.map((warning) => warning.kind)).not.toContain('unattributed-time');
+  });
+
+  it('stops counting it once the reviewer hides it', () => {
+    const rows = day();
+    const edits = hideRow({ edits: EMPTY_DAY_REVIEW_EDITS, row: reviewDay({ rows }).rows[0]! });
+
+    expect(reviewDay({ rows, edits }).check.unattributedMs).toBe(0);
   });
 });

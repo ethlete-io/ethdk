@@ -1,5 +1,5 @@
-import { streamKeyRepoPath } from '../model/block';
-import { formatDurationMs } from '../model/duration';
+import { streamKeyLabel, streamKeyRepoPath } from '../model/block';
+import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { WorklogProposal } from '../model/proposal';
 import { CALL_LANE_KEY, laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
@@ -45,6 +45,17 @@ export type DayWarningKind =
   | 'edited-row-drift'
   /** Raised by `reviewDay`, not here: an edited row whose proposals the engine no longer builds. */
   | 'stale-edit';
+
+/**
+ * A call the day also observed work during. It is time the day proposes twice, so the reviewer is told
+ * which call it was and when: without both they cannot find the pair of rows on screen.
+ */
+export type MeetingOverlap = {
+  /** What the call reads as: the issue its row was named for, or the call's own label. */
+  label: string;
+  from: Date;
+  overlapMs: number;
+};
 
 export type DayWarning = {
   kind: DayWarningKind;
@@ -92,8 +103,8 @@ export type CheckDayOptions = {
    */
   finished?: boolean;
   maxRowsPerDay?: number;
-  /** Time a meeting or a call and observed activity both claim, from `matchMeetings` and `matchCalls`. */
-  meetingOverlapMs?: number;
+  /** The calls whose minutes observed activity also claims, from `matchCalls`. */
+  meetingOverlaps?: readonly MeetingOverlap[];
   /** Time a timer claimed with no activity observed inside it, from `matchTimerRuns`. */
   timerUnobservedMs?: number;
   /** Idle time joined to the work around it, from `fillGaps`. */
@@ -120,6 +131,41 @@ const isBookable = (group: WorkGroup) => {
 };
 
 /**
+ * Which lane each band of unnamed work sits in, longest first, so the reviewer reads where to look
+ * rather than how many bands there are. A day runs several lanes at once, so the parts sum past the
+ * clock, and naming them is what makes that legible.
+ */
+const laneDetail = (options: { groups: readonly WorkGroup[]; totalMs: number }) => {
+  const byLane = new Map<string, number>();
+
+  for (const group of options.groups) {
+    const lane = group.laneKey ?? laneKeyOf(group.blocks);
+    const label = !lane ? 'other work' : lane === CALL_LANE_KEY ? 'calls' : streamKeyLabel(lane);
+
+    byLane.set(label, (byLane.get(label) ?? 0) + group.observedMs);
+  }
+
+  const lanes = [...byLane].sort(([, left], [, right]) => right - left);
+  const [only] = lanes;
+
+  if (lanes.length === 1 && only) return `${formatDurationMs(only[1])} in ${only[0]}`;
+
+  return `${formatDurationMs(options.totalMs)}: ${lanes
+    .map(([label, ms]) => `${label} ${formatDurationMs(ms)}`)
+    .join(', ')}`;
+};
+
+/** Each call the day also observed work during, named and placed on the clock, longest first. */
+const callDetail = (overlaps: readonly MeetingOverlap[]) =>
+  [...overlaps]
+    .sort((left, right) => right.overlapMs - left.overlapMs)
+    .map(
+      (overlap) =>
+        `${formatDurationMs(overlap.overlapMs)} during the ${formatTimeOfDay(overlap.from)} call ${overlap.label}`,
+    )
+    .join(', ');
+
+/**
  * Compares a proposed day against its target and reports what a reviewer should look at. It never
  * changes a duration: a day under target is a day under target, and filling it silently would be
  * inventing time.
@@ -129,16 +175,15 @@ export const checkDay = (options: {
   unattributed?: WorkGroup[];
   options?: CheckDayOptions;
 }): DayCheck => {
-  const { targetMs, toleranceMs, finished, maxRowsPerDay, meetingOverlapMs, timerUnobservedMs, filledMs, pausedMs } =
+  const { targetMs, toleranceMs, finished, maxRowsPerDay, meetingOverlaps, timerUnobservedMs, filledMs, pausedMs } =
     options.options ?? {};
   const unattributed = options.unattributed ?? [];
   const bookable = unattributed.filter(isBookable);
   const proposedMs = options.proposals.reduce((sum, proposal) => sum + proposal.durationMs, 0);
   const coveredMs = options.options?.coveredMs ?? 0;
   const loggedMs = proposedMs + coveredMs;
-  const unattributedMs = bookable
-    .filter((group) => group.attended !== false)
-    .reduce((sum, group) => sum + group.observedMs, 0);
+  const waiting = bookable.filter((group) => group.attended !== false);
+  const unattributedMs = waiting.reduce((sum, group) => sum + group.observedMs, 0);
   const unattended = bookable.filter((group) => group.attended === false);
   const unattendedMs = unattended.reduce((sum, group) => sum + group.observedMs, 0);
   const tolerance = toleranceMs ?? DEFAULT_ROUND_OPTIONS.incrementMs;
@@ -157,11 +202,9 @@ export const checkDay = (options: {
   }
 
   if (unattributedMs > 0) {
-    const named = bookable.length - unattended.length;
-
     warnings.push({
       kind: 'unattributed-time',
-      detail: `${formatDurationMs(unattributedMs)} across ${named} block(s) matched no issue`,
+      detail: laneDetail({ groups: waiting, totalMs: unattributedMs }),
     });
   }
 
@@ -178,11 +221,11 @@ export const checkDay = (options: {
     warnings.push({ kind: 'too-many-rows', detail: `${rows} rows to review, above the ${maxRowsPerDay} row cap` });
   }
 
-  if (meetingOverlapMs !== undefined && meetingOverlapMs >= tolerance) {
-    warnings.push({
-      kind: 'meeting-overlap',
-      detail: `${formatDurationMs(meetingOverlapMs)} is claimed by a meeting or a call and by observed activity at the same time`,
-    });
+  const overlapping = (meetingOverlaps ?? []).filter((overlap) => overlap.overlapMs > 0);
+  const meetingOverlapMs = overlapping.reduce((sum, overlap) => sum + overlap.overlapMs, 0);
+
+  if (meetingOverlapMs >= tolerance) {
+    warnings.push({ kind: 'meeting-overlap', detail: callDetail(overlapping) });
   }
 
   if (timerUnobservedMs !== undefined && timerUnobservedMs >= tolerance) {

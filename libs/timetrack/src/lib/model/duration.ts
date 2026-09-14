@@ -11,3 +11,7 @@ export const formatDurationMs = (ms: number) => {
 
 /** Under this `formatDurationMs` reads `0m`, so a line carrying only this much carries no number. */
 export const READABLE_MS = 30_000;
+
+/** A clock time the way a day reads it — `09:55`. Local, because a day is read where the person is. */
+export const formatTimeOfDay = (at: Date) =>
+  `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;

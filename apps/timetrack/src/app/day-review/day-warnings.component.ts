@@ -4,11 +4,11 @@ import { DayWarning, DayWarningKind } from '@ethlete/timetrack';
 const HEADINGS: Record<DayWarningKind, string> = {
   'under-target': 'The day is short of its target',
   'over-target': 'The day is over its target',
-  'unattributed-time': 'Some time matched no issue',
+  'unattributed-time': 'Some work is not named yet',
   'unattended-time': 'An agent worked while nobody was here',
   'too-many-rows': 'This day fragmented',
   'zero-duration': 'A row rounded away to nothing',
-  'meeting-overlap': 'A meeting and observed work claim the same time',
+  'meeting-overlap': 'A call and observed work claim the same time',
   'timer-unobserved': 'A timer ran while nothing was observed',
   'filled-time': 'Short pauses were logged as the work around them',
   'paused-time': 'You stopped collection for part of this day',
