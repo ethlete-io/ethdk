@@ -36,15 +36,15 @@ still loses to the `certain` a branch parse gives.
   follows one thing says nothing about a call that follows another. The clock is a scored feature as
   well as the tiebreak, which is what names a call that always stands alone and has no `after` to be
   keyed on.
-- The writer is `DayReview.setIssue`: naming a row in the meeting lane traces the row back to its
-  occurrence through `meetingBehindRow`, and naming a row in the call lane traces it back to the call
-  through `callBehindRow`. Naming any other row writes nothing.
+- The writer is `DayReview.setIssue`: naming a row in the call lane traces the row back to its
+  occurrence through `meetingBehindRow`, and back to the call itself through `callBehindRow` when the
+  calendar named no occurrence. Naming any other row writes nothing.
 - A remembered naming ages the same way a hand-written rule ages. `BD-2049` is called "Intern:
   Meeting 2025" and it is still current in 2026, so the app warns when the ticket a record names
   stops being touched. A record never expires on a date.
 - **A `likely` calendar pick loses to an answer of the user's about this call.** `matchOne` clears
-  the picked occurrence when `matchCallNaming` returns `likely`, which keeps the row in the call lane
-  and keeps the answer readable. A `certain` pick still wins, because a window title seen during the
+  the picked occurrence when `matchCallNaming` returns `likely`, which leaves the row with no meeting
+  behind it and keeps the answer readable. A `certain` pick still wins, because a window title seen during the
   call named the occurrence outright, and that is an observation rather than a guess. Without this,
   the call with no fixed time books to whatever single meeting happened to be accepted over it that
   week, and the answer given for the call is never read.

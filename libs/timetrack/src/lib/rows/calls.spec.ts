@@ -6,7 +6,7 @@ import { TimeWindow } from '../model/time-window';
 import { CallNaming, callFeaturesOf } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { CallMatch, callBehindRow, dropCallWindows, matchCalls, meetingBehindRow } from './calls';
-import { CALL_LANE_KEY, MEETING_LANE_KEY } from './lane';
+import { CALL_LANE_KEY } from './lane';
 import { MeetingOptions } from './meetings';
 import { RecurringPattern } from '../model/recurrence';
 
@@ -212,7 +212,7 @@ describe('meetingBehindRow', () => {
   const row = (overrides: { from?: Date; to?: Date; laneKey?: string } = {}) => ({
     from: at(10),
     to: at(11),
-    laneKey: MEETING_LANE_KEY,
+    laneKey: CALL_LANE_KEY,
     ...overrides,
   });
 
@@ -222,10 +222,10 @@ describe('meetingBehindRow', () => {
     expect(meetingBehindRow({ row: row(), calls })?.occurrenceId).toBe('occ-standup');
   });
 
-  it('names nothing for a row outside the meeting lane', () => {
+  it('names nothing for a row outside the call lane', () => {
     const calls = match({ occurrences: [occurrence()] });
 
-    expect(meetingBehindRow({ row: row({ laneKey: CALL_LANE_KEY }), calls })).toBeUndefined();
+    expect(meetingBehindRow({ row: row({ laneKey: 'repo:/dev/sdk' }), calls })).toBeUndefined();
   });
 
   it('names nothing for a call the calendar could not name', () => {
@@ -365,7 +365,7 @@ describe('a call the calendar never held', () => {
     });
 
     expect(second?.group.issueKey).toBe('XYZ-1');
-    expect(second?.group.laneKey).toBe(MEETING_LANE_KEY);
+    expect(second?.group.laneKey).toBe(CALL_LANE_KEY);
   });
 
   it('carries the features naming its row would remember', () => {

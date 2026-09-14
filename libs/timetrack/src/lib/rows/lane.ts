@@ -24,12 +24,17 @@ export const laneKeyOf = (blocks: readonly ActivityBlock[]) => {
 };
 
 /**
- * The lane every call row is drawn in, whatever application held the call.
+ * The lane every call row is drawn in, whatever application held the call and whether the calendar
+ * named it a meeting or not.
  *
  * A call carries no blocks, so `laneKeyOf` can read no checkout out of it, and a row with no lane
  * falls into the day screen's `lane:none` beside the work nothing could place.
  */
 export const CALL_LANE_KEY = 'lane:call';
 
-/** The lane every meeting row is drawn in, for the same reason a call has one. */
-export const MEETING_LANE_KEY = 'lane:meeting';
+/**
+ * The lane key of a row read back out of the store, with the lane calls and meetings used to be split
+ * into folded into {@link CALL_LANE_KEY}. A row pinned before that still names the old lane, and
+ * without this it draws a lane of its own on the day screen.
+ */
+export const storedLaneKey = (laneKey: string | undefined) => (laneKey === 'lane:meeting' ? CALL_LANE_KEY : laneKey);

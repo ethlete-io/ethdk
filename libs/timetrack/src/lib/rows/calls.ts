@@ -5,7 +5,7 @@ import { CalendarOccurrenceEvent } from '../model/event';
 import { Confidence, Evidence } from '../model/evidence';
 import { meetingSeriesKey } from '../model/meeting-naming';
 import { TimeWindow, subtractWindows } from '../model/time-window';
-import { CALL_LANE_KEY, MEETING_LANE_KEY } from './lane';
+import { CALL_LANE_KEY } from './lane';
 import {
   CalendarCandidate,
   MeetingOptions,
@@ -190,52 +190,52 @@ const matchOne = (options: {
         ...(key?.evidence ? [key.evidence] : []),
       ],
       blocks: [],
-      laneKey: meeting ? MEETING_LANE_KEY : CALL_LANE_KEY,
+      laneKey: CALL_LANE_KEY,
     },
   };
 };
 
 /**
- * The calendar occurrence a row was named from, or nothing.
- *
- * A naming is remembered against a calendar series, so naming a row only teaches the day something
- * when the row can be traced back to an occurrence. The lane and the clock are that link: a meeting
- * row keeps the meeting lane, and an edit moves its ends without making it a different meeting. The
- * call sharing the most time with the row wins, so two meetings in one hour still name one each.
+ * The call a row was built from: the one it shares the most time with, so two calls in one hour still
+ * name one each. A row outside the call lane was built from none.
  */
-export const meetingBehindRow = (options: {
-  row: { from: Date; to: Date; laneKey?: string };
-  calls: readonly CallMatch[];
-}): CalendarOccurrenceEvent | undefined => {
-  if (options.row.laneKey !== MEETING_LANE_KEY) return undefined;
-
-  return options.calls
-    .flatMap((match) =>
-      match.meeting ? [{ event: match.meeting.event, sharedMs: sharedMs(options.row, match.group) }] : [],
-    )
-    .filter((entry) => entry.sharedMs > 0)
-    .sort((a, b) => b.sharedMs - a.sharedMs)[0]?.event;
-};
-
-/**
- * The call a row was named from when no calendar occurrence named it, or nothing.
- *
- * It is the counterpart of {@link meetingBehindRow} for the call lane: a call the calendar never held
- * has no series to be remembered under, so its answer is remembered against the call's own features
- * instead. A row in the meeting lane is left to `meetingBehindRow`, and a call an occurrence named is
- * skipped here, so one answer never writes into both stores.
- */
-export const callBehindRow = (options: {
+const callOfRow = (options: {
   row: { from: Date; to: Date; laneKey?: string };
   calls: readonly CallMatch[];
 }): CallMatch | undefined => {
   if (options.row.laneKey !== CALL_LANE_KEY) return undefined;
 
   return options.calls
-    .filter((match) => !match.meeting)
     .map((match) => ({ match, sharedMs: sharedMs(options.row, match.group) }))
     .filter((entry) => entry.sharedMs > 0)
     .sort((a, b) => b.sharedMs - a.sharedMs)[0]?.match;
+};
+
+/**
+ * The calendar occurrence a row was named from, or nothing.
+ *
+ * A naming is remembered against a calendar series, so naming a row only teaches the day something
+ * when the row can be traced back to an occurrence.
+ */
+export const meetingBehindRow = (options: {
+  row: { from: Date; to: Date; laneKey?: string };
+  calls: readonly CallMatch[];
+}): CalendarOccurrenceEvent | undefined => callOfRow(options)?.meeting?.event;
+
+/**
+ * The call a row was named from when no calendar occurrence named it, or nothing.
+ *
+ * It is the counterpart of {@link meetingBehindRow}: a call the calendar never held has no series to
+ * be remembered under, so its answer is remembered against the call's own features instead. A call an
+ * occurrence named is left to `meetingBehindRow`, so one answer never writes into both stores.
+ */
+export const callBehindRow = (options: {
+  row: { from: Date; to: Date; laneKey?: string };
+  calls: readonly CallMatch[];
+}): CallMatch | undefined => {
+  const found = callOfRow(options);
+
+  return found?.meeting ? undefined : found;
 };
 
 /**
