@@ -118,43 +118,52 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
         </div>
 
         <p class="text-small text-et-surface" data-unnamed-total>{{ total() }}</p>
-        <p class="text-small text-et-surface-subtle" data-unnamed-gap>{{ gap() }}</p>
-        <p class="text-small text-et-surface-subtle" data-unnamed-unknown>{{ unknown() }}</p>
+
+        <p class="text-small text-et-surface-subtle">
+          <span data-unnamed-gap>{{ gap() }}</span>&ngsp;
+          <span data-unnamed-unknown>{{ unknown() }}</span>
+        </p>
 
         <ul class="flex flex-col gap-1">
           @for (row of rows(); track row.key) {
             <li [attr.data-app]="row.app" class="flex flex-col gap-1 text-small">
-              <div class="flex flex-wrap items-baseline gap-2">
-                <span class="font-medium">{{ row.app }}</span>
-                <span class="tabular-nums">{{ row.duration }}</span>
-                <span class="text-et-surface-muted">{{ row.why }}</span>
-                <et-badge [color]="row.color" variant="outline" size="sm">{{ row.standing }}</et-badge>
+              <div class="grid grid-cols-[minmax(0,16rem)_5rem_minmax(0,1fr)_8rem_15rem] items-baseline gap-x-3">
+                <span [title]="row.app" class="truncate font-medium">{{ row.app }}</span>
+                <span class="text-right tabular-nums">{{ row.duration }}</span>
 
-                @if (row.titlesLabel) {
-                  <button
-                    [attr.aria-expanded]="opened().has(row.key)"
-                    [attr.data-titles-of]="row.app"
-                    (click)="toggleTitles(row)"
-                    et-button
-                    variant="transparent"
-                    size="sm"
-                  >
-                    {{ row.titlesLabel }}
-                  </button>
-                }
+                <span class="flex min-w-0 flex-wrap items-baseline gap-2">
+                  <span class="text-et-surface-muted">{{ row.why }}</span>
+                  <et-badge [color]="row.color" variant="outline" size="sm">{{ row.standing }}</et-badge>
+                </span>
 
-                @if (row.appId) {
-                  <button
-                    [attr.data-declare]="row.appId"
-                    (click)="declare(row)"
-                    class="ml-auto"
-                    et-button
-                    variant="transparent"
-                    size="sm"
-                  >
-                    {{ row.declared ? 'It does hold work' : 'It holds no work' }}
-                  </button>
-                }
+                <span>
+                  @if (row.titlesLabel) {
+                    <button
+                      [attr.aria-expanded]="opened().has(row.key)"
+                      [attr.data-titles-of]="row.app"
+                      (click)="toggleTitles(row)"
+                      et-button
+                      variant="transparent"
+                      size="sm"
+                    >
+                      {{ row.titlesLabel }}
+                    </button>
+                  }
+                </span>
+
+                <span class="text-right">
+                  @if (row.appId) {
+                    <button
+                      [attr.data-declare]="row.appId"
+                      (click)="declare(row)"
+                      et-button
+                      variant="transparent"
+                      size="sm"
+                    >
+                      {{ row.declared ? 'Say it does hold work' : 'Say it holds no work' }}
+                    </button>
+                  }
+                </span>
               </div>
 
               @if (opened().has(row.key)) {
