@@ -299,7 +299,7 @@ describe('a call the calendar never held', () => {
 
   const naming = (overrides: Partial<CallNaming> = {}): CallNaming => ({
     ...callFeaturesOf({ appId: room.appId, from: room.from, to: room.to, after: 'series:weekly' }),
-    issueKey: 'ABC-7',
+    target: { kind: 'issue', issueKey: 'ABC-7' },
     label: 'Open Room #1',
     createdAt: at(9),
     ...overrides,
@@ -314,6 +314,18 @@ describe('a call the calendar never held', () => {
 
     expect(second?.group.issueKey).toBe('ABC-7');
     expect(second?.group.laneKey).toBe(CALL_LANE_KEY);
+    expect(second?.group.confidence).toBe('likely');
+  });
+
+  it('carries a stand-in the answer named, and no issue key with it', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      occurrences: [meetingOccurrence],
+      meetings: { callNamings: [naming({ target: { kind: 'stand-in', standInId: 'si-1' } })] },
+    });
+
+    expect(second?.group.standInId).toBe('si-1');
+    expect(second?.group.issueKey).toBeUndefined();
     expect(second?.group.confidence).toBe('likely');
   });
 

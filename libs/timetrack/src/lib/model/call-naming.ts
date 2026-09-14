@@ -1,3 +1,5 @@
+import { NamedTarget } from './attribution';
+
 /**
  * How long a break between two calls still makes the earlier one the thing that ran *before* the
  * later one. Past it a call stands on its own, so a meeting in the morning cannot key an evening
@@ -49,9 +51,15 @@ export type CallFeatures = {
   startMinute: number;
 };
 
-/** What the user answered when a call the calendar never held asked which issue it belongs to. */
+/**
+ * What the user answered when a call the calendar never held asked which work it belongs to.
+ *
+ * The answer may be a stand-in, because a weekly call can be about work Jira holds no ticket for. A
+ * call cannot donate its time, so the target is a {@link NamedTarget} rather than an
+ * `AttributionTarget`.
+ */
 export type CallNaming = CallFeatures & {
-  issueKey: string;
+  target: NamedTarget;
   /** What the call read as when the answer was given, so a list of these reads as calls. */
   label: string;
   createdAt: Date;
@@ -140,13 +148,16 @@ export const matchCallNaming = (options: {
 export const rememberCallNaming = (options: {
   namings: readonly CallNaming[];
   features: CallFeatures;
-  issueKey: string;
+  target: NamedTarget;
   label: string;
   at: Date;
 }): CallNaming[] => {
   const written: CallNaming = {
     ...options.features,
-    issueKey: options.issueKey.trim().toUpperCase(),
+    target:
+      options.target.kind === 'issue'
+        ? { kind: 'issue', issueKey: options.target.issueKey.trim().toUpperCase() }
+        : options.target,
     label: options.label,
     createdAt: options.at,
   };

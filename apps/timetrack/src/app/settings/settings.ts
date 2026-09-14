@@ -9,6 +9,7 @@ import {
   rememberMeetingNaming,
   AttributionRule,
   DEFAULT_TIMETRACK_SETTINGS,
+  NamedTarget,
   ProjectLinkTarget,
   StandIn,
   TIMETRACK_SECRET_KEYS,
@@ -284,7 +285,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * The same, for a call the calendar never held. It is remembered against the call's own features
      * rather than a series, because there is no series to key it on.
      */
-    nameCall: (options: { features: CallFeatures; label: string; issueKey: string }) =>
+    nameCall: (options: { features: CallFeatures; label: string; target: NamedTarget }) =>
       patch({
         callNamings: rememberCallNaming({ namings: settings().callNamings, ...options, at: new Date() }),
       }),

@@ -1,4 +1,5 @@
 import { DEFAULT_GIT_FLOW_CONFIG, GitFlowConfig } from '@ethlete/agent-rules/git-flow';
+import { NamedTarget } from '../model/attribution';
 import { ActivityBlock } from '../model/block';
 import { CallWindow } from '../model/call';
 import { CallNaming } from '../model/call-naming';
@@ -12,9 +13,9 @@ import { issueKeyInText } from './attribute';
 /** Where a meeting's or a call's issue key came from, which is what its confidence is computed from. */
 export type MeetingKeySource = 'event-title' | 'remembered' | 'remembered-call' | 'tempo-history';
 
-/** The issue a call was named from, and the observation that named it. */
-export type NamedIssue = {
-  issueKey: string;
+/** The work a call was named as, and the observation that named it. */
+export type NamedWork = {
+  target: NamedTarget;
   keySource: MeetingKeySource;
   evidence?: Evidence;
   /**
@@ -24,6 +25,12 @@ export type NamedIssue = {
    */
   strength?: 'likely' | 'weak';
 };
+
+/**
+ * A naming that names an issue, which is all a calendar occurrence or a Tempo pattern can name. Only
+ * the user's own remembered answer about a call may name a stand-in instead.
+ */
+export type NamedIssue = NamedWork & { target: { kind: 'issue'; issueKey: string } };
 
 export type MeetingOptions = {
   /** Standing commitments read out of Tempo history, the same ones the attribution ladder uses. */
@@ -224,7 +231,7 @@ export const patternIssueKey = (options: { at: Date; meetings: MeetingOptions })
   if (!pattern) return undefined;
 
   return {
-    issueKey: pattern.issueKey,
+    target: { kind: 'issue', issueKey: pattern.issueKey },
     keySource: 'tempo-history',
     evidence: {
       kind: 'tempo-history',
@@ -244,7 +251,7 @@ export const rememberedIssueKey = (options: {
   if (!naming) return undefined;
 
   return {
-    issueKey: naming.issueKey,
+    target: { kind: 'issue', issueKey: naming.issueKey },
     keySource: 'remembered',
     evidence: {
       kind: 'calendar',
@@ -290,7 +297,7 @@ export const unobservedOccurrences = (options: {
     .map((event) => {
       const key = occurrenceIssueKey({ event, meetings });
 
-      return { event, ...(key ? { issueKey: key.issueKey, keySource: key.keySource } : {}) };
+      return { event, ...(key ? { issueKey: key.target.issueKey, keySource: key.keySource } : {}) };
     });
 };
 
@@ -306,7 +313,7 @@ export const occurrenceIssueKey = (options: {
   const { event, meetings } = options;
   const titleKey = issueKeyInText({ text: event.title, config: meetings.config ?? DEFAULT_GIT_FLOW_CONFIG });
 
-  if (titleKey) return { issueKey: titleKey, keySource: 'event-title' };
+  if (titleKey) return { target: { kind: 'issue', issueKey: titleKey }, keySource: 'event-title' };
 
   return rememberedIssueKey({ event, meetings });
 };

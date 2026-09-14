@@ -9,7 +9,7 @@ import { CALL_LANE_KEY } from './lane';
 import {
   CalendarCandidate,
   MeetingOptions,
-  NamedIssue,
+  NamedWork,
   PickedCandidate,
   candidatesFor,
   occurrenceIssueKey,
@@ -76,7 +76,7 @@ const callEvidence = (options: { call: CallWindow; window: TimeWindow }): Eviden
  * call reaches `likely` at best, and only on the user's own remembered answer: a Tempo pattern names a
  * time of day rather than a call, so it stays `weak` and never syncs unreviewed.
  */
-const confidenceOf = (options: { meeting?: PickedCandidate; key?: NamedIssue }): Confidence => {
+const confidenceOf = (options: { meeting?: PickedCandidate; key?: NamedWork }): Confidence => {
   if (!options.key) return 'weak';
   if (!options.meeting) return options.key.strength ?? 'weak';
 
@@ -88,23 +88,26 @@ const confidenceOf = (options: { meeting?: PickedCandidate; key?: NamedIssue }):
  * weekday, the length and what ran before it. It is what names a call the calendar never held, which
  * has no series to be remembered under. See ADR 0012.
  */
-export const rememberedCallIssueKey = (options: {
+export const rememberedCallNaming = (options: {
   features: CallFeatures;
   meetings: MeetingOptions;
-}): NamedIssue | undefined => {
+}): NamedWork | undefined => {
   const found = matchCallNaming({ features: options.features, namings: options.meetings.callNamings ?? [] });
 
   if (!found) return undefined;
 
+  const { naming } = found;
+  const named = naming.target.kind === 'issue' ? naming.target.issueKey : 'work with no ticket yet';
+
   return {
-    issueKey: found.naming.issueKey,
+    target: naming.target,
     keySource: 'remembered-call',
     strength: found.match,
     evidence: {
       kind: 'call',
-      at: found.naming.createdAt,
-      detail: `you named _${found.naming.label}_ ${found.naming.issueKey}, and this call is like it`,
-      summary: found.naming.label,
+      at: naming.createdAt,
+      detail: `you named _${naming.label}_ ${named}, and this call is like it`,
+      summary: naming.label,
     },
   };
 };
@@ -178,7 +181,7 @@ const matchOne = (options: {
   }
 
   const picked = pickCandidate({ call, window, candidates, blocks: options.titled });
-  const answered = rememberedCallIssueKey({ features, meetings });
+  const answered = rememberedCallNaming({ features, meetings });
   /**
    * An answer of the user's about this call outranks an occurrence the calendar only guessed at. A
    * `certain` pick read the occurrence out of a window title seen during the call, so it stands. A
@@ -201,7 +204,8 @@ const matchOne = (options: {
     candidates,
     features,
     group: {
-      ...(key ? { issueKey: key.issueKey } : {}),
+      ...(key?.target.kind === 'issue' ? { issueKey: key.target.issueKey } : {}),
+      ...(key?.target.kind === 'stand-in' ? { standInId: key.target.standInId } : {}),
       from: window.from,
       to: window.to,
       // The microphone's own span, which is time it observed rather than time it reconstructed. A call

@@ -12,7 +12,7 @@ import {
   SpinnerComponent,
   TAB_IMPORTS,
 } from '@ethlete/components';
-import { callNamingKey } from '@ethlete/timetrack';
+import { callNamingKey, findStandIn } from '@ethlete/timetrack';
 import {
   injectAgentSessionCollector,
   injectAgentSpendBackfill,
@@ -310,7 +310,7 @@ window title, never a file path. A suggestion never syncs on its own.`;
                       <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-small" data-call-naming>
                         <span class="min-w-40 grow truncate">{{ naming.label }}</span>
                         <span class="text-et-surface-muted">{{ naming.when }}</span>
-                        <span class="text-mono text-et-surface-muted">{{ naming.issueKey }}</span>
+                        <span class="text-mono text-et-surface-muted">{{ naming.named }}</span>
                         <button (click)="store.forgetCallNaming(naming.key)" et-button variant="transparent" size="sm">
                           Forget
                         </button>
@@ -552,14 +552,19 @@ export class SettingsViewComponent {
   protected readonly CALL_NAMING_WHY = CALL_NAMING_WHY;
 
   /** The call namings with the key the Forget button needs and a line saying when the call runs. */
-  protected callNamings = computed(() =>
-    this.store.settings().callNamings.map((naming) => ({
+  protected callNamings = computed(() => {
+    const standIns = this.store.settings().standIns;
+
+    return this.store.settings().callNamings.map((naming) => ({
       key: callNamingKey(naming),
       label: naming.label,
-      issueKey: naming.issueKey,
+      named:
+        naming.target.kind === 'issue'
+          ? naming.target.issueKey
+          : (findStandIn({ id: naming.target.standInId, standIns })?.name ?? 'a deleted stand-in'),
       when: `${WEEKDAYS[naming.weekday] ?? ''} ${naming.durationBand} min`.trim(),
-    })),
-  );
+    }));
+  });
   protected readonly SUGGESTIONS_WHY = SUGGESTIONS_WHY;
   protected readonly LOCK_WHY = LOCK_WHY;
   protected readonly LOCK_WAIT_WHY = LOCK_WAIT_WHY;

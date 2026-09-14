@@ -5,17 +5,22 @@ import { ActivityContext, contextKey } from './block';
 export type AttributionScope = 'branch' | 'repo' | 'app';
 
 /**
- * What time in a context is logged against.
- *
- * `donate` is the answer for a project that has no tracker of its own — a shared library, a tooling
- * repository. Its time is real work, and it is done *for* whatever else was open that day, so it joins
- * the neighbouring work instead of becoming a row nobody can file. See `donateBlocks`.
+ * What a naming points at, wherever one is given: an attribution rule, a remembered call.
  *
  * `stand-in` names work Jira does not hold yet. It books nothing, and one rewrite of every rule that
  * carries it turns the whole set into `issue`. See `StandIn` and ADR 0021.
  */
-export type AttributionTarget =
-  { kind: 'issue'; issueKey: string } | { kind: 'donate' } | { kind: 'stand-in'; standInId: string };
+export type NamedTarget = { kind: 'issue'; issueKey: string } | { kind: 'stand-in'; standInId: string };
+
+/**
+ * What time in a context is logged against.
+ *
+ * `donate` is the answer for a project that has no tracker of its own — a shared library, a tooling
+ * repository. Its time is real work, and it is done *for* whatever else was open that day, so it joins
+ * the neighbouring work instead of becoming a row nobody can file. See `donateBlocks`. It is a rule's
+ * answer alone: a call is a fixed stretch of the day and has no neighbouring work to join.
+ */
+export type AttributionTarget = NamedTarget | { kind: 'donate' };
 
 /**
  * Who wrote a naming down. An agent may prepare one, and the review shows it differently, so a day

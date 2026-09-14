@@ -350,6 +350,27 @@ describe('parseTimetrackSettings', () => {
     expect(settings.favoriteProjects).toEqual([]);
   });
 
+  it('reads a call naming a document wrote before a call could name a stand-in', () => {
+    const settings = parseTimetrackSettings({
+      callNamings: [{ appId: 'com.hnc.Discord', weekday: 1, durationBand: '15-30', issueKey: 'abc-1', label: 'Room' }],
+    });
+
+    expect(settings.callNamings[0]?.target).toEqual({ kind: 'issue', issueKey: 'ABC-1' });
+  });
+
+  it('reads a call naming that names a stand-in, and drops one naming nothing', () => {
+    const settings = parseTimetrackSettings({
+      callNamings: [
+        { appId: 'com.hnc.Discord', durationBand: '15-30', target: { kind: 'stand-in', standInId: 'si-1' } },
+        { appId: 'com.hnc.Discord', durationBand: '15-30', target: { kind: 'stand-in' } },
+        { appId: '', durationBand: '15-30', target: { kind: 'issue', issueKey: 'ABC-1' } },
+      ],
+    });
+
+    expect(settings.callNamings).toHaveLength(1);
+    expect(settings.callNamings[0]?.target).toEqual({ kind: 'stand-in', standInId: 'si-1' });
+  });
+
   it('keeps the shipped rules unless the document says otherwise', () => {
     expect(parseTimetrackSettings({}).keepDefaultExclusionRules).toBe(true);
     expect(parseTimetrackSettings({ keepDefaultExclusionRules: false }).keepDefaultExclusionRules).toBe(false);

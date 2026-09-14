@@ -157,7 +157,7 @@ describe('occurrenceIssueKey', () => {
 
   it('takes the issue key out of the event title', () => {
     expect(named(meeting({ title: 'ABC-12 refinement' }))).toMatchObject({
-      issueKey: 'ABC-12',
+      target: { kind: 'issue', issueKey: 'ABC-12' },
       keySource: 'event-title',
     });
   });
@@ -168,7 +168,7 @@ describe('occurrenceIssueKey', () => {
     ];
 
     expect(named(meeting({ recurringEventId: 'series-1' }), { namings })).toMatchObject({
-      issueKey: 'ABC-4',
+      target: { kind: 'issue', issueKey: 'ABC-4' },
       keySource: 'remembered',
     });
   });
@@ -185,7 +185,7 @@ describe('occurrenceIssueKey', () => {
 describe('patternIssueKey', () => {
   it('names a call from the history of the same hour on earlier weeks', () => {
     expect(patternIssueKey({ at: at(10), meetings: { patterns: PATTERNS } })).toMatchObject({
-      issueKey: 'ABC-9',
+      target: { kind: 'issue', issueKey: 'ABC-9' },
       keySource: 'tempo-history',
     });
   });

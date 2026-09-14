@@ -704,7 +704,12 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
       const call = callBehindRow({ row, calls });
 
-      if (call) settings.nameCall({ features: call.features, label: callLabel(call.call), issueKey });
+      if (call)
+        settings.nameCall({
+          features: call.features,
+          label: callLabel(call.call),
+          target: { kind: 'issue', issueKey },
+        });
     },
     setDescription: (row: ReviewedRow, description: string) =>
       apply(setRowDescription({ edits: edits(), row, description })),

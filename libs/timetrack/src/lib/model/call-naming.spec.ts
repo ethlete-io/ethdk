@@ -10,6 +10,8 @@ import {
 
 const at = (hour: number, minute = 0) => new Date(2026, 7, 10, hour, minute);
 
+const issueKeyOf = (naming?: CallNaming) => (naming?.target.kind === 'issue' ? naming.target.issueKey : undefined);
+
 const features = (overrides: Partial<ReturnType<typeof callFeaturesOf>> = {}) => ({
   ...callFeaturesOf({ appId: 'com.hnc.Discord', from: at(9, 40), to: at(10, 10), after: 'series-mome' }),
   ...overrides,
@@ -17,7 +19,7 @@ const features = (overrides: Partial<ReturnType<typeof callFeaturesOf>> = {}) =>
 
 const naming = (overrides: Partial<CallNaming> = {}): CallNaming => ({
   ...features(),
-  issueKey: 'ABC-1',
+  target: { kind: 'issue', issueKey: 'ABC-1' },
   label: 'Open Room #1',
   createdAt: at(9),
   ...overrides,
@@ -50,7 +52,7 @@ describe('matchCallNaming', () => {
   it('names a call that repeats after the same meeting', () => {
     const found = matchCallNaming({ features: features(), namings: [naming()] });
 
-    expect(found?.naming.issueKey).toBe('ABC-1');
+    expect(issueKeyOf(found?.naming)).toBe('ABC-1');
     expect(found?.match).toBe('likely');
   });
 
@@ -58,7 +60,7 @@ describe('matchCallNaming', () => {
     const longer = features({ ...callFeaturesOf({ appId: 'com.hnc.Discord', from: at(9, 40), to: at(11) }) });
     const found = matchCallNaming({ features: { ...longer, after: 'series-mome' }, namings: [naming()] });
 
-    expect(found?.naming.issueKey).toBe('ABC-1');
+    expect(issueKeyOf(found?.naming)).toBe('ABC-1');
     expect(found?.match).toBe('likely');
   });
 
@@ -81,10 +83,10 @@ describe('matchCallNaming', () => {
   });
 
   it('names a call that always stands alone from the weekday, the length and the clock', () => {
-    const standing = naming({ after: undefined, issueKey: 'ABC-3' });
+    const standing = naming({ after: undefined, target: { kind: 'issue', issueKey: 'ABC-3' } });
     const found = matchCallNaming({ features: features({ after: undefined }), namings: [standing] });
 
-    expect(found?.naming.issueKey).toBe('ABC-3');
+    expect(issueKeyOf(found?.naming)).toBe('ABC-3');
     expect(found?.match).toBe('likely');
   });
 
@@ -95,27 +97,35 @@ describe('matchCallNaming', () => {
   });
 
   it('separates two records that score the same by the clock', () => {
-    const morning = naming({ issueKey: 'ABC-1', startMinute: 9 * 60 + 45, durationBand: '120+' });
-    const evening = naming({ issueKey: 'ABC-2', startMinute: 10 * 60 + 5, durationBand: '120+' });
+    const morning = naming({
+      target: { kind: 'issue', issueKey: 'ABC-1' },
+      startMinute: 9 * 60 + 45,
+      durationBand: '120+',
+    });
+    const evening = naming({
+      target: { kind: 'issue', issueKey: 'ABC-2' },
+      startMinute: 10 * 60 + 5,
+      durationBand: '120+',
+    });
     const found = matchCallNaming({ features: features({ startMinute: 9 * 60 + 40 }), namings: [evening, morning] });
 
-    expect(found?.naming.issueKey).toBe('ABC-1');
+    expect(issueKeyOf(found?.naming)).toBe('ABC-1');
   });
 });
 
 describe('rememberCallNaming', () => {
   it('replaces the answer for the same features and keeps the rest', () => {
-    const other = naming({ appId: 'com.google.chrome', issueKey: 'ABC-9' });
+    const other = naming({ appId: 'com.google.chrome', target: { kind: 'issue', issueKey: 'ABC-9' } });
     const written = rememberCallNaming({
       namings: [other, naming()],
       features: features(),
-      issueKey: ' abc-2 ',
+      target: { kind: 'issue', issueKey: ' abc-2 ' },
       label: 'Open Room #1',
       at: at(12),
     });
 
     expect(written).toHaveLength(2);
-    expect(written.find((entry) => callNamingKey(entry) === callNamingKey(features()))?.issueKey).toBe('ABC-2');
+    expect(issueKeyOf(written.find((entry) => callNamingKey(entry) === callNamingKey(features())))).toBe('ABC-2');
     expect(written).toContain(other);
   });
 });

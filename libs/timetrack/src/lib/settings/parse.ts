@@ -1,5 +1,5 @@
 import { ProjectLinkTarget, TimetrackProjectLink } from '../model/project-link';
-import { AttributionRule, AttributionTarget, NamingAuthor } from '../model/attribution';
+import { AttributionRule, AttributionTarget, NamedTarget, NamingAuthor } from '../model/attribution';
 import { StandIn } from '../model/stand-in';
 import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
@@ -109,10 +109,14 @@ const asAttributionRule = (value: unknown, index: number): AttributionRule | nul
   };
 };
 
-const asAttributionTarget = (value: unknown): AttributionTarget | null => {
-  const raw = asRecord(value);
+const asIssueTarget = (value: unknown): NamedTarget | null => {
+  const issueKey = asText(value).toUpperCase();
 
-  if (raw['kind'] === 'donate') return { kind: 'donate' };
+  return issueKey ? { kind: 'issue', issueKey } : null;
+};
+
+const asNamedTarget = (value: unknown): NamedTarget | null => {
+  const raw = asRecord(value);
 
   if (raw['kind'] === 'stand-in') {
     const standInId = asText(raw['standInId']);
@@ -120,10 +124,11 @@ const asAttributionTarget = (value: unknown): AttributionTarget | null => {
     return standInId ? { kind: 'stand-in', standInId } : null;
   }
 
-  const issueKey = asText(raw['issueKey']);
-
-  return issueKey ? { kind: 'issue', issueKey } : null;
+  return asIssueTarget(raw['issueKey']);
 };
+
+const asAttributionTarget = (value: unknown): AttributionTarget | null =>
+  asRecord(value)['kind'] === 'donate' ? { kind: 'donate' } : asNamedTarget(value);
 
 /**
  * A stand-in with no name is dropped: the name is the whole of what it is, and a band labelled with
@@ -218,15 +223,18 @@ const asMeetingNamings = (value: unknown) =>
   Array.isArray(value) ? value.flatMap((entry) => asMeetingNaming(entry) ?? []) : [];
 
 /**
- * A call naming with no application or no issue is dropped: the application is the gate
+ * A call naming with no application or no target is dropped: the application is the gate
  * `matchCallNaming` reads first, and a record without one would name a call in any product at all.
+ *
+ * A bare `issueKey` is read as an issue target. Every record written before a call could name a
+ * stand-in has that shape, and the store is the user's own answers rather than a cache.
  */
 const asCallNaming = (value: unknown): CallNaming | null => {
   const raw = asRecord(value);
   const appId = asText(raw['appId']).toLowerCase();
-  const issueKey = asText(raw['issueKey']).toUpperCase();
+  const target = raw['target'] === undefined ? asIssueTarget(raw['issueKey']) : asNamedTarget(raw['target']);
 
-  if (!appId || !issueKey) return null;
+  if (!appId || !target) return null;
 
   const createdAt = new Date(typeof raw['createdAt'] === 'number' ? raw['createdAt'] : asText(raw['createdAt']));
   const after = asText(raw['after']);
@@ -237,7 +245,7 @@ const asCallNaming = (value: unknown): CallNaming | null => {
     durationBand: asText(raw['durationBand']),
     ...(after ? { after } : {}),
     startMinute: asWholeNumber(raw['startMinute']) ?? 0,
-    issueKey,
+    target,
     label: asText(raw['label']),
     createdAt: Number.isNaN(createdAt.getTime()) ? new Date(0) : createdAt,
   };
