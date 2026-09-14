@@ -138,11 +138,15 @@ Reported by Tom, 2026-09-14. He pressed Reset on the `fifagg-frontend` row, then
 both ends in turn. **Dragging the end down puts the start back where it was, and dragging the start up
 puts the end back.** Only the end of the most recent drag survives.
 
-The likely cause is in `setRowRange` (`libs/timetrack/src/lib/review/edits.ts`) and `trackPinnedRows`
-(`review/review-day.ts`). A drag pins only the end it moved and leaves the other `tracksFrom` or
-`tracksTo`, so the free end is re-read off the engine's own row on the next pass — which is exactly
-the end the previous drag had moved. A second drag has to pin what the first one pinned as well, so
-the flags have to accumulate rather than be rewritten per drag.
+The cause is confirmed, 2026-09-14: `setRowRange` (`libs/timetrack/src/lib/review/edits.ts:435`)
+writes `tracksFrom` and `tracksTo` fresh on every drag, so the second drag clears the pin the first
+one set and `trackPinnedRows` (`review/review-day.ts:107`) re-reads that end off the engine's own
+row. The flags have to accumulate rather than be rewritten per drag.
+
+**Start here: `.claude/handoffs/timetrack-day-reads-honestly.md`.** It holds the candidate one-line
+fix, the test to write first, and the gotchas that cost the last session an hour — a reused e2e dev
+server on `:4211` that serves a stale build and hides Angular template type errors, which
+`tsc --noEmit` does not catch.
 
 Whatever the fix, it must keep the behaviour `0c94914ac` shipped: a row whose start was dragged still
 follows a day that is still being worked. A test has to fail without the fix — drag one end, then the
