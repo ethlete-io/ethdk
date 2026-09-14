@@ -244,6 +244,57 @@ Two things the reading also has to answer for them:
   `title-pattern` kind, but it denies. Marking a minute rather than dropping it is a different
   mechanism with the same matcher.
 
+### A browser tab that is the whole record of the work, 2026-09-14
+
+Measured on this machine between 09:21 and 10:24, over 63 minutes of focus:
+
+```
+google-chrome     39m
+code               6m
+com.slack.Slack    2m
+timetrack          2m
+discord            1m
+```
+
+One Chrome title holds 34 of the 39 minutes: `Timetrack app UI mockups`. It is a Claude
+conversation in the browser, and Tom designs this app's UI in it. The work is ET-772, and the
+browser is the only thing on the machine that saw it.
+
+The day proposes no row for it, and asks no question about it either.
+
+- Chrome is on neither `DEFAULT_NO_WORK_CONTEXT_APPS` nor `holdsWorkApps`, so `dropNoWorkContext`
+  drops any Chrome block over `DEFAULT_MAX_GLANCE_MS` — two minutes. It runs before `attribute`
+  (`build-rows.ts:138-139`), so no rung of the ladder ever reads the block.
+- It reaches no naming surface. `unnamedContexts` folds the groups `propose` left unattributed, and
+  those are built from what survived the drop. The stretch shows up in `unnamedFocus` in the Sources
+  panel, which measures and does not name.
+- It is not misbooked either, and that is the length rather than a rule about it. `fillableGap` needs
+  an `idle-start` inside the gap, and somebody typing for 34 minutes produces none; 34 minutes is
+  also longer than `maxMergeGapMs`, so a merge across it is refused. Twelve minutes of the same work
+  would have been swallowed by the merge and booked to whatever checkout sat beside it.
+- No other collector saw it. Claude in a browser writes no session file, so `agent-session`,
+  `agent-prompt` and `agent-usage` hold nothing for it and `StreamDay.spend` counts nothing. The day
+  holds one commit and it is not this.
+
+**Neither mechanism that exists reaches it.** `holdsWorkApps` for `google-chrome` keeps the block and
+gives it a lane, but a rule over it is then app-scoped: `scopeOf` returns `app` from an `appId` alone,
+so one rule names every browser minute of every day for one issue. The third reading had seventeen
+Chrome titles behind 43 minutes and they were four different things. The title rung does not help
+either — `issueKeyInText` needs a configured prefix in the text, and `Timetrack app UI mockups` holds
+no key.
+
+**Rung 2 is not the answer and neither is a browser reporter.** There is no port and no dev server. A
+reporter reading the URL reads a conversation id. The window title is what carries the meaning here,
+and it already reaches the block as `window-title` evidence.
+
+**What it asks for is the judgement per title this plan left open, with a target instead of a
+verdict**: a title pattern that names an issue, beside one that says "no work". That is a third
+candidate for the fourth reading and it was not on the list. Do not build it before that reading. One
+day is one day, and the browser held this morning because the task was design.
+
+**What books the time today**: a timer on ET-772, which `TimerRun` carries an `issueKey` for, or a
+worklog row written by hand. Both are the user asserting the time rather than the day observing it.
+
 ## The platform seam
 
 The window source answers one new question: **can this platform name the process of the focused
@@ -462,5 +513,6 @@ needs `tauri-driver` and the built host, which the suite does not drive — defe
 - **The order of the rungs.** Step 0's number decides it. Nothing beyond step 0 starts before that
   number exists.
 - **`repoStickinessMs`.** Revisited with the number in hand, and never in the same change.
-- **Whether a browser reporter is ever needed.** Rung 2 answers the dev-server case, which is the
-  only case measured so far.
+- **Whether a browser reporter is ever needed.** Rung 2 answers the dev-server case. The
+  2026-09-14 reading adds a second case, a browser tab that is the whole record of the work, and a
+  reporter does not answer that one: the title carries the meaning, not the URL.
