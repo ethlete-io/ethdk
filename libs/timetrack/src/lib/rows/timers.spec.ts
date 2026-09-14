@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { ClosedTimerRun } from '../model/timer';
-import { matchTimerRuns } from './timers';
+import { TIMER_LANE_KEY } from './lane';
+import { matchTimerRuns, timerProposesRow } from './timers';
 
 const at = (hour: number, minute = 0) => new Date(2026, 7, 11, hour, minute);
 
@@ -60,5 +61,21 @@ describe('matchTimerRuns', () => {
     });
 
     expect(matches.map((match) => match.run.id)).toEqual(['early', 'late']);
+  });
+
+  it('draws a run in the timer lane, so it never stands among the work nothing placed', () => {
+    const [match] = matchTimerRuns({ runs: [run({ from: at(14), to: at(15) })], blocks: [] });
+
+    expect(match?.group.laneKey).toBe(TIMER_LANE_KEY);
+  });
+});
+
+describe('timerProposesRow', () => {
+  it('refuses a run of seconds, which is the press nobody meant', () => {
+    expect(timerProposesRow(run({ from: at(10, 40), to: new Date(+at(10, 40) + 1855) }))).toBe(false);
+  });
+
+  it('takes a run of a minute', () => {
+    expect(timerProposesRow(run({ from: at(10, 40), to: at(10, 41) }))).toBe(true);
   });
 });

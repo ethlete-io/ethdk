@@ -1,7 +1,7 @@
 import { streamKeyLabel, streamKeyRepoPath } from '../model/block';
 import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { WorklogProposal } from '../model/proposal';
-import { CALL_LANE_KEY, laneKeyOf } from './lane';
+import { CALL_LANE_KEY, TIMER_LANE_KEY, laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
 
 export type RoundOptions = {
@@ -127,8 +127,11 @@ const isBookable = (group: WorkGroup) => {
 
   const lane = group.laneKey ?? laneKeyOf(group.blocks);
 
-  return lane === CALL_LANE_KEY || (!!lane && !!streamKeyRepoPath(lane));
+  return lane === CALL_LANE_KEY || lane === TIMER_LANE_KEY || (!!lane && !!streamKeyRepoPath(lane));
 };
+
+/** What a lane with no checkout behind it reads as in a warning. */
+const LANE_LABELS: Record<string, string> = { [CALL_LANE_KEY]: 'calls', [TIMER_LANE_KEY]: 'timed runs' };
 
 /**
  * Which lane each band of unnamed work sits in, longest first, so the reviewer reads where to look
@@ -140,7 +143,7 @@ const laneDetail = (options: { groups: readonly WorkGroup[]; totalMs: number }) 
 
   for (const group of options.groups) {
     const lane = group.laneKey ?? laneKeyOf(group.blocks);
-    const label = !lane ? 'other work' : lane === CALL_LANE_KEY ? 'calls' : streamKeyLabel(lane);
+    const label = !lane ? 'other work' : (LANE_LABELS[lane] ?? streamKeyLabel(lane));
 
     byLane.set(label, (byLane.get(label) ?? 0) + group.observedMs);
   }

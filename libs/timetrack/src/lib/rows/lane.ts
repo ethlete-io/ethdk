@@ -33,6 +33,15 @@ export const laneKeyOf = (blocks: readonly ActivityBlock[]) => {
 export const CALL_LANE_KEY = 'lane:call';
 
 /**
+ * The lane every timed run is drawn in.
+ *
+ * A run carries no blocks either, so `laneKeyOf` reads no checkout out of it. Without a lane of its
+ * own it falls into the day screen's `lane:none` beside the work nothing could place, and a run is the
+ * opposite of that: the user started it on purpose.
+ */
+export const TIMER_LANE_KEY = 'lane:timer';
+
+/**
  * The lane key of a row read back out of the store, with the lane calls and meetings used to be split
  * into folded into {@link CALL_LANE_KEY}. A row pinned before that still names the old lane, and
  * without this it draws a lane of its own on the day screen.

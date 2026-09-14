@@ -1,6 +1,7 @@
 import { ActivityBlock } from '../model/block';
 import { Evidence } from '../model/evidence';
 import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
+import { TIMER_LANE_KEY } from './lane';
 import { WorkGroup } from './merge';
 import { overlapMs } from './overlap';
 
@@ -14,6 +15,18 @@ export type TimerMatch = {
   /** The reviewable row. Carries no `issueKey` until the user names one, which leaves it unattributed. */
   group: WorkGroup;
 };
+
+/**
+ * A run shorter than this proposes no row. A start and a stop within seconds of each other recorded
+ * no work, and the rounding would turn it into a whole booked increment.
+ *
+ * The run itself is kept: it still displaces the reconstruction underneath it, it is still counted,
+ * and the review still lists it, so a reviewer who meant it can see it and say so.
+ */
+export const MIN_PROPOSED_TIMER_MS = 60_000;
+
+/** Whether a run is long enough to propose a row — see {@link MIN_PROPOSED_TIMER_MS}. */
+export const timerProposesRow = (run: ClosedTimerRun) => timerRunDurationMs(run) >= MIN_PROPOSED_TIMER_MS;
 
 const pad = (value: number) => String(value).padStart(2, '0');
 
@@ -54,6 +67,7 @@ export const matchTimerRuns = (options: {
           observedMs: timerRunDurationMs(run),
           confidence: 'certain' as const,
           evidence: [timerEvidence(run)],
+          laneKey: TIMER_LANE_KEY,
           blocks: [],
         },
       };

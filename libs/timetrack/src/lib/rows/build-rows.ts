@@ -20,7 +20,7 @@ import { clipBlocks } from './overlap';
 import { PrivateTime, privateTime } from './project-link';
 import { UnnamedProposal, propose } from './propose';
 import { CheckDayOptions, RoundOptions } from './round';
-import { TimerMatch, matchTimerRuns } from './timers';
+import { TimerMatch, matchTimerRuns, timerProposesRow } from './timers';
 
 export type BuildRowsOptions = {
   config?: GitFlowConfig;
@@ -206,7 +206,7 @@ export const buildRows = (
     groups: [
       ...mergeBlocks({ blocks: filled.blocks, barriers: options.breaks, options: options.merge }),
       ...calls.map((call) => call.group),
-      ...timers.map((timer) => timer.group),
+      ...timers.filter((timer) => timerProposesRow(timer.run)).map((timer) => timer.group),
     ],
     at: attendedAt({
       events: options.events,

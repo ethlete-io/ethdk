@@ -1,5 +1,12 @@
 import { SchedulerTimeGridBlock } from '@ethlete/components';
-import { BehindStretch, BreakWindow, CALL_LANE_KEY, ReviewedRow, streamKeyLabel } from '@ethlete/timetrack';
+import {
+  BehindStretch,
+  BreakWindow,
+  CALL_LANE_KEY,
+  ReviewedRow,
+  TIMER_LANE_KEY,
+  streamKeyLabel,
+} from '@ethlete/timetrack';
 import { TimelineEntry, rowEntryOf } from './row-edit/row-appointment';
 
 /** The lane a row with no checkout and no application behind it falls into. */
@@ -16,10 +23,11 @@ const BREAK_LANE_LABEL = 'Break';
  * They trail rather than sort by their first band, because their position is what says they are not
  * one of the day's checkouts.
  */
-const TRAILING_LANES = [CALL_LANE_KEY, NO_LANE_KEY];
+const TRAILING_LANES = [CALL_LANE_KEY, TIMER_LANE_KEY, NO_LANE_KEY];
 
 const TRAILING_LABELS: Record<string, string> = {
   [CALL_LANE_KEY]: 'Calls & meetings',
+  [TIMER_LANE_KEY]: 'Timed by hand',
   [NO_LANE_KEY]: 'No checkout',
 };
 

@@ -5,7 +5,7 @@ import { CallWindow } from '../model/call';
 import { CalendarOccurrenceEvent } from '../model/event';
 import { StandIn } from '../model/stand-in';
 import { buildRows } from './build-rows';
-import { CALL_LANE_KEY } from './lane';
+import { CALL_LANE_KEY, TIMER_LANE_KEY } from './lane';
 import { checkDay } from './round';
 
 const at = (hour: number, minute = 0) => new Date(2026, 8, 10, hour, minute);
@@ -308,5 +308,29 @@ describe('buildRows on a day that is still running', () => {
     expect(covered.slice(1).map((span, index) => span.from.getTime() - (covered[index]?.to.getTime() ?? 0))).toEqual(
       covered.slice(1).map(() => 0),
     );
+  });
+});
+
+describe('buildRows with a timed run', () => {
+  it('proposes no row for a run of seconds, which would otherwise book a whole increment', () => {
+    const rows = buildRows({
+      blocks: [],
+      events: [],
+      timerRuns: [{ id: 'run', from: at(10, 40), to: new Date(+at(10, 40) + 1855) }],
+    });
+
+    expect(rows.timers).toHaveLength(1);
+    expect(rows.unnamed).toEqual([]);
+    expect(rows.proposals).toEqual([]);
+  });
+
+  it('draws a real run in the timer lane rather than among the work nothing placed', () => {
+    const rows = buildRows({
+      blocks: [],
+      events: [],
+      timerRuns: [{ id: 'run', from: at(10), to: at(11) }],
+    });
+
+    expect(rows.unnamed.map((row) => row.laneKey)).toEqual([TIMER_LANE_KEY]);
   });
 });
