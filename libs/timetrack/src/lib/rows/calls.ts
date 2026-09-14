@@ -26,7 +26,10 @@ export type CallMatch = {
    * once as whatever the user was typing during it — so a reviewer has to see it.
    */
   overlapMs: number;
-  /** The meeting this call was, when one of the day's occurrences could be picked for it. */
+  /**
+   * The meeting this call was, when one of the day's occurrences could be picked for it. An answer the
+   * user already gave for this call clears it, unless the call's own windows named the occurrence.
+   */
   meeting?: PickedCandidate;
   /**
    * Every occurrence that overlaps the call, whether one was picked or not. It is what the review
@@ -149,15 +152,23 @@ const matchOne = (options: {
 }): CallMatch => {
   const { call, window, blocks, meetings } = options;
   const candidates = candidatesFor({ occurrences: options.occurrences, window });
-  const meeting = pickCandidate({ call, window, candidates, blocks: options.titled });
+  const picked = pickCandidate({ call, window, candidates, blocks: options.titled });
   const features = callFeaturesOf({ appId: call.appId, from: window.from, to: window.to, after: options.after });
+  const answered = rememberedCallIssueKey({ features, meetings });
+  /**
+   * An answer of the user's about this call outranks an occurrence the calendar only guessed at. A
+   * `certain` pick read the occurrence out of a window title seen during the call, so it stands. A
+   * `likely` pick is whatever single meeting was accepted over these minutes, and a call that starts
+   * when the meeting before it ends drifts into one week by week. See ADR 0012.
+   */
+  const meeting = picked && (picked.match === 'certain' || answered?.strength !== 'likely') ? picked : undefined;
   /**
    * The user's own answer is read before the history: a remembered naming is a statement about this
    * call, and a pattern is a statement about this time of day. See ADR 0012.
    */
   const key = meeting
     ? occurrenceIssueKey({ event: meeting.event, meetings })
-    : (rememberedCallIssueKey({ features, meetings }) ?? patternIssueKey({ at: window.from, meetings }));
+    : (answered ?? patternIssueKey({ at: window.from, meetings }));
 
   return {
     call,

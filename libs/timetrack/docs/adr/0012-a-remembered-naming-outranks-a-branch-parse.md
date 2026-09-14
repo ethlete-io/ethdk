@@ -42,6 +42,12 @@ still loses to the `certain` a branch parse gives.
 - A remembered naming ages the same way a hand-written rule ages. `BD-2049` is called "Intern:
   Meeting 2025" and it is still current in 2026, so the app warns when the ticket a record names
   stops being touched. A record never expires on a date.
+- **A `likely` calendar pick loses to an answer of the user's about this call.** `matchOne` clears
+  the picked occurrence when `matchCallNaming` returns `likely`, which keeps the row in the call lane
+  and keeps the answer readable. A `certain` pick still wins, because a window title seen during the
+  call named the occurrence outright, and that is an observation rather than a guess. Without this,
+  the call with no fixed time books to whatever single meeting happened to be accepted over it that
+  week, and the answer given for the call is never read.
 - When two rungs disagree, the band shows both and asks. It does not pick the higher one silently.
 - A model that invented a pattern from three occurrences would sit at rung 2 and outrank a fact.
   That is why the model proposes and the user accepts, and never the other way round.

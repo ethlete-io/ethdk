@@ -4,6 +4,7 @@ import { CallWindow } from '../model/call';
 import { CalendarOccurrenceEvent } from '../model/event';
 import { TimeWindow } from '../model/time-window';
 import { CallNaming, callFeaturesOf } from '../model/call-naming';
+import { MeetingNaming } from '../model/meeting-naming';
 import { CallMatch, callBehindRow, dropCallWindows, matchCalls, meetingBehindRow } from './calls';
 import { CALL_LANE_KEY, MEETING_LANE_KEY } from './lane';
 import { MeetingOptions } from './meetings';
@@ -310,6 +311,61 @@ describe('a call the calendar never held', () => {
     });
 
     expect(second?.group.issueKey).toBeUndefined();
+  });
+
+  const overlapping = occurrence({
+    at: at(10, 30),
+    until: at(11),
+    title: 'Sprint Review',
+    occurrenceId: 'occ-sprint-review',
+    recurringEventId: 'sprint-review',
+  });
+
+  const sprintNaming: MeetingNaming = {
+    seriesKey: 'sprint-review',
+    issueKey: 'XYZ-1',
+    title: 'Sprint Review',
+    createdAt: at(9),
+  };
+
+  const titled = (detail: string): ActivityBlock => ({
+    from: room.from,
+    to: room.to,
+    context: { appId: room.appId },
+    evidence: [{ kind: 'window-title', at: room.from, detail }],
+  });
+
+  it('keeps the user answer when one accepted meeting merely overlaps the call', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      occurrences: [meetingOccurrence, overlapping],
+      meetings: { callNamings: [naming()], namings: [sprintNaming] },
+    });
+
+    expect(second?.group.issueKey).toBe('ABC-7');
+    expect(second?.group.laneKey).toBe(CALL_LANE_KEY);
+  });
+
+  it('still offers the meeting the call overlapped, so the review can correct the answer', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      occurrences: [meetingOccurrence, overlapping],
+      meetings: { callNamings: [naming()], namings: [sprintNaming] },
+    });
+
+    expect(second?.candidates.map((candidate) => candidate.event.occurrenceId)).toEqual(['occ-sprint-review']);
+  });
+
+  it('lets a window title that names the meeting outrank the user answer', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      blocks: [titled('Sprint Review — Discord')],
+      occurrences: [meetingOccurrence, overlapping],
+      meetings: { callNamings: [naming()], namings: [sprintNaming] },
+    });
+
+    expect(second?.group.issueKey).toBe('XYZ-1');
+    expect(second?.group.laneKey).toBe(MEETING_LANE_KEY);
   });
 
   it('carries the features naming its row would remember', () => {
