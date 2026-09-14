@@ -74,7 +74,7 @@ Tom decided all seven on 2026-09-10:
 | M8  | What a day cost                 | 5, 9   | A real day shows a cost Tom recognises, and names what it missed.  |
 | M9  | The week, and the price of work | 6, 10  | Time and cost per issue and per project, over a week.              |
 | M10 | A second person installs it     | 11     | A colleague books a day from a build, with no help from this repo. |
-| M11 | The noisy tail                  | 12     | Codex logs and the browser reporter.                               |
+| M11 | The noisy tail                  | 12     | Codex logs, the browser reporter and a Figma plugin.               |
 
 Reordered on 2026-09-10, after Tom described the product he wants. His words: "thats where you come
 in and thats why we should prioritize this part now since everthing else is nice to have. if the
@@ -379,12 +379,38 @@ never pairs with Tom's, and the install must make that impossible rather than me
 
 ## M11: The noisy tail
 
-**Slice 12.** Phase 3 of `plans/timetrack.md`: Codex session logs, and the browser reporter over the
-ingest seam. Gmail notification parsing was dropped on 2026-09-14 - `glab` and `gh` read the same
-events from the forge, so the mails carry nothing new.
+**Slice 12.** Phase 3 of `plans/timetrack.md`, every entry over the ingest seam:
+
+- **Codex session logs.**
+- **The browser reporter.** Whether it is ever needed is still open - see "What this plan does not
+  decide" in [`name-the-window.md`](./name-the-window.md).
+- **A Figma plugin**, added on 2026-09-14. Tom's words: "a figma plugin that reports to timetrack so
+  designers also get some detailed tracking."
+
+Gmail notification parsing was dropped on 2026-09-14 - `glab` and `gh` read the same events from the
+forge, so the mails carry nothing new.
 
 Every entry here is a source, and every source is cheap once the pipeline is trusted. That is why
 they sit last. None of them is a reason to distrust a number, and none of them blocks a booking.
+
+### The Figma plugin is not one more reporter
+
+The other two report for someone who writes code, and the whole naming pipeline reads a checkout.
+This one reports for someone who writes none, so three things in it have no precedent here:
+
+- **It cannot pair the way a reporter pairs.** Every reporter reads the `0600` discovery file at each
+  post, because the token is new at every app start. A Figma plugin reads no local file. The token
+  has to reach it another way - a pairing code shown in the app and held in `figma.clientStorage` is
+  the obvious shape. Whether a plugin may reach the host's loopback port at all has to be measured
+  before this is planned, not assumed.
+- **What names the time is a file, not a checkout.** A Figma file key would need a link table beside
+  `projectLinks`, and the private-project rule has to hold on it the same way.
+- **Figma already reaches the day as a window title**, so the plugin has to add what the title cannot:
+  which file, which page, and whether the person edited or only looked.
+
+To decide before it is planned: whether it ships before M10, given that a designer is a second person
+and M10 is what makes a second person possible; and whether a file-key link is a fourth rung or a
+source of its own.
 
 ## What runs beside every milestone
 
