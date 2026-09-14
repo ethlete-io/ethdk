@@ -1,5 +1,5 @@
 import { TimeWindow } from '../model/time-window';
-import { streamKey } from '../model/block';
+import { ActivityBlock, streamKey } from '../model/block';
 import { projectKeyOf } from '../ticket/project';
 import { AttributedBlock } from './attribute';
 import { clipBlocks } from './overlap';
@@ -21,6 +21,78 @@ export type CutOptions = {
 const windowOf = (entry: AttributedBlock): TimeWindow => ({ from: entry.block.from, to: entry.block.to });
 
 /**
+ * A stretch a background band lost to a foreground band.
+ *
+ * The minutes are real work and another band already claims them, so they are neither booked nor
+ * waiting to be named. They are reported rather than dropped because the day screen draws one lane per
+ * checkout: without them the lane holds a hole nothing on the screen explains.
+ *
+ * `issueKey` is the key the band would have booked, and it sits here rather than on a row because a
+ * row's `issueKey` is what writes time to Tempo.
+ */
+export type BehindStretch = {
+  from: Date;
+  to: Date;
+  issueKey: string;
+  /** The checkout the band ran in, which is the lane it is drawn in. */
+  laneKey: string;
+};
+
+export type CutResult = {
+  blocks: AttributedBlock[];
+  behind: BehindStretch[];
+};
+
+/** The stretches of a block that the pieces kept from it no longer cover, in order. */
+const holesOf = (options: { block: ActivityBlock; kept: readonly ActivityBlock[] }): TimeWindow[] => {
+  const end = options.block.to.getTime();
+  const ordered = [...options.kept].sort((a, b) => a.from.getTime() - b.from.getTime());
+  const holes: TimeWindow[] = [];
+
+  let at = options.block.from.getTime();
+
+  for (const piece of ordered) {
+    if (piece.from.getTime() > at) holes.push({ from: new Date(at), to: piece.from });
+
+    at = Math.max(at, piece.to.getTime());
+  }
+
+  if (at < end) holes.push({ from: new Date(at), to: new Date(end) });
+
+  return holes;
+};
+
+/**
+ * Consecutive stretches of one lane and one key as one, so an afternoon behind another checkout is one
+ * band rather than one per block the builder happened to cut the presence into.
+ */
+const joinTouching = (stretches: readonly BehindStretch[]): BehindStretch[] => {
+  const ordered = [...stretches].sort(
+    (a, b) =>
+      a.laneKey.localeCompare(b.laneKey) || a.issueKey.localeCompare(b.issueKey) || a.from.getTime() - b.from.getTime(),
+  );
+  const joined: BehindStretch[] = [];
+
+  for (const stretch of ordered) {
+    const last = joined[joined.length - 1];
+    const continues =
+      last &&
+      last.laneKey === stretch.laneKey &&
+      last.issueKey === stretch.issueKey &&
+      last.to.getTime() >= stretch.from.getTime();
+
+    if (!continues || !last) {
+      joined.push(stretch);
+      continue;
+    }
+
+    if (stretch.to > last.to) joined[joined.length - 1] = { ...last, to: stretch.to };
+  }
+
+  return joined.sort((a, b) => a.from.getTime() - b.from.getTime());
+};
+
+/**
  * Takes the stretches a foreground band covers away from a background band.
  *
  * A person can be in one checkout all day while the work they are booking happens in another, and a
@@ -32,11 +104,14 @@ const windowOf = (entry: AttributedBlock): TimeWindow => ({ from: entry.block.fr
  * things at once, which is what `concurrency` is for and not a defect to resolve. Two background bands
  * are ranked against each other by the focus their streams held, then by which started first, so the
  * cut always resolves and never asks the reviewer to.
+ *
+ * What it loses is reported as `behind` rather than thrown away. The cut is silent otherwise: the lane
+ * holds an hour of presence, no row covers it, and nothing on the day says which band took it.
  */
-export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & CutOptions): AttributedBlock[] => {
+export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & CutOptions): CutResult => {
   const background = new Set((options.backgroundProjects ?? []).map((key) => key.trim().toUpperCase()).filter(Boolean));
 
-  if (!background.size) return [...options.blocks];
+  if (!background.size) return { blocks: [...options.blocks], behind: [] };
 
   const focusMs = options.focusMsByStream ?? {};
   const isBackground = (entry: AttributedBlock) => {
@@ -53,8 +128,10 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
 
   const covered = foreground.map(windowOf);
   const kept: AttributedBlock[] = [];
+  const behind: BehindStretch[] = [];
 
   for (const { entry } of ranked) {
+    const issueKey = entry.issueKey;
     const pieces = clipBlocks({ blocks: [entry.block], windows: covered }).map((block) => ({
       ...entry,
       block,
@@ -63,9 +140,22 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
       ),
     }));
 
+    if (issueKey) {
+      behind.push(
+        ...holesOf({ block: entry.block, kept: pieces.map((piece) => piece.block) }).map((hole) => ({
+          ...hole,
+          issueKey,
+          laneKey: streamKey(entry.block.context),
+        })),
+      );
+    }
+
     kept.push(...pieces);
     covered.push(...pieces.map(windowOf));
   }
 
-  return [...foreground, ...kept].sort((a, b) => a.block.from.getTime() - b.block.from.getTime());
+  return {
+    blocks: [...foreground, ...kept].sort((a, b) => a.block.from.getTime() - b.block.from.getTime()),
+    behind: joinTouching(behind),
+  };
 };

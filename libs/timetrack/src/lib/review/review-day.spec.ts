@@ -68,6 +68,7 @@ const dayRows = (options: {
   unobserved: [],
   calls: [],
   timers: [],
+  behind: [],
   filledMs: 0,
   private: [],
   privateMs: 0,

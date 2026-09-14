@@ -39,7 +39,53 @@ const spans = (blocks: readonly AttributedBlock[]) =>
     to: entry.block.to.toISOString().slice(11, 16),
   }));
 
+const behinds = (behind: readonly { issueKey: string; laneKey: string; from: Date; to: Date }[]) =>
+  behind.map((stretch) => ({
+    issueKey: stretch.issueKey,
+    laneKey: stretch.laneKey,
+    from: stretch.from.toISOString().slice(11, 16),
+    to: stretch.to.toISOString().slice(11, 16),
+  }));
+
 describe('cutBackground', () => {
+  it('reports the stretch it took, so the lane it left a hole in can say where the time went', () => {
+    const cut = cutBackground({
+      blocks: [
+        attributed({ repoPath: SDK, from: '09:15', to: '12:00', issueKey: 'ET-772' }),
+        attributed({ repoPath: APP, from: '11:00', to: '11:30', issueKey: 'FIFAGG-12624' }),
+      ],
+      backgroundProjects: ['ET'],
+    });
+
+    expect(behinds(cut.behind)).toEqual([
+      { issueKey: 'ET-772', laneKey: streamKey({ repoPath: SDK, branch: 'next' }), from: '11:00', to: '11:30' },
+    ]);
+  });
+
+  it('reports one stretch for an afternoon the builder cut the presence into several blocks', () => {
+    const cut = cutBackground({
+      blocks: [
+        attributed({ repoPath: SDK, from: '13:00', to: '14:00', issueKey: 'ET-772' }),
+        attributed({ repoPath: SDK, from: '14:00', to: '15:00', issueKey: 'ET-772' }),
+        attributed({ repoPath: APP, from: '13:30', to: '15:00', issueKey: 'FIFAGG-12624' }),
+      ],
+      backgroundProjects: ['ET'],
+    });
+
+    expect(behinds(cut.behind)).toEqual([
+      { issueKey: 'ET-772', laneKey: streamKey({ repoPath: SDK, branch: 'next' }), from: '13:30', to: '15:00' },
+    ]);
+  });
+
+  it('reports nothing when no foreground band took anything', () => {
+    const cut = cutBackground({
+      blocks: [attributed({ repoPath: SDK, from: '09:15', to: '12:00', issueKey: 'ET-772' })],
+      backgroundProjects: ['ET'],
+    });
+
+    expect(cut.behind).toEqual([]);
+  });
+
   it('takes the stretch a foreground band covers away from a background band', () => {
     const cut = cutBackground({
       blocks: [
@@ -49,7 +95,7 @@ describe('cutBackground', () => {
       backgroundProjects: ['ET'],
     });
 
-    expect(spans(cut)).toEqual([
+    expect(spans(cut.blocks)).toEqual([
       { issueKey: 'ET-772', from: '09:15', to: '11:00' },
       { issueKey: 'FIFAGG-12624', from: '11:00', to: '11:30' },
       { issueKey: 'ET-772', from: '11:30', to: '12:00' },
@@ -66,7 +112,7 @@ describe('cutBackground', () => {
       backgroundProjects: ['ET'],
     });
 
-    expect(spans(cut)).toEqual([
+    expect(spans(cut.blocks)).toEqual([
       { issueKey: 'ET-772', from: '09:15', to: '11:00' },
       { issueKey: 'FIFAGG-12624', from: '11:00', to: '11:30' },
       { issueKey: undefined, from: '11:30', to: '12:15' },
@@ -79,7 +125,7 @@ describe('cutBackground', () => {
       attributed({ repoPath: SPECS, from: '10:00', to: '12:00', issueKey: 'FIP-1' }),
     ];
 
-    expect(spans(cutBackground({ blocks, backgroundProjects: ['ET'] }))).toEqual(spans(blocks));
+    expect(spans(cutBackground({ blocks, backgroundProjects: ['ET'] }).blocks)).toEqual(spans(blocks));
   });
 
   it('changes nothing at all when no project was named as background', () => {
@@ -88,7 +134,7 @@ describe('cutBackground', () => {
       attributed({ repoPath: APP, from: '11:00', to: '11:30', issueKey: 'FIFAGG-12624' }),
     ];
 
-    expect(spans(cutBackground({ blocks }))).toEqual(spans(blocks));
+    expect(spans(cutBackground({ blocks }).blocks)).toEqual(spans(blocks));
   });
 
   it('leaves a band it cannot name alone, because no project key says it is background', () => {
@@ -97,7 +143,7 @@ describe('cutBackground', () => {
       attributed({ repoPath: APP, from: '11:00', to: '11:30', issueKey: 'FIFAGG-12624' }),
     ];
 
-    expect(spans(cutBackground({ blocks, backgroundProjects: ['ET'] }))).toEqual(spans(blocks));
+    expect(spans(cutBackground({ blocks, backgroundProjects: ['ET'] }).blocks)).toEqual(spans(blocks));
   });
 
   it('ranks two background bands by the focus their streams held', () => {
@@ -110,7 +156,7 @@ describe('cutBackground', () => {
       focusMsByStream: { [streamKey({ repoPath: SPECS })]: 90 * 60_000, [streamKey({ repoPath: SDK })]: 30 * 60_000 },
     });
 
-    expect(spans(cut)).toEqual([
+    expect(spans(cut.blocks)).toEqual([
       { issueKey: 'ET-1', from: '09:00', to: '10:00' },
       { issueKey: 'ET-2', from: '10:00', to: '12:00' },
     ]);
@@ -125,7 +171,7 @@ describe('cutBackground', () => {
       backgroundProjects: ['ET'],
     });
 
-    expect(spans(cut)).toEqual([
+    expect(spans(cut.blocks)).toEqual([
       { issueKey: 'ET-1', from: '09:00', to: '11:00' },
       { issueKey: 'ET-2', from: '11:00', to: '12:00' },
     ]);
@@ -140,7 +186,7 @@ describe('cutBackground', () => {
       backgroundProjects: [' et '],
     });
 
-    expect(spans(cut)).toEqual([
+    expect(spans(cut.blocks)).toEqual([
       { issueKey: 'et-772', from: '09:15', to: '11:00' },
       { issueKey: 'FIFAGG-12624', from: '11:00', to: '11:30' },
       { issueKey: 'et-772', from: '11:30', to: '12:00' },
@@ -159,6 +205,10 @@ describe('cutBackground', () => {
       backgroundProjects: ['ET'],
     });
 
-    expect(cut.map((entry) => entry.evidence.map((observed) => observed.detail))).toEqual([['early'], [], ['late']]);
+    expect(cut.blocks.map((entry) => entry.evidence.map((observed) => observed.detail))).toEqual([
+      ['early'],
+      [],
+      ['late'],
+    ]);
   });
 });

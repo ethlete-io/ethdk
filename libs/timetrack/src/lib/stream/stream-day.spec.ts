@@ -540,6 +540,7 @@ describe('streamDay', () => {
         calls: [],
         timers: [],
         filledMs: 0,
+        behind: [],
         private: [],
         privateMs: 0,
       },

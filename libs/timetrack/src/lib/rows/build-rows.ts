@@ -8,7 +8,7 @@ import { TimeWindow } from '../model/time-window';
 import { attendedAt, markAttendance } from './attended';
 import { AttributeOptions, attribute } from './attribute';
 import { CallMatch, dropCallWindows, matchCalls } from './calls';
-import { CutOptions, cutBackground } from './cut';
+import { BehindStretch, CutOptions, cutBackground } from './cut';
 import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { FillOptions, fillGaps } from './fill';
@@ -91,6 +91,11 @@ export type DayRows = {
   timers: TimerMatch[];
   /** Idle time `fillGaps` joined to the work around it, which the day claims with nothing behind it. */
   filledMs: number;
+  /**
+   * The stretches a foreground band took from a background band, so a lane's hole can be drawn and
+   * explained. Not rows: another band already claims the minutes, and no worklog may hold them twice.
+   */
+  behind: BehindStretch[];
   /** Time in a path the user marked private, for the day to label rather than bill. */
   private: PrivateTime[];
   /** How much of the day that time covers. It is owed to nobody and counts against no target. */
@@ -182,7 +187,7 @@ export const buildRows = (
   // thing that must never stand in for a person being at the machine.
   const booked = calls.filter((match) => match.call.countsAsWork);
   const filled = fillGaps({
-    blocks: cut,
+    blocks: cut.blocks,
     events: options.events,
     claimed: [...unwatched, ...booked.map((call) => call.group)],
     options: options.fill,
@@ -215,6 +220,7 @@ export const buildRows = (
     calls,
     timers,
     filledMs: filled.filledMs,
+    behind: cut.behind,
     private: secludedTime,
     privateMs: secludedTime.reduce((sum, entry) => sum + entry.observedMs, 0),
   };
