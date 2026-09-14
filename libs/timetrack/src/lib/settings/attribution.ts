@@ -41,3 +41,25 @@ export const withoutAttributionRule = (options: { settings: TimetrackSettings; i
   ...options.settings,
   attributionRules: options.settings.attributionRules.filter((entry) => entry.id !== options.id),
 });
+
+/**
+ * Writes a rule and takes back the one it stands in for, as one settings value.
+ *
+ * The two are one write because they are one decision. A rule for a whole checkout, saved while a
+ * branch rule of that checkout still donates its time away, is a rule nothing ever reads — and two
+ * writes would put exactly that state on disk in between.
+ */
+export const withReplacedAttributionRule = (options: {
+  settings: TimetrackSettings;
+  rule: AttributionRule;
+  /** The rules the new one stands in for, beyond the one `withAttributionRule` already replaces. */
+  supersededIds?: readonly string[];
+}): TimetrackSettings => {
+  const superseded = new Set(options.supersededIds ?? []);
+  const settings: TimetrackSettings = {
+    ...options.settings,
+    attributionRules: options.settings.attributionRules.filter((entry) => !superseded.has(entry.id)),
+  };
+
+  return withAttributionRule({ settings, rule: options.rule });
+};

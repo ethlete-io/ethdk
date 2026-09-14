@@ -33,6 +33,7 @@ import {
   withProjectLink,
   withStandIn,
   withStandInDay,
+  withReplacedAttributionRule,
   withoutAttributionRule,
   withoutFavoriteProject,
   withoutProjectLink,
@@ -304,6 +305,10 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     addAttributionRule: (rule: AttributionRule) => apply(withAttributionRule({ settings: settings(), rule })),
     removeAttributionRule: (id: string) => apply(withoutAttributionRule({ settings: settings(), id })),
+
+    /** Writes a rule and takes back the one it stands in for, as the one write they are. */
+    replaceAttributionRule: (options: { rule: AttributionRule; supersededIds?: readonly string[] }) =>
+      apply(withReplacedAttributionRule({ settings: settings(), ...options })),
 
     addStandIn: (standIn: StandIn) => apply(withStandIn({ settings: settings(), standIn })),
     removeStandIn: (id: string) => apply(withoutStandIn({ settings: settings(), id })),

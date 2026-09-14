@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AttributionRule } from '../model/attribution';
-import { withAttributionRule, withoutAttributionRule } from './attribution';
+import { withAttributionRule, withReplacedAttributionRule, withoutAttributionRule } from './attribution';
 import { DEFAULT_TIMETRACK_SETTINGS } from './model';
 
 const rule = (overrides: Partial<AttributionRule> = {}): AttributionRule => ({
@@ -40,5 +40,27 @@ describe('withoutAttributionRule', () => {
     const settings = withoutAttributionRule({ settings: settingsWith([rule()]), id: 'rule-1' });
 
     expect(settings.attributionRules).toEqual([]);
+  });
+});
+
+describe('withReplacedAttributionRule', () => {
+  it('writes the new rule and drops the one it stands in for, in one value', () => {
+    const donating = rule({ id: 'rule-1', branch: 'next', target: { kind: 'donate' } });
+    const settings = withReplacedAttributionRule({
+      settings: settingsWith([donating]),
+      rule: rule({ id: 'rule-2', branch: undefined, target: { kind: 'issue', issueKey: 'ET-772' } }),
+      supersededIds: ['rule-1'],
+    });
+
+    expect(settings.attributionRules.map((entry) => entry.id)).toEqual(['rule-2']);
+  });
+
+  it('writes the rule on its own when nothing is superseded', () => {
+    const settings = withReplacedAttributionRule({
+      settings: settingsWith([rule({ id: 'rule-1', branch: 'next' })]),
+      rule: rule({ id: 'rule-2', branch: undefined, target: { kind: 'issue', issueKey: 'ET-772' } }),
+    });
+
+    expect(settings.attributionRules.map((entry) => entry.id)).toEqual(['rule-1', 'rule-2']);
   });
 });

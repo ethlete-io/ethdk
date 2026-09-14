@@ -6,7 +6,7 @@ import { catchError, combineLatest, of, switchMap } from 'rxjs';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 
-const NOTHING: TempoHistory = { patterns: [], loggedIssues: [] };
+const NOTHING: TempoHistory = { patterns: [], loggedIssues: [], worklogs: [] };
 
 /**
  * What the user's own Tempo history holds: the standing commitments the recurrence rung attributes
@@ -47,6 +47,8 @@ const RECURRING_PATTERNS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     patterns: computed(() => read().patterns),
     /** Every issue the last weeks logged against, most recently logged first. */
     loggedIssues: computed(() => read().loggedIssues),
+    /** The same weeks' worklogs, for a reader that needs how much time an issue holds. */
+    worklogs: computed(() => read().worklogs),
     /** Reads it again, for a user who has just logged the week they want it to learn from. */
     reload: () => revision.update((count) => count + 1),
   };

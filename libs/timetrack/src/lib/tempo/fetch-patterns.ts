@@ -2,7 +2,13 @@ import { Observable, map, of, switchMap } from 'rxjs';
 import { JiraCredentials } from '../jira/client';
 import { fetchJiraIssueKeysByIds$ } from '../jira/issue';
 import { fetchJiraMyself$ } from '../jira/myself';
-import { LoggedIssue, RecurrenceOptions, RecurringPattern, detectRecurringPatterns } from '../model/recurrence';
+import {
+  HistoricalWorklog,
+  LoggedIssue,
+  RecurrenceOptions,
+  RecurringPattern,
+  detectRecurringPatterns,
+} from '../model/recurrence';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
 import { fetchTempoWorklogs$, toHistoricalWorklogs, toLoggedIssues } from './worklogs';
@@ -18,9 +24,15 @@ export type TempoHistory = {
   patterns: RecurringPattern[];
   /** Every issue the span logged against, most recently logged first. */
   loggedIssues: LoggedIssue[];
+  /**
+   * The span's worklogs themselves, which `loggedIssues` reduces away. `repoNamingOffers` reads them
+   * because how much time an issue holds is what separates a project's standing task from the twenty
+   * small tickets beside it.
+   */
+  worklogs: HistoricalWorklog[];
 };
 
-const EMPTY_HISTORY: TempoHistory = { patterns: [], loggedIssues: [] };
+const EMPTY_HISTORY: TempoHistory = { patterns: [], loggedIssues: [], worklogs: [] };
 
 /**
  * Reads the user's own Tempo history: the standing commitments the recurrence rung attributes from —
@@ -63,13 +75,15 @@ export const fetchTempoHistory$ = (options: {
             credentials: options.jira,
             ids: worklogs.map((worklog) => worklog.issueId),
           }).pipe(
-            map((keysByIssueId): TempoHistory => ({
-              patterns: detectRecurringPatterns({
-                worklogs: toHistoricalWorklogs({ worklogs, keysByIssueId }),
-                options: options.recurrence,
-              }),
-              loggedIssues: toLoggedIssues({ worklogs, keysByIssueId }),
-            })),
+            map((keysByIssueId): TempoHistory => {
+              const historical = toHistoricalWorklogs({ worklogs, keysByIssueId });
+
+              return {
+                patterns: detectRecurringPatterns({ worklogs: historical, options: options.recurrence }),
+                loggedIssues: toLoggedIssues({ worklogs, keysByIssueId }),
+                worklogs: historical,
+              };
+            }),
           )
         : of(EMPTY_HISTORY),
     ),

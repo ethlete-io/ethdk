@@ -39,7 +39,9 @@ import {
   readJiraCredentials$,
   readTempoCredentials$,
   reasoningCandidates,
+  RepoNamingOffer,
   reasoningPlan,
+  repoNamingOffers,
   removeManualRow,
   resetRow,
   reviewDay,
@@ -350,6 +352,34 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return found;
   });
 
+  /**
+   * The checkout-wide answer the user's own record already contains, for the checkouts the day saw.
+   *
+   * It reads every checkout rather than only the unnamed ones, because the case it exists for is a
+   * checkout whose time a donating rule hands away: nothing is left unnamed, and the day would never
+   * ask. It is read rather than learnt — the project link and the Tempo history are both decisions the
+   * user made, and this only states what they add up to. Accepting one is still a click. See
+   * `repoNamingOffers`.
+   */
+  /**
+   * The checkouts the user turned an offer down for. It lasts the session and no longer: a dismissal
+   * is not a decision about the work, and writing one into the settings would put a standing answer
+   * there that the user never gave.
+   */
+  const declinedOffers = signal<readonly string[]>([]);
+
+  const namingOffers = computed(() =>
+    repoNamingOffers({
+      checkouts: (streamed()?.streams ?? []).flatMap((stream) =>
+        stream.repoPath ? [{ repoPath: stream.repoPath, branches: stream.branches, observedMs: stream.engagedMs }] : [],
+      ),
+      links: settings.settings().projectLinks,
+      rules: settings.settings().attributionRules,
+      worklogs: recurring.worklogs(),
+      loggedIssues: recurring.loggedIssues(),
+    }).filter((offer) => !declinedOffers().includes(offer.repoPath)),
+  );
+
   const plan = computed(() => {
     const rows = deterministicRows();
 
@@ -586,6 +616,11 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** The rule already covering an unnamed context, by context id. */
     rulesByContext,
     /**
+     * The checkout-wide answer the user's own record already holds, for the checkouts the day saw.
+     * Empty without a Tempo history, which is every machine with no token.
+     */
+    namingOffers,
+    /**
      * Time in a path the user marked private. The day reports it rather than hiding it: a reviewer who
      * cannot see that the app watched has no way to tell a working link from a broken one.
      */
@@ -722,6 +757,25 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /** Takes back the standing answer for a context, so the day asks about it again. */
     forgetRule: (id: string) => settings.removeAttributionRule(id),
+
+    /**
+     * Takes the offer a checkout's own record made: one rule for the whole checkout, written in the
+     * same breath as the branch rule it replaces is taken back.
+     */
+    acceptNamingOffer: (offer: RepoNamingOffer) =>
+      settings.replaceAttributionRule({
+        rule: {
+          id: `repo:${offer.repoPath}#${Date.now()}`,
+          repoPath: offer.repoPath,
+          target: { kind: 'issue', issueKey: offer.issueKey },
+          author: 'user',
+          createdAt: new Date(),
+        },
+        supersededIds: offer.supersedes.map((rule) => rule.id),
+      }),
+
+    /** Turns an offer down for this session. Nothing is written: the rules stay exactly as they were. */
+    declineNamingOffer: (offer: RepoNamingOffer) => declinedOffers.update((declined) => [...declined, offer.repoPath]),
 
     nameContext: (context: UnnamedContext, target: AttributionTarget) =>
       settings.addAttributionRule({

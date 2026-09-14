@@ -14,6 +14,7 @@ export * from './no-work-context';
 export * from './overlap';
 export * from './project-link';
 export * from './propose';
+export * from './repo-naming';
 export * from './round';
 export * from './rules';
 export * from './snap';

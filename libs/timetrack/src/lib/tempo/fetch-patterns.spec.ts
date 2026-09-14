@@ -124,6 +124,7 @@ describe('fetchTempoHistory$', () => {
     const history = readHistory(fetchTempoHistory$({ transport, jira: JIRA, tempo: TEMPO, until: UNTIL }));
 
     expect(history.loggedIssues.map((issue) => issue.issueKey)).toEqual(['ET-772', 'BD-2049']);
+    expect(history.worklogs.map((worklog) => worklog.issueKey).sort()).toEqual(['BD-2049', 'ET-772']);
     expect(requests.filter((request) => request.url.includes('/worklogs/user/'))).toHaveLength(1);
   });
 
@@ -132,6 +133,6 @@ describe('fetchTempoHistory$', () => {
 
     const history = readHistory(fetchTempoHistory$({ transport, jira: JIRA, tempo: TEMPO, until: UNTIL }));
 
-    expect(history).toEqual({ patterns: [], loggedIssues: [] });
+    expect(history).toEqual({ patterns: [], loggedIssues: [], worklogs: [] });
   });
 });

@@ -5,6 +5,7 @@ import { injectDayReview } from './day-review';
 import { DayConcurrencyComponent } from './day-concurrency.component';
 import { DAY_DEBUG_OVERLAY } from './day-debug.component';
 import { DayTimelineComponent } from './day-timeline.component';
+import { NamingOfferComponent } from './naming-offer.component';
 import { DayWarningsComponent } from './day-warnings.component';
 import { formatDayLabel, formatSignedDurationMs } from './format';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
@@ -55,6 +56,16 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           <span class="text-base">Reading the day…</span>
         </div>
       } @else if (store.review(); as day) {
+        @if (store.namingOffers().length) {
+          <div class="shrink-0 border-b border-et-surface-border px-6 pb-3">
+            <ethlete-naming-offer
+              [offers]="store.namingOffers()"
+              (accept)="store.acceptNamingOffer($event)"
+              (dismiss)="store.declineNamingOffer($event)"
+            />
+          </div>
+        }
+
         @if (day.check.warnings.length) {
           <div
             class="flex shrink-0 flex-wrap items-baseline gap-x-8 gap-y-2 border-b border-et-surface-border px-6 pb-3"
@@ -98,6 +109,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
     DayConcurrencyComponent,
     DayTimelineComponent,
     DayWarningsComponent,
+    NamingOfferComponent,
     SpinnerComponent,
   ],
   host: { class: 'flex min-h-0 grow flex-col' },
