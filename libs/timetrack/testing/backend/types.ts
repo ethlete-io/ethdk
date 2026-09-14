@@ -61,6 +61,8 @@ export type FakeJiraState = {
   issues: FakeJiraIssue[];
   projects: FakeJiraProject[];
   issueTypes: FakeJiraIssueType[];
+  /** The type names this account may not create, which `createmeta` then leaves out of its answer. */
+  notCreatable: string[];
   fields: FakeJiraField[];
   links: FakeJiraLink[];
   /** Every issue the app filed, in order. `issues` holds these too. */

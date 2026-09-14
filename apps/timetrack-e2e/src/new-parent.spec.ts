@@ -1,5 +1,5 @@
 import { Page } from '@playwright/test';
-import { expect, openWaitingForAName, readBackend, test } from './support';
+import { expect, openWaitingForAName, readBackend, seedWorld, test } from './support';
 
 /** The default world's second stretch names no issue, which is the context this form is opened for. */
 const openTheForm = async (page: Page) => {
@@ -63,6 +63,28 @@ test.describe('filing the parent a ticket rolls up to', () => {
     await expect(levelSelect(page)).toBeHidden();
     await expect(page.getByRole('button', { name: 'New parent' })).toBeVisible();
     expect(await created(page)).toEqual([]);
+  });
+});
+
+test.describe('a parent level Jira refuses this account', () => {
+  test('is left off the picker, however the settings name it', async ({ page }) => {
+    await seedWorld(page, { jira: { notCreatable: ['Epic'] } });
+    await page.goto('/day');
+    await openTheForm(page);
+    await page.getByRole('button', { name: 'New parent' }).click();
+    await levelSelect(page).click();
+
+    await expect(page.getByRole('option', { name: 'Story', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Epic', exact: true })).toBeHidden();
+  });
+
+  test('leaves no parent to file at all, when it refuses every level', async ({ page }) => {
+    await seedWorld(page, { jira: { notCreatable: ['Story', 'Epic'] } });
+    await page.goto('/day');
+    await openTheForm(page);
+
+    await expect(page.getByRole('button', { name: 'Create in Jira' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'New parent' })).toBeHidden();
   });
 });
 

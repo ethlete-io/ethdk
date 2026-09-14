@@ -72,6 +72,24 @@ const linkIssues = (backend: FakeBackend, request: FakeRoutedRequest): FakeAnswe
   return { status: 201, body: {} };
 };
 
+/**
+ * What the account may create in the project, which is not what the instance defines: a type named by
+ * `notCreatable` stays in `/issuetype` and is left out here.
+ */
+const createMeta = (backend: FakeBackend): FakeAnswer => {
+  const refused = new Set(backend.jira.notCreatable.map((name) => name.toLowerCase()));
+
+  return ok({
+    projects: [
+      {
+        issuetypes: backend.jira.issueTypes
+          .filter((type) => !refused.has(type.name.toLowerCase()))
+          .map((type) => ({ ...type, fields: { summary: { fieldId: 'summary', required: true } } })),
+      },
+    ],
+  });
+};
+
 /** Answers a Jira Cloud REST v3 call, and applies the writes to `backend.jira`. */
 export const respondJira = (backend: FakeBackend, request: FakeRoutedRequest): FakeAnswer => {
   const path = request.path.slice(JIRA_PREFIX.length);
@@ -80,6 +98,7 @@ export const respondJira = (backend: FakeBackend, request: FakeRoutedRequest): F
   if (path === '/search/jql') return search(backend, request);
   if (path === '/project/search') return projectSearch(backend);
   if (path === '/issuetype' || path === '/issuetype/project') return ok(backend.jira.issueTypes);
+  if (path === '/issue/createmeta') return createMeta(backend);
   if (path === '/field') {
     return ok(
       backend.jira.fields.map((field) => ({

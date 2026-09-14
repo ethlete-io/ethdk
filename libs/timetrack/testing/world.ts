@@ -262,6 +262,7 @@ const defaultJira = (): FakeJiraState => ({
     { id: '2', name: 'Task', subtask: false, hierarchyLevel: 0 },
     { id: '3', name: 'Epic', subtask: false, hierarchyLevel: 1 },
   ],
+  notCreatable: [],
   fields: [
     { id: 'summary', name: 'Summary', custom: false, type: 'string' },
     { id: 'customfield_10057', name: 'Branch subject', custom: true, type: 'string' },
