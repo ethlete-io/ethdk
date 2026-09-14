@@ -168,7 +168,14 @@ export const buildRows = (
   const donated = donateBlocks({ blocks: working, rules: options.rules, options: options.donate });
   // Before the gaps are filled rather than after: a filled minute is idle time joined to the work
   // around it, and cutting one away afterwards would leave `filledMs` claiming time no row holds.
-  const cut = cutBackground({ blocks: donated, ...options.cut });
+  // The calls are handed in raw rather than as the rows `matchCalls` builds later: a call is the
+  // foreground of the minutes it runs in, and the cut has to happen before a gap is filled.
+  const cut = cutBackground({
+    blocks: donated,
+    claimed: (options.calls ?? []).filter((call) => call.countsAsWork),
+    round: options.round,
+    ...options.cut,
+  });
   const naming = { ...options.meetings, config: options.config, patterns: options.patterns };
   const occurrences = calendarOccurrences(options.events);
   // `nameable` rather than `blocks`: `overlapMs` is the time the day proposes twice, and a block no

@@ -77,6 +77,45 @@ describe('cutBackground', () => {
     ]);
   });
 
+  it('puts both ends of a reported stretch on the nearest increment, as every other clock time sits', () => {
+    const cut = cutBackground({
+      blocks: [
+        attributed({ repoPath: SDK, from: '13:00', to: '16:02', issueKey: 'ET-772' }),
+        attributed({ repoPath: APP, from: '13:41', to: '16:02', issueKey: 'FIFAGG-12624' }),
+      ],
+      backgroundProjects: ['ET'],
+    });
+
+    expect(behinds(cut.behind)).toEqual([
+      { issueKey: 'ET-772', laneKey: streamKey({ repoPath: SDK, branch: 'next' }), from: '13:45', to: '16:00' },
+    ]);
+  });
+
+  it('drops a stretch too short to reach an increment at all', () => {
+    const cut = cutBackground({
+      blocks: [
+        attributed({ repoPath: SDK, from: '09:00', to: '12:00', issueKey: 'ET-772' }),
+        attributed({ repoPath: APP, from: '10:00', to: '10:04', issueKey: 'FIFAGG-12624' }),
+      ],
+      backgroundProjects: ['ET'],
+    });
+
+    expect(cut.behind).toEqual([]);
+  });
+
+  it('lets a call a rule counts as work take the minutes a background band ran under it', () => {
+    const cut = cutBackground({
+      blocks: [attributed({ repoPath: SDK, from: '09:45', to: '12:15', issueKey: 'ET-772' })],
+      backgroundProjects: ['ET'],
+      claimed: [{ from: at('09:30'), to: at('10:30') }],
+    });
+
+    expect(spans(cut.blocks)).toEqual([{ issueKey: 'ET-772', from: '10:30', to: '12:15' }]);
+    expect(behinds(cut.behind)).toEqual([
+      { issueKey: 'ET-772', laneKey: streamKey({ repoPath: SDK, branch: 'next' }), from: '09:45', to: '10:30' },
+    ]);
+  });
+
   it('reports nothing when no foreground band took anything', () => {
     const cut = cutBackground({
       blocks: [attributed({ repoPath: SDK, from: '09:15', to: '12:00', issueKey: 'ET-772' })],

@@ -1,5 +1,12 @@
 import { Appointment } from '@ethlete/components';
-import { Confidence, ReviewedRow, formatDurationMs, isManualRow, syncsInState } from '@ethlete/timetrack';
+import {
+  BehindStretch,
+  Confidence,
+  ReviewedRow,
+  formatDurationMs,
+  isManualRow,
+  syncsInState,
+} from '@ethlete/timetrack';
 
 /** What a band with no issue is called, on the timeline and in the label of a boundary beside it. */
 export const UNNAMED_LABEL = 'Not yet named';
@@ -109,6 +116,13 @@ export const appointmentOf = (options: {
     standInName: options.standInName,
   },
 });
+
+/**
+ * What a stretch another band took the minutes of reads: the key it would have booked, that it ran as
+ * a background project for them, and how many of them there are.
+ */
+export const behindLabel = (stretch: BehindStretch) =>
+  `${stretch.issueKey} · in the background · ${formatDurationMs(stretch.to.getTime() - stretch.from.getTime())}`;
 
 /** What a band reads: the issue it is logged against, and how much time it logs. */
 export const appointmentLabel = (appointment: Appointment) => {

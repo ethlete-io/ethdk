@@ -25,11 +25,18 @@ import {
   countDescendants,
 } from '@ethlete/components';
 import { DragGestureEvent, ProvideColorDirective, dragGestureFrom } from '@ethlete/core';
-import { BreakWindow, DEFAULT_ROUND_OPTIONS, ReviewedRow, formatDurationMs } from '@ethlete/timetrack';
+import { BehindStretch, BreakWindow, DEFAULT_ROUND_OPTIONS, ReviewedRow, formatDurationMs } from '@ethlete/timetrack';
 import { tap } from 'rxjs';
 import { formatClockTime } from './format';
 import { BREAK_LANE_KEY, BreakBand, DayLane, lanesOf, laneKeyOfRow } from './lanes';
-import { TimelineEntry, appointmentLabel, appointmentOf, rowEntryOf, unnamedLabelOf } from './row-edit/row-appointment';
+import {
+  TimelineEntry,
+  appointmentLabel,
+  appointmentOf,
+  behindLabel,
+  rowEntryOf,
+  unnamedLabelOf,
+} from './row-edit/row-appointment';
 import { rowActionsFor } from './row-edit/row-actions';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 import { injectDayReview } from './day-review';
@@ -242,6 +249,21 @@ type RowDrag = {
                     </div>
                   }
 
+                  @for (band of lane.behind; track band.stretch.from) {
+                    <div
+                      [style.top.%]="band.offset"
+                      [style.height.%]="band.span"
+                      [title]="BEHIND_LABEL_OF(band.stretch)"
+                      [attr.data-compact]="compact(band.span) || null"
+                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-[repeating-linear-gradient(135deg,transparent_0px,transparent_6px,var(--color-et-surface-border)_6px,var(--color-et-surface-border)_7px)] px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
+                      data-behind
+                    >
+                      @if (labelled(band.span)) {
+                        <span class="block truncate">{{ BEHIND_LABEL_OF(band.stretch) }}</span>
+                      }
+                    </div>
+                  }
+
                   @for (laid of lane.blocks; track laid.block.node.appointment.id) {
                     <div
                       [attr.data-kind]="kindOf(laid.block.node.appointment)"
@@ -369,6 +391,11 @@ export class DayTimelineComponent {
   public rows = input.required<readonly ReviewedRow[]>();
   /** The day's breaks, as the rows leave them. They get a lane of their own, and no gesture. */
   public breaks = input<readonly BreakWindow[]>([]);
+  /**
+   * The stretches a foreground band took from a background band. Drawn in the lane they ran in, so a
+   * lane's hole says which band holds its minutes instead of saying nothing.
+   */
+  public behind = input<readonly BehindStretch[]>([]);
 
   /** Where two adjacent rows should meet instead. */
   public boundaryMove = output<BoundaryMove>();
@@ -402,10 +429,16 @@ export class DayTimelineComponent {
   protected readonly HOURS = Array.from({ length: 25 }, (_, hour) => hour);
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
+  protected readonly BEHIND_LABEL_OF = behindLabel;
 
   /** The day as one lane per checkout. The grid supplies the vertical geometry; the lane the inline. */
   protected lanes = computed<DayLane[]>(() =>
-    lanesOf({ blocks: this.grid()?.days()[0]?.blocks ?? [], breaks: this.breaks(), dayStart: this.focusedDate() }),
+    lanesOf({
+      blocks: this.grid()?.days()[0]?.blocks ?? [],
+      breaks: this.breaks(),
+      behind: this.behind(),
+      dayStart: this.focusedDate(),
+    }),
   );
 
   /**

@@ -3,6 +3,7 @@ import { ActivityBlock, streamKey } from '../model/block';
 import { projectKeyOf } from '../ticket/project';
 import { AttributedBlock } from './attribute';
 import { clipBlocks } from './overlap';
+import { DEFAULT_ROUND_OPTIONS, RoundOptions } from './round';
 
 export type CutOptions = {
   /**
@@ -16,6 +17,14 @@ export type CutOptions = {
    * bands against each other, and nothing else reads it.
    */
   focusMsByStream?: Readonly<Record<string, number>>;
+  /**
+   * Windows the day already holds as work outside its blocks — the calls a rule counts as work. A
+   * meeting is the foreground of the minutes it runs in, and it carries no block for the cut to read
+   * it off, so it has to be handed in.
+   */
+  claimed?: readonly TimeWindow[];
+  /** The increment the day's clock times sit on, which a reported stretch is snapped to. */
+  round?: Partial<RoundOptions>;
 };
 
 const windowOf = (entry: AttributedBlock): TimeWindow => ({ from: entry.block.from, to: entry.block.to });
@@ -60,6 +69,24 @@ const holesOf = (options: { block: ActivityBlock; kept: readonly ActivityBlock[]
   if (at < end) holes.push({ from: new Date(at), to: new Date(end) });
 
   return holes;
+};
+
+/**
+ * Puts both ends of a reported stretch on the nearest increment boundary, and drops what is then left
+ * with no time in it.
+ *
+ * Both ends round to the nearest, where a row's start floors and its end never falls short of the time
+ * it books. A row books time and must never be drawn narrower than its own worklog; a stretch books
+ * nothing, so the boundary nearest each raw end is the honest answer and the one that meets the rows
+ * either side of it exactly.
+ */
+const snapStretches = (stretches: readonly BehindStretch[], options?: Partial<RoundOptions>): BehindStretch[] => {
+  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options };
+  const nearest = (at: Date) => Math.round(at.getTime() / incrementMs) * incrementMs;
+
+  return stretches
+    .map((stretch) => ({ ...stretch, from: new Date(nearest(stretch.from)), to: new Date(nearest(stretch.to)) }))
+    .filter((stretch) => stretch.to.getTime() > stretch.from.getTime());
 };
 
 /**
@@ -126,7 +153,7 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
     .map((entry) => ({ entry, focus: focusMs[streamKey(entry.block.context)] ?? 0 }))
     .sort((a, b) => b.focus - a.focus || a.entry.block.from.getTime() - b.entry.block.from.getTime());
 
-  const covered = foreground.map(windowOf);
+  const covered = [...foreground.map(windowOf), ...(options.claimed ?? [])];
   const kept: AttributedBlock[] = [];
   const behind: BehindStretch[] = [];
 
@@ -156,6 +183,6 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
 
   return {
     blocks: [...foreground, ...kept].sort((a, b) => a.block.from.getTime() - b.block.from.getTime()),
-    behind: joinTouching(behind),
+    behind: snapStretches(joinTouching(behind), options.round),
   };
 };

@@ -1,5 +1,5 @@
 import { SchedulerTimeGridBlock } from '@ethlete/components';
-import { BreakWindow, CALL_LANE_KEY, ReviewedRow, streamKeyLabel } from '@ethlete/timetrack';
+import { BehindStretch, BreakWindow, CALL_LANE_KEY, ReviewedRow, streamKeyLabel } from '@ethlete/timetrack';
 import { TimelineEntry, rowEntryOf } from './row-edit/row-appointment';
 
 /** The lane a row with no checkout and no application behind it falls into. */
@@ -42,6 +42,19 @@ export type BreakBand = {
   span: number;
 };
 
+/**
+ * One stretch a foreground band took, placed on the day axis the same way a break is.
+ *
+ * It is not packed against the lane's rows. A stretch is measured on the clock while a row is drawn on
+ * the increment it snapped to, so the two overlap by the odd minute — and a packed behind band would
+ * then halve the width of a real row that only touches it.
+ */
+export type BehindBand = {
+  stretch: BehindStretch;
+  offset: number;
+  span: number;
+};
+
 /** A block placed in its lane: the grid's own vertical geometry, with the inline geometry re-read. */
 export type LaneBlock = {
   block: SchedulerTimeGridBlock<TimelineEntry>;
@@ -58,6 +71,8 @@ export type DayLane = {
   blocks: LaneBlock[];
   /** The day's breaks. Only the break lane holds any; every other lane holds work. */
   breaks: BreakBand[];
+  /** The stretches this checkout lost to another, drawn under its rows to explain the hole they left. */
+  behind: BehindBand[];
 };
 
 export const laneKeyOfRow = (row: ReviewedRow) => row.laneKey ?? NO_LANE_KEY;
@@ -123,11 +138,16 @@ const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): Lan
   return placed;
 };
 
+const offsetOf = (options: { at: Date; dayStart: Date }) =>
+  ((options.at.getTime() - options.dayStart.getTime()) / DAY_MS) * 100;
+
+const spanOf = (window: { from: Date; to: Date }) => ((window.to.getTime() - window.from.getTime()) / DAY_MS) * 100;
+
 const breakBandsOf = (options: { breaks: readonly BreakWindow[]; dayStart: Date }): BreakBand[] =>
   options.breaks.map((window) => ({
     window,
-    offset: ((window.from.getTime() - options.dayStart.getTime()) / DAY_MS) * 100,
-    span: ((window.to.getTime() - window.from.getTime()) / DAY_MS) * 100,
+    offset: offsetOf({ at: window.from, dayStart: options.dayStart }),
+    span: spanOf(window),
   }));
 
 /**
@@ -141,7 +161,8 @@ const breakBandsOf = (options: { breaks: readonly BreakWindow[]; dayStart: Date 
 export const lanesOf = (options: {
   blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[];
   breaks: readonly BreakWindow[];
-  /** Midnight of the day on screen, which the break geometry is measured from. */
+  behind?: readonly BehindStretch[];
+  /** Midnight of the day on screen, which the break and behind geometry is measured from. */
   dayStart: Date;
 }): DayLane[] => {
   const byLane = new Map<string, SchedulerTimeGridBlock<TimelineEntry>[]>();
@@ -152,18 +173,41 @@ export const lanesOf = (options: {
     byLane.set(key, [...(byLane.get(key) ?? []), block]);
   }
 
-  const startOf = (lane: SchedulerTimeGridBlock<TimelineEntry>[]) => Math.min(...lane.map((block) => block.offset));
+  const behindByLane = new Map<string, BehindBand[]>();
+
+  for (const stretch of options.behind ?? []) {
+    const band = {
+      stretch,
+      offset: offsetOf({ at: stretch.from, dayStart: options.dayStart }),
+      span: spanOf(stretch),
+    };
+
+    behindByLane.set(stretch.laneKey, [...(behindByLane.get(stretch.laneKey) ?? []), band]);
+    // A checkout every one of whose minutes went elsewhere has no block left to open a lane with, and
+    // that is the hole this band exists to explain.
+    if (!byLane.has(stretch.laneKey)) byLane.set(stretch.laneKey, []);
+  }
+
+  const startOf = (key: string, lane: SchedulerTimeGridBlock<TimelineEntry>[]) =>
+    Math.min(...lane.map((block) => block.offset), ...(behindByLane.get(key) ?? []).map((band) => band.offset));
 
   const work = [...byLane]
-    .sort(([aKey, a], [bKey, b]) => rankOf(aKey) - rankOf(bKey) || startOf(a) - startOf(b) || aKey.localeCompare(bKey))
+    .sort(
+      ([aKey, a], [bKey, b]) =>
+        rankOf(aKey) - rankOf(bKey) || startOf(aKey, a) - startOf(bKey, b) || aKey.localeCompare(bKey),
+    )
     .map(([key, laneBlocks]) => ({
       key,
       label: labelOf(key),
       blocks: packLane(laneBlocks),
       breaks: [],
+      behind: behindByLane.get(key) ?? [],
     }));
 
   if (!options.breaks.length) return work;
 
-  return [{ key: BREAK_LANE_KEY, label: BREAK_LANE_LABEL, blocks: [], breaks: breakBandsOf(options) }, ...work];
+  return [
+    { key: BREAK_LANE_KEY, label: BREAK_LANE_LABEL, blocks: [], breaks: breakBandsOf(options), behind: [] },
+    ...work,
+  ];
 };
