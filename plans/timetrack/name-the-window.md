@@ -283,9 +283,31 @@ Chrome titles behind 43 minutes and they were four different things. The title r
 either — `issueKeyInText` needs a configured prefix in the text, and `Timetrack app UI mockups` holds
 no key.
 
-**Rung 2 is not the answer and neither is a browser reporter.** There is no port and no dev server. A
-reporter reading the URL reads a conversation id. The window title is what carries the meaning here,
-and it already reaches the block as `window-title` evidence.
+**Rung 2 does not fire here, and a reporter answers less of this case than of the others.** There is
+no port and no dev server. A reporter reads `claude.ai/chat/<uuid>`, and a uuid names no project. Of
+the three identities a page has — title, origin, path — the title is the only one that carries
+meaning here, and it already reaches the block as `window-title` evidence. What a reporter would
+still buy is that the uuid survives a rename, so a conversation pinned to an issue stays pinned.
+Against that, a rule keyed on a uuid is unreadable in a settings list, and there is one conversation
+per piece of work.
+
+**Where a reporter earns its cost is the rest of the tail, and rung 2 left a hole there.** Rung 2
+"replaces the browser reporter idea in `plans/timetrack.md` completely", and the third reading then
+killed rung 2: no title on this machine carries a host or a port. So the dev-server case has no
+answer at all now. A reporter reads `location.host` directly. It also reads `github.com/<org>/<repo>`
+as a checkout and `<jira host>/browse/<KEY>` as an issue key, both deterministically, where a title
+carries either only when the site chooses to.
+
+**Its cost is higher than the rejection recorded.** Two deliberate rules stand in the way:
+
+- The endpoint refuses every request carrying an `Origin` header
+  (`src-tauri/src/ingest.rs:333-340`), and an extension's `fetch` carries
+  `Origin: chrome-extension://<id>`.
+- A reporter pairs by reading the `0600` discovery file (`ingest.rs:412`), and an extension reads no
+  file at all. It needs a native messaging host, one manifest per browser per platform.
+
+A URL is also far more revealing than an app id, against a Sources view that promises a source stores
+only what it needs.
 
 **What it asks for is the judgement per title this plan left open, with a target instead of a
 verdict**: a title pattern that names an issue, beside one that says "no work". That is a third
@@ -513,6 +535,7 @@ needs `tauri-driver` and the built host, which the suite does not drive — defe
 - **The order of the rungs.** Step 0's number decides it. Nothing beyond step 0 starts before that
   number exists.
 - **`repoStickinessMs`.** Revisited with the number in hand, and never in the same change.
-- **Whether a browser reporter is ever needed.** Rung 2 answers the dev-server case. The
-  2026-09-14 reading adds a second case, a browser tab that is the whole record of the work, and a
-  reporter does not answer that one: the title carries the meaning, not the URL.
+- **Whether a browser reporter is ever needed.** Rung 2 was the reason it was rejected, and the
+  third reading killed rung 2, so the dev-server case now has no answer at all. The 2026-09-14
+  reading adds a second case a reporter only partly answers. Decide the two together, with the
+  fourth reading in hand.
