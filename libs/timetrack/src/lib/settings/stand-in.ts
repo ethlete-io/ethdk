@@ -1,5 +1,6 @@
-import { standInIdOf } from '../model/attribution';
+import { AttributionRule, standInIdOf } from '../model/attribution';
 import { StandIn, standInDays } from '../model/stand-in';
+import { withReplacedAttributionRule } from './attribution';
 import { TimetrackSettings } from './model';
 
 /**
@@ -10,6 +11,25 @@ export const withStandIn = (options: { settings: TimetrackSettings; standIn: Sta
   ...options.settings,
   standIns: [...options.settings.standIns.filter((entry) => entry.id !== options.standIn.id), options.standIn],
 });
+
+/**
+ * Opens a stand-in and names a context with it, as one settings value.
+ *
+ * The two halves are one decision and must not be two writes: a rule stored without its record names
+ * nothing, and a record stored without a rule covers no band. `supersededIds` takes back whatever
+ * answered the context before, the way accepting a checkout-wide offer does.
+ */
+export const withNamedStandIn = (options: {
+  settings: TimetrackSettings;
+  standIn: StandIn;
+  rule: AttributionRule;
+  supersededIds?: readonly string[];
+}): TimetrackSettings =>
+  withReplacedAttributionRule({
+    settings: withStandIn({ settings: options.settings, standIn: options.standIn }),
+    rule: options.rule,
+    supersededIds: options.supersededIds,
+  });
 
 /**
  * Takes a stand-in out, and every rule that named it with it.

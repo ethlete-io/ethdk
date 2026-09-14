@@ -74,6 +74,16 @@ const overrideOn = (options: { edits: DayReviewEdits; row: ReviewedRow; change: 
 export const setRowIssue = (options: { edits: DayReviewEdits; row: ReviewedRow; issueKey: string }) =>
   overrideOn({ edits: options.edits, row: options.row, change: { issueKey: options.issueKey } });
 
+/**
+ * Names a row with a stand-in, while Jira holds no issue for the work.
+ *
+ * The key is cleared in the same change rather than left standing. The two answers are one field to
+ * the reviewer, and a row holding both would read as bookable through `isNamedRow` while showing the
+ * stand-in's name.
+ */
+export const setRowStandIn = (options: { edits: DayReviewEdits; row: ReviewedRow; standInId: string }) =>
+  overrideOn({ edits: options.edits, row: options.row, change: { standInId: options.standInId, issueKey: '' } });
+
 export const setRowDescription = (options: { edits: DayReviewEdits; row: ReviewedRow; description: string }) =>
   overrideOn({ edits: options.edits, row: options.row, change: { description: options.description } });
 

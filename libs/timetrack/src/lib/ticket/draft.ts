@@ -1,7 +1,7 @@
 import { GitFlowConfig, parseBranch, slugifySubject } from '@ethlete/agent-rules/git-flow';
 import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
-import { contextKey } from '../model/block';
+import { ActivityContext, contextKey } from '../model/block';
 import { formatDurationMs } from '../model/duration';
 import { QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
 
@@ -75,6 +75,21 @@ const summaryFor = (options: { context: UnnamedContext; notes: string[]; config:
     0,
     MAX_TICKET_SUMMARY_LENGTH,
   );
+};
+
+/**
+ * The name a stand-in opens with.
+ *
+ * It is drafted by the rules a ticket summary is drafted by, because that is what it becomes: the
+ * plan says the epic's summary is the stand-in name. The branch subject is the strongest source there
+ * is — it is what the user called the work while doing it — and a checkout with no subject falls back
+ * to the checkout's own name.
+ */
+export const standInNameFor = (options: { context: ActivityContext; config: GitFlowConfig }) => {
+  const { repoPath, branch, appId } = options.context;
+  const fromBranch = humanized(branchSubjectOf({ branch, config: options.config }) ?? '');
+
+  return (fromBranch || (repoPath ? repoNameOf(repoPath) : (appId ?? ''))).slice(0, MAX_TICKET_SUMMARY_LENGTH);
 };
 
 const whereFor = (context: UnnamedContext) => {

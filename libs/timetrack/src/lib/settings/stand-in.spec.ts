@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { AttributionRule, standInIdOf } from '../model/attribution';
 import { StandIn } from '../model/stand-in';
 import { DEFAULT_TIMETRACK_SETTINGS } from './model';
-import { reopenStandIn, resolveStandIn, withStandIn, withStandInDay, withoutStandIn } from './stand-in';
+import {
+  reopenStandIn,
+  resolveStandIn,
+  withNamedStandIn,
+  withStandIn,
+  withStandInDay,
+  withoutStandIn,
+} from './stand-in';
 
 const standIn = (overrides: Partial<StandIn> = {}): StandIn => ({
   id: 'stand-in-1',
@@ -118,5 +125,33 @@ describe('withStandInDay', () => {
     const twice = withStandInDay({ settings: once, id: 'stand-in-1', day: '2026-09-14' });
 
     expect(twice.standIns[0]?.days).toEqual(['2026-09-14']);
+  });
+});
+
+describe('withNamedStandIn', () => {
+  const OPENED = standIn({ id: 'stand-in-2', name: 'The export nobody filed yet' });
+  const NAMES_IT = rule({ id: 'rule-2', target: { kind: 'stand-in', standInId: OPENED.id } });
+
+  it('writes the record and the rule that points at it in one value', () => {
+    const settings = withNamedStandIn({
+      settings: settingsWith({ standIns: [], rules: [] }),
+      standIn: OPENED,
+      rule: NAMES_IT,
+    });
+
+    expect(settings.standIns.map((entry) => entry.id)).toEqual([OPENED.id]);
+    expect(settings.attributionRules.map(standInIdOf)).toEqual([OPENED.id]);
+  });
+
+  it('takes back the rule that answered the context before', () => {
+    const answered = rule({ id: 'rule-donate', target: { kind: 'donate' } });
+    const settings = withNamedStandIn({
+      settings: settingsWith({ standIns: [], rules: [answered] }),
+      standIn: OPENED,
+      rule: NAMES_IT,
+      supersededIds: [answered.id],
+    });
+
+    expect(settings.attributionRules.map((entry) => entry.id)).toEqual([NAMES_IT.id]);
   });
 });

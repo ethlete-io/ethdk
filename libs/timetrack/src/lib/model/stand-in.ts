@@ -40,6 +40,35 @@ export type StandIn = {
   createdAt: Date;
 };
 
+/**
+ * Opens a stand-in for work Jira does not hold yet.
+ *
+ * The id is derived from `now` rather than generated, so the whole act is one pure function the agent
+ * endpoint and the card can both call and a spec can read back. `days` starts with the day the user
+ * pressed on: a resolve names the days it made bookable from this list, and `collected_event` is
+ * pruned long before a slow stand-in is answered.
+ */
+export const openStandIn = (options: {
+  name: string;
+  /** The local day key the work was named on. */
+  day: string;
+  now: Date;
+  projectKey?: string;
+  author?: NamingAuthor;
+}): StandIn => ({
+  id: `stand-in:${options.now.getTime()}`,
+  name: options.name.trim(),
+  ...(options.projectKey ? { projectKey: options.projectKey } : {}),
+  state: 'open',
+  days: [options.day],
+  author: options.author ?? 'user',
+  createdAt: options.now,
+});
+
+/** The stand-ins still waiting on a ticket, newest first, which is what a picker offers. */
+export const openStandIns = (standIns: readonly StandIn[]) =>
+  standIns.filter((standIn) => standIn.state === 'open').sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
 /** The stand-in with this id, or nothing when a rule points at one that was deleted. */
 export const findStandIn = (options: { id: string; standIns: readonly StandIn[] }) =>
   options.standIns.find((standIn) => standIn.id === options.id);

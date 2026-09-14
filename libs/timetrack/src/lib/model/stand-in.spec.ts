@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AttributionRule } from './attribution';
-import { StandIn, findStandIn, matchStandIn, standInDays } from './stand-in';
+import { StandIn, findStandIn, matchStandIn, openStandIn, openStandIns, standInDays } from './stand-in';
 
 const standIn = (overrides: Partial<StandIn> = {}): StandIn => ({
   id: 'stand-in-1',
@@ -67,5 +67,41 @@ describe('standInDays', () => {
       '2026-09-14',
       '2026-09-15',
     ]);
+  });
+});
+
+describe('openStandIn', () => {
+  const NOW = new Date('2026-09-14T09:30:00.000Z');
+
+  it('opens on the day the user pressed on, so a resolve can name it later', () => {
+    const opened = openStandIn({ name: 'The export nobody filed yet', day: '2026-09-14', now: NOW });
+
+    expect(opened.state).toBe('open');
+    expect(opened.days).toEqual(['2026-09-14']);
+    expect(opened.author).toBe('user');
+  });
+
+  it('trims the name and leaves out a project nobody named', () => {
+    const opened = openStandIn({ name: '  Padded  ', day: '2026-09-14', now: NOW });
+
+    expect(opened.name).toBe('Padded');
+    expect(opened.projectKey).toBeUndefined();
+  });
+
+  it('names the same id for the same instant, so the act is readable back', () => {
+    const first = openStandIn({ name: 'One', day: '2026-09-14', now: NOW });
+    const second = openStandIn({ name: 'Two', day: '2026-09-14', now: NOW });
+
+    expect(first.id).toBe(second.id);
+  });
+});
+
+describe('openStandIns', () => {
+  it('lists what still waits on a ticket, newest first', () => {
+    const older = standIn({ id: 'a', createdAt: new Date('2026-09-10T00:00:00.000Z') });
+    const newer = standIn({ id: 'b', createdAt: new Date('2026-09-14T00:00:00.000Z') });
+    const done = standIn({ id: 'c', state: 'resolved', issueKey: 'ABC-1' });
+
+    expect(openStandIns([older, done, newer]).map((entry) => entry.id)).toEqual(['b', 'a']);
   });
 });

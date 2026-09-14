@@ -4,7 +4,7 @@ import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
 import { ActivityBlock, contextKey } from '../model/block';
 import { Evidence } from '../model/evidence';
-import { draftTicket } from './draft';
+import { draftTicket, standInNameFor } from './draft';
 
 const REPO = '/Users/tom/dev/ea-frontend';
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
@@ -129,5 +129,21 @@ describe('draftTicket', () => {
     });
 
     expect(drafted.notes).toEqual([]);
+  });
+});
+
+describe('standInNameFor', () => {
+  it('reads the branch subject as words, which is what the user called the work', () => {
+    expect(standInNameFor({ context: { repoPath: REPO, branch: 'feat/competition-journey' }, config: CONFIG })).toBe(
+      'Competition journey',
+    );
+  });
+
+  it('falls back to the checkout name when the branch carries no subject', () => {
+    expect(standInNameFor({ context: { repoPath: REPO, branch: 'next' }, config: CONFIG })).toBe('ea-frontend');
+  });
+
+  it('names the application for work no checkout holds', () => {
+    expect(standInNameFor({ context: { appId: 'com.slack.Slack' }, config: CONFIG })).toBe('com.slack.Slack');
   });
 });

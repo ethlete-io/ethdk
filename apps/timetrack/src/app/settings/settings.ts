@@ -32,6 +32,7 @@ import {
   withBackgroundProjects,
   withFavoriteProjects,
   withProjectLink,
+  withNamedStandIn,
   withStandIn,
   withStandInDay,
   withReplacedAttributionRule,
@@ -312,6 +313,11 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       apply(withReplacedAttributionRule({ settings: settings(), ...options })),
 
     addStandIn: (standIn: StandIn) => apply(withStandIn({ settings: settings(), standIn })),
+
+    /** Opens a stand-in and names a context with it, as the one write the two halves are. */
+    nameWithStandIn: (options: { standIn: StandIn; rule: AttributionRule; supersededIds?: readonly string[] }) =>
+      apply(withNamedStandIn({ settings: settings(), ...options })),
+
     removeStandIn: (id: string) => apply(withoutStandIn({ settings: settings(), id })),
     markStandInDay: (options: { id: string; day: string }) =>
       apply(withStandInDay({ settings: settings(), ...options })),
