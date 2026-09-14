@@ -1,77 +1,109 @@
 import { CollectedEvent } from '../model/event';
-import { TimeWindow } from '../model/time-window';
+import { TimeWindow, mergeWindows } from '../model/time-window';
 import { WorkGroup } from './merge';
 
-/** Which way an instant answers for: the time before it, the time after it, or both. */
-export type PresenceSide = 'both' | 'before' | 'after';
+const LEAVING: ReadonlySet<string> = new Set(['idle-start', 'lock']);
+const RETURNING: ReadonlySet<string> = new Set(['idle-end', 'unlock']);
 
-/** One instant a person was demonstrably at this machine, and which way it answers. */
-export type Presence = { at: Date; side: PresenceSide };
+/** An away stretch the day never closed runs to the end of time: nothing ever said the person came back. */
+const NEVER_CAME_BACK = new Date(8.64e15);
 
-const sideOf = (event: CollectedEvent): PresenceSide => {
-  if (event.source !== 'idle') return 'both';
+/**
+ * The stretches the notifier said nobody was watching, from the transitions that open and close them.
+ */
+const awayStretches = (events: readonly CollectedEvent[]): TimeWindow[] => {
+  const transitions = events
+    .filter((event) => event.source === 'idle' && (LEAVING.has(event.kind) || RETURNING.has(event.kind)))
+    .sort((a, b) => a.at.getTime() - b.at.getTime());
+  const away: TimeWindow[] = [];
 
-  return event.kind === 'idle-end' || event.kind === 'unlock' || event.kind === 'pause-end' ? 'after' : 'before';
+  let left: Date | undefined;
+
+  for (const event of transitions) {
+    if (LEAVING.has(event.kind)) {
+      left ??= event.at;
+      continue;
+    }
+
+    if (left) away.push({ from: left, to: event.at });
+    left = undefined;
+  }
+
+  if (left) away.push({ from: left, to: NEVER_CAME_BACK });
+
+  return away;
 };
 
 /**
- * The instants a person was demonstrably at this machine, and which way each one answers.
+ * The stretches a person was demonstrably at this machine, each instant widened by `graceMs`.
  *
  * Four things can say a person was there, and nothing else can: a window they brought to the front, an
  * idle transition the notifier saw, a prompt they gave an agent, and a call they held. A turn, a
  * session, a commit and an editor heartbeat all say the machine worked, which is a different question —
  * an agent on a schedule produces every one of them with nobody in the room.
  *
- * An idle transition is the one kind that also says where the person was *not*, so it answers one way
- * only: `idle-start`, `lock` and `pause-start` are the person leaving and answer for the time before
- * them; `idle-end`, `unlock` and `pause-end` are the person returning and answer for the time after.
- * Everything else answers both ways.
+ * An instant is widened because a person works a stretch of a day rather than a band of it: they step
+ * away for ten minutes while an agent runs, and the quarter hour that leaves behind is still time they
+ * were there for.
+ *
+ * An away stretch is a wall the grace cannot cross, and the one thing on a day that says where a person
+ * was *not*. An instant inside one is no person at all — the compositor reports a focus change as the
+ * session idles, three seconds after the transition — and an instant outside one reaches only up to its
+ * edge. Without the wall, the first window of the afternoon would answer for the last quarter hour of
+ * the lunch break it came back from.
  */
-export const attendedAt = (events: readonly CollectedEvent[]): Presence[] =>
-  events
+export const attendedAt = (options: { events: readonly CollectedEvent[]; graceMs: number }): TimeWindow[] => {
+  const grace = Math.max(0, options.graceMs);
+  const away = awayStretches(options.events).map((stretch) => ({
+    from: stretch.from.getTime(),
+    to: stretch.to.getTime(),
+  }));
+  const instants = options.events
     .filter((event) => {
       if (event.source === 'window' || event.source === 'idle') return true;
 
       return event.kind === 'agent-prompt' && event.askedBy !== 'machine';
     })
-    .map((event) => ({ at: event.at, side: sideOf(event) }))
-    .sort((a, b) => a.at.getTime() - b.at.getTime());
+    .map((event) => event.at.getTime())
+    .filter((at) => !away.some((stretch) => at > stretch.from && at < stretch.to));
+
+  return mergeWindows(
+    instants.map((at) => ({
+      from: new Date(
+        away.reduce((edge, stretch) => (stretch.to <= at ? Math.max(edge, stretch.to) : edge), at - grace),
+      ),
+      to: new Date(
+        away.reduce((edge, stretch) => (stretch.from >= at ? Math.min(edge, stretch.from) : edge), at + grace),
+      ),
+    })),
+  );
+};
 
 /**
  * Marks each group with whether anybody was there for it.
  *
- * One instant of attendance answers for a whole band, and reaches `graceMs` past itself to either side
- * it answers for. A person works a stretch of a day rather than a band of it: they step away for ten
- * minutes while an agent runs, and the fifteen minutes that leaves behind is still a slice of a day
- * they were present for. `false` is reserved for what it is for — a chunk that ran with nobody in the
- * room at all, such as a scheduled agent session at five on a Sunday morning, where no instant of a
- * person comes within `graceMs` of either end.
+ * One stretch of attendance touching a band answers for the whole band. `false` is reserved for what it
+ * is for — a chunk that ran with nobody in the room at all, such as a scheduled agent session at five
+ * on a Sunday morning, which no stretch of presence comes near.
  *
  * The test is deliberately lenient in that direction — a row wrongly called unattended costs the user a
  * manual entry, and a row wrongly called attended is what puts hours nobody worked into Tempo. The
- * grace is what keeps both true at once: it is short enough that a night's run reaches no one.
+ * grace inside {@link attendedAt} is what keeps both true at once: it is short enough that a night's run
+ * reaches no one, and it stops dead at an away stretch.
  *
  * A band the user claimed themselves is attended whatever the events say. A timer they started and a
  * call they held are both acts of a person, and neither leaves a window event behind.
  */
 export const markAttendance = (options: {
   groups: readonly WorkGroup[];
-  at: readonly Presence[];
-  /** How far past itself an instant answers. Pass the day's `gapFillMs`, which is the same question. */
-  graceMs: number;
+  at: readonly TimeWindow[];
   /** The stretches the user claimed by hand: the runs they timed and the calls a rule counted as work. */
   claimed?: readonly TimeWindow[];
 }): WorkGroup[] => {
-  const grace = Math.max(0, options.graceMs);
-  const reach = options.at.map((presence) => {
-    const at = presence.at.getTime();
-
-    return { from: presence.side === 'after' ? at : at - grace, to: presence.side === 'before' ? at : at + grace };
-  });
-  const spans = [
-    ...reach,
-    ...(options.claimed ?? []).map((window) => ({ from: window.from.getTime(), to: window.to.getTime() })),
-  ];
+  const spans = [...options.at, ...(options.claimed ?? [])].map((window) => ({
+    from: window.from.getTime(),
+    to: window.to.getTime(),
+  }));
 
   return options.groups.map((group) => {
     const from = group.from.getTime();

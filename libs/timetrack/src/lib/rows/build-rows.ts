@@ -208,8 +208,10 @@ export const buildRows = (
       ...calls.map((call) => call.group),
       ...timers.map((timer) => timer.group),
     ],
-    at: attendedAt(options.events),
-    graceMs: options.fill?.maxFillGapMs ?? DEFAULT_FILL_OPTIONS.maxFillGapMs,
+    at: attendedAt({
+      events: options.events,
+      graceMs: options.fill?.maxFillGapMs ?? DEFAULT_FILL_OPTIONS.maxFillGapMs,
+    }),
     claimed: [...unwatched, ...booked.map((call) => ({ from: call.group.from, to: call.group.to }))],
   }).sort((a, b) => a.from.getTime() - b.from.getTime());
   const { proposals, unattributed, unnamed } = propose({
