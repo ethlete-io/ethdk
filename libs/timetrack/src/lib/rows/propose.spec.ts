@@ -113,6 +113,30 @@ describe('propose', () => {
     expect(proposals[0]?.durationMs).toBe(60 * MINUTE);
   });
 
+  it('books the whole band, so a row never reads shorter than the time it covers', () => {
+    const { proposals } = propose({
+      groups: [
+        {
+          issueKey: 'FIP-2177',
+          from: AT(22),
+          to: AT(47),
+          observedMs: 13 * MINUTE,
+          confidence: 'certain',
+          evidence: [],
+          blocks: [
+            { from: AT(22), to: AT(30), context: {}, evidence: [] },
+            { from: AT(40), to: AT(47), context: {}, evidence: [] },
+          ],
+        },
+      ],
+    });
+
+    expect(proposals[0]?.from).toEqual(AT(15));
+    expect(proposals[0]?.to).toEqual(AT(45));
+    expect(proposals[0]?.durationMs).toBe(30 * MINUTE);
+    expect(proposals[0]?.observedMs).toBe(13 * MINUTE);
+  });
+
   it('carries the evidence chain onto the proposal', () => {
     const evidence: Evidence[] = [
       { kind: 'branch', at: AT(0), detail: 'branch `feat/FIP-2177-user-management` checked out' },

@@ -1,4 +1,4 @@
-import { DEFAULT_ROUND_OPTIONS, RoundOptions } from './round';
+import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurationUp } from './round';
 
 /** A row's raw bounds and the whole increments it books, from `roundDurationUp`. */
 export type SnapInput = {
@@ -20,7 +20,10 @@ type Placed = {
 };
 
 const endOf = (row: Placed, incrementMs: number) =>
-  Math.max(nearest(row.rawTo, incrementMs), row.from + Math.max(row.durationMs, incrementMs));
+  Math.max(
+    nearest(row.rawTo, incrementMs),
+    row.from + Math.max(roundDurationUp(row.durationMs, { incrementMs }), incrementMs),
+  );
 
 /**
  * Puts every row's clock times on an increment boundary: the start goes back to the boundary below
@@ -29,7 +32,8 @@ const endOf = (row: Placed, incrementMs: number) =>
  * it is the time a reviewer reads on their own timesheet.
  *
  * The end never lands before `from + durationMs`, so a band is never drawn narrower than the time it
- * books.
+ * books, and a duration that is not a whole increment reaches the boundary above it — both ends of a
+ * band are on the grid.
  *
  * Widening a row can make it reach into a row it only touched before. Where the snap alone would
  * create such an overlap, the earlier row's end rounds down instead of to the nearest boundary; when
@@ -70,7 +74,9 @@ export const snapRowBounds = <T extends SnapInput>(options: {
       }
 
       row.from = earlier.to;
-      row.to = endOf(row, incrementMs);
+      // Not `endOf`: the minutes this row gave up went to the row before it, and pushing its end out
+      // to keep its old length would book them a second time.
+      row.to = Math.max(nearest(row.rawTo, incrementMs), row.from + incrementMs);
     }
 
     done.push(row);

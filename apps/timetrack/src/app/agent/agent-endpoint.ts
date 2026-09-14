@@ -212,7 +212,6 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           description: request.description,
           from,
           to,
-          durationMs: request.durationMs,
         },
       })
       .pipe(

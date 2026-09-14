@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { ActivityBlock } from '../model/block';
 import { WorklogProposal } from '../model/proposal';
+import { CALL_LANE_KEY } from './lane';
 import { WorkGroup } from './merge';
-import { checkDay, roundDurationUp, roundDurations } from './round';
+import { checkDay, roundDurationUp } from './round';
 
 const MINUTE = 60_000;
-const minutes = (values: number[]) => values.map((value) => value * MINUTE);
-const asMinutes = (values: number[]) => values.map((value) => value / MINUTE);
 
 const proposal = (options: { issueKey: string; durationMinutes: number }): WorklogProposal => ({
   id: `${options.issueKey}@2026-08-11T08:00:00.000Z`,
@@ -20,13 +20,27 @@ const proposal = (options: { issueKey: string; durationMinutes: number }): Workl
   state: 'suggested',
 });
 
+const block = (context: ActivityBlock['context']): ActivityBlock => ({
+  from: new Date('2026-08-11T08:00:00Z'),
+  to: new Date('2026-08-11T09:00:00Z'),
+  context,
+  evidence: [],
+});
+
+/** A band in a checkout, which is time a worklog can hold. */
 const group = (observedMinutes: number): WorkGroup => ({
   from: new Date('2026-08-11T08:00:00Z'),
   to: new Date('2026-08-11T09:00:00Z'),
   observedMs: observedMinutes * MINUTE,
   confidence: 'weak',
   evidence: [],
-  blocks: [],
+  blocks: [block({ repoPath: '/home/tom/dev/ethlete-sdk' })],
+});
+
+/** A band in an application alone, which no worklog can hold. */
+const appGroup = (observedMinutes: number): WorkGroup => ({
+  ...group(observedMinutes),
+  blocks: [block({ appId: 'firefox' })],
 });
 
 describe('roundDurationUp', () => {
@@ -47,48 +61,6 @@ describe('roundDurationUp', () => {
 
   it('takes the increment from the caller', () => {
     expect(roundDurationUp(11 * MINUTE, { incrementMs: 5 * MINUTE }) / MINUTE).toBe(15);
-  });
-});
-
-describe('roundDurations', () => {
-  it('leaves durations that are already whole increments alone', () => {
-    expect(asMinutes(roundDurations({ durationsMs: minutes([90, 30]) }))).toEqual([90, 30]);
-  });
-
-  it('preserves the day total instead of rounding every row on its own', () => {
-    const rounded = roundDurations({ durationsMs: minutes([50, 40, 30]) });
-
-    expect(asMinutes(rounded)).toEqual([45, 45, 30]);
-    expect(rounded.reduce((sum, ms) => sum + ms, 0)).toBe(120 * MINUTE);
-  });
-
-  it('keeps a row that would round away, taking the increment from the longest row', () => {
-    const rounded = roundDurations({ durationsMs: minutes([235, 4]) });
-
-    expect(asMinutes(rounded)).toEqual([225, 15]);
-    expect(rounded.reduce((sum, ms) => sum + ms, 0)).toBe(240 * MINUTE);
-  });
-
-  it('gives a lone sub-increment row one increment rather than nothing', () => {
-    expect(asMinutes(roundDurations({ durationsMs: minutes([4]) }))).toEqual([15]);
-  });
-
-  it('leaves a row at zero when there is no increment to spare', () => {
-    expect(asMinutes(roundDurations({ durationsMs: minutes([4, 4]) }))).toEqual([15, 0]);
-  });
-
-  it('does not invent time for a row that observed none', () => {
-    expect(asMinutes(roundDurations({ durationsMs: minutes([0, 60]) }))).toEqual([0, 60]);
-  });
-
-  it('honours a different increment', () => {
-    expect(asMinutes(roundDurations({ durationsMs: minutes([22, 17]), options: { incrementMs: 5 * MINUTE } }))).toEqual(
-      [25, 15],
-    );
-  });
-
-  it('returns nothing for an empty day', () => {
-    expect(roundDurations({ durationsMs: [] })).toEqual([]);
   });
 });
 
@@ -172,6 +144,60 @@ describe('checkDay', () => {
     expect(check.unattributedMs).toBe(45 * MINUTE);
     expect(check.unattendedMs).toBe(90 * MINUTE);
     expect(check.warnings.map((warning) => warning.kind)).toEqual(['unattributed-time', 'unattended-time']);
+  });
+
+  it('leaves time in an application alone out of the unattributed total', () => {
+    const check = checkDay({
+      proposals: [proposal({ issueKey: 'FIP-2177', durationMinutes: 240 })],
+      unattributed: [group(45), appGroup(120)],
+    });
+
+    expect(check.unattributedMs).toBe(45 * MINUTE);
+    expect(check.warnings[0]?.detail).toContain('across 1 block(s)');
+  });
+
+  it('counts a call nothing named, which a worklog can hold', () => {
+    const check = checkDay({
+      proposals: [],
+      unattributed: [{ ...group(30), blocks: [], laneKey: CALL_LANE_KEY }],
+    });
+
+    expect(check.unattributedMs).toBe(30 * MINUTE);
+  });
+
+  it('says nothing about a day made only of application time', () => {
+    const check = checkDay({ proposals: [], unattributed: [appGroup(120)] });
+
+    expect(check.unattributedMs).toBe(0);
+    expect(check.warnings).toEqual([]);
+  });
+
+  it('holds the under-target warning back while the day is still running', () => {
+    const check = checkDay({
+      proposals: [proposal({ issueKey: 'FIP-2177', durationMinutes: 120 })],
+      options: { targetMs: 480 * MINUTE, finished: false },
+    });
+
+    expect(check.deltaMs).toBe(-360 * MINUTE);
+    expect(check.warnings).toEqual([]);
+  });
+
+  it('warns under target once the day is over', () => {
+    const check = checkDay({
+      proposals: [proposal({ issueKey: 'FIP-2177', durationMinutes: 120 })],
+      options: { targetMs: 480 * MINUTE, finished: true },
+    });
+
+    expect(check.warnings.map((warning) => warning.kind)).toEqual(['under-target']);
+  });
+
+  it('warns over target on a day still running, which no more work can fix', () => {
+    const check = checkDay({
+      proposals: [proposal({ issueKey: 'FIP-2177', durationMinutes: 600 })],
+      options: { targetMs: 480 * MINUTE, finished: false },
+    });
+
+    expect(check.warnings.map((warning) => warning.kind)).toEqual(['over-target']);
   });
 
   it('warns when a day is still above the row cap after consolidation', () => {

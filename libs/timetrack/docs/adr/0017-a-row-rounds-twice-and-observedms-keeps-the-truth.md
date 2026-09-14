@@ -30,15 +30,17 @@ proposal, which is the whole of Tom's point. The evidence chain behind the row s
 
 ## Consequences
 
-- A row's `to - from` is not `durationMs`. It is larger on a row that spans a gap between its blocks,
-  because the band covers the gap and the booking does not. This was already true and stays true.
+- ~~A row's `to - from` is not `durationMs`. It is larger on a row that spans a gap between its
+  blocks, because the band covers the gap and the booking does not.~~ Overturned by ADR 0019: a row
+  books the time its band covers, so `to - from` is `durationMs` and a row that spans a gap books the
+  gap.
 - `proposal.from` is Tempo's `startTime`, so the content hash in `tempo/diff.ts` changes for every
   row. A day synced before this ships will plan an update on its next run. That is correct: the time
   the timesheet claims really did change.
 - The proposal id still uses the group's raw start, so a re-run of a day recognises a row it already
   synced rather than duplicating it.
-- `roundDurations`, which preserves a total across several rows, stays for `splitRow` and
-  `moveBoundary`. A reviewer's cut must not invent time, so a cut is the one place the ceiling is the
-  wrong rule.
+- ~~`roundDurations`, which preserves a total across several rows, stays for `splitRow` and
+  `moveBoundary`.~~ Overturned by ADR 0019, which deletes it: a cut moves clock times and the
+  durations follow.
 - The day screen's drag already snapped to the same increment. The two now agree: a row a reviewer
   drags and a row the day proposed sit on the same grid.

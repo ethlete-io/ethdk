@@ -14,12 +14,12 @@ import {
   FORM_FIELD_IMPORTS,
   injectSchedulerEditSurfaceHost,
 } from '@ethlete/components';
-import { formatDurationMs } from '@ethlete/timetrack';
+import { formatDurationMs, roundDurationUp } from '@ethlete/timetrack';
 import { rowEntryOf } from './row-appointment';
 
 /**
- * How much time the row logs, which the clock span above it does not decide: the day rounds its
- * durations as a whole, so a band from 09:07 to 09:53 logs three quarters of an hour.
+ * How much time the row logs, which is the span of the band itself — see ADR 0019. Typing a duration
+ * moves the band's end, and a duration inside an increment books the whole of it.
  */
 @Component({
   selector: 'ethlete-edit-duration',
@@ -45,7 +45,11 @@ export class EditDurationComponent {
 
   private entry = computed(() => rowEntryOf(this.draft()()));
 
-  protected durationMs = computed(() => this.entry()?.durationMs ?? 0);
+  protected durationMs = computed(() => {
+    const appointment = this.draft()();
+
+    return appointment.end.getTime() - appointment.start.getTime();
+  });
 
   protected observed = computed(() => {
     const observedMs = this.entry()?.row.observedMs;
@@ -56,8 +60,15 @@ export class EditDurationComponent {
   protected set(durationMs: number) {
     this.draft().update((appointment) => {
       const entry = rowEntryOf(appointment);
+      const booked = roundDurationUp(Math.max(0, durationMs));
 
-      return entry ? { ...appointment, extra: { ...entry, durationMs } } : appointment;
+      if (!entry || booked <= 0) return appointment;
+
+      return {
+        ...appointment,
+        end: new Date(appointment.start.getTime() + booked),
+        extra: { ...entry, durationMs: booked },
+      };
     });
   }
 }

@@ -88,14 +88,14 @@ describe('snapRowBounds', () => {
     ).toEqual(['09:00-11:00', '10:00-11:00']);
   });
 
-  it('repairs a run of rows in order', () => {
+  it('repairs a run of rows in order, and a pushed row gives up the time rather than taking it back', () => {
     expect(
       snap([
         { from: '09:07', to: '09:38' },
         { from: '09:38', to: '10:08' },
         { from: '10:08', to: '10:52' },
       ]),
-    ).toEqual(['09:00-09:45', '09:45-10:15', '10:15-11:00']);
+    ).toEqual(['09:00-09:45', '09:45-10:15', '10:15-10:45']);
   });
 
   it('answers in the order it was given, whatever order the rows ran in', () => {

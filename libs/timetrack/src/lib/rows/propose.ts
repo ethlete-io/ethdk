@@ -79,7 +79,7 @@ export const propose = (options: {
       durationMs: roundDurationUp(group.observedMs, options.round),
     })),
     options: options.round,
-  });
+  }).map((row) => ({ ...row, durationMs: row.to.getTime() - row.from.getTime() }));
   const attributed = rows.filter(isAttributedRow);
   const unattributed = rows.filter((row) => !isAttributedRow(row));
 

@@ -301,7 +301,7 @@ describe('splitRow', () => {
     const edits = splitRow({ edits: EMPTY_DAY_REVIEW_EDITS, row, at: at('08:20') });
     const rows = reviewDay({ rows: base, edits }).rows;
 
-    expect(rows.map((entry) => entry.durationMs / MINUTE)).toEqual([15, 105]);
+    expect(rows.map((entry) => entry.durationMs / MINUTE)).toEqual([30, 90]);
     expect(rows.reduce((sum, entry) => sum + entry.durationMs, 0)).toBe(120 * MINUTE);
   });
 
@@ -387,10 +387,10 @@ describe('mergeRows', () => {
     expect(review.rows[0]!.to).toEqual(at('11:00'));
   });
 
-  it('adds the durations up and keeps the whole evidence chain in order', () => {
+  it('logs the whole span it now covers and keeps the evidence chain in order', () => {
     const row = reviewDay({ rows: base, edits: merge() }).rows[0]!;
 
-    expect(row.durationMs).toBe(120 * MINUTE);
+    expect(row.durationMs).toBe(180 * MINUTE);
     expect(row.observedMs).toBe(120 * MINUTE);
     expect(row.evidence.map((entry) => entry.detail)).toEqual(['a commit', 'a window title']);
   });
@@ -430,7 +430,7 @@ describe('mergeRows', () => {
     const review = reviewDay({ rows: base, edits: merge(rejected) });
 
     expect(review.rows[0]!.state).toBe('edited');
-    expect(review.check.proposedMs).toBe(120 * MINUTE);
+    expect(review.check.proposedMs).toBe(180 * MINUTE);
   });
 
   it('stays rejected when every row it merged was rejected', () => {
@@ -575,11 +575,8 @@ describe('addManualRow', () => {
     expect(isManualRow(row)).toBe(true);
   });
 
-  it('logs a whole increment, never zero, and takes an explicit duration over the span', () => {
+  it('logs a whole increment, never zero', () => {
     expect(rowFor(reviewDay({ rows: base, edits: added({ to: at('11:05') }) }), 'ABC-9').durationMs).toBe(15 * MINUTE);
-    expect(rowFor(reviewDay({ rows: base, edits: added({ durationMs: 45 * MINUTE }) }), 'ABC-9').durationMs).toBe(
-      45 * MINUTE,
-    );
   });
 
   it('leaves the machine-proposed rows alone and reports no drift for a row that replaced nothing', () => {
@@ -613,6 +610,20 @@ describe('setRowRange', () => {
       durationMs: 120 * MINUTE,
       observedMs: 120 * MINUTE,
     });
+  });
+
+  it('reads a row pinned in the old meeting lane back into the call lane', () => {
+    const laned = dayRows({
+      proposals: [{ ...proposal({ issueKey: 'ABC-1', from: '08:00', to: '09:00' }), laneKey: 'lane:meeting' }],
+    });
+    const edits = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewDay({ rows: laned }), 'ABC-1'),
+      from: at('08:00'),
+      to: at('08:30'),
+    });
+
+    expect(reviewDay({ rows: laned, edits }).rows[0]!.laneKey).toBe('lane:call');
   });
 
   it('re-reads the duration off the span when one end is dragged', () => {
@@ -722,10 +733,10 @@ describe('reviewDay, a band nothing named', () => {
     expect(review.check.proposedMs).toBe(60 * MINUTE);
   });
 
-  it('leaves a band alone while nothing has named it, because no sync would write it', () => {
+  it('logs the whole band, so the time it reads is the time it covers', () => {
     const odd = dayRows({ proposals: [], unnamed: [band({ from: '08:00', to: '09:00', minutes: 47 })] });
 
-    expect(reviewDay({ rows: odd }).rows[0]?.durationMs).toBe(47 * MINUTE);
+    expect(reviewDay({ rows: odd }).rows[0]?.durationMs).toBe(60 * MINUTE);
   });
 
   it('books a whole increment once it is named', () => {
@@ -739,7 +750,7 @@ describe('reviewDay, a band nothing named', () => {
     expect(reviewDay({ rows: odd, edits }).rows[0]?.durationMs).toBe(60 * MINUTE);
   });
 
-  it('keeps a duration typed by hand', () => {
+  it('moves the band\'s end to the duration typed by hand', () => {
     const odd = dayRows({ proposals: [], unnamed: [band({ from: '08:00', to: '09:00', minutes: 47 })] });
     const named = setRowIssue({
       edits: EMPTY_DAY_REVIEW_EDITS,
@@ -751,8 +762,10 @@ describe('reviewDay, a band nothing named', () => {
       row: reviewDay({ rows: odd, edits: named }).rows[0]!,
       durationMs: 20 * MINUTE,
     });
+    const row = reviewDay({ rows: odd, edits }).rows[0];
 
-    expect(reviewDay({ rows: odd, edits }).rows[0]?.durationMs).toBe(20 * MINUTE);
+    expect(row?.durationMs).toBe(30 * MINUTE);
+    expect(row?.to).toEqual(at('08:30'));
   });
 
   it('leaves a whole proposal beside it untouched', () => {

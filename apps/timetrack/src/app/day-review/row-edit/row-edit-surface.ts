@@ -46,7 +46,6 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     if (issueKey !== (row.issueKey ?? '')) store.setIssue(row, issueKey);
     if (description !== row.description) store.setDescription(row, description);
-    if (entry && entry.durationMs !== row.durationMs) store.setDuration(row, entry.durationMs);
     if (entry && entry.willSync !== syncsInState(row.state)) {
       store.setState(row, entry.willSync ? 'accepted' : 'rejected');
     }

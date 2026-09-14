@@ -423,6 +423,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     { initialValue: {} as Record<string, string> },
   );
 
+  const isToday = computed(() => day() === localDayKey(new Date(), boundary()));
+
   const review = computed(() => {
     const rows = reasonedRows();
 
@@ -434,6 +436,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             targetMs: targetMs(),
             coveredMs: coveredMsOf(coverage()),
             pausedMs: pausedMs(evidence()?.pauses ?? []),
+            finished: !isToday(),
           },
         })
       : null;
@@ -561,7 +564,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     day: streamed,
     /** The branch a checkout the day named none for was on, by checkout path, from its reflog. */
     headBranches,
-    isToday: computed(() => day() === localDayKey(new Date(), boundary())),
+    isToday,
     /** The rows the model's answers are in, which is what the screen draws and the reviewer edits. */
     reasoned: reasonedRows,
     /**

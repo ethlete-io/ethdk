@@ -5,8 +5,8 @@ import {
   DayCheck,
   RoundOptions,
   checkDay,
-  roundDurationUp,
 } from '../rows/round';
+import { storedLaneKey } from '../rows/lane';
 import { snapRowBounds } from '../rows/snap';
 import { formatDurationMs } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
@@ -63,7 +63,7 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
   to: row.to,
   durationMs: row.durationMs,
   observedMs: row.observedMs,
-  laneKey: row.laneKey,
+  laneKey: storedLaneKey(row.laneKey),
   description: row.description,
   confidence: row.confidence,
   evidence: row.evidence,
@@ -73,33 +73,17 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
 });
 
 /**
- * Guarantees that every row a sync would write books a whole increment, whatever built it.
+ * A row books the time its band covers. One number reaches the reviewer, so a band drawn 13:15 to
+ * 13:45 logs 30 minutes and never a shorter time the label would then have to explain. See ADR 0019.
  *
- * A duration the reviewer typed is theirs and is left alone. A row `propose` already booked is a
- * whole number of increments, so it comes back out of this unchanged.
+ * Run after `snapRowBounds`, whose bounds are whole increments, so this books whole increments too.
  */
-const withRounding = (options: {
-  rows: ReviewedRow[];
-  edits: DayReviewEdits;
-  round?: Partial<RoundOptions>;
-}): ReviewedRow[] => {
-  const byHand = new Set([
-    ...options.edits.pinned.map((row) => row.id),
-    ...Object.entries(options.edits.overrides)
-      .filter(([, override]) => override.durationMs !== undefined)
-      .map(([id]) => id),
-  ]);
-  const writes = options.rows.filter(
-    (row) => isNamedRow(row) && syncsInState(row.state) && !byHand.has(row.id) && row.durationMs > 0,
-  );
-  const byId = new Map(writes.map((row) => [row.id, roundDurationUp(row.durationMs, options.round)]));
+const bookTheSpan = (rows: ReviewedRow[]): ReviewedRow[] =>
+  rows.map((row) => {
+    const durationMs = row.to.getTime() - row.from.getTime();
 
-  return options.rows.map((row) => {
-    const durationMs = byId.get(row.id);
-
-    return durationMs === undefined || durationMs === row.durationMs ? row : { ...row, durationMs };
+    return durationMs === row.durationMs ? row : { ...row, durationMs };
   });
-};
 
 /**
  * Applies a day's local edits to a freshly correlated day and reports what a sync would write.
@@ -129,12 +113,7 @@ export const reviewDay = (options: {
   ].sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));
 
   const hidden = reviewed.filter((row) => row.hidden);
-  // Rounding spreads a day's increments over the rows a sync writes, so a hidden row has to be out of
-  // it before it runs: leaving one in would move minutes onto rows the reviewer can still see.
-  const rows = snapRowBounds({
-    rows: withRounding({ rows: reviewed.filter((row) => !row.hidden), edits, round: options.round }),
-    options: options.round,
-  });
+  const rows = bookTheSpan(snapRowBounds({ rows: reviewed.filter((row) => !row.hidden), options: options.round }));
 
   const replacedMs = options.rows.proposals
     .filter((proposal) => consumed.has(proposal.id))

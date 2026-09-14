@@ -1,5 +1,7 @@
+import { streamKeyRepoPath } from '../model/block';
 import { formatDurationMs } from '../model/duration';
 import { WorklogProposal } from '../model/proposal';
+import { CALL_LANE_KEY, laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
 
 export type RoundOptions = {
@@ -22,54 +24,6 @@ export const roundDurationUp = (durationMs: number, options?: Partial<RoundOptio
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options };
 
   return Math.ceil(durationMs / incrementMs) * incrementMs;
-};
-
-/**
- * Rounds a day's durations to whole increments while preserving the day's total: each row keeps its
- * whole increments and the leftover increments go to the longest remainders. Rounding every row on
- * its own is what invents or loses half an hour over a fragmented day.
- *
- * A row that would round away to nothing keeps one increment, taken from the longest row, so no row
- * silently vanishes from the timesheet. When only one row is left to take from, it keeps its own
- * increment instead and the total stands.
- */
-export const roundDurations = (options: { durationsMs: number[]; options?: Partial<RoundOptions> }): number[] => {
-  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.options };
-  const durations = options.durationsMs;
-  const observedMs = durations.reduce((sum, ms) => sum + ms, 0);
-  const increments = new Map<number, number>();
-
-  durations.forEach((ms, index) => increments.set(index, Math.floor(ms / incrementMs)));
-
-  const bump = (index: number, by: number) => increments.set(index, (increments.get(index) ?? 0) + by);
-  const byRemainder = durations
-    .map((ms, index) => ({ index, ms, remainder: ms % incrementMs }))
-    .sort((a, b) => b.remainder - a.remainder || b.ms - a.ms || a.index - b.index);
-
-  const wholeIncrements = observedMs > 0 ? Math.max(1, Math.round(observedMs / incrementMs)) : 0;
-  let left = wholeIncrements - [...increments.values()].reduce((sum, count) => sum + count, 0);
-
-  for (const row of byRemainder) {
-    if (left <= 0) break;
-
-    bump(row.index, 1);
-    left -= 1;
-  }
-
-  for (const row of byRemainder) {
-    if (row.ms === 0 || (increments.get(row.index) ?? 0) > 0) continue;
-
-    const donor = [...increments]
-      .filter(([index]) => index !== row.index)
-      .sort(([aIndex, aCount], [bIndex, bCount]) => bCount - aCount || aIndex - bIndex)[0];
-
-    if (!donor || donor[1] < 2) continue;
-
-    bump(donor[0], -1);
-    bump(row.index, 1);
-  }
-
-  return durations.map((_, index) => (increments.get(index) ?? 0) * incrementMs);
 };
 
 export type DayWarningKind =
@@ -108,6 +62,9 @@ export type DayCheck = {
    * Observed time nothing could attribute, and that a person was there for. Never folded into the
    * proposals. Time nobody was there for is `unattendedMs` instead: it is not work waiting for a name,
    * so counting it here would read as a question the reviewer has to answer.
+   *
+   * Only bookable bands count: a band with no checkout and no call behind it is drawn, and asking the
+   * reviewer to name time no worklog could ever hold is asking a question with no answer.
    */
   unattributedMs: number;
   /** Observed time an agent worked alone. Drawn, counted, and never proposed. */
@@ -129,6 +86,11 @@ export type CheckDayOptions = {
   coveredMs?: number;
   /** A day this close to the target is not worth a warning. Defaults to one rounding increment. */
   toleranceMs?: number;
+  /**
+   * Whether the day is over. A day still being worked is short of its target by definition, so
+   * `under-target` is raised only once the day can no longer grow. `over-target` is raised either way.
+   */
+  finished?: boolean;
   maxRowsPerDay?: number;
   /** Time a meeting or a call and observed activity both claim, from `matchMeetings` and `matchCalls`. */
   meetingOverlapMs?: number;
@@ -141,6 +103,20 @@ export type CheckDayOptions = {
 };
 
 /**
+ * Whether a band is time a worklog could hold: a checkout's work, or a call. Time in an application
+ * alone is neither, and it is drawn on the day without being counted — a reviewer asked to name an
+ * hour of browsing is asked a question that has no answer.
+ *
+ * The lane decides it, and not the blocks, so the footer, the warnings and the bands on screen all
+ * read the same day.
+ */
+const isBookable = (group: WorkGroup) => {
+  const lane = group.laneKey ?? laneKeyOf(group.blocks);
+
+  return lane === CALL_LANE_KEY || (!!lane && !!streamKeyRepoPath(lane));
+};
+
+/**
  * Compares a proposed day against its target and reports what a reviewer should look at. It never
  * changes a duration: a day under target is a day under target, and filling it silently would be
  * inventing time.
@@ -150,16 +126,17 @@ export const checkDay = (options: {
   unattributed?: WorkGroup[];
   options?: CheckDayOptions;
 }): DayCheck => {
-  const { targetMs, toleranceMs, maxRowsPerDay, meetingOverlapMs, timerUnobservedMs, filledMs, pausedMs } =
+  const { targetMs, toleranceMs, finished, maxRowsPerDay, meetingOverlapMs, timerUnobservedMs, filledMs, pausedMs } =
     options.options ?? {};
   const unattributed = options.unattributed ?? [];
+  const bookable = unattributed.filter(isBookable);
   const proposedMs = options.proposals.reduce((sum, proposal) => sum + proposal.durationMs, 0);
   const coveredMs = options.options?.coveredMs ?? 0;
   const loggedMs = proposedMs + coveredMs;
-  const unattributedMs = unattributed
+  const unattributedMs = bookable
     .filter((group) => group.attended !== false)
     .reduce((sum, group) => sum + group.observedMs, 0);
-  const unattended = unattributed.filter((group) => group.attended === false);
+  const unattended = bookable.filter((group) => group.attended === false);
   const unattendedMs = unattended.reduce((sum, group) => sum + group.observedMs, 0);
   const tolerance = toleranceMs ?? DEFAULT_ROUND_OPTIONS.incrementMs;
   const warnings: DayWarning[] = [];
@@ -172,12 +149,12 @@ export const checkDay = (options: {
         ? `${proposed} and ${formatDurationMs(coveredMs)} already in Tempo, against a ${formatDurationMs(targetMs)} target`
         : `${proposed} against a ${formatDurationMs(targetMs)} target`;
 
-    if (delta < -tolerance) warnings.push({ kind: 'under-target', detail: against });
+    if (delta < -tolerance && finished !== false) warnings.push({ kind: 'under-target', detail: against });
     else if (delta > tolerance) warnings.push({ kind: 'over-target', detail: against });
   }
 
   if (unattributedMs > 0) {
-    const named = unattributed.length - unattended.length;
+    const named = bookable.length - unattended.length;
 
     warnings.push({
       kind: 'unattributed-time',

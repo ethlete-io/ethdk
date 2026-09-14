@@ -1,5 +1,5 @@
 import { dominantConfidence, mergeEvidence } from '../rows/merge';
-import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurations } from '../rows/round';
+import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurationUp } from '../rows/round';
 import { Evidence } from '../model/evidence';
 import { DayReviewEdits, PinnedRow, ProposalOverride, ReviewedRow } from './model';
 
@@ -77,12 +77,29 @@ export const setRowDescription = (options: { edits: DayReviewEdits; row: Reviewe
   overrideOn({ edits: options.edits, row: options.row, change: { description: options.description } });
 
 /** Sets a row's logged duration. `observedMs` stays put: what was observed did not change. */
-export const setRowDuration = (options: { edits: DayReviewEdits; row: ReviewedRow; durationMs: number }) =>
-  overrideOn({
+/**
+ * Sets what a row logs by moving its end, because a row logs the time its band covers — see ADR 0019.
+ * A duration that is not a whole increment books the increment it reaches into, the same way a
+ * proposal does.
+ */
+export const setRowDuration = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  durationMs: number;
+  round?: Partial<RoundOptions>;
+}): DayReviewEdits => {
+  const durationMs = roundDurationUp(Math.max(0, Math.round(options.durationMs)), options.round);
+
+  if (durationMs <= 0) return options.edits;
+
+  return setRowRange({
     edits: options.edits,
     row: options.row,
-    change: { durationMs: Math.max(0, Math.round(options.durationMs)) },
+    from: options.row.from,
+    to: new Date(options.row.from.getTime() + durationMs),
+    round: options.round,
   });
+};
 
 export const setRowState = (options: { edits: DayReviewEdits; row: ReviewedRow; state: 'accepted' | 'rejected' }) =>
   overrideOn({ edits: options.edits, row: options.row, change: { state: options.state } });
@@ -139,8 +156,8 @@ export const resetRow = (options: { edits: DayReviewEdits; row: ReviewedRow }): 
 
 /**
  * Cuts a row in two at a clock instant, giving each side the evidence observed within it and the share
- * of the observed and logged time that falls inside it. The pair's logged total is preserved and both
- * sides land on whole increments, so splitting a row never changes the day's total.
+ * of the observed time that falls inside it. Each side logs its own half of the clock, so a cut never
+ * changes what the pair logs between them.
  *
  * A cut outside the row returns the edits unchanged — there is no half of a row to hand back.
  */
@@ -158,10 +175,8 @@ export const splitRow = (options: {
 
   const fraction = offset / span;
   const observed = Math.round(row.observedMs * fraction);
-  const [leftMs, rightMs] = roundDurations({
-    durationsMs: [row.durationMs * fraction, row.durationMs * (1 - fraction)],
-    options: options.round,
-  });
+  const leftMs = offset;
+  const rightMs = span - offset;
   const replaces = replacedBy(edits, row);
   const kept = edits.pinned.filter((entry) => entry.id !== row.id);
   const taken = new Set(kept.map((entry) => entry.id));
@@ -170,7 +185,7 @@ export const splitRow = (options: {
     ...asPinned(row, replaces),
     id: pinnedIdFor({ issueKey: row.issueKey, from: row.from, taken }),
     to: at,
-    durationMs: leftMs ?? 0,
+    durationMs: leftMs,
     observedMs: observed,
     evidence: row.evidence.filter((entry) => entry.at < at),
   };
@@ -181,7 +196,7 @@ export const splitRow = (options: {
     ...asPinned(row, replaces),
     id: pinnedIdFor({ issueKey: row.issueKey, from: at, taken }),
     from: at,
-    durationMs: rightMs ?? 0,
+    durationMs: rightMs,
     observedMs: row.observedMs - observed,
     evidence: row.evidence.filter((entry) => entry.at >= at),
   };
@@ -196,9 +211,9 @@ export const splitRow = (options: {
  * Moves the instant two adjacent rows meet at, so a cut can be placed exactly rather than only halved.
  *
  * The slice between the old boundary and the new one moves from one row to the other and carries the
- * density of the row it came from, so the pair's clock span, observed time and logged total all stay
- * put and neither side is flattened by the move. Each row keeps its own issue, description and
- * decision — this reshapes two rows, it does not merge them.
+ * density of the row it came from, so the pair's clock span and observed time both stay put and
+ * neither side is flattened by the move. Each row logs its own side of the boundary. Each keeps its
+ * own issue, description and decision — this reshapes two rows, it does not merge them.
  *
  * Rows that do not share a boundary, or an instant outside the pair, return the edits unchanged.
  */
@@ -225,11 +240,8 @@ export const moveRowBoundary = (options: {
   const sign = growsBefore ? 1 : -1;
   const moved = Math.abs(to - boundary) / donorSpan;
   const movedObservedMs = Math.round(donor.observedMs * moved);
-  const movedDurationMs = donor.durationMs * moved;
-  const [beforeMs, afterMs] = roundDurations({
-    durationsMs: [before.durationMs + sign * movedDurationMs, after.durationMs - sign * movedDurationMs],
-    options: options.round,
-  });
+  const beforeMs = to - before.from.getTime();
+  const afterMs = after.to.getTime() - to;
 
   const chain = mergeEvidence([before.evidence, after.evidence]);
   const kept = edits.pinned.filter((entry) => entry.id !== before.id && entry.id !== after.id);
@@ -239,7 +251,7 @@ export const moveRowBoundary = (options: {
     ...asPinned(before, replacedBy(edits, before)),
     id: pinnedIdFor({ issueKey: before.issueKey, from: before.from, taken }),
     to: at,
-    durationMs: beforeMs ?? 0,
+    durationMs: beforeMs,
     observedMs: before.observedMs + sign * movedObservedMs,
     evidence: chain.filter((entry) => entry.at < at),
   };
@@ -250,7 +262,7 @@ export const moveRowBoundary = (options: {
     ...asPinned(after, replacedBy(edits, after)),
     id: pinnedIdFor({ issueKey: after.issueKey, from: at, taken }),
     from: at,
-    durationMs: afterMs ?? 0,
+    durationMs: afterMs,
     observedMs: after.observedMs - sign * movedObservedMs,
     evidence: chain.filter((entry) => entry.at >= at),
   };
@@ -275,8 +287,6 @@ export type ManualRow = {
   description: string;
   from: Date;
   to: Date;
-  /** What to log. Defaults to the range's own span on a whole increment. */
-  durationMs?: number;
   /** The issue it rolls up to, when the picker knew one. */
   storyKey?: string;
 };
@@ -313,7 +323,7 @@ export const addManualRow = (options: {
 
   if (!issueKey || row.to.getTime() <= row.from.getTime()) return edits;
 
-  const durationMs = Math.max(0, Math.round(row.durationMs ?? roundedSpan({ ...row, round: options.round })));
+  const durationMs = roundedSpan({ ...row, round: options.round });
 
   return {
     ...edits,
@@ -396,8 +406,8 @@ export const removeManualRow = (options: { edits: DayReviewEdits; row: ReviewedR
 
 /**
  * Combines rows into one. The first row given supplies the issue, the description and the lane, so
- * the caller decides which of them the merged row is about; the clock spans all of them and the
- * durations add up.
+ * the caller decides which of them the merged row is about; the clock spans all of them, and the one
+ * band logs the whole of what it now covers — a gap between two merged rows included.
  *
  * Fewer than two rows returns the edits unchanged.
  */
@@ -411,6 +421,7 @@ export const mergeRows = (options: { edits: DayReviewEdits; rows: readonly Revie
   const replaces = [...new Set(rows.flatMap((row) => replacedBy(edits, row)))];
   const kept = edits.pinned.filter((entry) => !ids.includes(entry.id));
   const from = new Date(Math.min(...rows.map((row) => row.from.getTime())));
+  const to = new Date(Math.max(...rows.map((row) => row.to.getTime())));
 
   const merged: PinnedRow = {
     id: pinnedIdFor({ issueKey: first.issueKey, from, taken: new Set(kept.map((entry) => entry.id)) }),
@@ -418,8 +429,8 @@ export const mergeRows = (options: { edits: DayReviewEdits; rows: readonly Revie
     issueKey: first.issueKey,
     storyKey: first.storyKey,
     from,
-    to: new Date(Math.max(...rows.map((row) => row.to.getTime()))),
-    durationMs: rows.reduce((sum, row) => sum + row.durationMs, 0),
+    to,
+    durationMs: to.getTime() - from.getTime(),
     observedMs: rows.reduce((sum, row) => sum + row.observedMs, 0),
     laneKey: first.laneKey,
     description: first.description,
