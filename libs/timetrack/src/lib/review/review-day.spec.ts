@@ -649,6 +649,84 @@ describe('setRowRange', () => {
     expect(twice.pinned[0]?.id).toBe(once.pinned[0]?.id);
   });
 
+  const LANE = 'repo:/home/work';
+  const laned = (options: { from: string; to: string; minutes: number }) =>
+    dayRows({ proposals: [{ ...proposal({ issueKey: 'ABC-1', ...options }), laneKey: LANE }] });
+  const dragged = (options: { day: DayRows; from: string; to: string }) =>
+    setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewDay({ rows: options.day }), 'ABC-1'),
+      from: at(options.from),
+      to: at(options.to),
+    });
+
+  it('lets the end follow a day that grew, when only the start was dragged', () => {
+    const edits = dragged({ day: laned({ from: '09:00', to: '12:00', minutes: 180 }), from: '08:45', to: '12:00' });
+    const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
+
+    expect(review.rows).toHaveLength(1);
+    expect(rowFor(review, 'ABC-1')).toMatchObject({ from: at('08:45'), to: at('14:00') });
+    expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('stale-edit');
+  });
+
+  it('holds an end the reviewer dragged while the day grows past it', () => {
+    const edits = dragged({ day: laned({ from: '09:00', to: '12:00', minutes: 180 }), from: '09:00', to: '11:00' });
+    const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
+
+    expect(review.rows).toHaveLength(1);
+    expect(rowFor(review, 'ABC-1')).toMatchObject({ from: at('09:30'), to: at('11:00') });
+  });
+
+  const editedSpans = (review: DayReview) => review.rows.filter((row) => row.edited).map((row) => [row.from, row.to]);
+
+  it('holds both ends of a row that was moved rather than resized', () => {
+    const edits = dragged({ day: laned({ from: '09:00', to: '12:00', minutes: 180 }), from: '13:00', to: '16:00' });
+    const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
+
+    expect(editedSpans(review)).toEqual([[at('13:00'), at('16:00')]]);
+  });
+
+  it('frees the end again when a row pinned by an earlier drag has its start dragged', () => {
+    const day = laned({ from: '09:00', to: '12:00', minutes: 180 });
+    const moved = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewDay({ rows: day }), 'ABC-1'),
+      from: at('13:00'),
+      to: at('16:00'),
+    });
+    const edits = setRowRange({
+      edits: moved,
+      row: rowFor(reviewDay({ rows: day, edits: moved }), 'ABC-1'),
+      from: at('12:45'),
+      to: at('16:00'),
+    });
+    const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
+
+    expect(editedSpans(review)).toEqual([[at('12:45'), at('14:00')]]);
+  });
+
+  it('holds a typed duration against a day that grew, because a duration is a span', () => {
+    const edits = setRowDuration({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewDay({ rows: laned({ from: '09:00', to: '12:00', minutes: 180 }) }), 'ABC-1'),
+      durationMs: 120 * MINUTE,
+    });
+    const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
+
+    expect(editedSpans(review)).toEqual([[at('09:00'), at('11:00')]]);
+  });
+
+  it('never grows the halves of a split onto the band they were cut from', () => {
+    const day = laned({ from: '09:00', to: '12:00', minutes: 180 });
+    const edits = splitRow({ edits: EMPTY_DAY_REVIEW_EDITS, row: reviewDay({ rows: day }).rows[0]!, at: at('10:00') });
+    const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
+
+    expect(editedSpans(review)).toEqual([
+      [at('09:00'), at('10:00')],
+      [at('10:00'), at('12:00')],
+    ]);
+  });
+
   it('returns the edits unchanged for a range that did not move, or one with no time in it', () => {
     expect(setRowRange({ edits: EMPTY_DAY_REVIEW_EDITS, row: first(), from: at('08:00'), to: at('10:00') })).toBe(
       EMPTY_DAY_REVIEW_EDITS,

@@ -109,6 +109,7 @@ export const setRowDuration = (options: {
     from: options.row.from,
     to: new Date(options.row.from.getTime() + durationMs),
     round: options.round,
+    pinsBothEnds: true,
   });
 };
 
@@ -365,6 +366,9 @@ export const addManualRow = (options: {
  * duration off the new span, because that is the whole point of the gesture. `observedMs` never moves:
  * what was observed did not change, and the day still has to be able to say so.
  *
+ * A drag pins the end it moved and leaves the other one following the day's own row, so dragging a
+ * row's start never stops its end growing while the work goes on.
+ *
  * An empty or inverted range returns the edits unchanged.
  */
 export const setRowRange = (options: {
@@ -373,6 +377,8 @@ export const setRowRange = (options: {
   from: Date;
   to: Date;
   round?: Partial<RoundOptions>;
+  /** Pins both ends even where one of them did not move. A typed duration is a span, not one end. */
+  pinsBothEnds?: boolean;
 }): DayReviewEdits => {
   const { edits, row, from, to } = options;
 
@@ -383,6 +389,8 @@ export const setRowRange = (options: {
   const moved = to.getTime() - from.getTime() === row.to.getTime() - row.from.getTime();
   const replaces = replacedBy(edits, row);
   const kept = edits.pinned.filter((entry) => entry.id !== row.id);
+  const heldFrom = from.getTime() !== row.from.getTime();
+  const heldTo = to.getTime() !== row.to.getTime();
 
   return {
     overrides: withoutOverrides(edits.overrides, [row.id, ...replaces]),
@@ -396,6 +404,8 @@ export const setRowRange = (options: {
         from,
         to,
         durationMs: moved ? row.durationMs : roundedSpan({ from, to, round: options.round }),
+        tracksFrom: !options.pinsBothEnds && !heldFrom,
+        tracksTo: !options.pinsBothEnds && !heldTo,
       },
     ],
   };

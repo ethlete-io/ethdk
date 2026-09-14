@@ -74,6 +74,56 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
   hidden: row.hidden === true,
 });
 
+const overlapMs = (a: { from: Date; to: Date }, b: { from: Date; to: Date }) =>
+  Math.min(a.to.getTime(), b.to.getTime()) - Math.max(a.from.getTime(), b.from.getTime());
+
+/**
+ * Takes the ends a reviewer never set from the engine's row for the same lane, and reports which
+ * engine row each pinned row now stands for.
+ *
+ * A proposal's id carries its start, so a sliver of other work appearing in front of a band gives the
+ * band a new id and `replaces` stops finding it. Matching on the lane instead is what keeps a row
+ * whose start was dragged following a day that is still being worked.
+ *
+ * An engine row is claimed by one pinned row only, so the two halves of a split can never both grow
+ * onto the same band.
+ */
+const trackPinnedRows = (options: { pinned: readonly PinnedRow[]; sources: readonly RowSource[] }) => {
+  const claimed = new Set<string>();
+  const matched = new Map<string, string>();
+
+  const rows = options.pinned.map((pin) => {
+    const lane = storedLaneKey(pin.laneKey);
+
+    if ((!pin.tracksFrom && !pin.tracksTo) || !lane) return pin;
+
+    const [source] = options.sources
+      .filter((row) => !claimed.has(row.id) && storedLaneKey(row.laneKey) === lane && overlapMs(row, pin) > 0)
+      .sort((a, b) => overlapMs(b, pin) - overlapMs(a, pin));
+
+    if (!source) return pin;
+
+    const from = pin.tracksFrom ? source.from : pin.from;
+    const to = pin.tracksTo ? source.to : pin.to;
+
+    if (to.getTime() <= from.getTime()) return pin;
+
+    claimed.add(source.id);
+    matched.set(pin.id, source.id);
+
+    return {
+      ...pin,
+      from,
+      to,
+      durationMs: to.getTime() - from.getTime(),
+      observedMs: source.observedMs,
+      evidence: source.evidence,
+    };
+  });
+
+  return { rows, matched };
+};
+
 /**
  * A row books the time its band covers. One number reaches the reviewer, so a band drawn 13:15 to
  * 13:45 logs 30 minutes and never a shorter time the label would then have to explain. See ADR 0019.
@@ -105,7 +155,11 @@ export const reviewDay = (options: {
   cut?: CutOptions;
 }): DayReview => {
   const edits = options.edits ?? EMPTY_DAY_REVIEW_EDITS;
-  const consumed = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
+  const tracked = trackPinnedRows({
+    pinned: edits.pinned,
+    sources: [...options.rows.proposals, ...options.rows.unnamed],
+  });
+  const consumed = new Set([...edits.pinned.flatMap((row) => [row.id, ...row.replaces]), ...tracked.matched.values()]);
   const reviewed = [
     ...options.rows.proposals
       .filter((proposal) => !consumed.has(proposal.id))
@@ -113,7 +167,7 @@ export const reviewDay = (options: {
     ...options.rows.unnamed
       .filter((row) => !consumed.has(row.id))
       .map((row) => withOverride(row, edits.overrides[row.id])),
-    ...edits.pinned.map(fromPinned),
+    ...tracked.rows.map(fromPinned),
   ].sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));
 
   const hidden = reviewed.filter((row) => row.hidden);
@@ -130,7 +184,7 @@ export const reviewDay = (options: {
   const replacedMs = options.rows.proposals
     .filter((proposal) => consumed.has(proposal.id))
     .reduce((sum, proposal) => sum + proposal.observedMs, 0);
-  const pinnedMs = edits.pinned.reduce((sum, row) => sum + row.observedMs, 0);
+  const pinnedMs = tracked.rows.reduce((sum, row) => sum + row.observedMs, 0);
   const unreconciledMs = Math.max(0, replacedMs - pinnedMs);
 
   /**
@@ -157,6 +211,7 @@ export const reviewDay = (options: {
       check: withDrift({ check, unreconciledMs, options: options.check }),
       rows: options.rows,
       edits,
+      matched: tracked.matched,
     }),
     unreconciledMs,
   };
@@ -168,12 +223,18 @@ export const reviewDay = (options: {
  * the start those proposals had. Once the engine cuts the day differently, none of them exist, so the
  * reviewer's row and the new proposal are both shown and the day silently books the time twice.
  *
- * Only a pinned row that lost every source is reported. One that kept one still reconciles.
+ * Only a pinned row that lost every source is reported. One that kept one, or that `trackPinnedRows`
+ * re-attached to a row in its lane, still reconciles.
  */
-const withStaleEdits = (options: { check: DayCheck; rows: DayRows; edits: DayReviewEdits }): DayCheck => {
+const withStaleEdits = (options: {
+  check: DayCheck;
+  rows: DayRows;
+  edits: DayReviewEdits;
+  matched: ReadonlyMap<string, string>;
+}): DayCheck => {
   const known = new Set([...options.rows.proposals.map((row) => row.id), ...options.rows.unnamed.map((row) => row.id)]);
   const stale = options.edits.pinned.filter(
-    (row) => row.replaces.length > 0 && row.replaces.every((id) => !known.has(id)),
+    (row) => !options.matched.has(row.id) && row.replaces.length > 0 && row.replaces.every((id) => !known.has(id)),
   );
 
   if (!stale.length) return options.check;

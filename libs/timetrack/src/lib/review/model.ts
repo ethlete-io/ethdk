@@ -45,6 +45,13 @@ export type PinnedRow = {
   observedMs: number;
   /** The lane the row was cut out of, so a cut keeps its checkout's column on the day screen. */
   laneKey?: string;
+  /** True where the day's own row still decides this end. See {@link PinnedRow.tracksTo}. */
+  tracksFrom?: boolean;
+  /**
+   * True where the day's own row still decides this end. A drag pins only the end it moved, so moving
+   * a row's start leaves its end following a day that is still being worked.
+   */
+  tracksTo?: boolean;
   description: string;
   confidence: Confidence;
   evidence: Evidence[];
