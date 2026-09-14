@@ -10,7 +10,7 @@ import { injectWeekReview, provideWeekReview } from './week-review';
   selector: 'ethlete-week-review',
   template: `
     <div class="flex min-h-0 grow flex-col">
-      <header class="flex shrink-0 flex-wrap items-center justify-between gap-3 px-6 pt-6 pb-4">
+      <header class="flex shrink-0 flex-wrap items-center gap-3 px-6 pt-6 pb-4">
         <div class="flex items-center gap-2">
           <button (click)="store.shiftWeek(-1)" et-button variant="outline" size="sm" aria-label="Previous week">
             ←
@@ -21,8 +21,6 @@ import { injectWeekReview, provideWeekReview } from './week-review';
             <button (click)="store.goToThisWeek()" et-button variant="transparent" size="sm">This week</button>
           }
         </div>
-
-        <button (click)="store.recorrelate()" et-button variant="outline" size="sm">Re-correlate</button>
       </header>
 
       @if (store.failure(); as failure) {

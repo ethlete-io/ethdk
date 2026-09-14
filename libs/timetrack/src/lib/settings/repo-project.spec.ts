@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TimetrackProjectLink } from '../model/project-link';
 import { TimetrackFavoriteProject } from './model';
-import { repoProjectRows, suggestProjectForRepo } from './repo-project';
+import { projectPathRows, repoProjectRows, suggestProjectForRepo } from './repo-project';
 
 const PROJECTS: TimetrackFavoriteProject[] = [
   { key: 'ABC', name: 'Alpha Platform' },
@@ -78,5 +78,53 @@ describe('repoProjectRows', () => {
     expect(rows.map((row) => row.label)).toEqual(['abc-frontend', 'delta-shop']);
     expect(rows[0]?.suggestion).toBeUndefined();
     expect(rows[1]?.suggestion?.key).toBe('DEF');
+  });
+});
+
+describe('projectPathRows', () => {
+  it('lists a link whose path no repository sits at as a folder of its own', () => {
+    const rows = projectPathRows({
+      repoPaths: ['/home/you/dev/abc-frontend'],
+      links: [link({ id: 'root', path: '/home/you/dev/side', target: { kind: 'private' } })],
+      projects: PROJECTS,
+    });
+
+    expect(rows.map((row) => [row.path, row.kind])).toEqual([
+      ['/home/you/dev/abc-frontend', 'repo'],
+      ['/home/you/dev/side', 'folder'],
+    ]);
+    expect(rows[1]?.private).toBe(true);
+  });
+
+  it('lists a link written on a repository once, on that repository', () => {
+    const rows = projectPathRows({
+      repoPaths: ['/home/you/dev/abc-frontend'],
+      links: [link({ path: '/home/you/dev/abc-frontend' })],
+      projects: PROJECTS,
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ kind: 'repo', projectKey: 'ABC', inherited: false });
+  });
+
+  it('sorts a covering directory above the repositories it covers', () => {
+    const rows = projectPathRows({
+      repoPaths: ['/home/you/dev/abc-frontend'],
+      links: [link({ id: 'root', path: '/home/you/dev' })],
+      projects: PROJECTS,
+    });
+
+    expect(rows.map((row) => row.path)).toEqual(['/home/you/dev', '/home/you/dev/abc-frontend']);
+    expect(rows[1]?.inherited).toBe(true);
+  });
+
+  it('matches a link that names the repository with a trailing slash', () => {
+    const rows = projectPathRows({
+      repoPaths: ['/home/you/dev/abc-frontend'],
+      links: [link({ path: '/home/you/dev/abc-frontend/' })],
+      projects: PROJECTS,
+    });
+
+    expect(rows).toHaveLength(1);
   });
 });

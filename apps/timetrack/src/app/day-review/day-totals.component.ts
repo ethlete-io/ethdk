@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, computed, input } from '@angular/core';
 import { StreamDay, formatDurationMs } from '@ethlete/timetrack';
-import { readHeat } from './heat';
+import { DayConcurrencyComponent } from './day-concurrency.component';
 import { formatBreak, formatRebuilt, formatUnattended } from './stream-format';
 
 /**
@@ -9,59 +9,37 @@ import { formatBreak, formatRebuilt, formatUnattended } from './stream-format';
  * not a broken reading, it is what running agents beside you looks like.
  *
  * Every number here is measured, and no number the day books is. Read beside the bands the two
- * disagree by whatever the rounding moved, so this stays closed: a reviewer reads the footer for what
- * the day writes, and opens this only to ask what the collectors saw.
+ * disagree by whatever the rounding moved, which is why it lives in the debug panel rather than on
+ * the day: a reviewer reads the footer for what the day writes, and opens this only to ask what the
+ * collectors saw.
  */
 @Component({
   selector: 'ethlete-day-totals',
   template: `
-    <details class="rounded-md border border-et-surface-border" data-totals>
-      <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">What was measured</summary>
+    <div class="flex flex-wrap items-baseline gap-x-8 gap-y-2" data-totals>
+      <span class="text-large" data-presence>{{ presence() }} present</span>
+      <span class="text-large" data-engaged>{{ engaged() }} engaged</span>
+      <ethlete-day-concurrency [concurrency]="day()?.concurrency ?? 0" />
 
-      <div class="flex flex-wrap items-baseline gap-x-8 gap-y-2 px-3 pb-3">
-        <span class="text-large" data-presence>{{ presence() }} present</span>
-        <span class="text-large" data-engaged>{{ engaged() }} engaged</span>
-        <span class="flex items-baseline gap-2">
-          <span class="text-small text-et-surface-muted" data-concurrency>{{ concurrency() }} at once</span>
-
-          @if (heat(); as heat) {
-            <span
-              [attr.data-heat]="heat.level"
-              [style.--_et-heat]="heat.glow"
-              [title]="heat.hint"
-              class="inline-flex items-baseline gap-0.5 text-small leading-none"
-            >
-              @for (flame of heat.flames; track flame) {
-                <span [style.animation-delay.ms]="flame * 240" class="inline-block" aria-hidden="true" data-heat-flame>
-                  🔥
-                </span>
-              }
-              <span class="sr-only">{{ heat.hint }}</span>
-            </span>
-          }
-        </span>
-
-        @if (unattended(); as unattended) {
-          <span class="text-small text-et-surface-subtle" data-unattended-total>+ {{ unattended }}</span>
-        }
-        @if (away(); as away) {
-          <span class="text-small text-et-surface-subtle" data-break-total>{{ away }}</span>
-        }
-        @if (rebuilt(); as rebuilt) {
-          <span class="text-small text-et-brand-ink" data-rebuilt-total>{{ rebuilt }}</span>
-        }
-      </div>
-    </details>
+      @if (unattended(); as unattended) {
+        <span class="text-small text-et-surface-subtle" data-unattended-total>+ {{ unattended }}</span>
+      }
+      @if (away(); as away) {
+        <span class="text-small text-et-surface-subtle" data-break-total>{{ away }}</span>
+      }
+      @if (rebuilt(); as rebuilt) {
+        <span class="text-small text-et-brand-ink" data-rebuilt-total>{{ rebuilt }}</span>
+      }
+    </div>
   `,
   encapsulation: ViewEncapsulation.None,
+  imports: [DayConcurrencyComponent],
 })
 export class DayTotalsComponent {
   public day = input.required<StreamDay | null>();
 
   protected presence = computed(() => formatDurationMs(this.day()?.presenceMs ?? 0));
   protected engaged = computed(() => formatDurationMs(this.day()?.engagedMs ?? 0));
-  protected concurrency = computed(() => `${(this.day()?.concurrency ?? 0).toFixed(1)}×`);
-  protected heat = computed(() => readHeat(this.day()?.concurrency ?? 0));
   protected unattended = computed(() => formatUnattended(this.day()?.unattendedMs ?? 0));
   protected away = computed(() => formatBreak(this.day()?.breakMs ?? 0));
   protected rebuilt = computed(() => formatRebuilt(this.day()?.rebuiltMs ?? 0));

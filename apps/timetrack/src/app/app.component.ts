@@ -14,12 +14,9 @@ import { injectCollectionPause } from './collection-pause';
 import { LockViewComponent } from './lock-view.component';
 import { LogoComponent } from './logo.component';
 import { NudgeBannerComponent } from './nudge-banner.component';
-import { PauseControlComponent } from './pause-control.component';
 import { SidebarComponent } from './shell';
-import { TimerControlComponent } from './timer-control.component';
 import { injectTrayReadout } from './tray-readout';
 import { rememberViewState } from './view-state';
-import { WidgetControlComponent } from './widget/widget-control.component';
 import { WindowControlsComponent } from './window-controls.component';
 import { injectWindowLock } from './window-lock';
 
@@ -45,20 +42,15 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
     -->
       <div class="flex h-dvh flex-col">
         <!--
-        The band changes colour rather than only carrying a button: an app that has stopped watching
-        must not look like one that is watching, from across the room and at a glance.
+        The band changes colour: an app that has stopped watching must not look like one that is
+        watching, from across the room and at a glance. Its three buttons - the timer, the pause and
+        the floating readout - are hidden for now; their components are kept, not deleted.
       -->
         <div
           [class]="pause.isPaused() ? 'bg-et-warning/10' : ''"
-          class="flex shrink-0 items-center justify-between gap-3 border-b border-et-surface-border px-3 py-2"
+          class="flex shrink-0 items-center justify-end gap-3 border-b border-et-surface-border px-3 py-2"
           data-tauri-drag-region="deep"
         >
-          <div class="flex items-center gap-3">
-            <ethlete-timer-control />
-            <ethlete-pause-control />
-            <ethlete-widget-control />
-          </div>
-
           <ethlete-window-controls />
         </div>
 
@@ -93,10 +85,7 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
     LogoComponent,
     RouterOutlet,
     SidebarComponent,
-    TimerControlComponent,
-    PauseControlComponent,
     NudgeBannerComponent,
-    WidgetControlComponent,
     WindowControlsComponent,
   ],
 })

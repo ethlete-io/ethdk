@@ -307,8 +307,9 @@ Cases worth checking separately:
   posts nothing for that stretch: the last-posted time in Sources stops moving.
 - **A restarted app.** Quit the app and start it again, leaving VS Code running. Within a minute the
   row names `vscode` again — the extension re-reads the file after the refused token.
-- **The pause.** Pause collection, wait a minute, then resume. Nothing is stored for the paused
-  stretch, and Sources reports no refused posts: a pause drops what arrives rather than rejecting it.
+- **The pause.** Not drivable by hand at the moment: the pause button is hidden from the header band
+  and the tray offers none. What it checks, once a button is back: nothing is stored for the paused
+  stretch, and Sources reports no refused posts. A pause drops what arrives rather than rejecting it.
 - **A rule.** Add a title-pattern exclusion rule matching a checkout's name, then edit in it. Nothing
   is stored for that checkout, and the row counts the denial.
 

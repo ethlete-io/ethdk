@@ -1,20 +1,23 @@
 import { Component, ViewEncapsulation, computed } from '@angular/core';
-import { BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent } from '@ethlete/components';
+import {
+  BANNER_IMPORTS,
+  BUTTON_IMPORTS,
+  EMPTY_STATE_IMPORTS,
+  SpinnerComponent,
+  createOverlayOpener,
+} from '@ethlete/components';
 import { DEFAULT_ROUND_OPTIONS, formatDurationMs, localDayRange } from '@ethlete/timetrack';
 import { BranchRepairComponent } from './branch-repair.component';
 import { injectBranchRepair } from './branch-repair';
 import { CreateTicketComponent } from './create-ticket.component';
 import { injectDayReview } from './day-review';
+import { DayConcurrencyComponent } from './day-concurrency.component';
+import { DAY_DEBUG_OVERLAY } from './day-debug.component';
 import { DayNotesComponent } from './day-notes.component';
-import { DayStreamsComponent } from './day-streams.component';
 import { DayTimelineComponent } from './day-timeline.component';
-import { DayTotalsComponent } from './day-totals.component';
 import { DayWarningsComponent } from './day-warnings.component';
 import { formatDayLabel, formatSignedDurationMs } from './format';
 import { IssueFilterComponent } from '../jira';
-import { LoggedElsewhereComponent } from './logged-elsewhere.component';
-import { HiddenRowsComponent } from './hidden-rows.component';
-import { TimerRunLabel, TimerRunsComponent } from './timer-runs.component';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 import { injectTicketDraft } from './ticket-draft';
 import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
@@ -28,8 +31,8 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
  *
  * The timeline is the screen: a band is pressed to name it, dragged to move it and cut at its own
  * boundary, and every edit happens on the scheduler's edit surface rather than in a list beside it.
- * What is not a band lives in a closed strip underneath — the streams behind the day, the work still
- * waiting for a name, the time logged outside this app, and the day's notes.
+ * Under it sit the two strips a reviewer still acts in — the work waiting for a name, and the day's
+ * notes. Everything that is only a readout is behind the Debug button; see `ethlete-day-debug`.
  */
 @Component({
   selector: 'ethlete-day-review',
@@ -49,7 +52,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
 
         <div class="flex items-center gap-2">
           <button (click)="addEntry()" et-button variant="outline" size="sm">Add an entry</button>
-          <button (click)="store.recorrelate()" et-button variant="outline" size="sm">Re-correlate</button>
+          <button (click)="debug.open()" et-button variant="transparent" size="sm">Debug</button>
         </div>
       </header>
 
@@ -83,14 +86,6 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
         />
 
         <div class="flex shrink-0 flex-wrap items-start gap-2 px-6 py-3">
-          <ethlete-day-totals [day]="store.day()" class="block has-[details[open]]:w-full" />
-
-          <ethlete-day-streams
-            [day]="store.day()"
-            [headBranches]="store.headBranches()"
-            class="block has-[details[open]]:w-full"
-          />
-
           <details class="rounded-md border border-et-surface-border open:w-full" data-waiting>
             <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">{{ waitingLabel() }}</summary>
 
@@ -193,32 +188,6 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
             </div>
           </details>
 
-          <details class="rounded-md border border-et-surface-border open:w-full" data-logged>
-            <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">{{ loggedLabel() }}</summary>
-
-            <div class="flex max-h-96 flex-col gap-3 overflow-y-auto px-3 pb-3">
-              <ethlete-logged-elsewhere [coverage]="store.coverage()" [privateTime]="store.privateTime()" />
-
-              @if (store.timerRuns().length) {
-                <ethlete-timer-runs
-                  [runs]="store.timerRuns()"
-                  [openRunId]="store.openRunId()"
-                  (label)="labelRun($event)"
-                />
-              }
-            </div>
-          </details>
-
-          @if (store.hiddenRows().length) {
-            <details class="rounded-md border border-et-surface-border open:w-full" data-hidden>
-              <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">{{ hiddenLabel() }}</summary>
-
-              <div class="flex max-h-96 flex-col gap-3 overflow-y-auto px-3 pb-3">
-                <ethlete-hidden-rows [rows]="store.hiddenRows()" (show)="store.show($event)" />
-              </div>
-            </details>
-          }
-
           <details class="rounded-md border border-et-surface-border open:w-full" data-notes>
             <summary class="cursor-pointer px-3 py-2 text-small text-et-surface-muted">Day notes</summary>
 
@@ -233,6 +202,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
         >
           <span class="text-large">{{ proposed() }}</span>
           <span class="text-small text-et-surface-muted">of a {{ target() }} target ({{ delta() }})</span>
+          <ethlete-day-concurrency [concurrency]="store.day()?.concurrency ?? 0" />
           @if (covered(); as coveredTime) {
             <span class="text-small text-et-surface-muted">{{ coveredTime }} logged outside this app</span>
           }
@@ -250,17 +220,13 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
     BUTTON_IMPORTS,
     BranchRepairComponent,
     CreateTicketComponent,
+    DayConcurrencyComponent,
     DayNotesComponent,
-    DayStreamsComponent,
     DayTimelineComponent,
-    DayTotalsComponent,
     DayWarningsComponent,
     EMPTY_STATE_IMPORTS,
     IssueFilterComponent,
-    LoggedElsewhereComponent,
     SpinnerComponent,
-    HiddenRowsComponent,
-    TimerRunsComponent,
     UnnamedWorkComponent,
   ],
   host: { class: 'flex min-h-0 grow flex-col' },
@@ -270,6 +236,7 @@ export class DayReviewViewComponent {
   protected tickets = injectTicketDraft();
   protected repair = injectBranchRepair();
   private surface = injectRowEditSurface();
+  protected debug = createOverlayOpener(DAY_DEBUG_OVERLAY);
 
   protected dayLabel = computed(() => formatDayLabel(this.store.dayKey()));
   protected focusedDate = computed(() => localDayRange(this.store.dayKey(), this.store.boundary()).from);
@@ -307,21 +274,6 @@ export class DayReviewViewComponent {
     return contexts ? `Waiting for a name — ${contexts} context(s)` : 'Waiting for a name — none';
   });
 
-  protected loggedLabel = computed(() => {
-    const runs = this.store.timerRuns().length;
-    const elsewhere = this.store.coverage()?.issues.length ?? 0;
-    const secluded = this.store.privateTime().length;
-
-    return `Logged elsewhere — ${elsewhere} in Tempo, ${secluded} private, ${runs} timed run(s)`;
-  });
-
-  protected hiddenLabel = computed(() => {
-    const hidden = this.store.hiddenRows();
-    const ms = hidden.reduce((sum, row) => sum + (row.to.getTime() - row.from.getTime()), 0);
-
-    return `Hidden — ${hidden.length} row(s), ${formatDurationMs(ms)}`;
-  });
-
   /** Drafts a row over the hour the reviewer is most likely to mean: the one that just finished. */
   protected addEntry() {
     const from = new Date(Math.floor(Date.now() / ENTRY_STEP_MS) * ENTRY_STEP_MS - DEFAULT_ENTRY_MS);
@@ -331,9 +283,5 @@ export class DayReviewViewComponent {
 
   protected nameContext(naming: ContextNaming) {
     this.store.nameContext(naming.context, naming.target);
-  }
-
-  protected labelRun(label: TimerRunLabel) {
-    this.store.labelRun(label.id, { issueKey: label.issueKey, note: label.note });
   }
 }

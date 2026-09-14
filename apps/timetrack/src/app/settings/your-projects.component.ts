@@ -2,8 +2,10 @@ import { Component, ViewEncapsulation, computed, input, output } from '@angular/
 import {
   BANNER_IMPORTS,
   BUTTON_IMPORTS,
+  CHOICE_FIELD_IMPORTS,
   FORM_FIELD_IMPORTS,
   SELECT_IMPORTS,
+  SWITCH_IMPORTS,
   SpinnerComponent,
 } from '@ethlete/components';
 import { TimetrackFavoriteProject } from '@ethlete/timetrack';
@@ -18,15 +20,27 @@ picker in the app offers these projects and no others, so the list you scroll is
 Leaving it empty is not neutral. No issue key in free text is trusted then, and the pickers have nothing
 to offer.`;
 
+const BACKGROUND_WHY = `Some work runs behind a day rather than being it: the shared library you sit in all
+day while the tickets you book belong to the applications that use it. A band of such a project would claim
+every minute of your presence and overlap every other band on the day.
+
+Mark the project here and its band keeps only the minutes no other band claims. Nothing is marked by
+default, and no rule can work it out: the same repository is the background of one day and the whole of
+the work on the next.`;
+
 /**
- * The projects this machine works in, picked from the instance.
+ * The projects this machine works in, picked from the instance, each saying whether it runs behind the
+ * day or is the day.
  *
  * It is a picker rather than a text field on purpose. The keys used to be typed from memory, and a key
  * typed one character wrong is silent: nothing rejects it, the branch grammar simply stops matching, and
  * the day quietly loses the work it should have named.
+ *
+ * The background answer sits on the project's own row rather than in a second picker below, because the
+ * only projects it can ever name are the ones picked here.
  */
 @Component({
-  selector: 'ethlete-favorite-projects',
+  selector: 'ethlete-your-projects',
   template: `
     <div class="flex flex-col gap-3">
       <div class="flex items-center gap-1">
@@ -72,18 +86,57 @@ to offer.`;
           <button (click)="catalog.reloadProjects()" et-button variant="outline" size="sm">Read them again</button>
         </div>
       }
+
+      @if (projects().length) {
+        <div class="flex items-center gap-1">
+          <span class="text-small text-et-surface-muted">Work that runs in the background</span>
+          <ethlete-explain [text]="BACKGROUND_WHY" label="background projects" />
+        </div>
+
+        @for (project of projects(); track project.key) {
+          <div
+            [attr.data-project]="project.key"
+            class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3"
+          >
+            <span class="shrink-0 text-mono text-small">{{ project.key }}</span>
+            <span class="min-w-0 grow truncate text-small">{{ project.name }}</span>
+
+            <et-choice-field>
+              <et-switch
+                [checked]="backgroundKeys().includes(project.key)"
+                (checkedChange)="setBackground(project.key, $event)"
+              />
+              <et-label>runs in the background</et-label>
+            </et-choice-field>
+          </div>
+        }
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, ExplainComponent, FORM_FIELD_IMPORTS, SELECT_IMPORTS, SpinnerComponent],
+  imports: [
+    BANNER_IMPORTS,
+    BUTTON_IMPORTS,
+    CHOICE_FIELD_IMPORTS,
+    ExplainComponent,
+    FORM_FIELD_IMPORTS,
+    SELECT_IMPORTS,
+    SWITCH_IMPORTS,
+    SpinnerComponent,
+  ],
 })
-export class FavoriteProjectsComponent {
+export class YourProjectsComponent {
   protected catalog = injectJiraCatalog();
+
   public projects = input.required<readonly TimetrackFavoriteProject[]>();
+  public backgroundKeys = input.required<readonly string[]>();
 
   /** What the picker chose, whole. The document holds a list, so the list is what is written. */
   public projectsChange = output<readonly { key: string; name?: string }[]>();
+  public backgroundKeysChange = output<readonly string[]>();
+
   protected readonly WHY = WHY;
+  protected readonly BACKGROUND_WHY = BACKGROUND_WHY;
 
   protected picked = computed(() => this.projects().map((project) => project.key));
 
@@ -105,6 +158,12 @@ export class FavoriteProjectsComponent {
 
     return [...found.values()];
   });
+
+  protected setBackground(key: string, background: boolean) {
+    const keys = this.backgroundKeys().filter((entry) => entry !== key);
+
+    this.backgroundKeysChange.emit(background ? [...keys, key] : keys);
+  }
 
   protected opened(open: boolean) {
     if (open) this.catalog.loadProjects();

@@ -27,15 +27,13 @@ import { AttributionRulesComponent } from './attribution-rules.component';
 import { CallRulesComponent } from './call-rules.component';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { ExplainComponent } from './explain.component';
-import { BackgroundProjectsComponent } from './background-projects.component';
-import { FavoriteProjectsComponent } from './favorite-projects.component';
 import { GoogleConnectionComponent } from './google-connection.component';
-import { ProjectLinksComponent } from './project-links.component';
-import { RepoProjectsComponent } from './repo-projects.component';
+import { ProjectPathsComponent } from './project-paths.component';
 import { ScanRootsComponent } from './scan-roots.component';
 import { injectTimetrackSettings } from './settings';
 import { TicketSettingsComponent } from './ticket-settings.component';
 import { TokenFieldComponent } from './token-field.component';
+import { YourProjectsComponent } from './your-projects.component';
 
 const DAY_START_WHY = `Work at 01:00 belongs to the evening it came from, not to a two-hour Tuesday that
 describes nothing you did. Set the hour your day begins and every screen, total and booking follows it.
@@ -330,28 +328,18 @@ window title, never a file path. A suggestion never syncs on its own.`;
 
           <et-tab label="Projects">
             <div class="flex max-w-4xl flex-col gap-8 py-6">
-              <ethlete-favorite-projects
+              <ethlete-your-projects
                 [projects]="store.settings().favoriteProjects"
+                [backgroundKeys]="store.settings().backgroundProjects"
                 (projectsChange)="store.setFavoriteProjects($event)"
+                (backgroundKeysChange)="store.setBackgroundProjects($event)"
               />
 
-              <ethlete-background-projects
-                [projects]="store.settings().favoriteProjects"
-                [keys]="store.settings().backgroundProjects"
-                (keysChange)="store.setBackgroundProjects($event)"
-              />
-
-              <ethlete-repo-projects
+              <ethlete-project-paths
                 [repoPaths]="repoPaths()"
                 [links]="store.settings().projectLinks"
                 [projects]="store.settings().favoriteProjects"
-                (add)="store.addProjectLink($event)"
-                (remove)="store.removeProjectLink($event)"
-              />
-
-              <ethlete-project-links
-                [links]="store.settings().projectLinks"
-                (add)="store.addProjectLink($event)"
+                (addLink)="store.addProjectLink($event)"
                 (remove)="store.removeProjectLink($event)"
               />
 
@@ -525,18 +513,16 @@ window title, never a file path. A suggestion never syncs on its own.`;
     ExclusionRulesComponent,
     ExplainComponent,
     FORM_FIELD_IMPORTS,
-    BackgroundProjectsComponent,
-    FavoriteProjectsComponent,
     GoogleConnectionComponent,
     INPUT_IMPORTS,
-    ProjectLinksComponent,
-    RepoProjectsComponent,
+    ProjectPathsComponent,
     SWITCH_IMPORTS,
     ScanRootsComponent,
     SpinnerComponent,
     TAB_IMPORTS,
     TicketSettingsComponent,
     TokenFieldComponent,
+    YourProjectsComponent,
   ],
   host: { class: 'flex min-h-0 grow flex-col' },
 })

@@ -94,15 +94,6 @@ import { readViewState, rememberViewState } from '../view-state';
 /** How long typing settles before a day's edits are written. */
 const SAVE_DEBOUNCE_MS = 300;
 
-/**
- * Whether a stored coverage record still states what Tempo holds, without asking Tempo again.
- *
- * A record observed after its day ended cannot go stale by itself — no more work lands in a day that
- * is over. Today's can, because the rest of today has not happened. Time somebody adds to a past day
- * afterwards is the case this misses on purpose; `recorrelate` re-reads the day for it.
- */
-const isSettled = (coverage: TempoDayCoverage, dayEnd: Date) => coverage.observedAt >= dayEnd;
-
 /** A load tagged with the day it was asked for, so a stale answer is recognised rather than shown. */
 type Loaded<T> = { key: string; value: T | null; failure: string | null };
 
@@ -163,14 +154,10 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const day = signal(readViewState().day ?? localDayKey(new Date(), dayBoundaryOf(settings.settings())));
   const targetMs = computed(() => settings.settings().dayTargetMs);
   const local = signal<Record<string, DayReviewEdits>>({});
-  const reload = signal(0);
-  /** Set by `recorrelate` and cleared by `goToDay`, so only the day the reviewer asked about is re-read. */
-  const coverageReload = signal(false);
   const saves$ = new Subject<{ key: string; edits: DayReviewEdits }>();
 
   const probe = computed(() => ({
     key: day(),
-    reload: reload(),
     windows: windows.lastRun(),
     calls: callSource.lastRun(),
     sessions: agentSessions.lastRun(),
@@ -219,7 +206,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   );
 
   /**
-   * What Tempo already holds for the day, read from Tempo when the store has no settled record.
+   * What Tempo already holds for the day, asked of Tempo every time a day is opened.
    *
    * A day logged by hand proposes nothing at all — every row is reduced to zero by the same foreign
    * time — so without this the day compares `0m` against the target and reports a finished day as
@@ -255,18 +242,17 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   const loadedCoverage = toSignal(
-    toObservable(computed(() => ({ key: day(), forced: coverageReload() }))).pipe(
-      switchMap(({ key, forced }) => {
-        const dayEnd = localDayRange(key, boundary()).to;
-
-        return loadedFor<TempoDayCoverage | null>({
+    toObservable(day).pipe(
+      switchMap((key) =>
+        loadedFor<TempoDayCoverage | null>({
           key,
           load$: ports.coverage.forDay$(key).pipe(
             catchError(() => of(null)),
-            switchMap((stored) => (stored && !forced && isSettled(stored, dayEnd) ? of(stored) : readCoverage$(key))),
+            // The stored record is the answer only when Tempo gives none: no token, or no network.
+            switchMap((stored) => readCoverage$(key).pipe(map((read) => read ?? stored))),
           ),
-        });
-      }),
+        }),
+      ),
       startWith(null),
     ),
     { initialValue: null },
@@ -529,7 +515,6 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const goToDay = (key: string) => {
     day.set(key);
     rememberViewState({ day: key });
-    coverageReload.set(false);
   };
 
   /** Whether the day on screen holds its own edits yet, and why it never will when a read failed. */
@@ -646,10 +631,6 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     boundary,
     goToToday: () => goToDay(localDayKey(new Date(), boundary())),
     shiftDay: (byDays: number) => goToDay(shiftDayKey(day(), byDays)),
-    recorrelate: () => {
-      coverageReload.set(true);
-      reload.update((count) => count + 1);
-    },
 
     /**
      * The day's meetings, for the add-entry panel to offer rather than make the user retype one. A

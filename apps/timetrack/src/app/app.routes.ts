@@ -11,6 +11,8 @@ export const APP_ROUTES: Routes = [
     title: 'Day',
     loadComponent: () => import('./day-review/day-review-view.component').then((entry) => entry.DayReviewViewComponent),
   },
+  // Start, week and sync have no sidebar entry. They are reached by URL, and by the buttons that
+  // route to them, so an unreferenced route here is not a dead one.
   {
     path: 'start',
     title: 'Start',

@@ -96,3 +96,60 @@ export const repoProjectRows = (options: {
         suggestion: link ? undefined : suggestProjectForRepo({ repoPath, projects: options.projects }),
       };
     });
+
+/** Whether a path row was found by the repository discovery, or only stated as a link. */
+export type ProjectPathKind = 'repo' | 'folder';
+
+/** One path the settings screen lists, whether a repository was found at it or a link merely names it. */
+export type ProjectPathRow = {
+  path: string;
+  /** The last segment of the path, which is what the user recognises it by. */
+  label: string;
+  kind: ProjectPathKind;
+  /** The link that already covers this path, whether it names the path itself or a root above it. */
+  link?: TimetrackProjectLink;
+  /** The project the link names, or nothing when the link marks the path private. */
+  projectKey?: string;
+  /** Whether the link covering it names a directory above it rather than this path itself. */
+  inherited: boolean;
+  private: boolean;
+  /** What the path suggests, offered only while nothing covers it yet. */
+  suggestion?: TimetrackFavoriteProject;
+};
+
+const normalized = (path: string) => path.trim().replace(/\/+$/, '');
+
+/**
+ * Every path the user can answer for, in one list: the repositories the discovery found, and the links
+ * that name a directory no repository sits at.
+ *
+ * The two used to be two lists, and a link written on a repository appeared in both — once as that
+ * repository's answer and once as a bare path underneath it. Sorted by path, a directory sorts above
+ * the repositories it covers, which is the order its inherited rows read in.
+ */
+export const projectPathRows = (options: {
+  repoPaths: readonly string[];
+  links: readonly TimetrackProjectLink[];
+  projects: readonly TimetrackFavoriteProject[];
+}): ProjectPathRow[] => {
+  const repos = repoProjectRows(options).map(({ repoPath, ...row }): ProjectPathRow => ({
+    ...row,
+    path: repoPath,
+    kind: 'repo',
+  }));
+  const found = new Set(repos.map((row) => normalized(row.path)));
+
+  const folders = options.links
+    .filter((link) => !found.has(normalized(link.path)))
+    .map((link): ProjectPathRow => ({
+      path: link.path,
+      label: segmentsOf(link.path).pop() ?? link.path,
+      kind: 'folder',
+      link,
+      projectKey: link.target.kind === 'project' ? link.target.projectKey : undefined,
+      inherited: false,
+      private: link.target.kind === 'private',
+    }));
+
+  return [...repos, ...folders].sort((a, b) => a.path.localeCompare(b.path));
+};

@@ -44,7 +44,6 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
   const start = signal(
     startOfWeekKey(readViewState().weekStart ?? localDayKey(new Date(), dayBoundaryOf(settings.settings()))),
   );
-  const reload = signal(0);
 
   const goToWeek = (day: string) => {
     start.set(day);
@@ -67,7 +66,6 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
 
   const probe = computed(() => ({
     start: start(),
-    reload: reload(),
     settings: settings.settings(),
     repoRoots: git.discovery()?.repos ?? [],
     windows: windows.lastRun(),
@@ -109,7 +107,6 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
 
     shiftWeek: (byWeeks: number) => goToWeek(shiftWeekKey(start(), byWeeks)),
     goToThisWeek: () => goToWeek(startOfWeekKey(localDayKey(new Date(), dayBoundaryOf(settings.settings())))),
-    recorrelate: () => reload.update((count) => count + 1),
   };
 });
 
