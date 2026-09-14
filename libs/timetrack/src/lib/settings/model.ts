@@ -1,5 +1,6 @@
 import { TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule } from '../model/attribution';
+import { StandIn } from '../model/stand-in';
 import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { JiraParenting } from '../jira/hierarchy';
@@ -277,6 +278,14 @@ export type TimetrackSettings = {
    */
   projectLinks: TimetrackProjectLink[];
   /**
+   * The names the user gave work Jira does not hold an issue for yet. A setting for the same reason
+   * the rules are one: a handful of records the user wrote, read and written whole.
+   *
+   * A resolved stand-in stays in the list. It is what an undo reads, and its day list names the days a
+   * resolve made bookable — neither survives being deleted at the moment the issue appears.
+   */
+  standIns: StandIn[];
+  /**
    * Whether the window locks itself, so the months of window titles in the database are not readable by
    * whoever walks up to an unlocked desktop.
    *
@@ -324,6 +333,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   callNamings: [],
   attributionRules: [],
   projectLinks: [],
+  standIns: [],
   lockWindow: true,
   lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
 };

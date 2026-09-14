@@ -10,16 +10,26 @@ export type AttributionScope = 'branch' | 'repo' | 'app';
  * `donate` is the answer for a project that has no tracker of its own — a shared library, a tooling
  * repository. Its time is real work, and it is done *for* whatever else was open that day, so it joins
  * the neighbouring work instead of becoming a row nobody can file. See `donateBlocks`.
+ *
+ * `stand-in` names work Jira does not hold yet. It books nothing, and one rewrite of every rule that
+ * carries it turns the whole set into `issue`. See `StandIn` and ADR 0021.
  */
-export type AttributionTarget = { kind: 'issue'; issueKey: string } | { kind: 'donate' };
+export type AttributionTarget =
+  { kind: 'issue'; issueKey: string } | { kind: 'donate' } | { kind: 'stand-in'; standInId: string };
+
+/**
+ * Who wrote a naming down. An agent may prepare one, and the review shows it differently, so a day
+ * never hides which of its answers the user gave and which one it was handed. See ADR 0012.
+ */
+export type NamingAuthor = 'user' | 'agent';
 
 /**
  * A standing statement about what work in one context belongs to — the answer for a repository whose
  * branch names carry no issue key at all.
  *
- * A rule is only ever created by the user, either by naming a stretch of unattributed work or by
- * writing one in settings, so it is a decision rather than an inference. What it is not is a guess
- * the app may make on its own: nothing here learns without being told.
+ * A rule is written by naming a stretch of unattributed work or by writing one in settings, so it is
+ * a decision rather than an inference. What it is not is a guess the app may make on its own: nothing
+ * here learns without being told, and `author` says whose decision it was.
  */
 export type AttributionRule = {
   id: string;
@@ -30,11 +40,16 @@ export type AttributionRule = {
   /** Matches work that has no repository at all, such as a browser or a chat client. */
   appId?: string;
   target: AttributionTarget;
+  author: NamingAuthor;
   createdAt: Date;
 };
 
-/** The issue a rule names, or nothing when it donates its time instead. */
+/** The issue a rule names, or nothing when it names a stand-in or donates its time instead. */
 export const issueKeyOf = (rule: AttributionRule) => (rule.target.kind === 'issue' ? rule.target.issueKey : undefined);
+
+/** The stand-in a rule names, or nothing when it names an issue or donates its time instead. */
+export const standInIdOf = (rule: AttributionRule) =>
+  rule.target.kind === 'stand-in' ? rule.target.standInId : undefined;
 
 export type AttributionRuleMatch = {
   rule: AttributionRule;

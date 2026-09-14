@@ -216,7 +216,13 @@ export class UnnamedWorkComponent {
 const answeredBy = (rule: AttributionRule | undefined) => {
   if (!rule) return null;
 
-  return rule.target.kind === 'issue'
-    ? `Always logged on ${rule.target.issueKey}, but no time reached it on this day`
-    : 'Files no issues — its time joins the work beside it, and this day has none to join';
+  if (rule.target.kind === 'issue') {
+    return `Always logged on ${rule.target.issueKey}, but no time reached it on this day`;
+  }
+
+  if (rule.target.kind === 'stand-in') {
+    return 'Named by a stand-in, and waiting on the issue it resolves to';
+  }
+
+  return 'Files no issues — its time joins the work beside it, and this day has none to join';
 };

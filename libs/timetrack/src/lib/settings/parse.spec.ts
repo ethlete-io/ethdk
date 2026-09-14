@@ -70,6 +70,7 @@ describe('parseTimetrackSettings', () => {
       callNamings: [],
       attributionRules: [],
       projectLinks: [],
+      standIns: [],
       lockWindow: true,
       lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
     });
@@ -112,6 +113,7 @@ describe('parseTimetrackSettings', () => {
       callNamings: [],
       attributionRules: [],
       projectLinks: [],
+      standIns: [],
       lockWindow: true,
       lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
     });
@@ -189,9 +191,78 @@ describe('parseTimetrackSettings', () => {
         branch: 'next',
         appId: undefined,
         target: { kind: 'issue', issueKey: 'ABC-100' },
+        author: 'user',
         createdAt: new Date('2026-08-01T00:00:00.000Z'),
       },
     ]);
+  });
+
+  it('reads a rule a document written before the agent existed as one the user wrote', () => {
+    const settings = parseTimetrackSettings({
+      attributionRules: [
+        { id: 'rule-1', repoPath: '/home/you/dev/abc-frontend', target: { kind: 'issue', issueKey: 'ABC-100' } },
+        {
+          id: 'rule-2',
+          repoPath: '/home/you/dev/abc-frontend',
+          author: 'agent',
+          target: { kind: 'issue', issueKey: 'ABC-200' },
+        },
+      ],
+    });
+
+    expect(settings.attributionRules.map((rule) => rule.author)).toEqual(['user', 'agent']);
+  });
+
+  it('reads a rule that names a stand-in, and drops one naming none', () => {
+    const settings = parseTimetrackSettings({
+      attributionRules: [
+        { id: 'rule-1', repoPath: '/home/you/dev/abc-frontend', target: { kind: 'stand-in', standInId: 's-1' } },
+        { id: 'rule-2', repoPath: '/home/you/dev/abc-frontend', target: { kind: 'stand-in' } },
+      ],
+    });
+
+    expect(settings.attributionRules.map((rule) => rule.target)).toEqual([{ kind: 'stand-in', standInId: 's-1' }]);
+  });
+
+  it('reads a stand-in and upper-cases the keys it names', () => {
+    const settings = parseTimetrackSettings({
+      standIns: [
+        {
+          id: 'stand-in-1',
+          name: 'Competition Journey',
+          projectKey: 'abc',
+          state: 'resolved',
+          issueKey: 'abc-100',
+          days: ['2026-09-15', '2026-09-14'],
+          createdAt: '2026-09-14T00:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(settings.standIns).toEqual([
+      {
+        id: 'stand-in-1',
+        name: 'Competition Journey',
+        projectKey: 'ABC',
+        state: 'resolved',
+        issueKey: 'ABC-100',
+        days: ['2026-09-14', '2026-09-15'],
+        author: 'user',
+        createdAt: new Date('2026-09-14T00:00:00.000Z'),
+      },
+    ]);
+  });
+
+  it('reads a stand-in that claims to be resolved without an issue as one still waiting', () => {
+    const settings = parseTimetrackSettings({
+      standIns: [{ id: 'stand-in-1', name: 'Competition Journey', state: 'resolved' }],
+    });
+
+    expect(settings.standIns[0]?.state).toBe('open');
+  });
+
+  it('drops a stand-in with no name', () => {
+    expect(parseTimetrackSettings({ standIns: [{ id: 'stand-in-1', name: '  ' }, {}] }).standIns).toEqual([]);
   });
 
   it('drops an attribution rule that names no context or no issue', () => {

@@ -728,6 +728,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
         ...context.suggestion,
         id: `${context.id}#${Date.now()}`,
         target: target.kind === 'issue' ? { kind: 'issue', issueKey: target.issueKey.trim().toUpperCase() } : target,
+        author: 'user',
         createdAt: new Date(),
       }),
   };

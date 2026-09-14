@@ -45,6 +45,7 @@ const REPO_RULE: AttributionRule = {
   id: 'rule-repo',
   repoPath: '/Users/tom/dev/ea-frontend',
   target: { kind: 'issue', issueKey: 'ABC-100' },
+  author: 'user',
   createdAt: new Date('2026-08-01T00:00:00Z'),
 };
 
@@ -59,6 +60,7 @@ const DONATE_RULE: AttributionRule = {
   id: 'rule-donate',
   repoPath: '/Users/tom/dev/ethlete-sdk',
   target: { kind: 'donate' },
+  author: 'user',
   createdAt: new Date('2026-08-01T00:00:00Z'),
 };
 

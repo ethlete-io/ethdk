@@ -10,6 +10,7 @@ import {
   AttributionRule,
   DEFAULT_TIMETRACK_SETTINGS,
   ProjectLinkTarget,
+  StandIn,
   TIMETRACK_SECRET_KEYS,
   TimetrackCredentialStatus,
   TimetrackExclusionRule,
@@ -30,9 +31,14 @@ import {
   withBackgroundProjects,
   withFavoriteProjects,
   withProjectLink,
+  withStandIn,
+  withStandInDay,
   withoutAttributionRule,
   withoutFavoriteProject,
   withoutProjectLink,
+  withoutStandIn,
+  reopenStandIn,
+  resolveStandIn,
 } from '@ethlete/timetrack';
 import {
   Subject,
@@ -298,6 +304,14 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     addAttributionRule: (rule: AttributionRule) => apply(withAttributionRule({ settings: settings(), rule })),
     removeAttributionRule: (id: string) => apply(withoutAttributionRule({ settings: settings(), id })),
+
+    addStandIn: (standIn: StandIn) => apply(withStandIn({ settings: settings(), standIn })),
+    removeStandIn: (id: string) => apply(withoutStandIn({ settings: settings(), id })),
+    markStandInDay: (options: { id: string; day: string }) =>
+      apply(withStandInDay({ settings: settings(), ...options })),
+    resolveStandIn: (options: { id: string; issueKey: string }) =>
+      apply(resolveStandIn({ settings: settings(), ...options })),
+    reopenStandIn: (id: string) => apply(reopenStandIn({ settings: settings(), id })),
 
     addProjectLink: (options: { path: string; target: ProjectLinkTarget }) => {
       const path = options.path.trim();

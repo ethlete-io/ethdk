@@ -5,6 +5,11 @@ import { WorklogProposal } from '../model/proposal';
 /** The fields a reviewer can change on a machine-proposed row, keyed by the proposal's id. */
 export type ProposalOverride = {
   issueKey?: string;
+  /**
+   * The stand-in the reviewer named the row with, while Jira holds no issue for the work. It sits
+   * beside an absent `issueKey` rather than in it, so the row is still not one a sync can write.
+   */
+  standInId?: string;
   description?: string;
   durationMs?: number;
   /** An explicit review decision. Without one, the row's confidence decides whether it syncs. */
@@ -30,6 +35,8 @@ export type PinnedRow = {
    * never syncs — a split has to be able to leave both halves waiting for an answer.
    */
   issueKey?: string;
+  /** The stand-in naming the row, while Jira holds no issue for the work. See `StandIn`. */
+  standInId?: string;
   storyKey?: string;
   from: Date;
   to: Date;
@@ -58,6 +65,8 @@ export const EMPTY_DAY_REVIEW_EDITS: DayReviewEdits = { overrides: {}, pinned: [
 export type ReviewedRow = Omit<WorklogProposal, 'issueKey'> & {
   /** Absent on a row a cut left unnamed. Such a row is shown and never written. */
   issueKey?: string;
+  /** The stand-in naming the row, while Jira holds no issue for the work. See `StandIn`. */
+  standInId?: string;
   /** True when a local edit produced this row, so re-correlation must leave it alone. */
   edited: boolean;
   /** What the engine proposed before the edit, when there is still a proposal to reset to. */
@@ -71,6 +80,12 @@ export type NamedRow = ReviewedRow & { issueKey: string };
 
 /** Whether a row names an issue. A row a cut left unnamed is shown, counted as undecided, never written. */
 export const isNamedRow = (row: ReviewedRow): row is NamedRow => !!row.issueKey;
+
+/**
+ * Whether a row waits on a stand-in rather than on the reviewer. Such a row is shown and never
+ * written, like any unnamed row, and it is not one the day still has to ask about.
+ */
+export const isStandInRow = (row: Pick<ReviewedRow, 'issueKey' | 'standInId'>) => !row.issueKey && !!row.standInId;
 
 export type DayReview = {
   /** The rows on the timeline. A hidden row is not among them — read {@link DayReview.hidden} for those. */

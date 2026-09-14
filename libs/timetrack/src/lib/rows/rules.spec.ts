@@ -8,6 +8,7 @@ const rule = (overrides: Partial<AttributionRule> = {}): AttributionRule => ({
   id: 'rule-1',
   repoPath: '/Users/tom/dev/ea-frontend',
   target: { kind: 'issue', issueKey: 'FIP-100' },
+  author: 'user',
   createdAt: new Date('2026-08-01T00:00:00Z'),
   ...overrides,
 });

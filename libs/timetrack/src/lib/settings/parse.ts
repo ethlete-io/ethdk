@@ -1,5 +1,6 @@
 import { ProjectLinkTarget, TimetrackProjectLink } from '../model/project-link';
-import { AttributionRule, AttributionTarget } from '../model/attribution';
+import { AttributionRule, AttributionTarget, NamingAuthor } from '../model/attribution';
+import { StandIn } from '../model/stand-in';
 import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { REASONING_COMMANDS } from '../reason/model';
@@ -23,6 +24,18 @@ const asRecord = (value: unknown) =>
   typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
 
 const asText = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+
+/**
+ * A document written before the agent could prepare a naming holds no author, and every record in it
+ * is one the user wrote by hand. Reading the absence as `user` is therefore the fact, not a default.
+ */
+const asAuthor = (value: unknown): NamingAuthor => (value === 'agent' ? 'agent' : 'user');
+
+const asDate = (value: unknown) => {
+  const at = new Date(typeof value === 'number' ? value : asText(value));
+
+  return Number.isNaN(at.getTime()) ? new Date(0) : at;
+};
 
 const asWholeNumber = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) ? Math.trunc(value) : undefined;
@@ -85,15 +98,14 @@ const asAttributionRule = (value: unknown, index: number): AttributionRule | nul
 
   if (!target || (!repoPath && !appId)) return null;
 
-  const createdAt = new Date(typeof raw['createdAt'] === 'number' ? raw['createdAt'] : asText(raw['createdAt']));
-
   return {
     id: asText(raw['id']) || `rule-${index}`,
     repoPath: repoPath || undefined,
     branch: repoPath && branch ? branch : undefined,
     appId: repoPath ? undefined : appId,
     target,
-    createdAt: Number.isNaN(createdAt.getTime()) ? new Date(0) : createdAt,
+    author: asAuthor(raw['author']),
+    createdAt: asDate(raw['createdAt']),
   };
 };
 
@@ -102,10 +114,47 @@ const asAttributionTarget = (value: unknown): AttributionTarget | null => {
 
   if (raw['kind'] === 'donate') return { kind: 'donate' };
 
+  if (raw['kind'] === 'stand-in') {
+    const standInId = asText(raw['standInId']);
+
+    return standInId ? { kind: 'stand-in', standInId } : null;
+  }
+
   const issueKey = asText(raw['issueKey']);
 
   return issueKey ? { kind: 'issue', issueKey } : null;
 };
+
+/**
+ * A stand-in with no name is dropped: the name is the whole of what it is, and a band labelled with
+ * an empty string would read as one the app failed to name rather than one the user is waiting on.
+ *
+ * A record that says `resolved` without an issue is read back as open. A resolved stand-in with no key
+ * would be one the card offers neither to resolve nor to undo.
+ */
+const asStandIn = (value: unknown, index: number): StandIn | null => {
+  const raw = asRecord(value);
+  const name = asText(raw['name']);
+
+  if (!name) return null;
+
+  const issueKey = asText(raw['issueKey']).toUpperCase();
+  const projectKey = asText(raw['projectKey']).toUpperCase();
+
+  return {
+    id: asText(raw['id']) || `stand-in-${index}`,
+    name,
+    projectKey: projectKey || undefined,
+    state: raw['state'] === 'resolved' && issueKey ? 'resolved' : 'open',
+    issueKey: issueKey || undefined,
+    days: asTextList(raw['days']).sort(),
+    author: asAuthor(raw['author']),
+    createdAt: asDate(raw['createdAt']),
+  };
+};
+
+const asStandIns = (value: unknown) =>
+  Array.isArray(value) ? value.flatMap((entry, index) => asStandIn(entry, index) ?? []) : [];
 
 const asAttributionRules = (value: unknown) =>
   Array.isArray(value) ? value.flatMap((entry, index) => asAttributionRule(entry, index) ?? []) : [];
@@ -326,6 +375,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     callNamings: asCallNamings(document['callNamings']),
     attributionRules: asAttributionRules(document['attributionRules']),
     projectLinks: asProjectLinks(document['projectLinks']),
+    standIns: asStandIns(document['standIns']),
     lockWindow: document['lockWindow'] !== false,
     lockAfterIdleMs: asLockAfterIdle(document['lockAfterIdleMs']),
   };

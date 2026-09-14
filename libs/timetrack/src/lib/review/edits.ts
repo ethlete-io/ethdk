@@ -427,6 +427,11 @@ export const mergeRows = (options: { edits: DayReviewEdits; rows: readonly Revie
     id: pinnedIdFor({ issueKey: first.issueKey, from, taken: new Set(kept.map((entry) => entry.id)) }),
     replaces,
     issueKey: first.issueKey,
+    /**
+     * Unlike the issue, a stand-in the rows disagree about is dropped rather than taken from the
+     * first: it names which work the band is, and a merge of two stand-ins is neither of them.
+     */
+    standInId: rows.every((row) => row.standInId === first.standInId) ? first.standInId : undefined,
     storyKey: first.storyKey,
     from,
     to,

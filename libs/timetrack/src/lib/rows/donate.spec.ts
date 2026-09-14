@@ -11,6 +11,7 @@ const DONOR_RULE: AttributionRule = {
   id: 'rule-donor',
   repoPath: SDK,
   target: { kind: 'donate' },
+  author: 'user',
   createdAt: new Date('2026-08-01T00:00:00Z'),
 };
 

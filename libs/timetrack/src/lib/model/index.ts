@@ -10,6 +10,7 @@ export * from './meeting-naming';
 export * from './project-link';
 export * from './proposal';
 export * from './recurrence';
+export * from './stand-in';
 export * from './time-window';
 export * from './timer';
 export * from './tokens';

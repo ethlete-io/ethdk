@@ -7,3 +7,4 @@ export * from './parse';
 export * from './project-link';
 export * from './repo-project';
 export * from './rules';
+export * from './stand-in';

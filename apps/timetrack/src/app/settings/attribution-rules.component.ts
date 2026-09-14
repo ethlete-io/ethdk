@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, computed, input, output } from '@angular/core';
 import { BADGE_IMPORTS, BUTTON_IMPORTS } from '@ethlete/components';
-import { AttributionRule, describeAttributionRule, issueKeyOf } from '@ethlete/timetrack';
+import { AttributionRule, describeAttributionRule } from '@ethlete/timetrack';
 import { ExplainComponent } from './explain.component';
 
 const WHY = `For repositories whose branch names carry no issue key. A rule for one branch beats the rule
@@ -9,6 +9,13 @@ beside it instead.
 
 They have to be visible and removable somewhere: a rule keeps attributing time long after the branch it
 was written for is gone, and a wrong one nobody can find is a wrong worklog every day.`;
+
+/** What the rule files its time against, in the words the settings list uses for each kind. */
+const targetOf = (rule: AttributionRule) => {
+  if (rule.target.kind === 'issue') return rule.target.issueKey;
+
+  return rule.target.kind === 'stand-in' ? 'a name you gave the work' : 'with the work beside it';
+};
 
 /**
  * The standing answers to "what does work here belong to", written by naming a stretch of the day in
@@ -63,7 +70,7 @@ export class AttributionRulesComponent {
     this.rules().map((rule) => ({
       id: rule.id,
       label: describeAttributionRule(rule),
-      target: issueKeyOf(rule) ?? 'with the work beside it',
+      target: targetOf(rule),
       scope: rule.branch ? 'branch' : rule.repoPath ? 'repository' : 'app',
       color: rule.branch ? 'brand' : 'warning',
     })),

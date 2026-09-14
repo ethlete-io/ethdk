@@ -10,6 +10,7 @@ const rule = (options: { repoPath: string; issueKey: string }): AttributionRule 
   id: options.repoPath,
   repoPath: options.repoPath,
   target: { kind: 'issue', issueKey: options.issueKey },
+  author: 'user',
   createdAt: new Date('2026-08-01T00:00:00Z'),
 });
 
