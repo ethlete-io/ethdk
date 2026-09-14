@@ -36,6 +36,7 @@ const asPinned = (row: ReviewedRow, replaces: readonly string[]): PinnedRow => (
   id: row.id,
   replaces: [...replaces],
   issueKey: row.issueKey,
+  standInId: row.standInId,
   storyKey: row.storyKey,
   from: row.from,
   to: row.to,

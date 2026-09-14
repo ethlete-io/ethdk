@@ -5,6 +5,7 @@ import { IssueActivity, attribute } from './attribute';
 import { TimetrackProjectLink } from '../model/project-link';
 import { RecurringPattern } from '../model/recurrence';
 import { AttributionRule } from '../model/attribution';
+import { StandIn } from '../model/stand-in';
 
 const block = (context: ActivityBlock['context'], evidence: ActivityBlock['evidence'] = []): ActivityBlock => ({
   from: new Date('2026-08-11T08:00:00Z'),
@@ -54,6 +55,22 @@ const BRANCH_RULE: AttributionRule = {
   id: 'rule-branch',
   branch: 'refactor/hub-query-v3',
   target: { kind: 'issue', issueKey: 'ABC-2904' },
+};
+
+const STAND_IN: StandIn = {
+  id: 'stand-in-1',
+  name: 'Competition Journey',
+  state: 'open',
+  days: [],
+  author: 'user',
+  createdAt: new Date('2026-08-01T00:00:00Z'),
+};
+
+const STAND_IN_RULE: AttributionRule = {
+  ...REPO_RULE,
+  id: 'rule-stand-in',
+  branch: 'refactor/hub-query-v3',
+  target: { kind: 'stand-in', standInId: 'stand-in-1' },
 };
 
 const DONATE_RULE: AttributionRule = {
@@ -269,6 +286,60 @@ describe('attribute', () => {
     expect(result.issueKey).toBe('ABC-2904');
     expect(result.confidence).toBe('likely');
     expect(result.evidence.at(-1)?.detail).toBe('you assigned `ea-frontend @ refactor/hub-query-v3` to ABC-2904');
+  });
+
+  it('names a keyless branch with the stand-in the user opened for it, and no issue key', () => {
+    const result = attribute({
+      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+      config: CONFIG,
+      rules: [STAND_IN_RULE],
+      standIns: [STAND_IN],
+    });
+
+    expect(result.standInId).toBe('stand-in-1');
+    expect(result.issueKey).toBeUndefined();
+    expect(result.confidence).toBe('likely');
+    expect(result.evidence.at(-1)?.detail).toBe(
+      'you called `ea-frontend @ refactor/hub-query-v3` Competition Journey, and Jira holds no ticket for it yet',
+    );
+  });
+
+  it('lets a conforming branch outrank the stand-in, so the stand-in ends without being told', () => {
+    const result = attribute({
+      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
+      config: CONFIG,
+      rules: [{ ...STAND_IN_RULE, branch: 'feat/ABC-2177-user-management' }],
+      standIns: [STAND_IN],
+    });
+
+    expect(result.issueKey).toBe('ABC-2177');
+    expect(result.standInId).toBeUndefined();
+  });
+
+  it('lets a stand-in rule outrank a merge request naming another issue', () => {
+    const result = attribute({
+      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+      config: CONFIG,
+      rules: [STAND_IN_RULE],
+      standIns: [STAND_IN],
+      activity: [mergeRequest({ branch: 'refactor/hub-query-v3' })],
+    });
+
+    expect(result.standInId).toBe('stand-in-1');
+    expect(result.issueKey).toBeUndefined();
+  });
+
+  it('falls through to the rungs below when the stand-in a rule names was deleted', () => {
+    const result = attribute({
+      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+      config: CONFIG,
+      rules: [STAND_IN_RULE],
+      standIns: [],
+      activity: [mergeRequest({ branch: 'refactor/hub-query-v3' })],
+    });
+
+    expect(result.standInId).toBeUndefined();
+    expect(result.issueKey).toBe('ABC-3010');
   });
 
   it('lets a conforming branch outrank a rule for the same repository', () => {

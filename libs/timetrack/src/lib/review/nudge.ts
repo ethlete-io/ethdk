@@ -4,7 +4,7 @@ import { SyncedWorklog, syncsInState } from '../model/proposal';
 import { TempoDayCoverage, coverageAsForeignTime } from '../tempo/coverage';
 import { contentHashOf } from '../tempo/diff';
 import { subtractForeignTime } from '../tempo/subtract';
-import { DayReview, isNamedRow } from './model';
+import { DayReview, isNamedRow, isStandInRow } from './model';
 
 /** What a day still owes the person who worked it. */
 export type DayNudgeReason =
@@ -13,7 +13,12 @@ export type DayNudgeReason =
   /** Rows nobody has said yes or no to, which a sync leaves alone. */
   | 'undecided'
   /** Observed time no issue claimed, which no sync can ever write. */
-  | 'unattributed';
+  | 'unattributed'
+  /**
+   * Rows a stand-in names, which wait on a ticket rather than on the reviewer. It is never the only
+   * reason a day is reported: nothing in the app answers it. See ADR 0021.
+   */
+  | 'waiting';
 
 export type DayReviewGap = {
   /** Widest first, so the wording leads with the reason worth acting on. */
@@ -22,6 +27,7 @@ export type DayReviewGap = {
   unsyncedMs: number;
   undecidedMs: number;
   unattributedMs: number;
+  waitingMs: number;
 };
 
 /**
@@ -59,19 +65,25 @@ export const dayReviewGap = (options: {
   const reasons: DayNudgeReason[] = [];
   let unsyncedMs = 0;
   let undecidedMs = 0;
+  let waitingMs = 0;
   let pendingDelete = false;
 
   for (const original of options.review.rows) {
     const row = reducedById.get(original.id) ?? original;
     const entry = entries.get(row.id);
 
-    if (row.state === 'suggested') {
-      undecidedMs += row.durationMs;
+    if (row.state === 'rejected') {
+      pendingDelete ||= !!entry;
       continue;
     }
 
-    if (row.state === 'rejected') {
-      pendingDelete ||= !!entry;
+    if (isStandInRow(row)) {
+      waitingMs += row.durationMs;
+      continue;
+    }
+
+    if (row.state === 'suggested') {
+      undecidedMs += row.durationMs;
       continue;
     }
 
@@ -104,8 +116,9 @@ export const dayReviewGap = (options: {
   if (unsyncedMs >= tolerance || pendingDelete) reasons.push('unsynced');
   if (undecidedMs >= tolerance) reasons.push('undecided');
   if (unattributedMs >= tolerance) reasons.push('unattributed');
+  if (waitingMs >= tolerance) reasons.push('waiting');
 
-  return reasons.length > 0 ? { reasons, unsyncedMs, undecidedMs, unattributedMs } : null;
+  return reasons.length > 0 ? { reasons, unsyncedMs, undecidedMs, unattributedMs, waitingMs } : null;
 };
 
 /** How long the desktop notification stays quiet after it fired. The banner behind it does not blink. */
@@ -173,6 +186,7 @@ const WORDING: Record<DayNudgeReason, (gap: DayReviewGap) => string> = {
       : 'Tempo still holds time this day no longer has',
   undecided: (gap) => `${formatDurationMs(gap.undecidedMs)} is waiting for a yes or a no`,
   unattributed: (gap) => `${formatDurationMs(gap.unattributedMs)} matched no issue`,
+  waiting: (gap) => `${formatDurationMs(gap.waitingMs)} waits on a ticket`,
 };
 
 /**
@@ -202,7 +216,11 @@ export const dayNudge = (options: {
 
   const gap = dayReviewGap(options);
 
-  if (!gap) return null;
+  /**
+   * A day that only waits is not reported. The reminder exists to ask for a decision, and the one a
+   * stand-in band needs is a ticket somebody else has to file.
+   */
+  if (!gap || gap.reasons.every((reason) => reason === 'waiting')) return null;
 
   return {
     day: options.day,

@@ -18,11 +18,17 @@ import {
   matchAttributionRule,
   matchInferredAttribution,
 } from '../model/attribution';
+import { StandIn, findStandIn } from '../model/stand-in';
 
 export type AttributedBlock = {
   block: ActivityBlock;
   /** The issue the time should be logged against. Absent means nothing could attribute it. */
   issueKey?: string;
+  /**
+   * The stand-in naming the block while Jira holds no issue for the work. It never appears beside an
+   * `issueKey`: a stand-in rule loses to every rung that names a real issue.
+   */
+  standInId?: string;
   storyKey?: string;
   taskKey?: string;
   confidence: Confidence;
@@ -67,6 +73,12 @@ export type AttributeOptions = {
    * branch grammar rests on: nothing else in it can name an issue for `refactor/hub-query-v3`.
    */
   rules?: AttributionRule[];
+  /**
+   * The names the user gave work Jira does not hold an issue for yet. A rule may point at one, and the
+   * record is what the evidence chain says — without the list such a rule names nothing readable, so
+   * the block is left for the rungs below.
+   */
+  standIns?: readonly StandIn[];
   /**
    * The user's path-to-project links. A private one is read before every rung below, because it is
    * the user saying the time is not work — and no evidence can outrank that, least of all a branch
@@ -168,6 +180,34 @@ const ruleAttribution = (options: {
 };
 
 /**
+ * The same rung for a rule naming a stand-in. The block is named and still books nothing: `standInId`
+ * sits where `issueKey` would, and every reader that asks whether a row can be written asks for the
+ * key. See ADR 0021.
+ */
+const standInAttribution = (options: {
+  block: ActivityBlock;
+  match: AttributionRuleMatch;
+  standIn: StandIn;
+  evidence: Evidence[];
+}): AttributedBlock => {
+  const { block, match, standIn } = options;
+
+  return {
+    block,
+    standInId: standIn.id,
+    confidence: 'likely',
+    evidence: [
+      ...options.evidence,
+      {
+        kind: 'attribution-rule',
+        at: block.from,
+        detail: `you called \`${describeAttributionRule(match.rule)}\` ${standIn.name}, and Jira holds no ticket for it yet`,
+      },
+    ],
+  };
+};
+
+/**
  * Scores one block against the attribution ladder. A private link is read first and answers on its
  * own: it is the user saying the time is not work, and a rung that could overrule it would make the
  * statement worthless. Everything else follows in order — branch grammar, a branch-scoped rule of the
@@ -188,6 +228,10 @@ const ruleAttribution = (options: {
  * exists because the user wrote it, so a row it names is a row they already answered once. Only a
  * donating rule stays `weak` — it names no issue at all, and which work it joins is a guess the day
  * makes for it.
+ *
+ * A rule naming a stand-in is read at exactly those two rungs, and puts a `standInId` on the block
+ * rather than a key. That placement is what ends a stand-in cleanly: the day the branch names the real
+ * issue, the grammar above wins and nothing has to take the stand-in back.
  */
 export const attribute = (options: { block: ActivityBlock } & AttributeOptions): AttributedBlock => {
   const config = options.config ?? DEFAULT_GIT_FLOW_CONFIG;
@@ -216,6 +260,14 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
    */
   const rule =
     match && match.rule.target.kind === 'issue' ? { ...match, issueKey: match.rule.target.issueKey } : undefined;
+  /**
+   * A rule pointing at a record the settings no longer hold names nothing, so the block falls to the
+   * rungs below rather than to a band labelled with an id.
+   */
+  const standIn =
+    match && match.rule.target.kind === 'stand-in'
+      ? findStandIn({ id: match.rule.target.standInId, standIns: options.standIns ?? [] })
+      : undefined;
 
   if (block.context.branch) {
     const parsed = resolveBranch({ branch: block.context.branch, config, resolveBase: options.resolveBase });
@@ -243,6 +295,8 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
   if (rule?.scope === 'branch')
     return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'likely' });
 
+  if (standIn && match?.scope === 'branch') return standInAttribution({ block, match, standIn, evidence });
+
   const activity = options.activity?.length ? activityFor({ block, activity: options.activity }) : undefined;
 
   if (activity) {
@@ -254,6 +308,8 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
   }
 
   if (rule) return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'likely' });
+
+  if (standIn && match) return standInAttribution({ block, match, standIn, evidence });
 
   /**
    * A donating context leaves the ladder here, so that `donateBlocks` still sees it. The rungs below

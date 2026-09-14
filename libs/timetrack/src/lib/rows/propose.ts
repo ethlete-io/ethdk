@@ -12,13 +12,19 @@ import { stretchesOf } from './stretches';
  * A band of work the day will not book. It is drawn, split and merged like any other row, and it
  * never reaches Tempo — naming it is what turns it into a proposal.
  */
-export type UnnamedProposal = Omit<WorklogProposal, 'issueKey' | 'storyKey'>;
+export type UnnamedProposal = Omit<WorklogProposal, 'issueKey' | 'storyKey'> & {
+  /** The stand-in naming the band. The row is still drawn, counted and never written. */
+  standInId?: string;
+};
 
 export type ProposeResult = {
   proposals: WorklogProposal[];
   /**
-   * Groups no rule could attribute — the reasoning provider's input, and never synced. The same work
-   * as `unnamed`, kept as groups because `unnamedContexts` folds them by the context behind them.
+   * Groups no rule could attribute — the reasoning provider's input, and never synced. Kept as groups
+   * because `unnamedContexts` folds them by the context behind them.
+   *
+   * A band a stand-in names is not among them, though it is drawn in `unnamed`: unattributed means the
+   * user still owes the app an answer, and on a stand-in band the app owes them a ticket instead.
    */
   unattributed: WorkGroup[];
   /** The same work as rows, for the day screen to draw. */
@@ -81,7 +87,8 @@ export const propose = (options: {
     options: options.round,
   }).map((row) => ({ ...row, durationMs: row.to.getTime() - row.from.getTime() }));
   const attributed = rows.filter(isAttributedRow);
-  const unattributed = rows.filter((row) => !isAttributedRow(row));
+  const unnamed = rows.filter((row) => !isAttributedRow(row));
+  const unattributed = unnamed.filter((row) => !row.group.standInId);
 
   return {
     proposals: attributed.map(({ group, from, to, durationMs }) => ({
@@ -100,8 +107,9 @@ export const propose = (options: {
       state: 'suggested',
     })),
     unattributed: unattributed.map((row) => row.group),
-    unnamed: unattributed.map(({ group, from, to, durationMs }) => ({
+    unnamed: unnamed.map(({ group, from, to, durationMs }) => ({
       id: unnamedId(group),
+      ...(group.standInId ? { standInId: group.standInId } : {}),
       ...(group.attended === false ? { unattended: true } : {}),
       from,
       to,

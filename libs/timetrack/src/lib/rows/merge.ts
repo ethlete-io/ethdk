@@ -7,6 +7,8 @@ import { AttributedBlock } from './attribute';
 /** One or more attributed blocks that will become a single reviewable row. */
 export type WorkGroup = {
   issueKey?: string;
+  /** The stand-in naming the band while Jira holds no issue for it. Never set beside an `issueKey`. */
+  standInId?: string;
   storyKey?: string;
   taskKey?: string;
   from: Date;
@@ -30,6 +32,11 @@ export type WorkGroup = {
    * was not asked, which every caller that builds a group by hand is.
    */
   attended?: boolean;
+  /**
+   * Whether a worklog could hold this band. `false` is a band the day draws and never asks about — a
+   * call a rule excluded from work. Absent leaves the answer to the lane, in `isBookable`.
+   */
+  bookable?: boolean;
 };
 
 export type MergeOptions = {
@@ -105,6 +112,7 @@ export const mergeEvidence = (chains: readonly Evidence[][]): Evidence[] => {
 
 const groupFrom = (attributed: AttributedBlock): WorkGroup => ({
   issueKey: attributed.issueKey,
+  standInId: attributed.standInId,
   storyKey: attributed.storyKey,
   taskKey: attributed.taskKey,
   from: attributed.block.from,
@@ -139,6 +147,7 @@ const join = (into: WorkGroup, next: WorkGroup): WorkGroup => {
   return {
     ...into,
     issueKey: into.issueKey ?? next.issueKey,
+    standInId: into.standInId ?? next.standInId,
     storyKey: into.storyKey ?? next.storyKey,
     taskKey: into.taskKey ?? next.taskKey,
     from: into.from <= next.from ? into.from : next.from,

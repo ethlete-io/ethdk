@@ -22,7 +22,7 @@ import {
 } from './model';
 
 /** What the engine offered for one band: a proposal, or a band nothing could name. */
-type RowSource = Omit<WorklogProposal, 'issueKey'> & { issueKey?: string };
+type RowSource = Omit<WorklogProposal, 'issueKey'> & { issueKey?: string; standInId?: string };
 
 /**
  * The state an untouched row reviews in. A well-evidenced row is accepted on sight — asking for a
@@ -41,11 +41,15 @@ const withOverride = (row: RowSource, override: ProposalOverride | undefined): R
   if (!override) return { ...row, state: defaultState(row), edited: false, hidden: false };
 
   const changed =
-    override.issueKey !== undefined || override.description !== undefined || override.durationMs !== undefined;
+    override.issueKey !== undefined ||
+    override.standInId !== undefined ||
+    override.description !== undefined ||
+    override.durationMs !== undefined;
 
   return {
     ...row,
     issueKey: override.issueKey ?? row.issueKey,
+    standInId: override.standInId ?? row.standInId,
     description: override.description ?? row.description,
     durationMs: override.durationMs ?? row.durationMs,
     state: override.state ?? (changed ? 'edited' : defaultState(row)),
@@ -58,6 +62,7 @@ const withOverride = (row: RowSource, override: ProposalOverride | undefined): R
 const fromPinned = (row: PinnedRow): ReviewedRow => ({
   id: row.id,
   issueKey: row.issueKey,
+  standInId: row.standInId,
   storyKey: row.storyKey,
   from: row.from,
   to: row.to,
