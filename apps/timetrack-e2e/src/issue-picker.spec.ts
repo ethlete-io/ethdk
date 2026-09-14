@@ -78,6 +78,22 @@ test.describe('an issue picker', () => {
   });
 });
 
+test.describe('the issue picker field', () => {
+  test('fills the form field it sits in, so its panel is not wider than it is', async ({ page }) => {
+    const surface = await openBand(page, 'ABC-3010 · 1h 30m');
+    const select = surface.locator('ethlete-issue-select et-select');
+    const slot = surface.locator('ethlete-issue-select').locator('xpath=..');
+
+    await expect(select).toBeVisible();
+
+    /**
+     * The panel mirrors the form field's frame, not the field's own text. A picker that shrink-wraps
+     * its value therefore opens a panel visibly wider than the field, and resizes as the value changes.
+     */
+    await expect.poll(async () => Math.round((await width(select)) - (await width(slot)))).toBe(0);
+  });
+});
+
 const openPicker = async (surface: Locator) => {
   const picker = surface.locator('ethlete-issue-select et-select');
 
@@ -85,6 +101,8 @@ const openPicker = async (surface: Locator) => {
 
   return picker;
 };
+
+const width = async (locator: Locator) => (await locator.boundingBox())?.width ?? 0;
 
 const type = (picker: Locator, text: string) => picker.locator('input[etSelectSearch]').fill(text);
 

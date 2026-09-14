@@ -67,6 +67,7 @@ type IssueOption = {
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [SELECT_IMPORTS],
+  host: { class: 'flex min-w-0 grow' },
 })
 export class IssueSelectComponent {
   protected catalog = injectJiraCatalog();
