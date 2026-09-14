@@ -11,7 +11,7 @@ import { CallMatch, dropCallWindows, matchCalls } from './calls';
 import { BehindStretch, CutOptions, cutBackground } from './cut';
 import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
-import { FillOptions, fillGaps } from './fill';
+import { DEFAULT_FILL_OPTIONS, FillOptions, fillGaps } from './fill';
 import { MeetingOptions, UnobservedOccurrence, calendarOccurrences, unobservedOccurrences } from './meetings';
 import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, mergeBlocks } from './merge';
 import { mergeRequestActivity } from './merge-request-activity';
@@ -209,6 +209,7 @@ export const buildRows = (
       ...timers.map((timer) => timer.group),
     ],
     at: attendedAt(options.events),
+    graceMs: options.fill?.maxFillGapMs ?? DEFAULT_FILL_OPTIONS.maxFillGapMs,
     claimed: [...unwatched, ...booked.map((call) => ({ from: call.group.from, to: call.group.to }))],
   }).sort((a, b) => a.from.getTime() - b.from.getTime());
   const { proposals, unattributed, unnamed } = propose({

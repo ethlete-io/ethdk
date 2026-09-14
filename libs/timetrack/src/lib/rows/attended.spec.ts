@@ -5,6 +5,7 @@ import { WorkGroup } from './merge';
 import { attendedAt, markAttendance } from './attended';
 
 const AT = (minute: number) => new Date(2026, 8, 12, 0, minute, 0);
+const GRACE = 15 * 60_000;
 const REPO = '/home/tom/dev/ethlete-sdk';
 
 const focus = (minute: number): CollectedEvent => ({
@@ -36,6 +37,10 @@ const turn = (minute: number): CollectedEvent => ({
   model: 'claude-opus-5',
   usage: { input: 1, output: 10, cacheWrite: 0, cacheRead: 5, thinking: 0 },
 });
+
+const idleStart = (minute: number): CollectedEvent => ({ at: AT(minute), source: 'idle', kind: 'idle-start' });
+
+const idleEnd = (minute: number): CollectedEvent => ({ at: AT(minute), source: 'idle', kind: 'idle-end' });
 
 const prompt = (minute: number, askedBy: 'human' | 'machine'): CollectedEvent => ({
   at: AT(minute),
@@ -81,19 +86,23 @@ describe('attendedAt', () => {
 
 describe('markAttendance', () => {
   it('marks a band holding one instant of a person as attended', () => {
-    const marked = markAttendance({ groups: [group(0, 60)], at: attendedAt([focus(30)]) });
+    const marked = markAttendance({ groups: [group(0, 60)], at: attendedAt([focus(30)]), graceMs: GRACE });
 
     expect(marked[0]?.attended).toBe(true);
   });
 
   it('marks a band nothing but a commit and a turn covered as unattended', () => {
-    const marked = markAttendance({ groups: [group(0, 60)], at: attendedAt([commit(30), turn(40)]) });
+    const marked = markAttendance({ groups: [group(0, 60)], at: attendedAt([commit(30), turn(40)]), graceMs: GRACE });
 
     expect(marked[0]?.attended).toBe(false);
   });
 
   it('does not let one band lend its attendance to another', () => {
-    const marked = markAttendance({ groups: [group(0, 60), group(200, 260)], at: attendedAt([focus(30)]) });
+    const marked = markAttendance({
+      groups: [group(0, 60), group(200, 260)],
+      at: attendedAt([focus(30)]),
+      graceMs: GRACE,
+    });
 
     expect(marked.map((entry) => entry.attended)).toEqual([true, false]);
   });
@@ -102,9 +111,48 @@ describe('markAttendance', () => {
     const marked = markAttendance({
       groups: [group(200, 260)],
       at: attendedAt([focus(30)]),
+      graceMs: GRACE,
       claimed: [{ from: AT(210), to: AT(240) }],
     });
 
     expect(marked[0]?.attended).toBe(true);
+  });
+
+  it('marks the band a ten-minute absence left behind as attended, from the work either side of it', () => {
+    const marked = markAttendance({ groups: [group(15, 30)], at: attendedAt([focus(9), focus(38)]), graceMs: GRACE });
+
+    expect(marked[0]?.attended).toBe(true);
+  });
+
+  it('is the grace and nothing else that answers for that band', () => {
+    const marked = markAttendance({ groups: [group(15, 30)], at: attendedAt([focus(9), focus(38)]), graceMs: 0 });
+
+    expect(marked[0]?.attended).toBe(false);
+  });
+
+  it('refuses to let an idle-start answer for the time after the person left', () => {
+    const marked = markAttendance({
+      groups: [group(10, 22), group(30, 45)],
+      at: attendedAt([idleStart(22), idleEnd(77)]),
+      graceMs: GRACE,
+    });
+
+    expect(marked.map((entry) => entry.attended)).toEqual([true, false]);
+  });
+
+  it('refuses to let an idle-end answer for the time before the person came back', () => {
+    const marked = markAttendance({
+      groups: [group(60, 75), group(77, 90)],
+      at: attendedAt([idleStart(22), idleEnd(77)]),
+      graceMs: GRACE,
+    });
+
+    expect(marked.map((entry) => entry.attended)).toEqual([false, true]);
+  });
+
+  it('leaves a run nobody came within the grace of unattended, however long it is', () => {
+    const marked = markAttendance({ groups: [group(300, 540)], at: attendedAt([focus(30)]), graceMs: GRACE });
+
+    expect(marked[0]?.attended).toBe(false);
   });
 });
