@@ -595,6 +595,16 @@ describe('addManualRow', () => {
   it('upper-cases the key it is given, so a typed key reads like every other row', () => {
     expect(added({ issueKey: 'abc-9' }).pinned[0]?.issueKey).toBe('ABC-9');
   });
+
+  it('keeps the row in the lane it was drawn in', () => {
+    const review = reviewDay({ rows: base, edits: added({ laneKey: 'repo:/home/tom/dev/thing' }) });
+
+    expect(rowFor(review, 'ABC-9').laneKey).toBe('repo:/home/tom/dev/thing');
+  });
+
+  it('leaves a row drawn with no lane without one, so it stays beside the work nothing placed', () => {
+    expect(rowFor(reviewDay({ rows: base, edits: added() }), 'ABC-9').laneKey).toBeUndefined();
+  });
 });
 
 describe('setRowRange', () => {

@@ -28,7 +28,7 @@ import { DragGestureEvent, ProvideColorDirective, dragGestureFrom } from '@ethle
 import { BehindStretch, BreakWindow, DEFAULT_ROUND_OPTIONS, ReviewedRow, formatDurationMs } from '@ethlete/timetrack';
 import { tap } from 'rxjs';
 import { formatClockTime } from './format';
-import { BREAK_LANE_KEY, BreakBand, DayLane, lanesOf, laneKeyOfRow } from './lanes';
+import { BREAK_LANE_KEY, BreakBand, DayLane, NO_LANE_KEY, lanesOf, laneKeyOfRow } from './lanes';
 import {
   TimelineEntry,
   appointmentLabel,
@@ -986,11 +986,18 @@ export class DayTimelineComponent {
   private settleDraw() {
     const scheduler = this.scheduler();
     const draft = scheduler.draftRange();
+    const lane = this.drawLane();
 
     this.drawLane.set(null);
     scheduler.clearDraftRange();
 
-    if (draft) this.surface.openDraft({ from: draft.start, to: draft.end });
+    if (draft) {
+      this.surface.openDraft({
+        from: draft.start,
+        to: draft.end,
+        laneKey: lane && lane !== NO_LANE_KEY ? lane : undefined,
+      });
+    }
   }
 
   /** The instant a pointer sits at in the day column, on the increment a worklog is logged in. */

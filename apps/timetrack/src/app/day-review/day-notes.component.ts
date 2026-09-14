@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, computed, input } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import {
+  CALL_LANE_KEY,
   CallWindow,
   READABLE_MS,
   StreamDay,
@@ -200,7 +201,13 @@ export class DayNotesComponent {
   protected readonly CALL_LABEL_OF = callLabel;
 
   protected add(offer: OccurrenceOffer) {
-    this.store.addRow({ issueKey: offer.issueKey, description: offer.title, from: offer.from, to: offer.to });
+    this.store.addRow({
+      issueKey: offer.issueKey,
+      description: offer.title,
+      from: offer.from,
+      to: offer.to,
+      laneKey: CALL_LANE_KEY,
+    });
   }
 
   protected CALL_SPAN_OF(call: CallWindow) {

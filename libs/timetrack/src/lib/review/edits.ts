@@ -301,6 +301,11 @@ export type ManualRow = {
   to: Date;
   /** The issue it rolls up to, when the picker knew one. */
   storyKey?: string;
+  /**
+   * The lane the reviewer drew the row in, so the day screen keeps the band in the column they put it
+   * in. Absent for a row written with no column in front of the reviewer, which has no checkout.
+   */
+  laneKey?: string;
 };
 
 /**
@@ -350,6 +355,7 @@ export const addManualRow = (options: {
         to: row.to,
         durationMs,
         observedMs: 0,
+        laneKey: row.laneKey,
         description: row.description.trim(),
         confidence: 'certain',
         evidence: manualEvidence(row),

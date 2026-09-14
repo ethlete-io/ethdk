@@ -20,7 +20,7 @@ import { appointmentOf, rowEntryOf } from './row-appointment';
 const DISABLED = { enabled: false } as const;
 
 /** What the surface was opened for: a band of the day, or a range drawn on empty grid. */
-type Pending = { kind: 'row'; row: ReviewedRow } | { kind: 'draft' };
+type Pending = { kind: 'row'; row: ReviewedRow } | { kind: 'draft'; laneKey?: string };
 
 /**
  * The day's rows are edited on the scheduler's own edit surface, not in a list beside it.
@@ -54,7 +54,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }
   };
 
-  const addRow = (appointment: Appointment) => {
+  const addRow = (appointment: Appointment, laneKey?: string) => {
     const issueKey = appointment.title.trim().toUpperCase();
 
     if (!issueKey || appointment.end <= appointment.start) return;
@@ -64,6 +64,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       description: appointment.description ?? '',
       from: appointment.start,
       to: appointment.end,
+      laneKey,
     });
   };
 
@@ -75,7 +76,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     if (!open || result?.kind !== 'save') return;
 
     if (open.kind === 'row') editRow(open.row, result.appointment);
-    else addRow(result.appointment);
+    else addRow(result.appointment, open.laneKey);
   };
 
   const rowOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, { afterClosed: applyResult });
@@ -113,9 +114,12 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /**
      * Opens the surface for a range drawn on empty grid, which is the ask for a row nothing observed.
      * There is no duration field: a hand-written row logs the span it was drawn over.
+     *
+     * `laneKey` is the column the range was drawn in, and the row is kept there. Leave it out where
+     * the reviewer had no column in front of them, so the row lands beside the work nothing placed.
      */
-    openDraft: (range: { from: Date; to: Date }) => {
-      pending.set({ kind: 'draft' });
+    openDraft: (range: { from: Date; to: Date; laneKey?: string }) => {
+      pending.set({ kind: 'draft', laneKey: range.laneKey });
 
       draftOpener.open({
         bindings: surfaceBindings({ id: 'draft', parentId: null, title: '', start: range.from, end: range.to }, []),
