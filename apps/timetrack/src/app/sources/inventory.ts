@@ -60,8 +60,8 @@ export type EvidenceSource = {
 /**
  * Every source the tool reads, or intends to.
  *
- * The ones that are not built are listed on purpose: a person deciding whether to install this needs
- * to see the whole surface it will eventually watch, not only the part that is watching today.
+ * A source that is not built yet belongs here as `planned`: a person deciding whether to install this
+ * needs to see the whole surface it will eventually watch, not only the part that is watching today.
  */
 export const EVIDENCE_SOURCES: EvidenceSource[] = [
   {
@@ -187,13 +187,5 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     state: 'collecting',
     collector: 'call',
     eventSource: 'call',
-  },
-  {
-    id: 'gmail',
-    name: 'Gmail notifications',
-    reads: 'A narrow query over Jira and GitLab notification senders.',
-    stores: 'Only what those notifications say about issues you touched.',
-    state: 'planned',
-    detail: 'Phase 3, and last on purpose — once the APIs are wired this is a worse copy of the same events.',
   },
 ];

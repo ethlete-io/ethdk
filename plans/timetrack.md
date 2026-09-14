@@ -122,7 +122,7 @@ libs/timetrack/                     @ethlete/timetrack - framework-agnostic TS
     model/                          events, blocks, proposals, worklogs, confidence, evidence
     correlate/                      the pipeline: sessionize → attribute → merge → round → warn
     providers/
-      jira/  tempo/  gitlab/  google-calendar/  gmail/  slack/  discord/
+      jira/  tempo/  gitlab/  google-calendar/  slack/  discord/
     reason/                         the agent-CLI reasoning provider + prompt contract
     transport/                      the HTTP/exec/storage ports the host must supply
 apps/timetrack/                     private Angular app (@ethlete/components UI)
@@ -1107,13 +1107,13 @@ Measured on 2026-09-10, about how both CLIs behave as a transport:
 - **A query string in the endpoint argument works** — `glab api "events?after=…&per_page=3&page=1"` —
   so the existing query builder needs no change beyond dropping the host and the `/api/v4` prefix.
 
-### Gmail (phase 3)
+### Gmail (phase 3) - dropped
 
-Own OAuth client, `gmail.readonly`, restricted to a query over Jira and GitLab notification
-senders. This is the weakest collector in the set: once the GitLab and Jira APIs are wired,
-the notification mails are a strictly worse copy of the same events. Its only real edge is
-covering systems with no API access. Keep it last, and keep the query narrow enough that the
-app never touches unrelated mail.
+**Dropped 2026-09-14.** ~~Own OAuth client, `gmail.readonly`, restricted to a query over Jira and
+GitLab notification senders.~~ It was always the weakest collector in the set, and the `glab` and
+`gh` sources settled it: the notification mails are a strictly worse copy of events the app now reads
+from the forge itself. Its one remaining edge - a system with no API access - does not pay for an
+OAuth client and a mailbox scope. Removed from the sources inventory in the same change.
 
 ### Calls: huddles, voice rooms and meetings (phase 2)
 
@@ -2743,7 +2743,8 @@ ticket → branch → draft MR flow~~ **- built**, and ~~MR → ticket repair~~ 
 extension and the generic ingest endpoint~~ **- built**, so an editor now names the checkout and
 branch that a window title reading `Visual Studio Code` never could. **Phase 2 is complete.**
 
-**Phase 3 - the noisy tail.** Gmail notification parsing, and Codex session logs.
+**Phase 3 - the noisy tail.** ~~Gmail notification parsing~~ **- dropped 2026-09-14**, and Codex
+session logs. See **Gmail** above for why: `glab` and `gh` read the same events from the forge.
 
 Two entries left this phase on 2026-09-09. **Calls moved into phase 2 and changed mechanism**: the
 Slack huddle poll and the Discord bot are both ruled out, replaced by the process that holds the

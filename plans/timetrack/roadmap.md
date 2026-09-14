@@ -74,7 +74,7 @@ Tom decided all seven on 2026-09-10:
 | M8  | What a day cost                 | 5, 9   | A real day shows a cost Tom recognises, and names what it missed.  |
 | M9  | The week, and the price of work | 6, 10  | Time and cost per issue and per project, over a week.              |
 | M10 | A second person installs it     | 11     | A colleague books a day from a build, with no help from this repo. |
-| M11 | The noisy tail                  | 12     | Gmail, Codex logs and the browser reporter.                        |
+| M11 | The noisy tail                  | 12     | Codex logs and the browser reporter.                               |
 
 Reordered on 2026-09-10, after Tom described the product he wants. His words: "thats where you come
 in and thats why we should prioritize this part now since everthing else is nice to have. if the
@@ -379,8 +379,9 @@ never pairs with Tom's, and the install must make that impossible rather than me
 
 ## M11: The noisy tail
 
-**Slice 12.** Phase 3 of `plans/timetrack.md`, unchanged: Gmail notification parsing, Codex
-session logs, and the browser reporter over the ingest seam.
+**Slice 12.** Phase 3 of `plans/timetrack.md`: Codex session logs, and the browser reporter over the
+ingest seam. Gmail notification parsing was dropped on 2026-09-14 - `glab` and `gh` read the same
+events from the forge, so the mails carry nothing new.
 
 Every entry here is a source, and every source is cheap once the pipeline is trusted. That is why
 they sit last. None of them is a reason to distrust a number, and none of them blocks a booking.

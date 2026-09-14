@@ -46,10 +46,6 @@ test.describe('the sources screen', () => {
   test('leaves a source the host reports no status for collecting', async ({ page }) => {
     await expect(row(page, 'git')).toContainText('collecting');
   });
-
-  test('still reads as planned for a source nobody built', async ({ page }) => {
-    await expect(row(page, 'gmail')).toContainText('planned');
-  });
 });
 
 /**
