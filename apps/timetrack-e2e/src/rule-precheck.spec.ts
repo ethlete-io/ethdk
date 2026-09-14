@@ -9,6 +9,7 @@ const REPO_RULE = {
   id: 'rule-repo',
   repoPath: E2E_REPO,
   target: { kind: 'issue' as const, issueKey: E2E_PARENT_KEY },
+  author: 'user' as const,
   createdAt: new Date(0),
 };
 

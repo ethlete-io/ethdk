@@ -10,6 +10,7 @@ import {
   currentAttribution,
   formatDurationMs,
   isNamedRow,
+  isStandInRow,
 } from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, concatMap, distinctUntilChanged, map, merge, timer } from 'rxjs';
 import {
@@ -53,12 +54,21 @@ const formatActivity = (activity: CurrentActivity) => {
  * day reads as "the collectors are broken" when what happened is that six hours of real work matched
  * no ticket.
  */
-const formatTotal = (options: { check: DayCheck; targetMs: number }) => {
+const formatTotal = (options: { check: DayCheck; targetMs: number; waitingMs: number }) => {
   const { check } = options;
   const against = `${formatDurationMs(check.loggedMs)} of a ${formatDurationMs(options.targetMs)} target`;
+  const unattributed = check.unattributedMs > 0 ? `, ${formatDurationMs(check.unattributedMs)} unattributed` : '';
+  const waiting = options.waitingMs > 0 ? `, ${formatDurationMs(options.waitingMs)} waiting on a ticket` : '';
 
-  return check.unattributedMs > 0 ? `${against}, ${formatDurationMs(check.unattributedMs)} unattributed` : against;
+  return `${against}${unattributed}${waiting}`;
 };
+
+/**
+ * Time a stand-in names, which is neither logged nor unattributed. It is the one part of the day the
+ * user cannot finish: the answer it waits on is a ticket somebody has to file.
+ */
+const waitingMsOf = (rows: readonly ReviewedRow[]) =>
+  rows.filter(isStandInRow).reduce((sum, row) => sum + row.durationMs, 0);
 
 /** The timer entry is the one menu item that acts, so it has to read as the action it will perform. */
 const formatTimer = (options: { running: TimerRun | null; elapsedMs: number }) =>
@@ -161,7 +171,11 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }).pipe(
       map(({ events, day, review }) => {
         const activity = currentActivity({ events, blocks: day.blocks });
-        const total = formatTotal({ check: review.check, targetMs: current.dayTargetMs });
+        const total = formatTotal({
+          check: review.check,
+          targetMs: current.dayTargetMs,
+          waitingMs: waitingMsOf(review.rows),
+        });
 
         return {
           tray: {

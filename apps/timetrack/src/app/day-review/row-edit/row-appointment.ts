@@ -17,9 +17,18 @@ export const UNATTENDED_LABEL = 'Nobody was here';
  */
 export const EXCLUDED_LABEL = 'Not counted';
 
-/** What a band with no issue is called, on the timeline and in the label of a boundary beside it. */
-export const unnamedLabelOf = (row: ReviewedRow) => {
+/**
+ * What a band with no issue is called, on the timeline and in the label of a boundary beside it.
+ *
+ * A stand-in reads as its own name: the work has an answer, and the one thing still missing is the
+ * ticket. `standInName` is absent when the rule points at a stand-in the user deleted, and the band
+ * then reads as unnamed again, exactly as the ladder now reads it.
+ */
+export const unnamedLabelOf = (options: { row: ReviewedRow; standInName?: string }) => {
+  const { row } = options;
+
   if (row.excluded) return EXCLUDED_LABEL;
+  if (row.standInId && options.standInName) return options.standInName;
 
   return row.unattended ? UNATTENDED_LABEL : UNNAMED_LABEL;
 };
@@ -49,6 +58,8 @@ export type RowEntry = {
   row: ReviewedRow;
   durationMs: number;
   willSync: boolean;
+  /** What the row's stand-in is called, so the band reads it without a second lookup per redraw. */
+  standInName?: string;
 };
 
 /** A story or epic several of the day's rows roll up to. Drawn in the all-day strip, never billed. */
@@ -79,6 +90,7 @@ export const appointmentOf = (options: {
   parentId?: string | null;
   from?: Date;
   to?: Date;
+  standInName?: string;
 }): Appointment<TimelineEntry> => ({
   id: options.row.id,
   parentId: options.parentId ?? null,
@@ -94,6 +106,7 @@ export const appointmentOf = (options: {
     row: options.row,
     durationMs: options.row.durationMs,
     willSync: syncsInState(options.row.state),
+    standInName: options.standInName,
   },
 });
 
@@ -103,7 +116,7 @@ export const appointmentLabel = (appointment: Appointment) => {
 
   if (!entry) return appointment.title;
 
-  const named = entry.row.issueKey ?? unnamedLabelOf(entry.row);
+  const named = entry.row.issueKey ?? unnamedLabelOf({ row: entry.row, standInName: entry.standInName });
   const alone = entry.row.issueKey && entry.row.unattended ? ' · nobody was here' : '';
 
   return `${named} · ${formatDurationMs(entry.durationMs)}${alone}${isManualRow(entry.row) ? ' · by hand' : ''}`;

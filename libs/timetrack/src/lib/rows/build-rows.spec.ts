@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { AttributionRule } from '../model/attribution';
 import { ActivityBlock, ActivityContext } from '../model/block';
 import { CallWindow } from '../model/call';
 import { CalendarOccurrenceEvent } from '../model/event';
+import { StandIn } from '../model/stand-in';
 import { buildRows } from './build-rows';
 import { CALL_LANE_KEY } from './lane';
 import { checkDay } from './round';
@@ -165,5 +167,48 @@ describe('buildRows with a call a rule excluded', () => {
     const worked = rows.unattributed.find((group) => group.laneKey !== CALL_LANE_KEY);
 
     expect(worked?.attended).toBe(false);
+  });
+});
+
+describe('buildRows with a rule naming a stand-in', () => {
+  const STAND_IN: StandIn = {
+    id: 'stand-in-1',
+    name: 'The feature with no ticket',
+    state: 'open',
+    days: [],
+    author: 'user',
+    createdAt: at(8),
+  };
+
+  const RULE: AttributionRule = {
+    id: 'rule-1',
+    repoPath: '/dev/a',
+    target: { kind: 'stand-in', standInId: STAND_IN.id },
+    author: 'user',
+    createdAt: at(8),
+  };
+
+  const WORK = [block({ from: at(9), to: at(10), context: { repoPath: '/dev/a', branch: 'no-key-here' } })];
+
+  it('names the row with the stand-in and leaves it unbookable', () => {
+    const rows = buildRows({ blocks: WORK, events: [], rules: [RULE], standIns: [STAND_IN] });
+
+    expect(rows.unnamed).toHaveLength(1);
+    expect(rows.unnamed[0]?.standInId).toBe(STAND_IN.id);
+    expect(rows.proposals).toEqual([]);
+  });
+
+  it('leaves the row unnamed when the stand-in the rule points at is gone', () => {
+    const rows = buildRows({ blocks: WORK, events: [], rules: [RULE], standIns: [] });
+
+    expect(rows.unnamed[0]?.standInId).toBeUndefined();
+  });
+
+  it('takes the row out of the work the day still has to ask about', () => {
+    const named = buildRows({ blocks: WORK, events: [], rules: [RULE], standIns: [STAND_IN] });
+    const gone = buildRows({ blocks: WORK, events: [], rules: [RULE], standIns: [] });
+
+    expect(named.unattributed).toEqual([]);
+    expect(gone.unattributed).toHaveLength(1);
   });
 });

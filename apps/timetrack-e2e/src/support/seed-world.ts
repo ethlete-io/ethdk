@@ -3,6 +3,7 @@ import {
   FakeBackend,
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_SEED_KEY,
+  TIMETRACK_E2E_TRAY_KEY,
   TimetrackWorldSeed,
 } from '@ethlete/timetrack/testing';
 
@@ -47,3 +48,10 @@ export const seedWorld = async (page: Page, world: TimetrackWorld = {}) => {
  */
 export const readBackend = (page: Page): Promise<FakeBackend> =>
   page.evaluate((key) => (globalThis as Record<string, unknown>)[key] as FakeBackend, TIMETRACK_E2E_BACKEND_KEY);
+
+/** The tray menu's four lines, as the app words them. Declared here: the type lives in the app. */
+export type TrayLines = { activity: string; total: string; timer: string; pause: string };
+
+/** What the tray menu last said about today. A browser tab has no tray, so the fake port keeps it. */
+export const readTray = (page: Page): Promise<TrayLines | undefined> =>
+  page.evaluate((key) => (globalThis as Record<string, unknown>)[key] as TrayLines | undefined, TIMETRACK_E2E_TRAY_KEY);

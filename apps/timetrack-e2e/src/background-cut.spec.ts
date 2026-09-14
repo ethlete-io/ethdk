@@ -71,6 +71,7 @@ const world = (backgroundProjects: string[]) => ({
         id: 'rule-sdk',
         repoPath: SDK,
         target: { kind: 'issue' as const, issueKey: 'XYZ-4200' },
+        author: 'user' as const,
         createdAt: new Date(0),
       },
     ],

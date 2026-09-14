@@ -20,6 +20,7 @@ import {
   FakeAgentLog,
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_SEED_KEY,
+  TIMETRACK_E2E_TRAY_KEY,
   cliNotInstalledMessage,
   createFakeWorld,
   isEditorInstallSpec,
@@ -342,7 +343,13 @@ export const createFakePorts = (): HostPorts => {
 
     oauth: { authorize$: () => ok({ code: 'e2e', redirectUri: 'http://localhost', codeVerifier: 'e2e' }) },
 
-    tray: { setReadout$: () => done() },
+    tray: {
+      setReadout$: (readout) => {
+        (globalThis as Record<string, unknown>)[TIMETRACK_E2E_TRAY_KEY] = readout;
+
+        return done();
+      },
+    },
 
     // A browser tab has no second window to open, so the toggle reports one that never opens. The
     // readout stream is silent for the same reason: nothing here has a window to publish to.

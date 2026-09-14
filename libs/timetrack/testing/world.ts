@@ -96,6 +96,12 @@ export const TIMETRACK_E2E_SEED_KEY = '__timetrackE2eSeed';
 /** Where the live backend is published, so a spec can read at the wire what a flow wrote. */
 export const TIMETRACK_E2E_BACKEND_KEY = '__timetrackE2eBackend';
 
+/**
+ * Where the last tray readout is published. A browser tab has no tray, so without this the one
+ * sentence the app says about the whole day outside its window is unreadable from a spec.
+ */
+export const TIMETRACK_E2E_TRAY_KEY = '__timetrackE2eTray';
+
 /** The day the default fixture describes, so a test can drive the view straight to it. */
 export const e2eDay = () => {
   const now = new Date();

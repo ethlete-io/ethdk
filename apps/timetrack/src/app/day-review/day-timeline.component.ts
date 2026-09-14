@@ -33,6 +33,7 @@ import { TimelineEntry, appointmentLabel, appointmentOf, rowEntryOf, unnamedLabe
 import { rowActionsFor } from './row-edit/row-actions';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 import { injectDayReview } from './day-review';
+import { injectTimetrackSettings } from '../settings/settings';
 
 const markIntentOf = (event: Event) => {
   if (!(event instanceof MouseEvent)) return 'open';
@@ -362,6 +363,7 @@ export class DayTimelineComponent {
   private destroyRef = inject(DestroyRef);
   private surface = injectRowEditSurface();
   private store = injectDayReview();
+  private settings = injectTimetrackSettings();
 
   public focusedDate = input.required<Date>();
   public rows = input.required<readonly ReviewedRow[]>();
@@ -454,6 +456,11 @@ export class DayTimelineComponent {
     return [...byStory].filter(([, rows]) => rows.length > 1);
   });
 
+  /** Every stand-in by id, so a band naming one reads its name without walking the list per redraw. */
+  private standInNames = computed(
+    () => new Map(this.settings.settings().standIns.map((standIn) => [standIn.id, standIn.name])),
+  );
+
   private storyIdOf = computed(() => {
     const found = new Map<string, string>();
 
@@ -490,6 +497,7 @@ export class DayTimelineComponent {
           parentId: (row.storyKey && storyIds.get(row.storyKey)) ?? null,
           from: drag?.boundary.after.id === row.id ? drag.at : row.from,
           to: drag?.boundary.before.id === row.id ? drag.at : row.to,
+          standInName: this.standInNameOf(row),
         });
       }),
     ];
@@ -780,7 +788,7 @@ export class DayTimelineComponent {
   }
 
   protected labelOf(boundary: TimelineBoundary) {
-    const named = (row: ReviewedRow) => row.issueKey ?? unnamedLabelOf(row);
+    const named = (row: ReviewedRow) => row.issueKey ?? unnamedLabelOf({ row, standInName: this.standInNameOf(row) });
 
     return `Boundary between ${named(boundary.before)} and ${named(boundary.after)}`;
   }
@@ -841,6 +849,10 @@ export class DayTimelineComponent {
     if (entry?.kind === 'row') {
       this.rowReschedule.emit({ row: entry.row, from: move.appointment.start, to: move.appointment.end });
     }
+  }
+
+  private standInNameOf(row: ReviewedRow) {
+    return row.standInId ? this.standInNames().get(row.standInId) : undefined;
   }
 
   private toggleMark(row: ReviewedRow) {
