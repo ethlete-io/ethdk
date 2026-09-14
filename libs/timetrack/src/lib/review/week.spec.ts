@@ -47,6 +47,7 @@ const review = (options: { rows: ReviewedRow[]; unattributedMs?: number }): DayR
       coveredMs: 0,
       loggedMs: proposedMs,
       unattributedMs: options.unattributedMs ?? 0,
+      unattendedMs: 0,
       warnings: [],
     },
     unreconciledMs: 0,

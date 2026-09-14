@@ -46,7 +46,7 @@ const patternTransport = (options: { worklogs?: unknown[]; issuesById?: unknown[
 };
 
 const readHistory = (source: Observable<TempoHistory>) => {
-  let history: TempoHistory = { patterns: [], loggedIssues: [] };
+  let history: TempoHistory = { patterns: [], loggedIssues: [], worklogs: [] };
 
   source.subscribe((value) => (history = value));
 
