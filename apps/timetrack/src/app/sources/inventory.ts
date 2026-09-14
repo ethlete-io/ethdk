@@ -180,6 +180,22 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     eventSource: 'editor',
   },
   {
+    id: 'browser',
+    name: 'Browser tabs',
+    reads: 'An extension posting the host of the tab that holds the focus, while the browser has it.',
+    stores: 'The hostname and the checkout it resolves to. No address, no page title and no content.',
+    state: 'planned',
+    detail: 'Not built. Whether it is needed at all is still open.',
+  },
+  {
+    id: 'figma',
+    name: 'Figma',
+    reads: 'A Figma plugin posting while a file is open, so design work names itself the way a checkout does.',
+    stores: 'The file and the page, and whether it was edited or only looked at. No frame and no content.',
+    state: 'planned',
+    detail: 'Not built. A plugin cannot read the pairing file every other reporter reads.',
+  },
+  {
     id: 'call',
     name: 'Calls',
     reads: 'Which process on this machine is holding the microphone, and when it lets go.',

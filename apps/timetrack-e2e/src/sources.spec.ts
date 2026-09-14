@@ -344,3 +344,22 @@ test.describe('the editor row, which reports which editors hold the reporter', (
     await expect(editor(page, 'code')).not.toContainText('npx nx install');
   });
 });
+
+/**
+ * A source that is not built is still part of what the tool will watch, so a person deciding whether
+ * to install it has to see it. It must not read as something that is watching now, which is why it
+ * sits behind a disclosure rather than in the list.
+ */
+test.describe('the sources the app does not have yet', () => {
+  test('keeps them out of the list of what is watching, behind one disclosure', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW });
+    await page.goto('/sources');
+
+    await expect(row(page, 'figma')).toBeHidden();
+
+    await page.getByRole('button', { name: /What it will watch/ }).click();
+
+    await expect(row(page, 'figma')).toContainText('planned');
+    await expect(row(page, 'browser')).toContainText('planned');
+  });
+});

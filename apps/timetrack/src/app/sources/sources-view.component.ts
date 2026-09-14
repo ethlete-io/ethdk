@@ -1,6 +1,6 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, BadgeVariant } from '@ethlete/components';
+import { ACCORDION_IMPORTS, BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, BadgeVariant } from '@ethlete/components';
 import {
   EditorCli,
   EditorInstall,
@@ -315,10 +315,39 @@ type SourceRow = {
           </li>
         }
       </ul>
+
+      @if (planned.length) {
+        <et-accordion-group class="mt-2">
+          <et-accordion [label]="'What it will watch, but does not yet (' + planned.length + ')'">
+            <ul class="flex flex-col gap-2">
+              @for (source of planned; track source.id) {
+                <li
+                  [attr.data-source]="source.id"
+                  class="flex flex-col gap-1 rounded-md border border-et-surface-border p-3"
+                >
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-base font-medium">{{ source.name }}</span>
+                    <et-badge color="neutral" variant="outline" size="sm">planned</et-badge>
+                  </div>
+
+                  <p class="text-small text-et-surface-muted">{{ source.reads }}</p>
+                  <p class="text-small text-et-surface-subtle">
+                    <span class="font-medium">Will store:</span> {{ source.stores }}
+                  </p>
+
+                  @if (source.detail) {
+                    <p class="text-small text-et-surface-subtle">{{ source.detail }}</p>
+                  }
+                </li>
+              }
+            </ul>
+          </et-accordion>
+        </et-accordion-group>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, UnnamedFocusComponent],
+  imports: [ACCORDION_IMPORTS, BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, UnnamedFocusComponent],
 })
 export class SourcesViewComponent {
   private destroyRef = inject(DestroyRef);
@@ -391,8 +420,12 @@ export class SourcesViewComponent {
 
   protected pausedFor = computed(() => formatDurationMs(this.pause.pausedForMs()));
 
+  /** The sources that are not built. They carry no run, no tally and no repair, so the built rows'
+   * markup would be mostly empty branches. */
+  protected planned = EVIDENCE_SOURCES.filter((source) => source.state === 'planned');
+
   protected rows = computed<SourceRow[]>(() =>
-    EVIDENCE_SOURCES.map((source) => {
+    EVIDENCE_SOURCES.filter((source) => source.state !== 'planned').map((source) => {
       const state = this.stateOf(source);
       // A source that is running is the only claim the pause contradicts. One that is not set up, or
       // not built, is still not set up and still not built.
