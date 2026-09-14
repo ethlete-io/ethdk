@@ -14,6 +14,7 @@ const HEADINGS: Record<DayWarningKind, string> = {
   'paused-time': 'You stopped collection for part of this day',
   'edited-row-drift': 'New evidence landed under a row you edited',
   'stale-edit': 'A row you edited no longer matches the day',
+  'rows-overlap': 'Two rows claim the same minutes',
 };
 
 /**

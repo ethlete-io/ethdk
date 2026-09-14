@@ -1078,3 +1078,107 @@ describe('reviewDay over a background project', () => {
     expect(review.behind[0]?.issueKey).toBe('ET-772');
   });
 });
+
+describe('reviewDay over two rows claiming the same minutes', () => {
+  const day = dayRows({
+    proposals: [
+      proposal({ issueKey: 'ABC-1', from: '08:00', to: '10:00', minutes: 120 }),
+      proposal({ issueKey: 'DEF-2', from: '10:00', to: '12:00', minutes: 120 }),
+    ],
+  });
+
+  const warnings = (edits: DayReviewEdits) =>
+    reviewDay({ rows: day, edits }).check.warnings.filter((warning) => warning.kind === 'rows-overlap');
+
+  it('says nothing while the day is the one the machine cut', () => {
+    expect(warnings(EMPTY_DAY_REVIEW_EDITS)).toEqual([]);
+  });
+
+  it('warns once a reviewer grows one row over another, naming both and when', () => {
+    const grown = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewDay({ rows: day }), 'ABC-1'),
+      from: at('08:00'),
+      to: at('11:00'),
+    });
+
+    expect(warnings(grown)[0]?.detail).toContain('1h 0m');
+    expect(warnings(grown)[0]?.detail).toContain('under both ABC-1 and DEF-2');
+  });
+
+  it('stays quiet while the overlap is under the tolerance the day was checked with', () => {
+    const grown = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewDay({ rows: day }), 'ABC-1'),
+      from: at('08:00'),
+      to: at('11:00'),
+    });
+    const review = reviewDay({ rows: day, edits: grown, check: { toleranceMs: 120 * MINUTE } });
+
+    expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('rows-overlap');
+  });
+
+  it('stays quiet where the row the overlap runs under would not sync', () => {
+    const grown = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewDay({ rows: day }), 'ABC-1'),
+      from: at('08:00'),
+      to: at('11:00'),
+    });
+    const rejected = setRowState({
+      edits: grown,
+      row: rowFor(reviewDay({ rows: day, edits: grown }), 'DEF-2'),
+      state: 'rejected',
+    });
+
+    expect(warnings(rejected)).toEqual([]);
+  });
+});
+
+describe('reviewDay over a meeting inside a background row', () => {
+  const day = dayRows({
+    proposals: [
+      { ...proposal({ issueKey: 'FIFAGG-12652', from: '14:00', to: '15:00', minutes: 60 }), laneKey: 'call' },
+      { ...proposal({ issueKey: 'ET-772', from: '13:00', to: '16:00', minutes: 180 }), laneKey: 'repo:/dev/sdk' },
+    ],
+  });
+
+  const reviewed = (edits: DayReviewEdits) => reviewDay({ rows: day, edits, cut: { backgroundProjects: ['ET'] } });
+  const pieces = (review: DayReview) => review.rows.filter((row) => row.issueKey === 'ET-772');
+
+  it('cuts the background row in two, so the day books three hours and not four', () => {
+    const review = reviewed(EMPTY_DAY_REVIEW_EDITS);
+
+    expect(pieces(review).map((row) => [row.from, row.to])).toEqual([
+      [at('13:00'), at('14:00')],
+      [at('15:00'), at('16:00')],
+    ]);
+    expect(review.check.proposedMs).toBe(180 * MINUTE);
+  });
+
+  it('draws the hour the meeting took as a band behind the row it was cut out of', () => {
+    const review = reviewed(EMPTY_DAY_REVIEW_EDITS);
+
+    expect(review.behind.map((stretch) => [stretch.from, stretch.to])).toEqual([[at('14:00'), at('15:00')]]);
+    expect(review.behind[0]?.laneKey).toBe('repo:/dev/sdk');
+  });
+
+  it('writes an edit on the second piece against the row, so both pieces take it', () => {
+    const tail = pieces(reviewed(EMPTY_DAY_REVIEW_EDITS))[1]!;
+    const edits = setRowDescription({ edits: EMPTY_DAY_REVIEW_EDITS, row: tail, description: 'paired work' });
+
+    expect(pieces(reviewed(edits)).map((row) => row.description)).toEqual(['paired work', 'paired work']);
+  });
+
+  it('takes a drag of the second piece as a drag of the row, and never calls the edit stale', () => {
+    const tail = pieces(reviewed(EMPTY_DAY_REVIEW_EDITS))[1]!;
+    const edits = setRowRange({ edits: EMPTY_DAY_REVIEW_EDITS, row: tail, from: tail.from, to: at('15:45') });
+    const review = reviewed(edits);
+
+    expect(pieces(review).map((row) => [row.from, row.to])).toEqual([
+      [at('13:00'), at('14:00')],
+      [at('15:00'), at('15:45')],
+    ]);
+    expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('stale-edit');
+  });
+});

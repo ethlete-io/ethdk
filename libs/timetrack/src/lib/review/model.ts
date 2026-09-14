@@ -77,6 +77,12 @@ export type ReviewedRow = Omit<WorklogProposal, 'issueKey'> & {
   standInId?: string;
   /** True when a local edit produced this row, so re-correlation must leave it alone. */
   edited: boolean;
+  /**
+   * The row this one was cut out of, where the day's re-cut split a background row a foreground row
+   * sits inside. An edit on any piece is written against this id, so naming one half names the work
+   * both halves are, and a piece the next re-cut does not produce leaves nothing dangling behind.
+   */
+  recutOf?: string;
   /** What the engine proposed before the edit, when there is still a proposal to reset to. */
   proposed?: WorklogProposal;
   /** Whether the reviewer took this row off the timeline. See {@link DayReview.hidden}. */

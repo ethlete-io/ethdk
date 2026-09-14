@@ -100,7 +100,7 @@ describe('recutReviewedRows', () => {
     expect(result.behind).toEqual([]);
   });
 
-  it('leaves a background row whole when a meeting sits inside it, rather than split it in two', () => {
+  it('cuts a background row in two when a meeting sits inside it, so the hour is not booked twice', () => {
     const result = recut({
       rows: [
         row({ issueKey: 'ET-772', from: '13:00', to: '16:00' }),
@@ -108,6 +108,67 @@ describe('recutReviewedRows', () => {
       ],
     });
 
-    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual(['13:00-16:00']);
+    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual(['13:00-14:00', '15:00-16:00']);
+  });
+
+  it('draws the hour the meeting took as a band in the lane the background row sits in', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'ET-772', from: '13:00', to: '16:00' }),
+        row({ issueKey: 'FIFAGG-1', from: '14:00', to: '15:00' }),
+      ],
+    });
+
+    expect(spans(result.behind)).toEqual(['14:00-15:00']);
+    expect(result.behind[0]?.laneKey).toBe(SDK);
+  });
+
+  it('splits the observed time across the pieces, so the pair claims no more than the row did', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'ET-772', from: '13:00', to: '16:00' }),
+        row({ issueKey: 'FIFAGG-1', from: '14:00', to: '15:00' }),
+      ],
+    });
+    const pieces = result.rows.filter((entry) => entry.issueKey === 'ET-772');
+
+    expect(pieces.map((piece) => piece.observedMs / 60_000)).toEqual([60, 60]);
+  });
+
+  it('gives every piece but the first an id of its own, and points them all back at the row', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'ET-772', from: '13:00', to: '16:00' }),
+        row({ issueKey: 'FIFAGG-1', from: '14:00', to: '15:00' }),
+      ],
+    });
+    const pieces = result.rows.filter((entry) => entry.issueKey === 'ET-772');
+
+    expect(pieces.map((piece) => piece.id)).toEqual(['ET-772@13:00', 'ET-772@13:00#2']);
+    expect(pieces.map((piece) => piece.recutOf)).toEqual(['ET-772@13:00', 'ET-772@13:00']);
+  });
+
+  it('cuts two meetings inside one background row into three pieces', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'ET-772', from: '13:00', to: '17:00' }),
+        row({ issueKey: 'FIFAGG-1', from: '14:00', to: '15:00' }),
+        row({ issueKey: 'BD-9', from: '15:30', to: '16:00' }),
+      ],
+    });
+
+    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual([
+      '13:00-14:00',
+      '15:00-15:30',
+      '16:00-17:00',
+    ]);
+  });
+
+  it('leaves a row no foreground row touches exactly as it was', () => {
+    const untouched = row({ issueKey: 'ET-772', from: '13:00', to: '16:00' });
+    const result = recut({ rows: [untouched, row({ issueKey: 'FIFAGG-1', from: '17:00', to: '18:00' })] });
+
+    expect(result.rows).toContain(untouched);
+    expect(result.behind).toEqual([]);
   });
 });

@@ -44,7 +44,9 @@ export type DayWarningKind =
   /** Raised by `reviewDay`, not here: new evidence under a row a reviewer had already edited. */
   | 'edited-row-drift'
   /** Raised by `reviewDay`, not here: an edited row whose proposals the engine no longer builds. */
-  | 'stale-edit';
+  | 'stale-edit'
+  /** Raised by `reviewDay`, not here: two rows a sync would write claim the same minutes. */
+  | 'rows-overlap';
 
 /**
  * A call the day also observed work during. It is time the day proposes twice, so the reviewer is told

@@ -5,7 +5,7 @@ import { storedLaneKey } from '../rows/lane';
 import { unnamedRowId } from '../rows/propose';
 import { snapRowBounds } from '../rows/snap';
 import { recutReviewedRows } from './recut';
-import { formatDurationMs } from '../model/duration';
+import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
 import {
@@ -14,6 +14,7 @@ import {
   EMPTY_DAY_REVIEW_EDITS,
   PinnedRow,
   ProposalOverride,
+  NamedRow,
   ReviewedRow,
   isNamedRow,
 } from './model';
@@ -207,11 +208,15 @@ export const reviewDay = (options: {
     rows,
     hidden,
     behind: recut.behind,
-    check: withStaleEdits({
-      check: withDrift({ check, unreconciledMs, options: options.check }),
-      rows: options.rows,
-      edits,
-      matched: tracked.matched,
+    check: withOverlaps({
+      check: withStaleEdits({
+        check: withDrift({ check, unreconciledMs, options: options.check }),
+        rows: options.rows,
+        edits,
+        matched: tracked.matched,
+      }),
+      rows,
+      options: options.check,
     }),
     unreconciledMs,
   };
@@ -248,6 +253,49 @@ const withStaleEdits = (options: {
         detail: `${stale.length} row${stale.length === 1 ? '' : 's'} you edited no longer match what the day proposes; reset to take the new rows`,
       },
     ],
+  };
+};
+
+/** What a pair of rows claiming the same minutes reads as: how long, which two rows, and from when. */
+const overlapDetail = (pairs: readonly { left: NamedRow; right: NamedRow; overlapMs: number; from: Date }[]) =>
+  [...pairs]
+    .sort((left, right) => right.overlapMs - left.overlapMs)
+    .map(
+      (pair) =>
+        `${formatDurationMs(pair.overlapMs)} from ${formatTimeOfDay(pair.from)} under both ${pair.left.issueKey} and ${pair.right.issueKey}`,
+    )
+    .join(', ');
+
+/**
+ * Warns where two rows a sync would write cover the same minutes, which is time the day books twice.
+ *
+ * Only a pair the reviewer had a hand in is reported. The machine's own overlaps are the day running
+ * two things at once, which `concurrency` and `meeting-overlap` already say; a pair left over after
+ * the re-cut is instead the one thing no rule resolved, and nothing else on the screen names it.
+ */
+const withOverlaps = (options: {
+  check: DayCheck;
+  rows: readonly ReviewedRow[];
+  options?: CheckDayOptions;
+}): DayCheck => {
+  const tolerance = options.options?.toleranceMs ?? DEFAULT_ROUND_OPTIONS.incrementMs;
+  const writes = options.rows.filter(isNamedRow).filter((row) => syncsInState(row.state));
+  const pairs = writes
+    .flatMap((left, at) =>
+      writes.slice(at + 1).map((right) => ({
+        left,
+        right,
+        overlapMs: overlapMs(left, right),
+        from: new Date(Math.max(left.from.getTime(), right.from.getTime())),
+      })),
+    )
+    .filter((pair) => (pair.left.edited || pair.right.edited) && pair.overlapMs >= tolerance);
+
+  if (!pairs.length) return options.check;
+
+  return {
+    ...options.check,
+    warnings: [...options.check.warnings, { kind: 'rows-overlap', detail: overlapDetail(pairs) }],
   };
 };
 

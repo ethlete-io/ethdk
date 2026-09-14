@@ -5,8 +5,23 @@ import { DayReviewEdits, PinnedRow, ProposalOverride, ReviewedRow } from './mode
 
 const pinnedById = (edits: DayReviewEdits, id: string) => edits.pinned.find((row) => row.id === id);
 
+/**
+ * The id an edit to this row is written against. For a piece the day's re-cut split out of a
+ * background row that is the row it came out of — see {@link ReviewedRow.recutOf}.
+ */
+const editIdOf = (row: ReviewedRow) => row.recutOf ?? row.id;
+
+/**
+ * The row an edit is written against. A piece the re-cut split out of a background row resolves to
+ * that row, keeping its own bounds: both pieces are the one proposal, so naming either names the work
+ * both of them are, and a second structural edit to the pair replaces the first rather than stacking
+ * a row the engine never proposed beside it.
+ */
+const editTarget = (row: ReviewedRow): ReviewedRow => (row.recutOf ? { ...row, id: row.recutOf } : row);
+
 /** What a row stands in for, so splitting or merging an already-edited row keeps the original's claim. */
-const replacedBy = (edits: DayReviewEdits, row: ReviewedRow) => pinnedById(edits, row.id)?.replaces ?? [row.id];
+const replacedBy = (edits: DayReviewEdits, row: ReviewedRow) =>
+  pinnedById(edits, editIdOf(row))?.replaces ?? [editIdOf(row)];
 
 const withoutHidden = <T extends { hidden?: boolean }>(entry: T): T => {
   const { hidden: _hidden, ...kept } = entry;
@@ -55,18 +70,19 @@ const asPinned = (row: ReviewedRow, replaces: readonly string[]): PinnedRow => (
 
 const overrideOn = (options: { edits: DayReviewEdits; row: ReviewedRow; change: ProposalOverride }): DayReviewEdits => {
   const { edits, row, change } = options;
-  const pinned = pinnedById(edits, row.id);
+  const id = editIdOf(row);
+  const pinned = pinnedById(edits, id);
 
   if (pinned) {
     return {
       ...edits,
-      pinned: edits.pinned.map((entry) => (entry.id === row.id ? { ...entry, ...change } : entry)),
+      pinned: edits.pinned.map((entry) => (entry.id === id ? { ...entry, ...change } : entry)),
     };
   }
 
   return {
     ...edits,
-    overrides: { ...edits.overrides, [row.id]: { ...edits.overrides[row.id], ...change } },
+    overrides: { ...edits.overrides, [id]: { ...edits.overrides[id], ...change } },
   };
 };
 
@@ -127,7 +143,8 @@ export const hideRow = (options: { edits: DayReviewEdits; row: ReviewedRow }) =>
 
 /** Puts a hidden row back on the timeline, leaving every other edit it carries alone. */
 export const showRow = (options: { edits: DayReviewEdits; row: ReviewedRow }): DayReviewEdits => {
-  const { edits, row } = options;
+  const { edits } = options;
+  const row = editTarget(options.row);
 
   if (pinnedById(edits, row.id)) {
     return {
@@ -155,7 +172,8 @@ export const showRow = (options: { edits: DayReviewEdits; row: ReviewedRow }): D
  * turn the reset half's time into drift.
  */
 export const resetRow = (options: { edits: DayReviewEdits; row: ReviewedRow }): DayReviewEdits => {
-  const { edits, row } = options;
+  const { edits } = options;
+  const row = editTarget(options.row);
   const replaces = new Set(replacedBy(edits, row));
   const undone = edits.pinned.filter((entry) => entry.id === row.id || entry.replaces.some((id) => replaces.has(id)));
   const undoneIds = undone.flatMap((entry) => [entry.id, ...entry.replaces]);
@@ -179,7 +197,8 @@ export const splitRow = (options: {
   at: Date;
   round?: Partial<RoundOptions>;
 }): DayReviewEdits => {
-  const { edits, row, at } = options;
+  const { edits, at } = options;
+  const row = editTarget(options.row);
   const span = row.to.getTime() - row.from.getTime();
   const offset = at.getTime() - row.from.getTime();
 
@@ -236,7 +255,9 @@ export const moveRowBoundary = (options: {
   at: Date;
   round?: Partial<RoundOptions>;
 }): DayReviewEdits => {
-  const { edits, before, after, at } = options;
+  const { edits, at } = options;
+  const before = editTarget(options.before);
+  const after = editTarget(options.after);
   const boundary = before.to.getTime();
   const to = at.getTime();
 
@@ -386,7 +407,8 @@ export const setRowRange = (options: {
   /** Pins both ends even where one of them did not move. A typed duration is a span, not one end. */
   pinsBothEnds?: boolean;
 }): DayReviewEdits => {
-  const { edits, row, from, to } = options;
+  const { edits, from, to } = options;
+  const row = editTarget(options.row);
 
   if (to.getTime() <= from.getTime()) return edits;
   if (from.getTime() === row.from.getTime() && to.getTime() === row.to.getTime()) return edits;
@@ -423,7 +445,8 @@ export const setRowRange = (options: {
  * straight back.
  */
 export const removeManualRow = (options: { edits: DayReviewEdits; row: ReviewedRow }): DayReviewEdits => {
-  const { edits, row } = options;
+  const { edits } = options;
+  const row = editTarget(options.row);
   const pinned = pinnedById(edits, row.id);
 
   if (!pinned || pinned.replaces.length > 0) return edits;
@@ -439,7 +462,8 @@ export const removeManualRow = (options: { edits: DayReviewEdits; row: ReviewedR
  * Fewer than two rows returns the edits unchanged.
  */
 export const mergeRows = (options: { edits: DayReviewEdits; rows: readonly ReviewedRow[] }): DayReviewEdits => {
-  const { edits, rows } = options;
+  const { edits } = options;
+  const rows = options.rows.map(editTarget);
   const [first] = rows;
 
   if (!first || rows.length < 2) return edits;

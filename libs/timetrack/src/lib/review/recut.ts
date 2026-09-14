@@ -3,31 +3,80 @@ import { RoundOptions } from '../rows/round';
 import { projectKeyOf } from '../ticket/project';
 import { ReviewedRow } from './model';
 
+type Span = { from: number; to: number };
+
 /**
- * The end a background row gives up to a foreground row that overlaps it, or nothing when the two do
- * not meet. A foreground row inside the background row takes neither end, so the row is left whole:
- * splitting it would invent a row the reviewer never made.
+ * The stretches of a background row that no foreground row covers, in order.
+ *
+ * A foreground row inside the background row leaves two of them, which is why this is a list: a row
+ * left whole across a meeting books the meeting's minutes a second time.
  */
-const trimmedTo = (options: { row: ReviewedRow; covered: readonly LaneRow[] }) => {
-  let from = options.row.from.getTime();
-  let to = options.row.to.getTime();
+const keptSpansOf = (options: { row: ReviewedRow; covered: readonly LaneRow[] }): Span[] => {
+  const start = options.row.from.getTime();
+  const end = options.row.to.getTime();
+  const windows = options.covered
+    .map((other) => ({ from: Math.max(start, other.from.getTime()), to: Math.min(end, other.to.getTime()) }))
+    .filter((window) => window.to > window.from)
+    .sort((left, right) => left.from - right.from);
 
-  for (const other of options.covered) {
-    const start = other.from.getTime();
-    const end = other.to.getTime();
+  const kept: Span[] = [];
+  let at = start;
 
-    if (end <= from || start >= to) continue;
+  for (const window of windows) {
+    if (window.from > at) kept.push({ from: at, to: window.from });
 
-    if (start <= from && end >= to) {
-      from = to;
-      break;
-    }
-
-    if (start <= from) from = end;
-    else if (end >= to) to = start;
+    at = Math.max(at, window.to);
   }
 
-  return { from, to };
+  if (at < end) kept.push({ from: at, to: end });
+
+  return kept;
+};
+
+/** The stretches the kept spans no longer cover — what the row gave up, and what a band reports. */
+const lostSpansOf = (options: { row: ReviewedRow; kept: readonly Span[] }): Span[] => {
+  const end = options.row.to.getTime();
+  const lost: Span[] = [];
+
+  let at = options.row.from.getTime();
+
+  for (const span of options.kept) {
+    if (span.from > at) lost.push({ from: at, to: span.from });
+
+    at = span.to;
+  }
+
+  if (at < end) lost.push({ from: at, to: end });
+
+  return lost;
+};
+
+/**
+ * One kept stretch of a background row, as a row.
+ *
+ * `observedMs` is scaled by the part of the row the piece kept. The minutes it gave up were observed
+ * under the row that took them, and a piece reporting the whole row's observed time would have the
+ * day claim them twice over.
+ *
+ * Only a second and later piece is given an id of its own, so an edit already written against the
+ * row still reaches the piece that starts where the row did. `recutOf` is what carries the rest of
+ * them back to the row they were cut out of — see {@link ReviewedRow.recutOf}.
+ */
+const pieceOf = (options: { row: ReviewedRow; span: Span; at: number }): ReviewedRow => {
+  const { row, span, at } = options;
+  const spanMs = row.to.getTime() - row.from.getTime();
+  const keptMs = span.to - span.from;
+
+  if (keptMs === spanMs) return row;
+
+  return {
+    ...row,
+    id: at === 0 ? row.id : `${row.id}#${at + 1}`,
+    recutOf: row.recutOf ?? row.id,
+    from: new Date(span.from),
+    to: new Date(span.to),
+    observedMs: spanMs > 0 ? Math.round((row.observedMs * keptMs) / spanMs) : 0,
+  };
 };
 
 /**
@@ -68,22 +117,16 @@ export const recutReviewedRows = (options: {
       continue;
     }
 
-    const { from, to } = trimmedTo({ row, covered });
+    const kept = keptSpansOf({ row, covered });
     const laneKey = row.laneKey;
 
-    if (laneKey && from > row.from.getTime()) {
-      lost.push({ from: row.from, to: new Date(from), issueKey: row.issueKey, laneKey });
+    if (laneKey) {
+      for (const span of lostSpansOf({ row, kept })) {
+        lost.push({ from: new Date(span.from), to: new Date(span.to), issueKey: row.issueKey, laneKey });
+      }
     }
 
-    if (laneKey && to < row.to.getTime()) {
-      lost.push({ from: new Date(to), to: row.to, issueKey: row.issueKey, laneKey });
-    }
-
-    if (to <= from) continue;
-
-    rows.push(
-      from === row.from.getTime() && to === row.to.getTime() ? row : { ...row, from: new Date(from), to: new Date(to) },
-    );
+    rows.push(...kept.map((span, at) => pieceOf({ row, span, at })));
   }
 
   return {
