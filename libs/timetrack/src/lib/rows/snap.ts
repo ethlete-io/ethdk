@@ -40,6 +40,10 @@ const endOf = (row: Placed, incrementMs: number) =>
  * its own booked time leaves no room for that, the later row's start moves up to meet it. Rows that
  * already overlapped on the raw clock are left overlapping - a meeting held during coding is a real
  * overlap and this is not the place to resolve it.
+ *
+ * The earlier row gives up booked time rather than strand the later one past its own last evidence.
+ * A day still running widens its last row into an increment the clock has not reached, and a row
+ * pushed beyond that is drawn entirely in the future.
  */
 export const snapRowBounds = <T extends SnapInput>(options: {
   rows: readonly T[];
@@ -67,8 +71,12 @@ export const snapRowBounds = <T extends SnapInput>(options: {
       if (earlier.rawTo > row.rawFrom || earlier.to <= row.from) continue;
 
       const pulled = floorTo(earlier.rawTo, incrementMs);
+      // A push would put this row's start at or after its own last evidence, so it would be drawn over
+      // minutes nothing happened in — on a running day, minutes that have not happened at all.
+      const strands = earlier.to >= row.rawTo;
+      const room = earlier.from + (strands ? incrementMs : Math.max(earlier.durationMs, incrementMs));
 
-      if (pulled >= earlier.from + Math.max(earlier.durationMs, incrementMs)) {
+      if (pulled >= room) {
         earlier.to = pulled;
         continue;
       }

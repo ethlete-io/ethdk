@@ -272,6 +272,34 @@ describe('buildRows on a day that is still running', () => {
       .sort((a, b) => a.from.getTime() - b.from.getTime());
   };
 
+  const running = (foregroundEnd: Date, observedTo: Date) =>
+    buildRows({
+      ...dayOptions(foregroundEnd),
+      blocks: [
+        block({ from: at(13), to: observedTo, context: { repoPath: SDK, branch: 'next' } }),
+        block({ from: at(13, 30), to: foregroundEnd, context: { repoPath: APP, branch: 'next' } }),
+      ],
+    });
+
+  it.each([33, 35, 37, 39])('starts no row after the last minute the day saw, at a raw end of 16:%i', (minute) => {
+    const rows = running(at(16, minute), at(16, 40));
+
+    for (const row of [...rows.proposals, ...rows.unnamed]) {
+      expect(row.from.getTime()).toBeLessThan(at(16, 40).getTime());
+    }
+  });
+
+  it('gives the booked increment to the band that still has evidence in it', () => {
+    const rows = running(at(16, 37), at(16, 40));
+    const drawnRows = [...rows.proposals, ...rows.unnamed].sort((a, b) => a.from.getTime() - b.from.getTime());
+
+    expect(drawnRows.map((row) => [row.from, row.to])).toEqual([
+      [at(13), at(13, 30)],
+      [at(13, 30), at(16, 30)],
+      [at(16, 30), at(16, 45)],
+    ]);
+  });
+
   it.each([18, 22, 23, 28, 31, 38])('leaves the lane whole with the foreground band open at 16:%i', (minute) => {
     const covered = sdkLane(at(16, minute));
 
