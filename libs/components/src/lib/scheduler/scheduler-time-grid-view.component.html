@@ -96,6 +96,16 @@
           <div class="et-scheduler-time-grid-hour-row" role="presentation"></div>
         }
 
+        @if (grid.currentTime(); as currentTime) {
+          @if (currentTime.dayIndex === dayIndex) {
+            <div
+              [style.--_et-scheduler-time-grid-now-offset]="currentTime.offset"
+              class="et-scheduler-time-grid-now"
+              role="presentation"
+            ></div>
+          }
+        }
+
         @if (grid.draftBlock(); as draft) {
           @if (draft.dayIndex === dayIndex) {
             <div

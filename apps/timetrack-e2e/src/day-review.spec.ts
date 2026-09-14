@@ -37,6 +37,25 @@ test.describe('the day view', () => {
     await expect(bands.nth(1)).toHaveAttribute('title', 'Not yet named · 1h 0m');
   });
 
+  test('marks where the clock stands on the day it is showing', async ({ page }) => {
+    await expect(page.locator('[data-now]')).toBeVisible();
+
+    const down = await page.evaluate(() => {
+      const line = document.querySelector('[data-now]') as HTMLElement;
+
+      return line.offsetTop / (line.parentElement as HTMLElement).offsetHeight;
+    });
+
+    // the seeded instant is 18:00, three quarters of the way down a 24-hour timeline
+    expect(down).toBeCloseTo(0.75, 3);
+  });
+
+  test('marks nothing on a day the clock is not in', async ({ page }) => {
+    await page.getByRole('button', { name: 'Next day' }).click();
+
+    await expect(page.locator('[data-now]')).toHaveCount(0);
+  });
+
   test('says so when the agent named nothing, rather than looking unpressed', async ({ page }) => {
     await openWaitingForAName(page);
     await page.getByRole('button', { name: 'Ask for suggestions' }).click();

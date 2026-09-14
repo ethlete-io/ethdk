@@ -199,9 +199,12 @@ export const SCHEDULER_EDIT_SURFACE_OVERLAY = /* @__PURE__ */ defineOverlay<
         breakpoint: 'md',
         strategy: anchoredDialogStrategy.build({
           maxWidth: '520px',
+          // `minWidth` is also what decides the placement below: a side too narrow for it overflows,
+          // so the pane drops under the appointment rather than being squeezed in beside it.
+          minWidth: '440px',
           positionStrategy: buildAnchoredRuntimePositionStrategy({
-            placement: 'bottom',
-            fallbackPlacements: ['top', 'right', 'left', 'bottom-end', 'top-end', 'right-start', 'left-start'],
+            placement: 'right-start',
+            fallbackPlacements: ['left-start', 'bottom', 'top', 'right', 'left'],
             offset: 10,
             arrowPadding: 16,
             shift: true,

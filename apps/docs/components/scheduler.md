@@ -130,6 +130,8 @@ Clicking a badge (in the grid or the overflow popover) sets `selectedAppointment
 
 An hour axis with one column per day - a single column for the day view, seven for the week view. Both are the **same** `<et-scheduler-time-grid-view>`; only the visible range differs, driven by `view`. All-day appointments render as one bar spanning the visible days they cover in a strip above the hour grid - a 3-day appointment draws once, not once per day - stacked into rows when two spans overlap; timed appointments are laid out at their actual position and duration.
 
+A line marks the current time across today's column, with a dot on its leading edge, and moves on every minute boundary. It is drawn only when today is one of the visible days, so stepping to another week leaves the grid clean.
+
 The 24-hour body is bounded and internally scrollable (`--et-scheduler-time-grid-body-max-height`, default `600px`) rather than growing the page - the day header and all-day strip above it always stay in view. On mount it scrolls itself to a relevant hour: the current time (with an hour of lead-in) when today is one of the visible days, else the earliest appointment's hour, else 9am - so opening day/week view never starts on an empty screen scrolled to midnight. It scrolls once, on mount, not on every `focusedDate` change - stepping to the next day/week never yanks your own scroll position back.
 
 <StoryEmbed id="components-date-time-scheduler--week" height="640px" />
@@ -290,7 +292,7 @@ Where it opens depends on whether there is something on the calendar to open it 
 
 A phone gets the whole viewport in every case, where the form needs the space. Selecting an appointment that is not on screen - writing `selectedAppointmentId` yourself, or picking one from a month cell's overflow menu - has no element to anchor to either, so it falls back to a centered dialog.
 
-Anchored, it opens **centered under** what it belongs to, not aligned to one of its edges: a dragged range anchors to the span you drew, so the surface lands over its middle rather than over its first day. A month range that wraps to the next week row anchors to its first row only - covering every row would span all seven columns and center the surface on the grid instead of on the range. It flips above when there is no room below, and shifts along the viewport edge when centering would push it off screen.
+Anchored, it opens **beside** what it belongs to - to the right of it, aligned to its top edge, with the arrow pointing back at it. A timed block is as tall as the hours it covers, so a surface under it would start near the bottom of the calendar and hide the very hours you are editing against. When the right side cannot hold the form's 440px it tries the left, and only when neither side can does it drop under the block and flip above from there. A dragged range anchors to the span you drew; a month range that wraps to the next week row anchors to its first row only - covering every row would span all seven columns and place the surface against the grid instead of against the range. It shifts along the viewport edge when the side it picked would push it off screen.
 
 ```html
 <et-scheduler
@@ -413,7 +415,7 @@ Adding your own piece is the same mechanism: write a directive that injects `SCH
 
 ## Headless usage {#headless-usage}
 
-`[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in - `inlineSize` can be several columns wide, so it is not `100 / columnCount`) - and `allDay()`, the all-day entries spanning across those days (`inlineOffset`/`inlineSize` as percentages of the whole visible range, `row` for the stacking row an overlapping span landed in; `allDayRowCount()` is how many rows that needs):
+`[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in - `inlineSize` can be several columns wide, so it is not `100 / columnCount`) - and `allDay()`, the all-day entries spanning across those days (`inlineOffset`/`inlineSize` as percentages of the whole visible range, `row` for the stacking row an overlapping span landed in; `allDayRowCount()` is how many rows that needs). `currentTime()` is where the clock stands on that grid - `{ dayIndex, at, offset }`, with `offset` in the same percent unit a block uses, or `null` when today is not visible - and it re-reads the clock every minute, so a custom time grid can draw its own now-line from it:
 
 ```html
 <div #scheduler="etScheduler" [appointments]="appointments" etScheduler>

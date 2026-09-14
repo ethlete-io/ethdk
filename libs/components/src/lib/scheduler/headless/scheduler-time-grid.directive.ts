@@ -2,8 +2,11 @@ import { Directive, afterNextRender, computed, inject } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { eachDayOfInterval, isSameDay, startOfDay } from 'date-fns';
 import { SCHEDULER_ERROR_CODES } from '../scheduler-errors';
+import { injectSchedulerClock } from './internals/scheduler-clock';
 import { buildSchedulerTimeGrid, computeInitialScrollHour } from './internals/scheduler-time-grid';
 import { SchedulerDirective } from './scheduler.directive';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type {
   SchedulerTimeGridAllDayEntry,
@@ -26,6 +29,8 @@ export class SchedulerTimeGridDirective {
   private hostElement = injectHostElement();
 
   private scheduler = inject(SchedulerDirective, { optional: true });
+
+  private clock = injectSchedulerClock();
 
   private grid = computed(() => {
     const scheduler = this.scheduler;
@@ -59,6 +64,22 @@ export class SchedulerTimeGridDirective {
   public initialScrollHour = computed(() => computeInitialScrollHour(this.grid(), new Date()));
 
   /**
+   * Where the clock stands on this grid: the day column the current time falls in, and its `offset`
+   * as a percentage of that column - the same unit {@link days}' blocks use. `null` when today is
+   * not one of the visible days. Re-reads the clock every minute, so whatever renders it moves.
+   */
+  public currentTime = computed(() => {
+    const now = this.clock();
+    const dayIndex = this.days().findIndex((day) => isSameDay(day.date, now));
+
+    if (dayIndex === -1) return null;
+
+    const dayStart = startOfDay(now).getTime();
+
+    return { dayIndex, at: now, offset: ((now.getTime() - dayStart) / DAY_MS) * 100 };
+  });
+
+  /**
    * The scheduler's drag-to-create range placed on this grid: which day column it belongs to, and
    * its `offset`/`span` as percentages of that column, the same units {@link days}' blocks use.
    * `null` when nothing is being dragged or the range sits outside the visible days.
@@ -73,13 +94,12 @@ export class SchedulerTimeGridDirective {
     if (dayIndex === -1) return null;
 
     const dayStart = startOfDay(draft.start).getTime();
-    const dayMs = 24 * 60 * 60 * 1000;
-    const end = Math.min(draft.end.getTime(), dayStart + dayMs);
+    const end = Math.min(draft.end.getTime(), dayStart + DAY_MS);
 
     return {
       dayIndex,
-      offset: ((draft.start.getTime() - dayStart) / dayMs) * 100,
-      span: ((end - draft.start.getTime()) / dayMs) * 100,
+      offset: ((draft.start.getTime() - dayStart) / DAY_MS) * 100,
+      span: ((end - draft.start.getTime()) / DAY_MS) * 100,
       phase: draft.phase,
     };
   });

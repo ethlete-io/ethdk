@@ -147,6 +147,27 @@
     }
   }
 
+  .et-scheduler-time-grid-now {
+    position: absolute;
+    inset-block-start: calc(var(--_et-scheduler-time-grid-now-offset, 0) * 1%);
+    inset-inline: 0;
+    block-size: 0;
+    border-block-start: 2px solid var(--et-theme-color-primary-solid, rgb(94 234 212));
+    pointer-events: none;
+    z-index: 1;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block-start: -5px;
+      inset-inline-start: -4px;
+      inline-size: 8px;
+      block-size: 8px;
+      border-radius: 999px;
+      background: var(--et-theme-color-primary-solid, rgb(94 234 212));
+    }
+  }
+
   .et-scheduler-time-grid-draft {
     position: absolute;
     inset-block-start: calc(var(--_et-scheduler-time-grid-block-offset, 0) * 1%);

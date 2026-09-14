@@ -215,6 +215,17 @@ type RowDrag = {
               </div>
             }
 
+            @if (grid.currentTime(); as currentTime) {
+              <div
+                [style.top.%]="currentTime.offset"
+                class="pointer-events-none absolute right-0 left-13 z-10 border-t-2 border-t-et-brand-ink"
+                data-now
+                role="presentation"
+              >
+                <span class="absolute -top-1 -left-1 size-2 rounded-full bg-et-brand-ink"></span>
+              </div>
+            }
+
             <div class="absolute inset-y-0 right-0 left-13 flex">
               @for (lane of lanes(); track lane.key) {
                 <div

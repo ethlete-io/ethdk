@@ -57,6 +57,25 @@ describe('SchedulerTimeGridDirective', () => {
     expect(days[0]?.date).toEqual(new Date(2026, 6, 15));
   });
 
+  it('places the clock on the column of the day it falls in', () => {
+    const now = new Date();
+
+    host.focusedDate.set(now);
+    host.view.set('day');
+    fixture.detectChanges();
+
+    const currentTime = directive.currentTime();
+    const offsetMinutes = ((currentTime?.offset ?? 0) / 100) * 24 * 60;
+    const minutes = now.getHours() * 60 + now.getMinutes();
+
+    expect(currentTime?.dayIndex).toBe(0);
+    expect(Math.abs(offsetMinutes - minutes)).toBeLessThan(1);
+  });
+
+  it('places no clock on a week today is not in', () => {
+    expect(directive.currentTime()).toBeNull();
+  });
+
   it('re-lays-out when the input signal changes', () => {
     host.appointments.set([appointment('a', new Date(2026, 6, 15, 9), new Date(2026, 6, 15, 10))]);
     fixture.detectChanges();
