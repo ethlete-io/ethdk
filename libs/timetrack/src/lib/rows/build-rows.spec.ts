@@ -212,3 +212,51 @@ describe('buildRows with a rule naming a stand-in', () => {
     expect(gone.unattributed).toHaveLength(1);
   });
 });
+
+describe('buildRows on a day that is still running', () => {
+  const SDK = '/dev/sdk';
+  const APP = '/dev/app';
+  const BACKGROUND: AttributionRule = {
+    id: 'rule-sdk',
+    repoPath: SDK,
+    target: { kind: 'issue', issueKey: 'ET-772' },
+    author: 'user',
+    createdAt: at(8),
+  };
+  const FOREGROUND: AttributionRule = {
+    id: 'rule-app',
+    repoPath: APP,
+    target: { kind: 'issue', issueKey: 'FIFAGG-1' },
+    author: 'user',
+    createdAt: at(8),
+  };
+
+  const day = (foregroundEnd: Date) =>
+    buildRows({
+      blocks: [
+        block({ from: at(13), to: at(17), context: { repoPath: SDK, branch: 'next' } }),
+        block({ from: at(13, 30), to: foregroundEnd, context: { repoPath: APP, branch: 'next' } }),
+      ],
+      events: [],
+      rules: [BACKGROUND, FOREGROUND],
+      cut: { backgroundProjects: ['ET'] },
+    });
+
+  const drawn = (foregroundEnd: Date) => {
+    const rows = day(foregroundEnd);
+
+    return [...rows.proposals, ...rows.unnamed]
+      .map((row) => ({ id: row.id, from: row.from, to: row.to }))
+      .sort((a, b) => a.from.getTime() - b.from.getTime() || a.id.localeCompare(b.id));
+  };
+
+  it('draws the band the cut left over the same minutes either way', () => {
+    expect(drawn(at(16, 23)).map((row) => [row.from, row.to])).toEqual(
+      drawn(at(16, 22)).map((row) => [row.from, row.to]),
+    );
+  });
+
+  it('keeps every row id still while the foreground band it was cut against grows', () => {
+    expect(drawn(at(16, 23)).map((row) => row.id)).toEqual(drawn(at(16, 22)).map((row) => row.id));
+  });
+});

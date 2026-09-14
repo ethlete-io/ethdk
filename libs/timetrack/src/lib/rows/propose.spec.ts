@@ -240,4 +240,25 @@ describe('propose, the work nothing named', () => {
     expect(proposals[0]?.to).toEqual(AT(60));
     expect(unnamed[0]?.from).toEqual(AT(60));
   });
+  it("keeps a row id still while the band before it grows into the band's raw start", () => {
+    const first = propose({
+      groups: [group({ fromMinute: 22, observedMinutes: 20, issueKey: 'FIP-2178' })],
+      config: FIP,
+    });
+    const later = propose({
+      groups: [group({ fromMinute: 27, observedMinutes: 15, issueKey: 'FIP-2178' })],
+      config: FIP,
+    });
+
+    expect(later.proposals[0]?.from).toEqual(first.proposals[0]?.from);
+    expect(later.proposals[0]?.id).toBe(first.proposals[0]?.id);
+  });
+
+  it('keeps an unnamed row id still the same way', () => {
+    const first = propose({ groups: [group({ fromMinute: 22, observedMinutes: 20 })] });
+    const later = propose({ groups: [group({ fromMinute: 27, observedMinutes: 15 })] });
+
+    expect(later.unnamed[0]?.from).toEqual(first.unnamed[0]?.from);
+    expect(later.unnamed[0]?.id).toBe(first.unnamed[0]?.id);
+  });
 });

@@ -48,7 +48,13 @@ type BoundGroup = { group: WorkGroup; from: Date; to: Date; durationMs: number }
 
 const isAttributedRow = (row: BoundGroup): row is BoundGroup & { group: AttributedGroup } => isAttributed(row.group);
 
-/** Stable across re-runs of a day, so an already-synced row is recognised rather than duplicated. */
+/**
+ * Stable across re-runs of a day, so an already-synced row is recognised rather than duplicated.
+ *
+ * The group it reads has already been snapped, and it has to stay that way: a raw start moves with
+ * every neighbour that grows, so on a live day the id would change on every rebuild and the screen
+ * would destroy and redraw a band that never moved.
+ */
 const proposalId = (group: AttributedGroup) => `${group.issueKey}@${group.from.toISOString()}`;
 
 /**
@@ -89,7 +95,11 @@ export const propose = (options: {
       durationMs: roundDurationUp(group.observedMs, options.round),
     })),
     options: options.round,
-  }).map((row) => ({ ...row, durationMs: row.to.getTime() - row.from.getTime() }));
+  }).map((row) => ({
+    ...row,
+    group: { ...row.group, from: row.from, to: row.to },
+    durationMs: row.to.getTime() - row.from.getTime(),
+  }));
   const attributed = rows.filter(isAttributedRow);
   const unnamed = rows.filter((row) => !isAttributedRow(row));
   const unattributed = unnamed.filter((row) => !row.group.standInId);
