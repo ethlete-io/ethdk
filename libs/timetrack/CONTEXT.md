@@ -72,6 +72,14 @@ A standing ticket is retired and replaced by a successor without anyone telling 
 watches whether it is still touched.
 _Avoid_: default ticket, catch-all, bucket
 
+**Stand-in**:
+A name the user gave work that Jira does not hold yet. It takes bands across days and across
+checkouts, it books nothing, and it is resolved to an issue in one act. A band carries it in
+`standInId`, never in `issueKey`, so it stays "shown, counted undecided, never written". The matches
+live on attribution rules that point at it. See ADR 0021.
+_Avoid_: placeholder (an HTML attribute, and the `<KEY>` stand-in in a branch name), draft, pending
+ticket. It is not a **standing ticket** - that is a real issue that takes every hour of one context.
+
 **Remembered naming**:
 A stored answer that names later work the way earlier work was named: a set of features, an issue
 key, a count and the date it was last seen. Seeded from Tempo history, written by a naming of the

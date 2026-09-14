@@ -31,7 +31,7 @@ up, whatever position the roadmap gives it.
 | Providers: Jira, Tempo, GitLab, GitHub, Google      | Built, and verified against the real instances.                          |
 | `streamDay` and the one day screen                  | Built. Slices 1 and 2a are on screen.                                    |
 | Naming the unnamed window                           | Two rungs built. The rest waits on five more workdays of measurement.    |
-| Slices 2a to 2c                                     | M2 built, its exit test unread. M3 planned. M4 needs its own document.   |
+| Slices 2a to 2c                                     | M2 built, its exit test unread. M3 and M4 planned.                       |
 | Slices 5, 6, 9 to 12                                | One paragraph of outline each.                                           |
 | A production Tempo worklog                          | **Never written.** No day has left this machine.                         |
 | A day that spans two machines                       | **Not built.** Each machine reports only what it saw.                    |
@@ -67,7 +67,7 @@ Tom decided all seven on 2026-09-10:
 | M1  | The day it shows is true        | 1      | Three replayed real days read as true, with no edit.               |
 | M2  | The day, drawn                  | 2a, 4  | Tom reads a real day on one screen, and cuts it where he wants.    |
 | M3  | The day, named                  | 2b     | Every band of a real day carries the right issue, or says why not. |
-| M4  | The day, ticketed               | 2c     | A real week: every gap drafts a ticket or produces a report.       |
+| M4  | The day, ticketed               | 2c     | A real week: every gap holds a stand-in, a ticket or a report.     |
 | M5  | No day is lost                  | 7      | A reboot, a crash and two hours off all reconcile on the screen.   |
 | M6  | Book it                         | 3      | One real week reaches Tempo, and the second sync writes nothing.   |
 | M7  | One day, every machine          | 8      | A day worked on two machines reads the same on both, once.         |
@@ -151,12 +151,19 @@ one. Tom writes the answers down before the screen is opened, and judges it in w
 
 ## M4: The day, ticketed
 
-**Slice 2c.** What happens where the ladder found nothing.
+**Slice 2c.** Planned in [`ticket-the-day.md`](./ticket-the-day.md), grilled with Tom over seven
+rounds on 2026-09-14 against one live case: a feature with no epic and no ticket under it. What
+happens where the ladder found nothing.
 
+- **A stand-in**: a name the user gives the work before Jira holds one. It takes bands across days and
+  across checkouts, it books nothing, and it is resolved to an issue in one act. Without it a gap the
+  project manager has to answer asks the same question on every day of the work. See ADR 0021.
 - A drafted ticket: a title, a body, and the epic it goes under, shown with the reason that epic was
   chosen. It is created only on a press. `writeTicketWithAgent$` already drafts wording.
-- With no fitting epic, a report for the project manager, who owns epics. It is the gap plus a draft
-  epic, as text Tom copies. The app never writes an epic itself.
+- **The app files an epic**, on a press, where `createmeta` says this user may create one in this
+  project. The report for the project manager stays, for every project where they own epics, and it is
+  never hidden by a permission. A created issue cannot be deleted, so the create carries an in-flight
+  lock and a pre-flight search, both under `createJiraIssue$`. See ADR 0022.
 - The model call, on a press, with the full prompt shown first and the answer stored so the same
   question never costs twice. This changes the path that exists: `reasoning.enabled` is a setting
   today, and once it is on the call runs during day review with no press and no preview.
@@ -167,13 +174,19 @@ one. Tom writes the answers down before the screen is opened, and judges it in w
 The model's jobs, in order: draft a ticket, write a description, propose a pattern Tom accepts. It
 never names a band the ladder could not, and it never writes to the naming store.
 
-Exit test: one real week where every gap either drafts a ticket Tom is willing to create, or produces
-a report he is willing to send.
+Exit test: two, and the slice passes on both. The live case end to end - a stand-in opened on day 1,
+three days of work across two checkouts, the epic and both tasks filed from the card, and all three
+days book with no row typed by hand. And one real week where every band carries a Jira key or a
+stand-in that names the work in Tom's own words, and every stand-in is resolved or waits on somebody
+who is not Tom.
 
-To decide before it is planned:
+Two scenarios against the fake backend are a condition of shipping: a write whose response is dropped
+must not file twice, and the fake account holds no delete permission, so no test cleans up by deleting.
+
+The name list question is answered in [`ticket-the-day.md`](./ticket-the-day.md): grown by hand, seeded
+only from the Jira project names the app already fetches. Still to decide:
 
 - Whether the report stays as copied text once the project manager says what they want.
-- Whether the name list is seeded from Jira and the address book, or built by hand as words appear.
 - Whether the CLI reports its token use in print mode. If it does not, the app records the call count
   and the model instead.
 
