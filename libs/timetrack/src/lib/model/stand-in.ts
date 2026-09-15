@@ -93,3 +93,16 @@ export const matchStandIn = (options: {
 /** The days the stand-in already covers, with `day` in them. Ordered, so a list reads oldest first. */
 export const standInDays = (options: { standIn: Pick<StandIn, 'days'>; day: string }) =>
   [...new Set([...options.standIn.days, options.day])].sort();
+
+/**
+ * Whether a resolve may still be undone.
+ *
+ * Once a day the stand-in held has reached Tempo, the worklog there carries the issue key and nothing
+ * in this app can reach it. Putting the rules back would leave the two disagreeing, and the worklog is
+ * the one that counts, so a wrong key is a correction from there on rather than an undo.
+ */
+export const canReopenStandIn = (options: { standIn: StandIn; syncedDays: readonly string[] }) => {
+  const synced = new Set(options.syncedDays);
+
+  return options.standIn.state === 'resolved' && !options.standIn.days.some((day) => synced.has(day));
+};

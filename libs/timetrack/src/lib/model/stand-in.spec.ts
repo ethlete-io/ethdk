@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { AttributionRule } from './attribution';
-import { StandIn, findStandIn, matchStandIn, openStandIn, openStandIns, standInDays } from './stand-in';
+import {
+  StandIn,
+  canReopenStandIn,
+  findStandIn,
+  matchStandIn,
+  openStandIn,
+  openStandIns,
+  standInDays,
+} from './stand-in';
 
 const standIn = (overrides: Partial<StandIn> = {}): StandIn => ({
   id: 'stand-in-1',
@@ -103,5 +111,21 @@ describe('openStandIns', () => {
     const done = standIn({ id: 'c', state: 'resolved', issueKey: 'ABC-1' });
 
     expect(openStandIns([older, done, newer]).map((entry) => entry.id)).toEqual(['b', 'a']);
+  });
+});
+
+describe('canReopenStandIn', () => {
+  const resolved = standIn({ state: 'resolved', issueKey: 'ABC-1', days: ['2026-09-14', '2026-09-15'] });
+
+  it('lets a resolve be undone while none of its days reached tempo', () => {
+    expect(canReopenStandIn({ standIn: resolved, syncedDays: ['2026-09-13'] })).toBe(true);
+  });
+
+  it('refuses once one of its days holds a worklog, which carries the key this app cannot reach', () => {
+    expect(canReopenStandIn({ standIn: resolved, syncedDays: ['2026-09-15'] })).toBe(false);
+  });
+
+  it('refuses for a stand-in that was never resolved, because there is nothing to undo', () => {
+    expect(canReopenStandIn({ standIn: standIn({ days: ['2026-09-14'] }), syncedDays: [] })).toBe(false);
   });
 });
