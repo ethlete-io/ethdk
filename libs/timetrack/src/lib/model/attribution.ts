@@ -23,18 +23,19 @@ export type NamedTarget = { kind: 'issue'; issueKey: string } | { kind: 'stand-i
 export type AttributionTarget = NamedTarget | { kind: 'donate' };
 
 /**
- * Who wrote a naming down. An agent may prepare one, and the review shows it differently, so a day
- * never hides which of its answers the user gave and which one it was handed. See ADR 0012.
+ * Who wrote a naming down. An agent may prepare one, and the app itself opens a stand-in for a linked
+ * checkout no rule could name, so a day never hides which of its answers the user gave and which one
+ * it was handed. See ADR 0012.
  */
-export type NamingAuthor = 'user' | 'agent';
+export type NamingAuthor = 'user' | 'agent' | 'app';
 
 /**
  * A standing statement about what work in one context belongs to — the answer for a repository whose
  * branch names carry no issue key at all.
  *
- * A rule is written by naming a stretch of unattributed work or by writing one in settings, so it is
- * a decision rather than an inference. What it is not is a guess the app may make on its own: nothing
- * here learns without being told, and `author` says whose decision it was.
+ * A rule is written by naming a stretch of unattributed work, by writing one in settings, or by the
+ * app opening a stand-in for a linked checkout nothing could name. It is never a guess about which
+ * issue work belongs to: the app writes only the placeholder, and `author` says whose decision it was.
  */
 export type AttributionRule = {
   id: string;

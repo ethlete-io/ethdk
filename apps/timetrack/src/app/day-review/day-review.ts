@@ -1,4 +1,4 @@
-import { DestroyRef, computed, inject, signal } from '@angular/core';
+import { DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
@@ -19,6 +19,7 @@ import {
   TimerRun,
   UnnamedContext,
   addManualRow,
+  autoStandIns,
   classifyCalls,
   closeTimerRun,
   buildRows,
@@ -26,6 +27,7 @@ import {
   coveredMsOf,
   dayBoundaryOf,
   fetchTempoDayCoverage$,
+  findStandIn,
   gitFlowConfigFor,
   hideRow,
   localDayKey,
@@ -508,6 +510,46 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const rows = computed(() => review()?.rows ?? []);
   const hiddenRows = computed(() => review()?.hidden ?? []);
   const breaks = computed(() => breaksBetweenRows({ breaks: streamed()?.breaks ?? [], rows: rows() }));
+
+  /**
+   * Opens a placeholder for a linked checkout the day could not name, and records the day on every
+   * placeholder the day's rows already carry.
+   *
+   * Neither is asked for. A checkout Jira holds no ticket for produces `Not yet named` bands day after
+   * day, and a question the user has to go looking for is a question nobody answers — so the app
+   * writes the placeholder and the user resolves it to a real issue later.
+   *
+   * It waits for the day's own evidence, because a name drafted from half a day is a name the user has
+   * to correct. Both writes are what stop it reading its own write back: the rule takes the checkout
+   * out of `unnamed()`, and the day list is written only when the day is missing from it.
+   */
+  effect(() => {
+    const load = evidenceLoad();
+    const deterministic = deterministicRows();
+
+    if (!load || load.failure || !deterministic) return;
+
+    const current = settings.settings();
+    const key = day();
+
+    for (const opened of autoStandIns({
+      contexts: unnamed(),
+      unattributed: deterministic.unattributed,
+      links: current.projectLinks,
+      rules: current.attributionRules,
+      config: gitFlowConfigFor(current),
+      day: key,
+      now: new Date(),
+    })) {
+      settings.nameWithStandIn({ standIn: opened.standIn, rule: opened.rule });
+    }
+
+    for (const id of new Set(rows().flatMap((row) => (row.standInId ? [row.standInId] : [])))) {
+      const standIn = findStandIn({ id, standIns: settings.settings().standIns });
+
+      if (standIn && !standIn.days.includes(key)) settings.markStandInDay({ id, day: key });
+    }
+  });
 
   // The whole day's ledger, not the rows': an entry no row claims is a worklog the sync has to delete,
   // and a read by row id can never return it. The failure stays inside the switch, or one failed read

@@ -253,6 +253,30 @@ describe('parseTimetrackSettings', () => {
     ]);
   });
 
+  it('reads back the rules a resolve rewrote, so an undo after a restart can point them back', () => {
+    const settings = parseTimetrackSettings({
+      standIns: [
+        {
+          id: 'stand-in-1',
+          name: 'Competition Journey',
+          state: 'resolved',
+          issueKey: 'ABC-100',
+          resolvedRuleIds: ['rule-1', 'rule-2'],
+        },
+      ],
+    });
+
+    expect(settings.standIns[0]?.resolvedRuleIds).toEqual(['rule-1', 'rule-2']);
+  });
+
+  it('reads the description the app drafted for a stand-in it opened', () => {
+    const settings = parseTimetrackSettings({
+      standIns: [{ id: 'stand-in-1', name: 'User management', description: 'What the work says it was.' }],
+    });
+
+    expect(settings.standIns[0]?.description).toBe('What the work says it was.');
+  });
+
   it('reads a stand-in that claims to be resolved without an issue as one still waiting', () => {
     const settings = parseTimetrackSettings({
       standIns: [{ id: 'stand-in-1', name: 'Competition Journey', state: 'resolved' }],

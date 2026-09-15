@@ -1,3 +1,4 @@
+export * from './auto-stand-in';
 export * from './draft';
 export * from './file';
 export * from './parents';

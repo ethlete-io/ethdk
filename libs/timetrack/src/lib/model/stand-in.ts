@@ -19,6 +19,14 @@ export type StandIn = {
   id: string;
   /** What the user called the work, in their own words. Free text, so it is masked before any send. */
   name: string;
+  /**
+   * What the ticket will say the work was, drafted from the day's own evidence. Free text, so it is
+   * masked before any send.
+   *
+   * It is a draft and never a decision: the user rewrites it, and the resolve flow files it. A
+   * stand-in the user named in one press has none, because one press writes no description.
+   */
+  description?: string;
   /** The Jira project the issue will be filed in, when a link or the user named one. */
   projectKey?: string;
   state: StandInState;
@@ -40,6 +48,15 @@ export type StandIn = {
   createdAt: Date;
 };
 
+const standInId = (options: { now: Date; key?: string }) => {
+  const key = (options.key ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return key ? `stand-in:${options.now.getTime()}:${key}` : `stand-in:${options.now.getTime()}`;
+};
+
 /**
  * Opens a stand-in for work Jira does not hold yet.
  *
@@ -53,11 +70,18 @@ export const openStandIn = (options: {
   /** The local day key the work was named on. */
   day: string;
   now: Date;
+  description?: string;
   projectKey?: string;
   author?: NamingAuthor;
+  /**
+   * Tells apart two stand-ins opened in the same millisecond, which is what one pass over a day's
+   * checkouts does. Anything but letters and digits is dropped, so an id stays a readable key.
+   */
+  key?: string;
 }): StandIn => ({
-  id: `stand-in:${options.now.getTime()}`,
+  id: standInId(options),
   name: options.name.trim(),
+  ...(options.description?.trim() ? { description: options.description.trim() } : {}),
   ...(options.projectKey ? { projectKey: options.projectKey } : {}),
   state: 'open',
   days: [options.day],

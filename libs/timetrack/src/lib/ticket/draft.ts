@@ -33,6 +33,33 @@ const humanized = (subject: string) => {
 
 const repoNameOf = (path: string) => path.split('/').filter(Boolean).pop() ?? path;
 
+const notesForAll = (options: { groups: readonly WorkGroup[]; contextIds: readonly string[]; max: number }) => {
+  const wanted = new Set(options.contextIds);
+  const notes: string[] = [];
+  const seen = new Set<string>();
+
+  for (const group of options.groups) {
+    for (const block of group.blocks) {
+      if (!wanted.has(contextKey(block.context))) continue;
+
+      for (const entry of block.evidence) {
+        if (!QUOTABLE_EVIDENCE_KINDS.includes(entry.kind)) continue;
+
+        const note = entry.summary ?? entry.detail;
+
+        if (!note || seen.has(note)) continue;
+
+        seen.add(note);
+        notes.push(note);
+
+        if (notes.length >= options.max) return notes;
+      }
+    }
+  }
+
+  return notes;
+};
+
 const notesFor = (options: { groups: readonly WorkGroup[]; contextId: string; max: number }) => {
   const notes: string[] = [];
   const seen = new Set<string>();
@@ -149,6 +176,55 @@ export const draftTicket = (options: {
   return {
     summary,
     description: [...body, provenance].join('\n'),
+    subject: ticketSubjectOf(summary),
+    notes,
+  };
+};
+
+/**
+ * Drafts one ticket for every unnamed stretch of a single checkout, on the day's own evidence alone.
+ *
+ * It is what an auto-opened stand-in carries until the user rewrites it, so best effort is the bar,
+ * not correctness. The summary comes from the branch that held the most time: a checkout with no
+ * tickets still fragments into branches, and the largest one is the likeliest name for the whole.
+ * The description lists every branch it covers, so a title that names only the biggest piece never
+ * hides the rest.
+ */
+export const draftRepoTicket = (options: {
+  repoPath: string;
+  contexts: readonly UnnamedContext[];
+  unattributed: readonly WorkGroup[];
+  config: GitFlowConfig;
+  maxNotes?: number;
+}): TicketDraft => {
+  const { repoPath, config } = options;
+  const byTime = [...options.contexts].sort((left, right) => right.observedMs - left.observedMs);
+  const observedMs = byTime.reduce((total, context) => total + context.observedMs, 0);
+  const notes = notesForAll({
+    groups: options.unattributed,
+    contextIds: byTime.map((context) => context.id),
+    max: options.maxNotes ?? DEFAULT_MAX_TICKET_NOTES,
+  });
+
+  const branches = [
+    ...new Set(byTime.map((context) => context.context.branch).filter((branch): branch is string => !!branch)),
+  ];
+  const leading = byTime[0];
+  const fromBranch = humanized(branchSubjectOf({ branch: leading?.context.branch, config }) ?? '');
+  const summary = (fromBranch || notes[0] || repoNameOf(repoPath)).slice(0, MAX_TICKET_SUMMARY_LENGTH);
+
+  const body = notes.length
+    ? ['What the work says it was:', '', ...notes.map((note) => `- ${note}`), '']
+    : ['Nothing in the day names this work beyond where it happened.', ''];
+  const covers = branches.length ? [`Covers ${branches.join(', ')}.`, ''] : [];
+
+  return {
+    summary,
+    description: [
+      ...body,
+      ...covers,
+      `Recorded from ${formatDurationMs(observedMs)} of work in ${repoNameOf(repoPath)} that no issue covered.`,
+    ].join('\n'),
     subject: ticketSubjectOf(summary),
     notes,
   };

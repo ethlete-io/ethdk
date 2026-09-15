@@ -29,7 +29,7 @@ const asText = (value: unknown) => (typeof value === 'string' ? value.trim() : '
  * A document written before the agent could prepare a naming holds no author, and every record in it
  * is one the user wrote by hand. Reading the absence as `user` is therefore the fact, not a default.
  */
-const asAuthor = (value: unknown): NamingAuthor => (value === 'agent' ? 'agent' : 'user');
+const asAuthor = (value: unknown): NamingAuthor => (value === 'agent' || value === 'app' ? value : 'user');
 
 const asDate = (value: unknown) => {
   const at = new Date(typeof value === 'number' ? value : asText(value));
@@ -146,12 +146,17 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
   const issueKey = asText(raw['issueKey']).toUpperCase();
   const projectKey = asText(raw['projectKey']).toUpperCase();
 
+  const resolvedRuleIds = asTextList(raw['resolvedRuleIds']);
+
   return {
     id: asText(raw['id']) || `stand-in-${index}`,
     name,
+    description: asText(raw['description']) || undefined,
     projectKey: projectKey || undefined,
     state: raw['state'] === 'resolved' && issueKey ? 'resolved' : 'open',
     issueKey: issueKey || undefined,
+    /** Without it a resolve read back from disk has nothing to point back, so the undo puts back nothing. */
+    resolvedRuleIds: resolvedRuleIds.length ? resolvedRuleIds : undefined,
     days: asTextList(raw['days']).sort(),
     author: asAuthor(raw['author']),
     createdAt: asDate(raw['createdAt']),
