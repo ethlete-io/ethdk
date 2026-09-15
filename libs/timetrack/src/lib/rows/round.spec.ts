@@ -218,6 +218,34 @@ describe('checkDay', () => {
     expect(check.warnings.map((warning) => warning.kind)).toEqual(['too-many-rows']);
   });
 
+  it('reports a band two answers disagree about, and places it on the clock', () => {
+    const disputed: WorklogProposal = {
+      ...proposal({ issueKey: 'BD-2049', durationMinutes: 30 }),
+      disputedIssueKey: 'FIFAGG-12652',
+    };
+    const check = checkDay({ proposals: [disputed] });
+    const found = check.warnings.find((warning) => warning.kind === 'naming-disagreement');
+
+    expect(found?.detail).toContain('BD-2049 may be FIFAGG-12652');
+  });
+
+  it('reports a band whose other answer is a stand-in as work with no ticket', () => {
+    const disputed: WorklogProposal = {
+      ...proposal({ issueKey: 'BD-2049', durationMinutes: 30 }),
+      disputedStandInId: 'si-1',
+    };
+    const check = checkDay({ proposals: [disputed] });
+    const found = check.warnings.find((warning) => warning.kind === 'naming-disagreement');
+
+    expect(found?.detail).toContain('BD-2049 may be work with no ticket yet');
+  });
+
+  it('reports no disagreement for a band only one answer named', () => {
+    const check = checkDay({ proposals: [proposal({ issueKey: 'BD-2049', durationMinutes: 30 })] });
+
+    expect(check.warnings.map((warning) => warning.kind)).not.toContain('naming-disagreement');
+  });
+
   it('reports time a call and observed activity both claim, above a minute of noise', () => {
     const proposals = [proposal({ issueKey: 'FIP-2177', durationMinutes: 240 })];
     const overlap = (minutes: number) => [

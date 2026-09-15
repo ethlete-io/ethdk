@@ -15,6 +15,7 @@ import { EditIssueDirective } from './edit-issue.component';
 import { EditMeetingDirective } from './edit-meeting.component';
 import { EditStandInWaitingDirective } from './edit-stand-in-waiting.component';
 import { EditStandInDirective } from './edit-stand-in.component';
+import { EditDisputedDirective } from './edit-disputed.component';
 import { EditUnattendedDirective } from './edit-unattended.component';
 import { EditStateDirective } from './edit-state.component';
 import { RowActionsDirective } from './row-actions.directive';
@@ -107,6 +108,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         directives: [
           EditStandInWaitingDirective,
           EditUnattendedDirective,
+          EditDisputedDirective,
           EditIssueDirective,
           EditStandInDirective,
           EditStateDirective,

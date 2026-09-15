@@ -434,6 +434,56 @@ describe('a call the calendar never held', () => {
     expect(second?.group.confidence).toBe('weak');
   });
 
+  it('carries the meeting it overruled, so the band can show both answers', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      occurrences: [meetingOccurrence, overlapping],
+      meetings: { callNamings: [naming()], namings: [sprintNaming] },
+    });
+
+    expect(second?.group.issueKey).toBe('ABC-7');
+    expect(second?.group.disputedIssueKey).toBe('XYZ-1');
+  });
+
+  it('carries the answer a window title overruled, the other way round', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      blocks: [titled('Sprint Review — Discord')],
+      occurrences: [meetingOccurrence, overlapping],
+      meetings: { callNamings: [naming()], namings: [sprintNaming] },
+    });
+
+    expect(second?.group.issueKey).toBe('XYZ-1');
+    expect(second?.group.disputedIssueKey).toBe('ABC-7');
+  });
+
+  it('carries a stand-in the answer named as the work the band may be instead', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      blocks: [titled('Sprint Review — Discord')],
+      occurrences: [meetingOccurrence, overlapping],
+      meetings: {
+        callNamings: [naming({ target: { kind: 'stand-in', standInId: 'si-1' } })],
+        namings: [sprintNaming],
+      },
+    });
+
+    expect(second?.group.issueKey).toBe('XYZ-1');
+    expect(second?.group.disputedStandInId).toBe('si-1');
+    expect(second?.group.disputedIssueKey).toBeUndefined();
+  });
+
+  it('disputes nothing when both answers name the same work', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      occurrences: [meetingOccurrence, overlapping],
+      meetings: { callNamings: [naming()], namings: [{ ...sprintNaming, issueKey: 'ABC-7' }] },
+    });
+
+    expect(second?.group.issueKey).toBe('ABC-7');
+    expect(second?.group.disputedIssueKey).toBeUndefined();
+  });
+
   it('carries the features naming its row would remember', () => {
     const [, second] = match({ calls: [meeting, room], occurrences: [meetingOccurrence] });
 

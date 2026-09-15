@@ -144,6 +144,18 @@ export const appointmentOf = (options: {
 export const behindLabel = (stretch: BehindStretch) =>
   `${stretch.issueKey} · in the background · ${formatDurationMs(stretch.to.getTime() - stretch.from.getTime())}`;
 
+/**
+ * What a band two rungs named different work for adds to its label. The key it books leads, so the band
+ * still reads as the row it is, and the other answer follows as a question rather than as a claim.
+ */
+const disputedLabelOf = (row: ReviewedRow) => {
+  if (!row.issueKey) return '';
+
+  const other = row.disputedIssueKey ?? (row.disputedStandInId ? 'work with no ticket yet' : undefined);
+
+  return other ? ` · or ${other}?` : '';
+};
+
 /** What a band reads: the issue it is logged against, and how much time it logs. */
 export const appointmentLabel = (appointment: Appointment) => {
   const entry = rowEntryOf(appointment);
@@ -152,8 +164,9 @@ export const appointmentLabel = (appointment: Appointment) => {
 
   const named = entry.row.issueKey ?? unnamedLabelOf({ row: entry.row, standInName: entry.standInName });
   const alone = entry.row.issueKey && entry.row.unattended ? ' · nobody was here' : '';
+  const disputed = disputedLabelOf(entry.row);
 
-  return `${named} · ${formatDurationMs(entry.durationMs)}${alone}${isManualRow(entry.row) ? ' · by hand' : ''}`;
+  return `${named} · ${formatDurationMs(entry.durationMs)}${alone}${disputed}${isManualRow(entry.row) ? ' · by hand' : ''}`;
 };
 
 /** Whether a band is waiting on a ticket, so the timeline can mark it as provisional. */

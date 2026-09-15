@@ -11,6 +11,14 @@ export type WorkGroup = {
   standInId?: string;
   storyKey?: string;
   taskKey?: string;
+  /**
+   * The other work a second rung named for this band, when two rungs named different work. The band
+   * still books `issueKey` — the ranking in ADR 0012 decides that — and this is what lets the band show
+   * both and offer the loser in one press, so the higher rung is never picked silently.
+   */
+  disputedIssueKey?: string;
+  /** The same, for a rung that named a stand-in rather than an issue. */
+  disputedStandInId?: string;
   from: Date;
   to: Date;
   /**

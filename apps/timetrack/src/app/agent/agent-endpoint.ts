@@ -264,6 +264,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     state: row.state,
     confidence: row.confidence,
     withheldIssueKey: row.withheldIssueKey,
+    disputedIssueKey: row.disputedIssueKey,
+    disputedStandInId: row.disputedStandInId,
     edited: row.edited,
     hidden: row.hidden,
   });

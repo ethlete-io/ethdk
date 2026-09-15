@@ -273,6 +273,13 @@ export type AgentApiReviewedRow = {
    * one the ladder could not name at all.
    */
   withheldIssueKey?: string;
+  /**
+   * The other work a second rung named for this band, when two rungs named different work. The row
+   * books `issueKey` all the same, so a caller reads this to tell a settled answer from a picked one.
+   */
+  disputedIssueKey?: string;
+  /** The same, for a rung that named a stand-in rather than an issue. */
+  disputedStandInId?: string;
   /** Whether a reviewer's own edit produced this row. */
   edited: boolean;
   /** Whether the row is off the timeline. A hidden row is neither written nor waiting for a name. */

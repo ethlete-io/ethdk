@@ -50,6 +50,14 @@ export type WorklogProposal = {
    */
   withheldIssueKey?: string;
   /**
+   * The other work a second rung named for this band, when two rungs named different work. The row
+   * books `issueKey` all the same — the ranking in ADR 0012 decides that — and this is drawn beside it
+   * so the band shows both answers and applying the other one is a single press. See ADR 0012.
+   */
+  disputedIssueKey?: string;
+  /** The same, for a rung that named a stand-in rather than an issue. */
+  disputedStandInId?: string;
+  /**
    * True where a rule said this band is not work: a voice room the call rules exclude. The band is
    * drawn so the user can still make a row of it on the day it held a meeting, and it books nothing
    * until they name it themselves. See ADR 0024.

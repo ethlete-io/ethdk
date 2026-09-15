@@ -35,6 +35,8 @@ export type DayWarningKind =
   | 'too-many-rows'
   | 'zero-duration'
   | 'meeting-overlap'
+  /** Two rungs named different work for one band. The row books the higher one and says so. */
+  | 'naming-disagreement'
   /** A timer ran while the machine saw almost nothing, which is what a forgotten timer looks like. */
   | 'timer-unobserved'
   /** The day claims idle gaps that `fillGaps` joined to the work around them. */
@@ -171,6 +173,22 @@ const callDetail = (overlaps: readonly MeetingOverlap[]) =>
     .join(', ');
 
 /**
+ * Each band two rungs named different work for, placed on the clock so the reviewer can find it.
+ *
+ * It names the key the row books first, because that is the one the band already reads as. A rung that
+ * named a stand-in reads as the work having no ticket, which is what the band shows too.
+ */
+const disputeDetail = (proposals: readonly WorklogProposal[]) =>
+  proposals
+    .map(
+      (proposal) =>
+        `${formatTimeOfDay(proposal.from)} ${proposal.issueKey} may be ${
+          proposal.disputedIssueKey ?? 'work with no ticket yet'
+        }`,
+    )
+    .join(', ');
+
+/**
  * Compares a proposed day against its target and reports what a reviewer should look at. It never
  * changes a duration: a day under target is a day under target, and filling it silently would be
  * inventing time.
@@ -252,6 +270,12 @@ export const checkDay = (options: {
       kind: 'paused-time',
       detail: `${formatDurationMs(pausedMs)} was not collected because you paused it`,
     });
+  }
+
+  const disputed = options.proposals.filter((proposal) => proposal.disputedIssueKey ?? proposal.disputedStandInId);
+
+  if (disputed.length > 0) {
+    warnings.push({ kind: 'naming-disagreement', detail: disputeDetail(disputed) });
   }
 
   const zeroed = options.proposals.filter((proposal) => proposal.durationMs === 0);

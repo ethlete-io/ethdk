@@ -1,6 +1,7 @@
 import { ActivityBlock } from '../model/block';
 import { CallWindow, callLabel } from '../model/call';
 import { CallFeatures, DEFAULT_CALL_AFTER_GAP_MS, callFeaturesOf, matchCallNaming } from '../model/call-naming';
+import { NamedTarget } from '../model/attribution';
 import { CalendarOccurrenceEvent } from '../model/event';
 import { Confidence, Evidence } from '../model/evidence';
 import { meetingSeriesKey } from '../model/meeting-naming';
@@ -9,6 +10,7 @@ import { CALL_LANE_KEY } from './lane';
 import {
   CalendarCandidate,
   MeetingOptions,
+  NamedIssue,
   NamedWork,
   PickedCandidate,
   candidatesFor,
@@ -165,6 +167,32 @@ const excludedRow = (options: { call: CallWindow; window: TimeWindow }): WorkGro
   bookable: false,
 });
 
+const namesSameWork = (left: NamedTarget, right: NamedTarget) =>
+  left.kind === 'issue' && right.kind === 'issue'
+    ? left.issueKey === right.issueKey
+    : left.kind === 'stand-in' && right.kind === 'stand-in' && left.standInId === right.standInId;
+
+/**
+ * The other work a rung named for this call, when two rungs named different work.
+ *
+ * The ranking in ADR 0012 still decides what the row books. What this adds is the answer that lost, so
+ * the band shows both and the pick is never silent — a remembered answer keyed on a weekday and a
+ * duration band matches more calls than the one it was given for.
+ */
+const disputedBy = (options: {
+  key: NamedWork | undefined;
+  answered: NamedWork | undefined;
+  occurrence: NamedIssue | undefined;
+}): NamedWork | undefined => {
+  const { key, answered, occurrence } = options;
+
+  if (!key) return undefined;
+
+  const rival = key === answered ? occurrence : answered;
+
+  return rival && !namesSameWork(key.target, rival.target) ? rival : undefined;
+};
+
 const matchOne = (options: {
   call: CallWindow;
   window: TimeWindow;
@@ -198,8 +226,10 @@ const matchOne = (options: {
    * user's own answer is read before the history, because a remembered naming is a statement about
    * this call and a pattern is a statement about this time of day. See ADR 0012.
    */
-  const named = meeting ? occurrenceIssueKey({ event: meeting.event, meetings }) : undefined;
+  const occurrence = picked ? occurrenceIssueKey({ event: picked.event, meetings }) : undefined;
+  const named = meeting ? occurrence : undefined;
   const key = named ?? answered ?? patternIssueKey({ at: window.from, meetings });
+  const disputed = disputedBy({ key, answered, occurrence });
 
   return {
     call,
@@ -210,6 +240,8 @@ const matchOne = (options: {
     group: {
       ...(key?.target.kind === 'issue' ? { issueKey: key.target.issueKey } : {}),
       ...(key?.target.kind === 'stand-in' ? { standInId: key.target.standInId } : {}),
+      ...(disputed?.target.kind === 'issue' ? { disputedIssueKey: disputed.target.issueKey } : {}),
+      ...(disputed?.target.kind === 'stand-in' ? { disputedStandInId: disputed.target.standInId } : {}),
       from: window.from,
       to: window.to,
       // The microphone's own span, which is time it observed rather than time it reconstructed. A call
@@ -220,6 +252,7 @@ const matchOne = (options: {
         callEvidence({ call, window }),
         ...(meeting?.evidence ?? []),
         ...(key?.evidence ? [key.evidence] : []),
+        ...(disputed?.evidence ? [disputed.evidence] : []),
       ],
       blocks: [],
       laneKey: CALL_LANE_KEY,
