@@ -108,7 +108,7 @@ impl Dispatch<wl_registry::WlRegistry, ()> for WaylandState {
                 state.manager = Some(registry.bind(name, version.min(3), qh, ()));
             }
             "ext_idle_notifier_v1" if state.notifier.is_none() => {
-                state.notifier = Some(registry.bind(name, version.min(1), qh, ()));
+                state.notifier = Some(registry.bind(name, version.min(2), qh, ()));
             }
             "wl_seat" if state.seat.is_none() => {
                 state.seat = Some(registry.bind(name, version.min(7), qh, ()));
@@ -233,7 +233,15 @@ fn run(sink: WindowSource) -> Result<(), String> {
     state.sink.set_status("wayland-wlr", None);
 
     if let (Some(notifier), Some(seat)) = (state.notifier.clone(), state.seat.clone()) {
-        state.notification = Some(notifier.get_idle_notification(IDLE_THRESHOLD_MS, &seat, &qh, ()));
+        // Version 1 reports the *session* as idle, which any idle inhibitor silences - a video, a
+        // call, a download. None of those is somebody at the keyboard, so on a machine that holds one
+        // all day the app collects no idle transition at all. Version 2 reports input idleness, which
+        // an inhibitor cannot suppress, and that is the only one of the two this app can act on.
+        state.notification = Some(if notifier.version() >= 2 {
+            notifier.get_input_idle_notification(IDLE_THRESHOLD_MS, &seat, &qh, ())
+        } else {
+            notifier.get_idle_notification(IDLE_THRESHOLD_MS, &seat, &qh, ())
+        });
     }
 
     loop {
