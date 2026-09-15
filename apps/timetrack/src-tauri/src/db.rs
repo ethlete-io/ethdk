@@ -147,7 +147,13 @@ ALTER TABLE agent_session_cursor ADD COLUMN cwd TEXT;
 /// SQLite cannot widen a primary key in place, so the table is rebuilt. Every existing row belongs to
 /// the collector, because the backfill has never run. `read_through_ms` is what says a log has been
 /// read to its end: an empty log leaves `next_line` at 0, and the pass would otherwise read it for ever.
+///
+/// The leading drop is the one edit this migration may take. A store stranded by the non-atomic run it
+/// once had kept the half-built table and never reached v11, so every later start failed here; the drop
+/// is what lets such a store migrate. A store that finished v11 never runs this again, and a store that
+/// has not started it has no such table, so neither sees the drop at all.
 const SCHEMA_V11: &str = "
+DROP TABLE IF EXISTS agent_session_cursor_next;
 CREATE TABLE agent_session_cursor_next (
   id TEXT NOT NULL,
   kind TEXT NOT NULL,
@@ -209,6 +215,82 @@ fn add_read_through_ms(connection: &Connection) -> TimetrackResult<()> {
     if !present {
         connection.execute_batch("ALTER TABLE agent_session_cursor ADD COLUMN read_through_ms INTEGER;")?;
     }
+
+    Ok(())
+}
+
+/// The shape `agent_session_cursor` must have, whatever a store's history did to it.
+const CURSOR_COLUMNS: [&str; 8] = [
+    "id",
+    "kind",
+    "next_line",
+    "after_ms",
+    "title",
+    "cwd",
+    "read_through_ms",
+    "session_json",
+];
+
+const CURSOR_TABLE: &str = "
+CREATE TABLE agent_session_cursor_repair (
+  id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  next_line INTEGER NOT NULL,
+  after_ms INTEGER,
+  title TEXT,
+  cwd TEXT,
+  read_through_ms INTEGER,
+  session_json TEXT,
+  PRIMARY KEY (id, kind)
+);
+";
+
+/// Rebuilds `agent_session_cursor` whenever a column of `CURSOR_COLUMNS` is missing, whatever left it
+/// that way.
+///
+/// v12 repaired one known shape by its one missing column, and a store has since turned up at v11 or
+/// later with no `kind` at all, which fails every write the collector makes. Repairing against the
+/// shape rather than against a version number covers the one store nobody predicted as well.
+///
+/// A missing column is filled with what v11 would have written: the collector's pass for `kind`, and
+/// nothing for a column that carries no value of its own.
+fn repair_agent_session_cursor(connection: &Connection) -> TimetrackResult<()> {
+    let mut statement = connection.prepare("SELECT name FROM pragma_table_info('agent_session_cursor')")?;
+    let held = statement
+        .query_map([], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    drop(statement);
+
+    if CURSOR_COLUMNS
+        .iter()
+        .all(|column| held.iter().any(|name| name == column))
+    {
+        return Ok(());
+    }
+
+    let carried = CURSOR_COLUMNS
+        .iter()
+        .map(|column| {
+            if held.iter().any(|name| name == column) {
+                (*column).to_owned()
+            } else {
+                match *column {
+                    "kind" => "'agent-session'".to_owned(),
+                    "next_line" => "0".to_owned(),
+                    _ => "NULL".to_owned(),
+                }
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    connection.execute_batch(&format!(
+        "{CURSOR_TABLE}
+         INSERT INTO agent_session_cursor_repair ({columns}) SELECT {carried} FROM agent_session_cursor;
+         DROP TABLE agent_session_cursor;
+         ALTER TABLE agent_session_cursor_repair RENAME TO agent_session_cursor;",
+        columns = CURSOR_COLUMNS.join(", "),
+    ))?;
 
     Ok(())
 }
@@ -278,78 +360,99 @@ pub fn open(path: &Path, key: &str) -> TimetrackResult<Connection> {
     Ok(connection)
 }
 
+/// Applies one migration step and its version bump as one unit.
+///
+/// `execute_batch` is not atomic. A batch that fails half way leaves the statements before the failure
+/// applied and the version unbumped, so the next start runs the same step against a store that is
+/// already part way through it. v11 creates a table, so that re-run fails on a table it created itself,
+/// for ever, and only deleting the store gets the app back.
+fn step<F>(connection: &Connection, version: i64, apply: F) -> TimetrackResult<()>
+where
+    F: FnOnce(&Connection) -> TimetrackResult<()>,
+{
+    connection.execute_batch("BEGIN")?;
+
+    let applied = apply(connection).and_then(|()| {
+        connection.pragma_update(None, "user_version", version)?;
+        Ok(())
+    });
+
+    match applied {
+        Ok(()) => {
+            connection.execute_batch("COMMIT")?;
+            Ok(())
+        }
+        Err(error) => {
+            connection.execute_batch("ROLLBACK")?;
+            Err(error)
+        }
+    }
+}
+
 pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
     let version: i64 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
 
     if version < 1 {
-        connection.execute_batch(SCHEMA)?;
-        connection.pragma_update(None, "user_version", 1)?;
+        step(connection, 1, |connection| Ok(connection.execute_batch(SCHEMA)?))?;
     }
 
     if version < 2 {
-        connection.execute_batch(SCHEMA_V2)?;
-        connection.pragma_update(None, "user_version", 2)?;
+        step(connection, 2, |connection| Ok(connection.execute_batch(SCHEMA_V2)?))?;
     }
 
     if version < 3 {
-        connection.execute_batch(SCHEMA_V3)?;
-        connection.pragma_update(None, "user_version", 3)?;
+        step(connection, 3, |connection| Ok(connection.execute_batch(SCHEMA_V3)?))?;
     }
 
     if version < 4 {
-        connection.execute_batch(SCHEMA_V4)?;
-        connection.pragma_update(None, "user_version", 4)?;
+        step(connection, 4, |connection| Ok(connection.execute_batch(SCHEMA_V4)?))?;
     }
 
     if version < 5 {
-        connection.execute_batch(SCHEMA_V5)?;
-        connection.pragma_update(None, "user_version", 5)?;
+        step(connection, 5, |connection| Ok(connection.execute_batch(SCHEMA_V5)?))?;
     }
 
     if version < 6 {
-        connection.execute_batch(SCHEMA_V6)?;
-        connection.pragma_update(None, "user_version", 6)?;
+        step(connection, 6, |connection| Ok(connection.execute_batch(SCHEMA_V6)?))?;
     }
 
     if version < 7 {
-        connection.execute_batch(SCHEMA_V7)?;
-        connection.pragma_update(None, "user_version", 7)?;
+        step(connection, 7, |connection| Ok(connection.execute_batch(SCHEMA_V7)?))?;
     }
 
     if version < 8 {
-        connection.execute_batch(SCHEMA_V8)?;
-        backfill_synced_worklog_days(connection)?;
-        connection.pragma_update(None, "user_version", 8)?;
+        step(connection, 8, |connection| {
+            connection.execute_batch(SCHEMA_V8)?;
+            backfill_synced_worklog_days(connection)
+        })?;
     }
 
     if version < 9 {
-        connection.execute_batch(SCHEMA_V9)?;
-        connection.pragma_update(None, "user_version", 9)?;
+        step(connection, 9, |connection| Ok(connection.execute_batch(SCHEMA_V9)?))?;
     }
 
     if version < 10 {
-        connection.execute_batch(SCHEMA_V10)?;
-        connection.pragma_update(None, "user_version", 10)?;
+        step(connection, 10, |connection| Ok(connection.execute_batch(SCHEMA_V10)?))?;
     }
 
     if version < 11 {
-        connection.execute_batch(SCHEMA_V11)?;
-        connection.pragma_update(None, "user_version", 11)?;
+        step(connection, 11, |connection| Ok(connection.execute_batch(SCHEMA_V11)?))?;
     }
 
     if version < 12 {
-        add_read_through_ms(connection)?;
-        connection.pragma_update(None, "user_version", 12)?;
+        step(connection, 12, add_read_through_ms)?;
     }
 
     if version < 13 {
-        connection.execute_batch(SCHEMA_V13)?;
-        connection.pragma_update(None, "user_version", 13)?;
+        step(connection, 13, |connection| Ok(connection.execute_batch(SCHEMA_V13)?))?;
     }
 
     if version < 14 {
-        connection.execute_batch(SCHEMA_V14)?;
-        connection.pragma_update(None, "user_version", 14)?;
+        step(connection, 14, |connection| Ok(connection.execute_batch(SCHEMA_V14)?))?;
+    }
+
+    if version < 15 {
+        step(connection, 15, repair_agent_session_cursor)?;
     }
 
     Ok(())
@@ -426,7 +529,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            14
+            15
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -550,7 +653,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            14
+            15
         );
     }
 
@@ -829,5 +932,98 @@ mod tests {
         connection.execute(INSERT, params![1_i64, None::<String>]).unwrap();
 
         assert_eq!(count(&connection), 2);
+    }
+
+    /// A store built up to v10 and then stamped past v11 without v11 ever rebuilding its table. A build
+    /// made from a working tree left one like it, and every write the collector made there failed with
+    /// "table agent_session_cursor has no column named kind" until the store was deleted by hand.
+    #[test]
+    fn repairs_a_cursor_table_a_later_version_left_without_the_pass_column() {
+        let connection = Connection::open_in_memory().unwrap();
+
+        for schema in [
+            SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10,
+        ] {
+            connection.execute_batch(schema).unwrap();
+        }
+
+        connection
+            .execute(
+                "INSERT INTO agent_session_cursor (id, next_line, after_ms, title, cwd)
+                 VALUES ('s1', 42, 7, 'a title', '/repo')",
+                [],
+            )
+            .unwrap();
+        connection.pragma_update(None, "user_version", 14).unwrap();
+
+        migrate(&connection).unwrap();
+
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT kind, next_line, after_ms, title, cwd, read_through_ms, session_json
+                     FROM agent_session_cursor WHERE id = 's1'",
+                    [],
+                    |row| Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, i64>(1)?,
+                        row.get::<_, Option<i64>>(2)?,
+                        row.get::<_, Option<String>>(3)?,
+                        row.get::<_, Option<String>>(4)?,
+                        row.get::<_, Option<i64>>(5)?,
+                        row.get::<_, Option<String>>(6)?,
+                    ))
+                )
+                .unwrap(),
+            (
+                "agent-session".to_string(),
+                42,
+                Some(7),
+                Some("a title".to_string()),
+                Some("/repo".to_string()),
+                None,
+                None
+            )
+        );
+
+        connection
+            .execute(
+                "INSERT INTO agent_session_cursor (id, kind, next_line) VALUES ('s1', 'spend', 0)",
+                [],
+            )
+            .unwrap();
+    }
+
+    /// A step that fails part way through must leave nothing of itself behind. Without that, v11's own
+    /// `agent_session_cursor_next` survived the failure, the version stayed at 10, and every later start
+    /// failed on a table v11 had created itself.
+    #[test]
+    fn leaves_nothing_behind_when_a_migration_step_fails_part_way() {
+        let connection = Connection::open_in_memory().unwrap();
+
+        for schema in [
+            SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10,
+        ] {
+            connection.execute_batch(schema).unwrap();
+        }
+
+        connection
+            .execute("INSERT INTO agent_session_cursor (id, next_line) VALUES (NULL, 42)", [])
+            .unwrap();
+        connection.pragma_update(None, "user_version", 10).unwrap();
+
+        assert!(migrate(&connection).is_err());
+
+        assert_eq!(
+            connection
+                .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
+                .unwrap(),
+            10
+        );
+        assert!(!connection
+            .prepare("SELECT 1 FROM sqlite_master WHERE name = 'agent_session_cursor_next'")
+            .unwrap()
+            .exists([])
+            .unwrap());
     }
 }
