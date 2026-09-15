@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 import { E2E_KEYLESS_BRANCH, E2E_REPO, defaultSettings } from '@ethlete/timetrack/testing';
-import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
+import { E2E_DAY_KEY, E2E_NOW, closeStandIns, expect, openStandIns, seedWorld, test } from './support';
 
 const ID = 'stand-in-ageing';
 
@@ -40,7 +40,7 @@ const seed = async (
 };
 
 const openList = async (page: Page) => {
-  await page.locator('[data-waiting-on-a-ticket]').click();
+  await openStandIns(page);
 
   return page.locator(`[data-stand-in="${ID}"]`);
 };
@@ -60,8 +60,6 @@ const field = (page: Page, label: string) => page.locator('et-form-field').filte
 const goTo = (page: Page, view: 'Day' | 'Settings') =>
   page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: view }).click();
 
-const counter = (page: Page) => page.locator('[data-waited-long-enough]');
-
 /** Inside both limits when the screen opens, so a mark can only come from the control that was used. */
 const YOUNG = { createdAt: '2026-08-11T09:00:00.000Z', overdueAfterWorkdays: 5, overdueAfterMs: 0 };
 
@@ -75,10 +73,9 @@ test.describe('a stand-in that has waited', () => {
 
     await expect(card).toContainText('1 workday');
     await expect(card.locator('[data-overdue]')).toHaveCount(0);
-    await expect(page.locator('[data-waited-long-enough]')).toHaveCount(0);
   });
 
-  test('is marked in the list and counted in the day header once it is too old', async ({ page }) => {
+  test('is marked in the list once it is too old', async ({ page }) => {
     const card = await open(page, {
       createdAt: '2026-08-03T09:00:00.000Z',
       overdueAfterWorkdays: 5,
@@ -87,7 +84,6 @@ test.describe('a stand-in that has waited', () => {
 
     await expect(card).toContainText('7 workdays');
     await expect(card.locator('[data-overdue]')).toBeVisible();
-    await expect(page.locator('[data-waited-long-enough]')).toHaveText(/1 waited long enough/);
   });
 
   test('is marked for the time its own bands hold, however new it is', async ({ page }) => {
@@ -106,21 +102,22 @@ test.describe('the ageing limits on the settings screen', () => {
   test('marks the stand-in once the workday limit is lowered to reach it', async ({ page }) => {
     await seed(page, YOUNG);
 
-    await expect(counter(page)).toHaveCount(0);
+    await expect((await openList(page)).locator('[data-overdue]')).toHaveCount(0);
+    await closeStandIns(page);
 
     await goTo(page, 'Settings');
     await field(page, 'Older than').locator('et-select').click();
     await page.getByRole('option', { name: '1 workday', exact: true }).click();
     await goTo(page, 'Day');
 
-    await expect(counter(page)).toHaveText(/1 waited long enough/);
     await expect((await openList(page)).locator('[data-overdue]')).toBeVisible();
   });
 
   test('marks the stand-in once the held-time limit is lowered to reach it', async ({ page }) => {
     await seed(page, YOUNG);
 
-    await expect(counter(page)).toHaveCount(0);
+    await expect((await openList(page)).locator('[data-overdue]')).toHaveCount(0);
+    await closeStandIns(page);
 
     await goTo(page, 'Settings');
     const holding = field(page, 'Or holding').locator('.et-duration-input-field');
@@ -129,7 +126,6 @@ test.describe('the ageing limits on the settings screen', () => {
     await holding.press('Enter');
     await goTo(page, 'Day');
 
-    await expect(counter(page)).toHaveText(/1 waited long enough/);
     await expect((await openList(page)).locator('[data-overdue]')).toBeVisible();
   });
 

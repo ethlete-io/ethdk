@@ -146,6 +146,15 @@ Three decisions carry it, and each has an ADR:
 
 When two rungs disagree, the band shows both and asks.
 
+**Open, found on the screen on 2026-09-15.** An entry Tom named "Tom Tom unterwegs" is drawn as a
+meeting, and the edit surface offers "Use its time". It marks an absence, so its time is not work.
+Google sets `eventType: 'outOfOffice'` only on an entry made through its own Out of office type, and
+`libs/timetrack/src/lib/google-calendar/events.ts:25` already drops that one. A plain entry the user
+wrote by hand carries nothing that says the same. What evidence tells an absence from a meeting is
+undecided: the candidates are a single attendee, no call observed over it, and a wording the user
+teaches the app once. ADR 0010 already says an accepted occurrence with no call observed proposes
+nothing, so the offer on the edit surface and that rule disagree.
+
 Exit test: every band of a real day carries the right issue, or states in words why it cannot name
 one. Tom writes the answers down before the screen is opened, and judges it in writing.
 

@@ -68,6 +68,30 @@ export const closeDebug = async (page: Page) => {
   await expect(dialog).toBeHidden();
 };
 
+/**
+ * Opens the panel holding the work Jira has no ticket for yet.
+ *
+ * The day header's press is its plain door. The press on a band's edit surface opens a ticket draft
+ * with it, so it answers a different question.
+ */
+export const openStandIns = async (page: Page) => {
+  await page.locator('[data-waiting-on-a-ticket]').click();
+
+  const panel = page.locator('ethlete-stand-ins');
+
+  await expect(panel).toBeVisible();
+
+  return panel;
+};
+
+/** Dismisses the stand-in panel, so the day screen behind it can be acted on. */
+export const closeStandIns = async (page: Page) => {
+  const panel = page.locator('ethlete-stand-ins');
+
+  await panel.getByRole('button', { name: 'Close' }).click();
+  await expect(panel).toBeHidden();
+};
+
 /** What the day totalled: presence, engaged time and the ratio between them. */
 export const openTotals = (page: Page) => openDebugPanel(page, 'What was measured');
 

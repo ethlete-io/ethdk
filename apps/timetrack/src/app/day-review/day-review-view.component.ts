@@ -8,8 +8,8 @@ import { DayTimelineComponent } from './day-timeline.component';
 import { NamingOfferComponent } from './naming-offer.component';
 import { DayWarningsComponent } from './day-warnings.component';
 import { formatDayLabel, formatSignedDurationMs } from './format';
-import { STAND_INS_OVERLAY, injectStandIns } from '../stand-ins';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
+import { STAND_INS_OVERLAY } from '../stand-ins';
 
 /** What the header's own button drafts: the quarter-hour grid, and the hour that just finished. */
 const ENTRY_STEP_MS = DEFAULT_ROUND_OPTIONS.incrementMs;
@@ -41,14 +41,9 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
 
         <div class="flex items-center gap-2">
           <button (click)="addEntry()" et-button variant="outline" size="sm">Add an entry</button>
-          @if (standIns.openCount(); as waiting) {
-            <button (click)="standInList.open()" et-button variant="transparent" size="sm" data-waiting-on-a-ticket>
-              {{ waiting }} waiting on a ticket
-              @if (standIns.overdueCount(); as overdue) {
-                <span class="text-et-warning-ink" data-waited-long-enough> · {{ overdue }} waited long enough </span>
-              }
-            </button>
-          }
+          <button (click)="standInList.open()" et-button variant="transparent" size="sm" data-waiting-on-a-ticket>
+            Waiting on a ticket
+          </button>
           <button (click)="debug.open()" et-button variant="transparent" size="sm">Debug</button>
         </div>
       </header>
@@ -127,7 +122,6 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
 export class DayReviewViewComponent {
   protected store = injectDayReview();
   private surface = injectRowEditSurface();
-  protected standIns = injectStandIns();
   protected debug = createOverlayOpener(DAY_DEBUG_OVERLAY);
   protected standInList = createOverlayOpener(STAND_INS_OVERLAY);
 

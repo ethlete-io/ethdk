@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 import { E2E_KEYLESS_BRANCH, E2E_REPO, defaultSettings } from '@ethlete/timetrack/testing';
-import { E2E_NOW, expect, pickIssue, seedWorld, test } from './support';
+import { E2E_NOW, expect, openStandIns, pickIssue, seedWorld, test } from './support';
 
 /** The name the user gave the work before Jira held a ticket for it. */
 const STAND_IN = {
@@ -30,11 +30,6 @@ const band = (page: Page) => page.locator(`[data-kind="row"][title^="${STAND_IN.
 
 const namedBand = (page: Page) => page.locator('[data-kind="row"][title^="ABC-2000"]');
 
-const openList = async (page: Page) => {
-  await page.locator('[data-waiting-on-a-ticket]').click();
-  await expect(list(page)).toBeVisible();
-};
-
 test.describe('the work waiting on a ticket', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, {
@@ -44,10 +39,8 @@ test.describe('the work waiting on a ticket', () => {
     await page.goto('/day');
   });
 
-  test('is counted in the day header, and the count opens the list', async ({ page }) => {
-    await expect(page.locator('[data-waiting-on-a-ticket]')).toHaveText(/1 waiting on a ticket/);
-
-    await openList(page);
+  test('is listed under the name the user gave it', async ({ page }) => {
+    await openStandIns(page);
 
     await expect(card(page)).toContainText(STAND_IN.name);
   });
@@ -55,7 +48,7 @@ test.describe('the work waiting on a ticket', () => {
   test('gives its band the key once it is resolved', async ({ page }) => {
     await expect(band(page)).toHaveCount(1);
 
-    await openList(page);
+    await openStandIns(page);
     await pickIssue(page, card(page), /ABC-2000/);
     await card(page).getByRole('button', { name: 'Resolve' }).click();
 
@@ -65,7 +58,7 @@ test.describe('the work waiting on a ticket', () => {
   });
 
   test('takes the key back off the band when the resolve is undone', async ({ page }) => {
-    await openList(page);
+    await openStandIns(page);
     await pickIssue(page, card(page), /ABC-2000/);
     await card(page).getByRole('button', { name: 'Resolve' }).click();
     await expect(namedBand(page)).toHaveCount(1);
@@ -77,7 +70,7 @@ test.describe('the work waiting on a ticket', () => {
   });
 
   test('offers the model the whole stand-in from the ticket form it opens', async ({ page }) => {
-    await openList(page);
+    await openStandIns(page);
     await card(page).getByRole('button', { name: 'File a ticket' }).click();
 
     const form = page.locator('ethlete-create-ticket');
@@ -93,11 +86,11 @@ test.describe('the work waiting on a ticket', () => {
   });
 
   test('puts its band back to waiting for a name once it is deleted', async ({ page }) => {
-    await openList(page);
+    await openStandIns(page);
     await card(page).getByRole('button', { name: 'Delete' }).click();
 
     await expect(card(page)).toHaveCount(0);
     await expect(band(page)).toHaveCount(0);
-    await expect(page.locator('[data-waiting-on-a-ticket]')).toHaveCount(0);
+    await expect(list(page).locator('[data-stand-in]')).toHaveCount(0);
   });
 });

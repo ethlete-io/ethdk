@@ -127,12 +127,8 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   return {
     standIns,
     open,
-    /** What the day screen's own entry counts: the work that still waits on somebody for a ticket. */
-    openCount: computed(() => open().length),
-    /** How long each one has waited, by id. The list reads it, and the day header counts the overdue. */
+    /** How long each one has waited, by id. The list reads it, and marks the ones past a limit. */
     ages,
-    /** The open ones that waited past a limit the user set. Nothing is blocked; they are only marked. */
-    overdueCount: computed(() => open().filter((standIn) => ages().get(standIn.id)?.isOverdue).length),
     syncedDays,
     canReopen: (standIn: StandIn) => canReopenStandIn({ standIn, syncedDays: syncedDays() }),
 

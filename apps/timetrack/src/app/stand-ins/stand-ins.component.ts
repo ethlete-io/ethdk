@@ -164,6 +164,10 @@ import { injectStandIns } from './stand-ins';
         />
       }
     </et-overlay-body>
+
+    <div class="flex justify-end" etOverlayFooter>
+      <button et-button etOverlayClose size="sm" variant="outline">Close</button>
+    </div>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [

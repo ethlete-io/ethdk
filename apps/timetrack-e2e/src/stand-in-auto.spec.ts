@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 import { E2E_PARENT_ID, E2E_PARENT_KEY, E2E_REPO, defaultSettings, tempoWorklogOn } from '@ethlete/timetrack/testing';
-import { E2E_NOW, editSurface, expect, openBand, seedWorld, test } from './support';
+import { E2E_NOW, closeStandIns, editSurface, expect, openBand, openStandIns, seedWorld, test } from './support';
 
 /** The checkout is work and files its tickets in ABC. Nothing yet says which issue that work is. */
 const LINKS_THE_CHECKOUT = {
@@ -12,11 +12,6 @@ const LINKS_THE_CHECKOUT = {
 
 const band = (page: Page) => page.locator('[data-kind="row"][data-stand-in]');
 
-const openList = async (page: Page) => {
-  await page.locator('[data-waiting-on-a-ticket]').click();
-  await expect(page.locator('ethlete-stand-ins')).toBeVisible();
-};
-
 test.describe('a linked checkout Jira holds no ticket for', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, {
@@ -27,7 +22,9 @@ test.describe('a linked checkout Jira holds no ticket for', () => {
   });
 
   test('opens its own stand-in without being asked for one', async ({ page }) => {
-    await expect(page.locator('[data-waiting-on-a-ticket]')).toHaveText(/1 waiting on a ticket/);
+    await openStandIns(page);
+
+    await expect(page.locator('ethlete-stand-ins [data-stand-in]')).toHaveCount(1);
   });
 
   test('draws the band as work that is named and still waiting', async ({ page }) => {
@@ -37,7 +34,7 @@ test.describe('a linked checkout Jira holds no ticket for', () => {
   });
 
   test('names it from the branch and says in the list what it drew on', async ({ page }) => {
-    await openList(page);
+    await openStandIns(page);
 
     const card = page.locator('ethlete-stand-ins [data-stand-in]').first();
 
@@ -83,7 +80,7 @@ test.describe('the ticket a stand-in was waiting for', () => {
     await page.goto('/day');
     await expect(band(page)).toHaveCount(1);
 
-    await openList(page);
+    await openStandIns(page);
 
     const card = page.locator('ethlete-stand-ins [data-stand-in]').first();
 
@@ -114,20 +111,19 @@ test.describe('a stand-in the app opened and the user deleted', () => {
     await page.goto('/day');
     await expect(band(page)).toHaveCount(1);
 
-    await openList(page);
+    await openStandIns(page);
     await page.locator('ethlete-stand-ins [data-stand-in]').first().getByRole('button', { name: 'Delete' }).click();
   });
 
   test('stays deleted, and the checkout goes back to waiting for a name', async ({ page }) => {
     await expect(page.locator('[data-kind="row"][title^="Not yet named"]')).not.toHaveCount(0);
     await expect(page.locator('ethlete-stand-ins [data-stand-in]')).toHaveCount(0);
-    await expect(page.locator('[data-waiting-on-a-ticket]')).toHaveCount(0);
   });
 
   test('is opened again once the settings screen allows the checkout', async ({ page }) => {
     await expect(page.locator('[data-kind="row"][title^="Not yet named"]')).not.toHaveCount(0);
 
-    await page.keyboard.press('Escape');
+    await closeStandIns(page);
     await goTo(page, 'Settings');
     await page.getByRole('tab', { name: 'The day' }).click();
 
@@ -147,7 +143,7 @@ test.describe('a checkout no link covers', () => {
     await page.goto('/day');
 
     await expect(page.locator('[data-kind="row"][title^="Not yet named"]')).not.toHaveCount(0);
-    await expect(page.locator('[data-waiting-on-a-ticket]')).toHaveCount(0);
+    await expect((await openStandIns(page)).locator('[data-stand-in]')).toHaveCount(0);
   });
 });
 
@@ -173,7 +169,7 @@ test.describe('a linked checkout the record already names an issue for', () => {
   });
 
   test('opens no stand-in, and keeps offering the issue', async ({ page }) => {
-    await expect(page.locator('[data-waiting-on-a-ticket]')).toHaveCount(0);
     await expect(band(page)).toHaveCount(0);
+    await expect((await openStandIns(page)).locator('[data-stand-in]')).toHaveCount(0);
   });
 });
