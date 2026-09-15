@@ -84,6 +84,25 @@
   --color-et-warning-ink-active: rgb(245 158 11);
   --color-et-warning-ink-disabled: rgb(140 100 30);
 
+  /* pending theme */
+  --color-et-pending: rgb(124 58 237);
+  --color-et-pending-hover: rgb(139 92 246);
+  --color-et-pending-focus: rgb(139 92 246);
+  --color-et-pending-active: rgb(109 40 217);
+  --color-et-pending-disabled: rgb(76 55 120);
+
+  --color-et-on-pending: rgb(255 255 255);
+  --color-et-on-pending-hover: rgb(255 255 255);
+  --color-et-on-pending-focus: rgb(255 255 255);
+  --color-et-on-pending-active: rgb(255 255 255);
+  --color-et-on-pending-disabled: rgb(237 233 254);
+
+  --color-et-pending-ink: rgb(167 139 250);
+  --color-et-pending-ink-hover: rgb(196 181 253);
+  --color-et-pending-ink-focus: rgb(196 181 253);
+  --color-et-pending-ink-active: rgb(139 92 246);
+  --color-et-pending-ink-disabled: rgb(100 85 140);
+
   /* neutral theme */
   --color-et-neutral: rgb(82 82 82);
   --color-et-neutral-hover: rgb(115 115 115);
@@ -204,6 +223,26 @@
     --et-color-primary-ink-focus: 253 224 71;
     --et-color-primary-ink-active: 245 158 11;
     --et-color-primary-ink-disabled: 140 100 30;
+  }
+
+  .et-color--pending {
+    --et-color-primary: 124 58 237;
+    --et-color-primary-hover: 139 92 246;
+    --et-color-primary-focus: 139 92 246;
+    --et-color-primary-active: 109 40 217;
+    --et-color-primary-disabled: 76 55 120;
+
+    --et-color-on-primary: 255 255 255;
+    --et-color-on-primary-hover: 255 255 255;
+    --et-color-on-primary-focus: 255 255 255;
+    --et-color-on-primary-active: 255 255 255;
+    --et-color-on-primary-disabled: 237 233 254;
+
+    --et-color-primary-ink: 167 139 250;
+    --et-color-primary-ink-hover: 196 181 253;
+    --et-color-primary-ink-focus: 196 181 253;
+    --et-color-primary-ink-active: 139 92 246;
+    --et-color-primary-ink-disabled: 100 85 140;
   }
 
   .et-color--neutral {

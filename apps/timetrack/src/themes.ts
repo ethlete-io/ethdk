@@ -100,6 +100,30 @@ export const WARNING_THEME: ColorTheme = {
   },
 };
 
+export const PENDING_THEME: ColorTheme = {
+  name: 'pending',
+  primary: {
+    color: {
+      default: '124 58 237',
+      hover: '139 92 246',
+      focus: '139 92 246',
+      active: '109 40 217',
+      disabled: '76 55 120',
+    },
+    onColor: {
+      default: '255 255 255',
+      disabled: '237 233 254',
+    },
+    inkColor: {
+      default: '167 139 250',
+      hover: '196 181 253',
+      focus: '196 181 253',
+      active: '139 92 246',
+      disabled: '100 85 140',
+    },
+  },
+};
+
 export const NEUTRAL_THEME: ColorTheme = {
   name: 'neutral',
   primary: {
@@ -124,4 +148,4 @@ export const NEUTRAL_THEME: ColorTheme = {
   },
 };
 
-export const THEMES = [BRAND_THEME, DANGER_THEME, SUCCESS_THEME, WARNING_THEME, NEUTRAL_THEME];
+export const THEMES = [BRAND_THEME, DANGER_THEME, SUCCESS_THEME, WARNING_THEME, PENDING_THEME, NEUTRAL_THEME];

@@ -34,6 +34,7 @@ import {
   appointmentLabel,
   appointmentOf,
   behindLabel,
+  isStandInAppointment,
   rowEntryOf,
   unnamedLabelOf,
 } from './row-edit/row-appointment';
@@ -281,6 +282,7 @@ type RowDrag = {
                       [attr.data-compact]="compact(laid.block.span) || null"
                       [attr.data-dragging]="dragging(laid.block.node.appointment) || null"
                       [attr.data-marked]="marks(laid.block.node.appointment) || null"
+                      [attr.data-stand-in]="STANDS_IN(laid.block.node.appointment) || null"
                       [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
                       [style.top.%]="laid.block.offset"
                       [style.height.%]="laid.block.span"
@@ -290,7 +292,7 @@ type RowDrag = {
                       (pointerdown)="startDrag({ event: $event, appointment: laid.block.node.appointment, column })"
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
-                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset data-[stand-in]:border-dashed"
                       etMenu
                       etMenuContextTrigger
                       role="button"
@@ -441,6 +443,7 @@ export class DayTimelineComponent {
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
   protected readonly BEHIND_LABEL_OF = behindLabel;
+  protected readonly STANDS_IN = isStandInAppointment;
 
   /** The day as one lane per checkout. The grid supplies the vertical geometry; the lane the inline. */
   protected lanes = computed<DayLane[]>(() =>

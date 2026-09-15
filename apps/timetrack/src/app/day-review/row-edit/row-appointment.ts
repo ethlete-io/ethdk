@@ -5,6 +5,7 @@ import {
   ReviewedRow,
   formatDurationMs,
   isManualRow,
+  isStandInRow,
   syncsInState,
 } from '@ethlete/timetrack';
 
@@ -54,6 +55,14 @@ export const CONFIDENCE_THEME: Record<Confidence, string> = {
 export const EXCLUDED_THEME = 'neutral';
 
 /**
+ * The theme a band waiting on a ticket paints in, so a stand-in is one glance rather than a read.
+ *
+ * It is a colour of its own rather than a confidence tier: the work has a name and the day is not
+ * asking about it, so painting it as a weak guess would put a question on a band nobody has to answer.
+ */
+export const STAND_IN_THEME = 'pending';
+
+/**
  * A row as the scheduler carries it.
  *
  * `durationMs` and `willSync` are the two things an appointment has no field for and a worklog cannot
@@ -87,6 +96,15 @@ export const rowEntryOf = (appointment: Appointment): RowEntry | null => {
   return entry?.kind === 'row' ? entry : null;
 };
 
+// A band a rule excluded is not a weak guess the reviewer has to settle, so it does not take the
+// warning theme. Naming it is the user overruling the rule, and from then on it reads as any row.
+const colorTokenOf = (row: ReviewedRow) => {
+  if (row.excluded && !row.issueKey) return EXCLUDED_THEME;
+  if (isStandInRow(row)) return STAND_IN_THEME;
+
+  return CONFIDENCE_THEME[row.confidence];
+};
+
 /**
  * The row as an appointment. `title` is the issue key, so the edit surface's header reads it and the
  * issue field has somewhere to write. What a band shows is {@link appointmentLabel} instead: a
@@ -105,9 +123,7 @@ export const appointmentOf = (options: {
   description: options.row.description,
   start: options.from ?? options.row.from,
   end: options.to ?? options.row.to,
-  // A band a rule excluded is not a weak guess the reviewer has to settle, so it does not take the
-  // warning theme. Naming it is the user overruling the rule, and from then on it reads as any row.
-  colorToken: options.row.excluded && !options.row.issueKey ? EXCLUDED_THEME : CONFIDENCE_THEME[options.row.confidence],
+  colorToken: colorTokenOf(options.row),
   extra: {
     kind: 'row',
     row: options.row,
@@ -134,4 +150,11 @@ export const appointmentLabel = (appointment: Appointment) => {
   const alone = entry.row.issueKey && entry.row.unattended ? ' · nobody was here' : '';
 
   return `${named} · ${formatDurationMs(entry.durationMs)}${alone}${isManualRow(entry.row) ? ' · by hand' : ''}`;
+};
+
+/** Whether a band is waiting on a ticket, so the timeline can mark it as provisional. */
+export const isStandInAppointment = (appointment: Appointment) => {
+  const row = rowEntryOf(appointment)?.row;
+
+  return !!row && isStandInRow(row);
 };
