@@ -25,6 +25,7 @@ mod oauth;
 mod pause;
 mod placement;
 mod process;
+mod recovery;
 mod reporter;
 mod samples;
 mod secrets;
@@ -56,6 +57,7 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             tray::reveal(app);
         }))
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             // Before the database: the window is declared invisible so its stored size and position
@@ -65,7 +67,17 @@ pub fn run() {
 
             let data_dir = app.path().app_data_dir()?;
             let key = keychain::database_key()?;
-            let connection = db::open(&data_dir.join("timetrack.db"), &key)?;
+            let store = data_dir.join("timetrack.db");
+
+            // A store that cannot be opened leaves the rest of this unwired: every source below needs
+            // somewhere to write, so none of them may start. The dialog decides what happens next.
+            let connection = match db::open(&store, &key) {
+                Ok(connection) => connection,
+                Err(error) => {
+                    recovery::offer_a_fresh_start(app.handle(), store, error.to_string());
+                    return Ok(());
+                }
+            };
             let paused = pause::paused_at(&connection)?.is_some();
 
             app.manage(state::Db::new(connection));
