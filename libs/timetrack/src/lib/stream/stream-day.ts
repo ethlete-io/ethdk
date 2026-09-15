@@ -18,7 +18,7 @@ import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } fro
 import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
-import { BreakWindow, breakMs, breakWindows } from './breaks';
+import { BreakWindow, breakGaps, breakMs, breakWindows } from './breaks';
 import { classifyCalls, lastHostSampleAt } from './calls';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
@@ -989,25 +989,33 @@ export const streamDay = (options: {
     .filter((row) => row.ms > 0)
     .sort((a, b) => b.ms - a.ms || (a.appId ?? '').localeCompare(b.appId ?? ''));
 
-  const blocks = blocksFromSpans({
-    spans: [
-      ...clipSpans({ spans: focusSpans, within: seen }),
-      ...clipSpans({ spans: agentSpans, within: presence }),
-      ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
-    ],
-    observations,
-  });
+  const attendedSpans = [
+    ...clipSpans({ spans: focusSpans, within: seen }),
+    ...clipSpans({ spans: agentSpans, within: presence }),
+    ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
+  ];
 
-  const breaks = breakWindows({
+  const away = {
     presence,
     events: options.events,
     pauses: config.rows?.pauses,
-    work: blocks,
+    work: attendedSpans,
     minBreakMs: config.minBreakMs,
     // A prompt the agent gave itself buys nothing back: nobody read anything and nobody typed. See
     // ADR 0018.
     prompts: prompts.filter((prompt) => prompt.askedBy !== 'machine').map((prompt) => prompt.at),
     promptAttentionMs: config.promptAttentionMs,
+  };
+  const breaks = breakWindows(away);
+  // `work` above must stay the spans presence alone allows, because the agent's spans are then clipped
+  // to the gaps read off it. Clipping first would let a break widen the work span and so itself.
+  const blocks = blocksFromSpans({
+    spans: [
+      ...clipSpans({ spans: focusSpans, within: seen }),
+      ...clipSpans({ spans: agentSpans, within: mergeWindows([...presence, ...breakGaps(away)]) }),
+      ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
+    ],
+    observations,
   });
   // The focus ranks two background bands against each other. It is derived here because only this
   // pass holds it, and `buildRows` takes blocks that no longer say which stream they came from.

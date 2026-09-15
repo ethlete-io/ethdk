@@ -67,12 +67,11 @@ const overlaps = (window: TimeWindow, windows: readonly TimeWindow[]) =>
  * left on overnight samples presence hours before the first block and hours after the last, and one
  * gap of that size is the night rather than a break somebody took.
  *
- * The prompts the user sent then buy their attention back: each one shortens the break it ends by
- * `promptAttentionMs`, down to `minBreakMs` and never past it. A person who waits on an agent and
- * answers it is working; a person who answers it twice in forty minutes was away for the rest, and
- * that rest is what this reports.
+ * This is the whole absence, before any prompt buys its attention back. The day's work is clipped to
+ * it as well as to presence, so an agent that ran through a break still builds the row its time books
+ * and the break is drawn over that row. `breakWindows` is what the day reports.
  */
-export const breakWindows = (options: {
+export const breakGaps = (options: {
   /** The stretches the user was at the machine, from `presenceWindows`. */
   presence: readonly TimeWindow[];
   /** The day's own events, read only for its `lock` transitions. */
@@ -95,8 +94,6 @@ export const breakWindows = (options: {
   const events = (options.events ?? []).filter(isPresence).filter((event) => event.kind === 'lock');
   const pauses = options.pauses ?? [];
   const minBreakMs = options.minBreakMs ?? DEFAULT_MIN_BREAK_MS;
-  const attentionMs = options.promptAttentionMs ?? DEFAULT_PROMPT_ATTENTION_MS;
-  const maxAttentionShare = options.maxAttentionShare ?? DEFAULT_MAX_ATTENTION_SHARE;
   const maxBreakMs = options.maxBreakMs ?? DEFAULT_MAX_BREAK_MS;
   const work = options.work ?? [];
   const workFrom = work.length ? Math.min(...work.map((window) => window.from.getTime())) : undefined;
@@ -128,8 +125,24 @@ export const breakWindows = (options: {
     breaks.push({ ...window, locked });
   });
 
-  return attended({ breaks, prompts: options.prompts ?? [], attentionMs, minBreakMs, maxAttentionShare });
+  return breaks;
 };
+
+/**
+ * The breaks a day reports: the gaps of `breakGaps`, each one shortened by what its prompts bought.
+ *
+ * Each prompt shortens the break it ends by `promptAttentionMs`, down to `minBreakMs` and never past
+ * it. A person who waits on an agent and answers it is working; a person who answers it twice in
+ * forty minutes was away for the rest, and that rest is what this reports.
+ */
+export const breakWindows = (options: Parameters<typeof breakGaps>[0]): BreakWindow[] =>
+  attended({
+    breaks: breakGaps(options),
+    prompts: options.prompts ?? [],
+    attentionMs: options.promptAttentionMs ?? DEFAULT_PROMPT_ATTENTION_MS,
+    minBreakMs: options.minBreakMs ?? DEFAULT_MIN_BREAK_MS,
+    maxAttentionShare: options.maxAttentionShare ?? DEFAULT_MAX_ATTENTION_SHARE,
+  });
 
 /**
  * The breaks with each prompt's attention taken out of them.

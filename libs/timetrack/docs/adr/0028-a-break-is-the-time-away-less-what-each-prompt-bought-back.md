@@ -51,10 +51,21 @@ had left.
   `get_input_idle_notification` reports input idleness, which no inhibitor can suppress. Proven on
   2026-09-15 with a 10-second threshold: v1 never fired, v2 fired in 10 seconds. Without that fix
   this ADR changes nothing on this machine, because the signal never arrives.
-- **A break stops a band being drawn across it, and nothing more.** `barriers` in `mergeBlocks` bars
-  a join over a gap; it removes no block that falls inside the break. So a break nothing ran in is
-  proposed to nobody, and a break an agent ran through is still proposed — as its own row, marked
-  unattended and warned on. Verified on 2026-09-15: the rows covered the measured break 14:26-14:43.
+- **A break stops a band being drawn across a gap, and nothing more.** `barriers` in `mergeBlocks`
+  bars a join over a gap; it removes no block that falls inside the break. So a break nothing ran in
+  is proposed to nobody, and a break an agent ran through keeps its blocks and stays proposed.
+- **The day's work is clipped to presence and to the gaps `breakGaps` returns.** This was the hole
+  the rest of this ADR did not close: `stream-day` clipped the agent's spans to presence alone, so
+  every block inside a break was deleted before the rows were built. The break then had no row to be
+  drawn over, and `breaksBetweenRows` reported the whole row gap instead of the absence the notifier
+  measured. Measured on 2026-09-15, on 1h 20m the user steered from a phone: the day booked 90 m and
+  drew a 1h 15m break; it now books 165 m and draws the 40 m it measured. The clip reads the gaps
+  before the allowance, not the breaks after it, so the minutes a prompt bought back are booked too.
+- **A break merged into the work either side no longer raises `unattended-time`.** A group is
+  attended if any attended span overlaps it, and a band that now runs through the break overlaps the
+  work on both sides. The break drawn over the row is what says nobody was at the seat. This is the
+  leniency `attendedAt` already documents, and it is why the row is only as honest as the prompts
+  inside it.
 - **A break an agent ran through is drawn over the row it runs under.** `breaksBetweenRows` reports a
   break as the gap the rows leave, and such a break leaves none, so it is snapped to the row increment
   and drawn in the break lane instead. Both ends round to the nearest boundary rather than outwards: a

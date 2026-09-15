@@ -1,6 +1,7 @@
 import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
+import { breakMs, breaksBetweenRows } from './breaks';
 import { streamDay } from './stream-day';
 
 const MINUTE = 60_000;
@@ -178,5 +179,49 @@ describe('streamDay, on commits another machine made', () => {
 
     expect(late.length).toBeGreaterThan(0);
     expect(late.every((row) => row.unattended)).toBe(true);
+  });
+});
+
+describe('streamDay, on work the user steered from a phone', () => {
+  /**
+   * 2026-09-15: Tom left the desk and kept prompting through Claude remote. The idle notifier saw
+   * nobody at the seat for 1h 20m, and eight prompts he typed landed inside it.
+   */
+  const REMOTE: CollectedEvent[] = [
+    ...EVENING,
+    idle(90, 'idle-start'),
+    ...running(90, 170),
+    prompt(100, 'human'),
+    prompt(115, 'human'),
+    prompt(130, 'human'),
+    prompt(145, 'human'),
+    prompt(160, 'human'),
+    commit(120, 'fix(repo): Bound what a timetrack prompt buys back off a break'),
+    commit(155, 'feat(repo): Let the timetrack rules read the call lane too'),
+    idle(170, 'idle-end'),
+    focus(171),
+    commit(175, 'docs(repo): Mark the timetrack naming gaps as built'),
+  ];
+
+  it('books the time the agent worked while he steered it', () => {
+    const booked = dayOf(REMOTE).rows.proposals.filter((row) => row.issueKey === 'ET-772');
+
+    expect(booked.some((row) => row.from.getTime() <= AT(100).getTime() && row.to.getTime() >= AT(160).getTime())).toBe(
+      true,
+    );
+  });
+
+  it('draws one band across the window rather than cutting it in two', () => {
+    const inside = (at: Date) => at.getTime() > AT(90).getTime() && at.getTime() < AT(170).getTime();
+    const edges = dayOf(REMOTE).rows.proposals.flatMap((row) => [row.from, row.to].filter(inside));
+
+    expect(edges).toEqual([]);
+  });
+
+  it('draws a break no longer than the one the notifier measured', () => {
+    const day = dayOf(REMOTE);
+    const drawn = breaksBetweenRows({ breaks: day.breaks, rows: day.rows.proposals });
+
+    expect(breakMs(drawn)).toBeLessThanOrEqual(breakMs(day.breaks));
   });
 });
