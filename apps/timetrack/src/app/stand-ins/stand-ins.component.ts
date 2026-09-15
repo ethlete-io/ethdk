@@ -9,6 +9,8 @@ import {
 } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
 import { StandIn } from '@ethlete/timetrack';
+import { CreateTicketComponent } from '../day-review/create-ticket.component';
+import { injectTicketDraft } from '../day-review/ticket-draft';
 import { IssueSelectComponent } from '../jira';
 import { injectStandIns } from './stand-ins';
 
@@ -58,6 +60,10 @@ import { injectStandIns } from './stand-ins';
                     Resolve
                   </button>
 
+                  <button (click)="tickets.openForStandIn(entry.standIn)" et-button variant="outline" size="sm">
+                    File a ticket
+                  </button>
+
                   <button
                     (click)="store.remove(entry.id)"
                     et-button
@@ -93,6 +99,49 @@ import { injectStandIns } from './stand-ins';
                   </button>
                 </div>
               }
+
+              @if (tickets.standIn()?.id === entry.id) {
+                <ethlete-create-ticket
+                  [standIn]="tickets.standIn()"
+                  [createdParent]="tickets.createdParent()"
+                  [form]="tickets.form()"
+                  [candidates]="tickets.candidates()"
+                  [existing]="tickets.existing()"
+                  [agentMatch]="tickets.agentMatch()"
+                  [payload]="tickets.writingRequest()"
+                  [isSearching]="tickets.isSearching()"
+                  [parentForm]="tickets.parentForm()"
+                  [parentTypeNames]="tickets.parentTypeNames()"
+                  [canCreateParent]="tickets.canCreateParent()"
+                  [isCreatingParent]="tickets.isCreatingParent()"
+                  [createParentFailure]="tickets.createParentFailure()"
+                  [canWrite]="tickets.canWrite()"
+                  [isWriting]="tickets.isWriting()"
+                  [isCreating]="tickets.isCreating()"
+                  [canCreate]="tickets.canCreate()"
+                  [createGate]="tickets.createGate()"
+                  [createdKey]="tickets.createdKey()"
+                  [duplicateKey]="tickets.duplicateKey()"
+                  [searchFailure]="tickets.searchFailure()"
+                  [writeFailure]="tickets.writeFailure()"
+                  [createFailure]="tickets.createFailure()"
+                  (projectKeyChange)="tickets.setProjectKey($event)"
+                  (summaryChange)="tickets.setSummary($event)"
+                  (descriptionChange)="tickets.setDescription($event)"
+                  (parentKeyChange)="tickets.setParentKey($event)"
+                  (findParents)="tickets.findParents()"
+                  (openParentForm)="tickets.openParentForm()"
+                  (closeParentForm)="tickets.closeParentForm()"
+                  (parentSummaryChange)="tickets.setParentSummary($event)"
+                  (parentDescriptionChange)="tickets.setParentDescription($event)"
+                  (parentIssueTypeNameChange)="tickets.setParentIssueTypeName($event)"
+                  (createParent)="tickets.createParent()"
+                  (write)="tickets.writeWithAgent()"
+                  (useExisting)="tickets.useExisting($event)"
+                  (create)="tickets.create()"
+                  (dismiss)="tickets.close()"
+                />
+              }
             </div>
           }
         </div>
@@ -105,11 +154,19 @@ import { injectStandIns } from './stand-ins';
     </et-overlay-body>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, IssueSelectComponent, OVERLAY_CONTENT_IMPORTS, ProvideColorDirective],
+  imports: [
+    BUTTON_IMPORTS,
+    CreateTicketComponent,
+    EMPTY_STATE_IMPORTS,
+    IssueSelectComponent,
+    OVERLAY_CONTENT_IMPORTS,
+    ProvideColorDirective,
+  ],
   hostDirectives: [OverlayMainDirective],
 })
 export class StandInsComponent {
   protected store = injectStandIns();
+  protected tickets = injectTicketDraft();
 
   private drafts = signal<Record<string, string>>({});
 

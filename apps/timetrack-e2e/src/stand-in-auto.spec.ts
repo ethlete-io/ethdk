@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 import { E2E_REPO, defaultSettings } from '@ethlete/timetrack/testing';
-import { E2E_NOW, expect, seedWorld, test } from './support';
+import { E2E_NOW, editSurface, expect, openBand, seedWorld, test } from './support';
 
 /** The checkout is work and files its tickets in ABC. Nothing yet says which issue that work is. */
 const LINKS_THE_CHECKOUT = {
@@ -42,6 +42,58 @@ test.describe('a linked checkout Jira holds no ticket for', () => {
     const card = page.locator('ethlete-stand-ins [data-stand-in]').first();
 
     await expect(card).toContainText('Pdf export');
+  });
+});
+
+test.describe('the band of a checkout that waits on a ticket', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] },
+    });
+    await page.goto('/day');
+    await expect(band(page)).toHaveCount(1);
+  });
+
+  test('says in its own modal what it waits for', async ({ page }) => {
+    await openBand(page, (await band(page).getAttribute('title')) as string);
+
+    await expect(editSurface(page).locator('[data-stand-in-waiting]')).toContainText('waiting on a ticket');
+    await expect(editSurface(page).locator('[data-stand-in-waiting]')).toContainText('1 day');
+  });
+
+  test('opens the ticket form on that stand-in from one press', async ({ page }) => {
+    await openBand(page, (await band(page).getAttribute('title')) as string);
+    await editSurface(page).getByRole('button', { name: 'File its ticket' }).click();
+
+    const form = page.locator('ethlete-stand-ins ethlete-create-ticket');
+
+    await expect(form).toBeVisible();
+    await expect(form).toContainText('A ticket for Pdf export');
+    await expect(form).toContainText('Filing it resolves the placeholder');
+  });
+});
+
+test.describe('the ticket a stand-in was waiting for', () => {
+  test('resolves the stand-in when it is filed, and gives the band the key', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] },
+    });
+    await page.goto('/day');
+    await expect(band(page)).toHaveCount(1);
+
+    await openList(page);
+
+    const card = page.locator('ethlete-stand-ins [data-stand-in]').first();
+
+    await card.getByRole('button', { name: 'File a ticket' }).click();
+    await card.getByRole('button', { name: 'Create in Jira' }).click();
+
+    await expect(card).toContainText(/Filed ABC-/);
+    await expect(card).toContainText('is no longer waiting');
+    await expect(card).toHaveAttribute('data-state', 'resolved');
+    await expect(band(page)).toHaveCount(0);
   });
 });
 
