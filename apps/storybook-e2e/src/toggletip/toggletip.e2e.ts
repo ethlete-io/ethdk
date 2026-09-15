@@ -8,11 +8,7 @@ const RIGHT_STORY_ID = 'components-feedback-toggletip--right';
 /** The overlay arms its outside-pointer close only after the enter transition. Wait before you click outside. */
 async function waitForPanelEntered(dialog: Locator): Promise<void> {
   await expect(dialog).toBeVisible();
-  await dialog
-    .locator('.et-toggletip-panel')
-    .evaluate((el) =>
-      Promise.all(el.getAnimations({ subtree: true }).map((animation) => animation.finished.catch(() => undefined))),
-    );
+  await expect(dialog.locator('.et-toggletip-panel')).toHaveClass(/et-animation-enter-done/);
 }
 
 test.describe('toggletip / focus', () => {

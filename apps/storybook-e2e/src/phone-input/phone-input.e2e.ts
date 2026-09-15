@@ -108,6 +108,7 @@ test.describe('phone-input / keyboard', () => {
 
     await pressKey(page, 'Tab');
     await pressKey(page, 'Enter');
+    await expect(countrySearch(page)).toBeFocused();
     await countrySearch(page).pressSequentially('49');
 
     await expect(page.getByRole('option', { name: /Germany \+49/ })).toBeVisible();
@@ -125,6 +126,7 @@ test.describe('phone-input / keyboard', () => {
 
     await pressKey(page, 'Tab');
     await pressKey(page, 'Enter');
+    await expect(countrySearch(page)).toBeFocused();
     await countrySearch(page).pressSequentially('zzzz');
 
     await expect(page.getByText('No countries found')).toBeVisible();
@@ -149,6 +151,7 @@ test.describe('phone-input / keyboard', () => {
 
     await pressKey(page, 'Tab');
     await pressKey(page, 'Enter');
+    await expect(countrySearch(page)).toBeFocused();
     await countrySearch(page).pressSequentially('Switzer');
     await pressKey(page, 'Escape');
 
