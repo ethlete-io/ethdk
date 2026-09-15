@@ -85,6 +85,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
           rows: day.rows,
           edits: edits ?? EMPTY_DAY_REVIEW_EDITS,
           standIns: settings.standIns,
+          rules: settings.attributionRules,
           check: { targetMs: settings.dayTargetMs, coveredMs: coveredMsOf(coverage), pausedMs: pausedMs(pauses) },
         }),
       };

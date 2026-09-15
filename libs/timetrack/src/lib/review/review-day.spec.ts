@@ -22,6 +22,7 @@ import {
   showRow,
   splitRow,
 } from './edits';
+import { AttributionRule } from '../model/attribution';
 import { StandIn, openStandIn } from '../model/stand-in';
 import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, isNamedRow } from './model';
 import { reviewDay } from './review-day';
@@ -1248,5 +1249,80 @@ describe('reviewDay over a row named to a stand-in', () => {
 
     expect(row.standInId).toBeUndefined();
     expect(isNamedRow(row)).toBe(false);
+  });
+});
+
+describe('reviewDay over a row the reviewer built in a checkout a stand-in covers', () => {
+  const REPO = '/home/tom/dev/app';
+  const standIn = openStandIn({ name: 'the competition journey', day: '2026-08-11', now: at('07:00') });
+  const rule = (target: AttributionRule['target'], extra?: Partial<AttributionRule>): AttributionRule => ({
+    id: 'rule-1',
+    repoPath: REPO,
+    target,
+    author: 'app',
+    createdAt: at('07:00'),
+    ...extra,
+  });
+  const band: UnnamedProposal = {
+    id: `unnamed:repo:${REPO}@${at('08:00').toISOString()}`,
+    from: at('08:00'),
+    to: at('10:00'),
+    durationMs: 120 * MINUTE,
+    observedMs: 120 * MINUTE,
+    laneKey: `repo:${REPO}`,
+    description: 'unattributed activity',
+    confidence: 'weak',
+    evidence: [],
+    state: 'suggested',
+  };
+  const day = dayRows({ proposals: [], unnamed: [band] });
+  const pinned = setRowRange({
+    edits: EMPTY_DAY_REVIEW_EDITS,
+    row: reviewDay({ rows: day }).rows[0]!,
+    from: at('08:00'),
+    to: at('09:45'),
+  });
+  const reviewed = (options: { rules?: AttributionRule[]; standIns?: StandIn[]; edits?: DayReviewEdits }) =>
+    reviewDay({
+      rows: day,
+      edits: options.edits ?? pinned,
+      rules: options.rules ?? [],
+      standIns: options.standIns ?? [standIn],
+    }).rows[0]!;
+
+  it('takes the stand-in the checkout rule names', () => {
+    expect(reviewed({ rules: [rule({ kind: 'stand-in', standInId: standIn.id })] }).standInId).toBe(standIn.id);
+  });
+
+  it('stays unnamed while no rule covers the checkout', () => {
+    expect(reviewed({}).standInId).toBeUndefined();
+  });
+
+  it('is not reached by a rule naming one branch, which the lane it sits in does not hold', () => {
+    const branchRule = rule({ kind: 'stand-in', standInId: standIn.id }, { branch: 'next' });
+
+    expect(reviewed({ rules: [branchRule] }).standInId).toBeUndefined();
+  });
+
+  it('takes no key from a resolved stand-in, so a row nobody reviewed never books time', () => {
+    const resolved: StandIn = { ...standIn, state: 'resolved', issueKey: 'ABC-42' };
+    const row = reviewed({ rules: [rule({ kind: 'stand-in', standInId: standIn.id })], standIns: [resolved] });
+
+    expect(row).toMatchObject({ standInId: undefined, issueKey: undefined });
+  });
+
+  it('leaves a row the reviewer already named alone', () => {
+    const named = setRowIssue({
+      edits: pinned,
+      row: reviewDay({ rows: day, edits: pinned }).rows[0]!,
+      issueKey: 'ABC-7',
+    });
+    const row = reviewed({ rules: [rule({ kind: 'stand-in', standInId: standIn.id })], edits: named });
+
+    expect(row).toMatchObject({ issueKey: 'ABC-7', standInId: undefined });
+  });
+
+  it('takes no stand-in from a rule that names an issue instead', () => {
+    expect(reviewed({ rules: [rule({ kind: 'issue', issueKey: 'ABC-9' })] }).standInId).toBeUndefined();
   });
 });

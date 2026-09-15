@@ -4,11 +4,13 @@ import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, RoundOptions, checkDa
 import { storedLaneKey } from '../rows/lane';
 import { unnamedRowId } from '../rows/propose';
 import { snapRowBounds } from '../rows/snap';
+import { AttributionRule } from '../model/attribution';
+import { streamKeyRepoPath } from '../model/block';
 import { recutReviewedRows } from './recut';
 import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
-import { StandIn } from '../model/stand-in';
+import { StandIn, matchStandIn } from '../model/stand-in';
 import {
   DayReview,
   DayReviewEdits,
@@ -96,6 +98,32 @@ const readStandIn = (row: ReviewedRow, standIns: readonly StandIn[]): ReviewedRo
   return { ...row, standInId: undefined, issueKey: standIn.issueKey };
 };
 
+/**
+ * Names a row the reviewer built with the stand-in covering the checkout it sits in.
+ *
+ * A pinned row holds the structure the reviewer gave it and never passes the ladder again, so the rule
+ * the app writes when it opens a placeholder reaches every day except the ones they already answered.
+ * Only an open stand-in is read: it books nothing, where a key would put a row nobody reviewed into
+ * the sync.
+ */
+const nameFromStandInRule = (options: {
+  row: ReviewedRow;
+  rules: readonly AttributionRule[];
+  standIns: readonly StandIn[];
+}): ReviewedRow => {
+  const { row } = options;
+
+  if (row.issueKey || row.standInId) return row;
+
+  const repoPath = row.laneKey ? streamKeyRepoPath(row.laneKey) : undefined;
+
+  if (!repoPath) return row;
+
+  const standIn = matchStandIn({ context: { repoPath }, rules: options.rules, standIns: options.standIns });
+
+  return standIn?.state === 'open' ? { ...row, standInId: standIn.id } : row;
+};
+
 const overlapMs = (a: { from: Date; to: Date }, b: { from: Date; to: Date }) =>
   Math.min(a.to.getTime(), b.to.getTime()) - Math.max(a.from.getTime(), b.from.getTime());
 
@@ -177,9 +205,12 @@ export const reviewDay = (options: {
   cut?: CutOptions;
   /** Every stand-in the settings hold, so a row named to one reads the answer it has since been given. */
   standIns?: readonly StandIn[];
+  /** The standing rules, so a row the reviewer built still follows the one that covers its checkout. */
+  rules?: readonly AttributionRule[];
 }): DayReview => {
   const edits = options.edits ?? EMPTY_DAY_REVIEW_EDITS;
   const standIns = options.standIns ?? [];
+  const rules = options.rules ?? [];
   const tracked = trackPinnedRows({
     pinned: edits.pinned,
     sources: [...options.rows.proposals, ...options.rows.unnamed],
@@ -192,7 +223,7 @@ export const reviewDay = (options: {
     ...options.rows.unnamed
       .filter((row) => !consumed.has(row.id))
       .map((row) => withOverride(row, edits.overrides[row.id])),
-    ...tracked.rows.map(fromPinned),
+    ...tracked.rows.map(fromPinned).map((row) => nameFromStandInRule({ row, rules, standIns })),
   ]
     .map((row) => readStandIn(row, standIns))
     .sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));
