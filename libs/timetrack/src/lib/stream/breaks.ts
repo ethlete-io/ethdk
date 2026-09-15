@@ -67,9 +67,9 @@ const overlaps = (window: TimeWindow, windows: readonly TimeWindow[]) =>
  * gap of that size is the night rather than a break somebody took.
  *
  * The prompts the user sent then buy their attention back: each one shortens the break it ends by
- * `promptAttentionMs`, and what is left has to clear `minBreakMs` again. A person who waits on an
- * agent and answers it is working; a person who answers it twice in forty minutes was away for the
- * rest, and that rest is what this reports.
+ * `promptAttentionMs`, down to `minBreakMs` and never past it. A person who waits on an agent and
+ * answers it is working; a person who answers it twice in forty minutes was away for the rest, and
+ * that rest is what this reports.
  */
 export const breakWindows = (options: {
   /** The stretches the user was at the machine, from `presenceWindows`. */
@@ -138,6 +138,10 @@ export const breakWindows = (options: {
  * that overlap are merged first, so two prompts a moment apart buy back one allowance rather than
  * two, and no break gives up more than `maxAttentionShare` of itself however many prompts fall in it.
  *
+ * The allowance never takes a break below `minBreakMs`. It is a guess at attention around an instant,
+ * and a guess must not delete an absence the notifier observed: a break that was long enough to
+ * report before the prompts is long enough to report after them.
+ *
  * What the prompts buy back shortens the break from its end rather than punching holes in it. A
  * perforated break leaves slivers that `minBreakMs` then drops one by one, so two prompts half an
  * hour apart used to delete the whole half hour between them; the person was still away for it.
@@ -158,17 +162,17 @@ const attended = (options: {
     options.prompts.map((at) => ({ from: new Date(at.getTime() - options.attentionMs), to: at })),
   );
 
-  return options.breaks.flatMap((window) => {
-    if (window.locked) return [window];
+  return options.breaks.map((window) => {
+    if (window.locked) return window;
 
     const spanMs = window.to.getTime() - window.from.getTime();
     const bought = Math.min(
       windowsMs(clipWindows({ windows: attention, within: [window] })),
       spanMs * options.maxAttentionShare,
+      Math.max(0, spanMs - options.minBreakMs),
     );
-    const left = { ...window, to: new Date(window.to.getTime() - bought) };
 
-    return spanMs - bought >= options.minBreakMs ? [left] : [];
+    return { ...window, to: new Date(window.to.getTime() - bought) };
   });
 };
 

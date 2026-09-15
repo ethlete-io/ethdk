@@ -42,8 +42,16 @@ describe('breakWindows', () => {
     ]);
   });
 
-  it('drops a break the prompts leave shorter than the limit', () => {
-    expect(breakWindows({ presence: [MORNING, window([11, 20], [17, 0])], prompts: [at(11, 20)] })).toEqual([]);
+  it('never lets the prompts take a break below the limit that made it one', () => {
+    expect(breakWindows({ presence: [MORNING, window([11, 20], [17, 0])], prompts: [at(11, 20)] })).toEqual([
+      { from: at(11, 0), to: at(11, 15), locked: false },
+    ]);
+  });
+
+  it('buys nothing back off a break that is already the shortest one reported', () => {
+    expect(breakWindows({ presence: [MORNING, window([11, 15], [17, 0])], prompts: [at(11, 15)] })).toEqual([
+      { from: at(11, 0), to: at(11, 15), locked: false },
+    ]);
   });
 
   it('shortens a break from its end rather than punching a hole in it', () => {

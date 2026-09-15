@@ -20,17 +20,19 @@ and no touch is the machine saying nobody is there, and what the agent did in th
 
 **Each prompt then buys its own attention back off the break**, 15 minutes, running backwards from the
 prompt. A prompt is a person who read an answer and typed a reply, and that reading is real work at
-whatever distance they did it. What is left has to clear `minBreakMs` again, so a wait a prompt nearly
-covers is no break at all.
+whatever distance they did it.
 
 The allowance is measured backwards because that is the side the reading is on: the answer arrived,
 the person read it, and the prompt is the instant they finished. A locked break keeps no allowance —
 a lock is the user saying they left, and nothing typed afterwards changes where they were before it.
 
-**Two bounds keep the allowance honest.** Allowances that overlap are merged, so two prompts a
-moment apart buy back one and not two. And no break gives up more than half of itself, however many
+**Three bounds keep the allowance honest.** Allowances that overlap are merged, so two prompts a
+moment apart buy back one and not two. No break gives up more than half of itself, however many
 prompts fall in it: the allowance is a guess at the attention around an instant, and when the guesses
-cover a whole absence the guess is wrong — the notifier observed nobody there.
+cover a whole absence the guess is wrong — the notifier observed nobody there. And the allowance never
+takes a break below `minBreakMs`. Tom, on 2026-09-15: "as per definition deduction can't be to the
+point at which the break is 0m." A break the notifier observed is an absence, and a guess must not
+delete it; the day's grain is a quarter hour, so a quarter hour is the least it can report.
 
 **What is bought back shortens the break from its end; it never punches a hole in it.** A perforated
 break leaves slivers that `minBreakMs` drops one by one, so a 30-minute break with a prompt at minute
@@ -49,9 +51,13 @@ had left.
   `get_input_idle_notification` reports input idleness, which no inhibitor can suppress. Proven on
   2026-09-15 with a 10-second threshold: v1 never fired, v2 fired in 10 seconds. Without that fix
   this ADR changes nothing on this machine, because the signal never arrives.
-- **Tempo needs no rule of its own.** A break is a barrier in `mergeBlocks`, so no band is drawn
-  across one, and a row books the time its band covers (ADR 0019). Time inside a break is inside no
-  band and is therefore proposed to nobody.
+- **A break stops a band being drawn across it, and nothing more.** `barriers` in `mergeBlocks` bars
+  a join over a gap; it removes no block that falls inside the break. So a break nothing ran in is
+  proposed to nobody, and a break an agent ran through is still proposed — as its own row, marked
+  unattended and warned on. Verified on 2026-09-15: the rows covered the measured break 14:26-14:43.
+- **A break an agent ran through draws no band.** `breaksBetweenRows` reports a break as the gap the
+  rows leave, and those rows cover it, so the day screen shows the row's unattended marking and no
+  break. Whether that is right is open.
 - **The allowance is one number for every prompt, and it does not know where the prompt came from.**
   A person waiting at their desk and a person steering from a phone buy back the same 15 minutes.
   That is deliberate: nothing in a Claude Code log distinguishes them. Checked on 2026-09-15 —
