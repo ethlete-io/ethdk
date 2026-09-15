@@ -22,6 +22,14 @@ from the record rather than from the rung: a naming of the user's returns `certa
 with many occurrences returns `likely`, and a thin seed returns `weak`. So a seed placed that high
 still loses to the `certain` a branch parse gives.
 
+**That rung is the call and meeting ladder's**, `matchOne` in `rows/calls.ts`, and this ADR decides
+nothing about the work-block ladder in `rows/attribute.ts`. The two are not the same ladder and the
+remembered store has no writer on the work side: naming a work row writes a day-local override, and a
+standing answer about a checkout is offered rather than learnt — ADR 0025. So an `AttributionRule`
+sitting below the branch grammar in `attribute.ts` is not this decision being broken. Where a rule
+should sit against a parsed branch is an open question, and it is open on paper only: a branch that
+parses already states its key, so the rungs below it are reached only when the grammar named nothing.
+
 ## Consequences
 
 - The Tempo seed is wired: `injectRecurringPatterns` reads it and the day store passes it as
