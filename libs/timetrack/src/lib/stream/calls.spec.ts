@@ -11,6 +11,11 @@ const call = (minute: number, kind: CallEvent['kind'], appId: string, second = 0
   appId,
 });
 
+const repairEnd = (minute: number, appId: string, second = 0): CallEvent => ({
+  ...call(minute, 'call-end', appId, second),
+  stoppedWatching: true,
+});
+
 const focus = (minute: number, appId: string, title: string, second = 0): WindowFocusEvent => ({
   at: at(minute, second),
   source: 'window',
@@ -243,6 +248,15 @@ describe('closeAbandonedCalls', () => {
     expect(ends).toHaveLength(1);
     expect(ends[0]!.kind).toBe('call-end');
     expect(ends[0]!.appId).toBe('pw-record');
+  });
+
+  it('marks the end as the app stopping watching, so the reading can join the room back up', () => {
+    const ends = closeAbandonedCalls({
+      events: [call(0, 'call-start', 'pw-record'), focus(12, 'chrome', 'a tab')],
+      watchingSince: at(30),
+    });
+
+    expect(ends[0]!.stoppedWatching).toBe(true);
   });
 
   it('ends it where the watching stopped, not where the app came back', () => {
@@ -535,5 +549,63 @@ describe('classifyCalls, the voice room left open', () => {
 
     expect(DEFAULT_MIN_ATTENDED_MS).toBe(2 * 60_000);
     expect(windows[0]!.countsAsWork).toBe(true);
+  });
+});
+
+describe('classifyCalls, a room held across a restart of the app', () => {
+  const ROOM = 'pw-record';
+
+  it('is one call, not the two fragments the restart left', () => {
+    const windows = classify([
+      call(0, 'call-start', ROOM),
+      focus(12, 'chrome', 'a tab'),
+      repairEnd(12, ROOM),
+      call(16, 'call-start', ROOM),
+    ]);
+
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.from).toEqual(at(0));
+    expect(windows[0]!.to).toEqual(at(120));
+  });
+
+  it('joins it over a gap the ordinary glue is far too short for', () => {
+    const windows = classify([call(0, 'call-start', ROOM), repairEnd(2, ROOM), call(11, 'call-start', ROOM)]);
+
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.from).toEqual(at(0));
+  });
+
+  it('refuses to join a microphone that really closed, over the same gap', () => {
+    const windows = classify([call(0, 'call-start', ROOM), call(12, 'call-end', ROOM), call(16, 'call-start', ROOM)]);
+
+    expect(windows.map((window) => window.from)).toEqual([at(0), at(16)]);
+  });
+
+  it('refuses to join across a gap too long to be a restart', () => {
+    const windows = classify([call(0, 'call-start', ROOM), repairEnd(2, ROOM), call(30, 'call-start', ROOM)]);
+
+    expect(windows.map((window) => window.from)).toEqual([at(0), at(30)]);
+  });
+
+  it('leaves the room closed when the microphone is not held again after the restart', () => {
+    const windows = classify([call(0, 'call-start', ROOM), focus(12, 'chrome', 'a tab'), repairEnd(12, ROOM)]);
+
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.to).toEqual(at(12));
+  });
+
+  it('runs the repair and the reading together, the way the app does', () => {
+    const events: CollectedEvent[] = [call(0, 'call-start', ROOM), focus(12, 'chrome', 'a tab')];
+    const repaired = [
+      ...events,
+      ...closeAbandonedCalls({ events, watchingSince: at(14) }),
+      call(15, 'call-start', ROOM),
+    ];
+
+    const windows = classify(repaired, {}, 120);
+
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.from).toEqual(at(0));
+    expect(windows[0]!.to).toEqual(at(120));
   });
 });

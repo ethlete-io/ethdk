@@ -174,6 +174,12 @@ export type CallEvent = CollectedEventBase<'call', 'call-start' | 'call-end'> & 
    * exist part of the settings contract.
    */
   appId: string;
+  /**
+   * Set on a `call-end` the startup repair wrote, which says the app stopped watching rather than that
+   * the microphone closed. `classifyCalls` joins such an end to the next start of the same application,
+   * so a room held across a restart stays one call.
+   */
+  stoppedWatching?: true;
 };
 
 export type CalendarOccurrenceEvent = CollectedEventBase<'calendar', 'calendar-event'> & {

@@ -16,6 +16,11 @@ export type ClassifyCallsOptions = {
   /** How long a break in the microphone still reads as one call. Defaults to {@link DEFAULT_CALL_GLUE_MS}. */
   glueMs?: number;
   /**
+   * How long the app may have been away and still find the same room it left. Defaults to
+   * {@link DEFAULT_CALL_RESTART_GAP_MS}. It applies only after an end the repair wrote.
+   */
+  restartGapMs?: number;
+  /**
    * How long the call's own application must hold the focus inside the call before the call can count
    * as work. Defaults to {@link DEFAULT_MIN_ATTENDED_MS}. A call over a meeting the user accepted is
    * not held to it.
@@ -36,6 +41,22 @@ export type ClassifyCallsOptions = {
  * that drops and reconnects leaves the same shape, so one rule covers both.
  */
 export const DEFAULT_CALL_GLUE_MS = 2 * 60_000;
+
+/**
+ * How long the app may have been away and still find the same room it left.
+ *
+ * An end the repair wrote says the app stopped watching, not that the microphone closed, so the next
+ * start of the same application is the room it was already in. Without this a restart cuts one room
+ * into two, and either half can fall under the length the day draws a band for — measured 2026-09-15,
+ * a Discord room open all morning came out as fragments of 1 second, 7 milliseconds and 4 minutes, and
+ * the day drew none of them.
+ *
+ * It is the one place the app extends a call over time it did not watch, so it is bounded: the
+ * microphone was held on both sides of the gap and nothing else can account for it, which holds for a
+ * restart and not for a night. Ten minutes covers a restart, a crash the app came back from, and a
+ * rebuild during development.
+ */
+export const DEFAULT_CALL_RESTART_GAP_MS = 10 * 60_000;
 
 /**
  * The focus a call needs before it reads as a call the user was in, rather than a voice room left open.
@@ -113,8 +134,8 @@ const focusHeld = (focus: readonly WindowFocusEvent[], until: Date): HeldFocus[]
  * the real meeting ran 118%, and the rooms were 0.9 to 34.5 minutes long.
  *
  * A call the user listened to for an hour without ever clicking its window reads as a room and is
- * under-counted. That is the direction this module already picks: it never invents time it did not
- * observe.
+ * under-counted. That is the direction attendance picks, and it never counts a minute the focus
+ * history does not carry.
  */
 const attendedMs = (held: readonly HeldFocus[], call: PairedCall) =>
   windowsMs(clipWindows({ windows: held.filter((window) => belongsTo(call.appId, window.appId)), within: [call] }));
@@ -140,7 +161,13 @@ const titleAt = (focus: readonly WindowFocusEvent[], call: { appId: string; at: 
 };
 
 /** A call, from the edge that opened it to the edge that closed it. */
-type PairedCall = { appId: string; from: Date; to: Date };
+type PairedCall = {
+  appId: string;
+  from: Date;
+  to: Date;
+  /** Whether the edge that closed it was the app stopping watching rather than the microphone closing. */
+  stoppedWatching?: boolean;
+};
 
 /**
  * The call edges paired up: the calls that closed, and the ones still open with the instant each began.
@@ -165,7 +192,7 @@ const pairCallEdges = (calls: readonly CallEvent[]) => {
     if (!from) continue;
 
     open.delete(call.appId);
-    closed.push({ appId: call.appId, from, to: call.at });
+    closed.push({ appId: call.appId, from, to: call.at, stoppedWatching: call.stoppedWatching ?? false });
   }
 
   return { closed, open };
@@ -175,16 +202,22 @@ const pairCallEdges = (calls: readonly CallEvent[]) => {
  * Joins the calls of one application that a short break separates, so a device check and the meeting
  * it precedes are one band rather than two. Calls of different applications are never joined: two
  * microphones at once is two calls, and one of them may be the open voice room.
+ *
+ * A call the repair closed is given the wider {@link DEFAULT_CALL_RESTART_GAP_MS} instead, because the
+ * break after it is the app being away rather than the microphone closing.
  */
-const glueCalls = (calls: readonly PairedCall[], glueMs: number): PairedCall[] => {
+const glueCalls = (options: { calls: readonly PairedCall[]; glueMs: number; restartMs: number }): PairedCall[] => {
+  const { glueMs, restartMs } = options;
   const byApp = new Map<string, PairedCall[]>();
 
-  for (const call of [...calls].sort((left, right) => left.from.getTime() - right.from.getTime())) {
+  for (const call of [...options.calls].sort((left, right) => left.from.getTime() - right.from.getTime())) {
     const held = byApp.get(call.appId) ?? [];
     const last = held[held.length - 1];
+    const allowed = last?.stoppedWatching ? Math.max(glueMs, restartMs) : glueMs;
 
-    if (last && call.from.getTime() - last.to.getTime() <= glueMs) {
+    if (last && call.from.getTime() - last.to.getTime() <= allowed) {
       if (call.to > last.to) last.to = call.to;
+      last.stoppedWatching = call.stoppedWatching ?? false;
       continue;
     }
 
@@ -227,7 +260,9 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     const expected = invited.some((event) => windowsOverlap(call, { from: event.at, to: event.until }));
 
     return {
-      ...call,
+      appId: call.appId,
+      from: call.from,
+      to: call.to,
       title,
       attendedMs: attended,
       countsAsWork:
@@ -241,7 +276,11 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     ...[...open].flatMap(([appId, from]) => (from < options.until ? [{ appId, from, to: options.until }] : [])),
   ];
 
-  return glueCalls(paired, options.glueMs ?? DEFAULT_CALL_GLUE_MS)
+  return glueCalls({
+    calls: paired,
+    glueMs: options.glueMs ?? DEFAULT_CALL_GLUE_MS,
+    restartMs: options.restartGapMs ?? DEFAULT_CALL_RESTART_GAP_MS,
+  })
     .map(toWindow)
     .sort((left, right) => left.from.getTime() - right.from.getTime());
 };
@@ -270,8 +309,12 @@ export const lastHostSampleAt = (events: readonly CollectedEvent[]) =>
  * which on the Today screen is now. One killed run would otherwise claim every hour since.
  *
  * The end goes at the last host sample, not at the restart: nothing watched the microphone while the
- * app was down, so the call is cut where the watching stopped. That under-counts a call the user was
- * still in, which is the safe direction — this app never invents time it did not observe.
+ * app was down, so the call is cut where the watching stopped.
+ *
+ * It is written with `stoppedWatching`, which is what tells the reading that this edge is the app
+ * going away rather than the microphone closing. `classifyCalls` joins it to the next start of the
+ * same application within {@link DEFAULT_CALL_RESTART_GAP_MS}, so a room held across a restart stays
+ * one call. Drop that flag and a restart cuts every room in two.
  *
  * `watchingSince` is the instant the **host process** started watching, never the webview's own start:
  * a reload leaves the host running, and the host pushes no second start for a microphone it never saw
@@ -293,5 +336,6 @@ export const closeAbandonedCalls = (options: {
     source: 'call' as const,
     kind: 'call-end' as const,
     appId,
+    stoppedWatching: true as const,
   }));
 };
