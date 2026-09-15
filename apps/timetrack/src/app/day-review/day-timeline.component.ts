@@ -339,6 +339,15 @@ type RowDrag = {
                         class="absolute inset-x-0 bottom-0 cursor-ns-resize"
                       ></span>
 
+                      @for (held of breaksIn(laid.block.node.appointment); track held.offset) {
+                        <span
+                          [style.top.%]="held.offset"
+                          [style.height.%]="held.span"
+                          class="pointer-events-none absolute inset-x-0 bg-[repeating-linear-gradient(45deg,transparent_0px,transparent_5px,var(--color-et-surface-muted)_5px,var(--color-et-surface-muted)_6px)]"
+                          data-break-overlap
+                        ></span>
+                      }
+
                       @for (swap of swapsIn(laid.block.node.appointment); track swap.offset) {
                         <span
                           [style.top.%]="swap.offset"
@@ -682,6 +691,27 @@ export class DayTimelineComponent {
       .filter((entry) => entry.kind === 'branch-swap')
       .map((entry) => ({ detail: entry.detail, offset: ((entry.at.getTime() - row.from.getTime()) / span) * 100 }))
       .filter((swap) => swap.offset > 0 && swap.offset < 100);
+  }
+
+  /**
+   * Where a break crosses a band, as a percent of the band's height. A break an agent ran through
+   * leaves no gap between the rows, so its own lane draws it beside the band rather than in it; this
+   * marks the same window on the band that books the time.
+   */
+  protected breaksIn(appointment: Appointment<TimelineEntry>) {
+    const row = this.rowOf(appointment);
+    const span = row ? row.to.getTime() - row.from.getTime() : 0;
+
+    if (!row || span <= 0) return [];
+
+    return this.breaks()
+      .map((window) => {
+        const from = Math.max(window.from.getTime(), row.from.getTime());
+        const to = Math.min(window.to.getTime(), row.to.getTime());
+
+        return { offset: ((from - row.from.getTime()) / span) * 100, span: ((to - from) / span) * 100 };
+      })
+      .filter((held) => held.span > 0);
   }
 
   protected marks(appointment: Appointment<TimelineEntry>) {

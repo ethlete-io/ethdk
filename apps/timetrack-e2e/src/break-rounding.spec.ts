@@ -34,6 +34,56 @@ const aDayWithABreak = (): CollectedEvent[] => [
   ...['11:43', '11:58', '12:13', '12:28', '12:43', '13:00'].map(editing),
 ];
 
+const session = (clock: string): CollectedEvent => ({
+  at: at(clock),
+  source: 'agent-session',
+  kind: 'agent-session',
+  sessionId: 'session-1',
+  cwd: E2E_REPO,
+  gitBranch: E2E_ISSUE_BRANCH,
+});
+
+const prompt = (clock: string): CollectedEvent => ({
+  at: at(clock),
+  source: 'agent-prompt',
+  kind: 'agent-prompt',
+  provider: 'claude-code',
+  sessionId: 'session-1',
+  promptId: `prompt-${clock}`,
+  cwd: E2E_REPO,
+  gitBranch: E2E_ISSUE_BRANCH,
+  askedBy: 'human',
+});
+
+/**
+ * The same morning and afternoon, on one branch, with an agent the user kept prompting from a phone.
+ * The band runs through the break, so the break has no gap to sit in and is drawn over the band.
+ */
+const aDaySteeredFromAPhone = (): CollectedEvent[] => [
+  { at: at('09:07'), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: E2E_ISSUE_BRANCH },
+  ...['09:07', '09:22', '09:37', '09:52', '10:07', '10:22'].map(editing),
+  idle('10:22', 'idle-start'),
+  ...['10:25', '10:35', '10:45', '10:55', '11:05', '11:15', '11:25', '11:35', '11:43'].map(session),
+  ...['10:30', '10:50', '11:10', '11:30'].map(prompt),
+  idle('11:43', 'idle-end'),
+  ...['11:43', '11:58', '12:13', '12:28', '12:43', '13:00'].map(editing),
+];
+
+test.describe('a break an agent ran through', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: aDaySteeredFromAPhone() });
+    await page.goto('/day');
+  });
+
+  test('is hatched onto the band that books the time', async ({ page }) => {
+    await expect(page.locator('[data-break-overlap]').first()).toBeVisible();
+  });
+
+  test('is as long as the notifier measured, because the rows leave it no gap', async ({ page }) => {
+    await expect(page.locator('[data-break]').first()).toHaveAttribute('title', '10:15 AM - 11:00 AM');
+  });
+});
+
 test.describe('the break between two rows', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: aDayWithABreak() });
