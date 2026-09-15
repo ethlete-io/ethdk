@@ -95,16 +95,19 @@ const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const collect$ = (): Observable<unknown> =>
     defer(() =>
       settings.ready$.pipe(
-        concatMap(() => {
-          const { host } = settings.settings().gitlab;
-
-          if (!host) return of(undefined);
-
-          return probeForgeAuth$({ runner: ports.processes, cli: 'glab' }).pipe(
+        // The probe runs whether or not an instance is named, and before the name is read. What
+        // `glab` is logged in to is what Settings offers as the instance, so it has to be known
+        // while that field is still empty.
+        concatMap(() =>
+          probeForgeAuth$({ runner: ports.processes, cli: 'glab' }).pipe(
             tap((probed) => auth.set(probed)),
-            switchMap((probed) => (forgeLoginFor(probed, host) ? read$(forgeHostname(host)) : of(undefined))),
-          );
-        }),
+            switchMap((probed) => {
+              const { host } = settings.settings().gitlab;
+
+              return host && forgeLoginFor(probed, host) ? read$(forgeHostname(host)) : of(undefined);
+            }),
+          ),
+        ),
         // A run that throws never completes, so this is the one owner of clearing the failure. Doing
         // it in the success `tap` instead left the banner up for good in every run that stores
         // nothing: no host and no login both short-circuit before that `tap` is ever reached.

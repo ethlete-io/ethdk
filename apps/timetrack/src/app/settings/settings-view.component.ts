@@ -13,13 +13,14 @@ import {
   SpinnerComponent,
   TAB_IMPORTS,
 } from '@ethlete/components';
-import { callNamingKey, findStandIn } from '@ethlete/timetrack';
+import { callNamingKey, findStandIn, forgeLoginFor } from '@ethlete/timetrack';
 import {
   injectAgentSessionCollector,
   injectAgentSpendBackfill,
   injectCodexSessionCollector,
   injectCodexSpendBackfill,
   injectGitCollector,
+  injectGitLabCollector,
 } from '../../collectors';
 import { injectDayNudge } from '../day-nudge';
 import { injectWindowLock } from '../window-lock';
@@ -461,6 +462,16 @@ window title, never a file path. A suggestion never syncs on its own.`;
                   />
                 </et-form-field>
 
+                @if (glabOffers().length) {
+                  <div class="flex flex-wrap items-center gap-2" data-glab-offers>
+                    <span class="text-small text-et-surface-muted">glab is logged in to:</span>
+
+                    @for (host of glabOffers(); track host) {
+                      <button (click)="setGitLabHost(host)" et-button variant="outline" size="sm">{{ host }}</button>
+                    }
+                  </div>
+                }
+
                 <ethlete-token-field
                   [connected]="store.credentials().gitlab"
                   (save)="store.saveGitLabToken($event)"
@@ -615,6 +626,7 @@ export class SettingsViewComponent {
   protected store = injectTimetrackSettings();
 
   public git = injectGitCollector();
+  protected gitlab = injectGitLabCollector();
   protected agent = injectAgentSessionCollector();
   private agentSpend = injectAgentSpendBackfill();
   private codex = injectCodexSessionCollector();
@@ -654,6 +666,22 @@ export class SettingsViewComponent {
   protected readonly LOCK_WAIT_WHY = LOCK_WAIT_WHY;
 
   protected repoPaths = computed(() => this.git.discovery()?.repos ?? []);
+
+  /**
+   * The instances `glab` holds a login for, while the field names none of them.
+   *
+   * A host typed here that `glab` has no credential for reads as a working setup everywhere except
+   * the Sources row, so the one field that can be wrong is the one that offers what is right.
+   */
+  protected glabOffers = computed(() => {
+    const auth = this.gitlab.auth();
+
+    if (auth?.state !== 'logged-in') return [];
+
+    const { host } = this.store.settings().gitlab;
+
+    return host && forgeLoginFor(auth, host) ? [] : auth.logins.map((login) => login.host);
+  });
 
   /** The reminder is configured as a time of day, and the control it is typed into holds a duration. */
   protected nudgeAtMs = computed(() => this.store.settings().nudge.atMinute * 60_000);

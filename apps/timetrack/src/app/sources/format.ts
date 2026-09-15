@@ -1,4 +1,4 @@
-import { GitScanFailure } from '@ethlete/timetrack';
+import { ForgeCli, GitScanFailure } from '@ethlete/timetrack';
 import {
   AgentSessionCollectorTotals,
   AgentLogBackfillRun,
@@ -15,6 +15,9 @@ const day = (at: Date) => at.toLocaleDateString([], { day: 'numeric', month: 'sh
 const repos = (count: number) => `${count} ${count === 1 ? 'repository' : 'repositories'}`;
 
 const sentences = (parts: (string | null)[]) => parts.filter((part) => !!part).join(' ');
+
+const listOf = (parts: readonly string[]) =>
+  parts.length < 2 ? (parts[0] ?? '') : `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
 
 const isToday = (at: Date) => at.toDateString() === new Date().toDateString();
 
@@ -171,13 +174,37 @@ export const formatCalendarRead = (options: {
   ]);
 };
 
-/** Which instance is being read, and when. The failures name merge requests, not repositories. */
 /** What a forge source is reading, or that it is not reading yet. `reading` is a host, or `null`. */
 export const formatForgeRead = (options: { reading: string | null; readAt: Date | null }) =>
   sentences([
     options.reading ? `Reading ${options.reading}.` : 'Nothing is configured yet.',
     options.readAt ? `Last read at ${clock(options.readAt)}.` : null,
   ]);
+
+/**
+ * Why a shell-out source has no credential for the instance it was pointed at.
+ *
+ * A CLI that holds a login for a different instance is the one case where naming the login command
+ * alone misleads. The command is correct and running it changes nothing, because the host in it is
+ * the mistyped one — so the row names what the CLI does hold, which is what identifies the typo.
+ */
+export const formatForgeLoginGap = (options: {
+  cli: ForgeCli;
+  host: string;
+  held: readonly string[];
+  hasInstanceField: boolean;
+}) => {
+  const { cli, host, held, hasInstanceField } = options;
+  const command = `\`${cli} auth login --hostname ${host}\``;
+
+  if (held.length === 0) return `Waiting on ${command}.`;
+
+  const holds = `\`${cli}\` holds a login for ${listOf(held)}, not for ${host}.`;
+
+  return hasInstanceField
+    ? `${holds} Correct the instance in Settings, or run ${command}.`
+    : `${holds} Run ${command}.`;
+};
 
 /**
  * Which reporters have posted, and where a new one finds the endpoint.

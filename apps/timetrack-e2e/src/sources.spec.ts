@@ -175,6 +175,21 @@ test.describe('the GitLab row, which reads through `glab`', () => {
 
     await expect(row(page, 'gitlab')).toContainText('glab auth login --hostname gitlab.example.com');
   });
+
+  /**
+   * A mistyped instance and an expired login read identically otherwise, and only one of them is
+   * repaired by the login command — so the row names what `glab` does hold, which is the typo.
+   */
+  test('names the instance `glab` does hold, so a mistyped one can be told from a missing login', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      glab: { installed: true, logins: [{ host: 'gitlab.com', login: 'somebody' }] },
+    });
+    await page.goto('/sources');
+
+    await expect(row(page, 'gitlab')).toContainText('holds a login for gitlab.com, not for gitlab.example.com');
+    await expect(row(page, 'gitlab')).toContainText('Correct the instance in Settings');
+  });
 });
 
 /**

@@ -38,6 +38,7 @@ import {
   formatCalendarRead,
   formatCallSource,
   formatGitFailures,
+  formatForgeLoginGap,
   formatForgeRead,
   formatGitScan,
   formatIngest,
@@ -521,18 +522,29 @@ export class SourcesViewComponent {
 
     const gate =
       source.login === 'glab'
-        ? { auth: this.gitlab.auth(), host: this.settings.settings().gitlab.host, waiting: 'a GitLab instance' }
+        ? {
+            auth: this.gitlab.auth(),
+            host: this.settings.settings().gitlab.host,
+            waiting: 'a GitLab instance',
+            hasInstanceField: true,
+          }
         : {
             auth: this.github.auth(),
             host: this.settings.settings().github.enabled ? GITHUB_HOST : '',
             waiting: 'the GitHub switch',
+            hasInstanceField: false,
           };
 
     if (!gate.host) return `Waiting on ${gate.waiting} in Settings.`;
     if (!gate.auth) return null;
     if (gate.auth.state === 'not-installed') return `Waiting on \`${source.login}\`, which is not installed.`;
     if (!forgeLoginFor(gate.auth, gate.host)) {
-      return `Waiting on \`${source.login} auth login --hostname ${forgeHostname(gate.host)}\`.`;
+      return formatForgeLoginGap({
+        cli: source.login,
+        host: forgeHostname(gate.host),
+        held: gate.auth.logins.map((login) => login.host),
+        hasInstanceField: gate.hasInstanceField,
+      });
     }
 
     return null;
