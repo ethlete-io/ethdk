@@ -8,6 +8,7 @@ import {
   DURATION_INPUT_IMPORTS,
   FORM_FIELD_IMPORTS,
   INPUT_IMPORTS,
+  SELECT_IMPORTS,
   SWITCH_IMPORTS,
   SpinnerComponent,
   TAB_IMPORTS,
@@ -54,6 +55,16 @@ ever about today, and only while something is still owed.
 
 A development build posts under the terminal, because an unbundled binary has no identity of its own to
 post under.`;
+
+const STAND_IN_OVERDUE_WHY = `A stand-in is work you named before Jira had a ticket for it. Either limit
+alone marks one: work that sat for a week, and work that piled up four hours in two days, are both debts
+worth naming.
+
+Nothing is blocked and nothing notifies. The list marks it and the day header counts it. A weekend does
+not age a stand-in, and the held time is read from the days it covers. Set either one to zero to turn
+that limit off.`;
+
+const WORKDAY_LADDER = [0, 1, 2, 3, 5, 10, 20];
 
 const JIRA_WHY = `Issue keys are resolved to ids here, which is what a Tempo worklog is written against.
 The token is a Jira API token, and it is kept in the OS keychain — it is written there and only ever asked
@@ -201,6 +212,36 @@ window title, never a file path. A suggestion never syncs on its own.`;
                   </et-form-field>
 
                   <button (click)="sendTestNudge()" et-button variant="outline" size="sm">Send a test reminder</button>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-1">
+                  <h3 class="text-h4">When a stand-in waited long enough</h3>
+                  <ethlete-explain [text]="STAND_IN_OVERDUE_WHY" label="marking a stand-in" />
+                </div>
+
+                <div class="flex flex-wrap items-end gap-3">
+                  <et-form-field class="w-48" appearance="underline" size="sm">
+                    <et-label>Older than</et-label>
+                    <et-select
+                      [value]="overdueWorkdays()"
+                      (valueChange)="store.setStandInOverdueWorkdays(+($event ?? 0))"
+                    >
+                      @for (option of workdayOptions(); track option.value) {
+                        <et-select-option [value]="option.value" [label]="option.label" />
+                      }
+                    </et-select>
+                  </et-form-field>
+
+                  <et-form-field class="w-30" appearance="underline" size="sm">
+                    <et-label>Or holding</et-label>
+                    <et-duration-input
+                      [value]="store.settings().standIn.overdueAfterMs"
+                      (valueChange)="store.setStandInOverdueMs($event ?? 0)"
+                      durationFormat="hh:mm"
+                    />
+                  </et-form-field>
                 </div>
               </div>
             </div>
@@ -528,6 +569,7 @@ window title, never a file path. A suggestion never syncs on its own.`;
     INPUT_IMPORTS,
     MaskedNamesComponent,
     ProjectPathsComponent,
+    SELECT_IMPORTS,
     SWITCH_IMPORTS,
     ScanRootsComponent,
     SpinnerComponent,
@@ -553,6 +595,7 @@ export class SettingsViewComponent {
   protected readonly DAY_START_WHY = DAY_START_WHY;
   protected readonly FILL_WHY = FILL_WHY;
   protected readonly NUDGE_WHY = NUDGE_WHY;
+  protected readonly STAND_IN_OVERDUE_WHY = STAND_IN_OVERDUE_WHY;
   protected readonly JIRA_WHY = JIRA_WHY;
   protected readonly TEMPO_WHY = TEMPO_WHY;
   protected readonly GITLAB_WHY = GITLAB_WHY;
@@ -584,6 +627,19 @@ export class SettingsViewComponent {
   protected nudgeAtMs = computed(() => this.store.settings().nudge.atMinute * 60_000);
 
   protected dayStartMs = computed(() => this.store.settings().dayStartHour * 3_600_000);
+
+  /** The select answers in strings, and the setting is a count. */
+  protected overdueWorkdays = computed(() => `${this.store.settings().standIn.overdueAfterWorkdays}`);
+
+  /** A hand-edited count the ladder does not hold is added to it, so the control never reads blank. */
+  protected workdayOptions = computed(() =>
+    [...new Set([...WORKDAY_LADDER, this.store.settings().standIn.overdueAfterWorkdays])]
+      .sort((left, right) => left - right)
+      .map((workdays) => ({
+        value: `${workdays}`,
+        label: workdays === 0 ? 'Never by age' : `${workdays} workday${workdays === 1 ? '' : 's'}`,
+      })),
+  );
 
   /** Every pass over the logs reads the checkout again: one per agent for its sessions, one for their spend. */
   protected resync(paths: readonly string[]) {

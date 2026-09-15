@@ -19,6 +19,8 @@ import {
   clampGapFillMs,
   clampLockAfterIdleMs,
   clampMinuteOfDay,
+  clampStandInOverdueMs,
+  clampStandInOverdueWorkdays,
 } from './model';
 
 const asRecord = (value: unknown) =>
@@ -279,8 +281,12 @@ const asStandInSettings = (value: unknown): TimetrackStandInSettings => {
   const held = asWholeNumber(raw['overdueAfterMs']);
 
   return {
-    overdueAfterWorkdays: workdays ?? DEFAULT_TIMETRACK_SETTINGS.standIn.overdueAfterWorkdays,
-    overdueAfterMs: held ?? DEFAULT_TIMETRACK_SETTINGS.standIn.overdueAfterMs,
+    overdueAfterWorkdays:
+      workdays === undefined
+        ? DEFAULT_TIMETRACK_SETTINGS.standIn.overdueAfterWorkdays
+        : clampStandInOverdueWorkdays(workdays),
+    overdueAfterMs:
+      held === undefined ? DEFAULT_TIMETRACK_SETTINGS.standIn.overdueAfterMs : clampStandInOverdueMs(held),
   };
 };
 

@@ -171,7 +171,21 @@ export type TimetrackStandInSettings = {
 
 export const DEFAULT_STAND_IN_OVERDUE_AFTER_WORKDAYS = 5;
 
+/** A month of workdays. Past that the mark arrives long after anyone can still say what the work was. */
+export const MAX_STAND_IN_OVERDUE_WORKDAYS = 20;
+
+/** Holds the age limit in range. Zero is meaningful: it turns this limit off and leaves the other one. */
+export const clampStandInOverdueWorkdays = (value: number) =>
+  Math.min(MAX_STAND_IN_OVERDUE_WORKDAYS, Math.max(0, Math.round(value)));
+
 export const DEFAULT_STAND_IN_OVERDUE_AFTER_MS = 4 * 3_600_000;
+
+/** A working week of held time, which is already a week of days nobody named. */
+export const MAX_STAND_IN_OVERDUE_MS = 40 * 3_600_000;
+
+/** Holds the held-time limit in range. Zero is meaningful: it turns this limit off. */
+export const clampStandInOverdueMs = (value: number) =>
+  Math.min(MAX_STAND_IN_OVERDUE_MS, Math.max(0, Math.round(value)));
 
 /**
  * Which calls on this machine were work. Both lists are regular expressions, matched case-insensitively

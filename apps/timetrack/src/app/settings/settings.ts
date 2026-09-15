@@ -27,6 +27,8 @@ import {
   clampGapFillMs,
   clampLockAfterIdleMs,
   clampMinuteOfDay,
+  clampStandInOverdueMs,
+  clampStandInOverdueWorkdays,
   timetrackCredentialStatus,
   withAttributionRule,
   withBackgroundProjects,
@@ -203,6 +205,10 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     setNudgeEnabled: (enabled: boolean) => patch({ nudge: { ...settings().nudge, enabled } }),
     setNudgeAtMinute: (atMinute: number) =>
       patch({ nudge: { ...settings().nudge, atMinute: clampMinuteOfDay(atMinute) } }),
+    setStandInOverdueWorkdays: (workdays: number) =>
+      patch({ standIn: { ...settings().standIn, overdueAfterWorkdays: clampStandInOverdueWorkdays(workdays) } }),
+    setStandInOverdueMs: (overdueAfterMs: number) =>
+      patch({ standIn: { ...settings().standIn, overdueAfterMs: clampStandInOverdueMs(overdueAfterMs) } }),
     setJira: (jira: TimetrackJiraSettings) => patch({ jira }),
     setGoogle: (google: TimetrackGoogleSettings) => patch({ google }),
     setGitLab: (gitlab: TimetrackGitLabSettings) => patch({ gitlab }),
