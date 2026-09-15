@@ -46,16 +46,21 @@ describe('breakWindows', () => {
     expect(breakWindows({ presence: [MORNING, window([11, 20], [17, 0])], prompts: [at(11, 20)] })).toEqual([]);
   });
 
-  it('splits a break a prompt in the middle of it cuts in two', () => {
-    expect(
-      breakWindows({
-        presence: [MORNING, window([14, 0], [17, 0])],
-        prompts: [at(12, 30)],
-        minBreakMs: 15 * 60_000,
-      }),
-    ).toEqual([
-      { from: at(11, 0), to: at(12, 15), locked: false },
-      { from: at(12, 30), to: at(14, 0), locked: false },
+  it('shortens a break from its end rather than punching a hole in it', () => {
+    expect(breakWindows({ presence: [MORNING, window([14, 0], [17, 0])], prompts: [at(12, 30)] })).toEqual([
+      { from: at(11, 0), to: at(13, 45), locked: false },
+    ]);
+  });
+
+  it('buys back one allowance for two prompts inside the same one', () => {
+    expect(breakWindows({ presence: [MORNING, AFTERNOON], prompts: [at(12, 25), at(12, 30)] })).toEqual([
+      { from: at(11, 0), to: at(12, 10), locked: false },
+    ]);
+  });
+
+  it('never lets the prompts buy back more than half a break', () => {
+    expect(breakWindows({ presence: [MORNING, window([11, 30], [17, 0])], prompts: [at(11, 1), at(11, 29)] })).toEqual([
+      { from: at(11, 0), to: at(11, 15), locked: false },
     ]);
   });
 

@@ -1,5 +1,12 @@
 import { CollectedEvent, PresenceEvent } from '../model/event';
-import { TimeWindow, mergeWindows, subtractWindows, windowsOverlap } from '../model/time-window';
+import {
+  TimeWindow,
+  clipWindows,
+  mergeWindows,
+  subtractWindows,
+  windowsMs,
+  windowsOverlap,
+} from '../model/time-window';
 
 /**
  * The longest gap in presence that is not a break yet. It is `maxFillGapMs` on purpose: a gap short
@@ -22,6 +29,15 @@ export const DEFAULT_MAX_BREAK_MS = 3 * 60 * 60_000;
  * hour.
  */
 export const DEFAULT_PROMPT_ATTENTION_MS = 15 * 60_000;
+
+/**
+ * The most of one break the prompts inside it may buy back.
+ *
+ * The allowance is a guess at the attention around an instant. When the guesses cover a whole
+ * absence the guess is wrong: the idle notifier observed nobody there, and two prompts half an hour
+ * apart do not make the half hour between them work.
+ */
+export const DEFAULT_MAX_ATTENTION_SHARE = 0.5;
 
 /** A stretch of a day nobody was at the machine. */
 export type BreakWindow = TimeWindow & {
@@ -71,12 +87,15 @@ export const breakWindows = (options: {
   prompts?: readonly Date[];
   /** How much of a break one prompt buys back. Defaults to `DEFAULT_PROMPT_ATTENTION_MS`. */
   promptAttentionMs?: number;
+  /** The most of one break its prompts may buy back. Defaults to `DEFAULT_MAX_ATTENTION_SHARE`. */
+  maxAttentionShare?: number;
 }): BreakWindow[] => {
   const ordered = options.presence.slice().sort((a, b) => a.from.getTime() - b.from.getTime());
   const events = (options.events ?? []).filter(isPresence).filter((event) => event.kind === 'lock');
   const pauses = options.pauses ?? [];
   const minBreakMs = options.minBreakMs ?? DEFAULT_MIN_BREAK_MS;
   const attentionMs = options.promptAttentionMs ?? DEFAULT_PROMPT_ATTENTION_MS;
+  const maxAttentionShare = options.maxAttentionShare ?? DEFAULT_MAX_ATTENTION_SHARE;
   const maxBreakMs = options.maxBreakMs ?? DEFAULT_MAX_BREAK_MS;
   const work = options.work ?? [];
   const workFrom = work.length ? Math.min(...work.map((window) => window.from.getTime())) : undefined;
@@ -108,22 +127,30 @@ export const breakWindows = (options: {
     breaks.push({ ...window, locked });
   });
 
-  return attended({ breaks, prompts: options.prompts ?? [], attentionMs, minBreakMs });
+  return attended({ breaks, prompts: options.prompts ?? [], attentionMs, minBreakMs, maxAttentionShare });
 };
 
 /**
  * The breaks with each prompt's attention taken out of them.
  *
  * The allowance runs backwards from the prompt, because that is the side the reading and the typing
- * are on: the answer arrived, the person read it, and the prompt is when they finished. A locked
- * break keeps no allowance at all — a lock is the user saying they left, and nothing they typed
- * afterwards changes where they were before it.
+ * are on: the answer arrived, the person read it, and the prompt is when they finished. Allowances
+ * that overlap are merged first, so two prompts a moment apart buy back one allowance rather than
+ * two, and no break gives up more than `maxAttentionShare` of itself however many prompts fall in it.
+ *
+ * What the prompts buy back shortens the break from its end rather than punching holes in it. A
+ * perforated break leaves slivers that `minBreakMs` then drops one by one, so two prompts half an
+ * hour apart used to delete the whole half hour between them; the person was still away for it.
+ *
+ * A locked break keeps no allowance at all — a lock is the user saying they left, and nothing they
+ * typed afterwards changes where they were before it.
  */
 const attended = (options: {
   breaks: readonly BreakWindow[];
   prompts: readonly Date[];
   attentionMs: number;
   minBreakMs: number;
+  maxAttentionShare: number;
 }): BreakWindow[] => {
   if (!options.attentionMs || !options.prompts.length) return [...options.breaks];
 
@@ -134,9 +161,14 @@ const attended = (options: {
   return options.breaks.flatMap((window) => {
     if (window.locked) return [window];
 
-    return subtractWindows({ windows: [window], without: attention })
-      .filter((left) => left.to.getTime() - left.from.getTime() >= options.minBreakMs)
-      .map((left) => ({ ...left, locked: window.locked }));
+    const spanMs = window.to.getTime() - window.from.getTime();
+    const bought = Math.min(
+      windowsMs(clipWindows({ windows: attention, within: [window] })),
+      spanMs * options.maxAttentionShare,
+    );
+    const left = { ...window, to: new Date(window.to.getTime() - bought) };
+
+    return spanMs - bought >= options.minBreakMs ? [left] : [];
   });
 };
 

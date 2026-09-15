@@ -27,8 +27,18 @@ The allowance is measured backwards because that is the side the reading is on: 
 the person read it, and the prompt is the instant they finished. A locked break keeps no allowance —
 a lock is the user saying they left, and nothing typed afterwards changes where they were before it.
 
-Measured on the real 2026-09-10: 215 m of break with no allowance, 146 m with it, against the
-bridge's 133 m. The allowance lands where the bridge did without claiming a person was at a desk they
+**Two bounds keep the allowance honest.** Allowances that overlap are merged, so two prompts a
+moment apart buy back one and not two. And no break gives up more than half of itself, however many
+prompts fall in it: the allowance is a guess at the attention around an instant, and when the guesses
+cover a whole absence the guess is wrong — the notifier observed nobody there.
+
+**What is bought back shortens the break from its end; it never punches a hole in it.** A perforated
+break leaves slivers that `minBreakMs` drops one by one, so a 30-minute break with a prompt at minute
+1 and one at minute 29 used to vanish entirely. Tom, on 2026-09-15: "it also feels wrong to say 30m
+break but a prompt was made at minute 1 and one at minute 29 so the break gets totally eliminated."
+
+Measured on the real 2026-09-10: 215 m of break with no allowance in 4 breaks, 146 m with it
+in 3, against the bridge's 133 m. The allowance lands where the bridge did without claiming a person was at a desk they
 had left.
 
 ## Consequences
