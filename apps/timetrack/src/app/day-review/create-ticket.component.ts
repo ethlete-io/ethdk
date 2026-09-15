@@ -19,6 +19,7 @@ import {
 } from '@ethlete/timetrack';
 import { ProjectSelectComponent } from '../jira';
 import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
+import { UnmaskedWordsComponent } from './unmasked-words.component';
 
 /**
  * The create form for work no issue covers. It writes to Jira, so it shows the whole ticket before it
@@ -87,7 +88,7 @@ import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
                 @if (isWriting()) {
                   <et-spinner size="sm" />
                 }
-                Let the agent fill this in
+                Ask AI
               </button>
               <span class="text-small text-et-surface-muted">
                 It writes the summary and the description, picks the parent, and says if a ticket for this already
@@ -100,6 +101,8 @@ import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
             }
 
             @if (payload(); as request) {
+              <ethlete-unmasked-words [text]="printedPayload()" />
+
               <details class="rounded-md border border-et-surface-border p-3">
                 <summary class="cursor-pointer text-small text-et-surface-muted">
                   What gets sent — {{ request.notes.length }} note(s), no path and no window title
@@ -279,6 +282,7 @@ import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
     SELECT_IMPORTS,
     SpinnerComponent,
     TEXTAREA_IMPORTS,
+    UnmaskedWordsComponent,
   ],
 })
 export class CreateTicketComponent {

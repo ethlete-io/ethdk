@@ -140,3 +140,53 @@ describe('writeTicketWithAgent$', () => {
     expect(specs).toHaveLength(2);
   });
 });
+
+describe('the name list on the ticket call', () => {
+  const NAMES = ['Fip', 'ea-frontend'];
+
+  const MASKED = ticketWritingRequest({
+    context: UNNAMED,
+    notes: ['feat(hub): Add the review feedback panel for ea-frontend'],
+    parents: [issue('FIP-100', 'Hub')],
+    issues: [issue('FIP-2810', 'Review feedback panel')],
+    maskedNames: NAMES,
+  });
+
+  it('masks the repository, the notes and the project prefix of every offered key', () => {
+    const printed = JSON.stringify(MASKED);
+
+    expect(printed).not.toContain('ea-frontend');
+    expect(printed).not.toContain('FIP-');
+    expect(MASKED.parents[0]?.key).toMatch(/^[A-Z]+-100$/);
+    expect(MASKED.issues[0]?.key).toMatch(/^[A-Z]+-2810$/);
+  });
+
+  it('reads the answer back into real names, keys included', async () => {
+    const existingKey = MASKED.issues[0]?.key ?? '';
+    const parentKey = MASKED.parents[0]?.key ?? '';
+    const { runner } = stubRunner([
+      ok(
+        answer({
+          summary: `A review panel for ${MASKED.repo}`,
+          description: 'It shows the feedback.',
+          parentKey,
+          existingKey,
+          existingReason: `${existingKey} already tracks it`,
+        }),
+      ),
+    ]);
+
+    const wording = await firstValueFrom(writeTicketWithAgent$({ runner, request: MASKED, maskedNames: NAMES }));
+
+    expect(wording?.summary).toBe('A review panel for ea-frontend');
+    expect(wording?.parentKey).toBe('FIP-100');
+    expect(wording?.existingKey).toBe('FIP-2810');
+    expect(wording?.existingReason).toBe('FIP-2810 already tracks it');
+  });
+
+  it('masks nothing when the name list is empty', () => {
+    expect(ticketWritingRequest({ context: UNNAMED, notes: [], parents: [], issues: [], maskedNames: [] }).repo).toBe(
+      'ea-frontend',
+    );
+  });
+});

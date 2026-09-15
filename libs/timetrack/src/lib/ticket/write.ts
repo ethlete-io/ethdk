@@ -1,6 +1,7 @@
 import { Observable, catchError, defer, map, of, retry } from 'rxjs';
 import { agentOutputDocument } from '../reason/envelope';
 import { ReasoningOptions } from '../reason/model';
+import { PseudonymMap, maskIssueKey, maskNames, pseudonymMap, unmaskNames } from '../reason/pseudonym';
 import { agentProcessSpec } from '../reason/spec';
 import { UnnamedContext } from '../model/attribution';
 import { JiraIssue } from '../jira/issue';
@@ -89,26 +90,41 @@ export const TICKET_WRITING_JSON_SCHEMA = {
 
 const repoNameOf = (path: string) => path.split('/').filter(Boolean).pop() ?? path;
 
-const asIssues = (issues: readonly JiraIssue[]): TicketWritingIssue[] =>
-  issues.map((issue) => ({ key: issue.key, summary: issue.summary }));
+const asIssues = (options: { issues: readonly JiraIssue[]; map: PseudonymMap }): TicketWritingIssue[] =>
+  options.issues.map((issue) => ({
+    key: maskIssueKey({ issueKey: issue.key, map: options.map }),
+    summary: maskNames({ text: issue.summary, map: options.map }),
+  }));
 
-/** Builds the redacted payload the review shows before anything is sent. */
+const masked = (options: { text: string | undefined; map: PseudonymMap }) =>
+  options.text ? maskNames({ text: options.text, map: options.map }) : options.text;
+
+/**
+ * Builds the redacted payload the review shows before anything is sent.
+ *
+ * Every free-text field goes out in pseudonyms and the issue keys with them, exactly as the day's
+ * reasoning call does — a project key is a project name. `writeTicketWithAgent$` reads the answer back
+ * through the same name list.
+ */
 export const ticketWritingRequest = (options: {
   context: UnnamedContext;
   notes: readonly string[];
   parents?: readonly JiraIssue[];
   issues?: readonly JiraIssue[];
+  /** The user's own name list, from `settings.reasoning.maskedNames`. Empty masks nothing. */
+  maskedNames?: readonly string[];
 }): TicketWritingRequest => {
   const { repoPath, branch, appId } = options.context.context;
+  const map = pseudonymMap(options.maskedNames ?? []);
 
   return {
-    repo: repoPath ? repoNameOf(repoPath) : undefined,
-    branch,
-    app: appId,
+    repo: masked({ text: repoPath ? repoNameOf(repoPath) : undefined, map }),
+    branch: masked({ text: branch, map }),
+    app: masked({ text: appId, map }),
     minutes: Math.round(options.context.observedMs / 60_000),
-    notes: [...options.notes],
-    parents: asIssues(options.parents ?? []),
-    issues: asIssues(options.issues ?? []),
+    notes: options.notes.map((note) => maskNames({ text: note, map })),
+    parents: asIssues({ issues: options.parents ?? [], map }),
+    issues: asIssues({ issues: options.issues ?? [], map }),
   };
 };
 
@@ -162,13 +178,21 @@ const offeredKey = (options: { answered: string | null | undefined; issues: read
  *
  * A parent or an existing issue the request never offered is dropped, exactly as the day's reasoning
  * drops an invented issue key: the rest of the answer still stands on the wording it was given.
+ *
+ * The answer is checked in the pseudonyms it was asked in and read back into real names after, so a
+ * key the agent echoed is matched against what was actually sent. Pass the same name list the request
+ * was built with, or the wording comes back in pseudonyms.
  */
 export const writeTicketWithAgent$ = (options: {
   runner: TimetrackProcessRunner;
   request: TicketWritingRequest;
   options?: Partial<ReasoningOptions>;
+  /** The list `ticketWritingRequest` masked with. The list is the map; nothing derived is stored. */
+  maskedNames?: readonly string[];
 }): Observable<TicketWording | null> => {
   const spec = ticketWritingSpec({ request: options.request, options: options.options });
+  const names = pseudonymMap(options.maskedNames ?? []);
+  const real = (text: string | undefined) => (text ? unmaskNames({ text, map: names }) : text);
 
   // `defer` is what makes the retry a second run. Without it the retry re-subscribes to the
   // observable the first spawn already returned, which replays the failure it is meant to escape.
@@ -183,12 +207,14 @@ export const writeTicketWithAgent$ = (options: {
 
       const existingKey = offeredKey({ answered: wording.existingKey, issues: options.request.issues });
 
+      const parentKey = offeredKey({ answered: wording.parentKey, issues: options.request.parents });
+
       return {
-        summary,
-        description: wording.description.trim(),
-        parentKey: offeredKey({ answered: wording.parentKey, issues: options.request.parents }),
-        existingKey,
-        existingReason: existingKey ? wording.existingReason?.trim() : undefined,
+        summary: unmaskNames({ text: summary, map: names }),
+        description: unmaskNames({ text: wording.description.trim(), map: names }),
+        parentKey: real(parentKey),
+        existingKey: real(existingKey),
+        existingReason: existingKey ? real(wording.existingReason?.trim()) : undefined,
       };
     }),
     retry(1),

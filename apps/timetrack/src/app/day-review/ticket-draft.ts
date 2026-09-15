@@ -234,6 +234,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           runner: ports.processes,
           request,
           options: { command: settings.settings().reasoning.command, model: settings.settings().reasoning.model },
+          maskedNames: settings.settings().reasoning.maskedNames,
         }).pipe(
           tap((wording) => {
             if (wording) applyWording(wording);
@@ -386,7 +387,13 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const issues = status.kind === 'ready' ? status : { parents: [], open: [] };
 
     return unnamed
-      ? ticketWritingRequest({ context: unnamed, notes: notes(), parents: issues.parents, issues: issues.open })
+      ? ticketWritingRequest({
+          context: unnamed,
+          notes: notes(),
+          parents: issues.parents,
+          issues: issues.open,
+          maskedNames: settings.settings().reasoning.maskedNames,
+        })
       : null;
   };
 
