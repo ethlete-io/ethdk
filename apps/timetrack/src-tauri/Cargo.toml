@@ -1,6 +1,6 @@
 [package]
 name = "timetrack"
-version = "0.1.0"
+version = "0.2.0-next.0"
 description = "Reconstructs a day of Jira/Tempo worklogs from passive evidence"
 edition = "2021"
 publish = false

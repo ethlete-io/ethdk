@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 5.0.0-next.57
+
+### Patch Changes
+
+- [`ae96d23`](https://github.com/ethlete-io/ethdk/commit/ae96d237faec74d01fef4141e3000482673a4e6f) Core: overlays close and restore focus in a pop-up window, `unbindProps` undoes everything `bindProps` applied, cookie helpers no-op on the server, `equal()` compares `Date`s by tag, and `memoizeSignal` caches per application.
+- [`4326376`](https://github.com/ethlete-io/ethdk/commit/4326376c916cfd845e4c9b70b100d3bc88ffef81) Overlays can be mounted `passive` and are then skipped as the top layer, so a dialog still closes on a backdrop press while a tooltip shows inside it.
+- [`ef2277d`](https://github.com/ethlete-io/ethdk/commit/ef2277d0a103d84395df4f9bc73248ae790b7aee) An overlay now restores focus to its opener only when focus is still inside it at teardown, so an outside press that focuses another control keeps focus there.
+
 ## 5.0.0-next.56
 
 ### Patch Changes

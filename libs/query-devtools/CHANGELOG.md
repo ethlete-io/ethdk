@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0-next.11
+
+### Patch Changes
+
+- [`2bfa704`](https://github.com/ethlete-io/ethdk/commit/2bfa704a397dd1841cd439a69ad69b58373e1307) The response diff now reports a changed `Blob`, `Date`, `Map` or `Set` instead of reading two
+  of them as identical, and searching a folded slice no longer overflows on a cyclic value.
+- [`0dbb0fd`](https://github.com/ethlete-io/ethdk/commit/0dbb0fd7629ed2c3b88cb9528dd30a383466729a) The panel drops a client's Cache, Faults and Events entries once that client's injector is destroyed,
+  instead of keeping them alive for as long as one of its queries has a tombstone.
+- [`197ba4c`](https://github.com/ethlete-io/ethdk/commit/197ba4c2714122a9b27eda8f7eab84ad42ec8241) Query devtools exports stop carrying live credentials: a copied report slims its args, a session export omits auth-provider bodies and redacts credential-named keys, and an unchainable secure request drops its `Authorization`.
+- [`03f0285`](https://github.com/ethlete-io/ethdk/commit/03f0285b028cd5b740075eabe400858973d45533) `<et-query-devtools-lazy>` renders nothing without `provideQueryDevtools()` - no floating button, no
+  shortcut, no panel download - and the now-public `isQueryDevtoolsEnabled()` is what it gates on.
+- [`33251a2`](https://github.com/ethlete-io/ethdk/commit/33251a274b924ff60d48d50024d980a88c66620f) Devtools panel: the Settings client picker now narrows the Events tab, exports survive cyclic and non-JSON bodies, the `no auth` chip covers mocks with a query string, and copy confirmations reset again.
+
 ## 1.0.0-next.10
 
 ### Minor Changes
