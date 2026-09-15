@@ -213,6 +213,63 @@ describe('reviewDay', () => {
     expect(review.check.warnings.map((warning) => warning.kind)).toContain('stale-edit');
   });
 
+  it('draws one band where an edited row lost every source to a change of the id scheme', () => {
+    const laneKey = 'repo:/home/tom/dev/example';
+    const band = (id: string): UnnamedProposal => ({
+      id,
+      from: at('08:00'),
+      to: at('10:00'),
+      durationMs: 120 * MINUTE,
+      observedMs: 120 * MINUTE,
+      laneKey,
+      description: 'unattributed activity',
+      confidence: 'weak',
+      evidence: [],
+      state: 'suggested',
+    });
+    const before = dayRows({ proposals: [], unnamed: [band(`unnamed@${at('08:00').toISOString()}`)] });
+    const edits = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: before }).rows[0]!,
+      from: at('08:15'),
+      to: at('09:45'),
+    });
+    const after = dayRows({ proposals: [], unnamed: [band(`unnamed:${laneKey}@${at('08:00').toISOString()}`)] });
+
+    const review = reviewDay({ rows: after, edits });
+
+    expect(review.rows).toHaveLength(1);
+    expect(review.rows[0]?.durationMs).toBe(90 * MINUTE);
+    expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('stale-edit');
+  });
+
+  it('leaves a row the reviewer added beside the band it overlaps in the same lane', () => {
+    const laneKey = 'repo:/home/tom/dev/example';
+    const base = dayRows({
+      proposals: [],
+      unnamed: [
+        {
+          id: `unnamed:${laneKey}@${at('08:00').toISOString()}`,
+          from: at('08:00'),
+          to: at('10:00'),
+          durationMs: 120 * MINUTE,
+          observedMs: 120 * MINUTE,
+          laneKey,
+          description: 'unattributed activity',
+          confidence: 'weak',
+          evidence: [],
+          state: 'suggested',
+        },
+      ],
+    });
+    const edits = addManualRow({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: { issueKey: 'ABC-9', from: at('08:30'), to: at('09:30'), laneKey, description: 'by hand' },
+    });
+
+    expect(reviewDay({ rows: base, edits }).rows).toHaveLength(2);
+  });
+
   it('leaves an edited row alone while one of its proposals survives', () => {
     const before = dayRows({
       proposals: [

@@ -141,17 +141,29 @@ const overlapMs = (a: { from: Date; to: Date }, b: { from: Date; to: Date }) =>
 const trackPinnedRows = (options: { pinned: readonly PinnedRow[]; sources: readonly RowSource[] }) => {
   const claimed = new Set<string>();
   const matched = new Map<string, string>();
+  const known = new Set(options.sources.map((row) => row.id));
 
   const rows = options.pinned.map((pin) => {
     const lane = storedLaneKey(pin.laneKey);
+    // A pin that lost every source has to claim by lane even where it tracks neither end, or the day
+    // draws the stretch twice. The `replaces` test is what keeps a row added by hand out: it replaces
+    // nothing, so it must stand beside the day's own rows rather than swallow one.
+    const lostItsSources = pin.replaces.length > 0 && pin.replaces.every((id) => !known.has(id));
 
-    if ((!pin.tracksFrom && !pin.tracksTo) || !lane) return pin;
+    if ((!pin.tracksFrom && !pin.tracksTo && !lostItsSources) || !lane) return pin;
 
     const [source] = options.sources
       .filter((row) => !claimed.has(row.id) && storedLaneKey(row.laneKey) === lane && overlapMs(row, pin) > 0)
       .sort((a, b) => overlapMs(b, pin) - overlapMs(a, pin));
 
     if (!source) return pin;
+
+    if (!pin.tracksFrom && !pin.tracksTo) {
+      claimed.add(source.id);
+      matched.set(pin.id, source.id);
+
+      return pin;
+    }
 
     const from = pin.tracksFrom ? source.from : pin.from;
     const to = pin.tracksTo ? source.to : pin.to;
