@@ -1,6 +1,7 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { WorkGroup } from '../rows/merge';
 import { AttributionRule, UnnamedContext, standInIdOf } from '../model/attribution';
+import { repoRootOf } from '../model/context';
 import { TimetrackProjectLink, describeProjectLink, matchProjectLink } from '../model/project-link';
 import { StandIn, openStandIn } from '../model/stand-in';
 import { TicketDraft, draftRepoTicket } from './draft';
@@ -42,6 +43,16 @@ const groupByRepo = (contexts: readonly UnnamedContext[]) => {
   return [...groups.values()].sort((left, right) => left.repoPath.localeCompare(right.repoPath));
 };
 
+/**
+ * Whether the path is a checkout of its own, rather than a directory inside one.
+ *
+ * An agent session reports the directory it was started in, which is often deep inside a checkout, and
+ * a project link covers every path under it — so without this a subdirectory qualifies and opens a
+ * second placeholder for work the checkout's own placeholder already holds.
+ */
+const isCheckout = (options: { repoPath: string; roots: readonly string[] }) =>
+  repoRootOf({ path: options.repoPath, roots: options.roots }) === options.repoPath;
+
 /** A checkout the app already opened a placeholder for, whether or not this day's contexts show it. */
 const alreadyCovered = (options: { repoPath: string; rules: readonly AttributionRule[] }) =>
   options.rules.some((rule) => rule.repoPath === options.repoPath && !rule.branch && !!standInIdOf(rule));
@@ -59,6 +70,10 @@ const alreadyCovered = (options: { repoPath: string; rules: readonly Attribution
  *
  * Only a checkout with a `project` link qualifies. The link is what says the path is work at all and
  * which Jira project a ticket is filed in, so a placeholder opened without one has nowhere to go.
+ *
+ * Nothing opens until the host has answered which repositories exist. The day is cut before that
+ * answer arrives, and a day cut without it gives every subdirectory an agent ran in its own stream —
+ * so a pass that ran then would write permanent rules for paths that are not checkouts.
  */
 export const autoStandIns = (options: {
   contexts: readonly UnnamedContext[];
@@ -66,16 +81,26 @@ export const autoStandIns = (options: {
   links: readonly TimetrackProjectLink[];
   rules: readonly AttributionRule[];
   config: GitFlowConfig;
+  /**
+   * The checkouts the host discovered, or nothing while the discovery has not answered yet. Nothing
+   * opens until it has.
+   */
+  repoRoots: readonly string[] | null | undefined;
   /** The local day key the placeholders open on. */
   day: string;
   now: Date;
   minObservedMs?: number;
 }): AutoStandIn[] => {
+  const roots = options.repoRoots;
+
+  if (!roots) return [];
+
   const minObservedMs = options.minObservedMs ?? DEFAULT_MIN_AUTO_STAND_IN_MS;
   const opened: AutoStandIn[] = [];
 
   for (const group of groupByRepo(options.contexts)) {
     if (group.observedMs < minObservedMs) continue;
+    if (!isCheckout({ repoPath: group.repoPath, roots })) continue;
     if (alreadyCovered({ repoPath: group.repoPath, rules: options.rules })) continue;
 
     const first = group.contexts[0];

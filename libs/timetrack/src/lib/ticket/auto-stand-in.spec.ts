@@ -51,6 +51,7 @@ const open = (options: {
   unattributed?: readonly WorkGroup[];
   links?: readonly TimetrackProjectLink[];
   rules?: readonly AttributionRule[];
+  repoRoots?: readonly string[] | null;
 }) =>
   autoStandIns({
     contexts: options.contexts,
@@ -58,6 +59,7 @@ const open = (options: {
     links: options.links ?? [link(FIFAGG, { kind: 'project', projectKey: 'FIF' })],
     rules: options.rules ?? [],
     config: CONFIG,
+    repoRoots: options.repoRoots === undefined ? [FIFAGG, OTHER] : options.repoRoots,
     day: '2026-09-15',
     now: NOW,
   });
@@ -160,5 +162,33 @@ describe('autoStandIns', () => {
 
     expect(opened[0]?.standIn.name).toBe('fifagg-frontend');
     expect(opened[0]?.standIn.description).toContain('Nothing in the day names this work');
+  });
+  it('opens nothing for a directory inside a checkout, so one checkout keeps one stand-in', () => {
+    const inside = `${FIFAGG}/libs/domain/shared/match-overlay`;
+    const opened = open({
+      contexts: [
+        unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000),
+        unnamed({ repoPath: inside, branch: 'feat/x' }, 45 * 60_000),
+      ],
+    });
+
+    expect(opened).toHaveLength(1);
+    expect(opened[0]?.rule.repoPath).toBe(FIFAGG);
+  });
+
+  it('opens nothing at all while the repository discovery has not answered', () => {
+    const contexts = [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)];
+
+    expect(open({ contexts, repoRoots: null })).toEqual([]);
+    expect(open({ contexts })).toHaveLength(1);
+  });
+
+  it('still opens one for a checkout the discovery never walked', () => {
+    const opened = open({
+      contexts: [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)],
+      repoRoots: [OTHER],
+    });
+
+    expect(opened).toHaveLength(1);
   });
 });

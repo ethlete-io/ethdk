@@ -540,6 +540,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       links: current.projectLinks,
       rules: current.attributionRules,
       config: gitFlowConfigFor(current),
+      repoRoots: git.discovery()?.repos,
       day: key,
       now: new Date(),
     })) {
