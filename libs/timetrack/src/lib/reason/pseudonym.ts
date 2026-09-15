@@ -131,6 +131,10 @@ export const EMPTY_PSEUDONYM_MAP: PseudonymMap = { names: new Map(), byName: new
  * The list is sorted first, so the assignment does not depend on the order the user typed the names
  * in. A word already taken is resolved by walking the list forward from it, which makes the rule
  * total: a list longer than the word list keeps going with a numbered word rather than failing.
+ *
+ * A word that is itself a name on the list is never assigned. Without that, a client called `Mesa`
+ * takes `Mesa` as its own pseudonym and leaves the prompt unmasked, and no warning catches it — the
+ * word is on the list, so nothing reports it as unaccounted for.
  */
 export const pseudonymMap = (names: readonly string[]): PseudonymMap => {
   const written = new Map<string, string>();
@@ -154,7 +158,7 @@ export const pseudonymMap = (names: readonly string[]): PseudonymMap => {
           ? PSEUDONYM_WORDS[(start + step) % PSEUDONYM_WORDS.length]
           : `${PSEUDONYM_WORDS[start]}${Math.floor(step / PSEUDONYM_WORDS.length) + 1}`;
 
-      if (candidate && !byPseudonym.has(normal(candidate))) word = candidate;
+      if (candidate && !byPseudonym.has(normal(candidate)) && !written.has(normal(candidate))) word = candidate;
     }
 
     byName.set(key, word);

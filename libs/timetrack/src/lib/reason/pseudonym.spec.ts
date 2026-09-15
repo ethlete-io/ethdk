@@ -103,3 +103,21 @@ describe('unmaskedWords', () => {
     expect(unmaskedWords({ text: 'signed off by T', map: MAP })).toEqual([]);
   });
 });
+
+describe('a name that is also a pseudonym word', () => {
+  it('never takes itself as its own pseudonym', () => {
+    const map = pseudonymMap(['Mesa']);
+
+    expect(map.byName.get('mesa')).not.toBe('Mesa');
+    expect(maskNames({ text: 'We shipped it for Mesa', map })).not.toContain('Mesa');
+  });
+
+  it('still reads its answer back into the real name', () => {
+    const map = pseudonymMap(['Mesa', 'Fifagg']);
+    const masked = maskNames({ text: 'Mesa asked Fifagg for it', map });
+
+    expect(masked).not.toContain('Mesa');
+    expect(masked).not.toContain('Fifagg');
+    expect(unmaskNames({ text: masked, map })).toBe('Mesa asked Fifagg for it');
+  });
+});
