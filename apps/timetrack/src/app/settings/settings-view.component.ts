@@ -28,6 +28,7 @@ import { CallRulesComponent } from './call-rules.component';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { ExplainComponent } from './explain.component';
 import { GoogleConnectionComponent } from './google-connection.component';
+import { MaskedNamesComponent } from './masked-names.component';
 import { ProjectPathsComponent } from './project-paths.component';
 import { ScanRootsComponent } from './scan-roots.component';
 import { injectTimetrackSettings } from './settings';
@@ -497,6 +498,13 @@ window title, never a file path. A suggestion never syncs on its own.`;
                   placeholder="the CLI decides"
                 />
               </et-form-field>
+
+              <ethlete-masked-names
+                [names]="store.settings().reasoning.maskedNames"
+                [projects]="store.settings().favoriteProjects"
+                (add)="store.addMaskedName($event)"
+                (remove)="store.removeMaskedName($event)"
+              />
             </div>
           </et-tab>
         </et-tab-group>
@@ -518,6 +526,7 @@ window title, never a file path. A suggestion never syncs on its own.`;
     FORM_FIELD_IMPORTS,
     GoogleConnectionComponent,
     INPUT_IMPORTS,
+    MaskedNamesComponent,
     ProjectPathsComponent,
     SWITCH_IMPORTS,
     ScanRootsComponent,

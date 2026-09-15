@@ -20,6 +20,7 @@ import {
 import { IssueSelectComponent } from '../jira';
 import { injectTimetrackSettings } from '../settings/settings';
 import { formatClockTime } from './format';
+import { UnmaskedWordsComponent } from './unmasked-words.component';
 
 export type ContextNaming = { context: UnnamedContext; target: AttributionTarget };
 
@@ -65,6 +66,8 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
 
       @if (payload(); as request) {
         @if (canAsk()) {
+          <ethlete-unmasked-words [text]="printed()" />
+
           <details class="rounded-md border border-et-surface-border p-3">
             <summary class="cursor-pointer text-small text-et-surface-muted">
               What gets sent — {{ request.contexts.length }} context(s), {{ request.candidates.length }} candidate(s)
@@ -141,7 +144,15 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, FORM_FIELD_IMPORTS, IssueSelectComponent, SELECT_IMPORTS, SpinnerComponent],
+  imports: [
+    BANNER_IMPORTS,
+    BUTTON_IMPORTS,
+    FORM_FIELD_IMPORTS,
+    IssueSelectComponent,
+    SELECT_IMPORTS,
+    SpinnerComponent,
+    UnmaskedWordsComponent,
+  ],
 })
 export class UnnamedWorkComponent {
   private settings = injectTimetrackSettings();

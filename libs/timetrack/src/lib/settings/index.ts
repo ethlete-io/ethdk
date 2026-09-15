@@ -2,6 +2,7 @@ export * from './attribution';
 export * from './credentials';
 export * from './day';
 export * from './favorites';
+export * from './masked-name';
 export * from './model';
 export * from './parse';
 export * from './project-link';
