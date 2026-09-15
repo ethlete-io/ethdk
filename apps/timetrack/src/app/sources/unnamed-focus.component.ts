@@ -120,7 +120,8 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
         <p class="text-small text-et-surface" data-unnamed-total>{{ total() }}</p>
 
         <p class="text-small text-et-surface-subtle">
-          <span data-unnamed-gap>{{ gap() }}</span>&ngsp;
+          <span data-unnamed-gap>{{ gap() }}</span
+          >&ngsp;
           <span data-unnamed-unknown>{{ unknown() }}</span>
         </p>
 
