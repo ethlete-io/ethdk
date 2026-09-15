@@ -104,11 +104,10 @@ export type PresenceOptions = {
  * person spent reading what an agent wrote, and it can only ever happen between two of their own
  * actions. See ADR 0006.
  *
- * An `idle-start` a turn still runs through is the same wait, only longer than the idle notifier's
- * patience, so it postpones the close in the same way: the stretch stays open while the turns keep
- * arriving, and the resume that ends the idleness closes the whole wait as presence. If the agent
- * stops too, the stretch ends where the idleness began and the wait is an absence. A `lock` and a
- * `pause-start` say the user left, so neither may be held open this way.
+ * An `idle-start` ends the stretch whatever the agent is doing. Five minutes without a key or the
+ * mouse is the machine saying nobody is there, and an agent that keeps working through it is
+ * `unattendedMs` rather than presence. What the person gave the wait is bought back per prompt, in
+ * `breakWindows`, so it is taken off the break rather than added to the stretch. See ADR 0028.
  */
 export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
   const agentGapMs = options.maxAgentGapMs ?? options.maxUnobservedMs;
@@ -119,10 +118,6 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
   const resumeIndex = lastResumeIndex(options.samples);
   /** Whether the stretch away now running ends in a resume of its own, so nothing else may end it. */
   let awaited = away;
-  /** The `idle-start` an agent is still working through, and where the stretch closes if it stops too. */
-  let bridged: Date | null = null;
-  /** When the agent last did anything *for the user*, which is what says whether one is still working. */
-  let lastAgent: Date | null = null;
   const asked: SessionAttendance = new Map();
 
   const close = (at: Date) => {
@@ -131,7 +126,6 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
     windows.push(current);
     current = null;
     mark = null;
-    bridged = null;
   };
 
   /** The silence two marks tolerate: the shorter of what each of them allows. */
@@ -142,18 +136,10 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
     // is that answer until the next prompt changes it.
     if (sample.kind === 'agent-prompt') asked.set(sample.sessionId, sample.askedBy ?? 'human');
 
-    // The agent stopped as well, so the wait it held open was an absence after all. This has to run
-    // before the branches below, or the resume that ends the idleness would close it as presence.
-    const agentWorks = !!lastAgent && sample.at.getTime() - lastAgent.getTime() < agentGapMs;
-
-    if (bridged && current && !agentWorks) close(current.to);
-
     // An agent nobody asked for says nothing about the day: it may not open a stretch, extend one,
-    // hold one open across an idle-start, or end a stretch away. It is still the machine at work, and
-    // `unattendedMs` is where that is reported.
+    // or end a stretch away. It is still the machine at work, and `unattendedMs` is where that is
+    // reported.
     if (!attended(sample, asked)) continue;
-
-    if (isAgents(sample)) lastAgent = sample.at;
 
     if (sample.source === 'idle') {
       if (endsPresence(sample.kind)) {
@@ -163,22 +149,10 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
         // working in the window the user left focused would otherwise read as the user returning.
         awaited = index < resumeIndex;
 
-        if (sample.kind === 'idle-start' && current && mark && agentWorks) {
-          if (sample.at > current.to) current.to = sample.at;
-          bridged = sample.at;
-        } else {
-          close(bridged ?? sample.at);
-        }
+        close(sample.at);
       }
 
-      if (resumesPresence(sample.kind)) {
-        if (bridged && current) {
-          if (sample.at > current.to) current.to = sample.at;
-          bridged = null;
-        }
-
-        away = false;
-      }
+      if (resumesPresence(sample.kind)) away = false;
 
       continue;
     }
@@ -186,7 +160,7 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
     if (sample.source === 'agent-usage') {
       const allowed = Math.min(gapMs(sample), options.maxUnobservedMs);
 
-      if ((!away || bridged) && current && mark && sample.at.getTime() - mark.at.getTime() < allowed) {
+      if (!away && current && mark && sample.at.getTime() - mark.at.getTime() < allowed) {
         mark = { at: sample.at, gapMs: agentGapMs };
       }
 
@@ -195,10 +169,7 @@ export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
 
     // Input the idle notifier may have missed the resume of. A focus change and a typed prompt each
     // need somebody at the keyboard, so either ends being away on its own.
-    if (!awaited && isPresent(sample)) {
-      away = false;
-      bridged = null;
-    }
+    if (!awaited && isPresent(sample)) away = false;
 
     if (away) continue;
 

@@ -13,6 +13,16 @@ export const DEFAULT_MIN_BREAK_MS = 15 * 60_000;
  */
 export const DEFAULT_MAX_BREAK_MS = 3 * 60 * 60_000;
 
+/**
+ * How much of a break the prompt that ends it buys back.
+ *
+ * A prompt is a person who read what the agent wrote and typed an answer, and that attention is real
+ * work whether they gave it at the desk or from a phone. It is the whole of the allowance rather than
+ * a share of it: nothing observed says how long they read for, and the day's own grain is a quarter
+ * hour.
+ */
+export const DEFAULT_PROMPT_ATTENTION_MS = 15 * 60_000;
+
 /** A stretch of a day nobody was at the machine. */
 export type BreakWindow = TimeWindow & {
   /** Whether the screen was locked in it. A lock is a person saying they are leaving, so it needs no length. */
@@ -39,6 +49,11 @@ const overlaps = (window: TimeWindow, windows: readonly TimeWindow[]) =>
  * A gap also has to sit inside the day's work, and it has to be shorter than `maxBreakMs`. A machine
  * left on overnight samples presence hours before the first block and hours after the last, and one
  * gap of that size is the night rather than a break somebody took.
+ *
+ * The prompts the user sent then buy their attention back: each one shortens the break it ends by
+ * `promptAttentionMs`, and what is left has to clear `minBreakMs` again. A person who waits on an
+ * agent and answers it is working; a person who answers it twice in forty minutes was away for the
+ * rest, and that rest is what this reports.
  */
 export const breakWindows = (options: {
   /** The stretches the user was at the machine, from `presenceWindows`. */
@@ -52,11 +67,16 @@ export const breakWindows = (options: {
   minBreakMs?: number;
   /** The longest gap that is still a break. A longer one is time away from the day, lock or no lock. */
   maxBreakMs?: number;
+  /** When the user prompted an agent. Each prompt buys back the attention it took to write. */
+  prompts?: readonly Date[];
+  /** How much of a break one prompt buys back. Defaults to `DEFAULT_PROMPT_ATTENTION_MS`. */
+  promptAttentionMs?: number;
 }): BreakWindow[] => {
   const ordered = options.presence.slice().sort((a, b) => a.from.getTime() - b.from.getTime());
   const events = (options.events ?? []).filter(isPresence).filter((event) => event.kind === 'lock');
   const pauses = options.pauses ?? [];
   const minBreakMs = options.minBreakMs ?? DEFAULT_MIN_BREAK_MS;
+  const attentionMs = options.promptAttentionMs ?? DEFAULT_PROMPT_ATTENTION_MS;
   const maxBreakMs = options.maxBreakMs ?? DEFAULT_MAX_BREAK_MS;
   const work = options.work ?? [];
   const workFrom = work.length ? Math.min(...work.map((window) => window.from.getTime())) : undefined;
@@ -88,7 +108,36 @@ export const breakWindows = (options: {
     breaks.push({ ...window, locked });
   });
 
-  return breaks;
+  return attended({ breaks, prompts: options.prompts ?? [], attentionMs, minBreakMs });
+};
+
+/**
+ * The breaks with each prompt's attention taken out of them.
+ *
+ * The allowance runs backwards from the prompt, because that is the side the reading and the typing
+ * are on: the answer arrived, the person read it, and the prompt is when they finished. A locked
+ * break keeps no allowance at all — a lock is the user saying they left, and nothing they typed
+ * afterwards changes where they were before it.
+ */
+const attended = (options: {
+  breaks: readonly BreakWindow[];
+  prompts: readonly Date[];
+  attentionMs: number;
+  minBreakMs: number;
+}): BreakWindow[] => {
+  if (!options.attentionMs || !options.prompts.length) return [...options.breaks];
+
+  const attention = mergeWindows(
+    options.prompts.map((at) => ({ from: new Date(at.getTime() - options.attentionMs), to: at })),
+  );
+
+  return options.breaks.flatMap((window) => {
+    if (window.locked) return [window];
+
+    return subtractWindows({ windows: [window], without: attention })
+      .filter((left) => left.to.getTime() - left.from.getTime() >= options.minBreakMs)
+      .map((left) => ({ ...left, locked: window.locked }));
+  });
 };
 
 /** How long a day's breaks held. They never overlap, so this is a plain sum. */

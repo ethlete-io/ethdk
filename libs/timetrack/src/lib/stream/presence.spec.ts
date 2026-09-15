@@ -150,19 +150,23 @@ describe('presenceWindows, rebuilding a day nothing observed', () => {
     ]);
   });
 
-  it('holds a stretch open across an idle-start the agent kept working through', () => {
+  it('ends the stretch at an idle-start the agent kept working through', () => {
     expect(rebuilt([typed(0), presence(5, 'idle-start'), turn(10), turn(20), typed(30)])).toEqual([
-      { from: AT(0), to: AT(30) },
+      { from: AT(0), to: AT(5) },
+      { from: AT(30), to: AT(30) },
     ]);
   });
 
-  it('takes the whole wait as presence when the resume comes while the agent still works', () => {
+  it('counts the wait as absence when the resume comes while the agent still works', () => {
     const samples = [typed(0), presence(5, 'idle-start'), turn(10), turn(20), presence(25, 'idle-end'), focus(26)];
 
-    expect(rebuilt(samples)).toEqual([{ from: AT(0), to: AT(26) }]);
+    expect(rebuilt(samples)).toEqual([
+      { from: AT(0), to: AT(5) },
+      { from: AT(26), to: AT(26) },
+    ]);
   });
 
-  it('ends a bridged stretch where the idleness began when the user asks not to be watched', () => {
+  it('ends the stretch where the idleness began when the user asks not to be watched', () => {
     const samples = [typed(0), presence(5, 'idle-start'), turn(10), presence(12, 'pause-start'), typed(30)];
 
     expect(rebuilt(samples)).toEqual([

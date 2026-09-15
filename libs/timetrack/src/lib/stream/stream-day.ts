@@ -62,6 +62,10 @@ export type StreamDayOptions = {
    */
   maxAgentGapMs: number;
   /**
+   * How much of a break one prompt the user sent buys back. Defaults to `DEFAULT_PROMPT_ATTENTION_MS`.
+   */
+  promptAttentionMs?: number;
+  /**
    * The repository roots the host discovered. An agent session reports the directory it was started in,
    * which is often a subdirectory of a checkout, and without these each subdirectory becomes a stream.
    */
@@ -1000,6 +1004,10 @@ export const streamDay = (options: {
     pauses: config.rows?.pauses,
     work: blocks,
     minBreakMs: config.minBreakMs,
+    // A prompt the agent gave itself buys nothing back: nobody read anything and nobody typed. See
+    // ADR 0018.
+    prompts: prompts.filter((prompt) => prompt.askedBy !== 'machine').map((prompt) => prompt.at),
+    promptAttentionMs: config.promptAttentionMs,
   });
   // The focus ranks two background bands against each other. It is derived here because only this
   // pass holds it, and `buildRows` takes blocks that no longer say which stream they came from.

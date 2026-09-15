@@ -36,6 +36,45 @@ describe('breakWindows', () => {
     expect(breaks).toEqual([{ from: at(11, 0), to: at(11, 5), locked: true }]);
   });
 
+  it('takes the attention a prompt ending the break took off it', () => {
+    expect(breakWindows({ presence: [MORNING, AFTERNOON], prompts: [at(12, 30)] })).toEqual([
+      { from: at(11, 0), to: at(12, 15), locked: false },
+    ]);
+  });
+
+  it('drops a break the prompts leave shorter than the limit', () => {
+    expect(breakWindows({ presence: [MORNING, window([11, 20], [17, 0])], prompts: [at(11, 20)] })).toEqual([]);
+  });
+
+  it('splits a break a prompt in the middle of it cuts in two', () => {
+    expect(
+      breakWindows({
+        presence: [MORNING, window([14, 0], [17, 0])],
+        prompts: [at(12, 30)],
+        minBreakMs: 15 * 60_000,
+      }),
+    ).toEqual([
+      { from: at(11, 0), to: at(12, 15), locked: false },
+      { from: at(12, 30), to: at(14, 0), locked: false },
+    ]);
+  });
+
+  it('buys nothing back for a prompt sent outside the break', () => {
+    expect(breakWindows({ presence: [MORNING, AFTERNOON], prompts: [at(9, 30), at(16, 0)] })).toEqual([
+      { from: at(11, 0), to: at(12, 30), locked: false },
+    ]);
+  });
+
+  it('keeps a locked break whole, whatever the user typed afterwards', () => {
+    const breaks = breakWindows({
+      presence: [MORNING, window([11, 5], [17, 0])],
+      events: [lock(11, 1)],
+      prompts: [at(11, 5)],
+    });
+
+    expect(breaks).toEqual([{ from: at(11, 0), to: at(11, 5), locked: true }]);
+  });
+
   it('says nothing about a gap the user had stopped collection for', () => {
     const breaks = breakWindows({ presence: [MORNING, AFTERNOON], pauses: [window([11, 30], [12, 0])] });
 
