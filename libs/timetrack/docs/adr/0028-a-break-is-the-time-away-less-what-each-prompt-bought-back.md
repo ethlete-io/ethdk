@@ -55,9 +55,12 @@ had left.
   a join over a gap; it removes no block that falls inside the break. So a break nothing ran in is
   proposed to nobody, and a break an agent ran through is still proposed — as its own row, marked
   unattended and warned on. Verified on 2026-09-15: the rows covered the measured break 14:26-14:43.
-- **A break an agent ran through draws no band.** `breaksBetweenRows` reports a break as the gap the
-  rows leave, and those rows cover it, so the day screen shows the row's unattended marking and no
-  break. Whether that is right is open.
+- **A break an agent ran through is drawn over the row it runs under.** `breaksBetweenRows` reports a
+  break as the gap the rows leave, and such a break leaves none, so it is snapped to the row increment
+  and drawn in the break lane instead. Both ends round to the nearest boundary rather than outwards: a
+  break is an absence reported back to the person who took it, and rounding it outwards claims more of
+  one than the notifier saw. Tom chose this over cutting the break out of the rows, which would have
+  changed what the day books. Verified on 2026-09-15: the measured break 14:26-14:43 draws 14:30-14:45.
 - **The allowance is one number for every prompt, and it does not know where the prompt came from.**
   A person waiting at their desk and a person steering from a phone buy back the same 15 minutes.
   That is deliberate: nothing in a Claude Code log distinguishes them. Checked on 2026-09-15 —

@@ -1,4 +1,5 @@
 import { CollectedEvent, PresenceEvent } from '../model/event';
+import { DEFAULT_ROUND_OPTIONS, RoundOptions } from '../rows/round';
 import {
   TimeWindow,
   clipWindows,
@@ -180,22 +181,47 @@ const attended = (options: {
 export const breakMs = (breaks: readonly TimeWindow[]) =>
   breaks.reduce((sum, window) => sum + Math.max(0, window.to.getTime() - window.from.getTime()), 0);
 
+const nearest = (ms: number, incrementMs: number) => Math.round(ms / incrementMs) * incrementMs;
+
 /**
- * The breaks as the rows leave them: every stretch between two rows that a measured break falls in.
+ * A break the rows cover, put on the grid the rows sit on.
+ *
+ * Both ends round to the nearest boundary rather than outwards. A break is an absence the day reports
+ * back to the person who took it, and rounding it outwards claims more of one than the notifier saw.
+ * A break whose ends round to the same boundary keeps one increment, so no break the day measured
+ * reads as nothing.
+ */
+const snapped = (window: BreakWindow, incrementMs: number): BreakWindow => {
+  const from = nearest(window.from.getTime(), incrementMs);
+
+  return {
+    ...window,
+    from: new Date(from),
+    to: new Date(Math.max(nearest(window.to.getTime(), incrementMs), from + incrementMs)),
+  };
+};
+
+/**
+ * The day's breaks as the rows leave them, on the increment the rows are snapped to.
  *
  * A measured break runs from the last sample of presence to the next, so it lands on the minute the
  * user got up, while every row around it is on a quarter hour. Drawing both puts a break of 1h 21m
- * between two bands that stand 1h 30m apart, and no reviewer can act on that number. The rows are
- * what the day books, so the rows are what a break is long: the measured window says *that* somebody
- * was away, and the gap between the rows says for how long.
+ * between two bands that stand 1h 30m apart, and no reviewer can act on that number. Where the rows
+ * leave a gap, the gap is what the break is long: the measured window says *that* somebody was away,
+ * and the gap says for how long.
  *
- * A measured break that no gap holds is dropped - the rounding gave that time to the work around it.
- * With no rows at all there is nothing to read a gap from, so the measured breaks are returned as
- * they are.
+ * A break an agent ran through leaves no gap, because the agent's own blocks build a row across it.
+ * That break is still drawn, snapped to the increment itself. The row keeps booking the time and
+ * carries its own unattended marking; the break says nobody was there to do it.
+ *
+ * A measured break outside the rows is dropped, however early the machine was left. With no rows at
+ * all there is nothing to read a grid or a gap from, so the measured breaks are returned as they are.
  */
 export const breaksBetweenRows = (options: {
   breaks: readonly BreakWindow[];
   rows: readonly TimeWindow[];
+  /** The increment the rows were snapped to. A break off that grid is drawn beside rows it cannot line up with. */
+  round?: Partial<RoundOptions>;
 }): BreakWindow[] => {
   const covered = mergeWindows(options.rows);
   const first = covered[0];
@@ -203,13 +229,19 @@ export const breaksBetweenRows = (options: {
 
   if (!first || !last) return [...options.breaks];
 
-  const gaps = subtractWindows({ windows: [{ from: first.from, to: last.to }], without: covered });
+  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
+  const span = { from: first.from, to: last.to };
+  const gaps = subtractWindows({ windows: [span], without: covered });
+  const inGap = (window: BreakWindow) => gaps.some((gap) => windowsOverlap(gap, window));
 
-  return gaps.flatMap((gap) => {
-    const held = options.breaks.filter((window) => windowsOverlap(gap, window));
+  return [
+    ...gaps.flatMap((gap) => {
+      const held = options.breaks.filter((window) => windowsOverlap(gap, window));
 
-    if (!held.length) return [];
-
-    return [{ ...gap, locked: held.some((window) => window.locked) }];
-  });
+      return held.length ? [{ ...gap, locked: held.some((window) => window.locked) }] : [];
+    }),
+    ...options.breaks
+      .filter((window) => !inGap(window) && windowsOverlap(span, window))
+      .map((window) => snapped(window, incrementMs)),
+  ].sort((a, b) => a.from.getTime() - b.from.getTime());
 };

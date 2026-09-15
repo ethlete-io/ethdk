@@ -150,13 +150,37 @@ describe('breaksBetweenRows', () => {
     expect(drawn).toEqual([{ from: at(12, 0), to: at(13, 30), locked: true }]);
   });
 
-  it('drops a break the rows leave no gap for', () => {
+  it('draws a break the rows leave no gap for on the increment itself', () => {
     const drawn = breaksBetweenRows({
       breaks: [{ ...window([12, 4], [12, 20]), locked: false }],
       rows: [window([9, 0], [12, 30]), window([12, 30], [17, 0])],
     });
 
-    expect(drawn).toEqual([]);
+    expect(drawn).toEqual([{ from: at(12, 0), to: at(12, 15), locked: false }]);
+  });
+
+  it('keeps one increment for a break whose ends round to the same boundary', () => {
+    const drawn = breaksBetweenRows({
+      breaks: [{ ...window([12, 38], [12, 53]), locked: false }],
+      rows: [window([9, 0], [17, 0])],
+    });
+
+    expect(drawn).toEqual([{ from: at(12, 45), to: at(13, 0), locked: false }]);
+  });
+
+  it('draws both the gap the rows leave and the break an agent ran through', () => {
+    const drawn = breaksBetweenRows({
+      breaks: [
+        { ...window([10, 4], [10, 20]), locked: false },
+        { ...window([12, 4], [13, 25]), locked: false },
+      ],
+      rows: [window([9, 0], [12, 0]), window([13, 30], [17, 0])],
+    });
+
+    expect(drawn).toEqual([
+      { from: at(10, 0), to: at(10, 15), locked: false },
+      { from: at(12, 0), to: at(13, 30), locked: false },
+    ]);
   });
 
   it('says nothing about a gap no break was measured in', () => {
