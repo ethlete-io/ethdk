@@ -546,6 +546,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       config: gitFlowConfigFor(current),
       repoRoots: git.discovery()?.repos,
       offeredCheckouts: namingOffers().map((offer) => offer.repoPath),
+      standIns: current.standIns,
+      refusedCheckouts: current.noStandInCheckouts,
       day: key,
       now: new Date(),
     })) {

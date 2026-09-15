@@ -73,6 +73,7 @@ describe('parseTimetrackSettings', () => {
       attributionRules: [],
       projectLinks: [],
       standIns: [],
+      noStandInCheckouts: [],
       lockWindow: true,
       lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
     });
@@ -117,6 +118,7 @@ describe('parseTimetrackSettings', () => {
       attributionRules: [],
       projectLinks: [],
       standIns: [],
+      noStandInCheckouts: [],
       lockWindow: true,
       lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
     });
@@ -302,6 +304,19 @@ describe('parseTimetrackSettings', () => {
 
   it('drops a stand-in with no name', () => {
     expect(parseTimetrackSettings({ standIns: [{ id: 'stand-in-1', name: '  ' }, {}] }).standIns).toEqual([]);
+  });
+
+  it('drops a stand-in the app opened that no rule names any more', () => {
+    const settings = parseTimetrackSettings({
+      standIns: [
+        { id: 'dead', name: 'Competition Journey', author: 'app', openedFor: '/dev/fifagg' },
+        { id: 'live', name: 'The export', author: 'app', openedFor: '/dev/specs' },
+      ],
+      attributionRules: [{ id: 'rule-1', repoPath: '/dev/specs', target: { kind: 'stand-in', standInId: 'live' } }],
+    });
+
+    expect(settings.standIns.map((standIn) => standIn.id)).toEqual(['live']);
+    expect(settings.standIns[0]?.openedFor).toBe('/dev/specs');
   });
 
   it('drops an attribution rule that names no context or no issue', () => {

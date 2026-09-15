@@ -5,6 +5,7 @@ import { AttributionRule, UnnamedContext } from '../model/attribution';
 import { ActivityBlock, ActivityContext, contextKey } from '../model/block';
 import { Evidence } from '../model/evidence';
 import { TimetrackProjectLink } from '../model/project-link';
+import { StandIn } from '../model/stand-in';
 import { autoStandIns } from './auto-stand-in';
 
 const FIFAGG = '/Users/tom/dev/fifagg-frontend';
@@ -53,6 +54,8 @@ const open = (options: {
   rules?: readonly AttributionRule[];
   repoRoots?: readonly string[] | null;
   offeredCheckouts?: readonly string[];
+  standIns?: readonly StandIn[];
+  refusedCheckouts?: readonly string[];
 }) =>
   autoStandIns({
     contexts: options.contexts,
@@ -62,6 +65,8 @@ const open = (options: {
     config: CONFIG,
     repoRoots: options.repoRoots === undefined ? [FIFAGG, OTHER] : options.repoRoots,
     offeredCheckouts: options.offeredCheckouts ?? [],
+    standIns: options.standIns ?? [],
+    refusedCheckouts: options.refusedCheckouts ?? [],
     day: '2026-09-15',
     now: NOW,
   });
@@ -212,5 +217,32 @@ describe('autoStandIns', () => {
     expect(open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)], rules: [named] })).toEqual(
       [],
     );
+  });
+
+  it('opens none for a checkout a stand-in already waits on, whatever the rules say', () => {
+    const contexts = [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)];
+    const waiting = open({ contexts })[0]!.standIn;
+
+    expect(open({ contexts, standIns: [waiting] })).toEqual([]);
+  });
+
+  it('opens one again once the stand-in that waited on the checkout is resolved', () => {
+    const contexts = [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)];
+    const waiting = open({ contexts })[0]!.standIn;
+
+    expect(open({ contexts, standIns: [{ ...waiting, state: 'resolved', issueKey: 'FIF-1' }] })).toHaveLength(1);
+  });
+
+  it('opens none for a checkout the user refused one for', () => {
+    const contexts = [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)];
+
+    expect(open({ contexts, refusedCheckouts: [FIFAGG] })).toEqual([]);
+    expect(open({ contexts, refusedCheckouts: [OTHER] })).toHaveLength(1);
+  });
+
+  it('records the checkout it opened for, so a delete knows which one to refuse', () => {
+    const opened = open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)] });
+
+    expect(opened[0]?.standIn.openedFor).toBe(FIFAGG);
   });
 });

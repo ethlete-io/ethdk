@@ -56,6 +56,12 @@ ever about today, and only while something is still owed.
 A development build posts under the terminal, because an unbundled binary has no identity of its own to
 post under.`;
 
+const NO_STAND_IN_WHY = `Deleting a stand-in the app opened refuses the checkout it stood for. The work
+there is still unnamed, so without that refusal the next pass would open another one within seconds and
+the list could never be cleared.
+
+Allow it again and the app opens a stand-in for that checkout the next time it sees work there.`;
+
 const STAND_IN_OVERDUE_WHY = `A stand-in is work you named before Jira had a ticket for it. Either limit
 alone marks one: work that sat for a week, and work that piled up four hours in two days, are both debts
 worth naming.
@@ -246,6 +252,29 @@ window title, never a file path. A suggestion never syncs on its own.`;
                   </et-form-field>
                 </div>
               </div>
+
+              @if (store.settings().noStandInCheckouts; as refused) {
+                @if (refused.length) {
+                  <div class="flex flex-col gap-3">
+                    <div class="flex items-center gap-1">
+                      <h3 class="text-h4">Checkouts that get no stand-in</h3>
+                      <ethlete-explain [text]="NO_STAND_IN_WHY" label="refusing a stand-in" />
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                      @for (repoPath of refused; track repoPath) {
+                        <div [attr.data-no-stand-in]="repoPath" class="flex items-center gap-3">
+                          <span class="min-w-0 grow truncate text-mono text-small">{{ repoPath }}</span>
+
+                          <button (click)="store.allowStandInCheckout(repoPath)" et-button variant="outline" size="sm">
+                            Allow again
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              }
             </div>
           </et-tab>
 
@@ -598,6 +627,7 @@ export class SettingsViewComponent {
   protected readonly FILL_WHY = FILL_WHY;
   protected readonly NUDGE_WHY = NUDGE_WHY;
   protected readonly STAND_IN_OVERDUE_WHY = STAND_IN_OVERDUE_WHY;
+  protected readonly NO_STAND_IN_WHY = NO_STAND_IN_WHY;
   protected readonly JIRA_WHY = JIRA_WHY;
   protected readonly TEMPO_WHY = TEMPO_WHY;
   protected readonly GITLAB_WHY = GITLAB_WHY;

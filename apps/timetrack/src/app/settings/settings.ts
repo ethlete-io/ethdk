@@ -43,6 +43,7 @@ import {
   withoutFavoriteProject,
   withoutMaskedName,
   withoutProjectLink,
+  withStandInCheckoutAllowed,
   withoutStandIn,
   reopenStandIn,
   resolveStandIn,
@@ -330,6 +331,9 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       apply(withNamedStandIn({ settings: settings(), ...options })),
 
     removeStandIn: (id: string) => apply(withoutStandIn({ settings: settings(), id })),
+
+    /** Lets the app open a placeholder for the checkout again, after a delete refused it. */
+    allowStandInCheckout: (repoPath: string) => apply(withStandInCheckoutAllowed({ settings: settings(), repoPath })),
     markStandInDay: (options: { id: string; day: string }) =>
       apply(withStandInDay({ settings: settings(), ...options })),
     resolveStandIn: (options: { id: string; issueKey: string }) =>

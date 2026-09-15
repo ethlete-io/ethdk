@@ -8,6 +8,8 @@ import {
   withNamedStandIn,
   withStandIn,
   withStandInDay,
+  withStandInCheckoutAllowed,
+  withoutOrphanedStandIns,
   withoutStandIn,
 } from './stand-in';
 
@@ -54,6 +56,72 @@ describe('withoutStandIn', () => {
 
     expect(settings.standIns).toEqual([]);
     expect(settings.attributionRules.map((entry) => entry.id)).toEqual(['rule-2']);
+  });
+
+  it('refuses the checkout of one the app opened, so the next pass writes no replacement', () => {
+    const settings = withoutStandIn({
+      settings: settingsWith({ standIns: [standIn({ author: 'app', openedFor: '/home/tom/dev/ea-frontend' })] }),
+      id: 'stand-in-1',
+    });
+
+    expect(settings.noStandInCheckouts).toEqual(['/home/tom/dev/ea-frontend']);
+  });
+
+  it('reads the checkout off the rule where the record never recorded one', () => {
+    const settings = withoutStandIn({
+      settings: settingsWith({ standIns: [standIn({ author: 'app' })] }),
+      id: 'stand-in-1',
+    });
+
+    expect(settings.noStandInCheckouts).toEqual(['/home/tom/dev/ea-frontend']);
+  });
+
+  it('refuses nothing for one the user wrote, or one already resolved', () => {
+    const user = withoutStandIn({ settings: settingsWith(), id: 'stand-in-1' });
+    const resolved = withoutStandIn({
+      settings: settingsWith({ standIns: [standIn({ author: 'app', state: 'resolved', issueKey: 'FIP-1' })] }),
+      id: 'stand-in-1',
+    });
+
+    expect(user.noStandInCheckouts).toEqual([]);
+    expect(resolved.noStandInCheckouts).toEqual([]);
+  });
+});
+
+describe('withStandInCheckoutAllowed', () => {
+  it('takes the checkout back off the refused list', () => {
+    const refused = withoutStandIn({
+      settings: settingsWith({ standIns: [standIn({ author: 'app' })] }),
+      id: 'stand-in-1',
+    });
+
+    expect(
+      withStandInCheckoutAllowed({ settings: refused, repoPath: '/home/tom/dev/ea-frontend' }).noStandInCheckouts,
+    ).toEqual([]);
+  });
+});
+
+describe('withoutOrphanedStandIns', () => {
+  it('drops one the app opened that no rule names any more', () => {
+    const settings = withoutOrphanedStandIns(settingsWith({ standIns: [standIn({ author: 'app' })], rules: [] }));
+
+    expect(settings.standIns).toEqual([]);
+  });
+
+  it('keeps one a rule still names, one the user wrote, and one already resolved', () => {
+    const kept = settingsWith({
+      standIns: [
+        standIn({ author: 'app' }),
+        standIn({ id: 'stand-in-2', author: 'user' }),
+        standIn({ id: 'stand-in-3', author: 'app', state: 'resolved', issueKey: 'FIP-1' }),
+      ],
+    });
+
+    expect(withoutOrphanedStandIns(kept).standIns.map((entry) => entry.id)).toEqual([
+      'stand-in-1',
+      'stand-in-2',
+      'stand-in-3',
+    ]);
   });
 });
 

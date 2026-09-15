@@ -65,6 +65,16 @@ const alreadyAnswered = (options: { repoPath: string; rules: readonly Attributio
   options.rules.some((rule) => rule.repoPath === options.repoPath && !rule.branch);
 
 /**
+ * A checkout a placeholder is already waiting on, read from the records rather than from the rules.
+ *
+ * The rules alone are not enough. A rule is replaced whenever the checkout gets another answer, so a
+ * pass that ran while none was stored opened a second record and left the first in the waiting list
+ * for good.
+ */
+const alreadyWaiting = (options: { repoPath: string; standIns: readonly StandIn[] }) =>
+  options.standIns.some((standIn) => standIn.state === 'open' && standIn.openedFor === options.repoPath);
+
+/**
  * Opens a placeholder for every linked checkout whose work no rule could name, one per checkout.
  *
  * This is the app deciding that work exists, never that it belongs to an issue. A checkout Jira holds
@@ -102,6 +112,10 @@ export const autoStandIns = (options: {
    * issue covers, so one that does is not work for a placeholder.
    */
   offeredCheckouts: readonly string[];
+  /** Every placeholder the settings hold, so a checkout already waiting on one gets no second. */
+  standIns: readonly StandIn[];
+  /** The checkouts the user refused a placeholder for. Their work stays unnamed until they name it. */
+  refusedCheckouts: readonly string[];
   /** The local day key the placeholders open on. */
   day: string;
   now: Date;
@@ -118,6 +132,8 @@ export const autoStandIns = (options: {
     if (group.observedMs < minObservedMs) continue;
     if (!isCheckout({ repoPath: group.repoPath, roots })) continue;
     if (options.offeredCheckouts.includes(group.repoPath)) continue;
+    if (options.refusedCheckouts.includes(group.repoPath)) continue;
+    if (alreadyWaiting({ repoPath: group.repoPath, standIns: options.standIns })) continue;
     if (alreadyAnswered({ repoPath: group.repoPath, rules: options.rules })) continue;
 
     const first = group.contexts[0];
@@ -138,6 +154,7 @@ export const autoStandIns = (options: {
       now: options.now,
       projectKey: link.target.projectKey,
       author: 'app',
+      openedFor: group.repoPath,
       key: describeProjectLink({ path: group.repoPath }),
     });
 

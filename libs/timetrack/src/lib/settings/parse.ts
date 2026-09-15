@@ -22,6 +22,7 @@ import {
   clampStandInOverdueMs,
   clampStandInOverdueWorkdays,
 } from './model';
+import { withoutOrphanedStandIns } from './stand-in';
 
 const asRecord = (value: unknown) =>
   typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
@@ -158,6 +159,7 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
     projectKey: projectKey || undefined,
     state: raw['state'] === 'resolved' && issueKey ? 'resolved' : 'open',
     issueKey: issueKey || undefined,
+    openedFor: asText(raw['openedFor']) || undefined,
     /** Without it a resolve read back from disk has nothing to point back, so the undo puts back nothing. */
     resolvedRuleIds: resolvedRuleIds.length ? resolvedRuleIds : undefined,
     days: asTextList(raw['days']).sort(),
@@ -377,7 +379,16 @@ const asTicket = (value: unknown): TimetrackTicketSettings => {
  * of. Nothing here throws: a document written by an older version, or one a hand-edit broke, must leave
  * the app usable rather than refusing to start — and the fields it does understand still apply.
  */
-export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
+/**
+ * Reads the stored document back, and sweeps the placeholders it holds that nothing names any more.
+ *
+ * The sweep is here rather than at a call site because a dead placeholder is a property of the
+ * document, and every screen that reads the document would otherwise have to know about it.
+ */
+export const parseTimetrackSettings = (raw: unknown): TimetrackSettings =>
+  withoutOrphanedStandIns(readTimetrackSettings(raw));
+
+const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
   const document = asRecord(raw);
   const jira = asRecord(document['jira']);
   const google = asRecord(document['google']);
@@ -409,6 +420,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     attributionRules: asAttributionRules(document['attributionRules']),
     projectLinks: asProjectLinks(document['projectLinks']),
     standIns: asStandIns(document['standIns']),
+    noStandInCheckouts: asTextList(document['noStandInCheckouts']),
     lockWindow: document['lockWindow'] !== false,
     lockAfterIdleMs: asLockAfterIdle(document['lockAfterIdleMs']),
   };

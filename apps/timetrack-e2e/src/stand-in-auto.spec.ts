@@ -97,6 +97,50 @@ test.describe('the ticket a stand-in was waiting for', () => {
   });
 });
 
+const goTo = (page: Page, view: 'Day' | 'Settings') =>
+  page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: view }).click();
+
+/**
+ * The work under the checkout is still unnamed after the delete, so the next pass would open a
+ * replacement within seconds. Every replacement also replaced the rule of the one before it, which
+ * left that record open and in the list for good — four rows for one checkout on a real day.
+ */
+test.describe('a stand-in the app opened and the user deleted', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] },
+    });
+    await page.goto('/day');
+    await expect(band(page)).toHaveCount(1);
+
+    await openList(page);
+    await page.locator('ethlete-stand-ins [data-stand-in]').first().getByRole('button', { name: 'Delete' }).click();
+  });
+
+  test('stays deleted, and the checkout goes back to waiting for a name', async ({ page }) => {
+    await expect(page.locator('[data-kind="row"][title^="Not yet named"]')).not.toHaveCount(0);
+    await expect(page.locator('ethlete-stand-ins [data-stand-in]')).toHaveCount(0);
+    await expect(page.locator('[data-waiting-on-a-ticket]')).toHaveCount(0);
+  });
+
+  test('is opened again once the settings screen allows the checkout', async ({ page }) => {
+    await expect(page.locator('[data-kind="row"][title^="Not yet named"]')).not.toHaveCount(0);
+
+    await page.keyboard.press('Escape');
+    await goTo(page, 'Settings');
+    await page.getByRole('tab', { name: 'The day' }).click();
+
+    const refused = page.locator(`[data-no-stand-in="${E2E_REPO}"]`);
+
+    await expect(refused).toContainText(E2E_REPO);
+    await refused.getByRole('button', { name: 'Allow again' }).click();
+
+    await goTo(page, 'Day');
+    await expect(band(page)).toHaveCount(1);
+  });
+});
+
 test.describe('a checkout no link covers', () => {
   test('opens nothing, and the day keeps asking about it', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, settings: defaultSettings() });

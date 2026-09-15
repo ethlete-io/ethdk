@@ -326,6 +326,14 @@ export type TimetrackSettings = {
    */
   standIns: StandIn[];
   /**
+   * The checkouts the user refused a placeholder for, by deleting one the app opened.
+   *
+   * Without it the delete does not stick: the work is still unnamed, so the next pass opens another
+   * placeholder within seconds and the user cannot clear the list at all. The settings screen is where
+   * a checkout is taken back off.
+   */
+  noStandInCheckouts: string[];
+  /**
    * Whether the window locks itself, so the months of window titles in the database are not readable by
    * whoever walks up to an unlocked desktop.
    *
@@ -383,6 +391,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   attributionRules: [],
   projectLinks: [],
   standIns: [],
+  noStandInCheckouts: [],
   lockWindow: true,
   lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
 };

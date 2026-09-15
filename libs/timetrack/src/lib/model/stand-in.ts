@@ -33,6 +33,14 @@ export type StandIn = {
   /** The issue it resolved to. Absent while it is open. */
   issueKey?: string;
   /**
+   * The checkout the app opened it for. Absent on one the user wrote, which stands for work rather
+   * than for a path.
+   *
+   * The rule that names it holds the same path, but a rule is replaced whenever the checkout gets
+   * another answer, so the rule cannot be relied on to say which checkout a record came from.
+   */
+  openedFor?: string;
+  /**
    * The rules the resolve rewrote, so the undo can point exactly those back and no rule that named the
    * same issue on its own is dragged along. Written by the resolve and cleared by the undo.
    */
@@ -73,6 +81,8 @@ export const openStandIn = (options: {
   description?: string;
   projectKey?: string;
   author?: NamingAuthor;
+  /** The checkout the app opened it for, when the app is what opened it. */
+  openedFor?: string;
   /**
    * Tells apart two stand-ins opened in the same millisecond, which is what one pass over a day's
    * checkouts does. Anything but letters and digits is dropped, so an id stays a readable key.
@@ -83,6 +93,7 @@ export const openStandIn = (options: {
   name: options.name.trim(),
   ...(options.description?.trim() ? { description: options.description.trim() } : {}),
   ...(options.projectKey ? { projectKey: options.projectKey } : {}),
+  ...(options.openedFor ? { openedFor: options.openedFor } : {}),
   state: 'open',
   days: [options.day],
   author: options.author ?? 'user',
