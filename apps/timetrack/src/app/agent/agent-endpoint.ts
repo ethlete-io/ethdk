@@ -375,6 +375,27 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       backgroundProjects: [...current.backgroundProjects],
       noWorkContextApps: [...current.noWorkContextApps],
       holdsWorkApps: [...current.holdsWorkApps],
+      callRules: {
+        countsAsWork: [...current.callRules.countsAsWork],
+        neverCountsAsWork: [...current.callRules.neverCountsAsWork],
+      },
+      meetingNamings: current.meetingNamings.map((naming) => ({
+        seriesKey: naming.seriesKey,
+        issueKey: naming.issueKey,
+        title: naming.title,
+        createdAtMs: naming.createdAt.getTime(),
+      })),
+      callNamings: current.callNamings.map((naming) => ({
+        appId: naming.appId,
+        weekday: naming.weekday,
+        durationBand: naming.durationBand,
+        after: naming.after,
+        startMinute: naming.startMinute,
+        issueKey: naming.target.kind === 'issue' ? naming.target.issueKey : undefined,
+        standInId: naming.target.kind === 'stand-in' ? naming.target.standInId : undefined,
+        label: naming.label,
+        createdAtMs: naming.createdAt.getTime(),
+      })),
     });
   };
 

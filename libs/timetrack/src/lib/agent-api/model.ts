@@ -146,6 +146,46 @@ export type AgentApiRules = {
   noWorkContextApps: string[];
   /** The applications the user says do hold work, which is what gives one a lane of its own. */
   holdsWorkApps: string[];
+  /** Which applications a call counts as work in, and which it never does. */
+  callRules: { countsAsWork: string[]; neverCountsAsWork: string[] };
+  /** What the user answered for a meeting the calendar holds, keyed on its series. */
+  meetingNamings: AgentApiMeetingNaming[];
+  /** What the user answered for a call the calendar never held, keyed on the call's own features. */
+  callNamings: AgentApiCallNaming[];
+};
+
+/**
+ * One answer the user gave a meeting, as `settings.rules` reports it.
+ *
+ * `title` is the meeting's own name and it is here on purpose: without it a list of series keys says
+ * nothing a reader can act on. A caller that forwards this to a hosted model forwards a meeting title
+ * with it — see ADR 0013.
+ */
+export type AgentApiMeetingNaming = {
+  seriesKey: string;
+  issueKey: string;
+  title: string;
+  createdAtMs: number;
+};
+
+/**
+ * One answer the user gave a call, as `settings.rules` reports it. The features are the key it is
+ * matched on, so a reader can tell why a call did or did not reach it.
+ */
+export type AgentApiCallNaming = {
+  appId: string;
+  /** 0 for Sunday. */
+  weekday: number;
+  durationBand: string;
+  /** What ran immediately before it, where anything did. */
+  after?: string;
+  /** Minutes past local midnight. */
+  startMinute: number;
+  issueKey?: string;
+  standInId?: string;
+  /** What the call read as when the answer was given. */
+  label: string;
+  createdAtMs: number;
 };
 
 /**
