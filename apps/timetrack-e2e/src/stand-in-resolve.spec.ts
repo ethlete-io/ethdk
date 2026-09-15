@@ -76,6 +76,22 @@ test.describe('the work waiting on a ticket', () => {
     await expect(namedBand(page)).toHaveCount(0);
   });
 
+  test('offers the model the whole stand-in from the ticket form it opens', async ({ page }) => {
+    await openList(page);
+    await card(page).getByRole('button', { name: 'File a ticket' }).click();
+
+    const form = page.locator('ethlete-create-ticket');
+    const details = form.locator('details').filter({ hasText: 'What gets sent' });
+
+    await expect(form.getByRole('button', { name: 'Ask AI', exact: true })).toBeVisible();
+
+    await details.locator('> summary').click();
+
+    await expect(details.locator('pre')).toContainText(STAND_IN.name);
+    await expect(details.locator('pre')).toContainText('"days": 1');
+    await expect(details.locator('pre')).not.toContainText('minutes');
+  });
+
   test('puts its band back to waiting for a name once it is deleted', async ({ page }) => {
     await openList(page);
     await card(page).getByRole('button', { name: 'Delete' }).click();

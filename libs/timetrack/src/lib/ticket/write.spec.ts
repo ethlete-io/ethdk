@@ -4,7 +4,7 @@ import { UnnamedContext } from '../model/attribution';
 import { JiraIssue } from '../jira/issue';
 import { contextKey } from '../model/block';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
-import { ticketWritingRequest, writeTicketWithAgent$ } from './write';
+import { standInWritingRequest, ticketWritingRequest, writeTicketWithAgent$ } from './write';
 
 const CONTEXT: UnnamedContext['context'] = { repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/hub-review' };
 
@@ -188,5 +188,47 @@ describe('the name list on the ticket call', () => {
     expect(ticketWritingRequest({ context: UNNAMED, notes: [], parents: [], issues: [], maskedNames: [] }).repo).toBe(
       'ea-frontend',
     );
+  });
+});
+
+describe('standInWritingRequest', () => {
+  const WAITING = {
+    name: 'Mesa invoice export',
+    description: 'The finance team needs the run as a CSV.',
+    days: ['2026-09-10', '2026-09-11', '2026-09-14'],
+  };
+
+  it('sends the name the user gave the work, the days it waited, and no minutes', () => {
+    expect(standInWritingRequest({ standIn: WAITING, parents: [issue('FIP-100', 'Hub')] })).toEqual({
+      standIn: { name: 'Mesa invoice export', description: 'The finance team needs the run as a CSV.', days: 3 },
+      notes: [],
+      parents: [{ key: 'FIP-100', summary: 'Hub' }],
+      issues: [],
+    });
+  });
+
+  it('leaves out a description the stand-in never carried', () => {
+    const request = standInWritingRequest({ standIn: { name: 'Invoice export', days: ['2026-09-10'] } });
+
+    expect(request.standIn?.description).toBeUndefined();
+  });
+
+  it("masks the name and the description, which are the user's own free text", () => {
+    const request = standInWritingRequest({ standIn: WAITING, maskedNames: ['Mesa', 'finance team'] });
+    const printed = JSON.stringify(request);
+
+    expect(printed).not.toContain('Mesa');
+    expect(printed).not.toContain('finance team');
+  });
+
+  it('reads the answer back into the real names', async () => {
+    const request = standInWritingRequest({ standIn: WAITING, maskedNames: ['Mesa'] });
+    const { runner } = stubRunner([
+      ok(answer({ summary: `Export the ${request.standIn?.name}`, description: 'It writes a CSV.' })),
+    ]);
+
+    const wording = await firstValueFrom(writeTicketWithAgent$({ runner, request, maskedNames: ['Mesa'] }));
+
+    expect(wording?.summary).toBe('Export the Mesa invoice export');
   });
 });

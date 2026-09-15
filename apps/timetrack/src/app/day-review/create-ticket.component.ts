@@ -100,12 +100,12 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
               <et-banner [description]="failure" type="warning" heading="The agent wrote nothing" />
             }
 
-            @if (payload(); as request) {
+            @if (payload()) {
               <ethlete-unmasked-words [text]="printedPayload()" />
 
               <details class="rounded-md border border-et-surface-border p-3">
                 <summary class="cursor-pointer text-small text-et-surface-muted">
-                  What gets sent — {{ request.notes.length }} note(s), no path and no window title
+                  What gets sent — {{ sentSummary() }}, no path and no window title
                 </summary>
                 <pre class="mt-2 overflow-x-auto text-mono text-small">{{ printedPayload() }}</pre>
               </details>
@@ -373,6 +373,13 @@ export class CreateTicketComponent {
     return `${this.name()} is no longer waiting. Every band of it books against the key, on ${days} day${days === 1 ? '' : 's'} and on every later one.`;
   });
   protected printedPayload = computed(() => JSON.stringify(this.payload(), null, 2));
+
+  protected sentSummary = computed(() => {
+    const request = this.payload();
+    const notes = request?.notes.length ?? 0;
+
+    return request?.standIn ? 'your own name for the work' : `${notes} note(s)`;
+  });
 
   /** The agent's answer first, then what the wording matched, with the same issue never listed twice. */
   protected matches = computed(() => {

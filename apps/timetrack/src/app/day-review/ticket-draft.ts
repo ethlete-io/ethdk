@@ -25,6 +25,7 @@ import {
   matchExistingIssues,
   rankParentCandidates,
   readJiraCredentials$,
+  standInWritingRequest,
   suggestParentKey,
   ticketSubjectOf,
   ticketWritingRequest,
@@ -383,18 +384,15 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const writingRequestNow = (): TicketWritingRequest | null => {
     const unnamed = context();
+    const waiting = standIn();
     const status = candidateStatus();
     const issues = status.kind === 'ready' ? status : { parents: [], open: [] };
+    const offered = { parents: issues.parents, issues: issues.open };
+    const maskedNames = settings.settings().reasoning.maskedNames;
 
-    return unnamed
-      ? ticketWritingRequest({
-          context: unnamed,
-          notes: notes(),
-          parents: issues.parents,
-          issues: issues.open,
-          maskedNames: settings.settings().reasoning.maskedNames,
-        })
-      : null;
+    if (unnamed) return ticketWritingRequest({ context: unnamed, notes: notes(), ...offered, maskedNames });
+
+    return waiting ? standInWritingRequest({ standIn: waiting, ...offered, maskedNames }) : null;
   };
 
   return {
@@ -431,7 +429,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }),
     /** Exactly what a writing run would send, shown so it can be read before it leaves the machine. */
     writingRequest: computed(writingRequestNow),
-    canWrite: computed(() => settings.settings().reasoning.enabled && !!context()),
+    canWrite: computed(() => settings.settings().reasoning.enabled && (!!context() || !!standIn())),
     isWriting: computed(() => writeStatus().kind === 'writing'),
     writeFailure: computed(() => {
       const status = writeStatus();

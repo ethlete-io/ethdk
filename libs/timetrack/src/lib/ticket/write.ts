@@ -4,6 +4,7 @@ import { ReasoningOptions } from '../reason/model';
 import { PseudonymMap, maskIssueKey, maskNames, pseudonymMap, unmaskNames } from '../reason/pseudonym';
 import { agentProcessSpec } from '../reason/spec';
 import { UnnamedContext } from '../model/attribution';
+import { StandIn } from '../model/stand-in';
 import { JiraIssue } from '../jira/issue';
 import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { MAX_TICKET_SUMMARY_LENGTH } from './draft';
@@ -26,6 +27,14 @@ export type TicketWording = {
   existingReason?: string;
 };
 
+/** The name the user gave work before Jira held a ticket for it, offered as the ticket's subject. */
+export type TicketWritingStandIn = {
+  name: string;
+  description?: string;
+  /** How many days the work has run across, which is the only length a stand-in measures. */
+  days: number;
+};
+
 /**
  * Exactly what leaves the machine to have a ticket written. The same redaction the day's reasoning
  * call uses: a repository's name rather than its path, a branch name, an application id, and wording
@@ -35,8 +44,11 @@ export type TicketWritingRequest = {
   repo?: string;
   branch?: string;
   app?: string;
-  minutes: number;
+  /** Absent for a stand-in, whose length no band measured. */
+  minutes?: number;
   notes: string[];
+  /** Present when the ticket is filed for a stand-in the user named. */
+  standIn?: TicketWritingStandIn;
   /** The issues that may be the parent of a new ticket. */
   parents: TicketWritingIssue[];
   /** The project's open issues, so the work already tracked is found instead of filed twice. */
@@ -54,6 +66,11 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   'The user message is JSON with the repository, the branch, the application, how many minutes the',
   'work lasted, and notes taken from commit subjects, merge request titles and agent session titles.',
   '`parents` is the issues a new ticket could roll up to. `issues` is every open issue in the project.',
+  '`minutes` is absent when nothing measured how long the work took.',
+  '',
+  '`standIn` is present when the user already named this work themselves, before Jira held a ticket:',
+  'their own name for it, their own draft description, and how many days it has run across. Take it as',
+  'the subject of the ticket. Sharpen the wording. Never write about different work than it names.',
   '',
   'Write for the person who reads the backlog and was not there: a delivery lead, a product manager.',
   '',
@@ -123,6 +140,36 @@ export const ticketWritingRequest = (options: {
     app: masked({ text: appId, map }),
     minutes: Math.round(options.context.observedMs / 60_000),
     notes: options.notes.map((note) => maskNames({ text: note, map })),
+    parents: asIssues({ issues: options.parents ?? [], map }),
+    issues: asIssues({ issues: options.issues ?? [], map }),
+  };
+};
+
+/**
+ * Builds the redacted payload for a stand-in: work the user named in their own words before Jira
+ * held a ticket for it.
+ *
+ * The name and the description are free text the user typed, so both go out in pseudonyms through the
+ * same name list the day's reasoning call uses. `minutes` is left out rather than guessed — a stand-in
+ * holds days, and no band on it measures how long the work took.
+ */
+export const standInWritingRequest = (options: {
+  standIn: Pick<StandIn, 'name' | 'description' | 'days'>;
+  parents?: readonly JiraIssue[];
+  issues?: readonly JiraIssue[];
+  /** The user's own name list, from `settings.reasoning.maskedNames`. Empty masks nothing. */
+  maskedNames?: readonly string[];
+}): TicketWritingRequest => {
+  const map = pseudonymMap(options.maskedNames ?? []);
+  const description = masked({ text: options.standIn.description, map });
+
+  return {
+    standIn: {
+      name: maskNames({ text: options.standIn.name, map }),
+      ...(description ? { description } : {}),
+      days: options.standIn.days.length,
+    },
+    notes: [],
     parents: asIssues({ issues: options.parents ?? [], map }),
     issues: asIssues({ issues: options.issues ?? [], map }),
   };
