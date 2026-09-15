@@ -52,6 +52,19 @@ export type FakeWindowSourceStatus = {
 };
 
 /**
+ * What the host says the microphone source is doing, in the shape the host wire reports it.
+ *
+ * `watchingSinceMs` is when the host process started watching, which decides whether a call left open
+ * in the store belongs to a run that is gone. It defaults to the instant the page booted, so a seeded
+ * open call reads as one a killed run abandoned.
+ */
+export type FakeCallSourceStatus = {
+  kind: string;
+  detail: string | null;
+  watchingSinceMs: number;
+};
+
+/**
  * The world an e2e spec declares. Every key it leaves out falls back to the default fixture, so a
  * spec that does not care about Tempo states nothing about Tempo.
  */
@@ -81,6 +94,7 @@ export type TimetrackWorldSeed = {
   reporterVsix?: string | null;
   git?: Partial<FakeGitState>;
   windowSource?: Partial<FakeWindowSourceStatus>;
+  callSource?: Partial<FakeCallSourceStatus>;
   faults?: FakeFault[];
 };
 
@@ -95,6 +109,7 @@ export type FakeWorld = {
   agentLogs: FakeAgentLog[];
   codexLogs: FakeAgentLog[];
   windowSource: FakeWindowSourceStatus;
+  callSource: FakeCallSourceStatus;
   backend: FakeBackend;
 };
 
@@ -311,6 +326,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   agentLogs: seed.agentLogs ?? [],
   codexLogs: seed.codexLogs ?? [],
   windowSource: { kind: 'none', detail: null, capabilities: [], ...seed.windowSource },
+  callSource: { kind: 'none', detail: null, watchingSinceMs: Date.now(), ...seed.callSource },
   glab: { ...defaultGlab(), ...seed.glab },
   gh: { ...defaultGh(), ...seed.gh },
   editors: seedEditors(seed.editors),

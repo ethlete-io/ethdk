@@ -372,7 +372,7 @@ export const createFakePorts = (): HostPorts => {
 
     calls: {
       batch$: (afterSeq) => ok({ events: [], throughSeq: afterSeq, dropped: 0 }),
-      status$: () => ok({ kind: 'none', detail: null }),
+      status$: () => ok(world.callSource),
     },
 
     ingest: {

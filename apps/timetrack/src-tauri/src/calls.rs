@@ -38,6 +38,13 @@ pub struct CallSourceStatus {
     pub kind: String,
     /// Why there is no source, for the banner naming what is degraded.
     pub detail: Option<String>,
+    /// When this process started watching the microphone.
+    ///
+    /// A call edge in the store from before it was written by a run that is gone, and only such a run
+    /// can have left a call open with no end. The reader repairs those and must leave every later one
+    /// alone: this process is still watching them, and it pushes no second start for a microphone it
+    /// never saw let go.
+    pub watching_since_ms: i64,
 }
 
 #[cfg(test)]
@@ -59,6 +66,7 @@ impl CallSource {
             status: Arc::new(Mutex::new(CallSourceStatus {
                 kind: "none".to_string(),
                 detail: Some("the call source has not started yet".to_string()),
+                watching_since_ms: chrono::Utc::now().timestamp_millis(),
             })),
             holding: Arc::new(Mutex::new(Vec::new())),
         }
@@ -111,10 +119,8 @@ impl CallSource {
 
     pub fn set_status(&self, kind: &str, detail: Option<String>) {
         if let Ok(mut status) = self.status.lock() {
-            *status = CallSourceStatus {
-                kind: kind.to_string(),
-                detail,
-            };
+            status.kind = kind.to_string();
+            status.detail = detail;
         }
     }
 
@@ -281,6 +287,17 @@ mod tests {
         source.set_status("macos-core-audio", None);
 
         assert_eq!(source.status().unwrap().kind, "macos-core-audio");
+    }
+
+    #[test]
+    fn keeps_watching_since_when_the_platform_source_restarts() {
+        let source = CallSource::default();
+        let since = source.status().unwrap().watching_since_ms;
+
+        source.set_status("linux-pipewire", None);
+        source.set_status("none", Some("`pw-dump` stopped".to_string()));
+
+        assert_eq!(source.status().unwrap().watching_since_ms, since);
     }
 
     #[test]

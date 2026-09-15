@@ -56,8 +56,6 @@ const CALL_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   let throughSeq = 0;
 
-  const startedAt = new Date();
-
   const store$ = (batch: CallBatch): Observable<unknown> => {
     const record = (stored: number) => {
       throughSeq = batch.throughSeq;
@@ -100,19 +98,34 @@ const CALL_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   /**
    * Closes what the run before this one left open, before a single edge of this run is drained.
    *
-   * The host watches the microphone from inside this process, so a run that is killed mid-call writes
-   * no end and `classifyCalls` runs that call to now. It repairs the store rather than the reading
-   * because every later read of that day would otherwise have to guess the same thing again.
+   * The host watches the microphone from inside its own process, so a run that is killed mid-call
+   * writes no end and `classifyCalls` runs that call to now. It repairs the store rather than the
+   * reading because every later read of that day would otherwise have to guess the same thing again.
+   *
+   * The cut-off is the host's own start and not this collector's, because this webview reloads while
+   * the host keeps running — during development on every save. The host pushes no second start for a
+   * microphone it never saw let go, so an end written over a call it still holds is a call lost for
+   * the rest of the run. Measured 2026-09-15: a Discord room open all morning was stored as one
+   * second.
    *
    * A pause does not stop it. It only ever ends a call, so it can shorten a day and never lengthen one.
    */
   const repair$ = (): Observable<unknown> =>
     defer(() =>
-      ports.events.eventsBetween$(new Date(startedAt.getTime() - CALL_ABANDON_LOOKBACK_MS), startedAt).pipe(
-        concatMap((events) => {
-          const ends = closeAbandonedCalls({ events, startedAt });
+      ports.calls.status$().pipe(
+        tap((next) => status.set(next)),
+        switchMap((next) => {
+          const watchingSince = new Date(next.watchingSinceMs);
 
-          return ends.length ? ports.events.append$(ends) : EMPTY;
+          return ports.events
+            .eventsBetween$(new Date(watchingSince.getTime() - CALL_ABANDON_LOOKBACK_MS), watchingSince)
+            .pipe(
+              concatMap((events) => {
+                const ends = closeAbandonedCalls({ events, watchingSince });
+
+                return ends.length ? ports.events.append$(ends) : EMPTY;
+              }),
+            );
         }),
         catchError((error: unknown) => {
           failure.set(error instanceof Error ? error.message : String(error));

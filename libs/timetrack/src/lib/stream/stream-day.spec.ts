@@ -1025,6 +1025,30 @@ describe('streamDay, on a day something held the microphone', () => {
     expect(day.presenceMs).toBe(58 * MINUTE);
   });
 
+  it('runs a call nobody has hung up no further than the sources watched', () => {
+    const day = streamDay({
+      events: [
+        focus(0, DISCORD, '#standup | Braune Digital'),
+        call(2, 'call-start'),
+        {
+          at: AT(300),
+          until: AT(360),
+          source: 'calendar',
+          kind: 'calendar-event',
+          occurrenceId: 'o-afternoon',
+          title: 'Tom unterwegs',
+          accepted: true,
+        },
+      ],
+      options: {
+        windowsSeenThroughMs: AT(10).getTime(),
+        callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] },
+      },
+    });
+
+    expect(day.calls[0]!.to).toEqual(AT(10));
+  });
+
   it('counts a call the user was silent through, which nothing else observed at all', () => {
     const day = streamDay({
       events: [

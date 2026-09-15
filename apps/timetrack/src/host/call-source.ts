@@ -14,6 +14,11 @@ export type CallSourceStatus = {
   /** `macos-core-audio` while CoreAudio is watching, `none` when nothing is watching. */
   kind: string;
   detail: string | null;
+  /**
+   * When the host process started watching the microphone. It survives a reload of this webview, which
+   * is what `closeAbandonedCalls` needs: a call this host opened is still being watched.
+   */
+  watchingSinceMs: number;
 };
 
 export type CallBatch = {

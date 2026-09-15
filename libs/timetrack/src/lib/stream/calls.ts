@@ -253,8 +253,11 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
  */
 const HOST_SAMPLED: readonly CollectedEvent['source'][] = ['window', 'idle', 'call'];
 
-/** The last instant the app can be shown to have been running, or `undefined` if it cannot be shown at all. */
-const lastHostSampleAt = (events: readonly CollectedEvent[]) =>
+/**
+ * The last instant the app can be shown to have been running, or `undefined` if it cannot be shown at
+ * all. It is what cuts off a call nothing has ended yet: a call runs no further than the watching did.
+ */
+export const lastHostSampleAt = (events: readonly CollectedEvent[]) =>
   events
     .filter((event) => HOST_SAMPLED.includes(event.source))
     .reduce<Date | undefined>((last, event) => (!last || event.at > last ? event.at : last), undefined);
@@ -270,10 +273,15 @@ const lastHostSampleAt = (events: readonly CollectedEvent[]) =>
  * app was down, so the call is cut where the watching stopped. That under-counts a call the user was
  * still in, which is the safe direction — this app never invents time it did not observe.
  *
- * Pass only events from before the current run started, or this closes the calls that run just opened.
+ * `watchingSince` is the instant the **host process** started watching, never the webview's own start:
+ * a reload leaves the host running, and the host pushes no second start for a microphone it never saw
+ * let go, so an end written over a call it still holds loses that call for the rest of the run.
  */
-export const closeAbandonedCalls = (options: { events: readonly CollectedEvent[]; startedAt: Date }): CallEvent[] => {
-  const earlier = options.events.filter((event) => event.at < options.startedAt);
+export const closeAbandonedCalls = (options: {
+  events: readonly CollectedEvent[];
+  watchingSince: Date;
+}): CallEvent[] => {
+  const earlier = options.events.filter((event) => event.at < options.watchingSince);
   const at = lastHostSampleAt(earlier);
 
   if (!at) return [];

@@ -18,7 +18,7 @@ import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
 import { BreakWindow, breakMs, breakWindows } from './breaks';
-import { classifyCalls } from './calls';
+import { classifyCalls, lastHostSampleAt } from './calls';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
 
@@ -683,8 +683,10 @@ export const streamDay = (options: {
     events: options.events,
     rules: config.callRules ?? { countsAsWork: [], neverCountsAsWork: [] },
     // Where a call nothing has ended yet is cut: the later of what the sources have reported through
-    // and the last thing the day saw. A call with neither has no known duration and reads as none.
-    until: new Date(Math.max(config.windowsSeenThroughMs ?? 0, ...options.events.map((event) => +event.at))),
+    // and the last sample a source took. A call with neither has no known duration and reads as none.
+    // Only a sample the host took, never a calendar occurrence: an invitation is read from an API
+    // hours before it happens, and taking it would run the open microphone forward into it.
+    until: new Date(Math.max(config.windowsSeenThroughMs ?? 0, +(lastHostSampleAt(options.events) ?? 0))),
   });
 
   // A call is a stretch rather than a point, so it is unioned in rather than sampled: two edges an hour
