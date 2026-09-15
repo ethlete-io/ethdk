@@ -16,6 +16,7 @@ import {
   TimetrackSettings,
   parseTimetrackSettings,
   dedupeKeyOf,
+  meteredRunner,
 } from '@ethlete/timetrack';
 import {
   FakeAgentLog,
@@ -91,6 +92,7 @@ export const createFakePorts = (): HostPorts => {
   let settings: TimetrackSettings = parseTimetrackSettings(world.settings);
   let pausedAt: Date | null = null;
   let reasoningRuns = 0;
+  let agentRuns = 0;
 
   (globalThis as Record<string, unknown>)[TIMETRACK_E2E_BACKEND_KEY] = backend;
 
@@ -278,43 +280,50 @@ export const createFakePorts = (): HostPorts => {
       vsix$: () => ok(world.reporterVsix),
     },
 
-    processes: {
-      run$: (spec: ProcessSpec) => {
-        if (isGlabSpec(spec)) {
-          return world.glab.installed
-            ? ok(runFakeGlab({ backend, spec, state: world.glab }))
-            : throwError(() => cliNotInstalledMessage('glab'));
-        }
+    processes: meteredRunner({
+      runner: {
+        run$: (spec: ProcessSpec) => {
+          if (isGlabSpec(spec)) {
+            return world.glab.installed
+              ? ok(runFakeGlab({ backend, spec, state: world.glab }))
+              : throwError(() => cliNotInstalledMessage('glab'));
+          }
 
-        if (isGhSpec(spec)) {
-          return world.gh.installed
-            ? ok(runFakeGh({ spec, state: world.gh }))
-            : throwError(() => cliNotInstalledMessage('gh'));
-        }
+          if (isGhSpec(spec)) {
+            return world.gh.installed
+              ? ok(runFakeGh({ spec, state: world.gh }))
+              : throwError(() => cliNotInstalledMessage('gh'));
+          }
 
-        if (isEditorSpec(spec) || isEditorInstallSpec(spec)) {
-          const editor = world.editors[spec.command as EditorCli];
+          if (isEditorSpec(spec) || isEditorInstallSpec(spec)) {
+            const editor = world.editors[spec.command as EditorCli];
 
-          if (!editor.onPath) return throwError(() => cliNotInstalledMessage(spec.command));
+            if (!editor.onPath) return throwError(() => cliNotInstalledMessage(spec.command));
 
-          return ok(
-            isEditorSpec(spec)
-              ? runFakeEditor(editor)
-              : runFakeEditorInstall({ state: editor, spec, vsix: world.reporterVsix }),
-          );
-        }
+            return ok(
+              isEditorSpec(spec)
+                ? runFakeEditor(editor)
+                : runFakeEditorInstall({ state: editor, spec, vsix: world.reporterVsix }),
+            );
+          }
 
-        if (isReasoningSpec(spec)) reasoningRuns += 1;
+          if (isReasoningSpec(spec)) reasoningRuns += 1;
 
-        const stdout = isReasoningSpec(spec)
-          ? fakeReasoningAnswer(spec, reasoningRuns)
-          : spec.command === 'git'
-            ? runFakeGit(backend, spec)
-            : EMPTY_AGENT_ANSWER;
+          const answer = isReasoningSpec(spec)
+            ? fakeReasoningAnswer(spec, reasoningRuns)
+            : spec.command === 'git'
+              ? runFakeGit(backend, spec)
+              : EMPTY_AGENT_ANSWER;
 
-        return ok({ code: 0, stdout, stderr: '' });
+          return ok({ code: 0, stdout: withFakeUsage({ stdout: answer, spec, runs: agentRuns++ }), stderr: '' });
+        },
       },
-    },
+      record$: (event) => {
+        appendEvents([event]);
+
+        return done();
+      },
+    }),
 
     agentLogs: fakeLogReader(world.agentLogs),
 
@@ -404,10 +413,21 @@ export const createFakePorts = (): HostPorts => {
 const EMPTY_AGENT_ANSWER = '{"structured_output":{"answers":[]}}';
 
 /**
- * A reasoning call, told apart from a ticket-writing one by what it sends: only the day's question
- * carries `contexts`. Both spawn the same CLI with the same flags, so the payload is the difference.
+ * The spend the real CLI reports beside every answer under `--output-format json`. Without it the app's
+ * own calls cost nothing here, and the day screen could never show the line that reports them.
  */
-const isReasoningSpec = (spec: ProcessSpec) => spec.command !== 'git' && !!spec.stdin?.includes('"contexts"');
+const withFakeUsage = (options: { stdout: string; spec: ProcessSpec; runs: number }) => {
+  if (!options.spec.ask) return options.stdout;
+
+  const spent = JSON.parse(
+    `{"session_id":"fake-run-${options.runs}","modelUsage":{"claude-opus-5":{}},"usage":{"input_tokens":120,` +
+      `"output_tokens":340,"cache_creation_input_tokens":80,"cache_read_input_tokens":9000}}`,
+  ) as Record<string, unknown>;
+
+  return JSON.stringify({ ...(JSON.parse(options.stdout) as Record<string, unknown>), ...spent });
+};
+
+const isReasoningSpec = (spec: ProcessSpec) => spec.ask === 'the day';
 
 /**
  * What a reasoning run answers, so a second run is observable in the UI.

@@ -1,5 +1,5 @@
 import { InjectionToken, inject } from '@angular/core';
-import { AgentSessionLogReader, TimetrackPorts } from '@ethlete/timetrack';
+import { AgentSessionLogReader, TimetrackPorts, meteredRunner } from '@ethlete/timetrack';
 import { createTauriAgentSessionLogReader } from './agent-session-log-reader';
 import { TauriCallSource, createTauriCallSource } from './call-source';
 import { TauriCollectionPause, createTauriCollectionPause } from './collection-pause';
@@ -40,31 +40,38 @@ export type HostPorts = TimetrackPorts & {
   windowLock: TauriWindowLock;
 };
 
-export const createHostPorts = (): HostPorts => ({
-  transport: createTauriTransport(),
-  secrets: createTauriSecretStore(),
-  calls: createTauriCallSource(),
-  collection: createTauriCollectionPause(),
-  events: createTauriEventStore(),
-  ledger: createTauriLedgerStore(),
-  coverage: createTauriCoverageStore(),
-  review: createTauriReviewStore(),
-  settings: createTauriSettingsStore(),
-  timers: createTauriTimerStore(),
-  processes: createTauriProcessRunner(),
-  reporter: createTauriReporterBundle(),
-  agentLogs: createTauriAgentSessionLogReader(),
-  codexLogs: createTauriAgentSessionLogReader({ provider: 'codex' }),
-  git: createTauriGitSource(),
-  ingest: createTauriIngestSource(),
-  nudge: createTauriNudge(),
-  oauth: createTauriOAuth(),
-  tray: createTauriTray(),
-  widget: createTauriWidget(),
-  windows: createTauriWindowSource(),
-  windowControls: createTauriWindowControls(),
-  windowLock: createTauriWindowLock(),
-});
+export const createHostPorts = (): HostPorts => {
+  const events = createTauriEventStore();
+
+  return {
+    transport: createTauriTransport(),
+    secrets: createTauriSecretStore(),
+    calls: createTauriCallSource(),
+    collection: createTauriCollectionPause(),
+    events,
+    ledger: createTauriLedgerStore(),
+    coverage: createTauriCoverageStore(),
+    review: createTauriReviewStore(),
+    settings: createTauriSettingsStore(),
+    timers: createTauriTimerStore(),
+    processes: meteredRunner({
+      runner: createTauriProcessRunner(),
+      record$: (event) => events.append$([event]),
+    }),
+    reporter: createTauriReporterBundle(),
+    agentLogs: createTauriAgentSessionLogReader(),
+    codexLogs: createTauriAgentSessionLogReader({ provider: 'codex' }),
+    git: createTauriGitSource(),
+    ingest: createTauriIngestSource(),
+    nudge: createTauriNudge(),
+    oauth: createTauriOAuth(),
+    tray: createTauriTray(),
+    widget: createTauriWidget(),
+    windows: createTauriWindowSource(),
+    windowControls: createTauriWindowControls(),
+    windowLock: createTauriWindowLock(),
+  };
+};
 
 export const HOST_PORTS = new InjectionToken<HostPorts>('HOST_PORTS', {
   providedIn: 'root',

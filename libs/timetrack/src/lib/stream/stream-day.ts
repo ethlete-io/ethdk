@@ -7,6 +7,7 @@ import {
   AgentUsageEvent,
   CollectedEvent,
   CollectedEventSource,
+  TIMETRACK_PROVIDER,
   TokenUsage,
   isActivityEvent,
   windowFocusDetail,
@@ -235,6 +236,14 @@ export type StreamDay = {
    * unattended.
    */
   unattributedSpend: StreamSpend;
+  /**
+   * What the app itself spent on the user's behalf, under the reserved `TIMETRACK_PROVIDER`.
+   *
+   * It is outside `spend` and outside `unattributedSpend`, and no stream holds it: the app is no
+   * checkout, so nothing may book its tokens as work. It rebuilds no presence either — a run the user
+   * pressed for says the machine answered, not that a person was at the keyboard for its minutes.
+   */
+  ownSpend: StreamSpend;
   /**
    * The checkout names a window claimed that two checkouts share. Neither could take the window, so
    * its time is in the other-applications line, and this is the only thing that says why.
@@ -669,9 +678,20 @@ export const streamDay = (options: {
     .slice()
     .sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  const turns = options.events
+  const usage = options.events
     .filter((event): event is AgentUsageEvent => event.source === 'agent-usage')
     .filter((turn) => !turn.cwd || !isPrivate({ repoPath: repoRootOf({ path: turn.cwd, roots }), links }));
+
+  const ownSpend = emptySpend();
+
+  for (const turn of usage) {
+    if (turn.provider === TIMETRACK_PROVIDER) addSpend(ownSpend, turn);
+  }
+
+  // The app's own calls leave here rather than being filtered out further down. Everything below reads
+  // `turns`: the rebuild samples, the spend-only streams and both spend totals. One of them would
+  // otherwise let a run the app made open a band or rebuild a minute of presence.
+  const turns = usage.filter((turn) => turn.provider !== TIMETRACK_PROVIDER);
 
   const rebuildSamples: PresenceSample[] = [
     ...observed.filter((sample) => PRESENCE_SOURCES.includes(sample.source)),
@@ -1020,6 +1040,7 @@ export const streamDay = (options: {
     streams,
     spend,
     unattributedSpend,
+    ownSpend,
     ambiguousNames: [...claimedAmbiguously],
     calls,
   };

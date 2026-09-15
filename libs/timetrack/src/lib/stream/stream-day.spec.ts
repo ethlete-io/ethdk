@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CollectedEvent, TokenUsage } from '../model/event';
+import { CollectedEvent, TIMETRACK_PROVIDER, TokenUsage } from '../model/event';
 import { TimetrackProjectLink } from '../model/project-link';
 import { OTHER_APPLICATIONS_KEY, streamDay } from './stream-day';
 import { unnamedFocusMs } from './unnamed-focus';
@@ -63,6 +63,13 @@ const usage = (minutes: number, cwd: string, counts: Partial<TokenUsage> = {}): 
   cwd,
   model: 'claude-opus-5',
   usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0, ...counts },
+});
+
+/** A call the app made for the user: the reserved provider, and no working directory to carry it. */
+const own = (minutes: number, counts: Partial<TokenUsage> = {}): CollectedEvent => ({
+  ...(usage(minutes, '', counts) as Extract<CollectedEvent, { source: 'agent-usage' }>),
+  provider: TIMETRACK_PROVIDER,
+  sessionId: 'the day',
 });
 
 const typed = (minutes: number, cwd: string): CollectedEvent => ({
@@ -368,6 +375,46 @@ describe('streamDay', () => {
     expect(day.unattributedSpend.turns).toBe(0);
   });
 
+  it("keeps the app's own model calls out of every stream, out of both spend totals, and out of presence", () => {
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'ethlete-sdk - Code' }),
+        commit(0, 'feat(bracket): Add the resolver'),
+        usage(5, SDK, { output: 400 }),
+        own(300, { output: 900 }),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.ownSpend.turns).toBe(1);
+    expect(day.ownSpend.usage.output).toBe(900);
+    expect(day.spend.usage.output).toBe(400);
+    expect(day.spend.turns).toBe(1);
+    expect(day.unattributedSpend.turns).toBe(0);
+    expect(day.streams.map((stream) => stream.key)).toEqual([`repo:${SDK}`]);
+  });
+
+  it("rebuilds no presence from the app's own call, where a coding agent's turn holds the stretch open", () => {
+    // The gap between minute 10 and minute 45 is longer than a focused window bridges on its own.
+    const watched = [
+      focus(0, 'code', 'ethlete-sdk - Code'),
+      focus(5, 'code', 'ethlete-sdk - Code'),
+      focus(10, 'code', 'ethlete-sdk - Code'),
+      focus(45, 'code', 'ethlete-sdk - Code'),
+      focus(50, 'code', 'ethlete-sdk - Code'),
+    ];
+    const options = { repoRoots: [SDK] };
+
+    const alone = streamDay({ events: watched, options });
+    const byAgent = streamDay({ events: [...watched, usage(22, ''), usage(35, '')], options });
+    const byApp = streamDay({ events: [...watched, own(22), own(35)], options });
+
+    expect(alone.presenceMs).toBe(15 * MINUTE);
+    expect(byAgent.presenceMs).toBe(50 * MINUTE);
+    expect(byApp.presenceMs).toBe(15 * MINUTE);
+    expect(byApp.ownSpend.turns).toBe(2);
+  });
+
   it('reports a turn that names no working directory as unattributed, because nothing can carry it', () => {
     const day = streamDay({
       events: [
@@ -550,6 +597,7 @@ describe('streamDay', () => {
         turns: 0,
         models: [],
       },
+      ownSpend: { usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0 }, turns: 0, models: [] },
       ambiguousNames: [],
       calls: [],
     });

@@ -50,12 +50,17 @@ export type TimetrackSecretStore = {
   delete$(key: string): Observable<void>;
 };
 
+/** What one run asks the model for. A spec that names none is no model call, and nothing meters it. */
+export type ModelAsk = 'the day' | 'a ticket';
+
 export type ProcessSpec = {
   command: string;
   args: string[];
   cwd?: string;
   stdin?: string;
   timeoutMs?: number;
+  /** Names this run as a model call, so `meteredRunner` records what it spent. */
+  ask?: ModelAsk;
 };
 
 export type ProcessResult = {

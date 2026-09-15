@@ -7,7 +7,17 @@ import {
   FakeJiraIssue,
   defaultSettings,
 } from '@ethlete/timetrack/testing';
-import { E2E_DAY_KEY, E2E_NOW, addAnEntry, expect, openBand, openWaitingForAName, seedWorld, test } from './support';
+import {
+  E2E_DAY_KEY,
+  E2E_NOW,
+  addAnEntry,
+  expect,
+  openBand,
+  openDayNotes,
+  openWaitingForAName,
+  seedWorld,
+  test,
+} from './support';
 
 const ABC = { key: 'ABC', name: 'Alpha' };
 
@@ -61,6 +71,24 @@ test.describe('the day view', () => {
     await page.getByRole('button', { name: 'Ask for suggestions' }).click();
 
     await expect(page.getByText('The agent had no suggestion')).toBeVisible();
+  });
+
+  test('reports what the press itself spent, under the app rather than under a checkout', async ({ page }) => {
+    await openWaitingForAName(page);
+    await page.getByRole('button', { name: 'Ask for suggestions' }).click();
+
+    await expect(page.getByText('The agent had no suggestion')).toBeVisible();
+
+    // The day re-reads its events when a collector runs, and the app's own call is no collector. Step
+    // off the day and back to read it again, which is what the next collector pass does on a machine.
+    await page.keyboard.press('Escape');
+    await expect(page.locator('ethlete-day-debug')).toBeHidden();
+    await page.getByRole('button', { name: 'Next day' }).click();
+    await page.getByRole('button', { name: 'Previous day' }).click();
+    await openDayNotes(page);
+
+    await expect(page.locator('[data-own-spend]')).toHaveText('1 turn · 340 out · 9.0 k cached');
+    await expect(page.locator('[data-unattributed]')).toHaveCount(0);
   });
 
   test('runs the agent again when the button offers to', async ({ page }) => {

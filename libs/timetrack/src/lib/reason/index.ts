@@ -6,3 +6,4 @@ export * from './prompt';
 export * from './pseudonym';
 export * from './provider';
 export * from './spec';
+export * from './spend';

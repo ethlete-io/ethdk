@@ -11,6 +11,7 @@ export const reasoningSpec = (options: { plan: ReasoningPlan; options?: Partial<
     systemPrompt: REASONING_SYSTEM_PROMPT,
     schema: REASONING_JSON_SCHEMA,
     stdin: JSON.stringify(options.plan.request),
+    ask: 'the day',
     options: options.options,
   });
 

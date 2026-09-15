@@ -33,7 +33,7 @@ const NO_DIRECTORY =
 /**
  * What the day holds that is neither a row nor a stream: the part nothing watched, the calls, the
  * meetings the calendar named that no call was heard over, the checkout names that were ambiguous, the
- * window time no checkout took, and the turns no checkout can carry.
+ * window time no checkout took, the turns no checkout can carry, and what the app itself spent.
  *
  * Each of them is a number the timeline cannot show and the day does not reconcile without. A folded
  * Other applications line with nothing saying what it is made of reads as a fault the user cannot act
@@ -151,6 +151,20 @@ const NO_DIRECTORY =
         </span>
       </div>
     }
+
+    @if (own(); as spend) {
+      <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
+        <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span class="text-base" data-own-spend-label>What this app spent for you</span>
+          <span class="text-small text-et-surface-muted" data-own-spend>{{ spend }}</span>
+        </div>
+
+        <span class="text-small text-et-surface-subtle">
+          You asked it to read the day or to word a ticket. That is the app's own work, not a checkout's, so no line
+          carries it and it adds no time to the day.
+        </span>
+      </div>
+    }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS],
@@ -193,6 +207,16 @@ export class DayNotesComponent {
     const day = this.day();
 
     return day ? formatSpend(day.unattributedSpend) : '';
+  });
+
+  /**
+   * What the app itself asked the model for. It is beside the agents' spend rather than inside it: the
+   * user pressed for these, and no checkout did the work they paid for.
+   */
+  protected own = computed(() => {
+    const day = this.day();
+
+    return day ? formatSpend(day.ownSpend) : '';
   });
 
   /** The checkout names the day had to drop, so the folded line holds no time nobody can place. */

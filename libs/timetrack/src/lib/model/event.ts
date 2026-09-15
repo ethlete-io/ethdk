@@ -74,6 +74,14 @@ export type TokenUsage = {
 };
 
 /**
+ * The reserved `provider` of the app's own model calls.
+ *
+ * It is no coding agent: a turn under it names no checkout, so no stream and no band can take it, and
+ * the day reports it on a line of its own.
+ */
+export const TIMETRACK_PROVIDER = 'timetrack';
+
+/**
  * What one turn of a coding agent spent. A turn has an instant, so the spend is an event and maps to a
  * block the way a commit does — it is not a property of the session.
  *

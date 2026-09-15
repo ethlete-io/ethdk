@@ -1,4 +1,4 @@
-import { CollectedEvent, GIT_FIELD_SEPARATOR } from '@ethlete/timetrack';
+import { CollectedEvent, GIT_FIELD_SEPARATOR, TIMETRACK_PROVIDER } from '@ethlete/timetrack';
 import { defaultSettings } from '@ethlete/timetrack/testing';
 import { E2E_DAY_KEY, E2E_NOW, expect, openDayNotes, openStreams, openTotals, seedWorld, test } from './support';
 
@@ -454,6 +454,39 @@ test.describe('the day view, as streams', () => {
     await openDayNotes(page);
 
     await expect(page.locator('[data-unattributed]')).toHaveText('1 turn · 800 k out · 90.0 M cached');
+  });
+
+  test("reports what the app itself spent on a line of its own, and on no checkout's", async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: [
+        ...day(),
+        {
+          at: at(60),
+          source: 'agent-usage',
+          kind: 'agent-usage',
+          provider: TIMETRACK_PROVIDER,
+          sessionId: 'the day',
+          turnId: 'own-run-1',
+          cwd: '',
+          model: 'claude-opus-5',
+          usage: { input: 120, output: 340, cacheWrite: 80, cacheRead: 9_000, thinking: 0 },
+        },
+      ],
+    });
+    await page.goto('/day');
+
+    await openDayNotes(page);
+
+    await expect(page.locator('[data-own-spend]')).toHaveText('1 turn · 340 out · 9.0 k cached');
+    await expect(page.locator('[data-unattributed]')).toHaveCount(0);
+  });
+
+  test("shows no line for the app's own spend on a day it never asked the model", async ({ page }) => {
+    await openDayNotes(page);
+
+    await expect(page.locator('[data-own-spend]')).toHaveCount(0);
   });
 
   test('shows no unbooked line for a day every turn belongs to a stream', async ({ page }) => {

@@ -196,8 +196,11 @@ The name list question is answered in [`ticket-the-day.md`](./ticket-the-day.md)
 only from the Jira project names the app already fetches. Still to decide:
 
 - Whether the report stays as copied text once the project manager says what they want.
-- Whether the CLI reports its token use in print mode. If it does not, the app records the call count
-  and the model instead.
+
+**The CLI does report its token use in print mode**, so the fallback of a call count is not needed. A
+`--output-format json` run answers a `usage` block beside its answer, and `meteredRunner` records it as
+an `agent-usage` event under the reserved provider `timetrack`. The day reports it on a line of its
+own: outside every stream, outside `spend` and `unattributedSpend`, and rebuilding no presence.
 
 ## M5: No day is lost
 

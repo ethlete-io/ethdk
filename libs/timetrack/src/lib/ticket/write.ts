@@ -183,6 +183,7 @@ export const ticketWritingSpec = (options: {
     systemPrompt: TICKET_WRITING_SYSTEM_PROMPT,
     schema: TICKET_WRITING_JSON_SCHEMA,
     stdin: JSON.stringify(options.request),
+    ask: 'a ticket',
     options: options.options,
   });
 

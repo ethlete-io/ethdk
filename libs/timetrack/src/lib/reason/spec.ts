@@ -1,4 +1,4 @@
-import { ProcessSpec } from '../transport/ports';
+import { ModelAsk, ProcessSpec } from '../transport/ports';
 import { DEFAULT_REASONING_OPTIONS, ReasoningOptions } from './model';
 
 /**
@@ -17,6 +17,7 @@ export const agentProcessSpec = (options: {
   systemPrompt: string;
   schema: unknown;
   stdin: string;
+  ask: ModelAsk;
   options?: Partial<ReasoningOptions>;
 }): ProcessSpec => {
   const settings = { ...DEFAULT_REASONING_OPTIONS, ...options.options };
@@ -35,5 +36,6 @@ export const agentProcessSpec = (options: {
     ],
     stdin: options.stdin,
     timeoutMs: settings.timeoutMs,
+    ask: options.ask,
   };
 };
