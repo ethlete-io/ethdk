@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { EMPTY_PSEUDONYM_MAP, pseudonymMap } from './pseudonym';
 import { ReasoningPlan } from './model';
 import { parseReasoningOutput } from './parse';
 
@@ -11,6 +12,7 @@ const PLAN: ReasoningPlan = {
     contexts: [{ id: 'c1', repo: 'ea-frontend', branch: 'refactor/hub-query-v3', minutes: 95, notes: [] }],
   },
   contextIds: { c1: 'repo:/Users/tom/dev/ea-frontend@refactor/hub-query-v3' },
+  map: EMPTY_PSEUDONYM_MAP,
   hash: 'abc',
 };
 
@@ -78,5 +80,36 @@ describe('parseReasoningOutput', () => {
 
   it('throws on output that is not JSON at all', () => {
     expect(() => parseReasoningOutput({ stdout: 'Usage: claude [options]', plan: PLAN })).toThrow();
+  });
+});
+
+describe('parseReasoningOutput over a request written in pseudonyms', () => {
+  const map = pseudonymMap(['Fifagg']);
+  const pseudonym = map.byName.get('fifagg') ?? '';
+  const plan: ReasoningPlan = {
+    request: {
+      candidates: [{ issueKey: `${pseudonym.toUpperCase()}-12623`, summary: `the ${pseudonym} journey` }],
+      contexts: [{ id: 'c1', repo: 'app', minutes: 95, notes: [] }],
+    },
+    contextIds: { c1: 'repo:/Users/tom/dev/app@feat/journey' },
+    map,
+    hash: 'abc',
+  };
+  const read = (issueKey: string, reason: string) =>
+    parseReasoningOutput({
+      stdout: JSON.stringify({ is_error: false, structured_output: { answers: [{ id: 'c1', issueKey, reason }] } }),
+      plan,
+    })[0];
+
+  it('reads the key back into the project the user actually works in', () => {
+    expect(read(`${pseudonym.toUpperCase()}-12623`, 'the branch names it')?.issueKey).toBe('FIFAGG-12623');
+  });
+
+  it('reads the pseudonyms in the reason back into real names', () => {
+    expect(read(`${pseudonym.toUpperCase()}-12623`, `the ${pseudonym} journey`)?.reason).toBe('the Fifagg journey');
+  });
+
+  it('drops a key the request never offered, whichever names it was written in', () => {
+    expect(read('FIFAGG-12623', 'the branch names it')).toBeUndefined();
   });
 });

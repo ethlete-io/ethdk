@@ -31,7 +31,7 @@ describe('parseTimetrackSettings', () => {
         parentLinkType: 'Blocks',
         subjectField: 'customfield_10057',
       },
-      reasoning: { enabled: true, command: 'codex', model: 'gpt-5' },
+      reasoning: { enabled: true, command: 'codex', model: 'gpt-5', maskedNames: ['Fifagg'] },
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['#.*-general'] },
@@ -56,7 +56,7 @@ describe('parseTimetrackSettings', () => {
         parentLinkType: 'Blocks',
         subjectField: 'customfield_10057',
       },
-      reasoning: { enabled: true, command: 'codex', model: 'gpt-5' },
+      reasoning: { enabled: true, command: 'codex', model: 'gpt-5', maskedNames: ['Fifagg'] },
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['#.*-general'] },
@@ -131,6 +131,7 @@ describe('parseTimetrackSettings', () => {
       enabled: true,
       command: DEFAULT_TIMETRACK_SETTINGS.reasoning.command,
       model: '',
+      maskedNames: [],
     });
     expect(parseTimetrackSettings({ reasoning: { command: 'claude' } }).reasoning.enabled).toBe(false);
   });

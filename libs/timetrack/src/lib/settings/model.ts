@@ -108,6 +108,15 @@ export type TimetrackReasoningSettings = {
   command: string;
   /** A model alias such as `sonnet`. Empty uses the CLI's own default, which is the usual answer. */
   model: string;
+  /**
+   * The names that become pseudonyms in anything sent to the model — clients, products, Jira project
+   * keys. Grown by hand, because only the user knows which word in their own commit subjects is a
+   * client; `unmaskedWords` reports every capitalised word this list does not hold, before a send.
+   *
+   * The list is the map. Nothing derived from it is stored, so the same list is what reads an answer
+   * written in pseudonyms back into real names. See ADR 0013.
+   */
+  maskedNames: string[];
 };
 
 /**
@@ -319,7 +328,12 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
     parentLinkType: 'Relates',
     subjectField: '',
   },
-  reasoning: { enabled: false, command: DEFAULT_REASONING_OPTIONS.command, model: DEFAULT_REASONING_OPTIONS.model },
+  reasoning: {
+    enabled: false,
+    command: DEFAULT_REASONING_OPTIONS.command,
+    model: DEFAULT_REASONING_OPTIONS.model,
+    maskedNames: [],
+  },
   nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
   exclusionRules: [],
   callRules: { countsAsWork: [], neverCountsAsWork: [] },

@@ -143,3 +143,54 @@ describe('reasoningCandidates', () => {
     expect(candidates.map((candidate) => candidate.issueKey)).toEqual(['FIP-1', 'FIP-2', 'FIP-3']);
   });
 });
+
+describe('reasoningPlan over a user who listed names to mask', () => {
+  const MASKED = ['Fifagg', 'Ea'];
+  const plan = () =>
+    reasoningPlan({
+      contexts: [unnamed({ repoPath: REPO, branch: 'feat/fifagg-journey' })],
+      unattributed: [
+        group([
+          block({ repoPath: REPO, branch: 'feat/fifagg-journey' }, [
+            evidence('commit', 'feat: the Fifagg journey overlay'),
+          ]),
+        ]),
+      ],
+      candidates: [{ issueKey: 'FIFAGG-12623', summary: 'the Fifagg journey' }],
+      maskedNames: MASKED,
+    });
+
+  const pseudonymFor = (name: string) => plan().map.byName.get(name.toLowerCase()) ?? '';
+
+  it('sends no listed name in a branch, a note or a candidate summary', () => {
+    const sent = JSON.stringify(plan().request);
+
+    expect(sent.toLowerCase()).not.toContain('fifagg');
+  });
+
+  it('sends the repository name as a pseudonym', () => {
+    expect(plan().request.contexts[0]?.repo).toBe(pseudonymFor('Ea') + '-frontend');
+  });
+
+  it('keeps the number of a candidate key and masks only its project', () => {
+    expect(plan().request.candidates[0]?.issueKey).toBe(`${pseudonymFor('Fifagg').toUpperCase()}-12623`);
+  });
+
+  it('asks a different question once the name list changes, so no cached answer is reused', () => {
+    const unmasked = reasoningPlan({
+      contexts: [unnamed({ repoPath: REPO, branch: 'feat/fifagg-journey' })],
+      unattributed: [],
+    });
+
+    expect(plan().hash).not.toBe(unmasked.hash);
+  });
+
+  it('leaves every field as written when the user listed no name', () => {
+    const bare = reasoningPlan({
+      contexts: [unnamed({ repoPath: REPO, branch: 'feat/fifagg-journey' })],
+      unattributed: [],
+    });
+
+    expect(bare.request.contexts[0]).toMatchObject({ repo: 'ea-frontend', branch: 'feat/fifagg-journey' });
+  });
+});

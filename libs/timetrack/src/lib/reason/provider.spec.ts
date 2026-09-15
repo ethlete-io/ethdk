@@ -1,6 +1,7 @@
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
+import { EMPTY_PSEUDONYM_MAP } from './pseudonym';
 import { ReasoningPlan } from './model';
 import { reasoningSpec, runReasoning$ } from './provider';
 
@@ -10,10 +11,16 @@ const PLAN: ReasoningPlan = {
     contexts: [{ id: 'c1', repo: 'ea-frontend', branch: 'refactor/hub-query-v3', minutes: 95, notes: [] }],
   },
   contextIds: { c1: 'repo:/Users/tom/dev/ea-frontend@refactor/hub-query-v3' },
+  map: EMPTY_PSEUDONYM_MAP,
   hash: 'abc',
 };
 
-const EMPTY_PLAN: ReasoningPlan = { request: { candidates: [], contexts: [] }, contextIds: {}, hash: 'empty' };
+const EMPTY_PLAN: ReasoningPlan = {
+  request: { candidates: [], contexts: [] },
+  contextIds: {},
+  map: EMPTY_PSEUDONYM_MAP,
+  hash: 'empty',
+};
 
 const ANSWER = JSON.stringify({
   is_error: false,

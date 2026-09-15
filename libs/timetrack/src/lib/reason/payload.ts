@@ -4,6 +4,7 @@ import { contextKey } from '../model/block';
 import { QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
 import { LoggedIssue } from '../model/recurrence';
+import { PseudonymMap, maskIssueKey, maskNames, pseudonymMap } from './pseudonym';
 import {
   DEFAULT_MAX_NOTES_PER_CONTEXT,
   DEFAULT_MIN_REASONING_MS,
@@ -90,21 +91,35 @@ export const reasoningCandidates = (options: {
   return [...found.values()];
 };
 
+const masked = (options: { text: string | undefined; map: PseudonymMap }) =>
+  options.text ? maskNames({ text: options.text, map: options.map }) : options.text;
+
+const maskedCandidate = (options: { candidate: ReasoningCandidate; map: PseudonymMap }): ReasoningCandidate => ({
+  issueKey: maskIssueKey({ issueKey: options.candidate.issueKey, map: options.map }),
+  summary: maskNames({ text: options.candidate.summary, map: options.map }),
+});
+
 /**
  * Builds the redacted payload for one day, and the map that reads its answer back.
  *
  * Contexts are addressed by token rather than by `contextKey`, because a `contextKey` for a
  * repository *is* its absolute path — sending one would put `/Users/<name>/dev/…` in a prompt.
+ *
+ * Every free-text field goes out in pseudonyms, the issue keys with them: a project key is a project
+ * name. What comes back is read in the same map — see `parseReasoningOutput`.
  */
 export const reasoningPlan = (options: {
   contexts: readonly UnnamedContext[];
   unattributed: readonly WorkGroup[];
   candidates?: readonly ReasoningCandidate[];
+  /** The user's own name list, from `settings.reasoning.maskedNames`. Empty masks nothing. */
+  maskedNames?: readonly string[];
   minObservedMs?: number;
   maxNotesPerContext?: number;
 }): ReasoningPlan => {
   const minObservedMs = options.minObservedMs ?? DEFAULT_MIN_REASONING_MS;
   const max = options.maxNotesPerContext ?? DEFAULT_MAX_NOTES_PER_CONTEXT;
+  const map = pseudonymMap(options.maskedNames ?? []);
   const contextIds: Record<string, string> = {};
   const contexts: ReasoningContext[] = [];
 
@@ -116,15 +131,20 @@ export const reasoningPlan = (options: {
     contextIds[token] = unnamed.id;
     contexts.push({
       id: token,
-      repo: unnamed.context.repoPath ? repoNameOf(unnamed.context.repoPath) : undefined,
-      branch: unnamed.context.branch,
-      app: unnamed.context.appId,
+      repo: masked({ text: unnamed.context.repoPath ? repoNameOf(unnamed.context.repoPath) : undefined, map }),
+      branch: masked({ text: unnamed.context.branch, map }),
+      app: masked({ text: unnamed.context.appId, map }),
       minutes: Math.round(unnamed.observedMs / 60_000),
-      notes: notesFor({ groups: options.unattributed, contextId: unnamed.id, max }),
+      notes: notesFor({ groups: options.unattributed, contextId: unnamed.id, max }).map((note) =>
+        maskNames({ text: note, map }),
+      ),
     });
   }
 
-  const request = { candidates: [...(options.candidates ?? [])], contexts };
+  const request = {
+    candidates: (options.candidates ?? []).map((candidate) => maskedCandidate({ candidate, map })),
+    contexts,
+  };
 
-  return { request, contextIds, hash: hashOf(JSON.stringify(request)) };
+  return { request, contextIds, map, hash: hashOf(JSON.stringify(request)) };
 };

@@ -1,6 +1,7 @@
 import { InferredAttribution } from '../model/attribution';
 import { agentOutputDocument } from './envelope';
 import { ReasoningPlan, ReasoningRequest } from './model';
+import { unmaskNames } from './pseudonym';
 
 type Answer = { id: string; issueKey: string | null; reason: string };
 
@@ -33,6 +34,9 @@ const knownKey = (request: ReasoningRequest, issueKey: string) =>
  * that answers something else is not a model to trust with the rest of the answer either, but the
  * day loses only that context — the remaining answers still stand on their own evidence.
  *
+ * The answer is checked in the pseudonyms it was asked in and read back into real names after, so a
+ * key the model echoed is matched against what was actually sent.
+ *
  * Throws when the output is not readable at all, which is what the single retry is for.
  */
 export const parseReasoningOutput = (options: { stdout: string; plan: ReasoningPlan }): InferredAttribution[] => {
@@ -51,7 +55,11 @@ export const parseReasoningOutput = (options: { stdout: string; plan: ReasoningP
     if (!knownKey(plan.request, issueKey)) continue;
 
     answered.add(contextId);
-    inferred.push({ contextId, issueKey, reason });
+    inferred.push({
+      contextId,
+      issueKey: unmaskNames({ text: issueKey, map: plan.map }),
+      reason: unmaskNames({ text: reason, map: plan.map }),
+    });
   }
 
   return inferred;

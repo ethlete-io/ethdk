@@ -1,3 +1,5 @@
+import { PseudonymMap } from './pseudonym';
+
 /** An issue the day already knows about, offered so the provider chooses rather than invents. */
 export type ReasoningCandidate = {
   issueKey: string;
@@ -31,6 +33,11 @@ export type ReasoningPlan = {
   request: ReasoningRequest;
   /** `c1` → the `UnnamedContext.id` it stands for. */
   contextIds: Record<string, string>;
+  /**
+   * The pseudonyms the request was written in, so the answer can be read back in real names. It is
+   * rebuilt from the user's own name list on every plan and stored nowhere. See ADR 0013.
+   */
+  map: PseudonymMap;
   /** Identifies the request, so re-opening a day reads the cached answer instead of spawning a CLI. */
   hash: string;
 };
