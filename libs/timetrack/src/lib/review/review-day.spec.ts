@@ -687,6 +687,44 @@ describe('setRowRange', () => {
     expect(rowFor(review, 'ABC-1')).toMatchObject({ from: at('09:30'), to: at('11:00') });
   });
 
+  it('keeps the end a first drag set while a second drag moves the start', () => {
+    const day = laned({ from: '09:00', to: '12:00', minutes: 180 });
+    const grown = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewDay({ rows: day }), 'ABC-1'),
+      from: at('09:00'),
+      to: at('13:00'),
+    });
+    const edits = setRowRange({
+      edits: grown,
+      row: rowFor(reviewDay({ rows: day, edits: grown }), 'ABC-1'),
+      from: at('08:00'),
+      to: at('13:00'),
+    });
+    const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
+
+    expect(rowFor(review, 'ABC-1')).toMatchObject({ from: at('08:00'), to: at('13:00') });
+  });
+
+  it('keeps the start a first drag set while a second drag moves the end', () => {
+    const day = laned({ from: '09:00', to: '12:00', minutes: 180 });
+    const grown = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewDay({ rows: day }), 'ABC-1'),
+      from: at('08:00'),
+      to: at('12:00'),
+    });
+    const edits = setRowRange({
+      edits: grown,
+      row: rowFor(reviewDay({ rows: day, edits: grown }), 'ABC-1'),
+      from: at('08:00'),
+      to: at('13:00'),
+    });
+    const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
+
+    expect(rowFor(review, 'ABC-1')).toMatchObject({ from: at('08:00'), to: at('13:00') });
+  });
+
   const editedSpans = (review: DayReview) => review.rows.filter((row) => row.edited).map((row) => [row.from, row.to]);
 
   it('holds both ends of a row that was moved rather than resized', () => {
@@ -696,7 +734,7 @@ describe('setRowRange', () => {
     expect(editedSpans(review)).toEqual([[at('13:00'), at('16:00')]]);
   });
 
-  it('frees the end again when a row pinned by an earlier drag has its start dragged', () => {
+  it('holds the end of a row that was moved, even after its start is dragged', () => {
     const day = laned({ from: '09:00', to: '12:00', minutes: 180 });
     const moved = setRowRange({
       edits: EMPTY_DAY_REVIEW_EDITS,
@@ -712,7 +750,7 @@ describe('setRowRange', () => {
     });
     const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
 
-    expect(editedSpans(review)).toEqual([[at('12:45'), at('14:00')]]);
+    expect(editedSpans(review)).toEqual([[at('12:45'), at('16:00')]]);
   });
 
   it('holds a typed duration against a day that grew, because a duration is a span', () => {

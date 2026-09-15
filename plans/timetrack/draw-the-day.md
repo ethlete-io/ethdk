@@ -132,26 +132,6 @@ row. With `correlate/` deleted there is no second pipeline to compare against, s
 `stream/stream-day-rows.spec.ts` and it pins the same days' numbers directly. The real-day half needs
 the screen: the store is encrypted, so no script outside the app can read a day out of it.
 
-## Open bug: a resize undoes the last one at the other end
-
-Reported by Tom, 2026-09-14. He pressed Reset on the `fifagg-frontend` row, then dragged it larger at
-both ends in turn. **Dragging the end down puts the start back where it was, and dragging the start up
-puts the end back.** Only the end of the most recent drag survives.
-
-The cause is confirmed, 2026-09-14: `setRowRange` (`libs/timetrack/src/lib/review/edits.ts:435`)
-writes `tracksFrom` and `tracksTo` fresh on every drag, so the second drag clears the pin the first
-one set and `trackPinnedRows` (`review/review-day.ts:107`) re-reads that end off the engine's own
-row. The flags have to accumulate rather than be rewritten per drag.
-
-**Start here: `.claude/handoffs/timetrack-day-reads-honestly.md`.** It holds the candidate one-line
-fix, the test to write first, and the gotchas that cost the last session an hour — a reused e2e dev
-server on `:4211` that serves a stale build and hides Angular template type errors, which
-`tsc --noEmit` does not catch.
-
-Whatever the fix, it must keep the behaviour `0c94914ac` shipped: a row whose start was dragged still
-follows a day that is still being worked. A test has to fail without the fix — drag one end, then the
-other, and read both bounds back.
-
 ## Not in this milestone
 
 No naming beyond what the ladder already does — that is M3. No ticket drafts, no report, no model

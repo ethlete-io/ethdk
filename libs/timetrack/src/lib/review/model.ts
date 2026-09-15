@@ -48,8 +48,9 @@ export type PinnedRow = {
   /** True where the day's own row still decides this end. See {@link PinnedRow.tracksTo}. */
   tracksFrom?: boolean;
   /**
-   * True where the day's own row still decides this end. A drag pins only the end it moved, so moving
-   * a row's start leaves its end following a day that is still being worked.
+   * True where the day's own row still decides this end. A drag pins only the end it moved, so
+   * dragging a row's start leaves its end following a day that is still being worked. A pin holds:
+   * once an end is false, a later drag at the other end never sets it back to true.
    */
   tracksTo?: boolean;
   description: string;
