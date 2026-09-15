@@ -72,15 +72,18 @@ const callEvidence = (options: { call: CallWindow; window: TimeWindow }): Eviden
  * How sure the row is about which work the call was.
  *
  * The call itself is never in doubt — the microphone opened. What the confidence measures is the
- * naming, so only a meeting the call itself confirmed may reach `certain`. With no meeting behind it a
- * call reaches `likely` at best, and only on the user's own remembered answer: a Tempo pattern names a
- * time of day rather than a call, so it stays `weak` and never syncs unreviewed.
+ * naming, so it comes from whatever named the issue rather than from the rung that named it. Only an
+ * occurrence the call itself confirmed may reach `certain`. The user's own remembered answer about a
+ * call reaches `likely`, and a Tempo pattern names a time of day rather than a call, so it stays
+ * `weak` and never syncs unreviewed.
  */
 const confidenceOf = (options: { meeting?: PickedCandidate; key?: NamedWork }): Confidence => {
-  if (!options.key) return 'weak';
-  if (!options.meeting) return options.key.strength ?? 'weak';
+  const { key, meeting } = options;
 
-  return options.meeting.match === 'certain' ? 'certain' : 'likely';
+  if (!key) return 'weak';
+  if (key.keySource === 'event-title' || key.keySource === 'remembered') return meeting?.match ?? 'weak';
+
+  return key.strength ?? 'weak';
 };
 
 /**
@@ -190,12 +193,13 @@ const matchOne = (options: {
    */
   const meeting = picked && (picked.match === 'certain' || answered?.strength !== 'likely') ? picked : undefined;
   /**
-   * The user's own answer is read before the history: a remembered naming is a statement about this
-   * call, and a pattern is a statement about this time of day. See ADR 0012.
+   * A rung that named nothing does not end the ladder: an occurrence the call confirms says which
+   * meeting this was, and that is not the same thing as saying which work it books. Below it the
+   * user's own answer is read before the history, because a remembered naming is a statement about
+   * this call and a pattern is a statement about this time of day. See ADR 0012.
    */
-  const key = meeting
-    ? occurrenceIssueKey({ event: meeting.event, meetings })
-    : (answered ?? patternIssueKey({ at: window.from, meetings }));
+  const named = meeting ? occurrenceIssueKey({ event: meeting.event, meetings }) : undefined;
+  const key = named ?? answered ?? patternIssueKey({ at: window.from, meetings });
 
   return {
     call,

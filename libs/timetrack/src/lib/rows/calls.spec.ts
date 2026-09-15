@@ -411,6 +411,29 @@ describe('a call the calendar never held', () => {
     expect(second?.group.laneKey).toBe(CALL_LANE_KEY);
   });
 
+  it('keeps the user answer when the meeting a title named holds no issue of its own', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      blocks: [titled('Sprint Review — Discord')],
+      occurrences: [meetingOccurrence, overlapping],
+      meetings: { callNamings: [naming()] },
+    });
+
+    expect(second?.group.issueKey).toBe('ABC-7');
+    expect(second?.group.confidence).toBe('likely');
+  });
+
+  it('reads the Tempo history when the meeting it picked holds no issue of its own', () => {
+    const [, second] = match({
+      calls: [meeting, room],
+      occurrences: [meetingOccurrence, overlapping],
+      meetings: { patterns: PATTERNS },
+    });
+
+    expect(second?.group.issueKey).toBe('ABC-9');
+    expect(second?.group.confidence).toBe('weak');
+  });
+
   it('carries the features naming its row would remember', () => {
     const [, second] = match({ calls: [meeting, room], occurrences: [meetingOccurrence] });
 
