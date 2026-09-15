@@ -43,6 +43,13 @@ export type WorklogProposal = {
    */
   unattended?: boolean;
   /**
+   * The issue the ladder named this band, on a band that is drawn unnamed because nobody was at the
+   * machine for it. The row still books nothing and still never syncs — `isNamedRow` reads `issueKey`
+   * and this is not it. It is there so that deciding an agent's run was yours to book is one press
+   * rather than a retyped key the day already worked out.
+   */
+  withheldIssueKey?: string;
+  /**
    * True where a rule said this band is not work: a voice room the call rules exclude. The band is
    * drawn so the user can still make a row of it on the day it held a meeting, and it books nothing
    * until they name it themselves. See ADR 0024.

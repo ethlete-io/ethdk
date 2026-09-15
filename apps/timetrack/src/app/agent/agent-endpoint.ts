@@ -263,6 +263,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     laneKey: row.laneKey,
     state: row.state,
     confidence: row.confidence,
+    withheldIssueKey: row.withheldIssueKey,
     edited: row.edited,
     hidden: row.hidden,
   });

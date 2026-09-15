@@ -334,3 +334,36 @@ describe('buildRows with a timed run', () => {
     expect(rows.unnamed.map((row) => row.laneKey)).toEqual([TIMER_LANE_KEY]);
   });
 });
+
+describe('buildRows with a rule naming an issue for work nobody watched', () => {
+  const RULE: AttributionRule = {
+    id: 'rule-1',
+    repoPath: '/dev/a',
+    target: { kind: 'issue', issueKey: 'FIP-2178' },
+    author: 'user',
+    createdAt: at(8),
+  };
+
+  const WORK = [block({ from: at(9), to: at(10), context: { repoPath: '/dev/a', branch: 'no-key-here' } })];
+
+  it('books nothing, because nobody was at the machine', () => {
+    const rows = buildRows({ blocks: WORK, events: [], rules: [RULE] });
+
+    expect(rows.proposals).toEqual([]);
+    expect(rows.unnamed).toHaveLength(1);
+    expect(rows.unnamed[0]?.unattended).toBe(true);
+  });
+
+  it('keeps the key the rule named, so the user does not type it again', () => {
+    const rows = buildRows({ blocks: WORK, events: [], rules: [RULE] });
+
+    expect(rows.unnamed[0]?.withheldIssueKey).toBe('FIP-2178');
+  });
+
+  it('withholds nothing where no rung named the band', () => {
+    const rows = buildRows({ blocks: WORK, events: [] });
+
+    expect(rows.unnamed[0]?.unattended).toBe(true);
+    expect(rows.unnamed[0]?.withheldIssueKey).toBeUndefined();
+  });
+});

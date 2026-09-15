@@ -40,6 +40,9 @@ type AttributedGroup = WorkGroup & { issueKey: string };
  * because a proposal is the thing a reviewer accepts, and nothing the user has to notice may be the
  * only guard against booking an hour nobody was there for. Such a band is still drawn, in `unnamed`,
  * and the user can still name it by hand — which is a deliberate act rather than an oversight.
+ *
+ * What it keeps is the key the ladder found, on `withheldIssueKey`. Refusing to book the band and
+ * forgetting what it was are two decisions, and only the first one is this guard's.
  */
 const isAttributed = (group: WorkGroup): group is AttributedGroup => !!group.issueKey && group.attended !== false;
 
@@ -125,6 +128,7 @@ export const propose = (options: {
       id: unnamedRowId(group),
       ...(group.standInId ? { standInId: group.standInId } : {}),
       ...(group.attended === false ? { unattended: true } : {}),
+      ...(group.attended === false && group.issueKey ? { withheldIssueKey: group.issueKey } : {}),
       ...(group.bookable === false ? { excluded: true } : {}),
       from,
       to,

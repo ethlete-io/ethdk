@@ -16,6 +16,9 @@ export const UNNAMED_LABEL = 'Not yet named';
  * What a band with no issue is called when nobody was at the machine for it. It is a different answer
  * from {@link UNNAMED_LABEL}: the day is not waiting to be told what this work was, it is saying that
  * an agent did it alone and that its hours are not the user's to book.
+ *
+ * The key the ladder found follows it where there is one, so the band says what ran as well as who
+ * did not watch it. The state leads, so no band that books nothing reads as one that does.
  */
 export const UNATTENDED_LABEL = 'Nobody was here';
 
@@ -37,8 +40,9 @@ export const unnamedLabelOf = (options: { row: ReviewedRow; standInName?: string
 
   if (row.excluded) return EXCLUDED_LABEL;
   if (row.standInId && options.standInName) return options.standInName;
+  if (!row.unattended) return UNNAMED_LABEL;
 
-  return row.unattended ? UNATTENDED_LABEL : UNNAMED_LABEL;
+  return row.withheldIssueKey ? `${UNATTENDED_LABEL} · ${row.withheldIssueKey}` : UNATTENDED_LABEL;
 };
 
 /**

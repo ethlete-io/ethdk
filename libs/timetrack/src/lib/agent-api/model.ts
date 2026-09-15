@@ -227,6 +227,12 @@ export type AgentApiReviewedRow = {
   laneKey?: string;
   state: WorklogProposalState;
   confidence: Confidence;
+  /**
+   * Why an unnamed row is unnamed, where the ladder did name it: the key the day withheld because
+   * nobody was at the machine. A caller asked to check a day reads it to tell such a band apart from
+   * one the ladder could not name at all.
+   */
+  withheldIssueKey?: string;
   /** Whether a reviewer's own edit produced this row. */
   edited: boolean;
   /** Whether the row is off the timeline. A hidden row is neither written nor waiting for a name. */
