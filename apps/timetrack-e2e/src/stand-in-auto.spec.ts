@@ -1,5 +1,5 @@
 import { Page } from '@playwright/test';
-import { E2E_REPO, defaultSettings } from '@ethlete/timetrack/testing';
+import { E2E_PARENT_ID, E2E_PARENT_KEY, E2E_REPO, defaultSettings, tempoWorklogOn } from '@ethlete/timetrack/testing';
 import { E2E_NOW, editSurface, expect, openBand, seedWorld, test } from './support';
 
 /** The checkout is work and files its tickets in ABC. Nothing yet says which issue that work is. */
@@ -104,5 +104,32 @@ test.describe('a checkout no link covers', () => {
 
     await expect(page.locator('[data-kind="row"][title^="Not yet named"]')).not.toHaveCount(0);
     await expect(page.locator('[data-waiting-on-a-ticket]')).toHaveCount(0);
+  });
+});
+
+/** Five earlier days on the one task the project's hours went to, which is what makes the offer. */
+const HISTORY = ['2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07', '2026-08-11'].map((day, index) =>
+  tempoWorklogOn({ day, minutes: 120, issueId: E2E_PARENT_ID, id: `w-history-${index}`, description: 'SDK work' }),
+);
+
+/**
+ * The record already names the checkout an issue, so a placeholder would answer a question nobody has.
+ * Worse, the rule it writes replaces the one the offer would have written and the offer reads a rule as
+ * an answer — so accepting it would never be possible again.
+ */
+test.describe('a linked checkout the record already names an issue for', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] },
+      tempo: { worklogs: HISTORY },
+    });
+    await page.goto('/day');
+    await expect(page.locator(`[data-offer="${E2E_REPO}"]`)).toContainText(E2E_PARENT_KEY);
+  });
+
+  test('opens no stand-in, and keeps offering the issue', async ({ page }) => {
+    await expect(page.locator('[data-waiting-on-a-ticket]')).toHaveCount(0);
+    await expect(band(page)).toHaveCount(0);
   });
 });

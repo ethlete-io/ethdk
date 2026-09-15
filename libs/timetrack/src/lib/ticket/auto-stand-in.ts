@@ -1,6 +1,6 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { WorkGroup } from '../rows/merge';
-import { AttributionRule, UnnamedContext, standInIdOf } from '../model/attribution';
+import { AttributionRule, UnnamedContext } from '../model/attribution';
 import { repoRootOf } from '../model/context';
 import { TimetrackProjectLink, describeProjectLink, matchProjectLink } from '../model/project-link';
 import { StandIn, openStandIn } from '../model/stand-in';
@@ -53,9 +53,16 @@ const groupByRepo = (contexts: readonly UnnamedContext[]) => {
 const isCheckout = (options: { repoPath: string; roots: readonly string[] }) =>
   repoRootOf({ path: options.repoPath, roots: options.roots }) === options.repoPath;
 
-/** A checkout the app already opened a placeholder for, whether or not this day's contexts show it. */
-const alreadyCovered = (options: { repoPath: string; rules: readonly AttributionRule[] }) =>
-  options.rules.some((rule) => rule.repoPath === options.repoPath && !rule.branch && !!standInIdOf(rule));
+/**
+ * A checkout an answer already stands for, whether or not this day's contexts show it.
+ *
+ * Any checkout-wide rule counts, not only one pointing at a stand-in. `withAttributionRule` replaces
+ * the rule naming the same context, so a placeholder opened here would delete the issue the user named
+ * the checkout with — and the naming offer that would have named it again reads a rule as an answer,
+ * so it never comes back either.
+ */
+const alreadyAnswered = (options: { repoPath: string; rules: readonly AttributionRule[] }) =>
+  options.rules.some((rule) => rule.repoPath === options.repoPath && !rule.branch);
 
 /**
  * Opens a placeholder for every linked checkout whose work no rule could name, one per checkout.
@@ -74,6 +81,10 @@ const alreadyCovered = (options: { repoPath: string; rules: readonly Attribution
  * Nothing opens until the host has answered which repositories exist. The day is cut before that
  * answer arrives, and a day cut without it gives every subdirectory an agent ran in its own stream —
  * so a pass that ran then would write permanent rules for paths that are not checkouts.
+ *
+ * A checkout the app can still offer a real issue for is left alone. The offer is read out of the
+ * user's own Tempo history, it arrives later than the day does, and a placeholder written first both
+ * replaces the rule it would have become and stops the offer ever being made again.
  */
 export const autoStandIns = (options: {
   contexts: readonly UnnamedContext[];
@@ -86,6 +97,11 @@ export const autoStandIns = (options: {
    * opens until it has.
    */
   repoRoots: readonly string[] | null | undefined;
+  /**
+   * The checkouts the app can still offer a real issue for. A placeholder is the answer for work no
+   * issue covers, so one that does is not work for a placeholder.
+   */
+  offeredCheckouts: readonly string[];
   /** The local day key the placeholders open on. */
   day: string;
   now: Date;
@@ -101,7 +117,8 @@ export const autoStandIns = (options: {
   for (const group of groupByRepo(options.contexts)) {
     if (group.observedMs < minObservedMs) continue;
     if (!isCheckout({ repoPath: group.repoPath, roots })) continue;
-    if (alreadyCovered({ repoPath: group.repoPath, rules: options.rules })) continue;
+    if (options.offeredCheckouts.includes(group.repoPath)) continue;
+    if (alreadyAnswered({ repoPath: group.repoPath, rules: options.rules })) continue;
 
     const first = group.contexts[0];
     const link = first && matchProjectLink({ context: first.context, links: options.links });

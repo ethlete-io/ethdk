@@ -52,6 +52,7 @@ const open = (options: {
   links?: readonly TimetrackProjectLink[];
   rules?: readonly AttributionRule[];
   repoRoots?: readonly string[] | null;
+  offeredCheckouts?: readonly string[];
 }) =>
   autoStandIns({
     contexts: options.contexts,
@@ -60,6 +61,7 @@ const open = (options: {
     rules: options.rules ?? [],
     config: CONFIG,
     repoRoots: options.repoRoots === undefined ? [FIFAGG, OTHER] : options.repoRoots,
+    offeredCheckouts: options.offeredCheckouts ?? [],
     day: '2026-09-15',
     now: NOW,
   });
@@ -190,5 +192,25 @@ describe('autoStandIns', () => {
     });
 
     expect(opened).toHaveLength(1);
+  });
+  it('opens none for a checkout the app can still offer a real issue for', () => {
+    const contexts = [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)];
+
+    expect(open({ contexts, offeredCheckouts: [FIFAGG] })).toEqual([]);
+    expect(open({ contexts })).toHaveLength(1);
+  });
+
+  it('never replaces a rule that names the checkout an issue', () => {
+    const named: AttributionRule = {
+      id: 'repo:fifagg',
+      repoPath: FIFAGG,
+      target: { kind: 'issue', issueKey: 'FIF-1' },
+      author: 'user',
+      createdAt: new Date('2026-09-01T00:00:00Z'),
+    };
+
+    expect(open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)], rules: [named] })).toEqual(
+      [],
+    );
   });
 });

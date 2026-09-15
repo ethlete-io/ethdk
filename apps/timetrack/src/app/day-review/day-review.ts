@@ -524,12 +524,16 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * It waits for the day's own evidence, because a name drafted from half a day is a name the user has
    * to correct. Both writes are what stop it reading its own write back: the rule takes the checkout
    * out of `unnamed()`, and the day list is written only when the day is missing from it.
+   *
+   * It waits for the Tempo history too. A naming offer is read out of it, it arrives long after the
+   * day does, and a read taken while the request is out reports no history at all — so a pass that ran
+   * first would open a placeholder for a checkout the user's own record already names an issue for.
    */
   effect(() => {
     const load = evidenceLoad();
     const deterministic = deterministicRows();
 
-    if (!load || load.failure || !deterministic) return;
+    if (!load || load.failure || !deterministic || recurring.state().state === 'loading') return;
 
     const current = settings.settings();
     const key = day();
@@ -541,6 +545,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       rules: current.attributionRules,
       config: gitFlowConfigFor(current),
       repoRoots: git.discovery()?.repos,
+      offeredCheckouts: namingOffers().map((offer) => offer.repoPath),
       day: key,
       now: new Date(),
     })) {
