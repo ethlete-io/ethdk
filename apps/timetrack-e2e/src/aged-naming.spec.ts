@@ -35,9 +35,7 @@ const settings = () => ({
   ...defaultSettings(),
   callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] },
   nudge: { ...defaultSettings().nudge, enabled: false },
-  meetingNamings: [
-    { seriesKey: 'weekly', issueKey: E2E_ISSUE_KEY, title: 'Weekly sync', createdAt: at(-60).toISOString() },
-  ],
+  meetingNamings: [{ seriesKey: 'weekly', issueKey: E2E_ISSUE_KEY, title: 'Weekly sync', createdAt: at(-60) }],
 });
 
 const issues = (updated: string) => [

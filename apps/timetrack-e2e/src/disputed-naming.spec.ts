@@ -33,18 +33,16 @@ const settings = () => ({
   ...defaultSettings(),
   callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] },
   nudge: { ...defaultSettings().nudge, enabled: false },
-  meetingNamings: [
-    { seriesKey: 'weekly', issueKey: E2E_PARENT_KEY, title: 'Weekly sync', createdAt: at(-60).toISOString() },
-  ],
+  meetingNamings: [{ seriesKey: 'weekly', issueKey: E2E_PARENT_KEY, title: 'Weekly sync', createdAt: at(-60) }],
   callNamings: [
     {
       appId: HELPER.toLowerCase(),
       weekday: 3,
       durationBand: '30-60',
       startMinute: 14 * 60 + 1,
-      issueKey: E2E_ISSUE_KEY,
+      target: { kind: 'issue' as const, issueKey: E2E_ISSUE_KEY },
       label: 'Open Room #1',
-      createdAt: at(-60).toISOString(),
+      createdAt: at(-60),
     },
   ],
 });
@@ -90,9 +88,7 @@ test.describe('a band two answers disagree about', () => {
       events: EVENTS,
       settings: {
         ...settings(),
-        meetingNamings: [
-          { seriesKey: 'weekly', issueKey: E2E_ISSUE_KEY, title: 'Weekly sync', createdAt: at(-60).toISOString() },
-        ],
+        meetingNamings: [{ seriesKey: 'weekly', issueKey: E2E_ISSUE_KEY, title: 'Weekly sync', createdAt: at(-60) }],
       },
     });
     await page.goto('/day');
