@@ -229,7 +229,9 @@ window title, never a file path. A suggestion never syncs on its own.`;
                       (valueChange)="store.setStandInOverdueWorkdays(+($event ?? 0))"
                     >
                       @for (option of workdayOptions(); track option.value) {
-                        <et-select-option [value]="option.value" [label]="option.label" />
+                        <et-select-option [value]="option.value" [label]="option.label">
+                          {{ option.label }}
+                        </et-select-option>
                       }
                     </et-select>
                   </et-form-field>
