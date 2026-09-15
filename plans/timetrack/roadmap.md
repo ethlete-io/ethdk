@@ -360,6 +360,10 @@ took, rather than folding it into a line.
 To decide: where a price lives when it changes. A day in June and a day in September use different
 prices for the same model, so a price is dated, and a re-read of an old day must not reprice it.
 
+To decide: whether a press refreshes the day. `probe` in `day-review.ts` tracks each collector's
+`lastRun()`, and the app's own model call is no collector, so the own-spend line appears only on the
+next collector pass. Found 2026-09-15; the e2e steps off the day and back to force the read.
+
 ## M9: The week, and the price of work
 
 **Slice 6, plus slice 10.**
