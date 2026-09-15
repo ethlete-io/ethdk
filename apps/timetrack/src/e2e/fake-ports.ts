@@ -14,6 +14,7 @@ import {
   TimetrackRequest,
   TimetrackResponse,
   TimetrackSettings,
+  parseTimetrackSettings,
   dedupeKeyOf,
 } from '@ethlete/timetrack';
 import {
@@ -85,7 +86,9 @@ export const createFakePorts = (): HostPorts => {
   ]);
   const nudges = new Map<string, DayNudgeRecord>();
   const timers: TimerRun[] = [];
-  let settings: TimetrackSettings = world.settings;
+  // Read through the same parse the real store uses. A seed crosses into the page as JSON, so every
+  // `Date` on it arrives as a string, and only the parse turns them back.
+  let settings: TimetrackSettings = parseTimetrackSettings(world.settings);
   let pausedAt: Date | null = null;
   let reasoningRuns = 0;
 

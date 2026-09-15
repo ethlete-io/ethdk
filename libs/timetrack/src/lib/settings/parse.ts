@@ -10,6 +10,7 @@ import {
   TimetrackCallRules,
   TimetrackFavoriteProject,
   TimetrackNudgeSettings,
+  TimetrackStandInSettings,
   TimetrackReasoningSettings,
   TimetrackSettings,
   TimetrackTicketSettings,
@@ -272,6 +273,17 @@ const asNudge = (value: unknown): TimetrackNudgeSettings => {
   };
 };
 
+const asStandInSettings = (value: unknown): TimetrackStandInSettings => {
+  const raw = asRecord(value);
+  const workdays = asWholeNumber(raw['overdueAfterWorkdays']);
+  const held = asWholeNumber(raw['overdueAfterMs']);
+
+  return {
+    overdueAfterWorkdays: workdays ?? DEFAULT_TIMETRACK_SETTINGS.standIn.overdueAfterWorkdays,
+    overdueAfterMs: held ?? DEFAULT_TIMETRACK_SETTINGS.standIn.overdueAfterMs,
+  };
+};
+
 /**
  * The command is read back against the allowlist rather than taken as written. A settings document is
  * a file on disk, and the host would otherwise be asked to spawn whatever a hand-edit put here.
@@ -377,6 +389,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     ticket: asTicket(document['ticket']),
     reasoning: asReasoning(document['reasoning']),
     nudge: asNudge(document['nudge']),
+    standIn: asStandInSettings(document['standIn']),
     exclusionRules: asRules(document['exclusionRules']),
     callRules: asCallRules(document['callRules']),
     noWorkContextApps: asTextList(document['noWorkContextApps']),

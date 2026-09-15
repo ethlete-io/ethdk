@@ -8,7 +8,7 @@ import {
   dialogOverlayStrategy,
 } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
-import { StandIn } from '@ethlete/timetrack';
+import { StandIn, StandInAge, formatDurationMs } from '@ethlete/timetrack';
 import { CreateTicketComponent } from '../day-review/create-ticket.component';
 import { injectTicketDraft } from '../day-review/ticket-draft';
 import { IssueSelectComponent } from '../jira';
@@ -44,6 +44,18 @@ import { injectStandIns } from './stand-ins';
                 }
                 <span class="shrink-0 text-small text-et-surface-muted">{{ entry.days }}</span>
               </div>
+
+              @if (entry.age; as age) {
+                <div class="flex flex-wrap items-center gap-2 text-small">
+                  <span class="text-et-surface-muted">{{ age }}</span>
+
+                  @if (entry.isOverdue) {
+                    <span class="rounded-sm bg-et-warning/15 px-2 text-et-warning-ink" data-overdue>
+                      Waited long enough
+                    </span>
+                  }
+                </div>
+              }
 
               @if (entry.standIn.state === 'open') {
                 <div class="flex flex-wrap items-center gap-2">
@@ -170,15 +182,23 @@ export class StandInsComponent {
 
   private drafts = signal<Record<string, string>>({});
 
-  protected listed = computed(() =>
-    this.store.standIns().map((standIn) => ({
-      id: standIn.id,
-      standIn,
-      projectKey: standIn.projectKey ?? '',
-      days: daysLabel(standIn),
-      canReopen: this.store.canReopen(standIn),
-    })),
-  );
+  protected listed = computed(() => {
+    const ages = this.store.ages();
+
+    return this.store.standIns().map((standIn) => {
+      const age = ages.get(standIn.id);
+
+      return {
+        id: standIn.id,
+        standIn,
+        projectKey: standIn.projectKey ?? '',
+        days: daysLabel(standIn),
+        age: standIn.state === 'open' && age ? ageLabel(age) : '',
+        isOverdue: !!age?.isOverdue,
+        canReopen: this.store.canReopen(standIn),
+      };
+    });
+  });
 
   protected draftFor(id: string) {
     return this.drafts()[id] ?? '';
@@ -193,6 +213,13 @@ export class StandInsComponent {
     this.setDraft(id, '');
   }
 }
+
+/** How long it has waited: the workdays since it was opened, and the time its bands already hold. */
+const ageLabel = (age: StandInAge) => {
+  const workdays = age.workdays === 1 ? '1 workday' : `${age.workdays} workdays`;
+
+  return age.heldMs ? `${workdays} · ${formatDurationMs(age.heldMs)} held` : workdays;
+};
 
 /** The days a stand-in holds bands on, which are the days a resolve makes bookable. */
 const daysLabel = (standIn: StandIn) => {

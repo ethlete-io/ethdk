@@ -33,6 +33,7 @@ describe('parseTimetrackSettings', () => {
       },
       reasoning: { enabled: true, command: 'codex', model: 'gpt-5', maskedNames: ['Fifagg'] },
       nudge: { enabled: false, atMinute: 18 * 60 },
+      standIn: { overdueAfterWorkdays: 3, overdueAfterMs: 2 * 3_600_000 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['#.*-general'] },
       noWorkContextApps: ['spotify'],
@@ -58,6 +59,7 @@ describe('parseTimetrackSettings', () => {
       },
       reasoning: { enabled: true, command: 'codex', model: 'gpt-5', maskedNames: ['Fifagg'] },
       nudge: { enabled: false, atMinute: 18 * 60 },
+      standIn: { overdueAfterWorkdays: 3, overdueAfterMs: 2 * 3_600_000 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['#.*-general'] },
       noWorkContextApps: ['spotify'],
@@ -101,6 +103,7 @@ describe('parseTimetrackSettings', () => {
       ticket: DEFAULT_TIMETRACK_SETTINGS.ticket,
       reasoning: DEFAULT_TIMETRACK_SETTINGS.reasoning,
       nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
+      standIn: DEFAULT_TIMETRACK_SETTINGS.standIn,
       exclusionRules: [],
       callRules: { countsAsWork: [], neverCountsAsWork: [] },
       noWorkContextApps: [],
@@ -124,6 +127,17 @@ describe('parseTimetrackSettings', () => {
     expect(parseTimetrackSettings({ nudge: { atMinute: -30 } }).nudge).toEqual({ enabled: true, atMinute: 0 });
     expect(parseTimetrackSettings({ nudge: { atMinute: 5_000 } }).nudge.atMinute).toBe(MAX_MINUTE_OF_DAY);
     expect(parseTimetrackSettings({ nudge: { enabled: false } }).nudge.atMinute).toBe(DEFAULT_NUDGE_AT_MINUTE);
+  });
+
+  it('takes the two stand-in limits as written, and defaults each on its own', () => {
+    expect(parseTimetrackSettings({ standIn: { overdueAfterWorkdays: 3 } }).standIn).toEqual({
+      overdueAfterWorkdays: 3,
+      overdueAfterMs: DEFAULT_TIMETRACK_SETTINGS.standIn.overdueAfterMs,
+    });
+    expect(parseTimetrackSettings({ standIn: { overdueAfterMs: 0 } }).standIn.overdueAfterMs).toBe(0);
+    expect(parseTimetrackSettings({ standIn: { overdueAfterWorkdays: 'five' } }).standIn.overdueAfterWorkdays).toBe(
+      DEFAULT_TIMETRACK_SETTINGS.standIn.overdueAfterWorkdays,
+    );
   });
 
   it('refuses a reasoning command the host would not run, and stays off unless turned on', () => {

@@ -7,7 +7,10 @@ import {
   matchStandIn,
   openStandIn,
   openStandIns,
+  standInAge,
   standInDays,
+  standInHeldMs,
+  workdaysBetween,
 } from './stand-in';
 
 const standIn = (overrides: Partial<StandIn> = {}): StandIn => ({
@@ -127,5 +130,83 @@ describe('canReopenStandIn', () => {
 
   it('refuses for a stand-in that was never resolved, because there is nothing to undo', () => {
     expect(canReopenStandIn({ standIn: standIn({ days: ['2026-09-14'] }), syncedDays: [] })).toBe(false);
+  });
+});
+
+/** A Monday, so every span in these tests is read against a known weekday. */
+const MONDAY = new Date(2026, 8, 14);
+
+const on = (day: number) => new Date(2026, 8, day);
+
+describe('workdaysBetween', () => {
+  it('counts no day at all on the day it was opened', () => {
+    expect(workdaysBetween({ from: MONDAY, to: MONDAY })).toBe(0);
+  });
+
+  it('counts each weekday after it', () => {
+    expect(workdaysBetween({ from: MONDAY, to: on(15) })).toBe(1);
+    expect(workdaysBetween({ from: MONDAY, to: on(18) })).toBe(4);
+  });
+
+  it('does not age a debt over a weekend', () => {
+    expect(workdaysBetween({ from: on(18), to: on(21) })).toBe(1);
+  });
+
+  it('counts five a week, so a fortnight is ten', () => {
+    expect(workdaysBetween({ from: MONDAY, to: on(28) })).toBe(10);
+  });
+
+  it('answers zero rather than a negative age for a date before it', () => {
+    expect(workdaysBetween({ from: on(18), to: MONDAY })).toBe(0);
+  });
+});
+
+describe('standInHeldMs', () => {
+  const row = (standInId: string | undefined, durationMs: number) => ({ standInId, durationMs });
+
+  it('totals only the rows this stand-in names', () => {
+    const rows = [row('a', 60_000), row('b', 30_000), row(undefined, 90_000), row('a', 15_000)];
+
+    expect(standInHeldMs({ id: 'a', rows })).toBe(75_000);
+  });
+
+  it('totals nothing when no row names it', () => {
+    expect(standInHeldMs({ id: 'a', rows: [row('b', 60_000)] })).toBe(0);
+  });
+});
+
+describe('standInAge', () => {
+  const age = (options: { standIn?: Partial<StandIn>; heldMs?: number; now?: Date }) =>
+    standInAge({
+      standIn: standIn({ createdAt: MONDAY, ...options.standIn }),
+      heldMs: options.heldMs ?? 0,
+      now: options.now ?? on(15),
+      overdueAfterWorkdays: 5,
+      overdueAfterMs: 4 * 3_600_000,
+    });
+
+  it('waits for the limit before it says a stand-in waited long enough', () => {
+    expect(age({ now: on(18) })).toMatchObject({ workdays: 4, isOverdue: false });
+    expect(age({ now: on(21) })).toMatchObject({ workdays: 5, isOverdue: true });
+  });
+
+  it('marks work that piled up, however new it is', () => {
+    expect(age({ heldMs: 4 * 3_600_000 })).toMatchObject({ workdays: 1, isOverdue: true });
+  });
+
+  it('never marks one that is already resolved', () => {
+    expect(age({ standIn: { state: 'resolved' }, now: on(28) }).isOverdue).toBe(false);
+  });
+
+  it('turns a limit off when it is zero', () => {
+    const off = standInAge({
+      standIn: standIn({ createdAt: MONDAY }),
+      heldMs: 8 * 3_600_000,
+      now: on(28),
+      overdueAfterWorkdays: 0,
+      overdueAfterMs: 0,
+    });
+
+    expect(off.isOverdue).toBe(false);
   });
 });

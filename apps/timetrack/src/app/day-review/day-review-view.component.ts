@@ -44,6 +44,9 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           @if (standIns.openCount(); as waiting) {
             <button (click)="standInList.open()" et-button variant="transparent" size="sm" data-waiting-on-a-ticket>
               {{ waiting }} waiting on a ticket
+              @if (standIns.overdueCount(); as overdue) {
+                <span class="text-et-warning-ink" data-waited-long-enough> · {{ overdue }} waited long enough </span>
+              }
             </button>
           }
           <button (click)="debug.open()" et-button variant="transparent" size="sm">Debug</button>

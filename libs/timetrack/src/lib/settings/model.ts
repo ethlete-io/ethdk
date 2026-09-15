@@ -158,6 +158,22 @@ export type TimetrackNudgeSettings = {
 export const DEFAULT_NUDGE_AT_MINUTE = 17 * 60 + 30;
 
 /**
+ * When a stand-in has waited long enough that the app says so.
+ *
+ * Two limits, and either one alone marks it: work that sat for a week and work that piled up four
+ * hours in two days are both debts worth naming. Nothing is blocked and nothing notifies — the list
+ * marks it and the day header counts it. Zero or less turns that one limit off.
+ */
+export type TimetrackStandInSettings = {
+  overdueAfterWorkdays: number;
+  overdueAfterMs: number;
+};
+
+export const DEFAULT_STAND_IN_OVERDUE_AFTER_WORKDAYS = 5;
+
+export const DEFAULT_STAND_IN_OVERDUE_AFTER_MS = 4 * 3_600_000;
+
+/**
  * Which calls on this machine were work. Both lists are regular expressions, matched case-insensitively
  * against the process that held the microphone and against the window title the call was named from.
  *
@@ -218,6 +234,7 @@ export type TimetrackSettings = {
   ticket: TimetrackTicketSettings;
   reasoning: TimetrackReasoningSettings;
   nudge: TimetrackNudgeSettings;
+  standIn: TimetrackStandInSettings;
   /** The user's own deny rules. `effectiveExclusionRules` is what composes them with the defaults. */
   exclusionRules: TimetrackExclusionRule[];
   /** Which calls were work. Deliberately not an exclusion rule — see `TimetrackCallRules`. */
@@ -335,6 +352,10 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
     maskedNames: [],
   },
   nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
+  standIn: {
+    overdueAfterWorkdays: DEFAULT_STAND_IN_OVERDUE_AFTER_WORKDAYS,
+    overdueAfterMs: DEFAULT_STAND_IN_OVERDUE_AFTER_MS,
+  },
   exclusionRules: [],
   callRules: { countsAsWork: [], neverCountsAsWork: [] },
   noWorkContextApps: [],

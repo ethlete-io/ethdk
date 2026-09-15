@@ -80,6 +80,13 @@ live on attribution rules that point at it. See ADR 0021.
 _Avoid_: placeholder (an HTML attribute, and the `<KEY>` stand-in in a branch name), draft, pending
 ticket. It is not a **standing ticket** - that is a real issue that takes every hour of one context.
 
+**Overdue stand-in**:
+A stand-in that waited past one of the two limits the user set: an age in workdays, or the time its
+own bands already hold. A weekend does not age it, and the held time is totalled from the days it
+covers rather than stored. Nothing is blocked and nothing notifies - the list marks it and the day
+header counts it.
+_Avoid_: late, expired, stale, breached
+
 **Remembered naming**:
 A stored answer that names later work the way earlier work was named: a set of features, an issue
 key, a count and the date it was last seen. Seeded from Tempo history, written by a naming of the

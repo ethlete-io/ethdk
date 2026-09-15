@@ -1,10 +1,19 @@
-import { computed } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { computed, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { StandIn, canReopenStandIn } from '@ethlete/timetrack';
-import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { ReviewedRow, StandIn, StandInAge, canReopenStandIn, standInAge, standInHeldMs } from '@ethlete/timetrack';
+import { catchError, combineLatest, forkJoin, map, of, switchMap, tap, timer } from 'rxjs';
+import { injectGitCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
+import { readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
+
+/**
+ * How often the age is read again. An age is counted in workdays, so once an hour is far more often
+ * than it can change, and the alternative is a stand-in that only turns overdue when something else
+ * on the screen happens to change.
+ */
+const AGE_TICK_MS = 3_600_000;
 
 /**
  * Every stand-in the settings hold, and the three acts that end one.
@@ -15,6 +24,15 @@ import { injectTimetrackSettings } from '../settings/settings';
 const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const settings = injectTimetrackSettings();
   const ports = injectHostPorts();
+  const git = injectGitCollector();
+  const now = signal(new Date());
+
+  timer(AGE_TICK_MS, AGE_TICK_MS)
+    .pipe(
+      tap(() => now.set(new Date())),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
 
   const standIns = computed(() =>
     [...settings.settings().standIns].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
@@ -54,11 +72,67 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     { initialValue: [] as string[] },
   );
 
+  /** The days an open stand-in holds bands on, which is the only work the held time has to total. */
+  const daysToTotal = computed(() => [...new Set(open().flatMap((standIn) => standIn.days))].sort());
+
+  const heldProbe = computed(() => ({
+    days: daysToTotal(),
+    settings: settings.settings(),
+    repoRoots: git.discovery()?.repos ?? [],
+  }));
+
+  /**
+   * The rows of every day an open stand-in covers, read on demand rather than stored.
+   *
+   * A running total on the record would be a second answer to a question the day already answers, and
+   * the two would disagree the moment a band was re-cut or a rule was changed.
+   */
+  const heldRows = toSignal(
+    toObservable(heldProbe).pipe(
+      switchMap((probe) =>
+        probe.days.length
+          ? combineLatest(
+              probe.days.map((day) =>
+                readDay$({ ports, settings: probe.settings, repoRoots: probe.repoRoots, day }).pipe(
+                  map((read) => read.review.rows),
+                  catchError(() => of<ReviewedRow[]>([])),
+                ),
+              ),
+            ).pipe(map((days) => days.flat()))
+          : of<ReviewedRow[]>([]),
+      ),
+    ),
+    { initialValue: [] as ReviewedRow[] },
+  );
+
+  const ages = computed(() => {
+    const rows = heldRows();
+    const limits = settings.settings().standIn;
+    const at = now();
+
+    return new Map<string, StandInAge>(
+      standIns().map((standIn) => [
+        standIn.id,
+        standInAge({
+          standIn,
+          heldMs: standInHeldMs({ id: standIn.id, rows }),
+          now: at,
+          overdueAfterWorkdays: limits.overdueAfterWorkdays,
+          overdueAfterMs: limits.overdueAfterMs,
+        }),
+      ]),
+    );
+  });
+
   return {
     standIns,
     open,
     /** What the day screen's own entry counts: the work that still waits on somebody for a ticket. */
     openCount: computed(() => open().length),
+    /** How long each one has waited, by id. The list reads it, and the day header counts the overdue. */
+    ages,
+    /** The open ones that waited past a limit the user set. Nothing is blocked; they are only marked. */
+    overdueCount: computed(() => open().filter((standIn) => ages().get(standIn.id)?.isOverdue).length),
     syncedDays,
     canReopen: (standIn: StandIn) => canReopenStandIn({ standIn, syncedDays: syncedDays() }),
 

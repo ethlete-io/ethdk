@@ -130,3 +130,72 @@ export const canReopenStandIn = (options: { standIn: StandIn; syncedDays: readon
 
   return options.standIn.state === 'resolved' && !options.standIn.days.some((day) => synced.has(day));
 };
+
+const DAY_MS = 86_400_000;
+
+const midnightOf = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+/**
+ * The workdays from one date to another, counting neither Saturday nor Sunday. The same date answers
+ * zero, and a date before `from` answers zero rather than a negative age.
+ *
+ * `Math.round` rather than a floor: a span crossing a daylight-saving change is an hour short or an
+ * hour long, and a floor would lose a whole day to it.
+ */
+export const workdaysBetween = (options: { from: Date; to: Date }) => {
+  const from = midnightOf(options.from);
+  const days = Math.round((midnightOf(options.to).getTime() - from.getTime()) / DAY_MS);
+
+  if (days <= 0) return 0;
+
+  const rest = days % 7;
+  let extra = 0;
+
+  for (let step = 1; step <= rest; step += 1) {
+    const weekday = (from.getDay() + step) % 7;
+
+    if (weekday !== 0 && weekday !== 6) extra += 1;
+  }
+
+  return Math.floor(days / 7) * 5 + extra;
+};
+
+/** How long a stand-in has waited, and whether that is longer than the user said they would allow. */
+export type StandInAge = {
+  /** Workdays since it was opened. A weekend does not age a debt nobody was at work to answer. */
+  workdays: number;
+  /** The time its own bands hold, across every day it covers. */
+  heldMs: number;
+  isOverdue: boolean;
+};
+
+/**
+ * Reads the age of a stand-in against the two limits the user set.
+ *
+ * Either limit alone makes it overdue: work that waited a week and work that piled up four hours in
+ * two days are both debts worth naming. A resolved stand-in is never overdue, and a limit of zero or
+ * less is the user turning that one test off.
+ */
+export const standInAge = (options: {
+  standIn: Pick<StandIn, 'state' | 'createdAt'>;
+  /** From `standInHeldMs`, totalled on demand. Nothing stores a running total — see ADR 0021. */
+  heldMs: number;
+  now: Date;
+  overdueAfterWorkdays: number;
+  overdueAfterMs: number;
+}): StandInAge => {
+  const workdays = workdaysBetween({ from: options.standIn.createdAt, to: options.now });
+  const tooOld = options.overdueAfterWorkdays > 0 && workdays >= options.overdueAfterWorkdays;
+  const tooLong = options.overdueAfterMs > 0 && options.heldMs >= options.overdueAfterMs;
+
+  return { workdays, heldMs: options.heldMs, isOverdue: options.standIn.state === 'open' && (tooOld || tooLong) };
+};
+
+/**
+ * The time a stand-in's own bands hold in the rows given.
+ *
+ * The rows are typed by what this needs rather than as `ReviewedRow`, so the day's review model stays
+ * out of the model layer. Pass the rows of every day the stand-in covers to total the whole debt.
+ */
+export const standInHeldMs = (options: { id: string; rows: readonly { standInId?: string; durationMs: number }[] }) =>
+  options.rows.reduce((held, row) => (row.standInId === options.id ? held + row.durationMs : held), 0);
