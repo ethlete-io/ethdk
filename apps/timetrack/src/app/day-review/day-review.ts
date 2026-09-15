@@ -494,6 +494,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           rows,
           edits: edits(),
           cut: rowOptions().cut,
+          standIns: settings.settings().standIns,
           check: {
             targetMs: targetMs(),
             coveredMs: coveredMsOf(coverage()),

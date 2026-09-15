@@ -8,6 +8,7 @@ import { recutReviewedRows } from './recut';
 import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
+import { StandIn } from '../model/stand-in';
 import {
   DayReview,
   DayReviewEdits,
@@ -74,6 +75,26 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
   edited: true,
   hidden: row.hidden === true,
 });
+
+/**
+ * Reads a row's stand-in against the records that exist now.
+ *
+ * A resolve rewrites the rules that named the stand-in and never a stored day, so a row named to one
+ * in that day's own edits would otherwise keep pointing at a record that has since become an issue —
+ * and its override also blanks `issueKey`, so the key the rewritten rule puts on the block underneath
+ * would not reach it either. A row pointing at a record that is gone reads as unnamed, which is what
+ * `attribute` already does for a rule naming a deleted stand-in.
+ */
+const readStandIn = (row: ReviewedRow, standIns: readonly StandIn[]): ReviewedRow => {
+  if (!row.standInId) return row;
+
+  const standIn = standIns.find((entry) => entry.id === row.standInId);
+
+  if (!standIn) return { ...row, standInId: undefined };
+  if (standIn.state !== 'resolved' || !standIn.issueKey) return row;
+
+  return { ...row, standInId: undefined, issueKey: standIn.issueKey };
+};
 
 const overlapMs = (a: { from: Date; to: Date }, b: { from: Date; to: Date }) =>
   Math.min(a.to.getTime(), b.to.getTime()) - Math.max(a.from.getTime(), b.from.getTime());
@@ -154,8 +175,11 @@ export const reviewDay = (options: {
   round?: Partial<RoundOptions>;
   /** The same cut the day was built with, so a reviewer's edit is cut by the rule the machine used. */
   cut?: CutOptions;
+  /** Every stand-in the settings hold, so a row named to one reads the answer it has since been given. */
+  standIns?: readonly StandIn[];
 }): DayReview => {
   const edits = options.edits ?? EMPTY_DAY_REVIEW_EDITS;
+  const standIns = options.standIns ?? [];
   const tracked = trackPinnedRows({
     pinned: edits.pinned,
     sources: [...options.rows.proposals, ...options.rows.unnamed],
@@ -169,7 +193,9 @@ export const reviewDay = (options: {
       .filter((row) => !consumed.has(row.id))
       .map((row) => withOverride(row, edits.overrides[row.id])),
     ...tracked.rows.map(fromPinned),
-  ].sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));
+  ]
+    .map((row) => readStandIn(row, standIns))
+    .sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));
 
   const hidden = reviewed.filter((row) => row.hidden);
   // After the snap, so a background row gives up whole increments, and before the span is booked, so

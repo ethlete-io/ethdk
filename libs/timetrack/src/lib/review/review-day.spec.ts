@@ -17,11 +17,13 @@ import {
   removeManualRow,
   setRowRange,
   setRowIssue,
+  setRowStandIn,
   setRowState,
   showRow,
   splitRow,
 } from './edits';
-import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS } from './model';
+import { StandIn, openStandIn } from '../model/stand-in';
+import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, isNamedRow } from './model';
 import { reviewDay } from './review-day';
 
 const MINUTE = 60_000;
@@ -1218,5 +1220,33 @@ describe('reviewDay over a meeting inside a background row', () => {
       [at('15:00'), at('15:45')],
     ]);
     expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('stale-edit');
+  });
+});
+
+describe('reviewDay over a row named to a stand-in', () => {
+  const day = dayRows({ proposals: [proposal({ issueKey: 'ABC-1', from: '08:00', to: '10:00', minutes: 120 })] });
+  const standIn = openStandIn({ name: 'the invite flow', day: '2026-08-11', now: at('07:00') });
+  const named = setRowStandIn({
+    edits: EMPTY_DAY_REVIEW_EDITS,
+    row: reviewDay({ rows: day }).rows[0]!,
+    standInId: standIn.id,
+  });
+  const reviewed = (standIns: StandIn[]) => reviewDay({ rows: day, edits: named, standIns }).rows[0]!;
+
+  it('leaves the row on the stand-in while it still waits for an issue', () => {
+    expect(reviewed([standIn])).toMatchObject({ standInId: standIn.id, issueKey: '' });
+  });
+
+  it('reads the issue a resolved stand-in was answered with, which no stored day holds', () => {
+    const resolved: StandIn = { ...standIn, state: 'resolved', issueKey: 'ABC-42' };
+
+    expect(reviewed([resolved])).toMatchObject({ issueKey: 'ABC-42', standInId: undefined });
+  });
+
+  it('reads as unnamed again once the stand-in it points at is gone', () => {
+    const row = reviewed([]);
+
+    expect(row.standInId).toBeUndefined();
+    expect(isNamedRow(row)).toBe(false);
   });
 });
