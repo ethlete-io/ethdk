@@ -74,6 +74,8 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
             @if (tickets.context(); as drafting) {
               <ethlete-create-ticket
                 [context]="drafting"
+                [standIn]="tickets.standIn()"
+                [createdParent]="tickets.createdParent()"
                 [form]="tickets.form()"
                 [candidates]="tickets.candidates()"
                 [existing]="tickets.existing()"

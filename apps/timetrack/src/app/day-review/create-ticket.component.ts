@@ -9,7 +9,9 @@ import {
   TEXTAREA_IMPORTS,
 } from '@ethlete/components';
 import {
+  JiraIssue,
   ParentCandidate,
+  StandIn,
   TicketWritingRequest,
   UnnamedContext,
   describeAttributionRule,
@@ -27,17 +29,23 @@ import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
   template: `
     <div class="flex flex-col gap-3 rounded-md border border-et-brand-ink p-3">
       <div class="flex flex-wrap items-baseline gap-3">
-        <h4 class="grow text-h4">New ticket for {{ label() }}</h4>
+        <h4 class="grow text-h4">{{ heading() }}</h4>
         <span class="text-small text-et-surface-muted">{{ duration() }}</span>
         <button (click)="dismiss.emit()" et-button variant="transparent" size="sm">Close</button>
       </div>
 
       @if (createdKey(); as key) {
-        <et-banner
-          [description]="key + ' now holds this work, here and on every later day this context appears in.'"
-          type="success"
-          heading="Filed"
-        />
+        <div class="flex flex-col gap-2 rounded-md border border-et-brand-ink p-3">
+          <span class="text-h4">Filed {{ key }}</span>
+
+          @if (createdParent(); as parent) {
+            <span class="text-small">
+              {{ parent.issueType }} {{ parent.key }} — {{ parent.summary }}, filed here as its parent.
+            </span>
+          }
+
+          <span class="text-small text-et-surface-muted">{{ filedNote() }}</span>
+        </div>
       } @else if (duplicateKey(); as key) {
         <et-banner
           [description]="
@@ -256,9 +264,7 @@ import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
             Create in Jira
           </button>
 
-          <span class="text-small text-et-surface-muted">
-            Filing it also logs this work against the new key from now on.
-          </span>
+          <span class="text-small text-et-surface-muted">{{ createNote() }}</span>
         </div>
       }
     </div>
@@ -276,7 +282,12 @@ import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
   ],
 })
 export class CreateTicketComponent {
-  public context = input.required<UnnamedContext>();
+  /** The unnamed context being filed. Absent when the form was opened on a placeholder instead. */
+  public context = input<UnnamedContext | null>(null);
+  /** The placeholder being filed, whose days the created key resolves. Exclusive with `context`. */
+  public standIn = input<StandIn | null>(null);
+  /** The parent this form filed on the way, so the result says what it created and not only the key. */
+  public createdParent = input<JiraIssue | null>(null);
   public form = input<TicketForm | null>(null);
   public candidates = input<readonly ParentCandidate[]>([]);
   /** Open issues whose wording says this may already be tracked. */
@@ -323,8 +334,40 @@ export class CreateTicketComponent {
   public create = output<void>();
   public dismiss = output<void>();
 
-  protected label = computed(() => describeAttributionRule(this.context().suggestion));
-  protected duration = computed(() => formatDurationMs(this.context().observedMs));
+  protected duration = computed(() => {
+    const context = this.context();
+
+    if (context) return formatDurationMs(context.observedMs);
+
+    const days = this.standIn()?.days.length ?? 0;
+
+    return days ? `${days} day${days === 1 ? '' : 's'} waiting` : '';
+  });
+
+  /** What the placeholder is called, for a heading that reads as the work rather than as a checkout. */
+  public name = computed(() => this.standIn()?.name ?? 'work with no ticket');
+
+  protected heading = computed(() => {
+    const context = this.context();
+
+    return context ? `New ticket for ${describeAttributionRule(context.suggestion)}` : `A ticket for ${this.name()}`;
+  });
+
+  protected createNote = computed(() =>
+    this.standIn()
+      ? 'Filing it resolves the placeholder, so every day it holds books against the new key.'
+      : 'Filing it also logs this work against the new key from now on.',
+  );
+
+  protected filedNote = computed(() => {
+    const waiting = this.standIn();
+
+    if (!waiting) return 'It now holds this work, here and on every later day this context appears in.';
+
+    const days = waiting.days.length;
+
+    return `${this.name()} is no longer waiting. Every band of it books against the key, on ${days} day${days === 1 ? '' : 's'} and on every later one.`;
+  });
   protected printedPayload = computed(() => JSON.stringify(this.payload(), null, 2));
 
   /** The agent's answer first, then what the wording matched, with the same issue never listed twice. */

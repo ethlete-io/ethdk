@@ -6,6 +6,7 @@ import {
   JiraCredentials,
   JiraIssue,
   ParentCandidate,
+  StandIn,
   TicketWording,
   TicketWritingRequest,
   UnnamedContext,
@@ -113,6 +114,12 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const dayReview = injectDayReview();
 
   const context = signal<UnnamedContext | null>(null);
+  /**
+   * The placeholder being turned into a ticket, when the form was opened from one rather than from a
+   * context the day could not name. The two are exclusive: a stand-in already names the work, so the
+   * created key resolves it instead of writing a second rule beside the one it already has.
+   */
+  const standIn = signal<StandIn | null>(null);
   const form = signal<TicketForm | null>(null);
   const notes = signal<readonly string[]>([]);
   const searches$ = new Subject<string>();
@@ -338,6 +345,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     .pipe(
       exhaustMap((draft) => {
         const named = context();
+        const waiting = standIn();
 
         return readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
           switchMap((credentials) =>
@@ -345,6 +353,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           ),
           map((created): CreateStatus => {
             if (named) dayReview.nameContext(named, { kind: 'issue', issueKey: created.issueKey });
+            else if (waiting) settings.resolveStandIn({ id: waiting.id, issueKey: created.issueKey });
 
             return created.duplicate
               ? { kind: 'duplicate', issueKey: created.issueKey }
@@ -361,6 +370,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const close = () => {
     context.set(null);
+    standIn.set(null);
     form.set(null);
     notes.set([]);
     createStatus.set(IDLE);
@@ -383,6 +393,8 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   return {
     /** The context being filed, or nothing when the form is closed. */
     context: context.asReadonly(),
+    /** The placeholder being filed, or nothing when the form was opened from a context instead. */
+    standIn: standIn.asReadonly(),
     form: form.asReadonly(),
     /** Re-ranked as the summary is typed, so editing the draft re-orders the parents under it. */
     candidates: computed((): ParentCandidate[] => {
@@ -456,6 +468,8 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /** The open new-parent form, or nothing while it is closed. */
     parentForm: parentForm.asReadonly(),
+    /** The parent this form filed, newest first, so the result can name what it created as well as why. */
+    createdParent: computed(() => createdParents()[0] ?? null),
     /** The levels a parent may be filed at: what settings name, narrowed to what Jira permits here. */
     parentTypeNames: computed(() => parentTypeNames()),
     isCreatingParent: computed(() => parentStatus().kind === 'creating'),
@@ -469,6 +483,28 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
       return !!form()?.projectKey && !!draft?.summary.trim() && !!draft.issueTypeName;
     }),
+
+    /**
+     * Opens the form on a placeholder, so the ticket it files is the one the work has been waiting for.
+     *
+     * The summary and the description start as the placeholder's own, which the app drafted from the
+     * day's evidence when it opened — the user has been looking at them since, and re-drafting them
+     * here would throw away every correction they made.
+     */
+    openForStandIn: (waiting: StandIn) => {
+      const projectKey = waiting.projectKey ?? '';
+
+      context.set(null);
+      standIn.set(waiting);
+      form.set({ projectKey, summary: waiting.name, description: waiting.description ?? '', parentKey: null });
+      notes.set([]);
+      createStatus.set(IDLE);
+      writeStatus.set(IDLE);
+      agentMatch.set(null);
+      parentForm.set(null);
+      createdParents.set([]);
+      searches$.next(projectKey);
+    },
 
     open: (unnamed: UnnamedContext) => {
       const drafted = draftTicket({
@@ -486,6 +522,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         }) ?? '';
 
       context.set(unnamed);
+      standIn.set(null);
       form.set({ projectKey, summary: drafted.summary, description: drafted.description, parentKey: null });
       notes.set(drafted.notes);
       createStatus.set(IDLE);
@@ -502,10 +539,12 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
      */
     useExisting: (issueKey: string) => {
       const named = context();
+      const waiting = standIn();
 
-      if (!named) return;
+      if (named) dayReview.nameContext(named, { kind: 'issue', issueKey });
+      else if (waiting) settings.resolveStandIn({ id: waiting.id, issueKey });
+      else return;
 
-      dayReview.nameContext(named, { kind: 'issue', issueKey });
       close();
     },
 
@@ -533,7 +572,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       parentStatus.set(IDLE);
       parentForm.set({
         summary: form()?.summary ?? '',
-        description: named ? draftParentDescription(named) : '',
+        description: named ? draftParentDescription(named) : (standIn()?.description ?? ''),
         issueTypeName: parentTypeNames()[0] ?? '',
       });
     },
