@@ -113,17 +113,22 @@ A remembered naming never expires on a date. The app warns when the ticket a rec
 being touched. `BD-2049` is called "Intern: Meeting 2025", it is still current in 2026, and a
 successor will appear with nothing to announce it.
 
-## What the model is missing
+## What the model was missing — all four are built
 
-- **`recurringEventId` on `CalendarOccurrenceEvent`** (`model/event.ts:168`). Without the series id,
-  naming a weekly meeting once is impossible.
-- **`PinnedRow.issueKey` must become optional** (`review/model.ts:26`). A fresh cut leaves both
-  halves unnamed, and an unnamed band has to be a legal state.
-- **A call may be one call across two windows.** Glue two windows of the same application when the
-  gap between them is short. That covers the Meet pre-join check and a call that drops and
-  reconnects.
-- **A meeting group rule.** `MeetingOptions.defaultIssueKey` is one global key. Several series map
-  to one standing ticket, so the record has to name a group.
+Verified against the source on 2026-09-15. Kept because each entry says why the shape is what it is.
+
+- **`recurringEventId` on `CalendarOccurrenceEvent`** — `model/event.ts:203`, filled at
+  `google-calendar/events.ts:8,78`. Without the series id, naming a weekly meeting once is impossible.
+- **`PinnedRow.issueKey` is optional** — `review/model.ts:38`, with `NamedRow` and `isNamedRow` guards
+  at `:94,:97`. A fresh cut leaves both halves unnamed, and an unnamed band is a legal state.
+- **A call may be one call across two windows** — `glueCalls`, `stream/calls.ts:209`. Two thresholds: 2
+  minutes for the Meet pre-join check or a reconnect, 10 minutes when the app itself stopped watching.
+- **A meeting group rule — solved without a group.** `MeetingOptions.defaultIssueKey` is gone.
+  `MeetingNaming` is keyed on `seriesKey` (`model/meeting-naming.ts:7-14`), and several series may name
+  the same issue, so no group type is needed.
+
+The Tempo-pattern rung is live too: `apps/timetrack/src/app/stream-day-options.ts:36-37` passes both
+`patterns` and `meetings: { namings, callNamings }`.
 
 Deliberately **not** added: the other attendees of an invitation. A domain in an invitation would
 name the client cheaply, and it is the most privacy-sensitive field on the roadmap.
