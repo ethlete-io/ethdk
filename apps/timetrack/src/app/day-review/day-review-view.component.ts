@@ -9,7 +9,6 @@ import { NamingOfferComponent } from './naming-offer.component';
 import { DayWarningsComponent } from './day-warnings.component';
 import { formatDayLabel, formatSignedDurationMs } from './format';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
-import { STAND_INS_OVERLAY } from '../stand-ins';
 
 /** What the header's own button drafts: the quarter-hour grid, and the hour that just finished. */
 const ENTRY_STEP_MS = DEFAULT_ROUND_OPTIONS.incrementMs;
@@ -41,9 +40,6 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
 
         <div class="flex items-center gap-2">
           <button (click)="addEntry()" et-button variant="outline" size="sm">Add an entry</button>
-          <button (click)="standInList.open()" et-button variant="transparent" size="sm" data-waiting-on-a-ticket>
-            Waiting on a ticket
-          </button>
           <button (click)="debug.open()" et-button variant="transparent" size="sm">Debug</button>
         </div>
       </header>
@@ -123,7 +119,6 @@ export class DayReviewViewComponent {
   protected store = injectDayReview();
   private surface = injectRowEditSurface();
   protected debug = createOverlayOpener(DAY_DEBUG_OVERLAY);
-  protected standInList = createOverlayOpener(STAND_INS_OVERLAY);
 
   protected dayLabel = computed(() => formatDayLabel(this.store.dayKey()));
   protected focusedDate = computed(() => localDayRange(this.store.dayKey(), this.store.boundary()).from);

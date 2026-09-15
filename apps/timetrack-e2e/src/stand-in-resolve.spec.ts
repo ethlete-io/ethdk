@@ -22,7 +22,7 @@ const NAMES_THE_BRANCH = {
   createdAt: new Date(0),
 };
 
-const list = (page: Page) => page.locator('ethlete-stand-ins');
+const list = (page: Page) => page.locator('ethlete-stand-ins-list');
 
 const card = (page: Page) => list(page).locator(`[data-stand-in="${STAND_IN.id}"]`);
 

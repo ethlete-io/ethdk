@@ -20,6 +20,7 @@ import { DayStreamsComponent } from './day-streams.component';
 import { DayTotalsComponent } from './day-totals.component';
 import { HiddenRowsComponent } from './hidden-rows.component';
 import { IssueFilterComponent } from '../jira';
+import { StandInsListComponent } from '../stand-ins';
 import { LoggedElsewhereComponent } from './logged-elsewhere.component';
 import { injectTicketDraft } from './ticket-draft';
 import { TimerRunLabel, TimerRunsComponent } from './timer-runs.component';
@@ -174,6 +175,10 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
           <ethlete-hidden-rows [rows]="store.hiddenRows()" (show)="store.show($event)" />
         </et-accordion>
 
+        <et-accordion label="Waiting on a ticket">
+          <ethlete-stand-ins-list />
+        </et-accordion>
+
         <et-accordion label="Day notes">
           <ethlete-day-notes [day]="store.day()" />
         </et-accordion>
@@ -200,6 +205,7 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
     LoggedElsewhereComponent,
     OVERLAY_CONTENT_IMPORTS,
     SpinnerComponent,
+    StandInsListComponent,
     TimerRunsComponent,
     UnnamedWorkComponent,
   ],

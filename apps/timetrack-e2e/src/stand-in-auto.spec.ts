@@ -24,7 +24,7 @@ test.describe('a linked checkout Jira holds no ticket for', () => {
   test('opens its own stand-in without being asked for one', async ({ page }) => {
     await openStandIns(page);
 
-    await expect(page.locator('ethlete-stand-ins [data-stand-in]')).toHaveCount(1);
+    await expect(page.locator('ethlete-stand-ins-list [data-stand-in]')).toHaveCount(1);
   });
 
   test('draws the band as work that is named and still waiting', async ({ page }) => {
@@ -36,7 +36,7 @@ test.describe('a linked checkout Jira holds no ticket for', () => {
   test('names it from the branch and says in the list what it drew on', async ({ page }) => {
     await openStandIns(page);
 
-    const card = page.locator('ethlete-stand-ins [data-stand-in]').first();
+    const card = page.locator('ethlete-stand-ins-list [data-stand-in]').first();
 
     await expect(card).toContainText('Pdf export');
   });
@@ -63,7 +63,7 @@ test.describe('the band of a checkout that waits on a ticket', () => {
     await openBand(page, (await band(page).getAttribute('title')) as string);
     await editSurface(page).getByRole('button', { name: 'File its ticket' }).click();
 
-    const form = page.locator('ethlete-stand-ins ethlete-create-ticket');
+    const form = page.locator('ethlete-stand-ins-list ethlete-create-ticket');
 
     await expect(form).toBeVisible();
     await expect(form).toContainText('A ticket for Pdf export');
@@ -82,7 +82,7 @@ test.describe('the ticket a stand-in was waiting for', () => {
 
     await openStandIns(page);
 
-    const card = page.locator('ethlete-stand-ins [data-stand-in]').first();
+    const card = page.locator('ethlete-stand-ins-list [data-stand-in]').first();
 
     await card.getByRole('button', { name: 'File a ticket' }).click();
     await card.getByRole('button', { name: 'Create in Jira' }).click();
@@ -112,12 +112,16 @@ test.describe('a stand-in the app opened and the user deleted', () => {
     await expect(band(page)).toHaveCount(1);
 
     await openStandIns(page);
-    await page.locator('ethlete-stand-ins [data-stand-in]').first().getByRole('button', { name: 'Delete' }).click();
+    await page
+      .locator('ethlete-stand-ins-list [data-stand-in]')
+      .first()
+      .getByRole('button', { name: 'Delete' })
+      .click();
   });
 
   test('stays deleted, and the checkout goes back to waiting for a name', async ({ page }) => {
     await expect(page.locator('[data-kind="row"][title^="Not yet named"]')).not.toHaveCount(0);
-    await expect(page.locator('ethlete-stand-ins [data-stand-in]')).toHaveCount(0);
+    await expect(page.locator('ethlete-stand-ins-list [data-stand-in]')).toHaveCount(0);
   });
 
   test('is opened again once the settings screen allows the checkout', async ({ page }) => {

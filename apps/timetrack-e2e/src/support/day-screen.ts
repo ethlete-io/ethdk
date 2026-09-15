@@ -69,28 +69,19 @@ export const closeDebug = async (page: Page) => {
 };
 
 /**
- * Opens the panel holding the work Jira has no ticket for yet.
+ * Opens the accordion holding the work Jira has no ticket for yet.
  *
- * The day header's press is its plain door. The press on a band's edit surface opens a ticket draft
- * with it, so it answers a different question.
+ * It is inside the Debug dialog, never a dialog of its own: the press on a band's edit surface opens
+ * the same list as an overlay, and two dialogs stacked on each other keep re-measuring.
  */
 export const openStandIns = async (page: Page) => {
-  await page.locator('[data-waiting-on-a-ticket]').click();
+  await openDebugPanel(page, 'Waiting on a ticket');
 
-  const panel = page.locator('ethlete-stand-ins');
-
-  await expect(panel).toBeVisible();
-
-  return panel;
+  return page.locator('ethlete-stand-ins-list');
 };
 
-/** Dismisses the stand-in panel, so the day screen behind it can be acted on. */
-export const closeStandIns = async (page: Page) => {
-  const panel = page.locator('ethlete-stand-ins');
-
-  await panel.getByRole('button', { name: 'Close' }).click();
-  await expect(panel).toBeHidden();
-};
+/** Dismisses the debug dialog the stand-in list sits in, so the day screen behind it can be acted on. */
+export const closeStandIns = (page: Page) => closeDebug(page);
 
 /** What the day totalled: presence, engaged time and the ratio between them. */
 export const openTotals = (page: Page) => openDebugPanel(page, 'What was measured');
