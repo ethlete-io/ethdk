@@ -144,7 +144,8 @@ Three decisions carry it, and each has an ADR:
 3. **A remembered naming outranks a branch parse** (ADR 0012). One learned store at rung 2, seeded
    from Tempo history, written by a naming of Tom's, never written by a model.
 
-When two rungs disagree, the band shows both and asks.
+When two rungs disagree, the band books the higher answer and offers the other. A record whose
+ticket Jira has recorded no change on for a quarter is reported on every day that books it.
 
 **Open, found on the screen on 2026-09-15.** An entry Tom named "Tom Tom unterwegs" is drawn as a
 meeting, and the edit surface offers "Use its time". It marks an absence, so its time is not work.

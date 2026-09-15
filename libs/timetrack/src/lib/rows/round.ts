@@ -1,5 +1,6 @@
 import { streamKeyLabel, streamKeyRepoPath } from '../model/block';
 import { formatDurationMs, formatTimeOfDay } from '../model/duration';
+import { AgedNaming } from '../model/naming-age';
 import { WorklogProposal } from '../model/proposal';
 import { CALL_LANE_KEY, TIMER_LANE_KEY, laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
@@ -37,6 +38,8 @@ export type DayWarningKind =
   | 'meeting-overlap'
   /** Two rungs named different work for one band. The row books the higher one and says so. */
   | 'naming-disagreement'
+  /** The day books a remembered answer whose ticket nobody has touched in Jira for a long time. */
+  | 'aged-naming'
   /** A timer ran while the machine saw almost nothing, which is what a forgotten timer looks like. */
   | 'timer-unobserved'
   /** The day claims idle gaps that `fillGaps` joined to the work around them. */
@@ -115,6 +118,8 @@ export type CheckDayOptions = {
   filledMs?: number;
   /** Time the user had stopped collection for, from `pauseWindows`. */
   pausedMs?: number;
+  /** The remembered namings whose ticket has gone quiet in Jira, from `agedNamings`. */
+  agedNamings?: readonly AgedNaming[];
 };
 
 /**
@@ -186,6 +191,27 @@ const disputeDetail = (proposals: readonly WorklogProposal[]) =>
           proposal.disputedIssueKey ?? 'work with no ticket yet'
         }`,
     )
+    .join(', ');
+
+/**
+ * Each remembered naming this day books to whose ticket has gone quiet, placed on the clock.
+ *
+ * Only a record the day actually books is reported. A record that named nothing today says something
+ * about the store rather than about this day, and a warning that points at no band on screen is one
+ * the reviewer cannot act on.
+ */
+const agedDetail = (options: { aged: readonly AgedNaming[]; proposals: readonly WorklogProposal[] }) =>
+  options.aged
+    .flatMap((naming) => {
+      const booked = options.proposals
+        .filter((proposal) => proposal.issueKey === naming.issueKey)
+        .sort((left, right) => left.from.getTime() - right.from.getTime());
+      const first = booked[0];
+
+      if (!first) return [];
+
+      return `${formatTimeOfDay(first.from)} ${naming.issueKey} for ${naming.label}, unchanged in Jira for ${naming.quietDays} days`;
+    })
     .join(', ');
 
 /**
@@ -277,6 +303,10 @@ export const checkDay = (options: {
   if (disputed.length > 0) {
     warnings.push({ kind: 'naming-disagreement', detail: disputeDetail(disputed) });
   }
+
+  const aged = agedDetail({ aged: options.options?.agedNamings ?? [], proposals: options.proposals });
+
+  if (aged) warnings.push({ kind: 'aged-naming', detail: aged });
 
   const zeroed = options.proposals.filter((proposal) => proposal.durationMs === 0);
 

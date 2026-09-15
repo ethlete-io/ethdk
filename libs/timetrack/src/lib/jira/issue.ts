@@ -121,3 +121,45 @@ export const fetchJiraIssueKeysByIds$ = (options: {
     }, new Map<string, string>()),
   );
 };
+
+/**
+ * When Jira last recorded a change on each issue, by key.
+ *
+ * A key Jira does not know, or reports no `updated` for, is absent rather than dated. A ticket nobody
+ * may read and a ticket nobody touches read the same from here, and only the second is worth a word.
+ *
+ * A worklog this app writes goes to Tempo's own API and never through Jira, so booking time to a
+ * ticket does not keep this timestamp fresh. Without that, a record naming a dead ticket would keep
+ * the ticket looking alive by booking to it.
+ */
+export const fetchJiraIssueTouchedAt$ = (options: {
+  transport: TimetrackTransport;
+  credentials: JiraCredentials;
+  keys: string[];
+}): Observable<Map<string, Date>> => {
+  const keys = [...new Set(options.keys.map((key) => key.trim().toUpperCase()).filter(Boolean))];
+
+  if (keys.length === 0) return of(new Map<string, Date>());
+
+  return from(chunk(keys, KEYS_PER_REQUEST)).pipe(
+    concatMap((batch) =>
+      searchJiraIssues$({
+        transport: options.transport,
+        credentials: options.credentials,
+        jql: `key in (${batch.join(',')})`,
+        fields: ['updated'],
+        describe: `when ${batch[0]}… last changed`,
+      }),
+    ),
+    reduce((all: Map<string, Date>, resources) => {
+      for (const resource of resources) {
+        const updated = resource.fields?.updated;
+        const at = updated ? new Date(updated) : undefined;
+
+        if (resource.key && at && !Number.isNaN(at.getTime())) all.set(resource.key, at);
+      }
+
+      return all;
+    }, new Map<string, Date>()),
+  );
+};

@@ -7,6 +7,7 @@ export * from './duration';
 export * from './event';
 export * from './evidence';
 export * from './meeting-naming';
+export * from './naming-age';
 export * from './project-link';
 export * from './proposal';
 export * from './recurrence';

@@ -19,6 +19,7 @@ import {
   TimerRun,
   UnnamedContext,
   addManualRow,
+  agedNamings,
   autoStandIns,
   classifyCalls,
   closeTimerRun,
@@ -26,6 +27,7 @@ import {
   breaksBetweenRows,
   coveredMsOf,
   dayBoundaryOf,
+  fetchJiraIssueTouchedAt$,
   fetchTempoDayCoverage$,
   findStandIn,
   gitFlowConfigFor,
@@ -38,6 +40,7 @@ import {
   meetingBehindRow,
   mergeRows,
   moveRowBoundary,
+  namedIssueKeys,
   openStandIn,
   openStandIns,
   pauseWindows,
@@ -277,6 +280,48 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return loaded?.key === day() ? loaded.value : null;
   });
 
+  /**
+   * When Jira last recorded a change on each ticket the remembered namings point at.
+   *
+   * Read against the key list rather than against the day: the store changes when the user answers a
+   * band, and stepping from one day to the next changes nothing about it.
+   */
+  const namedKeys = computed(() =>
+    namedIssueKeys({
+      namings: settings.settings().meetingNamings,
+      callNamings: settings.settings().callNamings,
+    }).join(','),
+  );
+
+  const touchedAt = toSignal(
+    toObservable(namedKeys).pipe(
+      switchMap((keys) =>
+        keys
+          ? readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
+              switchMap((jira) =>
+                jira
+                  ? fetchJiraIssueTouchedAt$({ transport: ports.transport, credentials: jira, keys: keys.split(',') })
+                  : of(new Map<string, Date>()),
+              ),
+              // Jira is an extra, not the day. A missing token or an offline machine leaves the day
+              // reading exactly as it did before this was here.
+              catchError(() => of(new Map<string, Date>())),
+            )
+          : of(new Map<string, Date>()),
+      ),
+    ),
+    { initialValue: new Map<string, Date>() },
+  );
+
+  const agedRecords = computed(() =>
+    agedNamings({
+      namings: settings.settings().meetingNamings,
+      callNamings: settings.settings().callNamings,
+      touchedAt: touchedAt(),
+      now: new Date(),
+    }),
+  );
+
   const evidenceLoad = computed(() => {
     const loaded = loadedDay();
 
@@ -503,6 +548,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             targetMs: targetMs(),
             coveredMs: coveredMsOf(coverage()),
             pausedMs: pausedMs(evidence()?.pauses ?? []),
+            agedNamings: agedRecords(),
             finished: !isToday(),
           },
         })

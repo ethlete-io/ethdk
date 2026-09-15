@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
+import { AgedNaming } from '../model/naming-age';
 import { WorklogProposal } from '../model/proposal';
 import { CALL_LANE_KEY } from './lane';
 import { WorkGroup } from './merge';
@@ -18,6 +19,14 @@ const proposal = (options: { issueKey: string; durationMinutes: number }): Workl
   confidence: 'certain',
   evidence: [],
   state: 'suggested',
+});
+
+/** A record whose ticket Jira has recorded no change on, as `agedNamings` reports it. */
+const aged = (issueKey: string): AgedNaming => ({
+  issueKey,
+  label: 'The weekly one',
+  touchedAt: new Date('2026-01-05T10:00:00Z'),
+  quietDays: 253,
 });
 
 const block = (context: ActivityBlock['context']): ActivityBlock => ({
@@ -244,6 +253,25 @@ describe('checkDay', () => {
     const check = checkDay({ proposals: [proposal({ issueKey: 'BD-2049', durationMinutes: 30 })] });
 
     expect(check.warnings.map((warning) => warning.kind)).not.toContain('naming-disagreement');
+  });
+
+  it('reports a remembered answer whose ticket has gone quiet, and places it on the clock', () => {
+    const check = checkDay({
+      proposals: [{ ...proposal({ issueKey: 'BD-2049', durationMinutes: 30 }), from: new Date('2026-09-14T09:55:00') }],
+      options: { agedNamings: [aged('BD-2049')] },
+    });
+    const found = check.warnings.find((warning) => warning.kind === 'aged-naming');
+
+    expect(found?.detail).toBe('09:55 BD-2049 for The weekly one, unchanged in Jira for 253 days');
+  });
+
+  it('says nothing about a quiet ticket the day books no row for', () => {
+    const check = checkDay({
+      proposals: [proposal({ issueKey: 'FIP-2177', durationMinutes: 30 })],
+      options: { agedNamings: [aged('BD-2049')] },
+    });
+
+    expect(check.warnings.map((warning) => warning.kind)).not.toContain('aged-naming');
   });
 
   it('reports time a call and observed activity both claim, above a minute of noise', () => {

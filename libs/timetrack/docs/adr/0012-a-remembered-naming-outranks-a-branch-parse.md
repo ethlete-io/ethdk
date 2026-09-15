@@ -49,14 +49,20 @@ parses already states its key, so the rungs below it are reached only when the g
   calendar named no occurrence. Naming any other row writes nothing.
 - A remembered naming ages the same way a hand-written rule ages. `BD-2049` is called "Intern:
   Meeting 2025" and it is still current in 2026, so the app warns when the ticket a record names
-  stops being touched. A record never expires on a date.
+  stops being touched. A record never expires on a date. What is read is the issue's own `updated`
+  field, through `fetchJiraIssueTouchedAt$`, and a key Jira answered nothing for is left alone: a
+  missing token and a dead ticket read the same from here, and only the second is worth a warning. A
+  worklog this app writes goes to Tempo rather than to Jira, so booking to a ticket cannot keep it
+  looking alive. `aged-naming` is raised only on a day that books the record, so the warning names a
+  band the reviewer can find — ADR 0026.
 - **A `likely` calendar pick loses to an answer of the user's about this call.** `matchOne` clears
   the picked occurrence when `matchCallNaming` returns `likely`, which leaves the row with no meeting
   behind it and keeps the answer readable. A `certain` pick still wins, because a window title seen during the
   call named the occurrence outright, and that is an observation rather than a guess. Without this,
   the call with no fixed time books to whatever single meeting happened to be accepted over it that
   week, and the answer given for the call is never read.
-- When two rungs disagree, the band shows both and asks. It does not pick the higher one silently.
+- When two rungs disagree, the band shows both and offers the one that lost. It books the higher one
+  and never picks it silently.
 - A model that invented a pattern from three occurrences would sit at rung 2 and outrank a fact.
   That is why the model proposes and the user accepts, and never the other way round.
 - **No meeting, title, weekday or ticket key of the user's may be named in code.** A learned store is

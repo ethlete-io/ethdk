@@ -10,6 +10,7 @@ const HEADINGS: Record<DayWarningKind, string> = {
   'zero-duration': 'A row rounded away to nothing',
   'meeting-overlap': 'A call and observed work claim the same time',
   'naming-disagreement': 'Two answers disagree about a band',
+  'aged-naming': 'An answer you gave points at a ticket nobody touches',
   'timer-unobserved': 'A timer ran while nothing was observed',
   'filled-time': 'Short pauses were logged as the work around them',
   'paused-time': 'You stopped collection for part of this day',

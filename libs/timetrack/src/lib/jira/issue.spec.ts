@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
 import { JiraIssueResource } from './search';
-import { fetchJiraIssueIds$, fetchJiraIssueKeysByIds$, fetchJiraIssues$ } from './issue';
+import { fetchJiraIssueIds$, fetchJiraIssueKeysByIds$, fetchJiraIssueTouchedAt$, fetchJiraIssues$ } from './issue';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
 
@@ -190,5 +190,33 @@ describe('fetchJiraIssueKeysByIds$', () => {
     fetchJiraIssueKeysByIds$({ transport, credentials: CREDENTIALS, ids: ['10101', '99999'] }).subscribe(seen);
 
     expect([...(seen.mock.calls[0]?.[0] ?? [])]).toEqual([['10101', 'FIP-2177']]);
+  });
+});
+
+describe('fetchJiraIssueTouchedAt$', () => {
+  it('reads when each issue last changed', () => {
+    const { transport } = issuesTransport([{ ...STORY, fields: { updated: '2026-01-05T10:00:00.000+0100' } }]);
+    const seen = vi.fn();
+
+    fetchJiraIssueTouchedAt$({ transport, credentials: CREDENTIALS, keys: ['FIP-2177'] }).subscribe(seen);
+
+    expect(seen.mock.calls[0]?.[0]).toEqual(new Map([['FIP-2177', new Date('2026-01-05T10:00:00.000+0100')]]));
+  });
+
+  it('leaves out an issue Jira reported no change date for', () => {
+    const { transport } = issuesTransport([{ ...STORY, fields: {} }]);
+    const seen = vi.fn();
+
+    fetchJiraIssueTouchedAt$({ transport, credentials: CREDENTIALS, keys: ['FIP-2177'] }).subscribe(seen);
+
+    expect(seen.mock.calls[0]?.[0]).toEqual(new Map());
+  });
+
+  it('asks nothing when there are no keys', () => {
+    const { transport, requests } = issuesTransport([STORY]);
+
+    fetchJiraIssueTouchedAt$({ transport, credentials: CREDENTIALS, keys: [] }).subscribe();
+
+    expect(requests).toHaveLength(0);
   });
 });
