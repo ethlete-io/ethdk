@@ -25,12 +25,12 @@ test covers it.
 | SEC-17 Google revoke          | yes      | yes   | `libs/timetrack/src/lib/google-auth/tokens.ts`          |
 | SEC-18 refresh race           | yes      | yes   | `libs/timetrack/src/lib/google-auth/token-source.ts`    |
 | SEC-19 HTTP deadlines         | yes      | yes   | `src-tauri/src/lib.rs`, `http.rs`                       |
-| SEC-20 Rust advisories        | yes      |       | `Cargo.lock`                                            |
+| SEC-20 Rust advisories        | yes      | part  | `Cargo.lock`                                            |
 | SEC-21 Angular advisory       | yes      |       | `package.json`                                          |
-| SEC-22 CLI export mode        | yes      |       | `libs/agent-rules/src/lib/timetrack-command.ts`         |
-| SEC-23 CLI terminal escapes   | yes      |       | `libs/agent-rules/src/lib/timetrack-command.ts`         |
-| SEC-24 stale discovery        | yes      |       | `libs/agent-rules/src/lib/timetrack.ts`, `agent.rs`     |
-| SEC-25 conflicting edit flags | yes      |       | `libs/agent-rules/src/lib/timetrack-command.ts`         |
+| SEC-22 CLI export mode        | yes      | yes   | `libs/agent-rules/src/lib/timetrack-command.ts`         |
+| SEC-23 CLI terminal escapes   | yes      | yes   | `libs/agent-rules/src/lib/plain-text.ts`                |
+| SEC-24 stale discovery        | yes      | yes   | `libs/agent-rules/src/lib/timetrack.ts`, `agent.rs`     |
+| SEC-25 conflicting edit flags | yes      | yes   | `libs/agent-rules/src/lib/timetrack-command.ts`         |
 
 ## SEC-08 is not fixed here
 
@@ -41,11 +41,10 @@ compaction feature, not a security patch. The finding stands.
 
 ## Where this stands
 
-Six commits so far. The Rust host has 175 unit tests, all passing, and the timetrack e2e
-suite has 251, all passing.
+Nine commits so far. The Rust host has 176 unit tests, all passing.
 
-Done: SEC-01, SEC-02, SEC-03, SEC-05, SEC-06 (host half), SEC-07, SEC-09, SEC-10, SEC-11,
-SEC-12, SEC-13, SEC-14, SEC-15, SEC-16, SEC-17, SEC-18, SEC-19, and the host half of SEC-04 (the agent endpoint and a settings write
+Done: SEC-01, SEC-02, SEC-03, SEC-05, SEC-06, SEC-07, SEC-09, SEC-10, SEC-11,
+SEC-12, SEC-13, SEC-14, SEC-15, SEC-16, SEC-17, SEC-18, SEC-19, SEC-22, SEC-23, SEC-24, SEC-25, and the host half of SEC-04 (the agent endpoint and a settings write
 are refused while the window is locked).
 
 Notes on the third commit:
@@ -107,14 +106,35 @@ SEC-17 and SEC-18 are the sixth commit.
   pieces in the fake world: a `secrets` field on the seed, and a Google route in the fake backend.
   Two of its three tests fail without the fix.
 
+Notes on the seventh to ninth commits:
+
+- SEC-06 core half. `carriesCredentialsSafely` holds the host transport's own rule - https anywhere,
+  plain http on loopback alone - and `jiraRequest$` and `gitlabRequest$` apply it before the
+  authorization header exists. The settings screen says so under the host field, which is the only
+  place the user can act on it. The boundary was already the transport's; this is the message.
+- SEC-22. `writeExport` reads the name with `lstatSync`, so a symlink is refused rather than written
+  through, and creates the file with `openSync(path, 'wx', 0o600)`. A destination that exists needs
+  `--overwrite`, which unlinks and then creates the same way.
+- SEC-23. `plain` escapes every control character but tab and newline. Every human-readable line of
+  the CLI goes through it, as does the error the entry point prints. `--json` still answers data.
+- SEC-25. `namedEdits` counts what the flags ask for and the call is refused when it is more than one.
+- SEC-24. The CLI asks `GET /agent/proof?nonce=…` and sends nothing until the answer is
+  `HMAC-SHA256(token, nonce)`. The host answers it before the token check, because the caller has none
+  to send yet, and before the lock check, so a locked app still reads as Timetrack. The fetch refuses
+  a redirect. The discovery file was already removed at a clean exit, which a crash does not reach -
+  the proof is what covers that. The contract version is 2, so a CLI and an app that disagree say so
+  by name. A Rust test pins the same HMAC vector Node produces, so the two sides cannot drift apart.
+
 Still open, in the order to take them:
 
-1. SEC-06 core half: `normalizeJiraHost` and `normalizeGitLabHost` still accept an explicit
-   `http://` host. The host transport now refuses it, so this is the message, not the boundary.
-2. SEC-22 to SEC-25 in `libs/agent-rules/src/lib/`. Exclusive `0600` export, terminal-escape
-   stripping on printed provider text, `redirect: 'error'` plus a server proof in the discovery
-   file, and a refusal of conflicting edit flags.
-3. SEC-20 and SEC-21, the dependency updates.
+1. SEC-20 second half. `rustls` is 0.23.45 and `h2` is 0.4.19, so both advisories are out of the
+   lockfile. The repeatable advisory check in CI is not added yet. `glib 0.18.5`
+   (RUSTSEC-2024-0429) comes from the Tauri/WebKit stack and has no fix, so the check needs it on an
+   ignore list with that reason written down.
+2. SEC-21. Angular 22.0.7 is affected by GHSA-hh8m-fm6v-7cvg, fixed in 22.1.0. It is a workspace-wide
+   upgrade with a lockfile change, so it needs its own session: `yarn install`, a full build and the
+   whole test suite.
+3. SEC-08 stays out of scope until compaction exists, for the reason above.
 
 Each library change needs a changeset. `@ethlete/timetrack` and `@ethlete/agent-rules` are
 both published.
