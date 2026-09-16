@@ -159,7 +159,7 @@ describe('resolveStandIn', () => {
 
   it('narrows a checkout-wide rule to the branch the placeholder was opened on', () => {
     const settings = resolveStandIn({
-      settings: settingsWith({ standIns: [standIn({ author: 'app', openedOn: ['fix/player-name'] })] }),
+      settings: settingsWith({ standIns: [standIn({ author: 'app', heldOn: ['fix/player-name'] })] }),
       id: 'stand-in-1',
       issueKey: 'FIP-100',
     });
@@ -171,7 +171,7 @@ describe('resolveStandIn', () => {
 
   it('leaves a branch the placeholder never saw unnamed', () => {
     const settings = resolveStandIn({
-      settings: settingsWith({ standIns: [standIn({ author: 'app', openedOn: ['fix/player-name'] })] }),
+      settings: settingsWith({ standIns: [standIn({ author: 'app', heldOn: ['fix/player-name'] })] }),
       id: 'stand-in-1',
       issueKey: 'FIP-100',
     });
@@ -185,7 +185,7 @@ describe('resolveStandIn', () => {
 
   it('writes one rule per branch the placeholder was opened on', () => {
     const settings = resolveStandIn({
-      settings: settingsWith({ standIns: [standIn({ author: 'app', openedOn: ['next', 'fix/player-name'] })] }),
+      settings: settingsWith({ standIns: [standIn({ author: 'app', heldOn: ['next', 'fix/player-name'] })] }),
       id: 'stand-in-1',
       issueKey: 'FIP-100',
     });
@@ -206,7 +206,7 @@ describe('resolveStandIn', () => {
   it('leaves a rule that already names a branch alone', () => {
     const settings = resolveStandIn({
       settings: settingsWith({
-        standIns: [standIn({ author: 'app', openedOn: ['next'] })],
+        standIns: [standIn({ author: 'app', heldOn: ['next'] })],
         rules: [rule({ branch: 'fix/player-name' })],
       }),
       id: 'stand-in-1',
@@ -242,7 +242,7 @@ describe('reopenStandIn', () => {
 
   it('points the rules a narrowed resolve wrote back at the stand-in', () => {
     const resolved = resolveStandIn({
-      settings: settingsWith({ standIns: [standIn({ author: 'app', openedOn: ['next', 'fix/player-name'] })] }),
+      settings: settingsWith({ standIns: [standIn({ author: 'app', heldOn: ['next', 'fix/player-name'] })] }),
       id: 'stand-in-1',
       issueKey: 'FIP-100',
     });
@@ -263,11 +263,69 @@ describe('reopenStandIn', () => {
 });
 
 describe('withStandInDay', () => {
+  const BASE = ['next', 'main'];
+
   it('records the day once', () => {
     const once = withStandInDay({ settings: settingsWith(), id: 'stand-in-1', day: '2026-09-14' });
     const twice = withStandInDay({ settings: once, id: 'stand-in-1', day: '2026-09-14' });
 
     expect(twice.standIns[0]?.days).toEqual(['2026-09-14']);
+  });
+
+  it('collects the branches the day drew it on, so the resolve has a grain to cut to', () => {
+    const settings = withStandInDay({
+      settings: settingsWith(),
+      id: 'stand-in-1',
+      day: '2026-09-14',
+      branches: ['feat/x', 'feat/y'],
+      baseBranches: BASE,
+    });
+
+    expect(settings.standIns[0]?.heldOn).toEqual(['feat/x', 'feat/y']);
+  });
+
+  it('adds the branches a later day drew to the ones it already held', () => {
+    const first = withStandInDay({
+      settings: settingsWith(),
+      id: 'stand-in-1',
+      day: '2026-09-14',
+      branches: ['feat/x'],
+      baseBranches: BASE,
+    });
+    const settings = withStandInDay({
+      settings: first,
+      id: 'stand-in-1',
+      day: '2026-09-15',
+      branches: ['feat/x', 'feat/y'],
+      baseBranches: BASE,
+    });
+
+    expect(settings.standIns[0]?.heldOn).toEqual(['feat/x', 'feat/y']);
+    expect(settings.standIns[0]?.days).toEqual(['2026-09-14', '2026-09-15']);
+  });
+
+  it('records no base branch, because integration work is not one piece of work', () => {
+    const settings = withStandInDay({
+      settings: settingsWith(),
+      id: 'stand-in-1',
+      day: '2026-09-14',
+      branches: ['next', 'main', 'feat/x'],
+      baseBranches: BASE,
+    });
+
+    expect(settings.standIns[0]?.heldOn).toEqual(['feat/x']);
+  });
+
+  it('leaves a checkout that only worked a base branch without a grain', () => {
+    const settings = withStandInDay({
+      settings: settingsWith(),
+      id: 'stand-in-1',
+      day: '2026-09-14',
+      branches: ['next'],
+      baseBranches: BASE,
+    });
+
+    expect(settings.standIns[0]?.heldOn).toBeUndefined();
   });
 });
 

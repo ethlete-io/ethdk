@@ -1,5 +1,5 @@
 import { AttributionRule, standInIdOf } from '../model/attribution';
-import { StandIn, standInDays } from '../model/stand-in';
+import { StandIn, standInBranches, standInDays } from '../model/stand-in';
 import { withReplacedAttributionRule } from './attribution';
 import { TimetrackSettings } from './model';
 
@@ -95,11 +95,13 @@ export const withoutOrphanedStandIns = (settings: TimetrackSettings): TimetrackS
  *
  * A checkout-wide rule is right for a placeholder and wrong for an issue: the placeholder stands for
  * whatever the checkout does that Jira holds no ticket for, and the issue is one piece of work. So the
- * rule is cut down to the branches the placeholder was drafted from, and every other branch of that
- * checkout goes back to unnamed — where the next pass opens a placeholder of its own for it.
+ * rule is cut down to the branches the placeholder held, and every other branch of that checkout goes
+ * back to unnamed — where the next pass opens a placeholder of its own for it.
  *
  * A rule that already names a branch, and one of a stand-in the user wrote, are as narrow as whoever
- * wrote them meant them to be. Those keep their grain and only swap their target.
+ * wrote them meant them to be. Those keep their grain and only swap their target. So does one whose
+ * placeholder held no branch worth naming: there is nothing narrower to say, and `reconsider` already
+ * stops a checkout-wide rule stating a row that spans a swap.
  */
 const narrowedRules = (options: {
   rule: AttributionRule;
@@ -134,7 +136,7 @@ export const resolveStandIn = (options: {
 
   if (!standIn || standIn.state === 'resolved' || !issueKey) return settings;
 
-  const branches = standIn.openedOn ?? [];
+  const branches = standIn.heldOn ?? [];
   const replacements = new Map(
     settings.attributionRules
       .filter((rule) => standInIdOf(rule) === id)
@@ -182,14 +184,34 @@ export const reopenStandIn = (options: { settings: TimetrackSettings; id: string
 /**
  * Records that a day holds bands of this stand-in, so a resolve can name the days it made bookable
  * after the events behind them are pruned by retention.
+ *
+ * The branches that day's bands ran on are recorded with it, because that is the grain the resolve
+ * cuts the rule back to. It is collected here rather than read at the resolve: the placeholder may
+ * still name these, and work the checkout does after the resolve was never this issue.
  */
 export const withStandInDay = (options: {
   settings: TimetrackSettings;
   id: string;
   day: string;
+  /** The branches the day's bands of this stand-in ran on. */
+  branches?: readonly string[];
+  /** Branch names that are integration rather than one piece of work, so never a grain. */
+  baseBranches?: readonly string[];
 }): TimetrackSettings => ({
   ...options.settings,
-  standIns: options.settings.standIns.map((entry) =>
-    entry.id === options.id ? { ...entry, days: standInDays({ standIn: entry, day: options.day }) } : entry,
-  ),
+  standIns: options.settings.standIns.map((entry) => {
+    if (entry.id !== options.id) return entry;
+
+    const heldOn = standInBranches({
+      standIn: entry,
+      branches: options.branches ?? [],
+      baseBranches: options.baseBranches ?? [],
+    });
+
+    return {
+      ...entry,
+      days: standInDays({ standIn: entry, day: options.day }),
+      ...(heldOn.length ? { heldOn } : {}),
+    };
+  }),
 });

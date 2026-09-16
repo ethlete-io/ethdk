@@ -29,6 +29,7 @@ import {
   dayBoundaryOf,
   fetchJiraIssueTouchedAt$,
   fetchTempoDayCoverage$,
+  checkoutOf,
   findStandIn,
   gitFlowConfigFor,
   hideRow,
@@ -68,6 +69,7 @@ import {
   shiftDayKey,
   showRow,
   splitRow,
+  standInBranches,
   standInNameFor,
   streamDay,
   unnamedContexts,
@@ -614,10 +616,24 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       settings.nameWithStandIn({ standIn: opened.standIn, rule: opened.rule });
     }
 
+    const config = gitFlowConfigFor(current);
+    const baseBranches = [config.baseBranches.development, config.baseBranches.production];
+    const streams = streamed()?.streams ?? [];
+
     for (const id of new Set(rows().flatMap((row) => (row.standInId ? [row.standInId] : [])))) {
       const standIn = findStandIn({ id, standIns: settings.settings().standIns });
 
-      if (standIn && !standIn.days.includes(key)) settings.markStandInDay({ id, day: key });
+      if (!standIn) continue;
+
+      const checkout = checkoutOf({ settings: current, standIn });
+      const branches = streams
+        .filter((stream) => !!checkout && stream.repoPath === checkout)
+        .flatMap((stream) => stream.branches);
+      const heldOn = standInBranches({ standIn, branches, baseBranches });
+
+      /** A day already listed is written again once the checkout swapped branch: the grain grew. */
+      if (!standIn.days.includes(key) || heldOn.length !== (standIn.heldOn?.length ?? 0))
+        settings.markStandInDay({ id, day: key, branches, baseBranches });
     }
   });
 

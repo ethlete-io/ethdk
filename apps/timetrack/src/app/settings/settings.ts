@@ -336,8 +336,12 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /** Lets the app open a placeholder for the checkout again, after a delete refused it. */
     allowStandInCheckout: (repoPath: string) => apply(withStandInCheckoutAllowed({ settings: settings(), repoPath })),
-    markStandInDay: (options: { id: string; day: string }) =>
-      apply(withStandInDay({ settings: settings(), ...options })),
+    markStandInDay: (options: {
+      id: string;
+      day: string;
+      branches?: readonly string[];
+      baseBranches?: readonly string[];
+    }) => apply(withStandInDay({ settings: settings(), ...options })),
     resolveStandIn: (options: { id: string; issueKey: string }) =>
       apply(resolveStandIn({ settings: settings(), ...options })),
     reopenStandIn: (id: string) => apply(reopenStandIn({ settings: settings(), id })),

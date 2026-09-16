@@ -157,7 +157,7 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
   const projectKey = asText(raw['projectKey']).toUpperCase();
 
   const resolvedRuleIds = asTextList(raw['resolvedRuleIds']);
-  const openedOn = asTextList(raw['openedOn']);
+  const heldOn = asTextList(raw['heldOn']);
 
   return {
     id: asText(raw['id']) || `stand-in-${index}`,
@@ -168,7 +168,7 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
     issueKey: issueKey || undefined,
     openedFor: asText(raw['openedFor']) || undefined,
     /** Without it a placeholder read back from disk resolves checkout-wide again. See `narrowedRules`. */
-    openedOn: openedOn.length ? openedOn : undefined,
+    heldOn: heldOn.length ? heldOn : undefined,
     /** Without it a resolve read back from disk has nothing to point back, so the undo puts back nothing. */
     resolvedRuleIds: resolvedRuleIds.length ? resolvedRuleIds : undefined,
     days: asTextList(raw['days']).sort(),

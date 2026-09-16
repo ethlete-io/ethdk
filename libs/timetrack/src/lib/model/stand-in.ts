@@ -41,14 +41,18 @@ export type StandIn = {
    */
   openedFor?: string;
   /**
-   * The branches of the work the app drafted it from, when the app is what opened it.
+   * The branches its own bands were drawn on, collected as each day is drawn, apart from a base
+   * branch. A base branch is integration work rather than one piece of work.
    *
    * A placeholder covers the whole checkout, because it stands for whatever that checkout does that
-   * Jira holds no ticket for. An issue is one piece of work, so the resolve narrows the rule to these
-   * branches. Without them a checkout-wide grain would survive onto a real key and name every later
-   * branch after work it never covered.
+   * Jira holds no ticket for. An issue is one piece of work, so the resolve cuts the rule back to
+   * these branches. Without them a checkout-wide grain survives onto a real key and names every later
+   * branch of that checkout after work it never covered.
+   *
+   * Collected while the placeholder waits rather than read at the resolve: it is what the rule may
+   * still name, and work done after the resolve was never this issue.
    */
-  openedOn?: string[];
+  heldOn?: string[];
   /**
    * The rules the resolve rewrote, so the undo can point exactly those back and no rule that named the
    * same issue on its own is dragged along. Written by the resolve and cleared by the undo.
@@ -92,8 +96,6 @@ export const openStandIn = (options: {
   author?: NamingAuthor;
   /** The checkout the app opened it for, when the app is what opened it. */
   openedFor?: string;
-  /** The branches of the work the app drafted it from, when the app is what opened it. */
-  openedOn?: readonly string[];
   /**
    * Tells apart two stand-ins opened in the same millisecond, which is what one pass over a day's
    * checkouts does. Anything but letters and digits is dropped, so an id stays a readable key.
@@ -105,7 +107,6 @@ export const openStandIn = (options: {
   ...(options.description?.trim() ? { description: options.description.trim() } : {}),
   ...(options.projectKey ? { projectKey: options.projectKey } : {}),
   ...(options.openedFor ? { openedFor: options.openedFor } : {}),
-  ...(options.openedOn?.length ? { openedOn: [...new Set(options.openedOn)] } : {}),
   state: 'open',
   days: [options.day],
   author: options.author ?? 'user',
@@ -140,6 +141,25 @@ export const matchStandIn = (options: {
 /** The days the stand-in already covers, with `day` in them. Ordered, so a list reads oldest first. */
 export const standInDays = (options: { standIn: Pick<StandIn, 'days'>; day: string }) =>
   [...new Set([...options.standIn.days, options.day])].sort();
+
+/**
+ * The branches the stand-in has held, with the ones a day just drew added. First seen first, so the
+ * rules a resolve writes read in the order the work happened.
+ *
+ * A base branch is dropped. Work on one is integration rather than a piece of work, so a rule naming
+ * it would hand every later branch of the checkout to whichever issue the placeholder became.
+ */
+export const standInBranches = (options: {
+  standIn: Pick<StandIn, 'heldOn'>;
+  branches: readonly string[];
+  baseBranches: readonly string[];
+}) => {
+  const base = new Set(options.baseBranches);
+
+  return [...new Set([...(options.standIn.heldOn ?? []), ...options.branches])].filter(
+    (branch) => !!branch && !base.has(branch),
+  );
+};
 
 /**
  * Whether a resolve may still be undone.
