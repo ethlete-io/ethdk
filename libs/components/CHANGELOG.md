@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.0.0-next.60
+
+### Major Changes
+
+- [`8b90cd4`](https://github.com/ethlete-io/ethdk/commit/8b90cd46c77f2a0d34c44d65eebfcf6adbf27675) Bracket: a relayout now animates, with new `thirdPlaceTopOffset`, `finalRoundHeaderGap`, `alignRoundHeaders` and `focusInset` settings and a `--et-bracket-move-duration` token; `BracketLayout.drawEdges` now returns a `BracketDrawing` instead of an SVG string.
+- [`59adb91`](https://github.com/ethlete-io/ethdk/commit/59adb91fb2d1ccc8ea01dad2b2cb0142d9fcba43) Bracket pick card: per-side pick marks, a note line, a `readonly` results mode and slot wording from
+  `provideBracketLabels`. **Breaking:** the `unresolvableLabel` and `unavailableLabel` inputs are gone.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) **Breaking:** three features are opt-in. Import `MENU_SEARCH_IMPORTS` for `etMenuSearch`, register `provideSchedulerEditSurface()` for the default appointment editor, and `provideStreamPip()` for picture-in-picture on player slots.
+
+### Minor Changes
+
+- [`40f6464`](https://github.com/ethlete-io/ethdk/commit/40f64642d9d2aae79b62135eb3a80536dc1ef349) Bracket: add `migrateBracketPicks()` so a pick follows its participant when a pairing changes, plus `realParticipantOutranksPick` and `keepPickWhileFeederSideIsOpen` on `resolveBracketSlot()`.
+- [`c6cd941`](https://github.com/ethlete-io/ethdk/commit/c6cd94105ccb2f6b7de40a18a970d755a139e406) Bracket: add a framework-free prediction graph and resolver, prediction-aware slot states, an operable pick card, and focused round layout controls.
+- [`eb7135a`](https://github.com/ethlete-io/ethdk/commit/eb7135aa7840e7d4d46cfe696bc0c3fcb4f265e9) Standings: add `<et-standings-pick>`, a group table a viewer reorders by drag or arrow keys, plus `standingPickOutcome` and `standingPickStartOrder` in `@ethlete/bracket`.
+
+### Patch Changes
+
+- [`56d8504`](https://github.com/ethlete-io/ethdk/commit/56d85042a69a42c7883a2318845da793322cfe3d) `mirroredSingleEliminationBracketLayout`'s JSDoc now describes the fold as it works: it stops at the
+  first round it cannot halve, and that round and every later one are drawn whole in the middle.
+- [`edb7e77`](https://github.com/ethlete-io/ethdk/commit/edb7e778b0eb7e6aace697cb6f023f17af5d412b) An `et-button` keeps a `tabindex` its consumer set on the element. The host binding no longer removes it, so an opted-out control such as the scrollable's navigation buttons stays out of the tab order.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Color input: an empty string reads as unselected and `colorContrast` shares the picker's parser. A pasted OTP keeps its digits through separators, and choice-field support messages animate in severity order.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Range inputs no longer spin forever registering a side in development, `generateBracketDataForEthlete` accepts a stage whose leading rounds are empty, and forms and the calendar report a misplaced headless piece with an actionable error.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Focus follows the keyboard again: calendar arrow keys move DOM focus, the cascader sheet keeps it while drilling, a suffix-button icon click no longer steals it, and table `Enter` drills before it clicks the row.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Menu search keeps the runtime metadata Angular needs for its directives, and the phone input imports only the six select declarations its template uses.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Component CSS now loads with the feature that needs it. Calendar, dropzone, overlay, scheduler, select, cascader, table and the rich text editor ship none of their opt-in chrome unused, and related components share one stylesheet.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Toggletip follows a dismissal as it starts and re-opens during the leave transition; Escape dismisses a hover-shown tooltip from anywhere without blocking a dialog behind it.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Command palette: the search field drops `aria-controls` and reports `aria-expanded="false"` with no results, and `etCommandPaletteShortcut` closes a palette opened through `injectCommandPalette()` instead of stacking one.
+- [`4033412`](https://github.com/ethlete-io/ethdk/commit/40334123b995c4d000fc9c92bab4bc936e688af2) Table selection checkboxes carry their accessible names again, the grid's default remove button emits the item's `remove` output, and pagination clamps a page past the end to the last one.
+- [`291e658`](https://github.com/ethlete-io/ethdk/commit/291e658d9cbf85e6dfe0843b1e0c5f675ef9e704) `et-match-participant` draws the participant's first letter when an emblem is missing or fails to load, and
+  letterboxes a non-square logo instead of cropping it. A TBD slot stays blank.
+- [`480a1ca`](https://github.com/ethlete-io/ethdk/commit/480a1ca992662b4a5049782b3b8a6d57dd3f94d3) A nav tab link that a user reached with Tab follows on Enter again - the tab bar no longer swallows a key it does not act on - and Space no longer follows a disabled link.
+- [`4326376`](https://github.com/ethlete-io/ethdk/commit/4326376c916cfd845e4c9b70b100d3bc88ffef81) Overlays can be mounted `passive` and are then skipped as the top layer, so a dialog still closes on a backdrop press while a tooltip shows inside it.
+- [`0952147`](https://github.com/ethlete-io/ethdk/commit/09521477d67b28a3051681fea1c88b9314bbfe4b) Overlay: a breakpoint strategy switch now adds or removes the arrow and the drag handle with the strategy, instead of keeping the ones the overlay mounted with.
+- [`6c744bb`](https://github.com/ethlete-io/ethdk/commit/6c744bb88ed65244ffd875eabd69a45e7a1bef7a) `defineQueryForm`: `branch()` now debounces and runs the reset graph like the source form and exposes `liveValue`; the filter overlay applies `liveValue` on submit.
+
 ## 1.0.0-next.59
 
 ### Patch Changes

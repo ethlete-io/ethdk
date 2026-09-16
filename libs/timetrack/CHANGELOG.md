@@ -1,5 +1,78 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.6
+
+### Minor Changes
+
+- [`a2a44ed`](https://github.com/ethlete-io/ethdk/commit/a2a44ed110f8f611719d9d81d737e5331464b8d7) Collect the token spend of every coding-agent turn as an `agent-usage` event, read from the Claude Code session log.
+- [`e64d8e2`](https://github.com/ethlete-io/ethdk/commit/e64d8e2b6e267368c9bf0e60b8f6e14454a2aa4b) Add `parseCodexSessionLog()`: the Codex CLI's rollout logs read for their sessions and each turn's
+  token spend. A cursor now carries the session state a log states once rather than per record.
+- [`0f046df`](https://github.com/ethlete-io/ethdk/commit/0f046df3dafed8b92921fcb5e0aa7648cbf976ce) A short list of applications ships as no work context, media players and messengers, and
+  `holdsWorkApps` takes any of them back one at a time.
+- [`de9004c`](https://github.com/ethlete-io/ethdk/commit/de9004c7faf1331f84b8fed54454d293d2ca6a23) The Sources view says which editor on this machine holds the heartbeat reporter, and names the
+  command that installs it into one that does not.
+- [`21d78f6`](https://github.com/ethlete-io/ethdk/commit/21d78f65e331a7ea8c8f3ccaef77012f8de3e0cd) Pull request activity on github.com is read through `gh`, beside GitLab's. It stores no token, it is
+  off until the switch in Settings is on, and it says when GitHub's 300-event cap cut a window short.
+- [`f38dc5a`](https://github.com/ethlete-io/ethdk/commit/f38dc5a036fc41b1eadfd8f2b8a96dcaecd20f07) GitLab activity is read through `glab`, which holds its own login, so the app stores no token to
+  collect. A source now reports "not installed" and "not logged in" as two distinct states.
+- [`017441b`](https://github.com/ethlete-io/ethdk/commit/017441bb8da29c71eacc52e8d695276577a9aad2) The Sources view installs the heartbeat reporter into an editor from a button, using the extension
+  the app bundle ships. It names the checkout command only when the build ships none.
+- [`bb0dde7`](https://github.com/ethlete-io/ethdk/commit/bb0dde7fddf69bb61b93af3a82c2b3d3544ab082) Settings gain `noWorkContextApps`: applications the user says never hold a checkout, reported with
+  their own `no-work-context` cause instead of as unjudged time.
+- [`b6c9d05`](https://github.com/ethlete-io/ethdk/commit/b6c9d05cafad8342a9ea1ee096be98c7c45d096c) `streamDay()` takes the project links and drops a checkout a private link covers: no line, no
+  evidence, no spend. `TimetrackProjectLink` and `matchProjectLink()` move to the model, so a reader
+  outside `correlate` can honour a link.
+- [`2e98dd5`](https://github.com/ethlete-io/ethdk/commit/2e98dd591622ea82f31e4216f15712c6fa824c4f) `READABLE_MS` is exported: the duration under which `formatDurationMs` reads `0m`, so a caller can
+  drop a line that would carry no number.
+- [`55f4f16`](https://github.com/ethlete-io/ethdk/commit/55f4f16207af9cf3f6aececd07f42543dad82fff) Add `streamDay()`: what a local day was worked on, for how long and what the agents spent, one line
+  per checkout. `backfillAgentSpend$()` fills in the spend of days collected before it.
+- [`e1ff549`](https://github.com/ethlete-io/ethdk/commit/e1ff549bba8370a9ca529ef02913aea4e489ed85) Add the `@ethlete/timetrack/testing` entry point: a stateful fake Jira, Tempo, GitLab and git backend, plus the seedable world the app's end-to-end suite drives.
+- [`9612097`](https://github.com/ethlete-io/ethdk/commit/961209756c850ae6e62e6dbe9611d70c8873bf1f) `streamDay()` books a turn to its checkout by working directory alone, so an agent that ran while
+  nobody was at the machine still bills. Each stream reports that time as `unattendedMs`, outside both
+  presence and engaged time.
+- [`a27d9d1`](https://github.com/ethlete-io/ethdk/commit/a27d9d17f8588e64c34ea8ac6e2fb81a37619019) An unnamed focus row carries the window titles behind it, each with its own total, longest first. A
+  private checkout keeps none.
+- [`4c533fc`](https://github.com/ethlete-io/ethdk/commit/4c533fcc1e9493a16ab2cf0b9024672313c142db) Unnamed focus is now judged against the span: a `gap` is an application that names checkouts
+  elsewhere, and one that never names a checkout reads as `unknown`.
+- [`b8dbea3`](https://github.com/ethlete-io/ethdk/commit/b8dbea34c267b7b6469956c3392b41b3d6318259) `streamDay` reports `focusMs` and `unnamedFocus`: the focused-window time no checkout took, per
+  application and per cause, so the Other applications line can be read apart.
+- [`0fbe8cb`](https://github.com/ethlete-io/ethdk/commit/0fbe8cbf276d1b3751fa2e4b9174ef539f58fd99) The window source status reports what it reads on this machine, and the fake world seeds it, so a
+  missing capability no longer reads as a wrong number.
+
+### Patch Changes
+
+- [`78216c9`](https://github.com/ethlete-io/ethdk/commit/78216c9c8cda44547f8554719ecc393825216c73) Both agent parsers read the prompts a person typed as `agent-prompt` events: an instant, a session and
+  a checkout, never the text. They key like spend, so a log read again stores each one once.
+- [`f680628`](https://github.com/ethlete-io/ethdk/commit/f680628f002f91799ec391d1623f9313c779a7da) `streamDay()` reports `ambiguousNames`: the checkout names a window claimed that two checkouts share.
+  The time folds into the other-applications line, and the day now says why.
+- [`47abe4c`](https://github.com/ethlete-io/ethdk/commit/47abe4c7f0ff2fe7ac998828fb8b1295a73d7195) Exclusion rules now apply per calendar occurrence, and a Google account with a rejected refresh token reports that it stopped working instead of retrying forever.
+- [`396b6ed`](https://github.com/ethlete-io/ethdk/commit/396b6edcaa1022d4bbea436a66caba5178fe84d9) A call a rule counts as work now proposes its own weak row in the day review, on the same issue a meeting lands on. Time a meeting already claims is cut out first.
+- [`d937c1a`](https://github.com/ethlete-io/ethdk/commit/d937c1a1a54942f6a031433a9083f133d4501424) A call the app was killed in the middle of no longer counts to now. The next run ends it where the
+  watching stopped, so a killed run cannot claim every hour since.
+- [`68c7997`](https://github.com/ethlete-io/ethdk/commit/68c7997839a2197367a16954d30c985c4be3efc7) A GitLab or calendar failure now clears on the next clean run. It used to clear only in the append step, which a run with no credential never reaches, so a fixed token left the old error on screen.
+- [`c1855fc`](https://github.com/ethlete-io/ethdk/commit/c1855fc013126a688a3f21df9f09d6c6feee98f2) The v2 day reads editor heartbeats to name the checkout a window title cannot. A meeting title is no longer quotable evidence.
+- [`4e83e1b`](https://github.com/ethlete-io/ethdk/commit/4e83e1bce11ef72799e25ec07d37fc3be985c671) The e2e fake world serves seeded agent session logs, and its store now honours dedupe keys and keeps
+  cursors, so a collector's re-read behaves the way the real store makes it behave.
+- [`dcd6d68`](https://github.com/ethlete-io/ethdk/commit/dcd6d68dd0e308e8a4e94c9073c1d0bfd589a189) Git scan: a worktree no longer books the whole repository's commits as its own — a commit is read once
+  and named by the checkout that holds its branch.
+- [`2004b27`](https://github.com/ethlete-io/ethdk/commit/2004b2737eca2089bb06150ec03a5b0431b604e0) Ask for the GitLab token scope the activity feed needs. `/events` is documented as `read_user` or `api`, and `read_api` does not cover it, so a token made from the old instruction answered 403.
+- [`9939df6`](https://github.com/ethlete-io/ethdk/commit/9939df603ebf25b81fad9304dbe962c2959e71c7) A Google token error now names which request failed and keeps Google's own description. A rejected
+  authorization code no longer reports that the stored token needs a reconnect.
+- [`f680628`](https://github.com/ethlete-io/ethdk/commit/f680628f002f91799ec391d1623f9313c779a7da) New `readHeadBranches$()` reads the branch a checkout was on at an instant from its reflog, so a day
+  holding no git event for a checkout can still name its branch.
+- [`c1855fc`](https://github.com/ethlete-io/ethdk/commit/c1855fc013126a688a3f21df9f09d6c6feee98f2) The day counts calls, from which process holds the microphone. `TimetrackCallRules` decide at read time whether a call was work, and default to no.
+- [`54855a9`](https://github.com/ethlete-io/ethdk/commit/54855a90e66443c19b7e86187bd1483c32893fff) `applyExclusionRules` tests a title pattern against the checkout an `agent-prompt` names, as it already
+  does for a turn's spend. A rule that hides a repository now hides its prompts too.
+- [`ff168af`](https://github.com/ethlete-io/ethdk/commit/ff168af81485f62e454531aad1af837cf986a0e1) `streamDay()` rebuilds a day no window observed from the prompts the user typed, with a turn bridging
+  the minutes between two of them. It reports the rebuilt part as `rebuiltMs`. See ADR 0006.
+- [`0373c98`](https://github.com/ethlete-io/ethdk/commit/0373c9898f77dc371b071474a024c5dea084bcbb) A rebuilt day keeps a turn for a checkout no project link covers, and names a stream after a
+  directory only when something says the directory is a checkout. See ADR 0006.
+- [`63b06b1`](https://github.com/ethlete-io/ethdk/commit/63b06b141dfda19d2de34c9db28b9c51d37503e6) A URL in a window title is stored without its query string, and a focus that does not move no longer reads as time no window watched.
+- [`3bafba7`](https://github.com/ethlete-io/ethdk/commit/3bafba704f2da02ea70149d6c660d440fb464c26) `repairStoredTitles$` applies the window-title redaction to the titles already stored, which the rule could not reach because it only runs on the way in.
+- [`aed6f3a`](https://github.com/ethlete-io/ethdk/commit/aed6f3a441bb7363ff0534aac6bea59b1d145f29) `streamDay()` keeps unrelated windows off a checkout: the sticky context now comes only from a
+  window title, and only inside the application that set it.
+- [`c1855fc`](https://github.com/ethlete-io/ethdk/commit/c1855fc013126a688a3f21df9f09d6c6feee98f2) A window evidence row names the application when the window source reports no title, so untitled windows no longer collapse into one blank row.
+
 ## 0.1.0-next.5
 
 ### Minor Changes
