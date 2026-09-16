@@ -8,9 +8,14 @@ Storybook (:4401, `npx nx storybook timetrack-app`).
 **Inlay is the direction. Plate is the runner-up.** Tally and Rule stay in the story as
 rejected options, not as candidates.
 
-- **Inlay** — a flat plate with a strip of metal set into its left edge. The strip is
-  broken while the band asks nothing, and closes when it asks. The break is the mark's own
-  gesture, and it carries a meaning rather than decorating.
+- **Inlay** — a flat plate with a strip of metal set into its left edge. A band that asks
+  nothing carries a short cut at the top. A band that asks is marked down its whole length.
+
+  The first version broke the strip in its middle instead. That read as a hole, not a
+  gesture: the break sat at 50% so its position drifted with the band's height, and on a
+  2h45m band it floated in the middle of a long run with no reason to be there. The mark's
+  own break is a terminal cut, so a mid-run break is not the same gesture.
+
 - **Plate** — a raised panel framed in the metal, with corner brackets that close on a band
   that asks. Kept as the fallback.
 - **Tally** — rejected. The notch column is the most on-brand of the four and the quietest,

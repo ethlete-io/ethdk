@@ -11,7 +11,11 @@ const TREATMENTS: { key: BandTreatment; name: string; claim: string }[] = [
   { key: 'plate', name: 'Plate', claim: 'A raised panel. The corner brackets close on a band that asks.' },
   { key: 'tally', name: 'Tally', claim: 'No panel. One cut stick down the left edge, straight off the mark.' },
   { key: 'rule', name: 'Rule', claim: 'Hairlines only. Each band is an open bracket cut into the ground.' },
-  { key: 'inlay', name: 'Inlay', claim: 'A flat plate with a metal strip inlaid. The break closes when it asks.' },
+  {
+    key: 'inlay',
+    name: 'Inlay',
+    claim: 'A flat plate with a metal strip inlaid. A quiet band carries a cut, not a run.',
+  },
 ];
 
 const minutesFromStart = (from: string) => {

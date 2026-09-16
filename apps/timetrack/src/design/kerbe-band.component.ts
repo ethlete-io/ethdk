@@ -215,8 +215,8 @@ const TIME_MIN_REM = 2.2;
       background: var(--k-metal);
     }
 
-    /* Inlay - a flat plate with a strip of metal set into its left edge. The strip is broken while
-       the band asks nothing, and closes when it asks. One gesture, taken from the mark. */
+    /* Inlay - a flat plate with a strip of metal set into its left edge. A band that asks nothing
+       carries a short cut at the top. A band that asks is marked down its whole length. */
     .band[data-treatment='inlay'] {
       padding: 0.7rem 0.9rem 0.7rem 1.3rem;
       background: var(--k-panel);
@@ -228,25 +228,16 @@ const TIME_MIN_REM = 2.2;
 
     .band[data-treatment='inlay'] .band__notch {
       top: 0;
-      bottom: 0;
       left: 0;
       width: 3px;
+      height: 1.6rem;
       opacity: 1;
       background: var(--k-metal);
     }
 
-    .band[data-treatment='inlay'] .band__notch::after {
-      content: '';
-      position: absolute;
-      top: calc(50% - 0.6rem);
-      right: 0;
-      left: 0;
-      height: 1.2rem;
-      background: var(--k-ground);
-    }
-
-    .band[data-treatment='inlay']:not([data-ask='nothing']) .band__notch::after {
-      height: 0;
+    .band[data-treatment='inlay']:not([data-ask='nothing']) .band__notch {
+      bottom: 0;
+      height: auto;
     }
   `,
 })
