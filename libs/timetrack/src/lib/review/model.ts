@@ -60,6 +60,15 @@ export type PinnedRow = {
   state?: 'accepted' | 'rejected';
   /** Whether the reviewer took this row off the timeline. See {@link DayReview.hidden}. */
   hidden?: boolean;
+  /**
+   * What the band this row was built from is, which the reviewer's edit does not change: a rule said
+   * the room is not work, or nobody was at the machine. Stored rather than re-read off the day,
+   * because a split leaves two rows and only one of them can still match a band the engine produces.
+   * See {@link WorklogProposal.excluded} and {@link WorklogProposal.unattended}.
+   */
+  excluded?: boolean;
+  unattended?: boolean;
+  withheldIssueKey?: string;
 };
 
 /** Everything a reviewer changed about one day. The engine's own output is never stored alongside it. */

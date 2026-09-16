@@ -11,6 +11,7 @@ import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
 import { StandIn, matchStandIn } from '../model/stand-in';
+import { TimeWindow, subtractWindows } from '../model/time-window';
 import {
   DayReview,
   DayReviewEdits,
@@ -73,6 +74,9 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
   description: row.description,
   confidence: row.confidence,
   evidence: row.evidence,
+  excluded: row.excluded,
+  unattended: row.unattended,
+  withheldIssueKey: row.withheldIssueKey,
   state: row.state ?? 'edited',
   edited: true,
   hidden: row.hidden === true,
@@ -127,6 +131,77 @@ const nameFromStandInRule = (options: {
 const overlapMs = (a: { from: Date; to: Date }, b: { from: Date; to: Date }) =>
   Math.min(a.to.getTime(), b.to.getTime()) - Math.max(a.from.getTime(), b.from.getTime());
 
+const spanMs = (window: { from: Date; to: Date }) => window.to.getTime() - window.from.getTime();
+
+/** The share of a band's observed time that falls inside one window of it. */
+const sharedObservedMs = (options: { source: RowSource; window: TimeWindow }) => {
+  const whole = spanMs(options.source);
+
+  if (whole <= 0) return options.source.observedMs;
+
+  const shared = Math.max(
+    0,
+    Math.min(options.source.to.getTime(), options.window.to.getTime()) -
+      Math.max(options.source.from.getTime(), options.window.from.getTime()),
+  );
+
+  return Math.round((options.source.observedMs * shared) / whole);
+};
+
+/** The stretches a window holds of a band's own stretches, so a piece draws no band outside itself. */
+const clipStretches = (stretches: readonly TimeWindow[] | undefined, window: TimeWindow) =>
+  stretches
+    ?.map((stretch) => ({
+      from: new Date(Math.max(stretch.from.getTime(), window.from.getTime())),
+      to: new Date(Math.min(stretch.to.getTime(), window.to.getTime())),
+    }))
+    .filter((stretch) => stretch.to.getTime() > stretch.from.getTime());
+
+/**
+ * The stretches of the day's own band that no pinned row claiming it covers, as rows of their own.
+ *
+ * A pin takes the whole band it matched. Without these, shortening a row deletes whatever the band
+ * held outside it, and a band that is still growing — a voice room left open — stops on screen until
+ * the collector behind it restarts and opens a second band. Each stretch keeps the band's own marks,
+ * so a room a rule excluded is still drawn as excluded.
+ *
+ * Every pin of the lane is subtracted rather than only the one that matched, or a split whose halves
+ * re-claim their band by lane would have one half redraw the other.
+ *
+ * A stretch comes back unnamed. The reviewer shortened a row to say those minutes were not that work,
+ * so handing them back under its issue would book the time they just took off it.
+ */
+const leftoverRows = (options: {
+  rows: readonly PinnedRow[];
+  matched: ReadonlyMap<string, string>;
+  sources: readonly RowSource[];
+}): RowSource[] => {
+  const taken = new Set(options.matched.values());
+
+  return options.sources
+    .filter((source) => taken.has(source.id))
+    .flatMap((source) => {
+      const lane = storedLaneKey(source.laneKey);
+      const covered = options.rows.filter((row) => storedLaneKey(row.laneKey) === lane);
+
+      return subtractWindows({ windows: [{ from: source.from, to: source.to }], without: covered }).map(
+        (window, at): RowSource => ({
+          ...source,
+          id: `${source.id}#${at + 2}`,
+          issueKey: undefined,
+          standInId: undefined,
+          storyKey: undefined,
+          from: window.from,
+          to: window.to,
+          durationMs: spanMs(window),
+          observedMs: sharedObservedMs({ source, window }),
+          stretches: clipStretches(source.stretches, window),
+          state: 'suggested',
+        }),
+      );
+    });
+};
+
 /**
  * Takes the ends a reviewer never set from the engine's row for the same lane, and reports which
  * engine row each pinned row now stands for.
@@ -178,12 +253,18 @@ const trackPinnedRows = (options: { pinned: readonly PinnedRow[]; sources: reado
       from,
       to,
       durationMs: to.getTime() - from.getTime(),
-      observedMs: source.observedMs,
+      observedMs: sharedObservedMs({ source, window: { from, to } }),
       evidence: source.evidence,
+      // The band still says what it is, so the marks come off it rather than off the stored edit: a
+      // rule the user has since changed reaches the row, and a row pinned before the day carried them
+      // is not left reading as work nobody named.
+      excluded: source.excluded,
+      unattended: source.unattended,
+      withheldIssueKey: source.withheldIssueKey,
     };
   });
 
-  return { rows, matched };
+  return { rows, matched, leftovers: leftoverRows({ rows, matched, sources: options.sources }) };
 };
 
 /**
@@ -236,6 +317,7 @@ export const reviewDay = (options: {
       .filter((row) => !consumed.has(row.id))
       .map((row) => withOverride(row, edits.overrides[row.id])),
     ...tracked.rows.map(fromPinned).map((row) => nameFromStandInRule({ row, rules, standIns })),
+    ...tracked.leftovers.map((row) => withOverride(row, edits.overrides[row.id])),
   ]
     .map((row) => readStandIn(row, standIns))
     .sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));

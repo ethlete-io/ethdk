@@ -61,6 +61,9 @@ const asPinned = (row: ReviewedRow, replaces: readonly string[]): PinnedRow => (
   description: row.description,
   confidence: row.confidence,
   evidence: row.evidence,
+  excluded: row.excluded,
+  unattended: row.unattended,
+  withheldIssueKey: row.withheldIssueKey,
   /**
    * A rejection has to survive being split or merged, or restructuring a row somebody had already
    * thrown out would quietly put its time back into the sync. Anything else re-reviews as `edited`.

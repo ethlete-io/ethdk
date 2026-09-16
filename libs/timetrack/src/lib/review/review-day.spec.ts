@@ -238,8 +238,8 @@ describe('reviewDay', () => {
 
     const review = reviewDay({ rows: after, edits });
 
-    expect(review.rows).toHaveLength(1);
-    expect(review.rows[0]?.durationMs).toBe(90 * MINUTE);
+    expect(review.rows.filter((row) => row.edited)).toHaveLength(1);
+    expect(review.rows.find((row) => row.edited)?.durationMs).toBe(90 * MINUTE);
     expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('stale-edit');
   });
 
@@ -743,8 +743,16 @@ describe('setRowRange', () => {
     const edits = dragged({ day: laned({ from: '09:00', to: '12:00', minutes: 180 }), from: '09:00', to: '11:00' });
     const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
 
-    expect(review.rows).toHaveLength(1);
     expect(rowFor(review, 'ABC-1')).toMatchObject({ from: at('09:30'), to: at('11:00') });
+  });
+
+  it('draws what the day grew past a held end as a band nothing names yet', () => {
+    const edits = dragged({ day: laned({ from: '09:00', to: '12:00', minutes: 180 }), from: '09:00', to: '11:00' });
+    const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
+
+    expect(review.rows.filter((row) => !row.issueKey).map((row) => [row.from, row.to])).toEqual([
+      [at('11:00'), at('14:00')],
+    ]);
   });
 
   it('keeps the end a first drag set while a second drag moves the start', () => {
@@ -1381,5 +1389,68 @@ describe('reviewDay over a row the reviewer built in a checkout a stand-in cover
 
   it('takes no stand-in from a rule that names an issue instead', () => {
     expect(reviewed({ rules: [rule({ kind: 'issue', issueKey: 'ABC-9' })] }).standInId).toBeUndefined();
+  });
+});
+
+describe('reviewDay, a band a rule excluded that the reviewer resized', () => {
+  const room = (options: { from: string; to: string }): UnnamedProposal => ({
+    id: `unnamed:lane:call@${at(options.from).toISOString()}`,
+    from: at(options.from),
+    to: at(options.to),
+    durationMs: at(options.to).getTime() - at(options.from).getTime(),
+    observedMs: at(options.to).getTime() - at(options.from).getTime(),
+    laneKey: 'lane:call',
+    description: 'Open Room #1 | Braune Digital - Discord',
+    confidence: 'weak',
+    evidence: [],
+    state: 'suggested',
+    excluded: true,
+  });
+
+  const shortened = (options: { room: UnnamedProposal; to: string }) =>
+    setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: dayRows({ proposals: [], unnamed: [options.room] }) }).rows[0]!,
+      from: options.room.from,
+      to: at(options.to),
+    });
+
+  it('keeps the excluded mark on the part that is left', () => {
+    const open = room({ from: '08:00', to: '12:00' });
+    const edits = shortened({ room: open, to: '10:00' });
+    const review = reviewDay({ rows: dayRows({ proposals: [], unnamed: [open] }), edits });
+
+    expect(review.rows[0]?.excluded).toBe(true);
+  });
+
+  it('reads the mark off the band for an edit stored before the day carried one', () => {
+    const open = room({ from: '08:00', to: '12:00' });
+    const edits = shortened({ room: open, to: '10:00' });
+    const stale = { ...edits, pinned: edits.pinned.map((row) => ({ ...row, excluded: undefined })) };
+    const review = reviewDay({ rows: dayRows({ proposals: [], unnamed: [open] }), edits: stale });
+
+    expect(review.rows[0]?.excluded).toBe(true);
+  });
+
+  it('still draws the time after the part the reviewer kept', () => {
+    const open = room({ from: '08:00', to: '12:00' });
+    const edits = shortened({ room: open, to: '10:00' });
+    const review = reviewDay({ rows: dayRows({ proposals: [], unnamed: [open] }), edits });
+
+    expect(review.rows.map((row) => [row.from.toISOString(), row.to.toISOString()])).toEqual([
+      [at('08:00').toISOString(), at('10:00').toISOString()],
+      [at('10:00').toISOString(), at('12:00').toISOString()],
+    ]);
+  });
+
+  it('grows the remainder while the room is still open', () => {
+    const open = room({ from: '08:00', to: '12:00' });
+    const edits = shortened({ room: open, to: '10:00' });
+    const later = reviewDay({
+      rows: dayRows({ proposals: [], unnamed: [room({ from: '08:00', to: '13:00' })] }),
+      edits,
+    });
+
+    expect(later.rows[later.rows.length - 1]?.to.toISOString()).toBe(at('13:00').toISOString());
   });
 });
