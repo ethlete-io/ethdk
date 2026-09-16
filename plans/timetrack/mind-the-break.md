@@ -35,6 +35,10 @@ Three causes. All three are in the library, not on the screen.
 3. **Nothing compares a break with a work band.** `lanes.ts:15` puts every break in a lane of its
    own, and the lane packer compares a break with no row. An overlap is drawn rather than refused.
 
+**Cause 3 needs no fix.** Rule 1 stopped the overlap the day measured, and rule 2 makes an overlap
+the user states legal on purpose: an `away` statement over a work band is exactly the correction the
+rule exists for. A packer that refused one would fight the statement.
+
 ## Rule 1: a break never covers a call
 
 **Built on 2026-09-16**, all three steps. Recorded in ADR 0030. One correction to the reading below:
