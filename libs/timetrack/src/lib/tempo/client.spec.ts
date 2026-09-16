@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackResponse, TimetrackTransport } from '../transport/ports';
-import { TempoCredentials, TempoPage, TempoRequestError, tempoPaged$, tempoRequest$ } from './client';
+import { TempoCredentials, TempoCursorError, TempoPage, TempoRequestError, tempoPaged$, tempoRequest$ } from './client';
 
 const CREDENTIALS: TempoCredentials = { token: 'tempo-secret' };
 
@@ -110,6 +110,51 @@ describe('tempoRequest$', () => {
 const page = (results: number[], next?: string): TempoPage<{ n: number }> => ({
   results: results.map((n) => ({ n })),
   metadata: next ? { next } : {},
+});
+
+describe('the origin a tempo call may reach', () => {
+  const followed = (next: string) => {
+    const { transport, requests } = stubTransport([{ body: page([1], next) }]);
+    const failed = vi.fn();
+
+    tempoPaged$({
+      transport,
+      credentials: CREDENTIALS,
+      path: '/things',
+      describe: 'things',
+      options: { pageSize: 1 },
+    }).subscribe({ error: failed });
+
+    return { requests, failed };
+  };
+
+  it.each([
+    ['another origin', 'https://attacker.example/4/things'],
+    ['a host that only starts with tempo', 'https://api.tempo.io.attacker.example/4/things'],
+    ['http rather than https', 'http://api.tempo.io/4/things'],
+    ['user info in the url', 'https://user:secret@api.tempo.io/4/things'],
+    ['a url that does not parse', 'https://['],
+  ])('refuses a next cursor at %s', (_name, next) => {
+    const { requests, failed } = followed(next);
+
+    expect(requests).toHaveLength(1);
+    expect(failed.mock.calls[0]?.[0]).toBeInstanceOf(TempoCursorError);
+  });
+
+  it('holds no token in the refusal, and names the url it refused', () => {
+    const { failed } = followed('https://attacker.example/4/things');
+    const error = failed.mock.calls[0]?.[0] as TempoCursorError;
+
+    expect(error.message).not.toContain(CREDENTIALS.token);
+    expect(error.url).toBe('https://attacker.example/4/things');
+  });
+
+  it("still follows a next cursor on tempo's own origin", () => {
+    const { requests, failed } = followed('https://api.tempo.io/4/things?offset=1&limit=1');
+
+    expect(requests[1]?.url).toBe('https://api.tempo.io/4/things?offset=1&limit=1');
+    expect(failed).not.toHaveBeenCalled();
+  });
 });
 
 describe('tempoPaged$', () => {

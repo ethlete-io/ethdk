@@ -21,7 +21,7 @@ test covers it.
 | SEC-13 connection cap         | yes      | yes   | `src-tauri/src/agent.rs`, `ingest.rs`                   |
 | SEC-14 cursor metadata        | yes      | yes   | `agent-session/cursor-privacy.ts`                       |
 | SEC-15 title redaction        | yes      | yes   | `agent-session/cursor-privacy.ts`                       |
-| SEC-16 Tempo paging           | yes      |       | `libs/timetrack/src/lib/tempo/client.ts`                |
+| SEC-16 Tempo paging           | yes      | yes   | `libs/timetrack/src/lib/tempo/client.ts`                |
 | SEC-17 Google revoke          | yes      |       | `libs/timetrack/src/lib/google-auth/tokens.ts`          |
 | SEC-18 refresh race           | yes      |       | `libs/timetrack/src/lib/google-auth/token-source.ts`    |
 | SEC-19 HTTP deadlines         | yes      | yes   | `src-tauri/src/lib.rs`, `http.rs`                       |
@@ -41,11 +41,11 @@ compaction feature, not a security patch. The finding stands.
 
 ## Where this stands
 
-Four commits so far. The Rust host has 175 unit tests, all passing, and the timetrack e2e
+Five commits so far. The Rust host has 175 unit tests, all passing, and the timetrack e2e
 suite has 248, all passing.
 
 Done: SEC-01, SEC-02, SEC-03, SEC-05, SEC-06 (host half), SEC-07, SEC-09, SEC-10, SEC-11,
-SEC-12, SEC-13, SEC-14, SEC-15, SEC-19, and the host half of SEC-04 (the agent endpoint and a settings write
+SEC-12, SEC-13, SEC-14, SEC-15, SEC-16, SEC-19, and the host half of SEC-04 (the agent endpoint and a settings write
 are refused while the window is locked).
 
 Notes on the third commit:
@@ -89,18 +89,21 @@ Notes on the fourth commit:
   `TIMETRACK_E2E_CURSORS_KEY`. `agent-cursor-privacy.spec.ts` fails on all four runs without the
   sanitizer.
 
+SEC-16 is the fifth commit. `urlFor` resolves a path against `TEMPO_API_BASE` and accepts an
+absolute URL only on that exact origin, with no user info, so a cursor cannot send the token
+elsewhere. The host transport already refuses a redirect (`Policy::none()` in `http.rs`), which is
+the other half of the same hole.
+
 Still open, in the order to take them:
 
-1. SEC-16 `libs/timetrack/src/lib/tempo/client.ts`. `tempoPaged$` follows `metadata.next` as an
-   absolute URL with the bearer token attached. Accept only the `TEMPO_API_BASE` origin.
-2. SEC-17 and SEC-18 `libs/timetrack/src/lib/google-auth/`. `revokeGoogleToken$` maps every
+1. SEC-17 and SEC-18 `libs/timetrack/src/lib/google-auth/`. `revokeGoogleToken$` maps every
    status to success; `renew$` stores a grant that lands after `invalidate`.
-3. SEC-06 core half: `normalizeJiraHost` and `normalizeGitLabHost` still accept an explicit
+2. SEC-06 core half: `normalizeJiraHost` and `normalizeGitLabHost` still accept an explicit
    `http://` host. The host transport now refuses it, so this is the message, not the boundary.
-4. SEC-22 to SEC-25 in `libs/agent-rules/src/lib/`. Exclusive `0600` export, terminal-escape
+3. SEC-22 to SEC-25 in `libs/agent-rules/src/lib/`. Exclusive `0600` export, terminal-escape
    stripping on printed provider text, `redirect: 'error'` plus a server proof in the discovery
    file, and a refusal of conflicting edit flags.
-5. SEC-20 and SEC-21, the dependency updates.
+4. SEC-20 and SEC-21, the dependency updates.
 
 Each library change needs a changeset. `@ethlete/timetrack` and `@ethlete/agent-rules` are
 both published.

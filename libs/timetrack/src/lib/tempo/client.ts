@@ -1,4 +1,4 @@
-import { EMPTY, Observable, expand, map, reduce } from 'rxjs';
+import { EMPTY, Observable, defer, expand, map, reduce } from 'rxjs';
 import { TimetrackRequestMethod, TimetrackTransport } from '../transport/ports';
 
 /**
@@ -10,6 +10,9 @@ export type TempoCredentials = {
 };
 
 export const TEMPO_API_BASE = 'https://api.tempo.io/4';
+
+/** The only origin a request carrying the Tempo token may reach. */
+const TEMPO_API_ORIGIN = new URL(TEMPO_API_BASE).origin;
 
 export class TempoRequestError extends Error {
   readonly status: number;
@@ -68,7 +71,46 @@ const messageFor = (options: { status: number; describe: string }) => {
 };
 
 /**
- * Issues one Tempo v4 call through the host transport. `url` may be an absolute URL, which is how a
+ * A `metadata.next` cursor that does not point at Tempo. The request carries the Tempo token, so the
+ * page is refused rather than followed.
+ */
+export class TempoCursorError extends Error {
+  readonly url: string;
+
+  constructor(url: string) {
+    super(`Tempo offered a next page outside ${TEMPO_API_ORIGIN}. It was not followed.`);
+    this.name = 'TempoCursorError';
+    this.url = url;
+  }
+}
+
+/**
+ * The URL one call goes to. A path is resolved against {@link TEMPO_API_BASE}; an absolute URL is a
+ * `metadata.next` cursor and has to be Tempo's own origin over HTTPS.
+ *
+ * Tempo hands the cursor back as an absolute URL, and the call that follows it carries the bearer
+ * token. A compromised or malicious Tempo could therefore name any host and be sent the token, so the
+ * origin is checked before the header is attached. User info is refused with it: it is credentials in
+ * a URL this app never issues.
+ */
+const urlFor = (path: string) => {
+  if (!/^https?:\/\//.test(path)) return `${TEMPO_API_BASE}${path}`;
+
+  const url = (() => {
+    try {
+      return new URL(path);
+    } catch {
+      throw new TempoCursorError(path);
+    }
+  })();
+
+  if (url.origin !== TEMPO_API_ORIGIN || url.username || url.password) throw new TempoCursorError(path);
+
+  return path;
+};
+
+/**
+ * Issues one Tempo v4 call through the host transport. `path` may be an absolute URL, which is how a
  * `metadata.next` cursor is followed; anything else is resolved against {@link TEMPO_API_BASE}.
  */
 export const tempoRequest$ = <T>(options: {
@@ -81,32 +123,31 @@ export const tempoRequest$ = <T>(options: {
   body?: unknown;
 }): Observable<T> => {
   const { transport, credentials, path, describe } = options;
-  const url = /^https?:\/\//.test(path) ? path : `${TEMPO_API_BASE}${path}`;
 
-  return transport
-    .request$<T>({
+  return defer(() =>
+    transport.request$<T>({
       method: options.method ?? 'GET',
-      url: withQuery(url, options.query),
+      url: withQuery(urlFor(path), options.query),
       headers: {
         authorization: `Bearer ${credentials.token}`,
         accept: 'application/json',
         ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
       },
       body: options.body,
-    })
-    .pipe(
-      map((response) => {
-        if (response.status < 200 || response.status >= 300) {
-          throw new TempoRequestError({
-            status: response.status,
-            describe,
-            message: messageFor({ status: response.status, describe }),
-          });
-        }
+    }),
+  ).pipe(
+    map((response) => {
+      if (response.status < 200 || response.status >= 300) {
+        throw new TempoRequestError({
+          status: response.status,
+          describe,
+          message: messageFor({ status: response.status, describe }),
+        });
+      }
 
-        return response.body;
-      }),
-    );
+      return response.body;
+    }),
+  );
 };
 
 /** Follows `metadata.next` until Tempo stops offering one, and concatenates every page's results. */
