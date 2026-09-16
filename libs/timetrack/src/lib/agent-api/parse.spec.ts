@@ -75,6 +75,20 @@ describe('parseAgentRequest', () => {
     expect(parseAgentRequest({ op: 'standIn.list' })).toEqual({ ok: true, request: { op: 'standIn.list' } });
   });
 
+  it('takes the stand-in delete op with the id it names', () => {
+    expect(parseAgentRequest({ op: 'standIn.remove', id: 'stand-in:1:repo' })).toEqual({
+      ok: true,
+      request: { op: 'standIn.remove', id: 'stand-in:1:repo' },
+    });
+  });
+
+  it('refuses a stand-in delete that names no id', () => {
+    expect(parseAgentRequest({ op: 'standIn.remove' })).toEqual({
+      ok: false,
+      message: 'standIn.remove needs a id.',
+    });
+  });
+
   it('says what it does not know', () => {
     expect(parseAgentRequest({ op: 'jira.delete' })).toEqual({
       ok: false,

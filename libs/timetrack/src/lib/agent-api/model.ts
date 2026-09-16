@@ -98,9 +98,9 @@ export type AgentApiAttributionRule = {
 /**
  * One name the user gave work that Jira does not hold yet.
  *
- * An agent reads this list to say what is still open and how long it has waited. It may not write
- * one: a stand-in is the user's own word for their work, and an agent that opens one puts a name on
- * the day the user never chose.
+ * An agent reads this list to say what is still open and how long it has waited, and it may delete
+ * one. It may not open one: a stand-in is the user's own word for their work, and an agent that opens
+ * one puts a name on the day the user never chose.
  */
 export type AgentApiStandIn = {
   id: string;
@@ -115,6 +115,13 @@ export type AgentApiStandIn = {
   days: string[];
   author: NamingAuthor;
   createdAtMs: number;
+  /** The checkout the app opened it for. Absent on one the user opened by hand. */
+  openedFor?: string;
+  /**
+   * The branch of that checkout it covers. Absent on a record opened before the grain was the branch,
+   * which is why such a record covers the whole checkout and blocks every branch of it.
+   */
+  openedForBranch?: string;
 };
 
 /** One standing statement about a path: whether it is work, and which project it files into. */
@@ -340,6 +347,7 @@ export type AgentApiRequest =
   | { op: 'day.edits'; day: string; edits: AgentApiRowEdit[] }
   | { op: 'settings.rules' }
   | { op: 'standIn.list' }
+  | { op: 'standIn.remove'; id: string }
   | { op: 'naming.offers'; day: string };
 
 export type AgentApiOp = AgentApiRequest['op'];

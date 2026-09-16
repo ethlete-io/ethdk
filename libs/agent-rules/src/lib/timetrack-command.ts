@@ -18,6 +18,7 @@ import {
   timetrackRepoProject,
   timetrackRules,
   timetrackSearch,
+  timetrackRemoveStandIn,
   timetrackStandIns,
   timetrackStatus,
 } from './timetrack';
@@ -279,6 +280,8 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack edit <row-id> …     Change one row of a day: its times, its name, its note or its state
   timetrack rules               The rules that name a day's work: attribution, project links, apps
   timetrack standins            The names the user gave work Jira does not hold yet, and their age
+  timetrack standins --remove <id>
+                                Delete one placeholder, and the rule that named it
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
 
 Options for search
@@ -539,15 +542,17 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
   }
 
   if (subcommand === 'standins') {
-    const standIns = await timetrackStandIns();
+    const remove = flagValue(argv, '--remove');
+    const standIns = remove ? await timetrackRemoveStandIn(remove) : await timetrackStandIns();
     const open = standIns
       .filter((standIn) => standIn.state === 'open')
       .sort((left, right) => left.createdAtMs - right.createdAtMs);
 
     if (!json) {
+      if (remove) say(`Deleted ${remove}, and the rule that named it.`);
       say(`${open.length} open, ${standIns.length - open.length} resolved`);
       open.forEach((standIn) => say(`  ${describeStandIn(standIn)}`));
-      if (open.length) say('Only the app opens or resolves one — report them, do not write one.');
+      if (open.length) say('Only the app opens or resolves one — you may delete one, not write one.');
     }
 
     return printed(standIns, json);

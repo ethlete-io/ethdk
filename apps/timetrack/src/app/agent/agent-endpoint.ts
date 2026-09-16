@@ -404,9 +404,9 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   /**
    * The names the user gave work Jira does not hold yet.
    *
-   * Read only. An agent may say that a stand-in has waited five days; it may not open one, because
-   * the name is the user's own word for their work. `resolvedRuleIds` is left out: it is what the
-   * undo of a resolve reads, and no caller outside the app has any use for it.
+   * An agent may say that a stand-in has waited five days, and it may delete one; it may not open
+   * one, because the name is the user's own word for their work. `resolvedRuleIds` is left out: it is
+   * what the undo of a resolve reads, and no caller outside the app has any use for it.
    */
   const standIns$ = (): Observable<{ standIns: AgentApiStandIn[] }> =>
     of({
@@ -419,8 +419,27 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         days: [...standIn.days],
         author: standIn.author,
         createdAtMs: standIn.createdAt.getTime(),
+        openedFor: standIn.openedFor,
+        openedForBranch: standIn.openedForBranch,
       })),
     });
+
+  /**
+   * Deletes one placeholder, and answers with the list as it reads afterwards.
+   *
+   * `removeStandIn` takes the rule pointing at it with it, so a delete cannot leave a rule naming a
+   * record that is gone. A delete of an app-opened record that names a branch refuses that branch, so
+   * the next pass opens no second one; a record naming none refuses nothing, and the pass may redo it
+   * at whatever grain the day now reads.
+   */
+  const removeStandIn$ = (id: string): Observable<{ standIns: AgentApiStandIn[] }> => {
+    if (!settings.settings().standIns.some((standIn) => standIn.id === id))
+      return throwError(() => new Error(`Timetrack holds no stand-in ${id}.`));
+
+    settings.removeStandIn(id);
+
+    return standIns$();
+  };
 
   const carryOut$ = (request: AgentApiRequest): Observable<unknown> => {
     switch (request.op) {
@@ -448,6 +467,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return rules$();
       case 'standIn.list':
         return standIns$();
+      case 'standIn.remove':
+        return removeStandIn$(request.id);
       case 'naming.offers':
         return naming$(request);
     }

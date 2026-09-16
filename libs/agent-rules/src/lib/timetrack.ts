@@ -90,8 +90,9 @@ export type TimetrackRules = {
 /**
  * One name the user gave work that Jira does not hold yet.
  *
- * The list is read only. Nothing in this CLI opens or resolves a stand-in, because the name is the
- * user's own word for their work and the app is where they give it.
+ * Nothing in this CLI opens or resolves a stand-in, because the name is the user's own word for their
+ * work and the app is where they give it. A delete is allowed: it takes a name away rather than
+ * putting one on the day.
  */
 export type TimetrackStandIn = {
   id: string;
@@ -104,6 +105,13 @@ export type TimetrackStandIn = {
   days: string[];
   author: 'user' | 'agent';
   createdAtMs: number;
+  /** The checkout the app opened it for. Absent on one the user opened by hand. */
+  openedFor?: string;
+  /**
+   * The branch of that checkout it covers. Absent on a record opened before the grain was the branch,
+   * which is why such a record covers the whole checkout and blocks every branch of it.
+   */
+  openedForBranch?: string;
 };
 
 /**
@@ -395,3 +403,13 @@ export const timetrackRules = () => askTimetrack<TimetrackRules>({ op: 'settings
 
 export const timetrackStandIns = async () =>
   (await askTimetrack<{ standIns: TimetrackStandIn[] }>({ op: 'standIn.list' })).standIns;
+
+/**
+ * Deletes one placeholder and answers with the list as it reads afterwards.
+ *
+ * The rule pointing at it goes with it. A record the app opened for one branch refuses that branch as
+ * it goes, so no second one opens for it; a record naming no branch refuses nothing, and the next
+ * pass may open one at whatever grain the day reads.
+ */
+export const timetrackRemoveStandIn = async (id: string) =>
+  (await askTimetrack<{ standIns: TimetrackStandIn[] }>({ op: 'standIn.remove', id })).standIns;

@@ -42,6 +42,7 @@ nobody can rotate.
 | `edit <row-id> …`                 | The user asks you to correct one row of a day                           |
 | `rules`                           | You need to know why a band was named, or why it was not                |
 | `standins`                        | You need to know which work still waits for a ticket, and for how long  |
+| `standins --remove <id>`          | A placeholder is wrong or too wide, and the user asked you to delete it |
 | `naming [YYYY-MM-DD]`             | A checkout was never offered a name and you need the step that stopped  |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
@@ -115,9 +116,25 @@ npx ethlete-agents timetrack standins         # the open ones, oldest first
 npx ethlete-agents timetrack standins --json  # the whole answer, resolved ones included
 ```
 
-Read it, report it, and stop there. **Never open or resolve a stand-in.** The name is the
-user's own word for their work, and the app is the only place they give it. If the user asks
-for a ticket, use `create` and tell them to resolve the stand-in in Timetrack.
+**Never open or resolve a stand-in.** The name is the user's own word for their work, and the
+app is the only place they give it. If the user asks for a ticket, use `create` and tell them
+to resolve the stand-in in Timetrack.
+
+You may delete one, because that takes a name away rather than putting one on the day:
+
+```bash
+npx ethlete-agents timetrack standins --remove <id>
+```
+
+The rule that named it goes with it. What happens next depends on `openedForBranch`, which
+`--json` reports:
+
+- It names a branch. The delete refuses that branch, and no second placeholder opens for it.
+- It names none. The record covers the whole checkout, and it blocks a placeholder for every
+  branch of that checkout. The delete refuses nothing, so the next pass opens one per branch.
+
+Ask the user before you delete one. It holds a name they may have written and a list of the
+days it covers, and neither comes back.
 
 ## Why a checkout was never offered a name
 
