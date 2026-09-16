@@ -12,6 +12,7 @@ import {
   NamedTarget,
   ProjectLinkTarget,
   StandIn,
+  StandInRefusal,
   TIMETRACK_SECRET_KEYS,
   TimetrackCredentialStatus,
   TimetrackExclusionRule,
@@ -334,8 +335,9 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     removeStandIn: (id: string) => apply(withoutStandIn({ settings: settings(), id })),
 
-    /** Lets the app open a placeholder for the checkout again, after a delete refused it. */
-    allowStandInCheckout: (repoPath: string) => apply(withStandInCheckoutAllowed({ settings: settings(), repoPath })),
+    /** Lets the app open a placeholder for the work again, after a delete refused it. */
+    allowStandInCheckout: (refusal: StandInRefusal) =>
+      apply(withStandInCheckoutAllowed({ settings: settings(), ...refusal })),
     markStandInDay: (options: {
       id: string;
       day: string;

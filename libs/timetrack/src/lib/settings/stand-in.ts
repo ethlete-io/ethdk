@@ -1,5 +1,5 @@
 import { AttributionRule, standInIdOf } from '../model/attribution';
-import { StandIn, standInBranches, standInDays } from '../model/stand-in';
+import { StandIn, StandInRefusal, standInBranches, standInDays } from '../model/stand-in';
 import { withReplacedAttributionRule } from './attribution';
 import { TimetrackSettings } from './model';
 
@@ -39,7 +39,7 @@ export const withNamedStandIn = (options: {
  */
 export const checkoutOf = (options: { settings: TimetrackSettings; standIn: StandIn }) =>
   options.standIn.openedFor ??
-  options.settings.attributionRules.find((rule) => standInIdOf(rule) === options.standIn.id && !rule.branch)?.repoPath;
+  options.settings.attributionRules.find((rule) => standInIdOf(rule) === options.standIn.id)?.repoPath;
 
 /**
  * Takes a stand-in out, and every rule that named it with it.
@@ -48,29 +48,46 @@ export const checkoutOf = (options: { settings: TimetrackSettings; standIn: Stan
  * named by something nobody can open. A delete is the resolve with no issue at the end of it: the
  * bands go back to unnamed on every day the stand-in held.
  *
- * Deleting one the app opened also refuses the checkout. The work under it is still unnamed, so the
- * next auto pass would open another placeholder within seconds and the delete would never stick.
+ * Deleting one the app opened also refuses the branch it stood for. The work under it is still
+ * unnamed, so the next auto pass would open another placeholder within seconds and the delete would
+ * never stick.
+ *
+ * A record opened before the grain was the branch carries no branch, and deleting one refuses
+ * nothing. It covered a whole checkout, which is what made it wrong, and the pass no longer reopens
+ * that record — it opens one per branch, each named from its own work. So the delete is how such a
+ * record is corrected, and refusing the checkout would stop the correction.
  */
 export const withoutStandIn = (options: { settings: TimetrackSettings; id: string }): TimetrackSettings => {
   const { settings } = options;
   const standIn = settings.standIns.find((entry) => entry.id === options.id);
-  const refused = standIn?.author === 'app' && standIn.state === 'open' ? checkoutOf({ settings, standIn }) : undefined;
+  const branch = standIn?.author === 'app' && standIn.state === 'open' ? standIn.openedForBranch : undefined;
+  const checkout = standIn && branch ? checkoutOf({ settings, standIn }) : undefined;
+  const refused: StandInRefusal | undefined = checkout ? { repoPath: checkout, branch } : undefined;
 
   return {
     ...settings,
     standIns: settings.standIns.filter((entry) => entry.id !== options.id),
     attributionRules: settings.attributionRules.filter((rule) => standInIdOf(rule) !== options.id),
-    noStandInCheckouts: refused ? [...new Set([...settings.noStandInCheckouts, refused])] : settings.noStandInCheckouts,
+    noStandInCheckouts:
+      refused && !sameRefusal(settings.noStandInCheckouts, refused)
+        ? [...settings.noStandInCheckouts, refused]
+        : settings.noStandInCheckouts,
   };
 };
 
-/** Lets the app open a placeholder for the checkout again, which is how a delete is taken back. */
+const sameRefusal = (refused: readonly StandInRefusal[], entry: StandInRefusal) =>
+  refused.some((held) => held.repoPath === entry.repoPath && held.branch === entry.branch);
+
+/** Lets the app open a placeholder for the work again, which is how a delete is taken back. */
 export const withStandInCheckoutAllowed = (options: {
   settings: TimetrackSettings;
   repoPath: string;
+  branch?: string;
 }): TimetrackSettings => ({
   ...options.settings,
-  noStandInCheckouts: options.settings.noStandInCheckouts.filter((path) => path !== options.repoPath),
+  noStandInCheckouts: options.settings.noStandInCheckouts.filter(
+    (entry) => entry.repoPath !== options.repoPath || entry.branch !== options.branch,
+  ),
 });
 
 /**

@@ -1,6 +1,6 @@
 import { ProjectLinkTarget, TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule, AttributionTarget, NamedTarget, NamingAuthor } from '../model/attribution';
-import { StandIn } from '../model/stand-in';
+import { StandIn, StandInRefusal } from '../model/stand-in';
 import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { REASONING_COMMANDS } from '../reason/model';
@@ -167,6 +167,7 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
     state: raw['state'] === 'resolved' && issueKey ? 'resolved' : 'open',
     issueKey: issueKey || undefined,
     openedFor: asText(raw['openedFor']) || undefined,
+    openedForBranch: asText(raw['openedForBranch']) || undefined,
     /** Without it a placeholder read back from disk resolves checkout-wide again. See `narrowedRules`. */
     heldOn: heldOn.length ? heldOn : undefined,
     /** Without it a resolve read back from disk has nothing to point back, so the undo puts back nothing. */
@@ -176,6 +177,22 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
     createdAt: asDate(raw['createdAt']),
   };
 };
+
+/** A plain path is an entry written while a placeholder covered the whole checkout. It still does. */
+const asStandInRefusal = (value: unknown): StandInRefusal | null => {
+  if (typeof value === 'string') return value.trim() ? { repoPath: value.trim() } : null;
+
+  const raw = asRecord(value);
+  const repoPath = asText(raw['repoPath']);
+  const branch = asText(raw['branch']);
+
+  if (!repoPath) return null;
+
+  return branch ? { repoPath, branch } : { repoPath };
+};
+
+const asStandInRefusals = (value: unknown) =>
+  Array.isArray(value) ? value.flatMap((entry) => asStandInRefusal(entry) ?? []) : [];
 
 const asStandIns = (value: unknown) =>
   Array.isArray(value) ? value.flatMap((entry, index) => asStandIn(entry, index) ?? []) : [];
@@ -432,7 +449,7 @@ const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
     attributionRules: asAttributionRules(document['attributionRules']),
     projectLinks: asProjectLinks(document['projectLinks']),
     standIns: asStandIns(document['standIns']),
-    noStandInCheckouts: asTextList(document['noStandInCheckouts']),
+    noStandInCheckouts: asStandInRefusals(document['noStandInCheckouts']),
     lockWindow: document['lockWindow'] !== false,
     lockAfterIdleMs: asLockAfterIdle(document['lockAfterIdleMs']),
   };

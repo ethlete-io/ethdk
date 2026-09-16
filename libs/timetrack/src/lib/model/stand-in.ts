@@ -41,13 +41,22 @@ export type StandIn = {
    */
   openedFor?: string;
   /**
+   * The branch of `openedFor` the app opened it for. Absent on one the user wrote, and on one the app
+   * opened while the grain was the whole checkout.
+   *
+   * Its absence is what tells the two apart, so a checkout still holding a wide record gets no second
+   * placeholder per branch beside it.
+   */
+  openedForBranch?: string;
+  /**
    * The branches its own bands were drawn on, collected as each day is drawn, apart from a base
    * branch. A base branch is integration work rather than one piece of work.
    *
-   * A placeholder covers the whole checkout, because it stands for whatever that checkout does that
-   * Jira holds no ticket for. An issue is one piece of work, so the resolve cuts the rule back to
-   * these branches. Without them a checkout-wide grain survives onto a real key and names every later
-   * branch of that checkout after work it never covered.
+   * A placeholder the app opens now names its own branch, so this repeats that branch and the resolve
+   * changes nothing. It is what repairs a record opened while the grain was the whole checkout: an
+   * issue is one piece of work, so the resolve cuts the rule back to these branches. Without them a
+   * checkout-wide grain survives onto a real key and names every later branch after work it never
+   * covered.
    *
    * Collected while the placeholder waits rather than read at the resolve: it is what the rule may
    * still name, and work done after the resolve was never this issue.
@@ -96,6 +105,8 @@ export const openStandIn = (options: {
   author?: NamingAuthor;
   /** The checkout the app opened it for, when the app is what opened it. */
   openedFor?: string;
+  /** The branch of that checkout the app opened it for. */
+  openedForBranch?: string;
   /**
    * Tells apart two stand-ins opened in the same millisecond, which is what one pass over a day's
    * checkouts does. Anything but letters and digits is dropped, so an id stays a readable key.
@@ -107,11 +118,31 @@ export const openStandIn = (options: {
   ...(options.description?.trim() ? { description: options.description.trim() } : {}),
   ...(options.projectKey ? { projectKey: options.projectKey } : {}),
   ...(options.openedFor ? { openedFor: options.openedFor } : {}),
+  ...(options.openedForBranch ? { openedForBranch: options.openedForBranch } : {}),
   state: 'open',
   days: [options.day],
   author: options.author ?? 'user',
   createdAt: options.now,
 });
+
+/**
+ * Work the user refused a placeholder for, by deleting one the app opened.
+ *
+ * Without `branch` it refuses the whole checkout, which is what an entry written while the grain was
+ * the checkout means and what a delete of such a record still writes.
+ */
+export type StandInRefusal = { repoPath: string; branch?: string };
+
+/**
+ * Whether the user refused a placeholder for this branch of this checkout.
+ *
+ * A refusal of the whole checkout covers every branch of it, so a user who wants no placeholder at
+ * all from a repository is not asked to refuse each branch in turn.
+ */
+export const isStandInRefused = (options: { repoPath: string; branch?: string; refused: readonly StandInRefusal[] }) =>
+  options.refused.some(
+    (entry) => entry.repoPath === options.repoPath && (!entry.branch || entry.branch === options.branch),
+  );
 
 /** The stand-ins still waiting on a ticket, newest first, which is what a picker offers. */
 export const openStandIns = (standIns: readonly StandIn[]) =>

@@ -58,28 +58,41 @@ describe('withoutStandIn', () => {
     expect(settings.attributionRules.map((entry) => entry.id)).toEqual(['rule-2']);
   });
 
-  it('refuses the checkout of one the app opened, so the next pass writes no replacement', () => {
+  it('refuses the branch of one the app opened, so the next pass writes no replacement', () => {
+    const settings = withoutStandIn({
+      settings: settingsWith({
+        standIns: [standIn({ author: 'app', openedFor: '/home/tom/dev/ea-frontend', openedForBranch: 'feat/x' })],
+      }),
+      id: 'stand-in-1',
+    });
+
+    expect(settings.noStandInCheckouts).toEqual([{ repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/x' }]);
+  });
+
+  it('reads the checkout off the rule where the record never recorded one', () => {
+    const settings = withoutStandIn({
+      settings: settingsWith({ standIns: [standIn({ author: 'app', openedForBranch: 'feat/x' })] }),
+      id: 'stand-in-1',
+    });
+
+    expect(settings.noStandInCheckouts).toEqual([{ repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/x' }]);
+  });
+
+  it('refuses nothing for one opened while the grain was the checkout, so the pass can redo it', () => {
     const settings = withoutStandIn({
       settings: settingsWith({ standIns: [standIn({ author: 'app', openedFor: '/home/tom/dev/ea-frontend' })] }),
       id: 'stand-in-1',
     });
 
-    expect(settings.noStandInCheckouts).toEqual(['/home/tom/dev/ea-frontend']);
-  });
-
-  it('reads the checkout off the rule where the record never recorded one', () => {
-    const settings = withoutStandIn({
-      settings: settingsWith({ standIns: [standIn({ author: 'app' })] }),
-      id: 'stand-in-1',
-    });
-
-    expect(settings.noStandInCheckouts).toEqual(['/home/tom/dev/ea-frontend']);
+    expect(settings.noStandInCheckouts).toEqual([]);
   });
 
   it('refuses nothing for one the user wrote, or one already resolved', () => {
     const user = withoutStandIn({ settings: settingsWith(), id: 'stand-in-1' });
     const resolved = withoutStandIn({
-      settings: settingsWith({ standIns: [standIn({ author: 'app', state: 'resolved', issueKey: 'FIP-1' })] }),
+      settings: settingsWith({
+        standIns: [standIn({ author: 'app', openedForBranch: 'feat/x', state: 'resolved', issueKey: 'FIP-1' })],
+      }),
       id: 'stand-in-1',
     });
 
@@ -89,11 +102,25 @@ describe('withoutStandIn', () => {
 });
 
 describe('withStandInCheckoutAllowed', () => {
-  it('takes the checkout back off the refused list', () => {
+  it('takes the branch back off the refused list, and leaves another branch of it refused', () => {
     const refused = withoutStandIn({
-      settings: settingsWith({ standIns: [standIn({ author: 'app' })] }),
+      settings: settingsWith({ standIns: [standIn({ author: 'app', openedForBranch: 'feat/x' })] }),
       id: 'stand-in-1',
     });
+    const both = {
+      ...refused,
+      noStandInCheckouts: [...refused.noStandInCheckouts, { repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/y' }],
+    };
+
+    expect(
+      withStandInCheckoutAllowed({ settings: both, repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/x' })
+        .noStandInCheckouts,
+    ).toEqual([{ repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/y' }]);
+  });
+
+  it('takes a whole-checkout entry off, which is what an older delete wrote', () => {
+    const settings = settingsWith();
+    const refused = { ...settings, noStandInCheckouts: [{ repoPath: '/home/tom/dev/ea-frontend' }] };
 
     expect(
       withStandInCheckoutAllowed({ settings: refused, repoPath: '/home/tom/dev/ea-frontend' }).noStandInCheckouts,

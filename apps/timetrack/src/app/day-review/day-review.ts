@@ -609,7 +609,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       repoRoots: git.discovery()?.repos,
       offeredCheckouts: namingOffers().map((offer) => offer.repoPath),
       standIns: current.standIns,
-      refusedCheckouts: current.noStandInCheckouts,
+      refused: current.noStandInCheckouts,
       day: key,
       now: new Date(),
     })) {
@@ -626,9 +626,10 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       if (!standIn) continue;
 
       const checkout = checkoutOf({ settings: current, standIn });
-      const branches = streams
-        .filter((stream) => !!checkout && stream.repoPath === checkout)
-        .flatMap((stream) => stream.branches);
+      /** A placeholder with a branch of its own holds that branch and no other, whatever else ran. */
+      const branches = standIn.openedForBranch
+        ? [standIn.openedForBranch]
+        : streams.filter((stream) => !!checkout && stream.repoPath === checkout).flatMap((stream) => stream.branches);
       const heldOn = standInBranches({ standIn, branches, baseBranches });
 
       /** A day already listed is written again once the checkout swapped branch: the grain grew. */

@@ -1,20 +1,20 @@
-import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
+import { GitFlowConfig, stripRefPrefix } from '@ethlete/agent-rules/git-flow';
 import { WorkGroup } from '../rows/merge';
 import { AttributionRule, UnnamedContext } from '../model/attribution';
 import { repoRootOf } from '../model/context';
 import { TimetrackProjectLink, describeProjectLink, matchProjectLink } from '../model/project-link';
-import { StandIn, openStandIn } from '../model/stand-in';
+import { StandIn, StandInRefusal, isStandInRefused, openStandIn } from '../model/stand-in';
 import { TicketDraft, draftRepoTicket } from './draft';
 
 /**
- * How much unnamed time in one checkout is worth a placeholder.
+ * How much unnamed time on one branch is worth a placeholder.
  *
- * A stray five minutes in a checkout is noise, and a placeholder for it is a row the user has to
+ * A stray five minutes on a branch is noise, and a placeholder for it is a row the user has to
  * answer later for nothing. Fifteen minutes is the smallest stretch this app books at all.
  */
 export const DEFAULT_MIN_AUTO_STAND_IN_MS = 15 * 60_000;
 
-/** A stand-in the app opened, with the rule that makes it cover the checkout on every later day. */
+/** A stand-in the app opened, with the rule that makes it cover the branch on every later day. */
 export type AutoStandIn = {
   standIn: StandIn;
   rule: AttributionRule;
@@ -23,24 +23,38 @@ export type AutoStandIn = {
   observedMs: number;
 };
 
-type RepoGroup = { repoPath: string; contexts: UnnamedContext[]; observedMs: number };
+type BranchGroup = { repoPath: string; branch: string; contexts: UnnamedContext[]; observedMs: number };
 
-const groupByRepo = (contexts: readonly UnnamedContext[]) => {
-  const groups = new Map<string, RepoGroup>();
+/**
+ * One group per branch of a checkout, which is one piece of work.
+ *
+ * A checkout with no branch to report is left out. Its work stays unnamed until the user names it:
+ * the only placeholder that could be opened for it would cover the whole checkout, which is the grain
+ * this exists to stop.
+ *
+ * `refs/heads/next` and `next` are the same branch, so the key is the stripped name and that is what
+ * the rule carries — `matchAttributionRule` strips both sides before it compares them.
+ */
+const groupByBranch = (contexts: readonly UnnamedContext[]) => {
+  const groups = new Map<string, BranchGroup>();
 
   for (const unnamed of contexts) {
     const repoPath = unnamed.context.repoPath;
+    const branch = stripRefPrefix(unnamed.context.branch ?? '');
 
-    if (!repoPath) continue;
+    if (!repoPath || !branch) continue;
 
-    const group = groups.get(repoPath) ?? { repoPath, contexts: [], observedMs: 0 };
+    const key = `${repoPath}@${branch}`;
+    const group = groups.get(key) ?? { repoPath, branch, contexts: [], observedMs: 0 };
 
     group.contexts.push(unnamed);
     group.observedMs += unnamed.observedMs;
-    groups.set(repoPath, group);
+    groups.set(key, group);
   }
 
-  return [...groups.values()].sort((left, right) => left.repoPath.localeCompare(right.repoPath));
+  return [...groups.values()].sort(
+    (left, right) => left.repoPath.localeCompare(right.repoPath) || left.branch.localeCompare(right.branch),
+  );
 };
 
 /**
@@ -54,38 +68,53 @@ const isCheckout = (options: { repoPath: string; roots: readonly string[] }) =>
   repoRootOf({ path: options.repoPath, roots: options.roots }) === options.repoPath;
 
 /**
- * A checkout an answer already stands for, whether or not this day's contexts show it.
+ * An answer that already stands for the branch, whether or not this day's contexts show it.
  *
- * Any checkout-wide rule counts, not only one pointing at a stand-in. `withAttributionRule` replaces
- * the rule naming the same context, so a placeholder opened here would delete the issue the user named
- * the checkout with — and the naming offer that would have named it again reads a rule as an answer,
- * so it never comes back either.
+ * Any rule counts, not only one pointing at a stand-in. `withAttributionRule` replaces the rule
+ * naming the same context, so a placeholder opened here would delete the issue the user named the
+ * work with — and the naming offer that would have named it again reads a rule as an answer, so it
+ * never comes back either. A checkout-wide rule answers every branch of the checkout.
  */
-const alreadyAnswered = (options: { repoPath: string; rules: readonly AttributionRule[] }) =>
-  options.rules.some((rule) => rule.repoPath === options.repoPath && !rule.branch);
+const alreadyAnswered = (options: { repoPath: string; branch: string; rules: readonly AttributionRule[] }) =>
+  options.rules.some(
+    (rule) => rule.repoPath === options.repoPath && (!rule.branch || stripRefPrefix(rule.branch) === options.branch),
+  );
 
 /**
- * A checkout a placeholder is already waiting on, read from the records rather than from the rules.
+ * A placeholder already waiting on the branch, read from the records rather than from the rules.
  *
- * The rules alone are not enough. A rule is replaced whenever the checkout gets another answer, so a
- * pass that ran while none was stored opened a second record and left the first in the waiting list
- * for good.
+ * The rules alone are not enough. A rule is replaced whenever the work gets another answer, so a pass
+ * that ran while none was stored opened a second record and left the first in the waiting list for
+ * good.
+ *
+ * A record opened before the grain was the branch carries no branch of its own and covers the whole
+ * checkout, so it blocks every branch of it. Splitting one is the user's to ask for: it holds a name
+ * and a day list drawn from work the split cannot divide.
  */
-const alreadyWaiting = (options: { repoPath: string; standIns: readonly StandIn[] }) =>
-  options.standIns.some((standIn) => standIn.state === 'open' && standIn.openedFor === options.repoPath);
+const alreadyWaiting = (options: { repoPath: string; branch: string; standIns: readonly StandIn[] }) =>
+  options.standIns.some(
+    (standIn) =>
+      standIn.state === 'open' &&
+      standIn.openedFor === options.repoPath &&
+      (!standIn.openedForBranch || standIn.openedForBranch === options.branch),
+  );
 
 /**
- * Opens a placeholder for every linked checkout whose work no rule could name, one per checkout.
+ * Opens a placeholder for every branch of a linked checkout whose work no rule could name.
  *
  * This is the app deciding that work exists, never that it belongs to an issue. A checkout Jira holds
  * no ticket for produces `Not yet named` bands day after day, and a question the user has to go
  * looking for is a question nobody answers — so the placeholder is written, and the user resolves it
  * to a real issue later, which `resolveStandIn` does in one rewrite.
  *
- * The grain is the checkout, so yesterday's and today's bands of the same repository land on the same
- * stand-in and one resolve books both days. That is why the rule carries no branch. The grain is the
- * placeholder's alone: `standInBranches` collects the branches it holds as each day is drawn, and the
- * resolve cuts the rule back to them rather than handing a whole checkout to one issue.
+ * The grain is the branch, because an issue is one piece of work and a checkout does several
+ * unrelated pieces in one day. A checkout-wide placeholder drew itself over all of them and one
+ * resolve named all of them after one ticket, with a name drafted from whichever piece came last.
+ * Yesterday's and today's bands of the same branch still land on the same placeholder, so one resolve
+ * books both days.
+ *
+ * A base branch gets none. Work on one is integration rather than a piece of work, so a placeholder
+ * there would take every later branch of the checkout with it.
  *
  * Only a checkout with a `project` link qualifies. The link is what says the path is work at all and
  * which Jira project a ticket is filed in, so a placeholder opened without one has nowhere to go.
@@ -114,10 +143,10 @@ export const autoStandIns = (options: {
    * issue covers, so one that does is not work for a placeholder.
    */
   offeredCheckouts: readonly string[];
-  /** Every placeholder the settings hold, so a checkout already waiting on one gets no second. */
+  /** Every placeholder the settings hold, so work already waiting on one gets no second. */
   standIns: readonly StandIn[];
-  /** The checkouts the user refused a placeholder for. Their work stays unnamed until they name it. */
-  refusedCheckouts: readonly string[];
+  /** The work the user refused a placeholder for. It stays unnamed until they name it. */
+  refused: readonly StandInRefusal[];
   /** The local day key the placeholders open on. */
   day: string;
   now: Date;
@@ -128,15 +157,19 @@ export const autoStandIns = (options: {
   if (!roots) return [];
 
   const minObservedMs = options.minObservedMs ?? DEFAULT_MIN_AUTO_STAND_IN_MS;
+  const base = new Set(
+    [options.config.baseBranches.development, options.config.baseBranches.production].map(stripRefPrefix),
+  );
   const opened: AutoStandIn[] = [];
 
-  for (const group of groupByRepo(options.contexts)) {
+  for (const group of groupByBranch(options.contexts)) {
     if (group.observedMs < minObservedMs) continue;
+    if (base.has(group.branch)) continue;
     if (!isCheckout({ repoPath: group.repoPath, roots })) continue;
     if (options.offeredCheckouts.includes(group.repoPath)) continue;
-    if (options.refusedCheckouts.includes(group.repoPath)) continue;
-    if (alreadyWaiting({ repoPath: group.repoPath, standIns: options.standIns })) continue;
-    if (alreadyAnswered({ repoPath: group.repoPath, rules: options.rules })) continue;
+    if (isStandInRefused({ repoPath: group.repoPath, branch: group.branch, refused: options.refused })) continue;
+    if (alreadyWaiting({ repoPath: group.repoPath, branch: group.branch, standIns: options.standIns })) continue;
+    if (alreadyAnswered({ repoPath: group.repoPath, branch: group.branch, rules: options.rules })) continue;
 
     const first = group.contexts[0];
     const link = first && matchProjectLink({ context: first.context, links: options.links });
@@ -157,7 +190,8 @@ export const autoStandIns = (options: {
       projectKey: link.target.projectKey,
       author: 'app',
       openedFor: group.repoPath,
-      key: describeProjectLink({ path: group.repoPath }),
+      openedForBranch: group.branch,
+      key: `${describeProjectLink({ path: group.repoPath })}-${group.branch}`,
     });
 
     opened.push({
@@ -165,8 +199,9 @@ export const autoStandIns = (options: {
       draft,
       observedMs: group.observedMs,
       rule: {
-        id: `repo:${group.repoPath}#${options.now.getTime()}`,
+        id: `repo:${group.repoPath}@${group.branch}#${options.now.getTime()}`,
         repoPath: group.repoPath,
+        branch: group.branch,
         target: { kind: 'stand-in', standInId: standIn.id },
         author: 'app',
         createdAt: options.now,

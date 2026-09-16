@@ -64,11 +64,12 @@ ever about today, and only while something is still owed.
 A development build posts under the terminal, because an unbundled binary has no identity of its own to
 post under.`;
 
-const NO_STAND_IN_WHY = `Deleting a stand-in the app opened refuses the checkout it stood for. The work
-there is still unnamed, so without that refusal the next pass would open another one within seconds and
-the list could never be cleared.
+const NO_STAND_IN_WHY = `Deleting a stand-in the app opened refuses the branch it stood for. The work
+there is still unnamed, so without that refusal the next pass would open another one within seconds
+and the list could never be cleared. An entry naming no branch refuses a whole checkout, which is
+what a delete wrote while stand-ins covered one.
 
-Allow it again and the app opens a stand-in for that checkout the next time it sees work there.`;
+Allow it again and the app opens a stand-in for that work the next time it sees any.`;
 
 const STAND_IN_OVERDUE_WHY = `A stand-in is work you named before Jira had a ticket for it. Either limit
 alone marks one: work that sat for a week, and work that piled up four hours in two days, are both debts
@@ -276,16 +277,18 @@ window title, never a file path. A suggestion never syncs on its own.`;
                 @if (refused.length) {
                   <div class="flex flex-col gap-3">
                     <div class="flex items-center gap-1">
-                      <h3 class="text-h4">Checkouts that get no stand-in</h3>
+                      <h3 class="text-h4">Work that gets no stand-in</h3>
                       <ethlete-explain [text]="NO_STAND_IN_WHY" label="refusing a stand-in" />
                     </div>
 
                     <div class="flex flex-col gap-2">
-                      @for (repoPath of refused; track repoPath) {
-                        <div [attr.data-no-stand-in]="repoPath" class="flex items-center gap-3">
-                          <span class="min-w-0 grow truncate text-mono text-small">{{ repoPath }}</span>
+                      @for (entry of refused; track entry.repoPath + '@' + (entry.branch ?? '')) {
+                        <div [attr.data-no-stand-in]="entry.repoPath" class="flex items-center gap-3">
+                          <span class="min-w-0 grow truncate text-mono text-small">
+                            {{ entry.repoPath }}{{ entry.branch ? ' · ' + entry.branch : '' }}
+                          </span>
 
-                          <button (click)="store.allowStandInCheckout(repoPath)" et-button variant="outline" size="sm">
+                          <button (click)="store.allowStandInCheckout(entry)" et-button variant="outline" size="sm">
                             Allow again
                           </button>
                         </div>

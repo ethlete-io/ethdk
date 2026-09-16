@@ -1,7 +1,7 @@
 import { DEFAULT_EPIC_CHILD_LIMIT, MIN_EPIC_CHILD_LIMIT } from '../jira/children';
 import { TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule } from '../model/attribution';
-import { StandIn } from '../model/stand-in';
+import { StandIn, StandInRefusal } from '../model/stand-in';
 import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { JiraParenting } from '../jira/hierarchy';
@@ -356,13 +356,14 @@ export type TimetrackSettings = {
    */
   standIns: StandIn[];
   /**
-   * The checkouts the user refused a placeholder for, by deleting one the app opened.
+   * The work the user refused a placeholder for, by deleting one the app opened. One branch of a
+   * checkout, or the whole checkout when the entry names no branch.
    *
    * Without it the delete does not stick: the work is still unnamed, so the next pass opens another
    * placeholder within seconds and the user cannot clear the list at all. The settings screen is where
-   * a checkout is taken back off.
+   * an entry is taken back off.
    */
-  noStandInCheckouts: string[];
+  noStandInCheckouts: StandInRefusal[];
   /**
    * Whether the window locks itself, so the months of window titles in the database are not readable by
    * whoever walks up to an unlocked desktop.

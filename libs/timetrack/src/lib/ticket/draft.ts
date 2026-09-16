@@ -182,13 +182,12 @@ export const draftTicket = (options: {
 };
 
 /**
- * Drafts one ticket for every unnamed stretch of a single checkout, on the day's own evidence alone.
+ * Drafts the ticket for one unnamed stretch of a checkout, on the day's own evidence alone.
  *
  * It is what an auto-opened stand-in carries until the user rewrites it, so best effort is the bar,
- * not correctness. The summary comes from the branch that held the most time: a checkout with no
- * tickets still fragments into branches, and the largest one is the likeliest name for the whole.
- * The description lists every branch it covers, so a title that names only the biggest piece never
- * hides the rest.
+ * not correctness. The summary comes from the branch that held the most time, and the description
+ * names every branch the contexts cover, so a title that names only the biggest piece never hides
+ * the rest.
  */
 export const draftRepoTicket = (options: {
   repoPath: string;
