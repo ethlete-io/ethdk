@@ -264,7 +264,10 @@ export const breaksBetweenRows = (options: {
   rows: readonly TimeWindow[];
   /** The increment the rows were snapped to. A break off that grid is drawn beside rows it cannot line up with. */
   round?: Partial<RoundOptions>;
-  /** The stretches a call held that count as presence. A break may not cover one — see ADR 0030. */
+  /**
+   * The stretches the day holds as presence whatever the samples say: a call the user attended, and a
+   * timer run they started. A break may not cover one — see ADR 0030.
+   */
   presence?: readonly TimeWindow[];
 }): BreakWindow[] => {
   const covered = mergeWindows(options.rows);

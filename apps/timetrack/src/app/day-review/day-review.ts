@@ -573,7 +573,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     breaksBetweenRows({
       breaks: streamed()?.breaks ?? [],
       rows: rows(),
-      presence: (streamed()?.calls ?? []).filter((call) => call.isPresence),
+      presence: [...(streamed()?.calls ?? []).filter((call) => call.isPresence), ...(evidence()?.runs ?? [])],
     }),
   );
 
