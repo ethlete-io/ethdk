@@ -141,11 +141,17 @@ const attendedMs = (held: readonly HeldFocus[], call: PairedCall) =>
   windowsMs(clipWindows({ windows: held.filter((window) => belongsTo(call.appId, window.appId)), within: [call] }));
 
 /**
- * The title of the window that application had in front when the call opened.
+ * The title the call settled on: the last one inside `settleMs`, or the one before the call when
+ * nothing lands inside it.
  *
- * A title that arrives inside `settleMs` after the microphone wins over the one before it, because
- * joining a voice channel opens the microphone before it switches the view — without that, a call was
- * named after the channel the user was leaving, and a rule read the wrong name.
+ * A title inside `settleMs` wins over the one before the microphone, because joining a voice channel
+ * opens the microphone before it switches the view — without that, a call was named after the channel
+ * the user was leaving, and a rule read the wrong name.
+ *
+ * The **last** of them wins, because a join passes through the room it lands in from: measured on
+ * 2026-09-16 a Discord join reported `Open Room #1` 2.168 seconds after the microphone and
+ * `Meeting #1` 0.138 seconds later, and the first of the two was denied by a rule that named the room
+ * the user never stayed in. The same reading covers a user the room moved.
  *
  * Joining a call means focusing the application, so one of the two events is nearly always there, and
  * it names the channel that was deliberately opened. It is read from the focus history rather than
@@ -154,7 +160,9 @@ const attendedMs = (held: readonly HeldFocus[], call: PairedCall) =>
  */
 const titleAt = (focus: readonly WindowFocusEvent[], call: { appId: string; at: Date; settleMs: number }) => {
   const own = focus.filter((event) => belongsTo(call.appId, event.appId));
-  const settled = own.find((event) => event.at > call.at && event.at.getTime() - call.at.getTime() <= call.settleMs);
+  const settled = own
+    .filter((event) => event.at > call.at && event.at.getTime() - call.at.getTime() <= call.settleMs)
+    .at(-1);
   const before = own.filter((event) => event.at <= call.at).at(-1);
 
   return (settled ?? before)?.title ?? '';

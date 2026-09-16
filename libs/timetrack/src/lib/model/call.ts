@@ -4,7 +4,7 @@ export type CallWindow = {
   to: Date;
   /** The process that held the microphone, raw. This is what a rule matched, and what a rule may match. */
   appId: string;
-  /** The last window title that application had before the call opened. Empty when it had none. */
+  /** The window title the call was named from — see `titleAt`. Empty when the application had none. */
   title: string;
   /**
    * How long the call's own application held the focus inside this window.

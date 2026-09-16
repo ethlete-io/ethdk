@@ -107,6 +107,22 @@ describe('classifyCalls', () => {
     expect(windows[0]!.countsAsWork).toBe(false);
   });
 
+  it('names the call from the channel the join settled on, not one it passed through', () => {
+    const windows = classify(
+      [
+        focus(0, 'discord', 'Open Room #1 | Braune Digital - Discord', 6),
+        call(0, 'call-start', 'Discord', 6),
+        focus(0, 'discord', 'Open Room #1 | Braune Digital - Discord', 8),
+        focus(0, 'discord', 'Meeting #1 | Braune Digital - Discord', 9),
+        call(12, 'call-end', 'Discord'),
+      ],
+      { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['Open Room'] },
+    );
+
+    expect(windows[0]!.title).toBe('Meeting #1 | Braune Digital - Discord');
+    expect(windows[0]!.countsAsWork).toBe(true);
+  });
+
   it('keeps the title before the call when the next one lands after the settle window', () => {
     const windows = classify([
       focus(0, 'discord', 'Meeting #1 | Braune Digital - Discord', 27),
