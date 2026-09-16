@@ -32,11 +32,17 @@ const attributed = (options: {
 };
 
 describe('mergeBlocks', () => {
-  const ruled = (options: { fromMinute: number; toMinute: number; branch: string }): AttributedBlock => {
+  const ruled = (options: {
+    fromMinute: number;
+    toMinute: number;
+    branch: string;
+    scope?: 'branch' | 'repo';
+  }): AttributedBlock => {
     const base = attributed({ ...options, issueKey: 'FIP-3056', confidence: 'likely', repoPath: '/repo' });
 
     return {
       ...base,
+      ruleScope: options.scope ?? 'repo',
       evidence: [
         ...base.evidence,
         {
@@ -59,6 +65,18 @@ describe('mergeBlocks', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.issueKey).toBe('FIP-3056');
     expect(rows[0]?.confidence).toBe('weak');
+  });
+
+  it('leaves a branch rule stating its row across the swap that started the work', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        ruled({ fromMinute: 0, toMinute: 5, branch: 'next', scope: 'branch' }),
+        ruled({ fromMinute: 5, toMinute: 20, branch: 'dev-player-name-auto-size', scope: 'branch' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.confidence).toBe('likely');
   });
 
   it('leaves a rule that named one branch throughout stating its row', () => {

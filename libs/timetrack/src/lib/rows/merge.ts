@@ -3,6 +3,7 @@ import { formatDurationMs } from '../model/duration';
 import { Confidence, Evidence, compareConfidence } from '../model/evidence';
 import { TimeWindow } from '../model/time-window';
 import { AttributedBlock } from './attribute';
+import { AttributionScope } from '../model/attribution';
 
 /** One or more attributed blocks that will become a single reviewable row. */
 export type WorkGroup = {
@@ -27,6 +28,8 @@ export type WorkGroup = {
    */
   observedMs: number;
   confidence: Confidence;
+  /** The scope of the rule that named the row, when a rule did. See `AttributedBlock.ruleScope`. */
+  ruleScope?: AttributionScope;
   evidence: Evidence[];
   blocks: ActivityBlock[];
   /**
@@ -127,6 +130,7 @@ const groupFrom = (attributed: AttributedBlock): WorkGroup => ({
   to: attributed.block.to,
   observedMs: blockDurationMs(attributed.block),
   confidence: attributed.confidence,
+  ruleScope: attributed.ruleScope,
   evidence: [...attributed.evidence],
   blocks: [attributed.block],
 });
@@ -158,6 +162,7 @@ const join = (into: WorkGroup, next: WorkGroup): WorkGroup => {
     standInId: into.standInId ?? next.standInId,
     storyKey: into.storyKey ?? next.storyKey,
     taskKey: into.taskKey ?? next.taskKey,
+    ruleScope: into.ruleScope ?? next.ruleScope,
     from: into.from <= next.from ? into.from : next.from,
     to: into.to >= next.to ? into.to : next.to,
     observedMs: into.observedMs + next.observedMs,
@@ -382,13 +387,13 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
  * `absorbSlivers`, which is what keeps a call's worth of focus flashes out of the timeline.
  */
 /**
- * Re-reads a row once it is assembled. A rule names a context, so it never saw which branch the row
- * holds, and a row holding two of them was named before the swap that says the work changed. The key
- * stays as a proposal and stops syncing on its own — see `syncsWithoutReview`.
+ * Re-reads a row once it is assembled. A repository rule names no branch, so a row holding two of them
+ * was named before the swap that says the work changed. The key stays as a proposal and stops syncing
+ * on its own — see `syncsWithoutReview`. A branch rule is left alone: it named a branch the row holds,
+ * and the stretch before the swap into it is the start of that very work.
  */
 const reconsider = (row: WorkGroup): WorkGroup => {
-  if (!row.issueKey || row.confidence === 'weak') return row;
-  if (!row.evidence.some((entry) => entry.kind === 'attribution-rule')) return row;
+  if (!row.issueKey || row.confidence === 'weak' || row.ruleScope !== 'repo') return row;
 
   const branches = new Set(
     row.blocks.map((block) => block.context.branch).filter((branch): branch is string => !!branch),

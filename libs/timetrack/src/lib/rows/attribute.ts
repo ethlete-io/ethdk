@@ -13,6 +13,7 @@ import { RecurringPattern, patternAt } from '../model/recurrence';
 import {
   AttributionRule,
   AttributionRuleMatch,
+  AttributionScope,
   InferredAttribution,
   describeAttributionRule,
   matchAttributionRule,
@@ -33,6 +34,11 @@ export type AttributedBlock = {
   storyKey?: string;
   taskKey?: string;
   confidence: Confidence;
+  /**
+   * The scope of the rule that named the block, when a rule did. A repository rule names no branch, so
+   * a reader that knows which branches a row holds can tell the rule never saw them.
+   */
+  ruleScope?: AttributionScope;
   /** The block's own evidence plus whatever attribution added, in the order it was found. */
   evidence: Evidence[];
   /**
@@ -175,6 +181,7 @@ const ruleAttribution = (options: {
     block,
     issueKey,
     confidence,
+    ruleScope: match.scope,
     evidence: [
       ...options.evidence,
       {
