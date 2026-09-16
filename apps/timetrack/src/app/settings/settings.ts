@@ -28,6 +28,7 @@ import {
   clampLockAfterIdleMs,
   clampMinuteOfDay,
   clampStandInOverdueMs,
+  clampEpicChildLimit,
   clampStandInOverdueWorkdays,
   timetrackCredentialStatus,
   withAttributionRule,
@@ -210,6 +211,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       patch({ standIn: { ...settings().standIn, overdueAfterWorkdays: clampStandInOverdueWorkdays(workdays) } }),
     setStandInOverdueMs: (overdueAfterMs: number) =>
       patch({ standIn: { ...settings().standIn, overdueAfterMs: clampStandInOverdueMs(overdueAfterMs) } }),
+    setEpicChildLimit: (epicChildLimit: number) => patch({ epicChildLimit: clampEpicChildLimit(epicChildLimit) }),
     setJira: (jira: TimetrackJiraSettings) => patch({ jira }),
     setGoogle: (google: TimetrackGoogleSettings) => patch({ google }),
     setGitLab: (gitlab: TimetrackGitLabSettings) => patch({ gitlab }),

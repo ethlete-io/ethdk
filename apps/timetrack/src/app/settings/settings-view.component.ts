@@ -80,6 +80,13 @@ that limit off.`;
 
 const WORKDAY_LADDER = [0, 1, 2, 3, 5, 10, 20];
 
+const EPIC_CHILD_LADDER = [25, 50, 100, 200, 500];
+
+const EPIC_CHILD_WHY = `A checkout on a branch no issue key names can still be named from another checkout
+on the same branch name: its issue is read, and the one open child of that issue's parent nobody else
+books names the work. This is how many children of that parent are read. A parent that holds more than
+this is left alone rather than guessed at, so raise it for a team whose epics run long.`;
+
 const JIRA_WHY = `Issue keys are resolved to ids here, which is what a Tempo worklog is written against.
 The token is a Jira API token, and it is kept in the OS keychain — it is written there and only ever asked
 about, so there is no path back into this window for the value itself.`;
@@ -355,6 +362,22 @@ window title, never a file path. A suggestion never syncs on its own.`;
                   (forget)="store.forgetTempoToken()"
                   provider="Tempo"
                 />
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-1">
+                  <h3 class="text-h4">How far an epic is read</h3>
+                  <ethlete-explain [text]="EPIC_CHILD_WHY" label="reading an epic" />
+                </div>
+
+                <et-form-field class="w-48" appearance="underline" size="sm">
+                  <et-label>Children read</et-label>
+                  <et-select [value]="epicChildLimit()" (valueChange)="store.setEpicChildLimit(+($event ?? 0))">
+                    @for (option of epicChildOptions(); track option.value) {
+                      <et-select-option [value]="option.value" [label]="option.label" />
+                    }
+                  </et-select>
+                </et-form-field>
               </div>
 
               <ethlete-ticket-settings
@@ -669,6 +692,7 @@ export class SettingsViewComponent {
   protected readonly NUDGE_WHY = NUDGE_WHY;
   protected readonly STAND_IN_OVERDUE_WHY = STAND_IN_OVERDUE_WHY;
   protected readonly NO_STAND_IN_WHY = NO_STAND_IN_WHY;
+  protected readonly EPIC_CHILD_WHY = EPIC_CHILD_WHY;
   protected readonly JIRA_WHY = JIRA_WHY;
   protected readonly TEMPO_WHY = TEMPO_WHY;
   protected readonly GITLAB_WHY = GITLAB_WHY;
@@ -735,6 +759,15 @@ export class SettingsViewComponent {
   protected nudgeAtMs = computed(() => this.store.settings().nudge.atMinute * 60_000);
 
   protected dayStartMs = computed(() => this.store.settings().dayStartHour * 3_600_000);
+
+  /** The select answers in strings, and the setting is a count. */
+  protected epicChildLimit = computed(() => `${this.store.settings().epicChildLimit}`);
+
+  protected epicChildOptions = computed(() =>
+    [...new Set([...EPIC_CHILD_LADDER, this.store.settings().epicChildLimit])]
+      .sort((left, right) => left - right)
+      .map((limit) => ({ value: `${limit}`, label: `${limit} children` })),
+  );
 
   /** The select answers in strings, and the setting is a count. */
   protected overdueWorkdays = computed(() => `${this.store.settings().standIn.overdueAfterWorkdays}`);

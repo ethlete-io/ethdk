@@ -148,3 +148,15 @@ test.describe('a checkout that shares a branch name with a checkout that is alre
     await expect(rows(page).filter({ hasText: SECOND_FREE_CHILD })).toHaveCount(0);
   });
 });
+
+/** How deep the rung reads an epic is a guard on a network read, so the user sets it. */
+test.describe('the epic child limit', () => {
+  test('is offered on the Jira tab, showing the number the day reads with', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, settings: { ...settings(), epicChildLimit: 500 } });
+    await page.goto('/settings');
+    await page.getByRole('tab', { name: 'Jira' }).click();
+
+    await expect(page.getByText('How far an epic is read')).toBeVisible();
+    await expect(page.locator('et-form-field').filter({ hasText: 'Children read' })).toContainText('500 children');
+  });
+});
