@@ -11,6 +11,7 @@ import {
 import {
   JiraIssue,
   ParentCandidate,
+  ParentWritingRequest,
   StandIn,
   TicketWritingRequest,
   UnnamedContext,
@@ -215,6 +216,42 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
                 />
               </et-form-field>
 
+              @if (canWrite()) {
+                <div class="flex flex-wrap items-center gap-3">
+                  <button
+                    [disabled]="isWritingParent()"
+                    (click)="writeParent.emit()"
+                    et-button
+                    variant="outline"
+                    size="sm"
+                  >
+                    @if (isWritingParent()) {
+                      <et-spinner size="sm" />
+                    }
+                    Ask AI
+                  </button>
+                  <span class="text-small text-et-surface-muted">
+                    It writes the wider goal this ticket rolls up to, from the same evidence. Everything stays yours to
+                    edit.
+                  </span>
+                </div>
+
+                @if (parentWriteFailure(); as failure) {
+                  <et-banner [description]="failure" type="warning" heading="The agent wrote nothing" />
+                }
+
+                @if (parentPayload()) {
+                  <ethlete-unmasked-words [text]="printedParentPayload()" />
+
+                  <details class="rounded-md border border-et-surface-border p-3">
+                    <summary class="cursor-pointer text-small text-et-surface-muted">
+                      What gets sent — the ticket below, and the same notes
+                    </summary>
+                    <pre class="mt-2 overflow-x-auto text-mono text-small">{{ printedParentPayload() }}</pre>
+                  </details>
+                }
+              }
+
               @if (createParentFailure(); as failure) {
                 <et-banner [description]="failure" type="warning" heading="The parent could not be filed" />
               }
@@ -318,6 +355,10 @@ export class CreateTicketComponent {
   public createParentFailure = input<string | null>(null);
   public canWrite = input(false);
   public isWriting = input(false);
+  public isWritingParent = input(false);
+  /** Exactly what a parent-writing run would send, shown before it leaves the machine. */
+  public parentPayload = input<ParentWritingRequest | null>(null);
+  public parentWriteFailure = input<string | null>(null);
   public isCreating = input(false);
   public canCreate = input(false);
   public createdKey = input<string | null>(null);
@@ -341,6 +382,8 @@ export class CreateTicketComponent {
   public parentIssueTypeNameChange = output<string>();
   public createParent = output<void>();
   public write = output<void>();
+  /** Asks the agent for the wider goal the ticket rolls up to, into the open parent form. */
+  public writeParent = output<void>();
   /** The key of an issue that already tracks this work, taken instead of filing a new ticket. */
   public useExisting = output<string>();
   public create = output<void>();
@@ -381,6 +424,7 @@ export class CreateTicketComponent {
     return `${this.name()} is no longer waiting. Every band of it books against the key, on ${days} day${days === 1 ? '' : 's'} and on every later one.`;
   });
   protected printedPayload = computed(() => JSON.stringify(this.payload(), null, 2));
+  protected printedParentPayload = computed(() => JSON.stringify(this.parentPayload(), null, 2));
 
   protected sentSummary = computed(() => {
     const request = this.payload();

@@ -66,6 +66,23 @@ test.describe('filing the parent a ticket rolls up to', () => {
   });
 });
 
+test.describe('asking the agent to phrase the parent', () => {
+  test('offers its own Ask AI, and shows the ticket below it in what would be sent', async ({ page }) => {
+    await page.goto('/day');
+    await openTheForm(page);
+    await page.getByRole('button', { name: 'New parent' }).click();
+
+    const parentForm = page.locator('et-form-field').filter({ hasText: 'Level' }).locator('..').locator('..');
+
+    await expect(parentForm.getByRole('button', { name: 'Ask AI' })).toBeVisible();
+
+    await parentForm.getByText('What gets sent').click();
+
+    await expect(parentForm.locator('pre')).toContainText('"level": "Story"');
+    await expect(parentForm.locator('pre')).toContainText('"child"');
+  });
+});
+
 test.describe('a parent level Jira refuses this account', () => {
   test('is left off the picker, however the settings name it', async ({ page }) => {
     await seedWorld(page, { jira: { notCreatable: ['Epic'] } });

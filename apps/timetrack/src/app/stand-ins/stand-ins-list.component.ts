@@ -112,6 +112,9 @@ import { injectStandIns } from './stand-ins';
                 [createParentFailure]="tickets.createParentFailure()"
                 [canWrite]="tickets.canWrite()"
                 [isWriting]="tickets.isWriting()"
+                [isWritingParent]="tickets.isWritingParent()"
+                [parentPayload]="tickets.parentWritingRequest()"
+                [parentWriteFailure]="tickets.parentWriteFailure()"
                 [isCreating]="tickets.isCreating()"
                 [canCreate]="tickets.canCreate()"
                 [createGate]="tickets.createGate()"
@@ -132,6 +135,7 @@ import { injectStandIns } from './stand-ins';
                 (parentIssueTypeNameChange)="tickets.setParentIssueTypeName($event)"
                 (createParent)="tickets.createParent()"
                 (write)="tickets.writeWithAgent()"
+                (writeParent)="tickets.writeParentWithAgent()"
                 (useExisting)="tickets.useExisting($event)"
                 (create)="tickets.create()"
                 (dismiss)="tickets.close()"
@@ -155,10 +159,10 @@ export class StandInsListComponent {
   protected store = injectStandIns();
   protected tickets = injectTicketDraft();
 
-  private drafts = signal<Record<string, string>>({});
-
   /** The one placeholder to show, by id. Null lists every one of them. */
   public only = input<string | null>(null);
+
+  private drafts = signal<Record<string, string>>({});
 
   protected listed = computed(() => {
     const ages = this.store.ages();

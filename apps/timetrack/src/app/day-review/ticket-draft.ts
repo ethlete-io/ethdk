@@ -29,6 +29,9 @@ import {
   suggestParentKey,
   ticketSubjectOf,
   ticketWritingRequest,
+  ParentWritingRequest,
+  parentWritingRequest,
+  writeParentWithAgent$,
   writeTicketWithAgent$,
 } from '@ethlete/timetrack';
 import {
@@ -125,6 +128,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const notes = signal<readonly string[]>([]);
   const searches$ = new Subject<string>();
   const writes$ = new Subject<TicketWritingRequest>();
+  const parentWrites$ = new Subject<ParentWritingRequest>();
   const creations$ = new Subject<TicketForm>();
   const parentForm = signal<ParentForm | null>(null);
   const parentCreations$ = new Subject<ParentForm>();
@@ -206,6 +210,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const createStatus = signal<CreateStatus>(IDLE);
   const writeStatus = signal<WriteStatus>(IDLE);
+  const parentWriteStatus = signal<WriteStatus>(IDLE);
   const agentMatch = signal<AgentMatch | null>(null);
 
   const matchFor = (issueKey: string): AgentMatch => {
@@ -245,6 +250,31 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         ),
       ),
       tap((status) => writeStatus.set(status)),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  parentWrites$
+    .pipe(
+      exhaustMap((request) =>
+        writeParentWithAgent$({
+          runner: ports.processes,
+          request,
+          options: { command: settings.settings().reasoning.command, model: settings.settings().reasoning.model },
+          maskedNames: settings.settings().reasoning.maskedNames,
+        }).pipe(
+          tap((wording) => {
+            if (wording) {
+              parentForm.update((draft) =>
+                draft ? { ...draft, summary: wording.summary, description: wording.description } : draft,
+              );
+            }
+          }),
+          map((wording): WriteStatus => (wording ? IDLE : { kind: 'failed', message: AGENT_FAILED })),
+          startWith<WriteStatus>({ kind: 'writing' }),
+        ),
+      ),
+      tap((status) => parentWriteStatus.set(status)),
       takeUntilDestroyed(destroyRef),
     )
     .subscribe();
@@ -382,6 +412,20 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     createdParents.set([]);
   };
 
+  const parentWritingRequestNow = (): ParentWritingRequest | null => {
+    const draft = parentForm();
+    const request = writingRequestNow();
+
+    if (!draft || !request) return null;
+
+    return parentWritingRequest({
+      level: draft.issueTypeName,
+      child: { summary: form()?.summary ?? '', description: form()?.description ?? '' },
+      request,
+      maskedNames: settings.settings().reasoning.maskedNames,
+    });
+  };
+
   const writingRequestNow = (): TicketWritingRequest | null => {
     const unnamed = context();
     const waiting = standIn();
@@ -433,6 +477,14 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     isWriting: computed(() => writeStatus().kind === 'writing'),
     writeFailure: computed(() => {
       const status = writeStatus();
+
+      return status.kind === 'failed' ? status.message : null;
+    }),
+    /** Exactly what a parent-writing run would send, shown so it can be read before it leaves. */
+    parentWritingRequest: computed(parentWritingRequestNow),
+    isWritingParent: computed(() => parentWriteStatus().kind === 'writing'),
+    parentWriteFailure: computed(() => {
+      const status = parentWriteStatus();
 
       return status.kind === 'failed' ? status.message : null;
     }),
@@ -575,6 +627,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       const named = context();
 
       parentStatus.set(IDLE);
+      parentWriteStatus.set(IDLE);
       parentForm.set({
         summary: form()?.summary ?? '',
         description: named ? draftParentDescription(named) : (standIn()?.description ?? ''),
@@ -591,6 +644,16 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       const draft = parentForm();
 
       if (draft) parentCreations$.next(draft);
+    },
+
+    /**
+     * Hands the open parent form to the local agent CLI, which writes the wider goal the ticket
+     * below it serves. It fills the form and files nothing.
+     */
+    writeParentWithAgent: () => {
+      const request = parentWritingRequestNow();
+
+      if (request) parentWrites$.next(request);
     },
 
     /** Re-reads the parents for whatever project the form now names. */
