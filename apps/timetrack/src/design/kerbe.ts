@@ -26,6 +26,15 @@ export type BandTreatment = 'plate' | 'tally' | 'rule' | 'inlay';
 
 export type BandKind = 'work' | 'background' | 'break';
 
+/** How a run of touching plates is cut apart. Settled: `edge`. */
+export type BandSeparator = 'edge' | 'gap' | 'alternate' | 'none';
+
+/** How the one band too short for a padded row is drawn. Settled: `plain`. */
+export type BandShrink = 'small' | 'plain' | 'timed';
+
+/** What a band gives up in a lane too narrow for both. Under test in `Kerbe/Narrow lane`. */
+export type BandNarrow = 'drop-time' | 'stack' | 'drop-label';
+
 export type Band = {
   id: string;
   kind: BandKind;

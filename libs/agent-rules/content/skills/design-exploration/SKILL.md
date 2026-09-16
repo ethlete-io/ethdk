@@ -11,11 +11,14 @@ vars: [storybookUrl]
 A design exploration is a dialog. **The user is the designer. You find and frame. The user
 chooses.** A finding is not a licence to pick the fix.
 
+The unit of work is a **call**: one open question, with every answer drawn side by side at
+the same geometry. An option wins or loses only against the other options of its call.
+
 ## The rules
 
-1. **One open call at a time.** Take one question. Draw its alternatives. Stop.
-2. **Put the options in the story, then name your pick.** Two or three variants, rendered
-   for real, side by side, labelled, with what each one costs. Your pick is a proposal.
+1. **One open call at a time.** Take one question. Draw its options. Stop.
+2. **Put the options in the call, then name your pick.** Two to four options, drawn for
+   real, side by side, labelled, with what each one costs. Your pick is a proposal.
 3. **Commit only when the user says commit.**
 4. **Finish the task you were given, then stop.** Do not pick the next one. A plan file
    with an open list is a record, not a queue you may serve yourself.
@@ -27,69 +30,119 @@ finished while the user is still talking about it.
 ## What one stop looks like
 
 - The question, in one sentence.
-- The story id to look at.
+- The call slug to look at.
 - The options, labelled A, B, C, one line each.
 - Your pick, one line on why.
 - Nothing else. No next step, no second finding.
 
-**Do not send a screenshot.** The user keeps the Storybook open. Screenshot only for your
-own check that a variant renders.
+**Do not send a screenshot.** The user keeps the page open. Screenshot only for your own
+check that an option renders.
 
 If a second defect appears, add it to the open list and give it one line. Do not draw it.
 
-## Drawing the options
+## Where the options are drawn
 
-Draw every option in the **same** story, side by side, under the real geometry the thing
-ships in. An option judged alone is judged against memory.
+The exploration's plan file names the tool. Two shapes exist.
+
+**A repository with `tools/design-explore`** draws a call per page, each option in its own
+iframe. Start it with `yarn design`, which serves http://localhost:4402. A call is a folder
+under the `callsRoot` of `design-explore.config.json`:
+
+```
+calls/<group>/<slug>/
+  call.ts        the eyebrow, the headline, the intro, frameWidth, and the options
+  fixture.ts     the data every option shares
+  option-a.ts    one default-exported Angular component per option
+  option-b.ts
+```
+
+`call.ts` calls `defineCall` from `@design-explore`. Each option carries a `key`, a `name`,
+a `claim`, a `cost`, an optional `verdict` of `chosen` or `rejected`, and a `load` that
+imports its own module. The host greys a rejected option and shows it on hover.
+
+A call with one option and no `claim` is a **view**: one reference picture, drawn full
+width with no verdict tag. Use it for a picture that answers no question.
+
+Three constraints the tool puts on an option file:
+
+- **Never import a package barrel.** The libraries resolve to source, so one barrel makes
+  the browser request every module in the library, and the requests fail with
+  `ERR_INSUFFICIENT_RESOURCES`. Import the one file you need.
+- **The fixture is shared, and an option may not change it.** Options drawn at three
+  geometries cannot be compared.
+- **One file per option**, so several agents can draw at once, and a broken option breaks
+  its own frame only.
+
+**A repository with a sketch Storybook** draws every option in the **same** story, side by
+side, under the real geometry the thing ships in. The default Storybook is
+{%storybookUrl%}; an app with its own sketch Storybook names its port in the plan file.
+
+Either way:
 
 - Sketches take inputs only and stay out of the application's build.
 - Prototype, never refactor. Do not touch the shipped component until the treatment is
   settled.
-- Keep the rejected options in the story, marked as rejected.
+- Keep the rejected options drawn, marked as rejected.
 
 ## Check before you look
 
-A broken build renders as an overlay, so a screenshot of it looks like a design. Check
-first, cheapest way first.
+A broken build draws an overlay, so a screenshot of it looks like a design. **One check
+covers that, and it is the whole gate.** Name the files you changed, never a whole project,
+which is far slower and can fight the user's own editor.
 
-**1. Ask the editor.** Instant, and it returns type errors and lint errors together. It
-only reports files the editor has analysed, so open the file first - `code -r <file>` -
-then ask your harness for diagnostics on that file URI. An empty answer is not a pass.
-Filter to severity `Error`, source `ts` or `eslint`. Never ask for every file.
+With `tools/design-explore`, run the checker from the repository root - Node resolves
+`playwright` from the working directory, and the tool already sits inside the repository:
 
-**2. Run the checkers.** About four seconds, no dev server, no rebuild wait. Copy
-{%resource:check-story.mjs%} to the **repository root** - Node resolves `playwright` from
-the working directory. Name the files you changed, never a whole project.
+```bash
+node tools/design-explore/check-call.mjs --lint <changed files> --tsconfig tools/design-explore/tsconfig.json
+```
+
+With a Storybook, copy {%resource:check-story.mjs%} to the **repository root** first:
 
 ```bash
 node check-story.mjs --lint <changed files> --tsconfig apps/<app>/.storybook/tsconfig.json
 ```
 
-**3. Open the story.** Costs a browser launch, and sees only a build the dev server has
-finished.
+Both take about four seconds and need no dev server. Then stop and hand the slug to the
+user. Do not also open the page in a browser: it costs a browser launch, and both tools
+transpile without type checking, so the render reports `ok` on a file that does not
+compile. Open it only when the check passes and the drawing still does not appear:
 
 ```bash
+node tools/design-explore/check-call.mjs --call <slug>            # every option of the call
+node tools/design-explore/check-call.mjs --call <slug> --option b # one of them
 node check-story.mjs --tsconfig <path> --story <story-id>
 ```
 
-A type error does not stop Storybook - it transpiles without checking - so this stage
-reports `ok` on a file that does not compile. That is why it is last. If you started the
-dev server yourself, read its output instead.
+## Delegating a call
+
+A call has one job per option, so it fans out. Every brief names `model: opus`.
+
+1. **One agent per option.** Give it the call folder, the option key, the fixture it must
+   not change, and the one claim its drawing has to support. Tell it to write its own
+   option file and nothing else, so two agents never touch one file.
+2. **One check-and-fix agent, after the drawing agents return.** Give it the changed files
+   and the call slug. It runs the check above, fixes what it reports, and repeats until the
+   check says `ok`. It may not change what an option draws, only what stops it rendering.
+3. **One write-up agent, once the user settles the call.** Give it the verdict in the
+   user's own words and the plan file. It records what won, what lost and why, and it sets
+   each option's `verdict` in `call.ts`. It runs while you open the next call.
 
 ## Screenshots
 
-Only after the checks pass. Copy {%resource:shoot-template.mjs%} to the repository root.
+**Off by default.** The user has the page open and sends you a picture when something looks
+wrong. Take one only when the code cannot tell you whether two options really differ, and
+never to put in front of the user. Copy {%resource:shoot-template.mjs%} to the repository
+root.
 
 ```bash
 node shoot.mjs <story-id> 1100 760 out.png
 ```
 
-- `waitUntil: 'networkidle'` never settles on a Storybook iframe. Use `'domcontentloaded'`.
+- `waitUntil: 'networkidle'` never settles on an iframe that holds a live dev server
+  connection. Use `'domcontentloaded'`.
 - `:hover`, `:focus-visible` and `:active` need a CDP session and `CSS.forcePseudoState`.
   Several hold open at once, so one image shows them all. The template does this.
-
-The default Storybook is {%storybookUrl%}. An app with its own sketch Storybook runs on its
-own port; the exploration's plan file names it.
 
 ## Writing it down
 

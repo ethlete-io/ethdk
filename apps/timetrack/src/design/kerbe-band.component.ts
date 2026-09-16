@@ -1,11 +1,14 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
-import { Band, BandTreatment } from './kerbe';
+import { Band, BandNarrow, BandSeparator, BandShrink, BandTreatment } from './kerbe';
 
 const HOUR_REM = 8;
 const DETAIL_MIN_REM = 5.2;
 const TIME_MIN_REM = 2.2;
 
-/** Under this height a band cannot hold a padded line, so it drops to one tight row. */
+/**
+ * Under this height a band cannot hold a padded line, so it drops to one tight row. The app books
+ * in 15m increments, so the only band this catches is a 15m one, at 2rem.
+ */
 const COMPACT_MAX_REM = 2.6;
 
 @Component({
@@ -19,6 +22,10 @@ const COMPACT_MAX_REM = 2.6;
       [attr.data-marked]="marked() || null"
       [attr.data-kind]="band().kind"
       [attr.data-treatment]="treatment()"
+      [attr.data-separator]="separator()"
+      [attr.data-shrink]="shrink()"
+      [attr.data-narrow]="narrow()"
+      [attr.data-alt]="alt() || null"
       class="band"
       role="button"
       tabindex="0"
@@ -111,15 +118,34 @@ const COMPACT_MAX_REM = 2.6;
       color: var(--k-ink-2);
     }
 
-    .band[data-compact] .band__label {
+    .band[data-shrink='small'][data-compact] .band__label {
       font-size: 1.15rem;
       line-height: 1.45;
     }
 
-    /* A lane as narrow as the break column cannot hold a label and a duration. The grid already says
-       how long the band is, so the duration is what goes. */
+    .band[data-compact]:not([data-shrink='small']) {
+      justify-content: center;
+    }
+
+    /* A lane as narrow as the break column cannot hold a label and a duration on one row. Three
+       answers, under test. */
     @container (max-width: 10rem) {
-      .band__time {
+      .band[data-narrow='drop-time'] .band__time {
+        display: none;
+      }
+
+      .band[data-narrow='drop-label'] .band__label {
+        display: none;
+      }
+
+      .band[data-narrow='stack'] .band__head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+      }
+
+      /* A 15m band has one row and no more, so stacking falls back to dropping the duration. */
+      .band[data-narrow='stack'][data-compact] .band__time {
         display: none;
       }
     }
@@ -245,14 +271,26 @@ const COMPACT_MAX_REM = 2.6;
       background: var(--k-metal);
     }
 
-    /* Inlay - a flat plate with a strip of metal set into its left edge. A band that asks nothing
-       carries a short cut at the top. A band that asks is marked down its whole length. */
+    /* Inlay - a flat plate with a strip of metal set into its left edge. The strip runs the band's
+       whole length, and its colour alone says what the band asks of the reader. */
     .band[data-treatment='inlay'] {
       padding: 0.7rem 0.9rem 0.7rem 1.3rem;
       background: var(--k-panel);
-      /* Two touching plates of the same tone read as one slab, and the metal cannot separate them
-         because the metal already says what the band asks. The plate's own lit edge does it. */
-      border-top: 1px solid rgb(255 255 255 / 0.09);
+      border-top: 1px solid transparent;
+    }
+
+    /* Two touching plates of the same tone read as one slab, and the metal cannot separate them
+       because the metal already says what the band asks. Four answers, under test. */
+    .band[data-treatment='inlay'][data-separator='edge'] {
+      border-top-color: rgb(255 255 255 / 0.09);
+    }
+
+    .band[data-treatment='inlay'][data-separator='gap'] {
+      border-top-color: var(--k-ground);
+    }
+
+    .band[data-treatment='inlay'][data-separator='alternate'][data-alt] {
+      background-image: linear-gradient(rgb(255 255 255 / 0.028) 0 0);
     }
 
     .band[data-treatment='inlay'][data-kind='break'] {
@@ -265,20 +303,11 @@ const COMPACT_MAX_REM = 2.6;
 
     .band[data-treatment='inlay'] .band__notch {
       top: 0;
+      bottom: 0;
       left: 0;
       width: 3px;
-      height: 1.6rem;
       opacity: 1;
       background: var(--k-metal);
-    }
-
-    .band[data-treatment='inlay'][data-compact] .band__notch {
-      height: 0.9rem;
-    }
-
-    .band[data-treatment='inlay']:not([data-ask='nothing']) .band__notch {
-      bottom: 0;
-      height: auto;
     }
 
     /* Interaction. None of it touches the metal: the strip says what the band asks of the reader,
@@ -292,6 +321,9 @@ const COMPACT_MAX_REM = 2.6;
 
     .band[data-treatment='inlay']:hover {
       background: var(--k-panel-hi);
+    }
+
+    .band[data-treatment='inlay'][data-separator='edge']:hover {
       border-top-color: rgb(255 255 255 / 0.2);
     }
 
@@ -350,13 +382,18 @@ const COMPACT_MAX_REM = 2.6;
 export class KerbeBandComponent {
   public band = input.required<Band>();
   public treatment = input.required<BandTreatment>();
+  public separator = input<BandSeparator>('edge');
+  public shrink = input<BandShrink>('plain');
+  public narrow = input<BandNarrow>('drop-time');
+  public alt = input(false);
   public marked = input(false);
   public dragging = input(false);
 
   protected heightRem = computed(() => (this.band().minutes / 60) * HOUR_REM);
-  protected compact = computed(() => this.heightRem() < COMPACT_MAX_REM);
   protected showsDetail = computed(() => this.heightRem() >= DETAIL_MIN_REM);
-  protected showsTime = computed(() => this.heightRem() >= TIME_MIN_REM);
+
+  protected compact = computed(() => this.heightRem() < COMPACT_MAX_REM);
+  protected showsTime = computed(() => this.shrink() === 'timed' || this.heightRem() >= TIME_MIN_REM);
 
   protected duration = computed(() => {
     const m = this.band().minutes;

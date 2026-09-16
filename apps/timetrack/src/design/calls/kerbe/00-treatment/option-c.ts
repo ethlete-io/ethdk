@@ -4,18 +4,18 @@ import { KerbeFrameComponent } from '../../../kerbe-frame';
 import { BANDS, LANE_REM } from './fixture';
 
 @Component({
-  selector: 'ethlete-design-narrow-a',
+  selector: 'ethlete-design-treatment-c',
   template: `
-    <ethlete-design-kerbe-frame [widthRem]="LANE_REM" [gapRem]="1.6">
+    <ethlete-design-kerbe-frame [widthRem]="LANE_REM">
       @for (band of BANDS; track band.id) {
-        <ethlete-design-kerbe-band [band]="band" narrow="drop-time" treatment="inlay" />
+        <ethlete-design-kerbe-band [band]="band" treatment="tally" />
       }
     </ethlete-design-kerbe-frame>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [KerbeBandComponent, KerbeFrameComponent],
 })
-export default class NarrowOptionAComponent {
+export default class TreatmentOptionCComponent {
   protected readonly BANDS = BANDS;
   protected readonly LANE_REM = LANE_REM;
 }

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { KerbeBandComponent } from '../../../kerbe-band.component';
 import { KerbeFrameComponent } from '../../../kerbe-frame';
 import { BANDS, LANE_REM } from './fixture';
@@ -12,6 +12,7 @@ import { BANDS, LANE_REM } from './fixture';
       }
     </ethlete-design-kerbe-frame>
   `,
+  encapsulation: ViewEncapsulation.None,
   imports: [KerbeBandComponent, KerbeFrameComponent],
 })
 export default class NarrowOptionCComponent {
