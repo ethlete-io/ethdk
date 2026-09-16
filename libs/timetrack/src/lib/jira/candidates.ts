@@ -46,14 +46,20 @@ export const fetchJiraOpenIssues$ = (options: {
   }).pipe(map((resources) => resources.flatMap((resource) => toJiraIssue(resource, options.subjectField) ?? [])));
 };
 
-/** The open issues a new ticket could roll up to: the same read, narrowed to the parent types. */
+/**
+ * The open issues a new ticket could roll up to: the same read, narrowed to the parent types.
+ *
+ * Sub-tasks are dropped whatever the types say, because Jira accepts none of them as a parent.
+ */
 export const fetchJiraParentCandidates$ = (options: {
   transport: TimetrackTransport;
   credentials: JiraCredentials;
   projectKey: string;
-  /** The types that may be a parent, such as `Story` and `Epic`. Empty accepts any type. */
+  /** The types that may be a parent, such as `Story` and `Epic`. Empty accepts any parent type. */
   issueTypeNames: readonly string[];
   subjectField?: string;
   limit?: number;
 }): Observable<JiraIssue[]> =>
-  fetchJiraOpenIssues$({ ...options, limit: options.limit ?? DEFAULT_PARENT_CANDIDATE_LIMIT });
+  fetchJiraOpenIssues$({ ...options, limit: options.limit ?? DEFAULT_PARENT_CANDIDATE_LIMIT }).pipe(
+    map((issues) => issues.filter((issue) => !issue.isSubtask)),
+  );

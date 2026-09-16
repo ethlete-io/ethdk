@@ -5,7 +5,7 @@ import { JiraCredentials, jiraRequest$ } from './client';
 export type JiraIssueFields = Record<string, unknown> & {
   summary?: string;
   updated?: string;
-  issuetype?: { name?: string };
+  issuetype?: { name?: string; subtask?: boolean };
   parent?: { key?: string };
 };
 

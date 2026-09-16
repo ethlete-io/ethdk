@@ -45,8 +45,22 @@ describe('fetchJiraIssues$', () => {
     fetchJiraIssues$({ transport, credentials: CREDENTIALS, keys: ['FIP-2177', 'FIP-2178'] }).subscribe(seen);
 
     expect(seen.mock.calls[0]?.[0]).toEqual([
-      { key: 'FIP-2177', id: '10101', summary: 'User management', issueType: 'Story', parentKey: undefined },
-      { key: 'FIP-2178', id: '10102', summary: 'Password reset', issueType: 'Task', parentKey: 'FIP-2177' },
+      {
+        key: 'FIP-2177',
+        id: '10101',
+        summary: 'User management',
+        issueType: 'Story',
+        isSubtask: false,
+        parentKey: undefined,
+      },
+      {
+        key: 'FIP-2178',
+        id: '10102',
+        summary: 'Password reset',
+        issueType: 'Task',
+        isSubtask: false,
+        parentKey: 'FIP-2177',
+      },
     ]);
   });
 

@@ -94,7 +94,32 @@ describe('fetchJiraParentCandidates$', () => {
     }).subscribe(seen);
 
     expect(seen.mock.calls[0]?.[0]).toEqual([
-      { key: 'FIP-1', id: '1', summary: 'User management', issueType: '', parentKey: undefined, subject: undefined },
+      {
+        key: 'FIP-1',
+        id: '1',
+        summary: 'User management',
+        issueType: '',
+        isSubtask: false,
+        parentKey: undefined,
+        subject: undefined,
+      },
     ]);
+  });
+
+  it('offers no sub-task, which Jira accepts as a parent in no hierarchy', () => {
+    const { transport } = fakeTransport([
+      { id: '1', key: 'FIP-1', fields: { summary: 'The story', issuetype: { name: 'Story', subtask: false } } },
+      { id: '2', key: 'FIP-2', fields: { summary: 'A step of it', issuetype: { name: 'Sub-task', subtask: true } } },
+    ]);
+    const seen = vi.fn();
+
+    fetchJiraParentCandidates$({
+      transport,
+      credentials: CREDENTIALS,
+      projectKey: 'FIP',
+      issueTypeNames: [],
+    }).subscribe(seen);
+
+    expect(seen.mock.calls[0]?.[0]?.map((issue: { key: string }) => issue.key)).toEqual(['FIP-1']);
   });
 });

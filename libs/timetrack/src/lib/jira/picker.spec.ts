@@ -150,7 +150,17 @@ describe('fetchJiraIssuePicks$', () => {
     ]);
 
     expect(found).toEqual([
-      [{ key: 'ABC-1', id: '1', summary: 'Alpha', issueType: 'Task', parentKey: undefined, subject: undefined }],
+      [
+        {
+          key: 'ABC-1',
+          id: '1',
+          summary: 'Alpha',
+          issueType: 'Task',
+          isSubtask: false,
+          parentKey: undefined,
+          subject: undefined,
+        },
+      ],
     ]);
   });
 });

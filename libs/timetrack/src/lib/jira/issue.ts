@@ -9,6 +9,8 @@ export type JiraIssue = {
   id: string;
   summary: string;
   issueType: string;
+  /** Jira's own flag on the type. A sub-task is a leaf, so no hierarchy accepts it as a parent. */
+  isSubtask?: boolean;
   /** The parent issue, when the instance reports one — a Task under its Story. */
   parentKey?: string;
   /** The configured subject field's value, when the instance has one and this issue sets it. */
@@ -44,6 +46,7 @@ export const toJiraIssue = (resource: JiraIssueResource, subjectField?: string):
         id: resource.id,
         summary: resource.fields?.summary ?? '',
         issueType: resource.fields?.issuetype?.name ?? '',
+        isSubtask: resource.fields?.issuetype?.subtask ?? false,
         parentKey: resource.fields?.parent?.key,
         subject: readSubjectField(resource.fields ?? {}, subjectField),
       }
