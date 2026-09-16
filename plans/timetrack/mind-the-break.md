@@ -37,6 +37,11 @@ Three causes. All three are in the library, not on the screen.
 
 ## Rule 1: a break never covers a call
 
+**Built on 2026-09-16**, all three steps. Recorded in ADR 0030. One correction to the reading below:
+`streamDay` already unioned the calls into presence, through `countsAsWork` rather than through
+attendance, so cause 1 was in `stream-day.ts` and not in `presence.ts`. `CallWindow.isPresence` is
+the field that now answers it.
+
 Three steps, in this order:
 
 1. Make a call hold presence, as "Every call is presence" says. The gap then never opens, so the
