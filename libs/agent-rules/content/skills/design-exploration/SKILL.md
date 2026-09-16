@@ -1,0 +1,98 @@
+---
+name: design-exploration
+description: How a visual design exploration runs - the step size, what to put in front of the user at each stop, and when you may commit. Read BEFORE any visual design work on a sketch, a prototype, a theme, a palette, or the look of a component. The user is the designer; you find and frame, and you never pick the fix alone.
+kind: skill
+scope: both
+vars: [storybookUrl]
+---
+
+# Design exploration
+
+A design exploration is a dialog. **The user is the designer. You find and frame. The user
+chooses.** A finding is not a licence to pick the fix.
+
+## The rules
+
+1. **One open call at a time.** Take one question. Draw its alternatives. Stop.
+2. **Put the options in the story, then name your pick.** Two or three variants, rendered
+   for real, side by side, labelled, with what each one costs. Your pick is a proposal.
+3. **Commit only when the user says commit.**
+4. **Finish the task you were given, then stop.** Do not pick the next one. A plan file
+   with an open list is a record, not a queue you may serve yourself.
+5. **Keep the answer short.** 120 words at most.
+
+Confirm the step size once, at the start. Do not ask again at every stop. A task is not
+finished while the user is still talking about it.
+
+## What one stop looks like
+
+- The question, in one sentence.
+- The story id to look at.
+- The options, labelled A, B, C, one line each.
+- Your pick, one line on why.
+- Nothing else. No next step, no second finding.
+
+**Do not send a screenshot.** The user keeps the Storybook open. Screenshot only for your
+own check that a variant renders.
+
+If a second defect appears, add it to the open list and give it one line. Do not draw it.
+
+## Drawing the options
+
+Draw every option in the **same** story, side by side, under the real geometry the thing
+ships in. An option judged alone is judged against memory.
+
+- Sketches take inputs only and stay out of the application's build.
+- Prototype, never refactor. Do not touch the shipped component until the treatment is
+  settled.
+- Keep the rejected options in the story, marked as rejected.
+
+## Check before you look
+
+A broken build renders as an overlay, so a screenshot of it looks like a design. Check
+first, cheapest way first.
+
+**1. Ask the editor.** Instant, and it returns type errors and lint errors together. It
+only reports files the editor has analysed, so open the file first - `code -r <file>` -
+then ask your harness for diagnostics on that file URI. An empty answer is not a pass.
+Filter to severity `Error`, source `ts` or `eslint`. Never ask for every file.
+
+**2. Run the checkers.** About four seconds, no dev server, no rebuild wait. Copy
+{%resource:check-story.mjs%} to the **repository root** - Node resolves `playwright` from
+the working directory. Name the files you changed, never a whole project.
+
+```bash
+node check-story.mjs --lint <changed files> --tsconfig apps/<app>/.storybook/tsconfig.json
+```
+
+**3. Open the story.** Costs a browser launch, and sees only a build the dev server has
+finished.
+
+```bash
+node check-story.mjs --tsconfig <path> --story <story-id>
+```
+
+A type error does not stop Storybook - it transpiles without checking - so this stage
+reports `ok` on a file that does not compile. That is why it is last. If you started the
+dev server yourself, read its output instead.
+
+## Screenshots
+
+Only after the checks pass. Copy {%resource:shoot-template.mjs%} to the repository root.
+
+```bash
+node shoot.mjs <story-id> 1100 760 out.png
+```
+
+- `waitUntil: 'networkidle'` never settles on a Storybook iframe. Use `'domcontentloaded'`.
+- `:hover`, `:focus-visible` and `:active` need a CDP session and `CSS.forcePseudoState`.
+  Several hold open at once, so one image shows them all. The template does this.
+
+The default Storybook is {%storybookUrl%}. An app with its own sketch Storybook runs on its
+own port; the exploration's plan file names it.
+
+## Writing it down
+
+Every settled call goes in the exploration's plan file: what won, what lost, and why. Keep
+an **Open** list for the calls not yet made. A rejected option written down stops the next
+session from drawing it again.

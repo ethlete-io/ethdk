@@ -110,3 +110,17 @@ Two of these were found by drawing them, not by planning them:
 - Fonts load from Google in `preview-head.html`. The shipped Tauri app must self-host them.
 - The drag state fades the band in place. A real drag also needs a ghost in the slot the band
   came from, which the sketch does not draw.
+
+## How this exploration runs
+
+Agreed with the user on 2026-09-16, after a session that ran too far alone.
+
+1. **One open call at a time.** I take a single question, draw its alternatives as real
+   story variants, and stop. I never carry two calls into one stop.
+2. **I put the options in the story and name my pick.** Two or three variants side by side,
+   labelled, with what each one costs. My pick is a proposal. The user chooses. No
+   screenshots - the user keeps the Storybook open.
+3. **Nothing is committed until the user says commit.** Sketch code waits in the working
+   tree between stops.
+
+A finding is not a licence to pick the fix.
