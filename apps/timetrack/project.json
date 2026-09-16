@@ -127,6 +127,38 @@
         "command": "tauri build",
         "cwd": "apps/timetrack"
       }
+    },
+    "storybook": {
+      "executor": "@storybook/angular:start-storybook",
+      "options": {
+        "port": 4401,
+        "configDir": "apps/timetrack/.storybook",
+        "browserTarget": "timetrack-app:build-storybook",
+        "compodoc": false,
+        "styles": ["apps/timetrack/src/styles.css"],
+        "open": false
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
+    },
+    "build-storybook": {
+      "executor": "@storybook/angular:build-storybook",
+      "outputs": ["{options.outputDir}"],
+      "options": {
+        "outputDir": "dist/timetrack-storybook",
+        "configDir": "apps/timetrack/.storybook",
+        "browserTarget": "timetrack-app:build-storybook",
+        "compodoc": false,
+        "styles": ["apps/timetrack/src/styles.css"]
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
     }
   }
 }
