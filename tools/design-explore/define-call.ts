@@ -21,8 +21,6 @@ export type Call = {
   intro: string;
   /** The width every option frame gets, in px. The geometry the thing ships in. */
   frameWidth: number;
-  /** What the user decided, and why. Written after the call is settled. */
-  result?: string;
   options: CallOption[];
 };
 

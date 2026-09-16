@@ -6,8 +6,6 @@ export default defineCall({
   intro:
     'The break lane is 6rem wide, so "Break" and "45m" cannot share a row. Every frame below is that lane, with the three break lengths a day produces and one work band for the general case. The 15m band has no duration at any width, so all three draw it the same.',
   frameWidth: 120,
-  result:
-    'A wins, decided 2026-09-17. Under 10rem the band hides its duration and keeps the label on one row. The rule holds for any lane that gets narrow, not only the break lane.',
   options: [
     {
       key: 'a',

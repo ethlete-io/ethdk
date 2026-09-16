@@ -59,7 +59,6 @@ if (!slug) {
         <span class="eyebrow">${esc(call.eyebrow)}</span>
         <h1>${esc(call.headline)}</h1>
         <p>${esc(call.intro)}</p>
-        ${call.result ? `<p class="result"><span>Result</span>${esc(call.result)}</p>` : ''}
       </header>
       <div class="grid">
         ${shown
