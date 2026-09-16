@@ -74,6 +74,20 @@ describe('parseBranch', () => {
     expect(result.findings.map((finding) => finding.rule)).toEqual<GitFlowRule[]>(['deprecated-prefix']);
   });
 
+  it('reads spec/ as a branch type of its own, so planning work is not an unknown shape', () => {
+    const result = parse('spec/FIP-2177-user-management');
+
+    expect(result).toMatchObject({
+      ok: true,
+      kind: 'main-feature',
+      type: 'spec',
+      subject: 'user-management',
+      issueKey: 'FIP-2177',
+      expectedBase: 'next',
+    });
+    expect(result.findings).toEqual([]);
+  });
+
   it('reads the original nested spelling as one git cannot store, and says so', () => {
     const result = parse('feat/FIP-2177-user-management/FIP-2178-user-password-reset');
 

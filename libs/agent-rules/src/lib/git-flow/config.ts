@@ -71,7 +71,7 @@ export const DEFAULT_GIT_FLOW_CONFIG: GitFlowConfig = {
   keyPattern: '[A-Z]{2,10}-\\d+',
   keyPrefixes: [],
   baseBranches: { development: 'next', production: 'main' },
-  types: ['feat', 'fix', 'refactor', 'chore', 'docs', 'perf', 'test', 'style', 'build', 'ci'],
+  types: ['feat', 'fix', 'refactor', 'chore', 'docs', 'spec', 'perf', 'test', 'style', 'build', 'ci'],
   typeAliases: { feature: 'feat', bugfix: 'fix' },
   releasePrefix: 'release',
   releasePattern: '\\d{4}\\.\\d{2}\\.\\d{2}',
