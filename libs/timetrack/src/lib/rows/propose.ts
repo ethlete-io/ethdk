@@ -1,5 +1,5 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
-import { contextKey } from '../model/block';
+import { dominantContext, streamKey } from '../model/block';
 import { WorklogProposal } from '../model/proposal';
 import { DescribeOptions, describeWork } from './describe';
 import { laneKeyOf } from './lane';
@@ -61,17 +61,22 @@ const isAttributedRow = (row: BoundGroup): row is BoundGroup & { group: Attribut
 const proposalId = (group: AttributedGroup) => `${group.issueKey}@${group.from.toISOString()}`;
 
 /**
- * The id the row of an unnamed band carries. Stable the same way {@link proposalId} is, by the context
- * behind the band rather than by an issue: two contexts can hold the same minute, so the instant alone
+ * The id the row of an unnamed band carries. Stable the same way {@link proposalId} is, by the stream
+ * behind the band rather than by an issue: two streams can hold the same minute, so the instant alone
  * would give a concurrent day two rows with one id.
+ *
+ * The branch is deliberately left out, although a block carries one. Every unnamed band of a checkout
+ * is one band whatever branch each block was on, so a branch here names whichever one the band happens
+ * to hold the most of - and it moves to another while the day is still running. The user's own edits
+ * hang on this id, so an id that moves loses them.
  *
  * Exported because a review answers a band through its row, and `reviewDay` needs the group that row
  * came from to stop counting it as time nothing named.
  */
 export const unnamedRowId = (group: WorkGroup) => {
-  const context = group.blocks[0]?.context;
+  const context = dominantContext(group.blocks);
 
-  return `unnamed:${context ? contextKey(context) : ''}@${group.from.toISOString()}`;
+  return `unnamed:${context ? streamKey(context) : ''}@${group.from.toISOString()}`;
 };
 
 /**

@@ -176,6 +176,28 @@ describe('propose, the work nothing named', () => {
     expect(new Set(unnamed.map((row) => row.id)).size).toBe(2);
   });
 
+  it('gives a band one id whatever branches its blocks were on', () => {
+    const onBranches = (...branches: string[]): WorkGroup => {
+      const base = group({ fromMinute: 0, observedMinutes: 60 });
+
+      return {
+        ...base,
+        blocks: branches.map((branch, index) => ({
+          from: AT(index * 20),
+          to: AT(index * 20 + 20),
+          context: { repoPath: '/dev/app', branch },
+          evidence: [],
+        })),
+      };
+    };
+
+    const early = propose({ groups: [onBranches('next')] });
+    const later = propose({ groups: [onBranches('next', 'dev-toty', 'dev-toty')] });
+
+    expect(early.unnamed[0]?.id).toBe(later.unnamed[0]?.id);
+    expect(later.unnamed[0]?.id).not.toContain('next');
+  });
+
   it('books a whole increment too, so naming it never changes its size', () => {
     const { unnamed } = propose({ groups: [group({ fromMinute: 0, observedMinutes: 47 })] });
 
