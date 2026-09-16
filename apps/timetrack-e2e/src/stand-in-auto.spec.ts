@@ -69,6 +69,14 @@ test.describe('the band of a checkout that waits on a ticket', () => {
     await expect(form).toContainText('A ticket for Pdf export');
     await expect(form).toContainText('Filing it resolves the placeholder');
   });
+
+  test('titles that dialog with the placeholder it was opened on, not with the list', async ({ page }) => {
+    await openBand(page, (await band(page).getAttribute('title')) as string);
+    await editSurface(page).getByRole('button', { name: 'File its ticket' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Pdf export', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Waiting on a ticket' })).toHaveCount(0);
+  });
 });
 
 test.describe('the ticket a stand-in was waiting for', () => {

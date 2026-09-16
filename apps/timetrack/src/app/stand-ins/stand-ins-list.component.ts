@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { BUTTON_IMPORTS, EMPTY_STATE_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
 import { StandIn, StandInAge, formatDurationMs } from '@ethlete/timetrack';
@@ -17,6 +17,9 @@ import { injectStandIns } from './stand-ins';
  * It carries no chrome of its own, so it reads the same inside the Debug accordion and inside the
  * overlay the edit surface opens. Two dialogs must never stack: one on top of the other keeps
  * re-measuring, and the panel then moves under the pointer.
+ *
+ * Give it `only` to show one placeholder. A user who pressed a band asked about that band, and a
+ * list of every other one is a management screen they did not ask for.
  */
 @Component({
   selector: 'ethlete-stand-ins-list',
@@ -154,22 +157,29 @@ export class StandInsListComponent {
 
   private drafts = signal<Record<string, string>>({});
 
+  /** The one placeholder to show, by id. Null lists every one of them. */
+  public only = input<string | null>(null);
+
   protected listed = computed(() => {
     const ages = this.store.ages();
+    const only = this.only();
 
-    return this.store.standIns().map((standIn) => {
-      const age = ages.get(standIn.id);
+    return this.store
+      .standIns()
+      .filter((standIn) => !only || standIn.id === only)
+      .map((standIn) => {
+        const age = ages.get(standIn.id);
 
-      return {
-        id: standIn.id,
-        standIn,
-        projectKey: standIn.projectKey ?? '',
-        days: daysLabel(standIn),
-        age: standIn.state === 'open' && age ? ageLabel(age) : '',
-        isOverdue: !!age?.isOverdue,
-        canReopen: this.store.canReopen(standIn),
-      };
-    });
+        return {
+          id: standIn.id,
+          standIn,
+          projectKey: standIn.projectKey ?? '',
+          days: daysLabel(standIn),
+          age: standIn.state === 'open' && age ? ageLabel(age) : '',
+          isOverdue: !!age?.isOverdue,
+          canReopen: this.store.canReopen(standIn),
+        };
+      });
   });
 
   protected draftFor(id: string) {
