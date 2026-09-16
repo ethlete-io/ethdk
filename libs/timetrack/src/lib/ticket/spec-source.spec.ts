@@ -1,5 +1,6 @@
-import { Observable, firstValueFrom, of } from 'rxjs';
+import { Observable, firstValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
+import { Evidence, EvidenceKind } from '../model/evidence';
 import { ProcessResult, ProcessSpec, SpecFiles, TimetrackProcessRunner, TimetrackSpecSource } from '../transport/ports';
 import { shasFromEvidence, specForCommits$, specPathArgs } from './spec-source';
 
@@ -27,20 +28,26 @@ const harness = (options: { result?: Partial<ProcessResult>; files?: SpecFiles |
   return { processes, specs, spawned, asked };
 };
 
+const seen = (detail: string, kind: EvidenceKind = 'commit'): Evidence => ({ kind, at: new Date(), detail });
+
 describe('shasFromEvidence', () => {
   it('pulls the sha out of the detail the stream writes', () => {
-    expect(shasFromEvidence(['a1b2c3d Verlaufsleiste rendern', 'e4f5a6b Rundenname korrigieren'])).toEqual([
+    expect(shasFromEvidence([seen('a1b2c3d Verlaufsleiste rendern'), seen('e4f5a6b Rundenname korrigieren')])).toEqual([
       'a1b2c3d',
       'e4f5a6b',
     ]);
   });
 
   it('skips evidence that is not a commit', () => {
-    expect(shasFromEvidence(['Feature branch merged', 'a1b2c3d Real commit'])).toEqual(['a1b2c3d']);
+    expect(shasFromEvidence([seen('a1b2c3d Real branch', 'branch'), seen('a1b2c3d Real commit')])).toEqual(['a1b2c3d']);
+  });
+
+  it('skips a commit whose detail carries no sha', () => {
+    expect(shasFromEvidence([seen('Feature branch merged'), seen('a1b2c3d Real commit')])).toEqual(['a1b2c3d']);
   });
 
   it('names a sha once, however many blocks quoted it', () => {
-    expect(shasFromEvidence(['a1b2c3d One', 'a1b2c3d One'])).toEqual(['a1b2c3d']);
+    expect(shasFromEvidence([seen('a1b2c3d One'), seen('a1b2c3d One')])).toEqual(['a1b2c3d']);
   });
 });
 
@@ -86,6 +93,16 @@ describe('specForCommits$', () => {
 
     await expect(h.spec).resolves.toBeNull();
     expect(h.asked).toEqual([]);
+  });
+
+  it('answers null where the host itself threw', async () => {
+    const h = harness();
+
+    vi.spyOn(h.processes, 'run$').mockReturnValue(throwError(() => new Error('the host is gone')));
+
+    await expect(
+      firstValueFrom(specForCommits$({ repoPath: '/repo', shas: ['a1b2c3d'], processes: h.processes, specs: h.specs })),
+    ).resolves.toBeNull();
   });
 
   it('never asks the host anything when the band quotes no commit', async () => {

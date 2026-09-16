@@ -1,4 +1,5 @@
-import { Observable, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, map, of, switchMap } from 'rxjs';
+import { Evidence } from '../model/evidence';
 import { TimetrackProcessRunner, TimetrackSpecSource } from '../transport/ports';
 import { SpecHeader, readSpecHeader, touchedDirectories } from './spec';
 
@@ -15,11 +16,13 @@ const MAX_COMMITS = 40;
  * survives into a work group — the stored event keeps one, but the band that reaches the ticket form
  * carries evidence, not events.
  */
-export const shasFromEvidence = (details: readonly string[]): string[] => {
+export const shasFromEvidence = (evidence: readonly Evidence[]): string[] => {
   const shas: string[] = [];
 
-  for (const detail of details) {
-    const sha = SHA_PREFIX.exec(detail)?.[1];
+  for (const entry of evidence) {
+    if (entry.kind !== 'commit') continue;
+
+    const sha = SHA_PREFIX.exec(entry.detail)?.[1];
 
     if (sha && !shas.includes(sha)) shas.push(sha);
   }
@@ -63,5 +66,6 @@ export const specForCommits$ = (options: {
       directories.length ? options.specs.read$({ repoPath: options.repoPath, directories }) : of(null),
     ),
     map((files) => (files ? readSpecHeader({ metadata: files.metadata, index: files.index }) : null)),
+    catchError(() => of(null)),
   );
 };

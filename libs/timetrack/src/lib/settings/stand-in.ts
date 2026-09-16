@@ -37,7 +37,7 @@ export const withNamedStandIn = (options: {
  * The rule is the fallback, because a checkout that gets another answer has its rule replaced and the
  * record is then the only thing left holding the path.
  */
-const checkoutOf = (options: { settings: TimetrackSettings; standIn: StandIn }) =>
+export const checkoutOf = (options: { settings: TimetrackSettings; standIn: StandIn }) =>
   options.standIn.openedFor ??
   options.settings.attributionRules.find((rule) => standInIdOf(rule) === options.standIn.id && !rule.branch)?.repoPath;
 

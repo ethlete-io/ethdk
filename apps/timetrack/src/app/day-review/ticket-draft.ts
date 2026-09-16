@@ -2,14 +2,18 @@ import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
+  Evidence,
   JiraCreatableType,
   JiraCredentials,
   JiraIssue,
   ParentCandidate,
+  SpecHeader,
   StandIn,
   TicketWording,
   TicketWritingRequest,
   UnnamedContext,
+  checkoutOf,
+  contextKey,
   createJiraIssue$,
   creatableTypeNames,
   draftParentDescription,
@@ -25,6 +29,8 @@ import {
   matchExistingIssues,
   rankParentCandidates,
   readJiraCredentials$,
+  shasFromEvidence,
+  specForCommits$,
   standInWritingRequest,
   suggestParentKey,
   ticketSubjectOf,
@@ -126,7 +132,10 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const standIn = signal<StandIn | null>(null);
   const form = signal<TicketForm | null>(null);
   const notes = signal<readonly string[]>([]);
+  /** The specification the work sits under, when its own commits named one. Null until the read lands. */
+  const spec = signal<SpecHeader | null>(null);
   const searches$ = new Subject<string>();
+  const specs$ = new Subject<{ repoPath: string; evidence: readonly Evidence[] }>();
   const writes$ = new Subject<TicketWritingRequest>();
   const parentWrites$ = new Subject<ParentWritingRequest>();
   const creations$ = new Subject<TicketForm>();
@@ -134,6 +143,17 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const parentCreations$ = new Subject<ParentForm>();
   /** Parents filed from this form, which the project's own read does not hold yet. */
   const createdParents = signal<JiraIssue[]>([]);
+
+  /**
+   * Looks for the specification the work was written against, from the commits its own evidence
+   * names. It answers null wherever the guess does not land, which is the ticket every ticket was
+   * before this.
+   */
+  const askSpec = (options: { repoPath: string | undefined; evidence: readonly Evidence[] }) => {
+    spec.set(null);
+
+    if (options.repoPath) specs$.next({ repoPath: options.repoPath, evidence: options.evidence });
+  };
 
   const update = (change: Partial<TicketForm>) => {
     const current = form();
@@ -279,6 +299,21 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
+  specs$
+    .pipe(
+      switchMap((ask) =>
+        specForCommits$({
+          repoPath: ask.repoPath,
+          shas: shasFromEvidence(ask.evidence),
+          processes: ports.processes,
+          specs: ports.specs,
+        }),
+      ),
+      tap((found) => spec.set(found)),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
   /**
    * Why nothing can be filed in this project, or `null` while it can.
    *
@@ -405,6 +440,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     standIn.set(null);
     form.set(null);
     notes.set([]);
+    spec.set(null);
     createStatus.set(IDLE);
     writeStatus.set(IDLE);
     agentMatch.set(null);
@@ -434,9 +470,12 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const offered = { parents: issues.parents, issues: issues.open };
     const maskedNames = settings.settings().reasoning.maskedNames;
 
-    if (unnamed) return ticketWritingRequest({ context: unnamed, notes: notes(), ...offered, maskedNames });
+    const found = spec();
+    const framed = found ? { spec: found } : {};
 
-    return waiting ? standInWritingRequest({ standIn: waiting, ...offered, maskedNames }) : null;
+    if (unnamed) return ticketWritingRequest({ context: unnamed, notes: notes(), ...offered, ...framed, maskedNames });
+
+    return waiting ? standInWritingRequest({ standIn: waiting, ...offered, ...framed, maskedNames }) : null;
   };
 
   return {
@@ -561,6 +600,10 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       parentForm.set(null);
       createdParents.set([]);
       searches$.next(projectKey);
+      askSpec({
+        repoPath: checkoutOf({ settings: settings.settings(), standIn: waiting }),
+        evidence: dayReview.rows().flatMap((row) => (row.standInId === waiting.id ? row.evidence : [])),
+      });
     },
 
     open: (unnamed: UnnamedContext) => {
@@ -586,6 +629,12 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       writeStatus.set(IDLE);
       agentMatch.set(null);
       searches$.next(projectKey);
+      askSpec({
+        repoPath: unnamed.context.repoPath,
+        evidence: (dayReview.deterministic()?.unattributed ?? [])
+          .flatMap((group) => group.blocks)
+          .flatMap((block) => (contextKey(block.context) === unnamed.id ? block.evidence : [])),
+      });
     },
 
     close,
