@@ -59,6 +59,19 @@ statement that they work. The case is rarer than the meeting, so it can wait.
 
 ## Rule 2: a break edit is a statement about a stretch of the day
 
+**Built on 2026-09-16**, apart from the totals. `PresenceStatement` and `DayReviewEdits.statements`
+are in the library, the writers are in `review/statements.ts`, and `breaksBetweenRows` applies them.
+On the screen a press on a break states `present`, a range drawn in the break lane states `away`, and
+the day's notes take a statement back. Proofs 4, 5 and 6 are in `review/statements.spec.ts`, and one
+e2e flow is in `apps/timetrack-e2e/src/break-statement.spec.ts`.
+
+Two corrections to the reading below. Writing a statement takes the stretch out of every statement of
+the other kind it covers, so the day never holds two that contradict each other and the order they are
+applied in never decides the answer. And the break lane stays on a day whose breaks are all gone,
+because the lane is where a break is drawn.
+
+**Still open:** the day's `present` total and its engagement ratio do not follow the statements yet.
+
 A break has no id. It is derived from the gaps between two stretches of presence, and a new event
 moves it. An edit keyed by a break object therefore does not survive the next run of `streamDay`.
 
