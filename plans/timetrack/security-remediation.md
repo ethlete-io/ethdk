@@ -26,7 +26,7 @@ test covers it.
 | SEC-18 refresh race           | yes      | yes   | `libs/timetrack/src/lib/google-auth/token-source.ts`    |
 | SEC-19 HTTP deadlines         | yes      | yes   | `src-tauri/src/lib.rs`, `http.rs`                       |
 | SEC-20 Rust advisories        | yes      | yes   | `Cargo.lock`, `.cargo/audit.toml`, `ci.yml`             |
-| SEC-21 Angular advisory       | yes      |       | `package.json`                                          |
+| SEC-21 Angular advisory       | yes      | yes   | `package.json`, every published lib's peer range        |
 | SEC-22 CLI export mode        | yes      | yes   | `libs/agent-rules/src/lib/timetrack-command.ts`         |
 | SEC-23 CLI terminal escapes   | yes      | yes   | `libs/agent-rules/src/lib/plain-text.ts`                |
 | SEC-24 stale discovery        | yes      | yes   | `libs/agent-rules/src/lib/timetrack.ts`, `agent.rs`     |
@@ -146,12 +146,23 @@ Notes on the seventh to ninth commits:
 - `ci-check` gained step 16. It is the one step in the `rust` job that can fail on a branch which
   touched no Rust, because the database moves on its own.
 
-Still open, in the order to take them:
+## Notes on the eleventh commit
 
-1. SEC-21. Angular 22.0.7 is affected by GHSA-hh8m-fm6v-7cvg, fixed in 22.1.0. It is a workspace-wide
-   upgrade with a lockfile change, so it needs its own session: `yarn install`, a full build and the
-   whole test suite.
-2. SEC-08 stays out of scope until compaction exists, for the reason above.
+- SEC-21. Every `@angular/*`, `@angular-devkit/*` and `@schematics/angular` pin moves 22.0.7 to
+  22.1.6, and `@angular/cdk` 22.0.5 to 22.1.6. 22.1.6 is the newest stable 22.x. 22.0.8 is not a fix:
+  the advisory range is `>= 22.0.0, < 22.1.0`.
+- The six published libraries pin Angular exactly in `peerDependencies`, so a consumer of
+  `@ethlete/core` would have been held on the affected release. Those ranges moved too; that is what
+  the changeset is for.
+- `ng-packagr` stays at 22.0.1. It is a separate product with its own numbering, its peer range is
+  `^22.0.0`, and all 15 builds pass on the pair.
+- Checked after the upgrade: 15 builds, 12 test projects, lint on the six libraries, the bundle-size
+  goldens, the Storybook build, and 1129 behavior tests. `yarn npm audit --all --recursive` reports no
+  Angular finding. The remaining findings are all transitive build tooling.
+- `timetrack:typecheck` fails on `agent-session/cursor-privacy.spec.ts` with six `possibly undefined`
+  errors. It fails the same way without this change, so it belongs to commit `ec6fc0aec`, not here.
+
+SEC-08 stays out of scope until compaction exists, for the reason above.
 
 Each library change needs a changeset. `@ethlete/timetrack` and `@ethlete/agent-rules` are
 both published.

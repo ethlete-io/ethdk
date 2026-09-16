@@ -4,9 +4,9 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/common": "22.0.7",
-    "@angular/core": "22.0.7",
-    "@angular/router": "22.0.7",
+    "@angular/common": "22.1.6",
+    "@angular/core": "22.1.6",
+    "@angular/router": "22.1.6",
     "@contentful/rich-text-types": "17.2.7",
     "@ethlete/components": "^1.0.0-next.32",
     "@ethlete/core": "^5.0.0-beta.11",
