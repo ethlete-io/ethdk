@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed, input, output } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input, output, signal } from '@angular/core';
 import {
   BANNER_IMPORTS,
   BUTTON_IMPORTS,
@@ -46,6 +46,10 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
           }
 
           <span class="text-small text-et-surface-muted">{{ filedNote() }}</span>
+
+          <div>
+            <button (click)="dismiss.emit()" et-button variant="filled" size="sm">Back to the day</button>
+          </div>
         </div>
       } @else if (duplicateKey(); as key) {
         <et-banner
@@ -81,6 +85,33 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
           </div>
         }
 
+        <div class="flex flex-wrap items-end gap-3">
+          <div class="flex w-60 flex-col gap-1">
+            <span class="text-small text-et-surface-muted">Project</span>
+            <ethlete-project-select
+              [value]="draft.projectKey"
+              (valueChange)="projectKeyChange.emit($event)"
+              ariaLabel="The project the ticket is filed in"
+            />
+          </div>
+
+          <et-form-field class="min-w-60 grow" appearance="underline" size="sm">
+            <et-label>Summary</et-label>
+            <et-input [value]="draft.summary" (valueChange)="summaryChange.emit($event)" />
+          </et-form-field>
+        </div>
+
+        <et-form-field appearance="underline" size="sm">
+          <et-label>Description</et-label>
+          <et-textarea
+            [value]="draft.description"
+            [minRows]="3"
+            [maxRows]="10"
+            (valueChange)="descriptionChange.emit($event)"
+            autosize
+          />
+        </et-form-field>
+
         @if (canWrite()) {
           <div class="flex flex-col gap-2">
             <div class="flex flex-wrap items-center gap-3">
@@ -112,33 +143,6 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
             }
           </div>
         }
-
-        <div class="flex flex-wrap items-end gap-3">
-          <div class="flex w-60 flex-col gap-1">
-            <span class="text-small text-et-surface-muted">Project</span>
-            <ethlete-project-select
-              [value]="draft.projectKey"
-              (valueChange)="projectKeyChange.emit($event)"
-              ariaLabel="The project the ticket is filed in"
-            />
-          </div>
-
-          <et-form-field class="min-w-60 grow" appearance="underline" size="sm">
-            <et-label>Summary</et-label>
-            <et-input [value]="draft.summary" (valueChange)="summaryChange.emit($event)" />
-          </et-form-field>
-        </div>
-
-        <et-form-field appearance="underline" size="sm">
-          <et-label>Description</et-label>
-          <et-textarea
-            [value]="draft.description"
-            [minRows]="3"
-            [maxRows]="10"
-            (valueChange)="descriptionChange.emit($event)"
-            autosize
-          />
-        </et-form-field>
 
         <div class="flex flex-col gap-2">
           <et-form-field class="grow" appearance="underline" size="sm">
@@ -253,10 +257,10 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
           <et-banner [description]="reason" type="warning" heading="Jira does not permit this create" />
         }
 
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
           <button
             [disabled]="!canCreate() || isCreating()"
-            (click)="create.emit()"
+            (click)="pressCreate()"
             et-button
             variant="filled"
             size="sm"
@@ -264,10 +268,14 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
             @if (isCreating()) {
               <et-spinner size="sm" />
             }
-            Create in Jira
+            {{ isArmed() ? 'File it now' : 'Create in Jira' }}
           </button>
 
-          <span class="text-small text-et-surface-muted">{{ createNote() }}</span>
+          @if (isArmed()) {
+            <button (click)="disarm()" et-button variant="transparent" size="sm">Cancel</button>
+          }
+
+          <span class="text-small text-et-surface-muted">{{ isArmed() ? ARMED_NOTE : createNote() }}</span>
         </div>
       }
     </div>
@@ -391,6 +399,25 @@ export class CreateTicketComponent {
 
     return [...found, ...matched];
   });
+
+  protected readonly ARMED_NOTE = 'Jira holds no delete, so a filed ticket stays whatever happens next.';
+
+  protected isArmed = signal(false);
+
+  protected pressCreate() {
+    if (!this.isArmed()) {
+      this.isArmed.set(true);
+
+      return;
+    }
+
+    this.isArmed.set(false);
+    this.create.emit();
+  }
+
+  protected disarm() {
+    this.isArmed.set(false);
+  }
 
   protected pickParent(value: unknown) {
     this.parentKeyChange.emit(typeof value === 'string' ? value : null);

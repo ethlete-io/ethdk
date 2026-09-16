@@ -94,11 +94,60 @@ test.describe('the ticket a stand-in was waiting for', () => {
 
     await card.getByRole('button', { name: 'File a ticket' }).click();
     await card.getByRole('button', { name: 'Create in Jira' }).click();
+    await card.getByRole('button', { name: 'File it now' }).click();
 
     await expect(card).toContainText(/Filed ABC-/);
     await expect(card).toContainText('is no longer waiting');
     await expect(card).toHaveAttribute('data-state', 'resolved');
     await expect(band(page)).toHaveCount(0);
+  });
+
+  test('files nothing on the first press, and nothing at all when the confirm is cancelled', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] },
+    });
+    await page.goto('/day');
+    await expect(band(page)).toHaveCount(1);
+
+    await openStandIns(page);
+
+    const card = page.locator('ethlete-stand-ins-list [data-stand-in]').first();
+
+    await card.getByRole('button', { name: 'File a ticket' }).click();
+    await card.getByRole('button', { name: 'Create in Jira' }).click();
+
+    await expect(card).toContainText('Jira holds no delete');
+    await expect(card).not.toContainText(/Filed ABC-/);
+
+    await card.getByRole('button', { name: 'Cancel' }).click();
+
+    await expect(card.getByRole('button', { name: 'Create in Jira' })).toBeVisible();
+    await expect(card).not.toContainText(/Filed ABC-/);
+    await expect(band(page)).toHaveCount(1);
+  });
+
+  test('returns to the day from the filed ticket', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] },
+    });
+    await page.goto('/day');
+    await expect(band(page)).toHaveCount(1);
+
+    await openStandIns(page);
+
+    const card = page.locator('ethlete-stand-ins-list [data-stand-in]').first();
+
+    await card.getByRole('button', { name: 'File a ticket' }).click();
+    await card.getByRole('button', { name: 'Create in Jira' }).click();
+    await card.getByRole('button', { name: 'File it now' }).click();
+
+    await expect(card).toContainText(/Filed ABC-/);
+
+    await card.getByRole('button', { name: 'Back to the day' }).click();
+
+    await expect(card.locator('ethlete-create-ticket')).toHaveCount(0);
   });
 });
 

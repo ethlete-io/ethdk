@@ -8,6 +8,7 @@ const fileTheTicket = async (page: import('@playwright/test').Page) => {
   await openWaitingForAName(page);
   await page.getByRole('button', { name: 'Create a ticket' }).click();
   await page.getByRole('button', { name: 'Create in Jira' }).click();
+  await page.getByRole('button', { name: 'File it now' }).click();
   await expect(page.getByText(/now holds this work/)).toBeVisible();
 };
 
