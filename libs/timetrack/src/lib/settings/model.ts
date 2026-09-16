@@ -1,3 +1,4 @@
+import { DEFAULT_EPIC_CHILD_LIMIT, MIN_EPIC_CHILD_LIMIT } from '../jira/children';
 import { TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule } from '../model/attribution';
 import { StandIn } from '../model/stand-in';
@@ -37,6 +38,15 @@ export const MAX_GAP_FILL_MS = 30 * 60_000;
 
 /** Holds a gap-fill threshold inside its range. Zero is meaningful: it fills nothing. */
 export const clampGapFillMs = (value: number) => Math.min(MAX_GAP_FILL_MS, Math.max(0, Math.round(value)));
+
+export const MAX_EPIC_CHILD_LIMIT = 500;
+
+/**
+ * Holds the epic child cap in range. Zero is not meaningful here: a parent has to hold the sibling
+ * and one other child before elimination can say anything, so it clamps up rather than turning off.
+ */
+export const clampEpicChildLimit = (value: number) =>
+  Math.min(MAX_EPIC_CHILD_LIMIT, Math.max(MIN_EPIC_CHILD_LIMIT, Math.round(value)));
 
 /**
  * The Jira instance issue keys are resolved against. The API token is not here — it lives in the OS
@@ -241,6 +251,11 @@ export type TimetrackSettings = {
    * not a calendar date — see ADR 0015. Zero keeps the two the same.
    */
   dayStartHour: number;
+  /**
+   * How many open children of one parent the sibling-checkout rung reads. It guards a Jira read, not
+   * a judgement about the work, which is why it is settable at all — see ADR 0029.
+   */
+  epicChildLimit: number;
   jira: TimetrackJiraSettings;
   google: TimetrackGoogleSettings;
   gitlab: TimetrackGitLabSettings;
@@ -356,6 +371,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   dayTargetMs: DEFAULT_DAY_TARGET_MS,
   gapFillMs: DEFAULT_GAP_FILL_MS,
   dayStartHour: DEFAULT_DAY_START_HOUR,
+  epicChildLimit: DEFAULT_EPIC_CHILD_LIMIT,
   jira: { host: '', email: '' },
   google: { clientId: '', calendarIds: [] },
   gitlab: { host: '' },

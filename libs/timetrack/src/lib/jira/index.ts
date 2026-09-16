@@ -1,6 +1,7 @@
 export * from './activity';
 export * from './adf';
 export * from './candidates';
+export * from './children';
 export * from './client';
 export * from './create';
 export * from './createmeta';

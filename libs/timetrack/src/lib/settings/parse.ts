@@ -16,6 +16,7 @@ import {
   TimetrackTicketSettings,
   clampDayTargetMs,
   clampDayStartHour,
+  clampEpicChildLimit,
   clampGapFillMs,
   clampLockAfterIdleMs,
   clampMinuteOfDay,
@@ -51,6 +52,11 @@ const asTarget = (value: unknown) =>
 
 const asGapFill = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) ? clampGapFillMs(value) : DEFAULT_TIMETRACK_SETTINGS.gapFillMs;
+
+const asEpicChildLimit = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value)
+    ? clampEpicChildLimit(value)
+    : DEFAULT_TIMETRACK_SETTINGS.epicChildLimit;
 
 const asDayStartHour = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value)
@@ -399,6 +405,7 @@ const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
     dayTargetMs: asTarget(document['dayTargetMs']),
     gapFillMs: asGapFill(document['gapFillMs']),
     dayStartHour: asDayStartHour(document['dayStartHour']),
+    epicChildLimit: asEpicChildLimit(document['epicChildLimit']),
     jira: { host: asText(jira['host']), email: asText(jira['email']) },
     google: { clientId: asText(google['clientId']), calendarIds: asTextList(google['calendarIds']) },
     gitlab: { host: asText(gitlab['host']) },
