@@ -119,6 +119,15 @@ export type TimetrackReasoningSettings = {
   /** A model alias such as `sonnet`. Empty uses the CLI's own default, which is the usual answer. */
   model: string;
   /**
+   * The language every answer is written in, as the user names it — `Deutsch`, `English`. It is free
+   * text rather than a list: the model reads a language name, and the app has no business deciding
+   * which languages a user may file a ticket in.
+   *
+   * Empty leaves each call following the evidence it was given, so a repository whose commits are
+   * German already gets a German ticket. Naming one here is for a user whose evidence is mixed.
+   */
+  language: string;
+  /**
    * The names that become pseudonyms in anything sent to the model — clients, products, Jira project
    * keys. Grown by hand, because only the user knows which word in their own commit subjects is a
    * client; `unmaskedWords` reports every capitalised word this list does not hold, before a send.
@@ -387,6 +396,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
     enabled: false,
     command: DEFAULT_REASONING_OPTIONS.command,
     model: DEFAULT_REASONING_OPTIONS.model,
+    language: DEFAULT_REASONING_OPTIONS.language,
     maskedNames: [],
   },
   nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },

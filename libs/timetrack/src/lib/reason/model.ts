@@ -57,12 +57,18 @@ export type ReasoningOptions = {
    * the user already chose for it — naming one here is for a user who wants this one call cheaper.
    */
   model: string;
+  /**
+   * The language every answer is written in, as the user names it — `Deutsch`, `German`, `English`.
+   * Empty leaves each call following the evidence it was given, which is the default.
+   */
+  language: string;
   timeoutMs: number;
 };
 
 export const DEFAULT_REASONING_OPTIONS: ReasoningOptions = {
   command: 'claude',
   model: '',
+  language: '',
   timeoutMs: 120_000,
 };
 
@@ -74,3 +80,15 @@ export const DEFAULT_MIN_REASONING_MS = 5 * 60_000;
 
 /** How many notes one context contributes. Enough to recognise the work, short enough to stay cheap. */
 export const DEFAULT_MAX_NOTES_PER_CONTEXT = 6;
+
+/**
+ * What every model call takes from the settings document, so a new option reaches all four calls by
+ * being added here rather than at each of them.
+ */
+export const reasoningOptionsOf = (settings: {
+  reasoning: { command: string; model: string; language: string };
+}): Partial<ReasoningOptions> => ({
+  command: settings.reasoning.command,
+  model: settings.reasoning.model,
+  language: settings.reasoning.language,
+});

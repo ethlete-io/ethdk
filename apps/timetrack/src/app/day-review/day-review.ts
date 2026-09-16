@@ -50,6 +50,7 @@ import {
   readJiraCredentials$,
   readTempoCredentials$,
   reasoningCandidates,
+  reasoningOptionsOf,
   RepoNamingDecisions,
   RepoNamingOffer,
   reasoningPlan,
@@ -675,7 +676,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     runReasoning$({
       runner: ports.processes,
       plan: current,
-      options: { command: settings.settings().reasoning.command, model: settings.settings().reasoning.model },
+      options: reasoningOptionsOf(settings.settings()),
     })
       .pipe(
         tap((outcome) => {

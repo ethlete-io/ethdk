@@ -30,6 +30,7 @@ import {
   matchExistingIssues,
   matchTicketWithAgent$,
   rankParentCandidates,
+  reasoningOptionsOf,
   readJiraCredentials$,
   shasFromEvidence,
   specForCommits$,
@@ -277,7 +278,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         writeTicketWithAgent$({
           runner: ports.processes,
           request,
-          options: { command: settings.settings().reasoning.command, model: settings.settings().reasoning.model },
+          options: reasoningOptionsOf(settings.settings()),
           maskedNames: settings.settings().reasoning.maskedNames,
         }).pipe(
           tap((wording) => {
@@ -298,7 +299,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         matchTicketWithAgent$({
           runner: ports.processes,
           request,
-          options: { command: settings.settings().reasoning.command, model: settings.settings().reasoning.model },
+          options: reasoningOptionsOf(settings.settings()),
           maskedNames: settings.settings().reasoning.maskedNames,
         }).pipe(
           tap((match) => {
@@ -319,7 +320,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         writeParentWithAgent$({
           runner: ports.processes,
           request,
-          options: { command: settings.settings().reasoning.command, model: settings.settings().reasoning.model },
+          options: reasoningOptionsOf(settings.settings()),
           maskedNames: settings.settings().reasoning.maskedNames,
         }).pipe(
           tap((wording) => {

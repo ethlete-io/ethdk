@@ -625,14 +625,30 @@ window title, never a file path. A suggestion never syncs on its own.`;
                 <ethlete-explain [text]="SUGGESTIONS_WHY" label="suggestions" />
               </div>
 
-              <et-form-field class="w-40" appearance="underline" size="sm">
-                <et-label>Model</et-label>
-                <et-input
-                  [value]="store.settings().reasoning.model"
-                  (valueChange)="setReasoningModel($event)"
-                  placeholder="the CLI decides"
-                />
-              </et-form-field>
+              <div class="flex flex-wrap items-start gap-3">
+                <et-form-field class="w-40" appearance="underline" size="sm">
+                  <et-label>Model</et-label>
+                  <et-input
+                    [value]="store.settings().reasoning.model"
+                    (valueChange)="setReasoningModel($event)"
+                    placeholder="the CLI decides"
+                  />
+                </et-form-field>
+
+                <et-form-field class="w-40" appearance="underline" size="sm">
+                  <et-label>Language</et-label>
+                  <et-input
+                    [value]="store.settings().reasoning.language"
+                    (valueChange)="setReasoningLanguage($event)"
+                    placeholder="the evidence decides"
+                  />
+                </et-form-field>
+              </div>
+
+              <span class="text-small text-et-surface-muted">
+                Every ticket, every parent and every suggestion is written in this language. Leave it empty and each
+                answer follows the language of the work it was given.
+              </span>
 
               <ethlete-masked-names
                 [names]="store.settings().reasoning.maskedNames"
@@ -812,5 +828,9 @@ export class SettingsViewComponent {
 
   protected setReasoningModel(model: string) {
     this.store.setReasoning({ ...this.store.settings().reasoning, model: model.trim() });
+  }
+
+  protected setReasoningLanguage(language: string) {
+    this.store.setReasoning({ ...this.store.settings().reasoning, language: language.trim() });
   }
 }

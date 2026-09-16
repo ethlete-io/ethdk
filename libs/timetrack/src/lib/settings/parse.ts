@@ -310,6 +310,7 @@ const asReasoning = (value: unknown): TimetrackReasoningSettings => {
     enabled: raw['enabled'] === true,
     command: REASONING_COMMANDS.includes(command) ? command : DEFAULT_TIMETRACK_SETTINGS.reasoning.command,
     model: asText(raw['model']),
+    language: asText(raw['language']),
     maskedNames: asTextList(raw['maskedNames']),
   };
 };
