@@ -569,7 +569,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const rows = computed(() => review()?.rows ?? []);
   const hiddenRows = computed(() => review()?.hidden ?? []);
-  const breaks = computed(() => breaksBetweenRows({ breaks: streamed()?.breaks ?? [], rows: rows() }));
+  const breaks = computed(() =>
+    breaksBetweenRows({
+      breaks: streamed()?.breaks ?? [],
+      rows: rows(),
+      presence: (streamed()?.calls ?? []).filter((call) => call.isPresence),
+    }),
+  );
 
   /**
    * Opens a placeholder for a linked checkout the day could not name, and records the day on every

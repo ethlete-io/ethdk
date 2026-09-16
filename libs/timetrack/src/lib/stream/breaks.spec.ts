@@ -131,6 +131,38 @@ describe('breakWindows', () => {
   });
 });
 
+describe('breaksBetweenRows, against the calls the user attended', () => {
+  it('clips back the part of a break the snap pushed into a call', () => {
+    const drawn = breaksBetweenRows({
+      breaks: [{ ...window([12, 38], [13, 8]), locked: false }],
+      rows: [window([9, 0], [17, 0])],
+      presence: [window([11, 0], [12, 52])],
+    });
+
+    expect(drawn).toEqual([{ ...window([13, 0], [13, 15]), locked: false }]);
+  });
+
+  it('drops the break whole when the call leaves less than one increment of it', () => {
+    const drawn = breaksBetweenRows({
+      breaks: [{ ...window([12, 38], [12, 53]), locked: false }],
+      rows: [window([9, 0], [17, 0])],
+      presence: [window([11, 0], [12, 52])],
+    });
+
+    expect(drawn).toEqual([]);
+  });
+
+  it('leaves a break no call covers exactly where the snap put it', () => {
+    const drawn = breaksBetweenRows({
+      breaks: [{ ...window([12, 38], [12, 53]), locked: false }],
+      rows: [window([9, 0], [17, 0])],
+      presence: [window([9, 0], [10, 0])],
+    });
+
+    expect(drawn).toEqual([{ ...window([12, 45], [13, 0]), locked: false }]);
+  });
+});
+
 describe('breaksBetweenRows', () => {
   it('draws the break as the gap between the rows around it, not as it was measured', () => {
     const drawn = breaksBetweenRows({

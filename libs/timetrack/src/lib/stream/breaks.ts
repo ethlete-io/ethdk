@@ -215,6 +215,35 @@ const snapped = (window: BreakWindow, incrementMs: number): BreakWindow => {
 };
 
 /**
+ * A break with the stretches a call held taken out of it, on the increment the rows sit on.
+ *
+ * The clip runs after the snap because the snap is what creates the overlap: a break measured to
+ * 12:52 and a call measured to 12:52 are drawn to 13:00 and 12:45, and only then do they cross. What
+ * a clip leaves rounds **inward**, away from the call, so a refusal never hands a minute back. A
+ * remainder shorter than one increment is nothing the reviewer can act on, so it is dropped.
+ */
+const clippedToPresence = (options: {
+  breaks: readonly BreakWindow[];
+  presence: readonly TimeWindow[];
+  incrementMs: number;
+}): BreakWindow[] => {
+  if (!options.presence.length) return [...options.breaks];
+
+  const { incrementMs } = options;
+
+  return options.breaks.flatMap((window) =>
+    subtractWindows({ windows: [window], without: options.presence }).flatMap((part) => {
+      const from = Math.ceil(part.from.getTime() / incrementMs) * incrementMs;
+      const to = Math.floor(part.to.getTime() / incrementMs) * incrementMs;
+
+      if (to - from < incrementMs) return [];
+
+      return [{ from: new Date(from), to: new Date(to), locked: window.locked }];
+    }),
+  );
+};
+
+/**
  * The day's breaks as the rows leave them, on the increment the rows are snapped to.
  *
  * A measured break runs from the last sample of presence to the next, so it lands on the minute the
@@ -235,6 +264,8 @@ export const breaksBetweenRows = (options: {
   rows: readonly TimeWindow[];
   /** The increment the rows were snapped to. A break off that grid is drawn beside rows it cannot line up with. */
   round?: Partial<RoundOptions>;
+  /** The stretches a call held that count as presence. A break may not cover one — see ADR 0030. */
+  presence?: readonly TimeWindow[];
 }): BreakWindow[] => {
   const covered = mergeWindows(options.rows);
   const first = covered[0];
@@ -247,7 +278,7 @@ export const breaksBetweenRows = (options: {
   const gaps = subtractWindows({ windows: [span], without: covered });
   const inGap = (window: BreakWindow) => gaps.some((gap) => windowsOverlap(gap, window));
 
-  return [
+  const drawn = [
     ...gaps.flatMap((gap) => {
       const held = options.breaks.filter((window) => windowsOverlap(gap, window));
 
@@ -256,5 +287,9 @@ export const breaksBetweenRows = (options: {
     ...options.breaks
       .filter((window) => !inGap(window) && windowsOverlap(span, window))
       .map((window) => snapped(window, incrementMs)),
-  ].sort((a, b) => a.from.getTime() - b.from.getTime());
+  ];
+
+  return clippedToPresence({ breaks: drawn, presence: options.presence ?? [], incrementMs }).sort(
+    (a, b) => a.from.getTime() - b.from.getTime(),
+  );
 };
