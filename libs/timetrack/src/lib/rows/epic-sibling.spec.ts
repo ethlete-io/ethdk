@@ -1,7 +1,11 @@
 import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
+import { AttributionRule } from '../model/attribution';
+import { ActivityBlock, streamKey } from '../model/block';
 import { TimetrackProjectLink } from '../model/project-link';
-import { EpicOptions, EpicSibling, branchSlugOf, epicSiblingFor } from './epic-sibling';
+import { WorklogProposal } from '../model/proposal';
+import { EpicOptions, EpicSibling, branchSlugOf, epicQuestionOf, epicSiblingFor } from './epic-sibling';
+import { WorkGroup } from './merge';
 
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['ABC'] });
 
@@ -127,5 +131,97 @@ describe('epicSiblingFor', () => {
 
   it('answers nothing on a protected branch', () => {
     expect(resolve({ context: { ...CONTEXT, branch: 'main' } })).toBeUndefined();
+  });
+});
+
+const block = (repoPath: string, branch: string): ActivityBlock => ({
+  from: new Date('2026-08-12T09:00:00Z'),
+  to: new Date('2026-08-12T10:00:00Z'),
+  context: { repoPath, branch },
+  evidence: [],
+});
+
+const group = (blocks: ActivityBlock[]): WorkGroup => ({
+  from: blocks[0]?.from ?? new Date(0),
+  to: blocks[blocks.length - 1]?.to ?? new Date(0),
+  blocks,
+  observedMs: 3_600_000,
+  confidence: 'weak',
+  evidence: [],
+});
+
+const proposal = (repoPath: string, issueKey: string) =>
+  ({ id: `p-${issueKey}`, issueKey, laneKey: streamKey({ repoPath }) }) as WorklogProposal;
+
+const rule = (repoPath: string, branch: string, issueKey: string): AttributionRule => ({
+  id: `rule-${issueKey}`,
+  repoPath,
+  branch,
+  target: { kind: 'issue', issueKey },
+  author: 'user',
+  createdAt: new Date('2026-01-01T00:00:00Z'),
+});
+
+const FRONTEND_BLOCK = block('/dev/frontend', 'feature/20260819_bracket-challenge');
+const SPECS_BLOCK = block('/dev/specs', 'spec/20260819_bracket-challenge');
+
+const ask = (options: {
+  blocks?: ActivityBlock[];
+  unattributed?: WorkGroup[];
+  proposals?: WorklogProposal[];
+  rules?: AttributionRule[];
+}) =>
+  epicQuestionOf({
+    blocks: options.blocks ?? [FRONTEND_BLOCK, SPECS_BLOCK],
+    unattributed: options.unattributed ?? [group([FRONTEND_BLOCK])],
+    proposals: options.proposals ?? [],
+    rules: options.rules ?? [],
+    config: CONFIG,
+  });
+
+describe('epicQuestionOf', () => {
+  it('asks nothing when the day left no checkout unnamed', () => {
+    expect(
+      ask({ unattributed: [], rules: [rule('/dev/specs', SPECS_BLOCK.context.branch ?? '', 'ABC-12623')] }),
+    ).toEqual({ candidates: [], claimed: [] });
+  });
+
+  it('asks nothing when no named checkout shares an unnamed slug', () => {
+    const elsewhere = rule('/dev/other', 'feature/invoice-export', 'ABC-99');
+
+    expect(ask({ rules: [elsewhere] }).candidates).toEqual([]);
+  });
+
+  it('takes the sibling a rule names, with the branch the rule was written for', () => {
+    const question = ask({ rules: [rule('/dev/specs', 'spec/20260819_bracket-challenge', 'ABC-12623')] });
+
+    expect(question.candidates).toEqual([
+      { repoPath: '/dev/specs', branch: 'spec/20260819_bracket-challenge', issueKey: 'ABC-12623' },
+    ]);
+  });
+
+  it("takes the sibling the day itself named, reading its branch back from the day's blocks", () => {
+    const question = ask({ proposals: [proposal('/dev/specs', 'ABC-12623')] });
+
+    expect(question.candidates).toEqual([
+      { repoPath: '/dev/specs', branch: 'spec/20260819_bracket-challenge', issueKey: 'ABC-12623' },
+    ]);
+  });
+
+  it('claims every key a row books and every key a rule names', () => {
+    const question = ask({
+      proposals: [proposal('/dev/specs', 'ABC-12623'), proposal('/dev/other', 'ABC-77')],
+      rules: [rule('/dev/specs', 'spec/20260819_bracket-challenge', 'ABC-12623'), rule('/dev/third', 'next', 'ABC-88')],
+    });
+
+    expect([...question.claimed].sort()).toEqual(['ABC-12623', 'ABC-77', 'ABC-88']);
+  });
+
+  it('asks nothing for an unnamed checkout on a branch the slug rule refuses', () => {
+    const protectedBlock = block('/dev/frontend', 'next');
+
+    expect(ask({ blocks: [protectedBlock, SPECS_BLOCK], unattributed: [group([protectedBlock])] }).candidates).toEqual(
+      [],
+    );
   });
 });

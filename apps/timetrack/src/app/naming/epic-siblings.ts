@@ -2,19 +2,15 @@ import { computed, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
-  ActivityBlock,
-  AttributionRule,
   EpicOptions,
+  EpicQuestion,
   EpicSibling,
   TimetrackSettings,
-  WorklogProposal,
-  branchSlugOf,
+  epicQuestionOf,
   fetchJiraIssueChildren$,
   fetchJiraIssues$,
   gitFlowConfigFor,
-  issueKeyOf,
   readJiraCredentials$,
-  streamKeyRepoPath,
 } from '@ethlete/timetrack';
 import { Observable, catchError, distinctUntilChanged, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { injectGitCollector } from '../../collectors';
@@ -32,14 +28,6 @@ const NOTHING: EpicOptions = { siblings: [], claimed: [] };
  */
 export type EpicSiblingsState = { state: 'idle' } | { state: 'loading' } | { state: 'ready'; options: EpicOptions };
 
-/** One checkout's naming, before Jira has been asked what it hangs under. */
-type EpicCandidate = { repoPath: string; branch: string; issueKey: string };
-
-/** What the day asks Jira. Empty when the day left nothing unnamed, and then no call is made. */
-type EpicQuestion = { candidates: EpicCandidate[]; claimed: string[] };
-
-const NO_QUESTION: EpicQuestion = { candidates: [], claimed: [] };
-
 /**
  * Two questions are the same question when the same checkouts book the same keys and the same keys
  * are spoken for. The day read emits on every collected event, and without this each one would spend
@@ -50,112 +38,6 @@ const questionKey = (question: EpicQuestion) =>
     question.candidates.map((candidate) => [candidate.repoPath, candidate.branch, candidate.issueKey]).sort(),
     [...question.claimed].sort(),
   ]);
-
-/** Every branch each checkout was seen on during the day, which is where a proposal's branch comes from. */
-const branchesByRepo = (blocks: readonly ActivityBlock[]) => {
-  const found = new Map<string, Set<string>>();
-
-  for (const block of blocks) {
-    const { repoPath, branch } = block.context;
-
-    if (!repoPath || !branch) continue;
-
-    const branches = found.get(repoPath) ?? new Set<string>();
-
-    branches.add(branch);
-    found.set(repoPath, branches);
-  }
-
-  return found;
-};
-
-const candidatesFromRules = (options: {
-  rules: readonly AttributionRule[];
-  slugs: ReadonlySet<string>;
-  settings: TimetrackSettings;
-}) => {
-  const config = gitFlowConfigFor(options.settings);
-
-  return options.rules.flatMap((rule): EpicCandidate[] => {
-    const issueKey = issueKeyOf(rule);
-
-    if (!rule.repoPath || !rule.branch || !issueKey) return [];
-
-    const slug = branchSlugOf({ branch: rule.branch, config });
-
-    return slug && options.slugs.has(slug) ? [{ repoPath: rule.repoPath, branch: rule.branch, issueKey }] : [];
-  });
-};
-
-const candidatesFromDay = (options: {
-  proposals: readonly WorklogProposal[];
-  blocks: readonly ActivityBlock[];
-  slugs: ReadonlySet<string>;
-  settings: TimetrackSettings;
-}) => {
-  const config = gitFlowConfigFor(options.settings);
-  const branches = branchesByRepo(options.blocks);
-
-  return options.proposals.flatMap((proposal): EpicCandidate[] => {
-    const repoPath = proposal.laneKey ? streamKeyRepoPath(proposal.laneKey) : undefined;
-
-    if (!repoPath || !proposal.issueKey) return [];
-
-    return [...(branches.get(repoPath) ?? [])].flatMap((branch) => {
-      const slug = branchSlugOf({ branch, config });
-
-      return slug && options.slugs.has(slug) ? [{ repoPath, branch, issueKey: proposal.issueKey }] : [];
-    });
-  });
-};
-
-/**
- * What the day's first pass leaves for the epic rung to answer, narrowed before anything is fetched.
- *
- * The slugs of the blocks nothing named come first, and a day with none of them asks nothing at all —
- * the rung can only ever speak about a checkout that is still unnamed, so a fully named day must not
- * cost a Jira call. See ADR 0029.
- */
-const questionOf = (options: {
-  blocks: readonly ActivityBlock[];
-  unattributed: readonly { blocks: readonly ActivityBlock[] }[];
-  proposals: readonly WorklogProposal[];
-  settings: TimetrackSettings;
-}): EpicQuestion => {
-  const config = gitFlowConfigFor(options.settings);
-  const slugs = new Set<string>();
-
-  for (const group of options.unattributed) {
-    for (const block of group.blocks) {
-      const { repoPath, branch } = block.context;
-
-      if (!repoPath || !branch) continue;
-
-      const slug = branchSlugOf({ branch, config });
-
-      if (slug) slugs.add(slug);
-    }
-  }
-
-  if (!slugs.size) return NO_QUESTION;
-
-  const rules = options.settings.attributionRules;
-  const candidates = [
-    ...candidatesFromRules({ rules, slugs, settings: options.settings }),
-    ...candidatesFromDay({ proposals: options.proposals, blocks: options.blocks, slugs, settings: options.settings }),
-  ];
-
-  if (!candidates.length) return NO_QUESTION;
-
-  const claimed = [
-    ...new Set([
-      ...options.proposals.map((proposal) => proposal.issueKey).filter(Boolean),
-      ...rules.flatMap((rule) => issueKeyOf(rule) ?? []),
-    ]),
-  ];
-
-  return { candidates, claimed };
-};
 
 /**
  * The three reads behind one question: what each named checkout hangs under, what type that parent is,
@@ -264,11 +146,12 @@ const EPIC_SIBLINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
               day: current.day,
             }).pipe(
               map((day) =>
-                questionOf({
+                epicQuestionOf({
                   blocks: day.day.blocks,
                   unattributed: day.day.rows.unattributed,
                   proposals: day.day.rows.proposals,
-                  settings: current.settings,
+                  rules: current.settings.attributionRules,
+                  config: gitFlowConfigFor(current.settings),
                 }),
               ),
               distinctUntilChanged((a, b) => questionKey(a) === questionKey(b)),
