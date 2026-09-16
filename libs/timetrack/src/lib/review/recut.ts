@@ -80,6 +80,15 @@ const pieceOf = (options: { row: ReviewedRow; span: Span; at: number }): Reviewe
 };
 
 /**
+ * Whether the day was told this band is not work, so it claims none of a background row's minutes.
+ *
+ * A row nobody has answered yet still claims them: the test is what the band is, never whether a sync
+ * writes it. Naming an excluded call is the user overruling the rule, and from then on it claims like
+ * any other row - the same reading as `colorTokenOf` on the day screen. See ADR 0024.
+ */
+const takesNothing = (row: ReviewedRow) => (!!row.excluded && !row.issueKey) || row.state === 'rejected';
+
+/**
  * Cuts the day's background rows against the rows the reviewer ended up with, and reports what they
  * lost as bands drawn behind them.
  *
@@ -107,7 +116,7 @@ export const recutReviewedRows = (options: {
     return { rows: [...options.rows], behind: [...options.behind] };
   }
 
-  const covered = options.rows.filter((row) => !isBackground(row));
+  const covered = options.rows.filter((row) => !isBackground(row) && !takesNothing(row));
   const rows: ReviewedRow[] = [];
   const lost: BehindStretch[] = [];
 

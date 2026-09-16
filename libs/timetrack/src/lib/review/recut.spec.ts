@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { WorklogProposalState } from '../model/proposal';
 import { BehindStretch } from '../rows/cut';
 import { ReviewedRow } from './model';
 import { recutReviewedRows } from './recut';
@@ -6,7 +7,15 @@ import { recutReviewedRows } from './recut';
 const at = (time: string) => new Date(`2026-08-11T${time}:00Z`);
 const SDK = 'repo:/dev/sdk';
 
-const row = (options: { issueKey?: string; from: string; to: string; laneKey?: string }): ReviewedRow => ({
+const row = (options: {
+  issueKey?: string;
+  from: string;
+  to: string;
+  laneKey?: string;
+  state?: WorklogProposalState;
+  excluded?: boolean;
+  unattended?: boolean;
+}): ReviewedRow => ({
   id: `${options.issueKey ?? 'unnamed'}@${options.from}`,
   issueKey: options.issueKey,
   from: at(options.from),
@@ -17,7 +26,9 @@ const row = (options: { issueKey?: string; from: string; to: string; laneKey?: s
   description: '',
   confidence: 'certain',
   evidence: [],
-  state: 'suggested',
+  state: options.state ?? 'suggested',
+  excluded: options.excluded,
+  unattended: options.unattended,
   edited: false,
   hidden: false,
 });
@@ -162,6 +173,78 @@ describe('recutReviewedRows', () => {
       '15:00-15:30',
       '16:00-17:00',
     ]);
+  });
+
+  it('leaves the background row whole under a call a rule excluded, which books nothing', () => {
+    const result = recut({
+      rows: [
+        row({ from: '13:45', to: '14:15', excluded: true }),
+        row({ issueKey: 'ET-772', from: '13:00', to: '16:00' }),
+      ],
+    });
+
+    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual(['13:00-16:00']);
+    expect(result.behind).toEqual([]);
+  });
+
+  it('gives the minutes up to an excluded call the user named, because naming it overrules the rule', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'FIFAGG-1', from: '13:45', to: '14:15', excluded: true }),
+        row({ issueKey: 'ET-772', from: '13:00', to: '16:00' }),
+      ],
+    });
+
+    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual(['13:00-13:45', '14:15-16:00']);
+    expect(spans(result.behind)).toEqual(['13:45-14:15']);
+  });
+
+  it('leaves the background row whole under a row the reviewer rejected', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'FIFAGG-1', from: '13:45', to: '14:15', state: 'rejected' }),
+        row({ issueKey: 'ET-772', from: '13:00', to: '16:00' }),
+      ],
+    });
+
+    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual(['13:00-16:00']);
+    expect(result.behind).toEqual([]);
+  });
+
+  it('gives the minutes up to a suggested row, which no sync writes either and is work nobody answered', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'FIFAGG-1', from: '13:45', to: '14:15', state: 'suggested' }),
+        row({ issueKey: 'ET-772', from: '13:00', to: '16:00' }),
+      ],
+    });
+
+    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual(['13:00-13:45', '14:15-16:00']);
+    expect(spans(result.behind)).toEqual(['13:45-14:15']);
+  });
+
+  it('gives the minutes up to a band nobody was at, because an agent really did work them', () => {
+    const result = recut({
+      rows: [
+        row({ from: '13:45', to: '14:15', unattended: true }),
+        row({ issueKey: 'ET-772', from: '13:00', to: '16:00' }),
+      ],
+    });
+
+    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual(['13:00-13:45', '14:15-16:00']);
+    expect(spans(result.behind)).toEqual(['13:45-14:15']);
+  });
+
+  it('takes no snapped minute either, where an excluded call was drawn out to the whole quarter hour', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'ET-772', from: '10:45', to: '12:00' }),
+        row({ from: '11:45', to: '12:00', excluded: true }),
+      ],
+    });
+
+    expect(spans(result.rows.filter((entry) => entry.issueKey === 'ET-772'))).toEqual(['10:45-12:00']);
+    expect(result.behind).toEqual([]);
   });
 
   it('leaves a row no foreground row touches exactly as it was', () => {
