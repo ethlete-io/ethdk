@@ -86,3 +86,143 @@ export const DAY: Band[] = [
     detail: 'Open Room #1 · Discord',
   },
 ];
+
+/** An all-day story: the parent of the rows under it, drawn in the strip above the axis. */
+export type DayStory = {
+  id: string;
+  title: string;
+  rows: number;
+};
+
+/** One checkout's column of the day, as the app draws it: a key, a label and the bands in it. */
+export type DayLaneFixture = {
+  key: string;
+  label: string;
+  /** The break lane carries no ticket and no gesture, so it stays narrow. */
+  narrow?: boolean;
+  bands: Band[];
+};
+
+/**
+ * A full day, with the four lanes the app really draws, two overlaps inside one lane, and the
+ * all-day strip. This is what a treatment has to survive before it can go into the app.
+ */
+export const FULL_DAY_STORIES: DayStory[] = [
+  { id: 's1', title: 'ET-772 · Fire the context warning from three places', rows: 6 },
+  { id: 's2', title: 'FUT-2210 · The journey ticket', rows: 3 },
+];
+
+export const FULL_DAY_LANES: DayLaneFixture[] = [
+  {
+    key: 'lane:break',
+    label: 'Break',
+    narrow: true,
+    bands: [
+      { id: 'br1', kind: 'break', ask: 'nothing', from: '12:15', minutes: 45, label: 'Break' },
+      { id: 'br2', kind: 'break', ask: 'nothing', from: '15:30', minutes: 15, label: 'Break' },
+    ],
+  },
+  {
+    key: 'lane:ethlete-sdk',
+    label: 'ethlete-sdk',
+    bands: [
+      {
+        id: 'e1',
+        kind: 'work',
+        ask: 'nothing',
+        from: '08:45',
+        minutes: 45,
+        label: 'ET-772',
+        detail: 'feat(agent-rules): Fire the context warning',
+      },
+      {
+        id: 'e1b',
+        kind: 'work',
+        ask: 'nothing',
+        from: '09:30',
+        minutes: 30,
+        label: 'ET-772',
+        detail: 'test(agent-rules): Cover the three call sites',
+      },
+      {
+        id: 'e2',
+        kind: 'work',
+        ask: 'a glance',
+        from: '10:00',
+        minutes: 45,
+        label: 'ET-772',
+        detail: 'fix(repo): Cut the inlay instead of breaking it',
+      },
+      {
+        id: 'e3',
+        kind: 'work',
+        ask: 'nothing',
+        from: '10:45',
+        minutes: 90,
+        label: 'ET-772',
+        detail: 'feat(repo): Pick Inlay as the band direction',
+      },
+      {
+        id: 'e4',
+        kind: 'work',
+        ask: 'an answer',
+        from: '13:00',
+        minutes: 90,
+        label: 'Not yet named',
+        detail: 'chore(repo): Keep prettier off the exports',
+      },
+      {
+        id: 'e5',
+        kind: 'work',
+        ask: 'a glance',
+        from: '13:30',
+        minutes: 60,
+        label: 'ET-780',
+        detail: 'fix(query): Drop the stale token',
+      },
+      { id: 'e6', kind: 'background', ask: 'nothing', from: '14:30', minutes: 60, label: 'in the background' },
+    ],
+  },
+  {
+    key: 'lane:fut-frontend',
+    label: 'fut-frontend',
+    bands: [
+      {
+        id: 'f1',
+        kind: 'work',
+        ask: 'a ticket',
+        from: '09:15',
+        minutes: 60,
+        label: 'Toty public fixes',
+        detail: 'fix(toty-public): Correct the showcase layout',
+      },
+      {
+        id: 'f2',
+        kind: 'work',
+        ask: 'an answer',
+        from: '15:45',
+        minutes: 105,
+        label: 'Not yet named',
+        detail: 'feat(platform): Auto size the player item name',
+      },
+      { id: 'f3', kind: 'background', ask: 'nothing', from: '11:00', minutes: 45, label: 'in the background' },
+    ],
+  },
+  {
+    key: 'lane:calls',
+    label: 'Calls & meetings',
+    bands: [
+      { id: 'c1', kind: 'work', ask: 'nothing', from: '09:00', minutes: 15, label: 'Daily' },
+      {
+        id: 'c2',
+        kind: 'work',
+        ask: 'a glance',
+        from: '14:00',
+        minutes: 60,
+        label: 'Open Room #1',
+        detail: 'Discord · four people',
+      },
+      { id: 'c3', kind: 'work', ask: 'nothing', from: '17:00', minutes: 45, label: 'Not counted', detail: 'Discord' },
+    ],
+  },
+];

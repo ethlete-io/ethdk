@@ -53,9 +53,31 @@ If a thing can appear twenty times on one screen, it gets no ornament.
   band drops `from` because the grid already says where it sits.
 - The break band lost its label at short heights. Same fix.
 
+## The full day, and what it changed
+
+Decided 2026-09-16, from `Kerbe/Full day` on the same Storybook. The story draws the app's
+own geometry at the real window size, 1100x760: the four lanes, the narrow break lane, the
+all-day strip, two bands that overlap inside one lane, and background stretches.
+
+Inlay holds a full day. Three defects came out of it, all fixed in
+`apps/timetrack/src/design/kerbe-band.component.ts`:
+
+- **A run of touching bands read as one slab.** Four bands that meet in one lane share one
+  plate tone, and the metal cannot separate them, because the metal already says what each
+  band asks. The plate now carries a lit top edge, `1px solid rgb(255 255 255 / 0.09)`.
+  That is the plate's own construction and not a gesture, so it adds no meaning.
+- **A 15m band clipped its label.** A band under 2.6rem now drops to one tight row, with no
+  block padding and a 1.15rem label.
+- **The break lane lost its label.** In a lane 6rem wide, "Break" and "45m" do not both fit.
+  A container query drops the duration under 10rem. The grid already says how long the band
+  is; the label is what the reader needs.
+
+The overlap case needs no new gesture. Two bands that share a minute each take half the
+lane, exactly as `day-review/lanes.ts` packs them, and the metal strip stays on the left
+edge of each half.
+
 ## Open
 
-- Inlay against a full day: four project columns, overlapping bands, the all-day strip.
 - The palette is still only in `src/design/kerbe.ts`. It is not registered as an app theme.
 - Fonts load from Google in `preview-head.html`. The shipped Tauri app must self-host them.
 - Hover, focus, press, drag and the marked-for-merge state are all undrawn.

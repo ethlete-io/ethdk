@@ -5,12 +5,16 @@ const HOUR_REM = 8;
 const DETAIL_MIN_REM = 5.2;
 const TIME_MIN_REM = 2.2;
 
+/** Under this height a band cannot hold a padded line, so it drops to one tight row. */
+const COMPACT_MAX_REM = 2.6;
+
 @Component({
   selector: 'ethlete-design-kerbe-band',
   template: `
     <div
       [style.height.rem]="heightRem()"
       [attr.data-ask]="band().ask"
+      [attr.data-compact]="compact() || null"
       [attr.data-kind]="band().kind"
       [attr.data-treatment]="treatment()"
       class="band"
@@ -34,6 +38,11 @@ const TIME_MIN_REM = 2.2;
   `,
   encapsulation: ViewEncapsulation.None,
   styles: `
+    ethlete-design-kerbe-band {
+      display: block;
+      container-type: inline-size;
+    }
+
     .band {
       position: relative;
       display: flex;
@@ -69,6 +78,10 @@ const TIME_MIN_REM = 2.2;
       --k-metal-soft: rgb(140 134 118 / 0.12);
     }
 
+    .band[data-compact] {
+      padding-block: 0;
+    }
+
     .band__head {
       display: flex;
       align-items: baseline;
@@ -92,6 +105,19 @@ const TIME_MIN_REM = 2.2;
     .band[data-kind='break'] .band__label,
     .band[data-ask='nothing'] .band__label {
       color: var(--k-ink-2);
+    }
+
+    .band[data-compact] .band__label {
+      font-size: 1.15rem;
+      line-height: 1.45;
+    }
+
+    /* A lane as narrow as the break column cannot hold a label and a duration. The grid already says
+       how long the band is, so the duration is what goes. */
+    @container (max-width: 10rem) {
+      .band__time {
+        display: none;
+      }
     }
 
     .band__time {
@@ -220,10 +246,17 @@ const TIME_MIN_REM = 2.2;
     .band[data-treatment='inlay'] {
       padding: 0.7rem 0.9rem 0.7rem 1.3rem;
       background: var(--k-panel);
+      /* Two touching plates of the same tone read as one slab, and the metal cannot separate them
+         because the metal already says what the band asks. The plate's own lit edge does it. */
+      border-top: 1px solid rgb(255 255 255 / 0.09);
     }
 
     .band[data-treatment='inlay'][data-kind='break'] {
       background: transparent;
+    }
+
+    .band[data-treatment='inlay'][data-kind='background'] {
+      background: repeating-linear-gradient(135deg, transparent 0 6px, rgb(140 134 118 / 0.1) 6px 7px);
     }
 
     .band[data-treatment='inlay'] .band__notch {
@@ -233,6 +266,10 @@ const TIME_MIN_REM = 2.2;
       height: 1.6rem;
       opacity: 1;
       background: var(--k-metal);
+    }
+
+    .band[data-treatment='inlay'][data-compact] .band__notch {
+      height: 0.9rem;
     }
 
     .band[data-treatment='inlay']:not([data-ask='nothing']) .band__notch {
@@ -246,6 +283,7 @@ export class KerbeBandComponent {
   public treatment = input.required<BandTreatment>();
 
   protected heightRem = computed(() => (this.band().minutes / 60) * HOUR_REM);
+  protected compact = computed(() => this.heightRem() < COMPACT_MAX_REM);
   protected showsDetail = computed(() => this.heightRem() >= DETAIL_MIN_REM);
   protected showsTime = computed(() => this.heightRem() >= TIME_MIN_REM);
 
