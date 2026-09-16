@@ -44,14 +44,42 @@ const withQuery = (url: string, query: JiraQuery | undefined) => {
     : `${url}?${params.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`).join('&')}`;
 };
 
-const messageFor = (options: { status: number; describe: string }) => {
-  const { status, describe } = options;
+/** Long enough for the two or three fields a create call is rejected over, short enough for a banner. */
+const MAX_JIRA_REASON_LENGTH = 300;
 
-  if (status === 401 || status === 403) return `Jira rejected the credentials (${status}) for ${describe}.`;
-  if (status === 404) return `Jira has no ${describe}, or the token cannot see it.`;
-  if (status === 429) return `Jira rate-limited the request for ${describe}.`;
+type JiraErrorBody = {
+  errorMessages?: unknown;
+  errors?: unknown;
+};
 
-  return `Jira responded ${status} for ${describe}.`;
+/**
+ * What Jira says it rejected. A 400 on a create call names the field in `errors`, and that name is
+ * the only part of the answer that says what to change — a bare status leaves the user guessing
+ * which of an instance's required fields this project added.
+ */
+const reasonOf = (body: unknown) => {
+  if (typeof body !== 'object' || body === null) return undefined;
+
+  const { errorMessages, errors } = body as JiraErrorBody;
+  const general = Array.isArray(errorMessages) ? errorMessages.map((entry) => String(entry)) : [];
+  const named =
+    typeof errors === 'object' && errors !== null
+      ? Object.entries(errors as Record<string, unknown>).map(([field, message]) => `${field}: ${String(message)}`)
+      : [];
+  const all = [...general, ...named].filter((entry) => !!entry.trim());
+
+  return all.length ? all.join(' ').slice(0, MAX_JIRA_REASON_LENGTH) : undefined;
+};
+
+const messageFor = (options: { status: number; describe: string; reason?: string }) => {
+  const { status, describe, reason } = options;
+  const suffix = reason ? ` — ${reason}` : '';
+
+  if (status === 401 || status === 403) return `Jira rejected the credentials (${status}) for ${describe}${suffix}.`;
+  if (status === 404) return `Jira has no ${describe}, or the token cannot see it${suffix}.`;
+  if (status === 429) return `Jira rate-limited the request for ${describe}${suffix}.`;
+
+  return `Jira responded ${status} for ${describe}${suffix}.`;
 };
 
 /**
@@ -98,7 +126,7 @@ export const jiraRequest$ = <T>(options: {
           throw new JiraRequestError({
             status: response.status,
             describe,
-            message: messageFor({ status: response.status, describe }),
+            message: messageFor({ status: response.status, describe, reason: reasonOf(response.body) }),
           });
         }
 

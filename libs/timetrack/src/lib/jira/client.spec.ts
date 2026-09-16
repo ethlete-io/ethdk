@@ -142,3 +142,55 @@ describe('jiraRequest$', () => {
     expect(seen).toHaveBeenCalledWith({ ok: true });
   });
 });
+
+describe('what a rejected call says went wrong', () => {
+  const failWith = (status: number, body: unknown) => {
+    const { transport } = transportOf(status, body);
+    const failed = vi.fn();
+
+    jiraRequest$({
+      transport,
+      credentials: CREDENTIALS,
+      path: '/rest/api/3/issue',
+      describe: 'a new Task in FIP',
+    }).subscribe({ error: failed });
+
+    return (failed.mock.calls[0]?.[0] as JiraRequestError).message;
+  };
+
+  it('names the field Jira rejected, which is the only part that says what to change', () => {
+    const message = failWith(400, { errors: { customfield_10011: 'Epic Name is required.' } });
+
+    expect(message).toContain('customfield_10011: Epic Name is required.');
+    expect(message).toContain('a new Task in FIP');
+  });
+
+  it('carries a general message that names no field', () => {
+    expect(failWith(400, { errorMessages: ['Field parent cannot be set.'] })).toContain('Field parent cannot be set.');
+  });
+
+  it('reports both lists, so neither half of the answer is dropped', () => {
+    const message = failWith(400, {
+      errorMessages: ['The issue type is not valid.'],
+      errors: { summary: 'Summary is required.' },
+    });
+
+    expect(message).toContain('The issue type is not valid.');
+    expect(message).toContain('summary: Summary is required.');
+  });
+
+  it('stays a bare status where Jira sent no reason', () => {
+    expect(failWith(400, {})).toBe('Jira responded 400 for a new Task in FIP.');
+    expect(failWith(400, { errors: {}, errorMessages: [] })).toBe('Jira responded 400 for a new Task in FIP.');
+  });
+
+  it('cuts a long answer, so one rejection cannot fill the banner', () => {
+    expect(failWith(400, { errorMessages: ['x'.repeat(900)] }).length).toBeLessThan(400);
+  });
+
+  it('adds the reason to a rejection the status alone already explains', () => {
+    expect(failWith(403, { errorMessages: ['You do not have permission to create issues.'] })).toContain(
+      'You do not have permission to create issues.',
+    );
+  });
+});
