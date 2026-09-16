@@ -19,6 +19,7 @@ import {
   matchInferredAttribution,
 } from '../model/attribution';
 import { StandIn, findStandIn } from '../model/stand-in';
+import { EpicOptions, epicSiblingFor } from './epic-sibling';
 
 export type AttributedBlock = {
   block: ActivityBlock;
@@ -91,6 +92,12 @@ export type AttributeOptions = {
    * branch grammar, a rule the user wrote, or a merge request that was actually observed.
    */
   inferred?: readonly InferredAttribution[];
+  /**
+   * What the checkouts sharing a branch slug with this one already book, and the children of the
+   * parents those issues hang under. Pre-fetched by the caller from the day's first pass, which is
+   * why a day is read twice: the first read leaves this empty and the rung inert. See ADR 0029.
+   */
+  epics?: EpicOptions;
 };
 
 /**
@@ -211,9 +218,9 @@ const standInAttribution = (options: {
  * Scores one block against the attribution ladder. A private link is read first and answers on its
  * own: it is the user saying the time is not work, and a rung that could overrule it would make the
  * statement worthless. Everything else follows in order — branch grammar, a branch-scoped rule of the
- * user's own, merge request and issue-view activity, a project-wide rule, a recurring Tempo pattern,
- * then a key in a window title, and last of all what the reasoning provider proposed for this exact
- * context. Deterministic down to that final rung: a conforming branch name already states both keys,
+ * user's own, merge request and issue-view activity, a project-wide rule, the issue a sibling checkout
+ * sharing this branch slug points at, a recurring Tempo pattern, then a key in a window title, and last
+ * of all what the reasoning provider proposed for this exact context. Deterministic down to that final rung: a conforming branch name already states both keys,
  * so nothing above it guesses. A block that reaches the end without an `issueKey` is a first-class
  * outcome, not a failure — it is what the provider is offered, and what it leaves behind when it has
  * no answer either.
@@ -268,6 +275,14 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
     match && match.rule.target.kind === 'stand-in'
       ? findStandIn({ id: match.rule.target.standInId, standIns: options.standIns ?? [] })
       : undefined;
+  /**
+   * Read before the two stand-in rungs, though it answers after them. A stand-in exists because Jira
+   * held no ticket for the work, so the day a sibling checkout names the real issue the stand-in has
+   * to step aside — otherwise it would have to be taken back by hand.
+   */
+  const epic = options.epics
+    ? epicSiblingFor({ context: block.context, epics: options.epics, links: options.links ?? [], config })
+    : undefined;
 
   if (block.context.branch) {
     const parsed = resolveBranch({ branch: block.context.branch, config, resolveBase: options.resolveBase });
@@ -295,7 +310,7 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
   if (rule?.scope === 'branch')
     return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'likely' });
 
-  if (standIn && match?.scope === 'branch') return standInAttribution({ block, match, standIn, evidence });
+  if (standIn && !epic && match?.scope === 'branch') return standInAttribution({ block, match, standIn, evidence });
 
   const activity = options.activity?.length ? activityFor({ block, activity: options.activity }) : undefined;
 
@@ -309,7 +324,7 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
 
   if (rule) return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'likely' });
 
-  if (standIn && match) return standInAttribution({ block, match, standIn, evidence });
+  if (standIn && !epic && match) return standInAttribution({ block, match, standIn, evidence });
 
   /**
    * A donating context leaves the ladder here, so that `donateBlocks` still sees it. The rungs below
@@ -318,6 +333,12 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
    * on a browser tab about another tracker is exactly how that goes wrong.
    */
   if (match?.rule.target.kind === 'donate') return { block, confidence: 'weak', evidence };
+
+  if (epic) {
+    evidence.push({ kind: 'sibling-checkout', at: block.from, detail: epic.detail });
+
+    return { block, issueKey: epic.issueKey, storyKey: epic.parentKey, confidence: 'likely', evidence };
+  }
 
   const pattern = options.patterns?.length ? patternAt({ patterns: options.patterns, at: block.from }) : undefined;
 

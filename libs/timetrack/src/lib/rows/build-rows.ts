@@ -37,6 +37,8 @@ export type BuildRowsOptions = {
    * Passing none is the deterministic day, and is what the provider's input is read from.
    */
   inferred?: AttributeOptions['inferred'];
+  /** What the checkouts sharing a branch slug already book, from a first read of this same day. */
+  epics?: AttributeOptions['epics'];
   /** How far a donating repository's time looks for the work it was done for. */
   donate?: Partial<DonateOptions>;
   /** Which projects run behind the day, and the focus that ranks two of them — see `cutBackground`. */
@@ -157,6 +159,7 @@ export const buildRows = (
       standIns: options.standIns,
       links: options.links,
       inferred: options.inferred,
+      epics: options.epics,
     }),
   );
   // Private blocks leave before donation rather than after proposal: a repository the user took out

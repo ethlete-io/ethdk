@@ -5,6 +5,7 @@ export * from './calls';
 export * from './cut';
 export * from './describe';
 export * from './donate';
+export * from './epic-sibling';
 export * from './fill';
 export * from './lane';
 export * from './meetings';

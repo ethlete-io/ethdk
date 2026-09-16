@@ -512,3 +512,109 @@ describe('attribute', () => {
     });
   });
 });
+
+describe('attribute — the sibling-checkout rung', () => {
+  const epicLink = (path: string, projectKey: string): TimetrackProjectLink => ({
+    id: `link-${path}`,
+    path,
+    target: { kind: 'project', projectKey },
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+  });
+
+  const EPIC_LINKS = [epicLink('/dev/specs', 'ABC'), epicLink('/dev/frontend', 'ABC')];
+
+  const EPICS = {
+    siblings: [
+      {
+        repoPath: '/dev/specs',
+        branch: 'spec/20260819_bracket-challenge',
+        issueKey: 'ABC-12623',
+        parentKey: 'ABC-12605',
+        parentType: 'Epic',
+        siblingKeys: ['ABC-12623', 'ABC-12624'],
+        truncated: false,
+      },
+    ],
+    claimed: ['ABC-12623'],
+  };
+
+  const EPIC_BLOCK = block({ repoPath: '/dev/frontend', branch: 'feature/20260819_bracket-challenge' });
+
+  it('names the block from the one free child of the sibling parent', () => {
+    const result = attribute({ block: EPIC_BLOCK, config: CONFIG, links: EPIC_LINKS, epics: EPICS });
+
+    expect(result.issueKey).toBe('ABC-12624');
+    expect(result.storyKey).toBe('ABC-12605');
+    expect(result.confidence).toBe('likely');
+    expect(result.evidence.at(-1)?.kind).toBe('sibling-checkout');
+  });
+
+  it('loses to a merge request opened for this very branch', () => {
+    const result = attribute({
+      block: EPIC_BLOCK,
+      config: CONFIG,
+      links: EPIC_LINKS,
+      epics: EPICS,
+      activity: [mergeRequest({ issueKey: 'ABC-4040', branch: 'feature/20260819_bracket-challenge' })],
+    });
+
+    expect(result.issueKey).toBe('ABC-4040');
+  });
+
+  it('beats a recurring Tempo pattern', () => {
+    const result = attribute({
+      block: localBlock({ repoPath: '/dev/frontend', branch: 'feature/20260819_bracket-challenge' }),
+      config: CONFIG,
+      links: EPIC_LINKS,
+      epics: EPICS,
+      patterns: [{ ...TUESDAY_PATTERN, fromMinute: 9 * 60, toMinute: 12 * 60 }],
+    });
+
+    expect(result.issueKey).toBe('ABC-12624');
+  });
+
+  it('takes a stand-in rule out of the way, because the real ticket now exists', () => {
+    const standIn: StandIn = {
+      id: 'stand-in:1:frontend',
+      name: 'the bracket challenge',
+      createdAt: new Date('2026-08-01T00:00:00Z'),
+      state: 'open',
+      author: 'user',
+      days: [],
+    };
+    const rule: AttributionRule = {
+      id: 'repo:/dev/frontend#1',
+      repoPath: '/dev/frontend',
+      target: { kind: 'stand-in', standInId: standIn.id },
+      author: 'user',
+      createdAt: new Date('2026-08-01T00:00:00Z'),
+    };
+    const options = { config: CONFIG, links: EPIC_LINKS, rules: [rule], standIns: [standIn] };
+
+    expect(attribute({ block: EPIC_BLOCK, ...options }).standInId).toBe(standIn.id);
+
+    const named = attribute({ block: EPIC_BLOCK, ...options, epics: EPICS });
+
+    expect(named.issueKey).toBe('ABC-12624');
+    expect(named.standInId).toBeUndefined();
+  });
+
+  it('loses to a rule of the user own naming a real issue', () => {
+    const rule: AttributionRule = {
+      id: 'repo:/dev/frontend#2',
+      repoPath: '/dev/frontend',
+      target: { kind: 'issue', issueKey: 'ABC-5050' },
+      author: 'user',
+      createdAt: new Date('2026-08-01T00:00:00Z'),
+    };
+    const result = attribute({
+      block: EPIC_BLOCK,
+      config: CONFIG,
+      links: EPIC_LINKS,
+      rules: [rule],
+      epics: EPICS,
+    });
+
+    expect(result.issueKey).toBe('ABC-5050');
+  });
+});
