@@ -25,7 +25,14 @@ import {
   countDescendants,
 } from '@ethlete/components';
 import { DragGestureEvent, ProvideColorDirective, dragGestureFrom } from '@ethlete/core';
-import { BehindStretch, BreakWindow, DEFAULT_ROUND_OPTIONS, ReviewedRow, formatDurationMs } from '@ethlete/timetrack';
+import {
+  BehindStretch,
+  BreakWindow,
+  DEFAULT_ROUND_OPTIONS,
+  ReviewedRow,
+  TimeWindow,
+  formatDurationMs,
+} from '@ethlete/timetrack';
 import { tap } from 'rxjs';
 import { formatClockTime } from './format';
 import { BREAK_LANE_KEY, BreakBand, DayLane, NO_LANE_KEY, lanesOf, laneKeyOfRow } from './lanes';
@@ -247,18 +254,21 @@ type RowDrag = {
                   }
 
                   @for (band of lane.breaks; track band.window.from) {
-                    <div
+                    <button
                       [style.top.%]="band.offset"
                       [style.height.%]="band.span"
                       [title]="breakTitle(band)"
                       [attr.data-compact]="compact(band.span) || null"
-                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-interaction px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
+                      (click)="breakClear.emit(band.window)"
+                      (pointerdown)="$event.stopPropagation()"
+                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-interaction px-2 py-1 text-left text-small text-et-surface-muted hover:border-et-surface-border-strong hover:text-et-surface-ink data-[compact]:py-0 data-[compact]:leading-none"
                       data-break
+                      type="button"
                     >
                       @if (labelled(band.span)) {
                         <span class="block truncate">{{ breakLabel(band) }}</span>
                       }
-                    </div>
+                    </button>
                   }
 
                   @for (band of lane.behind; track band.stretch.from) {
@@ -429,6 +439,12 @@ export class DayTimelineComponent {
   public boundaryMove = output<BoundaryMove>();
   /** Where a row was dragged to, whole or by one end. */
   public rowReschedule = output<RowReschedule>();
+
+  /** A break the reviewer pressed, which says they were at the machine for the stretch it covered. */
+  public breakClear = output<TimeWindow>();
+
+  /** A range the reviewer drew in the break lane, which says they were away for that stretch. */
+  public breakDraw = output<TimeWindow>();
 
   private body = viewChild.required<ElementRef<HTMLElement>>('body');
   private dayColumn = viewChild<ElementRef<HTMLElement>>('dayColumn');
@@ -624,9 +640,9 @@ export class DayTimelineComponent {
     return remOf(span) >= DETAIL_MIN_REM;
   }
 
-  /** Whether a press on the lane draws a range. The break lane holds no work, so it draws none. */
+  /** Whether a press on the lane draws a range. Every lane does: the break lane draws a break. */
   protected drawable(lane: DayLane) {
-    return lane.key !== BREAK_LANE_KEY;
+    return !!lane;
   }
 
   protected boundariesIn(lane: DayLane) {
@@ -1052,13 +1068,19 @@ export class DayTimelineComponent {
     this.drawLane.set(null);
     scheduler.clearDraftRange();
 
-    if (draft) {
-      this.surface.openDraft({
-        from: draft.start,
-        to: draft.end,
-        laneKey: lane && lane !== NO_LANE_KEY ? lane : undefined,
-      });
+    if (!draft) return;
+
+    if (lane === BREAK_LANE_KEY) {
+      this.breakDraw.emit({ from: draft.start, to: draft.end });
+
+      return;
     }
+
+    this.surface.openDraft({
+      from: draft.start,
+      to: draft.end,
+      laneKey: lane && lane !== NO_LANE_KEY ? lane : undefined,
+    });
   }
 
   /** The instant a pointer sits at in the day column, on the increment a worklog is logged in. */

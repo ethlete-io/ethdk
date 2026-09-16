@@ -80,6 +80,8 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           [focusedDate]="focusedDate()"
           [rows]="store.rows()"
           (boundaryMove)="store.moveBoundary($event)"
+          (breakClear)="store.clearBreak($event)"
+          (breakDraw)="store.stateAway($event)"
           (rowReschedule)="store.rescheduleRow($event)"
           class="min-h-0 grow px-6 pb-3"
         />

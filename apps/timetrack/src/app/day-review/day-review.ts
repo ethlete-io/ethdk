@@ -32,6 +32,8 @@ import {
   checkoutOf,
   findStandIn,
   gitFlowConfigFor,
+  clearStatements,
+  deleteStatement,
   hideRow,
   localDayKey,
   localDayRange,
@@ -68,6 +70,7 @@ import {
   setRowState,
   shiftDayKey,
   showRow,
+  writeStatement,
   splitRow,
   standInBranches,
   standInNameFor,
@@ -569,6 +572,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const rows = computed(() => review()?.rows ?? []);
   const hiddenRows = computed(() => review()?.hidden ?? []);
+  const statements = computed(() => edits().statements);
   const breaks = computed(() =>
     breaksBetweenRows({
       breaks: streamed()?.breaks ?? [],
@@ -849,6 +853,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     hiddenRows,
     /** The day's breaks as the rows leave them, which is the only place a break is drawn. */
     breaks,
+    /** What the user said the day's stretches were, newest last. The breaks above already follow them. */
+    statements,
     review,
     /** The day as its streams: presence, concurrency, the agents' spend and the blocks behind the rows. */
     day: streamed,
@@ -1044,6 +1050,21 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /** Puts a hidden row back on the timeline with every other edit it carries intact. */
     show: (row: ReviewedRow) => apply(showRow({ edits: edits(), row })),
+
+    /**
+     * Draws a break over a stretch the user says they were away for, whatever the day measured in it.
+     * It outranks every rule the day derived, the call guard included.
+     */
+    stateAway: (window: TimeWindow) => apply(writeStatement({ edits: edits(), kind: 'away', ...window })),
+
+    /** Takes a break off the day: the user was at the machine for the stretch it covered. */
+    clearBreak: (window: TimeWindow) => apply(writeStatement({ edits: edits(), kind: 'present', ...window })),
+
+    /** Takes back one statement, so the stretch it covered reads as the day measured it again. */
+    takeBackStatement: (id: string) => apply(deleteStatement({ edits: edits(), id })),
+
+    /** Takes back every statement of the day, leaving the rows and their edits alone. */
+    resetStatements: () => apply(clearStatements({ edits: edits() })),
 
     /** Folds several bands into one row. Two that meet on the clock is what the edit surface passes. */
     mergeRows: (merging: readonly ReviewedRow[]) => apply(mergeRows({ edits: edits(), rows: merging })),

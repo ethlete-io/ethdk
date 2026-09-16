@@ -163,6 +163,10 @@ const breakBandsOf = (options: { breaks: readonly BreakWindow[]; dayStart: Date 
  * day's breaks in a leading lane of their own. A row nothing could place goes into a last lane rather
  * than into somebody else's.
  *
+ * A day whose breaks are all gone keeps the lane, empty: it is where a break is drawn, so a day that
+ * dropped the last one would otherwise offer no way to state a new one. A day with no work at all has
+ * no grid to draw on and gets no lane.
+ *
  * A lane is fixed by the checkout and never by who overlaps whom, so a band's width says which
  * checkout it is and a busy hour narrows nothing.
  */
@@ -212,7 +216,7 @@ export const lanesOf = (options: {
       behind: behindByLane.get(key) ?? [],
     }));
 
-  if (!options.breaks.length) return work;
+  if (!work.length) return work;
 
   return [
     { key: BREAK_LANE_KEY, label: BREAK_LANE_LABEL, blocks: [], breaks: breakBandsOf(options), behind: [] },

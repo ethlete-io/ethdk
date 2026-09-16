@@ -3,6 +3,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 import {
   CALL_LANE_KEY,
   CallWindow,
+  PresenceStatement,
   READABLE_MS,
   StreamDay,
   UnobservedOccurrence,
@@ -42,6 +43,45 @@ const NO_DIRECTORY =
 @Component({
   selector: 'ethlete-day-notes',
   template: `
+    @if (statements().length) {
+      <div
+        class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2"
+        data-statements
+      >
+        <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span class="text-base" data-statements-label>What you said about this day</span>
+          @if (statements().length > 1) {
+            <button (click)="store.resetStatements()" et-button variant="outline" size="sm" data-statements-reset>
+              Take all back
+            </button>
+          }
+        </div>
+
+        <ul class="flex flex-col gap-1">
+          @for (statement of statements(); track statement.id) {
+            <li [attr.data-statement]="statement.id" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-small">
+              <span class="text-mono text-et-surface-muted">{{ STATEMENT_SPAN_OF(statement) }}</span>
+              <span class="text-et-surface-subtle">{{ STATEMENT_LABEL_OF(statement) }}</span>
+              <button
+                (click)="store.takeBackStatement(statement.id)"
+                et-button
+                variant="outline"
+                size="sm"
+                data-statement-undo
+              >
+                Take it back
+              </button>
+            </li>
+          }
+        </ul>
+
+        <span class="text-small text-et-surface-subtle">
+          The day's breaks follow what you said here, whatever the collectors measured in those stretches. Take a
+          statement back and the stretch reads as it was measured again.
+        </span>
+      </div>
+    }
+
     @if (rebuilt(); as rebuilt) {
       <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -172,7 +212,7 @@ const NO_DIRECTORY =
 })
 export class DayNotesComponent {
   private windows = injectWindowCollector();
-  private store = injectDayReview();
+  protected store = injectDayReview();
   public day = input.required<StreamDay | null>();
 
   /** Absent while nothing is watching, which is when no capability may be claimed either way. */
@@ -182,6 +222,7 @@ export class DayNotesComponent {
       false,
   );
 
+  protected statements = computed(() => this.store.statements());
   protected rebuilt = computed(() => formatRebuilt(this.day()?.rebuiltMs ?? 0));
   protected calls = computed(() => this.day()?.calls ?? []);
   protected unobserved = computed(() => this.store.meetings().map(offerOf));
@@ -232,6 +273,14 @@ export class DayNotesComponent {
       to: offer.to,
       laneKey: CALL_LANE_KEY,
     });
+  }
+
+  protected STATEMENT_SPAN_OF(statement: PresenceStatement) {
+    return `${formatClockTime(statement.from)} \u2013 ${formatClockTime(statement.to)}`;
+  }
+
+  protected STATEMENT_LABEL_OF(statement: PresenceStatement) {
+    return statement.kind === 'away' ? 'you were away' : 'you were here';
   }
 
   protected CALL_SPAN_OF(call: CallWindow) {
