@@ -147,6 +147,8 @@ export type FakeGitState = {
   remoteUrl: string;
   /** What `git reflog show` prints, per working-tree root. A path with no entry has an empty reflog. */
   reflog: Record<string, string>;
+  /** The files each commit touched, by short sha, for `log --name-only`. Empty: most specs need none. */
+  commitPaths: Record<string, string[]>;
   /** Every mutating git command the app ran, joined as it spelled the arguments. */
   ran: string[];
 };

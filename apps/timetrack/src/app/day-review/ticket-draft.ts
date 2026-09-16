@@ -21,6 +21,7 @@ import {
   draftTicket,
   favoriteProjectKeys,
   fetchJiraCreatableTypes$,
+  fetchJiraIssues$,
   fetchJiraOpenIssues$,
   fetchJiraParentCandidates$,
   fileTicketOnce$,
@@ -134,6 +135,8 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const notes = signal<readonly string[]>([]);
   /** The specification the work sits under, when its own commits named one. Null until the read lands. */
   const spec = signal<SpecHeader | null>(null);
+  /** The epic the spec names, read on its own so the parent list can offer it under its own summary. */
+  const specParent = signal<JiraIssue | null>(null);
   const searches$ = new Subject<string>();
   const specs$ = new Subject<{ repoPath: string; evidence: readonly Evidence[] }>();
   const writes$ = new Subject<TicketWritingRequest>();
@@ -151,6 +154,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
    */
   const askSpec = (options: { repoPath: string | undefined; evidence: readonly Evidence[] }) => {
     spec.set(null);
+    specParent.set(null);
 
     if (options.repoPath) specs$.next({ repoPath: options.repoPath, evidence: options.evidence });
   };
@@ -299,6 +303,22 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
+  const epic$ = (issueKey: string): Observable<JiraIssue | null> =>
+    readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
+      switchMap((credentials) =>
+        credentials
+          ? fetchJiraIssues$({
+              transport: ports.transport,
+              credentials,
+              keys: [issueKey],
+              subjectField: settings.settings().ticket.subjectField || undefined,
+            })
+          : of<JiraIssue[]>([]),
+      ),
+      map((issues) => issues[0] ?? null),
+      catchError(() => of(null)),
+    );
+
   specs$
     .pipe(
       switchMap((ask) =>
@@ -307,9 +327,20 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           shas: shasFromEvidence(ask.evidence),
           processes: ports.processes,
           specs: ports.specs,
-        }),
+        }).pipe(
+          switchMap((found) =>
+            found?.epicKey ? epic$(found.epicKey).pipe(map((issue) => ({ found, issue }))) : of({ found, issue: null }),
+          ),
+        ),
       ),
-      tap((found) => spec.set(found)),
+      tap(({ found, issue }) => {
+        spec.set(found);
+        specParent.set(issue);
+
+        // Only while nothing answers the field yet, exactly as the ranking fills it: a key the spec
+        // names is a statement about the work, and a key the user picked is a decision about it.
+        if (found?.epicKey && !form()?.parentKey) update({ parentKey: found.epicKey });
+      }),
       takeUntilDestroyed(destroyRef),
     )
     .subscribe();
@@ -441,6 +472,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     form.set(null);
     notes.set([]);
     spec.set(null);
+    specParent.set(null);
     createStatus.set(IDLE);
     writeStatus.set(IDLE);
     agentMatch.set(null);
@@ -483,13 +515,20 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     context: context.asReadonly(),
     /** The placeholder being filed, or nothing when the form was opened from a context instead. */
     standIn: standIn.asReadonly(),
+    /** The specification the work sits under, for the form to say what framed the ticket. */
+    spec: spec.asReadonly(),
     form: form.asReadonly(),
     /** Re-ranked as the summary is typed, so editing the draft re-orders the parents under it. */
     candidates: computed((): ParentCandidate[] => {
       const status = candidateStatus();
       const read = status.kind === 'ready' ? status.parents : [];
+      const named = specParent();
+      const fromSpec = named && !read.some((issue) => issue.key === named.key) ? [named] : [];
 
-      return rankParentCandidates({ summary: form()?.summary ?? '', issues: [...createdParents(), ...read] });
+      return rankParentCandidates({
+        summary: form()?.summary ?? '',
+        issues: [...createdParents(), ...fromSpec, ...read],
+      });
     }),
     /**
      * Open issues whose wording says this work may already be tracked, best first. Ranked here as the
@@ -661,6 +700,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       update({ projectKey: key, parentKey: null });
       parentForm.set(null);
       createdParents.set([]);
+      specParent.set(null);
       searches$.next(key);
     },
     setSummary: (summary: string) => update({ summary }),

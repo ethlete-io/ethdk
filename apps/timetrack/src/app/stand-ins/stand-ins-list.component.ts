@@ -104,6 +104,7 @@ import { injectStandIns } from './stand-ins';
                 [existing]="tickets.existing()"
                 [agentMatch]="tickets.agentMatch()"
                 [payload]="tickets.writingRequest()"
+                [spec]="tickets.spec()"
                 [isSearching]="tickets.isSearching()"
                 [parentForm]="tickets.parentForm()"
                 [parentTypeNames]="tickets.parentTypeNames()"

@@ -1,4 +1,10 @@
-import { CollectedEvent, DEFAULT_TIMETRACK_SETTINGS, EditorCli, TimetrackSettings } from '@ethlete/timetrack';
+import {
+  CollectedEvent,
+  DEFAULT_TIMETRACK_SETTINGS,
+  EditorCli,
+  SpecFiles,
+  TimetrackSettings,
+} from '@ethlete/timetrack';
 import { FAKE_REPORTER_VSIX, FakeEditorState, FakeEditors } from './backend/editor-cli';
 import { FakeGitHubState } from './backend/gh';
 import { FakeGlabState } from './backend/glab';
@@ -101,6 +107,8 @@ export type TimetrackWorldSeed = {
   /** The reporter `.vsix` this build ships. `null` seeds a build that shipped none. */
   reporterVsix?: string | null;
   git?: Partial<FakeGitState>;
+  /** The specification one directory of the checkout holds. Absent: the seeded repository has none. */
+  spec?: SpecFiles | null;
   windowSource?: Partial<FakeWindowSourceStatus>;
   callSource?: Partial<FakeCallSourceStatus>;
   /**
@@ -128,6 +136,7 @@ export type FakeWorld = {
   windowLock: FakeWindowLock;
   backend: FakeBackend;
   secrets: Record<string, string>;
+  spec: SpecFiles | null;
 };
 
 /** Where `seedWorld` leaves the seed, as a JSON string, for `createFakeWorld` to read before boot. */
@@ -328,6 +337,7 @@ const defaultGit = (): FakeGitState => ({
   remoteBranches: ['next', E2E_KEYLESS_BRANCH, E2E_PARENT_BRANCH],
   remoteUrl: 'git@gitlab.example.com:braune-digital/fut-frontend.git',
   reflog: {},
+  commitPaths: {},
   ran: [],
 });
 
@@ -352,6 +362,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   callSource: { kind: 'none', detail: null, watchingSinceMs: Date.now(), ...seed.callSource },
   windowLock: seed.windowLock ?? 'unlocked',
   secrets: seed.secrets ?? {},
+  spec: seed.spec ?? null,
   glab: { ...defaultGlab(), ...seed.glab },
   gh: { ...defaultGh(), ...seed.gh },
   editors: seedEditors(seed.editors),

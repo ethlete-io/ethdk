@@ -296,7 +296,7 @@ export const createFakePorts = (): HostPorts => {
     },
 
     specs: {
-      read$: () => ok(null),
+      read$: ({ directories }) => ok(directories.includes(world.spec?.directory ?? '') ? world.spec : null),
     },
 
     processes: meteredRunner({

@@ -12,6 +12,7 @@ import {
   JiraIssue,
   ParentCandidate,
   ParentWritingRequest,
+  SpecHeader,
   StandIn,
   TicketWritingRequest,
   UnnamedContext,
@@ -170,6 +171,10 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
               }
             </et-select>
           </et-form-field>
+
+          @if (spec()?.epicKey; as epicKey) {
+            <span class="text-small text-et-surface-muted">The spec names {{ epicKey }}.</span>
+          }
 
           @if (isSearching()) {
             <div class="flex items-center gap-3 text-et-surface-muted">
@@ -345,6 +350,8 @@ export class CreateTicketComponent {
   public agentMatch = input<AgentMatch | null>(null);
   /** Exactly what a writing run would send, shown here so it can be read before it leaves the machine. */
   public payload = input<TicketWritingRequest | null>(null);
+  /** The specification the work sits under, unmasked, so the form can name the epic it already gives. */
+  public spec = input<SpecHeader | null>(null);
   public isSearching = input(false);
   /** The open new-parent form, or nothing while it is closed. */
   public parentForm = input<ParentForm | null>(null);
@@ -429,8 +436,9 @@ export class CreateTicketComponent {
   protected sentSummary = computed(() => {
     const request = this.payload();
     const notes = request?.notes.length ?? 0;
+    const work = request?.standIn ? 'your own name for the work' : `${notes} note(s)`;
 
-    return request?.standIn ? 'your own name for the work' : `${notes} note(s)`;
+    return request?.spec ? `${work} and the spec it sits under` : work;
   });
 
   /** The agent's answer first, then what the wording matched, with the same issue never listed twice. */

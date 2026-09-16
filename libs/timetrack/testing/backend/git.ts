@@ -21,6 +21,12 @@ export const runFakeGit = (backend: FakeBackend, spec: { args: readonly string[]
 
   if (command.startsWith('reflog show')) return git.reflog[spec.cwd ?? ''] ?? '';
 
+  if (command.startsWith('log --no-walk --name-only')) {
+    const shas = spec.args.slice(4);
+
+    return shas.flatMap((sha) => git.commitPaths[sha] ?? []).join('\n');
+  }
+
   if (command === 'status --porcelain') return git.clean ? '' : ' M src/invite.ts\n';
   if (command === 'remote') return 'origin\n';
   if (command === 'remote get-url origin') return `${git.remoteUrl}\n`;
