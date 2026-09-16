@@ -1,4 +1,5 @@
 import { CollectedEvent, PresenceEvent } from '../model/event';
+import { PresenceStatement, statementWindows } from '../model/statement';
 import { DEFAULT_ROUND_OPTIONS, RoundOptions } from '../rows/round';
 import {
   TimeWindow,
@@ -243,6 +244,43 @@ const clippedToPresence = (options: {
   );
 };
 
+/** Breaks with every overlap joined, keeping the lock of whichever part carried one. */
+const mergedBreaks = (breaks: readonly BreakWindow[]): BreakWindow[] =>
+  mergeWindows(breaks).map((window) => ({
+    ...window,
+    locked: breaks.some((entry) => entry.locked && windowsOverlap(entry, window)),
+  }));
+
+/**
+ * The breaks as the user's own statements leave them: an `away` statement draws one, a `present`
+ * statement clips one out.
+ *
+ * The `away` windows go in after the call guard has run and the `present` windows clip after both, so
+ * a statement outranks every rule the day derived. A user who says they were away during a meeting
+ * gets the break drawn, and the app does not argue.
+ *
+ * A statement is written on the grid already, and the clip drops whatever is left under one
+ * increment, so this never leaves a sliver no reviewer can act on.
+ */
+const stated = (options: {
+  breaks: readonly BreakWindow[];
+  statements: readonly PresenceStatement[];
+  incrementMs: number;
+}): BreakWindow[] => {
+  if (!options.statements.length) return [...options.breaks];
+
+  const away = statementWindows(options.statements, 'away');
+  const drawn = away.length
+    ? mergedBreaks([...options.breaks, ...away.map((window) => ({ ...window, locked: false }))])
+    : options.breaks;
+
+  return clippedToPresence({
+    breaks: drawn,
+    presence: statementWindows(options.statements, 'present'),
+    incrementMs: options.incrementMs,
+  });
+};
+
 /**
  * The day's breaks as the rows leave them, on the increment the rows are snapped to.
  *
@@ -269,14 +307,21 @@ export const breaksBetweenRows = (options: {
    * timer run they started. A break may not cover one — see ADR 0030.
    */
   presence?: readonly TimeWindow[];
+  /** What the user said the day's stretches were. A statement outranks everything above it. */
+  statements?: readonly PresenceStatement[];
 }): BreakWindow[] => {
   const covered = mergeWindows(options.rows);
   const first = covered[0];
   const last = covered[covered.length - 1];
 
-  if (!first || !last) return [...options.breaks];
-
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
+
+  if (!first || !last) {
+    return stated({ breaks: options.breaks, statements: options.statements ?? [], incrementMs }).sort(
+      (a, b) => a.from.getTime() - b.from.getTime(),
+    );
+  }
+
   const span = { from: first.from, to: last.to };
   const gaps = subtractWindows({ windows: [span], without: covered });
   const inGap = (window: BreakWindow) => gaps.some((gap) => windowsOverlap(gap, window));
@@ -292,7 +337,9 @@ export const breaksBetweenRows = (options: {
       .map((window) => snapped(window, incrementMs)),
   ];
 
-  return clippedToPresence({ breaks: drawn, presence: options.presence ?? [], incrementMs }).sort(
-    (a, b) => a.from.getTime() - b.from.getTime(),
-  );
+  return stated({
+    breaks: clippedToPresence({ breaks: drawn, presence: options.presence ?? [], incrementMs }),
+    statements: options.statements ?? [],
+    incrementMs,
+  }).sort((a, b) => a.from.getTime() - b.from.getTime());
 };

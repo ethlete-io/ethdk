@@ -5,4 +5,5 @@ export * from './now';
 export * from './nudge';
 export * from './recut';
 export * from './review-day';
+export * from './statements';
 export * from './week';

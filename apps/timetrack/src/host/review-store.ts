@@ -1,4 +1,4 @@
-import { DayReviewEdits, PinnedRow, TimetrackReviewStore } from '@ethlete/timetrack';
+import { DayReviewEdits, PinnedRow, PresenceStatement, TimetrackReviewStore } from '@ethlete/timetrack';
 import { map } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
@@ -8,7 +8,12 @@ type StoredPinnedRow = Omit<PinnedRow, 'from' | 'to' | 'evidence'> & {
   evidence: { kind: string; atMs: number; detail: string; summary?: string }[];
 };
 
-type StoredEdits = Omit<DayReviewEdits, 'pinned'> & { pinned: StoredPinnedRow[] };
+type StoredStatement = Omit<PresenceStatement, 'from' | 'to'> & { fromMs: number; toMs: number };
+
+type StoredEdits = Omit<DayReviewEdits, 'pinned' | 'statements'> & {
+  pinned: StoredPinnedRow[];
+  statements: StoredStatement[];
+};
 
 const toStored = (edits: DayReviewEdits): StoredEdits => ({
   overrides: edits.overrides,
@@ -17,6 +22,11 @@ const toStored = (edits: DayReviewEdits): StoredEdits => ({
     fromMs: from.getTime(),
     toMs: to.getTime(),
     evidence: evidence.map(({ at, ...entry }) => ({ ...entry, atMs: at.getTime() })),
+  })),
+  statements: edits.statements.map(({ from, to, ...rest }) => ({
+    ...rest,
+    fromMs: from.getTime(),
+    toMs: to.getTime(),
   })),
 });
 
@@ -28,6 +38,11 @@ const revive = (stored: StoredEdits): DayReviewEdits => ({
     to: new Date(toMs),
     evidence: evidence.map(({ atMs, ...entry }) => ({ ...entry, at: new Date(atMs) })),
   })) as PinnedRow[],
+  statements: (stored.statements ?? []).map(({ fromMs, toMs, ...rest }) => ({
+    ...rest,
+    from: new Date(fromMs),
+    to: new Date(toMs),
+  })),
 });
 
 /**

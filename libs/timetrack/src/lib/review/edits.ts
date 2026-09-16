@@ -183,6 +183,7 @@ export const resetRow = (options: { edits: DayReviewEdits; row: ReviewedRow }): 
   const undoneIds = undone.flatMap((entry) => [entry.id, ...entry.replaces]);
 
   return {
+    ...edits,
     overrides: withoutOverrides(edits.overrides, [row.id, ...undoneIds]),
     pinned: edits.pinned.filter((entry) => !undone.includes(entry)),
   };
@@ -237,6 +238,7 @@ export const splitRow = (options: {
   };
 
   return {
+    ...edits,
     overrides: withoutOverrides(edits.overrides, [row.id, ...replaces]),
     pinned: [...kept, left, right],
   };
@@ -305,6 +307,7 @@ export const moveRowBoundary = (options: {
   };
 
   return {
+    ...edits,
     overrides: withoutOverrides(edits.overrides, [before.id, after.id, ...left.replaces, ...right.replaces]),
     pinned: [...kept, left, right],
   };
@@ -429,6 +432,7 @@ export const setRowRange = (options: {
   const heldTo = to.getTime() !== row.to.getTime();
 
   return {
+    ...edits,
     overrides: withoutOverrides(edits.overrides, [row.id, ...replaces]),
     pinned: [
       ...kept,
@@ -543,5 +547,5 @@ export const mergeRows = (options: { edits: DayReviewEdits; rows: readonly Revie
     state: rows.every((row) => row.state === 'rejected') ? 'rejected' : undefined,
   };
 
-  return { overrides: withoutOverrides(edits.overrides, [...ids, ...replaces]), pinned: [...kept, merged] };
+  return { ...edits, overrides: withoutOverrides(edits.overrides, [...ids, ...replaces]), pinned: [...kept, merged] };
 };

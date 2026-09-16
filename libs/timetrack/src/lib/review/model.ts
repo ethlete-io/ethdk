@@ -1,6 +1,7 @@
 import { BehindStretch } from '../rows/cut';
 import { DayCheck } from '../rows/round';
 import { Confidence, Evidence } from '../model/evidence';
+import { PresenceStatement } from '../model/statement';
 import { WorklogProposal } from '../model/proposal';
 
 /** The fields a reviewer can change on a machine-proposed row, keyed by the proposal's id. */
@@ -75,9 +76,11 @@ export type PinnedRow = {
 export type DayReviewEdits = {
   overrides: Record<string, ProposalOverride>;
   pinned: PinnedRow[];
+  /** What the reviewer said the day's stretches were. See {@link PresenceStatement}. */
+  statements: PresenceStatement[];
 };
 
-export const EMPTY_DAY_REVIEW_EDITS: DayReviewEdits = { overrides: {}, pinned: [] };
+export const EMPTY_DAY_REVIEW_EDITS: DayReviewEdits = { overrides: {}, pinned: [], statements: [] };
 
 /** A worklog row as the review UI shows it: the engine's proposal with any local edit applied. */
 export type ReviewedRow = Omit<WorklogProposal, 'issueKey'> & {
