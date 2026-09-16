@@ -64,7 +64,7 @@ if (!load) {
         <h1>${esc(call.headline)}</h1>
         <p>${esc(call.intro)}</p>
       </header>
-      <div class="grid" ${isView ? 'data-view' : ''}>
+      <div class="grid" style="--frame-width:${call.frameWidth}px" ${isView ? 'data-view' : ''}>
         ${shown
           .map(
             (option) => `

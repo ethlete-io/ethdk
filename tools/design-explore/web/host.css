@@ -4,6 +4,7 @@
   --h-ink: #e6e2da;
   --h-ink-3: #8b8578;
   --h-line: #2c2c2c;
+  --h-prose: 21rem;
 }
 
 body {
@@ -18,12 +19,20 @@ body {
     sans-serif;
 }
 
+/* The tree stands still while the calls scroll, and scrolls on its own when it is longer than the window. */
 nav {
+  position: sticky;
+  top: 0;
   display: flex;
+  height: 100vh;
+  box-sizing: border-box;
   flex-direction: column;
+  align-self: start;
   gap: 20px;
   padding: 24px 12px;
   border-right: 1px solid var(--h-line);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 nav section {
@@ -95,13 +104,16 @@ header p {
   text-wrap: pretty;
 }
 
-/* Subgrid holds the four rows on one line across the columns, whatever a label wraps to. */
+/*
+ * A track is as wide as the frame it holds, so the options wrap to the next band when the window
+ * runs out of room. Row flow is what lets them wrap: each column takes four rows, so the next one
+ * starts beside it and only a full band pushes to a new line.
+ */
 .grid {
   display: grid;
-  grid-auto-columns: 38ch;
-  grid-auto-flow: column;
-  grid-template-rows: auto auto auto auto;
-  gap: 72px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--frame-width, 0px)), 1fr));
+  grid-auto-flow: row;
+  gap: 72px 40px;
 }
 
 .column {
@@ -111,17 +123,19 @@ header p {
   gap: 12px;
 }
 
-/* A view is one picture at its own geometry, so it gets the whole width and no subgrid. */
-.grid[data-view] {
-  grid-auto-columns: auto;
-}
-
+/* A view is one picture, so it gets the whole width and no subgrid. */
 .grid[data-view] .column {
   grid-row: auto;
   grid-template-rows: none;
 }
 
-/* The frame keeps the real geometry; the column around it is as wide as the prose needs. */
+/* A column can be wider than a line of text should be, so the text keeps its own measure. */
+h2,
+.claim,
+.cost {
+  max-width: var(--h-prose);
+}
+
 .stage {
   display: flex;
   padding: 24px 0;
