@@ -100,6 +100,17 @@ describe('filterByJql', () => {
     expect(keysOf('ORDER BY updated DESC', [first, second])).toEqual(['ABC-4', 'ABC-5']);
   });
 
+  it('keeps only the children of the named parent', () => {
+    const child = issue({ key: 'ABC-8', parentKey: 'ABC-2' });
+    const stranger = issue({ key: 'ABC-9', parentKey: 'ABC-3' });
+
+    expect(keysOf('parent = "ABC-2"', [child, stranger, TASK])).toEqual(['ABC-8']);
+  });
+
+  it('keeps nothing for a parent no issue hangs under', () => {
+    expect(keysOf('parent = "ABC-2"', [TASK, STORY])).toEqual([]);
+  });
+
   it('leaves the order alone when no ORDER BY is spelled', () => {
     expect(keysOf('project = ABC', [STORY, TASK])).toEqual(['ABC-2', 'ABC-1']);
   });

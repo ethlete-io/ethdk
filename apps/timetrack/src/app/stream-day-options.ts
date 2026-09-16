@@ -1,5 +1,6 @@
 import {
   BuildRowsOptions,
+  EpicOptions,
   RecurringPattern,
   StreamDayOptions,
   TimetrackSettings,
@@ -25,6 +26,13 @@ export const dayRowsOptionsOf = (options: {
   settings: TimetrackSettings;
   /** The standing commitments the user's Tempo history holds, from `injectRecurringPatterns`. */
   patterns?: readonly RecurringPattern[];
+  /**
+   * What a sibling checkout on the same branch name books, from `injectEpicSiblings`.
+   *
+   * Left out by a reader that builds the day the resolver itself reads: that read is the rung's first
+   * pass, and handing it an answer it produced would let the day narrow its own input.
+   */
+  epics?: EpicOptions;
 }): Omit<BuildRowsOptions, 'links' | 'calls'> => {
   const { settings } = options;
 
@@ -34,6 +42,7 @@ export const dayRowsOptionsOf = (options: {
     standIns: settings.standIns,
     cut: { backgroundProjects: settings.backgroundProjects },
     patterns: [...(options.patterns ?? [])],
+    epics: options.epics,
     fill: { maxFillGapMs: settings.gapFillMs },
     meetings: { namings: settings.meetingNamings, callNamings: settings.callNamings },
     noWorkContext: {
@@ -56,6 +65,8 @@ export const streamDayOptionsOf = (options: {
   settings: TimetrackSettings;
   /** The standing commitments the user's Tempo history holds, from `injectRecurringPatterns`. */
   patterns?: readonly RecurringPattern[];
+  /** What a sibling checkout on the same branch name books, from `injectEpicSiblings`. */
+  epics?: EpicOptions;
   /** The instant the window source has reported through, which is its last drain. */
   windowsSeenThroughMs?: number;
   /** What this reader adds to the shared row options: the day's timer runs, pauses and edits. */
@@ -69,5 +80,8 @@ export const streamDayOptionsOf = (options: {
   noWorkContextApps: effectiveNoWorkContextApps(options.settings),
   transientApps: effectiveTransientApps(options.settings),
   minBreakMs: options.settings.gapFillMs,
-  rows: { ...dayRowsOptionsOf({ settings: options.settings, patterns: options.patterns }), ...options.rows },
+  rows: {
+    ...dayRowsOptionsOf({ settings: options.settings, patterns: options.patterns, epics: options.epics }),
+    ...options.rows,
+  },
 });

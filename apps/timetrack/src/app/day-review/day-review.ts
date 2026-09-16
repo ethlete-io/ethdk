@@ -102,6 +102,7 @@ import {
 } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
+import { injectEpicSiblings } from '../naming/epic-siblings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { dayRowsOptionsOf, streamDayOptionsOf } from '../stream-day-options';
 import { injectTimer } from '../timer';
@@ -165,12 +166,15 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const timers = injectTimer();
   const settings = injectTimetrackSettings();
   const recurring = injectRecurringPatterns();
+  const epics = injectEpicSiblings();
 
   const boundary = computed(() => dayBoundaryOf(settings.settings()));
   const day = signal(readViewState().day ?? localDayKey(new Date(), dayBoundaryOf(settings.settings())));
   const targetMs = computed(() => settings.settings().dayTargetMs);
   const local = signal<Record<string, DayReviewEdits>>({});
   const saves$ = new Subject<{ key: string; edits: DayReviewEdits }>();
+
+  effect(() => epics.watch(day()));
 
   const probe = computed(() => ({
     key: day(),
@@ -354,7 +358,11 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const edits = computed(() => local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS);
 
   const rowOptions = computed(() => ({
-    ...dayRowsOptionsOf({ settings: settings.settings(), patterns: recurring.patterns() }),
+    ...dayRowsOptionsOf({
+      settings: settings.settings(),
+      patterns: recurring.patterns(),
+      epics: epics.optionsFor(day()),
+    }),
     timerRuns: evidence()?.runs ?? [],
     pauses: evidence()?.pauses ?? [],
   }));
@@ -377,6 +385,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             repoRoots: git.discovery()?.repos ?? [],
             settings: settings.settings(),
             patterns: recurring.patterns(),
+            epics: epics.optionsFor(day()),
             windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
             rows: rowOptions(),
           }),
@@ -574,12 +583,16 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * It waits for the Tempo history too. A naming offer is read out of it, it arrives long after the
    * day does, and a read taken while the request is out reports no history at all — so a pass that ran
    * first would open a placeholder for a checkout the user's own record already names an issue for.
+   *
+   * The epic rung is the same case and ranks above the stand-in rungs: a placeholder opened while its
+   * read is still out would take the checkout the sibling's parent was about to name.
    */
   effect(() => {
     const load = evidenceLoad();
     const deterministic = deterministicRows();
 
     if (!load || load.failure || !deterministic || recurring.state().state === 'loading') return;
+    if (!epics.settledFor(day())) return;
 
     const current = settings.settings();
     const key = day();

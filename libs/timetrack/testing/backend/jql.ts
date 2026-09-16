@@ -2,7 +2,7 @@ import { FakeJiraIssue } from './types';
 
 /**
  * The clauses `libs/timetrack/src/lib/jira` actually builds, and nothing else: `key`/`id`/`project`/
- * `issuetype` membership, `text ~`, `issuekey in updatedBy(...)`, and `ORDER BY updated`.
+ * `issuetype`/`parent` membership, `text ~`, `issuekey in updatedBy(...)`, and `ORDER BY updated`.
  *
  * A clause this does not know is ignored rather than refused, so a new one narrows nothing instead of
  * emptying the result. `statusCategory != Done` and `assignee = currentUser()` are two such: every
@@ -36,7 +36,7 @@ const applyClause = (issues: FakeJiraIssue[], clause: string): FakeJiraIssue[] =
     return issues.filter((issue) => issue.summary.toLowerCase().includes(needle));
   }
 
-  const membership = /^(key|id|issuekey|project|issuetype)\s*(=|in)\s*(.+)$/i.exec(trimmed);
+  const membership = /^(key|id|issuekey|project|issuetype|parent)\s*(=|in)\s*(.+)$/i.exec(trimmed);
 
   if (!membership) return issues;
 
@@ -48,6 +48,7 @@ const applyClause = (issues: FakeJiraIssue[], clause: string): FakeJiraIssue[] =
   if (field === 'id') return issues.filter((issue) => values.includes(issue.id));
   if (field === 'project') return issues.filter((issue) => values.includes(projectKeyOf(issue)));
   if (field === 'issuetype') return issues.filter((issue) => values.includes(issue.issueType));
+  if (field === 'parent') return issues.filter((issue) => !!issue.parentKey && values.includes(issue.parentKey));
 
   return issues.filter((issue) => values.includes(issue.key));
 };
