@@ -119,6 +119,16 @@ What the milestone holds:
   missing is their place in `streamDay` and on the screen.
 - Two windows of the same application separated by a short gap are one call. Every Google Meet opens
   the microphone twice, because its pre-join screen runs a device check. Measured on 2026-09-10.
+- **A break never covers a call, and the user can remove and restore one.** Planned in
+  [`mind-the-break.md`](./mind-the-break.md), from a day Tom read on 2026-09-16: a 15m break was
+  drawn over the last quarter hour of a meeting. A call does not hold presence yet, and the snap
+  moves a band end by up to half an increment. The edit is a statement about a stretch of the day,
+  not an edit of a break object, because a break has no id a re-run keeps.
+- **A band that books nothing never takes minutes from a background band.** Planned in
+  [`not-counted-takes-nothing.md`](./not-counted-takes-nothing.md), from the same day read at 12:00:
+  a voice room the call rules deny took the last quarter hour of `ET-772`, which then booked nothing.
+  ADR 0024 already rules that an excluded call claims nothing, and `recutReviewedRows` does not hold
+  the rule. A defect, not a decision.
 
 It writes local edits to `day_review` and never reaches Tempo.
 
