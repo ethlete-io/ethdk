@@ -27,6 +27,7 @@ export const emitCodexHooks = (options: {
   return [
     ...emitHookScripts({ hooks, hooksDir: HOOKS_DIR }),
     ...emitHookSettings({
+      agent: 'codex',
       path: CODEX_HOOKS_FILE,
       existing: existingHooks,
       hooks,

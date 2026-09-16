@@ -22,6 +22,7 @@ export const emitClaudeHooks = (options: {
   return [
     ...emitHookScripts({ hooks, hooksDir: HOOKS_DIR }),
     ...emitHookSettings({
+      agent: 'claude',
       path: CLAUDE_SETTINGS_FILE,
       existing: existingSettings,
       hooks,

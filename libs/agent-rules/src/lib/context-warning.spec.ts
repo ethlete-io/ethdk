@@ -45,27 +45,42 @@ const runHook = (options: RunHookOptions) => {
 };
 
 type RunClaudeHookOptions = {
+  agentId?: string;
+  event?: string;
   model?: string;
   permissionMode?: string;
   sessionId?: string;
   tokens: number;
+  withTranscript?: boolean;
 };
 
 const runClaudeHook = (options: RunClaudeHookOptions) => {
-  const { model = 'claude-opus-5', permissionMode = 'auto', sessionId = randomUUID(), tokens } = options;
+  const {
+    agentId,
+    event,
+    model = 'claude-opus-5',
+    permissionMode = 'auto',
+    sessionId = randomUUID(),
+    tokens,
+    withTranscript = true,
+  } = options;
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-context-warning-'));
   const transcriptPath = join(root, 'transcript.jsonl');
 
-  writeFileSync(
-    transcriptPath,
-    `${JSON.stringify({ type: 'assistant', message: { model, usage: { input_tokens: tokens } } })}\n`,
-    'utf8',
-  );
+  if (withTranscript) {
+    writeFileSync(
+      transcriptPath,
+      `${JSON.stringify({ type: 'assistant', message: { model, usage: { input_tokens: tokens } } })}\n`,
+      'utf8',
+    );
+  }
 
   const output = execFileSync('python3', [hookPath, '--agent', 'claude'], {
     encoding: 'utf8',
     input: JSON.stringify({
       cwd: root,
+      ...(agentId ? { agent_id: agentId } : {}),
+      ...(event ? { hook_event_name: event } : {}),
       permission_mode: permissionMode,
       session_id: sessionId,
       transcript_path: transcriptPath,
@@ -76,7 +91,7 @@ const runClaudeHook = (options: RunClaudeHookOptions) => {
 };
 
 type ClaudeHookOutput = {
-  hookSpecificOutput: { additionalContext: string };
+  hookSpecificOutput: { additionalContext: string; hookEventName: string };
   systemMessage?: string;
 };
 
@@ -198,5 +213,90 @@ describe('context-warning handoff mode', () => {
 
     expect(held).toContain('Handoff mode is active for this sub-agent thread, not the parent/main agent');
     expect(held).toContain('Do not create a user-facing session handoff.');
+  });
+});
+
+describe('context-warning mid-run delivery', () => {
+  it('states the budget at session start, before a transcript exists', () => {
+    const context =
+      runClaudeHook({ event: 'SessionStart', tokens: 0, withTranscript: false })?.hookSpecificOutput
+        .additionalContext ?? '';
+
+    expect(context).toContain('Context budget for this session: 200k tokens');
+    expect(context).toContain('You will be warned at 70%, 85% and 95%');
+  });
+
+  it('names the window at session start once the model is known', () => {
+    const context = runClaudeHook({ event: 'SessionStart', tokens: 1_000 })?.hookSpecificOutput.additionalContext ?? '';
+
+    expect(context).toContain("long-context pricing boundary of this model's 1M window");
+  });
+
+  it('warns on a tool batch, so a run with no user prompt still learns its token count', () => {
+    const output = runClaudeHook({ event: 'PostToolBatch', tokens: 150_000 });
+
+    expect(output?.hookSpecificOutput.hookEventName).toBe('PostToolBatch');
+    expect(output?.hookSpecificOutput.additionalContext).toContain('Handoff mode is active from here on');
+  });
+
+  it('warns once per tier on tool batches, not on every batch', () => {
+    const sessionId = randomUUID();
+
+    runClaudeHook({ event: 'PostToolBatch', sessionId, tokens: 150_000 });
+
+    expect(runClaudeHook({ event: 'PostToolBatch', sessionId, tokens: 155_000 })).toBeNull();
+  });
+
+  it('stays silent on a tool batch inside a sub-agent, whose tokens it cannot read', () => {
+    expect(runClaudeHook({ agentId: 'agent-1', event: 'PostToolBatch', tokens: 195_000 })).toBeNull();
+  });
+});
+
+describe('context-warning end of turn', () => {
+  it('lets a turn end below the critical tier', () => {
+    expect(runClaudeHook({ event: 'Stop', tokens: 150_000 })).toBeNull();
+  });
+
+  it('demands a named choice of three when a turn ends over the critical tier', () => {
+    const output = runClaudeHook({ event: 'Stop', tokens: 175_000 });
+    const context = output?.hookSpecificOutput.additionalContext ?? '';
+
+    expect(output?.hookSpecificOutput.hookEventName).toBe('Stop');
+    expect(context).toContain('Do not end the turn without taking one of these');
+    expect(context).toContain('1. Finish the task now');
+    expect(context).toContain('2. Hand off');
+    expect(context).toContain('3. Cross the boundary on purpose');
+  });
+
+  it('withdraws the finish option at the final tier but keeps the deliberate crossing', () => {
+    const context = runClaudeHook({ event: 'Stop', tokens: 195_000 })?.hookSpecificOutput.additionalContext ?? '';
+
+    expect(context).toContain('The finish-first option is withdrawn at this tier');
+    expect(context).not.toContain('Finish the task now');
+    expect(context).toContain('2. Cross the boundary on purpose');
+  });
+
+  it('demands the choice once per tier, so a turn can still end', () => {
+    const sessionId = randomUUID();
+
+    runClaudeHook({ event: 'Stop', sessionId, tokens: 175_000 });
+
+    expect(runClaudeHook({ event: 'Stop', sessionId, tokens: 176_000 })).toBeNull();
+  });
+
+  it('demands the choice again once the next tier is crossed', () => {
+    const sessionId = randomUUID();
+
+    runClaudeHook({ event: 'Stop', sessionId, tokens: 175_000 });
+
+    expect(runClaudeHook({ event: 'Stop', sessionId, tokens: 195_000 })).not.toBeNull();
+  });
+
+  it('still demands a choice at the end of a turn that a tool batch already warned about', () => {
+    const sessionId = randomUUID();
+
+    runClaudeHook({ event: 'PostToolBatch', sessionId, tokens: 175_000 });
+
+    expect(runClaudeHook({ event: 'Stop', sessionId, tokens: 176_000 })).not.toBeNull();
   });
 });

@@ -311,6 +311,15 @@ Available hooks:
   remaining budget, and how to work so that either ending stays cheap. The `handoff` skill
   calls this handoff mode.
 
+  Under Claude the hook runs on four events, because a warning that only a user prompt can
+  trigger never reaches a long autonomous run. `SessionStart` names the budget before the
+  first request. `UserPromptSubmit` carries the tiered warning and the reminder.
+  `PostToolBatch` fires between the agent's own model requests, so it learns the count while
+  it works. `Stop` fires as a turn ends over 85% and the turn then continues, so the agent
+  must take one of three and say which: finish, hand off, or cross the boundary on purpose
+  for a reason it states. Each event speaks once per tier. Codex has none of the three, so
+  its registration stays on `UserPromptSubmit`.
+
   Two things are Claude-only: the separate user-facing line (Codex documents only
   `additionalContext`, so there the warning is folded into the text the model is told to
   relay), and the auto-mode escalation that writes the handoff file unprompted - Codex's

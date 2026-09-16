@@ -153,6 +153,28 @@ is left, and how to work so that either ending stays cheap. One warning at 70% i
 the time the budget is tight, and an agent cannot read its own token count between prompts.
 The `handoff` skill calls this handoff mode and describes how to work under it.
 
+#### Where the warning reaches the agent
+
+A hook on `UserPromptSubmit` alone only fires when the user types. A long autonomous run
+makes many model requests without one, so it never learns its token count. Under Claude the
+hook therefore runs on four events:
+
+| Event              | What it does                                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `SessionStart`     | Names the budget and how to scope the session to it, before the first request.                                        |
+| `UserPromptSubmit` | The tiered warning, then a short reminder on every later prompt.                                                      |
+| `PostToolBatch`    | The same tiered warning, delivered between the agent's own model requests.                                            |
+| `Stop`             | From 85% on, as a turn ends: the turn continues so the agent can act, and it must say which of three options it took. |
+
+Each event speaks once per tier, so crossing 85% mid-run costs one notice while working and
+one demand at the end of the turn. The third option at `Stop` is to cross the boundary on
+purpose, for a reason the agent states in one sentence - a task one step from done, or a
+session holding reasoning no handoff file survives, is worth the premium rate. Codex has
+none of the three extra events, so its registration stays on `UserPromptSubmit`.
+
+The `PostToolBatch` hook runs once per model request, so the script reads only the tail of
+the transcript rather than parsing all of it.
+
 Claude additionally gets a separate user-facing warning and can save a handoff
 automatically in auto mode from the critical tier on. Codex receives the warning through
 the hook's additional context; its permission-mode values are not documented, so the

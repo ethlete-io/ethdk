@@ -4,13 +4,19 @@ import { resolveContentRoot } from '../load-content';
 import { SHELL_BANNER } from '../render';
 import { EmittedFile } from './shared';
 
-type HookDefinition = {
+type HookRegistration = {
   event: string;
-  file: string;
-  timeout: number;
   /** Tool-name pattern for a tool-scoped event, so the script is not run on every tool call. */
   matcher?: string;
-  /** Agents that have the event at all. Empty means every target registers the hook. */
+  /** Agents that have this event. Empty means every target that registers the hook gets it. */
+  agents?: string[];
+};
+
+type HookDefinition = {
+  events: HookRegistration[];
+  file: string;
+  timeout: number;
+  /** Agents that have the hook at all. Empty means every target registers it. */
   agents?: string[];
 };
 
@@ -19,12 +25,23 @@ type HookDefinition = {
  * developer's machine, so unlike rules and skills they are never emitted by default.
  */
 export const KNOWN_HOOKS: Record<string, HookDefinition> = {
-  'context-warning': { event: 'UserPromptSubmit', file: 'context-warning.py', timeout: 10 },
+  'context-warning': {
+    events: [
+      { event: 'UserPromptSubmit' },
+      // Codex has none of the three below, so its registration stays prompt-only.
+      { event: 'SessionStart', agents: ['claude'] },
+      // The only event between an agent's own model requests, and the only way a warning
+      // reaches a long autonomous run before the user sends a message.
+      { event: 'PostToolBatch', agents: ['claude'] },
+      { event: 'Stop', agents: ['claude'] },
+    ],
+    file: 'context-warning.py',
+    timeout: 10,
+  },
   'subagent-model-policy': {
-    event: 'PreToolUse',
+    events: [{ event: 'PreToolUse', matcher: 'Task|Agent' }],
     file: 'subagent-model-policy.py',
     timeout: 10,
-    matcher: 'Task|Agent',
     agents: ['claude'],
   },
 };
@@ -36,6 +53,12 @@ export const hooksForAgent = (options: { hooks: string[]; agent: string }) =>
 
     return agents.length === 0 || agents.includes(options.agent);
   });
+
+/** The registrations of one hook that the given agent has the event for. */
+export const eventsForAgent = (options: { hook: string; agent: string }) =>
+  (KNOWN_HOOKS[options.hook]?.events ?? []).filter(
+    (registration) => (registration.agents ?? []).length === 0 || registration.agents?.includes(options.agent),
+  );
 
 export const assertKnownHooks = (hooks: string[]) => {
   const unknown = hooks.filter((name) => !(name in KNOWN_HOOKS));
@@ -64,12 +87,13 @@ type HookSettings = Record<string, unknown> & { hooks?: Record<string, HookGroup
  * disabling a hook in the config also unregisters it. Everything else in the file is untouched.
  */
 export const mergeHookSettings = (options: {
+  agent: string;
   existing: string;
   hooks: string[];
   hooksDir: string;
   commandFor: (file: string) => string;
 }) => {
-  const { existing, hooks, hooksDir, commandFor } = options;
+  const { agent, existing, hooks, hooksDir, commandFor } = options;
   const settings = JSON.parse(existing.trim() || '{}') as HookSettings;
   const events = { ...(settings.hooks ?? {}) };
 
@@ -90,13 +114,15 @@ export const mergeHookSettings = (options: {
 
     if (!definition) continue;
 
-    events[definition.event] = [
-      ...(events[definition.event] ?? []),
-      {
-        ...(definition.matcher ? { matcher: definition.matcher } : {}),
-        hooks: [{ type: 'command', command: commandFor(definition.file), timeout: definition.timeout }],
-      },
-    ];
+    for (const registration of eventsForAgent({ hook: name, agent })) {
+      events[registration.event] = [
+        ...(events[registration.event] ?? []),
+        {
+          ...(registration.matcher ? { matcher: registration.matcher } : {}),
+          hooks: [{ type: 'command', command: commandFor(definition.file), timeout: definition.timeout }],
+        },
+      ];
+    }
   }
 
   if (Object.keys(events).length > 0) settings.hooks = events;
@@ -121,6 +147,7 @@ export const emitHookScripts = (options: { hooks: string[]; hooksDir: string }):
 
 /** Only planned when the parsed content actually changes; an unparseable file is left alone. */
 export const emitHookSettings = (options: {
+  agent: string;
   path: string;
   existing: string;
   hooks: string[];
@@ -128,12 +155,12 @@ export const emitHookSettings = (options: {
   commandFor: (file: string) => string;
   createWhenEmpty: boolean;
 }): EmittedFile[] => {
-  const { path, existing, hooks, hooksDir, commandFor, createWhenEmpty } = options;
+  const { agent, path, existing, hooks, hooksDir, commandFor, createWhenEmpty } = options;
 
   if (existing.trim().length === 0 && hooks.length === 0 && !createWhenEmpty) return [];
 
   try {
-    const merged = mergeHookSettings({ existing, hooks, hooksDir, commandFor });
+    const merged = mergeHookSettings({ agent, existing, hooks, hooksDir, commandFor });
 
     if (JSON.stringify(JSON.parse(existing.trim() || '{}')) === JSON.stringify(JSON.parse(merged))) return [];
 

@@ -22,10 +22,14 @@ ephemeral working state, not team docs).
 
 ## Handoff mode
 
-The `context-warning` hook turns handoff mode on at 70% of the token budget, then repeats a
-short note with the remaining budget on every prompt after that. Handoff mode is not an
-order to stop. It is the signal to change how you work, so that either ending - you finish,
-or a fresh session takes over - stays cheap:
+The `context-warning` hook names the budget at session start, turns handoff mode on at 70%
+of it, and repeats a short note with the remaining budget on every prompt after that. It
+reaches you at three points, not only when the user types: at the start of the session,
+after a batch of your own tool calls, and as a turn ends. So a long autonomous run learns
+its token count while it works.
+
+Handoff mode is not an order to stop. It is the signal to change how you work, so that
+either ending - you finish, or a fresh session takes over - stays cheap:
 
 - Work in slices that each end in a committable state. Never leave two half-finished edits
   in the tree.
@@ -46,6 +50,20 @@ which you chose:
 "Nearly done" means you can name the last steps now. It does not mean the end feels close.
 At the last tier (95%) the hook takes option 1 away, because a budget that small covers no
 task.
+
+### Ending a turn over the budget
+
+From 85% on, the hook also fires as you try to end the turn, and the turn then continues so
+you can act. It adds a third option to the two above:
+
+3. **Cross the boundary on purpose.** Some sessions are worth the premium rate: the task is
+   one step from done, or this session holds reasoning that no handoff file survives. Take
+   it only for a reason you can name in one sentence right now. Say the reason, say what it
+   costs, and keep working.
+
+Option 3 is a judgment call, not a way out of the other two. Naming a reason you cannot
+state plainly is the same as taking option 2 late and expensively. The hook asks once per
+tier, so it will not block the end of a turn twice for the same budget.
 
 ## Save mode
 
