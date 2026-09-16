@@ -125,6 +125,24 @@ describe('unmaskedWords', () => {
   it('drops nothing, so a plain client name is still reported behind the name-shaped ones', () => {
     expect(words('ACME and Konami')).toEqual(['ACME', 'Konami']);
   });
+
+  it('reports a name that starts with an umlaut', () => {
+    expect(words('ein Termin im Ärztehaus')).toEqual(['Ärztehaus', 'Termin']);
+  });
+
+  it('reports a name that carries an umlaut, whole rather than as its first letter', () => {
+    expect(words('ein Termin bei Müller')).toEqual(['Müller', 'Termin']);
+  });
+});
+
+describe('a listed name that carries an umlaut', () => {
+  it('is masked whole, and reads back into the real name', () => {
+    const map = pseudonymMap(['Müller']);
+    const masked = maskNames({ text: 'We shipped it for Müller', map });
+
+    expect(masked).not.toContain('Müller');
+    expect(unmaskNames({ text: masked, map })).toBe('We shipped it for Müller');
+  });
 });
 
 describe('a name that is also a pseudonym word', () => {

@@ -173,10 +173,10 @@ const matcher = (terms: readonly string[]) => {
 
   const sorted = [...terms].sort((left, right) => right.length - left.length).map(escaped);
 
-  return new RegExp(`(?<![A-Za-z0-9])(?:${sorted.join('|')})(?![A-Za-z0-9])`, 'gi');
+  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${sorted.join('|')})(?![\\p{L}\\p{N}])`, 'giu');
 };
 
-const isShouting = (text: string) => text === text.toUpperCase() && /[A-Z]{2}/.test(text);
+const isShouting = (text: string) => text === text.toUpperCase() && /\p{Lu}{2}/u.test(text);
 
 const replaceAll = (options: {
   text: string;
@@ -236,9 +236,9 @@ export const maskIssueKey = (options: { issueKey: string; map: PseudonymMap }) =
   return masked ? `${masked.toUpperCase()}${parts[2]}` : options.issueKey.trim();
 };
 
-const CAPITALISED = /(?<![A-Za-z0-9])([A-Z][A-Za-z0-9]*)/g;
+const CAPITALISED = /(?<![\p{L}\p{N}])(\p{Lu}[\p{L}\p{N}]*)/gu;
 
-const ISSUE_KEY_PREFIX = /(?<![A-Za-z0-9])([A-Za-z][A-Za-z0-9]*)-\d+/g;
+const ISSUE_KEY_PREFIX = /(?<![\p{L}\p{N}])([A-Za-z][A-Za-z0-9]*)-\d+/gu;
 
 /** A shape an ordinary word of prose does not take, whatever language the prose is in. */
 const isNameShaped = (options: { word: string; keyPrefixes: ReadonlySet<string> }) => {
@@ -248,7 +248,7 @@ const isNameShaped = (options: { word: string; keyPrefixes: ReadonlySet<string> 
   if (/\d/.test(word)) return true;
   if (word === word.toUpperCase()) return true;
 
-  return /[a-z][A-Z]/.test(word);
+  return /\p{Ll}\p{Lu}/u.test(word);
 };
 
 export type UnmaskedWord = {
