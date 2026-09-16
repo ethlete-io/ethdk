@@ -38,3 +38,41 @@ test covers it.
 raw event before a block replaces it destroys the only record of that day. A retention pass
 shipped without compaction would therefore delete data, not minimize it. The fix is the
 compaction feature, not a security patch. The finding stands.
+
+## Where this stands
+
+Two commits so far, both with their own unit tests in the Rust host, all 172 passing.
+
+Done: SEC-01, SEC-02, SEC-03, SEC-06 (host half), SEC-07, SEC-11, SEC-12, SEC-13, SEC-19,
+and the host half of SEC-04 (the agent endpoint and a settings write are refused while the
+window is locked).
+
+Still open, in the order to take them:
+
+1. SEC-05. Register the commands in `build.rs` with
+   `tauri_build::try_build(Attributes::new().app_manifest(AppManifest::new().commands(&[…])))`,
+   list every command from `lib.rs` in `capabilities/default.json` as `allow-<command>`, and
+   give `capabilities/widget.json` only what the widget window uses. Check which commands the
+   widget really invokes before writing that list.
+2. SEC-09 `app/window-lock.ts`. The `catchError` sets `ready` true and `isLocked` false for any
+   error. Fail open only where there is no shell: `'__TAURI_INTERNALS__' in globalThis` is the
+   test `host/invoke.ts` already uses.
+3. SEC-10 `app/tray-readout.ts`. Publish a generic locked readout as soon as the window locks,
+   and hold back every later one until it unlocks.
+4. SEC-14 and SEC-15 `collectors/agent-session-collector.ts`. `persist$` filters the events but
+   passes `collection.cursors` through whole, so a private cwd and an excluded title are stored.
+   Sanitize the cursor beside the events, and run `redactEventTitles` over the kept events the
+   way the window, calendar and ingest collectors do.
+5. SEC-16 `libs/timetrack/src/lib/tempo/client.ts`. `tempoPaged$` follows `metadata.next` as an
+   absolute URL with the bearer token attached. Accept only the `TEMPO_API_BASE` origin.
+6. SEC-17 and SEC-18 `libs/timetrack/src/lib/google-auth/`. `revokeGoogleToken$` maps every
+   status to success; `renew$` stores a grant that lands after `invalidate`.
+7. SEC-06 core half: `normalizeJiraHost` and `normalizeGitLabHost` still accept an explicit
+   `http://` host. The host transport now refuses it, so this is the message, not the boundary.
+8. SEC-22 to SEC-25 in `libs/agent-rules/src/lib/`. Exclusive `0600` export, terminal-escape
+   stripping on printed provider text, `redirect: 'error'` plus a server proof in the discovery
+   file, and a refusal of conflicting edit flags.
+9. SEC-20 and SEC-21, the dependency updates.
+
+Each library change needs a changeset. `@ethlete/timetrack` and `@ethlete/agent-rules` are
+both published.
