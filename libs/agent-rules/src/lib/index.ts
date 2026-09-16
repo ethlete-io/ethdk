@@ -5,6 +5,7 @@ export * from './load-content';
 export * from './migrate';
 export * from './output-style';
 export * from './owned-paths';
+export * from './plain-text';
 export * from './plan';
 export * from './render';
 export * from './sync';

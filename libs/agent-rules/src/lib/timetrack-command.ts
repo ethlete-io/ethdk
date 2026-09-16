@@ -1,4 +1,4 @@
-import { writeFileSync } from 'fs';
+import { closeSync, lstatSync, openSync, unlinkSync, writeSync } from 'fs';
 import {
   TimetrackAttributionRule,
   TimetrackIssue,
@@ -21,6 +21,7 @@ import {
   timetrackStandIns,
   timetrackStatus,
 } from './timetrack';
+import { plain } from './plain-text';
 
 const FLAGS_WITH_VALUE = [
   '--root',
@@ -40,6 +41,9 @@ const FLAGS_WITH_VALUE = [
   '--to',
   '--state',
 ];
+
+/** Every human-readable line, with anything a terminal would act on printed rather than obeyed. */
+const say = (line: string) => console.log(plain(line));
 
 const positionalArgs = (args: string[]) =>
   args.filter((entry, index) => !entry.startsWith('--') && !FLAGS_WITH_VALUE.includes(args[index - 1] ?? ''));
@@ -172,6 +176,16 @@ const instantOf = (flag: string, raw: string) => {
   return at.getTime();
 };
 
+/** Which edits the flags name. `--from` with `--to` is the one pair that names a single change. */
+const namedEdits = (argv: string[]) => {
+  const named = argv.includes('--from') || argv.includes('--to') ? ['--from/--to'] : [];
+
+  return [
+    ...named,
+    ...['--issue', '--description', '--state', '--hide', '--show', '--reset'].filter((flag) => argv.includes(flag)),
+  ];
+};
+
 /**
  * The one edit the flags state, or a refusal naming what they said instead.
  *
@@ -185,6 +199,13 @@ const editOf = (options: { argv: string[]; rowId: string }): TimetrackRowEdit =>
   const issueKey = flagValue(argv, '--issue');
   const description = flagValue(argv, '--description');
   const state = flagValue(argv, '--state');
+  const named = namedEdits(argv);
+
+  if (named.length > 1) {
+    throw new Error(
+      `One edit per call, and these name ${named.length}: ${named.join(', ')}. Run the command once for each.`,
+    );
+  }
 
   if (from && to) return { kind: 'range', rowId, fromMs: instantOf('--from', from), toMs: instantOf('--to', to) };
   if (from || to) throw new Error('Moving a row takes both --from and --to.');
@@ -205,6 +226,36 @@ const editOf = (options: { argv: string[]; rowId: string }): TimetrackRowEdit =>
   throw new Error('Pass one of --from with --to, --issue, --description, --state, --hide, --show or --reset.');
 };
 
+/**
+ * Writes an export nobody but its owner can read.
+ *
+ * A day's events are the rawest personal record the app holds, and the recommended destination is a
+ * shared temporary directory. The file therefore carries mode `0600` from the moment it exists, rather
+ * than whatever the umask leaves. `lstatSync` reads the name itself, so a symlink somebody else planted
+ * is refused rather than written through, and exclusive creation refuses one that arrives after the
+ * check.
+ */
+const writeExport = (options: { path: string; data: string; overwrite: boolean }) => {
+  const { path, data, overwrite } = options;
+  const found = lstatSync(path, { throwIfNoEntry: false });
+
+  if (found && !overwrite) {
+    throw new Error(`${path} already exists. Pass --overwrite to replace it, or name another file.`);
+  }
+
+  if (found && !found.isFile()) throw new Error(`${path} is not a regular file, so it is not overwritten.`);
+  if (found) unlinkSync(path);
+
+  const handle = openSync(path, 'wx', 0o600);
+
+  try {
+    writeSync(handle, data);
+  } finally {
+    closeSync(handle);
+  }
+};
+
+/** `--json` answers data, never a terminal-formatted line, so it is printed as it parses. */
 const printed = (value: unknown, json: boolean) => {
   if (json) console.log(JSON.stringify(value, null, 2));
 
@@ -250,7 +301,8 @@ Options for log
   --description <text>
 
 Options for day
-  --out <path>        Write the raw answer to a file, and print how many events it holds
+  --out <path>        Write the raw answer to a new file, readable by you alone
+  --overwrite         Replace the file --out names, which is refused otherwise
 
 Options for edit — pass exactly one change
   --day <YYYY-MM-DD>  The day the row is on (default: today)
@@ -283,11 +335,11 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     const status = await timetrackStatus();
 
     if (!json) {
-      console.log(`Timetrack   ${timetrackDiscoveryPath()}`);
-      console.log(`  jira      ${status.jiraReady ? 'configured' : 'not configured — set it in Timetrack Settings'}`);
-      console.log(`  tempo     ${status.tempoReady ? 'configured' : 'not configured — no worklog history is read'}`);
-      console.log(`  projects  ${status.projects.map((project) => project.key).join(', ') || '— none picked'}`);
-      console.log(`  subject   ${status.subjectField || '— no field configured, the summary is used'}`);
+      say(`Timetrack   ${timetrackDiscoveryPath()}`);
+      say(`  jira      ${status.jiraReady ? 'configured' : 'not configured — set it in Timetrack Settings'}`);
+      say(`  tempo     ${status.tempoReady ? 'configured' : 'not configured — no worklog history is read'}`);
+      say(`  projects  ${status.projects.map((project) => project.key).join(', ') || '— none picked'}`);
+      say(`  subject   ${status.subjectField || '— no field configured, the summary is used'}`);
     }
 
     return printed(status, json);
@@ -297,11 +349,11 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     const instance = await timetrackInstance();
 
     if (!json) {
-      console.log('Levels, highest first');
-      instance.levels.forEach((level) => console.log(`  ${level.hierarchyLevel}  ${level.typeNames.join(', ')}`));
-      console.log(`A parent can be named by  ${instance.suggestedParenting}`);
-      console.log(`Branch-subject candidates (${instance.subjectFieldCandidates.length})`);
-      instance.subjectFieldCandidates.forEach((field) => console.log(`  ${field.id}  ${field.name}`));
+      say('Levels, highest first');
+      instance.levels.forEach((level) => say(`  ${level.hierarchyLevel}  ${level.typeNames.join(', ')}`));
+      say(`A parent can be named by  ${instance.suggestedParenting}`);
+      say(`Branch-subject candidates (${instance.subjectFieldCandidates.length})`);
+      instance.subjectFieldCandidates.forEach((field) => say(`  ${field.id}  ${field.name}`));
     }
 
     return printed(instance, json);
@@ -312,7 +364,7 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
 
     const issue = await timetrackIssue(value);
 
-    if (!json) console.log(issueLine(issue));
+    if (!json) say(issueLine(issue));
 
     return printed(issue, json);
   }
@@ -326,8 +378,8 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     });
 
     if (!json) {
-      if (issues.length === 0) console.log('No issue matches.');
-      issues.forEach((issue) => console.log(issueLine(issue)));
+      if (issues.length === 0) say('No issue matches.');
+      issues.forEach((issue) => say(issueLine(issue)));
     }
 
     return printed(issues, json);
@@ -339,11 +391,11 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     if (!json) {
       const where = found.inherited ? ' (from a directory above it)' : '';
 
-      if (found.private) console.log(`${found.repoPath} is marked private — work there is logged nowhere${where}.`);
-      else if (found.projectKey) console.log(`${found.repoPath} logs into ${found.projectKey}${where}.`);
+      if (found.private) say(`${found.repoPath} is marked private — work there is logged nowhere${where}.`);
+      else if (found.projectKey) say(`${found.repoPath} logs into ${found.projectKey}${where}.`);
       else if (found.suggestedProjectKey) {
-        console.log(`${found.repoPath} is linked to nothing. Its name suggests ${found.suggestedProjectKey}.`);
-      } else console.log(`${found.repoPath} is linked to no project. Link it in Timetrack Settings.`);
+        say(`${found.repoPath} is linked to nothing. Its name suggests ${found.suggestedProjectKey}.`);
+      } else say(`${found.repoPath} is linked to no project. Link it in Timetrack Settings.`);
     }
 
     return printed(found, json);
@@ -363,7 +415,7 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
       subject: flagValue(argv, '--subject'),
     });
 
-    if (!json) console.log(`${issue.key}  ${summary}`);
+    if (!json) say(`${issue.key}  ${summary}`);
 
     return printed(issue, json);
   }
@@ -383,8 +435,8 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     });
 
     if (!json) {
-      console.log(`${worklog.issueKey}  ${minutes}m on ${worklog.day}`);
-      console.log('It is a row on the day, not a Tempo entry — review the day in Timetrack, then sync it.');
+      say(`${worklog.issueKey}  ${minutes}m on ${worklog.day}`);
+      say('It is a row on the day, not a Tempo entry — review the day in Timetrack, then sync it.');
     }
 
     return printed(worklog, json);
@@ -399,16 +451,17 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     const out = flagValue(argv, '--out');
 
     if (out) {
-      writeFileSync(out, JSON.stringify(found));
-      console.log(`${found.day}  ${found.events.length} events written to ${out}`);
+      writeExport({ path: out, data: JSON.stringify(found), overwrite: argv.includes('--overwrite') });
+      say(`${found.day}  ${found.events.length} events written to ${out}, readable by you alone`);
+      say('It holds the day as it was observed: window titles, paths and messages. Delete it when you are done.');
 
       return 0;
     }
 
     if (!json) {
-      console.log(`${found.day}  ${found.events.length} events`);
-      countByKind(found.events).forEach(([kind, count]) => console.log(`  ${kind}  ${count}`));
-      console.log('Pass --out <path> to write the events themselves, which are far too many to read.');
+      say(`${found.day}  ${found.events.length} events`);
+      countByKind(found.events).forEach(([kind, count]) => say(`  ${kind}  ${count}`));
+      say('Pass --out <path> to write the events themselves, which are far too many to read.');
     }
 
     return printed(found, json);
@@ -422,10 +475,10 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     const found = await timetrackDayRows(day);
 
     if (!json) {
-      console.log(`${found.day}  ${hours(found.loggedMs)} logged of a ${hours(found.targetMs)} target`);
-      found.rows.forEach((row) => console.log(`  ${rowLine(row)}`));
-      found.hidden.forEach((row) => console.log(`  ${rowLine(row)}`));
-      found.warnings.forEach((warning) => console.log(`  ! ${warning.kind}: ${warning.detail}`));
+      say(`${found.day}  ${hours(found.loggedMs)} logged of a ${hours(found.targetMs)} target`);
+      found.rows.forEach((row) => say(`  ${rowLine(row)}`));
+      found.hidden.forEach((row) => say(`  ${rowLine(row)}`));
+      found.warnings.forEach((warning) => say(`  ! ${warning.kind}: ${warning.detail}`));
     }
 
     return printed(found, json);
@@ -440,9 +493,9 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     const edited = await timetrackEditDay({ day, edits: [editOf({ argv, rowId: value })] });
 
     if (!json) {
-      console.log(`${edited.day}  ${edited.applied} of 1 edit landed`);
-      edited.rows.forEach((row) => console.log(`  ${rowLine(row)}`));
-      edited.warnings.forEach((warning) => console.log(`  ! ${warning.kind}: ${warning.detail}`));
+      say(`${edited.day}  ${edited.applied} of 1 edit landed`);
+      edited.rows.forEach((row) => say(`  ${rowLine(row)}`));
+      edited.warnings.forEach((warning) => say(`  ! ${warning.kind}: ${warning.detail}`));
     }
 
     return printed(edited, json);
@@ -452,12 +505,12 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     const rules = await timetrackRules();
 
     if (!json) {
-      console.log(`target ${Math.round(rules.dayTargetMs / 60_000)}m  day starts at ${rules.dayStartHour}:00`);
-      console.log(`${rules.attributionRules.length} attribution rule(s)`);
-      rules.attributionRules.forEach((rule) => console.log(`  ${describeRule(rule)}`));
-      console.log(`${rules.projectLinks.length} project link(s)`);
+      say(`target ${Math.round(rules.dayTargetMs / 60_000)}m  day starts at ${rules.dayStartHour}:00`);
+      say(`${rules.attributionRules.length} attribution rule(s)`);
+      rules.attributionRules.forEach((rule) => say(`  ${describeRule(rule)}`));
+      say(`${rules.projectLinks.length} project link(s)`);
       rules.projectLinks.forEach((link) =>
-        console.log(`  ${link.path} → ${link.private ? 'private' : (link.projectKey ?? 'no project')}`),
+        say(`  ${link.path} → ${link.private ? 'private' : (link.projectKey ?? 'no project')}`),
       );
     }
 
@@ -469,17 +522,17 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     const naming = await timetrackNaming(day);
 
     if (!json) {
-      console.log(`${day}   tempo ${naming.tempoReady ? 'configured' : 'not configured'}`);
-      console.log(`History   ${naming.history}, ${naming.historyWorklogs} worklog(s) in the span`);
-      if (naming.historyMessage) console.log(`          ${naming.historyMessage}`);
-      console.log(`Offered (${naming.offers.length})`);
+      say(`${day}   tempo ${naming.tempoReady ? 'configured' : 'not configured'}`);
+      say(`History   ${naming.history}, ${naming.historyWorklogs} worklog(s) in the span`);
+      if (naming.historyMessage) say(`          ${naming.historyMessage}`);
+      say(`Offered (${naming.offers.length})`);
       naming.offers.forEach((offer) =>
-        console.log(
+        say(
           `  ${offer.repoPath} → ${offer.issueKey}  ${hours(offer.loggedMs)}, ${Math.round(offer.share * 100)}%, ${offer.days}d`,
         ),
       );
-      console.log(`Not offered (${naming.declines.length})`);
-      naming.declines.forEach((decline) => console.log(`  ${describeDecline(decline)}`));
+      say(`Not offered (${naming.declines.length})`);
+      naming.declines.forEach((decline) => say(`  ${describeDecline(decline)}`));
     }
 
     return printed(naming, json);
@@ -492,15 +545,15 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
       .sort((left, right) => left.createdAtMs - right.createdAtMs);
 
     if (!json) {
-      console.log(`${open.length} open, ${standIns.length - open.length} resolved`);
-      open.forEach((standIn) => console.log(`  ${describeStandIn(standIn)}`));
-      if (open.length) console.log('Only the app opens or resolves one — report them, do not write one.');
+      say(`${open.length} open, ${standIns.length - open.length} resolved`);
+      open.forEach((standIn) => say(`  ${describeStandIn(standIn)}`));
+      if (open.length) say('Only the app opens or resolves one — report them, do not write one.');
     }
 
     return printed(standIns, json);
   }
 
-  console.log(USAGE);
+  say(USAGE);
 
   return subcommand === undefined || subcommand === '--help' || subcommand === '-h' ? 0 : 1;
 };

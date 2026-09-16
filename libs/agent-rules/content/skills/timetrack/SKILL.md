@@ -60,6 +60,10 @@ A real day holds thousands of events, so **never print them**. Write them to a f
 `--out`, then read that file from a test or a script. Without `--out` the command reports
 only the counts, which is what tells you whether a day holds the source you are looking for.
 
+`--out` writes a new file, readable by its owner alone. A destination that already exists is
+refused until you pass `--overwrite`, and a symlink is never written through. The file holds the
+day as it was observed - window titles, paths and messages - so delete it when you are done.
+
 ## Reading and correcting the rows a day drew
 
 `day` answers what the collectors saw. `rows` answers what the app made of it - the bands on the

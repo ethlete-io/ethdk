@@ -5,6 +5,7 @@ import { AGENT_TARGETS, AgentTarget, CONFIG_FILE_NAME, detectTargets } from './l
 import { gitFlowCommand } from './lib/git-flow-command';
 import { migrate } from './lib/migrate';
 import { outputStyleCommand } from './lib/output-style-command';
+import { plain } from './lib/plain-text';
 import { check, sync } from './lib/sync';
 import { timetrackCommand } from './lib/timetrack-command';
 
@@ -105,7 +106,7 @@ if (require.main === module) {
     .then(() => run(process.argv.slice(2)))
     .then((code) => process.exit(code))
     .catch((error: unknown) => {
-      console.error(error instanceof Error ? error.message : error);
+      console.error(plain(error instanceof Error ? error.message : String(error)));
       process.exit(1);
     });
 }
