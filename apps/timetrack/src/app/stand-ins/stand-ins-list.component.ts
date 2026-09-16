@@ -124,6 +124,7 @@ import { injectStandIns } from './stand-ins';
                 [createGate]="tickets.createGate()"
                 [createdKey]="tickets.createdKey()"
                 [duplicateKey]="tickets.duplicateKey()"
+                [startStatusNote]="tickets.startStatusNote()"
                 [searchFailure]="tickets.searchFailure()"
                 [writeFailure]="tickets.writeFailure()"
                 [matchFailure]="tickets.matchFailure()"

@@ -160,6 +160,12 @@ export type TimetrackTicketSettings = {
    * name because that is what the REST API writes to. Empty writes no subject at all.
    */
   subjectField: string;
+  /**
+   * The status a filed ticket is moved to once it exists, by name. Empty leaves it where the workflow
+   * files it. A ticket written from a day review covers work that already happened, so the first
+   * status of the workflow is regularly the wrong one for it.
+   */
+  initialStatus: string;
 };
 
 /**
@@ -391,6 +397,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
     parenting: 'parent-field',
     parentLinkType: 'Relates',
     subjectField: '',
+    initialStatus: '',
   },
   reasoning: {
     enabled: false,

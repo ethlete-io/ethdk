@@ -27,6 +27,8 @@ export type FakeJiraIssue = {
   parentKey?: string;
   /** The account the create call assigned it to. */
   assigneeAccountId?: string;
+  /** The status it stands in. Absent reads as the first of `FakeJiraState.statuses`. */
+  status?: string;
   /** ISO 8601. Jira orders the activity feed by it. */
   updated?: string;
   /** Custom fields the create call wrote, by field id. */
@@ -52,6 +54,11 @@ export type FakeJiraField = {
   type?: string;
 };
 
+export type FakeJiraStatus = {
+  id: string;
+  name: string;
+};
+
 export type FakeJiraLink = {
   type: string;
   inwardKey: string;
@@ -66,6 +73,8 @@ export type FakeJiraState = {
   /** The type names this account may not create, which `createmeta` then leaves out of its answer. */
   notCreatable: string[];
   fields: FakeJiraField[];
+  /** Every status the instance defines, the first of which every new issue is filed at. */
+  statuses: FakeJiraStatus[];
   links: FakeJiraLink[];
   /** Every issue the app filed, in order. `issues` holds these too. */
   created: FakeJiraIssue[];

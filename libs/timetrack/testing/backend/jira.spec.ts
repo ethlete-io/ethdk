@@ -130,12 +130,40 @@ describe('respondJira', () => {
     expect(Object.keys(issuesOf(found.body)[0]?.fields ?? {})).toEqual(['summary', 'issuetype', 'updated']);
   });
 
+  it('offers every status but the one the issue already stands in', () => {
+    const backend = backendOf();
+
+    const answer = get(backend, `/issue/${E2E_ISSUE_KEY}/transitions`);
+
+    expect(
+      (answer.body as { transitions: { to: { name: string } }[] }).transitions.map((move) => move.to.name),
+    ).toEqual(['In Progress', 'Done']);
+  });
+
+  it('moves the issue the transition names, so a later read stands in the new status', () => {
+    const backend = backendOf();
+
+    const answer = post(backend, `/issue/${E2E_ISSUE_KEY}/transitions`, { transition: { id: 't3' } });
+
+    expect(answer.status).toBe(204);
+    expect(backend.jira.issues.find((issue) => issue.key === E2E_ISSUE_KEY)?.status).toBe('In Progress');
+  });
+
+  it('refuses a move the issue does not offer', () => {
+    const backend = backendOf();
+
+    const answer = post(backend, `/issue/${E2E_ISSUE_KEY}/transitions`, { transition: { id: 'tNope' } });
+
+    expect(answer.status).toBe(400);
+    expect(backend.jira.issues.find((issue) => issue.key === E2E_ISSUE_KEY)?.status).toBeUndefined();
+  });
+
   it('answers 404 for a Jira path it does not route', () => {
-    const answer = get(backendOf(), '/issue/ABC-1/transitions');
+    const answer = get(backendOf(), '/issue/ABC-1/worklog');
 
     expect(answer.status).toBe(404);
     expect(answer.body).toMatchObject({
-      errorMessages: [expect.stringContaining('/rest/api/3/issue/ABC-1/transitions')],
+      errorMessages: [expect.stringContaining('/rest/api/3/issue/ABC-1/worklog')],
     });
   });
 });

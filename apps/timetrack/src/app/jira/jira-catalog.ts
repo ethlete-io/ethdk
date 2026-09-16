@@ -7,11 +7,13 @@ import {
   JiraIssue,
   JiraIssueType,
   JiraProject,
+  JiraStatus,
   favoriteProjectKeys,
   fetchJiraFields$,
   fetchJiraIssuePicks$,
   fetchJiraIssueTypes$,
   fetchJiraProjects$,
+  fetchJiraStatuses$,
   jiraSubjectFieldCandidates,
   readJiraCredentials$,
 } from '@ethlete/timetrack';
@@ -98,6 +100,7 @@ const JIRA_CATALOG_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const projectLoads$ = new Subject<void>();
   const issueTypeLoads$ = new Subject<void>();
   const fieldLoads$ = new Subject<void>();
+  const statusLoads$ = new Subject<void>();
   const issueAsks$ = new Subject<JiraIssueAsk>();
 
   /** Runs a read with the configured credentials, or fails with the one message that names the cause. */
@@ -139,6 +142,15 @@ const JIRA_CATALOG_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
     ),
     { initialValue: IDLE as Loaded<JiraField[]> },
+  );
+
+  const statusStatus = toSignal(
+    statusLoads$.pipe(
+      exhaustMap(() =>
+        loaded$(withCredentials$((credentials) => fetchJiraStatuses$({ transport: ports.transport, credentials }))),
+      ),
+    ),
+    { initialValue: IDLE as Loaded<JiraStatus[]> },
   );
 
   /** The projects one scope reads. An empty scope reads the projects the user picked, in their order. */
@@ -228,6 +240,15 @@ const JIRA_CATALOG_DEF = /* @__PURE__ */ defineRootProvider(() => {
       if (fieldStatus().kind !== 'ready') fieldLoads$.next();
     },
     reloadFields: () => fieldLoads$.next(),
+
+    /** Every status the instance defines, by name, so the one a ticket starts in is picked not typed. */
+    statuses: computed(() => valueOf<JiraStatus[]>(statusStatus(), [])),
+    isLoadingStatuses: computed(() => statusStatus().kind === 'loading'),
+    statusFailure: computed(() => failureOf(statusStatus())),
+    loadStatuses: () => {
+      if (statusStatus().kind !== 'ready') statusLoads$.next();
+    },
+    reloadStatuses: () => statusLoads$.next(),
 
     /** The issues one scope offers, most recently touched first. Empty until something asks for them. */
     issuesFor: (scope: string) => listFor(scope).issues,

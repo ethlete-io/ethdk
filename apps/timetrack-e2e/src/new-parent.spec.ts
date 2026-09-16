@@ -1,5 +1,5 @@
 import { Page } from '@playwright/test';
-import { E2E_ACCOUNT_ID } from '@ethlete/timetrack/testing';
+import { E2E_ACCOUNT_ID, defaultSettings } from '@ethlete/timetrack/testing';
 import { expect, openWaitingForAName, readBackend, seedWorld, test } from './support';
 
 /** The default world's second stretch names no issue, which is the context this form is opened for. */
@@ -116,3 +116,44 @@ test.describe('a parent level Jira refuses this account', () => {
 });
 
 const parentField = (page: Page) => page.locator('et-form-field').filter({ hasText: 'Parent' }).first();
+
+test.describe('the status a filed ticket starts in', () => {
+  const settingsWithStatus = (initialStatus: string) => ({
+    ...defaultSettings(),
+    ticket: { ...defaultSettings().ticket, initialStatus },
+  });
+
+  test('moves the filed ticket to the status the settings name', async ({ page }) => {
+    await seedWorld(page, { settings: settingsWithStatus('In Progress') });
+    await page.goto('/day');
+    await openWaitingForAName(page);
+    await page.getByRole('button', { name: 'Create a ticket' }).click();
+    await page.getByRole('button', { name: 'Create in Jira' }).click();
+    await page.getByRole('button', { name: 'File it now' }).click();
+
+    await expect.poll(async () => (await created(page)).map((issue) => issue.status)).toEqual(['In Progress']);
+  });
+
+  test('leaves it where Jira files it when the settings name no status', async ({ page }) => {
+    await page.goto('/day');
+    await openWaitingForAName(page);
+    await page.getByRole('button', { name: 'Create a ticket' }).click();
+    await page.getByRole('button', { name: 'Create in Jira' }).click();
+    await page.getByRole('button', { name: 'File it now' }).click();
+
+    await expect.poll(async () => (await created(page)).length).toBe(1);
+    expect((await created(page))[0]?.status).toBeUndefined();
+  });
+
+  test('says so on the filed ticket when the workflow offers no move there', async ({ page }) => {
+    await seedWorld(page, { settings: settingsWithStatus('Review') });
+    await page.goto('/day');
+    await openWaitingForAName(page);
+    await page.getByRole('button', { name: 'Create a ticket' }).click();
+    await page.getByRole('button', { name: 'Create in Jira' }).click();
+    await page.getByRole('button', { name: 'File it now' }).click();
+
+    await expect(page.getByText(/no move to Review/)).toBeVisible();
+    await expect(page.getByText(/It offers In Progress, Done\./)).toBeVisible();
+  });
+});

@@ -1,5 +1,5 @@
 import { filterByJql } from './jql';
-import { FakeAnswer, FakeRoutedRequest, bodyOf, created, nestedOf, notFound, ok, stringOf } from './route';
+import { FakeAnswer, FakeRoutedRequest, bodyOf, created, nestedOf, noContent, notFound, ok, stringOf } from './route';
 import { FakeBackend, FakeJiraIssue } from './types';
 
 const JIRA_PREFIX = '/rest/api/3';
@@ -58,6 +58,43 @@ const createIssue = (backend: FakeBackend, request: FakeRoutedRequest): FakeAnsw
   return created({ id: issue.id, key: issue.key });
 };
 
+const statusOf = (backend: FakeBackend, issue: FakeJiraIssue) =>
+  issue.status ?? backend.jira.statuses[0]?.name ?? 'Backlog';
+
+/**
+ * Every move but the one the issue already stands in. A real workflow offers fewer, and a test that
+ * needs a status nobody can reach names one the instance does not define at all.
+ */
+const transitionsFor = (backend: FakeBackend, issue: FakeJiraIssue) =>
+  backend.jira.statuses
+    .filter((status) => status.name !== statusOf(backend, issue))
+    .map((status) => ({ id: `t${status.id}`, name: `Move to ${status.name}`, to: { name: status.name } }));
+
+const readTransitions = (backend: FakeBackend, issueKey: string): FakeAnswer => {
+  const issue = backend.jira.issues.find((held) => held.key === issueKey);
+
+  if (!issue) return { status: 404, body: { errorMessages: ['Issue does not exist.'] } };
+
+  return ok({ transitions: transitionsFor(backend, issue) });
+};
+
+const writeTransition = (backend: FakeBackend, move: { issueKey: string; request: FakeRoutedRequest }): FakeAnswer => {
+  const { issueKey, request } = move;
+  const issue = backend.jira.issues.find((held) => held.key === issueKey);
+  const id = stringOf(nestedOf(bodyOf(request), 'transition'), 'id');
+  const wanted = issue && transitionsFor(backend, issue).find((transition) => transition.id === id);
+
+  if (!issue) return { status: 404, body: { errorMessages: ['Issue does not exist.'] } };
+  if (!wanted) return { status: 400, body: { errors: { transition: 'The issue does not offer that move.' } } };
+
+  const moved = { ...issue, status: wanted.to.name };
+
+  backend.jira.issues = backend.jira.issues.map((held) => (held.key === issueKey ? moved : held));
+  backend.jira.created = backend.jira.created.map((held) => (held.key === issueKey ? moved : held));
+
+  return noContent();
+};
+
 const linkIssues = (backend: FakeBackend, request: FakeRoutedRequest): FakeAnswer => {
   const body = bodyOf(request);
   const inwardKey = stringOf(nestedOf(body, 'inwardIssue'), 'key');
@@ -110,8 +147,19 @@ export const respondJira = (backend: FakeBackend, request: FakeRoutedRequest): F
       })),
     );
   }
+  if (path === '/status') return ok(backend.jira.statuses);
   if (path === '/issueLink' && request.method === 'POST') return linkIssues(backend, request);
   if (path === '/issue' && request.method === 'POST') return createIssue(backend, request);
+
+  const transitions = /^\/issue\/([^/]+)\/transitions$/.exec(path);
+
+  if (transitions) {
+    const issueKey = decodeURIComponent(transitions[1] ?? '');
+
+    return request.method === 'POST'
+      ? writeTransition(backend, { issueKey, request })
+      : readTransitions(backend, issueKey);
+  }
 
   return notFound(request);
 };

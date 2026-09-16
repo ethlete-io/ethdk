@@ -325,6 +325,11 @@ const defaultJira = (): FakeJiraState => ({
     { id: 'summary', name: 'Summary', custom: false, type: 'string' },
     { id: 'customfield_10057', name: 'Branch subject', custom: true, type: 'string' },
   ],
+  statuses: [
+    { id: '1', name: 'Backlog' },
+    { id: '3', name: 'In Progress' },
+    { id: '10001', name: 'Done' },
+  ],
   links: [],
   created: [],
 });

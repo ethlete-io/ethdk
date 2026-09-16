@@ -378,6 +378,7 @@ const asTicket = (value: unknown): TimetrackTicketSettings => {
     parenting: raw['parenting'] === 'issue-link' ? 'issue-link' : 'parent-field',
     parentLinkType: asText(raw['parentLinkType']) || ticket.parentLinkType,
     subjectField: asText(raw['subjectField']),
+    initialStatus: asText(raw['initialStatus']),
   };
 };
 

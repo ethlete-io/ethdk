@@ -49,6 +49,10 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
 
           <span class="text-small text-et-surface-muted">{{ filedNote() }}</span>
 
+          @if (startStatusNote(); as note) {
+            <span class="text-small text-et-warn">{{ note }}</span>
+          }
+
           <div>
             <button (click)="dismiss.emit()" et-button variant="filled" size="sm">Back to the day</button>
           </div>
@@ -390,6 +394,9 @@ export class CreateTicketComponent {
   public createGate = input<string | null>(null);
   /** The key the press landed on because Jira already held it. See `createdKey` for a new one. */
   public duplicateKey = input<string | null>(null);
+
+  /** Why the filed ticket does not stand in the status the settings name, or nothing when it does. */
+  public startStatusNote = input<string | null>(null);
   public searchFailure = input<string | null>(null);
   public writeFailure = input<string | null>(null);
   public matchFailure = input<string | null>(null);

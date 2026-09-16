@@ -12,6 +12,13 @@ expressible through the parent field depends on the levels your instance defines
 Jira before changing the level a ticket is filed at — a ticket at the wrong level is harder to explain
 than no ticket at all.`;
 
+const STATUS_WHY = `A ticket written from a day review covers work that already happened, so the first
+status of the workflow is regularly the wrong one for it.
+
+Jira takes no status on a create, so the ticket is filed and then moved. Only a move the workflow offers
+from that first status can be made — pick one the ticket can actually reach. Leave it unset to file the
+ticket where the workflow puts it.`;
+
 const SUBJECT_WHY = `A branch is named from the ticket, and the part after the key is the subject:
 feat/ABC-2177-user-management carries user-management. Naming the field that holds it lets a ticket filed
 here be turned into a branch name, and lets a branch be traced back to its ticket.
@@ -54,6 +61,27 @@ fields rather than a box to type an id into. Leave it unset to write no subject.
             }
           </et-select>
         </et-form-field>
+
+        <et-form-field class="w-45" appearance="underline" size="sm">
+          <et-label>Then move it to</et-label>
+          <et-select
+            [value]="settings().initialStatus || null"
+            [loading]="catalog.isLoadingStatuses()"
+            [error]="catalog.statusFailure()"
+            (valueChange)="setInitialStatus($event)"
+            (openChange)="openedStatuses($event)"
+            placeholder="Leave it where Jira files it"
+            allowCustomValues
+          >
+            <input etSelectSearch placeholder="Search statuses" />
+
+            @for (status of statuses(); track status.id) {
+              <et-select-option [value]="status.name">{{ status.name }}</et-select-option>
+            }
+          </et-select>
+        </et-form-field>
+
+        <ethlete-explain [text]="STATUS_WHY" label="the status a ticket starts in" />
 
         <et-form-field class="min-w-60 grow" appearance="underline" size="sm">
           <et-label>A parent may be</et-label>
@@ -138,6 +166,7 @@ export class TicketSettingsComponent {
   public settingsChange = output<TimetrackTicketSettings>();
   protected readonly WHY = WHY;
   protected readonly SUBJECT_WHY = SUBJECT_WHY;
+  protected readonly STATUS_WHY = STATUS_WHY;
 
   /** Jira's own built-in link types. The instance may define more, so the field still takes a name. */
   protected readonly LINK_TYPES = ['Relates', 'Blocks', 'Cloners', 'Duplicate'];
@@ -153,12 +182,18 @@ export class TicketSettingsComponent {
 
   protected subjectFields = computed(() => this.catalog.subjectFields());
 
+  protected statuses = computed(() => this.catalog.statuses());
+
   protected openedTypes(open: boolean) {
     if (open) this.catalog.loadIssueTypes();
   }
 
   protected openedFields(open: boolean) {
     if (open) this.catalog.loadFields();
+  }
+
+  protected openedStatuses(open: boolean) {
+    if (open) this.catalog.loadStatuses();
   }
 
   protected setIssueTypeName(value: unknown) {
@@ -177,6 +212,10 @@ export class TicketSettingsComponent {
 
   protected setParentLinkType(value: unknown) {
     this.emit({ parentLinkType: typeof value === 'string' ? value.trim() : '' });
+  }
+
+  protected setInitialStatus(value: unknown) {
+    this.emit({ initialStatus: typeof value === 'string' ? value.trim() : '' });
   }
 
   protected setSubjectField(value: unknown) {

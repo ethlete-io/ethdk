@@ -26,9 +26,11 @@ import {
   fetchJiraCreatableTypes$,
   fetchJiraIssues$,
   fetchJiraOpenIssues$,
+  JiraStatusMove,
   fetchJiraMyself$,
   fetchJiraParentCandidates$,
   fileTicketOnce$,
+  moveJiraIssueTo$,
   gitFlowConfigFor,
   inferTicketProjectKey,
   matchExistingIssues,
@@ -101,7 +103,11 @@ type CandidateStatus =
 type CreateStatus =
   | typeof IDLE
   | { kind: 'creating' }
-  | { kind: 'created'; issueKey: string }
+  | {
+      kind: 'created';
+      issueKey: string;
+      /** What the settings' start status did, when they name one. */ move?: JiraStatusMove;
+    }
   /** The project already held an issue with this summary, so nothing new was filed. */
   | { kind: 'duplicate'; issueKey: string }
   | { kind: 'failed'; message: string };
@@ -542,6 +548,28 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
+  /**
+   * Moves a filed ticket to the status the settings name, once it exists.
+   *
+   * Jira takes no status on a create, so this is a second call and it runs only for a ticket this press
+   * actually filed. A failure answers rather than throws: the ticket is filed either way, and reporting
+   * the create as failed would send the user to file it a second time.
+   */
+  const moveToStart$ = (options: { credentials: JiraCredentials; issueKey: string }) => {
+    const statusName = settings.settings().ticket.initialStatus;
+
+    if (!statusName) return of<JiraStatusMove | null>(null);
+
+    return moveJiraIssueTo$({
+      transport: ports.transport,
+      credentials: options.credentials,
+      issueKey: options.issueKey,
+      statusName,
+    }).pipe(
+      catchError((error: unknown) => of<JiraStatusMove>({ kind: 'failed', statusName, message: messageOf(error) })),
+    );
+  };
+
   const fileTicket$ = (options: { credentials: JiraCredentials; accountId: string; draft: TicketForm }) => {
     const ticket = settings.settings().ticket;
     const { credentials, accountId, draft } = options;
@@ -572,14 +600,24 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         const named = context();
         const waiting = standIn();
 
-        return withSelf$(({ credentials, accountId }) => fileTicket$({ credentials, accountId, draft })).pipe(
-          map((created): CreateStatus => {
+        return withSelf$(({ credentials, accountId }) =>
+          fileTicket$({ credentials, accountId, draft }).pipe(
+            // Only an issue this press filed is moved. One the project already held stands where its own
+            // work left it, and a day review is no reason to walk it back to the start of the workflow.
+            switchMap((created) =>
+              created.duplicate
+                ? of({ created, move: null })
+                : moveToStart$({ credentials, issueKey: created.issueKey }).pipe(map((move) => ({ created, move }))),
+            ),
+          ),
+        ).pipe(
+          map(({ created, move }): CreateStatus => {
             if (named) dayReview.nameContext(named, { kind: 'issue', issueKey: created.issueKey });
             else if (waiting) settings.resolveStandIn({ id: waiting.id, issueKey: created.issueKey });
 
             return created.duplicate
               ? { kind: 'duplicate', issueKey: created.issueKey }
-              : { kind: 'created', issueKey: created.issueKey };
+              : { kind: 'created', issueKey: created.issueKey, ...(move ? { move } : {}) };
           }),
           catchError((error: unknown) => of<CreateStatus>({ kind: 'failed', message: messageOf(error) })),
           startWith<CreateStatus>({ kind: 'creating' }),
@@ -704,6 +742,25 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       const status = createStatus();
 
       return status.kind === 'created' ? status.issueKey : null;
+    }),
+
+    /**
+     * Why the filed ticket does not stand in the status the settings name, or nothing when it does.
+     *
+     * Silence here would leave the user reading Jira to find out, and the setting is the only place
+     * either case is corrected — so both name the status that was asked for.
+     */
+    startStatusNote: computed(() => {
+      const status = createStatus();
+      const move = status.kind === 'created' ? status.move : undefined;
+
+      if (!move || move.kind === 'moved') return null;
+
+      if (move.kind === 'failed') return `Filed, but Jira refused the move to ${move.statusName}. ${move.message}`;
+
+      const offered = move.offered.length ? ` It offers ${move.offered.join(', ')}.` : '';
+
+      return `Filed, but the workflow has no move to ${move.statusName} from where it starts.${offered}`;
     }),
 
     /**
