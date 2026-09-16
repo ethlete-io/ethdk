@@ -131,9 +131,9 @@ pub struct HostProcessResult {
 /// A remote name and a branch name never hold `::`, so the whole family is refused rather than the
 /// one spelling that is known to execute.
 fn names_a_transport(argument: &str) -> bool {
-    argument
-        .split_once("::")
-        .is_some_and(|(scheme, _)| !scheme.is_empty() && scheme.chars().all(|c| c.is_ascii_alphanumeric() || "+.-".contains(c)))
+    argument.split_once("::").is_some_and(|(scheme, _)| {
+        !scheme.is_empty() && scheme.chars().all(|c| c.is_ascii_alphanumeric() || "+.-".contains(c))
+    })
 }
 
 fn rejected_argument(argument: &str) -> bool {
@@ -156,7 +156,11 @@ fn check(command: &str, args: &[String]) -> TimetrackResult<()> {
     if !allowed.operations.contains(&operation) {
         return Err(TimetrackError::Rejected(format!(
             "{command} may not be asked to {}",
-            if operation.is_empty() { "run with no operation" } else { operation }
+            if operation.is_empty() {
+                "run with no operation"
+            } else {
+                operation
+            }
         )));
     }
 

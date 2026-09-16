@@ -204,3 +204,84 @@ pub fn run() {
             }
         });
 }
+
+#[cfg(test)]
+mod capability_tests {
+    /// A command reaches a window only when three lists agree: `generate_handler!` above,
+    /// `COMMANDS` in `build.rs`, and the `allow-*` entries in `capabilities/default.json`. Nothing
+    /// in the build fails when one of them falls behind - the command is simply refused at runtime -
+    /// so this test is what catches it.
+    const HANDLER: &str = include_str!("lib.rs");
+    const BUILD: &str = include_str!("../build.rs");
+    const DEFAULT_CAPABILITY: &str = include_str!("../capabilities/default.json");
+
+    fn between<'a>(source: &'a str, start: &str, end: &str) -> &'a str {
+        let rest = source.split_once(start).expect("opening marker").1;
+
+        rest.split_once(end).expect("closing marker").0
+    }
+
+    fn registered() -> Vec<String> {
+        let mut names = between(HANDLER, "generate_handler![", "])")
+            .lines()
+            .filter_map(|line| line.trim().strip_suffix(',').map(str::to_owned))
+            .map(|name| name.rsplit("::").next().expect("a command name").to_owned())
+            .collect::<Vec<_>>();
+
+        names.sort();
+        names
+    }
+
+    fn declared() -> Vec<String> {
+        let mut names = between(BUILD, "const COMMANDS: &[&str] = &[", "];")
+            .lines()
+            .filter_map(|line| line.trim().trim_end_matches(',').strip_prefix('"').map(str::to_owned))
+            .map(|name| name.trim_end_matches('"').to_owned())
+            .collect::<Vec<_>>();
+
+        names.sort();
+        names
+    }
+
+    fn allowed() -> Vec<String> {
+        let capability: serde_json::Value =
+            serde_json::from_str(DEFAULT_CAPABILITY).expect("the default capability is valid JSON");
+        let mut names = capability["permissions"]
+            .as_array()
+            .expect("a permissions array")
+            .iter()
+            .filter_map(|entry| entry.as_str())
+            .filter_map(|entry| entry.strip_prefix("allow-"))
+            .map(|entry| entry.replace('-', "_"))
+            .collect::<Vec<_>>();
+
+        names.sort();
+        names
+    }
+
+    #[test]
+    fn build_declares_every_registered_command() {
+        assert_eq!(declared(), registered());
+    }
+
+    #[test]
+    fn the_app_window_is_allowed_every_registered_command() {
+        assert_eq!(allowed(), registered());
+    }
+
+    #[test]
+    fn the_widget_is_allowed_less_than_the_app_window() {
+        let widget: serde_json::Value = serde_json::from_str(include_str!("../capabilities/widget.json"))
+            .expect("the widget capability is valid JSON");
+        let widget_commands = widget["permissions"]
+            .as_array()
+            .expect("a permissions array")
+            .iter()
+            .filter_map(|entry| entry.as_str())
+            .filter(|entry| entry.starts_with("allow-"))
+            .count();
+
+        assert!(widget_commands > 0);
+        assert!(widget_commands < registered().len());
+    }
+}

@@ -400,9 +400,12 @@ export const createFakePorts = (): HostPorts => {
       close$: () => done(),
     },
 
-    /** Unlocked, so a scenario reaches the view it is about rather than a password prompt. */
+    /** Unlocked unless the seed says otherwise, so a scenario reaches the view it is about. */
     windowLock: {
-      state$: () => ok({ locked: false, promptsItself: false, available: true }),
+      state$: () =>
+        world.windowLock === 'unreachable'
+          ? throwError(() => new Error('the host did not answer'))
+          : ok({ locked: world.windowLock === 'locked', promptsItself: false, available: true }),
       lock$: () => done(),
       unlock$: () => ok(true),
     },

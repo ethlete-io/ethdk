@@ -5,6 +5,20 @@ const SHELL_MISSING =
   'This window is not running inside the Timetrack desktop shell, so no host command is reachable. Start it with `yarn timetrack`.';
 
 /**
+ * Thrown when the call never reached a host at all, which is a different answer from a host that
+ * refused.
+ *
+ * Anything that falls back on a failed host call has to tell the two apart by this type. A fallback
+ * taken on every error is a way around the host, because the host's own refusal takes it too.
+ */
+export class HostShellMissingError extends Error {
+  constructor() {
+    super(SHELL_MISSING);
+    this.name = 'HostShellMissingError';
+  }
+}
+
+/**
  * Wraps a call into the desktop shell as a cold Observable, so nothing runs until somebody
  * subscribes and a browser without the shell fails with a readable message rather than a crash.
  *
@@ -12,7 +26,7 @@ const SHELL_MISSING =
  * is already in flight, so a write that was unsubscribed from may still have happened.
  */
 export const hostOnly$ = <T>(act: () => Promise<T>): Observable<T> =>
-  defer(() => ('__TAURI_INTERNALS__' in globalThis ? from(act()) : throwError(() => new Error(SHELL_MISSING))));
+  defer(() => ('__TAURI_INTERNALS__' in globalThis ? from(act()) : throwError(() => new HostShellMissingError())));
 
 /** Wraps a Tauri command as a cold Observable. */
 export const invokeHost$ = <T>(command: string, args?: InvokeArgs): Observable<T> =>

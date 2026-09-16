@@ -12,7 +12,7 @@ import {
   isNamedRow,
   isStandInRow,
 } from '@ethlete/timetrack';
-import { EMPTY, Observable, catchError, concatMap, distinctUntilChanged, map, merge, timer } from 'rxjs';
+import { EMPTY, Observable, catchError, concatMap, distinctUntilChanged, filter, map, merge, tap, timer } from 'rxjs';
 import {
   injectAgentSessionCollector,
   injectCalendarCollector,
@@ -28,6 +28,7 @@ import { formatBlockLabel, formatClockTime } from './day-review/format';
 import { injectTimetrackSettings } from './settings/settings';
 import { injectTimer } from './timer';
 import { readToday$ } from './read-day';
+import { injectWindowLock } from './window-lock';
 
 /**
  * How often the readout is rebuilt even though nothing was collected.
@@ -118,6 +119,32 @@ const widgetReadout = (options: {
 type Readouts = { tray: TrayReadout; widget: WidgetReadout };
 
 /**
+ * What the tray and the widget say while the window is locked.
+ *
+ * Both surfaces stand outside the locked window and keep whatever was last written to them, so the
+ * lock has to reach them too: a tray menu naming the ticket and the hours is the day, read by anybody
+ * at the machine. The two action entries stay, because the lock is over the reading and not over the
+ * collection, but their wording says nothing about what they would toggle.
+ */
+const LOCKED: Readouts = {
+  tray: {
+    activity: 'Locked',
+    total: 'Unlock Timetrack to read the day',
+    timer: 'Toggle timer',
+    pause: 'Toggle collection',
+  },
+  widget: {
+    state: 'unknown',
+    label: 'Locked',
+    since: '',
+    issueKey: null,
+    confidence: null,
+    total: '',
+    isPaused: false,
+  },
+};
+
+/**
  * Whether two reconstructions say the same thing. Both documents are flat, so the wording is the
  * whole comparison — and the wording is exactly what a change has to reach a surface for.
  */
@@ -141,6 +168,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const timers = injectTimer();
   const pause = injectCollectionPause();
   const settings = injectTimetrackSettings();
+  const lock = injectWindowLock();
   const readout = signal<TrayReadout | null>(null);
   const published = signal<WidgetReadout | null>(null);
 
@@ -190,9 +218,23 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
+  const reconstructed = signal<Readouts | null>(null);
+
+  // Until the host has said whether the window is locked, it counts as locked: a readout published
+  // in that gap would be the day, and no later one can take it back off a tray that already shows it.
+  const outgoing = computed(() => (!lock.ready() || lock.isLocked() ? LOCKED : reconstructed()));
+
   merge(toObservable(collected), timer(0, TRAY_READOUT_INTERVAL_MS))
     .pipe(
       concatMap(() => read$().pipe(catchError(() => EMPTY))),
+      tap((next) => reconstructed.set(next)),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
+
+  toObservable(outgoing)
+    .pipe(
+      filter((next): next is Readouts => !!next),
       distinctUntilChanged(isSame),
       concatMap((next) => {
         readout.set(next.tray);

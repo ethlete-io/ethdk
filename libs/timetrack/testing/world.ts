@@ -65,6 +65,14 @@ export type FakeCallSourceStatus = {
 };
 
 /**
+ * What reading the window lock does in the seeded world.
+ *
+ * `'unreachable'` is the case the app has to get right: the host is there and the read failed, which
+ * says nothing at all about whether the window is locked.
+ */
+export type FakeWindowLock = 'unlocked' | 'locked' | 'unreachable';
+
+/**
  * The world an e2e spec declares. Every key it leaves out falls back to the default fixture, so a
  * spec that does not care about Tempo states nothing about Tempo.
  */
@@ -95,6 +103,11 @@ export type TimetrackWorldSeed = {
   git?: Partial<FakeGitState>;
   windowSource?: Partial<FakeWindowSourceStatus>;
   callSource?: Partial<FakeCallSourceStatus>;
+  /**
+   * What reading the window lock does. `'unreachable'` is a host that is there and did not answer,
+   * which a window must not read as an unlocked one.
+   */
+  windowLock?: FakeWindowLock;
   faults?: FakeFault[];
 };
 
@@ -110,6 +123,7 @@ export type FakeWorld = {
   codexLogs: FakeAgentLog[];
   windowSource: FakeWindowSourceStatus;
   callSource: FakeCallSourceStatus;
+  windowLock: FakeWindowLock;
   backend: FakeBackend;
 };
 
@@ -327,6 +341,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   codexLogs: seed.codexLogs ?? [],
   windowSource: { kind: 'none', detail: null, capabilities: [], ...seed.windowSource },
   callSource: { kind: 'none', detail: null, watchingSinceMs: Date.now(), ...seed.callSource },
+  windowLock: seed.windowLock ?? 'unlocked',
   glab: { ...defaultGlab(), ...seed.glab },
   gh: { ...defaultGh(), ...seed.gh },
   editors: seedEditors(seed.editors),

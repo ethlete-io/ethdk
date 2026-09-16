@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { EMPTY, Subject, catchError, exhaustMap, tap } from 'rxjs';
-import { WINDOW_LOCKED_EVENT, hostEvent$, injectHostPorts } from '../host';
+import { HostShellMissingError, WINDOW_LOCKED_EVENT, hostEvent$, injectHostPorts } from '../host';
 
 /**
  * Whether this window may show what it holds.
@@ -42,9 +42,12 @@ const WINDOW_LOCK_DEF = /* @__PURE__ */ defineRootProvider(() => {
       }),
       catchError((error: unknown) => {
         // A window with no host behind it is not a locked one: a story or a browser tab has no lock
-        // to read, and leaving it locked forever would make the app unopenable there.
+        // to read, and leaving it locked forever would make the app unopenable there. A host that is
+        // there and did not answer says the opposite, so that window stays locked and offers the
+        // prompt rather than the day.
+        if (error instanceof HostShellMissingError) isLocked.set(false);
+
         ready.set(true);
-        isLocked.set(false);
 
         return failed(error);
       }),

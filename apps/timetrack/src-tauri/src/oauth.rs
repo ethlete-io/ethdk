@@ -131,12 +131,11 @@ async fn respond(stream: &mut TcpStream, status: &str, body: &str) -> TimetrackR
 /// `None` means it did not, and the flow keeps waiting. A browser asks for `/favicon.ico` on its own,
 /// and answering that as the redirect would end the flow before the user has consented to anything.
 async fn read_callback(mut stream: TcpStream, state: &str) -> Option<TimetrackResult<String>> {
-    match tokio::time::timeout(CONNECTION_TIMEOUT, callback_of(&mut stream, state)).await {
-        Ok(outcome) => outcome,
-        // A connection that sends nothing is not the browser's. It is dropped on its own deadline, and
-        // the flow goes on waiting for the one that is.
-        Err(_) => None,
-    }
+    // A connection that sends nothing is not the browser's. The deadline drops it and the default is
+    // `None`, so the flow goes on waiting for the one that is.
+    tokio::time::timeout(CONNECTION_TIMEOUT, callback_of(&mut stream, state))
+        .await
+        .unwrap_or_default()
 }
 
 async fn callback_of(stream: &mut TcpStream, state: &str) -> Option<TimetrackResult<String>> {

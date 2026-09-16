@@ -392,7 +392,10 @@ async fn serve(stream: &mut TcpStream, endpoint: &AgentEndpoint, app: &AppHandle
     // app has started. The lock is therefore what decides whether an operation runs at all: a locked
     // app is one whose owner is away, and every operation here either reads the day's own evidence or
     // writes something to Jira in their name.
-    if app.try_state::<crate::lock::WindowLock>().is_some_and(|lock| lock.is_locked()) {
+    if app
+        .try_state::<crate::lock::WindowLock>()
+        .is_some_and(|lock| lock.is_locked())
+    {
         endpoint.refuse();
 
         return respond_json(

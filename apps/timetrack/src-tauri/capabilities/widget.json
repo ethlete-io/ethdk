@@ -1,7 +1,16 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "widget",
-  "description": "What the floating readout may reach. It reads the day from an event the app window emits rather than from the store, so it needs no command of its own beyond closing itself and being dragged. It gets neither minimize nor maximize: it has one size, and hiding it is what closing it means.",
+  "description": "What the floating readout may reach. It reads the day from an event the app window emits rather than from the store, so it holds no store command at all: it reads the lock so it can blank itself, reads and toggles the pause, closes itself, and reveals the app window. It gets neither minimize nor maximize: it has one size, and hiding it is what closing it means.",
   "windows": ["widget"],
-  "permissions": ["core:default", "core:window:allow-close", "core:window:allow-start-dragging"]
+  "permissions": [
+    "core:default",
+    "core:window:allow-close",
+    "core:window:allow-start-dragging",
+    "allow-collection-set-paused",
+    "allow-collection-state",
+    "allow-lock-state",
+    "allow-widget-close",
+    "allow-widget-reveal-app"
+  ]
 }
