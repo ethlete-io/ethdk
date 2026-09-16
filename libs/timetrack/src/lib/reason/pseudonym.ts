@@ -238,15 +238,46 @@ export const maskIssueKey = (options: { issueKey: string; map: PseudonymMap }) =
 
 const CAPITALISED = /(?<![A-Za-z0-9])([A-Z][A-Za-z0-9]*)/g;
 
+const ISSUE_KEY_PREFIX = /(?<![A-Za-z0-9])([A-Za-z][A-Za-z0-9]*)-\d+/g;
+
+/** A shape an ordinary word of prose does not take, whatever language the prose is in. */
+const isNameShaped = (options: { word: string; keyPrefixes: ReadonlySet<string> }) => {
+  const { word } = options;
+
+  if (options.keyPrefixes.has(normal(word))) return true;
+  if (/\d/.test(word)) return true;
+  if (word === word.toUpperCase()) return true;
+
+  return /[a-z][A-Z]/.test(word);
+};
+
+export type UnmaskedWord = {
+  word: string;
+  /**
+   * The word carries a shape a name has and prose does not, so it is worth reading first. False says
+   * only that the app has no reason to single it out — never that the word is safe to send.
+   */
+  likelyName: boolean;
+};
+
 /**
  * Every capitalised word in a piece of text that the app cannot account for: not a name the user
- * listed, not a pseudonym it just wrote, and not a word the industry shares.
+ * listed, not a pseudonym it just wrote, and not a word the industry shares. Name-shaped words come
+ * first, and each group is alphabetical.
  *
  * This is what makes "transparent" real. A new client shows up here before the first send, so it can
  * be added to the name list rather than found in a prompt afterwards.
+ *
+ * Nothing is dropped, and the order is the whole of the ranking. German capitalises every noun, so a
+ * German payload puts a few hundred ordinary words in front of the one client name the list is
+ * missing — which is the burial this function exists to prevent. A caller that shows only part of
+ * the list has to say how much it is holding back.
  */
-export const unmaskedWords = (options: { text: string; map: PseudonymMap }): string[] => {
+export const unmaskedWords = (options: { text: string; map: PseudonymMap }): UnmaskedWord[] => {
   const found = new Map<string, string>();
+  const keyPrefixes = new Set(
+    [...options.text.matchAll(ISSUE_KEY_PREFIX)].map((match) => normal(match[1] ?? '')).filter(Boolean),
+  );
 
   for (const match of options.text.matchAll(CAPITALISED)) {
     const word = match[1] ?? '';
@@ -258,5 +289,11 @@ export const unmaskedWords = (options: { text: string; map: PseudonymMap }): str
     found.set(key, word);
   }
 
-  return [...found.values()].sort((left, right) => left.localeCompare(right));
+  return [...found.values()]
+    .map((word): UnmaskedWord => ({ word, likelyName: isNameShaped({ word, keyPrefixes }) }))
+    .sort((left, right) =>
+      left.likelyName === right.likelyName
+        ? left.word.localeCompare(right.word)
+        : Number(right.likelyName) - Number(left.likelyName),
+    );
 };

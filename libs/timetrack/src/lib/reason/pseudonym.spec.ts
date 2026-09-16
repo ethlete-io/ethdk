@@ -85,22 +85,45 @@ describe('maskIssueKey', () => {
 });
 
 describe('unmaskedWords', () => {
+  const words = (text: string) => unmaskedWords({ text, map: MAP }).map((entry) => entry.word);
+  const named = (text: string) =>
+    unmaskedWords({ text, map: MAP })
+      .filter((entry) => entry.likelyName)
+      .map((entry) => entry.word);
+
   it('reports a capitalised word the app cannot account for', () => {
-    expect(unmaskedWords({ text: 'a report for Nordkiosk', map: MAP })).toEqual(['Nordkiosk']);
+    expect(words('a report for Nordkiosk')).toEqual(['Nordkiosk']);
   });
 
   it('accounts for a listed name, its pseudonym, and a word the industry shares', () => {
     const text = `Fifagg ${pseudonymFor('Fifagg')} Angular Gitlab`;
 
-    expect(unmaskedWords({ text, map: MAP })).toEqual([]);
+    expect(words(text)).toEqual([]);
   });
 
   it('reports each unknown word once, in reading order of the alphabet', () => {
-    expect(unmaskedWords({ text: 'Zephyr and Nordkiosk and Zephyr', map: MAP })).toEqual(['Nordkiosk', 'Zephyr']);
+    expect(words('Zephyr and Nordkiosk and Zephyr')).toEqual(['Nordkiosk', 'Zephyr']);
   });
 
   it('says nothing about a single capital letter, which is an initial rather than a name', () => {
-    expect(unmaskedWords({ text: 'signed off by T', map: MAP })).toEqual([]);
+    expect(words('signed off by T')).toEqual([]);
+  });
+
+  it('puts a name-shaped word in front of prose, so a German payload cannot bury it', () => {
+    const text = 'Bearbeitung der Anzeige fuer NORDKIOSK und Bereitstellung';
+
+    expect(words(text)).toEqual(['NORDKIOSK', 'Anzeige', 'Bearbeitung', 'Bereitstellung']);
+  });
+
+  it('reads an upper case word, an inner capital, a digit and an issue key prefix as name-shaped', () => {
+    expect(named('ACME')).toEqual(['ACME']);
+    expect(named('FeCC shipped')).toEqual(['FeCC']);
+    expect(named('Release2 is out')).toEqual(['Release2']);
+    expect(named('Nordkiosk-42 was filed')).toEqual(['Nordkiosk']);
+  });
+
+  it('drops nothing, so a plain client name is still reported behind the name-shaped ones', () => {
+    expect(words('ACME and Konami')).toEqual(['ACME', 'Konami']);
   });
 });
 
