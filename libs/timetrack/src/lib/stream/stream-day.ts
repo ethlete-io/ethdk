@@ -741,7 +741,7 @@ export const streamDay = (options: {
 
   // A call is a stretch rather than a point, so it is unioned in rather than sampled: two edges an hour
   // apart would otherwise be split by `maxUnobservedMs` into two instants with an absence between them.
-  const heldMicrophone = calls.filter((call) => call.countsAsWork).map(({ from, to }) => ({ from, to }));
+  const heldMicrophone = calls.filter((call) => call.isPresence).map(({ from, to }) => ({ from, to }));
 
   const presence = mergeWindows([
     ...presenceWindows({

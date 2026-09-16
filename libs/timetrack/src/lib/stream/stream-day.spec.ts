@@ -1009,10 +1009,31 @@ describe('streamDay, on a day something held the microphone', () => {
     expect(day.calls[0]!.countsAsWork).toBe(false);
   });
 
-  it('adds no presence for a call nothing classified', () => {
+  it('counts a call no rule named as presence, because a call is the user in a room', () => {
     const day = streamDay({ events: meeting });
 
+    expect(day.presenceMs).toBe(48 * MINUTE);
+  });
+
+  it('counts no presence for a room a rule marks as never work, which is the open room left running', () => {
+    const day = streamDay({
+      events: meeting,
+      options: { callRules: { countsAsWork: [], neverCountsAsWork: ['Braune Digital'] } },
+    });
+
     expect(day.presenceMs).toBe(0);
+  });
+
+  it('draws no break over a meeting nobody typed in, whether or not a rule made it work', () => {
+    const silent = [
+      ...focusRun({ from: 0, to: 10, appId: 'code', title: 'ethlete-sdk - Code' }),
+      focus(10, DISCORD, '#weekly | Braune Digital'),
+      call(11, 'call-start'),
+      call(90, 'call-end'),
+      ...focusRun({ from: 90, to: 120, appId: 'code', title: 'ethlete-sdk - Code' }),
+    ];
+
+    expect(streamDay({ events: silent, options: { repoRoots: [SDK] } }).breaks).toEqual([]);
   });
 
   it('counts a working call as presence for its whole stretch', () => {

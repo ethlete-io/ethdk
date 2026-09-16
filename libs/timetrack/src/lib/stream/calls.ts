@@ -267,15 +267,19 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     // and after the calendar stopped proposing rows of its own nothing else would propose it.
     const expected = invited.some((event) => windowsOverlap(call, { from: event.at, to: event.until }));
 
+    const named = { appId: call.appId, title };
+    // Attendance, not the work rules: a room nobody sat in is the one call that says nothing about
+    // where the user was, and a rule denying the work still leaves them in the meeting. See ADR 0024.
+    const attendedCall = !readable || expected || attended >= minAttendedMs;
+
     return {
       appId: call.appId,
       from: call.from,
       to: call.to,
       title,
       attendedMs: attended,
-      countsAsWork:
-        (!readable || expected || attended >= minAttendedMs) &&
-        countsAsWork(options.rules, { appId: call.appId, title }),
+      countsAsWork: attendedCall && countsAsWork(options.rules, named),
+      isPresence: attendedCall && !matches(options.rules.neverCountsAsWork, named),
     };
   };
 

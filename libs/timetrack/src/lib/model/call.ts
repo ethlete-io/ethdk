@@ -16,6 +16,11 @@ export type CallWindow = {
   attendedMs: number;
   /** Whether the user attended, and a rule said this was work. Nothing saying so means no — see `classifyCalls`. */
   countsAsWork: boolean;
+  /**
+   * Whether the user was in the room, which is presence whatever the work rules made of the call. A
+   * meeting the day books nothing for is still a meeting somebody sat through — see `classifyCalls`.
+   */
+  isPresence: boolean;
 };
 
 /** What a call reads as: the window it was named from, or the process alone when it had no title. */
