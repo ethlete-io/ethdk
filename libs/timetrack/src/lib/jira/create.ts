@@ -21,6 +21,8 @@ export type JiraIssueInput = {
   parentLinkType?: string;
   /** The instance's branch-subject field id, such as `customfield_10057`. Empty writes none. */
   subjectField?: string;
+  /** The account the issue is assigned to. Absent files it unassigned, as Jira's own default does. */
+  assigneeAccountId?: string;
   /** The branch subject the grammar would use, such as `user-management`. */
   subject?: string;
 };
@@ -42,6 +44,7 @@ const fieldsFor = (input: JiraIssueInput) => ({
   description: adfDocument(input.description),
   ...(input.parentKey && input.parenting !== 'issue-link' ? { parent: { key: input.parentKey } } : {}),
   ...(input.subjectField && input.subject ? { [input.subjectField]: input.subject } : {}),
+  ...(input.assigneeAccountId ? { assignee: { accountId: input.assigneeAccountId } } : {}),
 });
 
 /**

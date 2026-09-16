@@ -25,6 +25,8 @@ export type FakeJiraIssue = {
   summary: string;
   issueType: string;
   parentKey?: string;
+  /** The account the create call assigned it to. */
+  assigneeAccountId?: string;
   /** ISO 8601. Jira orders the activity feed by it. */
   updated?: string;
   /** Custom fields the create call wrote, by field id. */

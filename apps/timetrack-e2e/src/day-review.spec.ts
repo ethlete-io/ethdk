@@ -1,4 +1,5 @@
 import {
+  E2E_ACCOUNT_ID,
   E2E_EPIC_KEY,
   E2E_ISSUE_ID,
   E2E_ISSUE_KEY,
@@ -143,6 +144,17 @@ test.describe('the day view', () => {
     await expect
       .poll(async () => (await readBackend(page)).jira.created.map((issue) => [issue.issueType, issue.parentKey]))
       .toEqual([['Sub-Task', E2E_PARENT_KEY]]);
+  });
+
+  test('assigns the filed ticket to the account the token belongs to', async ({ page }) => {
+    await openWaitingForAName(page);
+    await page.getByRole('button', { name: 'Create a ticket' }).click();
+    await page.getByRole('button', { name: 'Create in Jira' }).click();
+    await page.getByRole('button', { name: 'File it now' }).click();
+
+    await expect
+      .poll(async () => (await readBackend(page)).jira.created.map((issue) => issue.assigneeAccountId))
+      .toEqual([E2E_ACCOUNT_ID]);
   });
 
   test('drafts the summary and the description from what the work left behind', async ({ page }) => {

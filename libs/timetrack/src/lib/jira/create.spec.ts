@@ -63,6 +63,23 @@ describe('createJiraIssue$', () => {
     expect(failed.mock.calls[0]?.[0]).toBeInstanceOf(Error);
   });
 
+  it('assigns the issue only when an account is named', () => {
+    const { transport, requests } = fakeTransport([
+      { id: '1', key: 'FIP-9' },
+      { id: '2', key: 'FIP-10' },
+    ]);
+
+    createJiraIssue$({ transport, credentials: CREDENTIALS, input: INPUT }).subscribe();
+    createJiraIssue$({
+      transport,
+      credentials: CREDENTIALS,
+      input: { ...INPUT, assigneeAccountId: '557058:abc' },
+    }).subscribe();
+
+    expect(fieldsOf(requests[0])['assignee']).toBeUndefined();
+    expect(fieldsOf(requests[1])['assignee']).toEqual({ accountId: '557058:abc' });
+  });
+
   it('writes the branch subject only when the instance names a field for it', () => {
     const { transport, requests } = fakeTransport([
       { id: '1', key: 'FIP-9' },

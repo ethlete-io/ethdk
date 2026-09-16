@@ -38,7 +38,7 @@ const createIssue = (backend: FakeBackend, request: FakeRoutedRequest): FakeAnsw
   const fields = nestedOf(bodyOf(request), 'fields');
   const projectKey = stringOf(nestedOf(fields, 'project'), 'key') ?? 'ABC';
   const number = FIRST_CREATED_ISSUE_NUMBER + backend.jira.created.length;
-  const known = new Set(['project', 'issuetype', 'summary', 'description', 'parent']);
+  const known = new Set(['project', 'issuetype', 'summary', 'description', 'parent', 'assignee']);
   const custom = Object.fromEntries(Object.entries(fields).filter(([id]) => !known.has(id)));
 
   const issue: FakeJiraIssue = {
@@ -47,6 +47,7 @@ const createIssue = (backend: FakeBackend, request: FakeRoutedRequest): FakeAnsw
     summary: stringOf(fields, 'summary') ?? '',
     issueType: stringOf(nestedOf(fields, 'issuetype'), 'name') ?? 'Task',
     parentKey: stringOf(nestedOf(fields, 'parent'), 'key'),
+    assigneeAccountId: stringOf(nestedOf(fields, 'assignee'), 'accountId'),
     updated: new Date().toISOString(),
     ...(Object.keys(custom).length ? { custom } : {}),
   };

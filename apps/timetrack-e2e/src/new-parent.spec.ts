@@ -1,4 +1,5 @@
 import { Page } from '@playwright/test';
+import { E2E_ACCOUNT_ID } from '@ethlete/timetrack/testing';
 import { expect, openWaitingForAName, readBackend, seedWorld, test } from './support';
 
 /** The default world's second stretch names no issue, which is the context this form is opened for. */
@@ -54,6 +55,15 @@ test.describe('filing the parent a ticket rolls up to', () => {
 
     await expect(page.getByRole('button', { name: 'New parent' })).toBeVisible();
     await expect(parentField(page)).toContainText(key);
+  });
+
+  test('assigns it to the account the token belongs to, as it does the ticket', async ({ page }) => {
+    await page.getByRole('button', { name: 'New parent' }).click();
+    await page.getByRole('button', { name: /File the Story/ }).click();
+
+    await expect
+      .poll(async () => (await created(page)).map((issue) => issue.assigneeAccountId))
+      .toEqual([E2E_ACCOUNT_ID]);
   });
 
   test('closes the form again on a cancel, filing nothing', async ({ page }) => {

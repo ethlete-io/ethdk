@@ -26,6 +26,7 @@ import {
   fetchJiraCreatableTypes$,
   fetchJiraIssues$,
   fetchJiraOpenIssues$,
+  fetchJiraMyself$,
   fetchJiraParentCandidates$,
   fileTicketOnce$,
   gitFlowConfigFor,
@@ -175,6 +176,24 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     if (current) form.set({ ...current, ...change });
   };
+
+  /**
+   * Runs a write with the configured credentials and the account they belong to.
+   *
+   * Every issue this form files is assigned to that account, and the id is not something the user can
+   * be asked for — Jira's own UI shows it nowhere. A failed read fails the write rather than filing the
+   * issue unassigned: the same token answers both calls, so it is the token that is wrong.
+   */
+  const withSelf$ = <T>(write$: (options: { credentials: JiraCredentials; accountId: string }) => Observable<T>) =>
+    readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
+      switchMap((credentials) =>
+        credentials
+          ? fetchJiraMyself$({ transport: ports.transport, credentials }).pipe(
+              switchMap((self) => write$({ credentials, accountId: self.accountId })),
+            )
+          : throwError(() => new Error(NO_JIRA)),
+      ),
+    );
 
   /**
    * The types an issue may be offered as a parent under: the ones settings name, minus any the
@@ -484,25 +503,23 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         const ticket = settings.settings().ticket;
         const projectKey = form()?.projectKey ?? '';
 
-        return readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
-          switchMap((credentials) =>
-            credentials
-              ? createJiraIssue$({
-                  transport: ports.transport,
-                  credentials,
-                  input: {
-                    projectKey,
-                    issueTypeName: draft.issueTypeName,
-                    summary: draft.summary,
-                    description: draft.description,
-                    parenting: ticket.parenting,
-                    parentLinkType: ticket.parentLinkType,
-                    subjectField: ticket.subjectField || undefined,
-                    subject: ticketSubjectOf(draft.summary),
-                  },
-                })
-              : throwError(() => new Error(NO_JIRA)),
-          ),
+        return withSelf$(({ credentials, accountId }) =>
+          createJiraIssue$({
+            transport: ports.transport,
+            credentials,
+            input: {
+              projectKey,
+              issueTypeName: draft.issueTypeName,
+              summary: draft.summary,
+              description: draft.description,
+              parenting: ticket.parenting,
+              parentLinkType: ticket.parentLinkType,
+              subjectField: ticket.subjectField || undefined,
+              subject: ticketSubjectOf(draft.summary),
+              assigneeAccountId: accountId,
+            },
+          }),
+        ).pipe(
           map((created): CreateStatus => {
             // Offered by the select straight away: the project's own read does not hold it yet, and
             // re-reading the project to find the issue this very form just filed is a round trip for
@@ -525,9 +542,9 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
-  const fileTicket$ = (options: { credentials: JiraCredentials; draft: TicketForm }) => {
+  const fileTicket$ = (options: { credentials: JiraCredentials; accountId: string; draft: TicketForm }) => {
     const ticket = settings.settings().ticket;
-    const { credentials, draft } = options;
+    const { credentials, accountId, draft } = options;
 
     return fileTicketOnce$({
       transport: ports.transport,
@@ -542,6 +559,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         parentLinkType: ticket.parentLinkType,
         subjectField: ticket.subjectField || undefined,
         subject: ticketSubjectOf(draft.summary),
+        assigneeAccountId: accountId,
       },
     });
   };
@@ -554,10 +572,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         const named = context();
         const waiting = standIn();
 
-        return readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
-          switchMap((credentials) =>
-            credentials ? fileTicket$({ credentials, draft }) : throwError(() => new Error(NO_JIRA)),
-          ),
+        return withSelf$(({ credentials, accountId }) => fileTicket$({ credentials, accountId, draft })).pipe(
           map((created): CreateStatus => {
             if (named) dayReview.nameContext(named, { kind: 'issue', issueKey: created.issueKey });
             else if (waiting) settings.resolveStandIn({ id: waiting.id, issueKey: created.issueKey });
