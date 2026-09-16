@@ -160,6 +160,23 @@ test.describe('a call over a band of a background project', () => {
   });
 });
 
+const excludedWorld = () => ({
+  ...meetingWorld(),
+  settings: { ...meetingWorld().settings, callRules: { countsAsWork: [], neverCountsAsWork: ['Discord'] } },
+});
+
+test.describe('a call a rule excluded, over a band of a background project', () => {
+  test('takes none of its minutes, because a band that is not work books none of them', async ({ page }) => {
+    await seedWorld(page, excludedWorld());
+    await page.goto('/day');
+
+    const lane = page.locator('[data-lane]').filter({ has: page.locator('[data-kind="row"][title^="XYZ-4200"]') });
+
+    await expect(titleOf(page, 'XYZ-4200')).toHaveAttribute('title', 'XYZ-4200 · 1h 0m');
+    await expect(lane.locator('[data-behind]')).toHaveCount(0);
+  });
+});
+
 const bands = (page: import('@playwright/test').Page) => page.locator('[data-lane] [data-kind="row"]');
 
 const titleOf = (page: import('@playwright/test').Page, key: string) =>
