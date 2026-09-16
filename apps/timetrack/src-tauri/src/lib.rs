@@ -30,6 +30,7 @@ mod recovery;
 mod reporter;
 mod samples;
 mod secrets;
+mod spec;
 mod state;
 mod store;
 mod timer;
@@ -154,6 +155,7 @@ pub fn run() {
             secrets::secret_has,
             secrets::secret_read,
             secrets::secret_write,
+            spec::read_spec,
             store::agent_session_cursors,
             store::app_settings,
             store::compacted_through,

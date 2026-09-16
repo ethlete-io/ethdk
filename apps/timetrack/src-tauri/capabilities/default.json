@@ -41,6 +41,7 @@
     "allow-lock-window",
     "allow-notify",
     "allow-oauth-authorize",
+    "allow-read-spec",
     "allow-reporter-vsix-path",
     "allow-run-process",
     "allow-secret-delete",

@@ -36,6 +36,7 @@ const COMMANDS: &[&str] = &[
     "lock_window",
     "notify",
     "oauth_authorize",
+    "read_spec",
     "reporter_vsix_path",
     "run_process",
     "secret_delete",
