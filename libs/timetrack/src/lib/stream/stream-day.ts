@@ -174,6 +174,11 @@ export type Stream = {
 export type StreamDay = {
   /** Wall-clock time at the machine, overlaps counted once. */
   presenceMs: number;
+  /**
+   * The stretches that time is made of, in order and never overlapping. It is what a statement of the
+   * user's is applied to — see `statedPresence`.
+   */
+  presence: TimeWindow[];
   /** Every stream's blocks summed, the folded line included. It may exceed `presenceMs`, and that is the point. */
   engagedMs: number;
   /** `engagedMs / presenceMs`. 1 is a serial day, 2.4 is a day that ran several agents, 0 is a day nothing observed. */
@@ -1079,6 +1084,7 @@ export const streamDay = (options: {
 
   return {
     presenceMs,
+    presence,
     engagedMs,
     concurrency: presenceMs ? engagedMs / presenceMs : 0,
     focusMs,

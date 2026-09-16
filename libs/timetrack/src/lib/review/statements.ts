@@ -1,5 +1,5 @@
-import { PresenceStatement } from '../model/statement';
-import { TimeWindow, subtractWindows } from '../model/time-window';
+import { PresenceStatement, statementWindows } from '../model/statement';
+import { TimeWindow, mergeWindows, subtractWindows } from '../model/time-window';
 import { DEFAULT_ROUND_OPTIONS, RoundOptions } from '../rows/round';
 import { DayReviewEdits } from './model';
 
@@ -78,3 +78,18 @@ export const clearStatements = (options: { edits: DayReviewEdits }): DayReviewEd
   ...options.edits,
   statements: [],
 });
+
+/**
+ * The day's presence as the user's statements leave it: a `present` statement is unioned in, an
+ * `away` statement is taken out.
+ *
+ * The two kinds never overlap, so the order they are applied in cannot decide the answer.
+ */
+export const statedPresence = (options: {
+  presence: readonly TimeWindow[];
+  statements: readonly PresenceStatement[];
+}): TimeWindow[] =>
+  subtractWindows({
+    windows: mergeWindows([...options.presence, ...statementWindows(options.statements, 'present')]),
+    without: statementWindows(options.statements, 'away'),
+  });

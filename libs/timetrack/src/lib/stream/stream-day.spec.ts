@@ -568,6 +568,7 @@ describe('streamDay', () => {
 
     expect(day).toEqual({
       presenceMs: 0,
+      presence: [],
       engagedMs: 0,
       focusMs: 0,
       unnamedFocus: [],

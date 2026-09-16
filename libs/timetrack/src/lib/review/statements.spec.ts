@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { TimeWindow } from '../model/time-window';
+import { TimeWindow, windowsMs } from '../model/time-window';
 import { BreakWindow, breaksBetweenRows } from '../stream/breaks';
 import { EMPTY_DAY_REVIEW_EDITS } from './model';
-import { clearStatements, deleteStatement, writeStatement } from './statements';
+import { clearStatements, deleteStatement, statedPresence, writeStatement } from './statements';
 
 const at = (hour: number, minute = 0) => new Date(2026, 8, 10, hour, minute);
 
@@ -135,5 +135,36 @@ describe('a statement over the day', () => {
     expect(
       breaksBetweenRows({ breaks: [breakAt([10, 0], [11, 0])], rows: ROWS, statements: reset.statements }),
     ).toEqual([breakAt([10, 0], [11, 0])]);
+  });
+});
+
+describe('statedPresence', () => {
+  it('leaves the measured presence alone when the day states nothing', () => {
+    expect(statedPresence({ presence: [window([9, 0], [12, 0])], statements: [] })).toEqual([window([9, 0], [12, 0])]);
+  });
+
+  it('takes the stretch an away statement covers out of the presence', () => {
+    const edits = writeStatement({ edits: EMPTY_DAY_REVIEW_EDITS, kind: 'away', from: at(10, 0), to: at(11, 0) });
+
+    expect(statedPresence({ presence: [window([9, 0], [12, 0])], statements: edits.statements })).toEqual([
+      window([9, 0], [10, 0]),
+      window([11, 0], [12, 0]),
+    ]);
+  });
+
+  it('adds a stretch nothing measured that a present statement claims', () => {
+    const edits = writeStatement({ edits: EMPTY_DAY_REVIEW_EDITS, kind: 'present', from: at(12, 0), to: at(13, 0) });
+
+    expect(statedPresence({ presence: [window([9, 0], [12, 0])], statements: edits.statements })).toEqual([
+      window([9, 0], [13, 0]),
+    ]);
+  });
+
+  it('counts a stretch a present statement already held once', () => {
+    const edits = writeStatement({ edits: EMPTY_DAY_REVIEW_EDITS, kind: 'present', from: at(10, 0), to: at(11, 0) });
+
+    expect(windowsMs(statedPresence({ presence: [window([9, 0], [12, 0])], statements: edits.statements }))).toBe(
+      3 * 60 * 60 * 1000,
+    );
   });
 });
