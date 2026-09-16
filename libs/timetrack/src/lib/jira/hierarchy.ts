@@ -89,3 +89,57 @@ export const describeJiraHierarchy$ = (options: {
         : ('issue-link' as const),
     })),
   );
+
+/** A type name with the level Jira puts it on. Both the instance read and `createmeta` answer this. */
+export type JiraLeveledType = { name: string; hierarchyLevel: number };
+
+const sameName = (left: string, right: string) => left.trim().toLowerCase() === right.trim().toLowerCase();
+
+/** The level Jira puts this type on, or nothing when the read holds no type of that name. */
+export const hierarchyLevelOf = (options: { typeName: string; types: readonly JiraLeveledType[] }) =>
+  options.types.find((type) => sameName(type.name, options.typeName))?.hierarchyLevel;
+
+/**
+ * The names that may be the parent of `childTypeName`, in the order they were given. Jira's parent
+ * field points one level up, so `['Story', 'Epic']` under a Task narrows to `['Epic']`.
+ *
+ * The bar is the nearest level the instance actually holds above the child, not `childLevel + 1`: a
+ * plan with a level nobody uses would otherwise leave a ticket with no parent it could take at all.
+ * A type neither read holds has no known level and is dropped rather than guessed at.
+ */
+export const parentTypeNamesFor = (options: {
+  childTypeName: string;
+  typeNames: readonly string[];
+  types: readonly JiraLeveledType[];
+}) => {
+  const childLevel = hierarchyLevelOf({ typeName: options.childTypeName, types: options.types });
+
+  if (childLevel === undefined) return [];
+
+  const levels = options.typeNames.map((typeName) => hierarchyLevelOf({ typeName, types: options.types }));
+  const above = levels.flatMap((level) => (level !== undefined && level > childLevel ? [level] : []));
+
+  if (!above.length) return [];
+
+  const nearest = Math.min(...above);
+
+  return options.typeNames.filter((_, index) => levels[index] === nearest);
+};
+
+const listed = (names: readonly string[]) =>
+  names.length < 2 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
+
+/**
+ * The one line the parent field shows when the hierarchy dropped a type the settings offer, or null
+ * when it dropped none.
+ */
+export const describeParentRule = (options: {
+  childTypeName: string;
+  configured: readonly string[];
+  allowed: readonly string[];
+}) => {
+  if (options.allowed.length === options.configured.length) return null;
+  if (!options.allowed.length) return `Jira accepts no parent for a ${options.childTypeName} here.`;
+
+  return `Only ${listed(options.allowed)} can be the parent of a ${options.childTypeName} here.`;
+};

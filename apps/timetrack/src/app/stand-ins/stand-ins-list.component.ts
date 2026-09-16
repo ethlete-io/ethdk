@@ -108,6 +108,7 @@ import { injectStandIns } from './stand-ins';
                 [isSearching]="tickets.isSearching()"
                 [parentForm]="tickets.parentForm()"
                 [parentTypeNames]="tickets.parentTypeNames()"
+                [parentRule]="tickets.parentRule()"
                 [canCreateParent]="tickets.canCreateParent()"
                 [isCreatingParent]="tickets.isCreatingParent()"
                 [createParentFailure]="tickets.createParentFailure()"

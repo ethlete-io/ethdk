@@ -25,6 +25,9 @@ export const E2E_ISSUE_KEY = 'ABC-3010';
 export const E2E_ISSUE_ID = '10100';
 export const E2E_PARENT_KEY = 'ABC-2000';
 export const E2E_PARENT_ID = '10200';
+/** The only level this instance accepts as the parent of a Task, which is what Story sits beside. */
+export const E2E_EPIC_KEY = 'ABC-1500';
+export const E2E_EPIC_ID = '10300';
 export const E2E_REPO = '/Users/e2e/dev/fut-frontend';
 export const E2E_PROJECT_PATH = 'braune-digital/fut-frontend';
 /** A branch the grammar can spell but which names no issue — the case branch repair exists for. */
@@ -302,12 +305,20 @@ const defaultJira = (): FakeJiraState => ({
       issueType: 'Story',
       updated: e2eAt(8, 0).toISOString(),
     },
+    {
+      id: E2E_EPIC_ID,
+      key: E2E_EPIC_KEY,
+      summary: 'Access platform',
+      issueType: 'Epic',
+      updated: e2eAt(7, 0).toISOString(),
+    },
   ],
   projects: [{ key: 'ABC', name: 'Alpha' }],
   issueTypes: [
     { id: '1', name: 'Story', subtask: false, hierarchyLevel: 0 },
     { id: '2', name: 'Task', subtask: false, hierarchyLevel: 0 },
     { id: '3', name: 'Epic', subtask: false, hierarchyLevel: 1 },
+    { id: '4', name: 'Feature', subtask: false, hierarchyLevel: 1 },
   ],
   notCreatable: [],
   fields: [

@@ -2,7 +2,7 @@ import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
-import { describeJiraHierarchy$, fetchJiraIssueTypes$ } from './hierarchy';
+import { describeJiraHierarchy$, describeParentRule, fetchJiraIssueTypes$, parentTypeNamesFor } from './hierarchy';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
 
@@ -104,5 +104,89 @@ describe('describeJiraHierarchy$', () => {
     describeJiraHierarchy$({ transport, credentials: CREDENTIALS }).subscribe(seen);
 
     expect(seen.mock.calls[0]?.[0].suggestedParenting).toBe('issue-link');
+  });
+});
+
+// Exactly what `/rest/api/3/issuetype` answers on the instance this app files into.
+const REAL_LEVELS = [
+  { name: 'Epic', hierarchyLevel: 1 },
+  { name: 'Story', hierarchyLevel: 0 },
+  { name: 'Task', hierarchyLevel: 0 },
+  { name: 'Bug', hierarchyLevel: 0 },
+  { name: 'Sub-Task', hierarchyLevel: -1 },
+];
+
+describe('parentTypeNamesFor', () => {
+  it('drops a type sitting on the child’s own level', () => {
+    expect(parentTypeNamesFor({ childTypeName: 'Task', typeNames: ['Story', 'Epic'], types: REAL_LEVELS })).toEqual([
+      'Epic',
+    ]);
+  });
+
+  it('matches a name however settings cased or spaced it', () => {
+    expect(parentTypeNamesFor({ childTypeName: ' task ', typeNames: [' epic '], types: REAL_LEVELS })).toEqual([
+      ' epic ',
+    ]);
+  });
+
+  it('drops a type no read holds, rather than guessing its level', () => {
+    expect(parentTypeNamesFor({ childTypeName: 'Task', typeNames: ['Initiative'], types: REAL_LEVELS })).toEqual([]);
+  });
+
+  it('answers nothing when the child type itself is unknown', () => {
+    expect(parentTypeNamesFor({ childTypeName: 'Aufgabe', typeNames: ['Epic'], types: REAL_LEVELS })).toEqual([]);
+  });
+
+  it('offers only the nearest level above, never one two steps up', () => {
+    const withInitiative = [...REAL_LEVELS, { name: 'Initiative', hierarchyLevel: 2 }];
+
+    expect(
+      parentTypeNamesFor({ childTypeName: 'Task', typeNames: ['Initiative', 'Epic'], types: withInitiative }),
+    ).toEqual(['Epic']);
+  });
+
+  it('takes the nearest level that exists when the one just above does not', () => {
+    const noEpics = [
+      { name: 'Task', hierarchyLevel: 0 },
+      { name: 'Initiative', hierarchyLevel: 2 },
+    ];
+
+    expect(parentTypeNamesFor({ childTypeName: 'Task', typeNames: ['Initiative'], types: noEpics })).toEqual([
+      'Initiative',
+    ]);
+  });
+
+  it('lets a sub-task take the level above it', () => {
+    expect(parentTypeNamesFor({ childTypeName: 'Sub-Task', typeNames: ['Story', 'Epic'], types: REAL_LEVELS })).toEqual(
+      ['Story'],
+    );
+  });
+});
+
+describe('describeParentRule', () => {
+  it('says nothing when the hierarchy dropped nothing', () => {
+    expect(describeParentRule({ childTypeName: 'Task', configured: ['Epic'], allowed: ['Epic'] })).toBeNull();
+  });
+
+  it('names the one type left', () => {
+    expect(describeParentRule({ childTypeName: 'Task', configured: ['Story', 'Epic'], allowed: ['Epic'] })).toBe(
+      'Only Epic can be the parent of a Task here.',
+    );
+  });
+
+  it('joins the types left with “or”', () => {
+    expect(
+      describeParentRule({
+        childTypeName: 'Task',
+        configured: ['Story', 'Epic', 'Feature'],
+        allowed: ['Epic', 'Feature'],
+      }),
+    ).toBe('Only Epic or Feature can be the parent of a Task here.');
+  });
+
+  it('says so when the hierarchy leaves no parent at all', () => {
+    expect(describeParentRule({ childTypeName: 'Task', configured: ['Story'], allowed: [] })).toBe(
+      'Jira accepts no parent for a Task here.',
+    );
   });
 });

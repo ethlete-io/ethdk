@@ -181,6 +181,10 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
             </et-select>
           </et-form-field>
 
+          @if (parentRule(); as rule) {
+            <span class="text-small text-et-surface-muted">{{ rule }}</span>
+          }
+
           @if (spec()?.epicKey; as epicKey) {
             <span class="text-small text-et-surface-muted">The spec names {{ epicKey }}.</span>
           }
@@ -366,6 +370,8 @@ export class CreateTicketComponent {
   public parentForm = input<ParentForm | null>(null);
   /** The levels a parent may be filed at, from the instance's own hierarchy. */
   public parentTypeNames = input<readonly string[]>([]);
+  /** Why the parent list holds fewer types than settings name, said once under the field. */
+  public parentRule = input<string | null>(null);
   public canCreateParent = input(false);
   public isCreatingParent = input(false);
   public createParentFailure = input<string | null>(null);

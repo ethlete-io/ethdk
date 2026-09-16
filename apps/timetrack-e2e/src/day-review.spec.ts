@@ -1,4 +1,5 @@
 import {
+  E2E_EPIC_KEY,
   E2E_ISSUE_ID,
   E2E_ISSUE_KEY,
   E2E_PARENT_ID,
@@ -111,6 +112,18 @@ test.describe('the day view', () => {
     const parent = page.locator('et-form-field').filter({ hasText: 'Parent' }).locator('input');
 
     await expect(parent).toHaveValue('');
+  });
+
+  test('offers only the level Jira accepts as a parent, and says so under the field', async ({ page }) => {
+    await openWaitingForAName(page);
+    await page.getByRole('button', { name: 'Create a ticket' }).click();
+
+    await expect(page.getByText('Only Epic can be the parent of a Task here.')).toBeVisible();
+
+    await page.locator('et-form-field').filter({ hasText: 'Parent' }).locator('et-select').click();
+
+    await expect(page.getByRole('option', { name: new RegExp(E2E_EPIC_KEY) })).toBeVisible();
+    await expect(page.getByRole('option', { name: new RegExp(E2E_PARENT_KEY) })).toBeHidden();
   });
 
   test('drafts the summary and the description from what the work left behind', async ({ page }) => {
