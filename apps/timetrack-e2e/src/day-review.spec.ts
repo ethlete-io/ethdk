@@ -16,6 +16,7 @@ import {
   openBand,
   openDayNotes,
   openWaitingForAName,
+  readBackend,
   seedWorld,
   test,
 } from './support';
@@ -114,16 +115,34 @@ test.describe('the day view', () => {
     await expect(parent).toHaveValue('');
   });
 
-  test('offers only the level Jira accepts as a parent, and says so under the field', async ({ page }) => {
+  test('files a sub-task under a story, and the settings’ own type under an epic', async ({ page }) => {
     await openWaitingForAName(page);
     await page.getByRole('button', { name: 'Create a ticket' }).click();
 
-    await expect(page.getByText('Only Epic can be the parent of a Task here.')).toBeVisible();
+    const parent = page.locator('et-form-field').filter({ hasText: 'Parent' }).locator('et-select');
 
+    await parent.click();
+    await page.getByRole('option', { name: new RegExp(E2E_PARENT_KEY) }).click();
+
+    await expect(page.getByText(`Filed as a Sub-Task, the level below ${E2E_PARENT_KEY} (Story).`)).toBeVisible();
+
+    await parent.click();
+    await page.getByRole('option', { name: new RegExp(E2E_EPIC_KEY) }).click();
+
+    await expect(page.getByText('Filed as a')).toBeHidden();
+  });
+
+  test('sends Jira the type the picked parent implies, not the one settings name', async ({ page }) => {
+    await openWaitingForAName(page);
+    await page.getByRole('button', { name: 'Create a ticket' }).click();
     await page.locator('et-form-field').filter({ hasText: 'Parent' }).locator('et-select').click();
+    await page.getByRole('option', { name: new RegExp(E2E_PARENT_KEY) }).click();
+    await page.getByRole('button', { name: 'Create in Jira' }).click();
+    await page.getByRole('button', { name: 'File it now' }).click();
 
-    await expect(page.getByRole('option', { name: new RegExp(E2E_EPIC_KEY) })).toBeVisible();
-    await expect(page.getByRole('option', { name: new RegExp(E2E_PARENT_KEY) })).toBeHidden();
+    await expect
+      .poll(async () => (await readBackend(page)).jira.created.map((issue) => [issue.issueType, issue.parentKey]))
+      .toEqual([['Sub-Task', E2E_PARENT_KEY]]);
   });
 
   test('drafts the summary and the description from what the work left behind', async ({ page }) => {

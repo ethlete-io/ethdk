@@ -318,7 +318,7 @@ const defaultJira = (): FakeJiraState => ({
     { id: '1', name: 'Story', subtask: false, hierarchyLevel: 0 },
     { id: '2', name: 'Task', subtask: false, hierarchyLevel: 0 },
     { id: '3', name: 'Epic', subtask: false, hierarchyLevel: 1 },
-    { id: '4', name: 'Feature', subtask: false, hierarchyLevel: 1 },
+    { id: '4', name: 'Sub-Task', subtask: true, hierarchyLevel: -1 },
   ],
   notCreatable: [],
   fields: [

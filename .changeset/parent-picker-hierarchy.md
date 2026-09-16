@@ -2,5 +2,5 @@
 'timetrack-app': patch
 ---
 
-The ticket form reads the instance hierarchy before the parents, so the Parent list holds only issues
-Jira accepts. A line under the field names the rule when a configured type was dropped.
+The ticket form files the type the picked parent implies, rather than one fixed type. Picking a Story
+files a sub-task, which is what Jira accepts there; a line under the field says so before the press.

@@ -6,7 +6,7 @@ import {
   JiraCreatableType,
   JiraCredentials,
   JiraIssue,
-  JiraLeveledType,
+  JiraIssueType,
   ParentCandidate,
   SpecHeader,
   StandIn,
@@ -17,8 +17,8 @@ import {
   contextKey,
   createJiraIssue$,
   creatableTypeNames,
+  childTypeNameFor,
   describeJiraHierarchy$,
-  describeParentRule,
   draftParentDescription,
   mayCreateType,
   draftTicket,
@@ -29,7 +29,6 @@ import {
   fetchJiraParentCandidates$,
   fileTicketOnce$,
   gitFlowConfigFor,
-  parentTypeNamesFor,
   inferTicketProjectKey,
   matchExistingIssues,
   matchTicketWithAgent$,
@@ -89,8 +88,10 @@ type ProjectIssues = {
   open: JiraIssue[];
   /** What this account may create here. Empty until the read lands, which offers no type at all. */
   creatable: JiraCreatableType[];
-  /** The types a parent may be, once the instance's own hierarchy narrowed what settings name. */
+  /** The types a parent may be: the ones settings name that something can be filed under. */
   parentTypes: string[];
+  /** The instance's own levels, which decide what type the ticket under a picked parent must be. */
+  issueTypes: JiraIssueType[];
 };
 
 type CandidateStatus =
@@ -176,35 +177,36 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   };
 
   /**
-   * The types an issue may be offered as a parent under: the ones settings name, narrowed to the
-   * level Jira's parent field accepts below the ticket's own type.
+   * The types an issue may be offered as a parent under: the ones settings name, minus any the
+   * account can file nothing beneath. Jira's parent field points one level down, so a parent with no
+   * creatable type below it is a choice that fails after the user wrote a summary.
    *
-   * Nothing is narrowed where `parenting` is `issue-link`. That link expresses a same-level relation,
+   * Nothing is dropped where `parenting` is `issue-link`. That link expresses a same-level relation,
    * which is the whole purpose of the setting.
    */
-  const parentTypesFor = (types: readonly JiraLeveledType[]) => {
+  const parentTypesFor = (options: { types: readonly JiraIssueType[]; creatable: readonly JiraCreatableType[] }) => {
     const ticket = settings.settings().ticket;
 
     if (ticket.parenting === 'issue-link') return [...ticket.parentIssueTypeNames];
 
-    return parentTypeNamesFor({
-      childTypeName: ticket.issueTypeName,
-      typeNames: ticket.parentIssueTypeNames,
-      types,
-    });
+    return ticket.parentIssueTypeNames.filter(
+      (parentTypeName) =>
+        childTypeNameFor({
+          parentTypeName,
+          preferredTypeNames: [ticket.issueTypeName],
+          types: options.types,
+          creatable: options.creatable,
+        }) !== null,
+    );
   };
 
-  /**
-   * The levels a parent may be *filed* at: the types above, narrowed again to the ones Jira says this
-   * account may create here. Permission gates creating, never picking — an epic the account may not
-   * create is still an epic it may roll a ticket up to.
-   */
+  /** The levels a parent may be filed at: what settings name, narrowed to what Jira permits here. */
   const parentTypeNames = () => {
     const status = candidateStatus();
 
     if (status.kind !== 'ready') return [];
 
-    return creatableTypeNames({ typeNames: status.parentTypes, types: status.creatable });
+    return creatableTypeNames({ typeNames: settings.settings().ticket.parentIssueTypeNames, types: status.creatable });
   };
 
   // The hierarchy has to land before the parent read: it decides which types that read asks for.
@@ -220,25 +222,26 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         credentials
           ? describeJiraHierarchy$({ transport: ports.transport, credentials }).pipe(
               switchMap((hierarchy) => {
-                const parentTypes = parentTypesFor(hierarchy.issueTypes);
+                return fetchJiraCreatableTypes$({ transport: ports.transport, credentials, projectKey }).pipe(
+                  switchMap((creatable) => {
+                    const parentTypes = parentTypesFor({ types: hierarchy.issueTypes, creatable });
 
-                return forkJoin({
-                  // An empty `issueTypeNames` reads as "any type", so a project with no usable
-                  // parent level must skip the read rather than make it.
-                  parents: parentTypes.length
-                    ? fetchJiraParentCandidates$({
-                        transport: ports.transport,
-                        credentials,
-                        projectKey,
-                        issueTypeNames: parentTypes,
-                        subjectField,
-                      })
-                    : of<JiraIssue[]>([]),
-                  open: fetchJiraOpenIssues$({ transport: ports.transport, credentials, projectKey, subjectField }),
-                  // What Jira permits, which decides the buttons. A type the project's scheme holds and
-                  // this account may not create is a press that fails after the user wrote a summary.
-                  creatable: fetchJiraCreatableTypes$({ transport: ports.transport, credentials, projectKey }),
-                }).pipe(map((issues) => ({ ...issues, parentTypes })));
+                    return forkJoin({
+                      // An empty `issueTypeNames` reads as "any type", so a project with no usable
+                      // parent level must skip the read rather than make it.
+                      parents: parentTypes.length
+                        ? fetchJiraParentCandidates$({
+                            transport: ports.transport,
+                            credentials,
+                            projectKey,
+                            issueTypeNames: parentTypes,
+                            subjectField,
+                          })
+                        : of<JiraIssue[]>([]),
+                      open: fetchJiraOpenIssues$({ transport: ports.transport, credentials, projectKey, subjectField }),
+                    }).pipe(map((issues) => ({ ...issues, creatable, parentTypes, issueTypes: hierarchy.issueTypes })));
+                  }),
+                );
               }),
             )
           : throwError(() => new Error(NO_JIRA)),
@@ -271,6 +274,40 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     ),
     { initialValue: IDLE as CandidateStatus },
   );
+
+  const pickedParent = computed(() => {
+    const status = candidateStatus();
+    const parentKey = form()?.parentKey;
+
+    if (!parentKey) return null;
+
+    const named = specParent();
+    const read = status.kind === 'ready' ? status.parents : [];
+
+    return [...createdParents(), ...(named ? [named] : []), ...read].find((issue) => issue.key === parentKey) ?? null;
+  });
+
+  /**
+   * The type the ticket is filed as. Jira's parent field points one level down, so the parent the
+   * user picked decides it: a Story takes a sub-task, an Epic takes the type settings name. Settings
+   * answer it whenever no parent is picked or the reads have not landed.
+   */
+  const issueTypeName = computed(() => {
+    const configured = settings.settings().ticket.issueTypeName;
+    const status = candidateStatus();
+    const parent = pickedParent();
+
+    if (status.kind !== 'ready' || !parent) return configured;
+
+    return (
+      childTypeNameFor({
+        parentTypeName: parent.issueType,
+        preferredTypeNames: [configured],
+        types: status.issueTypes,
+        creatable: status.creatable,
+      }) ?? configured
+    );
+  });
 
   const createStatus = signal<CreateStatus>(IDLE);
   const writeStatus = signal<WriteStatus>(IDLE);
@@ -426,7 +463,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
    */
   const createGate = computed(() => {
     const status = candidateStatus();
-    const typeName = settings.settings().ticket.issueTypeName;
+    const typeName = issueTypeName();
 
     if (status.kind !== 'ready' || !typeName) return null;
     if (!status.creatable.length) return `Jira lets this account create nothing in ${form()?.projectKey ?? 'it'}.`;
@@ -497,7 +534,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       credentials,
       input: {
         projectKey: draft.projectKey,
-        issueTypeName: ticket.issueTypeName,
+        issueTypeName: issueTypeName(),
         summary: draft.summary,
         description: draft.description,
         parentKey: draft.parentKey ?? undefined,
@@ -671,7 +708,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     canCreate: computed(() => {
       const draft = form();
 
-      return !!draft?.projectKey && !!draft.summary && !!settings.settings().ticket.issueTypeName && !createGate();
+      return !!draft?.projectKey && !!draft.summary && !!issueTypeName() && !createGate();
     }),
 
     /**
@@ -688,17 +725,15 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     createdParent: computed(() => createdParents()[0] ?? null),
     /** The levels a parent may be filed at: what settings name, narrowed to what Jira permits here. */
     parentTypeNames: computed(() => parentTypeNames()),
-    /** Why the parent list holds fewer types than settings name, or nothing when it holds them all. */
+    /** The type the create will file, which the picked parent decides. */
+    issueTypeName,
+    /** What the picked parent changed the ticket's own type to, or nothing when it changed nothing. */
     parentRule: computed(() => {
-      const status = candidateStatus();
-      const ticket = settings.settings().ticket;
+      const parent = pickedParent();
+      const typeName = issueTypeName();
 
-      return status.kind === 'ready'
-        ? describeParentRule({
-            childTypeName: ticket.issueTypeName,
-            configured: ticket.parentIssueTypeNames,
-            allowed: status.parentTypes,
-          })
+      return parent && typeName !== settings.settings().ticket.issueTypeName
+        ? `Filed as a ${typeName}, the level below ${parent.key} (${parent.issueType}).`
         : null;
     }),
     isCreatingParent: computed(() => parentStatus().kind === 'creating'),

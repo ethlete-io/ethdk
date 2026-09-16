@@ -1,5 +1,4 @@
 import { Page } from '@playwright/test';
-import { defaultSettings } from '@ethlete/timetrack/testing';
 import { expect, openWaitingForAName, readBackend, seedWorld, test } from './support';
 
 /** The default world's second stretch names no issue, which is the context this form is opened for. */
@@ -19,13 +18,12 @@ test.describe('filing the parent a ticket rolls up to', () => {
     await openTheForm(page);
   });
 
-  test('offers only a level above the ticket, rather than a type name typed from memory', async ({ page }) => {
+  test('offers the levels the instance holds, rather than a type name typed from memory', async ({ page }) => {
     await page.getByRole('button', { name: 'New parent' }).click();
     await levelSelect(page).click();
 
+    await expect(page.getByRole('option', { name: 'Story', exact: true })).toBeVisible();
     await expect(page.getByRole('option', { name: 'Epic', exact: true })).toBeVisible();
-    // Both sit on the ticket's own level, which Jira's parent field refuses.
-    await expect(page.getByRole('option', { name: 'Story', exact: true })).toBeHidden();
     await expect(page.getByRole('option', { name: 'Task', exact: true })).toBeHidden();
   });
 
@@ -40,7 +38,7 @@ test.describe('filing the parent a ticket rolls up to', () => {
 
   test('files it with no parent of its own, in the project the ticket names', async ({ page }) => {
     await page.getByRole('button', { name: 'New parent' }).click();
-    await page.getByRole('button', { name: /File the Epic/ }).click();
+    await page.getByRole('button', { name: /File the Story/ }).click();
 
     await expect.poll(async () => (await created(page)).map((issue) => issue.parentKey)).toEqual([undefined]);
     expect((await created(page))[0]?.key).toMatch(/^ABC-/);
@@ -48,7 +46,7 @@ test.describe('filing the parent a ticket rolls up to', () => {
 
   test('takes the filed parent as the parent of the ticket, and closes the form', async ({ page }) => {
     await page.getByRole('button', { name: 'New parent' }).click();
-    await page.getByRole('button', { name: /File the Epic/ }).click();
+    await page.getByRole('button', { name: /File the Story/ }).click();
 
     await expect.poll(async () => (await created(page)).length).toBe(1);
 
@@ -80,25 +78,20 @@ test.describe('asking the agent to phrase the parent', () => {
 
     await parentForm.getByText('What gets sent').click();
 
-    await expect(parentForm.locator('pre')).toContainText('"level": "Epic"');
+    await expect(parentForm.locator('pre')).toContainText('"level": "Story"');
     await expect(parentForm.locator('pre')).toContainText('"child"');
   });
 });
 
 test.describe('a parent level Jira refuses this account', () => {
   test('is left off the picker, however the settings name it', async ({ page }) => {
-    const settings = defaultSettings();
-
-    await seedWorld(page, {
-      jira: { notCreatable: ['Epic'] },
-      settings: { ...settings, ticket: { ...settings.ticket, parentIssueTypeNames: ['Epic', 'Feature'] } },
-    });
+    await seedWorld(page, { jira: { notCreatable: ['Epic'] } });
     await page.goto('/day');
     await openTheForm(page);
     await page.getByRole('button', { name: 'New parent' }).click();
     await levelSelect(page).click();
 
-    await expect(page.getByRole('option', { name: 'Feature', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Story', exact: true })).toBeVisible();
     await expect(page.getByRole('option', { name: 'Epic', exact: true })).toBeHidden();
   });
 

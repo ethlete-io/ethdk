@@ -100,46 +100,32 @@ export const hierarchyLevelOf = (options: { typeName: string; types: readonly Ji
   options.types.find((type) => sameName(type.name, options.typeName))?.hierarchyLevel;
 
 /**
- * The names that may be the parent of `childTypeName`, in the order they were given. Jira's parent
- * field points one level up, so `['Story', 'Epic']` under a Task narrows to `['Epic']`.
+ * The type a new child of `parentTypeName` has to be: a creatable type on the nearest level below
+ * the parent. An Epic parent yields a Task, a Story parent a Sub-Task.
  *
- * The bar is the nearest level the instance actually holds above the child, not `childLevel + 1`: a
- * plan with a level nobody uses would otherwise leave a ticket with no parent it could take at all.
- * A type neither read holds has no known level and is dropped rather than guessed at.
+ * `preferredTypeNames` decides only between types that already sit on that level, so the settings'
+ * own ticket type wins wherever it fits and never overrules the hierarchy. Null when the account may
+ * create nothing below that parent, which makes the parent itself unusable.
  */
-export const parentTypeNamesFor = (options: {
-  childTypeName: string;
-  typeNames: readonly string[];
+export const childTypeNameFor = (options: {
+  parentTypeName: string;
+  preferredTypeNames: readonly string[];
   types: readonly JiraLeveledType[];
+  creatable: readonly JiraLeveledType[];
 }) => {
-  const childLevel = hierarchyLevelOf({ typeName: options.childTypeName, types: options.types });
+  const parentLevel = hierarchyLevelOf({ typeName: options.parentTypeName, types: options.types });
 
-  if (childLevel === undefined) return [];
+  if (parentLevel === undefined) return null;
 
-  const levels = options.typeNames.map((typeName) => hierarchyLevelOf({ typeName, types: options.types }));
-  const above = levels.flatMap((level) => (level !== undefined && level > childLevel ? [level] : []));
+  const below = options.creatable.filter((type) => type.hierarchyLevel < parentLevel);
 
-  if (!above.length) return [];
+  if (!below.length) return null;
 
-  const nearest = Math.min(...above);
+  const nearest = Math.max(...below.map((type) => type.hierarchyLevel));
+  const onLevel = below.filter((type) => type.hierarchyLevel === nearest);
+  const preferred = options.preferredTypeNames.find((typeName) =>
+    onLevel.some((type) => sameName(type.name, typeName)),
+  );
 
-  return options.typeNames.filter((_, index) => levels[index] === nearest);
-};
-
-const listed = (names: readonly string[]) =>
-  names.length < 2 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
-
-/**
- * The one line the parent field shows when the hierarchy dropped a type the settings offer, or null
- * when it dropped none.
- */
-export const describeParentRule = (options: {
-  childTypeName: string;
-  configured: readonly string[];
-  allowed: readonly string[];
-}) => {
-  if (options.allowed.length === options.configured.length) return null;
-  if (!options.allowed.length) return `Jira accepts no parent for a ${options.childTypeName} here.`;
-
-  return `Only ${listed(options.allowed)} can be the parent of a ${options.childTypeName} here.`;
+  return preferred ?? onLevel[0]?.name ?? null;
 };
