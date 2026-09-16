@@ -124,11 +124,11 @@ What the milestone holds:
   drawn over the last quarter hour of a meeting. A call does not hold presence yet, and the snap
   moves a band end by up to half an increment. The edit is a statement about a stretch of the day,
   not an edit of a break object, because a break has no id a re-run keeps.
-- **A band that books nothing never takes minutes from a background band.** Planned in
+- **A band that books nothing never takes minutes from a background band.** Built, as planned in
   [`not-counted-takes-nothing.md`](./not-counted-takes-nothing.md), from the same day read at 12:00:
   a voice room the call rules deny took the last quarter hour of `ET-772`, which then booked nothing.
-  ADR 0024 already rules that an excluded call claims nothing, and `recutReviewedRows` does not hold
-  the rule. A defect, not a decision.
+  ADR 0024 already rules that an excluded call claims nothing, and `recutReviewedRows` now holds the
+  rule as well. A rejected row takes nothing either; naming an excluded call still overrules the rule.
 
 It writes local edits to `day_review` and never reaches Tempo.
 
