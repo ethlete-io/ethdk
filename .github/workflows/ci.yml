@@ -196,6 +196,22 @@ jobs:
 
       - run: yarn nx run timetrack-app:test-rust
 
+      # Pinned: a new cargo-audit release must not turn this job red on its own. What the audit
+      # denies, and which advisory is accepted with a reason, live in
+      # `apps/timetrack/src-tauri/.cargo/audit.toml`.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: cargo-audit-bin
+        with:
+          path: ~/.cargo/bin/cargo-audit
+          key: cargo-audit-${{ runner.os }}-0.22.2
+
+      - if: steps.cargo-audit-bin.outputs.cache-hit != 'true'
+        run: cargo install cargo-audit --locked --version 0.22.2
+
+      # Not cached by nx: the answer depends on the advisory database, which changes without the
+      # lockfile. A cache hit would hide an advisory published since the last run.
+      - run: yarn nx run timetrack-app:audit-rust
+
   verified:
     name: Verified
     # A single check for a branch rule or a Mergify condition to name. Skipped jobs pass: a run

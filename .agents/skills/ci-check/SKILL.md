@@ -40,7 +40,8 @@ yarn playwright test -c apps/storybook-e2e/playwright.config.ts  # 12. component
 yarn nx run timetrack-app:format-rust     # 13. cargo fmt --check on the Tauri host
 yarn nx run timetrack-app:lint-rust       # 14. cargo clippy -D warnings
 yarn nx run timetrack-app:test-rust       # 15. cargo test
-yarn nx e2e timetrack-e2e                 # 16. timetrack app e2e, against the host fakes
+yarn nx run timetrack-app:audit-rust      # 16. cargo audit against the RustSec database
+yarn nx e2e timetrack-e2e                 # 17. timetrack app e2e, against the host fakes
 ```
 
 Step 11 is the slowest by far. Skip steps 11 and 12 only when the change touches no component
@@ -48,9 +49,11 @@ source and no story - and say so rather than reporting a clean run you didn't do
 `dist/storybook` itself; to run it against the dev server instead, set
 `STORYBOOK_URL=http://localhost:4400` (see the **`component-behavior-tests`** skill).
 
-Steps 13 to 15 are the workflow's `rust` job. Skip all three when the change touches nothing
-under `apps/timetrack/src-tauri`. Step 16 is the `timetrack-e2e` job. Skip it when the change
-touches neither `libs/timetrack` nor `apps/timetrack`.
+Steps 13 to 16 are the workflow's `rust` job. Skip 13 to 15 when the change touches nothing
+under `apps/timetrack/src-tauri`. Step 16 needs `cargo-audit` 0.22 or later, and it reads a
+database that changes without the lockfile, so it can fail on a branch that touched no Rust.
+Step 17 is the `timetrack-e2e` job. Skip it when the change touches neither `libs/timetrack`
+nor `apps/timetrack`.
 
 ## Reading the results
 

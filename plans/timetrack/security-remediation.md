@@ -25,7 +25,7 @@ test covers it.
 | SEC-17 Google revoke          | yes      | yes   | `libs/timetrack/src/lib/google-auth/tokens.ts`          |
 | SEC-18 refresh race           | yes      | yes   | `libs/timetrack/src/lib/google-auth/token-source.ts`    |
 | SEC-19 HTTP deadlines         | yes      | yes   | `src-tauri/src/lib.rs`, `http.rs`                       |
-| SEC-20 Rust advisories        | yes      | part  | `Cargo.lock`                                            |
+| SEC-20 Rust advisories        | yes      | yes   | `Cargo.lock`, `.cargo/audit.toml`, `ci.yml`             |
 | SEC-21 Angular advisory       | yes      |       | `package.json`                                          |
 | SEC-22 CLI export mode        | yes      | yes   | `libs/agent-rules/src/lib/timetrack-command.ts`         |
 | SEC-23 CLI terminal escapes   | yes      | yes   | `libs/agent-rules/src/lib/plain-text.ts`                |
@@ -125,16 +125,33 @@ Notes on the seventh to ninth commits:
   the proof is what covers that. The contract version is 2, so a CLI and an app that disagree say so
   by name. A Rust test pins the same HMAC vector Node produces, so the two sides cannot drift apart.
 
+## Notes on the tenth commit
+
+- SEC-20, the second half. `cargo audit` now runs in CI as `timetrack-app:audit-rust`, after
+  `test-rust` in the `rust` job. Three decisions:
+  - **cargo-audit is pinned to 0.22.2 and installed from crates.io**, not taken from a GitHub action.
+    A security check should not add a new third-party action to the supply chain, and a pin stops a
+    new cargo-audit release from turning the job red by itself. 0.21.2, the version this machine had,
+    cannot read the database at all: it rejects every CVSS 4.0 entry. The binary is cached under the
+    key `cargo-audit-<os>-0.22.2`, so only a version bump pays the build.
+  - **What fails the run lives in `apps/timetrack/src-tauri/.cargo/audit.toml`**: a vulnerability
+    always, plus `unsound` and `yanked`. `unmaintained` is not denied - six crates under the Tauri
+    stack carry it today and none of them is ours to fix. RUSTSEC-2024-0429 (glib 0.18.5, unsound
+    `VariantStrIter`) is the one accepted entry, with the reason in the file. Proven to bite: with
+    that entry removed the run exits 1, with it there it exits 0.
+  - **The nx target is not cached.** The answer depends on the advisory database, which changes
+    without the lockfile, so a cache hit would hide an advisory published since the last run.
+- `chacha20` moved 0.10.1 to 0.10.2. 0.10.1 and 0.10.0 are both yanked; `rand 0.10.2` pulls it. The
+  176 Rust tests pass on the new one. Without this the new `yanked` deny rule would fail the job.
+- `ci-check` gained step 16. It is the one step in the `rust` job that can fail on a branch which
+  touched no Rust, because the database moves on its own.
+
 Still open, in the order to take them:
 
-1. SEC-20 second half. `rustls` is 0.23.45 and `h2` is 0.4.19, so both advisories are out of the
-   lockfile. The repeatable advisory check in CI is not added yet. `glib 0.18.5`
-   (RUSTSEC-2024-0429) comes from the Tauri/WebKit stack and has no fix, so the check needs it on an
-   ignore list with that reason written down.
-2. SEC-21. Angular 22.0.7 is affected by GHSA-hh8m-fm6v-7cvg, fixed in 22.1.0. It is a workspace-wide
+1. SEC-21. Angular 22.0.7 is affected by GHSA-hh8m-fm6v-7cvg, fixed in 22.1.0. It is a workspace-wide
    upgrade with a lockfile change, so it needs its own session: `yarn install`, a full build and the
    whole test suite.
-3. SEC-08 stays out of scope until compaction exists, for the reason above.
+2. SEC-08 stays out of scope until compaction exists, for the reason above.
 
 Each library change needs a changeset. `@ethlete/timetrack` and `@ethlete/agent-rules` are
 both published.

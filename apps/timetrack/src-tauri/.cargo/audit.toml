@@ -1,0 +1,13 @@
+[advisories]
+# RUSTSEC-2024-0429: `glib::VariantStrIter` has unsound `Iterator` and `DoubleEndedIterator` impls.
+# glib 0.18.5 reaches us only through the Tauri stack and has no fixed release. Drop this entry when
+# a Tauri upgrade moves us past glib 0.18.
+ignore = ["RUSTSEC-2024-0429"]
+
+[output]
+# Do not add "unmaintained": six crates under the Tauri stack carry it today, so the job would be red
+# on day one. A vulnerability fails the run whatever this list says.
+deny = ["unsound", "yanked"]
+format = "terminal"
+quiet = false
+show_tree = false

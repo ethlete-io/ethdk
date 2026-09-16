@@ -60,7 +60,8 @@
         },
         "e2e": {
           "buildTarget": "timetrack-app:build:e2e",
-          "port": 4211
+          "port": 4211,
+          "watch": false
         }
       }
     },
@@ -97,6 +98,13 @@
       "options": {
         "cwd": "apps/timetrack/src-tauri",
         "command": "cargo test"
+      }
+    },
+    "audit-rust": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/timetrack/src-tauri",
+        "command": "cargo audit"
       }
     },
     "tauri": {
