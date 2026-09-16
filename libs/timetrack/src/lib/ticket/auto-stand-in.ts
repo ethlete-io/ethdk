@@ -83,7 +83,9 @@ const alreadyWaiting = (options: { repoPath: string; standIns: readonly StandIn[
  * to a real issue later, which `resolveStandIn` does in one rewrite.
  *
  * The grain is the checkout, so yesterday's and today's bands of the same repository land on the same
- * stand-in and one resolve books both days. That is why the rule carries no branch.
+ * stand-in and one resolve books both days. That is why the rule carries no branch. The branches the
+ * draft was written from are stored on the record, because that grain is the placeholder's alone: the
+ * resolve cuts the rule back to them rather than handing a whole checkout to one issue.
  *
  * Only a checkout with a `project` link qualifies. The link is what says the path is work at all and
  * which Jira project a ticket is filed in, so a placeholder opened without one has nowhere to go.
@@ -155,6 +157,7 @@ export const autoStandIns = (options: {
       projectKey: link.target.projectKey,
       author: 'app',
       openedFor: group.repoPath,
+      openedOn: group.contexts.flatMap((entry) => entry.context.branch ?? []),
       key: describeProjectLink({ path: group.repoPath }),
     });
 

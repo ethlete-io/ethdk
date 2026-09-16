@@ -91,11 +91,37 @@ export const withoutOrphanedStandIns = (settings: TimetrackSettings): TimetrackS
 };
 
 /**
+ * The rules one rule becomes once the work it named turns out to be a real issue.
+ *
+ * A checkout-wide rule is right for a placeholder and wrong for an issue: the placeholder stands for
+ * whatever the checkout does that Jira holds no ticket for, and the issue is one piece of work. So the
+ * rule is cut down to the branches the placeholder was drafted from, and every other branch of that
+ * checkout goes back to unnamed — where the next pass opens a placeholder of its own for it.
+ *
+ * A rule that already names a branch, and one of a stand-in the user wrote, are as narrow as whoever
+ * wrote them meant them to be. Those keep their grain and only swap their target.
+ */
+const narrowedRules = (options: {
+  rule: AttributionRule;
+  branches: readonly string[];
+  issueKey: string;
+}): AttributionRule[] => {
+  const { rule, branches } = options;
+  const target = { kind: 'issue', issueKey: options.issueKey } as const;
+
+  if (!branches.length || !rule.repoPath || rule.branch) return [{ ...rule, target }];
+
+  return branches.map((branch) => ({ ...rule, id: `${rule.id}@${branch}`, branch, target }));
+};
+
+/**
  * Names the issue the work turned out to be, and rewrites every rule that pointed at the stand-in to
  * point at that issue instead.
  *
  * This is the whole of a resolve. Every band on every day the stand-in held is named by one of these
  * rules, so none of them is visited and no stored day is rewritten. An unknown id changes nothing.
+ *
+ * A rule the app opened for a whole checkout is narrowed as it is rewritten. See `narrowedRules`.
  */
 export const resolveStandIn = (options: {
   settings: TimetrackSettings;
@@ -108,17 +134,20 @@ export const resolveStandIn = (options: {
 
   if (!standIn || standIn.state === 'resolved' || !issueKey) return settings;
 
-  const rewritten = settings.attributionRules.filter((rule) => standInIdOf(rule) === id);
-  const resolvedRuleIds = rewritten.map((rule) => rule.id);
+  const branches = standIn.openedOn ?? [];
+  const replacements = new Map(
+    settings.attributionRules
+      .filter((rule) => standInIdOf(rule) === id)
+      .map((rule) => [rule.id, narrowedRules({ rule, branches, issueKey })] as const),
+  );
+  const resolvedRuleIds = [...replacements.values()].flat().map((rule) => rule.id);
 
   return {
     ...settings,
     standIns: settings.standIns.map((entry) =>
       entry.id === id ? { ...entry, state: 'resolved', issueKey, resolvedRuleIds } : entry,
     ),
-    attributionRules: settings.attributionRules.map((rule) =>
-      resolvedRuleIds.includes(rule.id) ? { ...rule, target: { kind: 'issue', issueKey } } : rule,
-    ),
+    attributionRules: settings.attributionRules.flatMap((rule) => replacements.get(rule.id) ?? rule),
   };
 };
 

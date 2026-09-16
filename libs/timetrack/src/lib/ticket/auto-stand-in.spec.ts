@@ -245,4 +245,22 @@ describe('autoStandIns', () => {
 
     expect(opened[0]?.standIn.openedFor).toBe(FIFAGG);
   });
+
+  it('records the branches it drafted from, so a resolve can cut the rule back to them', () => {
+    const opened = open({
+      contexts: [
+        unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000),
+        unnamed({ repoPath: FIFAGG, branch: 'feat/y' }, 20 * 60_000),
+        unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 10 * 60_000),
+      ],
+    });
+
+    expect(opened[0]?.standIn.openedOn).toEqual(['feat/x', 'feat/y']);
+  });
+
+  it('records no branch for a checkout whose work reported none', () => {
+    const opened = open({ contexts: [unnamed({ repoPath: FIFAGG }, 45 * 60_000)] });
+
+    expect(opened[0]?.standIn.openedOn).toBeUndefined();
+  });
 });

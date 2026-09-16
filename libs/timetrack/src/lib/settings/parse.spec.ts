@@ -293,6 +293,14 @@ describe('parseTimetrackSettings', () => {
     expect(settings.standIns[0]?.resolvedRuleIds).toEqual(['rule-1', 'rule-2']);
   });
 
+  it('reads back the branches a placeholder was drafted from, so a resolve still cuts the rule back', () => {
+    const settings = parseTimetrackSettings({
+      standIns: [{ id: 'stand-in-1', name: 'User management', openedOn: ['next', 'feat/x'] }],
+    });
+
+    expect(settings.standIns[0]?.openedOn).toEqual(['next', 'feat/x']);
+  });
+
   it('reads the description the app drafted for a stand-in it opened', () => {
     const settings = parseTimetrackSettings({
       standIns: [{ id: 'stand-in-1', name: 'User management', description: 'What the work says it was.' }],

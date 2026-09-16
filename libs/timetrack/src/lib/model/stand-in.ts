@@ -41,6 +41,15 @@ export type StandIn = {
    */
   openedFor?: string;
   /**
+   * The branches of the work the app drafted it from, when the app is what opened it.
+   *
+   * A placeholder covers the whole checkout, because it stands for whatever that checkout does that
+   * Jira holds no ticket for. An issue is one piece of work, so the resolve narrows the rule to these
+   * branches. Without them a checkout-wide grain would survive onto a real key and name every later
+   * branch after work it never covered.
+   */
+  openedOn?: string[];
+  /**
    * The rules the resolve rewrote, so the undo can point exactly those back and no rule that named the
    * same issue on its own is dragged along. Written by the resolve and cleared by the undo.
    */
@@ -83,6 +92,8 @@ export const openStandIn = (options: {
   author?: NamingAuthor;
   /** The checkout the app opened it for, when the app is what opened it. */
   openedFor?: string;
+  /** The branches of the work the app drafted it from, when the app is what opened it. */
+  openedOn?: readonly string[];
   /**
    * Tells apart two stand-ins opened in the same millisecond, which is what one pass over a day's
    * checkouts does. Anything but letters and digits is dropped, so an id stays a readable key.
@@ -94,6 +105,7 @@ export const openStandIn = (options: {
   ...(options.description?.trim() ? { description: options.description.trim() } : {}),
   ...(options.projectKey ? { projectKey: options.projectKey } : {}),
   ...(options.openedFor ? { openedFor: options.openedFor } : {}),
+  ...(options.openedOn?.length ? { openedOn: [...new Set(options.openedOn)] } : {}),
   state: 'open',
   days: [options.day],
   author: options.author ?? 'user',

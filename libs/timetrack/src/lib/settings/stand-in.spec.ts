@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AttributionRule, standInIdOf } from '../model/attribution';
+import { AttributionRule, matchAttributionRule, standInIdOf } from '../model/attribution';
 import { StandIn } from '../model/stand-in';
 import { DEFAULT_TIMETRACK_SETTINGS } from './model';
 import {
@@ -156,6 +156,66 @@ describe('resolveStandIn', () => {
 
     expect(resolveStandIn({ settings, id: 'stand-in-1', issueKey: '  ' })).toBe(settings);
   });
+
+  it('narrows a checkout-wide rule to the branch the placeholder was opened on', () => {
+    const settings = resolveStandIn({
+      settings: settingsWith({ standIns: [standIn({ author: 'app', openedOn: ['fix/player-name'] })] }),
+      id: 'stand-in-1',
+      issueKey: 'FIP-100',
+    });
+
+    expect(settings.attributionRules).toHaveLength(1);
+    expect(settings.attributionRules[0]?.branch).toBe('fix/player-name');
+    expect(settings.attributionRules[0]?.target).toEqual({ kind: 'issue', issueKey: 'FIP-100' });
+  });
+
+  it('leaves a branch the placeholder never saw unnamed', () => {
+    const settings = resolveStandIn({
+      settings: settingsWith({ standIns: [standIn({ author: 'app', openedOn: ['fix/player-name'] })] }),
+      id: 'stand-in-1',
+      issueKey: 'FIP-100',
+    });
+    const later = matchAttributionRule({
+      context: { repoPath: '/home/tom/dev/ea-frontend', branch: 'dev-player-name-auto-size' },
+      rules: settings.attributionRules,
+    });
+
+    expect(later).toBeUndefined();
+  });
+
+  it('writes one rule per branch the placeholder was opened on', () => {
+    const settings = resolveStandIn({
+      settings: settingsWith({ standIns: [standIn({ author: 'app', openedOn: ['next', 'fix/player-name'] })] }),
+      id: 'stand-in-1',
+      issueKey: 'FIP-100',
+    });
+
+    expect(settings.attributionRules.map((entry) => entry.branch)).toEqual(['next', 'fix/player-name']);
+    expect(new Set(settings.attributionRules.map((entry) => entry.id)).size).toBe(2);
+    expect(settings.standIns[0]?.resolvedRuleIds).toEqual(settings.attributionRules.map((entry) => entry.id));
+  });
+
+  it('leaves the rule of a stand-in the user wrote as wide as they wrote it', () => {
+    const settings = resolveStandIn({ settings: settingsWith(), id: 'stand-in-1', issueKey: 'FIP-100' });
+
+    expect(settings.attributionRules).toHaveLength(1);
+    expect(settings.attributionRules[0]?.id).toBe('rule-1');
+    expect(settings.attributionRules[0]?.branch).toBeUndefined();
+  });
+
+  it('leaves a rule that already names a branch alone', () => {
+    const settings = resolveStandIn({
+      settings: settingsWith({
+        standIns: [standIn({ author: 'app', openedOn: ['next'] })],
+        rules: [rule({ branch: 'fix/player-name' })],
+      }),
+      id: 'stand-in-1',
+      issueKey: 'FIP-100',
+    });
+
+    expect(settings.attributionRules).toHaveLength(1);
+    expect(settings.attributionRules[0]?.branch).toBe('fix/player-name');
+  });
 });
 
 describe('reopenStandIn', () => {
@@ -178,6 +238,21 @@ describe('reopenStandIn', () => {
     const settings = reopenStandIn({ settings: resolved, id: 'stand-in-1' });
 
     expect(settings.attributionRules[1]?.target).toEqual({ kind: 'issue', issueKey: 'FIP-100' });
+  });
+
+  it('points the rules a narrowed resolve wrote back at the stand-in', () => {
+    const resolved = resolveStandIn({
+      settings: settingsWith({ standIns: [standIn({ author: 'app', openedOn: ['next', 'fix/player-name'] })] }),
+      id: 'stand-in-1',
+      issueKey: 'FIP-100',
+    });
+    const settings = reopenStandIn({ settings: resolved, id: 'stand-in-1' });
+
+    expect(settings.attributionRules.map((entry) => entry.target)).toEqual([
+      { kind: 'stand-in', standInId: 'stand-in-1' },
+      { kind: 'stand-in', standInId: 'stand-in-1' },
+    ]);
+    expect(settings.standIns[0]?.state).toBe('open');
   });
 
   it('changes nothing for a stand-in that is still open', () => {
