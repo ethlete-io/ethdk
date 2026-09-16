@@ -32,6 +32,47 @@ const attributed = (options: {
 };
 
 describe('mergeBlocks', () => {
+  const ruled = (options: { fromMinute: number; toMinute: number; branch: string }): AttributedBlock => {
+    const base = attributed({ ...options, issueKey: 'FIP-3056', confidence: 'likely', repoPath: '/repo' });
+
+    return {
+      ...base,
+      evidence: [
+        ...base.evidence,
+        {
+          kind: 'attribution-rule',
+          at: AT(options.fromMinute),
+          detail: 'you assigned `/repo` to FIP-3056',
+        },
+      ],
+    };
+  };
+
+  it('proposes rather than states a row whose rule could not say which branch it meant', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        ruled({ fromMinute: 0, toMinute: 5, branch: 'next' }),
+        ruled({ fromMinute: 5, toMinute: 20, branch: 'dev-toty-public-fixes' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.issueKey).toBe('FIP-3056');
+    expect(rows[0]?.confidence).toBe('weak');
+  });
+
+  it('leaves a rule that named one branch throughout stating its row', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        ruled({ fromMinute: 0, toMinute: 5, branch: 'next' }),
+        ruled({ fromMinute: 5, toMinute: 20, branch: 'next' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.confidence).toBe('likely');
+  });
+
   it('combines consecutive blocks on the same issue into one row', () => {
     const rows = mergeBlocks({
       blocks: [

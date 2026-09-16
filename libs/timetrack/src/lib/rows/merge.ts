@@ -381,6 +381,22 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
  * A band left under `minBandMs` is then folded into the nearest band of its own lane - see
  * `absorbSlivers`, which is what keeps a call's worth of focus flashes out of the timeline.
  */
+/**
+ * Re-reads a row once it is assembled. A rule names a context, so it never saw which branch the row
+ * holds, and a row holding two of them was named before the swap that says the work changed. The key
+ * stays as a proposal and stops syncing on its own — see `syncsWithoutReview`.
+ */
+const reconsider = (row: WorkGroup): WorkGroup => {
+  if (!row.issueKey || row.confidence === 'weak') return row;
+  if (!row.evidence.some((entry) => entry.kind === 'attribution-rule')) return row;
+
+  const branches = new Set(
+    row.blocks.map((block) => block.context.branch).filter((branch): branch is string => !!branch),
+  );
+
+  return branches.size > 1 ? { ...row, confidence: 'weak' } : row;
+};
+
 export const mergeBlocks = (options: {
   blocks: AttributedBlock[];
   /** Instants no band may be drawn across, whatever the gap rule allows — the day's breaks. */
@@ -401,5 +417,5 @@ export const mergeBlocks = (options: {
     rows,
     minBandMs: config.minBandMs,
     pass: { ...pass, maxGapMs: config.maxMergeGapMs },
-  });
+  }).map(reconsider);
 };
