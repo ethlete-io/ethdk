@@ -13,7 +13,14 @@ import {
   SpinnerComponent,
   TAB_IMPORTS,
 } from '@ethlete/components';
-import { callNamingKey, findStandIn, forgeLoginFor } from '@ethlete/timetrack';
+import {
+  callNamingKey,
+  carriesCredentialsSafely,
+  findStandIn,
+  forgeLoginFor,
+  normalizeGitLabHost,
+  normalizeJiraHost,
+} from '@ethlete/timetrack';
 import {
   injectAgentSessionCollector,
   injectAgentSpendBackfill,
@@ -85,6 +92,10 @@ its own login that this app never sees. Run glab auth login --hostname on the in
 
 The token below is only for writing - repairing a branch and starting one both open merge requests.
 Give it the api scope. Leave it empty if you never use those two.`;
+
+const INSECURE_HOST = `Every call to it carries your token, and a plain http request puts that token and
+everything it answers on the wire for anyone on the network to read. No call is made to this host until
+it is https.`;
 
 const GITHUB_WHY = `The same reading as GitLab, for github.com. It runs gh, which holds its own login,
 so there is no host and no token to give - only this switch.
@@ -312,6 +323,15 @@ window title, never a file path. A suggestion never syncs on its own.`;
                   </et-form-field>
                 </div>
 
+                @if (jiraHostInsecure()) {
+                  <et-banner
+                    [description]="INSECURE_HOST"
+                    type="error"
+                    heading="This host is not https"
+                    data-jira-insecure-host
+                  />
+                }
+
                 <ethlete-token-field
                   [connected]="store.credentials().jira"
                   (save)="store.saveJiraToken($event)"
@@ -461,6 +481,15 @@ window title, never a file path. A suggestion never syncs on its own.`;
                     type="url"
                   />
                 </et-form-field>
+
+                @if (gitlabHostInsecure()) {
+                  <et-banner
+                    [description]="INSECURE_HOST"
+                    type="error"
+                    heading="This instance is not https"
+                    data-gitlab-insecure-host
+                  />
+                }
 
                 @if (glabOffers().length) {
                   <div class="flex flex-wrap items-center gap-2" data-glab-offers>
@@ -643,6 +672,7 @@ export class SettingsViewComponent {
   protected readonly JIRA_WHY = JIRA_WHY;
   protected readonly TEMPO_WHY = TEMPO_WHY;
   protected readonly GITLAB_WHY = GITLAB_WHY;
+  protected readonly INSECURE_HOST = INSECURE_HOST;
   protected readonly GITHUB_WHY = GITHUB_WHY;
   protected readonly MEETING_WHY = MEETING_WHY;
   protected readonly CALL_NAMING_WHY = CALL_NAMING_WHY;
@@ -681,6 +711,24 @@ export class SettingsViewComponent {
     const { host } = this.store.settings().gitlab;
 
     return host && forgeLoginFor(auth, host) ? [] : auth.logins.map((login) => login.host);
+  });
+
+  /**
+   * Whether the configured host would put its token on the wire in the clear.
+   *
+   * The provider clients refuse such a host, and the transport refuses it again. Saying so under the
+   * field is the only place the user can act on it, because a request is what raises it otherwise.
+   */
+  protected jiraHostInsecure = computed(() => {
+    const { host } = this.store.settings().jira;
+
+    return host.length > 0 && !carriesCredentialsSafely(normalizeJiraHost(host));
+  });
+
+  protected gitlabHostInsecure = computed(() => {
+    const { host } = this.store.settings().gitlab;
+
+    return host.length > 0 && !carriesCredentialsSafely(normalizeGitLabHost(host));
   });
 
   /** The reminder is configured as a time of day, and the control it is typed into holds a duration. */

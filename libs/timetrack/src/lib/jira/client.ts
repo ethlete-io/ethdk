@@ -1,5 +1,6 @@
-import { Observable, map } from 'rxjs';
+import { Observable, map, throwError } from 'rxjs';
 import { TimetrackRequestMethod, TimetrackTransport } from '../transport/ports';
+import { carriesCredentialsSafely, insecureHostMessage } from '../transport/secure-host';
 
 /**
  * A Jira Cloud API token, which is Basic auth over the account email — not the same secret as
@@ -67,11 +68,23 @@ export const jiraRequest$ = <T>(options: {
   body?: unknown;
 }): Observable<T> => {
   const { transport, credentials, path, describe } = options;
+  const base = normalizeJiraHost(credentials.host);
+
+  if (!carriesCredentialsSafely(base)) {
+    return throwError(
+      () =>
+        new JiraRequestError({
+          status: 0,
+          describe,
+          message: insecureHostMessage({ provider: 'Jira', url: base }),
+        }),
+    );
+  }
 
   return transport
     .request$<T>({
       method: options.method ?? 'GET',
-      url: withQuery(`${normalizeJiraHost(credentials.host)}${path}`, options.query),
+      url: withQuery(`${base}${path}`, options.query),
       headers: {
         authorization: `Basic ${encodeCredentials(credentials)}`,
         accept: 'application/json',

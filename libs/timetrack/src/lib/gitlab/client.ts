@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention -- GitLab's REST v4 wire format is snake_case. */
-import { EMPTY, Observable, expand, map, reduce } from 'rxjs';
+import { EMPTY, Observable, expand, map, reduce, throwError } from 'rxjs';
 import { TimetrackRequestMethod, TimetrackResponse, TimetrackTransport } from '../transport/ports';
+import { carriesCredentialsSafely, insecureHostMessage } from '../transport/secure-host';
 
 /**
  * A personal access token for the user's own GitLab, self-hosted or not.
@@ -69,11 +70,23 @@ export const gitlabRequest$ = <T>(options: {
   body?: unknown;
 }): Observable<TimetrackResponse<T>> => {
   const { transport, credentials, path, describe } = options;
+  const base = normalizeGitLabHost(credentials.host);
+
+  if (!carriesCredentialsSafely(base)) {
+    return throwError(
+      () =>
+        new GitLabRequestError({
+          status: 0,
+          describe,
+          message: insecureHostMessage({ provider: 'GitLab', url: base }),
+        }),
+    );
+  }
 
   return transport
     .request$<T>({
       method: options.method ?? 'GET',
-      url: withQuery(`${normalizeGitLabHost(credentials.host)}/api/v4${path}`, options.query),
+      url: withQuery(`${base}/api/v4${path}`, options.query),
       body: options.body,
       headers: {
         // GitLab reads a personal access token from this header. `Authorization: Bearer` is for OAuth

@@ -45,6 +45,22 @@ describe('jiraRequest$', () => {
     expect(requests[0]?.method).toBe('GET');
   });
 
+  it('refuses a host that is not https before the token reaches the transport', () => {
+    const { transport, requests } = transportOf();
+    const errors: Error[] = [];
+
+    jiraRequest$({
+      transport,
+      credentials: { ...CREDENTIALS, host: 'http://jira.example' },
+      path: '/rest/api/3/myself',
+      describe: 'the account',
+    }).subscribe({ error: (error: Error) => errors.push(error) });
+
+    expect(requests).toHaveLength(0);
+    expect(errors[0]).toBeInstanceOf(JiraRequestError);
+    expect(errors[0]?.message).toContain('is not https');
+  });
+
   it('drops undefined query values rather than sending the string "undefined"', () => {
     const { transport, requests } = transportOf();
 
