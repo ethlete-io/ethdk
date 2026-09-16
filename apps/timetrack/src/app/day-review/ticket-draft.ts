@@ -28,6 +28,7 @@ import {
   gitFlowConfigFor,
   inferTicketProjectKey,
   matchExistingIssues,
+  matchTicketWithAgent$,
   rankParentCandidates,
   readJiraCredentials$,
   shasFromEvidence,
@@ -36,6 +37,7 @@ import {
   suggestParentKey,
   ticketSubjectOf,
   ticketWritingRequest,
+  TicketMatch,
   ParentWritingRequest,
   parentWritingRequest,
   writeParentWithAgent$,
@@ -95,7 +97,7 @@ type CreateStatus =
   | { kind: 'duplicate'; issueKey: string }
   | { kind: 'failed'; message: string };
 
-type WriteStatus = typeof IDLE | { kind: 'writing' } | { kind: 'failed'; message: string };
+type WriteStatus = typeof IDLE | { kind: 'writing' } | { kind: 'matching' } | { kind: 'failed'; message: string };
 
 /** An issue the agent says already tracks this work, so nothing new has to be filed for it. */
 export type AgentMatch = {
@@ -140,6 +142,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const searches$ = new Subject<string>();
   const specs$ = new Subject<{ repoPath: string; evidence: readonly Evidence[] }>();
   const writes$ = new Subject<TicketWritingRequest>();
+  const matches$ = new Subject<TicketWritingRequest>();
   const parentWrites$ = new Subject<ParentWritingRequest>();
   const creations$ = new Subject<TicketForm>();
   const parentForm = signal<ParentForm | null>(null);
@@ -234,6 +237,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const createStatus = signal<CreateStatus>(IDLE);
   const writeStatus = signal<WriteStatus>(IDLE);
+  const matchStatus = signal<WriteStatus>(IDLE);
   const parentWriteStatus = signal<WriteStatus>(IDLE);
   const agentMatch = signal<AgentMatch | null>(null);
 
@@ -255,6 +259,16 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
+  /**
+   * Fills only what already exists. The summary and the description must stay untouched: the user
+   * wrote those words on the stand-in, and keeping them is the whole point of this press.
+   */
+  const applyMatch = (match: TicketMatch) => {
+    if (match.parentKey) update({ parentKey: match.parentKey });
+
+    agentMatch.set(match.existingKey ? { ...matchFor(match.existingKey), reason: match.existingReason ?? '' } : null);
+  };
+
   // `exhaustMap`, not `switchMap`: spawning a second CLI while the first still runs costs the user
   // twice and answers into the same fields.
   writes$
@@ -274,6 +288,27 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         ),
       ),
       tap((status) => writeStatus.set(status)),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  matches$
+    .pipe(
+      exhaustMap((request) =>
+        matchTicketWithAgent$({
+          runner: ports.processes,
+          request,
+          options: { command: settings.settings().reasoning.command, model: settings.settings().reasoning.model },
+          maskedNames: settings.settings().reasoning.maskedNames,
+        }).pipe(
+          tap((match) => {
+            if (match) applyMatch(match);
+          }),
+          map((match): WriteStatus => (match ? IDLE : { kind: 'failed', message: AGENT_FAILED })),
+          startWith<WriteStatus>({ kind: 'matching' }),
+        ),
+      ),
+      tap((status) => matchStatus.set(status)),
       takeUntilDestroyed(destroyRef),
     )
     .subscribe();
@@ -475,6 +510,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     specParent.set(null);
     createStatus.set(IDLE);
     writeStatus.set(IDLE);
+    matchStatus.set(IDLE);
     agentMatch.set(null);
     parentForm.set(null);
     createdParents.set([]);
@@ -543,6 +579,14 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }),
     /** The one the agent says is the same work, which is a stronger claim than shared wording. */
     agentMatch: agentMatch.asReadonly(),
+    /** Only a stand-in offers the press: a context has no wording of the user's own to protect. */
+    canMatch: computed(() => settings.settings().reasoning.enabled && !!standIn()),
+    isMatching: computed(() => matchStatus().kind === 'matching'),
+    matchFailure: computed(() => {
+      const status = matchStatus();
+
+      return status.kind === 'failed' ? status.message : null;
+    }),
     isSearching: computed(() => candidateStatus().kind === 'loading'),
     searchFailure: computed(() => {
       const status = candidateStatus();
@@ -635,6 +679,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       notes.set([]);
       createStatus.set(IDLE);
       writeStatus.set(IDLE);
+      matchStatus.set(IDLE);
       agentMatch.set(null);
       parentForm.set(null);
       createdParents.set([]);
@@ -666,6 +711,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       notes.set(drafted.notes);
       createStatus.set(IDLE);
       writeStatus.set(IDLE);
+      matchStatus.set(IDLE);
       agentMatch.set(null);
       searches$.next(projectKey);
       askSpec({
@@ -758,6 +804,17 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       const request = writingRequestNow();
 
       if (request) writes$.next(request);
+    },
+
+    /**
+     * Hands the same payload to the local agent CLI and asks it one thing: what already tracks this
+     * work. It fills the parent and names the issue that may already be it, and it never touches the
+     * summary or the description the user wrote. Nothing is resolved until the user presses.
+     */
+    matchWithAgent: () => {
+      const request = writingRequestNow();
+
+      if (request) matches$.next(request);
     },
 
     create: () => {

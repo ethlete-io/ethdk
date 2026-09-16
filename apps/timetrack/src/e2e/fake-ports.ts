@@ -330,9 +330,11 @@ export const createFakePorts = (): HostPorts => {
 
           const answer = isReasoningSpec(spec)
             ? fakeReasoningAnswer(spec, reasoningRuns)
-            : spec.command === 'git'
-              ? runFakeGit(backend, spec)
-              : EMPTY_AGENT_ANSWER;
+            : spec.ask === 'a match'
+              ? fakeMatchAnswer(spec)
+              : spec.command === 'git'
+                ? runFakeGit(backend, spec)
+                : EMPTY_AGENT_ANSWER;
 
           return ok({ code: 0, stdout: withFakeUsage({ stdout: answer, spec, runs: agentRuns++ }), stderr: '' });
         },
@@ -450,6 +452,21 @@ const withFakeUsage = (options: { stdout: string; spec: ProcessSpec; runs: numbe
 };
 
 const isReasoningSpec = (spec: ProcessSpec) => spec.ask === 'the day';
+
+/** What a match run answers: the first parent and the first open issue the payload itself offered. */
+const fakeMatchAnswer = (spec: ProcessSpec) => {
+  const request = JSON.parse(spec.stdin ?? '{}') as {
+    parents?: { key: string }[];
+    issues?: { key: string }[];
+  };
+  const match = {
+    parentKey: request.parents?.[0]?.key ?? null,
+    existingKey: request.issues?.[0]?.key ?? null,
+    existingReason: 'it names the same work',
+  };
+
+  return `{"structured_output":${JSON.stringify(match)}}`;
+};
 
 /**
  * What a reasoning run answers, so a second run is observable in the UI.

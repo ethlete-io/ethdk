@@ -51,7 +51,7 @@ export type TimetrackSecretStore = {
 };
 
 /** What one run asks the model for. A spec that names none is no model call, and nothing meters it. */
-export type ModelAsk = 'the day' | 'a ticket';
+export type ModelAsk = 'the day' | 'a ticket' | 'a match';
 
 export type ProcessSpec = {
   command: string;

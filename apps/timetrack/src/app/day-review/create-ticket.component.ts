@@ -123,14 +123,23 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
                 }
                 Ask AI
               </button>
-              <span class="text-small text-et-surface-muted">
-                It writes the summary and the description, picks the parent, and says if a ticket for this already
-                exists. Everything stays yours to edit.
-              </span>
+              @if (canMatch()) {
+                <button [disabled]="isMatching()" (click)="match.emit()" et-button variant="outline" size="sm">
+                  @if (isMatching()) {
+                    <et-spinner size="sm" />
+                  }
+                  Ask AI to find a match
+                </button>
+              }
+              <span class="text-small text-et-surface-muted">{{ askNote() }}</span>
             </div>
 
             @if (writeFailure(); as failure) {
               <et-banner [description]="failure" type="warning" heading="The agent wrote nothing" />
+            }
+
+            @if (matchFailure(); as failure) {
+              <et-banner [description]="failure" type="warning" heading="The agent found nothing" />
             }
 
             @if (payload()) {
@@ -361,7 +370,9 @@ export class CreateTicketComponent {
   public isCreatingParent = input(false);
   public createParentFailure = input<string | null>(null);
   public canWrite = input(false);
+  public canMatch = input(false);
   public isWriting = input(false);
+  public isMatching = input(false);
   public isWritingParent = input(false);
   /** Exactly what a parent-writing run would send, shown before it leaves the machine. */
   public parentPayload = input<ParentWritingRequest | null>(null);
@@ -375,6 +386,7 @@ export class CreateTicketComponent {
   public duplicateKey = input<string | null>(null);
   public searchFailure = input<string | null>(null);
   public writeFailure = input<string | null>(null);
+  public matchFailure = input<string | null>(null);
   public createFailure = input<string | null>(null);
 
   public projectKeyChange = output<string>();
@@ -392,6 +404,7 @@ export class CreateTicketComponent {
   /** Asks the agent for the wider goal the ticket rolls up to, into the open parent form. */
   public writeParent = output<void>();
   /** The key of an issue that already tracks this work, taken instead of filing a new ticket. */
+  public match = output<void>();
   public useExisting = output<string>();
   public create = output<void>();
   public dismiss = output<void>();
@@ -405,6 +418,12 @@ export class CreateTicketComponent {
 
     return days ? `${days} day${days === 1 ? '' : 's'} waiting` : '';
   });
+
+  protected askNote = computed(() =>
+    this.canMatch()
+      ? 'The first press rewrites the summary and the description. The second only looks for the parent and for a ticket that may already be this work, and leaves your words alone.'
+      : 'It writes the summary and the description, picks the parent, and says if a ticket for this already exists. Everything stays yours to edit.',
+  );
 
   /** What the placeholder is called, for a heading that reads as the work rather than as a checkout. */
   public name = computed(() => this.standIn()?.name ?? 'work with no ticket');

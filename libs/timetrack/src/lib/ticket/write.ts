@@ -338,7 +338,10 @@ const isWording = (value: unknown): value is RawWording => {
 };
 
 /** A key the request never offered is a key the agent made up, and it is dropped rather than shown. */
-const offeredKey = (options: { answered: string | null | undefined; issues: readonly TicketWritingIssue[] }) => {
+export const offeredIssueKey = (options: {
+  answered: string | null | undefined;
+  issues: readonly TicketWritingIssue[];
+}) => {
   const key = options.answered?.trim().toUpperCase();
 
   return key && options.issues.some((issue) => issue.key.toUpperCase() === key) ? key : undefined;
@@ -380,9 +383,9 @@ export const writeTicketWithAgent$ = (options: {
 
       if (!summary) throw new Error('the agent wrote no summary');
 
-      const existingKey = offeredKey({ answered: wording.existingKey, issues: options.request.issues });
+      const existingKey = offeredIssueKey({ answered: wording.existingKey, issues: options.request.issues });
 
-      const parentKey = offeredKey({ answered: wording.parentKey, issues: options.request.parents });
+      const parentKey = offeredIssueKey({ answered: wording.parentKey, issues: options.request.parents });
 
       return {
         summary: unmaskNames({ text: summary, map: names }),

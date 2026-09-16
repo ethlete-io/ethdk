@@ -1,6 +1,7 @@
 export * from './auto-stand-in';
 export * from './draft';
 export * from './file';
+export * from './match';
 export * from './parents';
 export * from './project';
 export * from './repair';
