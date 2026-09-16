@@ -14,6 +14,7 @@
     "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version && yarn versions:sync && yarn install --mode=update-lockfile",
     "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn versions:sync && yarn install --mode=update-lockfile",
     "commit": "yarn dlx @commitlint/prompt-cli",
+    "design": "node tools/design-explore/server.mjs",
     "docs": "nx serve docs",
     "lint:changesets": "node ./tools/scripts/lint-changesets.js",
     "lint:css-properties": "node ./tools/scripts/lint-css-properties.js",
