@@ -66,6 +66,13 @@ Notes on the third commit:
 - `oauth.rs` had a pre-existing clippy failure (`manual_unwrap_or_default`) from the SEC-12
   commit. It is fixed here; `cargo fmt` had also not been run over the last two commits.
 
+The capability gating itself is not covered by a test. The e2e suite replaces `HOST_PORTS`
+with fakes, so it never crosses the Tauri IPC boundary where a permission is checked, and the
+widget's five commands were derived from reading `widget.component.ts`, `widget.config.ts`,
+`collection-pause.ts` and `window-lock.ts` rather than from a run. Open the app once with
+`yarn timetrack`, open the widget, toggle the pause and press "Open Timetrack". A refused
+command reports itself in the webview console.
+
 Still open, in the order to take them:
 
 1. SEC-14 and SEC-15 `collectors/agent-session-collector.ts`. `persist$` filters the events but
