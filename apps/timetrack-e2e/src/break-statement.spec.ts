@@ -105,3 +105,40 @@ test.describe('a stretch the user says they were away for', () => {
     await expect(breaks(page).first()).toHaveAttribute('title', '09:00 AM - 10:00 AM');
   });
 });
+
+const MINUTE_MS = 60_000;
+
+const concurrency = (page: Page) => page.locator('footer [data-concurrency]');
+
+const ratioOf = (text: string) => Number.parseFloat(text);
+
+const durationsMsOf = (text: string) =>
+  [...text.matchAll(/(?:(\d+)h )?(\d+)m/g)].map((match) => (Number(match[1] ?? 0) * 60 + Number(match[2])) * MINUTE_MS);
+
+test.describe("the day's present total", () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: aDayWithABreak() });
+    await page.goto('/day');
+  });
+
+  test('reads the engagement ratio against the presence a statement leaves', async ({ page }) => {
+    const measured = ratioOf(await concurrency(page).innerText());
+
+    await drawBreak({ page, from: 12, to: 13 });
+
+    await expect.poll(async () => ratioOf(await concurrency(page).innerText())).toBeGreaterThan(measured);
+  });
+
+  test('keeps the measured total in the day notes, an hour above the stated one', async ({ page }) => {
+    await drawBreak({ page, from: 12, to: 13 });
+    await openDayNotes(page);
+
+    const measured = page.locator('[data-statements-measured]');
+
+    await expect(measured).toBeVisible();
+
+    const [measuredMs, statedMs] = durationsMsOf(await measured.innerText());
+
+    expect(measuredMs - statedMs).toBe(60 * MINUTE_MS);
+  });
+});

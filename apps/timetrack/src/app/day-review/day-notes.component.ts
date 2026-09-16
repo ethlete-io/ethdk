@@ -75,9 +75,13 @@ const NO_DIRECTORY =
           }
         </ul>
 
+        <span class="text-small text-et-surface-subtle" data-statements-measured>
+          The collectors measured {{ measuredPresence() }} present. This day counts {{ statedPresence() }}.
+        </span>
+
         <span class="text-small text-et-surface-subtle">
-          The day's breaks follow what you said here, whatever the collectors measured in those stretches. Take a
-          statement back and the stretch reads as it was measured again.
+          The day's breaks and its present total follow what you said here, whatever the collectors measured in those
+          stretches. Take a statement back and the stretch reads as it was measured again.
         </span>
       </div>
     }
@@ -223,6 +227,8 @@ export class DayNotesComponent {
   );
 
   protected statements = computed(() => this.store.statements());
+  protected measuredPresence = computed(() => formatDurationMs(this.day()?.presenceMs ?? 0));
+  protected statedPresence = computed(() => formatDurationMs(this.store.presentMs()));
   protected rebuilt = computed(() => formatRebuilt(this.day()?.rebuiltMs ?? 0));
   protected calls = computed(() => this.day()?.calls ?? []);
   protected unobserved = computed(() => this.store.meetings().map(offerOf));

@@ -74,8 +74,10 @@ import {
   splitRow,
   standInBranches,
   standInNameFor,
+  statedPresence,
   streamDay,
   unnamedContexts,
+  windowsMs,
 } from '@ethlete/timetrack';
 import {
   Observable,
@@ -582,6 +584,17 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }),
   );
 
+  const presentMs = computed(() =>
+    windowsMs(statedPresence({ presence: streamed()?.presence ?? [], statements: edits().statements })),
+  );
+
+  const concurrency = computed(() => {
+    const engagedMs = streamed()?.engagedMs ?? 0;
+    const presence = presentMs();
+
+    return presence ? engagedMs / presence : 0;
+  });
+
   /**
    * Opens a placeholder for a linked checkout the day could not name, and records the day on every
    * placeholder the day's rows already carry.
@@ -855,6 +868,14 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     breaks,
     /** What the user said the day's stretches were, newest last. The breaks above already follow them. */
     statements,
+    /**
+     * How long the user was present, as their statements leave it. The app is a human factor tool, so
+     * the number it shows is the one the user believes. `day().presenceMs` is what the collectors
+     * measured, and the day's notes keep it beside this one.
+     */
+    presentMs,
+    /** `engagedMs` read against the presence above, so the ratio follows a statement as well. */
+    concurrency,
     review,
     /** The day as its streams: presence, concurrency, the agents' spend and the blocks behind the rows. */
     day: streamed,

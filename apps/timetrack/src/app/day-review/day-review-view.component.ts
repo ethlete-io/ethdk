@@ -133,7 +133,7 @@ export class DayReviewViewComponent {
     return coveredMs > 0 ? formatDurationMs(coveredMs) : null;
   });
 
-  protected concurrency = computed(() => this.store.day()?.concurrency ?? 0);
+  protected concurrency = computed(() => this.store.concurrency());
   protected target = computed(() => formatDurationMs(this.store.targetMs()));
   protected delta = computed(() => formatSignedDurationMs(this.store.review()?.check.deltaMs ?? 0));
   protected unattributed = computed(() => formatDurationMs(this.store.review()?.check.unattributedMs ?? 0));
