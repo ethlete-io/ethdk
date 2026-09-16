@@ -12,10 +12,12 @@ use tokio::sync::oneshot;
 
 /// The shape of the contract with a caller. A caller refuses a discovery file whose version it does
 /// not know, so bumping this turns every older caller off rather than letting it guess.
-const PROTOCOL_VERSION: u32 = 1;
+const PROTOCOL_VERSION: u32 = 2;
 
 const DISCOVERY_FILENAME: &str = "agent.json";
 const PATH: &str = "/agent";
+/// Where a caller asks the server to prove it holds this run's token, before it sends its own.
+const PROOF_PATH: &str = "/agent/proof?nonce=";
 
 /// The event the window answers. Matches `AGENT_REQUEST_EVENT` in `events.ts`.
 const REQUEST_EVENT: &str = "agent-request";
@@ -90,6 +92,14 @@ pub struct AgentAnswer {
 }
 
 impl AgentAnswer {
+    fn value(value: serde_json::Value) -> Self {
+        Self {
+            ok: true,
+            value: Some(value),
+            message: None,
+        }
+    }
+
     fn failed(message: String) -> Self {
         Self {
             ok: false,
@@ -296,6 +306,26 @@ fn parse_head(head: &str) -> Option<RequestHead> {
     Some(parsed)
 }
 
+/// The answer to a caller's challenge: `HMAC-SHA256` of its nonce under this run's token, in hex.
+///
+/// The port is ephemeral, so anything on the machine can bind it once the app stops and answer the
+/// questions a stale discovery file leads a caller to ask. The caller therefore asks this first and
+/// sends nothing until the answer matches: a process that has not read the discovery file cannot
+/// produce it, and one that has needs no impersonation.
+fn proof_for(token: &str, nonce: &str) -> String {
+    use hmac::Mac;
+
+    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(token.as_bytes()).expect("hmac takes a key of any length");
+
+    mac.update(nonce.as_bytes());
+
+    mac.finalize()
+        .into_bytes()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
 /// Whether the request carries this run's token, in constant time over the token's length.
 ///
 /// A comparison that stops at the first wrong byte leaks where it stopped, and a caller that may make
@@ -380,6 +410,25 @@ async fn serve(stream: &mut TcpStream, endpoint: &AgentEndpoint, app: &AppHandle
         endpoint.refuse();
 
         return respond(stream, "403 Forbidden").await;
+    }
+
+    // Answered before the token check, because the caller has none to send yet, and before the lock,
+    // because a locked app must read as Timetrack rather than as something else on its port.
+    if let Some(nonce) = head.target.strip_prefix(PROOF_PATH) {
+        if head.method != "GET" {
+            return respond(stream, "405 Method Not Allowed").await;
+        }
+
+        if nonce.len() < 16 || nonce.len() > 128 || !nonce.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return respond(stream, "400 Bad Request").await;
+        }
+
+        return respond_json(
+            stream,
+            "200 OK",
+            &AgentAnswer::value(serde_json::json!({ "proof": proof_for(token, nonce) })),
+        )
+        .await;
     }
 
     if !authorized(head.authorization.as_deref(), token) {
@@ -561,6 +610,22 @@ mod tests {
         assert!(!authorized(Some("Bearer short"), TOKEN));
         assert!(!authorized(Some(TOKEN), TOKEN));
         assert!(!authorized(None, TOKEN));
+    }
+
+    #[test]
+    fn proves_the_run_token_without_being_told_it() {
+        let nonce = "a1b2c3d4e5f60718";
+        let proof = proof_for(TOKEN, nonce);
+
+        // The value Node's `createHmac('sha256', token).update(nonce)` produces. The CLI computes the
+        // proof that way and compares it, so the two sides have to agree byte for byte.
+        assert_eq!(
+            proof,
+            "2fe46ab918d17fb2c92cc26e9107c9a99e5c9a550fa0e762a155c9314b396c38"
+        );
+        assert_ne!(proof, proof_for("fedcba9876543210", nonce));
+        assert_ne!(proof, proof_for(TOKEN, "0000000000000000"));
+        assert_eq!(proof, proof_for(TOKEN, nonce));
     }
 
     #[test]

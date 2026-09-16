@@ -1,3 +1,4 @@
+import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { existsSync, readFileSync } from 'fs';
 import { homedir, platform } from 'os';
 import { join } from 'path';
@@ -11,12 +12,13 @@ const DISCOVERY_FILENAME = 'agent.json';
  * The contract version this client speaks. The app writes its own into the discovery file, and a
  * mismatch stops here rather than at a field that is missing for a reason nobody can see.
  */
-const PROTOCOL_VERSION = 1;
+const PROTOCOL_VERSION = 2;
 
 /** A Jira search behind a slow instance is the long case; the app's own deadline is 60 seconds. */
 const TIMEOUT_MS = 70_000;
 
 const PATH = '/agent';
+const PROOF_PATH = '/agent/proof';
 
 export type TimetrackIssue = {
   key: string;
@@ -266,6 +268,41 @@ const readDiscovery = (): Discovery => {
   return { version: discovery.version, port: discovery.port, token: discovery.token };
 };
 
+const IMPOSTOR = [
+  'Something other than Timetrack answers on the port its discovery file names.',
+  'The app writes a new port and a new token at every start — restart Timetrack, then try again.',
+].join('\n');
+
+/**
+ * Makes the server prove it holds this run's token, before a request body or that token is sent.
+ *
+ * The port is ephemeral: once the app stops, anything running as this account can bind the port the
+ * discovery file still names, be handed the request and answer invented data. So the token is used as
+ * an HMAC key over a nonce this caller picks, and nothing is sent until the answer matches.
+ */
+const proveTheServer = async (discovery: Discovery) => {
+  const nonce = randomBytes(16).toString('hex');
+  const expected = createHmac('sha256', discovery.token).update(nonce).digest('hex');
+  let answered: string | undefined;
+
+  try {
+    const response = await fetch(`http://127.0.0.1:${discovery.port}${PROOF_PATH}?nonce=${nonce}`, {
+      redirect: 'error',
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+
+    if (response.ok) answered = ((await response.json()) as { value?: { proof?: string } }).value?.proof;
+  } catch {
+    throw new Error(NOT_RUNNING);
+  }
+
+  const offered = Buffer.from(answered ?? '', 'utf8');
+
+  if (offered.length !== expected.length || !timingSafeEqual(offered, Buffer.from(expected, 'utf8'))) {
+    throw new Error(IMPOSTOR);
+  }
+};
+
 /**
  * Asks the running Timetrack app to carry out one operation.
  *
@@ -274,6 +311,9 @@ const readDiscovery = (): Discovery => {
  */
 export const askTimetrack = async <T>(request: Record<string, unknown> & { op: string }): Promise<T> => {
   const discovery = readDiscovery();
+
+  await proveTheServer(discovery);
+
   let response: Response;
 
   try {
@@ -281,6 +321,7 @@ export const askTimetrack = async <T>(request: Record<string, unknown> & { op: s
       method: 'POST',
       headers: { authorization: `Bearer ${discovery.token}`, 'content-type': 'application/json' },
       body: JSON.stringify(request),
+      redirect: 'error',
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch {

@@ -1,3 +1,4 @@
+import { createHmac } from 'crypto';
 import { createServer, IncomingMessage, Server, ServerResponse } from 'http';
 import { mkdtempSync, writeFileSync } from 'fs';
 import { platform, tmpdir } from 'os';
@@ -10,8 +11,32 @@ type Handler = (request: IncomingMessage, response: ServerResponse) => void;
 let server: Server | undefined;
 
 /** Serves one endpoint on a real socket and writes the discovery file that points at it. */
-const withEndpoint = async (options: { handler: Handler; version?: number; token?: string }) => {
-  server = createServer(options.handler);
+const withEndpoint = async (options: { handler: Handler; version?: number; token?: string; proves?: boolean }) => {
+  const token = options.token ?? 'secret';
+
+  server = createServer((request, response) => {
+    const nonce = new URL(request.url ?? '/', 'http://127.0.0.1').searchParams.get('nonce');
+
+    if (!request.url?.startsWith('/agent/proof')) return options.handler(request, response);
+
+    if (options.proves === false) {
+      response.statusCode = 404;
+
+      return response.end();
+    }
+
+    response.setHeader('content-type', 'application/json');
+    response.end(
+      JSON.stringify({
+        ok: true,
+        value: {
+          proof: createHmac('sha256', token)
+            .update(nonce ?? '')
+            .digest('hex'),
+        },
+      }),
+    );
+  });
 
   await new Promise<void>((resolve) => server?.listen(0, '127.0.0.1', resolve));
 
@@ -19,7 +44,7 @@ const withEndpoint = async (options: { handler: Handler; version?: number; token
   const port = typeof address === 'object' && address ? address.port : 0;
   const path = join(mkdtempSync(join(tmpdir(), 'agent-rules-timetrack-')), 'agent.json');
 
-  writeFileSync(path, JSON.stringify({ version: options.version ?? 1, port, token: options.token ?? 'secret' }));
+  writeFileSync(path, JSON.stringify({ version: options.version ?? 2, port, token }));
   process.env['TIMETRACK_AGENT_DISCOVERY'] = path;
 
   return path;
@@ -71,7 +96,7 @@ describe('askTimetrack', () => {
   it('refuses a contract version it does not speak', async () => {
     await withEndpoint({ handler: answered({ ok: true, value: {} }), version: 99 });
 
-    await expect(askTimetrack({ op: 'status' })).rejects.toThrow(/version 99 .* speaks 1/);
+    await expect(askTimetrack({ op: 'status' })).rejects.toThrow(/version 99 .* speaks 2/);
   });
 
   it('carries the run token and returns the value', async () => {
@@ -91,6 +116,21 @@ describe('askTimetrack', () => {
     expect(issue).toEqual({ key: 'FIP-1' });
     expect(authorization).toBe('Bearer secret');
     expect(JSON.parse(body)).toEqual({ op: 'jira.issue', key: 'FIP-1' });
+  });
+
+  it("sends nothing to a server that cannot prove it holds this run's token", async () => {
+    let asked = 0;
+
+    await withEndpoint({
+      handler: (_, response) => {
+        asked += 1;
+        response.end(JSON.stringify({ ok: true, value: { issue: { key: 'FIP-1' } } }));
+      },
+      proves: false,
+    });
+
+    await expect(timetrackIssue('FIP-1')).rejects.toThrow(/Something other than Timetrack answers/);
+    expect(asked).toBe(0);
   });
 
   it("reports the operation's own failure as the error", async () => {

@@ -1,4 +1,5 @@
 import { lstatSync, mkdtempSync, readFileSync, statSync, symlinkSync, writeFileSync } from 'fs';
+import { createHmac } from 'crypto';
 import { IncomingMessage, Server, ServerResponse, createServer } from 'http';
 import { platform, tmpdir } from 'os';
 import { join } from 'path';
@@ -10,7 +11,16 @@ type Handler = (request: IncomingMessage, response: ServerResponse) => void;
 let server: Server | undefined;
 
 const withEndpoint = async (handler: Handler) => {
-  server = createServer(handler);
+  server = createServer((request, response) => {
+    if (!request.url?.startsWith('/agent/proof')) return handler(request, response);
+
+    const nonce = new URL(request.url, 'http://127.0.0.1').searchParams.get('nonce') ?? '';
+
+    response.setHeader('content-type', 'application/json');
+    response.end(
+      JSON.stringify({ ok: true, value: { proof: createHmac('sha256', 'secret').update(nonce).digest('hex') } }),
+    );
+  });
 
   await new Promise<void>((resolve) => server?.listen(0, '127.0.0.1', resolve));
 
@@ -18,7 +28,7 @@ const withEndpoint = async (handler: Handler) => {
   const port = typeof address === 'object' && address ? address.port : 0;
   const path = join(mkdtempSync(join(tmpdir(), 'agent-rules-command-')), 'agent.json');
 
-  writeFileSync(path, JSON.stringify({ version: 1, port, token: 'secret' }));
+  writeFileSync(path, JSON.stringify({ version: 2, port, token: 'secret' }));
   process.env['TIMETRACK_AGENT_DISCOVERY'] = path;
 };
 
