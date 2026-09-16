@@ -26,6 +26,32 @@ export const contextKey = (context: ActivityContext) =>
   context.repoPath ? `repo:${context.repoPath}@${context.branch ?? ''}` : `app:${context.appId ?? ''}`;
 
 /**
+ * The context a set of blocks stands for: the one that held the most of their time.
+ *
+ * Reading the first block's instead names a band after a context somebody passed through on the way
+ * in - four minutes on a base branch spoke for a band whose other fifty-five were the branch the work
+ * was actually on. A tie goes to the earlier block, so the answer never depends on the order the
+ * blocks of two equally long contexts were built in.
+ */
+export const dominantContext = (blocks: readonly ActivityBlock[]): ActivityContext | undefined => {
+  const held = new Map<string, { context: ActivityContext; ms: number }>();
+
+  for (const block of blocks) {
+    const key = contextKey(block.context);
+    const found = held.get(key);
+
+    if (found) found.ms += blockDurationMs(block);
+    else held.set(key, { context: block.context, ms: blockDurationMs(block) });
+  }
+
+  let best: { context: ActivityContext; ms: number } | undefined;
+
+  for (const entry of held.values()) if (!best || entry.ms > best.ms) best = entry;
+
+  return best?.context;
+};
+
+/**
  * Identity of a stream: the checkout, or the application when there is no checkout.
  *
  * The branch is deliberately not part of it, so a day that switched branch three times is one

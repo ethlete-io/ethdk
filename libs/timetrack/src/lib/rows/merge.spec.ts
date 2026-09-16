@@ -138,6 +138,24 @@ describe('mergeBlocks', () => {
     expect(rows[0]?.evidence.map((entry) => entry.kind)).toContain('branch-swap');
   });
 
+  it('names the swap after the branch the unnamed work was mostly on, not the one it passed through', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 4, repoPath: '/dev/app', branch: 'next' }),
+        attributed({ fromMinute: 4, toMinute: 30, repoPath: '/dev/app', branch: 'dev-toty' }),
+        attributed({
+          fromMinute: 30,
+          toMinute: 60,
+          repoPath: '/dev/app',
+          branch: 'feat/FIP-2177',
+          issueKey: 'FIP-2177',
+        }),
+      ],
+    });
+
+    expect(rows[0]?.evidence.find((entry) => entry.kind === 'branch-swap')?.detail).toContain('`dev-toty`');
+  });
+
   it('leaves the two rows alone when each branch names an issue of its own', () => {
     const rows = mergeBlocks({
       blocks: [

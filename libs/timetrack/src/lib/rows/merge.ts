@@ -1,4 +1,4 @@
-import { ActivityBlock, blockDurationMs, contextKey, streamKey } from '../model/block';
+import { ActivityBlock, blockDurationMs, contextKey, dominantContext, streamKey } from '../model/block';
 import { formatDurationMs } from '../model/duration';
 import { Confidence, Evidence, compareConfidence } from '../model/evidence';
 import { TimeWindow } from '../model/time-window';
@@ -135,7 +135,7 @@ const groupFrom = (attributed: AttributedBlock): WorkGroup => ({
   blocks: [attributed.block],
 });
 
-const branchOf = (group: WorkGroup) => group.blocks.find((block) => block.context.branch)?.context.branch;
+const branchOf = (group: WorkGroup) => dominantContext(group.blocks)?.branch;
 
 /**
  * What a row says when it takes the stretch its own checkout worked before anything could name it.
