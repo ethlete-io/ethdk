@@ -6,6 +6,7 @@ import { agentProcessSpec } from '../reason/spec';
 import { UnnamedContext } from '../model/attribution';
 import { StandIn } from '../model/stand-in';
 import { JiraIssue } from '../jira/issue';
+import { SpecHeader } from './spec';
 import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { MAX_TICKET_SUMMARY_LENGTH } from './draft';
 
@@ -49,6 +50,8 @@ export type TicketWritingRequest = {
   notes: string[];
   /** Present when the ticket is filed for a stand-in the user named. */
   standIn?: TicketWritingStandIn;
+  /** The spec the work was written against, where its commits touched one. */
+  spec?: SpecHeader;
   /** The issues that may be the parent of a new ticket. */
   parents: TicketWritingIssue[];
   /** The project's open issues, so the work already tracked is found instead of filed twice. */
@@ -70,6 +73,12 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   'work lasted, and notes taken from commit subjects, merge request titles and agent session titles.',
   '`parents` is the issues a new ticket could roll up to. `issues` is every open issue in the project.',
   '`minutes` is absent when nothing measured how long the work took.',
+  '',
+  '`spec` is present when the work sits in a repository that holds a written specification: its',
+  'title, what kind of work it is, its tags, the parent issue it already names, and the section it',
+  'opens with. It is the closest thing to a brief that exists, so it outranks the notes on what the',
+  'work is for. The notes still say what was touched. Only the opening section is sent, never the',
+  'body of the specification, so take it as the frame and never assume a requirement it omits.',
   '',
   '`standIn` is present when the user already named this work themselves, before Jira held a ticket:',
   'their own name for it, their own draft description, and how many days it has run across. Take it as',
@@ -94,6 +103,9 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   '- Use only what the JSON says. Never invent a requirement, an acceptance criterion, a deadline or',
   '  a person. Where the notes are thin, write less rather than filling the gap.',
   '- Never write about yourself, the notes, the tracking, or how long the work took.',
+  '- Where `spec` is present, write the ticket inside the goal its `title` and `intent` name, and',
+  '  in their language. Never widen the ticket to the whole of the specification: the notes say',
+  '  which part of it this stretch of work is.',
   '- `parentKey` is the issue from `parents` this work belongs under, or null. Choose only from',
   '  `parents`. Answer null unless the notes or the branch actually say it belongs there.',
   '- `existingKey` is an issue from `issues` that already tracks this very work, or null. Answer it',
@@ -136,6 +148,8 @@ export type ParentWritingRequest = {
   branch?: string;
   notes: string[];
   standIn?: TicketWritingStandIn;
+  /** The spec the work was written against, copied from the ticket payload that carried it. */
+  spec?: SpecHeader;
 };
 
 /**
@@ -149,6 +163,8 @@ export const PARENT_WRITING_SYSTEM_PROMPT = [
   'the ticket being filed under it, in the words the user has in front of them. `notes` are commit',
   'subjects, merge request titles and agent session titles from the same work. `standIn` is the name',
   'the user gave the work before Jira held a ticket for it.',
+  '`spec` is the written specification the work sits under, where the repository holds one: its',
+  'title, its tags, the parent issue it already names, and the section it opens with.',
   '',
   'The evidence is a record of work already done, but the parent is not a report of it. A parent is',
   'the wider piece of work the ticket belongs to. Name the goal the ticket serves, not the ticket.',
@@ -168,6 +184,8 @@ export const PARENT_WRITING_SYSTEM_PROMPT = [
   '  that only adds emphasis and names no constraint — "vollständig", "sauber", "umfassend",',
   '  "robust", "fully", "properly", "comprehensive" — including where it is joined to a second',
   '  adjective with "and" or "und".',
+  '- Where `spec` is present, it names the wider goal already. Write `summary` from its `title`',
+  '  and `intent` rather than from the notes, in their language.',
   '- `description` is two to four sentences saying what this parent covers and why it is worth',
   '  doing. No bullet list of the notes: those belong on the ticket below it, not here.',
   '- Use only what the JSON says. Never invent a requirement, an acceptance criterion, a deadline',
@@ -198,6 +216,26 @@ const masked = (options: { text: string | undefined; map: PseudonymMap }) =>
   options.text ? maskNames({ text: options.text, map: options.map }) : options.text;
 
 /**
+ * Masks the free text a spec header carries. The title and the intent are prose from a repository the
+ * user works in, so both go through the same name list every other payload uses, and the epic key
+ * through the same rule as any other issue key.
+ */
+const maskedSpec = (options: { spec: SpecHeader | undefined; map: PseudonymMap }): SpecHeader | undefined => {
+  if (!options.spec) return undefined;
+
+  const { map } = options;
+  const intent = masked({ text: options.spec.intent, map });
+
+  return {
+    title: maskNames({ text: options.spec.title, map }),
+    ...(options.spec.type ? { type: options.spec.type } : {}),
+    ...(options.spec.tags ? { tags: options.spec.tags.map((tag) => maskNames({ text: tag, map })) } : {}),
+    ...(intent ? { intent } : {}),
+    ...(options.spec.epicKey ? { epicKey: maskIssueKey({ issueKey: options.spec.epicKey, map }) } : {}),
+  };
+};
+
+/**
  * Builds the redacted payload the review shows before anything is sent.
  *
  * Every free-text field goes out in pseudonyms and the issue keys with them, exactly as the day's
@@ -209,11 +247,14 @@ export const ticketWritingRequest = (options: {
   notes: readonly string[];
   parents?: readonly JiraIssue[];
   issues?: readonly JiraIssue[];
+  /** The spec the work was written against, from `specForCommits$`. */
+  spec?: SpecHeader;
   /** The user's own name list, from `settings.reasoning.maskedNames`. Empty masks nothing. */
   maskedNames?: readonly string[];
 }): TicketWritingRequest => {
   const { repoPath, branch, appId } = options.context.context;
   const map = pseudonymMap(options.maskedNames ?? []);
+  const spec = maskedSpec({ spec: options.spec, map });
 
   return {
     repo: masked({ text: repoPath ? repoNameOf(repoPath) : undefined, map }),
@@ -221,6 +262,7 @@ export const ticketWritingRequest = (options: {
     app: masked({ text: appId, map }),
     minutes: Math.round(options.context.observedMs / 60_000),
     notes: options.notes.map((note) => maskNames({ text: note, map })),
+    ...(spec ? { spec } : {}),
     parents: asIssues({ issues: options.parents ?? [], map }),
     issues: asIssues({ issues: options.issues ?? [], map }),
   };
@@ -238,11 +280,14 @@ export const standInWritingRequest = (options: {
   standIn: Pick<StandIn, 'name' | 'description' | 'days'>;
   parents?: readonly JiraIssue[];
   issues?: readonly JiraIssue[];
+  /** The spec the work was written against, from `specForCommits$`. */
+  spec?: SpecHeader;
   /** The user's own name list, from `settings.reasoning.maskedNames`. Empty masks nothing. */
   maskedNames?: readonly string[];
 }): TicketWritingRequest => {
   const map = pseudonymMap(options.maskedNames ?? []);
   const description = masked({ text: options.standIn.description, map });
+  const spec = maskedSpec({ spec: options.spec, map });
 
   return {
     standIn: {
@@ -251,6 +296,7 @@ export const standInWritingRequest = (options: {
       days: options.standIn.days.length,
     },
     notes: [],
+    ...(spec ? { spec } : {}),
     parents: asIssues({ issues: options.parents ?? [], map }),
     issues: asIssues({ issues: options.issues ?? [], map }),
   };
@@ -376,6 +422,7 @@ export const parentWritingRequest = (options: {
     repo: options.request.repo,
     branch: options.request.branch,
     notes: options.request.notes,
+    ...(options.request.spec ? { spec: options.request.spec } : {}),
     ...(options.request.standIn ? { standIn: options.request.standIn } : {}),
   };
 };

@@ -62,6 +62,26 @@ describe('ticketWritingRequest', () => {
       issues: [{ key: 'FIP-2810', summary: 'Review feedback panel' }],
     });
   });
+
+  it('carries the spec in pseudonyms, and leaves it out where the work sits under none', () => {
+    const request = ticketWritingRequest({
+      context: UNNAMED,
+      notes: [],
+      spec: {
+        title: 'Nordkiosk hub',
+        type: 'feature',
+        tags: ['nordkiosk', 'hub'],
+        intent: 'The Nordkiosk hub shows a review.',
+        epicKey: 'NORDKIOSK-12',
+      },
+      maskedNames: ['Nordkiosk'],
+    });
+
+    expect(JSON.stringify(request.spec)).not.toContain('Nordkiosk');
+    expect(JSON.stringify(request.spec).toLowerCase()).not.toContain('nordkiosk');
+    expect(request.spec?.epicKey).toMatch(/-12$/);
+    expect(ticketWritingRequest({ context: UNNAMED, notes: [] })).not.toHaveProperty('spec');
+  });
 });
 
 describe('writeTicketWithAgent$', () => {
@@ -240,6 +260,17 @@ describe('standInWritingRequest', () => {
 });
 
 describe('parentWritingRequest', () => {
+  it('passes the spec through from the ticket payload it was given', () => {
+    const request = ticketWritingRequest({
+      context: UNNAMED,
+      notes: [],
+      spec: { title: 'The hub', intent: 'It shows a review.' },
+    });
+
+    const parent = parentWritingRequest({ level: 'Epic', child: { summary: 'a', description: 'b' }, request });
+
+    expect(parent.spec).toEqual(request.spec);
+  });
   it('carries the child in pseudonyms and offers the agent no issue to pick from', () => {
     const request = ticketWritingRequest({
       context: UNNAMED,

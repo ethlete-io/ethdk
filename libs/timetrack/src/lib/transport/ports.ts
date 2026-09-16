@@ -74,6 +74,22 @@ export type TimetrackProcessRunner = {
   run$(spec: ProcessSpec): Observable<ProcessResult>;
 };
 
+/** The two files a spec directory holds, as the host read them off disk. */
+export type SpecFiles = {
+  /** The candidate that held them, as the caller ranked it. */
+  directory: string;
+  metadata: string;
+  index?: string;
+};
+
+/**
+ * Reads a spec out of a checkout. The host walks the ranked candidates and answers the first that
+ * holds a spec, so one read covers the whole guess rather than one call per candidate.
+ */
+export type TimetrackSpecSource = {
+  read$(options: { repoPath: string; directories: readonly string[] }): Observable<SpecFiles | null>;
+};
+
 /**
  * The reporter extension this build ships, so an editor can be given it without a checkout.
  *
@@ -94,5 +110,6 @@ export type TimetrackPorts = {
   settings: TimetrackSettingsStore;
   timers: TimetrackTimerStore;
   processes: TimetrackProcessRunner;
+  specs: TimetrackSpecSource;
   reporter: TimetrackReporterBundle;
 };

@@ -12,6 +12,7 @@ import { TauriNudge, createTauriNudge } from './nudge';
 import { TauriOAuth, createTauriOAuth } from './oauth';
 import { createTauriProcessRunner } from './process-runner';
 import { createTauriReporterBundle } from './reporter-bundle';
+import { createTauriSpecSource } from './spec-source';
 import { createTauriReviewStore } from './review-store';
 import { createTauriSecretStore } from './secrets';
 import { createTauriSettingsStore } from './settings-store';
@@ -59,6 +60,7 @@ export const createHostPorts = (): HostPorts => {
       record$: (event) => events.append$([event]),
     }),
     reporter: createTauriReporterBundle(),
+    specs: createTauriSpecSource(),
     agentLogs: createTauriAgentSessionLogReader(),
     codexLogs: createTauriAgentSessionLogReader({ provider: 'codex' }),
     git: createTauriGitSource(),

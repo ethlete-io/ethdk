@@ -9,7 +9,7 @@ export const SPEC_INDEX_FILE = 'index.md';
  * The slice of a spec document that may leave this machine: what the work is called, what kind of work
  * it is, and the paragraph the spec opens with. The body of a spec never goes — see ADR 0013.
  */
-export type TicketWritingSpec = {
+export type SpecHeader = {
   title: string;
   /** What kind of work the spec describes, such as `feature`. */
   type?: string;
@@ -52,7 +52,7 @@ const intentOf = (index: string) => {
  * `assignee` is in the metadata and is deliberately not read: a colleague's name has no place in a
  * payload that leaves the machine, and leaving it unread is stronger than masking it.
  */
-export const readTicketWritingSpec = (options: { metadata: string; index?: string }): TicketWritingSpec | null => {
+export const readSpecHeader = (options: { metadata: string; index?: string }): SpecHeader | null => {
   let parsed: unknown;
 
   try {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readTicketWritingSpec, touchedDirectories } from './spec';
+import { readSpecHeader, touchedDirectories } from './spec';
 
 const metadata = JSON.stringify({
   id: '20260819_bracket-challenge',
@@ -24,9 +24,9 @@ const index = [
   'Phase 6 von 7.',
 ].join('\n');
 
-describe('readTicketWritingSpec', () => {
+describe('readSpecHeader', () => {
   it('reads the title, the type, the tags and the epic the spec already names', () => {
-    expect(readTicketWritingSpec({ metadata })).toMatchObject({
+    expect(readSpecHeader({ metadata })).toMatchObject({
       title: 'Bracket Challenge — Vorhersage-Spiel auf einem Weiterkommen-Graph',
       type: 'feature',
       tags: ['bracket', 'prediction'],
@@ -35,35 +35,35 @@ describe('readTicketWritingSpec', () => {
   });
 
   it('never carries the assignee, whose name has no place in a payload that leaves the machine', () => {
-    expect(JSON.stringify(readTicketWritingSpec({ metadata, index }))).not.toContain('Nils');
+    expect(JSON.stringify(readSpecHeader({ metadata, index }))).not.toContain('Nils');
   });
 
   it('takes the first section of the index as the intent', () => {
-    expect(readTicketWritingSpec({ metadata, index })?.intent).toBe('Vorhersage-Spiel auf einem Wettbewerb.');
+    expect(readSpecHeader({ metadata, index })?.intent).toBe('Vorhersage-Spiel auf einem Wettbewerb.');
   });
 
   it('takes the first section whatever the heading is called', () => {
     const renamed = index.replace('## Kurzfassung', '## Kurzbeschreibung');
 
-    expect(readTicketWritingSpec({ metadata, index: renamed })?.intent).toBe('Vorhersage-Spiel auf einem Wettbewerb.');
+    expect(readSpecHeader({ metadata, index: renamed })?.intent).toBe('Vorhersage-Spiel auf einem Wettbewerb.');
   });
 
   it('caps an intent longer than a spec header should ever be', () => {
     const long = ['## Kurzfassung', '', 'x'.repeat(4000)].join('\n');
 
-    expect(readTicketWritingSpec({ metadata, index: long })?.intent).toHaveLength(1200);
+    expect(readSpecHeader({ metadata, index: long })?.intent).toHaveLength(1200);
   });
 
   it('answers no intent for an index that has no section', () => {
-    expect(readTicketWritingSpec({ metadata, index: '# Track\n\nNothing else.' })?.intent).toBeUndefined();
+    expect(readSpecHeader({ metadata, index: '# Track\n\nNothing else.' })?.intent).toBeUndefined();
   });
 
   it('answers null for metadata that is not JSON', () => {
-    expect(readTicketWritingSpec({ metadata: 'not json' })).toBeNull();
+    expect(readSpecHeader({ metadata: 'not json' })).toBeNull();
   });
 
   it('answers null for metadata that names no title', () => {
-    expect(readTicketWritingSpec({ metadata: JSON.stringify({ type: 'feature' }) })).toBeNull();
+    expect(readSpecHeader({ metadata: JSON.stringify({ type: 'feature' }) })).toBeNull();
   });
 });
 

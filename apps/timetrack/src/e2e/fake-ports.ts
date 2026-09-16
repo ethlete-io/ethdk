@@ -295,6 +295,10 @@ export const createFakePorts = (): HostPorts => {
       vsix$: () => ok(world.reporterVsix),
     },
 
+    specs: {
+      read$: () => ok(null),
+    },
+
     processes: meteredRunner({
       runner: {
         run$: (spec: ProcessSpec) => {
