@@ -76,8 +76,37 @@ The overlap case needs no new gesture. Two bands that share a minute each take h
 lane, exactly as `day-review/lanes.ts` packs them, and the metal strip stays on the left
 edge of each half.
 
+## The states under the pointer
+
+Drawn in `Kerbe/Band states`, and checked again inside a packed lane on `Kerbe/Full day`.
+Chromium's `CSS.forcePseudoState`, over a CDP session, holds `:hover`, `:focus-visible` and
+`:active` open at once, so all six states are judged from one image.
+
+**No state touches the metal.** The strip says what the band asks of the reader, and a
+pointer over a band says nothing about that. The plate answers instead.
+
+| State  | What it does                                                              |
+| ------ | ------------------------------------------------------------------------- |
+| hover  | the plate lifts to `--k-panel-hi` and its top edge lights to 20% white    |
+| focus  | a 2px ring in `--k-ink-2`, on three sides                                 |
+| press  | the plate goes down to `--k-ground`                                       |
+| drag   | the band drops to 0.7 opacity and the grid reads through it               |
+| marked | the plate lifts, and two brackets in lit brass close on the right corners |
+
+Two of these were found by drawing them, not by planning them:
+
+- **The focus ring leaves the left edge free.** A four-sided ring runs over the metal strip,
+  and a focused band then cannot say what it asks. It is three inset shadows and not an
+  `outline`, for two reasons: an outline cannot leave one side out, and an outline paints
+  above every descendant, so it would cover the strip even at full width. A transparent
+  outline carries the ring into forced-colors mode.
+- **Marked for a merge is the one state that earns ornament.** It is chosen by hand, it is
+  rare, and two at once is the whole point of it, so it cannot appear twenty times on one
+  screen. It reuses Plate's corner brackets, on the edge away from the metal.
+
 ## Open
 
 - The palette is still only in `src/design/kerbe.ts`. It is not registered as an app theme.
 - Fonts load from Google in `preview-head.html`. The shipped Tauri app must self-host them.
-- Hover, focus, press, drag and the marked-for-merge state are all undrawn.
+- The drag state fades the band in place. A real drag also needs a ghost in the slot the band
+  came from, which the sketch does not draw.

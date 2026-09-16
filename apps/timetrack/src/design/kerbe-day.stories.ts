@@ -111,6 +111,7 @@ const packLane = (bands: Band[]): Laid[] => {
                 <div [style.flexGrow]="lane.narrow ? 0 : 1" [style.minWidth.rem]="widthOf(lane)" class="lane">
                   @for (laid of packed(lane); track laid.band.id) {
                     <div
+                      [attr.data-band]="laid.band.id"
                       [style.top.rem]="laid.topRem"
                       [style.left.%]="laid.inlineOffset"
                       [style.width.%]="laid.inlineSize"

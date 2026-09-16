@@ -15,9 +15,13 @@ const COMPACT_MAX_REM = 2.6;
       [style.height.rem]="heightRem()"
       [attr.data-ask]="band().ask"
       [attr.data-compact]="compact() || null"
+      [attr.data-dragging]="dragging() || null"
+      [attr.data-marked]="marked() || null"
       [attr.data-kind]="band().kind"
       [attr.data-treatment]="treatment()"
       class="band"
+      role="button"
+      tabindex="0"
     >
       <span class="band__notch"></span>
       <span class="band__bracket"></span>
@@ -276,11 +280,78 @@ const COMPACT_MAX_REM = 2.6;
       bottom: 0;
       height: auto;
     }
+
+    /* Interaction. None of it touches the metal: the strip says what the band asks of the reader,
+       and a pointer over a band says nothing about that. The plate is what answers. */
+    .band[data-treatment='inlay'] {
+      cursor: grab;
+      transition:
+        background-color 120ms ease-out,
+        opacity 120ms ease-out;
+    }
+
+    .band[data-treatment='inlay']:hover {
+      background: var(--k-panel-hi);
+      border-top-color: rgb(255 255 255 / 0.2);
+    }
+
+    /* Three sides and not four: the metal owns the left edge, and a ring that runs over it leaves a
+       focused band unable to say what it asks. An outline cannot leave one side out, and it would
+       paint above the strip in any case. The transparent outline carries the ring into
+       forced-colors mode. */
+    .band[data-treatment='inlay']:focus-visible {
+      box-shadow:
+        inset 0 2px 0 var(--k-ink-2),
+        inset -2px 0 0 var(--k-ink-2),
+        inset 0 -2px 0 var(--k-ink-2);
+      outline: 2px solid transparent;
+      outline-offset: -2px;
+    }
+
+    .band[data-treatment='inlay']:active {
+      background: var(--k-ground);
+      cursor: grabbing;
+    }
+
+    .band[data-treatment='inlay'][data-dragging] {
+      opacity: 0.7;
+      cursor: grabbing;
+    }
+
+    /* Marked for a merge is the one state that earns ornament: it is chosen by hand, it is rare, and
+       two of them at once is the whole point. The brackets close on the edge away from the metal. */
+    .band[data-treatment='inlay'][data-marked] {
+      background: var(--k-panel-hi);
+    }
+
+    .band[data-treatment='inlay'][data-marked] .band__bracket:nth-of-type(2),
+    .band[data-treatment='inlay'][data-marked] .band__bracket:nth-of-type(4) {
+      width: 0.9rem;
+      height: 0.9rem;
+      border: 0 solid var(--k-brass-hi);
+      opacity: 1;
+    }
+
+    .band[data-treatment='inlay'][data-marked] .band__bracket:nth-of-type(2) {
+      top: 0;
+      right: 0;
+      border-top-width: 1px;
+      border-right-width: 1px;
+    }
+
+    .band[data-treatment='inlay'][data-marked] .band__bracket:nth-of-type(4) {
+      right: 0;
+      bottom: 0;
+      border-right-width: 1px;
+      border-bottom-width: 1px;
+    }
   `,
 })
 export class KerbeBandComponent {
   public band = input.required<Band>();
   public treatment = input.required<BandTreatment>();
+  public marked = input(false);
+  public dragging = input(false);
 
   protected heightRem = computed(() => (this.band().minutes / 60) * HOUR_REM);
   protected compact = computed(() => this.heightRem() < COMPACT_MAX_REM);
