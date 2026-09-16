@@ -130,6 +130,22 @@ const matching = (compiled: CompiledRule[], event: CollectedEvent) => {
 };
 
 /**
+ * A test of one piece of free text against the title patterns alone, compiled once.
+ *
+ * It exists for the text an exclusion rule has to reach that is not an event: the title and the
+ * checkout a stored cursor carries. An `app-id` rule is left out because such text names no
+ * application, and a rule whose pattern does not compile matches nothing, as it does for an event.
+ */
+export const titleRuleDenial = (rules: readonly TimetrackExclusionRule[]) => {
+  const patterns = compile([...rules]).compiled.flatMap((entry) =>
+    entry.title ? [{ rule: entry.rule, title: entry.title }] : [],
+  );
+
+  return (text: string | undefined): TimetrackExclusionRule | undefined =>
+    text === undefined ? undefined : patterns.find((entry) => entry.title.test(text))?.rule;
+};
+
+/**
  * Splits events into the ones that may be persisted and a summary of the ones a rule denied. Run this
  * before the store is touched: an excluded window title must never reach the database, which is why
  * the summary keeps only the timestamp, the source and the rule that fired.

@@ -19,8 +19,8 @@ test covers it.
 | SEC-11 process timeout        | yes      | yes   | `src-tauri/src/process.rs`                              |
 | SEC-12 OAuth listener         | yes      | yes   | `src-tauri/src/oauth.rs`                                |
 | SEC-13 connection cap         | yes      | yes   | `src-tauri/src/agent.rs`, `ingest.rs`                   |
-| SEC-14 cursor metadata        | yes      |       | `collectors/agent-session-collector.ts`                 |
-| SEC-15 title redaction        | yes      |       | `collectors/agent-session-collector.ts`                 |
+| SEC-14 cursor metadata        | yes      | yes   | `agent-session/cursor-privacy.ts`                       |
+| SEC-15 title redaction        | yes      | yes   | `agent-session/cursor-privacy.ts`                       |
 | SEC-16 Tempo paging           | yes      |       | `libs/timetrack/src/lib/tempo/client.ts`                |
 | SEC-17 Google revoke          | yes      |       | `libs/timetrack/src/lib/google-auth/tokens.ts`          |
 | SEC-18 refresh race           | yes      |       | `libs/timetrack/src/lib/google-auth/token-source.ts`    |
@@ -41,11 +41,11 @@ compaction feature, not a security patch. The finding stands.
 
 ## Where this stands
 
-Three commits so far. The Rust host has 175 unit tests, all passing, and the timetrack e2e
-suite has 244, all passing.
+Four commits so far. The Rust host has 175 unit tests, all passing, and the timetrack e2e
+suite has 248, all passing.
 
 Done: SEC-01, SEC-02, SEC-03, SEC-05, SEC-06 (host half), SEC-07, SEC-09, SEC-10, SEC-11,
-SEC-12, SEC-13, SEC-19, and the host half of SEC-04 (the agent endpoint and a settings write
+SEC-12, SEC-13, SEC-14, SEC-15, SEC-19, and the host half of SEC-04 (the agent endpoint and a settings write
 are refused while the window is locked).
 
 Notes on the third commit:
@@ -73,22 +73,34 @@ widget's five commands were derived from reading `widget.component.ts`, `widget.
 `yarn timetrack`, open the widget, toggle the pause and press "Open Timetrack". A refused
 command reports itself in the webview console.
 
+Notes on the fourth commit:
+
+- SEC-14 and SEC-15. `sanitizeAgentSessionCursors` puts a cursor under the two filters its events
+  already went through: a private or rule-denied checkout leaves the id, the line offset, `after` and
+  `readThrough` and nothing else, a denied title is dropped on its own, and a title that is kept has
+  its URL query strings redacted. Both agent collectors call it, and the session collector now runs
+  `redactEventTitles` over its events as the window, calendar and ingest collectors do.
+- The repair. `repairStoredCursors$` applies the same rules to what is already stored, over every
+  pass. The host page's button does both halves now and is named "Redact stored data".
+- A cursor of an _unlinked_ checkout keeps its `cwd` on purpose: nothing denied it, and a re-sync
+  needs it to find the logs of a checkout the user links later. A private one loses that, so a link
+  that turns from private to a project cannot re-read its logs. The privacy promise wins.
+- The e2e suite can read the stored cursors through `readStoredCursors`, published under
+  `TIMETRACK_E2E_CURSORS_KEY`. `agent-cursor-privacy.spec.ts` fails on all four runs without the
+  sanitizer.
+
 Still open, in the order to take them:
 
-1. SEC-14 and SEC-15 `collectors/agent-session-collector.ts`. `persist$` filters the events but
-   passes `collection.cursors` through whole, so a private cwd and an excluded title are stored.
-   Sanitize the cursor beside the events, and run `redactEventTitles` over the kept events the
-   way the window, calendar and ingest collectors do.
-2. SEC-16 `libs/timetrack/src/lib/tempo/client.ts`. `tempoPaged$` follows `metadata.next` as an
+1. SEC-16 `libs/timetrack/src/lib/tempo/client.ts`. `tempoPaged$` follows `metadata.next` as an
    absolute URL with the bearer token attached. Accept only the `TEMPO_API_BASE` origin.
-3. SEC-17 and SEC-18 `libs/timetrack/src/lib/google-auth/`. `revokeGoogleToken$` maps every
+2. SEC-17 and SEC-18 `libs/timetrack/src/lib/google-auth/`. `revokeGoogleToken$` maps every
    status to success; `renew$` stores a grant that lands after `invalidate`.
-4. SEC-06 core half: `normalizeJiraHost` and `normalizeGitLabHost` still accept an explicit
+3. SEC-06 core half: `normalizeJiraHost` and `normalizeGitLabHost` still accept an explicit
    `http://` host. The host transport now refuses it, so this is the message, not the boundary.
-5. SEC-22 to SEC-25 in `libs/agent-rules/src/lib/`. Exclusive `0600` export, terminal-escape
+4. SEC-22 to SEC-25 in `libs/agent-rules/src/lib/`. Exclusive `0600` export, terminal-escape
    stripping on printed provider text, `redirect: 'error'` plus a server proof in the discovery
    file, and a refusal of conflicting edit flags.
-6. SEC-20 and SEC-21, the dependency updates.
+5. SEC-20 and SEC-21, the dependency updates.
 
 Each library change needs a changeset. `@ethlete/timetrack` and `@ethlete/agent-rules` are
 both published.

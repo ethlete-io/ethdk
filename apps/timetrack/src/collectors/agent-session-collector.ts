@@ -12,7 +12,9 @@ import {
   parseClaudeCodeSessionLog,
   parseCodexSessionLog,
   pathIsUnder,
+  redactEventTitles,
   resyncAgentSessionCursors,
+  sanitizeAgentSessionCursors,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -118,35 +120,45 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
    * private one. See ADR 0006.
    *
    * The cursors move either way: the line was read, and re-reading it would only drop it again.
+   *
+   * Both filters reach the cursors too. A cursor carries the log's last title and checkout, so a cursor
+   * written whole stores what the two filters just denied.
    */
   const persist$ = (collection: AgentSessionCollection, startedAt: Date): Observable<AgentSessionCollection> => {
     const links = settings.settings().projectLinks;
+    const rules = effectiveExclusionRules(settings.settings());
     const linked = keepLinkedAgentSessions({ events: collection.events, links });
     const usage = keepPublicAgentRecords({ events: collection.usage, links });
     const prompts = keepPublicAgentRecords({ events: collection.prompts, links });
 
     const { kept, excluded } = applyExclusionRules({
       events: [...linked.kept, ...usage, ...prompts],
-      rules: effectiveExclusionRules(settings.settings()),
+      rules,
     });
 
-    return ports.events.appendWithCursors$({ events: kept, cursors: collection.cursors, pass: source.pass }).pipe(
-      map(() => collection),
-      tap(() => {
-        modifiedAfter = startedAt;
-        failure.set(null);
-        lastRun.set({
-          at: startedAt,
-          events: kept.length,
-          unparsedLines: collection.unparsedLines,
-        });
-        totals.update((all) => ({
-          since: all.since,
-          excluded: all.excluded + excluded.length,
-          unlinked: mergeUnlinked(all.unlinked, linked.unlinked),
-        }));
-      }),
-    );
+    return ports.events
+      .appendWithCursors$({
+        events: redactEventTitles(kept),
+        cursors: sanitizeAgentSessionCursors({ cursors: collection.cursors, links, rules }),
+        pass: source.pass,
+      })
+      .pipe(
+        map(() => collection),
+        tap(() => {
+          modifiedAfter = startedAt;
+          failure.set(null);
+          lastRun.set({
+            at: startedAt,
+            events: kept.length,
+            unparsedLines: collection.unparsedLines,
+          });
+          totals.update((all) => ({
+            since: all.since,
+            excluded: all.excluded + excluded.length,
+            unlinked: mergeUnlinked(all.unlinked, linked.unlinked),
+          }));
+        }),
+      );
   };
 
   /**

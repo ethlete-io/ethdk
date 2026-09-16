@@ -1,7 +1,9 @@
 import { Page } from '@playwright/test';
+import { AgentSessionCursor } from '@ethlete/timetrack';
 import {
   FakeBackend,
   TIMETRACK_E2E_BACKEND_KEY,
+  TIMETRACK_E2E_CURSORS_KEY,
   TIMETRACK_E2E_SEED_KEY,
   TIMETRACK_E2E_TRAY_KEY,
   TimetrackWorldSeed,
@@ -48,6 +50,18 @@ export const seedWorld = async (page: Page, world: TimetrackWorld = {}) => {
  */
 export const readBackend = (page: Page): Promise<FakeBackend> =>
   page.evaluate((key) => (globalThis as Record<string, unknown>)[key] as FakeBackend, TIMETRACK_E2E_BACKEND_KEY);
+
+/**
+ * The agent-log cursors the app has stored, by pass. Empty until a collector has written one.
+ *
+ * Read it to assert what a cursor does not carry: a title an exclusion rule denied, or the path of a
+ * checkout the user marked private, are both in the log the collector just read.
+ */
+export const readStoredCursors = (page: Page): Promise<Record<string, AgentSessionCursor[]>> =>
+  page.evaluate(
+    (key) => ((globalThis as Record<string, unknown>)[key] as Record<string, AgentSessionCursor[]>) ?? {},
+    TIMETRACK_E2E_CURSORS_KEY,
+  );
 
 /** The tray menu's four lines, as the app words them. Declared here: the type lives in the app. */
 export type TrayLines = { activity: string; total: string; timer: string; pause: string };

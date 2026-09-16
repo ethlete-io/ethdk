@@ -22,7 +22,7 @@ test.describe('redacting the titles already stored', () => {
     });
     await page.goto('/host');
 
-    await page.getByRole('button', { name: 'Redact stored titles' }).click();
+    await page.getByRole('button', { name: 'Redact stored data' }).click();
 
     await expect(page.getByText('Read 1 stored title and redacted 1.')).toBeVisible();
   });
@@ -31,7 +31,7 @@ test.describe('redacting the titles already stored', () => {
     await seedWorld(page, { now: E2E_NOW, events: [focus('timer.rs - Visual Studio Code')] });
     await page.goto('/host');
 
-    await page.getByRole('button', { name: 'Redact stored titles' }).click();
+    await page.getByRole('button', { name: 'Redact stored data' }).click();
 
     await expect(page.getByText('None held a query string.')).toBeVisible();
   });
@@ -39,7 +39,7 @@ test.describe('redacting the titles already stored', () => {
   test('has nothing left to change on a second run', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: [focus('gitlab.com/search?q=secret')] });
     await page.goto('/host');
-    const button = page.getByRole('button', { name: 'Redact stored titles' });
+    const button = page.getByRole('button', { name: 'Redact stored data' });
 
     await button.click();
     await expect(page.getByText('and redacted 1.')).toBeVisible();

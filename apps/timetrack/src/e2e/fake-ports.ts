@@ -22,6 +22,7 @@ import {
   FakeAgentLog,
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_SEED_KEY,
+  TIMETRACK_E2E_CURSORS_KEY,
   TIMETRACK_E2E_TRAY_KEY,
   cliNotInstalledMessage,
   createFakeWorld,
@@ -117,6 +118,17 @@ export const createFakePorts = (): HostPorts => {
     return added;
   };
 
+  const moveCursors = (pass: AgentLogPass, cursors: readonly AgentSessionCursor[]) => {
+    const held = cursorsByPass.get(pass) ?? new Map<string, AgentSessionCursor>();
+
+    for (const cursor of cursors) held.set(cursor.id, cursor);
+
+    cursorsByPass.set(pass, held);
+    (globalThis as Record<string, unknown>)[TIMETRACK_E2E_CURSORS_KEY] = Object.fromEntries(
+      [...cursorsByPass].map(([key, byId]) => [key, [...byId.values()]]),
+    );
+  };
+
   return {
     transport: { request$: <T>(request: TimetrackRequest) => ok(respond(backend, request) as TimetrackResponse<T>) },
 
@@ -145,13 +157,15 @@ export const createFakePorts = (): HostPorts => {
       appendCounted$: (appended) => ok(appendEvents(appended)),
       appendWithCursors$: (options) => {
         const added = appendEvents(options.events);
-        const held = cursorsByPass.get(options.pass) ?? new Map<string, AgentSessionCursor>();
 
-        for (const cursor of options.cursors) held.set(cursor.id, cursor);
-
-        cursorsByPass.set(options.pass, held);
+        moveCursors(options.pass, options.cursors);
 
         return ok(added);
+      },
+      writeCursors$: ({ pass, cursors }) => {
+        moveCursors(pass, cursors);
+
+        return done();
       },
       deleteEventsBefore$: () => ok(0),
       oldestEventAt$: () => ok(events[0]?.at ?? null),

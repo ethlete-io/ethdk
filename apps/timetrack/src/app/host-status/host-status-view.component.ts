@@ -1,10 +1,18 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, DESCRIPTION_LIST_IMPORTS, SpinnerComponent } from '@ethlete/components';
-import { AgentLogPass, TitleRepairReport, repairStoredTitles$ } from '@ethlete/timetrack';
-import { catchError, combineLatest, forkJoin, map, of, switchMap, tap } from 'rxjs';
+import {
+  AgentLogPass,
+  CursorRepairReport,
+  TitleRepairReport,
+  effectiveExclusionRules,
+  repairStoredCursors$,
+  repairStoredTitles$,
+} from '@ethlete/timetrack';
+import { catchError, combineLatest, concatMap, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
+import { injectTimetrackSettings } from '../settings/settings';
 import { BuildStampComponent } from '../build-stamp.component';
 
 /** One row per pass, because each reads its own agent's logs and each converges on its own. */
@@ -24,10 +32,12 @@ type HostStatus =
   | { state: 'ready'; oldestEventAt: Date | null; cursors: CursorTally[]; compactedThrough: Date | null }
   | { state: 'failed'; message: string };
 
-type TitleRepair =
+type StoreRepairReport = { titles: TitleRepairReport; cursors: CursorRepairReport };
+
+type StoreRepair =
   | { state: 'idle' }
   | { state: 'running' }
-  | { state: 'done'; report: TitleRepairReport }
+  | { state: 'done'; report: StoreRepairReport }
   | { state: 'failed'; message: string };
 
 /** Whether the encrypted store came up, and what it currently holds. */
@@ -73,11 +83,11 @@ type TitleRepair =
 
           <p class="text-small text-et-surface-subtle">The keychain answered and the database decrypted.</p>
 
-          <h3 class="text-h4 mt-3">Titles collected before the redaction</h3>
+          <h3 class="text-h4 mt-3">Data collected before the redaction</h3>
           <p class="text-small text-et-surface-subtle">
-            A window title is redacted on the way into the store, so a title collected before that rule existed still
-            holds the query string of every URL in it. Run this once to apply the rule to what is already stored. It
-            changes nothing else, and running it twice is free.
+            A window title is redacted on the way into the store, and an agent log's cursor drops what a private link or
+            an exclusion rule denies. Data collected before those rules existed still holds it. Run this once to apply
+            them to what is already stored. It changes nothing else, and running it twice is free.
           </p>
 
           <div class="flex flex-wrap items-center gap-3">
@@ -88,14 +98,14 @@ type TitleRepair =
               variant="outline"
               size="sm"
             >
-              Redact stored titles
+              Redact stored data
             </button>
 
             @switch (repair().state) {
               @case ('running') {
                 <span class="flex items-center gap-2 text-small text-et-surface-muted">
                   <et-spinner />
-                  Reading the stored titles…
+                  Reading the stored titles and cursors…
                 </span>
               }
               @case ('done') {
@@ -115,6 +125,7 @@ type TitleRepair =
 })
 export class HostStatusViewComponent {
   private ports = injectHostPorts();
+  private settings = injectTimetrackSettings();
   private agentSessions = injectAgentSessionCollector();
   private windows = injectWindowCollector();
   private git = injectGitCollector();
@@ -175,17 +186,25 @@ export class HostStatusViewComponent {
     return status.state === 'ready' ? status.cursors : [];
   });
 
-  protected repair = signal<TitleRepair>({ state: 'idle' });
+  protected repair = signal<StoreRepair>({ state: 'idle' });
 
   protected repaired = computed(() => {
     const repair = this.repair();
 
     if (repair.state !== 'done') return '';
 
-    const { scanned, rewritten } = repair.report;
-    const read = `${scanned} stored ${scanned === 1 ? 'title' : 'titles'}`;
+    const { titles, cursors } = repair.report;
+    const read = `${titles.scanned} stored ${titles.scanned === 1 ? 'title' : 'titles'}`;
+    const titleLine =
+      titles.rewritten === 0
+        ? `Read ${read}. None held a query string.`
+        : `Read ${read} and redacted ${titles.rewritten}.`;
+    const cursorLine =
+      cursors.rewritten === 0
+        ? `Read ${cursors.scanned} cursors. None held denied data.`
+        : `Read ${cursors.scanned} cursors and cleaned ${cursors.rewritten}.`;
 
-    return rewritten === 0 ? `Read ${read}. None held a query string.` : `Read ${read} and redacted ${rewritten}.`;
+    return `${titleLine} ${cursorLine}`;
   });
 
   protected repairFailure = computed(() => {
@@ -203,9 +222,17 @@ export class HostStatusViewComponent {
 
     repairStoredTitles$(this.ports.events)
       .pipe(
-        map((report): TitleRepair => ({ state: 'done', report })),
+        concatMap((titles) =>
+          repairStoredCursors$({
+            store: this.ports.events,
+            passes: CURSOR_PASSES.map(({ pass }) => pass),
+            links: this.settings.settings().projectLinks,
+            rules: effectiveExclusionRules(this.settings.settings()),
+          }).pipe(map((cursors): StoreRepairReport => ({ titles, cursors }))),
+        ),
+        map((report): StoreRepair => ({ state: 'done', report })),
         catchError((error: unknown) =>
-          of<TitleRepair>({ state: 'failed', message: error instanceof Error ? error.message : String(error) }),
+          of<StoreRepair>({ state: 'failed', message: error instanceof Error ? error.message : String(error) }),
         ),
         tap((repair) => this.repair.set(repair)),
         takeUntilDestroyed(this.destroyRef),

@@ -139,6 +139,12 @@ export const TIMETRACK_E2E_BACKEND_KEY = '__timetrackE2eBackend';
  */
 export const TIMETRACK_E2E_TRAY_KEY = '__timetrackE2eTray';
 
+/**
+ * Where the stored agent-log cursors are published, keyed by pass. A cursor holds a log's last title
+ * and checkout, so what it does *not* hold is the only proof that a private link reached it.
+ */
+export const TIMETRACK_E2E_CURSORS_KEY = '__timetrackE2eCursors';
+
 /** The day the default fixture describes, so a test can drive the view straight to it. */
 export const e2eDay = () => {
   const now = new Date();

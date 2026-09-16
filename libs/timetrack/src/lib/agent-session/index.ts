@@ -2,6 +2,7 @@ export * from './backfill';
 export * from './claude-code';
 export * from './codex';
 export * from './collect';
+export * from './cursor-privacy';
 export * from './linked';
 export * from './ports';
 export * from './record';

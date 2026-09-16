@@ -13,6 +13,7 @@ import {
   parseClaudeCodeSessionLog,
   parseCodexSessionLog,
   rewindAgentBackfillCursors,
+  sanitizeAgentSessionCursors,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -96,6 +97,9 @@ const createAgentLogBackfill = (source: AgentLogSource, keep: BackfillKeep) => {
    *
    * The rewound cursors are written together with the ones the run produced. A rewound log the run did
    * not reach has to keep its cleared cursor in the store, or the next run would skip it again.
+   *
+   * Both filters reach the cursors too, as they do in the session collector: a cursor carries the log's
+   * last title and checkout, so a cursor written whole stores what the two filters just denied.
    */
   const persist$ = (options: {
     result: AgentLogBackfill;
@@ -103,13 +107,15 @@ const createAgentLogBackfill = (source: AgentLogSource, keep: BackfillKeep) => {
     startedAt: Date;
   }): Observable<AgentLogBackfill> => {
     const { result, rewound, startedAt } = options;
-    const wanted = keep({ result, links: settings.settings().projectLinks });
-    const denied = applyExclusionRules({ events: wanted, rules: effectiveExclusionRules(settings.settings()) });
+    const links = settings.settings().projectLinks;
+    const rules = effectiveExclusionRules(settings.settings());
+    const wanted = keep({ result, links });
+    const denied = applyExclusionRules({ events: wanted, rules });
 
     return ports.events
       .appendWithCursors$({
         events: denied.kept,
-        cursors: [...rewound, ...result.cursors],
+        cursors: sanitizeAgentSessionCursors({ cursors: [...rewound, ...result.cursors], links, rules }),
         pass: source.pass,
       })
       .pipe(

@@ -4,6 +4,7 @@ import {
   AgentSessionCursor,
   CollectedEvent,
   StoredTitle,
+  TimetrackCursorRepairStore,
   TimetrackEventStore,
   TimetrackTitleRepairStore,
   dedupeKeyOf,
@@ -111,7 +112,8 @@ const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
  * `appendWithCursors$` and never `append$`.
  */
 export type TauriEventStore = TimetrackEventStore &
-  TimetrackTitleRepairStore & {
+  TimetrackTitleRepairStore &
+  TimetrackCursorRepairStore & {
     /** Resolves with the rows that were new — an event the store already holds under its dedupe key is skipped. */
     appendCounted$(events: CollectedEvent[]): Observable<number>;
     /** The same, and moves the cursors of one pass over the agent logs in the same transaction. */
@@ -121,7 +123,6 @@ export type TauriEventStore = TimetrackEventStore &
       pass: AgentLogPass;
     }): Observable<number>;
     bySource$(): Observable<SourceTally[]>;
-    cursors$(pass: AgentLogPass): Observable<AgentSessionCursor[]>;
     compactedThrough$(): Observable<Date | null>;
     setCompactedThrough$(through: Date | null): Observable<void>;
   };
@@ -143,6 +144,7 @@ export const createTauriEventStore = (): TauriEventStore => {
   return {
     appendCounted$,
     appendWithCursors$,
+    writeCursors$: ({ pass, cursors }) => appendWithCursors$({ events: [], cursors: [...cursors], pass }),
     append$: (events) => appendCounted$(events).pipe(map(() => undefined)),
     eventsBetween$: (from, to) =>
       invokeHost$<StoredEvent[]>('events_between', { fromMs: from.getTime(), toMs: to.getTime() }).pipe(
