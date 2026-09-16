@@ -4,7 +4,13 @@ import { UnnamedContext } from '../model/attribution';
 import { JiraIssue } from '../jira/issue';
 import { contextKey } from '../model/block';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
-import { standInWritingRequest, ticketWritingRequest, writeTicketWithAgent$ } from './write';
+import {
+  parentWritingRequest,
+  standInWritingRequest,
+  ticketWritingRequest,
+  writeParentWithAgent$,
+  writeTicketWithAgent$,
+} from './write';
 
 const CONTEXT: UnnamedContext['context'] = { repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/hub-review' };
 
@@ -230,5 +236,59 @@ describe('standInWritingRequest', () => {
     const wording = await firstValueFrom(writeTicketWithAgent$({ runner, request, maskedNames: ['Mesa'] }));
 
     expect(wording?.summary).toBe('Export the Mesa invoice export');
+  });
+});
+
+describe('parentWritingRequest', () => {
+  it('carries the child in pseudonyms and offers the agent no issue to pick from', () => {
+    const request = ticketWritingRequest({
+      context: UNNAMED,
+      notes: ['feat(hub): Add the review feedback panel'],
+      parents: [issue('FIP-100', 'Hub')],
+      issues: [issue('FIP-2810', 'Review feedback panel')],
+      maskedNames: ['Nordkiosk'],
+    });
+
+    const parent = parentWritingRequest({
+      level: 'Epic',
+      child: { summary: 'The Nordkiosk hub', description: 'It serves Nordkiosk.' },
+      request,
+      maskedNames: ['Nordkiosk'],
+    });
+
+    expect(parent.child.summary).not.toContain('Nordkiosk');
+    expect(parent.child.description).not.toContain('Nordkiosk');
+    expect(parent).not.toHaveProperty('issues');
+    expect(parent).not.toHaveProperty('parents');
+    expect(parent.level).toBe('Epic');
+  });
+});
+
+describe('writeParentWithAgent$', () => {
+  it('answers the wording the agent wrote, in real names', async () => {
+    const { runner, specs } = stubRunner([ok(answer({ summary: 'Hub for Kessel', description: 'Kessel needs one.' }))]);
+    const request = parentWritingRequest({
+      level: 'Epic',
+      child: { summary: 'A panel', description: 'For Kessel.' },
+      request: REQUEST,
+      maskedNames: ['Kessel'],
+    });
+
+    await expect(firstValueFrom(writeParentWithAgent$({ runner, request, maskedNames: ['Kessel'] }))).resolves.toEqual({
+      summary: 'Hub for Kessel',
+      description: 'Kessel needs one.',
+    });
+    expect(specs[0]?.args).toContain('--safe-mode');
+  });
+
+  it('answers null when the agent fails, so the drafted parent stays', async () => {
+    const { runner } = stubRunner([new Error('no agent')]);
+    const request = parentWritingRequest({
+      level: 'Epic',
+      child: { summary: 'A panel', description: '' },
+      request: REQUEST,
+    });
+
+    await expect(firstValueFrom(writeParentWithAgent$({ runner, request }))).resolves.toBeNull();
   });
 });

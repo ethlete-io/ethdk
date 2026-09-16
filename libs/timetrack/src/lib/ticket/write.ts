@@ -113,6 +113,71 @@ export const TICKET_WRITING_JSON_SCHEMA = {
   additionalProperties: false,
 } as const;
 
+/** What the agent answers for a parent. Both fields land in the parent form and stay the user's. */
+export type ParentWording = {
+  summary: string;
+  description: string;
+};
+
+/**
+ * Exactly what leaves the machine to have a parent written. Narrower than a ticket's payload: the
+ * open issues are left out, because this call picks nothing — it only names the wider work.
+ */
+export type ParentWritingRequest = {
+  /** What the instance calls this level, such as `Epic`. */
+  level: string;
+  /** The ticket being filed under this parent, in the words the user has in the form. */
+  child: { summary: string; description: string };
+  repo?: string;
+  branch?: string;
+  notes: string[];
+  standIn?: TicketWritingStandIn;
+};
+
+/**
+ * The whole instruction for a parent. Separate from the ticket's prompt because the ask is the
+ * opposite one: not what this work was, but what wider goal it serves.
+ */
+export const PARENT_WRITING_SYSTEM_PROMPT = [
+  'You write one Jira parent issue that a ticket rolls up to.',
+  '',
+  'The user message is JSON. `level` is what the instance calls this level, such as Epic. `child` is',
+  'the ticket being filed under it, in the words the user has in front of them. `notes` are commit',
+  'subjects, merge request titles and agent session titles from the same work. `standIn` is the name',
+  'the user gave the work before Jira held a ticket for it.',
+  '',
+  'The evidence is a record of work already done, but the parent is not a report of it. A parent is',
+  'the wider piece of work the ticket belongs to. Name the goal the ticket serves, not the ticket.',
+  '',
+  'Write for the person who reads the backlog and was not there: a delivery lead, a product manager.',
+  '',
+  'Rules:',
+  '- Write in the language the evidence is in. German evidence gets a German parent, whatever',
+  '  language this instruction is in.',
+  '- Write every word in the present tense, as work still to do. Never a past form, never a word',
+  '  that says a thing is already done, built, fixed or documented.',
+  '- `summary` is one line naming the wider goal. Aim under 80 characters and never pass 255. No',
+  '  issue key, no branch name, no ticket-type prefix such as "feat:" or "chore:".',
+  '- `summary` must be wider than `child.summary` and must not repeat it word for word. Where the',
+  '  evidence names no wider goal, write the nearest one it does support rather than inventing it.',
+  '- `description` is two to four sentences saying what this parent covers and why it is worth',
+  '  doing. No bullet list of the notes: those belong on the ticket below it, not here.',
+  '- Use only what the JSON says. Never invent a requirement, an acceptance criterion, a deadline',
+  '  or a person.',
+  '- Never write about yourself, the notes, the tracking, or how long the work took.',
+].join('\n');
+
+/** Passed to `--json-schema`, so the CLI validates the shape before it answers. */
+export const PARENT_WRITING_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    summary: { type: 'string' },
+    description: { type: 'string' },
+  },
+  required: ['summary', 'description'],
+  additionalProperties: false,
+} as const;
+
 const repoNameOf = (path: string) => path.split('/').filter(Boolean).pop() ?? path;
 
 const asIssues = (options: { issues: readonly JiraIssue[]; map: PseudonymMap }): TicketWritingIssue[] =>
@@ -271,6 +336,92 @@ export const writeTicketWithAgent$ = (options: {
         parentKey: real(parentKey),
         existingKey: real(existingKey),
         existingReason: existingKey ? real(wording.existingReason?.trim()) : undefined,
+      };
+    }),
+    retry(1),
+    catchError(() => of(null)),
+  );
+};
+
+/**
+ * Builds the redacted payload for a parent, from the ticket payload the review already showed.
+ *
+ * `child` is what the user has in the form, so it goes out in pseudonyms through the same name list.
+ * Everything else is copied from the ticket payload, which was masked when it was built.
+ */
+export const parentWritingRequest = (options: {
+  level: string;
+  child: { summary: string; description: string };
+  /** The already-masked ticket payload `ticketWritingRequest` or `standInWritingRequest` built. */
+  request: TicketWritingRequest;
+  /** The list that payload was masked with. The list is the map; nothing derived is stored. */
+  maskedNames?: readonly string[];
+}): ParentWritingRequest => {
+  const map = pseudonymMap(options.maskedNames ?? []);
+
+  return {
+    level: options.level,
+    child: {
+      summary: maskNames({ text: options.child.summary, map }),
+      description: maskNames({ text: options.child.description, map }),
+    },
+    repo: options.request.repo,
+    branch: options.request.branch,
+    notes: options.request.notes,
+    ...(options.request.standIn ? { standIn: options.request.standIn } : {}),
+  };
+};
+
+export const parentWritingSpec = (options: {
+  request: ParentWritingRequest;
+  options?: Partial<ReasoningOptions>;
+}): ProcessSpec =>
+  agentProcessSpec({
+    systemPrompt: PARENT_WRITING_SYSTEM_PROMPT,
+    schema: PARENT_WRITING_JSON_SCHEMA,
+    stdin: JSON.stringify(options.request),
+    ask: 'a ticket',
+    options: options.options,
+  });
+
+const isParentWording = (value: unknown): value is ParentWording => {
+  if (!value || typeof value !== 'object') return false;
+
+  const wording = value as Partial<ParentWording>;
+
+  return typeof wording.summary === 'string' && typeof wording.description === 'string';
+};
+
+/**
+ * Has the local agent CLI write the parent, and answers `null` when it cannot.
+ *
+ * `null` rather than a throw for the same reason {@link writeTicketWithAgent$} answers it: the
+ * deterministic draft is already in the form, so a failed run costs the user the button and nothing
+ * else. Pass the same name list the request was built with, or the wording comes back in pseudonyms.
+ */
+export const writeParentWithAgent$ = (options: {
+  runner: TimetrackProcessRunner;
+  request: ParentWritingRequest;
+  options?: Partial<ReasoningOptions>;
+  maskedNames?: readonly string[];
+}): Observable<ParentWording | null> => {
+  const spec = parentWritingSpec({ request: options.request, options: options.options });
+  const names = pseudonymMap(options.maskedNames ?? []);
+
+  // `defer` is what makes the retry a second run. Without it the retry re-subscribes to the
+  // observable the first spawn already returned, which replays the failure it is meant to escape.
+  return defer(() => options.runner.run$(spec)).pipe(
+    map((result): ParentWording => {
+      if (result.code !== 0) throw new Error(result.stderr.trim() || `the agent exited ${result.code}`);
+
+      const wording = agentOutputDocument({ stdout: result.stdout, isValid: isParentWording });
+      const summary = wording.summary.trim().slice(0, MAX_TICKET_SUMMARY_LENGTH);
+
+      if (!summary) throw new Error('the agent wrote no summary');
+
+      return {
+        summary: unmaskNames({ text: summary, map: names }),
+        description: unmaskNames({ text: wording.description.trim(), map: names }),
       };
     }),
     retry(1),
