@@ -3,8 +3,9 @@ use base64::Engine;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 
 /// How long the flow waits for the redirect before it gives the thread back.
@@ -14,6 +15,12 @@ use tokio::net::{TcpListener, TcpStream};
 const DEFAULT_TIMEOUT_SECS: u64 = 300;
 
 /// What the browser is shown once the code has arrived, so the tab does not sit on a blank page.
+/// How long one connection may take to send its request line before it is dropped.
+const CONNECTION_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// The longest request line read. A redirect is a URL, and no browser sends one longer than this.
+const MAX_REQUEST_LINE_BYTES: u64 = 8 * 1024;
+
 const DONE_PAGE: &str = "<!doctype html><meta charset=\"utf-8\"><title>Connected</title>\
 <body style=\"font:16px system-ui;padding:3rem\">timetrack has the authorization. You can close this tab.</body>";
 
@@ -119,54 +126,97 @@ async fn respond(stream: &mut TcpStream, status: &str, body: &str) -> TimetrackR
     Ok(())
 }
 
-/// Waits for the one request that carries the provider's answer, and lets every other one pass.
+/// Reads one connection and says whether it carried the provider's answer.
 ///
-/// A browser asks for `/favicon.ico` on its own, and answering that as the redirect would end the flow
-/// before the user has consented to anything.
-async fn wait_for_code(listener: &TcpListener, state: &str) -> TimetrackResult<String> {
-    loop {
-        let (mut stream, _) = listener.accept().await?;
-        let mut line = String::new();
+/// `None` means it did not, and the flow keeps waiting. A browser asks for `/favicon.ico` on its own,
+/// and answering that as the redirect would end the flow before the user has consented to anything.
+async fn read_callback(mut stream: TcpStream, state: &str) -> Option<TimetrackResult<String>> {
+    match tokio::time::timeout(CONNECTION_TIMEOUT, callback_of(&mut stream, state)).await {
+        Ok(outcome) => outcome,
+        // A connection that sends nothing is not the browser's. It is dropped on its own deadline, and
+        // the flow goes on waiting for the one that is.
+        Err(_) => None,
+    }
+}
 
-        BufReader::new(&mut stream).read_line(&mut line).await?;
+async fn callback_of(stream: &mut TcpStream, state: &str) -> Option<TimetrackResult<String>> {
+    let mut line = String::new();
 
+    // Bounded, because a request line is a URL and nothing here reads one longer than a browser sends.
+    if BufReader::new(&mut *stream)
+        .take(MAX_REQUEST_LINE_BYTES)
+        .read_line(&mut line)
+        .await
+        .is_err()
+    {
+        return None;
+    }
+
+    {
         let params = params_of(&line);
         let code = params.get("code");
         let error = params.get("error");
 
         if code.is_none() && error.is_none() {
-            respond(&mut stream, "404 Not Found", "").await?;
-            continue;
+            let _ = respond(stream, "404 Not Found", "").await;
+
+            return None;
         }
 
         // The state is what tells the user's own redirect from one another page talked this port into
         // sending, which is the whole reason the code is not accepted from the first caller.
         if params.get("state").map(String::as_str) != Some(state) {
-            respond(
-                &mut stream,
-                "400 Bad Request",
-                "This did not come from the authorization.",
-            )
-            .await?;
-            continue;
+            let _ = respond(stream, "400 Bad Request", "This did not come from the authorization.").await;
+
+            return None;
         }
 
         if let Some(error) = error {
-            respond(
-                &mut stream,
+            let _ = respond(
+                stream,
                 "200 OK",
                 "The authorization was refused. You can close this tab.",
             )
-            .await?;
+            .await;
 
-            return Err(TimetrackError::Rejected(format!(
+            return Some(Err(TimetrackError::Rejected(format!(
                 "the authorization was refused ({error})"
-            )));
+            ))));
         }
 
-        respond(&mut stream, "200 OK", DONE_PAGE).await?;
+        let _ = respond(stream, "200 OK", DONE_PAGE).await;
 
-        return Ok(code.cloned().unwrap_or_default());
+        Some(Ok(code.cloned().unwrap_or_default()))
+    }
+}
+
+/// Waits for the request that carries the provider's answer, whatever else connects meanwhile.
+///
+/// Every connection is read on its own task. Read one after another, a local process that finds the
+/// port and then sends nothing would hold the browser's own callback behind it until the whole flow
+/// times out, without knowing the state or the verifier.
+async fn wait_for_code(listener: Arc<TcpListener>, state: Arc<String>) -> TimetrackResult<String> {
+    let (sender, mut receiver) = tokio::sync::mpsc::channel::<TimetrackResult<String>>(1);
+
+    let accept = async {
+        loop {
+            let Ok((stream, _)) = listener.accept().await else {
+                continue;
+            };
+            let state = state.clone();
+            let sender = sender.clone();
+
+            tokio::spawn(async move {
+                if let Some(outcome) = read_callback(stream, &state).await {
+                    let _ = sender.send(outcome).await;
+                }
+            });
+        }
+    };
+
+    tokio::select! {
+        carried = receiver.recv() => carried.unwrap_or_else(|| Err(TimetrackError::Rejected("the redirect was never answered".into()))),
+        () = accept => Err(TimetrackError::Rejected("the redirect listener stopped".into())),
     }
 }
 
@@ -193,16 +243,16 @@ fn open_browser(url: &str) -> TimetrackResult<()> {
 /// installed application allow without the port being registered anywhere.
 #[tauri::command]
 pub async fn oauth_authorize(request: AuthorizeRequest) -> TimetrackResult<AuthorizeOutcome> {
-    let listener = TcpListener::bind("127.0.0.1:0").await?;
+    let listener = Arc::new(TcpListener::bind("127.0.0.1:0").await?);
     let redirect_uri = format!("http://127.0.0.1:{}", listener.local_addr()?.port());
     let code_verifier = random_hex();
-    let state = random_hex();
+    let state = Arc::new(random_hex());
 
     let mut query: Vec<(String, String)> = request.query.into_iter().collect();
     query.push(("redirect_uri".into(), redirect_uri.clone()));
     query.push(("code_challenge".into(), challenge_of(&code_verifier)));
     query.push(("code_challenge_method".into(), "S256".into()));
-    query.push(("state".into(), state.clone()));
+    query.push(("state".into(), state.as_ref().clone()));
 
     let url = format!(
         "{}?{}",
@@ -217,7 +267,7 @@ pub async fn oauth_authorize(request: AuthorizeRequest) -> TimetrackResult<Autho
     open_browser(&url)?;
 
     let timeout = Duration::from_secs(request.timeout_secs.unwrap_or(DEFAULT_TIMEOUT_SECS));
-    let code = match tokio::time::timeout(timeout, wait_for_code(&listener, &state)).await {
+    let code = match tokio::time::timeout(timeout, wait_for_code(listener.clone(), state.clone())).await {
         Ok(code) => code?,
         Err(_) => {
             return Err(TimetrackError::Rejected(
@@ -236,6 +286,33 @@ pub async fn oauth_authorize(request: AuthorizeRequest) -> TimetrackResult<Autho
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::net::TcpStream as ClientStream;
+
+    /// A local process that finds the port and sends nothing must not cost the user the flow.
+    #[tokio::test]
+    async fn answers_the_browser_while_an_idle_connection_is_held_open() {
+        let listener = Arc::new(TcpListener::bind("127.0.0.1:0").await.unwrap());
+        let port = listener.local_addr().unwrap().port();
+        let state = Arc::new("the-state".to_string());
+        let waiting = tokio::spawn(wait_for_code(listener, state));
+
+        let idle = ClientStream::connect(("127.0.0.1", port)).await.unwrap();
+        let mut browser = ClientStream::connect(("127.0.0.1", port)).await.unwrap();
+
+        browser
+            .write_all(b"GET /?code=4%2F0AX&state=the-state HTTP/1.1\r\n\r\n")
+            .await
+            .unwrap();
+
+        let code = tokio::time::timeout(Duration::from_secs(2), waiting)
+            .await
+            .expect("the idle connection blocked the callback")
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(code, "4/0AX");
+        drop(idle);
+    }
 
     #[test]
     fn reads_the_query_out_of_a_request_line() {

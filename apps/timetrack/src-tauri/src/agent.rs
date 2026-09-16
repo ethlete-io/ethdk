@@ -35,6 +35,13 @@ const READ_TIMEOUT: Duration = Duration::from_secs(5);
 /// a caller waiting forever for a window that will never answer is the case this bounds.
 const ANSWER_TIMEOUT: Duration = Duration::from_secs(60);
 
+/// How many connections may be open at once, authorized or not.
+///
+/// Every accepted socket costs a task and a buffer before the token is even read, and the endpoint
+/// answers one caller at a time in practice. Another account on the machine can connect without the
+/// token, so the count is what stops it from taking memory and sockets without limit.
+const MAX_CONNECTIONS: usize = 16;
+
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentStatus {
@@ -340,6 +347,9 @@ async fn respond_json(stream: &mut TcpStream, status: &str, answer: &AgentAnswer
 async fn serve(stream: &mut TcpStream, endpoint: &AgentEndpoint, app: &AppHandle, token: &str) -> TimetrackResult<()> {
     let mut buffer = Vec::new();
     let mut chunk = [0u8; 4096];
+    // The request has its own deadline, separate from the window's for answering it. Sharing one
+    // would let a connection that sends nothing hold a slot for as long as an answer may take.
+    let deadline = tokio::time::Instant::now() + READ_TIMEOUT;
 
     let head_end = loop {
         if let Some(index) = find_head_end(&buffer) {
@@ -350,7 +360,7 @@ async fn serve(stream: &mut TcpStream, endpoint: &AgentEndpoint, app: &AppHandle
             return respond(stream, "431 Request Header Fields Too Large").await;
         }
 
-        let read = stream.read(&mut chunk).await?;
+        let read = read_more(stream, &mut chunk, deadline).await?;
 
         if read == 0 {
             return Ok(());
@@ -378,6 +388,21 @@ async fn serve(stream: &mut TcpStream, endpoint: &AgentEndpoint, app: &AppHandle
         return respond(stream, "401 Unauthorized").await;
     }
 
+    // The token is this run's, and it sits in a file every process of this account can read once the
+    // app has started. The lock is therefore what decides whether an operation runs at all: a locked
+    // app is one whose owner is away, and every operation here either reads the day's own evidence or
+    // writes something to Jira in their name.
+    if app.try_state::<crate::lock::WindowLock>().is_some_and(|lock| lock.is_locked()) {
+        endpoint.refuse();
+
+        return respond_json(
+            stream,
+            "200 OK",
+            &AgentAnswer::failed("Timetrack is locked. Unlock it, then ask again.".to_string()),
+        )
+        .await;
+    }
+
     if head.target != PATH {
         return respond(stream, "404 Not Found").await;
     }
@@ -393,7 +418,7 @@ async fn serve(stream: &mut TcpStream, endpoint: &AgentEndpoint, app: &AppHandle
     let mut body = buffer.split_off(head_end + 4);
 
     while body.len() < head.content_length {
-        let read = stream.read(&mut chunk).await?;
+        let read = read_more(stream, &mut chunk, deadline).await?;
 
         if read == 0 {
             return respond(stream, "400 Bad Request").await;
@@ -419,6 +444,14 @@ async fn serve(stream: &mut TcpStream, endpoint: &AgentEndpoint, app: &AppHandle
     endpoint.answered();
 
     respond_json(stream, "200 OK", &answer).await
+}
+
+/// Reads what has arrived, or gives up once the request deadline has passed.
+async fn read_more(stream: &mut TcpStream, chunk: &mut [u8], deadline: tokio::time::Instant) -> TimetrackResult<usize> {
+    tokio::time::timeout_at(deadline, stream.read(chunk))
+        .await
+        .map_err(|_| TimetrackError::Rejected("the request was not sent in time".to_string()))?
+        .map_err(TimetrackError::Io)
 }
 
 fn find_head_end(buffer: &[u8]) -> Option<usize> {
@@ -462,8 +495,15 @@ pub fn start(endpoint: AgentEndpoint, app: AppHandle, data_dir: PathBuf) {
         // could not be written. Only the finding of it is broken, and the status is where that is said.
         endpoint.listening_on(port, write_discovery(&path, &discovery).map(|()| path));
 
+        let connections = Arc::new(tokio::sync::Semaphore::new(MAX_CONNECTIONS));
+
         loop {
             let Ok((mut stream, _)) = listener.accept().await else {
+                continue;
+            };
+            let Ok(permit) = connections.clone().try_acquire_owned() else {
+                // Dropping the socket is the answer: a caller that cannot be served now is better off
+                // failing at once than queued behind a limit that is already reached.
                 continue;
             };
             let endpoint = endpoint.clone();
@@ -471,12 +511,13 @@ pub fn start(endpoint: AgentEndpoint, app: AppHandle, data_dir: PathBuf) {
             let token = token.clone();
 
             tauri::async_runtime::spawn(async move {
-                // Long enough to cover both halves: reading the request, and the window's own deadline
-                // for answering it inside `ask`.
+                // Long enough to cover both halves: reading the request, which has its own deadline
+                // inside `serve`, and the window's for answering it inside `ask`.
                 let deadline = READ_TIMEOUT + ANSWER_TIMEOUT;
                 let served = serve(&mut stream, &endpoint, &app, &token);
 
                 let _ = tokio::time::timeout(deadline, served).await;
+                drop(permit);
             });
         }
     });

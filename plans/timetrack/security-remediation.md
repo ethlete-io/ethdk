@@ -9,7 +9,7 @@ test covers it.
 | SEC-01 process allowlist      | yes      | yes   | `src-tauri/src/process.rs`                              |
 | SEC-02 keychain accounts      | yes      | yes   | `src-tauri/src/secrets.rs`                              |
 | SEC-03 log root               | yes      | yes   | `src-tauri/src/logs.rs`                                 |
-| SEC-04 lock vs agent API      | yes      |       | `src-tauri/src/lock.rs`, `app/agent/agent-endpoint.ts`  |
+| SEC-04 lock vs agent API      | yes      | part  | `src-tauri/src/lock.rs`, `app/agent/agent-endpoint.ts`  |
 | SEC-05 command capabilities   | yes      |       | `src-tauri/build.rs`, `capabilities/`                   |
 | SEC-06 HTTP without TLS       | yes      | yes   | `src-tauri/src/http.rs`, `libs/timetrack/.../client.ts` |
 | SEC-07 discovery permissions  | yes      | yes   | `src-tauri/src/agent.rs`, `ingest.rs`                   |
@@ -17,8 +17,8 @@ test covers it.
 | SEC-09 fail-open lock         | yes      |       | `app/window-lock.ts`                                    |
 | SEC-10 tray while locked      | yes      |       | `app/tray-readout.ts`                                   |
 | SEC-11 process timeout        | yes      | yes   | `src-tauri/src/process.rs`                              |
-| SEC-12 OAuth listener         | yes      |       | `src-tauri/src/oauth.rs`                                |
-| SEC-13 connection cap         | yes      |       | `src-tauri/src/agent.rs`, `ingest.rs`                   |
+| SEC-12 OAuth listener         | yes      | yes   | `src-tauri/src/oauth.rs`                                |
+| SEC-13 connection cap         | yes      | yes   | `src-tauri/src/agent.rs`, `ingest.rs`                   |
 | SEC-14 cursor metadata        | yes      |       | `collectors/agent-session-collector.ts`                 |
 | SEC-15 title redaction        | yes      |       | `collectors/agent-session-collector.ts`                 |
 | SEC-16 Tempo paging           | yes      |       | `libs/timetrack/src/lib/tempo/client.ts`                |

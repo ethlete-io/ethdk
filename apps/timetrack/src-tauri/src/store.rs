@@ -1,4 +1,4 @@
-use crate::error::TimetrackResult;
+use crate::error::{TimetrackError, TimetrackResult};
 use crate::state::Db;
 use rusqlite::{params, params_from_iter, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
@@ -440,6 +440,14 @@ pub async fn set_app_settings(
     lock: State<'_, crate::lock::WindowLock>,
     settings: serde_json::Value,
 ) -> TimetrackResult<()> {
+    // A locked window shows the password prompt and nothing else, so no settings change can be the
+    // user's. Letting one through would let anything that reaches this command turn the lock off.
+    if lock.is_locked() {
+        return Err(TimetrackError::Rejected(
+            "the window is locked, so its settings cannot be changed".to_string(),
+        ));
+    }
+
     let lock_settings = crate::lock::LockSettings::read(&settings);
 
     db.run(move |connection| {

@@ -28,6 +28,9 @@ const MAX_RECORDS: usize = 512;
 /// says nothing must not be able to hold a task open.
 const READ_TIMEOUT: Duration = Duration::from_secs(5);
 
+/// How many connections may be open at once, authorized or not. See the same limit in `agent.rs`.
+const MAX_CONNECTIONS: usize = 16;
+
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct IngestPayload {
@@ -431,8 +434,13 @@ pub fn start(source: IngestSource, data_dir: PathBuf) {
         // could not be written. Only the finding of it is broken, and the status is where that is said.
         source.listening_on(port, write_discovery(&path, &discovery).map(|()| path));
 
+        let connections = Arc::new(tokio::sync::Semaphore::new(MAX_CONNECTIONS));
+
         loop {
             let Ok((mut stream, _)) = listener.accept().await else {
+                continue;
+            };
+            let Ok(permit) = connections.clone().try_acquire_owned() else {
                 continue;
             };
             let source = source.clone();
@@ -440,6 +448,7 @@ pub fn start(source: IngestSource, data_dir: PathBuf) {
 
             tauri::async_runtime::spawn(async move {
                 let _ = tokio::time::timeout(READ_TIMEOUT, serve(&mut stream, &source, &token, now_ms())).await;
+                drop(permit);
             });
         }
     });
