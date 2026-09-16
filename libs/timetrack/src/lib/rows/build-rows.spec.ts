@@ -24,6 +24,7 @@ const HUDDLE: CallWindow = {
   title: 'Huddle | Braune Digital',
   attendedMs: 30 * 60_000,
   countsAsWork: true,
+  isPresence: true,
 };
 
 describe('buildRows with no-work-context applications', () => {

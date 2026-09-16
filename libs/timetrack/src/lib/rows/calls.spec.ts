@@ -19,6 +19,7 @@ const call = (overrides: Partial<CallWindow> = {}): CallWindow => ({
   title: '#standup | Braune Digital',
   attendedMs: 30 * 60_000,
   countsAsWork: true,
+  isPresence: true,
   ...overrides,
 });
 

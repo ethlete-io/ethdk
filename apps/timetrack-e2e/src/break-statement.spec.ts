@@ -112,8 +112,15 @@ const concurrency = (page: Page) => page.locator('footer [data-concurrency]');
 
 const ratioOf = (text: string) => Number.parseFloat(text);
 
-const durationsMsOf = (text: string) =>
-  [...text.matchAll(/(?:(\d+)h )?(\d+)m/g)].map((match) => (Number(match[1] ?? 0) * 60 + Number(match[2])) * MINUTE_MS);
+const durationPairMsOf = (text: string) => {
+  const [first, second] = [...text.matchAll(/(?:(\d+)h )?(\d+)m/g)].map(
+    (match) => (Number(match[1] ?? 0) * 60 + Number(match[2])) * MINUTE_MS,
+  );
+
+  if (first === undefined || second === undefined) throw new Error(`expected two durations in "${text}"`);
+
+  return [first, second] as const;
+};
 
 test.describe("the day's present total", () => {
   test.beforeEach(async ({ page }) => {
@@ -137,7 +144,7 @@ test.describe("the day's present total", () => {
 
     await expect(measured).toBeVisible();
 
-    const [measuredMs, statedMs] = durationsMsOf(await measured.innerText());
+    const [measuredMs, statedMs] = durationPairMsOf(await measured.innerText());
 
     expect(measuredMs - statedMs).toBe(60 * MINUTE_MS);
   });

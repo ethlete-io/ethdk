@@ -42,6 +42,7 @@ const call = (overrides: Partial<CallWindow> = {}): CallWindow => ({
   title: 'Mozilla Firefox',
   attendedMs: 10 * 60_000,
   countsAsWork: true,
+  isPresence: true,
   ...overrides,
 });
 

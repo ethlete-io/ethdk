@@ -33,8 +33,13 @@ const cursor = (over: Partial<AgentSessionCursor> = {}): AgentSessionCursor => (
   ...over,
 });
 
-const sanitized = (over: Partial<AgentSessionCursor> = {}) =>
-  sanitizeAgentSessionCursors({ cursors: [cursor(over)], links: LINKS, rules: RULES })[0];
+const sanitized = (over: Partial<AgentSessionCursor> = {}) => {
+  const [only] = sanitizeAgentSessionCursors({ cursors: [cursor(over)], links: LINKS, rules: RULES });
+
+  if (!only) throw new Error('sanitizeAgentSessionCursors returned no cursor');
+
+  return only;
+};
 
 describe('sanitizeAgentSessionCursors', () => {
   it('keeps a cursor no rule reaches as it was', () => {
