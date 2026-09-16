@@ -2,8 +2,8 @@ import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { Band, BandTreatment } from './kerbe';
 
 const HOUR_REM = 8;
-const DETAIL_MIN_REM = 4.4;
-const TIME_MIN_REM = 2.6;
+const DETAIL_MIN_REM = 5.2;
+const TIME_MIN_REM = 2.2;
 
 @Component({
   selector: 'ethlete-design-kerbe-band',
@@ -21,10 +21,12 @@ const TIME_MIN_REM = 2.6;
       <span class="band__bracket"></span>
       <span class="band__bracket"></span>
 
-      <span class="band__label">{{ band().label }}</span>
-      @if (showsTime()) {
-        <span class="band__time">{{ band().from }} · {{ duration() }}</span>
-      }
+      <div class="band__head">
+        <span class="band__label">{{ band().label }}</span>
+        @if (showsTime()) {
+          <span class="band__time">{{ duration() }}</span>
+        }
+      </div>
       @if (showsDetail() && band().detail) {
         <span class="band__detail">{{ band().detail }}</span>
       }
@@ -67,7 +69,17 @@ const TIME_MIN_REM = 2.6;
       --k-metal-soft: rgb(140 134 118 / 0.12);
     }
 
+    .band__head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.8rem;
+      min-width: 0;
+    }
+
     .band__label {
+      flex: 1;
+      min-width: 0;
       font-size: 1.3rem;
       line-height: 1.35;
       color: var(--k-ink);
@@ -83,6 +95,7 @@ const TIME_MIN_REM = 2.6;
     }
 
     .band__time {
+      flex: none;
       font-family: var(--k-mono);
       font-size: 1.05rem;
       letter-spacing: 0.08em;
