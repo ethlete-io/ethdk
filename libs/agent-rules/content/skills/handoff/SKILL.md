@@ -156,7 +156,10 @@ resume from it.
 3. Verify reality still matches: current branch, `git status`, last commit. If
    they diverge from the handoff (e.g. someone committed in between), say what
    changed and adapt - the repo is the truth, the handoff is the guide.
-4. Read any focused repository guidance the handoff's work needs - same rules as always.
+4. **Read only what you are about to change.** The handoff already carries the decisions,
+   the constraints and the dead ends, so do not re-read the plan files it summarises, and do
+   not survey the directory. Open a source file when you are going to edit it, and load a
+   focused guidance file only when the work needs one.
 5. Continue with the **Next steps** section. Don't redo work listed under
    _Done_; don't re-open questions under _Decisions_.
 6. When every next step is complete, decide whether the handoff can be removed. Delete it

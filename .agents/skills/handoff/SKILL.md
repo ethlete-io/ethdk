@@ -155,8 +155,11 @@ After writing, tell the user:
 3. Verify reality still matches: current branch, `git status`, last commit. If
    they diverge from the handoff (e.g. someone committed in between), say what
    changed and adapt - the repo is the truth, the handoff is the guide.
-4. Read any skills the handoff's work obviously needs (e.g. `theming` before
-   CSS work) - same rules as always.
+4. **Read only what you are about to change.** The handoff already carries the
+   decisions, the constraints and the dead ends, so do not re-read the plan files
+   it summarises, and do not survey the directory. Open a source file when you are
+   going to edit it, and read a skill only when the work needs one (e.g. `theming`
+   before CSS work).
 5. Continue with the **Next steps** section. Don't redo work listed under
    *Done*; don't re-open questions under *Decisions*.
 6. When every next step is complete (including changeset/docs follow-ups),
