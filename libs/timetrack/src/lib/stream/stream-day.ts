@@ -421,6 +421,32 @@ const repoStateFor = (sample: ActivityEvent, roots: readonly string[]): RepoStat
 };
 
 /**
+ * The branch each checkout is first seen on, so the part of the day before that fact reads as it too.
+ *
+ * A checkout has a branch at every instant, but nothing observes one until git, an editor or an agent
+ * says so. Without this the window in front before then holds a block on no branch at all, which no
+ * rule can name and no placeholder can open for, although the checkout was plainly on the branch the
+ * next fact reports.
+ *
+ * A `git-checkout` is the exception, and it is why this stops at the first fact rather than taking the
+ * first branch it can find: that event says the branch changed here, so it is the one fact that says
+ * the minutes before it were on a different branch. Those stay unnamed, which is what they are.
+ */
+const firstBranches = (samples: readonly ActivityEvent[], roots: readonly string[]) => {
+  const found = new Map<string, string | undefined>();
+
+  for (const sample of samples) {
+    const state = repoStateFor(sample, roots);
+
+    if (!state?.branch || found.has(state.repoPath)) continue;
+
+    found.set(state.repoPath, sample.kind === 'git-checkout' ? undefined : state.branch);
+  }
+
+  return found;
+};
+
+/**
  * Which checkout a window title names, by the directory the checkout lives in.
  *
  * Matching a whole title segment rather than a substring is what keeps a page title from claiming a
@@ -745,8 +771,12 @@ export const streamDay = (options: {
   const { byName, ambiguous } = reposByName(samples, roots);
   const claimedAmbiguously = new Set<string>();
   const drafts = new Map<string, StreamDraft>();
-  /** The branch each checkout was last seen on. Learned from git and from an agent session alike. */
-  const branches = new Map<string, string | undefined>();
+  /**
+   * The branch each checkout was last seen on. Learned from git, from an editor and from an agent
+   * session alike, and seeded with the first branch of the day so the minutes before it are not
+   * stranded on no branch.
+   */
+  const branches = firstBranches(samples, roots);
   const lastAgentSample = new Map<string, Date>();
   const marks: Mark[] = [];
   const focusSpans: ContextSpan[] = [];
@@ -863,7 +893,7 @@ export const streamDay = (options: {
 
     if (sample.kind === 'agent-session') {
       const cwd = repoRootOf({ path: sample.cwd, roots });
-      const ran: ActivityContext = { repoPath: cwd, branch: branchOf(sample.gitBranch) };
+      const ran: ActivityContext = { repoPath: cwd, branch: branchOf(sample.gitBranch) ?? branches.get(cwd) };
       const draft = draftFor(drafts, ran);
       const last = lastAgentSample.get(cwd);
 
@@ -877,14 +907,21 @@ export const streamDay = (options: {
       lastAgentSample.set(cwd, sample.at);
     }
 
-    const of = observed ? { repoPath: observed.repoPath, branch: observed.branch } : context;
+    // A sample that names a checkout but no branch is not a checkout on no branch. Reading the day's
+    // branch for it is what stops an agent session that reports no branch stranding its own minutes in
+    // a context no rule can name and no placeholder can open for.
+    const state = observed && {
+      repoPath: observed.repoPath,
+      branch: observed.branch ?? branches.get(observed.repoPath),
+    };
+    const of = state ?? context;
     const seenHere = secludedWindow || ownWindow ? null : evidenceFor(sample);
 
     addEvidence(draftFor(drafts, of), seenHere);
     if (seenHere) observations.push({ at: sample.at, context: of, evidence: seenHere });
     marks.push({
       at: sample.at,
-      state: observed ?? (holder ? { repoPath: holder, branch: branches.get(holder) } : null),
+      state: state ?? (holder ? { repoPath: holder, branch: branches.get(holder) } : null),
     });
   });
 

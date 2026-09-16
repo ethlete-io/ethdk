@@ -1431,6 +1431,31 @@ describe('streamDay, the blocks a row is built from', () => {
     expect(day.streams).toHaveLength(1);
   });
 
+  it("takes the branch the first fact names back to the start of the checkout's day", () => {
+    const day = streamDay({
+      events: [...focusRun({ from: 0, to: 40, appId: 'code', title: 'a.ts - ethlete-sdk - Code' }), commit(20, 'x')],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(blocksIn(day, SDK).map((block) => block.context.branch)).toEqual(['next']);
+  });
+
+  it('gives a sample that names a checkout but no branch the branch the day knows for it', () => {
+    const unbranched = (minutes: number): CollectedEvent => ({
+      at: AT(minutes),
+      source: 'agent-session',
+      kind: 'agent-session',
+      sessionId: 'session-1',
+      cwd: SDK,
+    });
+    const day = streamDay({
+      events: [commit(0, 'x'), ...Array.from({ length: 21 }, (_, offset) => unbranched(offset))],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(blocksIn(day, SDK).map((block) => block.context.branch)).toEqual(['next']);
+  });
+
   it('lets two contexts hold the same minute, and no context overlap itself', () => {
     const day = streamDay({
       events: [
