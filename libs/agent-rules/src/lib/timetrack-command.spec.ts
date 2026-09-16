@@ -47,6 +47,35 @@ const printedLines = () => {
   return lines;
 };
 
+/** Answers each operation from its own entry, and records every operation the command asked for. */
+const answeredByOp = (values: Record<string, unknown>) => {
+  const asked: string[] = [];
+  const handler: Handler = (request, response) => {
+    let body = '';
+
+    request.on('data', (chunk) => (body += chunk));
+    request.on('end', () => {
+      const op = String((JSON.parse(body || '{}') as { op?: string }).op ?? '');
+
+      asked.push(op);
+      response.setHeader('content-type', 'application/json');
+      response.end(JSON.stringify({ ok: true, value: values[op] ?? {} }));
+    });
+  };
+
+  return { handler, asked };
+};
+
+const standIn = (over: Record<string, unknown>) => ({
+  id: 'stand-in:1:repo',
+  name: 'Some work',
+  state: 'open',
+  days: ['2026-09-16'],
+  author: 'app',
+  createdAtMs: Date.UTC(2026, 8, 16),
+  ...over,
+});
+
 const run = (argv: string[]) => timetrackCommand({ root: '/repo', argv });
 
 afterEach(async () => {
@@ -146,5 +175,83 @@ describe('timetrack day --out', () => {
 
     expect(readFileSync(target, 'utf8')).toBe('somebody else');
     expect(lstatSync(out).isSymbolicLink()).toBe(true);
+  });
+});
+
+describe('timetrack standins', () => {
+  const noRules = { attributionRules: [], projectLinks: [] };
+
+  it('says a record naming no branch holds its whole checkout', async () => {
+    const { handler } = answeredByOp({
+      'standIn.list': { standIns: [standIn({ openedFor: '/repo/wide' })] },
+      'settings.rules': noRules,
+    });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await run(['standins']);
+
+    expect(lines.join('\n')).toContain('covers all of /repo/wide');
+  });
+
+  it('reads the rule too, because an older record names no checkout of its own', async () => {
+    const { handler } = answeredByOp({
+      'standIn.list': { standIns: [standIn({})] },
+      'settings.rules': {
+        ...noRules,
+        attributionRules: [{ id: 'r1', repoPath: '/repo/older', standInId: 'stand-in:1:repo', donates: false }],
+      },
+    });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await run(['standins']);
+
+    expect(lines.join('\n')).toContain('covers all of /repo/older');
+  });
+
+  it('says nothing about the grain of a record that names its branch', async () => {
+    const { handler } = answeredByOp({
+      'standIn.list': { standIns: [standIn({ openedFor: '/repo/wide', openedForBranch: 'feat-1' })] },
+      'settings.rules': noRules,
+    });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await run(['standins']);
+
+    expect(lines.join('\n')).not.toContain('covers all of');
+  });
+
+  it('refuses a delete that would strand a day, and asks nothing of the endpoint', async () => {
+    const { handler, asked } = answeredByOp({
+      'standIn.list': { standIns: [standIn({ days: ['2026-09-08', '2026-09-16'] })] },
+    });
+
+    await withEndpoint(handler);
+    printedLines();
+
+    await expect(run(['standins', '--remove', 'stand-in:1:repo'])).resolves.toBe(1);
+    expect(asked).toEqual(['standIn.list']);
+  });
+
+  it('makes the same delete once --force says the stranded days are wanted', async () => {
+    const { handler, asked } = answeredByOp({
+      'standIn.list': { standIns: [standIn({ days: ['2026-09-08', '2026-09-16'] })] },
+      'standIn.remove': { standIns: [] },
+      'settings.rules': noRules,
+    });
+
+    await withEndpoint(handler);
+    printedLines();
+
+    await expect(run(['standins', '--remove', 'stand-in:1:repo', '--force'])).resolves.toBe(0);
+    expect(asked).toContain('standIn.remove');
   });
 });

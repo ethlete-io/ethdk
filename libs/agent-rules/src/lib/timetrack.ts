@@ -147,7 +147,14 @@ export type TimetrackNamingOffer = {
 
 export type TimetrackNamingDecline = {
   repoPath: string;
-  reason: 'already-named' | 'no-project-link' | 'no-history' | 'project-too-small' | 'too-few-days' | 'share-too-low';
+  reason:
+    | 'already-named'
+    | 'named-by-stand-in'
+    | 'no-project-link'
+    | 'no-history'
+    | 'project-too-small'
+    | 'too-few-days'
+    | 'share-too-low';
   projectKey?: string;
   issueKey?: string;
   days?: number;

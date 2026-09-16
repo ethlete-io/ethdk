@@ -120,21 +120,33 @@ npx ethlete-agents timetrack standins --json  # the whole answer, resolved ones 
 app is the only place they give it. If the user asks for a ticket, use `create` and tell them
 to resolve the stand-in in Timetrack.
 
+A placeholder is drawn per branch. One written before that was true covers a whole checkout,
+and it blocks a per-branch placeholder for every branch of it. The list says so:
+
+```
+Competition journey spec frontend in FIFAGG  3d old, 3 day(s) of work
+  covers all of /home/tom/dev/fifagg/specs, so no branch of it gets one of its own
+```
+
+Two separate things cause that, and either alone is enough: the record names no branch, or the
+rule naming it names no branch. The line above reports both, so take it at its word rather than
+reading `--json` yourself.
+
 You may delete one, because that takes a name away rather than putting one on the day:
 
 ```bash
 npx ethlete-agents timetrack standins --remove <id>
 ```
 
-The rule that named it goes with it. What happens next depends on `openedForBranch`, which
-`--json` reports:
+The rule that named it goes with it, and what happens next is worth knowing before you ask:
 
-- It names a branch. The delete refuses that branch, and no second placeholder opens for it.
-- It names none. The record covers the whole checkout, and it blocks a placeholder for every
-  branch of that checkout. The delete refuses nothing, so the next pass opens one per branch.
+- The record names a branch. The delete refuses that branch, and no second one opens for it.
+- It names none. The delete refuses nothing, so the next pass opens one per branch instead.
 
-Ask the user before you delete one. It holds a name they may have written and a list of the
-days it covers, and neither comes back.
+**Deleting one strands every day but today.** Only the day the app next reviews gets a new
+placeholder; every earlier day the record covered then reads as unnamed, with nothing left to
+say what it was. The command refuses such a delete and lists the days, and `--force` makes it
+anyway. Ask the user before you use `--force`, and tell them which days they will lose.
 
 ## Why a checkout was never offered a name
 

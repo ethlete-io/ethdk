@@ -124,11 +124,46 @@ const describeRule = (rule: TimetrackAttributionRule) => {
 
 const DAY_MS = 24 * 60 * 60_000;
 
-const describeStandIn = (standIn: TimetrackStandIn) => {
+/**
+ * The checkout an open placeholder holds at the wider grain, or nothing when it names a branch.
+ *
+ * Two separate things stop a branch-grained placeholder opening, and either alone is enough, so both
+ * are read here. The record itself blocks when it was opened for a checkout and names no branch. A
+ * rule blocks when it names the placeholder for a checkout and names no branch — and a record opened
+ * before the grain was the branch has no `openedFor` at all, so the rule is the only side that shows
+ * it. Until the placeholder goes, the checkout stays at the wider grain.
+ */
+const wholeCheckoutHeld = (options: { standIn: TimetrackStandIn; rules: readonly TimetrackAttributionRule[] }) => {
+  const { standIn } = options;
+
+  if (standIn.state !== 'open') return undefined;
+  if (standIn.openedForBranch) return undefined;
+  if (standIn.openedFor) return standIn.openedFor;
+
+  return options.rules.find((rule) => rule.standInId === standIn.id && rule.repoPath && !rule.branch)?.repoPath;
+};
+
+/**
+ * The days a delete of this record would leave unnamed, today left out.
+ *
+ * A delete takes the rule with it, and only the day the app next reviews gets a new placeholder. Any
+ * earlier day the record covered reads as unnamed from then on, with nothing left to say what it was.
+ */
+const strandedDays = async (id: string) => {
+  const standIn = (await timetrackStandIns()).find((entry) => entry.id === id);
+  const now = today();
+
+  return standIn?.state === 'open' ? standIn.days.filter((day) => day !== now).sort() : [];
+};
+
+const describeStandIn = (options: { standIn: TimetrackStandIn; rules: readonly TimetrackAttributionRule[] }) => {
+  const { standIn } = options;
   const days = Math.floor((Date.now() - standIn.createdAtMs) / DAY_MS);
   const where = standIn.projectKey ? ` in ${standIn.projectKey}` : '';
+  const held = wholeCheckoutHeld(options);
+  const grain = held ? `\n    covers all of ${held}, so no branch of it gets one of its own` : '';
 
-  return `${standIn.name}${where}  ${days}d old, ${standIn.days.length} day(s) of work`;
+  return `${standIn.name}${where}  ${days}d old, ${standIn.days.length} day(s) of work${grain}`;
 };
 
 const HOUR_MS = 60 * 60_000;
@@ -137,6 +172,7 @@ const hours = (ms: number) => `${(ms / HOUR_MS).toFixed(1)}h`;
 
 const DECLINE_LINES: Record<TimetrackNamingDecline['reason'], string> = {
   'already-named': 'a rule already names an issue for it',
+  'named-by-stand-in': 'a rule names a placeholder for it, not an issue yet',
   'no-project-link': 'no project link covers it',
   'no-history': 'the project holds no Tempo worklog in the span',
   'project-too-small': 'the project holds too little time to read a habit from',
@@ -543,7 +579,18 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
 
   if (subcommand === 'standins') {
     const remove = flagValue(argv, '--remove');
+    const stranded = remove ? await strandedDays(remove) : [];
+
+    if (stranded.length && !argv.includes('--force')) {
+      say(`${remove} holds ${stranded.length} day(s) before today: ${stranded.join(', ')}.`);
+      say('Deleting it takes the rule with it, so those days read as unnamed and nothing reopens them.');
+      say('The app reopens a placeholder for today only. Pass --force if that is what you want.');
+
+      return 1;
+    }
+
     const standIns = remove ? await timetrackRemoveStandIn(remove) : await timetrackStandIns();
+    const rules = json ? [] : (await timetrackRules()).attributionRules;
     const open = standIns
       .filter((standIn) => standIn.state === 'open')
       .sort((left, right) => left.createdAtMs - right.createdAtMs);
@@ -551,7 +598,7 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     if (!json) {
       if (remove) say(`Deleted ${remove}, and the rule that named it.`);
       say(`${open.length} open, ${standIns.length - open.length} resolved`);
-      open.forEach((standIn) => say(`  ${describeStandIn(standIn)}`));
+      open.forEach((standIn) => say(`  ${describeStandIn({ standIn, rules })}`));
       if (open.length) say('Only the app opens or resolves one — you may delete one, not write one.');
     }
 

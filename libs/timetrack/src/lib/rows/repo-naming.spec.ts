@@ -233,6 +233,17 @@ describe('repoNamingDecisions', () => {
     ).toBe('already-named');
   });
 
+  it('separates a placeholder answering the checkout from an issue answering it', () => {
+    expect(
+      reasonFor({
+        checkouts: [checkout()],
+        links: [link()],
+        rules: [rule({ target: { kind: 'stand-in', standInId: 'stand-in:1:repo' } })],
+        worklogs: DOMINANT,
+      }),
+    ).toBe('named-by-stand-in');
+  });
+
   it('names the missing link when nothing says which project the checkout files into', () => {
     expect(reasonFor({ checkouts: [checkout()], links: [], rules: [], worklogs: DOMINANT })).toBe('no-project-link');
   });

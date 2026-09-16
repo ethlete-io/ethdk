@@ -98,6 +98,11 @@ const dominantIssue = (options: { projectKey: string; worklogs: readonly Histori
 export type RepoNamingDeclineReason =
   /** A rule already names an issue for the checkout, so the answer is given and not ours to overwrite. */
   | 'already-named'
+  /**
+   * Every rule over the checkout names a placeholder rather than an issue. The answer is provisional,
+   * so an offer would still overwrite it, but the work has no ticket and the user is owed that word.
+   */
+  | 'named-by-stand-in'
   /** No project link covers the checkout, so nothing narrows the history down to one project. */
   | 'no-project-link'
   /** The span's worklogs hold nothing at all for the project. */
@@ -169,8 +174,12 @@ export const repoNamingDecisions = (options: {
       : [{ repoPath }];
     const matched = contexts.flatMap((context) => matchAttributionRule({ context, rules: options.rules })?.rule ?? []);
 
-    if (matched.some((rule) => rule.target.kind !== 'donate')) {
-      declines.push({ repoPath, reason: 'already-named' });
+    const answering = matched.filter((rule) => rule.target.kind !== 'donate');
+
+    if (answering.length) {
+      const standInOnly = answering.every((rule) => rule.target.kind === 'stand-in');
+
+      declines.push({ repoPath, reason: standInOnly ? 'named-by-stand-in' : 'already-named' });
       continue;
     }
 
