@@ -2,6 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "types": [],
+    "target": "es2022",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["dom", "es2022"],
+    "strict": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "ignoreDeprecations": "6.0"

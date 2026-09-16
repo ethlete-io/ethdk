@@ -24,7 +24,7 @@ const registry = () => {
 
   return `export const calls = {\n${entries
     .map(([slug, url]) => `  ${JSON.stringify(slug)}: () => import(${JSON.stringify(url)}),`)
-    .join('\n')}\n};\n`;
+    .join('\n')}\n};\nexport const defaultCall = ${JSON.stringify(config.defaultCall ?? null)};\n`;
 };
 
 /**
@@ -64,6 +64,22 @@ const designExplore = () => ({
       if (!config.head || !ctx.path.includes('frame')) return html;
       return html.replace('<!--head-->', readFileSync(resolve(repoRoot, config.head), 'utf8'));
     },
+  },
+  /** The registry is built once per load, so a new call folder is invisible until it is invalidated. */
+  configureServer: (vite) => {
+    const root = resolve(repoRoot, config.callsRoot);
+
+    const refresh = (file) => {
+      if (!file.startsWith(root) || !file.endsWith('/call.ts')) return;
+
+      const module = vite.moduleGraph.getModuleById(`\0${VIRTUAL}`);
+      if (module) vite.moduleGraph.invalidateModule(module);
+      vite.ws.send({ type: 'full-reload' });
+    };
+
+    vite.watcher.add(root);
+    vite.watcher.on('add', refresh);
+    vite.watcher.on('unlink', refresh);
   },
 });
 

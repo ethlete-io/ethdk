@@ -1,11 +1,12 @@
 import type { Call } from '@design-explore';
-import { calls } from 'virtual:design-explore';
+import { calls, defaultCall } from 'virtual:design-explore';
 import './host.css';
 
 const params = new URLSearchParams(location.search);
 const slugs = Object.keys(calls);
 const asked = params.get('call') ?? '';
-const slug = slugs.includes(asked) ? asked : (slugs.at(-1) ?? '');
+const landing = defaultCall && slugs.includes(defaultCall) ? defaultCall : (slugs.at(-1) ?? '');
+const slug = slugs.includes(asked) ? asked : landing;
 const only = params.get('only');
 
 const esc = (text: string) => text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] ?? c);
@@ -46,11 +47,14 @@ const tree = () => {
     .join('');
 };
 
-if (!slug) {
+const load = slug ? calls[slug] : undefined;
+
+if (!load) {
   document.body.innerHTML = `<p class="empty">No call under callsRoot in design-explore.config.json.</p>`;
 } else {
-  const call: Call = (await calls[slug]()).default;
+  const call: Call = (await load()).default;
   const shown = call.options.filter((option) => !only || option.key === only);
+  const isView = call.options.length === 1 && !call.options[0]?.claim;
 
   document.body.innerHTML = `
     <nav>${tree()}</nav>
@@ -60,15 +64,19 @@ if (!slug) {
         <h1>${esc(call.headline)}</h1>
         <p>${esc(call.intro)}</p>
       </header>
-      <div class="grid">
+      <div class="grid" ${isView ? 'data-view' : ''}>
         ${shown
           .map(
             (option) => `
           <div class="column" data-verdict="${option.verdict ?? 'open'}">
-            <h2>
+            ${
+              isView
+                ? ''
+                : `<h2>
               <a href="${link({ only: only === option.key ? null : option.key })}">${esc(option.name)}</a>
               <span class="tag">${option.verdict ?? 'open'}</span>
-            </h2>
+            </h2>`
+            }
             <div class="stage">
               <iframe
                 src="frame.html?call=${encodeURIComponent(slug)}&option=${encodeURIComponent(option.key)}"
@@ -77,8 +85,8 @@ if (!slug) {
                 style="width:${call.frameWidth}px"
               ></iframe>
             </div>
-            <p class="claim">${esc(option.claim)}</p>
-            <p class="cost">${esc(option.cost)}</p>
+            ${option.claim ? `<p class="claim">${esc(option.claim)}</p>` : ''}
+            ${option.cost ? `<p class="cost">${esc(option.cost)}</p>` : ''}
           </div>`,
           )
           .join('')}

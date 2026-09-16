@@ -111,6 +111,16 @@ header p {
   gap: 12px;
 }
 
+/* A view is one picture at its own geometry, so it gets the whole width and no subgrid. */
+.grid[data-view] {
+  grid-auto-columns: auto;
+}
+
+.grid[data-view] .column {
+  grid-row: auto;
+  grid-template-rows: none;
+}
+
 /* The frame keeps the real geometry; the column around it is as wide as the prose needs. */
 .stage {
   display: flex;
