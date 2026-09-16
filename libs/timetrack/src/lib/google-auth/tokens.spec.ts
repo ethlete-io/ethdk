@@ -4,6 +4,7 @@ import { TimetrackTransport } from '../transport/ports';
 import {
   GoogleAuthError,
   GoogleOAuthClient,
+  GoogleRevokeError,
   exchangeGoogleAuthCode$,
   refreshGoogleAccessToken$,
   revokeGoogleToken$,
@@ -166,5 +167,28 @@ describe('revokeGoogleToken$', () => {
     revokeGoogleToken$({ transport: answering(400, { error: 'invalid_token' }), token: 'gone' }).subscribe(done);
 
     expect(done).toHaveBeenCalledWith(undefined);
+  });
+
+  it('fails when google could not answer, because the grant may still stand', () => {
+    const failed = vi.fn();
+
+    revokeGoogleToken$({ transport: answering(500, {}), token: '1//refresh' }).subscribe({ error: failed });
+
+    const error = failed.mock.calls[0]?.[0] as GoogleRevokeError;
+
+    expect(error).toBeInstanceOf(GoogleRevokeError);
+    expect(error.status).toBe(500);
+  });
+
+  it('fails on a rejection that is not invalid_token, so a bad client is not read as a disconnect', () => {
+    const failed = vi.fn();
+    const body = { error: 'invalid_client', error_description: 'The OAuth client was not found.' };
+
+    revokeGoogleToken$({ transport: answering(401, body), token: '1//refresh' }).subscribe({ error: failed });
+
+    const error = failed.mock.calls[0]?.[0] as GoogleRevokeError;
+
+    expect(error.code).toBe('invalid_client');
+    expect(error.message).toBe('The OAuth client was not found.');
   });
 });

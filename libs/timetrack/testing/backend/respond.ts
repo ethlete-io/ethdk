@@ -1,11 +1,13 @@
 import { TimetrackRequest, TimetrackResponse } from '@ethlete/timetrack';
 import { respondGitLab } from './gitlab';
+import { respondGoogle } from './google';
 import { respondJira } from './jira';
 import { FakeAnswer, FakeRoutedRequest, notFound } from './route';
 import { respondTempo } from './tempo';
 import { FakeBackend, FakeFault } from './types';
 
 const TEMPO_BASE = 'https://api.tempo.io/4';
+const GOOGLE_OAUTH_BASE = 'https://oauth2.googleapis.com';
 
 const faultFor = (backend: FakeBackend, request: TimetrackRequest): FakeFault | undefined =>
   backend.faults.find(
@@ -29,6 +31,7 @@ const answerFor = (backend: FakeBackend, request: TimetrackRequest): FakeAnswer 
   if (request.url.startsWith(TEMPO_BASE)) {
     return respondTempo(backend, routed(request, url.pathname.replace(/^\/4/, '')));
   }
+  if (request.url.startsWith(GOOGLE_OAUTH_BASE)) return respondGoogle(routed(request, url.pathname));
 
   return notFound(routed(request, url.pathname));
 };

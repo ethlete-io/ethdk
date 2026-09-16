@@ -1,4 +1,4 @@
-import { Observable, combineLatest, finalize, map, of, shareReplay, switchMap, tap } from 'rxjs';
+import { Observable, combineLatest, finalize, map, of, shareReplay, switchMap } from 'rxjs';
 import { GoogleCalendarCredentials } from '../google-calendar/client';
 import { TIMETRACK_SECRET_KEYS } from '../settings/credentials';
 import { TimetrackSecretStore, TimetrackTransport } from '../transport/ports';
@@ -20,7 +20,10 @@ export const GOOGLE_TOKEN_REFRESH_MARGIN_MS = 2 * 60_000;
 export type GoogleTokenSource = {
   /** The credentials the calendar provider takes, or `null` while the account is not connected. */
   credentials$(): Observable<GoogleCalendarCredentials | null>;
-  /** Drops the held access token, so the next call asks Google for a new one. */
+  /**
+   * Drops the held access token, so the next call asks Google for a new one. A renewal already in
+   * flight is disowned: it stores nothing and answers `null`.
+   */
   invalidate(): void;
 };
 
@@ -33,6 +36,9 @@ export const createGoogleTokenSource = (options: {
 }): GoogleTokenSource => {
   let held: { accessToken: string; expiresAtMs: number } | null = null;
   let inFlight: Observable<GoogleCalendarCredentials | null> | null = null;
+  // Disconnecting cannot cancel a refresh Google is already answering. Without this counter that
+  // answer would store a usable token after the refresh token was deleted.
+  let generation = 0;
 
   const store = (grant: GoogleTokenGrant) => {
     held = { accessToken: grant.accessToken, expiresAtMs: options.now() + grant.expiresInMs };
@@ -45,6 +51,7 @@ export const createGoogleTokenSource = (options: {
     });
 
   const renew$ = (): Observable<GoogleCalendarCredentials | null> => {
+    const startedAt = generation;
     const shared$: Observable<GoogleCalendarCredentials | null> = stored$().pipe(
       switchMap(({ clientSecret, refreshToken }) => {
         const client: GoogleOAuthClient = {
@@ -52,6 +59,7 @@ export const createGoogleTokenSource = (options: {
           clientSecret: clientSecret?.trim() ?? '',
         };
 
+        if (generation !== startedAt) return of(null);
         if (!client.clientId || !client.clientSecret || !refreshToken?.trim()) return of(null);
 
         return refreshGoogleAccessToken$({
@@ -59,8 +67,13 @@ export const createGoogleTokenSource = (options: {
           client,
           refreshToken: refreshToken.trim(),
         }).pipe(
-          tap(store),
-          map((grant): GoogleCalendarCredentials => ({ accessToken: grant.accessToken })),
+          map((grant): GoogleCalendarCredentials | null => {
+            if (generation !== startedAt) return null;
+
+            store(grant);
+
+            return { accessToken: grant.accessToken };
+          }),
         );
       }),
       // The renewal has to be forgotten once it ends, or a later caller replays an expired token.
@@ -89,6 +102,7 @@ export const createGoogleTokenSource = (options: {
     invalidate: () => {
       held = null;
       inFlight = null;
+      generation += 1;
     },
   };
 };

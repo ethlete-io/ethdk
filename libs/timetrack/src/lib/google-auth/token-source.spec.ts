@@ -1,4 +1,4 @@
-import { Observable, of } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TIMETRACK_SECRET_KEYS } from '../settings/credentials';
 import { TimetrackSecretStore, TimetrackTransport } from '../transport/ports';
@@ -95,6 +95,32 @@ describe('createGoogleTokenSource', () => {
     source.credentials$().subscribe();
 
     expect(transport.request$).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops a renewal that lands after the account was disconnected', () => {
+    const answers = new Subject<unknown>();
+    const transport = { request$: vi.fn(() => answers as never) } satisfies TimetrackTransport;
+    const source = sourceWith({ transport });
+    const seen = vi.fn();
+
+    source.credentials$().subscribe(seen);
+    source.invalidate();
+    answers.next({ status: 200, headers: {}, body: { access_token: 'ya29.late', expires_in: 3600 } });
+
+    expect(seen).toHaveBeenCalledWith(null);
+  });
+
+  it('does not hold a token a disconnected renewal brought back', () => {
+    const answers = new Subject<unknown>();
+    const transport = { request$: vi.fn(() => answers as never) } satisfies TimetrackTransport;
+    const source = sourceWith({ transport });
+
+    source.credentials$().subscribe();
+    source.invalidate();
+    answers.next({ status: 200, headers: {}, body: { access_token: 'ya29.late', expires_in: 3600 } });
+    source.credentials$().subscribe();
+
+    expect(transport.request$).toHaveBeenCalledTimes(2);
   });
 
   it('asks again after the held token is dropped', () => {

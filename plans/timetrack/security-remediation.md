@@ -22,8 +22,8 @@ test covers it.
 | SEC-14 cursor metadata        | yes      | yes   | `agent-session/cursor-privacy.ts`                       |
 | SEC-15 title redaction        | yes      | yes   | `agent-session/cursor-privacy.ts`                       |
 | SEC-16 Tempo paging           | yes      | yes   | `libs/timetrack/src/lib/tempo/client.ts`                |
-| SEC-17 Google revoke          | yes      |       | `libs/timetrack/src/lib/google-auth/tokens.ts`          |
-| SEC-18 refresh race           | yes      |       | `libs/timetrack/src/lib/google-auth/token-source.ts`    |
+| SEC-17 Google revoke          | yes      | yes   | `libs/timetrack/src/lib/google-auth/tokens.ts`          |
+| SEC-18 refresh race           | yes      | yes   | `libs/timetrack/src/lib/google-auth/token-source.ts`    |
 | SEC-19 HTTP deadlines         | yes      | yes   | `src-tauri/src/lib.rs`, `http.rs`                       |
 | SEC-20 Rust advisories        | yes      |       | `Cargo.lock`                                            |
 | SEC-21 Angular advisory       | yes      |       | `package.json`                                          |
@@ -41,11 +41,11 @@ compaction feature, not a security patch. The finding stands.
 
 ## Where this stands
 
-Five commits so far. The Rust host has 175 unit tests, all passing, and the timetrack e2e
-suite has 248, all passing.
+Six commits so far. The Rust host has 175 unit tests, all passing, and the timetrack e2e
+suite has 251, all passing.
 
 Done: SEC-01, SEC-02, SEC-03, SEC-05, SEC-06 (host half), SEC-07, SEC-09, SEC-10, SEC-11,
-SEC-12, SEC-13, SEC-14, SEC-15, SEC-16, SEC-19, and the host half of SEC-04 (the agent endpoint and a settings write
+SEC-12, SEC-13, SEC-14, SEC-15, SEC-16, SEC-17, SEC-18, SEC-19, and the host half of SEC-04 (the agent endpoint and a settings write
 are refused while the window is locked).
 
 Notes on the third commit:
@@ -94,16 +94,27 @@ absolute URL only on that exact origin, with no user info, so a cursor cannot se
 elsewhere. The host transport already refuses a redirect (`Policy::none()` in `http.rs`), which is
 the other half of the same hole.
 
+SEC-17 and SEC-18 are the sixth commit.
+
+- SEC-17. `revokeGoogleToken$` accepts a success and `invalid_token`, and raises `GoogleRevokeError`
+  for every other answer. `disconnect$` no longer swallows that: the stored token is kept, the card
+  says Google did not confirm, and a second button removes the token on this machine alone. Deleting
+  it on a refused revocation is what would leave a grant standing that this machine can no longer
+  withdraw.
+- SEC-18. `createGoogleTokenSource` holds a generation counter that `invalidate()` raises. A renewal
+  that started before it stores nothing and answers `null`.
+- `google-disconnect.spec.ts` drives the three paths through the settings card. It needed two new
+  pieces in the fake world: a `secrets` field on the seed, and a Google route in the fake backend.
+  Two of its three tests fail without the fix.
+
 Still open, in the order to take them:
 
-1. SEC-17 and SEC-18 `libs/timetrack/src/lib/google-auth/`. `revokeGoogleToken$` maps every
-   status to success; `renew$` stores a grant that lands after `invalidate`.
-2. SEC-06 core half: `normalizeJiraHost` and `normalizeGitLabHost` still accept an explicit
+1. SEC-06 core half: `normalizeJiraHost` and `normalizeGitLabHost` still accept an explicit
    `http://` host. The host transport now refuses it, so this is the message, not the boundary.
-3. SEC-22 to SEC-25 in `libs/agent-rules/src/lib/`. Exclusive `0600` export, terminal-escape
+2. SEC-22 to SEC-25 in `libs/agent-rules/src/lib/`. Exclusive `0600` export, terminal-escape
    stripping on printed provider text, `redirect: 'error'` plus a server proof in the discovery
    file, and a refusal of conflicting edit flags.
-4. SEC-20 and SEC-21, the dependency updates.
+3. SEC-20 and SEC-21, the dependency updates.
 
 Each library change needs a changeset. `@ethlete/timetrack` and `@ethlete/agent-rules` are
 both published.

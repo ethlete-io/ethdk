@@ -14,7 +14,19 @@ import {
   googleAuthorizationQuery,
   revokeGoogleToken$,
 } from '@ethlete/timetrack';
-import { EMPTY, Observable, Subject, catchError, defer, exhaustMap, finalize, of, switchMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  Subject,
+  catchError,
+  defer,
+  exhaustMap,
+  finalize,
+  of,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 
@@ -38,6 +50,7 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const calendars = signal<GoogleCalendar[] | null>(null);
   const needsReconnect = signal(false);
   const loadFailed = signal(false);
+  const revokeFailed = signal(false);
 
   const tokens = createGoogleTokenSource({
     transport: ports.transport,
@@ -65,6 +78,7 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     defer(() => {
       busy.set(true);
       failure.set(null);
+      revokeFailed.set(false);
 
       return work$.pipe(
         catchError((error: unknown) => {
@@ -140,23 +154,36 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
     );
 
+  const forget$ = () =>
+    ports.secrets.delete$(TIMETRACK_SECRET_KEYS.googleRefreshToken).pipe(
+      tap(() => {
+        tokens.invalidate();
+        settings.recheckCredentials();
+        calendars.set(null);
+        loadFailed.set(false);
+        needsReconnect.set(false);
+        revokeFailed.set(false);
+      }),
+    );
+
   /** Withdraws the grant at Google first, so disconnecting is not only a local forget. */
   const disconnect$ = () =>
     started(
       ports.secrets.read$(TIMETRACK_SECRET_KEYS.googleRefreshToken).pipe(
         switchMap((token) =>
           token
-            ? revokeGoogleToken$({ transport: ports.transport, token }).pipe(catchError(() => of(undefined)))
+            ? revokeGoogleToken$({ transport: ports.transport, token }).pipe(
+                catchError((error: unknown) => {
+                  // The stored token is kept when Google did not confirm: deleting it would leave a
+                  // grant standing that this machine can no longer withdraw.
+                  revokeFailed.set(true);
+
+                  return throwError(() => error);
+                }),
+              )
             : of(undefined),
         ),
-        switchMap(() => ports.secrets.delete$(TIMETRACK_SECRET_KEYS.googleRefreshToken)),
-        tap(() => {
-          tokens.invalidate();
-          settings.recheckCredentials();
-          calendars.set(null);
-          loadFailed.set(false);
-          needsReconnect.set(false);
-        }),
+        switchMap(() => forget$()),
       ),
     );
 
@@ -181,12 +208,19 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     needsReconnect: needsReconnect.asReadonly(),
     /** Whether the last read of the calendar list failed. Ask again by hand, never on sight. */
     loadFailed: loadFailed.asReadonly(),
+    /**
+     * Whether Google refused the last revocation. The account is still connected, here and at Google,
+     * until the user either disconnects again or removes the token with `forgetLocally`.
+     */
+    revokeFailed: revokeFailed.asReadonly(),
 
     /** An access token that is valid now, or `null` while no account is connected. */
     credentials$: (): Observable<GoogleCalendarCredentials | null> => tokens.credentials$(),
 
     connect: () => actions$.next(connect$()),
     disconnect: () => actions$.next(disconnect$()),
+    /** Deletes the stored token without asking Google, for when a revocation cannot get through. */
+    forgetLocally: () => actions$.next(started(forget$())),
     loadCalendars: () => actions$.next(started(calendars$())),
   };
 });

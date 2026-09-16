@@ -109,6 +109,8 @@ export type TimetrackWorldSeed = {
    */
   windowLock?: FakeWindowLock;
   faults?: FakeFault[];
+  /** Secrets the keychain already holds, over the three tokens every seed starts with. */
+  secrets?: Record<string, string>;
 };
 
 export type FakeWorld = {
@@ -125,6 +127,7 @@ export type FakeWorld = {
   callSource: FakeCallSourceStatus;
   windowLock: FakeWindowLock;
   backend: FakeBackend;
+  secrets: Record<string, string>;
 };
 
 /** Where `seedWorld` leaves the seed, as a JSON string, for `createFakeWorld` to read before boot. */
@@ -348,6 +351,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   windowSource: { kind: 'none', detail: null, capabilities: [], ...seed.windowSource },
   callSource: { kind: 'none', detail: null, watchingSinceMs: Date.now(), ...seed.callSource },
   windowLock: seed.windowLock ?? 'unlocked',
+  secrets: seed.secrets ?? {},
   glab: { ...defaultGlab(), ...seed.glab },
   gh: { ...defaultGh(), ...seed.gh },
   editors: seedEditors(seed.editors),

@@ -41,11 +41,7 @@ import { TokenFieldComponent } from './token-field.component';
       </p>
 
       @if (account.failure(); as failure) {
-        <et-banner
-          [description]="failure"
-          [heading]="account.needsReconnect() ? 'The account stopped working' : 'The account could not be connected'"
-          type="error"
-        />
+        <et-banner [description]="failure" [heading]="failureHeading()" type="error" />
       }
 
       <et-form-field class="min-w-60" appearance="underline" size="sm">
@@ -76,6 +72,25 @@ import { TokenFieldComponent } from './token-field.component';
           </button>
         }
       </div>
+
+      @if (account.revokeFailed()) {
+        <div class="flex flex-col items-start gap-2">
+          <p class="text-small text-et-surface-muted">
+            The token is still on this machine and the account still works. Disconnect again to ask Google once more. To
+            stop here, remove the token and then withdraw the access yourself under your Google account.
+          </p>
+
+          <button
+            [disabled]="account.busy()"
+            (click)="account.forgetLocally()"
+            et-button
+            variant="transparent"
+            size="sm"
+          >
+            Remove from this machine
+          </button>
+        </div>
+      }
 
       @if (connected()) {
         <div class="flex flex-col gap-2">
@@ -134,6 +149,13 @@ export class GoogleConnectionComponent {
   public forgetClientSecret = output<void>();
 
   protected picked = computed(() => new Set(this.settings().calendarIds));
+
+  protected failureHeading = computed(() => {
+    if (this.account.revokeFailed()) return 'Google did not confirm the disconnect';
+    if (this.account.needsReconnect()) return 'The account stopped working';
+
+    return 'The account could not be connected';
+  });
 
   protected badge = computed(() => {
     if (this.account.needsReconnect()) return { color: 'danger', label: 'reconnect needed' };

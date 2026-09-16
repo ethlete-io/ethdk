@@ -54,6 +54,23 @@ export class GoogleAuthError extends Error {
   }
 }
 
+/**
+ * A revocation Google did not confirm. The stored refresh token is still on this machine when this is
+ * thrown, so the grant may still stand in the user's account.
+ */
+export class GoogleRevokeError extends Error {
+  readonly status: number;
+  /** Google's own `error` code, when the body carried one. */
+  readonly code?: string;
+
+  constructor(options: { status: number; code?: string; message: string }) {
+    super(options.message);
+    this.name = 'GoogleRevokeError';
+    this.status = options.status;
+    this.code = options.code;
+  }
+}
+
 type GoogleTokenBody = {
   access_token?: string;
   expires_in?: number;
@@ -158,13 +175,31 @@ export const exchangeGoogleAuthCode$ = (options: {
  * Withdraws the app's access at Google, which is what makes disconnecting mean something outside this
  * machine: deleting the stored token alone would leave the grant standing in the user's account.
  *
- * Revoking a refresh token takes the whole grant with it. A token Google has already forgotten answers
- * 400, which is the state this asks for, so only a transport failure reaches the caller.
+ * Revoking a refresh token takes the whole grant with it. Only an answer Google confirms counts: a
+ * success, or `invalid_token`, which says Google has already forgotten the token. Every other answer
+ * fails with a `GoogleRevokeError`, so a caller never reports a withdrawal that did not happen.
  */
 export const revokeGoogleToken$ = (options: { transport: TimetrackTransport; token: string }): Observable<void> =>
   options.transport
     .request$<unknown>({ method: 'POST', url: GOOGLE_REVOKE_ENDPOINT, form: { token: options.token } })
-    .pipe(map(() => undefined));
+    .pipe(
+      map((response) => {
+        const body = asBody(response.body);
+        const gone = (response.status >= 200 && response.status < 300) || body.error === 'invalid_token';
+
+        if (!gone) {
+          throw new GoogleRevokeError({
+            status: response.status,
+            code: body.error,
+            message:
+              body.error_description ??
+              `Google did not withdraw the access: it responded ${response.status}${body.error ? ` (${body.error})` : ''}.`,
+          });
+        }
+
+        return undefined;
+      }),
+    );
 
 /** Renews the access token. Google returns no new refresh token here, so the stored one stays. */
 export const refreshGoogleAccessToken$ = (options: {
