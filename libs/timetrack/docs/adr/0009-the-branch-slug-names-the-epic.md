@@ -1,5 +1,9 @@
 # The branch slug names the epic, not the issue
 
+> **Implemented by [ADR 0029](./0029-a-sibling-checkout-names-the-child-by-elimination.md).** The
+> second half of this rule — the epic plus the checkout finds the task — is done by elimination over
+> the parent's open children, and the day is read twice to do it.
+
 Neither of Tom's two bracket-challenge branches carries a Jira key, so `parseBranch` names nothing
 and three rungs of the ladder miss. The obvious repair is a rule that maps a branch slug to an
 issue. That is wrong, and it was measured on real tickets: `spec/20260819_bracket-challenge` in

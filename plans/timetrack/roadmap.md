@@ -138,7 +138,10 @@ rounds on 2026-09-10 against four of his real tickets and one live meeting.
 Three decisions carry it, and each has an ADR:
 
 1. **The branch slug names the epic, not the issue** (ADR 0009). The epic plus the checkout names the
-   task, and the checkout is what cuts one task from its sibling.
+   task, and the checkout is what cuts one task from its sibling. **Built** (ADR 0029): the task is
+   found by elimination over the parent's open children, less every key another checkout books. That
+   needs the day's own answers, so the day is read twice and never in a loop, and a day the other
+   rungs answered in full costs no Jira read.
 2. **A call is the fact and the calendar is a candidate list** (ADR 0010). An accepted occurrence
    with no call observed proposes nothing.
 3. **A remembered naming outranks a branch parse** (ADR 0012). One learned store at rung 2, seeded

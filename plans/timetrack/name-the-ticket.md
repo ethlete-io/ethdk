@@ -93,10 +93,24 @@ to match against.
 The rung sits under the private project link and above the branch grammar. A correction has to beat
 a parse. Its confidence comes from the record, not from the rung.
 
-### The epic rung
+### The epic rung — built
 
 The branch slug names the epic; the epic plus the checkout names the task. Slug first, sibling
-second. See ADR 0009.
+second. See ADR 0009 for the rule and ADR 0029 for how the second half is done.
+
+The task is found by **elimination**: the parent's open children, minus every issue key any checkout
+already books, and one left names the block. Nothing in Jira links a child to a checkout, so there is
+nothing else to pick it by. The rung stays silent on two parents, two free children, a child list
+`epicChildLimit` cut short, or two checkouts in different projects.
+
+It needs the day's own answers to subtract them, so the day is read **twice** — once with no epic
+options, which is the question, and once with them, which is the answer. Never a loop. A day the other
+rungs answered in full costs no Jira read at all.
+
+It answers below the `donate` short-circuit and above the Tempo pattern rung, at `likely`, with a
+`sibling-checkout` evidence line. It is read **before** the two stand-in rungs though it answers after
+them: a stand-in exists because Jira held no ticket, so a named sibling removes its premise. It writes
+no rule and offers none — one new ticket under the epic ends the proof.
 
 ### Meetings invert
 
