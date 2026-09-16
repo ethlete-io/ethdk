@@ -1454,3 +1454,85 @@ describe('reviewDay, a band a rule excluded that the reviewer resized', () => {
     expect(later.rows[later.rows.length - 1]?.to.toISOString()).toBe(at('13:00').toISOString());
   });
 });
+
+describe('reviewDay, a row the reviewer drew over a band a rule excluded', () => {
+  const room = (options: { from: string; to: string }): UnnamedProposal => ({
+    id: `unnamed:lane:call@${at(options.from).toISOString()}`,
+    from: at(options.from),
+    to: at(options.to),
+    durationMs: at(options.to).getTime() - at(options.from).getTime(),
+    observedMs: at(options.to).getTime() - at(options.from).getTime(),
+    laneKey: 'lane:call',
+    description: 'Open Room #1 | Braune Digital - Discord',
+    confidence: 'weak',
+    evidence: [],
+    state: 'suggested',
+    excluded: true,
+  });
+
+  const day = (open: UnnamedProposal) => dayRows({ proposals: [], unnamed: [open] });
+
+  const drawn = (options: { over: UnnamedProposal; from: string; to: string; laneKey?: string }) =>
+    addManualRow({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: {
+        issueKey: 'ABC-1',
+        description: 'the part of the room that was work',
+        from: at(options.from),
+        to: at(options.to),
+        laneKey: 'laneKey' in options ? options.laneKey : 'lane:call',
+      },
+      over: reviewDay({ rows: day(options.over) }).rows,
+    });
+
+  const spans = (review: DayReview) =>
+    review.rows.map((row) => [row.from.toISOString(), row.to.toISOString(), row.issueKey]);
+
+  it('cuts the minutes it covers out of the band and leaves the rest of it drawn', () => {
+    const open = room({ from: '08:00', to: '12:00' });
+    const review = reviewDay({ rows: day(open), edits: drawn({ over: open, from: '09:00', to: '10:00' }) });
+
+    expect(spans(review)).toEqual([
+      [at('08:00').toISOString(), at('09:00').toISOString(), undefined],
+      [at('09:00').toISOString(), at('10:00').toISOString(), 'ABC-1'],
+      [at('10:00').toISOString(), at('12:00').toISOString(), undefined],
+    ]);
+  });
+
+  it('leaves both parts of the band excluded', () => {
+    const open = room({ from: '08:00', to: '12:00' });
+    const review = reviewDay({ rows: day(open), edits: drawn({ over: open, from: '09:00', to: '10:00' }) });
+
+    expect(review.rows.filter((row) => row.excluded)).toHaveLength(2);
+  });
+
+  it('moves the start of the band when the row was drawn from the start of it', () => {
+    const open = room({ from: '08:00', to: '12:00' });
+    const review = reviewDay({ rows: day(open), edits: drawn({ over: open, from: '08:00', to: '09:00' }) });
+
+    expect(spans(review)).toEqual([
+      [at('08:00').toISOString(), at('09:00').toISOString(), 'ABC-1'],
+      [at('09:00').toISOString(), at('12:00').toISOString(), undefined],
+    ]);
+  });
+
+  it('takes the band off the day when the row covers the whole of it', () => {
+    const open = room({ from: '08:00', to: '12:00' });
+    const review = reviewDay({ rows: day(open), edits: drawn({ over: open, from: '08:00', to: '12:00' }) });
+
+    expect(spans(review)).toEqual([[at('08:00').toISOString(), at('12:00').toISOString(), 'ABC-1']]);
+  });
+
+  it('leaves the band whole for a row written with no column in front of the reviewer', () => {
+    const open = room({ from: '08:00', to: '12:00' });
+    const review = reviewDay({
+      rows: day(open),
+      edits: drawn({ over: open, from: '09:00', to: '10:00', laneKey: undefined }),
+    });
+
+    expect(spans(review)).toEqual([
+      [at('08:00').toISOString(), at('12:00').toISOString(), undefined],
+      [at('09:00').toISOString(), at('10:00').toISOString(), 'ABC-1'],
+    ]);
+  });
+});

@@ -281,6 +281,7 @@ type RowDrag = {
                       [attr.data-kind]="kindOf(laid.block.node.appointment)"
                       [attr.data-compact]="compact(laid.block.span) || null"
                       [attr.data-dragging]="dragging(laid.block.node.appointment) || null"
+                      [attr.data-excluded]="excluded(laid.block.node.appointment) || null"
                       [attr.data-marked]="marks(laid.block.node.appointment) || null"
                       [attr.data-stand-in]="STANDS_IN(laid.block.node.appointment) || null"
                       [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
@@ -289,10 +290,12 @@ type RowDrag = {
                       [style.left.%]="laid.inlineOffset"
                       [style.width.%]="laid.inlineSize"
                       [title]="LABEL_OF(laid.block.node.appointment)"
-                      (pointerdown)="startDrag({ event: $event, appointment: laid.block.node.appointment, column })"
+                      (pointerdown)="
+                        startDrag({ event: $event, appointment: laid.block.node.appointment, column, lane })
+                      "
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
-                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset data-[stand-in]:border-dashed"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[excluded]:cursor-cell data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset data-[stand-in]:border-dashed"
                       etMenu
                       etMenuContextTrigger
                       role="button"
@@ -327,17 +330,20 @@ type RowDrag = {
                       }
 
                       <!-- These carry the resize cursor over the zone modeAt reads as an end, and nothing
-                      else: the press is handled on the band, so they must let it through. -->
-                      <span
-                        [style.height.%]="EDGE_PERCENT"
-                        [style.maxHeight.px]="MAX_EDGE_PX"
-                        class="absolute inset-x-0 top-0 cursor-ns-resize"
-                      ></span>
-                      <span
-                        [style.height.%]="EDGE_PERCENT"
-                        [style.maxHeight.px]="MAX_EDGE_PX"
-                        class="absolute inset-x-0 bottom-0 cursor-ns-resize"
-                      ></span>
+                      else: the press is handled on the band, so they must let it through. A band a rule
+                      excluded resizes nowhere, so it shows neither. -->
+                      @if (!excluded(laid.block.node.appointment)) {
+                        <span
+                          [style.height.%]="EDGE_PERCENT"
+                          [style.maxHeight.px]="MAX_EDGE_PX"
+                          class="absolute inset-x-0 top-0 cursor-ns-resize"
+                        ></span>
+                        <span
+                          [style.height.%]="EDGE_PERCENT"
+                          [style.maxHeight.px]="MAX_EDGE_PX"
+                          class="absolute inset-x-0 bottom-0 cursor-ns-resize"
+                        ></span>
+                      }
 
                       @for (held of breaksIn(laid.block.node.appointment); track held.offset) {
                         <span
@@ -720,6 +726,11 @@ export class DayTimelineComponent {
     return !!row && this.isMarked(row);
   }
 
+  /** Whether a rule excluded this band, which is what makes the press on it draw rather than drag. */
+  protected excluded(appointment: Appointment<TimelineEntry>) {
+    return !!this.rowOf(appointment)?.excluded;
+  }
+
   /** What a band's own context menu offers, which is the list the edit surface offers as well. */
   protected actionsFor(row: ReviewedRow) {
     return rowActionsFor({ store: this.store, row, rows: this.rows() });
@@ -771,9 +782,21 @@ export class DayTimelineComponent {
     this.store.mergeRows(rows);
   }
 
-  /** Moves a row to another time, or drags one of its ends. */
-  protected startDrag(options: { event: PointerEvent; appointment: Appointment<TimelineEntry>; column: HTMLElement }) {
-    const { event, appointment, column } = options;
+  /**
+   * Moves a row to another time, or drags one of its ends.
+   *
+   * A press on a band a rule excluded draws a range over it instead. That band's clock is the
+   * microphone's and not the reviewer's, so neither end of it is theirs to move; what they can say is
+   * that some of those minutes were work, and drawing the row over it is how they say it. The row
+   * then cuts the band — see `addManualRow`.
+   */
+  protected startDrag(options: {
+    event: PointerEvent;
+    appointment: Appointment<TimelineEntry>;
+    column: HTMLElement;
+    lane: DayLane;
+  }) {
+    const { event, appointment, column, lane } = options;
     const entry = appointment.extra;
 
     // a press on a block must not also draw a fresh range down the column underneath it
@@ -781,6 +804,7 @@ export class DayTimelineComponent {
     this.hasDragged = false;
 
     if (entry?.kind !== 'row' || event.button !== 0) return;
+    if (entry.row.excluded) return this.startDraw({ event, column, lane });
 
     const scheduler = this.scheduler();
     const drag: RowDrag = {
@@ -834,6 +858,10 @@ export class DayTimelineComponent {
       switch (gesture.type) {
         case 'start':
         case 'move':
+          // A range drawn over a band ends in a click on that band. Without this, the band's own edit
+          // surface would open over the add surface the drawn range just asked for.
+          this.hasDragged = true;
+
           return scheduler.draftRange()
             ? scheduler.extendDraftRange(at(gesture.data.clientY), SNAP_MS)
             : scheduler.beginDraftRange(at(gesture.data.clientY), DEFAULT_DRAFT_MS);

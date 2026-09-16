@@ -1,5 +1,6 @@
 import { dominantConfidence, mergeEvidence } from '../rows/merge';
 import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurationUp } from '../rows/round';
+import { storedLaneKey } from '../rows/lane';
 import { Evidence } from '../model/evidence';
 import { DayReviewEdits, PinnedRow, ProposalOverride, ReviewedRow } from './model';
 
@@ -357,14 +358,17 @@ const manualEvidence = (row: ManualRow): Evidence[] => [
 export const addManualRow = (options: {
   edits: DayReviewEdits;
   row: ManualRow;
+  /** The day's rows as drawn. A band a rule excluded among them gives up the minutes the row covers. */
+  over?: readonly ReviewedRow[];
   round?: Partial<RoundOptions>;
 }): DayReviewEdits => {
-  const { edits, row } = options;
+  const { row } = options;
   const issueKey = row.issueKey.trim().toUpperCase();
 
-  if (!issueKey || row.to.getTime() <= row.from.getTime()) return edits;
+  if (!issueKey || row.to.getTime() <= row.from.getTime()) return options.edits;
 
   const durationMs = roundedSpan({ ...row, round: options.round });
+  const edits = cutExcludedBands({ edits: options.edits, row, bands: options.over ?? [] });
 
   return {
     ...edits,
@@ -441,6 +445,45 @@ export const setRowRange = (options: {
       },
     ],
   };
+};
+
+/**
+ * Takes the minutes a hand-written row covers out of every band a rule excluded it was drawn over.
+ *
+ * Drawing a row across an ignored room is how the reviewer says those minutes were work after all.
+ * The band keeps the rest: the stretch in front of the row is pinned, and the stretch behind it comes
+ * back as a leftover of the day's own band. A band the row covers whole is hidden, because no stretch
+ * of it is left to draw.
+ *
+ * Only a band in the row's own lane is cut. A leftover is subtracted lane by lane, so a cut across
+ * two lanes would draw the stretch the row covers a second time.
+ */
+const cutExcludedBands = (options: {
+  edits: DayReviewEdits;
+  row: ManualRow;
+  bands: readonly ReviewedRow[];
+}): DayReviewEdits => {
+  const { row } = options;
+  const lane = storedLaneKey(row.laneKey);
+
+  if (!lane) return options.edits;
+
+  return options.bands
+    .filter(
+      (band) =>
+        band.excluded &&
+        storedLaneKey(band.laneKey) === lane &&
+        band.from.getTime() < row.to.getTime() &&
+        row.from.getTime() < band.to.getTime(),
+    )
+    .reduce((edits, band) => {
+      const head = { from: band.from, to: row.from };
+      const kept = head.to.getTime() > head.from.getTime() ? head : { from: row.to, to: band.to };
+
+      if (kept.to.getTime() <= kept.from.getTime()) return hideRow({ edits, row: band });
+
+      return setRowRange({ edits, row: band, ...kept });
+    }, options.edits);
 };
 
 /**

@@ -988,8 +988,10 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /**
      * Adds a row for work nothing observed — a meeting away from the desk, a phone call, an hour on
      * another machine. It is what the timeline's drag-to-create and the add-entry panel write.
+     *
+     * A row drawn over a band a rule excluded cuts that band: the minutes are this work now.
      */
-    addRow: (row: ManualRow) => apply(addManualRow({ edits: edits(), row })),
+    addRow: (row: ManualRow) => apply(addManualRow({ edits: edits(), row, over: rows() })),
 
     /**
      * The same, for a row an agent's CLI wrote from another repository. It moves the review to the day
