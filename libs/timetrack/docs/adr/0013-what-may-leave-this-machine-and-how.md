@@ -27,6 +27,27 @@ that nobody can audit. The full prompt is shown before it goes. Every capitalise
 not recognise is marked, so a new client can be added to the name list before the first send rather
 than after it.
 
+## A spec goes as a header, never as a document
+
+A ticket is written from what the work was for, and a repository that holds written specifications
+says that far better than a commit subject does. So a spec may go, under one rule: only its header.
+The title, what kind of work it is, its tags, the parent issue it already names, and the section it
+opens with. Between 408 and 888 characters over the ten specifications measured.
+
+The body never goes, and the rule is not a length cap. Two reasons, and the second is the stronger
+one. A whole document floods the unrecognised-word warning, which makes the one transparency rule
+this decision rests on unreadable, and a warning nobody reads guards nothing. And a header is what a
+ticket needs: the frame the work sits in. The body is the requirements, which the notes already
+narrow to the part that was worked on.
+
+The assignee is in the same file and is never read. A colleague's name has no place in a payload that
+leaves the machine, and not reading a field is stronger than masking it: the mask is a list the user
+maintains, so a name that is not on the list goes out in full.
+
+The read is `read_spec`, a host command that can only ever return two files, under names the core
+fixes, from inside one checkout. A general `read_text_file` would be a larger capability than
+everything else this app grants together, and a reader could not audit what a press sends.
+
 ## Consequences
 
 - The app meters its own model spend, on its own line, separate from the spend collected from the
@@ -37,5 +58,7 @@ than after it.
   cost of the work, and charging it would inflate the number the whole cost goal depends on.
 - `reason/payload.ts` already addresses contexts by opaque tokens and sends a repository name rather
   than an absolute path. That is half of this. No name-masking helper exists anywhere yet.
+- A spec header is masked like every other payload, so a client name in a title or an opening
+  section goes out in pseudonyms and its epic key goes out with a pseudonymous prefix.
 - A report to the project manager is **not** pseudonymised. It goes to a colleague who knows the
   real client, and masked names would make it useless.
