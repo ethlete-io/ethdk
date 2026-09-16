@@ -21,3 +21,6 @@ CHANGELOG.md
 
 /.claude
 /.agents
+
+# Design-tool exports, written by the tool.
+*.dc.html
