@@ -40,7 +40,6 @@ pub struct AgentLogLines {
 pub struct AgentLogLinesRequest {
     pub path: String,
     pub from_line: i64,
-    pub root: Option<String>,
     #[serde(default)]
     pub provider: AgentLogProvider,
 }
@@ -51,15 +50,12 @@ struct Read {
     complete: usize,
 }
 
-fn agent_log_root(
-    app: &tauri::AppHandle,
-    root: Option<String>,
-    provider: AgentLogProvider,
-) -> TimetrackResult<PathBuf> {
-    if let Some(root) = root {
-        return Ok(PathBuf::from(root));
-    }
-
+/// Where this provider files its session logs.
+///
+/// The root is resolved here and never taken from the caller. A caller that names its own root names
+/// the confinement the read is then checked against, so `/` would read any file on the machine — and
+/// that is what this command is confined for.
+fn agent_log_root(app: &tauri::AppHandle, provider: AgentLogProvider) -> TimetrackResult<PathBuf> {
     let home = app.path().home_dir()?;
 
     Ok(match provider {
@@ -265,12 +261,11 @@ fn read_lines(path: &Path, from_line: usize) -> TimetrackResult<AgentLogLines> {
 #[tauri::command]
 pub async fn agent_logs(
     app: tauri::AppHandle,
-    root: Option<String>,
     modified_after_ms: Option<i64>,
     provider: Option<AgentLogProvider>,
 ) -> TimetrackResult<Vec<AgentLogRef>> {
     let provider = provider.unwrap_or_default();
-    let root = agent_log_root(&app, root, provider)?;
+    let root = agent_log_root(&app, provider)?;
 
     tauri::async_runtime::spawn_blocking(move || match provider {
         AgentLogProvider::ClaudeCode => list_logs(&root, modified_after_ms),
@@ -282,18 +277,20 @@ pub async fn agent_logs(
 
 /// Reads one log the webview previously listed.
 ///
-/// `path` is confined to the log root: it arrives from the webview, and an unconfined path would let
-/// anything reaching that code read any file the user can, which is the same reason `run_process`
-/// takes an allowlist.
+/// `path` is confined to the log root this host resolves, and has to be a `.jsonl` session log: it
+/// arrives from the webview, and an unconfined path would let anything reaching that code read any
+/// file the user can, which is the same reason `run_process` takes an allowlist.
 #[tauri::command]
 pub async fn agent_log_lines(app: tauri::AppHandle, request: AgentLogLinesRequest) -> TimetrackResult<AgentLogLines> {
-    let root = agent_log_root(&app, request.root, request.provider)?;
+    let root = agent_log_root(&app, request.provider)?;
     let path = PathBuf::from(&request.path);
     let (root, resolved) = (root.canonicalize()?, path.canonicalize()?);
 
-    if !resolved.starts_with(&root) {
+    // The canonical path is compared, so a symlink inside the root that points outside it is refused
+    // by where it resolves to rather than by where it sits.
+    if !resolved.starts_with(&root) || resolved.extension().is_none_or(|extension| extension != "jsonl") {
         return Err(TimetrackError::Rejected(format!(
-            "{} is outside the agent log directory",
+            "{} is not a session log inside the agent log directory",
             request.path
         )));
     }

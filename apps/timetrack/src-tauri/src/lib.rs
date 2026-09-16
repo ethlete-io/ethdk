@@ -9,6 +9,7 @@ mod db;
 mod decorations;
 #[cfg(target_os = "linux")]
 mod decorations_wayland;
+mod discovery;
 mod error;
 mod git;
 mod http;
@@ -81,11 +82,7 @@ pub fn run() {
             let paused = pause::paused_at(&connection)?.is_some();
 
             app.manage(state::Db::new(connection));
-            app.manage(http::Http(
-                reqwest::Client::builder()
-                    .user_agent(concat!("ethlete-timetrack/", env!("CARGO_PKG_VERSION")))
-                    .build()?,
-            ));
+            app.manage(http::Http(http::client()?));
 
             let window_lock = lock::WindowLock::new();
             let windows = window::WindowSource::new(window_lock.clone());
@@ -197,6 +194,13 @@ pub fn run() {
             // since the window was last put away is written.
             if matches!(event, tauri::RunEvent::Exit) {
                 placement::persist(app);
+
+                // The token in these files outlives nothing: what binds the freed port next would
+                // otherwise be asked the same questions, with the same bearer token attached.
+                if let Ok(data_dir) = app.path().app_data_dir() {
+                    discovery::forget(&agent::discovery_path(&data_dir));
+                    discovery::forget(&ingest::discovery_path(&data_dir));
+                }
             }
         });
 }

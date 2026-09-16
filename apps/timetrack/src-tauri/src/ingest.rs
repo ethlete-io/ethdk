@@ -394,25 +394,9 @@ fn now_ms() -> i64 {
     chrono::Utc::now().timestamp_millis()
 }
 
-/// Writes the discovery file so only its owner can read it.
-///
-/// The permissions are the whole point on a shared machine: the token is what stands between the
-/// endpoint and any other account, and a world-readable file would hand it to all of them.
+/// Writes the discovery file so only its owner can read it. See `discovery::write_private`.
 fn write_discovery(path: &Path, discovery: &Discovery) -> TimetrackResult<()> {
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-
-    std::fs::write(path, serde_json::to_vec(discovery)?)?;
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-
-        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))?;
-    }
-
-    Ok(())
+    crate::discovery::write_private(path, &serde_json::to_vec(discovery)?)
 }
 
 pub fn discovery_path(data_dir: &Path) -> PathBuf {
