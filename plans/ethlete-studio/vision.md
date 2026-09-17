@@ -169,14 +169,17 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    the drawing can argue them, so the agent writes them once it has drawn. A key is taken only when
    no option claims it **and** no `option-<key>.ts` already exists, so an orphaned file is never
    overwritten.
-6. **Tools the agent can call.** Studio ships a set, so a run spends its budget on the drawing and
-   not on finding out how this repo works. Tom ruled how they arrive. An MCP server Studio runs
-   carries the actions - read the call, read the fixture, run `check-call.mjs` - because Claude
-   Code and Codex both speak MCP while a skill file is a Claude Code format. Studio already holds
-   the checkout, the slug, the variant key and the server port, so a tool can take no arguments,
-   and Studio can see that the check ran before it writes a verdict. The hard rules stay a fixed
-   section of every prompt: never import a package barrel, never change the fixture, write one
-   file only. A rule the agent has to fetch is a rule it can skip.
+6. ~~**Tools the agent can call.**~~ Done. Studio is the tool server itself: the binary started
+   with `mcp` speaks stdio MCP and answers `read_call`, `read_fixture` and `check_call`. Every tool
+   takes no argument, because Studio already holds the checkout, the call, the variant and the
+   design port, so a run can never name the wrong call. Claude Code gets the server through
+   `--mcp-config`, with `--strict-mcp-config` so a design run pays for no server the checkout
+   happens to configure; Codex gets it through two `-c mcp_servers.studio.*` overrides. A second
+   CLI stays one more implementation. `check_call` writes its result into a receipt file under the
+   temporary directory, keyed by checkout, call and variant, so Studio reads it back with
+   `design_check` and the frame footer says `check passed`, `check failed` or `not checked`. The
+   hard rules are a fixed section of every prompt draft: never import a package barrel, never
+   change the fixture, one component file per variant, run `check_call` after every edit.
 7. ~~**A workbench that shows every variant at once.**~~ Done. The option tab strip is gone. A
    narrow scrolling column of thumbnails stands at the left of the stage, and the variant under
    study takes the rest of the width and the full height, because a drawing of an application is

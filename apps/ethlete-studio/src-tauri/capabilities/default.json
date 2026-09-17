@@ -18,6 +18,7 @@
     "allow-design-server-start",
     "allow-design-server-state",
     "allow-design-server-stop",
+    "allow-design-check",
     "allow-workspace-check",
     "allow-workspace-diff",
     "allow-workspace-root",

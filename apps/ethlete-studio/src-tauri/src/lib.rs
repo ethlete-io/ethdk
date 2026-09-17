@@ -124,6 +124,7 @@ pub fn run() {
             design_server::design_server_start,
             design_server::design_server_state,
             design_server::design_server_stop,
+            tools::design_check,
             workspace_check,
             workspace_diff,
             workspace_root,

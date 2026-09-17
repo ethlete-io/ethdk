@@ -40,6 +40,25 @@ export type Project = {
 export const designProject$ = (checkout: string): Observable<Project> =>
   invokeHost$<Project>('design_project', { checkout });
 
+/** What the last check said about one variant. A variant no run ever checked has none. */
+export type CheckReceipt = {
+  ok: boolean;
+  /** When the check ran, in seconds since the epoch. */
+  at: number;
+  said: string;
+};
+
+/** Which option of which call a check, or a verdict, is about. */
+export type OptionAddress = {
+  checkout: string;
+  slug: string;
+  option: string;
+};
+
+/** Reads what the last `check_call` said about one option, or `null` when no run ever checked it. */
+export const designCheck$ = (address: OptionAddress): Observable<CheckReceipt | null> =>
+  invokeHost$<CheckReceipt | null>('design_check', address);
+
 /** Which option of which call the user ruled about, and how. */
 export type VerdictWrite = {
   checkout: string;

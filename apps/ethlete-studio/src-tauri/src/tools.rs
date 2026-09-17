@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 /// The MCP server name the agent sees. A Claude Code tool therefore reads as `mcp__studio__…`.
@@ -114,6 +115,24 @@ fn flattened(value: &str) -> String {
         .chars()
         .map(|letter| if letter.is_ascii_alphanumeric() { letter } else { '-' })
         .collect()
+}
+
+/// What the last check said about one variant. Studio reads it to see that the check ran at all.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckReceipt {
+    pub ok: bool,
+    /// When the check ran, in seconds since the epoch.
+    pub at: u64,
+    pub said: String,
+}
+
+/// What the last check said about one variant, or `None` when no run ever checked it.
+#[tauri::command]
+pub fn design_check(checkout: String, slug: String, option: String) -> Option<CheckReceipt> {
+    let source = std::fs::read_to_string(receipt_path(&checkout, &slug, &option)).ok()?;
+
+    serde_json::from_str(&source).ok()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -457,6 +476,34 @@ mod tests {
         let answer = answer(&context(), &request).expect("tools/call is answered");
 
         assert_eq!(answer.pointer("/result/isError").and_then(Value::as_bool), Some(false));
+    }
+
+    #[test]
+    fn a_variant_no_run_ever_checked_carries_no_receipt() {
+        assert!(design_check(
+            "/tmp/never-checked".to_owned(),
+            "studio/01-workbench".to_owned(),
+            "z".to_owned()
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn a_check_that_ran_reads_back_as_the_receipt_it_wrote() {
+        let mut context = context();
+        context.receipt = receipt_path("/tmp/written", "studio/01-workbench", "b");
+
+        write_receipt(&context, false, "the frame threw");
+
+        let read = design_check(
+            "/tmp/written".to_owned(),
+            "studio/01-workbench".to_owned(),
+            "b".to_owned(),
+        )
+        .expect("the receipt is there");
+
+        assert!(!read.ok);
+        assert_eq!(read.said, "the frame threw");
     }
 
     #[test]

@@ -9,7 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
 import { EMPTY, Subscription, catchError, finalize, map, of, switchMap, tap } from 'rxjs';
 import { AgentDescriptor, AgentEvent, AgentTools, agentList$, agentRun$ } from '../../host/agent';
@@ -20,6 +20,7 @@ import {
   Project,
   ServerState,
   Verdict,
+  designCheck$,
   designAddOptions$,
   designProject$,
   designServerStart$,
@@ -225,6 +226,13 @@ const THUMB_ASPECT = 9 / 16;
                       <span [class.text-et-brand]="drawn.verdict === 'chosen'">{{ drawn.name }}</span>
                       @if (drawn.verdict) {
                         <span class="text-small text-et-surface-muted">{{ drawn.verdict }}</span>
+                      }
+                      @if (check(); as checked) {
+                        <span [class.text-et-danger-ink]="!checked.ok" class="text-small text-et-surface-muted">
+                          {{ checked.ok ? 'check passed' : 'check failed' }}
+                        </span>
+                      } @else {
+                        <span class="text-small text-et-surface-muted">not checked</span>
                       }
                       <span class="text-et-surface-muted text-mono">{{ address() }}</span>
                     </div>
@@ -457,6 +465,27 @@ export class CallViewComponent {
   private run: Subscription | null = null;
   private design = signal<Project | null>(null);
   private epoch = signal(0);
+
+  private checkEpoch = signal(0);
+
+  /** What the last check said about the variant under study. A run that never checked leaves `null`. */
+  protected check = toSignal(
+    toObservable(
+      computed(() => ({
+        checkout: this.checkout(),
+        slug: this.slug(),
+        option: this.optionKey(),
+        seen: this.checkEpoch(),
+      })),
+    ).pipe(
+      switchMap(({ checkout, slug, option }) =>
+        checkout && slug && option
+          ? designCheck$({ checkout, slug, option }).pipe(catchError(() => of(null)))
+          : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
 
   protected clis = toSignal(
     agentList$().pipe(
@@ -819,6 +848,7 @@ export class CallViewComponent {
 
   /** Reads the checkout again, which is how a call an agent just wrote reaches the list. */
   protected reload() {
+    this.checkEpoch.update((seen) => seen + 1);
     this.read();
   }
 

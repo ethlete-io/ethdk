@@ -10,6 +10,7 @@ fn main() {
             "design_server_start",
             "design_server_state",
             "design_server_stop",
+            "design_check",
             "workspace_check",
             "workspace_diff",
             "workspace_root",
