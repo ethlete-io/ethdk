@@ -189,9 +189,20 @@ fn write_verdict(source: &str, option_key: &str, verdict: Option<&str>) -> Resul
         }
         (None, None) => block.to_owned(),
         (None, Some(value)) => {
-            let key_line_end = block.find('\n').map(|offset| offset + 1).unwrap_or(block.len());
             let indent: String = region[..start].chars().rev().take_while(|c| *c == ' ').collect();
-            format!("{}{indent}verdict: '{value}',\n{}", &block[..key_line_end], &block[key_line_end..])
+
+            match block.find("load:") {
+                Some(at) => {
+                    let line_start = block[..at].rfind('\n').map(|offset| offset + 1).unwrap_or(0);
+
+                    format!("{}{indent}verdict: '{value}',\n{}", &block[..line_start], &block[line_start..])
+                }
+                None => {
+                    let key_line_end = block.find('\n').map(|offset| offset + 1).unwrap_or(block.len());
+
+                    format!("{}{indent}verdict: '{value}',\n{}", &block[..key_line_end], &block[key_line_end..])
+                }
+            }
         }
     };
 
@@ -306,7 +317,7 @@ export default defineCall({
 
         assert_eq!(options[1].verdict.as_deref(), Some("chosen"));
         assert_eq!(options[0].verdict.as_deref(), Some("rejected"));
-        assert!(written.contains("      verdict: 'chosen',\n"));
+        assert!(written.contains("      verdict: 'chosen',\n      load: () => import('./option-b'),"));
     }
 
     #[test]
