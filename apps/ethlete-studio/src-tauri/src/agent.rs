@@ -78,6 +78,17 @@ pub struct AgentRequest {
 #[derive(Default, Clone)]
 pub struct AgentRuns(Arc<Mutex<HashMap<String, Child>>>);
 
+/// Where a run's events go. A Tauri channel is the one the app uses; a test uses its own.
+pub trait EventSink: Send + Sync + 'static {
+    fn emit(&self, event: AgentEvent) -> bool;
+}
+
+impl EventSink for Channel<AgentEvent> {
+    fn emit(&self, event: AgentEvent) -> bool {
+        self.send(event).is_ok()
+    }
+}
+
 static NEXT_RUN: AtomicU64 = AtomicU64::new(1);
 
 const DETAIL_KEYS: [&str; 6] = ["file_path", "command", "pattern", "path", "url", "description"];
@@ -152,6 +163,17 @@ pub async fn agent_run(
         .find(|cli| cli.id() == request.cli)
         .ok_or_else(|| StudioError::Rejected(format!("No agent CLI is registered under {}.", request.cli)))?;
 
+    start(cli, &request, runs.inner().clone(), Arc::new(stream)).await
+}
+
+/// Spawns the CLI and reads what it prints until it stops. It is split out of the command so a test
+/// can drive this same path with a CLI it controls.
+async fn start(
+    cli: Box<dyn AgentCli>,
+    request: &AgentRequest,
+    table: AgentRuns,
+    sink: Arc<dyn EventSink>,
+) -> StudioResult<String> {
     let cwd = PathBuf::from(&request.cwd);
 
     if !cwd.is_dir() {
@@ -177,28 +199,27 @@ pub async fn agent_run(
     let stderr = child.stderr.take().ok_or(StudioError::Rejected("The agent printed nowhere.".to_owned()))?;
 
     let id = format!("run-{}", NEXT_RUN.fetch_add(1, Ordering::Relaxed));
-    let table = runs.inner().clone();
 
     table.0.lock().map_err(|_| StudioError::Poisoned)?.insert(id.clone(), child);
 
-    let _ = stream.send(AgentEvent::Started {
+    sink.emit(AgentEvent::Started {
         cli: cli.id().to_owned(),
         model: request.model.clone(),
     });
 
     let complaints = Arc::new(Mutex::new(String::new()));
-    let sink = complaints.clone();
+    let pen = complaints.clone();
 
     tokio::spawn(async move {
         let mut lines = BufReader::new(stderr).lines();
 
         while let Ok(Some(line)) = lines.next_line().await {
-            let Ok(mut sink) = sink.lock() else {
+            let Ok(mut pen) = pen.lock() else {
                 return;
             };
 
-            sink.push_str(&line);
-            sink.push('\n');
+            pen.push_str(&line);
+            pen.push('\n');
         }
     });
 
@@ -212,7 +233,7 @@ pub async fn agent_run(
             for event in cli.read_line(&line) {
                 reported = reported || matches!(event, AgentEvent::Finished { .. });
 
-                if stream.send(event).is_err() {
+                if !sink.emit(event) {
                     break;
                 }
             }
@@ -230,7 +251,7 @@ pub async fn agent_run(
 
         let summary = complaints.lock().map(|text| clip(text.trim())).unwrap_or_default();
 
-        let _ = stream.send(AgentEvent::Finished {
+        sink.emit(AgentEvent::Finished {
             ok: status.is_some_and(|status| status.success()),
             summary,
         });
@@ -248,4 +269,99 @@ pub async fn agent_cancel(runs: tauri::State<'_, AgentRuns>, run_id: String) -> 
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use super::*;
+
+    struct ScriptedCli(&'static str);
+
+    impl AgentCli for ScriptedCli {
+        fn id(&self) -> &'static str {
+            "scripted"
+        }
+
+        fn label(&self) -> &'static str {
+            "Scripted"
+        }
+
+        fn binary(&self) -> &'static str {
+            "sh"
+        }
+
+        fn suggested_models(&self) -> Vec<String> {
+            Vec::new()
+        }
+
+        fn arguments(&self, _prompt: &str, _model: Option<&str>) -> Vec<String> {
+            vec!["-c".to_owned(), self.0.to_owned()]
+        }
+
+        fn read_line(&self, line: &str) -> Vec<AgentEvent> {
+            ClaudeCli.read_line(line)
+        }
+    }
+
+    #[derive(Default)]
+    struct Collected(Mutex<Vec<AgentEvent>>);
+
+    impl EventSink for Collected {
+        fn emit(&self, event: AgentEvent) -> bool {
+            self.0.lock().expect("the sink lock holds").push(event);
+            true
+        }
+    }
+
+    async fn drive(script: &'static str) -> Vec<AgentEvent> {
+        let sink = Arc::new(Collected::default());
+
+        let request = AgentRequest {
+            cli: "scripted".to_owned(),
+            model: None,
+            prompt: String::new(),
+            cwd: ".".to_owned(),
+        };
+
+        start(Box::new(ScriptedCli(script)), &request, AgentRuns::default(), sink.clone())
+            .await
+            .expect("the scripted CLI starts");
+
+        for _ in 0..300 {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+
+            let seen = sink.0.lock().expect("the sink lock holds");
+
+            if seen.iter().any(|event| matches!(event, AgentEvent::Finished { .. })) {
+                return seen.clone();
+            }
+        }
+
+        panic!("the run never finished");
+    }
+
+    #[tokio::test]
+    async fn a_run_reports_what_the_agent_said_and_then_its_result() {
+        let seen = drive(concat!(
+            r#"printf '%s\n' '{"type":"system","subtype":"init"}'; "#,
+            r#"printf '%s\n' '{"type":"assistant","message":{"content":[{"type":"text","text":"ok"}]}}'; "#,
+            r#"printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"result":"ok"}'"#
+        ))
+        .await;
+
+        assert!(matches!(seen.first(), Some(AgentEvent::Started { .. })));
+        assert!(seen.iter().any(|event| matches!(event, AgentEvent::Message { text } if text == "ok")));
+        assert!(matches!(seen.last(), Some(AgentEvent::Finished { ok: true, summary }) if summary == "ok"));
+    }
+
+    #[tokio::test]
+    async fn a_run_that_prints_nothing_still_finishes() {
+        let seen = drive("echo 'the CLI complained' >&2; exit 3").await;
+
+        assert!(
+            matches!(seen.last(), Some(AgentEvent::Finished { ok: false, summary }) if summary == "the CLI complained")
+        );
+    }
 }

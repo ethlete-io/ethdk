@@ -75,3 +75,34 @@ fn blocks(value: &Value) -> Vec<AgentEvent> {
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_text_block_and_a_tool_call_read_as_two_events() {
+        let line = concat!(
+            r#"{"type":"assistant","message":{"content":["#,
+            r#"{"type":"text","text":"ok"},"#,
+            r#"{"type":"tool_use","name":"Read","input":{"file_path":"/tmp/a.ts"}}]}}"#
+        );
+
+        let events = ClaudeCli.read_line(line);
+
+        assert!(matches!(&events[0], AgentEvent::Message { text } if text == "ok"));
+        assert!(matches!(&events[1], AgentEvent::Action { action, detail } if action == "Read" && detail == "/tmp/a.ts"));
+    }
+
+    #[test]
+    fn a_result_ends_the_run() {
+        let line = r#"{"type":"result","subtype":"error_during_execution","is_error":true,"result":"it broke"}"#;
+
+        assert!(matches!(&ClaudeCli.read_line(line)[0], AgentEvent::Finished { ok: false, summary } if summary == "it broke"));
+    }
+
+    #[test]
+    fn a_rate_limit_line_says_nothing() {
+        assert!(ClaudeCli.read_line(r#"{"type":"rate_limit_event","rate_limit_info":{}}"#).is_empty());
+    }
+}

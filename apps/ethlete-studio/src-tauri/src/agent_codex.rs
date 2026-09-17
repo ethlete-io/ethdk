@@ -108,3 +108,40 @@ fn changed(item: &Value) -> String {
 
     clip(&paths.join(", "))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_completed_message_reads_as_text() {
+        let line = r#"{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"ok"}}"#;
+
+        assert!(matches!(&CodexCli.read_line(line)[0], AgentEvent::Message { text } if text == "ok"));
+    }
+
+    #[test]
+    fn a_command_reads_as_an_action_when_it_starts_and_not_again_when_it_ends() {
+        let line = r#"{"type":"item.started","item":{"id":"item_1","type":"command_execution","command":"ls -la"}}"#;
+        let ended = r#"{"type":"item.completed","item":{"id":"item_1","type":"command_execution","command":"ls -la"}}"#;
+
+        assert!(matches!(&CodexCli.read_line(line)[0], AgentEvent::Action { action, detail } if action == "run" && detail == "ls -la"));
+        assert!(CodexCli.read_line(ended).is_empty());
+    }
+
+    #[test]
+    fn a_completed_turn_ends_the_run() {
+        let line = r#"{"type":"turn.completed","usage":{"input_tokens":1}}"#;
+
+        assert!(matches!(&CodexCli.read_line(line)[0], AgentEvent::Finished { ok: true, .. }));
+    }
+
+    #[test]
+    fn a_failed_turn_reports_the_reason_and_ends_the_run() {
+        let line = r#"{"type":"turn.failed","error":{"message":"it broke"}}"#;
+        let events = CodexCli.read_line(line);
+
+        assert!(matches!(&events[0], AgentEvent::Failed { message } if message == "it broke"));
+        assert!(matches!(&events[1], AgentEvent::Finished { ok: false, .. }));
+    }
+}
