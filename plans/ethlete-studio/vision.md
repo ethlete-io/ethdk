@@ -95,11 +95,43 @@ scope in check, later on the chat should move fully into studio". So the first S
 one-shot jobs and records verdicts. Build nothing that a full transcript view would have to
 tear out: the agent bridge streams turns, it does not return one finished answer.
 
+## The drawing language: no framework
+
+A drawing is a **value, not a component**. `@design-explore` exports `html` and `css`, which tag a
+template literal so Prettier formats it and an editor highlights it, and `drawing()`, which types
+the pair the frame renders. The frame injects the styles and writes the body into its root.
+
+The count that settled it. Across the 141 Angular drawings there was not one `signal()`,
+`inject()`, `effect()`, lifecycle hook or `(click)` handler, and not one import of a real
+`@ethlete` component. What they used was `@if` (118), `@for` (62), `[class.…]` (70) and
+`[style.…]` (78) over a constant fixture. Angular was charging a full compiler for a template
+engine, and its compiler is what kept breaking.
+
+What the change buys:
+
+- **Nothing compiles a template.** Vite's esbuild strips the types. A broken drawing throws a
+  JavaScript error with a real line number, not a template compile error.
+- **The CSS loses its selector prefix.** Every rule was hand-scoped with the component selector,
+  because `ViewEncapsulation.None` makes styles global. A drawing owns its whole frame, so the
+  prefix goes and the host rules move to `#root`.
+- **The barrel failure stops mattering for drawings**, because a plain drawing imports nothing
+  from the libraries.
+
+Rejected: **htmx** swaps server fragments on user events, and a drawing has neither. **Vue** is
+still a compiler and a runtime, bought for reactivity no drawing uses. **Plain HTML files** have
+no loop, so a column of eight variants becomes copy-paste and a fixture change stops reaching the
+picture. **Lit** is the same template literals plus a runtime that would go unused.
+
+Every drawing converts and Angular leaves the design server. The frame renders both shapes while
+the conversion runs, so every state of the tree works. A design-mode call that one day has to draw
+a real `et-button` can get the Angular loader back; none does today.
+
 ## Still open
 
 - **How a frame renders a component out of another project's checkout.** The barrel failure
-  (`ERR_INSUFFICIENT_RESOURCES`) that the old tool never solved. The live frame above makes
-  it urgent rather than theoretical.
+  (`ERR_INSUFFICIENT_RESOURCES`) that the old tool never solved. It no longer touches drawings,
+  which import nothing from the libraries, but a call that wants the real component library still
+  has to pre-bundle it.
 
 ## Order of work
 
