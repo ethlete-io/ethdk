@@ -21,6 +21,9 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
           class="grow rounded border border-et-surface-border px-3 py-1 text-mono"
           placeholder="The checkout the design work lives in"
         />
+        <button (click)="reload()" class="rounded border border-et-surface-border px-3 py-1" type="button">
+          Reload
+        </button>
       </div>
 
       @if (trouble(); as message) {
@@ -387,7 +390,10 @@ export class CallViewComponent {
 
           return EMPTY;
         }),
-        finalize(() => this.running.set(false)),
+        finalize(() => {
+          this.running.set(false);
+          this.reload();
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
@@ -396,6 +402,11 @@ export class CallViewComponent {
   protected stop() {
     this.run?.unsubscribe();
     this.run = null;
+  }
+
+  /** Reads the checkout again, which is how a call an agent just wrote reaches the list. */
+  protected reload() {
+    this.read();
   }
 
   private show(project: Project) {
