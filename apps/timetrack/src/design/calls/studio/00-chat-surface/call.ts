@@ -11,13 +11,14 @@ export default defineCall({
     {
       key: 'r1',
       title: 'Where it sits',
-      note: '',
+      note: 'The right rail won. Width is the cheaper dimension to give up: a frame that runs out of height has nowhere to go, and the dock took the one thing a tall drawing needs. The drawer lost for hiding what was said behind a control, and for covering the drawing it talks about the moment it opens. So the conversation keeps a column of its own beside the drawing, oldest turn at the top, the prompt box at its foot.',
     },
   ],
   options: [
     {
       key: 'a',
       round: 'r1',
+      verdict: 'chosen',
       name: 'A · The right rail',
       claim:
         'One column at the right edge holds the whole conversation, oldest at the top, and the prompt box sits at its foot. The drawing keeps the rest of the width, so what was said and what it produced stay side by side.',
@@ -27,6 +28,7 @@ export default defineCall({
     {
       key: 'b',
       round: 'r1',
+      verdict: 'rejected',
       name: 'B · The bottom dock',
       claim:
         'The conversation lies under the drawing across the full width, with the prompt box as its last row. A line of text reads at its natural measure, and the drawing keeps every pixel of width.',
@@ -36,6 +38,7 @@ export default defineCall({
     {
       key: 'c',
       round: 'r1',
+      verdict: 'rejected',
       name: 'C · The drawer',
       claim:
         'Only the prompt box and the live action stay on the screen. The conversation opens over the drawing when the reader asks for it, and closes again, so the drawing is never made smaller for words nobody is reading.',

@@ -152,8 +152,14 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    the session shows how full it is. Past 70% of 200k a "Hand off" control appears: it asks the
    full session to write its state into `handoff.md` next to the call, then drops the session, and
    the next verb tells the fresh session to read that file. Nothing happens without the user.
-4. **One chat surface.** The prompt box, the run's events and the conversation read as one thing,
-   probably a right sidebar.
+4. **One chat surface.** Drawn and decided, not yet built. The call `studio/00-chat-surface` asked
+   where the conversation lives and drew three answers: a right rail, a bottom dock, and a drawer
+   over the drawing. Tom chose **the right rail**. Width is the cheaper dimension to give up: a
+   frame that runs out of height has nowhere to go, and a drawer hides both what was said and the
+   drawing it talks about. So the prompt box, the run's actions and every earlier turn share one
+   column at the right edge, oldest turn at the top, the prompt box at its foot. Studio keeps no
+   conversation today - `events` is cleared at the start of every run - so building this needs a
+   stored history per call, beside the session id.
 5. **Studio does the boilerplate.** Asking for three more variants creates their files, so the
    agent only draws.
 6. **Tools the agent can call.** Studio ships a set, so a run spends its budget on the drawing and
