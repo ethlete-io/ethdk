@@ -28,41 +28,45 @@ const toggleOpen = (key: string) => {
   return link({ open: next.size > 0 ? [...next].join(',') : null });
 };
 
-type Band = { round: CallRound | null; options: CallOption[] };
+type Band = { key: string | null; number: number; round: CallRound | null; options: CallOption[] };
 
 /**
- * A duplicate round key draws its options in two bands, and an option that names no declared
- * round falls into the trailing unnamed band. Both look like a drawing decision, so they are
- * named on the page instead, where `check-call.mjs --call` reads them.
+ * The options are the call. A band exists because an option names it, never because `rounds`
+ * declares it, so an option added without its round entry still gets a band, a heading and a
+ * menu row - all three say the bare key until somebody writes the prose.
  */
-const problemsOf = (call: Call) => {
-  const rounds = call.rounds ?? [];
-  const keys = rounds.map((round) => round.key);
-  const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
-  const orphans = rounds.length === 0 ? [] : call.options.filter((option) => !keys.includes(option.round ?? ''));
+const bandsOf = (call: Call): Band[] => {
+  const declared = new Map((call.rounds ?? []).map((round) => [round.key, round]));
+  const bands = new Map<string, Band>();
 
-  return [
-    ...[...new Set(duplicates)].map((key) => `two rounds share the key "${key}"`),
-    ...orphans.map((option) => `option "${option.key}" names no declared round`),
-  ];
+  for (const option of call.options) {
+    const key = option.round ?? '';
+    const band = bands.get(key) ?? { key: key || null, number: 0, round: declared.get(key) ?? null, options: [] };
+    band.options.push(option);
+    bands.set(key, band);
+  }
+
+  let number = 0;
+  for (const band of bands.values()) if (band.key) band.number = ++number;
+
+  return [...bands.values()];
 };
 
-/** A call with no rounds is one unnamed band, which is what the page drew before rounds existed. */
-const bandsOf = (call: Call): Band[] => {
-  const rounds = call.rounds ?? [];
-  if (rounds.length === 0) return [{ round: null, options: call.options }];
-
-  const keys = new Set(rounds.map((round) => round.key));
-  const loose = call.options.filter((option) => !option.round || !keys.has(option.round));
+/** Prose that no option claims is stale prose, and it is the one thing the options cannot show. */
+const problemsOf = (call: Call, bands: Band[]) => {
+  const keys = (call.rounds ?? []).map((round) => round.key);
+  const drawn = new Set(bands.map((band) => band.key));
 
   return [
-    ...rounds.map((round) => ({ round, options: call.options.filter((option) => option.round === round.key) })),
-    ...(loose.length > 0 ? [{ round: null, options: loose }] : []),
+    ...[...new Set(keys.filter((key, index) => keys.indexOf(key) !== index))].map(
+      (key) => `two rounds share the key "${key}"`,
+    ),
+    ...keys.filter((key) => !drawn.has(key)).map((key) => `round "${key}" has no options`),
   ];
 };
 
 /** A call's folder path is its place in the tree, so the sidebar nests on the path segments. */
-const tree = (call: Call | null) => {
+const tree = (bands: Band[]) => {
   const groups = new Map<string, string[]>();
   for (const s of slugs) {
     const parts = s.split('/');
@@ -70,11 +74,16 @@ const tree = (call: Call | null) => {
     groups.set(group, [...(groups.get(group) ?? []), s]);
   }
 
+  const named = bands.filter((band) => band.key);
+
   const rounds = (s: string) =>
-    s !== slug || !call?.rounds?.length
+    s !== slug || named.length < 2
       ? ''
-      : `<div class="nav-rounds">${call.rounds
-          .map((round, index) => `<a href="#round-${esc(round.key)}">${index + 1} · ${esc(round.title)}</a>`)
+      : `<div class="nav-rounds">${named
+          .map(
+            (band) =>
+              `<a href="#round-${esc(band.key ?? '')}">${band.number} · ${esc(band.round?.title ?? band.key ?? '')}</a>`,
+          )
           .join('')}</div>`;
 
   return [...groups]
@@ -101,6 +110,7 @@ if (!load) {
   document.body.innerHTML = `<p class="empty">No call under callsRoot in design-explore.config.json.</p>`;
 } else {
   const call: Call = (await load()).default;
+  const bands = bandsOf(call);
   const isView = call.options.length === 1 && !call.options[0]?.claim;
 
   const column = (option: CallOption) => `
@@ -125,24 +135,24 @@ if (!load) {
       ${option.cost ? `<p class="cost">${esc(option.cost)}</p>` : ''}
     </div>`;
 
-  const band = ({ round, options }: Band, index: number) => {
+  const band = ({ key, number, round, options }: Band) => {
     const shown = options.filter((option) => !only || option.key === only);
     if (shown.length === 0) return '';
 
     const settled = shown.every((option) => option.verdict);
-    const open = !round || !settled || !!only || opened.has(round.key);
+    const open = !key || !settled || !!only || opened.has(key);
     const drawn = open ? shown : shown.filter((option) => option.verdict === 'chosen');
     const folded = open ? [] : shown.filter((option) => option.verdict !== 'chosen');
 
-    const head = !round
+    const head = !key
       ? ''
       : `<div class="round-head">
-          <span class="eyebrow">Round ${index + 1}${settled ? ' · settled' : ''}</span>
-          <h2>${esc(round.title)}</h2>
-          <p>${esc(round.note)}</p>
+          <span class="eyebrow">Round ${number}${settled ? ' · settled' : ''}</span>
+          <h2>${esc(round?.title ?? key)}</h2>
+          ${round?.note ? `<p>${esc(round.note)}</p>` : ''}
           ${
             settled
-              ? `<a class="fold" href="${toggleOpen(round.key)}">${
+              ? `<a class="fold" href="${toggleOpen(key)}">${
                   open ? `Fold ${shown.length} options away` : `Show all ${shown.length} options`
                 }</a>`
               : ''
@@ -150,7 +160,7 @@ if (!load) {
         </div>`;
 
     return `
-      <section class="round" ${round ? `id="round-${esc(round.key)}"` : ''}>
+      <section class="round" ${key ? `id="round-${esc(key)}"` : ''}>
         ${head}
         ${
           drawn.length > 0
@@ -164,7 +174,7 @@ if (!load) {
             ? `<ul class="folded">${folded
                 .map(
                   (option) =>
-                    `<li><a href="${toggleOpen(round?.key ?? '')}">${esc(option.name)}</a><span class="tag">${
+                    `<li><a href="${toggleOpen(key ?? '')}">${esc(option.name)}</a><span class="tag">${
                       option.verdict ?? 'open'
                     }</span></li>`,
                 )
@@ -175,17 +185,17 @@ if (!load) {
   };
 
   document.body.innerHTML = `
-    <nav>${tree(call)}</nav>
+    <nav>${tree(bands)}</nav>
     <main>
       <header>
         <span class="eyebrow">${esc(call.eyebrow)}</span>
         <h1>${esc(call.headline)}</h1>
         <p>${esc(call.intro)}</p>
       </header>
-      ${problemsOf(call)
+      ${problemsOf(call, bands)
         .map((problem) => `<p class="problem">design-explore: ${esc(problem)}</p>`)
         .join('')}
-      ${bandsOf(call).map(band).join('')}
+      ${bands.map(band).join('')}
     </main>`;
 }
 

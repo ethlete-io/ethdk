@@ -49,7 +49,7 @@ under the `callsRoot` of `design-explore.config.json`:
 
 ```
 calls/<group>/<slug>/
-  call.ts        the eyebrow, the headline, the intro, frameWidth, the rounds and the options
+  call.ts        the eyebrow, the headline, the intro, frameWidth, the options and the round prose
   fixture.ts     the data every option shares
   option-a.ts    one default-exported Angular component per option
   option-b.ts
@@ -59,13 +59,19 @@ calls/<group>/<slug>/
 a `claim`, a `cost`, an optional `verdict` of `chosen` or `rejected`, and a `load` that
 imports its own module. The host greys a rejected option and shows it on hover.
 
-A call that runs past about a dozen options declares `rounds`, and every option names the
-round that drew it with `round: 'r3'`. A round carries a `key`, a `title` and a `note` that
-says what came out of it, so the intro stays short and each pass reads as a reply to the one
-before. The host draws a heading per round and lists the rounds in the sidebar. A round whose
+In a call that runs past about a dozen options, every option names the pass that drew it with
+`round: 'r3'`. **That tag is the only thing that makes a round exist.** The host reads the
+options, draws one band per round in the order the options introduce them, and lists those
+same bands in the sidebar, so a new option can never leave the menu stale. A round whose
 options all carry a verdict is **settled**: the page folds it down to its winner plus one row
-per rejected option, and a link opens it again. Write the note in the same pass that sets the
-verdicts, and never before the user rules.
+per rejected option, and a link opens it again.
+
+`rounds` is prose only. Each entry gives a `key`, a `title` and a `note` saying what came out
+of that pass, which is how the intro stays short and each pass reads as a reply to the one
+before. An untagged round still draws and still gets a menu row - it says the bare key until
+somebody writes the entry. A `rounds` entry that no option names is stale prose, and the host
+and the check both report it. Write the note in the same pass that sets the verdicts, never
+before the user rules.
 
 A call with one option and no `claim` is a **view**: one reference picture, drawn full
 width with no verdict tag. Use it for a picture that answers no question.
