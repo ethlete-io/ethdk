@@ -132,3 +132,32 @@ port the config names and runs `yarn design` there if nothing answers, so the fr
 A server somebody else started is left alone and only reads as running; a server Studio started
 carries a Stop control and ends with the app. The header names the port and the state, and the
 last lines the server printed read below it while the port stays silent.
+
+## The next round Tom asked for
+
+Studio stays an Angular app. The alternative, plain HTML and JavaScript, would cost more to write
+and to change: the frames already render Angular components, the repo's lint rules, theming and
+component library apply to Studio's own surface, and an agent writing a feature here follows
+patterns it can read out of the repo instead of hand-rolled DOM code.
+
+1. **A welcome screen that selects a project.** The call list today mixes every project of a
+   checkout, and the entries have nothing to do with each other. Studio opens on a project choice
+   and the list then holds one project.
+2. **One more layer above a call.** A task ("build the calendar") holds many calls ("build the hour
+   strip", "build the item"). The call file format, the grouping and the list all need it.
+3. **A remembered agent session.** An iteration continues the conversation it came from instead of
+   starting a new one. It follows the handoff rules, so a session that grows long writes its state
+   down and a fresh one takes over, and the long-context price never applies.
+4. **One chat surface.** The prompt box, the run's events and the conversation read as one thing,
+   probably a right sidebar.
+5. **Studio does the boilerplate.** Asking for three more variants creates their files, so the
+   agent only draws.
+6. **Tools the agent can call.** Studio ships a set, so a run spends its budget on the drawing and
+   not on finding out how this repo works.
+7. **A workbench that shows every variant at once.** Switching a variant one at a time is tedious,
+   and nothing shows what the others look like. A thumbnail per variant, taken after a change
+   lands, and the controls of a variant built into its own tile. The shape to try first is a
+   security-camera dashboard: every variant visible, one of them large.
+
+Open, and Tom decides: how a thumbnail is taken and when it is stale; how much of a tile's controls
+stay visible; whether the large variant sits beside the grid or above it.
