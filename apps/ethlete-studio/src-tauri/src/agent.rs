@@ -195,12 +195,22 @@ async fn start(
             _ => StudioError::Io(error),
         })?;
 
-    let stdout = child.stdout.take().ok_or(StudioError::Rejected("The agent printed nowhere.".to_owned()))?;
-    let stderr = child.stderr.take().ok_or(StudioError::Rejected("The agent printed nowhere.".to_owned()))?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or(StudioError::Rejected("The agent printed nowhere.".to_owned()))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or(StudioError::Rejected("The agent printed nowhere.".to_owned()))?;
 
     let id = format!("run-{}", NEXT_RUN.fetch_add(1, Ordering::Relaxed));
 
-    table.0.lock().map_err(|_| StudioError::Poisoned)?.insert(id.clone(), child);
+    table
+        .0
+        .lock()
+        .map_err(|_| StudioError::Poisoned)?
+        .insert(id.clone(), child);
 
     sink.emit(AgentEvent::Started {
         cli: cli.id().to_owned(),
@@ -325,9 +335,14 @@ mod tests {
             cwd: ".".to_owned(),
         };
 
-        start(Box::new(ScriptedCli(script)), &request, AgentRuns::default(), sink.clone())
-            .await
-            .expect("the scripted CLI starts");
+        start(
+            Box::new(ScriptedCli(script)),
+            &request,
+            AgentRuns::default(),
+            sink.clone(),
+        )
+        .await
+        .expect("the scripted CLI starts");
 
         for _ in 0..300 {
             tokio::time::sleep(Duration::from_millis(10)).await;
@@ -352,7 +367,9 @@ mod tests {
         .await;
 
         assert!(matches!(seen.first(), Some(AgentEvent::Started { .. })));
-        assert!(seen.iter().any(|event| matches!(event, AgentEvent::Message { text } if text == "ok")));
+        assert!(seen
+            .iter()
+            .any(|event| matches!(event, AgentEvent::Message { text } if text == "ok")));
         assert!(matches!(seen.last(), Some(AgentEvent::Finished { ok: true, summary }) if summary == "ok"));
     }
 

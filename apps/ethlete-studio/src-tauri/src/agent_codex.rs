@@ -104,7 +104,10 @@ fn changed(item: &Value) -> String {
         return String::new();
     };
 
-    let paths: Vec<&str> = changes.iter().filter_map(|change| change.get("path").and_then(Value::as_str)).collect();
+    let paths: Vec<&str> = changes
+        .iter()
+        .filter_map(|change| change.get("path").and_then(Value::as_str))
+        .collect();
 
     clip(&paths.join(", "))
 }
@@ -125,7 +128,9 @@ mod tests {
         let line = r#"{"type":"item.started","item":{"id":"item_1","type":"command_execution","command":"ls -la"}}"#;
         let ended = r#"{"type":"item.completed","item":{"id":"item_1","type":"command_execution","command":"ls -la"}}"#;
 
-        assert!(matches!(&CodexCli.read_line(line)[0], AgentEvent::Action { action, detail } if action == "run" && detail == "ls -la"));
+        assert!(
+            matches!(&CodexCli.read_line(line)[0], AgentEvent::Action { action, detail } if action == "run" && detail == "ls -la")
+        );
         assert!(CodexCli.read_line(ended).is_empty());
     }
 
@@ -133,7 +138,10 @@ mod tests {
     fn a_completed_turn_ends_the_run() {
         let line = r#"{"type":"turn.completed","usage":{"input_tokens":1}}"#;
 
-        assert!(matches!(&CodexCli.read_line(line)[0], AgentEvent::Finished { ok: true, .. }));
+        assert!(matches!(
+            &CodexCli.read_line(line)[0],
+            AgentEvent::Finished { ok: true, .. }
+        ));
     }
 
     #[test]

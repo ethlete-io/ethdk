@@ -18,7 +18,10 @@ impl AgentCli for ClaudeCli {
     }
 
     fn suggested_models(&self) -> Vec<String> {
-        ["opus", "sonnet", "haiku", "fable"].iter().map(|name| (*name).to_owned()).collect()
+        ["opus", "sonnet", "haiku", "fable"]
+            .iter()
+            .map(|name| (*name).to_owned())
+            .collect()
     }
 
     fn arguments(&self, prompt: &str, model: Option<&str>) -> Vec<String> {
@@ -51,7 +54,11 @@ impl AgentCli for ClaudeCli {
             Some("assistant") => blocks(&value),
             Some("result") => vec![AgentEvent::Finished {
                 ok: !value.get("is_error").and_then(Value::as_bool).unwrap_or(false),
-                summary: value.get("result").and_then(Value::as_str).unwrap_or_default().to_owned(),
+                summary: value
+                    .get("result")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned(),
             }],
             _ => Vec::new(),
         }
@@ -102,18 +109,24 @@ mod tests {
         let events = ClaudeCli.read_line(line);
 
         assert!(matches!(&events[0], AgentEvent::Message { text } if text == "ok"));
-        assert!(matches!(&events[1], AgentEvent::Action { action, detail } if action == "Read" && detail == "/tmp/a.ts"));
+        assert!(
+            matches!(&events[1], AgentEvent::Action { action, detail } if action == "Read" && detail == "/tmp/a.ts")
+        );
     }
 
     #[test]
     fn a_result_ends_the_run() {
         let line = r#"{"type":"result","subtype":"error_during_execution","is_error":true,"result":"it broke"}"#;
 
-        assert!(matches!(&ClaudeCli.read_line(line)[0], AgentEvent::Finished { ok: false, summary } if summary == "it broke"));
+        assert!(
+            matches!(&ClaudeCli.read_line(line)[0], AgentEvent::Finished { ok: false, summary } if summary == "it broke")
+        );
     }
 
     #[test]
     fn a_rate_limit_line_says_nothing() {
-        assert!(ClaudeCli.read_line(r#"{"type":"rate_limit_event","rate_limit_info":{}}"#).is_empty());
+        assert!(ClaudeCli
+            .read_line(r#"{"type":"rate_limit_event","rate_limit_info":{}}"#)
+            .is_empty());
     }
 }
