@@ -14,9 +14,6 @@ const view = params.get('view') === 'sheet' ? 'sheet' : 'rounds';
 const opened = new Set((params.get('open') ?? '').split(',').filter(Boolean));
 const picked = (params.get('pick') ?? '').split(',').filter(Boolean);
 
-/** The frame geometry of the open call, read by the fit pass after the page is built. */
-let frameWidth = 0;
-
 const esc = (text: string) => text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] ?? c);
 
 const link = (next: Record<string, string | null>) => {
@@ -138,7 +135,6 @@ if (!load) {
   const result = chain.at(-1);
   const isView = call.options.length === 1 && !call.options[0]?.claim;
   const geometry = `--frame-width:${call.frameWidth}px`;
-  frameWidth = call.frameWidth;
 
   const frame = (option: CallOption) => `
     <iframe
