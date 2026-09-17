@@ -4,6 +4,8 @@ fn main() {
             "agent_cancel",
             "agent_list",
             "agent_run",
+            "design_project",
+            "design_set_verdict",
             "workspace_check",
             "workspace_diff",
             "workspace_root",

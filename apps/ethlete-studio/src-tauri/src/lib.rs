@@ -1,6 +1,7 @@
 mod agent;
 mod agent_claude;
 mod agent_codex;
+mod design;
 mod error;
 
 use std::path::PathBuf;
@@ -100,6 +101,8 @@ pub fn run() {
             agent::agent_cancel,
             agent::agent_list,
             agent::agent_run,
+            design::design_project,
+            design::design_set_verdict,
             workspace_check,
             workspace_diff,
             workspace_root,

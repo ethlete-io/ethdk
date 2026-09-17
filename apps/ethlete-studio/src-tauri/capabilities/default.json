@@ -12,6 +12,8 @@
     "allow-agent-cancel",
     "allow-agent-list",
     "allow-agent-run",
+    "allow-design-project",
+    "allow-design-set-verdict",
     "allow-workspace-check",
     "allow-workspace-diff",
     "allow-workspace-root",
