@@ -120,8 +120,11 @@ two tests in `lib.rs` read the invoke handler and check both files.
 
 Two views. `/` lists every call of a checkout, draws the selected option in a frame served by
 that checkout's design server, and writes `accept`, `reject` and `open again` back into the call
-file. `/agent` is the agent console. `design_project` reads `design-explore.config.json` from the
-checkout, so Studio needs no config of its own.
+file. The four verbs write a first draft of the prompt into an editable box under the frame, and
+`accept` and `reject` also write the verdict. The box sends through the agent bridge, and the
+run's events read beside the frame. The selected call and option are remembered in
+`localStorage`, so a reload comes back to them. `/agent` is the agent console. `design_project`
+reads `design-explore.config.json` from the checkout, so Studio needs no config of its own.
 
 Studio does not start the checkout's design server yet. The frame stays empty until `yarn design`
 runs in that checkout.

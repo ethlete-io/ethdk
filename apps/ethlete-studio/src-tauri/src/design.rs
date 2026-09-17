@@ -8,6 +8,8 @@ pub struct CallOption {
     pub name: String,
     pub round: Option<String>,
     pub verdict: Option<String>,
+    pub claim: String,
+    pub cost: String,
 }
 
 #[derive(Debug, Serialize, PartialEq)]
@@ -16,6 +18,7 @@ pub struct Call {
     pub slug: String,
     pub eyebrow: String,
     pub headline: String,
+    pub intro: String,
     pub frame_width: u32,
     pub options: Vec<CallOption>,
 }
@@ -33,8 +36,8 @@ fn config_path(checkout: &str) -> PathBuf {
     Path::new(checkout).join("design-explore.config.json")
 }
 
-/// The value of `field: '…'`, from the first line that opens it. A value written over more
-/// than one line keeps only its first line, which is enough for the fields read here.
+/// The value of `field: '…'`. A value that wraps over more than one line comes back as one
+/// line, because every reader of these fields shows them as prose.
 fn string_field(source: &str, field: &str) -> Option<String> {
     let after = source.split_once(&format!("{field}:"))?.1;
     let start = after.find('\'')?;
@@ -49,13 +52,36 @@ fn string_field(source: &str, field: &str) -> Option<String> {
         } else if character == '\\' {
             escaped = true;
         } else if character == '\'' {
-            return Some(value);
+            return Some(one_line(&value));
         } else {
             value.push(character);
         }
     }
 
     None
+}
+
+/// Whitespace that holds a line break becomes one space.
+fn one_line(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    let mut chars = value.chars().peekable();
+
+    while let Some(character) = chars.next() {
+        if !character.is_whitespace() {
+            out.push(character);
+            continue;
+        }
+
+        let mut run = String::from(character);
+
+        while chars.peek().is_some_and(|next| next.is_whitespace()) {
+            run.push(chars.next().expect("peeked"));
+        }
+
+        out.push(if run.contains('\n') { ' ' } else { character });
+    }
+
+    out
 }
 
 fn number_field(source: &str, field: &str) -> Option<u32> {
@@ -87,6 +113,8 @@ fn parse_options(source: &str) -> Vec<CallOption> {
                 name: string_field(block, "name").unwrap_or_default(),
                 round: string_field(block, "round"),
                 verdict: string_field(block, "verdict"),
+                claim: string_field(block, "claim").unwrap_or_default(),
+                cost: string_field(block, "cost").unwrap_or_default(),
             })
         })
         .collect()
@@ -97,6 +125,7 @@ fn parse_call(slug: &str, source: &str) -> Call {
         slug: slug.to_owned(),
         eyebrow: string_field(source, "eyebrow").unwrap_or_default(),
         headline: string_field(source, "headline").unwrap_or_default(),
+        intro: string_field(source, "intro").unwrap_or_default(),
         frame_width: number_field(source, "frameWidth").unwrap_or_default(),
         options: parse_options(source),
     }
@@ -291,6 +320,22 @@ export default defineCall({
         assert_eq!(call.headline, "What the clock column costs the day");
         assert_eq!(call.frame_width, 1100);
         assert_eq!(call.options.len(), 2);
+    }
+
+    #[test]
+    fn a_wrapped_intro_reads_as_one_line() {
+        let call = parse_call("kerbe/09-gutter", CALL);
+
+        assert_eq!(call.intro, "The gutter is 5rem wide.");
+    }
+
+    #[test]
+    fn an_option_carries_its_claim_and_its_cost() {
+        let options = parse_call("x", CALL).options;
+
+        assert_eq!(options[0].claim, "What the app draws today.");
+        assert_eq!(options[0].cost, "Three of the five characters never change.");
+        assert_eq!(options[1].cost, "");
     }
 
     #[test]

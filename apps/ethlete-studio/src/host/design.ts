@@ -10,6 +10,8 @@ export type CallOption = {
   name: string;
   round: string | null;
   verdict: Verdict | null;
+  claim: string;
+  cost: string;
 };
 
 /** One open question of an exploration, and every option drawn for it. */
@@ -17,6 +19,7 @@ export type Call = {
   slug: string;
   eyebrow: string;
   headline: string;
+  intro: string;
   frameWidth: number;
   options: CallOption[];
 };
