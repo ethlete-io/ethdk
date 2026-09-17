@@ -14,6 +14,12 @@ export type CallOption = {
   cost: string;
 };
 
+/**
+ * How a call is drawn. A wireframe shows the bare workflow with mocked values, and draws no logic
+ * and no interaction state. A design call draws the real thing.
+ */
+export type CallMode = 'wireframe' | 'design';
+
 /** One open question of an exploration, and every option drawn for it. */
 export type Call = {
   slug: string;
@@ -23,6 +29,8 @@ export type Call = {
   headline: string;
   intro: string;
   frameWidth: number;
+  /** The mode every variant of the call is drawn in. A call that names none is in `design`. */
+  mode: CallMode;
   /** True when a full agent session already wrote its state into the call's folder. */
   handoff: boolean;
   options: CallOption[];
@@ -70,6 +78,19 @@ export type VerdictWrite = {
 /** Writes one option's verdict into its call file. A `null` verdict opens the option again. */
 export const designSetVerdict$ = (write: VerdictWrite): Observable<void> =>
   invokeHost$<void>('design_set_verdict', write);
+
+/** Which call changes mode, and to which one. */
+export type ModeWrite = {
+  checkout: string;
+  slug: string;
+  mode: CallMode;
+};
+
+/**
+ * Writes the mode into the call file. The mode belongs to the call, so every variant of it is
+ * drawn under the same rules and the thumbnail column compares like with like.
+ */
+export const designSetMode$ = (write: ModeWrite): Observable<void> => invokeHost$<void>('design_set_mode', write);
 
 /** How many variants a call gets, and what the round they answer asks. */
 export type OptionsWrite = {

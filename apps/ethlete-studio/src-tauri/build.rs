@@ -6,6 +6,7 @@ fn main() {
             "agent_run",
             "design_project",
             "design_set_verdict",
+            "design_set_mode",
             "design_add_options",
             "design_server_start",
             "design_server_state",

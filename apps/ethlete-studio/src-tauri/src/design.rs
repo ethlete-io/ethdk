@@ -23,6 +23,8 @@ pub struct Call {
     pub headline: String,
     pub intro: String,
     pub frame_width: u32,
+    /// `wireframe` or `design`. A call that names none draws the real thing.
+    pub mode: String,
     /// Whether a full agent session already wrote its state into the call's folder.
     pub handoff: bool,
     pub options: Vec<CallOption>,
@@ -92,6 +94,19 @@ fn one_line(value: &str) -> String {
     out
 }
 
+/// The two modes a call is drawn in. `DESIGN_MODE` is what a call that names none is in, so
+/// the field is written only for the other one.
+pub const WIREFRAME_MODE: &str = "wireframe";
+pub const DESIGN_MODE: &str = "design";
+
+/// The value of a field at the call's own indent. Prose that holds the same word cannot be
+/// mistaken for it, because a field nested in a round or an option never starts at two spaces.
+fn top_field(source: &str, field: &str) -> Option<String> {
+    let at = source.find(&format!("\n  {field}: '"))?;
+
+    string_field(&source[at..], field)
+}
+
 fn number_field(source: &str, field: &str) -> Option<u32> {
     let after = source.split_once(&format!("{field}:"))?.1;
 
@@ -141,6 +156,7 @@ fn parse_call(slug: &str, source: &str) -> Call {
         headline: string_field(source, "headline").unwrap_or_default(),
         intro: string_field(source, "intro").unwrap_or_default(),
         frame_width: number_field(source, "frameWidth").unwrap_or_default(),
+        mode: top_field(source, "mode").unwrap_or_else(|| DESIGN_MODE.to_owned()),
         handoff: false,
         options: parse_options(source),
     }
@@ -321,6 +337,57 @@ pub fn design_set_verdict(
     let path = call_file(&checkout, &slug)?;
     let source = std::fs::read_to_string(&path).map_err(|error| format!("Unable to read the call: {error}"))?;
     let written = write_verdict(&source, &option, verdict.as_deref())?;
+
+    std::fs::write(&path, written).map_err(|error| format!("Unable to write the call: {error}"))
+}
+
+/// The line of the call's own `mode` field, as a range over `source`. The range starts at the
+/// line break before it, so removing it takes the whole line.
+fn mode_line(source: &str) -> Option<(usize, usize)> {
+    let start = source.find("\n  mode: '")?;
+    let end = source[start + 1..]
+        .find('\n')
+        .map(|offset| start + 1 + offset)
+        .unwrap_or(source.len());
+
+    Some((start, end))
+}
+
+/// Rewrite the call's `mode` in place. `design` removes the field, because a call that names no
+/// mode already draws the real thing, and the two must not read as different calls.
+fn write_mode(source: &str, mode: &str) -> Result<String, String> {
+    if mode != WIREFRAME_MODE && mode != DESIGN_MODE {
+        return Err(format!("{mode} is no mode."));
+    }
+
+    match (mode_line(source), mode) {
+        (Some((start, end)), DESIGN_MODE) => Ok(format!("{}{}", &source[..start], &source[end..])),
+        (Some((start, end)), _) => Ok(format!("{}\n  mode: '{mode}',{}", &source[..start], &source[end..])),
+        (None, DESIGN_MODE) => Ok(source.to_owned()),
+        (None, _) => {
+            let at = source
+                .find("\n  frameWidth:")
+                .map(|start| {
+                    source[start + 1..]
+                        .find('\n')
+                        .map(|offset| start + 1 + offset)
+                        .unwrap_or(source.len())
+                })
+                .or_else(|| source.find("defineCall({").map(|start| start + "defineCall({".len()))
+                .ok_or_else(|| "The file declares no call.".to_owned())?;
+
+            Ok(format!("{}\n  mode: '{mode}',{}", &source[..at], &source[at..]))
+        }
+    }
+}
+
+/// Writes which mode a call is drawn in. The mode belongs to the call, so every variant of it is
+/// drawn under the same rules and the thumbnail column compares like with like.
+#[tauri::command]
+pub fn design_set_mode(checkout: String, slug: String, mode: String) -> Result<(), String> {
+    let path = call_file(&checkout, &slug)?;
+    let source = std::fs::read_to_string(&path).map_err(|error| format!("Unable to read the call: {error}"))?;
+    let written = write_mode(&source, &mode)?;
 
     std::fs::write(&path, written).map_err(|error| format!("Unable to write the call: {error}"))
 }
@@ -622,6 +689,59 @@ export default defineCall({
         assert_eq!(call.headline, "What the clock column costs the day");
         assert_eq!(call.frame_width, 1100);
         assert_eq!(call.options.len(), 2);
+    }
+
+    #[test]
+    fn a_call_that_names_no_mode_draws_the_real_thing() {
+        assert_eq!(parse_call("x", CALL).mode, DESIGN_MODE);
+    }
+
+    #[test]
+    fn a_call_reads_the_mode_it_declares() {
+        let source = CALL.replace("  frameWidth: 1100,", "  frameWidth: 1100,\n  mode: 'wireframe',");
+
+        assert_eq!(parse_call("x", &source).mode, WIREFRAME_MODE);
+    }
+
+    #[test]
+    fn prose_that_holds_the_word_mode_is_not_the_mode() {
+        let source = CALL.replace("'The gutter is 5rem wide.'", "'The mode: it draws the day.'");
+
+        assert_eq!(parse_call("x", &source).mode, DESIGN_MODE);
+    }
+
+    #[test]
+    fn the_mode_is_written_under_the_frame_width() {
+        let written = write_mode(CALL, WIREFRAME_MODE).expect("written");
+
+        assert!(written.contains("  frameWidth: 1100,\n  mode: 'wireframe',\n  rounds: ["));
+        assert_eq!(parse_call("x", &written).mode, WIREFRAME_MODE);
+    }
+
+    #[test]
+    fn writing_the_mode_twice_leaves_one_field() {
+        let once = write_mode(CALL, WIREFRAME_MODE).expect("once");
+        let twice = write_mode(&once, WIREFRAME_MODE).expect("twice");
+
+        assert_eq!(twice.matches("mode:").count(), 1);
+        assert_eq!(twice, once);
+    }
+
+    #[test]
+    fn design_mode_removes_the_field_again() {
+        let wireframe = write_mode(CALL, WIREFRAME_MODE).expect("wireframe");
+
+        assert_eq!(write_mode(&wireframe, DESIGN_MODE).expect("design"), CALL);
+    }
+
+    #[test]
+    fn a_call_that_is_already_in_design_mode_is_left_alone() {
+        assert_eq!(write_mode(CALL, DESIGN_MODE).expect("design"), CALL);
+    }
+
+    #[test]
+    fn a_mode_nobody_declared_is_refused() {
+        assert!(write_mode(CALL, "sketch").is_err());
     }
 
     #[test]

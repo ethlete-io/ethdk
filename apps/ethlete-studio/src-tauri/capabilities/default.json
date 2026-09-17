@@ -15,6 +15,7 @@
     "allow-design-add-options",
     "allow-design-project",
     "allow-design-set-verdict",
+    "allow-design-set-mode",
     "allow-design-server-start",
     "allow-design-server-state",
     "allow-design-server-stop",

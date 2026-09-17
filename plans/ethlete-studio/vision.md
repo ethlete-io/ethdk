@@ -179,7 +179,9 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    temporary directory, keyed by checkout, call and variant, so Studio reads it back with
    `design_check` and the frame footer says `check passed`, `check failed` or `not checked`. The
    hard rules are a fixed section of every prompt draft: never import a package barrel, never
-   change the fixture, one component file per variant, run `check_call` after every edit.
+   change the fixture, one component file per variant, run `check_call` after every edit. The check
+   **reports** and never blocks: Accept always works, because a small visual call is worth ruling on
+   whether or not a check ran.
 7. ~~**A workbench that shows every variant at once.**~~ Done. The option tab strip is gone. A
    narrow scrolling column of thumbnails stands at the left of the stage, and the variant under
    study takes the rest of the width and the full height, because a drawing of an application is
@@ -199,9 +201,15 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    background shooter is small work. A captured picture is still worth building later, because a
    live tile costs one running copy of the drawing per variant.
 
-8. **Wireframe mode, still missing.** The decision stands from the start and nothing implements it:
-   wireframe mode ignores logic and hover states, design mode draws the real thing. A call, or the
-   workbench, says which mode it is in.
+8. ~~**Wireframe mode.**~~ Done. `call.ts` carries an optional `mode: 'wireframe'`, the host reads
+   it, and the workbench says `Mode: wireframe` or `Mode: design` under the picture and switches it
+   with one press. The mode belongs to the **call**, so every variant of it is drawn under the same
+   rules and the thumbnail column compares like with like. It changes **the agent's rules only**: a
+   wireframe prompt asks for the bare workflow, every value mocked, no logic, no hover, focus,
+   pressed or disabled state, and nothing spent on the finish. A design prompt asks for the real
+   thing. Nothing renders differently, so a variant already drawn keeps its picture when the mode
+   turns over. `design` writes no field, because a call that names no mode already draws the real
+   thing and the two must not read as different calls.
 
 9. **A workflow that creates the work itself.** Studio starts a new project, adds a task under it
    and adds a call under a task, writing the config and the files each one needs. Today every one

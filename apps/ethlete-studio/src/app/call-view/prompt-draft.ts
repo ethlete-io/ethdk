@@ -1,4 +1,4 @@
-import { AddedOptions, Call, CallOption } from '../../host/design';
+import { AddedOptions, Call, CallMode, CallOption } from '../../host/design';
 
 /** The file a full session writes its state into, next to the call it worked on. */
 export const HANDOFF_FILE = 'handoff.md';
@@ -59,6 +59,25 @@ const groundRules = [
   '- Run check_call after every edit. Never say you are done before it answers ok.',
 ];
 
+/**
+ * What the call's mode asks of the drawing. A wireframe answers whether the workflow is right, so
+ * anything that argues about the finish costs the round its answer.
+ */
+const modeRules: Record<CallMode, string[]> = {
+  wireframe: [
+    '',
+    'This call is in wireframe mode. Draw the bare workflow and nothing more:',
+    '- Mock every value. Wire up no logic, no state and no data source.',
+    '- Draw no hover, focus, pressed or disabled state.',
+    '- Spend nothing on colour, type or finish beyond what the structure needs to read.',
+  ],
+  design: [
+    '',
+    'This call is in design mode. Draw the real thing: the colour, the type, the spacing and every',
+    'interaction state the drawing needs.',
+  ],
+};
+
 /** True when Studio opens the round itself, so the verb needs the files it made. */
 export const opensARound = (verb: Verb) => verb !== 'accept';
 
@@ -81,11 +100,10 @@ export const promptDraft = ({ call, option, dir, made }: DraftSubject, verb: Ver
     `The claim: ${option.claim || '(none written)'}`,
     `The cost: ${option.cost || '(none written)'}`,
     '',
-    ...(call.handoff
-      ? [`Read ${dir}/${HANDOFF_FILE}: an earlier session of this call wrote down what it knew.`]
-      : []),
+    ...(call.handoff ? [`Read ${dir}/${HANDOFF_FILE}: an earlier session of this call wrote down what it knew.`] : []),
     task[verb],
     ...(made ? boilerplate(dir, made) : []),
+    ...modeRules[call.mode],
     ...groundRules,
   ].join('\n');
 

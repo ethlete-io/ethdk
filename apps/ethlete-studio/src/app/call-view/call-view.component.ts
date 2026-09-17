@@ -16,6 +16,7 @@ import { AgentDescriptor, AgentEvent, AgentTools, agentList$, agentRun$ } from '
 import {
   AddedOptions,
   Call,
+  CallMode,
   CallOption,
   Project,
   ServerState,
@@ -26,6 +27,7 @@ import {
   designServerStart$,
   designServerState$,
   designServerStop$,
+  designSetMode$,
   designSetVerdict$,
   frameUrl,
 } from '../../host/design';
@@ -235,6 +237,14 @@ const THUMB_ASPECT = 9 / 16;
                         <span class="text-small text-et-surface-muted">not checked</span>
                       }
                       <span class="text-et-surface-muted text-mono">{{ address() }}</span>
+                      <button
+                        (click)="switchMode(open)"
+                        class="rounded border border-et-surface-border px-2 text-small"
+                        title="The mode every variant of this call is drawn in"
+                        type="button"
+                      >
+                        Mode: {{ open.mode }}
+                      </button>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
@@ -770,6 +780,27 @@ export class CallViewComponent {
 
   protected write(option: CallOption, verdict: Verdict | null) {
     designSetVerdict$({ checkout: this.checkout(), slug: this.slug(), option: option.key, verdict })
+      .pipe(
+        switchMap(() => designProject$(this.checkout())),
+        tap((design) => this.design.set(design)),
+        catchError((error: unknown) => {
+          this.trouble.set(`${error}`);
+
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  /**
+   * Turns the call over to the other mode. Only the prompt of the next round reads it, so a
+   * variant already drawn keeps the picture it was drawn with.
+   */
+  protected switchMode(call: Call) {
+    const mode: CallMode = call.mode === 'wireframe' ? 'design' : 'wireframe';
+
+    designSetMode$({ checkout: this.checkout(), slug: call.slug, mode })
       .pipe(
         switchMap(() => designProject$(this.checkout())),
         tap((design) => this.design.set(design)),

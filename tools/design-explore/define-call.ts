@@ -30,6 +30,12 @@ export type CallRound = {
 };
 
 /**
+ * How a call is drawn. A wireframe shows the bare workflow with mocked values, and draws no
+ * logic and no interaction state. A design call draws the real thing.
+ */
+export type CallMode = 'wireframe' | 'design';
+
+/**
  * One open question of an exploration, with every option drawn at the same geometry.
  * A call with one option and no claim is a view: one reference picture, drawn full width.
  */
@@ -41,6 +47,8 @@ export type Call = {
   intro: string;
   /** The width every option frame gets, in px. The geometry the thing ships in. */
   frameWidth: number;
+  /** Left out by a call that draws the real thing, which is what `design` means. */
+  mode?: CallMode;
   /** Left out by a short call. With rounds, the intro says only what the call is about. */
   rounds?: CallRound[];
   options: CallOption[];
