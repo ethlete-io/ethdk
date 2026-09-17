@@ -50,7 +50,7 @@ under the `callsRoot` of `design-explore.config.json`:
 
 ```
 calls/<group>/<slug>/
-  call.ts        the eyebrow, the headline, the intro, frameWidth, and the options
+  call.ts        the eyebrow, the headline, the intro, frameWidth, the rounds and the options
   fixture.ts     the data every option shares
   option-a.ts    one default-exported Angular component per option
   option-b.ts
@@ -59,6 +59,14 @@ calls/<group>/<slug>/
 `call.ts` calls `defineCall` from `@design-explore`. Each option carries a `key`, a `name`,
 a `claim`, a `cost`, an optional `verdict` of `chosen` or `rejected`, and a `load` that
 imports its own module. The host greys a rejected option and shows it on hover.
+
+A call that runs past about a dozen options declares `rounds`, and every option names the
+round that drew it with `round: 'r3'`. A round carries a `key`, a `title` and a `note` that
+says what came out of it, so the intro stays short and each pass reads as a reply to the one
+before. The host draws a heading per round and lists the rounds in the sidebar. A round whose
+options all carry a verdict is **settled**: the page folds it down to its winner plus one row
+per rejected option, and a link opens it again. Write the note in the same pass that sets the
+verdicts, and never before the user rules.
 
 A call with one option and no `claim` is a **view**: one reference picture, drawn full
 width with no verdict tag. Use it for a picture that answers no question.
@@ -125,8 +133,9 @@ A call has one job per option, so it fans out. Every brief names `model: opus`.
    and the call slug. It runs the check above, fixes what it reports, and repeats until the
    check says `ok`. It may not change what an option draws, only what stops it rendering.
 3. **One write-up agent, once the user settles the call.** Give it the verdict in the
-   user's own words and the plan file. It records what won, what lost and why, and it sets
-   each option's `verdict` in `call.ts`. It runs while you open the next call.
+   user's own words and the plan file. It records what won, what lost and why, it sets each
+   option's `verdict` in `call.ts`, and it writes that round's `note`. It runs while you open
+   the next call.
 
 ## Screenshots
 

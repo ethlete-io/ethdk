@@ -12,7 +12,21 @@ export type CallOption = {
   cost?: string;
   /** Left out while the call is open. The user sets it, never the drawing. */
   verdict?: 'chosen' | 'rejected';
+  /** The `key` of the round that drew it. Left out by a call that runs no rounds. */
+  round?: string;
   load: () => Promise<{ default: Type<unknown> }>;
+};
+
+/**
+ * One pass over a call: the options drawn together, and what came out of them. A round
+ * whose options all carry a verdict is settled, and the page folds it down to its winner.
+ */
+export type CallRound = {
+  key: string;
+  /** What this pass asked, in a few words. */
+  title: string;
+  /** What it answered. Write it once the user has ruled, so the next round reads as a reply. */
+  note: string;
 };
 
 /**
@@ -25,6 +39,8 @@ export type Call = {
   intro: string;
   /** The width every option frame gets, in px. The geometry the thing ships in. */
   frameWidth: number;
+  /** Left out by a short call. With rounds, the intro says only what the call is about. */
+  rounds?: CallRound[];
   options: CallOption[];
 };
 

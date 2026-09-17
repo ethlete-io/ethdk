@@ -41,7 +41,7 @@ nav section {
   gap: 2px;
 }
 
-nav h3 {
+nav > section > h3 {
   margin: 0 0 4px 12px;
   color: var(--h-ink-3);
   font-family: ui-monospace, monospace;
@@ -69,12 +69,106 @@ nav a[aria-current] {
   color: var(--h-ink);
 }
 
+.nav-rounds {
+  display: flex;
+  flex-direction: column;
+  margin: 2px 0 6px 12px;
+  border-left: 1px solid var(--h-line);
+}
+
+.nav-rounds a {
+  padding: 5px 10px;
+  border-radius: 0 6px 6px 0;
+  font-size: 11px;
+}
+
 main {
   display: flex;
   flex-direction: column;
   gap: 56px;
   padding: 48px 56px;
   overflow-x: auto;
+}
+
+.round {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  scroll-margin-top: 24px;
+}
+
+.round-head {
+  display: flex;
+  max-width: 68ch;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 24px;
+  border-top: 1px solid var(--h-line);
+}
+
+.round-head h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 300;
+}
+
+.round-head p {
+  margin: 0;
+  color: var(--h-ink-3);
+  text-wrap: pretty;
+}
+
+.fold {
+  align-self: start;
+  margin-top: 4px;
+  color: var(--h-ink-3);
+  text-decoration: none;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+.fold::before {
+  content: '\203A\00a0';
+}
+
+.fold:hover {
+  color: var(--h-ink);
+}
+
+/* A folded option keeps its name on the page, so the thread of the round is still readable. */
+.folded {
+  display: flex;
+  max-width: 68ch;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.folded li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  opacity: 0.55;
+}
+
+.folded li:hover {
+  background: var(--h-panel);
+  opacity: 1;
+}
+
+.folded a {
+  color: var(--h-ink);
+  text-decoration: none;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 header {
@@ -130,7 +224,7 @@ header p {
 }
 
 /* A column can be wider than a line of text should be, so the text keeps its own measure. */
-h2,
+.column h3,
 .claim,
 .cost {
   max-width: var(--h-prose);
@@ -142,7 +236,7 @@ h2,
   justify-content: flex-start;
 }
 
-h2 {
+.column h3 {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -155,7 +249,7 @@ h2 {
   text-transform: uppercase;
 }
 
-h2 a {
+.column h3 a {
   color: var(--h-ink);
   text-decoration: none;
 }
@@ -195,6 +289,16 @@ iframe {
 
 .cost {
   color: var(--h-ink-3);
+}
+
+.problem {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 6px;
+  background: #1a1414;
+  color: #f0a0a0;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
 }
 
 .empty {

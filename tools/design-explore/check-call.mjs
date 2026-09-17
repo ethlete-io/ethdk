@@ -114,6 +114,9 @@ const onPage = await page
 
 if (!onPage) await fail(`NO CALL "${slug}" - the host drew no page for it. Check the folder under callsRoot.`);
 
+const problems = await page.locator('.problem').allInnerTexts();
+if (problems.length > 0) await fail(`BAD CALL ${slug}\n${problems.join('\n')}`);
+
 const keys = await page.locator('iframe[data-option]').evaluateAll((frames) => frames.map((f) => f.dataset.option));
 const checked = wanted ? keys.filter((key) => key === wanted) : keys;
 
