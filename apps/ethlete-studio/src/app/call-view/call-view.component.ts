@@ -6,7 +6,8 @@ import { AgentDescriptor, AgentEvent, agentList$, agentRun$ } from '../../host/a
 import { Call, CallOption, Project, Verdict, designProject$, designSetVerdict$, frameUrl } from '../../host/design';
 import { workspaceRoot$ } from '../../host/workspace';
 import { Verb, promptDraft, verbLabel, verdictOf } from './prompt-draft';
-import { rememberCall, rememberedCall } from './remembered';
+import { callGroups, openOptions } from './grouping';
+import { CallOrder, rememberView, rememberedView } from './remembered';
 
 @Component({
   selector: 'ethlete-call-view',
@@ -27,22 +28,62 @@ import { rememberCall, rememberedCall } from './remembered';
       }
 
       <div class="flex min-h-0 grow gap-6">
-        <ul class="w-80 shrink-0 overflow-auto rounded border border-et-surface-border">
-          @for (call of calls(); track call.slug) {
-            <li>
+        <div class="flex w-80 shrink-0 flex-col gap-2">
+          <input
+            [value]="filter()"
+            (input)="filter.set(typed($event))"
+            class="rounded border border-et-surface-border px-3 py-1"
+            placeholder="Find a call"
+          />
+
+          <div class="flex gap-2">
+            @for (choice of ORDERS; track choice.key) {
               <button
-                [class.bg-et-surface-bg]="call.slug === slug()"
-                (click)="openCall(call)"
-                class="flex w-full flex-col gap-1 border-b border-et-surface-border p-3 text-left"
+                [class.bg-et-surface-bg]="order() === choice.key"
+                (click)="setOrder(choice.key)"
+                class="grow rounded border border-et-surface-border px-3 py-1"
                 type="button"
               >
-                <span class="text-et-surface-muted">{{ call.eyebrow }}</span>
-                <span>{{ call.headline }}</span>
-                <span class="text-et-surface-muted">{{ settled(call) }} of {{ call.options.length }} settled</span>
+                {{ choice.label }}
               </button>
-            </li>
-          }
-        </ul>
+            }
+          </div>
+
+          <ul class="min-h-0 grow overflow-auto rounded border border-et-surface-border">
+            @for (group of groups(); track group.name) {
+              <li>
+                <h2
+                  class="sticky top-0 flex justify-between gap-2 border-b border-et-surface-border bg-et-surface-bg px-3 py-2 uppercase"
+                >
+                  <span>{{ group.name }}</span>
+                  <span class="text-et-surface-muted">{{ group.open }} open</span>
+                </h2>
+
+                <ul>
+                  @for (call of group.calls; track call.slug) {
+                    <li>
+                      <button
+                        [class.bg-et-surface-bg]="call.slug === slug()"
+                        [class.text-et-surface-muted]="settled(call) === call.options.length"
+                        (click)="openCall(call)"
+                        class="flex w-full flex-col gap-1 border-b border-et-surface-border p-3 text-left"
+                        type="button"
+                      >
+                        <span class="text-et-surface-muted">{{ call.eyebrow }}</span>
+                        <span>{{ call.headline }}</span>
+                        <span class="text-et-surface-muted">
+                          {{ settled(call) }} of {{ call.options.length }} settled
+                        </span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </li>
+            } @empty {
+              <li class="p-3 text-et-surface-muted">No call matches.</li>
+            }
+          </ul>
+        </div>
 
         @if (call(); as open) {
           <div class="flex min-h-0 grow flex-col gap-3">
@@ -189,7 +230,15 @@ export class CallViewComponent {
   protected events = signal<AgentEvent[]>([]);
   protected running = signal(false);
 
+  protected filter = signal('');
+  protected order = signal<CallOrder>(rememberedView().order ?? 'name');
+
   protected readonly VERBS: Verb[] = ['accept', 'iterate', 'reject', 'more'];
+
+  protected readonly ORDERS: { key: CallOrder; label: string }[] = [
+    { key: 'name', label: 'By name' },
+    { key: 'open', label: 'Open first' },
+  ];
 
   private run: Subscription | null = null;
   private project = signal<Project | null>(null);
@@ -203,6 +252,8 @@ export class CallViewComponent {
   );
 
   protected calls = computed(() => this.project()?.calls ?? []);
+
+  protected groups = computed(() => callGroups({ calls: this.calls(), term: this.filter(), order: this.order() }));
 
   protected call = computed(() => this.calls().find((call) => call.slug === this.slug()) ?? null);
 
@@ -234,7 +285,12 @@ export class CallViewComponent {
   }
 
   protected settled(call: Call) {
-    return call.options.filter((option) => option.verdict).length;
+    return call.options.length - openOptions(call);
+  }
+
+  protected setOrder(order: CallOrder) {
+    this.order.set(order);
+    rememberView({ order });
   }
 
   protected label(verb: Verb) {
@@ -253,12 +309,12 @@ export class CallViewComponent {
   protected openCall(call: Call, option = call.options[0]?.key ?? '') {
     this.slug.set(call.slug);
     this.optionKey.set(option);
-    rememberCall({ checkout: this.checkout(), slug: call.slug, option });
+    rememberView({ checkout: this.checkout(), slug: call.slug, option });
   }
 
   protected openOption(option: CallOption) {
     this.optionKey.set(option.key);
-    rememberCall({ checkout: this.checkout(), slug: this.slug(), option: option.key });
+    rememberView({ checkout: this.checkout(), slug: this.slug(), option: option.key });
   }
 
   protected pick(cli: AgentDescriptor | null) {
@@ -325,7 +381,7 @@ export class CallViewComponent {
   private show(project: Project) {
     this.project.set(project);
 
-    const last = rememberedCall();
+    const last = rememberedView();
     const wanted =
       last?.checkout === this.checkout() ? last.slug : (project.defaultCall ?? project.calls[0]?.slug ?? '');
     const call = project.calls.find((entry) => entry.slug === wanted) ?? null;
