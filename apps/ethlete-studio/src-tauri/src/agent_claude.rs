@@ -29,6 +29,9 @@ impl AgentCli for ClaudeCli {
             "stream-json".to_owned(),
             // stream-json prints nothing at all without it.
             "--verbose".to_owned(),
+            // A run without this cannot write a file, so a drawing job produces nothing.
+            "--permission-mode".to_owned(),
+            "acceptEdits".to_owned(),
         ];
 
         if let Some(model) = model {
@@ -79,6 +82,14 @@ fn blocks(value: &Value) -> Vec<AgentEvent> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_run_may_write_a_file() {
+        let arguments = ClaudeCli.arguments("draw it", None);
+        let at = arguments.iter().position(|argument| argument == "--permission-mode");
+
+        assert_eq!(at.map(|at| arguments[at + 1].as_str()), Some("acceptEdits"));
+    }
 
     #[test]
     fn a_text_block_and_a_tool_call_read_as_two_events() {
