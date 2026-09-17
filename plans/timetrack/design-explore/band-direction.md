@@ -333,6 +333,30 @@ One defect was found by drawing r1 and is fixed in every r2 and r3 frame: `.head
 `text-transform: uppercase`, which ran over the time as well, so r1 drew `7H 45M` while the title
 bar drew `7h 15m`. A clock is not a tag.
 
+## Call 9: what the clock column costs the day
+
+Decided 2026-09-17, from `kerbe/09-gutter`. One round, four options. Call 7 settled what the axis
+marks and left the gutter at 5rem with `08:00` in mono; neither number was ever designed. The
+width and the label are one answer, because the label is what the width allows.
+
+**B, a 3.4rem gutter and the bare hour, wins.** The label drops the `:00` and keeps two digits,
+right-aligned, at 1.05rem in `--k-ink-3`, which is how it is set today. The day gets 1.6rem of
+every screen back.
+
+- **A, 5rem and `08:00`** — rejected. What the app draws today. Three of the five characters never
+  change, because every label sits on an hour.
+- **C, 2.6rem and no leading zero** — rejected. `8` and `13` leave the column ragged on both edges,
+  and at 2.6rem the two-digit hours overhang their box by 2px. 2.8rem would seat them, but the
+  ragged edge is the reason and not the two pixels.
+- **D, 6.4rem and the label at 1.3rem in `--k-ink-2`** — rejected. It tested whether the scale
+  should be easy to read. It made the quietest part of the frame the largest text outside the title
+  bar, over a field every call since 5 has kept quiet.
+
+Drawing it found one thing a shipped change has to carry: the gutter width is not three CSS rules
+but nine. Besides the gutter itself, the hour label and the quarter tick, it sets where the field
+starts for the break block, its hatch, its edges, its sign, the now marker and the lane grid. The
+shell binds one `--k-gutter` custom property and reads it in all six of the rest.
+
 ## Cut: the all-day story strip
 
 Decided 2026-09-17 by the user: _"i think its bloat for this specific view."_ The strip is not a
@@ -375,9 +399,7 @@ below is a rework and not a fix. Take one at a time, in the order the user asks 
 - **Whether a break still shortens when work lands in it.** A break is derived from a gap, so
   an event inside the gap arguably ends the break at that minute. That is a data question, not
   a drawing one, and call 5 draws only the picture. Raised 2026-09-17.
-- **The gutter width, and the hour labels themselves.** Call 7 settled what the axis marks and
-  left both at what the app has today: a 5rem gutter, and `08:00` in mono at 1.05rem in
-  `--k-ink-3`. Raised 2026-09-17.
+- ~~The gutter width, and the hour labels themselves.~~ **Decided 2026-09-17.** See call 9.
 - ~~The all-day story strip above the axis.~~ **Cut, 2026-09-17.** See below.
 - **The window chrome**: the title bar, the date, the day total.
 
