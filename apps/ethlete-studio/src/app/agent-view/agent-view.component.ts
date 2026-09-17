@@ -11,7 +11,7 @@ import { workspaceRoot$ } from '../../host/workspace';
       <h1 class="text-h2">Agent bridge</h1>
 
       @if (clis().length === 0) {
-        <p class="text-et-surface-muted">No agent CLI answered on this machine.</p>
+        <p class="text-et-surface-muted">No agent CLI answered on this machine. {{ trouble() }}</p>
       } @else {
         <div class="flex flex-wrap items-center gap-2">
           @for (found of clis(); track found.id) {
@@ -105,10 +105,30 @@ import { workspaceRoot$ } from '../../host/workspace';
   encapsulation: ViewEncapsulation.None,
 })
 export class AgentViewComponent {
-
   private destroyRef = inject(DestroyRef);
-  protected clis = toSignal(agentList$().pipe(catchError(() => of<AgentDescriptor[]>([]))), { initialValue: [] });
-  public root = toSignal(workspaceRoot$().pipe(catchError(() => of(''))), { initialValue: '' });
+  protected trouble = signal('');
+
+  protected clis = toSignal(
+    agentList$().pipe(
+      catchError((error: unknown) => {
+        this.trouble.set(String(error));
+
+        return of<AgentDescriptor[]>([]);
+      }),
+    ),
+    { initialValue: [] },
+  );
+
+  public root = toSignal(
+    workspaceRoot$().pipe(
+      catchError((error: unknown) => {
+        this.trouble.set(String(error));
+
+        return of('');
+      }),
+    ),
+    { initialValue: '' },
+  );
 
   protected cli = signal<AgentDescriptor | null>(null);
   protected model = signal('');

@@ -67,9 +67,32 @@ fn workspace_diff() -> String {
     }
 }
 
-pub fn run() {
-    // A desktop launcher starts the app with a trimmed PATH, and then no agent CLI is found at all.
+/// A desktop launcher starts the app with a trimmed PATH, and then no agent CLI is found at all.
+/// `fix_path_env` reads the login shell's PATH, but it *replaces* PATH with whatever that shell
+/// printed - and a shell that also prints a clear-screen escape leaves PATH empty, so not even git
+/// is reachable. Widen instead: what the shell adds goes in front, what the launcher gave stays.
+fn widen_path() {
+    let inherited = std::env::var("PATH").unwrap_or_default();
+
     let _ = fix_path_env::fix();
+
+    let mut widened: Vec<String> = Vec::new();
+
+    for entry in std::env::var("PATH").unwrap_or_default().split(':').chain(inherited.split(':')) {
+        let entry = entry.trim();
+
+        if entry.is_empty() || widened.iter().any(|seen| seen == entry) {
+            continue;
+        }
+
+        widened.push(entry.to_owned());
+    }
+
+    std::env::set_var("PATH", widened.join(":"));
+}
+
+pub fn run() {
+    widen_path();
 
     tauri::Builder::default()
         .manage(agent::AgentRuns::default())
