@@ -300,6 +300,39 @@ is read across the day.
 The gutter stayed 5rem in all four frames. **How wide the gutter should be is still open**, and
 so are the hour labels themselves; this call changed neither.
 
+## Call 8: what a lane header carries
+
+Decided 2026-09-17, from `kerbe/08-lane-headers`. Three rounds and ten options. A lane is one
+checkout, and its header named it and nothing else, so nothing on screen said where the day went.
+This is the first call drawn without the story strip.
+
+**The answer is B with I's ink.** The header carries the checkout name and the lane's total on one
+row, in the mono it already uses, at one size. The name takes `--k-ink` and the total
+`--k-ink-3`, so the column says what it is first and the number waits to be looked for.
+
+**r1, what the header carries. B wins.** The lane total is the one fact the column below cannot
+show, and it is text in the frame, so it claims nothing about any minute. It is the honest form
+of what the cut story strip was reaching for.
+
+- **A, the name alone** — rejected. What the app draws today. The reader adds the bands in a
+  column by eye, or reads the day total and cannot break it down.
+- **C, the total and a brass bar for the share** — rejected. Brass says a band asks the reader for
+  something. A brass bar sized by a lane's share makes the same metal mean size.
+- **D, the count of what still asks** — rejected. The column below already says this in metal, so
+  the header repeats what the reader can see, and it says nothing once a lane is answered.
+
+**r2, which of the two leads. All three rejected**, in the user's words: _"i think we should do
+this only using font color."_ E made the total 1.5rem, F made the name 1.2rem, G stacked them on
+two rows. Size and row count are not available; the hierarchy comes from the ink alone.
+
+**r3, the same row and only the ink. I wins.** H put `--k-ink` on the total, which made four
+numbers the loudest row on screen, above a field this exploration keeps quiet throughout. J
+lifted the total one step to `--k-ink-2`, which does not separate the two at 1.05rem mono.
+
+One defect was found by drawing r1 and is fixed in every r2 and r3 frame: `.head-lane` sets
+`text-transform: uppercase`, which ran over the time as well, so r1 drew `7H 45M` while the title
+bar drew `7h 15m`. A clock is not a tag.
+
 ## Cut: the all-day story strip
 
 Decided 2026-09-17 by the user: _"i think its bloat for this specific view."_ The strip is not a
@@ -345,7 +378,6 @@ below is a rework and not a fix. Take one at a time, in the order the user asks 
 - **The gutter width, and the hour labels themselves.** Call 7 settled what the axis marks and
   left both at what the app has today: a 5rem gutter, and `08:00` in mono at 1.05rem in
   `--k-ink-3`. Raised 2026-09-17.
-- **The lane headers** across the top - the category columns.
 - ~~The all-day story strip above the axis.~~ **Cut, 2026-09-17.** See below.
 - **The window chrome**: the title bar, the date, the day total.
 
@@ -390,6 +422,7 @@ answers no question.
 | `kerbe/05-break-not-empty`                      | a break that is not empty, B chosen         |
 | `kerbe/06-break-label`                          | how a break says it is a break, W chosen    |
 | `kerbe/07-hour-axis`                            | what the axis marks, B chosen               |
+| `kerbe/08-lane-headers`                         | what a lane header carries, B with I's ink  |
 | `kerbe/ref-full-day`                            | the whole day at 1100x760                   |
 | `kerbe/ref-band-states`                         | the six states under the pointer            |
 | `timeline/ref-states`, `timeline/ref-durations` | the block sketch the band replaced          |
