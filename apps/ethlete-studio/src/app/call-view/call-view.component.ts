@@ -121,12 +121,17 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
               </div>
 
               <div class="flex min-h-0 grow gap-3 overflow-auto">
-                <iframe
-                  [src]="source()"
-                  [style.width.px]="open.frameWidth"
-                  class="min-h-0 shrink-0 rounded border border-et-surface-border bg-et-surface-bg"
-                  title="The drawn option"
-                ></iframe>
+                <div [style.width.px]="open.frameWidth" class="relative min-h-0 shrink-0">
+                  @for (frame of frames(); track frame.key) {
+                    <iframe
+                      [src]="frame.source"
+                      [class.opacity-0]="frame.key !== optionKey()"
+                      [class.pointer-events-none]="frame.key !== optionKey()"
+                      class="absolute inset-0 h-full w-full rounded border border-et-surface-border bg-et-surface-bg transition-opacity"
+                      title="The drawn option"
+                    ></iframe>
+                  }
+                </div>
 
                 @if (events().length) {
                   <ul
@@ -266,7 +271,22 @@ export class CallViewComponent {
     return port && option ? frameUrl({ port, slug: this.slug(), option: option.key }) : '';
   });
 
-  protected source = computed(() => this.sanitizer.bypassSecurityTrustResourceUrl(this.address()));
+  /**
+   * One frame per option of the open call, all of them loaded. Switching an option changes which
+   * one is opaque, so a drawing never reloads. The list changes only with the call itself, which is
+   * what keeps each `src` stable across a redraw.
+   */
+  protected frames = computed(() => {
+    const call = this.call();
+    const port = this.project()?.port;
+
+    if (!call || !port) return [];
+
+    return call.options.map((option) => ({
+      key: option.key,
+      source: this.sanitizer.bypassSecurityTrustResourceUrl(frameUrl({ port, slug: call.slug, option: option.key })),
+    }));
+  });
 
   private callDir = computed(() => {
     const root = this.project()?.callsRoot;
