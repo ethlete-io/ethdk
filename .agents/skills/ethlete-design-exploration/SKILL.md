@@ -66,6 +66,11 @@ same bands in the sidebar, so a new option can never leave the menu stale. A rou
 options all carry a verdict is **settled**: the page folds it down to its winner plus one row
 per rejected option, and a link opens it again.
 
+A call whose rounds have all ruled is **resolved**. Its winners usually form a chain, each one
+the last plus a change, so the page stops drawing them: it leads with a **Result** band holding
+the final winner, and prints the chain as a row of keys above it. Every round below folds to
+rows. A key in the chain opens the round that drew it.
+
 `rounds` is prose only. Each entry gives a `key`, a `title` and a `note` saying what came out
 of that pass, which is how the intro stays short and each pass reads as a reply to the one
 before. An untagged round still draws and still gets a menu row - it says the bare key until
@@ -75,6 +80,16 @@ before the user rules.
 
 A call with one option and no `claim` is a **view**: one reference picture, drawn full
 width with no verdict tag. Use it for a picture that answers no question.
+
+Two views, and a way to compare:
+
+- **rounds** is the default. Round headings, the result band, and the folding above.
+- **all N** is a contact sheet: every option in the call at about a third size, in one grid, so
+  a call of two dozen fits on a screen or two. Use it to find the options worth a close look.
+- Clicking an option's name anywhere - a heading, a folded row, a thumbnail - puts it in the
+  **compare tray** at the top of the page. The tray draws its picks side by side and scales them
+  down together until they fit, so the picks keep one geometry and one size. The picks live in
+  the URL under `pick`, so a comparison is a link you can send.
 
 Three constraints the tool puts on an option file:
 

@@ -2,13 +2,20 @@ import type { Call, CallOption, CallRound } from '@design-explore';
 import { calls, defaultCall } from 'virtual:design-explore';
 import './host.css';
 
+/** The contact sheet draws about five 1100px frames per screen at this scale. */
+const SHEET_SCALE = 0.32;
+
 const params = new URLSearchParams(location.search);
 const slugs = Object.keys(calls);
 const asked = params.get('call') ?? '';
 const landing = defaultCall && slugs.includes(defaultCall) ? defaultCall : (slugs.at(-1) ?? '');
 const slug = slugs.includes(asked) ? asked : landing;
-const only = params.get('only');
+const view = params.get('view') === 'sheet' ? 'sheet' : 'rounds';
 const opened = new Set((params.get('open') ?? '').split(',').filter(Boolean));
+const picked = (params.get('pick') ?? '').split(',').filter(Boolean);
+
+/** The frame geometry of the open call, read by the fit pass after the page is built. */
+let frameWidth = 0;
 
 const esc = (text: string) => text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] ?? c);
 
@@ -21,12 +28,13 @@ const link = (next: Record<string, string | null>) => {
   return `?${url}`;
 };
 
-const toggleOpen = (key: string) => {
-  const next = new Set(opened);
-  if (next.has(key)) next.delete(key);
-  else next.add(key);
-  return link({ open: next.size > 0 ? [...next].join(',') : null });
+const listLink = (name: string, list: string[], key: string) => {
+  const next = list.includes(key) ? list.filter((entry) => entry !== key) : [...list, key];
+  return link({ [name]: next.length > 0 ? next.join(',') : null });
 };
+
+const toggleOpen = (key: string) => listLink('open', [...opened], key);
+const togglePick = (key: string) => listLink('pick', picked, key);
 
 type Band = { key: string | null; number: number; round: CallRound | null; options: CallOption[] };
 
@@ -65,6 +73,21 @@ const problemsOf = (call: Call, bands: Band[]) => {
   ];
 };
 
+/**
+ * A call is resolved once every round has ruled and at least one round has a winner. Its rounds
+ * then draw nothing, because each winner is the one before it plus a change, so the last of them
+ * already holds all the others.
+ */
+const chainOf = (bands: Band[]) => {
+  const named = bands.filter((band) => band.key);
+  const ruled = named.length > 1 && named.every((band) => band.options.every((option) => option.verdict));
+  const chain = named
+    .map((band) => band.options.find((option) => option.verdict === 'chosen'))
+    .filter((option): option is CallOption => !!option);
+
+  return ruled && chain.length > 0 ? chain : [];
+};
+
 /** A call's folder path is its place in the tree, so the sidebar nests on the path segments. */
 const tree = (bands: Band[]) => {
   const groups = new Map<string, string[]>();
@@ -77,7 +100,7 @@ const tree = (bands: Band[]) => {
   const named = bands.filter((band) => band.key);
 
   const rounds = (s: string) =>
-    s !== slug || named.length < 2
+    s !== slug || view === 'sheet' || named.length < 2
       ? ''
       : `<div class="nav-rounds">${named
           .map(
@@ -94,7 +117,7 @@ const tree = (bands: Band[]) => {
         ${members
           .map(
             (s) =>
-              `<a href="${link({ call: s, only: null, open: null })}" ${s === slug ? 'aria-current="page"' : ''}>${esc(
+              `<a href="${link({ call: s, open: null, pick: null })}" ${s === slug ? 'aria-current="page"' : ''}>${esc(
                 s.split('/').at(-1) ?? s,
               )}</a>${rounds(s)}`,
           )
@@ -111,38 +134,59 @@ if (!load) {
 } else {
   const call: Call = (await load()).default;
   const bands = bandsOf(call);
+  const chain = chainOf(bands);
+  const result = chain.at(-1);
   const isView = call.options.length === 1 && !call.options[0]?.claim;
+  const geometry = `--frame-width:${call.frameWidth}px`;
+  frameWidth = call.frameWidth;
+
+  const frame = (option: CallOption) => `
+    <iframe
+      src="frame.html?call=${encodeURIComponent(slug)}&option=${encodeURIComponent(option.key)}"
+      data-option="${esc(option.key)}"
+      title="${esc(option.name)}"
+      style="width:${call.frameWidth}px"
+    ></iframe>`;
 
   const column = (option: CallOption) => `
-    <div class="column" data-verdict="${option.verdict ?? 'open'}">
+    <div class="column" data-verdict="${option.verdict ?? 'open'}" ${picked.includes(option.key) ? 'data-picked' : ''}>
       ${
         isView
           ? ''
           : `<h3>
-        <a href="${link({ only: only === option.key ? null : option.key })}">${esc(option.name)}</a>
+        <a href="${togglePick(option.key)}">${esc(option.name)}</a>
         <span class="tag">${option.verdict ?? 'open'}</span>
       </h3>`
       }
-      <div class="stage">
-        <iframe
-          src="frame.html?call=${encodeURIComponent(slug)}&option=${encodeURIComponent(option.key)}"
-          data-option="${esc(option.key)}"
-          title="${esc(option.name)}"
-          style="width:${call.frameWidth}px"
-        ></iframe>
-      </div>
+      <div class="stage">${frame(option)}</div>
       ${option.claim ? `<p class="claim">${esc(option.claim)}</p>` : ''}
       ${option.cost ? `<p class="cost">${esc(option.cost)}</p>` : ''}
     </div>`;
 
-  const band = ({ key, number, round, options }: Band) => {
-    const shown = options.filter((option) => !only || option.key === only);
-    if (shown.length === 0) return '';
+  const grid = (options: CallOption[], fit = false) =>
+    options.length === 0
+      ? ''
+      : `<div class="grid" style="${geometry}${fit ? `;--de-count:${options.length}` : ''}" ${
+          isView ? 'data-view' : ''
+        } ${fit ? 'data-fit' : ''}>${options.map(column).join('')}</div>`;
 
-    const settled = shown.every((option) => option.verdict);
-    const open = !key || !settled || !!only || opened.has(key);
-    const drawn = open ? shown : shown.filter((option) => option.verdict === 'chosen');
-    const folded = open ? [] : shown.filter((option) => option.verdict !== 'chosen');
+  const rows = (options: CallOption[]) =>
+    options.length === 0
+      ? ''
+      : `<ul class="folded">${options
+          .map(
+            (option) =>
+              `<li data-verdict="${option.verdict ?? 'open'}"><a href="${togglePick(option.key)}">${esc(
+                option.name,
+              )}</a><span class="tag">${option.verdict ?? 'open'}</span></li>`,
+          )
+          .join('')}</ul>`;
+
+  const band = ({ key, number, round, options }: Band) => {
+    const settled = options.every((option) => option.verdict);
+    const open = !key || !settled || opened.has(key);
+    const drawn = open ? options : chain.length > 0 ? [] : options.filter((option) => option.verdict === 'chosen');
+    const folded = options.filter((option) => !drawn.includes(option));
 
     const head = !key
       ? ''
@@ -153,7 +197,7 @@ if (!load) {
           ${
             settled
               ? `<a class="fold" href="${toggleOpen(key)}">${
-                  open ? `Fold ${shown.length} options away` : `Show all ${shown.length} options`
+                  open ? `Fold ${options.length} options away` : `Show all ${options.length} options`
                 }</a>`
               : ''
           }
@@ -162,27 +206,82 @@ if (!load) {
     return `
       <section class="round" ${key ? `id="round-${esc(key)}"` : ''}>
         ${head}
-        ${
-          drawn.length > 0
-            ? `<div class="grid" style="--frame-width:${call.frameWidth}px" ${isView ? 'data-view' : ''}>${drawn
-                .map(column)
-                .join('')}</div>`
-            : ''
-        }
-        ${
-          folded.length > 0
-            ? `<ul class="folded">${folded
-                .map(
-                  (option) =>
-                    `<li><a href="${toggleOpen(key ?? '')}">${esc(option.name)}</a><span class="tag">${
-                      option.verdict ?? 'open'
-                    }</span></li>`,
-                )
-                .join('')}</ul>`
-            : ''
-        }
+        ${grid(drawn)}
+        ${rows(folded)}
       </section>`;
   };
+
+  /** Each step is the one before it plus a change, so the arrow is the order they were drawn in. */
+  const trail = () =>
+    chain
+      .map((option) => {
+        const band = bands.find((entry) => entry.options.includes(option));
+        const target = band?.key ? `${toggleOpen(band.key)}#round-${band.key}` : togglePick(option.key);
+        return `<a href="${esc(target)}" ${option === result ? 'aria-current="step"' : ''}>${esc(
+          option.key.toUpperCase(),
+        )}</a>`;
+      })
+      .join('<span class="arrow">→</span>');
+
+  const resultBand = () =>
+    !result
+      ? ''
+      : `<section class="round result">
+          <div class="round-head">
+            <span class="eyebrow">Result</span>
+            <h2>${esc(result.name)}</h2>
+            ${result.claim ? `<p>${esc(result.claim)}</p>` : ''}
+            <div class="trail">${trail()}</div>
+          </div>
+          <div class="grid" style="${geometry}">
+            <div class="column" data-verdict="chosen">
+              <div class="stage">${frame(result)}</div>
+              ${result.cost ? `<p class="cost">${esc(result.cost)}</p>` : ''}
+            </div>
+          </div>
+        </section>`;
+
+  const tray = () => {
+    const options = picked
+      .map((key) => call.options.find((option) => option.key === key))
+      .filter((option): option is CallOption => !!option);
+    if (options.length === 0) return '';
+
+    return `
+      <section class="round tray">
+        <div class="round-head">
+          <span class="eyebrow">Compare · ${options.length}</span>
+          <h2>${options.map((option) => esc(option.key.toUpperCase())).join(' · ')}</h2>
+          <a class="fold" href="${link({ pick: null })}">Clear the comparison</a>
+        </div>
+        ${grid(options, true)}
+      </section>`;
+  };
+
+  const sheet = () => `
+    <div class="grid sheet" style="${geometry};--de-scale:${SHEET_SCALE}">
+      ${call.options
+        .map(
+          (option) => `
+        <a class="thumb" href="${togglePick(option.key)}" data-verdict="${option.verdict ?? 'open'}" ${
+          picked.includes(option.key) ? 'data-picked' : ''
+        }>
+          <div class="thumb-frame">${frame(option)}</div>
+          <span class="thumb-name">${esc(option.name)}</span>
+        </a>`,
+        )
+        .join('')}
+    </div>`;
+
+  const views = () =>
+    isView
+      ? ''
+      : `<div class="views">
+          <a href="${link({ view: null })}" ${view === 'rounds' ? 'aria-current="page"' : ''}>rounds</a>
+          <a href="${link({ view: 'sheet' })}" ${view === 'sheet' ? 'aria-current="page"' : ''}>all ${
+            call.options.length
+          }</a>
+        </div>`;
 
   document.body.innerHTML = `
     <nav>${tree(bands)}</nav>
@@ -191,11 +290,13 @@ if (!load) {
         <span class="eyebrow">${esc(call.eyebrow)}</span>
         <h1>${esc(call.headline)}</h1>
         <p>${esc(call.intro)}</p>
+        ${views()}
       </header>
       ${problemsOf(call, bands)
         .map((problem) => `<p class="problem">design-explore: ${esc(problem)}</p>`)
         .join('')}
-      ${bands.map(band).join('')}
+      ${tray()}
+      ${view === 'sheet' ? sheet() : `${resultBand()}${bands.map(band).join('')}`}
     </main>`;
 }
 
@@ -204,7 +305,7 @@ if (!load) {
  * load. The scroll is put back on every one of those reports, until the reader scrolls or the
  * frames go quiet, because a single restore lands on a page that is still the wrong height.
  */
-const scrollKey = `design-explore:scroll:${slug}`;
+const scrollKey = `design-explore:scroll:${slug}:${view}`;
 
 history.scrollRestoration = 'manual';
 
@@ -233,11 +334,40 @@ addEventListener(
   { passive: true },
 );
 
+/** A frame is never re-laid out to fit, because its width is the geometry under test. It is scaled. */
+const GAP = 40;
+
+const heights = new Map<string, number>();
+
+const fit = () => {
+  const tray = document.querySelector<HTMLElement>('.grid[data-fit]');
+  if (tray && frameWidth > 0) {
+    const count = tray.childElementCount;
+    const room = tray.clientWidth - GAP * (count - 1);
+    tray.style.setProperty('--de-scale', String(Math.min(1, room / (count * frameWidth))));
+  }
+
+  /** A picked option is drawn in the tray as well as in its own place, so every copy is sized. */
+  for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe[data-option]')) {
+    const height = heights.get(frame.dataset.option ?? '');
+    if (!height) continue;
+
+    frame.style.height = `${height}px`;
+
+    const scale = Number(getComputedStyle(frame).getPropertyValue('--de-scale')) || 1;
+    const box = frame.parentElement;
+    if (box && scale < 1) box.style.height = `${Math.ceil(height * scale)}px`;
+  }
+};
+
+addEventListener('resize', fit);
+
 addEventListener('message', (event) => {
   const data = event.data as { type?: string; option?: string; height?: number };
-  if (data?.type !== 'design-explore:height') return;
+  if (data?.type !== 'design-explore:height' || !data.height || !data.option) return;
 
-  const frame = document.querySelector<HTMLIFrameElement>(`iframe[data-option="${data.option}"]`);
-  if (frame && data.height) frame.style.height = `${data.height}px`;
+  heights.set(data.option, data.height);
+  fit();
+
   if (restoring) scrollTo(0, target);
 });

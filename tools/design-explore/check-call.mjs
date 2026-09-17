@@ -101,7 +101,8 @@ const fail = async (message) => {
   process.exit(1);
 };
 
-await page.goto(`${BASE}/?call=${encodeURIComponent(slug)}`, { waitUntil: 'domcontentloaded' });
+/** The rounds view folds a settled round away, so only the contact sheet holds every option. */
+await page.goto(`${BASE}/?call=${encodeURIComponent(slug)}&view=sheet`, { waitUntil: 'domcontentloaded' });
 
 const onPage = await page
   .locator('nav a[aria-current]')

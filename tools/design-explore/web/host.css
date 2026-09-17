@@ -118,6 +118,73 @@ main {
   text-wrap: pretty;
 }
 
+.views {
+  display: flex;
+  margin-top: 4px;
+  gap: 2px;
+}
+
+.views a {
+  padding: 5px 12px;
+  border: 1px solid var(--h-line);
+  color: var(--h-ink-3);
+  text-decoration: none;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.views a:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.views a:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.views a[aria-current] {
+  background: var(--h-panel);
+  color: var(--h-ink);
+}
+
+/* The result is the end of the chain, so the chain itself sits under it as a line of keys. */
+.trail {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+  gap: 8px;
+}
+
+.trail a {
+  padding: 4px 9px;
+  border: 1px solid var(--h-line);
+  border-radius: 5px;
+  color: var(--h-ink-3);
+  text-decoration: none;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+.trail a:hover {
+  color: var(--h-ink);
+}
+
+.trail a[aria-current] {
+  border-color: #7fd4bf;
+  color: #7fd4bf;
+}
+
+.arrow {
+  color: var(--h-line);
+  font-size: 12px;
+}
+
+.result .round-head,
+.tray .round-head {
+  border-top-color: var(--h-ink-3);
+}
+
 .fold {
   align-self: start;
   margin-top: 4px;
@@ -155,6 +222,10 @@ main {
   padding: 7px 10px;
   border-radius: 6px;
   opacity: 0.55;
+}
+
+.folded li[data-verdict='chosen'] .tag {
+  color: #7fd4bf;
 }
 
 .folded li:hover {
@@ -252,6 +323,78 @@ header p {
 .column h3 a {
   color: var(--h-ink);
   text-decoration: none;
+}
+
+/* Two 1100px frames never fit a screen, so the tray scales its frames instead of re-flowing them. */
+.grid[data-fit] {
+  grid-template-columns: repeat(var(--de-count), minmax(0, 1fr));
+}
+
+.grid[data-fit] .stage {
+  overflow: hidden;
+  padding: 0;
+}
+
+.grid[data-fit] iframe,
+.grid.sheet iframe {
+  display: block;
+  transform: scale(var(--de-scale, 1));
+  transform-origin: top left;
+}
+
+/* The contact sheet draws every option at once, so one screen holds the whole call. */
+.grid.sheet {
+  --thumb-width: calc(var(--frame-width) * var(--de-scale));
+
+  grid-template-columns: repeat(auto-fill, minmax(var(--thumb-width), max-content));
+  gap: 28px 20px;
+}
+
+.thumb {
+  display: flex;
+  width: var(--thumb-width);
+  flex-direction: column;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.thumb-frame {
+  overflow: hidden;
+  width: 100%;
+  border: 1px solid var(--h-line);
+  border-radius: 4px;
+}
+
+/* A thumbnail is read, never driven, and a click on it belongs to the link around it. */
+.thumb-frame iframe {
+  pointer-events: none;
+}
+
+.thumb-name {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.thumb[data-verdict='rejected'] {
+  opacity: 0.45;
+  transition: opacity 0.15s;
+}
+
+.thumb:hover {
+  opacity: 1;
+}
+
+.thumb[data-verdict='chosen'] .thumb-name {
+  color: #7fd4bf;
+}
+
+.thumb[data-picked] .thumb-frame,
+.column[data-picked] .stage {
+  outline: 1px solid #7fd4bf;
+  outline-offset: 4px;
 }
 
 /* A rejected option stays readable, and comes back to full strength under the pointer. */
