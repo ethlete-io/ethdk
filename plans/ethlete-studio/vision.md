@@ -163,5 +163,10 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    wireframe mode ignores logic and hover states, design mode draws the real thing. A call, or the
    workbench, says which mode it is in.
 
-Open, and Tom decides: how a thumbnail is taken and when it is stale; how much of a tile's controls
+9. **A workflow that creates the work itself.** Studio starts a new project, adds a task under it
+   and adds a call under a task, writing the config and the files each one needs. Today every one
+   of those is hand-written in an editor. The naming is open: today a drawing is an option inside a
+   call, and the new layer above is called a task here only to have a word for it.
+
+Open, and Tom decides: what the three layers are called; how a thumbnail is taken and when it is stale; how much of a tile's controls
 stay visible; whether the large variant sits beside the grid or above it.
