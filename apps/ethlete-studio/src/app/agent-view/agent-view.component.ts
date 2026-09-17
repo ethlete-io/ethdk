@@ -160,7 +160,7 @@ export class AgentViewComponent {
     this.events.set([]);
     this.running.set(true);
 
-    this.run = agentRun$({ cli: cli.id, model: this.model() || null, prompt: this.prompt(), cwd })
+    this.run = agentRun$({ cli: cli.id, model: this.model() || null, prompt: this.prompt(), cwd, resume: null })
       .pipe(
         tap((event) => this.record(event)),
         catchError((error: unknown) => {

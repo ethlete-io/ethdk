@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::agent::{detail, AgentCli, AgentEvent};
+use crate::agent::{detail, AgentCli, AgentEvent, AgentRequest};
 
 pub struct ClaudeCli;
 
@@ -24,10 +24,10 @@ impl AgentCli for ClaudeCli {
             .collect()
     }
 
-    fn arguments(&self, prompt: &str, model: Option<&str>) -> Vec<String> {
+    fn arguments(&self, request: &AgentRequest) -> Vec<String> {
         let mut arguments = vec![
             "--print".to_owned(),
-            prompt.to_owned(),
+            request.prompt.clone(),
             "--output-format".to_owned(),
             "stream-json".to_owned(),
             // stream-json prints nothing at all without it.
@@ -37,9 +37,14 @@ impl AgentCli for ClaudeCli {
             "acceptEdits".to_owned(),
         ];
 
-        if let Some(model) = model {
+        if let Some(model) = &request.model {
             arguments.push("--model".to_owned());
-            arguments.push(model.to_owned());
+            arguments.push(model.clone());
+        }
+
+        if let Some(session) = &request.resume {
+            arguments.push("--resume".to_owned());
+            arguments.push(session.clone());
         }
 
         arguments
@@ -90,12 +95,47 @@ fn blocks(value: &Value) -> Vec<AgentEvent> {
 mod tests {
     use super::*;
 
+    fn asking(prompt: &str, resume: Option<&str>) -> AgentRequest {
+        AgentRequest {
+            cli: "claude".to_owned(),
+            model: None,
+            prompt: prompt.to_owned(),
+            cwd: ".".to_owned(),
+            resume: resume.map(str::to_owned),
+        }
+    }
+
     #[test]
     fn a_run_may_write_a_file() {
-        let arguments = ClaudeCli.arguments("draw it", None);
+        let arguments = ClaudeCli.arguments(&asking("draw it", None));
         let at = arguments.iter().position(|argument| argument == "--permission-mode");
 
         assert_eq!(at.map(|at| arguments[at + 1].as_str()), Some("acceptEdits"));
+    }
+
+    #[test]
+    fn a_named_session_is_continued() {
+        let arguments = ClaudeCli.arguments(&asking("draw it again", Some("s-7")));
+        let at = arguments.iter().position(|argument| argument == "--resume");
+
+        assert_eq!(at.map(|at| arguments[at + 1].as_str()), Some("s-7"));
+    }
+
+    #[test]
+    fn a_run_without_a_session_starts_a_new_one() {
+        assert!(!ClaudeCli
+            .arguments(&asking("draw it", None))
+            .contains(&"--resume".to_owned()));
+    }
+
+    #[test]
+    fn a_line_names_the_session_it_belongs_to() {
+        assert_eq!(
+            ClaudeCli
+                .session_of(r#"{"type":"system","session_id":"s-7"}"#)
+                .as_deref(),
+            Some("s-7")
+        );
     }
 
     #[test]

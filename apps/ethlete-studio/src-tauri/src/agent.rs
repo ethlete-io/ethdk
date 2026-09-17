@@ -28,7 +28,18 @@ pub trait AgentCli: Send + Sync {
     fn suggested_models(&self) -> Vec<String>;
 
     /// The arguments that answer one prompt without a terminal and print newline-delimited JSON.
-    fn arguments(&self, prompt: &str, model: Option<&str>) -> Vec<String>;
+    /// A request that names a session continues it instead of starting a new one.
+    fn arguments(&self, request: &AgentRequest) -> Vec<String>;
+
+    /// The session a printed line belongs to, so the next run can continue it.
+    fn session_of(&self, line: &str) -> Option<String> {
+        let value = serde_json::from_str::<Value>(line).ok()?;
+
+        ["session_id", "thread_id"]
+            .iter()
+            .find_map(|key| value.get(key).and_then(Value::as_str))
+            .map(str::to_owned)
+    }
 
     /// Turns one line the CLI printed into what the UI shows. A line can carry several events, or
     /// none at all.
@@ -54,6 +65,9 @@ pub struct AgentDescriptor {
 pub enum AgentEvent {
     #[serde(rename_all = "camelCase")]
     Started { cli: String, model: Option<String> },
+    /// The session the run belongs to. Naming it in the next request continues this conversation.
+    #[serde(rename_all = "camelCase")]
+    Session { id: String },
     #[serde(rename_all = "camelCase")]
     Message { text: String },
     #[serde(rename_all = "camelCase")]
@@ -73,6 +87,8 @@ pub struct AgentRequest {
     /// The checkout the agent works in. A project's design work lives in that project's own repo, so
     /// every run names the directory it writes to.
     pub cwd: String,
+    /// The session to continue. Left out by a run that starts a new conversation.
+    pub resume: Option<String>,
 }
 
 #[derive(Default, Clone)]
@@ -182,7 +198,7 @@ async fn start(
 
     let mut child = Command::new(cli.binary())
         .current_dir(&cwd)
-        .args(cli.arguments(&request.prompt, request.model.as_deref()))
+        .args(cli.arguments(request))
         // Codex reads a prompt from stdin when it is a pipe, and then waits for input that never
         // comes.
         .stdin(Stdio::null())
@@ -238,8 +254,16 @@ async fn start(
     tokio::spawn(async move {
         let mut lines = BufReader::new(stdout).lines();
         let mut reported = false;
+        let mut named = false;
 
         while let Ok(Some(line)) = lines.next_line().await {
+            if !named {
+                if let Some(id) = cli.session_of(&line) {
+                    named = true;
+                    sink.emit(AgentEvent::Session { id });
+                }
+            }
+
             for event in cli.read_line(&line) {
                 reported = reported || matches!(event, AgentEvent::Finished { .. });
 
@@ -306,7 +330,7 @@ mod tests {
             Vec::new()
         }
 
-        fn arguments(&self, _prompt: &str, _model: Option<&str>) -> Vec<String> {
+        fn arguments(&self, _request: &AgentRequest) -> Vec<String> {
             vec!["-c".to_owned(), self.0.to_owned()]
         }
 
@@ -333,6 +357,7 @@ mod tests {
             model: None,
             prompt: String::new(),
             cwd: ".".to_owned(),
+            resume: None,
         };
 
         start(
@@ -371,6 +396,22 @@ mod tests {
             .iter()
             .any(|event| matches!(event, AgentEvent::Message { text } if text == "ok")));
         assert!(matches!(seen.last(), Some(AgentEvent::Finished { ok: true, summary }) if summary == "ok"));
+    }
+
+    #[tokio::test]
+    async fn a_run_names_the_session_it_belongs_to() {
+        let seen = drive(concat!(
+            r#"printf '%s\n' '{"type":"system","subtype":"init","session_id":"s-1"}'; "#,
+            r#"printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"result":"ok","session_id":"s-1"}'"#
+        ))
+        .await;
+
+        let named: Vec<&AgentEvent> = seen
+            .iter()
+            .filter(|event| matches!(event, AgentEvent::Session { .. }))
+            .collect();
+
+        assert!(matches!(named.as_slice(), [AgentEvent::Session { id }] if id == "s-1"));
     }
 
     #[tokio::test]

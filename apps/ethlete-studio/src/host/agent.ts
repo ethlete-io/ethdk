@@ -10,7 +10,7 @@ export type AgentDescriptor = {
   version: string;
   /** Model names to offer first. A run accepts any other name as well. */
   suggestedModels: string[];
-}
+};
 
 /** One prompt, sent to one CLI, in one checkout. */
 export type AgentRequest = {
@@ -18,11 +18,14 @@ export type AgentRequest = {
   model: string | null;
   prompt: string;
   cwd: string;
-}
+  /** The session to continue. `null` starts a new conversation. */
+  resume: string | null;
+};
 
 /** What the agent did, in the order it did it. */
 export type AgentEvent =
   | { kind: 'started'; cli: string; model: string | null }
+  | { kind: 'session'; id: string }
   | { kind: 'message'; text: string }
   | { kind: 'action'; action: string; detail: string }
   | { kind: 'failed'; message: string }

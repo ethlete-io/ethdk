@@ -20,6 +20,7 @@ import { workspaceRoot$ } from '../../host/workspace';
 import { Verb, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import { featureGroups, openOptions, projectOf, projectSummaries } from './grouping';
 import { ProjectPickerComponent } from './project-picker.component';
+import { SessionTable, sessionKey, storedSessions, writeSessions } from './sessions';
 import { CallOrder, rememberView, rememberedView } from './remembered';
 
 @Component({
@@ -254,6 +255,16 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
                       <option [value]="name"></option>
                     }
                   </datalist>
+                  @if (session(); as id) {
+                    <span class="text-et-surface-muted text-mono">Continues {{ id.slice(0, 8) }}</span>
+                    <button
+                      (click)="forgetSession()"
+                      class="rounded border border-et-surface-border px-3 py-1"
+                      type="button"
+                    >
+                      New session
+                    </button>
+                  }
                   <button
                     [disabled]="running() || !prompt().trim() || !cli()"
                     (click)="send()"
@@ -296,6 +307,7 @@ export class CallViewComponent {
   protected events = signal<AgentEvent[]>([]);
   protected running = signal(false);
   protected server = signal<ServerState | null>(null);
+  private sessions = signal<SessionTable>(storedSessions());
   protected serverBusy = signal(false);
 
   protected filter = signal('');
@@ -374,6 +386,10 @@ export class CallViewComponent {
       ),
     }));
   });
+
+  private conversation = computed(() => sessionKey({ slug: this.slug(), cli: this.cli()?.id ?? '' }));
+
+  protected session = computed(() => this.sessions()[this.conversation()] ?? null);
 
   private callDir = computed(() => {
     const root = this.design()?.callsRoot;
@@ -519,9 +535,19 @@ export class CallViewComponent {
     this.events.set([]);
     this.running.set(true);
 
-    this.run = agentRun$({ cli: cli.id, model: this.model() || null, prompt: this.prompt(), cwd })
+    this.run = agentRun$({
+      cli: cli.id,
+      model: this.model() || null,
+      prompt: this.prompt(),
+      cwd,
+      resume: this.session(),
+    })
       .pipe(
-        tap((event) => this.events.update((events) => [...events, event])),
+        tap((event) => {
+          this.events.update((events) => [...events, event]);
+
+          if (event.kind === 'session') this.keepSession(event.id);
+        }),
         catchError((error: unknown) => {
           this.events.update((events) => [...events, { kind: 'failed', message: String(error) }]);
 
@@ -541,9 +567,29 @@ export class CallViewComponent {
     this.run = null;
   }
 
+  /** Drops the conversation of the open call, so the next run starts a new one. */
+  protected forgetSession() {
+    this.keepSession(null);
+  }
+
   /** Reads the checkout again, which is how a call an agent just wrote reaches the list. */
   protected reload() {
     this.read();
+  }
+
+  private keepSession(id: string | null) {
+    const key = this.conversation();
+
+    this.sessions.update((table) => {
+      const next = { ...table };
+
+      if (id) next[key] = id;
+      else delete next[key];
+
+      writeSessions(next);
+
+      return next;
+    });
   }
 
   private show(design: Project) {

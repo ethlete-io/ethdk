@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::agent::{clip, detail, AgentCli, AgentEvent};
+use crate::agent::{clip, detail, AgentCli, AgentEvent, AgentRequest};
 
 pub struct CodexCli;
 
@@ -23,22 +23,28 @@ impl AgentCli for CodexCli {
         Vec::new()
     }
 
-    fn arguments(&self, prompt: &str, model: Option<&str>) -> Vec<String> {
-        let mut arguments = vec![
-            "exec".to_owned(),
+    fn arguments(&self, request: &AgentRequest) -> Vec<String> {
+        let mut arguments = vec!["exec".to_owned()];
+
+        if let Some(session) = &request.resume {
+            arguments.push("resume".to_owned());
+            arguments.push(session.clone());
+        }
+
+        arguments.extend([
             "--json".to_owned(),
             // A design checkout is not always a git repository, and the agent has to write into it.
             "--skip-git-repo-check".to_owned(),
             "--sandbox".to_owned(),
             "workspace-write".to_owned(),
-        ];
+        ]);
 
-        if let Some(model) = model {
+        if let Some(model) = &request.model {
             arguments.push("--model".to_owned());
-            arguments.push(model.to_owned());
+            arguments.push(model.clone());
         }
 
-        arguments.push(prompt.to_owned());
+        arguments.push(request.prompt.clone());
         arguments
     }
 
