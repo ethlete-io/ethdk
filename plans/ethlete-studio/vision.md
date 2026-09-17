@@ -72,13 +72,34 @@ from. Two consequences to build for from the start, even before the feature exis
 - The bridge is **one interface with an implementation per CLI**, not a `claude -p` call
   with a flag. A second CLI must be an added implementation, never a rewrite.
 
+## How the workflow behaves
+
+Decided with Tom on 2026-09-17. These three answers replace the questions that stood here.
+
+**A build shows the frame and the agent's stream side by side.** The option card splits in
+two: a live frame on the left that redraws every time the agent writes a file, and the
+agent's tool log with an elapsed timer on the right. Watching a drawing appear is the
+point, so the frame is not optional. The stream says why it looks the way it does. This
+needs a dev server per project checkout and a file watcher, and that cost is accepted.
+
+**Verbs fill an editable prompt box, and you send it.** An option carries `accept`,
+`iterate`, `reject` and `more like this`. A verb does not run the agent. It writes a first
+draft of the prompt into a box under the round. You change the draft, then you send it. You
+always see the exact text the agent gets, so a bad result is a bad prompt you can read.
+`accept` and `reject` also write the verdict back to the call file.
+
+**The conversation stays split for now, and moves into Studio later.** Studio holds the
+claim, the cost, the verdict and the prompt behind every option. Planning a whole call, and
+debugging a broken frame, stay in a CLI session outside Studio. Tom: "for now 1 to keep the
+scope in check, later on the chat should move fully into studio". So the first Studio runs
+one-shot jobs and records verdicts. Build nothing that a full transcript view would have to
+tear out: the agent bridge streams turns, it does not return one finished answer.
+
 ## Still open
 
-- **Live feedback while the agent builds.** Tom wants to watch a drawing being produced,
-  not wait for a finished row.
-- **Which UI actions drive the agent** — pick a variant to iterate on, accept one, reject
-  one — and what each one sends.
-- Whether the design conversation itself moves into the app, replacing chat.
+- **How a frame renders a component out of another project's checkout.** The barrel failure
+  (`ERR_INSUFFICIENT_RESOURCES`) that the old tool never solved. The live frame above makes
+  it urgent rather than theoretical.
 
 ## Order of work
 
