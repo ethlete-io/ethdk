@@ -62,8 +62,13 @@ assumes one. A missing CLI is simply an option that is not offered.
 Codex to draw the same thing, and the round comes back with more diverse answers to pick
 from. Two consequences to build for from the start, even before the feature exists:
 
-- An option records **which agent drew it**, so a round can mix agents and you can see
-  who produced which answer.
+- An option records **which agent drew it, and on which model** — for example Sonnet,
+  Opus or Fable under one CLI, and Tera, Luna, Sol or Astra under another. A round can
+  therefore mix both the CLI and the model, and you can see who produced which answer.
+  Two options from the same CLI on different models are a real comparison.
+- **The model is never a fixed union in the code.** The list belongs to the CLI, it
+  differs per CLI, and it changes without Studio changing. Studio asks the CLI what it
+  offers, or stores the name as written; it never ships an enum that goes stale.
 - The bridge is **one interface with an implementation per CLI**, not a `claude -p` call
   with a flag. A second CLI must be an added implementation, never a rewrite.
 
