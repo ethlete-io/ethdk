@@ -118,7 +118,8 @@ implementation per CLI, and the call model (`design_project`, `design_set_verdic
 only answers when it is listed in `build.rs` **and** in `src-tauri/capabilities/default.json`;
 two tests in `lib.rs` read the invoke handler and check both files.
 
-Two views. `/` lists every call of a checkout, draws the selected option in a frame served by
+Two views. `/` lists every call of a checkout under its group, with a filter box and a choice of
+order (by name, or the calls with open options first), draws the selected option in a frame served by
 that checkout's design server, and writes `accept`, `reject` and `open again` back into the call
 file. The four verbs write a first draft of the prompt into an editable box under the frame, and
 `accept` and `reject` also write the verdict. The box sends through the agent bridge, and the
