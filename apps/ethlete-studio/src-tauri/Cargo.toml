@@ -20,3 +20,7 @@ serde_json = "1.0.151"
 tauri = { version = "2.11.5", features = [] }
 thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["io-util", "macros", "process", "rt-multi-thread", "sync", "time"] }
+
+[target.'cfg(unix)'.dependencies]
+# Stopping the design server means signalling the process group the package manager leads.
+libc = "0.2.189"

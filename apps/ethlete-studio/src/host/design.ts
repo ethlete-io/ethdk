@@ -48,13 +48,37 @@ export type VerdictWrite = {
 export const designSetVerdict$ = (write: VerdictWrite): Observable<void> =>
   invokeHost$<void>('design_set_verdict', write);
 
+/** What a checkout's design server is doing, and what Studio may do about it. */
+export type ServerState = {
+  port: number;
+  listening: boolean;
+  /** True when this Studio started the server. Only then can Studio stop it again. */
+  managed: boolean;
+  log: string[];
+};
+
+/** Reads whether the checkout's design server answers on its port. */
+export const designServerState$ = (checkout: string): Observable<ServerState> =>
+  invokeHost$<ServerState>('design_server_state', { checkout });
+
+/** Starts the checkout's design server. Answers once the port accepts connections. */
+export const designServerStart$ = (checkout: string): Observable<ServerState> =>
+  invokeHost$<ServerState>('design_server_start', { checkout });
+
+/** Stops the server this Studio started. A server somebody else started stays up. */
+export const designServerStop$ = (checkout: string): Observable<ServerState> =>
+  invokeHost$<ServerState>('design_server_stop', { checkout });
+
 /** Where one option is drawn: the checkout's design server port, the call and the option. */
 export type FrameAddress = {
   port: number;
   slug: string;
   option: string;
+  /** Changes when the server started again, so a frame that met a dead port loads once more. */
+  epoch?: number;
 };
 
 /** The address the checkout's design server draws one option at. */
-export const frameUrl = ({ port, slug, option }: FrameAddress) =>
-  `http://localhost:${port}/frame.html?call=${encodeURIComponent(slug)}&option=${encodeURIComponent(option)}`;
+export const frameUrl = ({ port, slug, option, epoch }: FrameAddress) =>
+  `http://localhost:${port}/frame.html?call=${encodeURIComponent(slug)}&option=${encodeURIComponent(option)}` +
+  (epoch ? `&epoch=${epoch}` : '');

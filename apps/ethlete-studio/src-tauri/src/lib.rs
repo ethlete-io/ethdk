@@ -2,10 +2,13 @@ mod agent;
 mod agent_claude;
 mod agent_codex;
 mod design;
+mod design_server;
 mod error;
 
 use std::path::PathBuf;
 use std::process::Command;
+
+use tauri::Manager;
 
 /// The top level of the repository the host was started in. Every git command runs from there, so a
 /// path it prints is relative to the repository and not to the crate directory.
@@ -40,7 +43,9 @@ fn git(args: &[&str]) -> Result<std::process::Output, String> {
 
 #[tauri::command]
 fn workspace_root() -> String {
-    repository_root().map(|root| root.to_string_lossy().into_owned()).unwrap_or_default()
+    repository_root()
+        .map(|root| root.to_string_lossy().into_owned())
+        .unwrap_or_default()
 }
 
 #[tauri::command]
@@ -79,7 +84,11 @@ fn widen_path() {
 
     let mut widened: Vec<String> = Vec::new();
 
-    for entry in std::env::var("PATH").unwrap_or_default().split(':').chain(inherited.split(':')) {
+    for entry in std::env::var("PATH")
+        .unwrap_or_default()
+        .split(':')
+        .chain(inherited.split(':'))
+    {
         let entry = entry.trim();
 
         if entry.is_empty() || widened.iter().any(|seen| seen == entry) {
@@ -97,19 +106,28 @@ pub fn run() {
 
     tauri::Builder::default()
         .manage(agent::AgentRuns::default())
+        .manage(design_server::DesignServers::default())
         .invoke_handler(tauri::generate_handler![
             agent::agent_cancel,
             agent::agent_list,
             agent::agent_run,
             design::design_project,
             design::design_set_verdict,
+            design_server::design_server_start,
+            design_server::design_server_state,
+            design_server::design_server_stop,
             workspace_check,
             workspace_diff,
             workspace_root,
             workspace_status
         ])
-        .run(tauri::generate_context!())
-        .expect("Ethlete Studio failed to run");
+        .build(tauri::generate_context!())
+        .expect("Ethlete Studio failed to run")
+        .run(|handle, event| {
+            if matches!(event, tauri::RunEvent::Exit) {
+                design_server::stop_every(&handle.state::<design_server::DesignServers>());
+            }
+        });
 }
 
 #[cfg(test)]
@@ -135,7 +153,10 @@ mod tests {
         let build = include_str!("../build.rs");
 
         for command in registered_commands() {
-            assert!(build.contains(&format!("\"{command}\"")), "build.rs does not list {command}");
+            assert!(
+                build.contains(&format!("\"{command}\"")),
+                "build.rs does not list {command}"
+            );
         }
     }
 

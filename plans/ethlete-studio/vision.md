@@ -127,5 +127,8 @@ run's events read beside the frame. The selected call and option are remembered 
 `localStorage`, so a reload comes back to them. `/agent` is the agent console. `design_project`
 reads `design-explore.config.json` from the checkout, so Studio needs no config of its own.
 
-Studio does not start the checkout's design server yet. The frame stays empty until `yarn design`
-runs in that checkout.
+Studio starts the checkout's design server itself. When a checkout is set, the host probes the
+port the config names and runs `yarn design` there if nothing answers, so the frame is never empty.
+A server somebody else started is left alone and only reads as running; a server Studio started
+carries a Stop control and ends with the app. The header names the port and the state, and the
+last lines the server printed read below it while the port stays silent.

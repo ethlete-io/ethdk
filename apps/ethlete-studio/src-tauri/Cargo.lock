@@ -770,6 +770,7 @@ name = "ethlete-studio"
 version = "0.1.0"
 dependencies = [
  "fix-path-env",
+ "libc",
  "serde",
  "serde_json",
  "tauri",

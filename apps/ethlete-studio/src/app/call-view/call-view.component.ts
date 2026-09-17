@@ -3,7 +3,19 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
 import { EMPTY, Subscription, catchError, finalize, of, switchMap, tap } from 'rxjs';
 import { AgentDescriptor, AgentEvent, agentList$, agentRun$ } from '../../host/agent';
-import { Call, CallOption, Project, Verdict, designProject$, designSetVerdict$, frameUrl } from '../../host/design';
+import {
+  Call,
+  CallOption,
+  Project,
+  ServerState,
+  Verdict,
+  designProject$,
+  designServerStart$,
+  designServerState$,
+  designServerStop$,
+  designSetVerdict$,
+  frameUrl,
+} from '../../host/design';
 import { workspaceRoot$ } from '../../host/workspace';
 import { Verb, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import { callGroups, openOptions } from './grouping';
@@ -24,7 +36,36 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
         <button (click)="reload()" class="rounded border border-et-surface-border px-3 py-1" type="button">
           Reload
         </button>
+
+        @if (serverLine(); as line) {
+          <span class="text-et-surface-muted text-mono">{{ line }}</span>
+        }
+
+        @if (server(); as state) {
+          @if (state.listening && state.managed) {
+            <button (click)="stopServer()" class="rounded border border-et-surface-border px-3 py-1" type="button">
+              Stop server
+            </button>
+          } @else if (!state.listening) {
+            <button
+              [disabled]="serverBusy()"
+              (click)="startServer()"
+              class="rounded border border-et-surface-border px-3 py-1 disabled:opacity-50"
+              type="button"
+            >
+              Start server
+            </button>
+          }
+        }
       </div>
+
+      @if (serverLog().length) {
+        <ul class="text-et-surface-muted text-mono">
+          @for (line of serverLog(); track $index) {
+            <li>{{ line }}</li>
+          }
+        </ul>
+      }
 
       @if (trouble(); as message) {
         <p class="text-et-surface-muted">{{ message }}</p>
@@ -237,6 +278,8 @@ export class CallViewComponent {
   protected cli = signal<AgentDescriptor | null>(null);
   protected events = signal<AgentEvent[]>([]);
   protected running = signal(false);
+  protected server = signal<ServerState | null>(null);
+  protected serverBusy = signal(false);
 
   protected filter = signal('');
   protected order = signal<CallOrder>(rememberedView().order ?? 'name');
@@ -250,6 +293,7 @@ export class CallViewComponent {
 
   private run: Subscription | null = null;
   private project = signal<Project | null>(null);
+  private epoch = signal(0);
 
   protected clis = toSignal(
     agentList$().pipe(
@@ -258,6 +302,21 @@ export class CallViewComponent {
     ),
     { initialValue: [] },
   );
+
+  protected serverLine = computed(() => {
+    const state = this.server();
+
+    if (!state) return '';
+    if (this.serverBusy()) return `Design server ${state.port} · starting`;
+
+    return `Design server ${state.port} · ${state.listening ? 'running' : 'stopped'}`;
+  });
+
+  protected serverLog = computed(() => {
+    const state = this.server();
+
+    return state && !state.listening ? state.log.slice(-5) : [];
+  });
 
   protected calls = computed(() => this.project()?.calls ?? []);
 
@@ -285,9 +344,13 @@ export class CallViewComponent {
 
     if (!call || !port) return [];
 
+    const epoch = this.epoch();
+
     return call.options.map((option) => ({
       key: option.key,
-      source: this.sanitizer.bypassSecurityTrustResourceUrl(frameUrl({ port, slug: call.slug, option: option.key })),
+      source: this.sanitizer.bypassSecurityTrustResourceUrl(
+        frameUrl({ port, slug: call.slug, option: option.key, epoch }),
+      ),
     }));
   });
 
@@ -327,6 +390,46 @@ export class CallViewComponent {
   protected setCheckout(path: string) {
     this.checkout.set(path);
     this.read();
+    this.readServer();
+  }
+
+  protected startServer() {
+    const checkout = this.checkout();
+
+    if (!checkout || this.serverBusy()) return;
+
+    this.serverBusy.set(true);
+
+    designServerStart$(checkout)
+      .pipe(
+        tap((state) => this.showServer(state)),
+        catchError((error: unknown) => {
+          this.trouble.set(`${error}`);
+
+          return of(null);
+        }),
+        finalize(() => this.serverBusy.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  protected stopServer() {
+    const checkout = this.checkout();
+
+    if (!checkout) return;
+
+    designServerStop$(checkout)
+      .pipe(
+        tap((state) => this.showServer(state)),
+        catchError((error: unknown) => {
+          this.trouble.set(`${error}`);
+
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   protected openCall(call: Call, option = call.options[0]?.key ?? '') {
@@ -422,6 +525,33 @@ export class CallViewComponent {
     const option = call.options.some((entry) => entry.key === last?.option) ? last?.option : undefined;
 
     this.openCall(call, option);
+  }
+
+  /** A frame only draws once the port answers, so a checkout without a server gets one. */
+  private readServer() {
+    const checkout = this.checkout();
+
+    if (!checkout) return;
+
+    designServerState$(checkout)
+      .pipe(
+        tap((state) => {
+          this.showServer(state);
+
+          if (!state.listening) this.startServer();
+        }),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private showServer(state: ServerState) {
+    const answered = this.server()?.listening ?? false;
+
+    this.server.set(state);
+
+    if (state.listening && !answered) this.epoch.update((value) => value + 1);
   }
 
   private read() {
