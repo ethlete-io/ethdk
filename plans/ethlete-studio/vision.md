@@ -118,7 +118,8 @@ implementation per CLI, and the call model (`design_project`, `design_set_verdic
 only answers when it is listed in `build.rs` **and** in `src-tauri/capabilities/default.json`;
 two tests in `lib.rs` read the invoke handler and check both files.
 
-Two views. `/` lists every call of a checkout under its group, with a filter box and a choice of
+Two views. `/` opens on the checkout's projects, then lists that project's calls under one band per
+feature, with a filter box and a choice of
 order (by name, or the calls with open options first), draws the selected option in a frame served by
 that checkout's design server, and writes `accept`, `reject` and `open again` back into the call
 file. The four verbs write a first draft of the prompt into an editable box under the frame, and
@@ -140,11 +141,11 @@ and to change: the frames already render Angular components, the repo's lint rul
 component library apply to Studio's own surface, and an agent writing a feature here follows
 patterns it can read out of the repo instead of hand-rolled DOM code.
 
-1. **A welcome screen that selects a project.** The call list today mixes every project of a
-   checkout, and the entries have nothing to do with each other. Studio opens on a project choice
-   and the list then holds one project.
-2. **One more layer above a call.** A task ("build the calendar") holds many calls ("build the hour
-   strip", "build the item"). The call file format, the grouping and the list all need it.
+1. ~~**A welcome screen that selects a project.**~~ Done. Studio opens on a grid of the checkout's
+   projects, and the list then holds one project. The choice is remembered.
+2. ~~**One more layer above a call.**~~ Done. `call.ts` declares `feature`, the host reads it, and
+   the list draws one band per feature. A call that names none reads under "No feature". The
+   feature is a field, not a folder level, so no call folder moves.
 3. **A remembered agent session.** An iteration continues the conversation it came from instead of
    starting a new one. It follows the handoff rules, so a session that grows long writes its state
    down and a fresh one takes over, and the long-context price never applies.
@@ -168,5 +169,14 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    of those is hand-written in an editor. The naming is open: today a drawing is an option inside a
    call, and the new layer above is called a task here only to have a word for it.
 
-Open, and Tom decides: what the three layers are called; how a thumbnail is taken and when it is stale; how much of a tile's controls
+### The names
+
+Tom settled them: **project → feature → call → variant**. A project holds features, a feature holds
+calls, and a call holds the variants drawn for it.
+
+`variant` is decided but not yet renamed. The code, the call files and the design server still say
+`option`. A rename rewrites every `call.ts`, and four call folders in the tree are another session's
+uncommitted work, so it waits for a clean tree and gets its own commit.
+
+Open, and Tom decides: how a thumbnail is taken and when it is stale; how much of a tile's controls
 stay visible; whether the large variant sits beside the grid or above it.
