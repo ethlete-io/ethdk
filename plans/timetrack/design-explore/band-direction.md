@@ -168,6 +168,111 @@ narrow, not only the break lane.
 
 The `narrow` input on `KerbeBandComponent` defaults to `drop-time`, which is A.
 
+## Call 4: where a break goes
+
+Decided 2026-09-17, from `kerbe/04-break-lane`. The app gave a break its own 6rem column, and
+every band in it repeated the column header. Four whole days at 1100x760, one per answer.
+
+**B, a rule across the day, wins.** A break leaves the lanes and becomes a stretch across all
+of them, so the work lanes take the 6rem back. It says what a break is: the absence of work in
+every lane at once, and not a track running beside them.
+
+- **A, the column stays and the word goes** — rejected. The band drops "Break" and keeps its
+  length, which fixes the repeated word but not the column. A break still reads as a parallel
+  track, and 6rem is spent all day on two events.
+- **C, a mark in the hour gutter** — rejected. The break leaves the field and marks the clock
+  instead. A strip with no word has to be learned, and a 15m break is 2rem of it.
+- **D, the day closes up** — rejected. A break costs no height and the rows meet at a seam.
+  The hour axis then stops being linear, so a band's height and its place no longer read off
+  the same scale. Every other call so far leans on that scale.
+
+The call left two things open, both named by the user on 2026-09-17, and both taken up in
+call 5.
+
+## Call 5: a break that is not empty
+
+Decided 2026-09-17, from `kerbe/05-break-not-empty`. Call 4 assumed no band overlaps a break. That is
+wrong: an agent can run while nobody is at the machine, so a break is not proof that nothing
+happened. Every frame adds one agent band at 12:30 for 45m, which starts inside the 12:15
+break and ends 15m after it. The 15:30 break stays empty, so both cases read in one picture.
+
+The label moved out of the gutter and into the block in all three options, as the user asked.
+
+**B, the break is a frame and not a fill, wins.** Two hairlines and a label, no wash at all.
+Nothing is behind a band, so nothing can contradict it.
+
+- **A, the work sits on the break** — rejected. The wash is a claim that the lane was idle, and
+  the band contradicts that claim in the same pixels.
+- **C, the break parts around the work** — rejected. The washed and unwashed cells make one rule
+  look broken, and the label can still land over a band in the first lane.
+
+## Call 6: how a break says it is a break
+
+Decided 2026-09-17, from `kerbe/06-break-label`. Seven rounds and twenty-four options, because
+the first two rounds were rejected whole. The frame from call 5 has to say "break" where a band
+cannot cover the answer, and the gutter is not free either, because the hour labels live there.
+The fixture runs three agents across the 12:15 break, one per lane, so **no** lane is idle
+through it; the 15:30 break keeps every lane idle and is 15m long. Every option has to hold both
+ends. Do not change that fixture.
+
+**The answer is the chain K → N → Q → T → W.** The break is two 2px rules across the full width
+of the day, with the lane lines cut between them. Its block in the gutter is hatched, and a
+pause sign sits centred in that block on its own ground plate. Under 3rem the bars drop to 8px
+and the plate halves its padding, so the plate keeps 4px clear of each rule.
+
+Two rendering faults were found by drawing this call, and both fixes must stay:
+
+- `.hour` carries a `transform`, so it is a stacking context and a `z-index` inside it could
+  never beat the break's `z-index: 3`. The `z-index` sits on `.hour` itself now. Before that, a
+  heavy rule drew straight through `13:00`.
+- The pause bars were 2px with a 3.5px gap. At a fractional display scale a 2px bar is 2.5
+  device pixels, the two bars land on different subpixel phases, and one renders wider. They are
+  4px wide with a 4px gap now, so the width and the pitch are whole device pixels at 1.25, 1.5,
+  2 and 3.
+
+### The rounds
+
+| Round    | What it asked                  | Answer                  |
+| -------- | ------------------------------ | ----------------------- |
+| r1 (A-C) | the word inside the lanes      | all rejected            |
+| r2 (D-I) | a mark instead of the word     | all rejected, too quiet |
+| r3 (J-L) | the same ideas, turned up      | **K**                   |
+| r4 (M-P) | K, and a name with it          | **N**                   |
+| r5 (Q-S) | a sign in place of the word    | **Q**                   |
+| r6 (T-V) | how the sign sits on the hatch | **T**                   |
+| r7 (W-X) | the 15m break                  | **W**                   |
+
+**r1, the word inside the lanes.** A label in the band area, on whatever ground it needs.
+Rejected whole: _"the plate breaks the frame rule, maybe it could be just a visual indicator
+rather than the word and time?"_ A plate under the word is a fill, and call 5 threw fills out.
+A took its own ground, B took the first idle lane, C stayed in the gutter as the app does today.
+
+**r2, a mark and no word.** D, E and F drew at the left edge of the gutter, where no band
+reaches. G, H and I used a pattern instead of a line: G is D with a texture, H puts the pattern
+in the rules, I runs a hatch across the whole day and over the bands, which re-opens call 5.
+All six rejected: _"still quiet aint it."_
+
+**r3, the same three ideas turned up. K wins.** The frame goes heavy: 2px rules across the full
+width, with the lane lines cut between them. J gave the gutter a block, L made the hatch coarse.
+K holds the day apart, but a mark alone never says the word "break".
+
+**r4, K with a name. N wins.** The word sits in the gutter on a hatched gutter block. M put the
+word on K alone, O hatched the day behind it, P turned the word down the gutter. Two faults came
+out of N: the word is pinned to the top, so a 15m break is nearly all word, and a word has to be
+translated.
+
+**r5, a sign in place of the word. Q wins.** A pause sign, centred in the block, so it needs no
+translation and it sits in the middle of a 15m break. R drew a cup, S left the block empty. The
+bars still read as noise on the hatch behind them.
+
+**r6, how the sign sits on the hatch. T wins.** The sign gets its own ground plate. U cut the
+sign out of the hatch, which only interrupts hairline strokes, so the sign nearly disappeared. V
+used weight alone, and the hatch still ran between the bars.
+
+**r7, the 15m break. W wins.** The sign shrinks and keeps its ground, so the plate T was chosen
+for survives the short break. X dropped the plate under 3rem and put the bars back on the hatch,
+which is the noise T was drawn to fix.
+
 ## Open calls
 
 Stated by the user on 2026-09-17: **nothing in the app is cut in stone.** The three calls
@@ -176,8 +281,9 @@ below is a rework and not a fix. Take one at a time, in the order the user asks 
 
 ### The scheduler's frame
 
-- **The break lane.** A 6rem column whose bands repeat its own header. The column, the label,
-  and the idea that a break is a band in a lane at all are open.
+- **Whether a break still shortens when work lands in it.** A break is derived from a gap, so
+  an event inside the gap arguably ends the break at that minute. That is a data question, not
+  a drawing one, and call 5 draws only the picture. Raised 2026-09-17.
 - **The hour axis** down the left side: the hour labels, the lines, the gutter width.
 - **The lane headers** across the top - the category columns.
 - **The all-day story strip** above the axis.
@@ -191,6 +297,9 @@ below is a rework and not a fix. Take one at a time, in the order the user asks 
 - **How the rest of the lane reacts** while a band moves or resizes: whether the neighbours
   reflow, and whether that is animated.
 - **A band being added**, and how it arrives.
+- **A break the user adds, edits or removes.** Stated by the user on 2026-09-17: a pause is not
+  only derived from a gap, the user makes one. Calls 4 to 6 drew a break as a read-only rule
+  across the day, with no handle on it and no way to place one. Raised 2026-09-17, not drawn.
 
 ### A band state with no drawing
 
@@ -217,6 +326,9 @@ answers no question.
 | `kerbe/01-separator`                            | what cuts a run of touching bands, A chosen |
 | `kerbe/02-short-bands`                          | what a 15m band gives up, B chosen          |
 | `kerbe/03-narrow-lane`                          | a lane too narrow for both, A chosen        |
+| `kerbe/04-break-lane`                           | where a break goes, B chosen                |
+| `kerbe/05-break-not-empty`                      | a break that is not empty, B chosen         |
+| `kerbe/06-break-label`                          | how a break says it is a break, W chosen    |
 | `kerbe/ref-full-day`                            | the whole day at 1100x760                   |
 | `kerbe/ref-band-states`                         | the six states under the pointer            |
 | `timeline/ref-states`, `timeline/ref-durations` | the block sketch the band replaced          |
