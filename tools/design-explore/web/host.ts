@@ -163,12 +163,10 @@ if (!load) {
       ${option.cost ? `<p class="cost">${esc(option.cost)}</p>` : ''}
     </div>`;
 
-  const grid = (options: CallOption[], fit = false) =>
+  const grid = (options: CallOption[]) =>
     options.length === 0
       ? ''
-      : `<div class="grid" style="${geometry}${fit ? `;--de-count:${options.length}` : ''}" ${
-          isView ? 'data-view' : ''
-        } ${fit ? 'data-fit' : ''}>${options.map(column).join('')}</div>`;
+      : `<div class="grid" style="${geometry}" ${isView ? 'data-view' : ''}>${options.map(column).join('')}</div>`;
 
   const rows = (options: CallOption[]) =>
     options.length === 0
@@ -247,14 +245,27 @@ if (!load) {
       .filter((option): option is CallOption => !!option);
     if (options.length === 0) return '';
 
+    const two = options.length === 2;
+
     return `
       <section class="round tray">
         <div class="round-head">
           <span class="eyebrow">Compare · ${options.length}</span>
-          <h2>${options.map((option) => esc(option.key.toUpperCase())).join(' · ')}</h2>
+          <h2>${options.map((option) => esc(option.name)).join('  ·  ')}</h2>
+          <div class="switch">
+            ${options
+              .map((option, index) => `<button data-step="${index}">${esc(option.key.toUpperCase())}</button>`)
+              .join('')}
+            <span class="hint">${
+              two ? 'click or space to blink · arrows to wipe' : 'click or space for the next one'
+            }</span>
+          </div>
           <a class="fold" href="${link({ pick: null })}">Clear the comparison</a>
         </div>
-        ${grid(options, true)}
+        <div class="overlay" data-two="${two}" style="width:${call.frameWidth}px">
+          ${options.map(frame).join('')}
+          <div class="seam"></div>
+        </div>
       </section>`;
   };
 
@@ -334,40 +345,105 @@ addEventListener(
   { passive: true },
 );
 
-/** A frame is never re-laid out to fit, because its width is the geometry under test. It is scaled. */
-const GAP = 40;
-
 const heights = new Map<string, number>();
 
-const fit = () => {
-  const tray = document.querySelector<HTMLElement>('.grid[data-fit]');
-  if (tray && frameWidth > 0) {
-    const count = tray.childElementCount;
-    const room = tray.clientWidth - GAP * (count - 1);
-    tray.style.setProperty('--de-scale', String(Math.min(1, room / (count * frameWidth))));
-  }
-
-  /** A picked option is drawn in the tray as well as in its own place, so every copy is sized. */
+/** The overlay is as tall as its tallest pick, so no frame is cut and none of them move. */
+const size = () => {
   for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe[data-option]')) {
     const height = heights.get(frame.dataset.option ?? '');
     if (!height) continue;
 
     frame.style.height = `${height}px`;
 
-    const scale = Number(getComputedStyle(frame).getPropertyValue('--de-scale')) || 1;
     const box = frame.parentElement;
-    if (box && scale < 1) box.style.height = `${Math.ceil(height * scale)}px`;
+    if (box?.classList.contains('thumb-frame')) box.style.height = `${Math.ceil(height * SHEET_SCALE)}px`;
   }
-};
 
-addEventListener('resize', fit);
+  const overlay = document.querySelector<HTMLElement>('.overlay');
+  if (!overlay) return;
+
+  const tallest = [...overlay.querySelectorAll<HTMLIFrameElement>('iframe')]
+    .map((frame) => heights.get(frame.dataset.option ?? '') ?? 0)
+    .reduce((a, b) => Math.max(a, b), 0);
+
+  if (tallest > 0) overlay.style.height = `${tallest}px`;
+};
 
 addEventListener('message', (event) => {
   const data = event.data as { type?: string; option?: string; height?: number };
   if (data?.type !== 'design-explore:height' || !data.height || !data.option) return;
 
   heights.set(data.option, data.height);
-  fit();
+  size();
 
   if (restoring) scrollTo(0, target);
 });
+
+/**
+ * Two drawings that differ by a few pixels can only be told apart in one place, so the picks are
+ * stacked at full size and the reader switches between them. Two picks also get a wipe: the
+ * second one is clipped from the left, so dragging the seam turns one into the other.
+ */
+const overlay = document.querySelector<HTMLElement>('.overlay');
+
+if (overlay) {
+  const frames = [...overlay.querySelectorAll<HTMLIFrameElement>('iframe')];
+  const steps = [...document.querySelectorAll<HTMLButtonElement>('.switch button')];
+  const seam = overlay.querySelector<HTMLElement>('.seam');
+  const two = overlay.dataset.two === 'true';
+
+  let wipe = 50;
+  let active = 0;
+
+  const paint = () => {
+    frames.forEach((frame, index) => {
+      if (two && index === 1) {
+        frame.style.clipPath = `inset(0 0 0 ${wipe}%)`;
+        frame.style.opacity = '1';
+      } else if (two) {
+        frame.style.opacity = '1';
+      } else {
+        frame.style.opacity = index === active ? '1' : '0';
+      }
+    });
+
+    if (seam) {
+      seam.style.left = `${wipe}%`;
+      seam.hidden = !two || wipe === 0 || wipe === 100;
+    }
+
+    const shown = two ? (wipe > 50 ? 0 : 1) : active;
+    steps.forEach((step, index) => step.toggleAttribute('aria-current', index === shown));
+  };
+
+  const next = () => {
+    if (two) wipe = wipe > 50 ? 0 : 100;
+    else active = (active + 1) % frames.length;
+    paint();
+  };
+
+  const go = (index: number) => {
+    if (two) wipe = index === 0 ? 100 : 0;
+    else active = index;
+    paint();
+  };
+
+  steps.forEach((step, index) => step.addEventListener('click', () => go(index)));
+  overlay.addEventListener('click', next);
+
+  addEventListener('keydown', (event) => {
+    if (event.target !== document.body) return;
+
+    if (event.key === ' ') next();
+    else if (two && event.key === 'ArrowLeft') wipe = Math.max(0, wipe - 5);
+    else if (two && event.key === 'ArrowRight') wipe = Math.min(100, wipe + 5);
+    else if (!two && event.key === 'ArrowLeft') active = (active - 1 + frames.length) % frames.length;
+    else if (!two && event.key === 'ArrowRight') active = (active + 1) % frames.length;
+    else return;
+
+    event.preventDefault();
+    paint();
+  });
+
+  paint();
+}

@@ -325,17 +325,61 @@ header p {
   text-decoration: none;
 }
 
-/* Two 1100px frames never fit a screen, so the tray scales its frames instead of re-flowing them. */
-.grid[data-fit] {
-  grid-template-columns: repeat(var(--de-count), minmax(0, 1fr));
-}
-
-.grid[data-fit] .stage {
+/*
+ * Two 1100px frames never fit a screen side by side, and shrinking them hides the pixels the
+ * comparison is about. The picks are stacked in one box at full size instead.
+ */
+.overlay {
+  position: relative;
   overflow: hidden;
-  padding: 0;
+  cursor: crosshair;
 }
 
-.grid[data-fit] iframe,
+.overlay iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #7fd4bf;
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+  gap: 6px;
+}
+
+.switch button {
+  padding: 5px 11px;
+  border: 1px solid var(--h-line);
+  border-radius: 5px;
+  background: none;
+  color: var(--h-ink-3);
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.switch button[aria-current] {
+  border-color: #7fd4bf;
+  color: #7fd4bf;
+}
+
+.hint {
+  margin-left: 8px;
+  color: var(--h-ink-3);
+  font-size: 11px;
+}
+
 .grid.sheet iframe {
   display: block;
   transform: scale(var(--de-scale, 1));

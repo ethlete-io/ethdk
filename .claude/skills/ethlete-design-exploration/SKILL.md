@@ -87,9 +87,11 @@ Two views, and a way to compare:
 - **all N** is a contact sheet: every option in the call at about a third size, in one grid, so
   a call of two dozen fits on a screen or two. Use it to find the options worth a close look.
 - Clicking an option's name anywhere - a heading, a folded row, a thumbnail - puts it in the
-  **compare tray** at the top of the page. The tray draws its picks side by side and scales them
-  down together until they fit, so the picks keep one geometry and one size. The picks live in
-  the URL under `pick`, so a comparison is a link you can send.
+  **compare overlay** at the top of the page. Two drawings that differ by a few pixels can only
+  be told apart in one place, so the overlay stacks every pick in one box at full size and the
+  reader switches between them: click the box or press space to blink, and with two picks the
+  arrow keys wipe a seam across. Nothing is scaled and nothing moves. The picks live in the URL
+  under `pick`, so a comparison is a link you can send.
 
 Three constraints the tool puts on an option file:
 
