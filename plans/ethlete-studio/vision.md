@@ -120,8 +120,9 @@ two tests in `lib.rs` read the invoke handler and check both files.
 
 Two views. `/` opens on the checkout's projects, then lists that project's calls under one band per
 feature, with a filter box and a choice of
-order (by name, or the calls with open options first), draws the selected option in a frame served by
-that checkout's design server, and writes `accept`, `reject` and `open again` back into the call
+order (by name, or the calls with open options first), draws every variant of the selected call in
+frames served by that checkout's design server — a column of thumbnails beside the one under study —
+and writes `accept`, `reject` and `open again` back into the call
 file. The four verbs write a first draft of the prompt into an editable box under the frame, and
 `accept` and `reject` also write the verdict. The box sends through the agent bridge, and the
 run's events read beside the frame. The selected call and option are remembered in
@@ -170,10 +171,24 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    overwritten.
 6. **Tools the agent can call.** Studio ships a set, so a run spends its budget on the drawing and
    not on finding out how this repo works.
-7. **A workbench that shows every variant at once.** Switching a variant one at a time is tedious,
-   and nothing shows what the others look like. A thumbnail per variant, taken after a change
-   lands, and the controls of a variant built into its own tile. The shape to try first is a
-   security-camera dashboard: every variant visible, one of them large.
+7. ~~**A workbench that shows every variant at once.**~~ Done. The option tab strip is gone. A
+   narrow scrolling column of thumbnails stands at the left of the stage, and the variant under
+   study takes the rest of the width and the full height, because a drawing of an application is
+   tall as well as wide. The verbs, the variant name, its verdict and the frame address sit under
+   the large picture. A thumbnail carries no control of its own: every verb belongs to the variant
+   under study. A verdict reads without a word — a rejected tile falls to `opacity: 0.32`, a chosen
+   one keeps full strength with an accent border and its name in the accent, an open one is plain —
+   and the tile under study carries a full-strength border. Three calls under
+   `apps/timetrack/src/design/calls/studio/` settled that shape: `01-workbench`, `02-tile-controls`
+   and `03-verdict-mark`.
+
+   The fourth question, how a thumbnail is taken, was dropped instead of put to a call. A tile is
+   the variant's own frame, scaled down with a CSS transform: Studio already loads one frame per
+   variant, so a live tile needs no new machinery and cannot go out of date. Staleness was never
+   the hard part either — `tools/design-explore/check-call.mjs:88` already launches a headless
+   Chromium and `tools/design-explore/server.mjs:80` already watches the calls folder, so a
+   background shooter is small work. A captured picture is still worth building later, because a
+   live tile costs one running copy of the drawing per variant.
 
 8. **Wireframe mode, still missing.** The decision stands from the start and nothing implements it:
    wireframe mode ignores logic and hover states, design mode draws the real thing. A call, or the
@@ -193,5 +208,6 @@ calls, and a call holds the variants drawn for it.
 `option`. A rename rewrites every `call.ts`, and four call folders in the tree are another session's
 uncommitted work, so it waits for a clean tree and gets its own commit.
 
-Open, and Tom decides: how a thumbnail is taken and when it is stale; how much of a tile's controls
-stay visible; whether the large variant sits beside the grid or above it.
+Open, and Tom decides: whether a live tile survives a call of two dozen variants, or the column has
+to move to captured pictures. A tile also assumes a 16:9 window, because the design server reports
+no frame height.
