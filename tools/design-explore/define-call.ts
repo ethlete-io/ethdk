@@ -1,6 +1,43 @@
 import type { Type } from '@angular/core';
 
 /**
+ * A value inside a template. An array joins with nothing between, and `null`, `undefined` and
+ * `false` write nothing, so `${rows.map(row)}` and `${isOn && html`…`}` both read as they look.
+ */
+const flatten = (value: unknown): string => {
+  if (Array.isArray(value)) return value.map(flatten).join('');
+  if (value === null || value === undefined || value === false) return '';
+
+  return String(value);
+};
+
+const join = (strings: TemplateStringsArray, values: unknown[]) =>
+  strings.reduce((out, part, index) => out + flatten(values[index - 1]) + part);
+
+/**
+ * Marks a template literal as HTML, so Prettier formats it and an editor highlights it. It escapes
+ * nothing: a drawing writes its own markup, and nothing a call draws comes from outside the
+ * repository.
+ */
+export const html = (strings: TemplateStringsArray, ...values: unknown[]) => join(strings, values);
+
+/** Marks a template literal as CSS, for the same reason `html` does it for markup. */
+export const css = (strings: TemplateStringsArray, ...values: unknown[]) => join(strings, values);
+
+/**
+ * One drawn answer, as the frame renders it: the markup that goes in the frame root, and the CSS
+ * that styles it. A drawing runs no logic, so it is a value the module builds when the frame
+ * imports it, not a component the frame has to instantiate.
+ */
+export type Drawing = {
+  body: string;
+  styles: string;
+};
+
+/** Types a drawing where it is written, so a mistake reads in its own file and not in `call.ts`. */
+export const drawing = (drawn: Drawing): Drawing => drawn;
+
+/**
  * One drawn answer to a call. `load` resolves the module whose default export is the
  * Angular component that draws it, so a broken option breaks its own frame only.
  */
@@ -14,7 +51,7 @@ export type CallOption = {
   verdict?: 'chosen' | 'rejected';
   /** The `key` of the round that drew it. Left out by a call that runs no rounds. */
   round?: string;
-  load: () => Promise<{ default: Type<unknown> }>;
+  load: () => Promise<{ default: Drawing | Type<unknown> }>;
 };
 
 /**

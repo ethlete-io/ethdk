@@ -20,23 +20,32 @@ else {
   const option = (await call()).default.options.find((o) => o.key === key);
   if (!option) fail(`design-explore: call "${slug}" has no option "${key}"`);
   else {
-    const Drawn = (await option.load()).default;
-    const app = await createApplication({ providers });
-    const drawn = createComponent(Drawn, { environmentInjector: app.injector });
+    const loaded = (await option.load()).default;
 
-    if (Wrapper) {
-      const wrapper = createComponent(Wrapper, {
-        environmentInjector: app.injector,
-        hostElement: root,
-        projectableNodes: [[drawn.location.nativeElement]],
-      });
-      app.attachView(wrapper.hostView);
+    if (typeof loaded === 'function') {
+      const app = await createApplication({ providers });
+      const drawn = createComponent(loaded, { environmentInjector: app.injector });
+
+      if (Wrapper) {
+        const wrapper = createComponent(Wrapper, {
+          environmentInjector: app.injector,
+          hostElement: root,
+          projectableNodes: [[drawn.location.nativeElement]],
+        });
+        app.attachView(wrapper.hostView);
+      } else {
+        root.append(drawn.location.nativeElement);
+      }
+
+      app.attachView(drawn.hostView);
+      app.tick();
     } else {
-      root.append(drawn.location.nativeElement);
-    }
+      const style = document.createElement('style');
 
-    app.attachView(drawn.hostView);
-    app.tick();
+      style.textContent = loaded.styles;
+      document.head.append(style);
+      root.innerHTML = loaded.body;
+    }
   }
 }
 
