@@ -7,7 +7,7 @@ import { workspaceRoot$ } from '../../host/workspace';
 @Component({
   selector: 'ethlete-agent-view',
   template: `
-    <div class="flex h-dvh flex-col gap-4 p-8">
+    <div class="flex min-h-0 grow flex-col gap-4 p-8">
       <h1 class="text-h2">Agent bridge</h1>
 
       @if (clis().length === 0) {
@@ -103,6 +103,7 @@ import { workspaceRoot$ } from '../../host/workspace';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
+  host: { class: 'flex min-h-0 grow flex-col' },
 })
 export class AgentViewComponent {
   private destroyRef = inject(DestroyRef);

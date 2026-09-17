@@ -1,4 +1,14 @@
-import { Component, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  ViewEncapsulation,
+  afterRenderEffect,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
 import { EMPTY, Subscription, catchError, finalize, of, switchMap, tap } from 'rxjs';
@@ -24,9 +34,11 @@ import {
   CONTEXT_LIMIT,
   HANDOFF_AT,
   SessionTable,
+  Turn,
   fullness,
   sessionKey,
   storedSessions,
+  withTurn,
   writeSessions,
 } from './sessions';
 import { CallOrder, rememberView, rememberedView } from './remembered';
@@ -34,7 +46,7 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
 @Component({
   selector: 'ethlete-call-view',
   template: `
-    <div class="flex h-dvh min-h-0 flex-col gap-4 p-8">
+    <div class="flex min-h-0 grow flex-col gap-4 p-8">
       <div class="flex flex-wrap items-baseline gap-4">
         <h1 class="text-h2">{{ project() || 'Calls' }}</h1>
 
@@ -149,173 +161,181 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
           </div>
 
           @if (call(); as open) {
-            <div class="flex min-h-0 grow flex-col gap-3">
-              <div class="flex flex-wrap gap-2">
-                @for (option of open.options; track option.key) {
-                  <button
-                    [class.bg-et-surface-bg]="option.key === optionKey()"
-                    (click)="openOption(option)"
-                    class="rounded border border-et-surface-border px-3 py-1"
-                    type="button"
-                  >
-                    {{ option.name }}
-                    @if (option.verdict) {
-                      <span class="text-et-surface-muted">{{ option.verdict }}</span>
-                    }
-                  </button>
-                }
-              </div>
-
-              @if (option(); as drawn) {
-                <div class="flex flex-wrap items-center gap-2">
-                  @for (verb of VERBS; track verb) {
+            <div class="flex min-h-0 grow gap-6">
+              <div class="flex min-h-0 grow flex-col gap-3">
+                <div class="flex flex-wrap gap-2">
+                  @for (option of open.options; track option.key) {
                     <button
-                      (click)="draft(verb)"
+                      [class.bg-et-surface-bg]="option.key === optionKey()"
+                      (click)="openOption(option)"
                       class="rounded border border-et-surface-border px-3 py-1"
                       type="button"
                     >
-                      {{ label(verb) }}
-                    </button>
-                  }
-                  <button
-                    (click)="write(drawn, null)"
-                    class="rounded border border-et-surface-border px-3 py-1"
-                    type="button"
-                  >
-                    Open again
-                  </button>
-                  <span class="text-et-surface-muted text-mono">{{ address() }}</span>
-                </div>
-
-                <div class="flex min-h-0 grow gap-3 overflow-auto">
-                  <div [style.width.px]="open.frameWidth" class="relative min-h-0 shrink-0">
-                    @for (frame of frames(); track frame.key) {
-                      <iframe
-                        [src]="frame.source"
-                        [class.opacity-0]="frame.key !== optionKey()"
-                        [class.pointer-events-none]="frame.key !== optionKey()"
-                        class="absolute inset-0 h-full w-full rounded border border-et-surface-border bg-et-surface-bg transition-opacity"
-                        title="The drawn option"
-                      ></iframe>
-                    }
-                  </div>
-
-                  @if (events().length) {
-                    <ul
-                      class="flex w-96 shrink-0 flex-col gap-1 overflow-auto rounded border border-et-surface-border bg-et-surface-bg p-3 text-mono"
-                    >
-                      @for (event of events(); track $index) {
-                        <li>
-                          @switch (event.kind) {
-                            @case ('started') {
-                              <span class="text-et-surface-muted">{{ event.cli }} {{ event.model }} started</span>
-                            }
-                            @case ('action') {
-                              <span>{{ event.action }}</span>
-                              <span class="text-et-surface-muted">{{ event.detail }}</span>
-                            }
-                            @case ('message') {
-                              <span>{{ event.text }}</span>
-                            }
-                            @case ('failed') {
-                              <span>{{ event.message }}</span>
-                            }
-                            @case ('finished') {
-                              <span class="text-et-surface-muted">
-                                {{ event.ok ? 'finished' : 'stopped' }} {{ event.summary }}
-                              </span>
-                            }
-                          }
-                        </li>
+                      {{ option.name }}
+                      @if (option.verdict) {
+                        <span class="text-et-surface-muted">{{ option.verdict }}</span>
                       }
-                    </ul>
+                    </button>
                   }
                 </div>
 
-                <textarea
-                  [value]="prompt()"
-                  (input)="prompt.set(typed($event))"
-                  class="h-32 shrink-0 rounded border border-et-surface-border p-3"
-                  placeholder="A verb writes the first draft here. Change it, then send it."
-                ></textarea>
-
-                <div class="flex flex-wrap items-center gap-2">
-                  @for (found of clis(); track found.id) {
-                    <button
-                      [class.bg-et-surface-bg]="cli()?.id === found.id"
-                      (click)="pick(found)"
-                      class="rounded border border-et-surface-border px-3 py-1"
-                      type="button"
-                    >
-                      {{ found.label }}
-                      <span class="text-et-surface-muted">{{ found.version }}</span>
-                    </button>
-                  }
-                  <input
-                    [value]="model()"
-                    (input)="model.set(typed($event))"
-                    class="w-48 rounded border border-et-surface-border px-3 py-1"
-                    list="call-models"
-                    placeholder="Model"
-                  />
-                  <datalist id="call-models">
-                    @for (name of cli()?.suggestedModels ?? []; track name) {
-                      <option [value]="name"></option>
-                    }
-                  </datalist>
-                  @if (session(); as conversation) {
-                    <span
-                      [class.text-et-surface-muted]="!full()"
-                      [title]="conversation.tokens + ' of ' + LIMIT + ' tokens'"
-                      class="flex items-center gap-2 text-mono"
-                    >
-                      Continues {{ conversation.id.slice(0, 8) }}
-                      <span class="block h-1 w-16 rounded bg-et-surface-border">
-                        <span
-                          [class.bg-et-brand]="full()"
-                          [class.bg-et-surface-subtle]="!full()"
-                          [style.width.%]="fill()"
-                          class="block h-full rounded"
-                        ></span>
-                      </span>
-                      {{ sessionSize() }}
-                    </span>
-                    @if (full()) {
+                @if (option(); as drawn) {
+                  <div class="flex flex-wrap items-center gap-2">
+                    @for (verb of VERBS; track verb) {
                       <button
-                        [disabled]="running()"
-                        (click)="handOff()"
-                        class="rounded border border-et-brand px-3 py-1 text-et-brand-ink disabled:opacity-50"
+                        (click)="draft(verb)"
+                        class="rounded border border-et-surface-border px-3 py-1"
                         type="button"
                       >
-                        Hand off
+                        {{ label(verb) }}
                       </button>
                     }
                     <button
-                      (click)="forgetSession()"
+                      (click)="write(drawn, null)"
                       class="rounded border border-et-surface-border px-3 py-1"
                       type="button"
                     >
-                      New session
+                      Open again
                     </button>
+                    <span class="text-et-surface-muted text-mono">{{ address() }}</span>
+                  </div>
+
+                  <div class="flex min-h-0 grow overflow-auto">
+                    <div [style.width.px]="open.frameWidth" class="relative min-h-0 shrink-0">
+                      @for (frame of frames(); track frame.key) {
+                        <iframe
+                          [src]="frame.source"
+                          [class.opacity-0]="frame.key !== optionKey()"
+                          [class.pointer-events-none]="frame.key !== optionKey()"
+                          class="absolute inset-0 h-full w-full rounded border border-et-surface-border bg-et-surface-bg transition-opacity"
+                          title="The drawn option"
+                        ></iframe>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="flex w-[34rem] shrink-0 flex-col border-l border-et-surface-border pl-6">
+                <ul #thread class="flex min-h-0 grow flex-col gap-3 overflow-auto pb-4">
+                  @for (turn of turns(); track $index) {
+                    <li>
+                      @switch (turn.kind) {
+                        @case ('ask') {
+                          <p
+                            class="ml-3 border-l-2 border-et-surface-border pl-3 text-small break-words whitespace-pre-wrap"
+                          >
+                            {{ turn.text }}
+                          </p>
+                        }
+                        @case ('say') {
+                          <p class="text-small break-words whitespace-pre-wrap">{{ turn.text }}</p>
+                        }
+                        @case ('act') {
+                          <p class="flex gap-2 overflow-hidden text-mono">
+                            <span [class.text-et-brand]="$index === liveTurn()">{{ turn.action }}</span>
+                            <span class="truncate text-et-surface-muted">{{ turn.detail }}</span>
+                          </p>
+                        }
+                        @case ('note') {
+                          <p class="text-et-surface-muted text-small">{{ turn.text }}</p>
+                        }
+                      }
+                    </li>
+                  } @empty {
+                    <li class="text-et-surface-muted">Nothing said in this call yet.</li>
                   }
-                  <button
-                    [disabled]="running() || !prompt().trim() || !cli()"
-                    (click)="send()"
-                    class="rounded border border-et-surface-border px-3 py-1"
-                    type="button"
-                  >
-                    Send
-                  </button>
-                  <button
-                    [disabled]="!running()"
-                    (click)="stop()"
-                    class="rounded border border-et-surface-border px-3 py-1"
-                    type="button"
-                  >
-                    Stop
-                  </button>
+                </ul>
+
+                <div class="flex shrink-0 flex-col gap-2 border-t border-et-surface-border pt-4">
+                  <textarea
+                    [value]="prompt()"
+                    (input)="prompt.set(typed($event))"
+                    class="h-32 rounded border border-et-surface-border p-3"
+                    placeholder="A verb writes the first draft here. Change it, then send it."
+                  ></textarea>
+
+                  <div class="flex flex-wrap items-center gap-2">
+                    @for (found of clis(); track found.id) {
+                      <button
+                        [class.bg-et-surface-bg]="cli()?.id === found.id"
+                        (click)="pick(found)"
+                        class="rounded border border-et-surface-border px-3 py-1"
+                        type="button"
+                      >
+                        {{ found.label }}
+                        <span class="text-et-surface-muted">{{ found.version }}</span>
+                      </button>
+                    }
+                    <input
+                      [value]="model()"
+                      (input)="model.set(typed($event))"
+                      class="w-40 grow rounded border border-et-surface-border px-3 py-1"
+                      list="call-models"
+                      placeholder="Model"
+                    />
+                    <datalist id="call-models">
+                      @for (name of cli()?.suggestedModels ?? []; track name) {
+                        <option [value]="name"></option>
+                      }
+                    </datalist>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-2">
+                    @if (resume(); as id) {
+                      <span
+                        [class.text-et-surface-muted]="!full()"
+                        [title]="(session()?.tokens ?? 0) + ' of ' + LIMIT + ' tokens'"
+                        class="flex grow items-center gap-2 text-mono"
+                      >
+                        {{ id.slice(0, 8) }}
+                        <span class="block h-1 grow rounded bg-et-surface-border">
+                          <span
+                            [class.bg-et-brand]="full()"
+                            [class.bg-et-surface-subtle]="!full()"
+                            [style.width.%]="fill()"
+                            class="block h-full rounded"
+                          ></span>
+                        </span>
+                        {{ sessionSize() }}
+                      </span>
+                      @if (full()) {
+                        <button
+                          [disabled]="running()"
+                          (click)="handOff()"
+                          class="rounded border border-et-brand px-3 py-1 text-et-brand-ink disabled:opacity-50"
+                          type="button"
+                        >
+                          Hand off
+                        </button>
+                      }
+                      <button
+                        (click)="forgetSession()"
+                        class="rounded border border-et-surface-border px-3 py-1"
+                        type="button"
+                      >
+                        New session
+                      </button>
+                    }
+                    <button
+                      [disabled]="running() || !prompt().trim() || !cli()"
+                      (click)="send()"
+                      class="ml-auto rounded border border-et-surface-border px-3 py-1"
+                      type="button"
+                    >
+                      Send
+                    </button>
+                    <button
+                      [disabled]="!running()"
+                      (click)="stop()"
+                      class="rounded border border-et-surface-border px-3 py-1"
+                      type="button"
+                    >
+                      Stop
+                    </button>
+                  </div>
                 </div>
-              }
+              </div>
             </div>
           }
         </div>
@@ -324,10 +344,13 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [ProjectPickerComponent],
+  host: { class: 'flex min-h-0 grow flex-col' },
 })
 export class CallViewComponent {
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(DomSanitizer);
+
+  private thread = viewChild<ElementRef<HTMLElement>>('thread');
 
   protected checkout = signal('');
   protected project = signal('');
@@ -337,7 +360,6 @@ export class CallViewComponent {
   protected prompt = signal('');
   protected model = signal('');
   protected cli = signal<AgentDescriptor | null>(null);
-  protected events = signal<AgentEvent[]>([]);
   protected running = signal(false);
   private handingOff = signal(false);
   protected server = signal<ServerState | null>(null);
@@ -425,6 +447,15 @@ export class CallViewComponent {
 
   protected session = computed(() => this.sessions()[this.conversation()] ?? null);
 
+  /** The session the next run continues. `null` starts a new conversation. */
+  protected resume = computed(() => this.session()?.id ?? null);
+
+  /** Every turn the open conversation holds, oldest first. A reload reads them back. */
+  protected turns = computed(() => this.session()?.turns ?? []);
+
+  /** The turn the agent is on now, so the rail marks it. `-1` while no run is going. */
+  protected liveTurn = computed(() => (this.running() ? this.turns().length - 1 : -1));
+
   protected readonly LIMIT = CONTEXT_LIMIT;
 
   protected fill = computed(() => Math.min(100, Math.round(fullness(this.session()) * 100)));
@@ -441,6 +472,13 @@ export class CallViewComponent {
   });
 
   constructor() {
+    afterRenderEffect(() => {
+      const count = this.turns().length;
+      const rail = this.thread()?.nativeElement;
+
+      if (rail && count) rail.scrollTop = rail.scrollHeight;
+    });
+
     workspaceRoot$()
       .pipe(
         catchError(() => of('')),
@@ -572,29 +610,28 @@ export class CallViewComponent {
   protected send() {
     const cli = this.cli();
     const cwd = this.checkout();
+    const prompt = this.prompt();
 
-    if (!cli || !cwd || !this.prompt().trim() || this.running()) return;
+    if (!cli || !cwd || !prompt.trim() || this.running()) return;
 
-    this.events.set([]);
+    // Read once: a run keeps writing to the conversation it started in, even if the CLI changes.
+    const key = this.conversation();
+
+    this.keepTurn(key, { kind: 'ask', text: prompt });
+    this.prompt.set('');
     this.running.set(true);
 
     this.run = agentRun$({
       cli: cli.id,
       model: this.model() || null,
-      prompt: this.prompt(),
+      prompt,
       cwd,
-      resume: this.session()?.id ?? null,
+      resume: this.resume(),
     })
       .pipe(
-        tap((event) => {
-          this.events.update((events) => [...events, event]);
-
-          if (event.kind === 'session') this.keepSession(event.id);
-          if (event.kind === 'context') this.keepContext(event.tokens);
-          if (event.kind === 'finished' && event.ok && this.handingOff()) this.forgetSession();
-        }),
+        tap((event) => this.keepEvent(key, event)),
         catchError((error: unknown) => {
-          this.events.update((events) => [...events, { kind: 'failed', message: String(error) }]);
+          this.keepTurn(key, { kind: 'note', text: String(error) });
 
           return EMPTY;
         }),
@@ -615,12 +652,12 @@ export class CallViewComponent {
 
   /** Drops the conversation of the open call, so the next run starts a new one. */
   protected forgetSession() {
-    this.keepSession(null);
+    this.keepSession(this.conversation(), null);
   }
 
   /**
-   * Asks the full session to write its state next to the call, and drops it once it did. The prompt
-   * stays in the box, so the user reads what went out.
+   * Asks the full session to write its state next to the call, and drops it once it did. What went
+   * out stays readable as the last turn of the rail.
    */
   protected handOff() {
     const call = this.call();
@@ -657,13 +694,35 @@ export class CallViewComponent {
       .subscribe();
   }
 
-  private keepSession(id: string | null) {
-    const key = this.conversation();
+  /** Writes what one event says into the conversation the run started in. */
+  private keepEvent(key: string, event: AgentEvent) {
+    if (event.kind === 'session') this.keepSession(key, event.id);
+    if (event.kind === 'context') this.keepContext(key, event.tokens);
+    if (event.kind === 'message') this.keepTurn(key, { kind: 'say', text: event.text });
+    if (event.kind === 'action') this.keepTurn(key, { kind: 'act', action: event.action, detail: event.detail });
+    if (event.kind === 'failed') this.keepTurn(key, { kind: 'note', text: event.message });
+    if (event.kind !== 'finished') return;
 
+    if (!event.ok) this.keepTurn(key, { kind: 'note', text: event.summary || 'The run stopped.' });
+    else if (this.handingOff()) this.keepSession(key, null);
+  }
+
+  private keepTurn(key: string, turn: Turn) {
+    this.sessions.update((table) => {
+      const next = { ...table, [key]: withTurn(table[key] ?? null, turn) };
+
+      writeSessions(next);
+
+      return next;
+    });
+  }
+
+  private keepSession(key: string, id: string | null) {
     this.sessions.update((table) => {
       const next = { ...table };
+      const open = table[key];
 
-      if (id) next[key] = { id, tokens: table[key]?.id === id ? table[key].tokens : 0 };
+      if (id) next[key] = { id, tokens: open?.id === id ? open.tokens : 0, turns: open?.turns ?? [] };
       else delete next[key];
 
       writeSessions(next);
@@ -672,9 +731,7 @@ export class CallViewComponent {
     });
   }
 
-  private keepContext(tokens: number) {
-    const key = this.conversation();
-
+  private keepContext(key: string, tokens: number) {
     this.sessions.update((table) => {
       const open = table[key];
 
