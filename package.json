@@ -22,6 +22,7 @@
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish && yarn sync:dist-tags",
     "storybook": "nx run storybook:storybook:network",
+    "studio": "nx tauri:dev ethlete-studio",
     "sync:dist-tags": "node ./tools/scripts/sync-dist-tags.js",
     "timetrack": "nx tauri:dev timetrack-app",
     "timetrack:build": "nx tauri:build timetrack-app",

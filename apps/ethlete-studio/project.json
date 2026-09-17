@@ -1,0 +1,105 @@
+{
+  "name": "ethlete-studio",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/ethlete-studio/src",
+  "prefix": "ethlete",
+  "tags": ["type:app", "scope:studio"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "browser": "apps/ethlete-studio/src/main.ts",
+        "outputPath": "dist/apps/ethlete-studio",
+        "index": "apps/ethlete-studio/src/index.html",
+        "tsConfig": "apps/ethlete-studio/tsconfig.app.json",
+        "assets": [],
+        "styles": ["apps/ethlete-studio/src/styles.css"]
+      },
+      "configurations": {
+        "production": {
+          "outputHashing": "all",
+          "optimization": {
+            "scripts": true,
+            "styles": {
+              "minify": true,
+              "inlineCritical": false
+            },
+            "fonts": true
+          }
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      }
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "defaultConfiguration": "development",
+      "continuous": true,
+      "options": {
+        "port": 4221
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "ethlete-studio:build:production"
+        },
+        "development": {
+          "buildTarget": "ethlete-studio:build:development"
+        }
+      }
+    },
+    "format-rust": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["{projectRoot}/src-tauri/**/*"],
+      "options": {
+        "cwd": "apps/ethlete-studio/src-tauri",
+        "command": "cargo fmt --check"
+      }
+    },
+    "lint-rust": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["{projectRoot}/src-tauri/**/*"],
+      "options": {
+        "cwd": "apps/ethlete-studio/src-tauri",
+        "command": "cargo clippy --all-targets -- -D warnings"
+      }
+    },
+    "test-rust": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["{projectRoot}/src-tauri/**/*"],
+      "options": {
+        "cwd": "apps/ethlete-studio/src-tauri",
+        "command": "cargo test"
+      }
+    },
+    "tauri": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tauri",
+        "cwd": "apps/ethlete-studio"
+      }
+    },
+    "tauri:dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tauri dev",
+        "cwd": "apps/ethlete-studio"
+      }
+    },
+    "tauri:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tauri build",
+        "cwd": "apps/ethlete-studio"
+      }
+    }
+  }
+}

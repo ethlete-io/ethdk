@@ -177,6 +177,8 @@ jobs:
       # so a badly formatted crate fails the job in seconds rather than after a cargo build.
       - run: yarn nx run timetrack-app:format-rust
 
+      - run: yarn nx run ethlete-studio:format-rust
+
       - name: Install the Tauri Linux build dependencies
         run: |
           sudo apt-get update
@@ -188,13 +190,18 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             apps/timetrack/src-tauri/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('apps/timetrack/src-tauri/Cargo.lock') }}
+            apps/ethlete-studio/src-tauri/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('apps/timetrack/src-tauri/Cargo.lock', 'apps/ethlete-studio/src-tauri/Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-
 
       # After the build dependencies: clippy compiles the crate, where `cargo fmt --check` reads it.
       - run: yarn nx run timetrack-app:lint-rust
 
       - run: yarn nx run timetrack-app:test-rust
+
+      - run: yarn nx run ethlete-studio:lint-rust
+
+      - run: yarn nx run ethlete-studio:test-rust
 
       # Pinned: a new cargo-audit release must not turn this job red on its own. What the audit
       # denies, and which advisory is accepted with a reason, live in

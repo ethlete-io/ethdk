@@ -41,7 +41,10 @@ yarn nx run timetrack-app:format-rust     # 13. cargo fmt --check on the Tauri h
 yarn nx run timetrack-app:lint-rust       # 14. cargo clippy -D warnings
 yarn nx run timetrack-app:test-rust       # 15. cargo test
 yarn nx run timetrack-app:audit-rust      # 16. cargo audit against the RustSec database
-yarn nx e2e timetrack-e2e                 # 17. timetrack app e2e, against the host fakes
+yarn nx run ethlete-studio:format-rust    # 17. cargo fmt --check on the studio host
+yarn nx run ethlete-studio:lint-rust      # 18. cargo clippy -D warnings
+yarn nx run ethlete-studio:test-rust      # 19. cargo test
+yarn nx e2e timetrack-e2e                 # 20. timetrack app e2e, against the host fakes
 ```
 
 Step 11 is the slowest by far. Skip steps 11 and 12 only when the change touches no component

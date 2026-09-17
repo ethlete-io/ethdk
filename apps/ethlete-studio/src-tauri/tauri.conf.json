@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Ethlete Studio",
+  "version": "0.1.0",
+  "identifier": "io.ethlete.studio",
+  "build": {
+    "frontendDist": "../../../dist/apps/ethlete-studio/browser",
+    "devUrl": "http://localhost:4221",
+    "beforeDevCommand": "npx nx serve ethlete-studio",
+    "beforeBuildCommand": "npx nx build ethlete-studio"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Ethlete Studio",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 900,
+        "minHeight": 600
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "rpm", "appimage", "dmg", "app"],
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+  }
+}
