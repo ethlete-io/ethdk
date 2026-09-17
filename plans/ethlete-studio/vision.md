@@ -108,9 +108,20 @@ tear out: the agent bridge streams turns, it does not return one finished answer
 
 ## Current state
 
-`apps/ethlete-studio` is set up to match the Timetrack app: build configurations, Rust
-targets, eslint, Tailwind with generated surface and colour themes, zoneless change
-detection, a hash-location router, and a cold-Observable Tauri bridge in `src/host`. The
-one view is a placeholder that prints `git status`. The Rust host exposes
-`workspace_status`, `workspace_diff` and `workspace_check`, all run from the repository
-root. Run it with `yarn studio`.
+`apps/ethlete-studio` matches the Timetrack app: build configurations, Rust targets, eslint,
+Tailwind with generated surface and colour themes, zoneless change detection, a hash-location
+router, and a cold-Observable Tauri bridge in `src/host`. Run it with `yarn studio`.
+
+The Rust host exposes `workspace_status`, `workspace_diff`, `workspace_check` and
+`workspace_root`, the agent bridge (`agent_list`, `agent_run`, `agent_cancel`) with one
+implementation per CLI, and the call model (`design_project`, `design_set_verdict`). A command
+only answers when it is listed in `build.rs` **and** in `src-tauri/capabilities/default.json`;
+two tests in `lib.rs` read the invoke handler and check both files.
+
+Two views. `/` lists every call of a checkout, draws the selected option in a frame served by
+that checkout's design server, and writes `accept`, `reject` and `open again` back into the call
+file. `/agent` is the agent console. `design_project` reads `design-explore.config.json` from the
+checkout, so Studio needs no config of its own.
+
+Studio does not start the checkout's design server yet. The frame stays empty until `yarn design`
+runs in that checkout.
