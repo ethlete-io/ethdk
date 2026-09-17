@@ -1,22 +1,22 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { css, drawing, html } from '@design-explore';
 import { GROUND, INK, LINE, MUTED, TILES } from './fixture';
 
-@Component({
-  selector: 'ethlete-design-tile-e',
-  template: `
+export default drawing({
+  body: html`
     <div class="row">
-      @for (tile of TILES; track tile.label) {
-        <div class="tile">
-          <span class="label">{{ tile.label }}</span>
-          <span class="value">{{ tile.value }}</span>
-          <span class="change">{{ tile.change }} since yesterday</span>
-        </div>
-      }
+      ${TILES.map(
+        (tile) => html`
+          <div class="tile">
+            <span class="label">${tile.label}</span>
+            <span class="value">${tile.value}</span>
+            <span class="change">${tile.change} since yesterday</span>
+          </div>
+        `,
+      )}
     </div>
   `,
-  encapsulation: ViewEncapsulation.None,
-  styles: `
-    ethlete-design-tile-e {
+  styles: css`
+    #root {
       display: block;
       padding: 3.2rem;
       background: ${GROUND};
@@ -24,12 +24,12 @@ import { GROUND, INK, LINE, MUTED, TILES } from './fixture';
       color: ${INK};
     }
 
-    ethlete-design-tile-e .row {
+    .row {
       display: flex;
       border: 1px solid ${LINE};
     }
 
-    ethlete-design-tile-e .tile {
+    .tile {
       display: flex;
       flex: 1;
       flex-direction: column;
@@ -37,31 +37,28 @@ import { GROUND, INK, LINE, MUTED, TILES } from './fixture';
       padding: 1.6rem;
     }
 
-    ethlete-design-tile-e .tile + .tile {
+    .tile + .tile {
       border-left: 1px solid ${LINE};
     }
 
-    ethlete-design-tile-e .label {
+    .label {
       font-size: 1.1rem;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: ${MUTED};
     }
 
-    ethlete-design-tile-e .value {
+    .value {
       font-size: 3.2rem;
       font-weight: 300;
       line-height: 1;
       font-variant-numeric: tabular-nums;
     }
 
-    ethlete-design-tile-e .change {
+    .change {
       font-size: 1.3rem;
       color: ${MUTED};
       font-variant-numeric: tabular-nums;
     }
   `,
-})
-export default class TileOptionEComponent {
-  protected readonly TILES = TILES;
-}
+});

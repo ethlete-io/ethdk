@@ -1,9 +1,52 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, VERBS } from './fixture';
+import { css, drawing, html } from '@design-explore';
+import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, VERBS, Variant } from './fixture';
 
-@Component({
-  selector: 'ethlete-design-workbench-b',
-  template: `
+const change = (variant: Variant, at: Variant['change']) =>
+  variant.change === at && html`<span class="change ${variant.accent && 'accent'}">${TILE.change}</span>`;
+
+const mini = (variant: Variant, size: string) => html`
+  <div class="mini ${size}">
+    ${change(variant, 'over')}
+    <span class="label">${TILE.label}</span>
+    <span class="figure">
+      <span class="number">${TILE.number}</span>
+      <span class="unit">${TILE.unit}</span>
+      ${change(variant, 'beside')}
+    </span>
+    ${change(variant, 'under')}
+  </div>
+`;
+
+const verdict = (variant: Variant) =>
+  variant.verdict && html`<span class="verdict ${variant.verdict === 'chosen' && 'chosen'}">${variant.verdict}</span>`;
+
+const stale = (variant: Variant) => variant.stale && html`<span class="stale">stale</span>`;
+
+const hero = (variant: Variant) => html`
+  <div class="hero">
+    <div class="hero-head">
+      <span class="hero-name">${variant.name}</span>
+      ${stale(variant)} ${verdict(variant)}
+    </div>
+
+    <div class="hero-picture ${variant.verdict === 'rejected' && 'dimmed'}">${mini(variant, 'large')}</div>
+
+    <div class="verbs">${VERBS.map((verb) => html`<span class="verb">${verb}</span>`)}</div>
+  </div>
+`;
+
+const thumb = (variant: Variant) => html`
+  <div class="thumb ${variant.key === LARGE && 'open'}">
+    <div class="thumb-picture ${variant.verdict === 'rejected' && 'dimmed'}">${mini(variant, '')}</div>
+
+    <span class="thumb-name">${variant.name}</span>
+
+    <div class="markers">${verdict(variant)} ${stale(variant)}</div>
+  </div>
+`;
+
+export default drawing({
+  body: html`
     <div class="window">
       <div class="rail">
         <div class="search">Search</div>
@@ -13,8 +56,8 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
             <span class="bar headline-bar"></span>
           </div>
           <div class="call open">
-            <span class="eyebrow">{{ CALL.eyebrow }}</span>
-            <span class="headline">{{ CALL.headline }}</span>
+            <span class="eyebrow">${CALL.eyebrow}</span>
+            <span class="headline">${CALL.headline}</span>
           </div>
           <div class="call">
             <span class="bar eyebrow-bar"></span>
@@ -24,109 +67,35 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       </div>
 
       <div class="stage">
-        @for (variant of VARIANTS; track variant.key) {
-          @if (variant.key === LARGE) {
-            <div class="hero">
-              <div class="hero-head">
-                <span class="hero-name">{{ variant.name }}</span>
-                @if (variant.stale) {
-                  <span class="stale">stale</span>
-                }
-                @if (variant.verdict) {
-                  <span [class.chosen]="variant.verdict === 'chosen'" class="verdict">{{ variant.verdict }}</span>
-                }
-              </div>
-
-              <div [class.dimmed]="variant.verdict === 'rejected'" class="hero-picture">
-                <div class="mini large">
-                  @if (variant.change === 'over') {
-                    <span [class.accent]="variant.accent" class="change">{{ TILE.change }}</span>
-                  }
-                  <span class="label">{{ TILE.label }}</span>
-                  <span class="figure">
-                    <span class="number">{{ TILE.number }}</span>
-                    <span class="unit">{{ TILE.unit }}</span>
-                    @if (variant.change === 'beside') {
-                      <span [class.accent]="variant.accent" class="change">{{ TILE.change }}</span>
-                    }
-                  </span>
-                  @if (variant.change === 'under') {
-                    <span [class.accent]="variant.accent" class="change">{{ TILE.change }}</span>
-                  }
-                </div>
-              </div>
-
-              <div class="verbs">
-                @for (verb of VERBS; track verb) {
-                  <span class="verb">{{ verb }}</span>
-                }
-              </div>
-            </div>
-          }
-        }
+        ${VARIANTS.map((variant) => variant.key === LARGE && hero(variant))}
 
         <div class="strip">
           <div class="strip-head">
-            <span class="strip-title">All {{ VARIANTS.length }} variants</span>
+            <span class="strip-title">All ${VARIANTS.length} variants</span>
             <span class="strip-note">a ninth starts a second row, and the large one moves up</span>
           </div>
 
-          <div class="thumbs">
-            @for (variant of VARIANTS; track variant.key) {
-              <div [class.open]="variant.key === LARGE" class="thumb">
-                <div [class.dimmed]="variant.verdict === 'rejected'" class="thumb-picture">
-                  <div class="mini">
-                    @if (variant.change === 'over') {
-                      <span [class.accent]="variant.accent" class="change">{{ TILE.change }}</span>
-                    }
-                    <span class="label">{{ TILE.label }}</span>
-                    <span class="figure">
-                      <span class="number">{{ TILE.number }}</span>
-                      <span class="unit">{{ TILE.unit }}</span>
-                      @if (variant.change === 'beside') {
-                        <span [class.accent]="variant.accent" class="change">{{ TILE.change }}</span>
-                      }
-                    </span>
-                    @if (variant.change === 'under') {
-                      <span [class.accent]="variant.accent" class="change">{{ TILE.change }}</span>
-                    }
-                  </div>
-                </div>
-
-                <span class="thumb-name">{{ variant.name }}</span>
-
-                <div class="markers">
-                  @if (variant.verdict) {
-                    <span [class.chosen]="variant.verdict === 'chosen'" class="verdict">{{ variant.verdict }}</span>
-                  }
-                  @if (variant.stale) {
-                    <span class="stale">stale</span>
-                  }
-                </div>
-              </div>
-            }
-          </div>
+          <div class="thumbs">${VARIANTS.map(thumb)}</div>
         </div>
       </div>
     </div>
   `,
-  encapsulation: ViewEncapsulation.None,
-  styles: `
-    ethlete-design-workbench-b {
+  styles: css`
+    #root {
       display: block;
       background: ${GROUND};
       font-family: 'Jost', sans-serif;
       color: ${INK};
     }
 
-    ethlete-design-workbench-b .window {
+    .window {
       display: flex;
       width: 128rem;
       height: 72rem;
       overflow: hidden;
     }
 
-    ethlete-design-workbench-b .rail {
+    .rail {
       display: flex;
       flex-direction: column;
       gap: 1.6rem;
@@ -136,7 +105,7 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       border-right: 1px solid ${LINE};
     }
 
-    ethlete-design-workbench-b .search {
+    .search {
       padding: 0.8rem 1rem;
       border: 1px solid ${LINE};
       border-radius: 0.4rem;
@@ -144,13 +113,13 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       color: ${MUTED};
     }
 
-    ethlete-design-workbench-b .calls {
+    .calls {
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
     }
 
-    ethlete-design-workbench-b .call {
+    .call {
       display: flex;
       flex-direction: column;
       gap: 0.6rem;
@@ -158,40 +127,40 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       border-radius: 0.4rem;
     }
 
-    ethlete-design-workbench-b .call.open {
+    .call.open {
       background: ${PLATE};
     }
 
-    ethlete-design-workbench-b .eyebrow {
+    .eyebrow {
       font-size: 1rem;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: ${MUTED};
     }
 
-    ethlete-design-workbench-b .headline {
+    .headline {
       font-size: 1.3rem;
       line-height: 1.3;
     }
 
-    ethlete-design-workbench-b .bar {
+    .bar {
       display: block;
       height: 0.8rem;
       border-radius: 0.2rem;
       background: ${LINE};
     }
 
-    ethlete-design-workbench-b .eyebrow-bar {
+    .eyebrow-bar {
       width: 4.8rem;
       height: 0.6rem;
     }
 
-    ethlete-design-workbench-b .headline-bar {
+    .headline-bar {
       width: 100%;
       height: 1.2rem;
     }
 
-    ethlete-design-workbench-b .stage {
+    .stage {
       display: flex;
       flex: 1;
       flex-direction: column;
@@ -200,7 +169,7 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       padding: 1.6rem;
     }
 
-    ethlete-design-workbench-b .hero {
+    .hero {
       display: flex;
       flex: 1;
       flex-direction: column;
@@ -212,18 +181,18 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       background: ${PLATE};
     }
 
-    ethlete-design-workbench-b .hero-head {
+    .hero-head {
       display: flex;
       align-items: center;
       gap: 1.2rem;
       flex: none;
     }
 
-    ethlete-design-workbench-b .hero-name {
+    .hero-name {
       font-size: 1.4rem;
     }
 
-    ethlete-design-workbench-b .hero-picture {
+    .hero-picture {
       display: flex;
       flex: 1;
       align-items: center;
@@ -233,13 +202,13 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       border-radius: 0.4rem;
     }
 
-    ethlete-design-workbench-b .verbs {
+    .verbs {
       display: flex;
       gap: 0.8rem;
       flex: none;
     }
 
-    ethlete-design-workbench-b .verb {
+    .verb {
       padding: 0.6rem 1.2rem;
       border: 1px solid ${LINE};
       border-radius: 1.4rem;
@@ -247,7 +216,7 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       color: ${MUTED};
     }
 
-    ethlete-design-workbench-b .strip {
+    .strip {
       display: flex;
       flex-direction: column;
       gap: 0.8rem;
@@ -255,7 +224,7 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       flex: none;
     }
 
-    ethlete-design-workbench-b .strip-head {
+    .strip-head {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
@@ -263,12 +232,12 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       color: ${MUTED};
     }
 
-    ethlete-design-workbench-b .strip-title {
+    .strip-title {
       letter-spacing: 0.16em;
       text-transform: uppercase;
     }
 
-    ethlete-design-workbench-b .thumbs {
+    .thumbs {
       display: flex;
       gap: 0.8rem;
       flex: 1;
@@ -276,7 +245,7 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       overflow: hidden;
     }
 
-    ethlete-design-workbench-b .thumb {
+    .thumb {
       display: flex;
       flex-direction: column;
       gap: 0.8rem;
@@ -288,45 +257,45 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       background: ${PLATE};
     }
 
-    ethlete-design-workbench-b .thumb.open {
+    .thumb.open {
       border-color: ${ACCENT};
     }
 
-    ethlete-design-workbench-b .thumb-picture {
+    .thumb-picture {
       display: flex;
       flex: 1;
       align-items: center;
       min-height: 0;
     }
 
-    ethlete-design-workbench-b .thumb-name {
+    .thumb-name {
       font-size: 1rem;
       line-height: 1.3;
       color: ${MUTED};
     }
 
-    ethlete-design-workbench-b .markers {
+    .markers {
       display: flex;
       gap: 0.6rem;
       min-height: 1.4rem;
     }
 
-    ethlete-design-workbench-b .dimmed {
+    .dimmed {
       opacity: 0.45;
     }
 
-    ethlete-design-workbench-b .verdict {
+    .verdict {
       font-size: 1rem;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: ${MUTED};
     }
 
-    ethlete-design-workbench-b .verdict.chosen {
+    .verdict.chosen {
       color: ${ACCENT};
     }
 
-    ethlete-design-workbench-b .stale {
+    .stale {
       padding: 0 0.6rem;
       border: 1px solid ${LINE};
       border-radius: 0.8rem;
@@ -335,55 +304,48 @@ import { ACCENT, CALL, GROUND, INK, LARGE, LINE, MUTED, PLATE, TILE, VARIANTS, V
       color: ${MUTED};
     }
 
-    ethlete-design-workbench-b .mini {
+    .mini {
       display: flex;
       flex-direction: column;
       gap: 0.4em;
       font-size: 1rem;
     }
 
-    ethlete-design-workbench-b .mini.large {
+    .mini.large {
       font-size: 2.4rem;
     }
 
-    ethlete-design-workbench-b .label {
+    .label {
       font-size: 1.1em;
       color: ${MUTED};
     }
 
-    ethlete-design-workbench-b .figure {
+    .figure {
       display: flex;
       align-items: baseline;
       gap: 0.3em;
     }
 
-    ethlete-design-workbench-b .number {
+    .number {
       font-size: 3.2em;
       line-height: 1;
       color: ${INK};
       font-variant-numeric: tabular-nums;
     }
 
-    ethlete-design-workbench-b .unit {
+    .unit {
       font-size: 1.2em;
       color: ${INK};
     }
 
-    ethlete-design-workbench-b .change {
+    .change {
       font-size: 1.2em;
       color: ${MUTED};
       font-variant-numeric: tabular-nums;
     }
 
-    ethlete-design-workbench-b .change.accent {
+    .change.accent {
       color: ${ACCENT};
     }
   `,
-})
-export default class WorkbenchBComponent {
-  protected readonly VARIANTS = VARIANTS;
-  protected readonly TILE = TILE;
-  protected readonly CALL = CALL;
-  protected readonly VERBS = VERBS;
-  protected readonly LARGE = LARGE;
-}
+});

@@ -1,26 +1,47 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSION, TURNS } from './fixture';
+import { css, drawing, html } from '@design-explore';
+import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSION, TURNS, Turn } from './fixture';
 
-@Component({
-  selector: 'ethlete-design-chat-a',
-  template: `
+const CHIPS = ['B · A hairline frame and the change', CALL.option, 'E · The change goes quiet'];
+
+const RAILS = [
+  { eyebrow: 'Sandbox · call 0', headline: CALL.headline, on: true },
+  { eyebrow: 'Sandbox · call 1', headline: 'How a day names the work it holds', on: false },
+  { eyebrow: 'Sandbox · call 2', headline: 'What a running entry looks like', on: false },
+];
+
+const FILLED = (SESSION.tokens / SESSION.limit) * 100;
+
+const turn = (item: Turn) => {
+  if (item.kind === 'ask') return html`<p class="ask">${item.text}</p>`;
+  if (item.kind === 'say') return html`<p class="say">${item.text}</p>`;
+
+  return html`
+    <p class="act">
+      <span class="act-action">${item.action}</span>
+      <span class="act-detail">${item.detail}</span>
+    </p>
+  `;
+};
+
+export default drawing({
+  body: html`
     <div class="window">
       <div class="rail">
         <div class="search"></div>
-        @for (row of RAILS; track row.headline) {
-          <div [class.on]="row.on" class="call">
-            <span class="call-eyebrow">{{ row.eyebrow }}</span>
-            <span class="call-headline">{{ row.headline }}</span>
-            <span class="call-state">0 of 6 settled</span>
-          </div>
-        }
+        ${RAILS.map(
+          (row) => html`
+            <div class="call ${row.on && 'on'}">
+              <span class="call-eyebrow">${row.eyebrow}</span>
+              <span class="call-headline">${row.headline}</span>
+              <span class="call-state">0 of 6 settled</span>
+            </div>
+          `,
+        )}
       </div>
 
       <div class="stage">
         <div class="chips">
-          @for (chip of CHIPS; track chip) {
-            <span [class.on]="chip === CALL.option" class="chip">{{ chip }}</span>
-          }
+          ${CHIPS.map((chip) => html`<span class="chip ${chip === CALL.option && 'on'}">${chip}</span>`)}
         </div>
         <div class="plate">
           <span class="plate-label">the drawn option</span>
@@ -29,31 +50,20 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
 
       <div class="chat">
         <div class="thread">
-          @for (turn of TURNS; track $index) {
-            @if (turn.kind === 'ask') {
-              <p class="ask">{{ turn.text }}</p>
-            } @else if (turn.kind === 'say') {
-              <p class="say">{{ turn.text }}</p>
-            } @else {
-              <p class="act">
-                <span class="act-action">{{ turn.action }}</span>
-                <span class="act-detail">{{ turn.detail }}</span>
-              </p>
-            }
-          }
+          ${TURNS.map(turn)}
           <p class="act live">
-            <span class="act-action">{{ LIVE.action }}</span>
-            <span class="act-detail">{{ LIVE.detail }}</span>
+            <span class="act-action">${LIVE.action}</span>
+            <span class="act-detail">${LIVE.detail}</span>
           </p>
         </div>
 
         <div class="foot">
-          <div class="prompt">{{ DRAFT }}</div>
+          <div class="prompt">${DRAFT}</div>
           <div class="bar">
-            <span class="cli">{{ CLI }}</span>
+            <span class="cli">${CLI}</span>
             <span class="meter">
-              <span class="meter-id">{{ SESSION.id }}</span>
-              <span class="meter-track"><span [style.width.%]="FILLED" class="meter-fill"></span></span>
+              <span class="meter-id">${SESSION.id}</span>
+              <span class="meter-track"><span class="meter-fill" style="width: ${FILLED}%"></span></span>
               <span class="meter-value">152k</span>
             </span>
             <span class="send">Send</span>
@@ -62,23 +72,22 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       </div>
     </div>
   `,
-  encapsulation: ViewEncapsulation.None,
-  styles: `
-    ethlete-design-chat-a {
+  styles: css`
+    #root {
       display: block;
       background: ${GROUND};
       font-family: 'Jost', sans-serif;
       color: ${INK};
     }
 
-    ethlete-design-chat-a .window {
+    .window {
       display: flex;
       width: 128rem;
       height: 72rem;
       overflow: hidden;
     }
 
-    ethlete-design-chat-a .rail {
+    .rail {
       display: flex;
       flex-direction: column;
       gap: 1.6rem;
@@ -87,14 +96,14 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       border-right: 1px solid ${LINE};
     }
 
-    ethlete-design-chat-a .search {
+    .search {
       height: 2.8rem;
       border: 1px solid ${LINE};
       border-radius: 0.4rem;
       background: ${PLATE};
     }
 
-    ethlete-design-chat-a .call {
+    .call {
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
@@ -102,28 +111,28 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       border-radius: 0.4rem;
     }
 
-    ethlete-design-chat-a .call.on {
+    .call.on {
       background: ${PLATE};
     }
 
-    ethlete-design-chat-a .call-eyebrow {
+    .call-eyebrow {
       font-size: 1rem;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: ${MUTED};
     }
 
-    ethlete-design-chat-a .call-headline {
+    .call-headline {
       font-size: 1.3rem;
       line-height: 1.35;
     }
 
-    ethlete-design-chat-a .call-state {
+    .call-state {
       font-size: 1.1rem;
       color: ${MUTED};
     }
 
-    ethlete-design-chat-a .stage {
+    .stage {
       display: flex;
       flex-direction: column;
       gap: 1.6rem;
@@ -132,12 +141,12 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       padding: 1.6rem;
     }
 
-    ethlete-design-chat-a .chips {
+    .chips {
       display: flex;
       gap: 0.8rem;
     }
 
-    ethlete-design-chat-a .chip {
+    .chip {
       padding: 0.5rem 1.2rem;
       border: 1px solid ${LINE};
       border-radius: 999px;
@@ -145,12 +154,12 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       color: ${MUTED};
     }
 
-    ethlete-design-chat-a .chip.on {
+    .chip.on {
       border-color: ${INK};
       color: ${INK};
     }
 
-    ethlete-design-chat-a .plate {
+    .plate {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -160,14 +169,14 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       background: ${PLATE};
     }
 
-    ethlete-design-chat-a .plate-label {
+    .plate-label {
       font-size: 1.2rem;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: ${MUTED};
     }
 
-    ethlete-design-chat-a .chat {
+    .chat {
       display: flex;
       flex-direction: column;
       flex: 0 0 34rem;
@@ -175,7 +184,7 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       border-left: 1px solid ${LINE};
     }
 
-    ethlete-design-chat-a .thread {
+    .thread {
       display: flex;
       flex-direction: column;
       gap: 1.4rem;
@@ -185,7 +194,7 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       overflow: hidden;
     }
 
-    ethlete-design-chat-a .ask {
+    .ask {
       margin: 0 0 0 1.2rem;
       padding-left: 1.2rem;
       border-left: 2px solid ${LINE};
@@ -194,14 +203,14 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       color: ${INK};
     }
 
-    ethlete-design-chat-a .say {
+    .say {
       margin: 0;
       font-size: 1.3rem;
       line-height: 1.6;
       color: ${INK};
     }
 
-    ethlete-design-chat-a .act {
+    .act {
       display: flex;
       gap: 0.8rem;
       margin: 0;
@@ -211,26 +220,26 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       white-space: nowrap;
     }
 
-    ethlete-design-chat-a .act-action {
+    .act-action {
       color: ${INK};
     }
 
-    ethlete-design-chat-a .act-detail {
+    .act-detail {
       overflow: hidden;
       text-overflow: ellipsis;
       color: ${MUTED};
     }
 
-    ethlete-design-chat-a .live .act-action {
+    .live .act-action {
       color: ${ACCENT};
     }
 
-    ethlete-design-chat-a .live .act-action::after {
+    .live .act-action::after {
       content: ' ·';
       color: ${ACCENT};
     }
 
-    ethlete-design-chat-a .foot {
+    .foot {
       display: flex;
       flex-direction: column;
       gap: 0.8rem;
@@ -238,7 +247,7 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       border-top: 1px solid ${LINE};
     }
 
-    ethlete-design-chat-a .prompt {
+    .prompt {
       min-height: 7.2rem;
       padding: 1.2rem;
       border: 1px solid ${LINE};
@@ -248,7 +257,7 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       line-height: 1.5;
     }
 
-    ethlete-design-chat-a .bar {
+    .bar {
       display: flex;
       align-items: center;
       gap: 1.2rem;
@@ -256,11 +265,11 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       color: ${MUTED};
     }
 
-    ethlete-design-chat-a .cli {
+    .cli {
       white-space: nowrap;
     }
 
-    ethlete-design-chat-a .meter {
+    .meter {
       display: flex;
       align-items: center;
       gap: 0.6rem;
@@ -269,21 +278,21 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       font-family: 'JetBrains Mono', ui-monospace, monospace;
     }
 
-    ethlete-design-chat-a .meter-track {
+    .meter-track {
       flex: 1 1 auto;
       height: 0.3rem;
       border-radius: 999px;
       background: ${LINE};
     }
 
-    ethlete-design-chat-a .meter-fill {
+    .meter-fill {
       display: block;
       height: 100%;
       border-radius: 999px;
       background: ${MUTED};
     }
 
-    ethlete-design-chat-a .send {
+    .send {
       padding: 0.5rem 1.4rem;
       border-radius: 0.4rem;
       background: ${ACCENT};
@@ -292,22 +301,4 @@ import { ACCENT, CALL, CLI, DRAFT, GROUND, INK, LINE, LIVE, MUTED, PLATE, SESSIO
       font-size: 1.2rem;
     }
   `,
-})
-export default class ChatSurfaceOptionAComponent {
-  protected readonly TURNS = TURNS;
-  protected readonly LIVE = LIVE;
-  protected readonly DRAFT = DRAFT;
-  protected readonly SESSION = SESSION;
-  protected readonly CLI = CLI;
-  protected readonly CALL = CALL;
-
-  protected readonly CHIPS = ['B · A hairline frame and the change', CALL.option, 'E · The change goes quiet'];
-
-  protected readonly RAILS = [
-    { eyebrow: 'Sandbox · call 0', headline: CALL.headline, on: true },
-    { eyebrow: 'Sandbox · call 1', headline: 'How a day names the work it holds', on: false },
-    { eyebrow: 'Sandbox · call 2', headline: 'What a running entry looks like', on: false },
-  ];
-
-  protected readonly FILLED = (SESSION.tokens / SESSION.limit) * 100;
-}
+});

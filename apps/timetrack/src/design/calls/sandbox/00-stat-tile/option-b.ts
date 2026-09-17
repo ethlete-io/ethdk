@@ -1,22 +1,22 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { css, drawing, html } from '@design-explore';
 import { DOWN, GROUND, INK, LINE, MUTED, TILES, UP } from './fixture';
 
-@Component({
-  selector: 'ethlete-design-tile-b',
-  template: `
+export default drawing({
+  body: html`
     <div class="row">
-      @for (tile of TILES; track tile.label) {
-        <div class="tile">
-          <span class="label">{{ tile.label }}</span>
-          <span class="value">{{ tile.value }}</span>
-          <span [class.rising]="tile.rising" class="change">{{ tile.change }}</span>
-        </div>
-      }
+      ${TILES.map(
+        (tile) => html`
+          <div class="tile">
+            <span class="label">${tile.label}</span>
+            <span class="value">${tile.value}</span>
+            <span class="change ${tile.rising && 'rising'}">${tile.change}</span>
+          </div>
+        `,
+      )}
     </div>
   `,
-  encapsulation: ViewEncapsulation.None,
-  styles: `
-    ethlete-design-tile-b {
+  styles: css`
+    #root {
       display: block;
       padding: 3.2rem;
       background: ${GROUND};
@@ -24,12 +24,12 @@ import { DOWN, GROUND, INK, LINE, MUTED, TILES, UP } from './fixture';
       color: ${INK};
     }
 
-    ethlete-design-tile-b .row {
+    .row {
       display: flex;
       gap: 1.6rem;
     }
 
-    ethlete-design-tile-b .tile {
+    .tile {
       display: flex;
       flex: 1;
       flex-direction: column;
@@ -38,30 +38,27 @@ import { DOWN, GROUND, INK, LINE, MUTED, TILES, UP } from './fixture';
       border: 1px solid ${LINE};
     }
 
-    ethlete-design-tile-b .label {
+    .label {
       font-size: 1.1rem;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: ${MUTED};
     }
 
-    ethlete-design-tile-b .value {
+    .value {
       font-size: 3.2rem;
       font-weight: 300;
       line-height: 1;
       font-variant-numeric: tabular-nums;
     }
 
-    ethlete-design-tile-b .change {
+    .change {
       font-size: 1.3rem;
       color: ${DOWN};
     }
 
-    ethlete-design-tile-b .change.rising {
+    .change.rising {
       color: ${UP};
     }
   `,
-})
-export default class TileOptionBComponent {
-  protected readonly TILES = TILES;
-}
+});

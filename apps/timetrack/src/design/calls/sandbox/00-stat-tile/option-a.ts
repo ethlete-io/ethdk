@@ -1,21 +1,21 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { css, drawing, html } from '@design-explore';
 import { GROUND, INK, MUTED, TILES } from './fixture';
 
-@Component({
-  selector: 'ethlete-design-tile-a',
-  template: `
+export default drawing({
+  body: html`
     <div class="row">
-      @for (tile of TILES; track tile.label) {
-        <div class="tile">
-          <span class="value">{{ tile.value }}</span>
-          <span class="label">{{ tile.label }}</span>
-        </div>
-      }
+      ${TILES.map(
+        (tile) => html`
+          <div class="tile">
+            <span class="value">${tile.value}</span>
+            <span class="label">${tile.label}</span>
+          </div>
+        `,
+      )}
     </div>
   `,
-  encapsulation: ViewEncapsulation.None,
-  styles: `
-    ethlete-design-tile-a {
+  styles: css`
+    #root {
       display: block;
       padding: 3.2rem;
       background: ${GROUND};
@@ -23,32 +23,29 @@ import { GROUND, INK, MUTED, TILES } from './fixture';
       color: ${INK};
     }
 
-    ethlete-design-tile-a .row {
+    .row {
       display: flex;
       gap: 6.4rem;
     }
 
-    ethlete-design-tile-a .tile {
+    .tile {
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
     }
 
-    ethlete-design-tile-a .value {
+    .value {
       font-size: 3.6rem;
       font-weight: 300;
       line-height: 1;
       font-variant-numeric: tabular-nums;
     }
 
-    ethlete-design-tile-a .label {
+    .label {
       font-size: 1.1rem;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: ${MUTED};
     }
   `,
-})
-export default class TileOptionAComponent {
-  protected readonly TILES = TILES;
-}
+});

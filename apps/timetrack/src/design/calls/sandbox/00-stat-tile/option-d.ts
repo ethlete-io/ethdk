@@ -1,27 +1,27 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { css, drawing, html } from '@design-explore';
 import { DOWN, GROUND, INK, LINE, MUTED, TILES, UP } from './fixture';
 
-@Component({
-  selector: 'ethlete-design-tile-d',
-  template: `
+export default drawing({
+  body: html`
     <div class="row">
-      @for (tile of TILES; track tile.label) {
-        <div class="tile">
-          <span class="label">{{ tile.label }}</span>
-          <span class="line">
-            <span class="value">{{ tile.value }}</span>
-            <span class="change">
-              <span [class.rising]="tile.rising" class="mark">{{ tile.rising ? '▲' : '▼' }}</span>
-              {{ tile.change }}
+      ${TILES.map(
+        (tile) => html`
+          <div class="tile">
+            <span class="label">${tile.label}</span>
+            <span class="line">
+              <span class="value">${tile.value}</span>
+              <span class="change">
+                <span class="mark ${tile.rising && 'rising'}">${tile.rising ? '▲' : '▼'}</span>
+                ${tile.change}
+              </span>
             </span>
-          </span>
-        </div>
-      }
+          </div>
+        `,
+      )}
     </div>
   `,
-  encapsulation: ViewEncapsulation.None,
-  styles: `
-    ethlete-design-tile-d {
+  styles: css`
+    #root {
       display: block;
       padding: 3.2rem;
       background: ${GROUND};
@@ -29,12 +29,12 @@ import { DOWN, GROUND, INK, LINE, MUTED, TILES, UP } from './fixture';
       color: ${INK};
     }
 
-    ethlete-design-tile-d .row {
+    .row {
       display: flex;
       gap: 1.6rem;
     }
 
-    ethlete-design-tile-d .tile {
+    .tile {
       display: flex;
       flex: 1;
       flex-direction: column;
@@ -43,42 +43,39 @@ import { DOWN, GROUND, INK, LINE, MUTED, TILES, UP } from './fixture';
       border: 1px solid ${LINE};
     }
 
-    ethlete-design-tile-d .label {
+    .label {
       font-size: 1.1rem;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: ${MUTED};
     }
 
-    ethlete-design-tile-d .line {
+    .line {
       display: flex;
       align-items: baseline;
       gap: 0.8rem;
     }
 
-    ethlete-design-tile-d .value {
+    .value {
       font-size: 3.2rem;
       font-weight: 300;
       line-height: 1;
       font-variant-numeric: tabular-nums;
     }
 
-    ethlete-design-tile-d .change {
+    .change {
       font-size: 1.3rem;
       color: ${MUTED};
       font-variant-numeric: tabular-nums;
     }
 
-    ethlete-design-tile-d .mark {
+    .mark {
       font-size: 0.9rem;
       color: ${DOWN};
     }
 
-    ethlete-design-tile-d .mark.rising {
+    .mark.rising {
       color: ${UP};
     }
   `,
-})
-export default class TileOptionDComponent {
-  protected readonly TILES = TILES;
-}
+});
