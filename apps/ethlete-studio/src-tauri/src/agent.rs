@@ -68,6 +68,10 @@ pub enum AgentEvent {
     /// The session the run belongs to. Naming it in the next request continues this conversation.
     #[serde(rename_all = "camelCase")]
     Session { id: String },
+    /// How much the conversation reads now, in tokens. A CLI reports it as the run ends, so this
+    /// event has to reach the app before `Finished`: the app closes the stream on `Finished`.
+    #[serde(rename_all = "camelCase")]
+    Context { tokens: u64 },
     #[serde(rename_all = "camelCase")]
     Message { text: String },
     #[serde(rename_all = "camelCase")]

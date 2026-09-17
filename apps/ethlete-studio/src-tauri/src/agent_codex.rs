@@ -56,15 +56,36 @@ impl AgentCli for CodexCli {
         match value.get("type").and_then(Value::as_str) {
             Some("item.started") => item(&value, false),
             Some("item.completed") => item(&value, true),
-            Some("turn.completed") => vec![AgentEvent::Finished {
-                ok: true,
-                summary: String::new(),
-            }],
+            Some("turn.completed") => {
+                let mut events = context(&value);
+
+                events.push(AgentEvent::Finished {
+                    ok: true,
+                    summary: String::new(),
+                });
+
+                events
+            }
             Some("turn.failed") => stopped(value.pointer("/error/message").and_then(Value::as_str)),
             Some("error") => stopped(value.get("message").and_then(Value::as_str)),
             _ => Vec::new(),
         }
     }
+}
+
+/// What the turn read. Codex counts the cached part inside `input_tokens`, so that one number is
+/// the size of the session the next turn continues.
+fn context(value: &Value) -> Vec<AgentEvent> {
+    let tokens = value
+        .pointer("/usage/input_tokens")
+        .and_then(Value::as_u64)
+        .unwrap_or(0);
+
+    if tokens == 0 {
+        return Vec::new();
+    }
+
+    vec![AgentEvent::Context { tokens }]
 }
 
 fn stopped(message: Option<&str>) -> Vec<AgentEvent> {
@@ -141,11 +162,19 @@ mod tests {
     }
 
     #[test]
-    fn a_completed_turn_ends_the_run() {
-        let line = r#"{"type":"turn.completed","usage":{"input_tokens":1}}"#;
+    fn a_completed_turn_reports_the_size_of_the_session_before_it_ends_the_run() {
+        let line = r#"{"type":"turn.completed","usage":{"input_tokens":41000,"cached_input_tokens":40000}}"#;
 
+        let events = CodexCli.read_line(line);
+
+        assert!(matches!(&events[0], AgentEvent::Context { tokens } if *tokens == 41000));
+        assert!(matches!(&events[1], AgentEvent::Finished { ok: true, .. }));
+    }
+
+    #[test]
+    fn a_completed_turn_that_counts_nothing_still_ends_the_run() {
         assert!(matches!(
-            &CodexCli.read_line(line)[0],
+            &CodexCli.read_line(r#"{"type":"turn.completed"}"#)[0],
             AgentEvent::Finished { ok: true, .. }
         ));
     }

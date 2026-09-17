@@ -17,10 +17,18 @@ import {
   frameUrl,
 } from '../../host/design';
 import { workspaceRoot$ } from '../../host/workspace';
-import { Verb, promptDraft, verbLabel, verdictOf } from './prompt-draft';
+import { Verb, handoffDraft, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import { featureGroups, openOptions, projectOf, projectSummaries } from './grouping';
 import { ProjectPickerComponent } from './project-picker.component';
-import { SessionTable, sessionKey, storedSessions, writeSessions } from './sessions';
+import {
+  CONTEXT_LIMIT,
+  HANDOFF_AT,
+  SessionTable,
+  fullness,
+  sessionKey,
+  storedSessions,
+  writeSessions,
+} from './sessions';
 import { CallOrder, rememberView, rememberedView } from './remembered';
 
 @Component({
@@ -255,8 +263,33 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
                       <option [value]="name"></option>
                     }
                   </datalist>
-                  @if (session(); as id) {
-                    <span class="text-et-surface-muted text-mono">Continues {{ id.slice(0, 8) }}</span>
+                  @if (session(); as conversation) {
+                    <span
+                      [class.text-et-surface-muted]="!full()"
+                      [title]="conversation.tokens + ' of ' + LIMIT + ' tokens'"
+                      class="flex items-center gap-2 text-mono"
+                    >
+                      Continues {{ conversation.id.slice(0, 8) }}
+                      <span class="block h-1 w-16 rounded bg-et-surface-border">
+                        <span
+                          [class.bg-et-brand]="full()"
+                          [class.bg-et-surface-subtle]="!full()"
+                          [style.width.%]="fill()"
+                          class="block h-full rounded"
+                        ></span>
+                      </span>
+                      {{ sessionSize() }}
+                    </span>
+                    @if (full()) {
+                      <button
+                        [disabled]="running()"
+                        (click)="handOff()"
+                        class="rounded border border-et-brand px-3 py-1 text-et-brand-ink disabled:opacity-50"
+                        type="button"
+                      >
+                        Hand off
+                      </button>
+                    }
                     <button
                       (click)="forgetSession()"
                       class="rounded border border-et-surface-border px-3 py-1"
@@ -306,6 +339,7 @@ export class CallViewComponent {
   protected cli = signal<AgentDescriptor | null>(null);
   protected events = signal<AgentEvent[]>([]);
   protected running = signal(false);
+  private handingOff = signal(false);
   protected server = signal<ServerState | null>(null);
   private sessions = signal<SessionTable>(storedSessions());
   protected serverBusy = signal(false);
@@ -387,9 +421,18 @@ export class CallViewComponent {
     }));
   });
 
-  private conversation = computed(() => sessionKey({ slug: this.slug(), cli: this.cli()?.id ?? '' }));
+  public conversation = computed(() => sessionKey({ slug: this.slug(), cli: this.cli()?.id ?? '' }));
 
   protected session = computed(() => this.sessions()[this.conversation()] ?? null);
+
+  protected readonly LIMIT = CONTEXT_LIMIT;
+
+  protected fill = computed(() => Math.min(100, Math.round(fullness(this.session()) * 100)));
+
+  protected sessionSize = computed(() => `${Math.round((this.session()?.tokens ?? 0) / 1000)}k`);
+
+  /** A session this full pays the long-context rate on its next turn, so it has to hand over. */
+  protected full = computed(() => fullness(this.session()) >= HANDOFF_AT);
 
   private callDir = computed(() => {
     const root = this.design()?.callsRoot;
@@ -540,13 +583,15 @@ export class CallViewComponent {
       model: this.model() || null,
       prompt: this.prompt(),
       cwd,
-      resume: this.session(),
+      resume: this.session()?.id ?? null,
     })
       .pipe(
         tap((event) => {
           this.events.update((events) => [...events, event]);
 
           if (event.kind === 'session') this.keepSession(event.id);
+          if (event.kind === 'context') this.keepContext(event.tokens);
+          if (event.kind === 'finished' && event.ok && this.handingOff()) this.forgetSession();
         }),
         catchError((error: unknown) => {
           this.events.update((events) => [...events, { kind: 'failed', message: String(error) }]);
@@ -555,6 +600,7 @@ export class CallViewComponent {
         }),
         finalize(() => {
           this.running.set(false);
+          this.handingOff.set(false);
           this.reload();
         }),
         takeUntilDestroyed(this.destroyRef),
@@ -572,9 +618,43 @@ export class CallViewComponent {
     this.keepSession(null);
   }
 
+  /**
+   * Asks the full session to write its state next to the call, and drops it once it did. The prompt
+   * stays in the box, so the user reads what went out.
+   */
+  protected handOff() {
+    const call = this.call();
+
+    if (!call || this.running()) return;
+
+    this.prompt.set(handoffDraft({ call, dir: this.callDir() }));
+    this.handingOff.set(true);
+    this.send();
+  }
+
   /** Reads the checkout again, which is how a call an agent just wrote reaches the list. */
   protected reload() {
     this.read();
+  }
+
+  public read() {
+    const checkout = this.checkout();
+
+    if (!checkout) return;
+
+    this.trouble.set('');
+
+    designProject$(checkout)
+      .pipe(
+        tap((project) => this.show(project)),
+        catchError((error: unknown) => {
+          this.trouble.set(`${error}`);
+
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   private keepSession(id: string | null) {
@@ -583,8 +663,24 @@ export class CallViewComponent {
     this.sessions.update((table) => {
       const next = { ...table };
 
-      if (id) next[key] = id;
+      if (id) next[key] = { id, tokens: table[key]?.id === id ? table[key].tokens : 0 };
       else delete next[key];
+
+      writeSessions(next);
+
+      return next;
+    });
+  }
+
+  private keepContext(tokens: number) {
+    const key = this.conversation();
+
+    this.sessions.update((table) => {
+      const open = table[key];
+
+      if (!open) return table;
+
+      const next = { ...table, [key]: { ...open, tokens } };
 
       writeSessions(next);
 
@@ -643,25 +739,5 @@ export class CallViewComponent {
     this.server.set(state);
 
     if (state.listening && !answered) this.epoch.update((value) => value + 1);
-  }
-
-  private read() {
-    const checkout = this.checkout();
-
-    if (!checkout) return;
-
-    this.trouble.set('');
-
-    designProject$(checkout)
-      .pipe(
-        tap((project) => this.show(project)),
-        catchError((error: unknown) => {
-          this.trouble.set(`${error}`);
-
-          return of(null);
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
   }
 }

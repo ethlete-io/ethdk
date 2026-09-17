@@ -26,6 +26,7 @@ export type AgentRequest = {
 export type AgentEvent =
   | { kind: 'started'; cli: string; model: string | null }
   | { kind: 'session'; id: string }
+  | { kind: 'context'; tokens: number }
   | { kind: 'message'; text: string }
   | { kind: 'action'; action: string; detail: string }
   | { kind: 'failed'; message: string }

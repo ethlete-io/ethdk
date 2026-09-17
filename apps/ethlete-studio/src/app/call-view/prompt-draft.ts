@@ -1,5 +1,8 @@
 import { Call, CallOption } from '../../host/design';
 
+/** The file a full session writes its state into, next to the call it worked on. */
+export const HANDOFF_FILE = 'handoff.md';
+
 /** What the user wants to happen next to one option. A verb never runs the agent on its own. */
 export type Verb = 'accept' | 'iterate' | 'reject' | 'more';
 
@@ -45,5 +48,28 @@ export const promptDraft = ({ call, option, dir }: DraftSubject, verb: Verb) =>
     `The cost: ${option.cost || '(none written)'}`,
     '',
     'Read the call file first. It carries the question, the intro and every option drawn so far.',
+    ...(call.handoff
+      ? [`Read ${dir}/${HANDOFF_FILE} as well: an earlier session of this call wrote down what it knew.`]
+      : []),
     task[verb],
+  ].join('\n');
+
+/**
+ * The prompt that empties a full session. It asks for the state in a file, so the next session reads
+ * a page instead of paying for the whole conversation again.
+ */
+export const handoffDraft = ({ call, dir }: Pick<DraftSubject, 'call' | 'dir'>) =>
+  [
+    `Hand off: the call "${call.headline}".`,
+    '',
+    `This conversation is full, and a fresh one takes over. Write what that one needs into`,
+    `${dir}/${HANDOFF_FILE}, then stop. Change nothing else.`,
+    '',
+    'Write for a reader who sees none of this conversation:',
+    '- What this call asks, and where the work stands.',
+    '- Every decision and constraint the user stated, in the words they used.',
+    '- What you tried that did not work, and why it did not.',
+    '- What the next step is, named by file and by command.',
+    '',
+    'Name a file by its path. Do not retell the conversation, and do not repeat the call file.',
   ].join('\n');

@@ -57,17 +57,42 @@ impl AgentCli for ClaudeCli {
 
         match value.get("type").and_then(Value::as_str) {
             Some("assistant") => blocks(&value),
-            Some("result") => vec![AgentEvent::Finished {
-                ok: !value.get("is_error").and_then(Value::as_bool).unwrap_or(false),
-                summary: value
-                    .get("result")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default()
-                    .to_owned(),
-            }],
+            Some("result") => {
+                let mut events = context(&value);
+
+                events.push(AgentEvent::Finished {
+                    ok: !value.get("is_error").and_then(Value::as_bool).unwrap_or(false),
+                    summary: value
+                        .get("result")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_owned(),
+                });
+
+                events
+            }
             _ => Vec::new(),
         }
     }
+}
+
+/// What the turn read: the fresh input, plus the part of the conversation the cache wrote and the
+/// part it replayed. Together they are the size of the session the next turn continues.
+fn context(value: &Value) -> Vec<AgentEvent> {
+    let Some(usage) = value.get("usage") else {
+        return Vec::new();
+    };
+
+    let tokens: u64 = ["input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"]
+        .iter()
+        .filter_map(|key| usage.get(key).and_then(Value::as_u64))
+        .sum();
+
+    if tokens == 0 {
+        return Vec::new();
+    }
+
+    vec![AgentEvent::Context { tokens }]
 }
 
 fn blocks(value: &Value) -> Vec<AgentEvent> {
@@ -161,6 +186,19 @@ mod tests {
         assert!(
             matches!(&ClaudeCli.read_line(line)[0], AgentEvent::Finished { ok: false, summary } if summary == "it broke")
         );
+    }
+
+    #[test]
+    fn a_result_reports_the_size_of_the_session_before_it_ends_the_run() {
+        let line = concat!(
+            r#"{"type":"result","is_error":false,"result":"done","usage":{"input_tokens":10,"#,
+            r#""cache_creation_input_tokens":8834,"cache_read_input_tokens":13983,"output_tokens":39}}"#
+        );
+
+        let events = ClaudeCli.read_line(line);
+
+        assert!(matches!(&events[0], AgentEvent::Context { tokens } if *tokens == 22827));
+        assert!(matches!(&events[1], AgentEvent::Finished { ok: true, .. }));
     }
 
     #[test]

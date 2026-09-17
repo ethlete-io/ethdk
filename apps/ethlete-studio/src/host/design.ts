@@ -23,6 +23,8 @@ export type Call = {
   headline: string;
   intro: string;
   frameWidth: number;
+  /** True when a full agent session already wrote its state into the call's folder. */
+  handoff: boolean;
   options: CallOption[];
 };
 

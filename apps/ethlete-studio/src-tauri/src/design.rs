@@ -23,8 +23,13 @@ pub struct Call {
     pub headline: String,
     pub intro: String,
     pub frame_width: u32,
+    /// Whether a full agent session already wrote its state into the call's folder.
+    pub handoff: bool,
     pub options: Vec<CallOption>,
 }
+
+/// Where a session that grew too long writes down what the next one has to know.
+pub const HANDOFF_FILE: &str = "handoff.md";
 
 #[derive(Debug, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -136,6 +141,7 @@ fn parse_call(slug: &str, source: &str) -> Call {
         headline: string_field(source, "headline").unwrap_or_default(),
         intro: string_field(source, "intro").unwrap_or_default(),
         frame_width: number_field(source, "frameWidth").unwrap_or_default(),
+        handoff: false,
         options: parse_options(source),
     }
 }
@@ -286,8 +292,11 @@ pub fn design_project(checkout: String) -> Result<Project, String> {
         .into_iter()
         .filter_map(|slug| {
             let source = std::fs::read_to_string(root.join(&slug).join("call.ts")).ok()?;
+            let mut call = parse_call(&slug, &source);
 
-            Some(parse_call(&slug, &source))
+            call.handoff = root.join(&slug).join(HANDOFF_FILE).exists();
+
+            Some(call)
         })
         .collect();
 
@@ -479,6 +488,24 @@ export default defineCall({
         assert_eq!(project.default_call.as_deref(), Some("kerbe/09-gutter"));
         assert_eq!(project.calls.len(), 1);
         assert_eq!(project.calls[0].slug, "kerbe/09-gutter");
+        assert!(!project.calls[0].handoff);
+
+        std::fs::remove_dir_all(checkout).unwrap();
+    }
+
+    #[test]
+    fn a_call_whose_folder_holds_a_handoff_says_so() {
+        let checkout = a_checkout("handoff");
+
+        std::fs::write(
+            checkout.join("design/calls/kerbe/09-gutter").join(HANDOFF_FILE),
+            "state",
+        )
+        .unwrap();
+
+        let project = design_project(checkout.to_string_lossy().into_owned()).unwrap();
+
+        assert!(project.calls[0].handoff);
 
         std::fs::remove_dir_all(checkout).unwrap();
     }
