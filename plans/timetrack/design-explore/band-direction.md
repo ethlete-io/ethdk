@@ -273,6 +273,64 @@ used weight alone, and the hatch still ran between the bars.
 for survives the short break. X dropped the plate under 3rem and put the bars back on the hatch,
 which is the noise T was drawn to fix.
 
+## Call 7: what the axis gives the reader to measure with
+
+Decided 2026-09-17, from `kerbe/07-hour-axis`. The app books in 15m increments and the axis
+marks only the hour, so three of every four band edges meet no mark. Four whole days, each one
+changing only what the axis says between one hour label and the next.
+
+**B, quarter ticks in the gutter, wins.** The field keeps the hour line and nothing else. Each
+15m step draws a 0.5rem tick at the right edge of the gutter, 0.9rem at the half hour. The scale
+sits where no band can cover it, and the field stays quiet behind the bands, which is what call
+5 decided when it threw out the wash.
+
+Its cost is named and accepted: the break's gutter block owns the gutter for its own height, so
+the ticks stop across a break. The measure also sits away from the band, so a lane on the right
+is read across the day.
+
+- **A, the hour alone** — rejected. It is what the app draws today. A band that starts at 09:45
+  meets no mark, so the reader counts the quarter by eye against a band four lanes away.
+- **C, the half hour crosses the field** — rejected. B, plus a line at 3% white across the whole
+  field at :30. It doubles the lines behind the bands, and that is the place call 5 cleared.
+- **D, the gutter is a ruler and the field is clean** — rejected. Nothing crosses at all, and the
+  gutter carries the whole scale: a 2px notch at the hour, 1rem at the half, 0.5rem at the
+  quarter. It is the most on-brand of the four and the least useful at this width, because a band
+  in the rightmost lane then cannot be lined up with a time at a glance.
+
+The gutter stayed 5rem in all four frames. **How wide the gutter should be is still open**, and
+so are the hour labels themselves; this call changed neither.
+
+## Cut: the all-day story strip
+
+Decided 2026-09-17 by the user: _"i think its bloat for this specific view."_ The strip is not a
+call. It is removed, and no option is drawn for it.
+
+It ships today in `apps/timetrack/src/app/day-review/day-timeline.component.ts:191`. It draws one
+band per story: `stories` at :525 groups the day's rows by `row.storyKey`, drops a row whose
+`storyKey` is missing or equal to its own `issueKey`, and keeps a story only when more than one
+row sits under it. A band spans the earliest to the latest of those rows and shows the story key
+with a count of rows under it. A click opens the first row under it.
+
+Four things are wrong with it, and three are structural:
+
+- **It counts rows, not time.** A row is a `ReviewedRow`, a worklog proposal. How many rows an
+  epic broke into is a fact about the review list, not about the day.
+- **Its length is a false claim.** A bar on a time axis has to mean time. This one runs from the
+  first row to the last, with breaks, other epics and other lanes inside it. That is the defect
+  call 5 threw out, where a wash claimed a lane was idle and a band contradicted it.
+- **It appears only when the Jira hierarchy is filled in**, so it is not a place a reader can
+  learn to look.
+- It costs fixed height at the top of every day.
+
+The question under it stays real: what did today go into? It is answered as a total, in the
+totals area, and never as geometry over the axis. It is not an open call, because no drawing
+fixes a bar that cannot mean what its length says.
+
+**Owed:** the sketch shells under `apps/timetrack/src/design/calls/` still draw the strip, and
+calls 1 to 7 were judged with it in the picture. Every shell drawn from now on leaves it out.
+Removing it from the shipped `day-timeline.component.ts` is a code change, not a drawing, and it
+waits for the user to call it.
+
 ## Open calls
 
 Stated by the user on 2026-09-17: **nothing in the app is cut in stone.** The three calls
@@ -284,9 +342,11 @@ below is a rework and not a fix. Take one at a time, in the order the user asks 
 - **Whether a break still shortens when work lands in it.** A break is derived from a gap, so
   an event inside the gap arguably ends the break at that minute. That is a data question, not
   a drawing one, and call 5 draws only the picture. Raised 2026-09-17.
-- **The hour axis** down the left side: the hour labels, the lines, the gutter width.
+- **The gutter width, and the hour labels themselves.** Call 7 settled what the axis marks and
+  left both at what the app has today: a 5rem gutter, and `08:00` in mono at 1.05rem in
+  `--k-ink-3`. Raised 2026-09-17.
 - **The lane headers** across the top - the category columns.
-- **The all-day story strip** above the axis.
+- ~~The all-day story strip above the axis.~~ **Cut, 2026-09-17.** See below.
 - **The window chrome**: the title bar, the date, the day total.
 
 ### Direct manipulation, none of which is drawn
@@ -329,6 +389,7 @@ answers no question.
 | `kerbe/04-break-lane`                           | where a break goes, B chosen                |
 | `kerbe/05-break-not-empty`                      | a break that is not empty, B chosen         |
 | `kerbe/06-break-label`                          | how a break says it is a break, W chosen    |
+| `kerbe/07-hour-axis`                            | what the axis marks, B chosen               |
 | `kerbe/ref-full-day`                            | the whole day at 1100x760                   |
 | `kerbe/ref-band-states`                         | the six states under the pointer            |
 | `timeline/ref-states`, `timeline/ref-durations` | the block sketch the band replaced          |
