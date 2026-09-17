@@ -146,9 +146,11 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
 2. ~~**One more layer above a call.**~~ Done. `call.ts` declares `feature`, the host reads it, and
    the list draws one band per feature. A call that names none reads under "No feature". The
    feature is a field, not a folder level, so no call folder moves.
-3. **A remembered agent session.** An iteration continues the conversation it came from instead of
-   starting a new one. It follows the handoff rules, so a session that grows long writes its state
-   down and a fresh one takes over, and the long-context price never applies.
+3. **A remembered agent session.** Half done. A run reports its session, Studio keeps it per call
+   and CLI, and the next run of that call continues it. "New session" drops it. Left: the handoff
+   rule. A session that grows long has to write its state down and let a fresh one take over, so
+   the long-context price never applies. Claude's `result` line carries the usage a threshold
+   could read.
 4. **One chat surface.** The prompt box, the run's events and the conversation read as one thing,
    probably a right sidebar.
 5. **Studio does the boilerplate.** Asking for three more variants creates their files, so the
