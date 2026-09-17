@@ -53,10 +53,22 @@ prose in `claim` and `cost`. Studio should make the delta visible.
 | Wireframe mode vs design mode            | **Wireframe ignores detailed logic and hover states. It shows the bare workflow, mocked.** Design mode draws the real thing.                                                                         |
 | How do we bootstrap?                     | **Build a rough Studio by hand, then iterate on Studio inside Studio.** It will be ugly at first. Everything now in `apps/ethlete-studio/src` may be thrown away.                                    |
 
+## The agent bridge
+
+**Studio detects which agent CLIs are installed and offers them as a choice.** It never
+assumes one. A missing CLI is simply an option that is not offered.
+
+**Later, a round may run more than one of them on the same question.** Ask Claude and
+Codex to draw the same thing, and the round comes back with more diverse answers to pick
+from. Two consequences to build for from the start, even before the feature exists:
+
+- An option records **which agent drew it**, so a round can mix agents and you can see
+  who produced which answer.
+- The bridge is **one interface with an implementation per CLI**, not a `claude -p` call
+  with a flag. A second CLI must be an added implementation, never a rewrite.
+
 ## Still open
 
-- **The agent bridge.** Headless `claude -p`, a Codex equivalent, or both behind one
-  interface. Not chosen yet.
 - **Live feedback while the agent builds.** Tom wants to watch a drawing being produced,
   not wait for a finished row.
 - **Which UI actions drive the agent** — pick a variant to iterate on, accept one, reject
