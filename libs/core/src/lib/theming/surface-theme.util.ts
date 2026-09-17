@@ -40,7 +40,7 @@ export type SurfaceInteractionColor = {
 };
 
 export type SurfaceTheme = {
-  name: string;
+  name: RegisteredSurfaceThemeName;
   type: SurfaceType;
   elevation: number;
   isDefault?: boolean;
