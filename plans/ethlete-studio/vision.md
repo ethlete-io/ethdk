@@ -159,5 +159,9 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    lands, and the controls of a variant built into its own tile. The shape to try first is a
    security-camera dashboard: every variant visible, one of them large.
 
+8. **Wireframe mode, still missing.** The decision stands from the start and nothing implements it:
+   wireframe mode ignores logic and hover states, design mode draws the real thing. A call, or the
+   workbench, says which mode it is in.
+
 Open, and Tom decides: how a thumbnail is taken and when it is stale; how much of a tile's controls
 stay visible; whether the large variant sits beside the grid or above it.
