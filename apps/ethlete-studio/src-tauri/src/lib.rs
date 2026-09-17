@@ -108,3 +108,45 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("Ethlete Studio failed to run");
 }
+
+#[cfg(test)]
+mod tests {
+    fn registered_commands() -> Vec<String> {
+        let source = include_str!("lib.rs");
+        let list = source
+            .split_once("generate_handler![")
+            .expect("lib.rs registers commands")
+            .1
+            .split_once(']')
+            .expect("the command list ends")
+            .0;
+
+        list.split(',')
+            .map(|entry| entry.trim().rsplit("::").next().unwrap_or_default().to_owned())
+            .filter(|entry| !entry.is_empty())
+            .collect()
+    }
+
+    #[test]
+    fn every_registered_command_has_a_generated_permission() {
+        let build = include_str!("../build.rs");
+
+        for command in registered_commands() {
+            assert!(build.contains(&format!("\"{command}\"")), "build.rs does not list {command}");
+        }
+    }
+
+    #[test]
+    fn every_registered_command_is_allowed_by_the_capability() {
+        let capability = include_str!("../capabilities/default.json");
+
+        for command in registered_commands() {
+            let permission = format!("\"allow-{}\"", command.replace('_', "-"));
+
+            assert!(
+                capability.contains(&permission),
+                "the default capability does not allow {command}"
+            );
+        }
+    }
+}

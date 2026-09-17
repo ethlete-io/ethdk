@@ -9,8 +9,12 @@
     "core:window:allow-minimize",
     "core:window:allow-start-dragging",
     "core:window:allow-toggle-maximize",
+    "allow-agent-cancel",
+    "allow-agent-list",
+    "allow-agent-run",
     "allow-workspace-check",
     "allow-workspace-diff",
+    "allow-workspace-root",
     "allow-workspace-status"
   ]
 }
