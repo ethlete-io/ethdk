@@ -12,6 +12,11 @@ export default defineCall({
       title: 'How much a tile wears',
       note: '',
     },
+    {
+      key: 'r2',
+      title: 'The frame stays, the third line pays',
+      note: '',
+    },
   ],
   options: [
     {
@@ -40,6 +45,33 @@ export default defineCall({
         'The frame becomes a filled plate with a soft corner, and the change sits on the number‘s own baseline. The tile reads as one object and the row needs no separator.',
       cost: 'The plates are the brightest thing on the page, and a summary row above a day is the one place that should stay quiet.',
       load: () => import('./option-c'),
+    },
+    {
+      key: 'd',
+      round: 'r2',
+      name: 'D · The change joins the number',
+      claim:
+        'The hairline frame stays, and the change moves onto the number‘s own baseline, so a tile is two lines. Only a small arrow carries the colour, and the amount reads in the muted ink of the label.',
+      cost: 'The direction now rides on one small glyph, so a reader who scans the row at speed takes three numbers and no direction.',
+      load: () => import('./option-d'),
+    },
+    {
+      key: 'e',
+      round: 'r2',
+      name: 'E · One frame, two seams',
+      claim:
+        'One hairline box holds the whole row and a seam splits the tiles, so the row draws four lines instead of twelve. The change keeps its own line and names itself in muted ink.',
+      cost: 'The row reads as one object, so a single tile is harder to take alone, and a direction with no colour must be read, not seen.',
+      load: () => import('./option-e'),
+    },
+    {
+      key: 'f',
+      round: 'r2',
+      name: 'F · The change rides the label',
+      claim:
+        'The frame stays and the change moves up beside the label, at the label‘s own size and right of it. The colour stays, but it sits on the smallest text in the tile, so the number keeps the weight.',
+      cost: 'The change stands far from the number it belongs to, and a long label pushes against it.',
+      load: () => import('./option-f'),
     },
   ],
 });
