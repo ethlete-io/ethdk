@@ -18,7 +18,8 @@ import {
 } from '../../host/design';
 import { workspaceRoot$ } from '../../host/workspace';
 import { Verb, promptDraft, verbLabel, verdictOf } from './prompt-draft';
-import { callGroups, openOptions } from './grouping';
+import { callList, openOptions, projectOf, projectSummaries } from './grouping';
+import { ProjectPickerComponent } from './project-picker.component';
 import { CallOrder, rememberView, rememberedView } from './remembered';
 
 @Component({
@@ -26,7 +27,13 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
   template: `
     <div class="flex h-dvh min-h-0 flex-col gap-4 p-8">
       <div class="flex flex-wrap items-baseline gap-4">
-        <h1 class="text-h2">Calls</h1>
+        <h1 class="text-h2">{{ project() || 'Calls' }}</h1>
+
+        @if (project()) {
+          <button (click)="closeProject()" class="rounded border border-et-surface-border px-3 py-1" type="button">
+            Projects
+          </button>
+        }
         <input
           [value]="checkout()"
           (change)="setCheckout(typed($event))"
@@ -71,205 +78,200 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
         <p class="text-et-surface-muted">{{ message }}</p>
       }
 
-      <div class="flex min-h-0 grow gap-6">
-        <div class="flex w-80 shrink-0 flex-col gap-2">
-          <input
-            [value]="filter()"
-            (input)="filter.set(typed($event))"
-            class="rounded border border-et-surface-border px-3 py-1"
-            placeholder="Find a call"
-          />
+      @if (!project()) {
+        <ethlete-project-picker [projects]="projects()" (pick)="openProject($event)" />
+      } @else {
+        <div class="flex min-h-0 grow gap-6">
+          <div class="flex w-80 shrink-0 flex-col gap-2">
+            <input
+              [value]="filter()"
+              (input)="filter.set(typed($event))"
+              class="rounded border border-et-surface-border px-3 py-1"
+              placeholder="Find a call"
+            />
 
-          <div class="flex gap-2">
-            @for (choice of ORDERS; track choice.key) {
-              <button
-                [class.bg-et-surface-bg]="order() === choice.key"
-                (click)="setOrder(choice.key)"
-                class="grow rounded border border-et-surface-border px-3 py-1"
-                type="button"
-              >
-                {{ choice.label }}
-              </button>
-            }
-          </div>
-
-          <ul class="min-h-0 grow overflow-auto rounded border border-et-surface-border">
-            @for (group of groups(); track group.name) {
-              <li>
-                <h2
-                  class="sticky top-0 flex justify-between gap-2 border-b border-et-surface-border bg-et-surface-bg px-3 py-2 uppercase"
-                >
-                  <span>{{ group.name }}</span>
-                  <span class="text-et-surface-muted">{{ group.open }} open</span>
-                </h2>
-
-                <ul>
-                  @for (call of group.calls; track call.slug) {
-                    <li>
-                      <button
-                        [class.bg-et-surface-bg]="call.slug === slug()"
-                        [class.text-et-surface-muted]="settled(call) === call.options.length"
-                        (click)="openCall(call)"
-                        class="flex w-full flex-col gap-1 border-b border-et-surface-border p-3 text-left"
-                        type="button"
-                      >
-                        <span class="text-et-surface-muted">{{ call.eyebrow }}</span>
-                        <span>{{ call.headline }}</span>
-                        <span class="text-et-surface-muted">
-                          {{ settled(call) }} of {{ call.options.length }} settled
-                        </span>
-                      </button>
-                    </li>
-                  }
-                </ul>
-              </li>
-            } @empty {
-              <li class="p-3 text-et-surface-muted">No call matches.</li>
-            }
-          </ul>
-        </div>
-
-        @if (call(); as open) {
-          <div class="flex min-h-0 grow flex-col gap-3">
-            <div class="flex flex-wrap gap-2">
-              @for (option of open.options; track option.key) {
+            <div class="flex gap-2">
+              @for (choice of ORDERS; track choice.key) {
                 <button
-                  [class.bg-et-surface-bg]="option.key === optionKey()"
-                  (click)="openOption(option)"
-                  class="rounded border border-et-surface-border px-3 py-1"
+                  [class.bg-et-surface-bg]="order() === choice.key"
+                  (click)="setOrder(choice.key)"
+                  class="grow rounded border border-et-surface-border px-3 py-1"
                   type="button"
                 >
-                  {{ option.name }}
-                  @if (option.verdict) {
-                    <span class="text-et-surface-muted">{{ option.verdict }}</span>
-                  }
+                  {{ choice.label }}
                 </button>
               }
             </div>
 
-            @if (option(); as drawn) {
-              <div class="flex flex-wrap items-center gap-2">
-                @for (verb of VERBS; track verb) {
-                  <button (click)="draft(verb)" class="rounded border border-et-surface-border px-3 py-1" type="button">
-                    {{ label(verb) }}
-                  </button>
-                }
-                <button
-                  (click)="write(drawn, null)"
-                  class="rounded border border-et-surface-border px-3 py-1"
-                  type="button"
-                >
-                  Open again
-                </button>
-                <span class="text-et-surface-muted text-mono">{{ address() }}</span>
-              </div>
-
-              <div class="flex min-h-0 grow gap-3 overflow-auto">
-                <div [style.width.px]="open.frameWidth" class="relative min-h-0 shrink-0">
-                  @for (frame of frames(); track frame.key) {
-                    <iframe
-                      [src]="frame.source"
-                      [class.opacity-0]="frame.key !== optionKey()"
-                      [class.pointer-events-none]="frame.key !== optionKey()"
-                      class="absolute inset-0 h-full w-full rounded border border-et-surface-border bg-et-surface-bg transition-opacity"
-                      title="The drawn option"
-                    ></iframe>
-                  }
-                </div>
-
-                @if (events().length) {
-                  <ul
-                    class="flex w-96 shrink-0 flex-col gap-1 overflow-auto rounded border border-et-surface-border bg-et-surface-bg p-3 text-mono"
-                  >
-                    @for (event of events(); track $index) {
-                      <li>
-                        @switch (event.kind) {
-                          @case ('started') {
-                            <span class="text-et-surface-muted">{{ event.cli }} {{ event.model }} started</span>
-                          }
-                          @case ('action') {
-                            <span>{{ event.action }}</span>
-                            <span class="text-et-surface-muted">{{ event.detail }}</span>
-                          }
-                          @case ('message') {
-                            <span>{{ event.text }}</span>
-                          }
-                          @case ('failed') {
-                            <span>{{ event.message }}</span>
-                          }
-                          @case ('finished') {
-                            <span class="text-et-surface-muted">
-                              {{ event.ok ? 'finished' : 'stopped' }} {{ event.summary }}
-                            </span>
-                          }
-                        }
-                      </li>
-                    }
-                  </ul>
-                }
-              </div>
-
-              <textarea
-                [value]="prompt()"
-                (input)="prompt.set(typed($event))"
-                class="h-32 shrink-0 rounded border border-et-surface-border p-3"
-                placeholder="A verb writes the first draft here. Change it, then send it."
-              ></textarea>
-
-              <div class="flex flex-wrap items-center gap-2">
-                @for (found of clis(); track found.id) {
+            <ul class="min-h-0 grow overflow-auto rounded border border-et-surface-border">
+              @for (call of list(); track call.slug) {
+                <li>
                   <button
-                    [class.bg-et-surface-bg]="cli()?.id === found.id"
-                    (click)="pick(found)"
+                    [class.bg-et-surface-bg]="call.slug === slug()"
+                    [class.text-et-surface-muted]="settled(call) === call.options.length"
+                    (click)="openCall(call)"
+                    class="flex w-full flex-col gap-1 border-b border-et-surface-border p-3 text-left"
+                    type="button"
+                  >
+                    <span class="text-et-surface-muted">{{ call.eyebrow }}</span>
+                    <span>{{ call.headline }}</span>
+                    <span class="text-et-surface-muted">{{ settled(call) }} of {{ call.options.length }} settled</span>
+                  </button>
+                </li>
+              } @empty {
+                <li class="p-3 text-et-surface-muted">No call matches.</li>
+              }
+            </ul>
+          </div>
+
+          @if (call(); as open) {
+            <div class="flex min-h-0 grow flex-col gap-3">
+              <div class="flex flex-wrap gap-2">
+                @for (option of open.options; track option.key) {
+                  <button
+                    [class.bg-et-surface-bg]="option.key === optionKey()"
+                    (click)="openOption(option)"
                     class="rounded border border-et-surface-border px-3 py-1"
                     type="button"
                   >
-                    {{ found.label }}
-                    <span class="text-et-surface-muted">{{ found.version }}</span>
+                    {{ option.name }}
+                    @if (option.verdict) {
+                      <span class="text-et-surface-muted">{{ option.verdict }}</span>
+                    }
                   </button>
                 }
-                <input
-                  [value]="model()"
-                  (input)="model.set(typed($event))"
-                  class="w-48 rounded border border-et-surface-border px-3 py-1"
-                  list="call-models"
-                  placeholder="Model"
-                />
-                <datalist id="call-models">
-                  @for (name of cli()?.suggestedModels ?? []; track name) {
-                    <option [value]="name"></option>
-                  }
-                </datalist>
-                <button
-                  [disabled]="running() || !prompt().trim() || !cli()"
-                  (click)="send()"
-                  class="rounded border border-et-surface-border px-3 py-1"
-                  type="button"
-                >
-                  Send
-                </button>
-                <button
-                  [disabled]="!running()"
-                  (click)="stop()"
-                  class="rounded border border-et-surface-border px-3 py-1"
-                  type="button"
-                >
-                  Stop
-                </button>
               </div>
-            }
-          </div>
-        }
-      </div>
+
+              @if (option(); as drawn) {
+                <div class="flex flex-wrap items-center gap-2">
+                  @for (verb of VERBS; track verb) {
+                    <button
+                      (click)="draft(verb)"
+                      class="rounded border border-et-surface-border px-3 py-1"
+                      type="button"
+                    >
+                      {{ label(verb) }}
+                    </button>
+                  }
+                  <button
+                    (click)="write(drawn, null)"
+                    class="rounded border border-et-surface-border px-3 py-1"
+                    type="button"
+                  >
+                    Open again
+                  </button>
+                  <span class="text-et-surface-muted text-mono">{{ address() }}</span>
+                </div>
+
+                <div class="flex min-h-0 grow gap-3 overflow-auto">
+                  <div [style.width.px]="open.frameWidth" class="relative min-h-0 shrink-0">
+                    @for (frame of frames(); track frame.key) {
+                      <iframe
+                        [src]="frame.source"
+                        [class.opacity-0]="frame.key !== optionKey()"
+                        [class.pointer-events-none]="frame.key !== optionKey()"
+                        class="absolute inset-0 h-full w-full rounded border border-et-surface-border bg-et-surface-bg transition-opacity"
+                        title="The drawn option"
+                      ></iframe>
+                    }
+                  </div>
+
+                  @if (events().length) {
+                    <ul
+                      class="flex w-96 shrink-0 flex-col gap-1 overflow-auto rounded border border-et-surface-border bg-et-surface-bg p-3 text-mono"
+                    >
+                      @for (event of events(); track $index) {
+                        <li>
+                          @switch (event.kind) {
+                            @case ('started') {
+                              <span class="text-et-surface-muted">{{ event.cli }} {{ event.model }} started</span>
+                            }
+                            @case ('action') {
+                              <span>{{ event.action }}</span>
+                              <span class="text-et-surface-muted">{{ event.detail }}</span>
+                            }
+                            @case ('message') {
+                              <span>{{ event.text }}</span>
+                            }
+                            @case ('failed') {
+                              <span>{{ event.message }}</span>
+                            }
+                            @case ('finished') {
+                              <span class="text-et-surface-muted">
+                                {{ event.ok ? 'finished' : 'stopped' }} {{ event.summary }}
+                              </span>
+                            }
+                          }
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+
+                <textarea
+                  [value]="prompt()"
+                  (input)="prompt.set(typed($event))"
+                  class="h-32 shrink-0 rounded border border-et-surface-border p-3"
+                  placeholder="A verb writes the first draft here. Change it, then send it."
+                ></textarea>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  @for (found of clis(); track found.id) {
+                    <button
+                      [class.bg-et-surface-bg]="cli()?.id === found.id"
+                      (click)="pick(found)"
+                      class="rounded border border-et-surface-border px-3 py-1"
+                      type="button"
+                    >
+                      {{ found.label }}
+                      <span class="text-et-surface-muted">{{ found.version }}</span>
+                    </button>
+                  }
+                  <input
+                    [value]="model()"
+                    (input)="model.set(typed($event))"
+                    class="w-48 rounded border border-et-surface-border px-3 py-1"
+                    list="call-models"
+                    placeholder="Model"
+                  />
+                  <datalist id="call-models">
+                    @for (name of cli()?.suggestedModels ?? []; track name) {
+                      <option [value]="name"></option>
+                    }
+                  </datalist>
+                  <button
+                    [disabled]="running() || !prompt().trim() || !cli()"
+                    (click)="send()"
+                    class="rounded border border-et-surface-border px-3 py-1"
+                    type="button"
+                  >
+                    Send
+                  </button>
+                  <button
+                    [disabled]="!running()"
+                    (click)="stop()"
+                    class="rounded border border-et-surface-border px-3 py-1"
+                    type="button"
+                  >
+                    Stop
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
+  imports: [ProjectPickerComponent],
 })
 export class CallViewComponent {
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(DomSanitizer);
 
   protected checkout = signal('');
+  protected project = signal('');
   protected slug = signal('');
   protected optionKey = signal('');
   protected trouble = signal('');
@@ -292,7 +294,7 @@ export class CallViewComponent {
   ];
 
   private run: Subscription | null = null;
-  private project = signal<Project | null>(null);
+  private design = signal<Project | null>(null);
   private epoch = signal(0);
 
   protected clis = toSignal(
@@ -318,16 +320,20 @@ export class CallViewComponent {
     return state && !state.listening ? state.log.slice(-5) : [];
   });
 
-  protected calls = computed(() => this.project()?.calls ?? []);
+  public calls = computed(() => this.design()?.calls ?? []);
 
-  protected groups = computed(() => callGroups({ calls: this.calls(), term: this.filter(), order: this.order() }));
+  protected projects = computed(() => projectSummaries(this.calls()));
+
+  protected list = computed(() =>
+    callList({ calls: this.calls(), project: this.project(), term: this.filter(), order: this.order() }),
+  );
 
   protected call = computed(() => this.calls().find((call) => call.slug === this.slug()) ?? null);
 
   protected option = computed(() => this.call()?.options.find((o) => o.key === this.optionKey()) ?? null);
 
   protected address = computed(() => {
-    const port = this.project()?.port;
+    const port = this.design()?.port;
     const option = this.option();
 
     return port && option ? frameUrl({ port, slug: this.slug(), option: option.key }) : '';
@@ -340,7 +346,7 @@ export class CallViewComponent {
    */
   protected frames = computed(() => {
     const call = this.call();
-    const port = this.project()?.port;
+    const port = this.design()?.port;
 
     if (!call || !port) return [];
 
@@ -355,7 +361,7 @@ export class CallViewComponent {
   });
 
   private callDir = computed(() => {
-    const root = this.project()?.callsRoot;
+    const root = this.design()?.callsRoot;
 
     return root ? `${root}/${this.slug()}` : '';
   });
@@ -432,6 +438,19 @@ export class CallViewComponent {
       .subscribe();
   }
 
+  protected openProject(name: string) {
+    this.project.set(name);
+    rememberView({ checkout: this.checkout(), project: name });
+    this.openIn({ project: name, wanted: this.design()?.defaultCall ?? '' });
+  }
+
+  protected closeProject() {
+    this.project.set('');
+    this.slug.set('');
+    this.optionKey.set('');
+    rememberView({ project: '' });
+  }
+
   protected openCall(call: Call, option = call.options[0]?.key ?? '') {
     this.slug.set(call.slug);
     this.optionKey.set(option);
@@ -465,7 +484,7 @@ export class CallViewComponent {
     designSetVerdict$({ checkout: this.checkout(), slug: this.slug(), option: option.key, verdict })
       .pipe(
         switchMap(() => designProject$(this.checkout())),
-        tap((project) => this.project.set(project)),
+        tap((design) => this.design.set(design)),
         catchError((error: unknown) => {
           this.trouble.set(`${error}`);
 
@@ -512,19 +531,30 @@ export class CallViewComponent {
     this.read();
   }
 
-  private show(project: Project) {
-    this.project.set(project);
+  private show(design: Project) {
+    this.design.set(design);
 
     const last = rememberedView();
-    const wanted =
-      last?.checkout === this.checkout() ? last.slug : (project.defaultCall ?? project.calls[0]?.slug ?? '');
-    const call = project.calls.find((entry) => entry.slug === wanted) ?? null;
+    const remembered = last.checkout === this.checkout() ? last : {};
+
+    this.project.set(remembered.project ?? '');
+    this.openIn({
+      project: remembered.project ?? '',
+      wanted: remembered.slug ?? design.defaultCall ?? '',
+      option: remembered.option,
+    });
+  }
+
+  /** Opens the wanted call of a project, or the project's first call when the wanted one is gone. */
+  private openIn({ project, wanted, option }: { project: string; wanted: string; option?: string }) {
+    if (!project) return;
+
+    const inProject = this.calls().filter((entry) => projectOf(entry) === project);
+    const call = inProject.find((entry) => entry.slug === wanted) ?? inProject[0];
 
     if (!call) return;
 
-    const option = call.options.some((entry) => entry.key === last?.option) ? last?.option : undefined;
-
-    this.openCall(call, option);
+    this.openCall(call, call.options.some((entry) => entry.key === option) ? option : undefined);
   }
 
   /** A frame only draws once the port answers, so a checkout without a server gets one. */

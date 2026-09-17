@@ -1,51 +1,59 @@
 import { Call } from '../../host/design';
 import { CallOrder } from './remembered';
 
-/** Every call of one group of a checkout, and how much of the group is still open. */
-export type CallGroup = {
+/** One project of a checkout: the top folder of a call slug, with how much of it is still open. */
+export type ProjectSummary = {
   name: string;
+  calls: number;
   open: number;
-  calls: Call[];
 };
 
 export const openOptions = (call: Call) => call.options.filter((option) => !option.verdict).length;
 
+/** The project a call belongs to. */
+export const projectOf = (call: Call) => call.slug.split('/')[0] ?? '';
+
 const matches = (call: Call, term: string) =>
   !term || `${call.slug} ${call.eyebrow} ${call.headline}`.toLowerCase().includes(term);
-
-const groupName = (call: Call) => call.slug.split('/')[0] ?? '';
 
 const byName = (left: Call, right: Call) => left.slug.localeCompare(right.slug);
 
 const byOpen = (left: Call, right: Call) => openOptions(right) - openOptions(left) || byName(left, right);
 
 /** Which calls the sidebar draws, in which order, and what the reader typed to find them. */
-export type GroupRequest = {
+export type CallListRequest = {
   calls: Call[];
+  /** Only the calls of this project. An empty name keeps every call. */
+  project: string;
   /** Matched against the slug, the eyebrow and the headline. An empty term keeps every call. */
   term: string;
   order: CallOrder;
 };
 
-/**
- * The call list as the sidebar draws it: one group per top folder, the groups by name, and the
- * calls inside each group in the order asked for.
- */
-export const callGroups = ({ calls, term, order }: GroupRequest): CallGroup[] => {
+/** The call list as the sidebar draws it: one project, found by the term, in the order asked for. */
+export const callList = ({ calls, project, term, order }: CallListRequest): Call[] => {
   const wanted = term.trim().toLowerCase();
-  const groups = new Map<string, Call[]>();
 
-  for (const call of calls.filter((call) => matches(call, wanted))) {
-    const name = groupName(call);
+  return calls
+    .filter((call) => (!project || projectOf(call) === project) && matches(call, wanted))
+    .sort(order === 'open' ? byOpen : byName);
+};
 
-    groups.set(name, [...(groups.get(name) ?? []), call]);
+/** Every project of a checkout, by name, as the welcome screen lists them. */
+export const projectSummaries = (calls: Call[]): ProjectSummary[] => {
+  const found = new Map<string, Call[]>();
+
+  for (const call of calls) {
+    const name = projectOf(call);
+
+    found.set(name, [...(found.get(name) ?? []), call]);
   }
 
-  return [...groups.entries()]
-    .map(([name, found]) => ({
+  return [...found.entries()]
+    .map(([name, entries]) => ({
       name,
-      open: found.filter((call) => openOptions(call) > 0).length,
-      calls: [...found].sort(order === 'open' ? byOpen : byName),
+      calls: entries.length,
+      open: entries.filter((call) => openOptions(call) > 0).length,
     }))
     .sort((left, right) => left.name.localeCompare(right.name));
 };

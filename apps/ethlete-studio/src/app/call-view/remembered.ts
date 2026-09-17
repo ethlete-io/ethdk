@@ -4,6 +4,8 @@ export type CallOrder = 'name' | 'open';
 /** What the window showed last, so a reload comes back to it. */
 export type ViewState = {
   checkout: string;
+  /** The project the window is in. An empty name means the welcome screen. */
+  project: string;
   slug: string;
   option: string;
   order: CallOrder;
@@ -17,10 +19,11 @@ export const rememberedView = (): Partial<ViewState> => {
 
     if (!stored || typeof stored !== 'object') return {};
 
-    const { checkout, slug, option, order } = stored as Partial<ViewState>;
+    const { checkout, project, slug, option, order } = stored as Partial<ViewState>;
 
     return {
       checkout: typeof checkout === 'string' ? checkout : undefined,
+      project: typeof project === 'string' ? project : undefined,
       slug: typeof slug === 'string' ? slug : undefined,
       option: typeof option === 'string' ? option : undefined,
       order: order === 'name' || order === 'open' ? order : undefined,
