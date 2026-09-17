@@ -12,6 +12,17 @@ export type AgentDescriptor = {
   suggestedModels: string[];
 };
 
+/**
+ * The call a run draws, so Studio can hand it a tool set that needs no argument. Studio knows all
+ * four, so a tool call can never name the wrong call.
+ */
+export type AgentTools = {
+  call: string;
+  variant: string;
+  port: number;
+  callsRoot: string;
+};
+
 /** One prompt, sent to one CLI, in one checkout. */
 export type AgentRequest = {
   cli: string;
@@ -20,6 +31,8 @@ export type AgentRequest = {
   cwd: string;
   /** The session to continue. `null` starts a new conversation. */
   resume: string | null;
+  /** The call the run works on. `null` leaves the run without Studio's tools. */
+  tools: AgentTools | null;
 };
 
 /** What the agent did, in the order it did it. */

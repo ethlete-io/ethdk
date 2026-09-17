@@ -13,6 +13,7 @@ use tokio::process::{Child, Command};
 use crate::agent_claude::ClaudeCli;
 use crate::agent_codex::CodexCli;
 use crate::error::{StudioError, StudioResult};
+use crate::tools::{receipt_path, ToolContext};
 
 /// One agent CLI that Studio can drive. A second CLI is another implementation of this trait, never
 /// a flag on an existing one.
@@ -28,8 +29,9 @@ pub trait AgentCli: Send + Sync {
     fn suggested_models(&self) -> Vec<String>;
 
     /// The arguments that answer one prompt without a terminal and print newline-delimited JSON.
-    /// A request that names a session continues it instead of starting a new one.
-    fn arguments(&self, request: &AgentRequest) -> Vec<String>;
+    /// A request that names a session continues it instead of starting a new one. A run that carries
+    /// a tool server reaches Studio's own tools over MCP.
+    fn arguments(&self, request: &AgentRequest, tools: Option<&ToolServer>) -> Vec<String>;
 
     /// The session a printed line belongs to, so the next run can continue it.
     fn session_of(&self, line: &str) -> Option<String> {
@@ -93,6 +95,49 @@ pub struct AgentRequest {
     pub cwd: String,
     /// The session to continue. Left out by a run that starts a new conversation.
     pub resume: Option<String>,
+    /// The call the run works on. A run that names none reaches no Studio tool.
+    pub tools: Option<AgentTools>,
+}
+
+/// The call and the variant a run draws, so Studio can hand the agent a tool set that needs no
+/// argument.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentTools {
+    pub call: String,
+    pub variant: String,
+    pub port: u16,
+    pub calls_root: String,
+}
+
+/// How a CLI starts Studio's tool server. Studio is the server itself, so the command is the running
+/// binary with the arguments that name this one call.
+pub struct ToolServer {
+    pub name: &'static str,
+    pub command: String,
+    pub arguments: Vec<String>,
+}
+
+/// The tool server for one request, or `None` when the request names no call or the binary cannot
+/// find itself.
+fn tool_server(request: &AgentRequest) -> Option<ToolServer> {
+    let tools = request.tools.as_ref()?;
+    let binary = std::env::current_exe().ok()?;
+
+    let context = ToolContext {
+        checkout: PathBuf::from(&request.cwd),
+        call: tools.call.clone(),
+        variant: tools.variant.clone(),
+        port: tools.port,
+        calls_root: tools.calls_root.clone(),
+        receipt: receipt_path(&request.cwd, &tools.call, &tools.variant),
+    };
+
+    Some(ToolServer {
+        name: crate::tools::SERVER_NAME,
+        command: binary.to_string_lossy().into_owned(),
+        arguments: context.to_arguments(),
+    })
 }
 
 #[derive(Default, Clone)]
@@ -200,9 +245,11 @@ async fn start(
         return Err(StudioError::Rejected(format!("{} is not a directory.", request.cwd)));
     }
 
+    let tools = tool_server(request);
+
     let mut child = Command::new(cli.binary())
         .current_dir(&cwd)
-        .args(cli.arguments(request))
+        .args(cli.arguments(request, tools.as_ref()))
         // Codex reads a prompt from stdin when it is a pipe, and then waits for input that never
         // comes.
         .stdin(Stdio::null())
@@ -334,7 +381,7 @@ mod tests {
             Vec::new()
         }
 
-        fn arguments(&self, _request: &AgentRequest) -> Vec<String> {
+        fn arguments(&self, _request: &AgentRequest, _tools: Option<&ToolServer>) -> Vec<String> {
             vec!["-c".to_owned(), self.0.to_owned()]
         }
 
@@ -362,6 +409,7 @@ mod tests {
             prompt: String::new(),
             cwd: ".".to_owned(),
             resume: None,
+            tools: None,
         };
 
         start(

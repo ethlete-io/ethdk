@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::agent::{clip, detail, AgentCli, AgentEvent, AgentRequest};
+use crate::agent::{clip, detail, AgentCli, AgentEvent, AgentRequest, ToolServer};
 
 pub struct CodexCli;
 
@@ -23,7 +23,7 @@ impl AgentCli for CodexCli {
         Vec::new()
     }
 
-    fn arguments(&self, request: &AgentRequest) -> Vec<String> {
+    fn arguments(&self, request: &AgentRequest, tools: Option<&ToolServer>) -> Vec<String> {
         let mut arguments = vec!["exec".to_owned()];
 
         if let Some(session) = &request.resume {
@@ -42,6 +42,13 @@ impl AgentCli for CodexCli {
         if let Some(model) = &request.model {
             arguments.push("--model".to_owned());
             arguments.push(model.clone());
+        }
+
+        if let Some(tools) = tools {
+            for override_ in overrides(tools) {
+                arguments.push("-c".to_owned());
+                arguments.push(override_);
+            }
         }
 
         arguments.push(request.prompt.clone());
@@ -71,6 +78,23 @@ impl AgentCli for CodexCli {
             _ => Vec::new(),
         }
     }
+}
+
+/// Codex reads its MCP servers from `config.toml`, so a server for one run arrives as two
+/// overrides. A `-c` value is parsed as TOML, and JSON strings and arrays are valid TOML.
+fn overrides(tools: &ToolServer) -> Vec<String> {
+    vec![
+        format!(
+            "mcp_servers.{}.command={}",
+            tools.name,
+            Value::from(tools.command.clone())
+        ),
+        format!(
+            "mcp_servers.{}.args={}",
+            tools.name,
+            Value::from(tools.arguments.clone())
+        ),
+    ]
 }
 
 /// What the turn read. Codex counts the cached part inside `input_tokens`, so that one number is
@@ -142,6 +166,43 @@ fn changed(item: &Value) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn asking() -> AgentRequest {
+        AgentRequest {
+            cli: "codex".to_owned(),
+            model: None,
+            prompt: "draw it".to_owned(),
+            cwd: ".".to_owned(),
+            resume: None,
+            tools: None,
+        }
+    }
+
+    fn serving() -> ToolServer {
+        ToolServer {
+            name: "studio",
+            command: "/tmp/ethlete-studio".to_owned(),
+            arguments: vec!["mcp".to_owned(), "--call".to_owned(), "studio/01-workbench".to_owned()],
+        }
+    }
+
+    #[test]
+    fn a_run_without_a_tool_server_configures_none() {
+        assert!(!CodexCli
+            .arguments(&asking(), None)
+            .iter()
+            .any(|argument| argument.starts_with("mcp_servers.")));
+    }
+
+    #[test]
+    fn a_tool_server_arrives_as_two_config_overrides_before_the_prompt() {
+        let serving = serving();
+        let arguments = CodexCli.arguments(&asking(), Some(&serving));
+
+        assert!(arguments.contains(&r#"mcp_servers.studio.command="/tmp/ethlete-studio""#.to_owned()));
+        assert!(arguments.contains(&r#"mcp_servers.studio.args=["mcp","--call","studio/01-workbench"]"#.to_owned()));
+        assert_eq!(arguments.last().map(String::as_str), Some("draw it"));
+    }
 
     #[test]
     fn a_completed_message_reads_as_text() {

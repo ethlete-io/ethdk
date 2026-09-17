@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::agent::{detail, AgentCli, AgentEvent, AgentRequest};
+use crate::agent::{detail, AgentCli, AgentEvent, AgentRequest, ToolServer};
 
 pub struct ClaudeCli;
 
@@ -24,7 +24,7 @@ impl AgentCli for ClaudeCli {
             .collect()
     }
 
-    fn arguments(&self, request: &AgentRequest) -> Vec<String> {
+    fn arguments(&self, request: &AgentRequest, tools: Option<&ToolServer>) -> Vec<String> {
         let mut arguments = vec![
             "--print".to_owned(),
             request.prompt.clone(),
@@ -45,6 +45,16 @@ impl AgentCli for ClaudeCli {
         if let Some(session) = &request.resume {
             arguments.push("--resume".to_owned());
             arguments.push(session.clone());
+        }
+
+        if let Some(tools) = tools {
+            arguments.push("--mcp-config".to_owned());
+            arguments.push(mcp_config(tools));
+            // The permission mode accepts edits, not a tool of a server, so the set is named here.
+            arguments.push("--allowedTools".to_owned());
+            arguments.push(format!("mcp__{}", tools.name));
+            // A design run pays for no server the checkout happens to configure.
+            arguments.push("--strict-mcp-config".to_owned());
         }
 
         arguments
@@ -74,6 +84,15 @@ impl AgentCli for ClaudeCli {
             _ => Vec::new(),
         }
     }
+}
+
+fn mcp_config(tools: &ToolServer) -> String {
+    serde_json::json!({
+        "mcpServers": {
+            tools.name: { "command": tools.command, "args": tools.arguments },
+        },
+    })
+    .to_string()
 }
 
 /// What the turn read: the fresh input, plus the part of the conversation the cache wrote and the
@@ -127,12 +146,21 @@ mod tests {
             prompt: prompt.to_owned(),
             cwd: ".".to_owned(),
             resume: resume.map(str::to_owned),
+            tools: None,
+        }
+    }
+
+    fn serving() -> ToolServer {
+        ToolServer {
+            name: "studio",
+            command: "/tmp/ethlete-studio".to_owned(),
+            arguments: vec!["mcp".to_owned(), "--call".to_owned(), "studio/01-workbench".to_owned()],
         }
     }
 
     #[test]
     fn a_run_may_write_a_file() {
-        let arguments = ClaudeCli.arguments(&asking("draw it", None));
+        let arguments = ClaudeCli.arguments(&asking("draw it", None), None);
         let at = arguments.iter().position(|argument| argument == "--permission-mode");
 
         assert_eq!(at.map(|at| arguments[at + 1].as_str()), Some("acceptEdits"));
@@ -140,7 +168,7 @@ mod tests {
 
     #[test]
     fn a_named_session_is_continued() {
-        let arguments = ClaudeCli.arguments(&asking("draw it again", Some("s-7")));
+        let arguments = ClaudeCli.arguments(&asking("draw it again", Some("s-7")), None);
         let at = arguments.iter().position(|argument| argument == "--resume");
 
         assert_eq!(at.map(|at| arguments[at + 1].as_str()), Some("s-7"));
@@ -149,8 +177,31 @@ mod tests {
     #[test]
     fn a_run_without_a_session_starts_a_new_one() {
         assert!(!ClaudeCli
-            .arguments(&asking("draw it", None))
+            .arguments(&asking("draw it", None), None)
             .contains(&"--resume".to_owned()));
+    }
+
+    #[test]
+    fn a_run_without_a_tool_server_configures_none() {
+        assert!(!ClaudeCli
+            .arguments(&asking("draw it", None), None)
+            .contains(&"--mcp-config".to_owned()));
+    }
+
+    #[test]
+    fn a_tool_server_is_configured_and_allowed() {
+        let serving = serving();
+        let arguments = ClaudeCli.arguments(&asking("draw it", None), Some(&serving));
+        let at = arguments.iter().position(|argument| argument == "--mcp-config");
+        let configured: Value =
+            serde_json::from_str(&arguments[at.expect("the config is passed") + 1]).expect("the config is JSON");
+
+        assert_eq!(
+            configured.pointer("/mcpServers/studio/command").and_then(Value::as_str),
+            Some("/tmp/ethlete-studio")
+        );
+        assert!(arguments.contains(&"mcp__studio".to_owned()));
+        assert!(arguments.contains(&"--strict-mcp-config".to_owned()));
     }
 
     #[test]

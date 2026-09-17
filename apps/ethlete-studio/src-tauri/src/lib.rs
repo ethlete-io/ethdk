@@ -4,6 +4,7 @@ mod agent_codex;
 mod design;
 mod design_server;
 mod error;
+mod tools;
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -102,6 +103,12 @@ fn widen_path() {
 }
 
 pub fn run() {
+    if let Some(context) = tools::ToolContext::from_arguments(std::env::args().skip(1)) {
+        tools::serve(&context);
+
+        return;
+    }
+
     widen_path();
 
     tauri::Builder::default()

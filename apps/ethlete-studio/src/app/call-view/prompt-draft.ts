@@ -39,6 +39,26 @@ const task: Record<Verb, string> = {
   more: 'Draw a new round of variants in this direction. Each one changes one thing, and its claim names the thing it changes.',
 };
 
+/**
+ * What every prompt carries, whatever the verb: the tool set Studio runs, and the rules that do not
+ * bend. A rule the agent has to fetch is a rule it can skip, so both stay in the prompt itself.
+ */
+const groundRules = [
+  '',
+  'Studio runs three tools for you. Each one takes no argument and already knows this call:',
+  '- read_call: the question, the intro and every variant drawn so far.',
+  '- read_fixture: the data every variant of this call draws.',
+  '- check_call: lints the variant under study, type-checks the call, and renders it.',
+  '',
+  'These rules do not bend:',
+  '- Never import a package barrel. A frame that does dies with ERR_INSUFFICIENT_RESOURCES.',
+  '  Import the file the symbol lives in.',
+  '- Never change the fixture. Every variant draws the same data, or the comparison says nothing.',
+  '- Write one component file per variant, and in the call file only the name, the claim and the',
+  '  cost. Change nothing else in the checkout.',
+  '- Run check_call after every edit. Never say you are done before it answers ok.',
+];
+
 /** True when Studio opens the round itself, so the verb needs the files it made. */
 export const opensARound = (verb: Verb) => verb !== 'accept';
 
@@ -61,12 +81,12 @@ export const promptDraft = ({ call, option, dir, made }: DraftSubject, verb: Ver
     `The claim: ${option.claim || '(none written)'}`,
     `The cost: ${option.cost || '(none written)'}`,
     '',
-    'Read the call file first. It carries the question, the intro and every option drawn so far.',
     ...(call.handoff
-      ? [`Read ${dir}/${HANDOFF_FILE} as well: an earlier session of this call wrote down what it knew.`]
+      ? [`Read ${dir}/${HANDOFF_FILE}: an earlier session of this call wrote down what it knew.`]
       : []),
     task[verb],
     ...(made ? boilerplate(dir, made) : []),
+    ...groundRules,
   ].join('\n');
 
 /**

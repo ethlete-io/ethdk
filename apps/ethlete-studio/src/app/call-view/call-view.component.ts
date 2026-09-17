@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
 import { EMPTY, Subscription, catchError, finalize, map, of, switchMap, tap } from 'rxjs';
-import { AgentDescriptor, AgentEvent, agentList$, agentRun$ } from '../../host/agent';
+import { AgentDescriptor, AgentEvent, AgentTools, agentList$, agentRun$ } from '../../host/agent';
 import {
   AddedOptions,
   Call,
@@ -564,6 +564,16 @@ export class CallViewComponent {
   /** A session this full pays the long-context rate on its next turn, so it has to hand over. */
   protected full = computed(() => fullness(this.session()) >= HANDOFF_AT);
 
+  /** What the run can reach through Studio's own tool server. A run without an open variant gets none. */
+  private tools = computed<AgentTools | null>(() => {
+    const design = this.design();
+    const option = this.option();
+
+    if (!design || !option) return null;
+
+    return { call: this.slug(), variant: option.key, port: design.port, callsRoot: design.callsRoot };
+  });
+
   private callDir = computed(() => {
     const root = this.design()?.callsRoot;
 
@@ -764,6 +774,7 @@ export class CallViewComponent {
       prompt,
       cwd,
       resume: this.resume(),
+      tools: this.tools(),
     })
       .pipe(
         tap((event) => this.keepEvent(key, event)),
