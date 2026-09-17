@@ -337,4 +337,54 @@ export default defineCall({
     fn an_unknown_option_is_refused() {
         assert!(write_verdict(CALL, "z", Some("chosen")).is_err());
     }
+
+    fn a_checkout(name: &str) -> PathBuf {
+        let checkout = std::env::temp_dir().join(format!("ethlete-studio-{}-{name}", std::process::id()));
+        let call = checkout.join("design/calls/kerbe/09-gutter");
+
+        std::fs::create_dir_all(&call).unwrap();
+        std::fs::write(call.join("call.ts"), CALL).unwrap();
+        std::fs::write(
+            checkout.join("design-explore.config.json"),
+            r#"{ "port": 4405, "callsRoot": "design/calls", "defaultCall": "kerbe/09-gutter" }"#,
+        )
+        .unwrap();
+
+        checkout
+    }
+
+    #[test]
+    fn a_checkout_reports_the_calls_under_its_calls_root() {
+        let checkout = a_checkout("read");
+        let project = design_project(checkout.to_string_lossy().into_owned()).unwrap();
+
+        assert_eq!(project.port, 4405);
+        assert_eq!(project.default_call.as_deref(), Some("kerbe/09-gutter"));
+        assert_eq!(project.calls.len(), 1);
+        assert_eq!(project.calls[0].slug, "kerbe/09-gutter");
+
+        std::fs::remove_dir_all(checkout).unwrap();
+    }
+
+    #[test]
+    fn a_verdict_reaches_the_call_file_on_disk() {
+        let checkout = a_checkout("write");
+        let path = checkout.to_string_lossy().into_owned();
+
+        design_set_verdict(path.clone(), "kerbe/09-gutter".to_owned(), "b".to_owned(), Some("chosen".to_owned()))
+            .unwrap();
+
+        let project = design_project(path).unwrap();
+
+        assert_eq!(project.calls[0].options[1].verdict.as_deref(), Some("chosen"));
+
+        std::fs::remove_dir_all(checkout).unwrap();
+    }
+
+    #[test]
+    fn a_checkout_without_a_config_says_so() {
+        let missing = std::env::temp_dir().join("ethlete-studio-no-such-checkout");
+
+        assert!(design_project(missing.to_string_lossy().into_owned()).is_err());
+    }
 }
