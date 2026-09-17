@@ -11,14 +11,16 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
-import { EMPTY, Subscription, catchError, finalize, of, switchMap, tap } from 'rxjs';
+import { EMPTY, Subscription, catchError, finalize, map, of, switchMap, tap } from 'rxjs';
 import { AgentDescriptor, AgentEvent, agentList$, agentRun$ } from '../../host/agent';
 import {
+  AddedOptions,
   Call,
   CallOption,
   Project,
   ServerState,
   Verdict,
+  designAddOptions$,
   designProject$,
   designServerStart$,
   designServerState$,
@@ -27,7 +29,7 @@ import {
   frameUrl,
 } from '../../host/design';
 import { workspaceRoot$ } from '../../host/workspace';
-import { Verb, handoffDraft, promptDraft, verbLabel, verdictOf } from './prompt-draft';
+import { Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import { featureGroups, openOptions, projectOf, projectSummaries } from './grouping';
 import { ProjectPickerComponent } from './project-picker.component';
 import {
@@ -200,6 +202,44 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
                     <span class="text-et-surface-muted text-mono">{{ address() }}</span>
                   </div>
 
+                  @if (formVerb(); as verb) {
+                    <div class="flex flex-wrap items-center gap-2 rounded border border-et-surface-border p-3">
+                      <span>{{ label(verb) }}</span>
+                      <label class="flex items-center gap-2">
+                        How many
+                        <input
+                          [value]="count()"
+                          (input)="setCount($event)"
+                          class="w-16 rounded border border-et-surface-border px-3 py-1"
+                          max="8"
+                          min="1"
+                          type="number"
+                        />
+                      </label>
+                      <input
+                        [value]="question()"
+                        (input)="question.set(typed($event))"
+                        class="grow rounded border border-et-surface-border px-3 py-1"
+                        placeholder="What this round asks"
+                      />
+                      <button
+                        [disabled]="making() || !question().trim()"
+                        (click)="create()"
+                        class="rounded border border-et-surface-border px-3 py-1 disabled:opacity-50"
+                        type="button"
+                      >
+                        Create and draft
+                      </button>
+                      <button
+                        (click)="formVerb.set(null)"
+                        class="rounded border border-et-surface-border px-3 py-1"
+                        type="button"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  }
+
                   <div class="flex min-h-0 grow overflow-auto">
                     <div [style.width.px]="open.frameWidth" class="relative min-h-0 shrink-0">
                       @for (frame of frames(); track frame.key) {
@@ -368,6 +408,11 @@ export class CallViewComponent {
 
   protected filter = signal('');
   protected order = signal<CallOrder>(rememberedView().order ?? 'name');
+
+  protected formVerb = signal<Verb | null>(null);
+  protected count = signal(3);
+  protected question = signal('');
+  protected making = signal(false);
 
   protected readonly VERBS: Verb[] = ['accept', 'iterate', 'reject', 'more'];
 
@@ -564,6 +609,7 @@ export class CallViewComponent {
   }
 
   protected openCall(call: Call, option = call.options[0]?.key ?? '') {
+    this.formVerb.set(null);
     this.slug.set(call.slug);
     this.optionKey.set(option);
     rememberView({ checkout: this.checkout(), slug: call.slug, option });
@@ -579,17 +625,54 @@ export class CallViewComponent {
     this.model.set(cli?.suggestedModels[0] ?? '');
   }
 
+  protected setCount(event: Event) {
+    const value = Number.parseInt(this.typed(event), 10);
+
+    this.count.set(Number.isFinite(value) ? Math.min(8, Math.max(1, value)) : 1);
+  }
+
   protected draft(verb: Verb) {
+    if (opensARound(verb)) {
+      this.formVerb.set(verb);
+      this.question.set('');
+
+      return;
+    }
+
+    this.settle(verb);
+  }
+
+  /** Opens the round the verb asked for, then drafts a prompt that names the files Studio made. */
+  protected create() {
+    const verb = this.formVerb();
     const call = this.call();
-    const option = this.option();
 
-    if (!call || !option) return;
+    if (!verb || !call || this.making()) return;
 
-    this.prompt.set(promptDraft({ call, option, dir: this.callDir() }, verb));
+    this.making.set(true);
 
-    const verdict = verdictOf(verb);
+    designAddOptions$({
+      checkout: this.checkout(),
+      slug: call.slug,
+      count: this.count(),
+      roundTitle: this.question().trim(),
+    })
+      .pipe(
+        switchMap((made) => designProject$(this.checkout()).pipe(map((design) => ({ made, design })))),
+        tap(({ made, design }) => {
+          this.design.set(design);
+          this.formVerb.set(null);
+          this.settle(verb, made);
+        }),
+        catchError((error: unknown) => {
+          this.trouble.set(`${error}`);
 
-    if (verdict) this.write(option, verdict);
+          return of(null);
+        }),
+        finalize(() => this.making.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   protected write(option: CallOption, verdict: Verdict | null) {
@@ -692,6 +775,19 @@ export class CallViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  private settle(verb: Verb, made: AddedOptions | null = null) {
+    const call = this.call();
+    const option = this.option();
+
+    if (!call || !option) return;
+
+    this.prompt.set(promptDraft({ call, option, dir: this.callDir(), made }, verb));
+
+    const verdict = verdictOf(verb);
+
+    if (verdict) this.write(option, verdict);
   }
 
   /** Writes what one event says into the conversation the run started in. */

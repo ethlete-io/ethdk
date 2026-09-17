@@ -161,8 +161,13 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    made it: `sessions.ts` stores every turn beside the session id, one per call and CLI, and keeps
    the last `TURN_LIMIT`. A reload shows what the resumed session holds, so the rail never claims
    the agent remembers more than it does; dropping the session drops its turns with it.
-5. **Studio does the boilerplate.** Asking for three more variants creates their files, so the
-   agent only draws.
+5. ~~**Studio does the boilerplate.**~~ Done. The three verbs that open a round - Iterate, Reject
+   and More like this - now ask two things before they draft: how many variants, and what the round
+   asks. Studio then writes the round into `call.ts`, one entry per variant, and one empty component
+   file per variant, and the prompt names those files. `name`, `claim` and `cost` stay empty: only
+   the drawing can argue them, so the agent writes them once it has drawn. A key is taken only when
+   no option claims it **and** no `option-<key>.ts` already exists, so an orphaned file is never
+   overwritten.
 6. **Tools the agent can call.** Studio ships a set, so a run spends its budget on the drawing and
    not on finding out how this repo works.
 7. **A workbench that shows every variant at once.** Switching a variant one at a time is tedious,

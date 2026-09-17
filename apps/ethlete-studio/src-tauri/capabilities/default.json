@@ -12,6 +12,7 @@
     "allow-agent-cancel",
     "allow-agent-list",
     "allow-agent-run",
+    "allow-design-add-options",
     "allow-design-project",
     "allow-design-set-verdict",
     "allow-design-server-start",

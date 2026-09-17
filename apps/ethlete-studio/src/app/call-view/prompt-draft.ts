@@ -1,4 +1,4 @@
-import { Call, CallOption } from '../../host/design';
+import { AddedOptions, Call, CallOption } from '../../host/design';
 
 /** The file a full session writes its state into, next to the call it worked on. */
 export const HANDOFF_FILE = 'handoff.md';
@@ -26,20 +26,34 @@ export type DraftSubject = {
   call: Call;
   option: CallOption;
   dir: string;
+  /** What Studio created for the round this verb opened. Left out by a verb that opens none. */
+  made?: AddedOptions | null;
 };
 
 const task: Record<Verb, string> = {
   accept:
     'Carry this option into the app. Keep what the claim promises, and say in your answer what you did about the cost.',
-  iterate:
-    'Draw a new round that keeps the claim and answers the cost. Give each new option its own folder, its own claim and its own cost, and add it to the call file.',
+  iterate: 'Draw a new round that keeps the claim and answers the cost.',
   reject:
     'This direction is closed. Draw a new round that answers the same question another way, and say in each claim how it avoids the cost above.',
   more: 'Draw a new round of variants in this direction. Each one changes one thing, and its claim names the thing it changes.',
 };
 
+/** True when Studio opens the round itself, so the verb needs the files it made. */
+export const opensARound = (verb: Verb) => verb !== 'accept';
+
+/** What Studio already wrote for a new round, so the run spends its budget on the drawing alone. */
+const boilerplate = (dir: string, made: AddedOptions) => [
+  '',
+  `Studio already opened round ${made.round} and created one empty component per option:`,
+  ...made.keys.map((key) => `- ${dir}/option-${key}.ts`),
+  'Draw into those files. Each one holds a component with an empty template and empty styles.',
+  'Add no option to the call file: the entries are there. Write only the name, the claim and the',
+  'cost of each new option into it, and the note of the round once the user has ruled.',
+];
+
 /** The first draft of the prompt a verb sends. The user reads and edits it before it goes out. */
-export const promptDraft = ({ call, option, dir }: DraftSubject, verb: Verb) =>
+export const promptDraft = ({ call, option, dir, made }: DraftSubject, verb: Verb) =>
   [
     `${verbLabel[verb]}: option "${option.name}" of the call "${call.headline}".`,
     '',
@@ -52,6 +66,7 @@ export const promptDraft = ({ call, option, dir }: DraftSubject, verb: Verb) =>
       ? [`Read ${dir}/${HANDOFF_FILE} as well: an earlier session of this call wrote down what it knew.`]
       : []),
     task[verb],
+    ...(made ? boilerplate(dir, made) : []),
   ].join('\n');
 
 /**

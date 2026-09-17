@@ -52,6 +52,28 @@ export type VerdictWrite = {
 export const designSetVerdict$ = (write: VerdictWrite): Observable<void> =>
   invokeHost$<void>('design_set_verdict', write);
 
+/** How many variants a call gets, and what the round they answer asks. */
+export type OptionsWrite = {
+  checkout: string;
+  slug: string;
+  count: number;
+  roundTitle: string;
+};
+
+/** The round Studio opened, and the key of every option it created for it. */
+export type AddedOptions = {
+  round: string;
+  keys: string[];
+};
+
+/**
+ * Opens a new round on a call and creates one empty option per variant: a stub component file
+ * each, and an entry each in the call file. The name, the claim and the cost stay empty, because
+ * only the drawing can argue them.
+ */
+export const designAddOptions$ = (write: OptionsWrite): Observable<AddedOptions> =>
+  invokeHost$<AddedOptions>('design_add_options', write);
+
 /** What a checkout's design server is doing, and what Studio may do about it. */
 export type ServerState = {
   port: number;

@@ -113,6 +113,7 @@ pub fn run() {
             agent::agent_run,
             design::design_project,
             design::design_set_verdict,
+            design::design_add_options,
             design_server::design_server_start,
             design_server::design_server_state,
             design_server::design_server_stop,
