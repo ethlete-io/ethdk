@@ -45,6 +45,11 @@ import {
 } from './sessions';
 import { CallOrder, rememberView, rememberedView } from './remembered';
 
+const THUMB_WIDTH = 180;
+
+/** The design server reports no frame height, so a tile assumes the 16:9 window a call draws. */
+const THUMB_ASPECT = 9 / 16;
+
 @Component({
   selector: 'ethlete-call-view',
   template: `
@@ -164,96 +169,124 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
 
           @if (call(); as open) {
             <div class="flex min-h-0 grow gap-6">
-              <div class="flex min-h-0 grow flex-col gap-3">
-                <div class="flex flex-wrap gap-2">
-                  @for (option of open.options; track option.key) {
+              <div class="flex min-h-0 grow gap-4">
+                <div class="flex w-48 shrink-0 flex-col gap-2.5 overflow-auto">
+                  @for (tile of tiles(); track tile.key) {
                     <button
-                      [class.bg-et-surface-bg]="option.key === optionKey()"
-                      (click)="openOption(option)"
-                      class="rounded border border-et-surface-border px-3 py-1"
+                      [style.opacity]="tile.verdict === 'rejected' ? 0.32 : 1"
+                      [class.border-et-surface-interaction-ink]="tile.key === optionKey()"
+                      (click)="openOption(tile)"
+                      class="flex shrink-0 flex-col gap-1.5 rounded border border-et-surface-border bg-et-surface-bg p-1.5 text-left"
                       type="button"
                     >
-                      {{ option.name }}
-                      @if (option.verdict) {
-                        <span class="text-et-surface-muted">{{ option.verdict }}</span>
-                      }
+                      <span
+                        [class.border-et-brand]="tile.verdict === 'chosen'"
+                        [style.height.px]="THUMB_HEIGHT"
+                        class="relative block w-full overflow-hidden rounded-sm border border-transparent"
+                      >
+                        @if (tile.source; as source) {
+                          <iframe
+                            [src]="source"
+                            [style.width.px]="open.frameWidth"
+                            [style.height.px]="thumbFrameHeight()"
+                            [style.transform]="thumbTransform()"
+                            class="pointer-events-none absolute top-0 left-0 origin-top-left border-0"
+                            tabindex="-1"
+                            title="The variant, drawn small"
+                          ></iframe>
+                        }
+                      </span>
+                      <span
+                        [class.text-et-brand]="tile.verdict === 'chosen'"
+                        class="text-small text-et-surface-muted"
+                        >{{ tile.name }}</span
+                      >
                     </button>
                   }
                 </div>
 
-                @if (option(); as drawn) {
-                  <div class="flex flex-wrap items-center gap-2">
-                    @for (verb of VERBS; track verb) {
-                      <button
-                        (click)="draft(verb)"
-                        class="rounded border border-et-surface-border px-3 py-1"
-                        type="button"
-                      >
-                        {{ label(verb) }}
-                      </button>
-                    }
-                    <button
-                      (click)="write(drawn, null)"
-                      class="rounded border border-et-surface-border px-3 py-1"
-                      type="button"
-                    >
-                      Open again
-                    </button>
-                    <span class="text-et-surface-muted text-mono">{{ address() }}</span>
-                  </div>
-
-                  @if (formVerb(); as verb) {
-                    <div class="flex flex-wrap items-center gap-2 rounded border border-et-surface-border p-3">
-                      <span>{{ label(verb) }}</span>
-                      <label class="flex items-center gap-2">
-                        How many
-                        <input
-                          [value]="count()"
-                          (input)="setCount($event)"
-                          class="w-16 rounded border border-et-surface-border px-3 py-1"
-                          max="8"
-                          min="1"
-                          type="number"
-                        />
-                      </label>
-                      <input
-                        [value]="question()"
-                        (input)="question.set(typed($event))"
-                        class="grow rounded border border-et-surface-border px-3 py-1"
-                        placeholder="What this round asks"
-                      />
-                      <button
-                        [disabled]="making() || !question().trim()"
-                        (click)="create()"
-                        class="rounded border border-et-surface-border px-3 py-1 disabled:opacity-50"
-                        type="button"
-                      >
-                        Create and draft
-                      </button>
-                      <button
-                        (click)="formVerb.set(null)"
-                        class="rounded border border-et-surface-border px-3 py-1"
-                        type="button"
-                      >
-                        Cancel
-                      </button>
+                <div class="flex min-h-0 grow flex-col gap-3">
+                  @if (option(); as drawn) {
+                    <div class="flex min-h-0 grow overflow-auto">
+                      <div [style.width.px]="open.frameWidth" class="relative min-h-0 shrink-0">
+                        @for (frame of frames(); track frame.key) {
+                          <iframe
+                            [src]="frame.source"
+                            [class.opacity-0]="frame.key !== optionKey()"
+                            [class.pointer-events-none]="frame.key !== optionKey()"
+                            class="absolute inset-0 h-full w-full rounded border border-et-surface-border bg-et-surface-bg transition-opacity"
+                            title="The drawn option"
+                          ></iframe>
+                        }
+                      </div>
                     </div>
-                  }
 
-                  <div class="flex min-h-0 grow overflow-auto">
-                    <div [style.width.px]="open.frameWidth" class="relative min-h-0 shrink-0">
-                      @for (frame of frames(); track frame.key) {
-                        <iframe
-                          [src]="frame.source"
-                          [class.opacity-0]="frame.key !== optionKey()"
-                          [class.pointer-events-none]="frame.key !== optionKey()"
-                          class="absolute inset-0 h-full w-full rounded border border-et-surface-border bg-et-surface-bg transition-opacity"
-                          title="The drawn option"
-                        ></iframe>
+                    <div class="flex flex-wrap items-baseline gap-3">
+                      <span [class.text-et-brand]="drawn.verdict === 'chosen'">{{ drawn.name }}</span>
+                      @if (drawn.verdict) {
+                        <span class="text-small text-et-surface-muted">{{ drawn.verdict }}</span>
                       }
+                      <span class="text-et-surface-muted text-mono">{{ address() }}</span>
                     </div>
-                  </div>
-                }
+
+                    <div class="flex flex-wrap items-center gap-2">
+                      @for (verb of VERBS; track verb) {
+                        <button
+                          (click)="draft(verb)"
+                          class="rounded border border-et-surface-border px-3 py-1"
+                          type="button"
+                        >
+                          {{ label(verb) }}
+                        </button>
+                      }
+                      <button
+                        (click)="write(drawn, null)"
+                        class="rounded border border-et-surface-border px-3 py-1"
+                        type="button"
+                      >
+                        Open again
+                      </button>
+                    </div>
+
+                    @if (formVerb(); as verb) {
+                      <div class="flex flex-wrap items-center gap-2 rounded border border-et-surface-border p-3">
+                        <span>{{ label(verb) }}</span>
+                        <label class="flex items-center gap-2">
+                          How many
+                          <input
+                            [value]="count()"
+                            (input)="setCount($event)"
+                            class="w-16 rounded border border-et-surface-border px-3 py-1"
+                            max="8"
+                            min="1"
+                            type="number"
+                          />
+                        </label>
+                        <input
+                          [value]="question()"
+                          (input)="question.set(typed($event))"
+                          class="grow rounded border border-et-surface-border px-3 py-1"
+                          placeholder="What this round asks"
+                        />
+                        <button
+                          [disabled]="making() || !question().trim()"
+                          (click)="create()"
+                          class="rounded border border-et-surface-border px-3 py-1 disabled:opacity-50"
+                          type="button"
+                        >
+                          Create and draft
+                        </button>
+                        <button
+                          (click)="formVerb.set(null)"
+                          class="rounded border border-et-surface-border px-3 py-1"
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    }
+                  }
+                </div>
               </div>
 
               <div class="flex w-[34rem] shrink-0 flex-col border-l border-et-surface-border pl-6">
@@ -486,6 +519,27 @@ export class CallViewComponent {
         frameUrl({ port, slug: call.slug, option: option.key, epoch }),
       ),
     }));
+  });
+
+  protected readonly THUMB_HEIGHT = Math.round(THUMB_WIDTH * THUMB_ASPECT);
+
+  /** Every variant of the open call, each with the frame its tile draws small. */
+  protected tiles = computed(() => {
+    const call = this.call();
+
+    if (!call) return [];
+
+    const sources = new Map(this.frames().map((frame) => [frame.key, frame.source]));
+
+    return call.options.map((option) => ({ ...option, source: sources.get(option.key) ?? null }));
+  });
+
+  protected thumbFrameHeight = computed(() => Math.round((this.call()?.frameWidth ?? 0) * THUMB_ASPECT));
+
+  protected thumbTransform = computed(() => {
+    const width = this.call()?.frameWidth ?? 0;
+
+    return `scale(${width ? THUMB_WIDTH / width : 1})`;
   });
 
   public conversation = computed(() => sessionKey({ slug: this.slug(), cli: this.cli()?.id ?? '' }));
