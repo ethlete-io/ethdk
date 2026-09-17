@@ -38,6 +38,11 @@ fn git(args: &[&str]) -> Result<std::process::Output, String> {
 }
 
 #[tauri::command]
+fn workspace_root() -> String {
+    repository_root().map(|root| root.to_string_lossy().into_owned()).unwrap_or_default()
+}
+
+#[tauri::command]
 fn workspace_status() -> String {
     match git(&["status", "--short"]) {
         Ok(output) => String::from_utf8_lossy(&output.stdout).trim().to_owned(),
@@ -74,6 +79,7 @@ pub fn run() {
             agent::agent_run,
             workspace_check,
             workspace_diff,
+            workspace_root,
             workspace_status
         ])
         .run(tauri::generate_context!())
