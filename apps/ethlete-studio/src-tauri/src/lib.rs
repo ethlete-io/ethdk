@@ -1,3 +1,8 @@
+mod agent;
+mod agent_claude;
+mod agent_codex;
+mod error;
+
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -58,8 +63,15 @@ fn workspace_diff() -> String {
 }
 
 pub fn run() {
+    // A desktop launcher starts the app with a trimmed PATH, and then no agent CLI is found at all.
+    let _ = fix_path_env::fix();
+
     tauri::Builder::default()
+        .manage(agent::AgentRuns::default())
         .invoke_handler(tauri::generate_handler![
+            agent::agent_cancel,
+            agent::agent_list,
+            agent::agent_run,
             workspace_check,
             workspace_diff,
             workspace_status

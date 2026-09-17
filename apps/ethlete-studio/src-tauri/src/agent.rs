@@ -1,0 +1,251 @@
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::process::Stdio;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
+
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use tauri::ipc::Channel;
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::{Child, Command};
+
+use crate::agent_claude::ClaudeCli;
+use crate::agent_codex::CodexCli;
+use crate::error::{StudioError, StudioResult};
+
+/// One agent CLI that Studio can drive. A second CLI is another implementation of this trait, never
+/// a flag on an existing one.
+pub trait AgentCli: Send + Sync {
+    fn id(&self) -> &'static str;
+
+    fn label(&self) -> &'static str;
+
+    fn binary(&self) -> &'static str;
+
+    /// Model names to offer first. A run accepts any other name as well, because the list belongs to
+    /// the CLI and changes without Studio changing.
+    fn suggested_models(&self) -> Vec<String>;
+
+    /// The arguments that answer one prompt without a terminal and print newline-delimited JSON.
+    fn arguments(&self, prompt: &str, model: Option<&str>) -> Vec<String>;
+
+    /// Turns one line the CLI printed into what the UI shows. A line can carry several events, or
+    /// none at all.
+    fn read_line(&self, line: &str) -> Vec<AgentEvent>;
+}
+
+fn every_cli() -> Vec<Box<dyn AgentCli>> {
+    vec![Box::new(ClaudeCli), Box::new(CodexCli)]
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentDescriptor {
+    pub id: String,
+    pub label: String,
+    pub binary: String,
+    pub version: String,
+    pub suggested_models: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum AgentEvent {
+    #[serde(rename_all = "camelCase")]
+    Started { cli: String, model: Option<String> },
+    #[serde(rename_all = "camelCase")]
+    Message { text: String },
+    #[serde(rename_all = "camelCase")]
+    Action { action: String, detail: String },
+    #[serde(rename_all = "camelCase")]
+    Failed { message: String },
+    #[serde(rename_all = "camelCase")]
+    Finished { ok: bool, summary: String },
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentRequest {
+    pub cli: String,
+    pub model: Option<String>,
+    pub prompt: String,
+    /// The checkout the agent works in. A project's design work lives in that project's own repo, so
+    /// every run names the directory it writes to.
+    pub cwd: String,
+}
+
+#[derive(Default, Clone)]
+pub struct AgentRuns(Arc<Mutex<HashMap<String, Child>>>);
+
+static NEXT_RUN: AtomicU64 = AtomicU64::new(1);
+
+const DETAIL_KEYS: [&str; 6] = ["file_path", "command", "pattern", "path", "url", "description"];
+
+/// A short readable stand-in for a tool's whole argument object, so the stream reads as a list of
+/// actions and not as a wall of JSON.
+pub fn detail(input: Option<&Value>) -> String {
+    let Some(input) = input else {
+        return String::new();
+    };
+
+    if let Some(text) = input.as_str() {
+        return clip(text);
+    }
+
+    for key in DETAIL_KEYS {
+        if let Some(found) = input.get(key).and_then(Value::as_str) {
+            return clip(found);
+        }
+    }
+
+    clip(&input.to_string())
+}
+
+pub fn clip(text: &str) -> String {
+    let text = text.trim();
+
+    if text.chars().count() <= 160 {
+        return text.to_owned();
+    }
+
+    let mut short: String = text.chars().take(159).collect();
+    short.push('…');
+    short
+}
+
+#[tauri::command]
+pub async fn agent_list() -> Vec<AgentDescriptor> {
+    let mut installed = Vec::new();
+
+    for cli in every_cli() {
+        let Ok(output) = Command::new(cli.binary()).arg("--version").output().await else {
+            continue;
+        };
+
+        if !output.status.success() {
+            continue;
+        }
+
+        installed.push(AgentDescriptor {
+            id: cli.id().to_owned(),
+            label: cli.label().to_owned(),
+            binary: cli.binary().to_owned(),
+            version: String::from_utf8_lossy(&output.stdout).trim().to_owned(),
+            suggested_models: cli.suggested_models(),
+        });
+    }
+
+    installed
+}
+
+/// Starts one agent run and returns its id at once, so the UI can cancel a run that is still going.
+/// Every later event arrives on `stream`.
+#[tauri::command]
+pub async fn agent_run(
+    runs: tauri::State<'_, AgentRuns>,
+    request: AgentRequest,
+    stream: Channel<AgentEvent>,
+) -> StudioResult<String> {
+    let cli = every_cli()
+        .into_iter()
+        .find(|cli| cli.id() == request.cli)
+        .ok_or_else(|| StudioError::Rejected(format!("No agent CLI is registered under {}.", request.cli)))?;
+
+    let cwd = PathBuf::from(&request.cwd);
+
+    if !cwd.is_dir() {
+        return Err(StudioError::Rejected(format!("{} is not a directory.", request.cwd)));
+    }
+
+    let mut child = Command::new(cli.binary())
+        .current_dir(&cwd)
+        .args(cli.arguments(&request.prompt, request.model.as_deref()))
+        // Codex reads a prompt from stdin when it is a pipe, and then waits for input that never
+        // comes.
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true)
+        .spawn()
+        .map_err(|error| match error.kind() {
+            std::io::ErrorKind::NotFound => StudioError::NotInstalled(cli.binary().to_owned()),
+            _ => StudioError::Io(error),
+        })?;
+
+    let stdout = child.stdout.take().ok_or(StudioError::Rejected("The agent printed nowhere.".to_owned()))?;
+    let stderr = child.stderr.take().ok_or(StudioError::Rejected("The agent printed nowhere.".to_owned()))?;
+
+    let id = format!("run-{}", NEXT_RUN.fetch_add(1, Ordering::Relaxed));
+    let table = runs.inner().clone();
+
+    table.0.lock().map_err(|_| StudioError::Poisoned)?.insert(id.clone(), child);
+
+    let _ = stream.send(AgentEvent::Started {
+        cli: cli.id().to_owned(),
+        model: request.model.clone(),
+    });
+
+    let complaints = Arc::new(Mutex::new(String::new()));
+    let sink = complaints.clone();
+
+    tokio::spawn(async move {
+        let mut lines = BufReader::new(stderr).lines();
+
+        while let Ok(Some(line)) = lines.next_line().await {
+            let Ok(mut sink) = sink.lock() else {
+                return;
+            };
+
+            sink.push_str(&line);
+            sink.push('\n');
+        }
+    });
+
+    let reader_id = id.clone();
+
+    tokio::spawn(async move {
+        let mut lines = BufReader::new(stdout).lines();
+        let mut reported = false;
+
+        while let Ok(Some(line)) = lines.next_line().await {
+            for event in cli.read_line(&line) {
+                reported = reported || matches!(event, AgentEvent::Finished { .. });
+
+                if stream.send(event).is_err() {
+                    break;
+                }
+            }
+        }
+
+        let taken = table.0.lock().ok().and_then(|mut table| table.remove(&reader_id));
+        let status = match taken {
+            Some(mut child) => child.wait().await.ok(),
+            None => None,
+        };
+
+        if reported {
+            return;
+        }
+
+        let summary = complaints.lock().map(|text| clip(text.trim())).unwrap_or_default();
+
+        let _ = stream.send(AgentEvent::Finished {
+            ok: status.is_some_and(|status| status.success()),
+            summary,
+        });
+    });
+
+    Ok(id)
+}
+
+#[tauri::command]
+pub async fn agent_cancel(runs: tauri::State<'_, AgentRuns>, run_id: String) -> StudioResult<()> {
+    let taken = runs.0.lock().map_err(|_| StudioError::Poisoned)?.remove(&run_id);
+
+    if let Some(mut child) = taken {
+        let _ = child.start_kill();
+    }
+
+    Ok(())
+}

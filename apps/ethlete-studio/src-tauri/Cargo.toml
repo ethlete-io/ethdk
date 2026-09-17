@@ -13,4 +13,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
+# Not on crates.io - the Tauri team publishes it as a git repo, with no version tags to pin.
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "c4c45d503ea115a839aae718d02f79e7c7f0f673" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
 tauri = { version = "2.11.5", features = [] }
+thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["io-util", "macros", "process", "rt-multi-thread", "sync"] }
