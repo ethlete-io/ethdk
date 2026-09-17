@@ -18,7 +18,7 @@ import {
 } from '../../host/design';
 import { workspaceRoot$ } from '../../host/workspace';
 import { Verb, promptDraft, verbLabel, verdictOf } from './prompt-draft';
-import { callList, openOptions, projectOf, projectSummaries } from './grouping';
+import { featureGroups, openOptions, projectOf, projectSummaries } from './grouping';
 import { ProjectPickerComponent } from './project-picker.component';
 import { CallOrder, rememberView, rememberedView } from './remembered';
 
@@ -104,19 +104,34 @@ import { CallOrder, rememberView, rememberedView } from './remembered';
             </div>
 
             <ul class="min-h-0 grow overflow-auto rounded border border-et-surface-border">
-              @for (call of list(); track call.slug) {
+              @for (feature of features(); track feature.name) {
                 <li>
-                  <button
-                    [class.bg-et-surface-bg]="call.slug === slug()"
-                    [class.text-et-surface-muted]="settled(call) === call.options.length"
-                    (click)="openCall(call)"
-                    class="flex w-full flex-col gap-1 border-b border-et-surface-border p-3 text-left"
-                    type="button"
+                  <h2
+                    class="sticky top-0 flex justify-between gap-2 border-b border-et-surface-border bg-et-surface-bg px-3 py-2"
                   >
-                    <span class="text-et-surface-muted">{{ call.eyebrow }}</span>
-                    <span>{{ call.headline }}</span>
-                    <span class="text-et-surface-muted">{{ settled(call) }} of {{ call.options.length }} settled</span>
-                  </button>
+                    <span>{{ feature.name }}</span>
+                    <span class="text-et-surface-muted">{{ feature.open }} open</span>
+                  </h2>
+
+                  <ul>
+                    @for (call of feature.calls; track call.slug) {
+                      <li>
+                        <button
+                          [class.bg-et-surface-bg]="call.slug === slug()"
+                          [class.text-et-surface-muted]="settled(call) === call.options.length"
+                          (click)="openCall(call)"
+                          class="flex w-full flex-col gap-1 border-b border-et-surface-border p-3 text-left"
+                          type="button"
+                        >
+                          <span class="text-et-surface-muted">{{ call.eyebrow }}</span>
+                          <span>{{ call.headline }}</span>
+                          <span class="text-et-surface-muted">
+                            {{ settled(call) }} of {{ call.options.length }} settled
+                          </span>
+                        </button>
+                      </li>
+                    }
+                  </ul>
                 </li>
               } @empty {
                 <li class="p-3 text-et-surface-muted">No call matches.</li>
@@ -324,8 +339,8 @@ export class CallViewComponent {
 
   protected projects = computed(() => projectSummaries(this.calls()));
 
-  protected list = computed(() =>
-    callList({ calls: this.calls(), project: this.project(), term: this.filter(), order: this.order() }),
+  protected features = computed(() =>
+    featureGroups({ calls: this.calls(), project: this.project(), term: this.filter(), order: this.order() }),
   );
 
   protected call = computed(() => this.calls().find((call) => call.slug === this.slug()) ?? null);

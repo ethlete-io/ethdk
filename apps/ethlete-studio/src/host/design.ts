@@ -17,6 +17,8 @@ export type CallOption = {
 /** One open question of an exploration, and every option drawn for it. */
 export type Call = {
   slug: string;
+  /** The feature the call belongs to. A call without one is loose. */
+  feature: string | null;
   eyebrow: string;
   headline: string;
   intro: string;

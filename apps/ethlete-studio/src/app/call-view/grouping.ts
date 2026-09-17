@@ -39,6 +39,33 @@ export const callList = ({ calls, project, term, order }: CallListRequest): Call
     .sort(order === 'open' ? byOpen : byName);
 };
 
+/** The heading a call without a feature reads under. */
+export const LOOSE_FEATURE = 'No feature';
+
+/** Every call of one feature, and how many of its calls are still open. */
+export type FeatureGroup = {
+  name: string;
+  open: number;
+  calls: Call[];
+};
+
+/** The sidebar's list: one band per feature of the project, the loose calls last. */
+export const featureGroups = (request: CallListRequest): FeatureGroup[] => {
+  const found = new Map<string, Call[]>();
+
+  for (const call of callList(request)) {
+    const name = call.feature || LOOSE_FEATURE;
+
+    found.set(name, [...(found.get(name) ?? []), call]);
+  }
+
+  return [...found.entries()]
+    .map(([name, calls]) => ({ name, open: calls.filter((call) => openOptions(call) > 0).length, calls }))
+    .sort((left, right) => rank(left.name) - rank(right.name) || left.name.localeCompare(right.name));
+};
+
+const rank = (name: string) => (name === LOOSE_FEATURE ? 1 : 0);
+
 /** Every project of a checkout, by name, as the welcome screen lists them. */
 export const projectSummaries = (calls: Call[]): ProjectSummary[] => {
   const found = new Map<string, Call[]>();

@@ -34,6 +34,8 @@ export type CallRound = {
  * A call with one option and no claim is a view: one reference picture, drawn full width.
  */
 export type Call = {
+  /** The feature this call belongs to, for example 'the hour strip'. Left out by a loose call. */
+  feature?: string;
   eyebrow: string;
   headline: string;
   intro: string;

@@ -18,6 +18,7 @@ pub struct CallOption {
 #[serde(rename_all = "camelCase")]
 pub struct Call {
     pub slug: String,
+    pub feature: Option<String>,
     pub eyebrow: String,
     pub headline: String,
     pub intro: String,
@@ -130,6 +131,7 @@ fn parse_options(source: &str) -> Vec<CallOption> {
 fn parse_call(slug: &str, source: &str) -> Call {
     Call {
         slug: slug.to_owned(),
+        feature: string_field(source, "feature"),
         eyebrow: string_field(source, "eyebrow").unwrap_or_default(),
         headline: string_field(source, "headline").unwrap_or_default(),
         intro: string_field(source, "intro").unwrap_or_default(),
@@ -321,6 +323,7 @@ mod tests {
     const CALL: &str = r#"import { defineCall } from '@design-explore';
 
 export default defineCall({
+  feature: 'The clock column',
   eyebrow: 'Kerbe · call 9',
   headline: 'What the clock column costs the day',
   intro:
@@ -362,6 +365,18 @@ export default defineCall({
         assert_eq!(call.headline, "What the clock column costs the day");
         assert_eq!(call.frame_width, 1100);
         assert_eq!(call.options.len(), 2);
+    }
+
+    #[test]
+    fn a_call_reads_the_feature_it_belongs_to() {
+        assert_eq!(parse_call("x", CALL).feature.as_deref(), Some("The clock column"));
+    }
+
+    #[test]
+    fn a_call_without_a_feature_is_loose() {
+        let loose = CALL.replace("  feature: 'The clock column',\n", "");
+
+        assert_eq!(parse_call("x", &loose).feature, None);
     }
 
     #[test]
