@@ -170,7 +170,13 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    no option claims it **and** no `option-<key>.ts` already exists, so an orphaned file is never
    overwritten.
 6. **Tools the agent can call.** Studio ships a set, so a run spends its budget on the drawing and
-   not on finding out how this repo works.
+   not on finding out how this repo works. Tom ruled how they arrive. An MCP server Studio runs
+   carries the actions - read the call, read the fixture, run `check-call.mjs` - because Claude
+   Code and Codex both speak MCP while a skill file is a Claude Code format. Studio already holds
+   the checkout, the slug, the variant key and the server port, so a tool can take no arguments,
+   and Studio can see that the check ran before it writes a verdict. The hard rules stay a fixed
+   section of every prompt: never import a package barrel, never change the fixture, write one
+   file only. A rule the agent has to fetch is a rule it can skip.
 7. ~~**A workbench that shows every variant at once.**~~ Done. The option tab strip is gone. A
    narrow scrolling column of thumbnails stands at the left of the stage, and the variant under
    study takes the rest of the width and the full height, because a drawing of an application is
