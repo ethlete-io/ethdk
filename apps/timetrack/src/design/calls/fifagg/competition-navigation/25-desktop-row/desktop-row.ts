@@ -2,7 +2,8 @@ import { css, drawing, html } from '@design-explore';
 import { COMPETITION, CURRENT, LIVE, PAGES } from './fixture';
 
 /** What the desktop row does with the width the phone row does not have. */
-export type DesktopRule = 'stretched' | 'pages-between' | 'named-control';
+export type DesktopRule =
+  'stretched' | 'pages-between' | 'named-control' | 'strip-left' | 'chip-leads' | 'chip-in-strip';
 
 const searchIcon = html`
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -50,7 +51,41 @@ const pageLinks = html`
   <div class="links">${PAGES.map((page) => html`<a class="${page === CURRENT ? 'is-current' : ''}">${page}</a>`)}</div>
 `;
 
+const square = html` <button class="square" type="button" aria-label="All of the competition">${grid}</button> `;
+
+const stageEntry = html` <a class="links__stage"><span class="dot"></span>${LIVE.name}</a> `;
+
 const subRow = (rule: DesktopRule) => {
+  if (rule === 'strip-left') {
+    return html`
+      <nav class="sub">
+        ${pageLinks}
+        <span class="grow"></span>
+        ${chip} ${square}
+      </nav>
+    `;
+  }
+
+  if (rule === 'chip-leads') {
+    return html`
+      <nav class="sub">
+        ${chip} ${pageLinks}
+        <span class="grow"></span>
+        ${square}
+      </nav>
+    `;
+  }
+
+  if (rule === 'chip-in-strip') {
+    return html`
+      <nav class="sub">
+        <div class="links">${stageEntry}${pageLinks}</div>
+        <span class="grow"></span>
+        ${square}
+      </nav>
+    `;
+  }
+
   if (rule === 'pages-between') {
     return html`
       <nav class="sub">
@@ -287,6 +322,25 @@ export const desktopRow = ({ rule }: { rule: DesktopRule }) =>
       .links a.is-current {
         box-shadow: inset 0 -2px 0 rgb(var(--primary));
         color: var(--ink);
+      }
+
+      .links .links {
+        gap: 4px;
+      }
+
+      .links__stage {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-right: 6px;
+        padding: 7px 12px;
+        border: 1px solid rgb(var(--primary) / 0.28);
+        border-radius: 8px;
+        background: rgb(var(--primary) / 0.1);
+        color: rgb(var(--primary));
+        font-size: 14px;
+        white-space: nowrap;
+        cursor: pointer;
       }
 
       .square {
