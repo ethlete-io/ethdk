@@ -1,4 +1,4 @@
-/** The longest names the platform really carries, with the `shortName` the stage view already has. */
+/** The longest name the platform really carries. `shortName` is drawn by the rejected option a only. */
 export const COMPETITION = {
   name: 'Cyprus Football Association Esports Competition - Featuring Rocket League',
   shortName: 'Cyprus FA Esports',

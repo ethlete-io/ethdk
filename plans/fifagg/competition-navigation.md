@@ -18,18 +18,27 @@ The source this redesigns is `/home/tom/dev/fifagg/fifagg-frontend`:
 - The accent is per competition: `gg-theme` → `var(--et-color-primary)`, set by
   `etThemeFromCompetitionSlug`. FeWC ft. eFootball Console is `#00FC06`.
 - No competition ships an icon asset. The banner image is the only art.
+- `CompetitionView` carries `name` and nothing else name-like. `shortName` exists only on
+  `BaseStageView`, is nullable, and is often the full name again, so it is not a short label.
+- `videoGameType` is a field of the competition, so the `ft. eFootball` tail inside a name is data
+  the row already holds without reading the name string.
+- The longest real names run to 56 characters, for example
+  `[PlayStation] DFL eFootball Challenge 2023 - Qualifier 1`.
+- The page states the name twice before the row could state it a third time: inside the banner art,
+  and as the page heading right below the header.
 
 ## Settled
 
-| Call              | Question                                                             | Won                                                                                                 | Lost                                                                       |
-| ----------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 9 · attachment    | How does the sub-navigation attach to the floating header?           | A · second row inside the header card                                                               | B · attached pill below; C · full-width band                               |
-| 10 · crowded row  | What does the row hold when seven destinations do not fit?           | B · the live stage leads                                                                            | A · one map control; C · pinned live with the strip below                  |
-| 11 · open map     | What opens when the row is used?                                     | A · one mega panel, reusing the shipped hover panel and the drill-in drawer                         | B · two anchored menus; C · spotlight leads the panel                      |
-| 12 · long names   | How does the row carry a 44-character name with no icon asset?       | A · two lines, one control (on the phone)                                                           | B · live only, name in the page; C · the banner is the mark                |
-| 13 · desktop row  | What does the desktop row do with the width the phone does not need? | C · the pages inline, both controls right                                                           | A · one line, status inline; B · name left, controls right                 |
-| 14 · active state | How does the row mark the page you are on?                           | B · theme pill                                                                                      | A · connected tab; C · weight and a dot                                    |
-| 15 · control jobs | What does each control on the right do?                              | C · no competition button: every page in the strip, an overflow menu, the stages on a split control | A · live is a link; B · live is a split button beside the competition menu |
+| Call              | Question                                                             | Won                                                                                                 | Lost                                                                           |
+| ----------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 9 · attachment    | How does the sub-navigation attach to the floating header?           | A · second row inside the header card                                                               | B · attached pill below; C · full-width band                                   |
+| 10 · crowded row  | What does the row hold when seven destinations do not fit?           | B · the live stage leads                                                                            | A · one map control; C · pinned live with the strip below                      |
+| 11 · open map     | What opens when the row is used?                                     | A · one mega panel, reusing the shipped hover panel and the drill-in drawer                         | B · two anchored menus; C · spotlight leads the panel                          |
+| 12 · long names   | How does the row carry a 44-character name with no icon asset?       | A · two lines, one control (on the phone)                                                           | B · live only, name in the page; C · the banner is the mark                    |
+| 13 · desktop row  | What does the desktop row do with the width the phone does not need? | C · the pages inline, both controls right                                                           | A · one line, status inline; B · name left, controls right                     |
+| 14 · active state | How does the row mark the page you are on?                           | B · theme pill                                                                                      | A · connected tab; C · weight and a dot                                        |
+| 15 · control jobs | What does each control on the right do?                              | C · no competition button: every page in the strip, an overflow menu, the stages on a split control | A · live is a link; B · live is a split button beside the competition menu     |
+| 16 · name width   | How does the row carry a 72-character competition name?              | nothing: all three rejected                                                                         | A · the short name, a field that does not exist; B · cap it; C · B plus a slot |
 
 Calls 1 to 8 ran before the drawing tool dropped Angular. Their sketches no longer render; call 8
 `call.ts` still records what each round ruled.
@@ -40,7 +49,6 @@ Standing decisions:
 - The row splits today's strip into what it really is: three pages about the competition, and the
   stage children, which carry `executionStatus`.
 - No "you are on X" label.
-- The competition button sits on the right and is the one control that opens the menu.
 - The competition part of the bar wears a subtle competition theme gradient.
 
 ## Open
@@ -56,3 +64,9 @@ Standing decisions:
 
 - **The mega panel has no opener left.** Call 15 chose the row without a competition button, so
   what call 11 settled needs a new entry point, on desktop and on the phone.
+
+- **The desktop row, once the phone is settled.** Calls 9 to 16 designed at 1400px first. Call 17
+  restarts at 390px, and the desktop row has to follow whatever the phone settles.
+
+Call 17 runs on a premise the user stated and call 17 itself has to confirm: the row carries no
+competition name at all.
