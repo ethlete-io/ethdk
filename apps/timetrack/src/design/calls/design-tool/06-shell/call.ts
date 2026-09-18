@@ -45,5 +45,32 @@ export default defineCall({
       verdict: 'rejected',
       load: () => import('./option-c'),
     },
+    {
+      key: 'd',
+      round: 'r2',
+      name: 'D · The explorer swallows the chrome',
+      claim:
+        'There is no top bar. The left sidebar owns every piece of chrome: the project name and the Projects control are its head, the checkout path, Reload and the server line sit in its foot. The three columns run the full height of the window.',
+      cost: 'The foot of the explorer holds three things that have nothing to do with each other, and the checkout path is far from the work it describes.',
+      load: () => import('./option-d'),
+    },
+    {
+      key: 'e',
+      round: 'r2',
+      name: 'E · A title bar, cut to the columns',
+      claim:
+        'One thin bar crosses the top, aligned to the columns below it: the project and the Projects control over the explorer, the checkout path and Reload over the workspace, the server line over the chat. It carries no variant switcher; the tiles do that job.',
+      cost: 'A strip of chrome still crosses all three columns, so every column starts 44px lower than it needs to.',
+      load: () => import('./option-e'),
+    },
+    {
+      key: 'f',
+      round: 'r2',
+      name: 'F · A status bar at the foot',
+      claim:
+        'Nothing crosses the top. The project name and the Projects control head the explorer, and everything a reader looks at once a day drops to one thin status bar across the bottom of the window: the checkout, Reload, the server and the agent.',
+      cost: 'The bottom of the window is the last place a reader looks, so the server line reports a stopped server where nobody sees it.',
+      load: () => import('./option-f'),
+    },
   ],
 });
