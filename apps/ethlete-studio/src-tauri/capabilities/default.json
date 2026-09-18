@@ -14,6 +14,7 @@
     "allow-agent-run",
     "allow-design-add-options",
     "allow-design-project",
+    "allow-design-watch",
     "allow-design-set-verdict",
     "allow-design-set-mode",
     "allow-design-server-start",

@@ -15,12 +15,15 @@ export class HostShellMissingError extends Error {
   }
 }
 
+/** Whether this window runs inside the desktop shell, so a host command can reach a host at all. */
+export const hasHostShell = () => '__TAURI_INTERNALS__' in globalThis;
+
 /**
  * Wraps a call into the desktop shell as a cold Observable, so nothing runs until somebody
  * subscribes and a browser without the shell fails with a readable message rather than a crash.
  */
 export const hostOnly$ = <T>(act: () => Promise<T>): Observable<T> =>
-  defer(() => ('__TAURI_INTERNALS__' in globalThis ? from(act()) : throwError(() => new HostShellMissingError())));
+  defer(() => (hasHostShell() ? from(act()) : throwError(() => new HostShellMissingError())));
 
 /** Wraps a Tauri command as a cold Observable. */
 export const invokeHost$ = <T>(command: string, args?: InvokeArgs): Observable<T> =>

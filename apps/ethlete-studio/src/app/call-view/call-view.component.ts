@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
-import { EMPTY, Subscription, catchError, finalize, map, of, switchMap, tap } from 'rxjs';
+import { EMPTY, Subscription, catchError, debounceTime, finalize, map, of, switchMap, tap } from 'rxjs';
 import { AgentDescriptor, AgentEvent, AgentTools, agentList$, agentRun$ } from '../../host/agent';
 import {
   AddedOptions,
@@ -23,6 +23,7 @@ import {
   Verdict,
   designCheck$,
   designAddOptions$,
+  designChanges$,
   designProject$,
   designServerStart$,
   designServerState$,
@@ -52,6 +53,12 @@ const THUMB_WIDTH = 180;
 
 /** The design server reports no frame height, so a tile assumes the 16:9 window a call draws. */
 const THUMB_ASPECT = 9 / 16;
+
+/**
+ * How long the calls root has to stay quiet before the list is read again. One edit lands as
+ * several file events, and an agent writes a whole round of variants in a burst.
+ */
+const SETTLE_MS = 300;
 
 @Component({
   selector: 'ethlete-call-view',
@@ -472,6 +479,7 @@ export class CallViewComponent {
   ];
 
   private run: Subscription | null = null;
+  private watch: Subscription | null = null;
   private design = signal<Project | null>(null);
   private epoch = signal(0);
 
@@ -656,6 +664,7 @@ export class CallViewComponent {
     this.checkout.set(path);
     this.read();
     this.readServer();
+    this.watchCalls();
   }
 
   protected startServer() {
@@ -964,6 +973,43 @@ export class CallViewComponent {
 
       return next;
     });
+  }
+
+  /**
+   * Reads the checkout again whenever its calls root changes, so a call or a variant written
+   * outside this window shows up on its own. The reader keeps the call and the variant they are on.
+   */
+  private watchCalls() {
+    const checkout = this.checkout();
+
+    this.watch?.unsubscribe();
+    this.watch = null;
+
+    if (!checkout) return;
+
+    this.watch = designChanges$(checkout)
+      .pipe(
+        debounceTime(SETTLE_MS),
+        switchMap(() => designProject$(checkout).pipe(catchError(() => EMPTY))),
+        tap((project) => this.absorb(project)),
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  /**
+   * Takes a reading nobody asked for. A project that reads the same is dropped: setting it again
+   * hands every frame a new address, which reloads every drawing on it.
+   */
+  private absorb(project: Project) {
+    if (JSON.stringify(project) === JSON.stringify(this.design())) return;
+
+    const open = this.slug();
+
+    this.design.set(project);
+
+    if (open && !project.calls.some((call) => call.slug === open)) this.show(project);
   }
 
   private show(design: Project) {

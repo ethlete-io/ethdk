@@ -1,5 +1,6 @@
+import { Channel, invoke } from '@tauri-apps/api/core';
 import { Observable } from 'rxjs';
-import { invokeHost$ } from './invoke';
+import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
 
 /** What the user ruled about an option. An option without one is still open. */
 export type Verdict = 'chosen' | 'rejected';
@@ -47,6 +48,25 @@ export type Project = {
 /** Reads every call of a checkout. The checkout must carry a `design-explore.config.json`. */
 export const designProject$ = (checkout: string): Observable<Project> =>
   invokeHost$<Project>('design_project', { checkout });
+
+/**
+ * Reports every change under the checkout's calls root. A call or a variant that an agent or an
+ * editor wrote outside this window reaches the list through it, so nothing waits for a reload.
+ */
+export const designChanges$ = (checkout: string): Observable<void> =>
+  new Observable<void>((subscriber) => {
+    if (!hasHostShell()) {
+      subscriber.error(new HostShellMissingError());
+
+      return;
+    }
+
+    const changes = new Channel<void>();
+
+    changes.onmessage = () => subscriber.next();
+
+    invoke('design_watch', { checkout, changes }).catch((error: unknown) => subscriber.error(error));
+  });
 
 /** What the last check said about one variant. A variant no run ever checked has none. */
 export type CheckReceipt = {

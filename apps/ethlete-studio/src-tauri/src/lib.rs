@@ -3,6 +3,7 @@ mod agent_claude;
 mod agent_codex;
 mod design;
 mod design_server;
+mod design_watch;
 mod error;
 mod tools;
 
@@ -114,6 +115,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(agent::AgentRuns::default())
         .manage(design_server::DesignServers::default())
+        .manage(design_watch::DesignWatch::default())
         .invoke_handler(tauri::generate_handler![
             agent::agent_cancel,
             agent::agent_list,
@@ -122,6 +124,7 @@ pub fn run() {
             design::design_set_verdict,
             design::design_set_mode,
             design::design_add_options,
+            design_watch::design_watch,
             design_server::design_server_start,
             design_server::design_server_state,
             design_server::design_server_stop,

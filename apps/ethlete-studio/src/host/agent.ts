@@ -1,6 +1,6 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
 import { Observable } from 'rxjs';
-import { HostShellMissingError, invokeHost$ } from './invoke';
+import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
 
 /** One agent CLI that this machine has installed. */
 export type AgentDescriptor = {
@@ -54,7 +54,7 @@ export const agentList$ = (): Observable<AgentDescriptor[]> => invokeHost$<Agent
  */
 export const agentRun$ = (request: AgentRequest): Observable<AgentEvent> =>
   new Observable<AgentEvent>((subscriber) => {
-    if (!('__TAURI_INTERNALS__' in globalThis)) {
+    if (!hasHostShell()) {
       subscriber.error(new HostShellMissingError());
 
       return;

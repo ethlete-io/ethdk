@@ -8,6 +8,7 @@ fn main() {
             "design_set_verdict",
             "design_set_mode",
             "design_add_options",
+            "design_watch",
             "design_server_start",
             "design_server_state",
             "design_server_stop",

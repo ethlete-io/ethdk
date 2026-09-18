@@ -205,7 +205,7 @@ pub fn port_of(config: &serde_json::Value) -> u16 {
         .unwrap_or(DEFAULT_PORT)
 }
 
-fn calls_root(checkout: &str, config: &serde_json::Value) -> Result<PathBuf, String> {
+pub fn calls_root(checkout: &str, config: &serde_json::Value) -> Result<PathBuf, String> {
     let root = config
         .get("callsRoot")
         .and_then(|value| value.as_str())
