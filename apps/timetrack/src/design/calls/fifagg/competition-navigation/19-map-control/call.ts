@@ -13,7 +13,11 @@ export default defineCall({
       title: 'One target or two',
       note: 'All three rejected. A makes the whole row one target, so the live stage cannot be reached in one tap. B and C keep the map separate but neither gives the live stage a target of its own. The next pass holds two rules at once: the live stage is a one-tap link, and the map needs no precise aim.',
     },
-    { key: 'r2', title: 'Two large targets', note: '' },
+    {
+      key: 'r2',
+      title: 'Two large targets',
+      note: 'E won. Two bounded objects with a gap between them: neither needs aim, and the live stage stays a one-tap link. D hides the split in a hairline, and F moves the map off the bar it opens. What E still owes: alignment with the header above, and a stage name that does not fit.',
+    },
   ],
   options: [
     {
@@ -49,6 +53,7 @@ export default defineCall({
     {
       key: 'd',
       round: 'r2',
+      verdict: 'rejected',
       name: 'D · Two zones, one seam',
       claim:
         'The row is two full-height zones divided by a hairline: the live stage takes everything to the left of it, the map a 54px zone at the right. Both targets are 48px tall.',
@@ -58,6 +63,7 @@ export default defineCall({
     {
       key: 'e',
       round: 'r2',
+      verdict: 'chosen',
       name: 'E · A chip and a square',
       claim:
         'The live stage is a chip with its own bounds, the map a filled 44px square. Nothing is ambiguous: two objects, a gap between them, each one clearly a button.',
@@ -67,6 +73,7 @@ export default defineCall({
     {
       key: 'f',
       round: 'r2',
+      verdict: 'rejected',
       name: 'F · The map joins the header icons',
       claim:
         'The grid moves up beside search and burger, where a global control belongs. The whole competition row is then one thing: the link to the live stage.',
