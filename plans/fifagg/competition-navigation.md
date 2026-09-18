@@ -40,6 +40,7 @@ The source this redesigns is `/home/tom/dev/fifagg/fifagg-frontend`:
 | 15 · control jobs | What does each control on the right do?                              | C · no competition button: every page in the strip, an overflow menu, the stages on a split control | A · live is a link; B · live is a split button beside the competition menu                                                                    |
 | 16 · name width   | How does the row carry a 72-character competition name?              | nothing: all three rejected                                                                         | A · the short name, a field that does not exist; B · cap it; C · B plus a slot                                                                |
 | 19 · map control  | How does the control that opens the full map sit in the row?         | E · a chip and a square, two bounded targets with a gap                                             | A · the whole row is the control; B · a bare icon; C · the right edge of the bar; D · two zones, one seam; F · the map joins the header icons |
+| 20 · long stage   | What does the chip do with a stage name it cannot fit?               | B · drop "is live now" before the name is cut                                                       | A · truncate the name inside the chip; C · wrap the chip to two lines                                                                         |
 
 Calls 1 to 8 ran before the drawing tool dropped Angular. Their sketches no longer render; call 8
 `call.ts` still records what each round ruled.
@@ -78,4 +79,5 @@ Standing decisions:
 Calls 17 and 18 are drawn and unruled. The exploration moved past them: the user kept the call 12 A
 shape and dropped the name from it, which call 19 then settled into a chip and a square.
 
-Call 20 is drawn and open. It asks what the chip does with a stage name it cannot fit.
+Call 20 ruled that the dot carries the live state on its own, so the verb is what the chip gives up
+first. The name is cut only after the verb is gone.

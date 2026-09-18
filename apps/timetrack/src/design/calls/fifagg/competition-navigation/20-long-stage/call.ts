@@ -10,6 +10,7 @@ export default defineCall({
   options: [
     {
       key: 'a',
+      verdict: 'rejected',
       name: 'A · The name truncates in the chip',
       claim: 'The chip takes the width that is left and cuts the name, so the row keeps one height and one shape.',
       cost: 'The cut lands mid-name, and "is live now" holds width the name needs.',
@@ -17,6 +18,7 @@ export default defineCall({
     },
     {
       key: 'b',
+      verdict: 'chosen',
       name: 'B · Drop "is live now" first',
       claim:
         'The dot already says the stage is live, so the verb goes before the name does. The name gets the whole chip and is cut only after that.',
@@ -25,6 +27,7 @@ export default defineCall({
     },
     {
       key: 'c',
+      verdict: 'rejected',
       name: 'C · The chip wraps',
       claim: 'The chip wraps to a second line and keeps the whole name, so nothing about the stage is ever hidden.',
       cost: 'The row height then depends on the stage name, and the square no longer centres against one line.',
