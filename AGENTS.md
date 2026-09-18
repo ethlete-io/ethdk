@@ -342,6 +342,11 @@ means, and say "keep it brief" for a lookup. Two calls need no `model` of their 
 agent type carries the model and reasoning effort its own definition sets, and a fork always
 inherits the parent's model.
 
+A subagent does not have to be a Claude one. Delegate to a Codex agent where another model
+family would answer better - a second opinion, a review of your own diff, a bug hunt your own
+reading failed - and whenever the Claude usage limit is close, because a Codex run does not draw
+on it. Read `.agents/skills/ethlete-codex-subagent/SKILL.md` first.
+
 ## Ethlete skills
 
 On-demand package guides live in `.agents/skills/ethlete-*/SKILL.md`; `ethlete-agents sync` owns and updates them. Third-party skills may be tracked separately in `skills-lock.json`, while repository-authored skills are maintained by the repository. Each skill's frontmatter says when to read it. If your agent does not discover skills on its own, list the directory and read the matching guide before starting that kind of work — do not work from memory.

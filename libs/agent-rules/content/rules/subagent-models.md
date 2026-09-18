@@ -22,3 +22,8 @@ Effort follows the prompt, not a parameter: scope the prompt to one question, na
 means, and say "keep it brief" for a lookup. Two calls need no `model` of their own - a named
 agent type carries the model and reasoning effort its own definition sets, and a fork always
 inherits the parent's model.
+
+A subagent does not have to be a Claude one. Delegate to a Codex agent where another model
+family would answer better - a second opinion, a review of your own diff, a bug hunt your own
+reading failed - and whenever the Claude usage limit is close, because a Codex run does not draw
+on it. Read {%skill:codex-subagent%} first.
