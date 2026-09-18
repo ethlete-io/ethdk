@@ -42,10 +42,11 @@ Standing decisions:
 
 ## Open
 
-- **Call 13 · desktop row** (drawn, waiting on a ruling): what the desktop row does with the width
-  the two-line phone shape does not need.
 - **The status line's other states.** Live is one state of five: before the competition starts, a
   wait between stages, after the competition ends, and right after the announcement, when no stage
   exists at all and the overview page is the whole competition.
 - **The hover-to-open morph.** How the competition button grows into the mega panel, on desktop
   hover and on a phone tap.
+
+- **The competition name as a link to Overview.** It would make the row's first word clickable, but
+  the active mark would then run the whole length of a 44-character name.

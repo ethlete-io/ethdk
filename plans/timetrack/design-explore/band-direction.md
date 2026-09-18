@@ -401,7 +401,12 @@ below is a rework and not a fix. Take one at a time, in the order the user asks 
   a drawing one, and call 5 draws only the picture. Raised 2026-09-17.
 - ~~The gutter width, and the hour labels themselves.~~ **Decided 2026-09-17.** See call 9.
 - ~~The all-day story strip above the axis.~~ **Cut, 2026-09-17.** See below.
-- **The window chrome**: the title bar, the date, the day total.
+- **The scheduler's chrome**: the date, the day total, and the controls. **Drawn and parked**,
+  2026-09-17, in `kerbe/10-chrome`. Two things came out of drawing it. The bar belongs to the
+  scheduler and not to the window, so the product name does not go in it at all, which rejected
+  options A and D. What is left is B and C, which differ only by whether the day total stays. The
+  call cannot resolve, because every button in it is a placeholder: **the button treatment is not
+  defined yet, and it is the call that has to come first.**
 
 ### Direct manipulation, none of which is drawn
 

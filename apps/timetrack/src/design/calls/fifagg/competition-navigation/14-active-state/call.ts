@@ -14,6 +14,7 @@ export default defineCall({
       claim:
         'The current page wears the shape the active zone wears in the bar above: a raised block that reaches the bottom edge, ready to flow into the menu when it opens.',
       cost: 'It is the heaviest mark, and the row can only hold one shape of this weight.',
+      verdict: 'rejected',
       load: () => import('./option-a'),
     },
     {
@@ -22,6 +23,7 @@ export default defineCall({
       claim:
         'The current page sits in a rounded block of the competition tint, which matches the two controls on the right.',
       cost: 'It reads as a button beside two real buttons, so the row holds three things that look pressable.',
+      verdict: 'chosen',
       load: () => import('./option-b'),
     },
     {
@@ -30,6 +32,7 @@ export default defineCall({
       claim:
         'No shape at all: the current page is the only one in full white, with a small dot in the competition colour.',
       cost: 'It is the quietest mark, and at a glance the row looks like plain text.',
+      verdict: 'rejected',
       load: () => import('./option-c'),
     },
   ],
