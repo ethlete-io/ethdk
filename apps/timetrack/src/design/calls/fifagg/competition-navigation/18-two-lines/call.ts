@@ -10,6 +10,7 @@ export default defineCall({
   options: [
     {
       key: 'a',
+      verdict: 'rejected',
       name: 'A · The page, then the stage',
       claim: 'Line one is the page you are on, line two the stage that runs now. The row answers "where am I" first.',
       cost: 'The page name is the loud line, and it is the thing the visitor just tapped, so it tells them little.',
@@ -17,6 +18,7 @@ export default defineCall({
     },
     {
       key: 'b',
+      verdict: 'rejected',
       name: 'B · The stage, then the pages',
       claim:
         'Line one is the live stage, in full size. Line two is the quiet line: the page you are on and how many more there are.',
@@ -25,6 +27,7 @@ export default defineCall({
     },
     {
       key: 'c',
+      verdict: 'rejected',
       name: 'C · One line, the control names the page',
       claim: 'The block drops to one line, the live stage, and the control on the right states the page instead.',
       cost: 'The row is the shortest of the three, but the control grows and the two facts no longer read as a pair.',

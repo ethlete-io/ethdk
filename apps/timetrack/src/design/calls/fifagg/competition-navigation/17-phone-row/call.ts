@@ -10,6 +10,7 @@ export default defineCall({
   options: [
     {
       key: 'a',
+      verdict: 'rejected',
       name: 'A · One control, the live stage',
       claim:
         'The row is a single full-width control: the stage that runs now, and a chevron that opens the map for everything else.',
@@ -18,6 +19,7 @@ export default defineCall({
     },
     {
       key: 'b',
+      verdict: 'rejected',
       name: 'B · The page and the stage',
       claim:
         'Two controls: the page you are on, which opens the page list, and the live stage beside it. Both jobs are one tap away.',
@@ -26,6 +28,7 @@ export default defineCall({
     },
     {
       key: 'c',
+      verdict: 'rejected',
       name: 'C · The pages scroll, the stages are an icon',
       claim: 'Every page stays visible in a scrolling strip, and the stages collapse into one icon at the right.',
       cost: 'It is the strip the redesign set out to replace, and the live stage loses its name.',

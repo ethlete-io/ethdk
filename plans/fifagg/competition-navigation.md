@@ -39,9 +39,12 @@ The source this redesigns is `/home/tom/dev/fifagg/fifagg-frontend`:
 | 14 · active state | How does the row mark the page you are on?                           | B · theme pill                                                                                      | A · connected tab; C · weight and a dot                                                                                                       |
 | 15 · control jobs | What does each control on the right do?                              | C · no competition button: every page in the strip, an overflow menu, the stages on a split control | A · live is a link; B · live is a split button beside the competition menu                                                                    |
 | 16 · name width   | How does the row carry a 72-character competition name?              | nothing: all three rejected                                                                         | A · the short name, a field that does not exist; B · cap it; C · B plus a slot                                                                |
+| 17 · phone row    | What does the phone row carry, now that the name is not its job?     | nothing: all three rejected                                                                         | A · one control, the live stage; B · the page and the stage; C · the pages scroll, the stages are an icon                                     |
+| 18 · two lines    | What do the call 12 two lines say without the name?                  | nothing: all three rejected                                                                         | A · the page, then the stage; B · the stage, then the pages; C · one line, the control names the page                                         |
 | 19 · map control  | How does the control that opens the full map sit in the row?         | E · a chip and a square, two bounded targets with a gap                                             | A · the whole row is the control; B · a bare icon; C · the right edge of the bar; D · two zones, one seam; F · the map joins the header icons |
 | 20 · long stage   | What does the chip do with a stage name it cannot fit?               | B · drop "is live now" before the name is cut                                                       | A · truncate the name inside the chip; C · wrap the chip to two lines                                                                         |
 | 21 · alignment    | What do the chip and the square line up with in the header above?    | A · the boxes line up, on the header's 16px gutter                                                  | B · the ink lines up, breaking the gutter; C · the row keeps its own 24px gutter                                                              |
+| 22 · other states | What does the chip carry when no stage is live?                      | A · the nearest stage, forward or backward                                                          | B · the chip is only ever a live stage; C · the chip states the competition                                                                   |
 
 Calls 1 to 8 ran before the drawing tool dropped Angular. Their sketches no longer render; call 8
 `call.ts` still records what each round ruled.
@@ -62,9 +65,6 @@ Standing decisions:
 
 ## Open
 
-- **The status line's other states.** Live is one state of five: before the competition starts, a
-  wait between stages, after the competition ends, and right after the announcement, when no stage
-  exists at all and the overview page is the whole competition.
 - **The hover-to-open morph.** How the competition button grows into the mega panel, on desktop
   hover and on a phone tap.
 
@@ -74,11 +74,16 @@ Standing decisions:
 - **The desktop row, once the phone is settled.** Calls 9 to 16 designed at 1400px first. Call 17
   restarts at 390px, and the desktop row has to follow whatever the phone settles.
 
-Calls 17 and 18 are drawn and unruled. The exploration moved past them: the user kept the call 12 A
-shape and dropped the name from it, which call 19 then settled into a chip and a square.
+Calls 17 and 18 are rejected whole. Both still carried a strip of pages beside the stage; call 19
+settled the row into one stage and one map control instead.
 
 Call 20 ruled that the dot carries the live state on its own, so the verb is what the chip gives up
 first. The name is cut only after the verb is gone.
 
 Call 21 ruled that a filled shape aligns by its edge. The chip and the square sit on the header's own
 16px gutter, and the 13px the chip's padding adds is accepted.
+
+Call 22 ruled the chip names the nearest stage in every state: the next one starts, the last one
+ended. Only the announced competition, which has no stage at all, drops the chip. The user added a
+constraint with the ruling: `scheduledAt` is often missing or holds a value that cannot be shown, so
+the chip has to read without a time. Call 23 asks what it says then.

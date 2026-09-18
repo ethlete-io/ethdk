@@ -10,6 +10,7 @@ export default defineCall({
   options: [
     {
       key: 'a',
+      verdict: 'chosen',
       name: 'A · The nearest stage, whichever way it lies',
       claim:
         'The chip always names a stage and says what it does: the next one starts, the last one ended. It stays a one-tap link to the stage that matters now.',
@@ -18,6 +19,7 @@ export default defineCall({
     },
     {
       key: 'b',
+      verdict: 'rejected',
       name: 'B · The chip is only ever a live stage',
       claim:
         'No live stage, no chip. The row keeps the square and a plain label, and every schedule lives inside the panel the square opens.',
@@ -26,6 +28,7 @@ export default defineCall({
     },
     {
       key: 'c',
+      verdict: 'rejected',
       name: 'C · The chip states the competition',
       claim:
         'The chip reports the competition itself: starts, between stages, ended, announced. One sentence covers every state, including the one with no stage.',
