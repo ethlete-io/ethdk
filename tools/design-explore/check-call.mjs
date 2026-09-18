@@ -115,6 +115,17 @@ const onPage = await page
 
 if (!onPage) await fail(`NO CALL "${slug}" - the host drew no page for it. Check the folder under callsRoot.`);
 
+/** An unknown slug falls back to the first call, so read back which one the host actually drew. */
+const drawn = await page
+  .locator('nav a[aria-current="page"]')
+  .first()
+  .getAttribute('href')
+  .then((href) => new URL(href ?? '', BASE).searchParams.get('call'));
+
+if (drawn !== slug) {
+  await fail(`NO CALL "${slug}" - the host fell back to "${drawn}". Pass the full slug, for example kerbe/${slug}.`);
+}
+
 const problems = await page.locator('.problem').allInnerTexts();
 if (problems.length > 0) await fail(`BAD CALL ${slug}\n${problems.join('\n')}`);
 
