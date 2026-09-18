@@ -21,12 +21,14 @@ The source this redesigns is `/home/tom/dev/fifagg/fifagg-frontend`:
 
 ## Settled
 
-| Call             | Question                                                       | Won                                                                         | Lost                                                        |
-| ---------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| 9 · attachment   | How does the sub-navigation attach to the floating header?     | A · second row inside the header card                                       | B · attached pill below; C · full-width band                |
-| 10 · crowded row | What does the row hold when seven destinations do not fit?     | B · the live stage leads                                                    | A · one map control; C · pinned live with the strip below   |
-| 11 · open map    | What opens when the row is used?                               | A · one mega panel, reusing the shipped hover panel and the drill-in drawer | B · two anchored menus; C · spotlight leads the panel       |
-| 12 · long names  | How does the row carry a 44-character name with no icon asset? | A · two lines, one control (on the phone)                                   | B · live only, name in the page; C · the banner is the mark |
+| Call              | Question                                                             | Won                                                                         | Lost                                                        |
+| ----------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 9 · attachment    | How does the sub-navigation attach to the floating header?           | A · second row inside the header card                                       | B · attached pill below; C · full-width band                |
+| 10 · crowded row  | What does the row hold when seven destinations do not fit?           | B · the live stage leads                                                    | A · one map control; C · pinned live with the strip below   |
+| 11 · open map     | What opens when the row is used?                                     | A · one mega panel, reusing the shipped hover panel and the drill-in drawer | B · two anchored menus; C · spotlight leads the panel       |
+| 12 · long names   | How does the row carry a 44-character name with no icon asset?       | A · two lines, one control (on the phone)                                   | B · live only, name in the page; C · the banner is the mark |
+| 13 · desktop row  | What does the desktop row do with the width the phone does not need? | C · the pages inline, both controls right                                   | A · one line, status inline; B · name left, controls right  |
+| 14 · active state | How does the row mark the page you are on?                           | B · theme pill                                                              | A · connected tab; C · weight and a dot                     |
 
 Calls 1 to 8 ran before the drawing tool dropped Angular. Their sketches no longer render; call 8
 `call.ts` still records what each round ruled.
