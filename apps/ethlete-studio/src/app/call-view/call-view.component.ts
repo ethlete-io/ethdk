@@ -35,7 +35,7 @@ import {
   frameUrl,
 } from '../../host/design';
 import { workspaceRoot$ } from '../../host/workspace';
-import { Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
+import { Compose, Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import {
   openOptions,
   projectOf,
@@ -294,7 +294,6 @@ const SETTLE_MS = 300;
 
               <div
                 [etProvideColor]="check()?.ok === false ? 'danger' : 'brand'"
-                [class.studio__float--pinned]="!!formVerb()"
                 class="studio__float studio__float--bottom"
               >
                 <div class="studio__line">
@@ -328,30 +327,6 @@ const SETTLE_MS = 300;
                     }
                     <button (click)="write(drawn, null)" class="studio__verb" type="button">Open again</button>
                   </div>
-
-                  @if (formVerb(); as verb) {
-                    <div class="studio__round-form">
-                      <span>{{ label(verb) }}</span>
-                      <label>
-                        How many
-                        <input [value]="count()" (input)="setCount($event)" max="8" min="1" type="number" />
-                      </label>
-                      <input
-                        [value]="question()"
-                        (input)="question.set(typed($event))"
-                        placeholder="What this round asks"
-                      />
-                      <button
-                        [disabled]="making() || !question().trim()"
-                        (click)="create()"
-                        class="studio__verb"
-                        type="button"
-                      >
-                        Create and draft
-                      </button>
-                      <button (click)="formVerb.set(null)" class="studio__verb" type="button">Cancel</button>
-                    </div>
-                  }
                 </div>
               </div>
             }
@@ -361,95 +336,157 @@ const SETTLE_MS = 300;
 
       <aside [etProvideSurface]="'dark-elevated'" class="studio__chat">
         <header class="studio__chat-head">
-          <b>Chat</b>
-          <span>{{ call()?.eyebrow }}</span>
+          <div class="studio__chat-head-row">
+            <b>Chat</b>
+            <span>{{ call()?.eyebrow }}</span>
+          </div>
+
+          <div class="studio__agent">
+            <i [class.studio__dot--off]="!cli()" class="studio__dot"></i>
+            @if (cli(); as agent) {
+              {{ agent.label }} {{ agent.version }}
+            } @else {
+              No agent picked
+            }
+          </div>
         </header>
 
-        <ul #thread class="flex min-h-0 flex-col gap-3 overflow-auto p-4">
+        <ul #thread class="studio__thread">
           @for (turn of turns(); track $index) {
             <li>
               @switch (turn.kind) {
                 @case ('ask') {
-                  <p class="ml-3 border-l-2 border-et-surface-border pl-3 text-small break-words whitespace-pre-wrap">
-                    {{ turn.text }}
-                  </p>
+                  <article class="studio__turn studio__turn--you">
+                    <div class="studio__turn-meta"><b>You</b></div>
+                    <p>{{ turn.text }}</p>
+                  </article>
                 }
                 @case ('say') {
-                  <p class="text-small break-words whitespace-pre-wrap">{{ turn.text }}</p>
+                  <article class="studio__turn studio__turn--agent">
+                    <div class="studio__turn-meta"><b>Agent</b></div>
+                    <p>{{ turn.text }}</p>
+                  </article>
                 }
                 @case ('act') {
-                  <p class="flex gap-2 overflow-hidden text-mono">
-                    <span [class.text-et-brand]="$index === liveTurn()">{{ turn.action }}</span>
-                    <span class="truncate text-et-surface-muted">{{ turn.detail }}</span>
+                  <p class="studio__act">
+                    <span [class.studio__act--live]="$index === liveTurn()">{{ turn.action }}</span>
+                    <span class="studio__act-detail">{{ turn.detail }}</span>
                   </p>
                 }
                 @case ('note') {
-                  <p class="text-et-surface-muted text-small">{{ turn.text }}</p>
+                  <p class="studio__note">{{ turn.text }}</p>
                 }
               }
             </li>
           } @empty {
-            <li class="text-et-surface-muted">Nothing said in this call yet.</li>
+            <li class="studio__note">Nothing said in this call yet.</li>
           }
         </ul>
 
-        <div class="flex flex-col gap-2 border-t border-et-surface-border p-4">
-          <textarea
-            [value]="prompt()"
-            (input)="prompt.set(typed($event))"
-            class="h-32 rounded border border-et-surface-border p-3"
-            placeholder="A verb writes the first draft here. Change it, then send it."
-          ></textarea>
+        <div class="studio__foot">
+          <div class="studio__lift"></div>
 
-          <div class="flex flex-wrap items-center gap-2">
-            @if (resume(); as id) {
-              <span
-                [class.text-et-surface-muted]="!full()"
-                [title]="(session()?.tokens ?? 0) + ' of ' + LIMIT + ' tokens'"
-                class="flex grow items-center gap-2 text-mono"
-              >
+          @if (compose(); as open) {
+            <section class="studio__compose" etProvideSurface="dark-elevated-2">
+              <header class="studio__compose-head">
+                <b>Compose</b>
+                <button (click)="dismiss()" class="studio__dismiss" title="Drop this draft" type="button">
+                  <svg viewBox="0 0 24 24">
+                    <path d="m7 7 10 10" />
+                    <path d="M17 7 7 17" />
+                  </svg>
+                </button>
+              </header>
+
+              <div class="studio__field">
+                <span class="studio__field-label">Verb</span>
+                <span class="studio__compose-verb">{{ label(open.verb) }}</span>
+              </div>
+
+              <div class="studio__field">
+                <span class="studio__field-label">Option</span>
+                <div class="studio__stated">
+                  <span>{{ open.option.name }}</span>
+                  <span class="studio__stated-round">{{ open.round }}</span>
+                </div>
+                <span class="studio__fixed">stated by the verb press, not typed</span>
+              </div>
+
+              @if (composeOpensRound()) {
+                <div class="studio__field">
+                  <span class="studio__field-label">The round it opens</span>
+                  <div class="studio__round-fields">
+                    <input
+                      [value]="question()"
+                      (input)="question.set(typed($event))"
+                      placeholder="What this round asks"
+                    />
+                    <label>
+                      How many
+                      <input [value]="count()" (input)="setCount($event)" max="8" min="1" type="number" />
+                    </label>
+                  </div>
+                </div>
+              }
+
+              <div class="studio__field">
+                <span class="studio__field-label">Message</span>
+                <textarea
+                  [value]="message()"
+                  (input)="message.set(typed($event))"
+                  class="studio__box"
+                  placeholder="Say what you want changed"
+                ></textarea>
+              </div>
+
+              <footer class="studio__compose-foot">
+                <button [disabled]="!composeReady()" (click)="composeSend()" class="studio__send" type="button">
+                  {{ making() ? 'Opening the round' : 'Send' }}
+                </button>
+              </footer>
+            </section>
+          }
+
+          @if (resume(); as id) {
+            <div class="studio__session">
+              <span [title]="(session()?.tokens ?? 0) + ' of ' + LIMIT + ' tokens'" class="studio__meter">
                 {{ id.slice(0, 8) }}
-                <span class="block h-1 grow rounded bg-et-surface-border">
-                  <span
-                    [class.bg-et-brand]="full()"
-                    [class.bg-et-surface-subtle]="!full()"
-                    [style.width.%]="fill()"
-                    class="block h-full rounded"
-                  ></span>
-                </span>
+                <i class="studio__meter-rail"><i [style.width.%]="fill()" class="studio__meter-fill"></i></i>
                 {{ sessionSize() }}
               </span>
               @if (full()) {
-                <button
-                  [disabled]="running()"
-                  (click)="handOff()"
-                  class="rounded border border-et-brand px-3 py-1 text-et-brand-ink disabled:opacity-50"
-                  type="button"
-                >
-                  Hand off
-                </button>
+                <button [disabled]="running()" (click)="handOff()" class="studio__verb" type="button">Hand off</button>
               }
-              <button (click)="forgetSession()" class="rounded border border-et-surface-border px-3 py-1" type="button">
-                New session
+              <button (click)="forgetSession()" class="studio__verb" type="button">New session</button>
+              @if (running()) {
+                <button (click)="stop()" class="studio__verb" type="button">Stop</button>
+              }
+            </div>
+          }
+
+          @if (compose()) {
+            <div class="studio__input-off">
+              <span>Say something on its own</span>
+              <span>closed</span>
+            </div>
+          } @else {
+            <div class="studio__input">
+              <textarea
+                [value]="prompt()"
+                (input)="prompt.set(typed($event))"
+                class="studio__box"
+                placeholder="Say something on its own"
+              ></textarea>
+              <button
+                [disabled]="running() || !prompt().trim() || !cli()"
+                (click)="send()"
+                class="studio__send"
+                type="button"
+              >
+                Send
               </button>
-            }
-            <button
-              [disabled]="running() || !prompt().trim() || !cli()"
-              (click)="send()"
-              class="ml-auto rounded border border-et-surface-border px-3 py-1"
-              type="button"
-            >
-              Send
-            </button>
-            <button
-              [disabled]="!running()"
-              (click)="stop()"
-              class="rounded border border-et-surface-border px-3 py-1"
-              type="button"
-            >
-              Stop
-            </button>
-          </div>
+            </div>
+          }
         </div>
       </aside>
     </div>
@@ -558,10 +595,23 @@ export class CallViewComponent {
 
   private fold = signal<string | null>(null);
 
-  protected formVerb = signal<Verb | null>(null);
+  protected compose = signal<Compose | null>(null);
+  protected message = signal('');
   protected count = signal(3);
   protected question = signal('');
   protected making = signal(false);
+
+  protected composeOpensRound = computed(() => {
+    const open = this.compose();
+
+    return !!open && opensARound(open.verb);
+  });
+
+  protected composeReady = computed(() => {
+    if (!this.compose() || this.making() || this.running()) return false;
+
+    return !this.composeOpensRound() || !!this.question().trim();
+  });
 
   protected readonly VERBS: Verb[] = ['accept', 'iterate', 'reject', 'more'];
 
@@ -890,7 +940,7 @@ export class CallViewComponent {
   }
 
   protected openCall(call: Call, option = call.options[0]?.key ?? '') {
-    this.formVerb.set(null);
+    this.dismiss();
     this.fold.set(null);
     this.slug.set(call.slug);
     this.optionKey.set(option);
@@ -917,29 +967,39 @@ export class CallViewComponent {
     this.count.set(Number.isFinite(value) ? Math.min(8, Math.max(1, value)) : 1);
   }
 
+  /** Opens the compose card. Nothing is written and nothing is sent until the card's Send. */
   protected draft(verb: Verb) {
-    if (opensARound(verb)) {
-      this.formVerb.set(verb);
-      this.question.set('');
+    const call = this.call();
+    const option = this.option();
+
+    if (!call || !option) return;
+
+    this.compose.set({ verb, call, option, dir: this.callDir(), round: this.roundLabel() });
+    this.message.set('');
+    this.question.set('');
+  }
+
+  protected dismiss() {
+    this.compose.set(null);
+    this.message.set('');
+  }
+
+  protected composeSend() {
+    const open = this.compose();
+
+    if (!open || !this.composeReady()) return;
+
+    if (!opensARound(open.verb)) {
+      this.fire(open, null);
 
       return;
     }
-
-    this.settle(verb);
-  }
-
-  /** Opens the round the verb asked for, then drafts a prompt that names the files Studio made. */
-  protected create() {
-    const verb = this.formVerb();
-    const call = this.call();
-
-    if (!verb || !call || this.making()) return;
 
     this.making.set(true);
 
     designAddOptions$({
       checkout: this.checkout(),
-      slug: call.slug,
+      slug: open.call.slug,
       count: this.count(),
       roundTitle: this.question().trim(),
     })
@@ -947,8 +1007,7 @@ export class CallViewComponent {
         switchMap((made) => designProject$(this.checkout()).pipe(map((design) => ({ made, design })))),
         tap(({ made, design }) => {
           this.design.set(design);
-          this.formVerb.set(null);
-          this.settle(verb, made);
+          this.fire(open, made);
         }),
         catchError((error: unknown) => {
           this.trouble.set(`${error}`);
@@ -1086,17 +1145,14 @@ export class CallViewComponent {
       .subscribe();
   }
 
-  private settle(verb: Verb, made: AddedOptions | null = null) {
-    const call = this.call();
-    const option = this.option();
-
-    if (!call || !option) return;
-
-    this.prompt.set(promptDraft({ call, option, dir: this.callDir(), made }, verb));
-
+  private fire({ verb, call, option, dir }: Compose, made: AddedOptions | null) {
     const verdict = verdictOf(verb);
 
     if (verdict) this.write(option, verdict);
+
+    this.prompt.set(promptDraft({ call, option, dir, made, message: this.message().trim() }, verb));
+    this.dismiss();
+    this.send();
   }
 
   /** Writes what one event says into the conversation the run started in. */

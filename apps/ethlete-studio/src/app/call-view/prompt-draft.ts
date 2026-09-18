@@ -28,7 +28,15 @@ export type DraftSubject = {
   dir: string;
   /** What Studio created for the round this verb opened. Left out by a verb that opens none. */
   made?: AddedOptions | null;
+  /** What the user wrote on the compose card, under the verb and the option it names. */
+  message?: string;
 };
+
+/**
+ * What a verb press fixed. The option it names is stated on the compose card, so a draft left
+ * waiting keeps its subject even when the reader opens another variant.
+ */
+export type Compose = Omit<DraftSubject, 'made' | 'message'> & { verb: Verb; round: string };
 
 const task: Record<Verb, string> = {
   accept:
@@ -91,8 +99,8 @@ const boilerplate = (dir: string, made: AddedOptions) => [
   'cost of each new option into it, and the note of the round once the user has ruled.',
 ];
 
-/** The first draft of the prompt a verb sends. The user reads and edits it before it goes out. */
-export const promptDraft = ({ call, option, dir, made }: DraftSubject, verb: Verb) =>
+/** The prompt a verb sends. The verb and the option it names are fixed at the press. */
+export const promptDraft = ({ call, option, dir, made, message }: DraftSubject, verb: Verb) =>
   [
     `${verbLabel[verb]}: option "${option.name}" of the call "${call.headline}".`,
     '',
@@ -102,6 +110,7 @@ export const promptDraft = ({ call, option, dir, made }: DraftSubject, verb: Ver
     '',
     ...(call.handoff ? [`Read ${dir}/${HANDOFF_FILE}: an earlier session of this call wrote down what it knew.`] : []),
     task[verb],
+    ...(message ? ['', message] : []),
     ...(made ? boilerplate(dir, made) : []),
     ...modeRules[call.mode],
     ...groundRules,
