@@ -10,6 +10,7 @@ export default defineCall({
   options: [
     {
       key: 'a',
+      verdict: 'chosen',
       name: 'A · The boxes line up',
       claim:
         'The chip and the square keep the header gutter, so the card holds one 16px margin from the top of the logo to the bottom of the row.',
@@ -18,6 +19,7 @@ export default defineCall({
     },
     {
       key: 'b',
+      verdict: 'rejected',
       name: 'B · The ink lines up',
       claim:
         'The row is pulled out until the stage name starts under the wordmark and the grid ends under the burger glyph, so what you read lines up down the card.',
@@ -26,6 +28,7 @@ export default defineCall({
     },
     {
       key: 'c',
+      verdict: 'rejected',
       name: 'C · The row keeps its own gutter',
       claim:
         'A 24px inset marks the second row as content inside the card rather than a second header, so it lines up with nothing above on purpose.',

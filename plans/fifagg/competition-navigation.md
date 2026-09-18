@@ -41,6 +41,7 @@ The source this redesigns is `/home/tom/dev/fifagg/fifagg-frontend`:
 | 16 · name width   | How does the row carry a 72-character competition name?              | nothing: all three rejected                                                                         | A · the short name, a field that does not exist; B · cap it; C · B plus a slot                                                                |
 | 19 · map control  | How does the control that opens the full map sit in the row?         | E · a chip and a square, two bounded targets with a gap                                             | A · the whole row is the control; B · a bare icon; C · the right edge of the bar; D · two zones, one seam; F · the map joins the header icons |
 | 20 · long stage   | What does the chip do with a stage name it cannot fit?               | B · drop "is live now" before the name is cut                                                       | A · truncate the name inside the chip; C · wrap the chip to two lines                                                                         |
+| 21 · alignment    | What do the chip and the square line up with in the header above?    | A · the boxes line up, on the header's 16px gutter                                                  | B · the ink lines up, breaking the gutter; C · the row keeps its own 24px gutter                                                              |
 
 Calls 1 to 8 ran before the drawing tool dropped Angular. Their sketches no longer render; call 8
 `call.ts` still records what each round ruled.
@@ -70,9 +71,6 @@ Standing decisions:
 - **The competition name as a link to Overview.** It would make the row's first word clickable, but
   the active mark would then run the whole length of a 44-character name.
 
-- **The mega panel has no opener left.** Call 15 chose the row without a competition button, so
-  what call 11 settled needs a new entry point, on desktop and on the phone.
-
 - **The desktop row, once the phone is settled.** Calls 9 to 16 designed at 1400px first. Call 17
   restarts at 390px, and the desktop row has to follow whatever the phone settles.
 
@@ -81,3 +79,6 @@ shape and dropped the name from it, which call 19 then settled into a chip and a
 
 Call 20 ruled that the dot carries the live state on its own, so the verb is what the chip gives up
 first. The name is cut only after the verb is gone.
+
+Call 21 ruled that a filled shape aligns by its edge. The chip and the square sit on the header's own
+16px gutter, and the 13px the chip's padding adds is accepted.
