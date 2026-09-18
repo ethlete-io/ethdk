@@ -1,10 +1,7 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { GutterDayComponent } from './gutter-day';
+import { drawing } from '@design-explore';
+import { GUTTER_DAY_STYLES, gutterDay } from './gutter-day';
 
-@Component({
-  selector: 'ethlete-design-gutter-d',
-  template: `<ethlete-design-gutter-day rule="roomy" />`,
-  encapsulation: ViewEncapsulation.None,
-  imports: [GutterDayComponent],
-})
-export default class GutterRoomyComponent {}
+export default drawing({
+  body: gutterDay('roomy'),
+  styles: GUTTER_DAY_STYLES,
+});

@@ -1,6 +1,6 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { css, drawing, html } from '@design-explore';
 import { BandTreatment, KERBE_VARS } from '../../../kerbe';
-import { KerbeBandComponent } from '../../../kerbe-band.component';
+import { KERBE_BAND_STYLES, kerbeBand } from '../../../kerbe-band.component';
 import {
   DAY_END_HOUR,
   DAY_START_HOUR,
@@ -13,9 +13,10 @@ import {
   STRIP_ROW_REM,
 } from './fixture';
 
-@Component({
-  selector: 'ethlete-design-full-day',
-  template: `
+const TREATMENT: BandTreatment = 'inlay';
+
+export default drawing({
+  body: html`
     <div class="window">
       <div class="chrome">
         <span class="mark">KERBE</span>
@@ -26,58 +27,64 @@ import {
       <div class="timeline">
         <div class="head">
           <span class="head-gutter"></span>
-          @for (lane of LANES; track lane.key) {
-            <span [style.flexGrow]="lane.narrow ? 0 : 1" [style.minWidth.rem]="lane.widthRem" class="head-lane">
-              {{ lane.label }}
-            </span>
-          }
+          ${LANES.map(
+            (lane) => html`
+              <span class="head-lane" style="flex-grow: ${lane.narrow ? 0 : 1}; min-width: ${lane.widthRem}rem">
+                ${lane.label}
+              </span>
+            `,
+          )}
         </div>
 
         <div class="scroller">
           <div class="strip">
-            @for (story of STORIES; track story.id; let i = $index) {
-              <span [style.top.rem]="i * STRIP_ROW_REM" class="story">
-                <span class="story-title">{{ story.title }}</span>
-                <span class="story-rows">{{ story.rows }} rows</span>
-              </span>
-            }
+            ${STORIES.map(
+              (story, i) => html`
+                <span class="story" style="top: ${i * STRIP_ROW_REM}rem">
+                  <span class="story-title">${story.title}</span>
+                  <span class="story-rows">${story.rows} rows</span>
+                </span>
+              `,
+            )}
           </div>
 
-          <div [style.height.rem]="(DAY_END_HOUR - DAY_START_HOUR) * HOUR_REM" class="axis">
-            @for (hour of HOURS; track hour) {
-              <div [style.top.rem]="(hour - DAY_START_HOUR) * HOUR_REM" class="hour">
-                <span class="hour-label">{{ hour }}:00</span>
-                <span class="hour-line"></span>
-              </div>
-            }
+          <div class="axis" style="height: ${(DAY_END_HOUR - DAY_START_HOUR) * HOUR_REM}rem">
+            ${HOURS.map(
+              (hour) => html`
+                <div class="hour" style="top: ${(hour - DAY_START_HOUR) * HOUR_REM}rem">
+                  <span class="hour-label">${hour}:00</span>
+                  <span class="hour-line"></span>
+                </div>
+              `,
+            )}
 
-            <div [style.top.rem]="NOW_REM" class="now"><span class="now-dot"></span></div>
+            <div class="now" style="top: ${NOW_REM}rem"><span class="now-dot"></span></div>
 
             <div class="lanes">
-              @for (lane of LANES; track lane.key) {
-                <div [style.flexGrow]="lane.narrow ? 0 : 1" [style.minWidth.rem]="lane.widthRem" class="lane">
-                  @for (laid of lane.laid; track laid.band.id) {
-                    <div
-                      [attr.data-band]="laid.band.id"
-                      [style.top.rem]="laid.topRem"
-                      [style.left.%]="laid.inlineOffset"
-                      [style.width.%]="laid.inlineSize"
-                      class="slot"
-                    >
-                      <ethlete-design-kerbe-band [band]="laid.band" [treatment]="TREATMENT" />
-                    </div>
-                  }
-                </div>
-              }
+              ${LANES.map(
+                (lane) => html`
+                  <div class="lane" style="flex-grow: ${lane.narrow ? 0 : 1}; min-width: ${lane.widthRem}rem">
+                    ${lane.laid.map(
+                      (laid) => html`
+                        <div
+                          class="slot"
+                          data-band="${laid.band.id}"
+                          style="top: ${laid.topRem}rem; left: ${laid.inlineOffset}%; width: ${laid.inlineSize}%"
+                        >
+                          ${kerbeBand({ band: laid.band, treatment: TREATMENT })}
+                        </div>
+                      `,
+                    )}
+                  </div>
+                `,
+              )}
             </div>
           </div>
         </div>
       </div>
     </div>
   `,
-  encapsulation: ViewEncapsulation.None,
-  imports: [KerbeBandComponent],
-  styles: `
+  styles: css`
     .window {
       ${KERBE_VARS}
       display: flex;
@@ -254,16 +261,7 @@ import {
       position: absolute;
       padding-right: 1px;
     }
+
+    ${KERBE_BAND_STYLES}
   `,
-})
-export default class FullDayViewComponent {
-  protected readonly LANES = LANES;
-  protected readonly STORIES = STORIES;
-  protected readonly TREATMENT: BandTreatment = 'inlay';
-  protected readonly DAY_START_HOUR = DAY_START_HOUR;
-  protected readonly DAY_END_HOUR = DAY_END_HOUR;
-  protected readonly HOUR_REM = HOUR_REM;
-  protected readonly STRIP_ROW_REM = STRIP_ROW_REM;
-  protected readonly HOURS = HOURS;
-  protected readonly NOW_REM = NOW_REM;
-}
+});

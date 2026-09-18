@@ -1,10 +1,7 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { GutterDayComponent } from './gutter-day';
+import { drawing } from '@design-explore';
+import { GUTTER_DAY_STYLES, gutterDay } from './gutter-day';
 
-@Component({
-  selector: 'ethlete-design-gutter-c',
-  template: `<ethlete-design-gutter-day rule="hour-bare" />`,
-  encapsulation: ViewEncapsulation.None,
-  imports: [GutterDayComponent],
-})
-export default class GutterHourBareComponent {}
+export default drawing({
+  body: gutterDay('hour-bare'),
+  styles: GUTTER_DAY_STYLES,
+});

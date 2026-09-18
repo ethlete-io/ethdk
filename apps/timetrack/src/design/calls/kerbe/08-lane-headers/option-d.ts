@@ -1,10 +1,7 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { HeadDayComponent } from './head-day';
+import { drawing } from '@design-explore';
+import { HEAD_DAY_STYLES, headDay } from './head-day';
 
-@Component({
-  selector: 'ethlete-design-lane-headers-d',
-  template: `<ethlete-design-head-day rule="asks" />`,
-  encapsulation: ViewEncapsulation.None,
-  imports: [HeadDayComponent],
-})
-export default class LaneHeadersAsksComponent {}
+export default drawing({
+  body: headDay('asks'),
+  styles: HEAD_DAY_STYLES,
+});

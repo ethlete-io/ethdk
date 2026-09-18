@@ -1,10 +1,7 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { AxisDayComponent } from './axis-day';
+import { drawing } from '@design-explore';
+import { AXIS_DAY_STYLES, axisDay } from './axis-day';
 
-@Component({
-  selector: 'ethlete-design-hour-axis-a',
-  template: `<ethlete-design-axis-day rule="hour" />`,
-  encapsulation: ViewEncapsulation.None,
-  imports: [AxisDayComponent],
-})
-export default class HourAxisHourComponent {}
+export default drawing({
+  body: axisDay('hour'),
+  styles: AXIS_DAY_STYLES,
+});

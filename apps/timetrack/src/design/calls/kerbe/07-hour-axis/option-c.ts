@@ -1,10 +1,7 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { AxisDayComponent } from './axis-day';
+import { drawing } from '@design-explore';
+import { AXIS_DAY_STYLES, axisDay } from './axis-day';
 
-@Component({
-  selector: 'ethlete-design-hour-axis-c',
-  template: `<ethlete-design-axis-day rule="half-line" />`,
-  encapsulation: ViewEncapsulation.None,
-  imports: [AxisDayComponent],
-})
-export default class HourAxisHalfLineComponent {}
+export default drawing({
+  body: axisDay('half-line'),
+  styles: AXIS_DAY_STYLES,
+});

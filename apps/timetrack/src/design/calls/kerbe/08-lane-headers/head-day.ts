@@ -1,493 +1,487 @@
-import { Component, input, ViewEncapsulation } from '@angular/core';
+import { css, html } from '@design-explore';
 import { BandTreatment, KERBE_VARS } from '../../../kerbe';
-import { KerbeBandComponent } from '../../../kerbe-band.component';
-import { DAY_HEIGHT_REM, GUTTER_REM, HeadRule, HOURS, LANES, MARKS, NOW_REM, RUNGS } from './fixture';
+import { KERBE_BAND_STYLES, kerbeBand } from '../../../kerbe-band.component';
+import { DAY_HEIGHT_REM, GUTTER_REM, HeadRule, HOURS, LaidLane, LANES, MARKS, NOW_REM, RUNGS } from './fixture';
+
+const TREATMENT: BandTreatment = 'inlay';
+
+const headLane = (lane: LaidLane) => html`
+  <span class="head-lane" style="min-width: ${lane.widthRem}rem">
+    <span class="head-row">
+      <span class="head-name">${lane.label}</span>
+      <span class="head-total">${lane.total}</span>
+      <span class="head-asks">${lane.asks} ask</span>
+    </span>
+    <span class="head-bar" style="width: ${lane.share * 100}%"></span>
+  </span>
+`;
 
 /**
  * The day as calls 4 to 7 settled it, and without the all-day story strip, which was cut on
  * 2026-09-17. Only `rule` changes: what a lane header carries above the column it names.
  */
-@Component({
-  selector: 'ethlete-design-head-day',
-  template: `
-    <div class="window">
-      <div class="chrome">
-        <span class="mark">KERBE</span>
-        <span class="date">Tuesday, 16 September</span>
-        <span class="total">7h 15m</span>
+export const headDay = (rule: HeadRule) => html`
+  <div class="window">
+    <div class="chrome">
+      <span class="mark">KERBE</span>
+      <span class="date">Tuesday, 16 September</span>
+      <span class="total">7h 15m</span>
+    </div>
+
+    <div class="timeline">
+      <div class="head head--${rule}">
+        <span class="head-gutter"></span>
+        ${LANES.map(headLane)}
       </div>
 
-      <div class="timeline">
-        <div class="head head--{{ rule() }}">
-          <span class="head-gutter"></span>
-          @for (lane of LANES; track lane.key) {
-            <span [style.minWidth.rem]="lane.widthRem" class="head-lane">
-              <span class="head-row">
-                <span class="head-name">{{ lane.label }}</span>
-                <span class="head-total">{{ lane.total }}</span>
-                <span class="head-asks">{{ lane.asks }} ask</span>
-              </span>
-              <span [style.width.%]="lane.share * 100" class="head-bar"></span>
-            </span>
-          }
-        </div>
-
-        <div class="scroller">
-          <div [style.height.rem]="DAY_HEIGHT_REM" class="axis">
-            @for (rung of RUNGS; track rung.key) {
-              <div [style.top.rem]="rung.topRem" [class.rung--half]="rung.half" class="rung">
+      <div class="scroller">
+        <div class="axis" style="height: ${DAY_HEIGHT_REM}rem">
+          ${RUNGS.map(
+            (rung) => html`
+              <div class="rung ${rung.half && 'rung--half'}" style="top: ${rung.topRem}rem">
                 <span class="rung-tick"></span>
                 <span class="rung-line"></span>
               </div>
-            }
-
-            @for (hour of HOURS; track hour.hour) {
-              <div [style.top.rem]="hour.topRem" class="hour">
-                <span class="hour-label"
-                  ><span class="hour-text">{{ hour.hour }}:00</span></span
-                >
+            `,
+          )}
+          ${HOURS.map(
+            (hour) => html`
+              <div class="hour" style="top: ${hour.topRem}rem">
+                <span class="hour-label"><span class="hour-text">${hour.hour}:00</span></span>
                 <span class="hour-line"></span>
               </div>
-            }
-
-            @for (mark of MARKS; track mark.id) {
-              <div [style.top.rem]="mark.topRem" [style.height.rem]="mark.heightRem" class="brk">
-                @for (lane of LANES; track lane.key) {
-                  <span [style.minWidth.rem]="lane.widthRem" class="brk-cell"></span>
-                }
+            `,
+          )}
+          ${MARKS.map(
+            (mark) => html`
+              <div class="brk" style="top: ${mark.topRem}rem; height: ${mark.heightRem}rem">
+                ${LANES.map((lane) => html`<span class="brk-cell" style="min-width: ${lane.widthRem}rem"></span>`)}
                 <span class="brk-hatch"></span>
                 <span class="brk-edge brk-edge--top"></span>
                 <span class="brk-edge brk-edge--bottom"></span>
                 <span class="brk-sign">
-                  <span [class.brk-pause--small]="mark.short" class="brk-pause"></span>
+                  <span class="brk-pause ${mark.short && 'brk-pause--small'}"></span>
                 </span>
               </div>
-            }
+            `,
+          )}
 
-            <div [style.top.rem]="NOW_REM" class="now"><span class="now-dot"></span></div>
+          <div class="now" style="top: ${NOW_REM}rem"><span class="now-dot"></span></div>
 
-            <div class="lanes">
-              @for (lane of LANES; track lane.key) {
-                <div [style.minWidth.rem]="lane.widthRem" class="lane">
-                  @for (laid of lane.laid; track laid.band.id) {
-                    <div
-                      [style.top.rem]="laid.topRem"
-                      [style.left.%]="laid.inlineOffset"
-                      [style.width.%]="laid.inlineSize"
-                      class="slot"
-                    >
-                      <ethlete-design-kerbe-band [band]="laid.band" [treatment]="TREATMENT" />
-                    </div>
-                  }
+          <div class="lanes">
+            ${LANES.map(
+              (lane) => html`
+                <div class="lane" style="min-width: ${lane.widthRem}rem">
+                  ${lane.laid.map(
+                    (laid) => html`
+                      <div
+                        class="slot"
+                        style="top: ${laid.topRem}rem; left: ${laid.inlineOffset}%; width: ${laid.inlineSize}%"
+                      >
+                        ${kerbeBand({ band: laid.band, treatment: TREATMENT })}
+                      </div>
+                    `,
+                  )}
                 </div>
-              }
-            </div>
+              `,
+            )}
           </div>
         </div>
       </div>
     </div>
-  `,
-  encapsulation: ViewEncapsulation.None,
-  imports: [KerbeBandComponent],
-  styles: `
-    .window {
-      ${KERBE_VARS}
-      display: flex;
-      flex-direction: column;
-      width: 110rem;
-      height: 76rem;
-      overflow: hidden;
-      background: var(--k-ground);
-      font-family: var(--k-sans);
-      font-weight: 300;
-      color: var(--k-ink-2);
-    }
+  </div>
+`;
 
-    .chrome {
-      display: flex;
-      flex: none;
-      align-items: center;
-      gap: 1.6rem;
-      padding: 1rem 1.6rem;
-      border-bottom: 1px solid rgb(255 255 255 / 0.06);
-    }
+/** The styles `headDay` needs, for a drawing to include in its own `styles`. */
+export const HEAD_DAY_STYLES = css`
+  .window {
+    ${KERBE_VARS}
+    display: flex;
+    flex-direction: column;
+    width: 110rem;
+    height: 76rem;
+    overflow: hidden;
+    background: var(--k-ground);
+    font-family: var(--k-sans);
+    font-weight: 300;
+    color: var(--k-ink-2);
+  }
 
-    .mark {
-      font-family: var(--k-mono);
-      font-size: 1.1rem;
-      letter-spacing: 0.32em;
-      color: var(--k-brass);
-    }
+  .chrome {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 1.6rem;
+    padding: 1rem 1.6rem;
+    border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  }
 
-    .date {
-      flex: 1;
-      font-size: 1.3rem;
-      color: var(--k-ink);
-    }
+  .mark {
+    font-family: var(--k-mono);
+    font-size: 1.1rem;
+    letter-spacing: 0.32em;
+    color: var(--k-brass);
+  }
 
-    .total {
-      font-family: var(--k-mono);
-      font-size: 1.2rem;
-      color: var(--k-ink-3);
-    }
+  .date {
+    flex: 1;
+    font-size: 1.3rem;
+    color: var(--k-ink);
+  }
 
-    .timeline {
-      display: flex;
-      min-height: 0;
-      flex-direction: column;
-    }
+  .total {
+    font-family: var(--k-mono);
+    font-size: 1.2rem;
+    color: var(--k-ink-3);
+  }
 
-    .head {
-      display: flex;
-      flex: none;
-      border-bottom: 1px solid rgb(255 255 255 / 0.06);
-    }
+  .timeline {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+  }
 
-    .head-gutter {
-      width: ${GUTTER_REM}rem;
-      flex: none;
-    }
+  .head {
+    display: flex;
+    flex: none;
+    border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  }
 
-    .head-lane {
-      position: relative;
-      flex: 1;
-      flex-basis: 0;
-      overflow: hidden;
-      padding: 0.6rem 0.8rem;
-      border-left: 1px solid rgb(255 255 255 / 0.06);
-      font-family: var(--k-mono);
-      font-size: 1.05rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--k-ink-3);
-    }
+  .head-gutter {
+    width: ${GUTTER_REM}rem;
+    flex: none;
+  }
 
-    .head-row {
-      display: flex;
-      align-items: baseline;
-      gap: 0.8rem;
-    }
+  .head-lane {
+    position: relative;
+    flex: 1;
+    flex-basis: 0;
+    overflow: hidden;
+    padding: 0.6rem 0.8rem;
+    border-left: 1px solid rgb(255 255 255 / 0.06);
+    font-family: var(--k-mono);
+    font-size: 1.05rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--k-ink-3);
+  }
 
-    .head-name {
-      flex: 1;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
+  .head-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+  }
 
-    .head-total,
-    .head-asks {
-      display: none;
-      flex: none;
-      letter-spacing: 0.08em;
-    }
+  .head-name {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
 
-    .head-bar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      display: none;
-      height: 2px;
-      background: var(--k-brass);
-    }
+  .head-total,
+  .head-asks {
+    display: none;
+    flex: none;
+    letter-spacing: 0.08em;
+  }
 
-    .head--total .head-total,
-    .head--share .head-total {
-      display: block;
-      color: var(--k-ink-2);
-    }
+  .head-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    display: none;
+    height: 2px;
+    background: var(--k-brass);
+  }
 
-    .head--share .head-bar {
-      display: block;
-    }
+  .head--total .head-total,
+  .head--share .head-total {
+    display: block;
+    color: var(--k-ink-2);
+  }
 
-    .head--asks .head-asks {
-      display: block;
-      color: var(--k-brass);
-    }
+  .head--share .head-bar {
+    display: block;
+  }
 
-    /*
-     * Round 2. The uppercase of the header runs over the total as well, so round 1 drew 7H 45M
-     * while the title bar drew 7h 15m. Every rule below turns it back off.
-     */
-    .head--total-lead .head-total,
-    .head--name-lead .head-total,
-    .head--total-under .head-total {
-      display: block;
-      letter-spacing: 0.02em;
-      text-transform: none;
-    }
+  .head--asks .head-asks {
+    display: block;
+    color: var(--k-brass);
+  }
 
-    .head--total-lead .head-total {
-      font-size: 1.5rem;
-      color: var(--k-ink);
-    }
+  /*
+   * Round 2. The uppercase of the header runs over the total as well, so round 1 drew 7H 45M
+   * while the title bar drew 7h 15m. Every rule below turns it back off.
+   */
+  .head--total-lead .head-total,
+  .head--name-lead .head-total,
+  .head--total-under .head-total {
+    display: block;
+    letter-spacing: 0.02em;
+    text-transform: none;
+  }
 
-    .head--total-lead .head-name {
-      font-size: 0.95rem;
-    }
+  .head--total-lead .head-total {
+    font-size: 1.5rem;
+    color: var(--k-ink);
+  }
 
-    .head--name-lead .head-name {
-      font-size: 1.2rem;
-      letter-spacing: 0.1em;
-      color: var(--k-ink);
-    }
+  .head--total-lead .head-name {
+    font-size: 0.95rem;
+  }
 
-    .head--total-under .head-row {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.2rem;
-    }
+  .head--name-lead .head-name {
+    font-size: 1.2rem;
+    letter-spacing: 0.1em;
+    color: var(--k-ink);
+  }
 
-    .head--total-under .head-name {
-      flex: none;
-      color: var(--k-ink);
-    }
+  .head--total-under .head-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
 
-    /* Round 3. One row, one size, one face. Only the ink differs. */
-    .head--ink-total .head-total,
-    .head--ink-name .head-total,
-    .head--ink-step .head-total {
-      display: block;
-      letter-spacing: 0.02em;
-      text-transform: none;
-    }
+  .head--total-under .head-name {
+    flex: none;
+    color: var(--k-ink);
+  }
 
-    .head--ink-total .head-total {
-      color: var(--k-ink);
-    }
+  /* Round 3. One row, one size, one face. Only the ink differs. */
+  .head--ink-total .head-total,
+  .head--ink-name .head-total,
+  .head--ink-step .head-total {
+    display: block;
+    letter-spacing: 0.02em;
+    text-transform: none;
+  }
 
-    .head--ink-name .head-name {
-      color: var(--k-ink);
-    }
+  .head--ink-total .head-total {
+    color: var(--k-ink);
+  }
 
-    .head--ink-name .head-total {
-      color: var(--k-ink-3);
-    }
+  .head--ink-name .head-name {
+    color: var(--k-ink);
+  }
 
-    .head--ink-step .head-total {
-      color: var(--k-ink-2);
-    }
+  .head--ink-name .head-total {
+    color: var(--k-ink-3);
+  }
 
-    .scroller {
-      min-height: 0;
-      overflow: auto;
-      scrollbar-width: thin;
-      scrollbar-color: rgb(140 134 118 / 0.3) transparent;
-    }
+  .head--ink-step .head-total {
+    color: var(--k-ink-2);
+  }
 
-    .axis {
-      position: relative;
-    }
+  .scroller {
+    min-height: 0;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(140 134 118 / 0.3) transparent;
+  }
 
-    /* The transform makes this a stacking context, so the z-index has to sit here and not on the label. */
-    .hour {
-      position: absolute;
-      right: 0;
-      left: 0;
-      z-index: 4;
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      transform: translateY(-50%);
-    }
+  .axis {
+    position: relative;
+  }
 
-    .hour-label {
-      width: ${GUTTER_REM - 0.8}rem;
-      flex: none;
-      text-align: right;
-      font-family: var(--k-mono);
-      font-size: 1.05rem;
-      color: var(--k-ink-3);
-    }
+  /* The transform makes this a stacking context, so the z-index has to sit here and not on the label. */
+  .hour {
+    position: absolute;
+    right: 0;
+    left: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    transform: translateY(-50%);
+  }
 
-    .hour-text {
-      padding: 0 0.3rem;
-      background: var(--k-ground);
-    }
+  .hour-label {
+    width: ${GUTTER_REM - 0.8}rem;
+    flex: none;
+    text-align: right;
+    font-family: var(--k-mono);
+    font-size: 1.05rem;
+    color: var(--k-ink-3);
+  }
 
-    .hour-line {
-      height: 1px;
-      flex: 1;
-      background: rgb(255 255 255 / 0.05);
-    }
+  .hour-text {
+    padding: 0 0.3rem;
+    background: var(--k-ground);
+  }
 
-    .rung {
-      position: absolute;
-      right: 0;
-      left: 0;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      transform: translateY(-50%);
-    }
+  .hour-line {
+    height: 1px;
+    flex: 1;
+    background: rgb(255 255 255 / 0.05);
+  }
 
-    .rung-tick {
-      display: flex;
-      width: ${GUTTER_REM}rem;
-      flex: none;
-      justify-content: flex-end;
-    }
+  .rung {
+    position: absolute;
+    right: 0;
+    left: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    transform: translateY(-50%);
+  }
 
-    .rung-tick::after {
-      width: 0.5rem;
-      height: 1px;
-      background: rgb(140 134 118 / 0.34);
-      content: '';
-    }
+  .rung-tick {
+    display: flex;
+    width: ${GUTTER_REM}rem;
+    flex: none;
+    justify-content: flex-end;
+  }
 
-    .rung--half .rung-tick::after {
-      width: 0.9rem;
-    }
+  .rung-tick::after {
+    width: 0.5rem;
+    height: 1px;
+    background: rgb(140 134 118 / 0.34);
+    content: '';
+  }
 
-    .rung-line {
-      height: 1px;
-      flex: 1;
-    }
+  .rung--half .rung-tick::after {
+    width: 0.9rem;
+  }
 
-    .brk {
-      position: absolute;
-      right: 0;
-      left: ${GUTTER_REM}rem;
-      z-index: 3;
-      display: flex;
-      box-sizing: border-box;
-      border-top: 1px solid rgb(140 134 118 / 0.26);
-      border-bottom: 1px solid rgb(140 134 118 / 0.26);
-      pointer-events: none;
-    }
+  .rung-line {
+    height: 1px;
+    flex: 1;
+  }
 
-    .brk-cell {
-      position: relative;
-      flex: 1;
-      flex-basis: 0;
-    }
+  .brk {
+    position: absolute;
+    right: 0;
+    left: ${GUTTER_REM}rem;
+    z-index: 3;
+    display: flex;
+    box-sizing: border-box;
+    border-top: 1px solid rgb(140 134 118 / 0.26);
+    border-bottom: 1px solid rgb(140 134 118 / 0.26);
+    pointer-events: none;
+  }
 
-    /* The lane line has to stop at the break, so the rules read as one span across the day. */
-    .brk-cell::before {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: -1px;
-      width: 1px;
-      background: var(--k-ground);
-      content: '';
-    }
+  .brk-cell {
+    position: relative;
+    flex: 1;
+    flex-basis: 0;
+  }
 
-    .brk-hatch {
-      position: absolute;
-      top: -1px;
-      bottom: -1px;
-      left: ${-GUTTER_REM}rem;
-      width: ${GUTTER_REM}rem;
-      border-top: 1px solid rgb(140 134 118 / 0.26);
-      border-bottom: 1px solid rgb(140 134 118 / 0.26);
-      background-image: repeating-linear-gradient(45deg, rgb(140 134 118 / 0.3) 0 1px, transparent 1px 5px);
-    }
+  /* The lane line has to stop at the break, so the rules read as one span across the day. */
+  .brk-cell::before {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -1px;
+    width: 1px;
+    background: var(--k-ground);
+    content: '';
+  }
 
-    .brk-edge {
-      position: absolute;
-      right: 0;
-      left: ${-GUTTER_REM}rem;
-      height: 2px;
-      background: rgb(169 161 146 / 0.5);
-    }
+  .brk-hatch {
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    left: ${-GUTTER_REM}rem;
+    width: ${GUTTER_REM}rem;
+    border-top: 1px solid rgb(140 134 118 / 0.26);
+    border-bottom: 1px solid rgb(140 134 118 / 0.26);
+    background-image: repeating-linear-gradient(45deg, rgb(140 134 118 / 0.3) 0 1px, transparent 1px 5px);
+  }
 
-    .brk-edge--top {
-      top: -1px;
-    }
+  .brk-edge {
+    position: absolute;
+    right: 0;
+    left: ${-GUTTER_REM}rem;
+    height: 2px;
+    background: rgb(169 161 146 / 0.5);
+  }
 
-    .brk-edge--bottom {
-      bottom: -1px;
-    }
+  .brk-edge--top {
+    top: -1px;
+  }
 
-    .brk-sign {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: ${-GUTTER_REM}rem;
-      display: flex;
-      width: ${GUTTER_REM}rem;
-      align-items: center;
-      justify-content: center;
-    }
+  .brk-edge--bottom {
+    bottom: -1px;
+  }
 
-    /*
-     * 4px bar and 4px gap, so the width and the pitch are both whole device pixels at scale
-     * 1.25, 1.5, 2 and 3. At 2px the bar is 2.5 device pixels at 1.25, the two bars land on
-     * different subpixel phases, and one renders wider than the other.
-     */
-    .brk-pause {
-      display: flex;
-      align-items: center;
-      padding: 4px 6px;
-      gap: 4px;
-      background: var(--k-ground);
-    }
+  .brk-sign {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: ${-GUTTER_REM}rem;
+    display: flex;
+    width: ${GUTTER_REM}rem;
+    align-items: center;
+    justify-content: center;
+  }
 
-    .brk-pause::before,
-    .brk-pause::after {
-      width: 4px;
-      height: 14px;
-      background: var(--k-ink-2);
-      content: '';
-    }
+  /*
+   * 4px bar and 4px gap, so the width and the pitch are both whole device pixels at scale
+   * 1.25, 1.5, 2 and 3. At 2px the bar is 2.5 device pixels at 1.25, the two bars land on
+   * different subpixel phases, and one renders wider than the other.
+   */
+  .brk-pause {
+    display: flex;
+    align-items: center;
+    padding: 4px 6px;
+    gap: 4px;
+    background: var(--k-ground);
+  }
 
-    .brk-pause--small {
-      padding: 2px 5px;
-    }
+  .brk-pause::before,
+  .brk-pause::after {
+    width: 4px;
+    height: 14px;
+    background: var(--k-ink-2);
+    content: '';
+  }
 
-    .brk-pause--small::before,
-    .brk-pause--small::after {
-      height: 10px;
-    }
+  .brk-pause--small {
+    padding: 2px 5px;
+  }
 
-    .now {
-      position: absolute;
-      right: 0;
-      left: ${GUTTER_REM}rem;
-      z-index: 2;
-      border-top: 1px solid var(--k-oxide);
-    }
+  .brk-pause--small::before,
+  .brk-pause--small::after {
+    height: 10px;
+  }
 
-    .now-dot {
-      position: absolute;
-      top: -0.3rem;
-      left: -0.3rem;
-      width: 0.6rem;
-      height: 0.6rem;
-      border-radius: 50%;
-      background: var(--k-oxide);
-    }
+  .now {
+    position: absolute;
+    right: 0;
+    left: ${GUTTER_REM}rem;
+    z-index: 2;
+    border-top: 1px solid var(--k-oxide);
+  }
 
-    .lanes {
-      position: absolute;
-      inset: 0 0 0 ${GUTTER_REM}rem;
-      z-index: 1;
-      display: flex;
-    }
+  .now-dot {
+    position: absolute;
+    top: -0.3rem;
+    left: -0.3rem;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--k-oxide);
+  }
 
-    .lane {
-      position: relative;
-      flex: 1;
-      flex-basis: 0;
-      border-left: 1px solid rgb(255 255 255 / 0.06);
-    }
+  .lanes {
+    position: absolute;
+    inset: 0 0 0 ${GUTTER_REM}rem;
+    z-index: 1;
+    display: flex;
+  }
 
-    .slot {
-      position: absolute;
-      padding-right: 1px;
-    }
-  `,
-})
-export class HeadDayComponent {
-  public rule = input.required<HeadRule>();
+  .lane {
+    position: relative;
+    flex: 1;
+    flex-basis: 0;
+    border-left: 1px solid rgb(255 255 255 / 0.06);
+  }
 
-  protected readonly TREATMENT: BandTreatment = 'inlay';
-  protected readonly LANES = LANES;
-  protected readonly HOURS = HOURS;
-  protected readonly RUNGS = RUNGS;
-  protected readonly MARKS = MARKS;
-  protected readonly DAY_HEIGHT_REM = DAY_HEIGHT_REM;
-  protected readonly NOW_REM = NOW_REM;
-}
+  .slot {
+    position: absolute;
+    padding-right: 1px;
+  }
+
+  ${KERBE_BAND_STYLES}
+`;

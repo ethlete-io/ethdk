@@ -1,10 +1,7 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { BreakDayShellComponent } from './day-shell';
+import { drawing } from '@design-explore';
+import { BREAK_DAY_STYLES, breakDay } from './day-shell';
 
-@Component({
-  selector: 'ethlete-design-break-a',
-  template: `<ethlete-design-break-day mode="lane" />`,
-  encapsulation: ViewEncapsulation.None,
-  imports: [BreakDayShellComponent],
-})
-export default class BreakOptionAComponent {}
+export default drawing({
+  body: breakDay({ mode: 'lane' }),
+  styles: BREAK_DAY_STYLES,
+});

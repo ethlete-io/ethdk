@@ -1,10 +1,3 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { BreakDayComponent } from './break-day';
+import { breakDay } from './break-day';
 
-@Component({
-  selector: 'ethlete-design-break-label-f',
-  template: `<ethlete-design-break-day labelAt="bare" />`,
-  encapsulation: ViewEncapsulation.None,
-  imports: [BreakDayComponent],
-})
-export default class BreakLabelBareFComponent {}
+export default breakDay('bare');

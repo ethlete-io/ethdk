@@ -1,10 +1,7 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { AxisDayComponent } from './axis-day';
+import { drawing } from '@design-explore';
+import { AXIS_DAY_STYLES, axisDay } from './axis-day';
 
-@Component({
-  selector: 'ethlete-design-hour-axis-b',
-  template: `<ethlete-design-axis-day rule="gutter-ticks" />`,
-  encapsulation: ViewEncapsulation.None,
-  imports: [AxisDayComponent],
-})
-export default class HourAxisGutterTicksComponent {}
+export default drawing({
+  body: axisDay('gutter-ticks'),
+  styles: AXIS_DAY_STYLES,
+});

@@ -1,10 +1,7 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { BreakDayComponent } from './break-day';
+import { drawing } from '@design-explore';
+import { BREAK_DAY_STYLES, breakDay } from './break-day';
 
-@Component({
-  selector: 'ethlete-design-break-fill-c',
-  template: `<ethlete-design-break-day fill="part" />`,
-  encapsulation: ViewEncapsulation.None,
-  imports: [BreakDayComponent],
-})
-export default class BreakFillPartCComponent {}
+export default drawing({
+  body: breakDay({ fill: 'part' }),
+  styles: BREAK_DAY_STYLES,
+});

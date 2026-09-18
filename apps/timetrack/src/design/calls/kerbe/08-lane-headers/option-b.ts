@@ -1,10 +1,7 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { HeadDayComponent } from './head-day';
+import { drawing } from '@design-explore';
+import { HEAD_DAY_STYLES, headDay } from './head-day';
 
-@Component({
-  selector: 'ethlete-design-lane-headers-b',
-  template: `<ethlete-design-head-day rule="total" />`,
-  encapsulation: ViewEncapsulation.None,
-  imports: [HeadDayComponent],
-})
-export default class LaneHeadersTotalComponent {}
+export default drawing({
+  body: headDay('total'),
+  styles: HEAD_DAY_STYLES,
+});

@@ -1,10 +1,7 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { HeadDayComponent } from './head-day';
+import { drawing } from '@design-explore';
+import { HEAD_DAY_STYLES, headDay } from './head-day';
 
-@Component({
-  selector: 'ethlete-design-lane-headers-f',
-  template: `<ethlete-design-head-day rule="name-lead" />`,
-  encapsulation: ViewEncapsulation.None,
-  imports: [HeadDayComponent],
-})
-export default class LaneHeadersNameLeadComponent {}
+export default drawing({
+  body: headDay('name-lead'),
+  styles: HEAD_DAY_STYLES,
+});
