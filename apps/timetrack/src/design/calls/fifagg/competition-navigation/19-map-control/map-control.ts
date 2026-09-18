@@ -2,7 +2,7 @@ import { css, drawing, html } from '@design-explore';
 import { COMPETITION, LIVE } from './fixture';
 
 /** How the control that opens the full map sits in the row. */
-export type ControlRule = 'whole-row' | 'bare-icon' | 'edge-zone';
+export type ControlRule = 'whole-row' | 'bare-icon' | 'edge-zone' | 'two-zones' | 'chip-square' | 'in-header';
 
 const burgerIcon = html`
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -19,10 +19,14 @@ const searchIcon = html`
 
 const grid = html`<span class="grid"><i></i><i></i><i></i><i></i></span>`;
 
-const phoneBar = html`
+const phoneBar = (rule: ControlRule) => html`
   <header class="bar">
     <span class="logo">FIFA<i>e</i></span>
     <span class="grow"></span>
+    ${
+      rule === 'in-header' &&
+      html`<button class="icon icon--map" type="button" aria-label="All of the competition">${grid}</button>`
+    }
     <button class="icon" type="button" aria-label="Search">${searchIcon}</button>
     <button class="icon" type="button" aria-label="Menu">${burgerIcon}</button>
   </header>
@@ -51,13 +55,36 @@ const subRow = (rule: ControlRule) => {
     `;
   }
 
-  return html`
-    <nav class="sub sub--edge">
-      ${liveLine}
-      <span class="grow"></span>
-      <button class="edge" type="button" aria-label="All of the competition">${grid}</button>
-    </nav>
-  `;
+  if (rule === 'edge-zone') {
+    return html`
+      <nav class="sub sub--edge">
+        ${liveLine}
+        <span class="grow"></span>
+        <button class="edge" type="button" aria-label="All of the competition">${grid}</button>
+      </nav>
+    `;
+  }
+
+  if (rule === 'two-zones') {
+    return html`
+      <nav class="sub sub--edge sub--zones">
+        <button class="zone" type="button">${liveLine}</button>
+        <button class="edge" type="button" aria-label="All of the competition">${grid}</button>
+      </nav>
+    `;
+  }
+
+  if (rule === 'chip-square') {
+    return html`
+      <nav class="sub sub--chip">
+        <button class="chip" type="button">${liveLine}</button>
+        <span class="grow"></span>
+        <button class="square" type="button" aria-label="All of the competition">${grid}</button>
+      </nav>
+    `;
+  }
+
+  return html`<button class="sub sub--whole sub--link" type="button">${liveLine}</button>`;
 };
 
 /**
@@ -68,7 +95,7 @@ export const mapControl = ({ rule }: { rule: ControlRule }) =>
   drawing({
     body: html`
       <div class="page" data-rule="${rule}">
-        <div class="stack">${phoneBar} ${subRow(rule)}</div>
+        <div class="stack">${phoneBar(rule)} ${subRow(rule)}</div>
         <div class="banner">
           <span class="banner__art">Cyprus Football Association Esports Competition<br />Featuring Rocket League™</span>
           <b>${COMPETITION.name}</b>
@@ -230,6 +257,49 @@ export const mapControl = ({ rule }: { rule: ControlRule }) =>
       }
 
       .icon--map .grid i {
+        background: var(--ink);
+      }
+
+      .sub--zones {
+        gap: 0;
+        padding-left: 0;
+      }
+
+      .zone {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        align-self: stretch;
+        min-width: 0;
+        padding-inline: 16px;
+      }
+
+      .sub--chip {
+        padding-block: 8px;
+      }
+
+      .chip {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        height: 40px;
+        padding-inline: 12px;
+        border: 1px solid rgb(var(--primary) / 0.28);
+        border-radius: 10px;
+        background: rgb(var(--primary) / 0.1);
+      }
+
+      .square {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: 44px;
+        height: 40px;
+        border-radius: 10px;
+        background: #1f2937;
+      }
+
+      .square .grid i {
         background: var(--ink);
       }
 
