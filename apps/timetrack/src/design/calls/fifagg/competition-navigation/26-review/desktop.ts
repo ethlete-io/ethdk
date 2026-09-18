@@ -1,5 +1,5 @@
 import { css, drawing, html } from '@design-explore';
-import { CURRENT, LIVE, PAGES } from './fixture';
+import { CURRENT, LIVE, PAGES } from './desktop-fixture';
 
 const searchIcon = html`
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -34,7 +34,7 @@ const desktopBar = html`
 `;
 
 /** Where the chevron that opens all stages sits against the live stage control. */
-export type ChevronRule = 'full-seam' | 'inset-seam' | 'own-square';
+type ChevronRule = 'full-seam' | 'own-square';
 
 const chevron = html`<button class="ctl__more" type="button" aria-label="All stages"><em>⌄</em></button>`;
 
@@ -75,7 +75,7 @@ const links = html`
  * The call 16 A row with the competition name removed. At 1400px every page fits, so there is no
  * overflow menu, and no control carries a count.
  */
-export const desktopRow = ({ rule }: { rule: ChevronRule }) =>
+export const desktopRow = () =>
   drawing({
     body: html`
       <div class="page">
@@ -84,7 +84,7 @@ export const desktopRow = ({ rule }: { rule: ChevronRule }) =>
           <nav class="sub">
             ${links}
             <span class="grow"></span>
-            ${liveSplit(rule, false)}
+            ${liveSplit('full-seam', false)}
           </nav>
         </div>
         <span class="caption">A stage name the control cannot fit</span>
@@ -92,7 +92,7 @@ export const desktopRow = ({ rule }: { rule: ChevronRule }) =>
           <nav class="sub">
             ${links}
             <span class="grow"></span>
-            ${liveSplit(rule, true)}
+            ${liveSplit('full-seam', true)}
           </nav>
         </div>
       </div>
