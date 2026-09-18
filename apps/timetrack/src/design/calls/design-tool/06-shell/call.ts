@@ -11,7 +11,7 @@ export default defineCall({
     {
       key: 'r1',
       title: 'Where the chrome goes',
-      note: '',
+      note: 'All three rejected. Every option traded the variant tiles for a segmented switcher, and the tiles are not chrome: the column of previews to the left of the drawing is how a variant is picked and compared. The next pass keeps that column and moves only the chrome around it.',
     },
   ],
   options: [
@@ -22,6 +22,7 @@ export default defineCall({
       claim:
         'The project name moves into the head of the explorer. The top bar keeps only what is about the open call: the variant switcher, centred over the workspace.',
       cost: 'A strip of chrome still crosses all three columns, so the chat and the explorer start lower than they need to.',
+      verdict: 'rejected',
       load: () => import('./option-a'),
     },
     {
@@ -31,6 +32,7 @@ export default defineCall({
       claim:
         'The switcher sits inside the workspace, above the drawing it switches. The top bar shrinks to one thin line for the checkout and the server.',
       cost: 'The line across the top holds two things a reader looks at once a day.',
+      verdict: 'rejected',
       load: () => import('./option-b'),
     },
     {
@@ -40,6 +42,7 @@ export default defineCall({
       claim:
         'Every column owns its own head and foot. The checkout and the server line drop into the foot of the explorer, and the three columns run the full height of the window.',
       cost: 'The checkout path is no longer in one fixed place, and the foot of the explorer holds two unrelated things.',
+      verdict: 'rejected',
       load: () => import('./option-c'),
     },
   ],
