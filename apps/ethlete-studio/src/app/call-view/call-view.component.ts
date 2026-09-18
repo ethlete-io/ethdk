@@ -255,7 +255,7 @@ const SETTLE_MS = 300;
           <div class="studio__canvas">
             @if (option(); as drawn) {
               <div class="studio__stage">
-                <div [style.width.px]="open.frameWidth" class="studio__frame">
+                <div [style.width]="frameWidth()" class="studio__frame">
                   @for (frame of frames(); track frame.key) {
                     <iframe
                       [src]="frame.source"
@@ -699,6 +699,12 @@ export class CallViewComponent {
 
     return checked.ok ? 'check passed' : 'check failed';
   });
+
+  /**
+   * A call's `frameWidth` is the widest the drawing may be, not the width it always gets. A canvas
+   * narrower than the call would otherwise scroll sideways.
+   */
+  protected frameWidth = computed(() => `min(${this.call()?.frameWidth ?? 0}px, 100%)`);
 
   protected roundLabel = computed(() => {
     const call = this.call();

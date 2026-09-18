@@ -742,7 +742,7 @@
 
   .studio__stage {
     display: grid;
-    justify-content: safe center;
+    grid-template-columns: minmax(0, 1fr);
     min-height: 0;
     overflow: auto;
   }
@@ -750,6 +750,7 @@
   .studio__frame {
     position: relative;
     height: 100%;
+    margin-inline: auto;
     border-inline: 0.1rem solid var(--et-surface-border-solid);
     background: var(--et-surface-background-solid);
   }
