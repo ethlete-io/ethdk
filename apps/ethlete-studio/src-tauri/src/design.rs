@@ -14,6 +14,14 @@ pub struct CallOption {
     pub cost: String,
 }
 
+/// One pass over a call, as the call file declares it.
+#[derive(Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CallRound {
+    pub key: String,
+    pub title: String,
+}
+
 #[derive(Debug, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Call {
@@ -29,6 +37,8 @@ pub struct Call {
     pub handoff: bool,
     /// When the call's folder was last written, in seconds since the epoch.
     pub touched: u64,
+    /// Every round the call declares, in the order it wrote them. A call may declare none.
+    pub rounds: Vec<CallRound>,
     pub options: Vec<CallOption>,
 }
 
@@ -120,6 +130,30 @@ fn number_field(source: &str, field: &str) -> Option<u32> {
         .ok()
 }
 
+fn parse_rounds(source: &str) -> Vec<CallRound> {
+    let Some(start) = source.find(ROUNDS_HEADER) else {
+        return Vec::new();
+    };
+
+    let region = &source[start..];
+    let region = region.find(OPTIONS_HEADER).map_or(region, |end| &region[..end]);
+    let starts: Vec<usize> = region.match_indices("key:").map(|(index, _)| index).collect();
+
+    starts
+        .iter()
+        .enumerate()
+        .filter_map(|(position, start)| {
+            let end = starts.get(position + 1).copied().unwrap_or(region.len());
+            let block = &region[*start..end];
+
+            Some(CallRound {
+                key: string_field(block, "key")?,
+                title: string_field(block, "title").unwrap_or_default(),
+            })
+        })
+        .collect()
+}
+
 fn options_region(source: &str) -> Option<&str> {
     source.find("\n  options: [").map(|start| &source[start..])
 }
@@ -161,6 +195,7 @@ fn parse_call(slug: &str, source: &str) -> Call {
         mode: top_field(source, "mode").unwrap_or_else(|| DESIGN_MODE.to_owned()),
         handoff: false,
         touched: 0,
+        rounds: parse_rounds(source),
         options: parse_options(source),
     }
 }
@@ -709,6 +744,20 @@ export default defineCall({
         assert_eq!(call.headline, "What the clock column costs the day");
         assert_eq!(call.frame_width, 1100);
         assert_eq!(call.options.len(), 2);
+    }
+
+    #[test]
+    fn a_call_reads_the_rounds_it_declares() {
+        let rounds = parse_call("x", CALL).rounds;
+
+        assert_eq!(rounds.len(), 1);
+        assert_eq!(rounds[0].key, "r1");
+        assert_eq!(rounds[0].title, "How wide the clock column is");
+    }
+
+    #[test]
+    fn a_call_that_declares_no_round_reads_none() {
+        assert!(parse_rounds("  options: [\n    {\n      key: 'a',\n    },\n  ],").is_empty());
     }
 
     #[test]

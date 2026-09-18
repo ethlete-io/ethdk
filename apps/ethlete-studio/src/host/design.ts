@@ -21,6 +21,12 @@ export type CallOption = {
  */
 export type CallMode = 'wireframe' | 'design';
 
+/** One pass over a call, as the call file declares it. */
+export type CallRound = {
+  key: string;
+  title: string;
+};
+
 /** One open question of an exploration, and every option drawn for it. */
 export type Call = {
   slug: string;
@@ -36,6 +42,8 @@ export type Call = {
   handoff: boolean;
   /** When the call's folder was last written, in seconds since the epoch. */
   touched: number;
+  /** Every round the call declares, in the order it wrote them. A call may declare none. */
+  rounds: CallRound[];
   options: CallOption[];
 };
 

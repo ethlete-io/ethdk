@@ -9,6 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
@@ -180,38 +181,76 @@ const SETTLE_MS = 300;
         @if (!project()) {
           <ethlete-project-picker [projects]="projects()" (pick)="openProject($event)" />
         } @else if (call(); as open) {
-          <div class="flex w-48 shrink-0 flex-col gap-2.5 overflow-auto p-3">
-            @for (tile of tiles(); track tile.key) {
-              <button
-                [style.opacity]="tile.verdict === 'rejected' ? 0.32 : 1"
-                [class.border-et-surface-interaction-ink]="tile.key === optionKey()"
-                (click)="openOption(tile)"
-                class="flex shrink-0 flex-col gap-1.5 rounded border border-et-surface-border bg-et-surface-bg p-1.5 text-left"
-                type="button"
-              >
-                <span
-                  [class.border-et-brand]="tile.verdict === 'chosen'"
-                  [style.height.px]="THUMB_HEIGHT"
-                  class="relative block w-full overflow-hidden rounded-sm border border-transparent"
-                >
-                  @if (tile.source; as source) {
-                    <iframe
-                      [src]="source"
-                      [style.width.px]="open.frameWidth"
-                      [style.height.px]="thumbFrameHeight()"
-                      [style.transform]="thumbTransform()"
-                      class="pointer-events-none absolute top-0 left-0 origin-top-left border-0"
-                      tabindex="-1"
-                      title="The variant, drawn small"
-                    ></iframe>
-                  }
-                </span>
-                <span [class.text-et-brand]="tile.verdict === 'chosen'" class="text-small text-et-surface-muted">{{
-                  tile.name
-                }}</span>
-              </button>
+          <ng-template #tileCard let-tile>
+            <button
+              [class.studio__tile--current]="tile.key === optionKey()"
+              [class.studio__tile--chosen]="tile.verdict === 'chosen'"
+              [class.studio__tile--rejected]="tile.verdict === 'rejected'"
+              (click)="openOption(tile)"
+              class="studio__tile"
+              type="button"
+            >
+              <span [style.height.px]="THUMB_HEIGHT" class="studio__thumb">
+                @if (tile.source; as source) {
+                  <iframe
+                    [src]="source"
+                    [style.width.px]="open.frameWidth"
+                    [style.height.px]="thumbFrameHeight()"
+                    [style.transform]="thumbTransform()"
+                    class="studio__thumb-frame"
+                    tabindex="-1"
+                    title="The variant, drawn small"
+                  ></iframe>
+                }
+                @if (tile.key === optionKey()) {
+                  <span class="studio__tile-tag">on screen</span>
+                } @else if (tile.verdict === 'chosen') {
+                  <span class="studio__tile-tag studio__tile-tag--chosen">chosen</span>
+                }
+              </span>
+              <span class="studio__tile-name">{{ tile.name }}</span>
+            </button>
+          </ng-template>
+
+          <aside class="studio__tiles" etProvideSurface="dark-elevated">
+            @if (bands().open; as open) {
+              <section class="studio__round">
+                <header class="studio__round-head">
+                  <span class="studio__round-key">{{ open.key }}</span>
+                  <span class="studio__round-title">{{ open.title }}</span>
+                  <span class="studio__round-state">open</span>
+                </header>
+
+                @for (tile of open.tiles; track tile.key) {
+                  <ng-container [ngTemplateOutlet]="tileCard" [ngTemplateOutletContext]="{ $implicit: tile }" />
+                }
+              </section>
             }
-          </div>
+
+            @for (band of bands().settled; track band.key) {
+              <div [class.studio__fold--open]="shownFold() === band.key" class="studio__fold">
+                <button (click)="toggleFold(band.key)" class="studio__fold-line" type="button">
+                  <span class="studio__caret"></span>
+                  <span class="studio__round-key">{{ band.key }}</span>
+                  <span class="studio__fold-title">{{ band.title }}</span>
+                  @if (band.winner; as winner) {
+                    <span class="studio__chip">
+                      <i class="studio__chip-key">{{ winner.key }}</i>
+                      <span class="studio__chip-name">{{ tail(winner.name) }}</span>
+                    </span>
+                  }
+                </button>
+
+                @if (shownFold() === band.key) {
+                  <div class="studio__fold-body">
+                    @for (tile of band.tiles; track tile.key) {
+                      <ng-container [ngTemplateOutlet]="tileCard" [ngTemplateOutletContext]="{ $implicit: tile }" />
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </aside>
 
           <div class="studio__canvas">
             @if (option(); as drawn) {
@@ -489,7 +528,7 @@ const SETTLE_MS = 300;
   `,
   styleUrl: './call-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [ProjectPickerComponent, ProvideColorDirective, ProvideSurfaceDirective],
+  imports: [NgTemplateOutlet, ProjectPickerComponent, ProvideColorDirective, ProvideSurfaceDirective],
   host: { class: 'studio' },
 })
 export class CallViewComponent {
@@ -516,6 +555,8 @@ export class CallViewComponent {
 
   /** The settled feature group the explorer leaves unfolded. An empty name folds them all. */
   protected settledFeature = signal(rememberedView().settledFeature ?? '');
+
+  private fold = signal<string | null>(null);
 
   protected formVerb = signal<Verb | null>(null);
   protected count = signal(3);
@@ -654,6 +695,42 @@ export class CallViewComponent {
     return call.options.map((option) => ({ ...option, source: sources.get(option.key) ?? null }));
   });
 
+  /**
+   * The open call by round: the first round that still holds an unruled variant, and every round
+   * that has ruled, newest first.
+   */
+  protected bands = computed(() => {
+    const call = this.call();
+    const tiles = this.tiles();
+
+    if (!call) return { open: null, settled: [] };
+
+    const titles = new Map(call.rounds.map((round) => [round.key, round.title]));
+    const keys = call.rounds.length
+      ? call.rounds.map((round) => round.key)
+      : [...new Set(tiles.map((tile) => tile.round ?? ''))];
+
+    const bands = keys
+      .map((key) => {
+        const own = tiles.filter((tile) => (tile.round ?? '') === key);
+
+        return {
+          key,
+          title: titles.get(key) ?? '',
+          tiles: own,
+          winner: own.find((tile) => tile.verdict === 'chosen') ?? null,
+        };
+      })
+      .filter((band) => band.tiles.length);
+
+    const open = bands.find((band) => band.tiles.some((tile) => !tile.verdict)) ?? null;
+
+    return { open, settled: bands.filter((band) => band !== open).reverse() };
+  });
+
+  /** Which settled round is unfolded. The newest one is, until the reader says otherwise. */
+  protected shownFold = computed(() => this.fold() ?? this.bands().settled[0]?.key ?? '');
+
   protected thumbFrameHeight = computed(() => Math.round((this.call()?.frameWidth ?? 0) * THUMB_ASPECT));
 
   protected thumbTransform = computed(() => {
@@ -730,6 +807,14 @@ export class CallViewComponent {
   }
 
   /** Unfolds one settled feature group and folds the one that was open. */
+  protected toggleFold(key: string) {
+    this.fold.set(this.shownFold() === key ? '' : key);
+  }
+
+  protected tail(name: string) {
+    return name.split(' · ')[1] ?? name;
+  }
+
   protected toggleFeature(name: string) {
     const settledFeature = this.settledFeature() === name ? '' : name;
 
@@ -806,6 +891,7 @@ export class CallViewComponent {
 
   protected openCall(call: Call, option = call.options[0]?.key ?? '') {
     this.formVerb.set(null);
+    this.fold.set(null);
     this.slug.set(call.slug);
     this.optionKey.set(option);
     rememberView({ checkout: this.checkout(), slug: call.slug, option });
