@@ -1,35 +1,35 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { css, drawing, html } from '@design-explore';
 import { BandTreatment, KERBE_VARS } from '../../../kerbe';
-import { KerbeBandComponent } from '../../../kerbe-band.component';
+import { KERBE_BAND_STYLES, kerbeBand } from '../../../kerbe-band.component';
 import { BAND, STATES } from './fixture';
 
-@Component({
-  selector: 'ethlete-design-band-states',
-  template: `
+const TREATMENT: BandTreatment = 'inlay';
+
+export default drawing({
+  body: html`
     <div class="page">
       <div class="grid">
-        @for (state of STATES; track state.key) {
-          <div class="cell">
-            <h2>{{ state.name }}</h2>
-            <div class="slot">
-              <ethlete-design-kerbe-band
-                [band]="BAND"
-                [treatment]="TREATMENT"
-                [marked]="!!state.marked"
-                [dragging]="!!state.dragging"
-                [attr.data-state]="state.key"
-              />
+        ${STATES.map(
+          (state) => html`
+            <div class="cell">
+              <h2>${state.name}</h2>
+              <div class="slot" data-state="${state.key}">
+                ${kerbeBand({
+                  band: BAND,
+                  treatment: TREATMENT,
+                  marked: !!state.marked,
+                  dragging: !!state.dragging,
+                })}
+              </div>
+              <p class="claim">${state.claim}</p>
             </div>
-            <p class="claim">{{ state.claim }}</p>
-          </div>
-        }
+          `,
+        )}
       </div>
     </div>
   `,
-  encapsulation: ViewEncapsulation.None,
-  imports: [KerbeBandComponent],
-  styles: `
-    ethlete-design-band-states .page {
+  styles: css`
+    .page {
       ${KERBE_VARS}
       padding: 4rem;
       background: var(--k-ground);
@@ -38,19 +38,19 @@ import { BAND, STATES } from './fixture';
       color: var(--k-ink-2);
     }
 
-    ethlete-design-band-states .grid {
+    .grid {
       display: grid;
       grid-template-columns: repeat(3, 26rem);
       gap: 3.2rem;
     }
 
-    ethlete-design-band-states .cell {
+    .cell {
       display: flex;
       flex-direction: column;
       gap: 0.8rem;
     }
 
-    ethlete-design-band-states h2 {
+    h2 {
       margin: 0;
       font-family: var(--k-mono);
       font-size: 1.1rem;
@@ -61,21 +61,18 @@ import { BAND, STATES } from './fixture';
     }
 
     /* The grid line under the band is what a drag has to read through, so every cell carries one. */
-    ethlete-design-band-states .slot {
+    .slot {
       background: repeating-linear-gradient(to bottom, transparent 0 3.9rem, rgb(255 255 255 / 0.06) 3.9rem 4rem);
     }
 
-    ethlete-design-band-states .claim {
+    .claim {
       margin: 0;
       font-size: 1.2rem;
       line-height: 1.5;
       color: var(--k-ink-3);
       text-wrap: pretty;
     }
+
+    ${KERBE_BAND_STYLES}
   `,
-})
-export default class BandStatesViewComponent {
-  protected readonly BAND = BAND;
-  protected readonly STATES = STATES;
-  protected readonly TREATMENT: BandTreatment = 'inlay';
-}
+});
