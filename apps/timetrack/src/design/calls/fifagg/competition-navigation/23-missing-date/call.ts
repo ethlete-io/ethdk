@@ -10,6 +10,7 @@ export default defineCall({
   options: [
     {
       key: 'a',
+      verdict: 'chosen',
       name: 'A · Keep the verb, drop the time',
       claim:
         'The name keeps a word that places it in time: "Group Stage next", "Final ended". The word never depends on a date, so every state reads the same way.',
@@ -18,6 +19,7 @@ export default defineCall({
     },
     {
       key: 'b',
+      verdict: 'rejected',
       name: 'B · The name alone',
       claim:
         'With no date, the chip is the stage name and the ring. Nothing is written that the data did not give, and the chip is at its shortest exactly when a name is longest.',
@@ -26,6 +28,7 @@ export default defineCall({
     },
     {
       key: 'c',
+      verdict: 'rejected',
       name: 'C · Say the date is missing',
       claim:
         'The chip reads "Group Stage · date to come", so a missing schedule is stated rather than hidden, and a reader stops waiting for a time that is not coming.',

@@ -45,6 +45,7 @@ The source this redesigns is `/home/tom/dev/fifagg/fifagg-frontend`:
 | 20 · long stage   | What does the chip do with a stage name it cannot fit?               | B · drop "is live now" before the name is cut                                                       | A · truncate the name inside the chip; C · wrap the chip to two lines                                                                         |
 | 21 · alignment    | What do the chip and the square line up with in the header above?    | A · the boxes line up, on the header's 16px gutter                                                  | B · the ink lines up, breaking the gutter; C · the row keeps its own 24px gutter                                                              |
 | 22 · other states | What does the chip carry when no stage is live?                      | A · the nearest stage, forward or backward                                                          | B · the chip is only ever a live stage; C · the chip states the competition                                                                   |
+| 23 · missing date | What does the chip read when the stage has no date it can show?      | A · keep the verb, drop the time                                                                    | B · the name alone; C · say the date is missing                                                                                               |
 
 Calls 1 to 8 ran before the drawing tool dropped Angular. Their sketches no longer render; call 8
 `call.ts` still records what each round ruled.
@@ -86,4 +87,12 @@ Call 21 ruled that a filled shape aligns by its edge. The chip and the square si
 Call 22 ruled the chip names the nearest stage in every state: the next one starts, the last one
 ended. Only the announced competition, which has no stage at all, drops the chip. The user added a
 constraint with the ruling: `scheduledAt` is often missing or holds a value that cannot be shown, so
-the chip has to read without a time. Call 23 asks what it says then.
+the chip has to read without a time.
+
+Call 23 ruled the chip keeps a word that places the stage in time, and drops only the time itself.
+"next" is accepted. "ended" is not: the user called the word wrong, so call 24 asks what a stage
+that is over reads instead.
+
+Every row drawing from call 24 on carries two strips it is easy to forget: the live state, which is
+the reference every other state is judged against, and an overflow state with a stage name the chip
+cannot fit.
