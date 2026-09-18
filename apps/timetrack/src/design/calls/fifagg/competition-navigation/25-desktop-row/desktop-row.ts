@@ -44,7 +44,7 @@ const liveSplit = (rule: ChevronRule, long: boolean) => {
       <span class="dot"></span>
       <span class="ctl__text">
         <b>${long ? LIVE.long : LIVE.name}</b>
-        ${!long && html`<small>${LIVE.detail}</small>`}
+        <small>${LIVE.detail}</small>
       </span>
     </a>
   `;
@@ -338,6 +338,7 @@ export const desktopRow = ({ rule }: { rule: ChevronRule }) =>
       }
 
       .ctl__text b {
+        max-width: 260px;
         overflow: hidden;
         color: rgb(var(--primary));
         font-weight: 500;

@@ -5,11 +5,12 @@ export default defineCall({
   eyebrow: 'Fifagg · call 25',
   headline: 'How does the chevron sit against the live stage control?',
   intro:
-    'The row is call 16 A with the competition name removed: the page strip at the gutter, every page fitting at 1400px, no overflow menu and no count on anything. The control now carries the subline the phone settled, so it is two lines tall when the stage name is short, and one line when it is not. That makes the chevron beside it a column of empty height. The second row in each frame is the long-name case.',
+    'The row is call 16 A with the competition name removed: the page strip at the gutter, every page fitting at 1400px, no overflow menu and no count on anything. The control now carries the subline the phone settled, so it is always two lines tall. The name truncates at 260px; the subline never gives way, because the control keeps its height either way. That makes the chevron beside it a column of empty height. The second row in each frame is the long-name case.',
   frameWidth: 1400,
   options: [
     {
       key: 'a',
+      verdict: 'chosen',
       name: 'A · The seam runs the full height',
       claim:
         'One object, cut in two: the seam meets the border top and bottom, so the two halves read as one control with two jobs.',
@@ -18,6 +19,7 @@ export default defineCall({
     },
     {
       key: 'b',
+      verdict: 'rejected',
       name: 'B · The seam is inset',
       claim:
         'The seam shrinks to 22px and centres, so it separates the two jobs without cutting the shape, and the chevron sits on its own centre line.',
@@ -26,6 +28,7 @@ export default defineCall({
     },
     {
       key: 'c',
+      verdict: 'rejected',
       name: 'C · The chevron is its own square',
       claim:
         'No seam at all. The chevron becomes a bounded square beside the control with a gap, which is exactly the pair the phone settled.',

@@ -47,6 +47,7 @@ The source this redesigns is `/home/tom/dev/fifagg/fifagg-frontend`:
 | 22 · other states | What does the chip carry when no stage is live?                      | A · the nearest stage, forward or backward                                                          | B · the chip is only ever a live stage; C · the chip states the competition                                                                   |
 | 23 · missing date | What does the chip read when the stage has no date it can show?      | A · keep the verb, drop the time                                                                    | B · the name alone; C · say the date is missing                                                                                               |
 | 24 · past stage   | What does the chip say about a stage that is over?                   | A · name what the tap gives, "Final results"                                                        | B · match the live voice, "is over"; C · the date it happened                                                                                 |
+| 25 · chevron      | How does the chevron sit against the live stage control?             | A · the seam runs the full height                                                                   | B · the seam is inset to 22px; C · the chevron is its own square                                                                              |
 
 Calls 1 to 8 ran before the drawing tool dropped Angular. Their sketches no longer render; call 8
 `call.ts` still records what each round ruled.
@@ -111,8 +112,9 @@ Three corrections the user made on that view:
   decision holds everywhere, not only on the phone.
 
 The desktop control then took the subline the phone settled: the stage name on the first line, the
-word under it, and no subline at all when the name is too long to leave room. Call 25 asks the one
-thing that change opened, which is how the chevron sits beside a control that is now two lines tall.
+word under it. Call 25 ruled the seam runs the full height of the control, and with a control that
+keeps one height either way the subline always fits. So the subline never gives way on desktop; the
+name truncates at 260px instead.
 
 Every row drawing from call 24 on carries two strips it is easy to forget: the live state, which is
 the reference every other state is judged against, and an overflow state with a stage name the chip
