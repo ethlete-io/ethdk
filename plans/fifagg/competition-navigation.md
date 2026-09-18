@@ -110,6 +110,10 @@ Three corrections the user made on that view:
 - The "More" button, wherever it returns, carries no count either. The standing "no count badge"
   decision holds everywhere, not only on the phone.
 
+The desktop control then took the subline the phone settled: the stage name on the first line, the
+word under it, and no subline at all when the name is too long to leave room. Call 25 asks the one
+thing that change opened, which is how the chevron sits beside a control that is now two lines tall.
+
 Every row drawing from call 24 on carries two strips it is easy to forget: the live state, which is
 the reference every other state is judged against, and an overflow state with a stage name the chip
 cannot fit.

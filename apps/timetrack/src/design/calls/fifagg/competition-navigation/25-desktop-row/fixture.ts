@@ -6,6 +6,8 @@ export const COMPETITION = {
 /** A stage carries one name. `Group Stage · Week 4` was invented. */
 export const LIVE = {
   name: 'Group Stage',
+  detail: 'is live now',
+  long: 'Play-In Qualifier Round 2 · Europe & Africa',
 };
 
 export const PAGES = [

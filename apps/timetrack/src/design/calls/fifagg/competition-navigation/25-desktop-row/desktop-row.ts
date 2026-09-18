@@ -1,5 +1,5 @@
 import { css, drawing, html } from '@design-explore';
-import { COMPETITION, CURRENT, LIVE, PAGES } from './fixture';
+import { CURRENT, LIVE, PAGES } from './fixture';
 
 const searchIcon = html`
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -33,13 +33,39 @@ const desktopBar = html`
   </header>
 `;
 
-const liveSplit = html`
-  <span class="ctl ctl--live ctl--split">
-    <a class="ctl__main"><span class="dot"></span><span>${LIVE.name}</span></a>
-    <span class="ctl__seam"></span>
-    <button class="ctl__more" type="button" aria-label="All stages"><em>⌄</em></button>
-  </span>
-`;
+/** Where the chevron that opens all stages sits against the live stage control. */
+export type ChevronRule = 'full-seam' | 'inset-seam' | 'own-square';
+
+const chevron = html`<button class="ctl__more" type="button" aria-label="All stages"><em>⌄</em></button>`;
+
+const liveSplit = (rule: ChevronRule, long: boolean) => {
+  const main = html`
+    <a class="ctl__main">
+      <span class="dot"></span>
+      <span class="ctl__text">
+        <b>${long ? LIVE.long : LIVE.name}</b>
+        ${!long && html`<small>${LIVE.detail}</small>`}
+      </span>
+    </a>
+  `;
+
+  if (rule === 'own-square') {
+    return html`
+      <span class="pair">
+        <span class="ctl ctl--live">${main}</span>
+        <span class="ctl ctl--live ctl--square">${chevron}</span>
+      </span>
+    `;
+  }
+
+  return html`
+    <span class="ctl ctl--live ctl--split" data-seam="${rule}">
+      ${main}
+      <span class="ctl__seam"></span>
+      ${chevron}
+    </span>
+  `;
+};
 
 const links = html`
   <div class="links">${PAGES.map((page) => html`<a class="${page === CURRENT ? 'is-current' : ''}">${page}</a>`)}</div>
@@ -49,7 +75,7 @@ const links = html`
  * The call 16 A row with the competition name removed. At 1400px every page fits, so there is no
  * overflow menu, and no control carries a count.
  */
-export const desktopRow = () =>
+export const desktopRow = ({ rule }: { rule: ChevronRule }) =>
   drawing({
     body: html`
       <div class="page">
@@ -58,13 +84,16 @@ export const desktopRow = () =>
           <nav class="sub">
             ${links}
             <span class="grow"></span>
-            ${liveSplit}
+            ${liveSplit(rule, false)}
           </nav>
         </div>
-        <div class="peek">
-          <small>Hosted by FIFAe</small>
-          <b>${COMPETITION.name}</b>
-          <span></span>
+        <span class="caption">A stage name the control cannot fit · no subline</span>
+        <div class="stack">
+          <nav class="sub">
+            ${links}
+            <span class="grow"></span>
+            ${liveSplit(rule, true)}
+          </nav>
         </div>
       </div>
     `,
@@ -256,7 +285,7 @@ export const desktopRow = () =>
       }
 
       .ctl {
-        height: 36px;
+        height: 40px;
         padding-inline: 12px;
         border: 1px solid transparent;
         border-radius: 10px;
@@ -296,6 +325,52 @@ export const desktopRow = () =>
         width: 1px;
         height: 100%;
         background: rgb(var(--primary) / 0.28);
+      }
+
+      [data-seam='inset-seam'] .ctl__seam {
+        align-self: center;
+        height: 22px;
+      }
+
+      .ctl__text {
+        display: grid;
+        text-align: left;
+      }
+
+      .ctl__text b {
+        overflow: hidden;
+        color: rgb(var(--primary));
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 1.15;
+        text-overflow: ellipsis;
+      }
+
+      .ctl__text small {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.15;
+      }
+
+      .pair {
+        display: flex;
+        gap: 8px;
+      }
+
+      .ctl--square {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        padding-inline: 0;
+      }
+
+      .caption {
+        display: block;
+        margin: 18px 2px 8px;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
       }
 
       .ctl__more {

@@ -1,3 +1,3 @@
 import { desktopRow } from './desktop-row';
 
-export default desktopRow();
+export default desktopRow({ rule: 'full-seam' });
