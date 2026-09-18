@@ -1,5 +1,4 @@
 import { Call } from '../../host/design';
-import { CallOrder } from './remembered';
 
 /** One project of a checkout: the top folder of a call slug, with how much of it is still open. */
 export type ProjectSummary = {
@@ -18,25 +17,60 @@ const matches = (call: Call, term: string) =>
 
 const byName = (left: Call, right: Call) => left.slug.localeCompare(right.slug);
 
-const byOpen = (left: Call, right: Call) => openOptions(right) - openOptions(left) || byName(left, right);
-
-/** Which calls the sidebar draws, in which order, and what the reader typed to find them. */
+/** Which calls the explorer draws, and what the reader typed to find them. */
 export type CallListRequest = {
   calls: Call[];
   /** Only the calls of this project. An empty name keeps every call. */
   project: string;
   /** Matched against the slug, the eyebrow and the headline. An empty term keeps every call. */
   term: string;
-  order: CallOrder;
 };
 
-/** The call list as the sidebar draws it: one project, found by the term, in the order asked for. */
-export const callList = ({ calls, project, term, order }: CallListRequest): Call[] => {
+/** The calls of one project that the term found, by name. */
+export const callList = ({ calls, project, term }: CallListRequest): Call[] => {
   const wanted = term.trim().toLowerCase();
 
-  return calls
-    .filter((call) => (!project || projectOf(call) === project) && matches(call, wanted))
-    .sort(order === 'open' ? byOpen : byName);
+  return calls.filter((call) => (!project || projectOf(call) === project) && matches(call, wanted)).sort(byName);
+};
+
+/** Every call that still has an open variant, the most recently written first. */
+export const unsettledCalls = (request: CallListRequest): Call[] =>
+  callList(request)
+    .filter((call) => openOptions(call) > 0)
+    .sort((left, right) => right.touched - left.touched);
+
+/** Every round of a call, in the order its options declare them, each saying whether it is settled. */
+export const roundPips = (call: Call): boolean[] => {
+  const rounds = new Map<string, boolean>();
+
+  for (const option of call.options) {
+    const key = option.round ?? option.key;
+
+    rounds.set(key, (rounds.get(key) ?? true) && !!option.verdict);
+  }
+
+  return [...rounds.values()];
+};
+
+const MINUTE = 60;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+const WEEK = 7 * DAY;
+
+const count = (amount: number, unit: string) => `${amount} ${unit}${amount === 1 ? '' : 's'} ago`;
+
+/** How long ago a call was written, in the words the explorer prints. */
+export const touchedLabel = (touched: number, now = Date.now() / 1000): string => {
+  const ago = Math.max(0, now - touched);
+
+  if (!touched) return '';
+  if (ago < MINUTE) return 'just now';
+  if (ago < HOUR) return count(Math.round(ago / MINUTE), 'minute');
+  if (ago < DAY) return count(Math.round(ago / HOUR), 'hour');
+  if (ago < 2 * DAY) return 'yesterday';
+  if (ago < WEEK) return count(Math.round(ago / DAY), 'day');
+
+  return count(Math.round(ago / WEEK), 'week');
 };
 
 /** The heading a call without a feature reads under. */
@@ -49,7 +83,7 @@ export type FeatureGroup = {
   calls: Call[];
 };
 
-/** The sidebar's list: one band per feature of the project, the loose calls last. */
+/** One band per feature of the project, the loose calls last. */
 export const featureGroups = (request: CallListRequest): FeatureGroup[] => {
   const found = new Map<string, Call[]>();
 
@@ -65,6 +99,10 @@ export const featureGroups = (request: CallListRequest): FeatureGroup[] => {
 };
 
 const rank = (name: string) => (name === LOOSE_FEATURE ? 1 : 0);
+
+/** The settled half of the explorer: every call with no open variant left, grouped by feature. */
+export const settledGroups = (request: CallListRequest): FeatureGroup[] =>
+  featureGroups({ ...request, calls: request.calls.filter((call) => openOptions(call) === 0) });
 
 /** Every project of a checkout, by name, as the welcome screen lists them. */
 export const projectSummaries = (calls: Call[]): ProjectSummary[] => {

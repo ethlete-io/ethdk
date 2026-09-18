@@ -35,7 +35,15 @@ import {
 } from '../../host/design';
 import { workspaceRoot$ } from '../../host/workspace';
 import { Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
-import { featureGroups, openOptions, projectOf, projectSummaries } from './grouping';
+import {
+  openOptions,
+  projectOf,
+  projectSummaries,
+  roundPips,
+  settledGroups,
+  touchedLabel,
+  unsettledCalls,
+} from './grouping';
 import { ProjectPickerComponent } from './project-picker.component';
 import {
   CONTEXT_LIMIT,
@@ -48,7 +56,7 @@ import {
   withTurn,
   writeSessions,
 } from './sessions';
-import { CallOrder, rememberView, rememberedView } from './remembered';
+import { rememberView, rememberedView } from './remembered';
 
 const THUMB_WIDTH = 180;
 
@@ -73,6 +81,7 @@ const SETTLE_MS = 300;
             @if (project()) {
               <button (click)="closeProject()" class="studio__project-switch" type="button">
                 Projects
+                <span class="studio__projects-count">{{ projects().length }}</span>
                 <svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5" /></svg>
               </button>
             }
@@ -87,54 +96,83 @@ const SETTLE_MS = 300;
           </div>
         </div>
 
-        <div class="flex min-h-0 flex-col gap-2 overflow-auto p-4">
-          <div class="flex gap-2">
-            @for (choice of ORDERS; track choice.key) {
+        <div class="studio__list">
+          <section class="studio__section">
+            <header class="studio__section-head">
+              <b>Open</b>
+              <span>{{ openCalls().length }}</span>
+            </header>
+
+            @for (call of openCalls(); track call.slug) {
               <button
-                [class.bg-et-surface-bg]="order() === choice.key"
-                (click)="setOrder(choice.key)"
-                class="grow rounded border border-et-surface-border px-3 py-1"
+                [class.studio__row--current]="call.slug === slug()"
+                (click)="openCall(call)"
+                class="studio__row"
                 type="button"
               >
-                {{ choice.label }}
+                <span class="studio__row-head">
+                  <span class="studio__eyebrow">{{ call.eyebrow }}</span>
+                  <span class="studio__touched">{{ touched(call) }}</span>
+                </span>
+                <b>{{ call.headline }}</b>
+                <span class="studio__row-foot">
+                  <span class="studio__tag">{{ call.feature || 'No feature' }}</span>
+                  <span class="studio__pips">
+                    @for (settled of pips(call); track $index) {
+                      <i [class.studio__pip--settled]="settled" class="studio__pip"></i>
+                    }
+                  </span>
+                  <span class="studio__count">{{ settled(call) }} of {{ call.options.length }}</span>
+                </span>
               </button>
+            } @empty {
+              <p class="studio__none">Nothing open.</p>
             }
-          </div>
+          </section>
 
-          <ul class="rounded border border-et-surface-border">
-            @for (feature of features(); track feature.name) {
-              <li>
-                <h2
-                  class="sticky top-0 flex justify-between gap-2 border-b border-et-surface-border bg-et-surface-bg px-3 py-2"
-                >
-                  <span>{{ feature.name }}</span>
-                  <span class="text-et-surface-muted">{{ feature.open }} open</span>
-                </h2>
+          @if (settledCalls()) {
+            <section class="studio__section studio__section--settled">
+              <header class="studio__section-head">
+                <b>Settled</b>
+                <span>{{ settledCalls() }}</span>
+              </header>
 
-                <ul>
-                  @for (call of feature.calls; track call.slug) {
-                    <li>
+              @for (band of settledBands(); track band.name) {
+                <section [class.studio__group--open]="settledFeature() === band.name" class="studio__group">
+                  <button (click)="toggleFeature(band.name)" class="studio__group-head" type="button">
+                    <svg viewBox="0 0 24 24"><path d="m10 7 5 5-5 5" /></svg>
+                    <b>{{ band.name }}</b>
+                    <span>{{ band.calls.length }}</span>
+                  </button>
+
+                  @if (settledFeature() === band.name) {
+                    @for (call of band.calls; track call.slug) {
                       <button
-                        [class.bg-et-surface-bg]="call.slug === slug()"
-                        [class.text-et-surface-muted]="settled(call) === call.options.length"
+                        [class.studio__row--current]="call.slug === slug()"
                         (click)="openCall(call)"
-                        class="flex w-full flex-col gap-1 border-b border-et-surface-border p-3 text-left"
+                        class="studio__row studio__row--settled"
                         type="button"
                       >
-                        <span class="text-et-surface-muted">{{ call.eyebrow }}</span>
-                        <span>{{ call.headline }}</span>
-                        <span class="text-et-surface-muted">
-                          {{ settled(call) }} of {{ call.options.length }} settled
+                        <span class="studio__row-head">
+                          <span class="studio__eyebrow">{{ call.eyebrow }}</span>
+                          <span class="studio__touched">{{ touched(call) }}</span>
+                        </span>
+                        <b>{{ call.headline }}</b>
+                        <span class="studio__row-foot">
+                          <span class="studio__pips">
+                            @for (settled of pips(call); track $index) {
+                              <i [class.studio__pip--settled]="settled" class="studio__pip"></i>
+                            }
+                          </span>
+                          <span class="studio__count">{{ settled(call) }} of {{ call.options.length }}</span>
                         </span>
                       </button>
-                    </li>
+                    }
                   }
-                </ul>
-              </li>
-            } @empty {
-              <li class="p-3 text-et-surface-muted">No call matches.</li>
-            }
-          </ul>
+                </section>
+              }
+            </section>
+          }
         </div>
       </aside>
 
@@ -470,7 +508,9 @@ export class CallViewComponent {
   protected serverBusy = signal(false);
 
   protected filter = signal('');
-  protected order = signal<CallOrder>(rememberedView().order ?? 'name');
+
+  /** The settled feature group the explorer leaves unfolded. An empty name folds them all. */
+  protected settledFeature = signal(rememberedView().settledFeature ?? '');
 
   protected formVerb = signal<Verb | null>(null);
   protected count = signal(3);
@@ -478,11 +518,6 @@ export class CallViewComponent {
   protected making = signal(false);
 
   protected readonly VERBS: Verb[] = ['accept', 'iterate', 'reject', 'more'];
-
-  protected readonly ORDERS: { key: CallOrder; label: string }[] = [
-    { key: 'name', label: 'By name' },
-    { key: 'open', label: 'Open first' },
-  ];
 
   private run: Subscription | null = null;
   private watch: Subscription | null = null;
@@ -540,9 +575,15 @@ export class CallViewComponent {
 
   protected projects = computed(() => projectSummaries(this.calls()));
 
-  protected features = computed(() =>
-    featureGroups({ calls: this.calls(), project: this.project(), term: this.filter(), order: this.order() }),
-  );
+  private listed = computed(() => ({ calls: this.calls(), project: this.project(), term: this.filter() }));
+
+  /** Every call of the project that still has an open variant, the most recently written first. */
+  protected openCalls = computed(() => unsettledCalls(this.listed()));
+
+  /** What is left: the fully settled calls, folded into their feature. */
+  protected settledBands = computed(() => settledGroups(this.listed()));
+
+  protected settledCalls = computed(() => this.settledBands().reduce((total, band) => total + band.calls.length, 0));
 
   protected call = computed(() => this.calls().find((call) => call.slug === this.slug()) ?? null);
 
@@ -656,9 +697,20 @@ export class CallViewComponent {
     return call.options.length - openOptions(call);
   }
 
-  protected setOrder(order: CallOrder) {
-    this.order.set(order);
-    rememberView({ order });
+  protected pips(call: Call) {
+    return roundPips(call);
+  }
+
+  protected touched(call: Call) {
+    return touchedLabel(call.touched);
+  }
+
+  /** Unfolds one settled feature group and folds the one that was open. */
+  protected toggleFeature(name: string) {
+    const settledFeature = this.settledFeature() === name ? '' : name;
+
+    this.settledFeature.set(settledFeature);
+    rememberView({ settledFeature });
   }
 
   protected label(verb: Verb) {

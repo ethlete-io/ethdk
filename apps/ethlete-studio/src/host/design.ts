@@ -34,6 +34,8 @@ export type Call = {
   mode: CallMode;
   /** True when a full agent session already wrote its state into the call's folder. */
   handoff: boolean;
+  /** When the call's folder was last written, in seconds since the epoch. */
+  touched: number;
   options: CallOption[];
 };
 

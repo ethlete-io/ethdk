@@ -27,6 +27,8 @@ pub struct Call {
     pub mode: String,
     /// Whether a full agent session already wrote its state into the call's folder.
     pub handoff: bool,
+    /// When the call's folder was last written, in seconds since the epoch.
+    pub touched: u64,
     pub options: Vec<CallOption>,
 }
 
@@ -158,8 +160,25 @@ fn parse_call(slug: &str, source: &str) -> Call {
         frame_width: number_field(source, "frameWidth").unwrap_or_default(),
         mode: top_field(source, "mode").unwrap_or_else(|| DESIGN_MODE.to_owned()),
         handoff: false,
+        touched: 0,
         options: parse_options(source),
     }
+}
+
+/// When a call last changed: the newest write among its own files, so a redrawn variant counts.
+fn touched_at(directory: &Path) -> u64 {
+    let entries = std::fs::read_dir(directory)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter_map(|entry| entry.metadata().ok()?.modified().ok());
+
+    entries
+        .chain(std::fs::metadata(directory).ok().and_then(|meta| meta.modified().ok()))
+        .max()
+        .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|since| since.as_secs())
+        .unwrap_or_default()
 }
 
 fn call_slugs(root: &Path) -> Vec<String> {
@@ -311,6 +330,7 @@ pub fn design_project(checkout: String) -> Result<Project, String> {
             let mut call = parse_call(&slug, &source);
 
             call.handoff = root.join(&slug).join(HANDOFF_FILE).exists();
+            call.touched = touched_at(&root.join(&slug));
 
             Some(call)
         })
