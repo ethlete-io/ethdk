@@ -17,10 +17,11 @@ impl AgentCli for CodexCli {
         "codex"
     }
 
-    /// Codex names no model in its help output, so Studio offers none and the run takes whatever the
-    /// user types.
     fn suggested_models(&self) -> Vec<String> {
-        Vec::new()
+        ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol", "gpt-6-astra"]
+            .iter()
+            .map(|name| (*name).to_owned())
+            .collect()
     }
 
     fn arguments(&self, request: &AgentRequest, tools: Option<&ToolServer>) -> Vec<String> {
@@ -192,6 +193,14 @@ mod tests {
             .arguments(&asking(), None)
             .iter()
             .any(|argument| argument.starts_with("mcp_servers.")));
+    }
+
+    #[test]
+    fn suggests_the_available_codex_models() {
+        assert_eq!(
+            CodexCli.suggested_models(),
+            ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol", "gpt-6-astra"]
+        );
     }
 
     #[test]

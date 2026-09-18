@@ -167,6 +167,11 @@ mod tests {
     }
 
     #[test]
+    fn suggests_the_available_claude_models() {
+        assert_eq!(ClaudeCli.suggested_models(), ["opus", "sonnet", "haiku", "fable"]);
+    }
+
+    #[test]
     fn a_named_session_is_continued() {
         let arguments = ClaudeCli.arguments(&asking("draw it again", Some("s-7")), None);
         let at = arguments.iter().position(|argument| argument == "--resume");

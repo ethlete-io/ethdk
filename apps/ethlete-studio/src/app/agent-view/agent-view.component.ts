@@ -145,7 +145,7 @@ export class AgentViewComponent {
 
   protected pick(cli: AgentDescriptor) {
     this.cli.set(cli);
-    this.model.set(cli.suggestedModels[0] ?? '');
+    this.model.set('');
   }
 
   protected where() {
