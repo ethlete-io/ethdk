@@ -97,9 +97,10 @@ where the tap goes instead of a state nobody waits for.
 With that, the phone row is settled in every state. What is left is the panel the square opens, and
 the desktop row.
 
-The desktop row starts from call 16 A with the competition name removed: the pages inline, the
-controls at the right end. Call 13 settled that, so no later call re-opens it. Call 25 round 1 did,
-and was rejected whole for it.
+The desktop row is the call 16 A drawing with the competition name and its divider removed, and
+nothing else changed: the page strip at the gutter, "More" as its last entry, and the live stage on
+a split control at the far right. Call 25 is that picture, drawn as a view. An earlier round of 25
+re-asked whether the pages belong in the row at all; it was dropped, because call 13 settled it.
 
 Every row drawing from call 24 on carries two strips it is easy to forget: the live state, which is
 the reference every other state is judged against, and an overflow state with a stage name the chip

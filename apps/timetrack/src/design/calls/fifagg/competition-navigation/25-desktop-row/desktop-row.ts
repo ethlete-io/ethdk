@@ -1,9 +1,5 @@
 import { css, drawing, html } from '@design-explore';
-import { COMPETITION, CURRENT, LIVE, PAGES } from './fixture';
-
-/** What the desktop row does with the width the phone row does not have. */
-export type DesktopRule =
-  'stretched' | 'pages-between' | 'named-control' | 'strip-left' | 'chip-leads' | 'chip-in-strip';
+import { COMPETITION, CURRENT, LIVE, REST_PAGES, STAGE_COUNT, VISIBLE_PAGES } from './fixture';
 
 const searchIcon = html`
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -26,8 +22,6 @@ const laurelIcon = html`
   </svg>
 `;
 
-const grid = html`<span class="grid"><i></i><i></i><i></i><i></i></span>`;
-
 const desktopBar = html`
   <header class="bar">
     <span class="logo">FIFA<i>e</i></span>
@@ -39,90 +33,48 @@ const desktopBar = html`
   </header>
 `;
 
-const chip = html`
-  <button class="chip" type="button">
-    <span class="dot"></span>
-    <b>${LIVE.name}</b>
-    <span class="chip__detail">${LIVE.detail}</span>
+const liveSplit = html`
+  <span class="ctl ctl--live ctl--split">
+    <a class="ctl__main"><span class="dot"></span><span>${LIVE.name}</span></a>
+    <span class="ctl__seam"></span>
+    <button class="ctl__more" type="button" aria-label="All stages">
+      <em>⌄</em><i class="ctl__count">${STAGE_COUNT}</i>
+    </button>
+  </span>
+`;
+
+const overflowButton = html`
+  <button class="ctl ctl--quiet" type="button">
+    <span>More</span>
+    <i class="ctl__count">${REST_PAGES.length}</i>
+    <em>⌄</em>
   </button>
 `;
 
-const pageLinks = html`
-  <div class="links">${PAGES.map((page) => html`<a class="${page === CURRENT ? 'is-current' : ''}">${page}</a>`)}</div>
+const links = html`
+  <div class="links">
+    ${VISIBLE_PAGES.map((page) => html`<a class="${page === CURRENT ? 'is-current' : ''}">${page}</a>`)}
+    ${overflowButton}
+  </div>
 `;
 
-const square = html` <button class="square" type="button" aria-label="All of the competition">${grid}</button> `;
-
-const stageEntry = html` <a class="links__stage"><span class="dot"></span>${LIVE.name}</a> `;
-
-const subRow = (rule: DesktopRule) => {
-  if (rule === 'strip-left') {
-    return html`
-      <nav class="sub">
-        ${pageLinks}
-        <span class="grow"></span>
-        ${chip} ${square}
-      </nav>
-    `;
-  }
-
-  if (rule === 'chip-leads') {
-    return html`
-      <nav class="sub">
-        ${chip} ${pageLinks}
-        <span class="grow"></span>
-        ${square}
-      </nav>
-    `;
-  }
-
-  if (rule === 'chip-in-strip') {
-    return html`
-      <nav class="sub">
-        <div class="links">${stageEntry}${pageLinks}</div>
-        <span class="grow"></span>
-        ${square}
-      </nav>
-    `;
-  }
-
-  if (rule === 'pages-between') {
-    return html`
-      <nav class="sub">
-        ${chip}
-        <span class="grow"></span>
-        ${pageLinks}
-        <span class="grow"></span>
-        <button class="square" type="button" aria-label="All of the competition">${grid}</button>
-      </nav>
-    `;
-  }
-
-  if (rule === 'named-control') {
-    return html`
-      <nav class="sub">
-        ${chip}
-        <span class="grow"></span>
-        <button class="named" type="button">${grid}<span>All of the competition</span></button>
-      </nav>
-    `;
-  }
-
-  return html`
-    <nav class="sub">
-      ${chip}
-      <span class="grow"></span>
-      <button class="square" type="button" aria-label="All of the competition">${grid}</button>
-    </nav>
-  `;
-};
-
-/** The settled phone row at 1400px: one chip, one map control, and nothing the phone dropped. */
-export const desktopRow = ({ rule }: { rule: DesktopRule }) =>
+/**
+ * The call 16 A row with the competition name removed, and nothing else changed: the page strip
+ * starts at the gutter the name held, the overflow menu is its last entry, and the stage control
+ * sits at the far right.
+ */
+export const desktopRow = () =>
   drawing({
     body: html`
       <div class="page">
-        <div class="stack">${desktopBar} ${subRow(rule)}</div>
+        <div class="stack">
+          ${desktopBar}
+          <nav class="sub">
+            ${links}
+            <span class="grow"></span>
+            ${liveSplit}
+          </nav>
+        </div>
         <div class="peek">
           <small>Hosted by FIFAe</small>
           <b>${COMPETITION.name}</b>
@@ -197,8 +149,7 @@ export const desktopRow = ({ rule }: { rule: DesktopRule }) =>
       .zone,
       .search,
       .login,
-      .chip,
-      .named {
+      .ctl {
         display: flex;
         align-items: center;
         gap: 8px;
@@ -263,36 +214,110 @@ export const desktopRow = ({ rule }: { rule: DesktopRule }) =>
       .sub {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 12px;
         min-height: 56px;
-        padding-block: 8px;
-        padding-inline: 18px;
+        padding: 0 18px;
         border-top: 1px solid var(--line);
         background:
           radial-gradient(100% 738.03% at 100% 0%, rgb(var(--primary) / 0.15) 0%, rgb(var(--primary) / 0) 100%),
           var(--card);
       }
 
-      .chip {
-        min-width: 0;
-        height: 40px;
-        padding-inline: 12px;
-        border: 1px solid rgb(var(--primary) / 0.28);
-        border-radius: 10px;
-        background: rgb(var(--primary) / 0.1);
-      }
-
-      .chip b {
+      .name {
+        max-width: 260px;
         overflow: hidden;
-        color: rgb(var(--primary));
         font-weight: 500;
+        font-size: 15px;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
-      .chip__detail {
-        flex: none;
+      [data-rule='short'] .name {
+        max-width: none;
+      }
+
+      .name-entry {
+        max-width: 260px;
+        overflow: hidden;
+        color: var(--ink) !important;
+        font-weight: 500;
+        text-overflow: ellipsis;
+      }
+
+      .rule {
+        width: 1px;
+        height: 22px;
+        background: var(--line);
+      }
+
+      .links {
+        display: flex;
+        gap: 4px;
+      }
+
+      .links a {
+        padding: 9px 14px;
+        border-radius: 10px;
         color: var(--muted);
+        font-size: 14px;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .links a.is-current {
+        background: rgb(var(--primary) / 0.14);
+        color: var(--ink);
+      }
+
+      .ctl {
+        height: 36px;
+        padding-inline: 12px;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        background: #1f2937;
+        font-size: 14px;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .links .ctl--quiet {
+        height: auto;
+        padding: 9px 14px;
+        border-color: transparent;
+        background: none;
+        color: var(--muted);
+      }
+
+      .ctl--live {
+        border-color: rgb(var(--primary) / 0.28);
+        background: rgb(var(--primary) / 0.1);
+      }
+
+      .ctl--split {
+        gap: 0;
+        padding-inline: 0;
+      }
+
+      .ctl__main {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 100%;
+        padding-inline: 12px;
+      }
+
+      .ctl__seam {
+        width: 1px;
+        height: 100%;
+        background: rgb(var(--primary) / 0.28);
+      }
+
+      .ctl__more {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 100%;
+        padding-inline: 10px;
       }
 
       .dot {
@@ -304,76 +329,34 @@ export const desktopRow = ({ rule }: { rule: DesktopRule }) =>
         box-shadow: 0 0 0 3px rgb(var(--primary) / 0.18);
       }
 
-      .links {
-        display: flex;
-        flex: none;
-        gap: 4px;
-      }
-
-      .links a {
-        padding: 7px 12px;
-        border-radius: 8px;
+      .ctl em {
+        font-style: normal;
         color: var(--muted);
-        font-size: 14px;
-        white-space: nowrap;
-        cursor: pointer;
       }
 
-      .links a.is-current {
-        box-shadow: inset 0 -2px 0 rgb(var(--primary));
-        color: var(--ink);
-      }
-
-      .links .links {
-        gap: 4px;
-      }
-
-      .links__stage {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        margin-right: 6px;
-        padding: 7px 12px;
-        border: 1px solid rgb(var(--primary) / 0.28);
-        border-radius: 8px;
-        background: rgb(var(--primary) / 0.1);
-        color: rgb(var(--primary));
-        font-size: 14px;
-        white-space: nowrap;
-        cursor: pointer;
-      }
-
-      .square {
+      .ctl__grid {
         display: grid;
-        flex: none;
-        place-items: center;
-        width: 44px;
-        height: 40px;
-        border-radius: 10px;
-        background: #1f2937;
-      }
-
-      .named {
-        flex: none;
-        height: 40px;
-        padding-inline: 14px;
-        border-radius: 10px;
-        background: #1f2937;
-        font-size: 14px;
-      }
-
-      .grid {
-        display: grid;
-        flex: none;
-        grid-template-columns: repeat(2, 6px);
+        grid-template-columns: repeat(2, 5px);
         gap: 3px;
       }
 
-      .grid i {
-        width: 6px;
-        height: 6px;
+      .ctl__grid i {
+        width: 5px;
+        height: 5px;
         border-radius: 1px;
-        background: var(--ink);
+        background: var(--muted);
+      }
+
+      .ctl__count {
+        display: grid;
+        place-items: center;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        background: #283140;
+        color: var(--muted);
+        font-style: normal;
+        font-size: 11px;
       }
 
       .peek {
@@ -397,8 +380,8 @@ export const desktopRow = ({ rule }: { rule: DesktopRule }) =>
 
       .peek span {
         width: 60%;
-        height: 12px;
-        border-radius: 6px;
+        height: 10px;
+        border-radius: 5px;
         background: rgba(255, 255, 255, 0.06);
       }
     `,
