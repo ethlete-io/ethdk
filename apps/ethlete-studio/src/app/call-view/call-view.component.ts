@@ -358,18 +358,17 @@ const THUMB_ASPECT = 9 / 16;
                         <span class="text-et-surface-muted">{{ found.version }}</span>
                       </button>
                     }
-                    <input
+                    <select
                       [value]="model()"
-                      (input)="model.set(typed($event))"
+                      [disabled]="!cli()"
+                      (change)="model.set(typed($event))"
                       class="w-40 grow rounded border border-et-surface-border px-3 py-1"
-                      list="call-models"
-                      placeholder="Model"
-                    />
-                    <datalist id="call-models">
+                    >
+                      <option value="">CLI default</option>
                       @for (name of cli()?.suggestedModels ?? []; track name) {
-                        <option [value]="name"></option>
+                        <option [value]="name">{{ name }}</option>
                       }
-                    </datalist>
+                    </select>
                   </div>
 
                   <div class="flex flex-wrap items-center gap-2">
@@ -650,7 +649,7 @@ export class CallViewComponent {
   }
 
   protected typed(event: Event) {
-    return (event.target as HTMLInputElement | HTMLTextAreaElement).value;
+    return (event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value;
   }
 
   protected setCheckout(path: string) {
@@ -725,7 +724,7 @@ export class CallViewComponent {
 
   protected pick(cli: AgentDescriptor | null) {
     this.cli.set(cli);
-    this.model.set(cli?.suggestedModels[0] ?? '');
+    this.model.set('');
   }
 
   protected setCount(event: Event) {

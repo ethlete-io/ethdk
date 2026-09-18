@@ -35,18 +35,17 @@ import { workspaceRoot$ } from '../../host/workspace';
           class="grow rounded border border-et-surface-border px-3 py-1 text-mono"
           placeholder="The checkout the agent works in"
         />
-        <input
+        <select
           [value]="model()"
-          (input)="model.set(typed($event))"
+          [disabled]="!cli()"
+          (change)="model.set(typed($event))"
           class="w-48 rounded border border-et-surface-border px-3 py-1"
-          list="agent-models"
-          placeholder="Model"
-        />
-        <datalist id="agent-models">
+        >
+          <option value="">CLI default</option>
           @for (name of cli()?.suggestedModels ?? []; track name) {
-            <option [value]="name"></option>
+            <option [value]="name">{{ name }}</option>
           }
-        </datalist>
+        </select>
       </div>
 
       <textarea
@@ -140,7 +139,7 @@ export class AgentViewComponent {
   private run: Subscription | null = null;
 
   protected typed(event: Event) {
-    return (event.target as HTMLInputElement | HTMLTextAreaElement).value;
+    return (event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value;
   }
 
   protected pick(cli: AgentDescriptor) {
