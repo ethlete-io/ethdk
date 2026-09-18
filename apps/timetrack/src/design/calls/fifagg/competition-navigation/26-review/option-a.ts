@@ -1,3 +1,3 @@
-import { phoneRow } from './phone';
+import { review } from './review';
 
-export default phoneRow();
+export default review();

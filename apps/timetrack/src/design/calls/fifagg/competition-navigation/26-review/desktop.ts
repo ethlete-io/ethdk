@@ -67,6 +67,13 @@ const liveSplit = (rule: ChevronRule, long: boolean) => {
   `;
 };
 
+const narrowLinks = html`
+  <div class="links">
+    ${PAGES.slice(0, 4).map((page) => html`<a class="${page === CURRENT ? 'is-current' : ''}">${page}</a>`)}
+    <button class="ctl ctl--quiet" type="button"><span>More</span><em>⌄</em></button>
+  </div>
+`;
+
 const links = html`
   <div class="links">${PAGES.map((page) => html`<a class="${page === CURRENT ? 'is-current' : ''}">${page}</a>`)}</div>
 `;
@@ -83,6 +90,14 @@ export const desktopRow = () =>
           ${desktopBar}
           <nav class="sub">
             ${links}
+            <span class="grow"></span>
+            ${liveSplit('full-seam', false)}
+          </nav>
+        </div>
+        <span class="caption">A viewport too narrow for every page · the strip overflows</span>
+        <div class="stack stack--narrow">
+          <nav class="sub">
+            ${narrowLinks}
             <span class="grow"></span>
             ${liveSplit('full-seam', false)}
           </nav>
@@ -120,6 +135,10 @@ export const desktopRow = () =>
         color: var(--ink);
         font-family: Jost, system-ui, sans-serif;
         font-size: 15px;
+      }
+
+      .stack--narrow {
+        width: 1024px;
       }
 
       .stack {
