@@ -102,6 +102,14 @@ nothing else changed: the page strip at the gutter, "More" as its last entry, an
 a split control at the far right. Call 25 is that picture, drawn as a view. An earlier round of 25
 re-asked whether the pages belong in the row at all; it was dropped, because call 13 settled it.
 
+Three corrections the user made on that view:
+
+- At 1400px every page fits, so the row carries no "More" menu. The overflow is a narrower-viewport
+  question, not a desktop one.
+- The split control carries no stage count.
+- The "More" button, wherever it returns, carries no count either. The standing "no count badge"
+  decision holds everywhere, not only on the phone.
+
 Every row drawing from call 24 on carries two strips it is easy to forget: the live state, which is
 the reference every other state is judged against, and an overflow state with a stage name the chip
 cannot fit.

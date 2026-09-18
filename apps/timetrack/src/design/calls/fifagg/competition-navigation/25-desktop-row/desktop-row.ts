@@ -1,5 +1,5 @@
 import { css, drawing, html } from '@design-explore';
-import { COMPETITION, CURRENT, LIVE, REST_PAGES, STAGE_COUNT, VISIBLE_PAGES } from './fixture';
+import { COMPETITION, CURRENT, LIVE, PAGES } from './fixture';
 
 const searchIcon = html`
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -37,31 +37,17 @@ const liveSplit = html`
   <span class="ctl ctl--live ctl--split">
     <a class="ctl__main"><span class="dot"></span><span>${LIVE.name}</span></a>
     <span class="ctl__seam"></span>
-    <button class="ctl__more" type="button" aria-label="All stages">
-      <em>⌄</em><i class="ctl__count">${STAGE_COUNT}</i>
-    </button>
+    <button class="ctl__more" type="button" aria-label="All stages"><em>⌄</em></button>
   </span>
 `;
 
-const overflowButton = html`
-  <button class="ctl ctl--quiet" type="button">
-    <span>More</span>
-    <i class="ctl__count">${REST_PAGES.length}</i>
-    <em>⌄</em>
-  </button>
-`;
-
 const links = html`
-  <div class="links">
-    ${VISIBLE_PAGES.map((page) => html`<a class="${page === CURRENT ? 'is-current' : ''}">${page}</a>`)}
-    ${overflowButton}
-  </div>
+  <div class="links">${PAGES.map((page) => html`<a class="${page === CURRENT ? 'is-current' : ''}">${page}</a>`)}</div>
 `;
 
 /**
- * The call 16 A row with the competition name removed, and nothing else changed: the page strip
- * starts at the gutter the name held, the overflow menu is its last entry, and the stage control
- * sits at the far right.
+ * The call 16 A row with the competition name removed. At 1400px every page fits, so there is no
+ * overflow menu, and no control carries a count.
  */
 export const desktopRow = () =>
   drawing({
@@ -345,18 +331,6 @@ export const desktopRow = () =>
         height: 5px;
         border-radius: 1px;
         background: var(--muted);
-      }
-
-      .ctl__count {
-        display: grid;
-        place-items: center;
-        min-width: 18px;
-        height: 18px;
-        border-radius: 9px;
-        background: #283140;
-        color: var(--muted);
-        font-style: normal;
-        font-size: 11px;
       }
 
       .peek {

@@ -5,7 +5,7 @@ export default defineCall({
   eyebrow: 'Fifagg · call 25',
   headline: 'The desktop row: call 16 A with the competition name removed',
   intro:
-    'A reference picture, not a question. It is the call 16 A drawing with one change: the competition name and its divider are gone, so the page strip starts at the gutter the name held. Everything else is untouched - the four visible pages, the "More" button as the last entry in the strip, and the live stage on a split control at the far right. The stage reads "Group Stage", because "Group Stage · Week 4" was ruled invented.',
+    'A reference picture, not a question. It is the call 16 A drawing with one change: the competition name and its divider are gone, so the page strip starts at the gutter the name held. Three corrections follow from it: at 1400px every page fits, so the row carries no "More" menu, and neither the strip nor the split control carries a count badge. What is left is the page strip at the gutter and the live stage on a split control at the far right. The stage reads "Group Stage", because "Group Stage · Week 4" was ruled invented.',
   frameWidth: 1400,
   options: [
     {
