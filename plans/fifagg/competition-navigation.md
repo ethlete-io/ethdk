@@ -48,7 +48,13 @@ Standing decisions:
 - The global header stays the source implementation. The competition row never replaces it.
 - The row splits today's strip into what it really is: three pages about the competition, and the
   stage children, which carry `executionStatus`.
-- No "you are on X" label.
+- No "you are on X" label, and no "Overview · 5 more pages" line either: no product writes that.
+- A stage carries one name. `Group Stage · Week 4` was invented; the row states the child stage name,
+  whatever it is.
+- The row carries no count badge.
+- The shipped Overview/Tournament tabs are the navigation this redesign replaces, so no drawing shows
+  them.
+- The control opens a full-page panel that the bar morphs into, holding everything the competition has.
 - The competition part of the bar wears a subtle competition theme gradient.
 
 ## Open
@@ -68,5 +74,5 @@ Standing decisions:
 - **The desktop row, once the phone is settled.** Calls 9 to 16 designed at 1400px first. Call 17
   restarts at 390px, and the desktop row has to follow whatever the phone settles.
 
-Call 17 runs on a premise the user stated and call 17 itself has to confirm: the row carries no
-competition name at all.
+Calls 17 and 18 are drawn and unruled. The exploration moved past them: the user kept the call 12 A
+shape, dropped the name from it, and the live question is now call 19, the map control itself.
