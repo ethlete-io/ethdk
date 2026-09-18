@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
+import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { EMPTY, Subscription, catchError, debounceTime, finalize, map, of, switchMap, tap } from 'rxjs';
 import { AgentDescriptor, AgentEvent, AgentTools, agentList$, agentRun$ } from '../../host/agent';
 import {
@@ -63,385 +64,390 @@ const SETTLE_MS = 300;
 @Component({
   selector: 'ethlete-call-view',
   template: `
-    <div class="flex min-h-0 grow flex-col gap-4 p-8">
-      <div class="flex flex-wrap items-baseline gap-4">
-        <h1 class="text-h2">{{ project() || 'Calls' }}</h1>
+    <div class="studio__body">
+      <aside [etProvideSurface]="'dark-elevated'" class="studio__explorer">
+        <div class="studio__explorer-head">
+          <div class="studio__project">
+            <h1>{{ project() || 'Calls' }}</h1>
 
-        @if (project()) {
-          <button (click)="closeProject()" class="rounded border border-et-surface-border px-3 py-1" type="button">
-            Projects
-          </button>
-        }
-        <input
-          [value]="checkout()"
-          (change)="setCheckout(typed($event))"
-          class="grow rounded border border-et-surface-border px-3 py-1 text-mono"
-          placeholder="The checkout the design work lives in"
-        />
-        <button (click)="reload()" class="rounded border border-et-surface-border px-3 py-1" type="button">
-          Reload
-        </button>
+            @if (project()) {
+              <button (click)="closeProject()" class="studio__project-switch" type="button">
+                Projects
+                <svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5" /></svg>
+              </button>
+            }
+          </div>
 
-        @if (serverLine(); as line) {
-          <span class="text-et-surface-muted text-mono">{{ line }}</span>
-        }
+          <div class="studio__search">
+            <svg viewBox="0 0 24 24">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="m15.5 15.5 5 5" />
+            </svg>
+            <input [value]="filter()" (input)="filter.set(typed($event))" placeholder="Search calls" />
+          </div>
+        </div>
 
-        @if (server(); as state) {
-          @if (state.listening && state.managed) {
-            <button (click)="stopServer()" class="rounded border border-et-surface-border px-3 py-1" type="button">
-              Stop server
-            </button>
-          } @else if (!state.listening) {
-            <button
-              [disabled]="serverBusy()"
-              (click)="startServer()"
-              class="rounded border border-et-surface-border px-3 py-1 disabled:opacity-50"
-              type="button"
-            >
-              Start server
-            </button>
-          }
-        }
-      </div>
+        <div class="flex min-h-0 flex-col gap-2 overflow-auto p-4">
+          <div class="flex gap-2">
+            @for (choice of ORDERS; track choice.key) {
+              <button
+                [class.bg-et-surface-bg]="order() === choice.key"
+                (click)="setOrder(choice.key)"
+                class="grow rounded border border-et-surface-border px-3 py-1"
+                type="button"
+              >
+                {{ choice.label }}
+              </button>
+            }
+          </div>
 
-      @if (serverLog().length) {
-        <ul class="text-et-surface-muted text-mono">
-          @for (line of serverLog(); track $index) {
-            <li>{{ line }}</li>
-          }
-        </ul>
-      }
+          <ul class="rounded border border-et-surface-border">
+            @for (feature of features(); track feature.name) {
+              <li>
+                <h2
+                  class="sticky top-0 flex justify-between gap-2 border-b border-et-surface-border bg-et-surface-bg px-3 py-2"
+                >
+                  <span>{{ feature.name }}</span>
+                  <span class="text-et-surface-muted">{{ feature.open }} open</span>
+                </h2>
 
-      @if (trouble(); as message) {
-        <p class="text-et-surface-muted">{{ message }}</p>
-      }
+                <ul>
+                  @for (call of feature.calls; track call.slug) {
+                    <li>
+                      <button
+                        [class.bg-et-surface-bg]="call.slug === slug()"
+                        [class.text-et-surface-muted]="settled(call) === call.options.length"
+                        (click)="openCall(call)"
+                        class="flex w-full flex-col gap-1 border-b border-et-surface-border p-3 text-left"
+                        type="button"
+                      >
+                        <span class="text-et-surface-muted">{{ call.eyebrow }}</span>
+                        <span>{{ call.headline }}</span>
+                        <span class="text-et-surface-muted">
+                          {{ settled(call) }} of {{ call.options.length }} settled
+                        </span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </li>
+            } @empty {
+              <li class="p-3 text-et-surface-muted">No call matches.</li>
+            }
+          </ul>
+        </div>
+      </aside>
 
-      @if (!project()) {
-        <ethlete-project-picker [projects]="projects()" (pick)="openProject($event)" />
-      } @else {
-        <div class="flex min-h-0 grow gap-6">
-          <div class="flex w-80 shrink-0 flex-col gap-2">
-            <input
-              [value]="filter()"
-              (input)="filter.set(typed($event))"
-              class="rounded border border-et-surface-border px-3 py-1"
-              placeholder="Find a call"
-            />
-
-            <div class="flex gap-2">
-              @for (choice of ORDERS; track choice.key) {
+      <main class="flex min-h-0 flex-col gap-3 p-8">
+        @if (!project()) {
+          <ethlete-project-picker [projects]="projects()" (pick)="openProject($event)" />
+        } @else if (call(); as open) {
+          <div class="flex min-h-0 grow gap-4">
+            <div class="flex w-48 shrink-0 flex-col gap-2.5 overflow-auto">
+              @for (tile of tiles(); track tile.key) {
                 <button
-                  [class.bg-et-surface-bg]="order() === choice.key"
-                  (click)="setOrder(choice.key)"
-                  class="grow rounded border border-et-surface-border px-3 py-1"
+                  [style.opacity]="tile.verdict === 'rejected' ? 0.32 : 1"
+                  [class.border-et-surface-interaction-ink]="tile.key === optionKey()"
+                  (click)="openOption(tile)"
+                  class="flex shrink-0 flex-col gap-1.5 rounded border border-et-surface-border bg-et-surface-bg p-1.5 text-left"
                   type="button"
                 >
-                  {{ choice.label }}
+                  <span
+                    [class.border-et-brand]="tile.verdict === 'chosen'"
+                    [style.height.px]="THUMB_HEIGHT"
+                    class="relative block w-full overflow-hidden rounded-sm border border-transparent"
+                  >
+                    @if (tile.source; as source) {
+                      <iframe
+                        [src]="source"
+                        [style.width.px]="open.frameWidth"
+                        [style.height.px]="thumbFrameHeight()"
+                        [style.transform]="thumbTransform()"
+                        class="pointer-events-none absolute top-0 left-0 origin-top-left border-0"
+                        tabindex="-1"
+                        title="The variant, drawn small"
+                      ></iframe>
+                    }
+                  </span>
+                  <span [class.text-et-brand]="tile.verdict === 'chosen'" class="text-small text-et-surface-muted">{{
+                    tile.name
+                  }}</span>
                 </button>
               }
             </div>
 
-            <ul class="min-h-0 grow overflow-auto rounded border border-et-surface-border">
-              @for (feature of features(); track feature.name) {
-                <li>
-                  <h2
-                    class="sticky top-0 flex justify-between gap-2 border-b border-et-surface-border bg-et-surface-bg px-3 py-2"
-                  >
-                    <span>{{ feature.name }}</span>
-                    <span class="text-et-surface-muted">{{ feature.open }} open</span>
-                  </h2>
-
-                  <ul>
-                    @for (call of feature.calls; track call.slug) {
-                      <li>
-                        <button
-                          [class.bg-et-surface-bg]="call.slug === slug()"
-                          [class.text-et-surface-muted]="settled(call) === call.options.length"
-                          (click)="openCall(call)"
-                          class="flex w-full flex-col gap-1 border-b border-et-surface-border p-3 text-left"
-                          type="button"
-                        >
-                          <span class="text-et-surface-muted">{{ call.eyebrow }}</span>
-                          <span>{{ call.headline }}</span>
-                          <span class="text-et-surface-muted">
-                            {{ settled(call) }} of {{ call.options.length }} settled
-                          </span>
-                        </button>
-                      </li>
+            <div class="flex min-h-0 grow flex-col gap-3">
+              @if (option(); as drawn) {
+                <div class="flex min-h-0 grow overflow-auto">
+                  <div [style.width.px]="open.frameWidth" class="relative min-h-0 shrink-0">
+                    @for (frame of frames(); track frame.key) {
+                      <iframe
+                        [src]="frame.source"
+                        [class.opacity-0]="frame.key !== optionKey()"
+                        [class.pointer-events-none]="frame.key !== optionKey()"
+                        class="absolute inset-0 h-full w-full rounded border border-et-surface-border bg-et-surface-bg transition-opacity"
+                        title="The drawn option"
+                      ></iframe>
                     }
-                  </ul>
-                </li>
-              } @empty {
-                <li class="p-3 text-et-surface-muted">No call matches.</li>
-              }
-            </ul>
-          </div>
-
-          @if (call(); as open) {
-            <div class="flex min-h-0 grow gap-6">
-              <div class="flex min-h-0 grow gap-4">
-                <div class="flex w-48 shrink-0 flex-col gap-2.5 overflow-auto">
-                  @for (tile of tiles(); track tile.key) {
-                    <button
-                      [style.opacity]="tile.verdict === 'rejected' ? 0.32 : 1"
-                      [class.border-et-surface-interaction-ink]="tile.key === optionKey()"
-                      (click)="openOption(tile)"
-                      class="flex shrink-0 flex-col gap-1.5 rounded border border-et-surface-border bg-et-surface-bg p-1.5 text-left"
-                      type="button"
-                    >
-                      <span
-                        [class.border-et-brand]="tile.verdict === 'chosen'"
-                        [style.height.px]="THUMB_HEIGHT"
-                        class="relative block w-full overflow-hidden rounded-sm border border-transparent"
-                      >
-                        @if (tile.source; as source) {
-                          <iframe
-                            [src]="source"
-                            [style.width.px]="open.frameWidth"
-                            [style.height.px]="thumbFrameHeight()"
-                            [style.transform]="thumbTransform()"
-                            class="pointer-events-none absolute top-0 left-0 origin-top-left border-0"
-                            tabindex="-1"
-                            title="The variant, drawn small"
-                          ></iframe>
-                        }
-                      </span>
-                      <span
-                        [class.text-et-brand]="tile.verdict === 'chosen'"
-                        class="text-small text-et-surface-muted"
-                        >{{ tile.name }}</span
-                      >
-                    </button>
-                  }
-                </div>
-
-                <div class="flex min-h-0 grow flex-col gap-3">
-                  @if (option(); as drawn) {
-                    <div class="flex min-h-0 grow overflow-auto">
-                      <div [style.width.px]="open.frameWidth" class="relative min-h-0 shrink-0">
-                        @for (frame of frames(); track frame.key) {
-                          <iframe
-                            [src]="frame.source"
-                            [class.opacity-0]="frame.key !== optionKey()"
-                            [class.pointer-events-none]="frame.key !== optionKey()"
-                            class="absolute inset-0 h-full w-full rounded border border-et-surface-border bg-et-surface-bg transition-opacity"
-                            title="The drawn option"
-                          ></iframe>
-                        }
-                      </div>
-                    </div>
-
-                    <div class="flex flex-wrap items-baseline gap-3">
-                      <span [class.text-et-brand]="drawn.verdict === 'chosen'">{{ drawn.name }}</span>
-                      @if (drawn.verdict) {
-                        <span class="text-small text-et-surface-muted">{{ drawn.verdict }}</span>
-                      }
-                      @if (check(); as checked) {
-                        <span [class.text-et-danger-ink]="!checked.ok" class="text-small text-et-surface-muted">
-                          {{ checked.ok ? 'check passed' : 'check failed' }}
-                        </span>
-                      } @else {
-                        <span class="text-small text-et-surface-muted">not checked</span>
-                      }
-                      <span class="text-et-surface-muted text-mono">{{ address() }}</span>
-                      <button
-                        (click)="switchMode(open)"
-                        class="rounded border border-et-surface-border px-2 text-small"
-                        title="The mode every variant of this call is drawn in"
-                        type="button"
-                      >
-                        Mode: {{ open.mode }}
-                      </button>
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-2">
-                      @for (verb of VERBS; track verb) {
-                        <button
-                          (click)="draft(verb)"
-                          class="rounded border border-et-surface-border px-3 py-1"
-                          type="button"
-                        >
-                          {{ label(verb) }}
-                        </button>
-                      }
-                      <button
-                        (click)="write(drawn, null)"
-                        class="rounded border border-et-surface-border px-3 py-1"
-                        type="button"
-                      >
-                        Open again
-                      </button>
-                    </div>
-
-                    @if (formVerb(); as verb) {
-                      <div class="flex flex-wrap items-center gap-2 rounded border border-et-surface-border p-3">
-                        <span>{{ label(verb) }}</span>
-                        <label class="flex items-center gap-2">
-                          How many
-                          <input
-                            [value]="count()"
-                            (input)="setCount($event)"
-                            class="w-16 rounded border border-et-surface-border px-3 py-1"
-                            max="8"
-                            min="1"
-                            type="number"
-                          />
-                        </label>
-                        <input
-                          [value]="question()"
-                          (input)="question.set(typed($event))"
-                          class="grow rounded border border-et-surface-border px-3 py-1"
-                          placeholder="What this round asks"
-                        />
-                        <button
-                          [disabled]="making() || !question().trim()"
-                          (click)="create()"
-                          class="rounded border border-et-surface-border px-3 py-1 disabled:opacity-50"
-                          type="button"
-                        >
-                          Create and draft
-                        </button>
-                        <button
-                          (click)="formVerb.set(null)"
-                          class="rounded border border-et-surface-border px-3 py-1"
-                          type="button"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    }
-                  }
-                </div>
-              </div>
-
-              <div class="flex w-[34rem] shrink-0 flex-col border-l border-et-surface-border pl-6">
-                <ul #thread class="flex min-h-0 grow flex-col gap-3 overflow-auto pb-4">
-                  @for (turn of turns(); track $index) {
-                    <li>
-                      @switch (turn.kind) {
-                        @case ('ask') {
-                          <p
-                            class="ml-3 border-l-2 border-et-surface-border pl-3 text-small break-words whitespace-pre-wrap"
-                          >
-                            {{ turn.text }}
-                          </p>
-                        }
-                        @case ('say') {
-                          <p class="text-small break-words whitespace-pre-wrap">{{ turn.text }}</p>
-                        }
-                        @case ('act') {
-                          <p class="flex gap-2 overflow-hidden text-mono">
-                            <span [class.text-et-brand]="$index === liveTurn()">{{ turn.action }}</span>
-                            <span class="truncate text-et-surface-muted">{{ turn.detail }}</span>
-                          </p>
-                        }
-                        @case ('note') {
-                          <p class="text-et-surface-muted text-small">{{ turn.text }}</p>
-                        }
-                      }
-                    </li>
-                  } @empty {
-                    <li class="text-et-surface-muted">Nothing said in this call yet.</li>
-                  }
-                </ul>
-
-                <div class="flex shrink-0 flex-col gap-2 border-t border-et-surface-border pt-4">
-                  <textarea
-                    [value]="prompt()"
-                    (input)="prompt.set(typed($event))"
-                    class="h-32 rounded border border-et-surface-border p-3"
-                    placeholder="A verb writes the first draft here. Change it, then send it."
-                  ></textarea>
-
-                  <div class="flex flex-wrap items-center gap-2">
-                    @for (found of clis(); track found.id) {
-                      <button
-                        [class.bg-et-surface-bg]="cli()?.id === found.id"
-                        (click)="pick(found)"
-                        class="rounded border border-et-surface-border px-3 py-1"
-                        type="button"
-                      >
-                        {{ found.label }}
-                        <span class="text-et-surface-muted">{{ found.version }}</span>
-                      </button>
-                    }
-                    <select
-                      [value]="model()"
-                      [disabled]="!cli()"
-                      (change)="model.set(typed($event))"
-                      class="w-40 grow rounded border border-et-surface-border px-3 py-1"
-                    >
-                      <option value="">CLI default</option>
-                      @for (name of cli()?.suggestedModels ?? []; track name) {
-                        <option [value]="name">{{ name }}</option>
-                      }
-                    </select>
                   </div>
+                </div>
 
-                  <div class="flex flex-wrap items-center gap-2">
-                    @if (resume(); as id) {
-                      <span
-                        [class.text-et-surface-muted]="!full()"
-                        [title]="(session()?.tokens ?? 0) + ' of ' + LIMIT + ' tokens'"
-                        class="flex grow items-center gap-2 text-mono"
-                      >
-                        {{ id.slice(0, 8) }}
-                        <span class="block h-1 grow rounded bg-et-surface-border">
-                          <span
-                            [class.bg-et-brand]="full()"
-                            [class.bg-et-surface-subtle]="!full()"
-                            [style.width.%]="fill()"
-                            class="block h-full rounded"
-                          ></span>
-                        </span>
-                        {{ sessionSize() }}
-                      </span>
-                      @if (full()) {
-                        <button
-                          [disabled]="running()"
-                          (click)="handOff()"
-                          class="rounded border border-et-brand px-3 py-1 text-et-brand-ink disabled:opacity-50"
-                          type="button"
-                        >
-                          Hand off
-                        </button>
-                      }
-                      <button
-                        (click)="forgetSession()"
-                        class="rounded border border-et-surface-border px-3 py-1"
-                        type="button"
-                      >
-                        New session
-                      </button>
-                    }
+                <div class="flex flex-wrap items-baseline gap-3">
+                  <span [class.text-et-brand]="drawn.verdict === 'chosen'">{{ drawn.name }}</span>
+                  @if (drawn.verdict) {
+                    <span class="text-small text-et-surface-muted">{{ drawn.verdict }}</span>
+                  }
+                  @if (check(); as checked) {
+                    <span [class.text-et-danger-ink]="!checked.ok" class="text-small text-et-surface-muted">
+                      {{ checked.ok ? 'check passed' : 'check failed' }}
+                    </span>
+                  } @else {
+                    <span class="text-small text-et-surface-muted">not checked</span>
+                  }
+                  <span class="text-et-surface-muted text-mono">{{ address() }}</span>
+                  <button
+                    (click)="switchMode(open)"
+                    class="rounded border border-et-surface-border px-2 text-small"
+                    title="The mode every variant of this call is drawn in"
+                    type="button"
+                  >
+                    Mode: {{ open.mode }}
+                  </button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  @for (verb of VERBS; track verb) {
                     <button
-                      [disabled]="running() || !prompt().trim() || !cli()"
-                      (click)="send()"
-                      class="ml-auto rounded border border-et-surface-border px-3 py-1"
-                      type="button"
-                    >
-                      Send
-                    </button>
-                    <button
-                      [disabled]="!running()"
-                      (click)="stop()"
+                      (click)="draft(verb)"
                       class="rounded border border-et-surface-border px-3 py-1"
                       type="button"
                     >
-                      Stop
+                      {{ label(verb) }}
+                    </button>
+                  }
+                  <button
+                    (click)="write(drawn, null)"
+                    class="rounded border border-et-surface-border px-3 py-1"
+                    type="button"
+                  >
+                    Open again
+                  </button>
+                </div>
+
+                @if (formVerb(); as verb) {
+                  <div class="flex flex-wrap items-center gap-2 rounded border border-et-surface-border p-3">
+                    <span>{{ label(verb) }}</span>
+                    <label class="flex items-center gap-2">
+                      How many
+                      <input
+                        [value]="count()"
+                        (input)="setCount($event)"
+                        class="w-16 rounded border border-et-surface-border px-3 py-1"
+                        max="8"
+                        min="1"
+                        type="number"
+                      />
+                    </label>
+                    <input
+                      [value]="question()"
+                      (input)="question.set(typed($event))"
+                      class="grow rounded border border-et-surface-border px-3 py-1"
+                      placeholder="What this round asks"
+                    />
+                    <button
+                      [disabled]="making() || !question().trim()"
+                      (click)="create()"
+                      class="rounded border border-et-surface-border px-3 py-1 disabled:opacity-50"
+                      type="button"
+                    >
+                      Create and draft
+                    </button>
+                    <button
+                      (click)="formVerb.set(null)"
+                      class="rounded border border-et-surface-border px-3 py-1"
+                      type="button"
+                    >
+                      Cancel
                     </button>
                   </div>
-                </div>
-              </div>
+                }
+              }
             </div>
+          </div>
+        }
+      </main>
+
+      <aside [etProvideSurface]="'dark-elevated'" class="studio__chat">
+        <header class="studio__chat-head">
+          <b>Chat</b>
+          <span>{{ call()?.eyebrow }}</span>
+        </header>
+
+        <ul #thread class="flex min-h-0 flex-col gap-3 overflow-auto p-4">
+          @for (turn of turns(); track $index) {
+            <li>
+              @switch (turn.kind) {
+                @case ('ask') {
+                  <p class="ml-3 border-l-2 border-et-surface-border pl-3 text-small break-words whitespace-pre-wrap">
+                    {{ turn.text }}
+                  </p>
+                }
+                @case ('say') {
+                  <p class="text-small break-words whitespace-pre-wrap">{{ turn.text }}</p>
+                }
+                @case ('act') {
+                  <p class="flex gap-2 overflow-hidden text-mono">
+                    <span [class.text-et-brand]="$index === liveTurn()">{{ turn.action }}</span>
+                    <span class="truncate text-et-surface-muted">{{ turn.detail }}</span>
+                  </p>
+                }
+                @case ('note') {
+                  <p class="text-et-surface-muted text-small">{{ turn.text }}</p>
+                }
+              }
+            </li>
+          } @empty {
+            <li class="text-et-surface-muted">Nothing said in this call yet.</li>
           }
+        </ul>
+
+        <div class="flex flex-col gap-2 border-t border-et-surface-border p-4">
+          <textarea
+            [value]="prompt()"
+            (input)="prompt.set(typed($event))"
+            class="h-32 rounded border border-et-surface-border p-3"
+            placeholder="A verb writes the first draft here. Change it, then send it."
+          ></textarea>
+
+          <div class="flex flex-wrap items-center gap-2">
+            @if (resume(); as id) {
+              <span
+                [class.text-et-surface-muted]="!full()"
+                [title]="(session()?.tokens ?? 0) + ' of ' + LIMIT + ' tokens'"
+                class="flex grow items-center gap-2 text-mono"
+              >
+                {{ id.slice(0, 8) }}
+                <span class="block h-1 grow rounded bg-et-surface-border">
+                  <span
+                    [class.bg-et-brand]="full()"
+                    [class.bg-et-surface-subtle]="!full()"
+                    [style.width.%]="fill()"
+                    class="block h-full rounded"
+                  ></span>
+                </span>
+                {{ sessionSize() }}
+              </span>
+              @if (full()) {
+                <button
+                  [disabled]="running()"
+                  (click)="handOff()"
+                  class="rounded border border-et-brand px-3 py-1 text-et-brand-ink disabled:opacity-50"
+                  type="button"
+                >
+                  Hand off
+                </button>
+              }
+              <button (click)="forgetSession()" class="rounded border border-et-surface-border px-3 py-1" type="button">
+                New session
+              </button>
+            }
+            <button
+              [disabled]="running() || !prompt().trim() || !cli()"
+              (click)="send()"
+              class="ml-auto rounded border border-et-surface-border px-3 py-1"
+              type="button"
+            >
+              Send
+            </button>
+            <button
+              [disabled]="!running()"
+              (click)="stop()"
+              class="rounded border border-et-surface-border px-3 py-1"
+              type="button"
+            >
+              Stop
+            </button>
+          </div>
         </div>
-      }
+      </aside>
     </div>
+
+    <footer class="studio__status">
+      <input
+        [value]="checkout()"
+        (change)="setCheckout(typed($event))"
+        class="studio__checkout"
+        placeholder="The checkout the design work lives in"
+        title="The checkout the design work lives in"
+      />
+
+      <button (click)="reload()" class="studio__status-button" type="button">
+        <svg viewBox="0 0 24 24">
+          <path d="M20 12a8 8 0 1 1-2.4-5.7" />
+          <path d="M20 4v4h-4" />
+        </svg>
+        Reload
+      </button>
+
+      @if (trouble(); as message) {
+        <span [etProvideColor]="'danger'" [title]="message" class="studio__status-item studio__status-item--trouble">
+          <span>{{ message }}</span>
+        </span>
+      }
+
+      <span class="studio__status-spacer"></span>
+
+      @if (serverLine(); as line) {
+        <span [title]="serverNote()" class="studio__status-item">
+          <i [class.studio__dot--off]="!server()?.listening" class="studio__dot"></i>
+          <span>{{ line }}</span>
+        </span>
+      }
+
+      @if (server(); as state) {
+        @if (state.listening && state.managed) {
+          <button (click)="stopServer()" class="studio__status-button" type="button">Stop</button>
+        } @else if (!state.listening) {
+          <button [disabled]="serverBusy()" (click)="startServer()" class="studio__status-button" type="button">
+            Start
+          </button>
+        }
+      }
+
+      <span class="studio__status-item">
+        <select
+          [value]="cli()?.id ?? ''"
+          [disabled]="!clis().length"
+          (change)="pickById(typed($event))"
+          class="studio__status-select"
+          title="The agent CLI a run goes to"
+        >
+          @for (found of clis(); track found.id) {
+            <option [value]="found.id">{{ found.label }} {{ found.version }}</option>
+          } @empty {
+            <option value="">No agent CLI</option>
+          }
+        </select>
+
+        <select
+          [value]="model()"
+          [disabled]="!cli()"
+          (change)="model.set(typed($event))"
+          class="studio__status-select"
+          title="The model the run asks for"
+        >
+          <option value="">CLI default</option>
+          @for (name of cli()?.suggestedModels ?? []; track name) {
+            <option [value]="name">{{ name }}</option>
+          }
+        </select>
+      </span>
+    </footer>
   `,
+  styleUrl: './call-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [ProjectPickerComponent],
-  host: { class: 'flex min-h-0 grow flex-col' },
+  imports: [ProjectPickerComponent, ProvideColorDirective, ProvideSurfaceDirective],
+  host: { class: 'studio' },
 })
 export class CallViewComponent {
   private destroyRef = inject(DestroyRef);
@@ -526,6 +532,9 @@ export class CallViewComponent {
 
     return state && !state.listening ? state.log.slice(-5) : [];
   });
+
+  /** What a stopped server last said, read by hovering its line in the status bar. */
+  protected serverNote = computed(() => this.serverLog().join(' · '));
 
   public calls = computed(() => this.design()?.calls ?? []);
 
@@ -734,6 +743,10 @@ export class CallViewComponent {
   protected pick(cli: AgentDescriptor | null) {
     this.cli.set(cli);
     this.model.set('');
+  }
+
+  protected pickById(id: string) {
+    this.pick(this.clis().find((found) => found.id === id) ?? null);
   }
 
   protected setCount(event: Event) {

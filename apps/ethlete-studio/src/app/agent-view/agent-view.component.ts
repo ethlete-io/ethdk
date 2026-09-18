@@ -1,5 +1,6 @@
 import { Component, DestroyRef, ViewEncapsulation, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { EMPTY, Subscription, catchError, finalize, of, tap } from 'rxjs';
 import { AgentDescriptor, AgentEvent, agentList$, agentRun$ } from '../../host/agent';
 import { workspaceRoot$ } from '../../host/workspace';
@@ -7,8 +8,11 @@ import { workspaceRoot$ } from '../../host/workspace';
 @Component({
   selector: 'ethlete-agent-view',
   template: `
-    <div class="flex min-h-0 grow flex-col gap-4 p-8">
-      <h1 class="text-h2">Agent bridge</h1>
+    <div class="flex h-dvh min-h-0 flex-col gap-4 overflow-auto p-8">
+      <div class="flex items-baseline gap-4">
+        <h1 class="text-h2">Agent bridge</h1>
+        <a class="text-et-surface-muted" routerLink="/">Back to calls</a>
+      </div>
 
       @if (clis().length === 0) {
         <p class="text-et-surface-muted">No agent CLI answered on this machine. {{ trouble() }}</p>
@@ -102,6 +106,7 @@ import { workspaceRoot$ } from '../../host/workspace';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
+  imports: [RouterLink],
   host: { class: 'flex min-h-0 grow flex-col' },
 })
 export class AgentViewComponent {
