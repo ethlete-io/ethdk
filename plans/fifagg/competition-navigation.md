@@ -46,6 +46,7 @@ The source this redesigns is `/home/tom/dev/fifagg/fifagg-frontend`:
 | 21 · alignment    | What do the chip and the square line up with in the header above?    | A · the boxes line up, on the header's 16px gutter                                                  | B · the ink lines up, breaking the gutter; C · the row keeps its own 24px gutter                                                              |
 | 22 · other states | What does the chip carry when no stage is live?                      | A · the nearest stage, forward or backward                                                          | B · the chip is only ever a live stage; C · the chip states the competition                                                                   |
 | 23 · missing date | What does the chip read when the stage has no date it can show?      | A · keep the verb, drop the time                                                                    | B · the name alone; C · say the date is missing                                                                                               |
+| 24 · past stage   | What does the chip say about a stage that is over?                   | A · name what the tap gives, "Final results"                                                        | B · match the live voice, "is over"; C · the date it happened                                                                                 |
 
 Calls 1 to 8 ran before the drawing tool dropped Angular. Their sketches no longer render; call 8
 `call.ts` still records what each round ruled.
@@ -90,8 +91,11 @@ constraint with the ruling: `scheduledAt` is often missing or holds a value that
 the chip has to read without a time.
 
 Call 23 ruled the chip keeps a word that places the stage in time, and drops only the time itself.
-"next" is accepted. "ended" is not: the user called the word wrong, so call 24 asks what a stage
-that is over reads instead.
+"next" is accepted. Call 24 replaced "ended" with "results": the chip is a link, so the word names
+where the tap goes instead of a state nobody waits for.
+
+With that, the phone row is settled in every state. What is left is the panel the square opens, and
+the desktop row.
 
 Every row drawing from call 24 on carries two strips it is easy to forget: the live state, which is
 the reference every other state is judged against, and an overflow state with a stage name the chip

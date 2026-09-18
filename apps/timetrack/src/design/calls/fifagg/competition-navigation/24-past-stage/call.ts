@@ -10,6 +10,7 @@ export default defineCall({
   options: [
     {
       key: 'a',
+      verdict: 'chosen',
       name: 'A · Name what the tap gives',
       claim: '"Final results". The word is the destination, not the status, so it earns its place in a link.',
       cost: 'A stage really named "Final" then reads as the adjective, and the chip promises a page of results that has to exist.',
@@ -17,6 +18,7 @@ export default defineCall({
     },
     {
       key: 'b',
+      verdict: 'rejected',
       name: 'B · Match the voice of the live row',
       claim:
         '"Final is over" is built like "Group Stage is live now": the same sentence, a different verb, so one voice covers every state.',
@@ -25,6 +27,7 @@ export default defineCall({
     },
     {
       key: 'c',
+      verdict: 'rejected',
       name: 'C · The date it happened',
       claim:
         '"Final 14 April". A past date states the past on its own, and a finished stage almost always has one, so no word is invented.',
