@@ -5,6 +5,7 @@ import {
   CollectedEvent,
   DayNudgeRecord,
   DayReviewEdits,
+  EMPTY_DAY_REVIEW_EDITS,
   EditorCli,
   ProcessSpec,
   SyncedWorklog,
@@ -79,7 +80,9 @@ export const createFakePorts = (): HostPorts => {
   const dedupeKeys = new Set(events.map(dedupeKeyOf));
   const cursorsByPass = new Map<AgentLogPass, Map<string, AgentSessionCursor>>();
   const ledger = new Map<string, SyncedWorklog[]>();
-  const edits = new Map<string, DayReviewEdits>();
+  const edits = new Map<string, DayReviewEdits>(
+    Object.entries(world.reviewOverrides).map(([day, overrides]) => [day, { ...EMPTY_DAY_REVIEW_EDITS, overrides }]),
+  );
   const coverage = new Map<string, TempoDayCoverage>();
   const secrets = new Map<string, string>([
     [TIMETRACK_SECRET_KEYS.jiraToken, 'e2e-jira-token'],

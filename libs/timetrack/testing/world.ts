@@ -2,6 +2,7 @@ import {
   CollectedEvent,
   DEFAULT_TIMETRACK_SETTINGS,
   EditorCli,
+  ProposalOverride,
   SpecFiles,
   TimetrackSettings,
 } from '@ethlete/timetrack';
@@ -122,6 +123,12 @@ export type TimetrackWorldSeed = {
   faults?: FakeFault[];
   /** Secrets the keychain already holds, over the three tokens every seed starts with. */
   secrets?: Record<string, string>;
+  /**
+   * What earlier reviewers decided, by local calendar day and then by proposal id. Only overrides
+   * are seedable: a pinned row and a presence statement carry `Date`s, and the seed crosses into the
+   * page as JSON.
+   */
+  reviewOverrides?: Record<string, Record<string, ProposalOverride>>;
 };
 
 export type FakeWorld = {
@@ -140,6 +147,7 @@ export type FakeWorld = {
   backend: FakeBackend;
   secrets: Record<string, string>;
   spec: SpecFiles | null;
+  reviewOverrides: Record<string, Record<string, ProposalOverride>>;
 };
 
 /** Where `seedWorld` leaves the seed, as a JSON string, for `createFakeWorld` to read before boot. */
@@ -379,6 +387,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   windowLock: seed.windowLock ?? 'unlocked',
   secrets: seed.secrets ?? {},
   spec: seed.spec ?? null,
+  reviewOverrides: seed.reviewOverrides ?? {},
   glab: { ...defaultGlab(), ...seed.glab },
   gh: { ...defaultGh(), ...seed.gh },
   editors: seedEditors(seed.editors),
