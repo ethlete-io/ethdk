@@ -448,6 +448,8 @@ export const timetrackSplitStandIn = (options: {
   id: string;
   branch: string;
   commits: readonly TimetrackWorkCommit[];
+  /** The checkout the directories are in, for a record that names none of its own. */
+  repoPath?: string;
   /** The projects the checkout declares, relative to it. They are the grain a piece is cut to. */
   projectRoots: readonly string[];
   /** The directories the user picked as the pieces. Empty lets the automatic reading answer. */

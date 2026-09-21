@@ -323,17 +323,20 @@ const splitStandIn = async (options: { id: string; argv: string[]; json: boolean
     return 1;
   }
 
-  if (!standIn.openedFor) {
-    say(`${id} stands for work rather than for a checkout, so it has no directories to split into.`);
+  const repoPath = flagValue(argv, '--repo');
+  const checkout = standIn.openedFor ?? repoPath;
+
+  if (!checkout) {
+    say(`${id} names no checkout, so nothing says where its directories are. Name one with --repo <dir>.`);
 
     return 1;
   }
 
-  const branch = flagValue(argv, '--branch') ?? currentBranch(standIn.openedFor);
-  const commits = commitPathsOnDays({ root: standIn.openedFor, days: standIn.days });
+  const branch = flagValue(argv, '--branch') ?? currentBranch(checkout);
+  const commits = commitPathsOnDays({ root: checkout, days: standIn.days });
 
   if (!commits.length) {
-    say(`No commit of ${standIn.openedFor} falls on ${standIn.days.join(', ')}, so nothing says how to split it.`);
+    say(`No commit of ${checkout} falls on ${standIn.days.join(', ')}, so nothing says how to split it.`);
 
     return 1;
   }
@@ -344,8 +347,17 @@ const splitStandIn = async (options: { id: string; argv: string[]; json: boolean
     .filter(Boolean);
   const claim = flagValue(argv, '--claim');
   const apply = argv.includes('--force');
-  const projectRoots = projectRootsOf(standIn.openedFor);
-  const answer = await timetrackSplitStandIn({ id, branch, commits, projectRoots, paths, claim, apply });
+  const projectRoots = projectRootsOf(checkout);
+  const answer = await timetrackSplitStandIn({
+    id,
+    branch,
+    repoPath,
+    commits,
+    projectRoots,
+    paths,
+    claim,
+    apply,
+  });
 
   if (!json) {
     say(`${standIn.name}  ${standIn.days.length} day(s), branch ${branch}`);
@@ -383,7 +395,7 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack standins            The names the user gave work Jira does not hold yet, and their age
   timetrack standins --remove <id>
                                 Delete one placeholder, and the rule that named it
-  timetrack standins --split <id> [--paths <dir>,<dir>] [--claim <dir>] [--force]
+  timetrack standins --split <id> [--repo <dir>] [--paths <dir>,<dir>] [--claim <dir>] [--force]
                                 Cut one that covered a whole checkout into one per directory
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
 

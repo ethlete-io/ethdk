@@ -100,6 +100,7 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     const paths = (Array.isArray(raw['paths']) ? raw['paths'] : []).map(asText).filter(Boolean);
     const projectRoots = (Array.isArray(raw['projectRoots']) ? raw['projectRoots'] : []).map(asText).filter(Boolean);
     const claim = asText(raw['claim']);
+    const repoPath = asText(raw['repoPath']);
 
     return commits.length
       ? {
@@ -111,6 +112,7 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
             commits,
             projectRoots,
             paths,
+            ...(repoPath ? { repoPath } : {}),
             ...(claim ? { claim } : {}),
             apply: asFlag(raw['apply']),
           },

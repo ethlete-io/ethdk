@@ -355,6 +355,8 @@ export type AgentApiRequest =
       id: string;
       branch: string;
       commits: AgentApiWorkCommit[];
+      /** The checkout the directories are in, for a record that names none of its own. */
+      repoPath?: string;
       /** The projects the checkout declares, relative to it. They are the grain a piece is cut to. */
       projectRoots: string[];
       paths: string[];

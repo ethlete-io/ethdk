@@ -344,6 +344,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     splitStandIn: (options: {
       id: string;
       branch: string;
+      repoPath?: string;
       pieces: readonly StandInSplitPiece[];
       claim?: string;
       now: Date;

@@ -474,18 +474,40 @@ describe('splitStandIn', () => {
     expect(result.opened[1]?.days).toEqual(['2026-09-11', '2026-09-30']);
   });
 
-  it('refuses a claim for a directory it does not write', () => {
-    expect(split({ claim: 'context/tracks/nowhere' }).refused).toContain('not one of the directories');
+  it('opens a piece for a claimed directory the commits never named', () => {
+    const thin = [pieces[0]!, { workPath: 'context/tracks/season-pass', days: ['2026-09-30'] }];
+    const result = split({ pieces: thin, claim: 'context/tracks/overlay' });
+
+    expect(result.refused).toBeUndefined();
+    expect(result.opened.map((standIn) => standIn.openedForWorkPath)).toContain('context/tracks/overlay');
+    expect(result.opened.at(-1)?.days).toEqual(['2026-09-11']);
+  });
+
+  it('refuses a claim when every day of the record already has a directory', () => {
+    expect(split({ claim: 'context/tracks/nowhere' }).refused).toContain('can claim none');
   });
 
   it('refuses a single directory, which is the whole checkout under another name', () => {
     expect(split({ pieces: [pieces[0]!] }).refused).toContain('two directories or more');
   });
 
-  it('refuses a record that stands for work rather than for a checkout', () => {
+  it('refuses a record that names no checkout and was given none', () => {
     const result = split({ settings: settingsWith({ standIns: [standIn({ id: 'stand-in:1:specs' })], rules: [] }) });
 
-    expect(result.refused).toContain('stands for work');
+    expect(result.refused).toContain('names no checkout');
+  });
+
+  it('splits a record that names no checkout when the caller names one', () => {
+    const result = split({
+      settings: settingsWith({ standIns: [standIn({ id: 'stand-in:1:specs' })], rules: [] }),
+      repoPath: '/home/tom/dev/fifagg/specs',
+    });
+
+    expect(result.refused).toBeUndefined();
+    expect(result.opened.map((entry) => entry.openedFor)).toEqual([
+      '/home/tom/dev/fifagg/specs',
+      '/home/tom/dev/fifagg/specs',
+    ]);
   });
 
   it('names each piece after its directory unless the caller says otherwise', () => {

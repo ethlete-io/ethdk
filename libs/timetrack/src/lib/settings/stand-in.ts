@@ -135,6 +135,10 @@ const splitPieceName = (options: { standIn: StandIn; piece: StandInSplitPiece })
  *
  * A day the record holds that no commit of it falls on cannot be placed by a directory, and it is
  * real work — so the user says which piece it was rather than the split guessing or dropping it.
+ *
+ * The directory they name does not have to be one the commits found. A day with no commit is often
+ * the first day of a piece of work that only got committed later, and its directory holds nothing
+ * yet; naming it opens a piece of its own. The plan run shows the piece before anything is written.
  */
 const claimedPieces = (options: {
   standIn: StandIn;
@@ -148,6 +152,9 @@ const claimedPieces = (options: {
   const covered = new Set(pieces.flatMap((piece) => piece.days));
   const left = options.standIn.days.filter((day) => !covered.has(day));
 
+  if (!pieces.some((piece) => piece.workPath === claim))
+    return left.length ? [...pieces, { workPath: claim, days: [...left].sort() }] : [...pieces];
+
   return pieces.map((piece) =>
     piece.workPath === claim ? { ...piece, days: [...new Set([...piece.days, ...left])].sort() } : piece,
   );
@@ -158,19 +165,21 @@ const splitProblem = (options: {
   id: string;
   pieces: readonly StandInSplitPiece[];
   claim?: string;
+  checkout?: string;
 }) => {
   const { standIn, pieces, claim } = options;
 
   if (!standIn) return `Timetrack holds no stand-in ${options.id}.`;
   if (standIn.state !== 'open') return `${options.id} is resolved, so there is nothing left to split.`;
-  if (!standIn.openedFor) return `${options.id} stands for work rather than for a checkout, so it has no directories.`;
+  if (!options.checkout)
+    return `${options.id} names no checkout, so nothing says where its directories are. Name one with --repo.`;
   if (pieces.length < 2) return `A split needs two directories or more, and ${pieces.length} was given.`;
   if (new Set(pieces.map((piece) => piece.workPath)).size !== pieces.length)
     return 'Two of the directories given are the same.';
   if (pieces.some((piece) => !piece.workPath.trim() || !piece.days.length))
     return 'Every directory needs a name and at least one day.';
   if (claim && !pieces.some((piece) => piece.workPath === claim))
-    return `${claim} is not one of the directories the split writes, so it can claim no day.`;
+    return `Every day of ${options.id} already has a directory, so ${claim} can claim none.`;
 
   const covered = new Set(pieces.flatMap((piece) => piece.days));
   const stranded = standIn.days.filter((day) => !covered.has(day));
@@ -201,6 +210,11 @@ export const splitStandIn = (options: {
   id: string;
   /** The branch the work was on, which the new records and their rules name. */
   branch: string;
+  /**
+   * The checkout the directories are in, for a record that names none of its own. A record the user
+   * opened by hand is the case: it holds days and a name, and nothing says which repository they are.
+   */
+  repoPath?: string;
   pieces: readonly StandInSplitPiece[];
   /** The directory that takes every day of the record no piece claims. Without one such a day refuses. */
   claim?: string;
@@ -209,11 +223,10 @@ export const splitStandIn = (options: {
   const { settings, id, branch, now } = options;
   const standIn = settings.standIns.find((entry) => entry.id === id);
   const pieces = standIn ? claimedPieces({ standIn, pieces: options.pieces, claim: options.claim }) : [];
-  const refused = splitProblem({ standIn, id, pieces, claim: options.claim });
+  const checkout = standIn?.openedFor ?? options.repoPath?.trim();
+  const refused = splitProblem({ standIn, id, pieces, claim: options.claim, checkout });
 
-  if (refused || !standIn?.openedFor) return { settings, opened: [], refused };
-
-  const checkout = standIn.openedFor;
+  if (refused || !standIn || !checkout) return { settings, opened: [], refused };
   const opened = pieces.map((piece) => ({
     ...openStandIn({
       name: splitPieceName({ standIn, piece }),

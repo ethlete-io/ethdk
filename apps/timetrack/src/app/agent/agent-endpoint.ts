@@ -472,6 +472,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const result = settings.splitStandIn({
       id: request.id,
       branch: request.branch,
+      repoPath: request.repoPath,
       pieces,
       claim: request.claim,
       now: new Date(),
