@@ -23,10 +23,17 @@ export type AutoStandIn = {
   observedMs: number;
 };
 
-type BranchGroup = { repoPath: string; branch: string; contexts: UnnamedContext[]; observedMs: number };
+type BranchGroup = {
+  repoPath: string;
+  branch: string;
+  workPath?: string;
+  contexts: UnnamedContext[];
+  observedMs: number;
+};
 
 /**
- * One group per branch of a checkout, which is one piece of work.
+ * One group per piece of work a checkout did: its branch, and the directory its commits worked in
+ * where the branch names no piece of work of its own.
  *
  * A checkout with no branch to report is left out. Its work stays unnamed until the user names it:
  * the only placeholder that could be opened for it would cover the whole checkout, which is the grain
@@ -35,17 +42,18 @@ type BranchGroup = { repoPath: string; branch: string; contexts: UnnamedContext[
  * `refs/heads/next` and `next` are the same branch, so the key is the stripped name and that is what
  * the rule carries — `matchAttributionRule` strips both sides before it compares them.
  */
-const groupByBranch = (contexts: readonly UnnamedContext[]) => {
+const groupByWork = (contexts: readonly UnnamedContext[]) => {
   const groups = new Map<string, BranchGroup>();
 
   for (const unnamed of contexts) {
     const repoPath = unnamed.context.repoPath;
     const branch = stripRefPrefix(unnamed.context.branch ?? '');
+    const workPath = unnamed.context.workPath;
 
     if (!repoPath || !branch) continue;
 
-    const key = `${repoPath}@${branch}`;
-    const group = groups.get(key) ?? { repoPath, branch, contexts: [], observedMs: 0 };
+    const key = `${repoPath}@${branch}#${workPath ?? ''}`;
+    const group = groups.get(key) ?? { repoPath, branch, workPath, contexts: [], observedMs: 0 };
 
     group.contexts.push(unnamed);
     group.observedMs += unnamed.observedMs;
@@ -53,7 +61,10 @@ const groupByBranch = (contexts: readonly UnnamedContext[]) => {
   }
 
   return [...groups.values()].sort(
-    (left, right) => left.repoPath.localeCompare(right.repoPath) || left.branch.localeCompare(right.branch),
+    (left, right) =>
+      left.repoPath.localeCompare(right.repoPath) ||
+      left.branch.localeCompare(right.branch) ||
+      (left.workPath ?? '').localeCompare(right.workPath ?? ''),
   );
 };
 
@@ -75,9 +86,17 @@ const isCheckout = (options: { repoPath: string; roots: readonly string[] }) =>
  * work with — and the naming offer that would have named it again reads a rule as an answer, so it
  * never comes back either. A checkout-wide rule answers every branch of the checkout.
  */
-const alreadyAnswered = (options: { repoPath: string; branch: string; rules: readonly AttributionRule[] }) =>
+const alreadyAnswered = (options: {
+  repoPath: string;
+  branch: string;
+  workPath?: string;
+  rules: readonly AttributionRule[];
+}) =>
   options.rules.some(
-    (rule) => rule.repoPath === options.repoPath && (!rule.branch || stripRefPrefix(rule.branch) === options.branch),
+    (rule) =>
+      rule.repoPath === options.repoPath &&
+      (!rule.branch || stripRefPrefix(rule.branch) === options.branch) &&
+      (!rule.workPath || rule.workPath === options.workPath),
   );
 
 /**
@@ -91,12 +110,18 @@ const alreadyAnswered = (options: { repoPath: string; branch: string; rules: rea
  * checkout, so it blocks every branch of it. Splitting one is the user's to ask for: it holds a name
  * and a day list drawn from work the split cannot divide.
  */
-const alreadyWaiting = (options: { repoPath: string; branch: string; standIns: readonly StandIn[] }) =>
+const alreadyWaiting = (options: {
+  repoPath: string;
+  branch: string;
+  workPath?: string;
+  standIns: readonly StandIn[];
+}) =>
   options.standIns.some(
     (standIn) =>
       standIn.state === 'open' &&
       standIn.openedFor === options.repoPath &&
-      (!standIn.openedForBranch || standIn.openedForBranch === options.branch),
+      (!standIn.openedForBranch || standIn.openedForBranch === options.branch) &&
+      (!standIn.openedForWorkPath || standIn.openedForWorkPath === options.workPath),
   );
 
 /**
@@ -113,8 +138,10 @@ const alreadyWaiting = (options: { repoPath: string; branch: string; standIns: r
  * Yesterday's and today's bands of the same branch still land on the same placeholder, so one resolve
  * books both days.
  *
- * A base branch gets none. Work on one is integration rather than a piece of work, so a placeholder
- * there would take every later branch of the checkout with it.
+ * A base branch gets one only when a directory says which piece of work it was. Work on a base branch
+ * is otherwise integration rather than a piece of work, and a placeholder for the branch itself would
+ * take every later branch of the checkout with it — which is what `workPath` avoids: the placeholder
+ * covers one directory of the base branch and nothing else.
  *
  * Only a checkout with a `project` link qualifies. The link is what says the path is work at all and
  * which Jira project a ticket is filed in, so a placeholder opened without one has nowhere to go.
@@ -162,14 +189,16 @@ export const autoStandIns = (options: {
   );
   const opened: AutoStandIn[] = [];
 
-  for (const group of groupByBranch(options.contexts)) {
+  for (const group of groupByWork(options.contexts)) {
+    const { repoPath, branch, workPath } = group;
+
     if (group.observedMs < minObservedMs) continue;
-    if (base.has(group.branch)) continue;
-    if (!isCheckout({ repoPath: group.repoPath, roots })) continue;
-    if (options.offeredCheckouts.includes(group.repoPath)) continue;
-    if (isStandInRefused({ repoPath: group.repoPath, branch: group.branch, refused: options.refused })) continue;
-    if (alreadyWaiting({ repoPath: group.repoPath, branch: group.branch, standIns: options.standIns })) continue;
-    if (alreadyAnswered({ repoPath: group.repoPath, branch: group.branch, rules: options.rules })) continue;
+    if (base.has(branch) && !workPath) continue;
+    if (!isCheckout({ repoPath, roots })) continue;
+    if (options.offeredCheckouts.includes(repoPath)) continue;
+    if (isStandInRefused({ repoPath, branch, refused: options.refused })) continue;
+    if (alreadyWaiting({ repoPath, branch, workPath, standIns: options.standIns })) continue;
+    if (alreadyAnswered({ repoPath, branch, workPath, rules: options.rules })) continue;
 
     const first = group.contexts[0];
     const link = first && matchProjectLink({ context: first.context, links: options.links });
@@ -191,7 +220,8 @@ export const autoStandIns = (options: {
       author: 'app',
       openedFor: group.repoPath,
       openedForBranch: group.branch,
-      key: `${describeProjectLink({ path: group.repoPath })}-${group.branch}`,
+      openedForWorkPath: workPath,
+      key: [describeProjectLink({ path: repoPath }), branch, workPath].filter(Boolean).join('-'),
     });
 
     opened.push({
@@ -199,9 +229,10 @@ export const autoStandIns = (options: {
       draft,
       observedMs: group.observedMs,
       rule: {
-        id: `repo:${group.repoPath}@${group.branch}#${options.now.getTime()}`,
-        repoPath: group.repoPath,
-        branch: group.branch,
+        id: `repo:${repoPath}@${branch}${workPath ? `#${workPath}` : ''}#${options.now.getTime()}`,
+        repoPath,
+        branch,
+        workPath,
         target: { kind: 'stand-in', standInId: standIn.id },
         author: 'app',
         createdAt: options.now,

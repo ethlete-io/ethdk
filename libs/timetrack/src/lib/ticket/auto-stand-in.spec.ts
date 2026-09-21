@@ -72,6 +72,39 @@ const open = (options: {
   });
 
 describe('autoStandIns', () => {
+  it('opens one per directory of a base branch, which is the only thing that names the work there', () => {
+    const rework = { repoPath: FIFAGG, branch: 'main', workPath: 'context/tracks/20260921_rework' };
+    const journey = { repoPath: FIFAGG, branch: 'main', workPath: 'context/tracks/20260808_journey' };
+    const opened = open({ contexts: [unnamed(rework, 45 * 60_000), unnamed(journey, 75 * 60_000)] });
+
+    expect(opened).toHaveLength(2);
+    expect(opened.map((entry) => entry.standIn.openedForWorkPath).sort()).toEqual(
+      [journey.workPath, rework.workPath].sort(),
+    );
+    expect(opened.map((entry) => entry.rule.workPath).sort()).toEqual([journey.workPath, rework.workPath].sort());
+  });
+
+  it('still opens none for a base branch no directory could split', () => {
+    expect(open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'main' }, 45 * 60_000)] })).toEqual([]);
+  });
+
+  it('leaves a directory of a base branch alone once a record waits on it', () => {
+    const context = { repoPath: FIFAGG, branch: 'main', workPath: 'context/tracks/20260921_rework' };
+    const waiting: StandIn = {
+      id: 'stand-in:1:rework',
+      name: 'The rework',
+      state: 'open',
+      openedFor: FIFAGG,
+      openedForBranch: 'main',
+      openedForWorkPath: context.workPath,
+      days: ['2026-09-14'],
+      author: 'app',
+      createdAt: new Date('2026-09-14T09:00:00Z'),
+    };
+
+    expect(open({ contexts: [unnamed(context, 45 * 60_000)], standIns: [waiting] })).toEqual([]);
+  });
+
   it('opens one stand-in for a branch nothing could name', () => {
     const opened = open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'feat/user-management' }, 45 * 60_000)] });
 

@@ -43,6 +43,12 @@ export type AttributionRule = {
   repoPath?: string;
   /** Restricts the rule to one branch of `repoPath`. Without it the whole repository matches. */
   branch?: string;
+  /**
+   * Restricts the rule to one directory of `repoPath`, for a branch that names no piece of work of its
+   * own. Without it every directory of the branch matches, which is what every rule written before work
+   * paths existed keeps doing.
+   */
+  workPath?: string;
   /** Matches work that has no repository at all, such as a browser or a chat client. */
   appId?: string;
   target: AttributionTarget;
@@ -78,6 +84,9 @@ const matches = (options: { rule: AttributionRule; context: ActivityContext; sco
   if (scope === 'app') return !!context.appId && context.appId === rule.appId;
   if (context.repoPath !== rule.repoPath) return false;
   if (scope === 'repo') return true;
+
+  /** A rule that names no directory covers every directory of the branch, as it always did. */
+  if (rule.workPath && rule.workPath !== context.workPath) return false;
 
   /** A checkout reports `next` and a merge request `refs/heads/next`; both name the same branch. */
   return !!context.branch && !!rule.branch && stripRefPrefix(context.branch) === stripRefPrefix(rule.branch);
@@ -121,12 +130,14 @@ export type UnnamedContext = {
   from: Date;
   to: Date;
   /** The rule naming this context would create, ready to be given a target. */
-  suggestion: Pick<AttributionRule, 'repoPath' | 'branch' | 'appId'>;
+  suggestion: Pick<AttributionRule, 'repoPath' | 'branch' | 'workPath' | 'appId'>;
 };
 
 /** The rule that would name this context, ready to be given a target. */
 export const suggestionFor = (context: ActivityContext): UnnamedContext['suggestion'] =>
-  context.repoPath ? { repoPath: context.repoPath, branch: context.branch } : { appId: context.appId };
+  context.repoPath
+    ? { repoPath: context.repoPath, branch: context.branch, workPath: context.workPath }
+    : { appId: context.appId };
 
 /**
  * What the reasoning provider proposes one unnamed context belongs to.

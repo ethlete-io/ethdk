@@ -49,6 +49,11 @@ export type StandIn = {
    */
   openedForBranch?: string;
   /**
+   * The directory of `openedForBranch` the app opened it for, where the branch names no piece of work
+   * of its own. Absent on every record opened while the grain was the branch or the whole checkout.
+   */
+  openedForWorkPath?: string;
+  /**
    * The branches its own bands were drawn on, collected as each day is drawn, apart from a base
    * branch. A base branch is integration work rather than one piece of work.
    *
@@ -107,6 +112,8 @@ export const openStandIn = (options: {
   openedFor?: string;
   /** The branch of that checkout the app opened it for. */
   openedForBranch?: string;
+  /** The directory of that branch the app opened it for, where the branch names no piece of work. */
+  openedForWorkPath?: string;
   /**
    * Tells apart two stand-ins opened in the same millisecond, which is what one pass over a day's
    * checkouts does. Anything but letters and digits is dropped, so an id stays a readable key.
@@ -119,6 +126,7 @@ export const openStandIn = (options: {
   ...(options.projectKey ? { projectKey: options.projectKey } : {}),
   ...(options.openedFor ? { openedFor: options.openedFor } : {}),
   ...(options.openedForBranch ? { openedForBranch: options.openedForBranch } : {}),
+  ...(options.openedForWorkPath ? { openedForWorkPath: options.openedForWorkPath } : {}),
   state: 'open',
   days: [options.day],
   author: options.author ?? 'user',

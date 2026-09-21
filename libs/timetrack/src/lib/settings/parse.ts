@@ -105,6 +105,7 @@ const asAttributionRule = (value: unknown, index: number): AttributionRule | nul
   const repoPath = asText(raw['repoPath']);
   const appId = asText(raw['appId']);
   const branch = asText(raw['branch']);
+  const workPath = asText(raw['workPath']);
 
   if (!target || (!repoPath && !appId)) return null;
 
@@ -112,6 +113,7 @@ const asAttributionRule = (value: unknown, index: number): AttributionRule | nul
     id: asText(raw['id']) || `rule-${index}`,
     repoPath: repoPath || undefined,
     branch: repoPath && branch ? branch : undefined,
+    workPath: repoPath && workPath ? workPath : undefined,
     appId: repoPath ? undefined : appId,
     target,
     author: asAuthor(raw['author']),
@@ -168,6 +170,7 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
     issueKey: issueKey || undefined,
     openedFor: asText(raw['openedFor']) || undefined,
     openedForBranch: asText(raw['openedForBranch']) || undefined,
+    openedForWorkPath: asText(raw['openedForWorkPath']) || undefined,
     /** Without it a placeholder read back from disk resolves checkout-wide again. See `narrowedRules`. */
     heldOn: heldOn.length ? heldOn : undefined,
     /** Without it a resolve read back from disk has nothing to point back, so the undo puts back nothing. */
