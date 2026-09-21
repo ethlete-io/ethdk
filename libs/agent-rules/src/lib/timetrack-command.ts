@@ -24,7 +24,7 @@ import {
   timetrackStatus,
 } from './timetrack';
 import { plain } from './plain-text';
-import { commitPathsOnDays, currentBranch, projectRootsOf } from './git';
+import { commitAuthorOf, commitPathsOnDays, currentBranch, projectRootsOf } from './git';
 
 const FLAGS_WITH_VALUE = [
   '--root',
@@ -48,6 +48,7 @@ const FLAGS_WITH_VALUE = [
   '--branch',
   '--paths',
   '--claim',
+  '--author',
 ];
 
 /** Every human-readable line, with anything a terminal would act on printed rather than obeyed. */
@@ -333,7 +334,8 @@ const splitStandIn = async (options: { id: string; argv: string[]; json: boolean
   }
 
   const branch = flagValue(argv, '--branch') ?? currentBranch(checkout);
-  const commits = commitPathsOnDays({ root: checkout, days: standIn.days });
+  const author = flagValue(argv, '--author') ?? commitAuthorOf(checkout);
+  const commits = commitPathsOnDays({ root: checkout, days: standIn.days, ...(author ? { author } : {}) });
 
   if (!commits.length) {
     say(`No commit of ${checkout} falls on ${standIn.days.join(', ')}, so nothing says how to split it.`);
@@ -406,7 +408,8 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack standins            The names the user gave work Jira does not hold yet, and their age
   timetrack standins --remove <id>
                                 Delete one placeholder, and the rule that named it
-  timetrack standins --split <id> [--repo <dir>] [--paths <dir>,<dir>] [--claim <dir>] [--force]
+  timetrack standins --split <id> [--repo <dir>] [--paths <dir>,<dir>] [--claim <dir>] [--author <email>]
+                                [--force]
                                 Cut one that covered a whole checkout into one per directory
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
 

@@ -10,6 +10,18 @@ export const gitLoud = (options: { root: string; args: string[] }) =>
 
 export const currentBranch = (root: string) => git({ root, args: ['rev-parse', '--abbrev-ref', 'HEAD'] });
 
+/**
+ * The identity a checkout commits under, which is how somebody else's commits stay out of a repair.
+ * A work checkout and a personal one are often two addresses, so this is read per checkout.
+ */
+export const commitAuthorOf = (root: string) => {
+  try {
+    return git({ root, args: ['config', '--get', 'user.email'] }) || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 export const allBranches = (root: string) => {
   const refs = git({ root, args: ['for-each-ref', '--format=%(refname)', 'refs/heads', 'refs/remotes'] });
   const names = refs
@@ -83,6 +95,10 @@ export type CommitPaths = { day: string; paths: string[] };
  * `%cd` with `--date=format-local:%F` is the day in the machine's own zone, which is the grain
  * Timetrack keys a day by. The span is read from the days given, so one `git log` answers them all,
  * and a commit on a day outside the list is dropped.
+ *
+ * `--branches` and the author filter must stay in step with the collector that opened the record
+ * (`gitLogArgs` in `libs/timetrack/src/lib/git/scan.ts`). Read a narrower history than the collector
+ * did and a day the record holds looks empty, which makes a repair refuse or drop it.
  */
 export const commitPathsOnDays = (options: { root: string; days: readonly string[]; author?: string }) => {
   const wanted = new Set(options.days);
@@ -96,6 +112,7 @@ export const commitPathsOnDays = (options: { root: string; days: readonly string
     root: options.root,
     args: [
       'log',
+      '--branches',
       '--name-only',
       '--no-merges',
       '--pretty=format:%x00%cd',
