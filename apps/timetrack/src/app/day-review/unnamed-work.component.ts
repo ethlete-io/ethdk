@@ -16,6 +16,7 @@ import {
   describeAttributionRule,
   formatDurationMs,
   projectKeyFor,
+  streamKey,
 } from '@ethlete/timetrack';
 import { IssueSelectComponent } from '../jira';
 import { injectTimetrackSettings } from '../settings/settings';
@@ -99,6 +100,7 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
             <ethlete-issue-select
               [value]="draftFor(entry.id)"
               [projectKey]="entry.projectKey"
+              [laneKey]="entry.laneKey"
               [ariaLabel]="'Issue for ' + entry.label"
               (valueChange)="setDraft(entry.id, $event)"
               class="w-42 shrink-0"
@@ -214,6 +216,7 @@ export class UnnamedWorkComponent {
       suggestion: suggestions.get(context.id),
       answered: answeredBy(rules.get(context.id)),
       projectKey: projectKeyFor({ context: context.context, links }) ?? '',
+      laneKey: streamKey(context.context),
     }));
   });
 

@@ -8,6 +8,12 @@ import { WorklogProposal } from '../model/proposal';
 export type ProposalOverride = {
   issueKey?: string;
   /**
+   * The lane the row was in when the reviewer named it, so a later read can tell which lane a naming
+   * belongs to. A proposal id holds no lane of its own for a row no checkout is behind — a call, a
+   * meeting — and `laneIssueUses` is what reads this back.
+   */
+  laneKey?: string;
+  /**
    * The stand-in the reviewer named the row with, while Jira holds no issue for the work. It sits
    * beside an absent `issueKey` rather than in it, so the row is still not one a sync can write.
    */

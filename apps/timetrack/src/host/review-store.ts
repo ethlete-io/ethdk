@@ -55,6 +55,10 @@ export const createTauriReviewStore = (): TimetrackReviewStore => ({
     invokeHost$<StoredEdits | null>('day_review_edits', { day }).pipe(
       map((stored) => (stored === null ? null : revive(stored))),
     ),
+  editsBetween$: (from, to) =>
+    invokeHost$<{ day: string; edits: StoredEdits }[]>('day_review_edits_between', { from, to }).pipe(
+      map((rows) => rows.map(({ day, edits }) => ({ day, edits: revive(edits) }))),
+    ),
   save$: (day, edits) => invokeHost$<void>('set_day_review_edits', { day, edits: toStored(edits) }),
   clear$: (day) => invokeHost$<void>('set_day_review_edits', { day, edits: null }),
 });

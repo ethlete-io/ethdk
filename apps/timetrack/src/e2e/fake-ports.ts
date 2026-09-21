@@ -244,6 +244,12 @@ export const createFakePorts = (): HostPorts => {
 
     review: {
       editsFor$: (day) => ok(edits.get(day) ?? null),
+      editsBetween$: (from, to) =>
+        ok(
+          [...edits.entries()]
+            .filter(([day]) => day >= from && day <= to)
+            .map(([day, stored]) => ({ day, edits: stored })),
+        ),
       save$: (day, next) => {
         edits.set(day, next);
 

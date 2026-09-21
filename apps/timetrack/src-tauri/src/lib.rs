@@ -160,6 +160,7 @@ pub fn run() {
             store::app_settings,
             store::compacted_through,
             store::day_review_edits,
+            store::day_review_edits_between,
             store::events_append,
             store::events_between,
             store::events_by_source,

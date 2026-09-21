@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 import { CollectedEvent } from '../model/event';
 import { SyncedWorklog } from '../model/proposal';
 import { TimerRun } from '../model/timer';
+import { StoredDayEdits } from '../review/lane-issues';
 import { DayReviewEdits } from '../review/model';
 import { TimetrackSettings } from '../settings/model';
 import { TempoDayCoverage } from '../tempo/coverage';
@@ -54,6 +55,12 @@ export type TimetrackCoverageStore = {
  */
 export type TimetrackReviewStore = {
   editsFor$(day: string): Observable<DayReviewEdits | null>;
+  /**
+   * Every day between `from` and `to`, both ends included, that holds an edit. A day nobody touched
+   * is absent rather than empty. `laneIssueUses` is what reads this: which issue a lane belongs to is
+   * a question about many days at once, and one read per day would be one call per day.
+   */
+  editsBetween$(from: string, to: string): Observable<StoredDayEdits[]>;
   save$(day: string, edits: DayReviewEdits): Observable<void>;
   clear$(day: string): Observable<void>;
 };

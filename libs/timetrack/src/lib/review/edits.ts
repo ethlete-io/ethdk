@@ -91,8 +91,12 @@ const overrideOn = (options: { edits: DayReviewEdits; row: ReviewedRow; change: 
 };
 
 /** Re-attributes a row to a different issue. The evidence chain is untouched — it is what was seen. */
-export const setRowIssue = (options: { edits: DayReviewEdits; row: ReviewedRow; issueKey: string }) =>
-  overrideOn({ edits: options.edits, row: options.row, change: { issueKey: options.issueKey } });
+export const setRowIssue = (options: { edits: DayReviewEdits; row: ReviewedRow; issueKey: string }) => {
+  const laneKey = storedLaneKey(options.row.laneKey);
+  const change = laneKey ? { issueKey: options.issueKey, laneKey } : { issueKey: options.issueKey };
+
+  return overrideOn({ edits: options.edits, row: options.row, change });
+};
 
 /**
  * Names a row with a stand-in, while Jira holds no issue for the work.

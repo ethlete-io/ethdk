@@ -395,6 +395,46 @@ pub async fn day_review_edits(db: State<'_, Db>, day: String) -> TimetrackResult
     .await
 }
 
+/// One stored day of review edits, as `day_review_edits_between` hands it back.
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DayReviewEditsRow {
+    pub day: String,
+    pub edits: serde_json::Value,
+}
+
+/// Every edited day between `from` and `to`, both ends included, oldest first.
+///
+/// One call rather than one per day: the window screen asks which issue each lane was named with, and
+/// that question spans weeks. A day whose stored JSON no longer parses is left out rather than failing
+/// the read - the answer is a ranking, and one unreadable day must not cost the whole window.
+#[tauri::command]
+pub async fn day_review_edits_between(
+    db: State<'_, Db>,
+    from: String,
+    to: String,
+) -> TimetrackResult<Vec<DayReviewEditsRow>> {
+    db.run(move |connection| {
+        let mut statement =
+            connection.prepare("SELECT day, edits FROM day_review WHERE day >= ?1 AND day <= ?2 ORDER BY day")?;
+        let rows = statement
+            .query_map(params![from, to], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(rows
+            .into_iter()
+            .filter_map(|(day, edits)| {
+                serde_json::from_str(&edits)
+                    .ok()
+                    .map(|edits| DayReviewEditsRow { day, edits })
+            })
+            .collect())
+    })
+    .await
+}
+
 /// The settings document, or `None` while nothing has been configured. Passed through untouched: what
 /// a setting means belongs to the core, and the host only has to keep it.
 #[tauri::command]

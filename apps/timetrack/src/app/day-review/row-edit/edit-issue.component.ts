@@ -23,6 +23,7 @@ import { rowEntryOf } from './row-appointment';
       <ethlete-issue-select
         [value]="issueKey()"
         [projectKey]="projectKey()"
+        [laneKey]="laneKey()"
         (valueChange)="pick($event)"
         ariaLabel="Issue for this band"
       />
@@ -38,14 +39,16 @@ export class EditIssueComponent {
 
   protected issueKey = computed(() => this.draft()().title);
 
+  /** The lane the row is drawn in, so the picker can offer what that lane was named with before. */
+  protected laneKey = computed(() => rowEntryOf(this.draft()())?.row.laneKey ?? '');
+
   /**
    * The project the row's own checkout is logged into, so the picker offers that project and not the
    * whole instance. Empty for a row no checkout is behind - a call, a meeting - and for a checkout no
    * project link covers.
    */
   protected projectKey = computed(() => {
-    const laneKey = rowEntryOf(this.draft()())?.row.laneKey;
-    const repoPath = laneKey ? streamKeyRepoPath(laneKey) : undefined;
+    const repoPath = this.laneKey() ? streamKeyRepoPath(this.laneKey()) : undefined;
 
     if (!repoPath) return '';
 

@@ -11,6 +11,7 @@ import {
   favoriteProjectKeys,
   fetchJiraFields$,
   fetchJiraIssuePicks$,
+  fetchJiraIssues$,
   fetchJiraIssueTypes$,
   fetchJiraProjects$,
   fetchJiraStatuses$,
@@ -102,6 +103,7 @@ const JIRA_CATALOG_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const fieldLoads$ = new Subject<void>();
   const statusLoads$ = new Subject<void>();
   const issueAsks$ = new Subject<JiraIssueAsk>();
+  const keyAsks$ = new Subject<string[]>();
 
   /** Runs a read with the configured credentials, or fails with the one message that names the cause. */
   const withCredentials$ = <T>(read$: (credentials: JiraCredentials) => Observable<T>) =>
@@ -199,6 +201,33 @@ const JIRA_CATALOG_DEF = /* @__PURE__ */ defineRootProvider(() => {
     { initialValue: {} as Record<string, IssueList> },
   );
 
+  const askedKeys = new Set<string>();
+
+  /**
+   * The issues behind a set of keys, whatever project they are in and whether or not they are closed.
+   *
+   * A key somebody remembers is regularly one no picker list holds, and a line that shows a bare key
+   * where every other line shows a summary reads as a list that failed to load. A failed read leaves
+   * the key unresolved rather than raising: the caller has the key, which is the part that books.
+   */
+  const keyedIssues = toSignal(
+    keyAsks$.pipe(
+      mergeMap((keys) =>
+        withCredentials$((credentials) => fetchJiraIssues$({ transport: ports.transport, credentials, keys })).pipe(
+          catchError(() => of<JiraIssue[]>([])),
+        ),
+      ),
+      scan(
+        (all: Record<string, JiraIssue>, issues) => ({
+          ...all,
+          ...Object.fromEntries(issues.map((issue) => [issue.key, issue])),
+        }),
+        {},
+      ),
+    ),
+    { initialValue: {} as Record<string, JiraIssue> },
+  );
+
   /**
    * The list one scope holds, or none at all.
    *
@@ -264,6 +293,21 @@ const JIRA_CATALOG_DEF = /* @__PURE__ */ defineRootProvider(() => {
       if (list && list.text === ask.text && sameKeys(list.projectKeys, keysFor(ask.scope))) return;
 
       issueAsks$.next(ask);
+    },
+    /** The issue one key names, once `askForIssueKeys` has read it. */
+    issueForKey: (key: string): JiraIssue | undefined => keyedIssues()[key],
+    /**
+     * Reads the issues behind these keys. A key already asked for costs nothing, so a caller may ask
+     * on every open and with the whole set it holds.
+     */
+    askForIssueKeys: (keys: readonly string[]) => {
+      const wanted = keys.filter((key) => !askedKeys.has(key));
+
+      if (wanted.length === 0) return;
+
+      for (const key of wanted) askedKeys.add(key);
+
+      keyAsks$.next(wanted);
     },
     /** Reads one scope again, with the text it last read — after a failure, or a token fixed since. */
     reloadIssues: (scope: string) => issueAsks$.next({ scope, text: issueLists()[scope]?.text ?? '' }),
