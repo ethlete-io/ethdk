@@ -24,7 +24,7 @@ import {
   timetrackStatus,
 } from './timetrack';
 import { plain } from './plain-text';
-import { commitPathsOnDays, currentBranch } from './git';
+import { commitPathsOnDays, currentBranch, projectRootsOf } from './git';
 
 const FLAGS_WITH_VALUE = [
   '--root',
@@ -344,12 +344,13 @@ const splitStandIn = async (options: { id: string; argv: string[]; json: boolean
     .filter(Boolean);
   const claim = flagValue(argv, '--claim');
   const apply = argv.includes('--force');
-  const answer = await timetrackSplitStandIn({ id, branch, commits, paths, claim, apply });
+  const projectRoots = projectRootsOf(standIn.openedFor);
+  const answer = await timetrackSplitStandIn({ id, branch, commits, projectRoots, paths, claim, apply });
 
   if (!json) {
     say(`${standIn.name}  ${standIn.days.length} day(s), branch ${branch}`);
     say(`Directories the commits name (${answer.candidates.length})`);
-    answer.candidates.forEach((piece) => say(`  ${piece.workPath}  ${piece.days.join(', ')}`));
+    answer.candidates.forEach((piece) => say(`  ${piece.workPath}  ${piece.commits}c  ${piece.days.join(', ')}`));
 
     if (!answer.pieces.length) {
       say('None of them is an automatic grain. Pick the pieces with --paths <dir>,<dir>.');

@@ -20,6 +20,28 @@ export const allBranches = (root: string) => {
   return [...new Set(names)].sort();
 };
 
+/**
+ * The directories a checkout declares as projects, relative to it, deepest last.
+ *
+ * A repository states its own boundaries in the files its tooling reads, and those beat any depth a
+ * rule could pick: two sibling libraries stay apart, and one library's own subdirectories fold into
+ * it. The checkout root is left out on purpose - it is the whole checkout under another name.
+ *
+ * Read through `git ls-files` rather than the filesystem, so an ignored or vendored copy under
+ * `node_modules` never counts as a project.
+ */
+export const projectRootsOf = (root: string) => {
+  const out = git({ root, args: ['ls-files', '--', '*/project.json', '*/package.json'] });
+
+  const roots = out
+    .split('\n')
+    .filter(Boolean)
+    .filter((path) => !path.includes('node_modules/'))
+    .map((path) => path.slice(0, path.lastIndexOf('/')));
+
+  return [...new Set(roots)].sort();
+};
+
 export const isDirty = (root: string) => git({ root, args: ['status', '--porcelain'] }).length > 0;
 
 const refExists = (options: { root: string; ref: string }) => {

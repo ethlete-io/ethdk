@@ -110,9 +110,22 @@ describe('parseAgentRequest', () => {
         branch: 'main',
         apply: true,
         paths: [],
+        projectRoots: [],
         commits: [{ day: '2026-09-08', paths: ['src/a/one.ts'] }],
       },
     });
+  });
+
+  it('takes the projects a split cuts its pieces to', () => {
+    expect(
+      parseAgentRequest({
+        op: 'standIn.split',
+        id: 'x',
+        branch: 'main',
+        commits: [{ day: '2026-09-08', paths: ['libs/one/src/a.ts'] }],
+        projectRoots: ['libs/one', 'libs/two', ''],
+      }),
+    ).toMatchObject({ ok: true, request: { projectRoots: ['libs/one', 'libs/two'] } });
   });
 
   it('reads a split without apply as a plan, and refuses one with no commit left', () => {

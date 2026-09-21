@@ -355,6 +355,8 @@ export type AgentApiRequest =
       id: string;
       branch: string;
       commits: AgentApiWorkCommit[];
+      /** The projects the checkout declares, relative to it. They are the grain a piece is cut to. */
+      projectRoots: string[];
       paths: string[];
       claim?: string;
       apply: boolean;
@@ -370,7 +372,7 @@ export type AgentApiRequest =
 export type AgentApiWorkCommit = { day: string; paths: string[] };
 
 /** One directory a split names, with the days of the record that worked in it. */
-export type AgentApiStandInPiece = { workPath: string; days: string[] };
+export type AgentApiStandInPiece = { workPath: string; days: string[]; commits: number };
 
 /**
  * What a split would do, or did.

@@ -1,10 +1,4 @@
 /**
- * How deep a work path may reach. Three segments is `context/tracks/<track>` and `src/app/<feature>`,
- * and a fourth starts naming the parts of one piece of work rather than the piece.
- */
-export const DEFAULT_MAX_WORK_PATH_DEPTH = 3;
-
-/**
  * How many work paths one checkout may split into before the split stops meaning anything.
  *
  * A checkout that touches nine directories in a day is not doing nine pieces of work; it is a
@@ -13,13 +7,73 @@ export const DEFAULT_MAX_WORK_PATH_DEPTH = 3;
  */
 export const DEFAULT_MAX_WORK_PATHS = 4;
 
+/**
+ * How many commits a directory needs before a repair opens a record for it.
+ *
+ * Measured over four checkouts: the directories below this floor are an incidental edit to a
+ * neighbouring library rather than a piece of work, and one checkout produced fifteen of them. They
+ * stay in the candidate list, so the user can still pick one by hand.
+ */
+export const DEFAULT_MIN_WORK_PATH_COMMITS = 3;
+
+/**
+ * The projects each checkout declares, relative to that checkout, keyed by the checkout's own path.
+ *
+ * The host reads them; the model only applies them. A checkout missing here is not an error - it
+ * falls back to the trunk rule, which is what a repository with no project files needs anyway.
+ */
+export type TimetrackProjectRoots = Readonly<Record<string, readonly string[]>>;
+
 const directoryOf = (path: string) => {
   const cut = path.lastIndexOf('/');
 
   return cut > 0 ? path.slice(0, cut) : '';
 };
 
-const truncate = (directory: string, maxDepth: number) => directory.split('/').slice(0, maxDepth).join('/');
+const prefixes = (directory: string) => {
+  const segments = directory.split('/');
+
+  return segments.map((_, index) => segments.slice(0, index + 1).join('/'));
+};
+
+const deepest = (left: string | undefined, right: string) =>
+  left && left.split('/').length >= right.split('/').length ? left : right;
+
+/** The deepest prefix more than `half` of `directories` sit inside, or nothing. */
+const majorityPrefix = (directories: readonly string[], half: number) => {
+  const held = new Map<string, number>();
+
+  for (const directory of directories) {
+    for (const prefix of prefixes(directory)) held.set(prefix, (held.get(prefix) ?? 0) + 1);
+  }
+
+  let found: string | undefined;
+
+  for (const [prefix, count] of held) {
+    if (count <= half) continue;
+
+    found = deepest(found, prefix);
+  }
+
+  return found;
+};
+
+/**
+ * The deepest project the checkout declares that holds `directory`, or nothing.
+ *
+ * A repository states its own boundaries in the directories that carry a `project.json` or a
+ * `package.json`, and those beat any depth this code could pick: they keep two sibling libraries
+ * apart while folding one library's own subdirectories back together.
+ */
+const projectRootOf = (directory: string, projectRoots: ReadonlySet<string>) => {
+  let found: string | undefined;
+
+  for (const prefix of prefixes(directory)) {
+    if (projectRoots.has(prefix)) found = deepest(found, prefix);
+  }
+
+  return found;
+};
 
 /**
  * The directory one commit worked in, or nothing when its files name no directory in common.
@@ -29,38 +83,42 @@ const truncate = (directory: string, maxDepth: number) => directory.split('/').s
  * still count as work on the directory its other files are in - which is most commits that add
  * anything, so requiring a common prefix would answer the checkout root for nearly all of them.
  *
- * The answer is cut to `maxDepth` segments, because below that a directory names a part of a piece of
- * work rather than the piece.
+ * The answer is the raw directory. `workPathsOf` narrows it to the piece of work it belongs to.
  */
-export const workPathOf = (options: { paths: readonly string[]; maxDepth?: number }): string | undefined => {
-  const maxDepth = options.maxDepth ?? DEFAULT_MAX_WORK_PATH_DEPTH;
-  const directories = options.paths.map((path) => truncate(directoryOf(path), maxDepth)).filter(Boolean);
+export const workPathOf = (options: { paths: readonly string[] }): string | undefined => {
+  const directories = options.paths.map(directoryOf).filter(Boolean);
 
   if (!directories.length) return undefined;
 
-  const held = new Map<string, number>();
+  return majorityPrefix(directories, options.paths.length / 2);
+};
 
-  for (const directory of directories) {
-    const segments = directory.split('/');
+/**
+ * The piece of work each commit belongs to, in the order the commits were given.
+ *
+ * Two rules answer this, and the checkout decides which. Where the checkout declares projects, the
+ * deepest one holding the commit's directory is the piece - `libs/domain/public/competition` and
+ * `libs/domain/public/static` stay apart, while every subdirectory of one library folds into it.
+ * Where it declares none, the commits decide between them: the deepest prefix more than half of them
+ * sit inside is the trunk, and the pieces are one level below it.
+ *
+ * The trunk is read across the whole set rather than per commit, so a checkout answers at one grain.
+ */
+export const workPathsOf = (options: {
+  commits: readonly { paths: readonly string[] }[];
+  projectRoots?: readonly string[];
+}): (string | undefined)[] => {
+  const roots = new Set(options.projectRoots ?? []);
+  const directories = options.commits.map((commit) => workPathOf({ paths: commit.paths }));
+  const named = directories.filter((directory): directory is string => !!directory);
+  const trunk = majorityPrefix(named, named.length / 2);
+  const depth = trunk ? trunk.split('/').length + 1 : 1;
 
-    for (let depth = 1; depth <= segments.length; depth++) {
-      const prefix = segments.slice(0, depth).join('/');
+  return directories.map((directory) => {
+    if (!directory) return undefined;
 
-      held.set(prefix, (held.get(prefix) ?? 0) + 1);
-    }
-  }
-
-  const majority = options.paths.length / 2;
-  let found: string | undefined;
-
-  for (const [prefix, count] of held) {
-    if (count <= majority) continue;
-    if (found && found.split('/').length >= prefix.split('/').length) continue;
-
-    found = prefix;
-  }
-
-  return found;
+    return projectRootOf(directory, roots) ?? directory.split('/').slice(0, depth).join('/');
+  });
 };
 
 /**
@@ -81,36 +139,47 @@ export const workPathsSplit = (options: { paths: readonly (string | undefined)[]
 export type WorkPathCommit = { day: string; paths: readonly string[] };
 
 /** One directory a set of commits worked in, with the days that worked in it. */
-export type WorkPathPiece = { workPath: string; days: string[] };
+export type WorkPathPiece = { workPath: string; days: string[]; commits: number };
 
 /**
  * Every directory a set of commits worked in, with the days that worked in each.
  *
- * This is the raw reading, with no judgment about whether the directories are a grain. It is what a
- * user picking the pieces of a repair by hand is offered.
+ * This is the raw reading, with no judgment about whether a directory holds enough work to be a
+ * piece. It is what a user picking the pieces of a repair by hand is offered.
  */
-export const workPathDays = (options: { commits: readonly WorkPathCommit[]; maxDepth?: number }): WorkPathPiece[] => {
-  const days = new Map<string, Set<string>>();
+export const workPathDays = (options: {
+  commits: readonly WorkPathCommit[];
+  projectRoots?: readonly string[];
+}): WorkPathPiece[] => {
+  const paths = workPathsOf(options);
+  const held = new Map<string, { days: Set<string>; commits: number }>();
 
-  for (const commit of options.commits) {
-    const workPath = workPathOf({ paths: commit.paths, maxDepth: options.maxDepth });
+  options.commits.forEach((commit, index) => {
+    const workPath = paths[index];
 
-    if (!workPath) continue;
+    if (!workPath) return;
 
-    days.set(workPath, (days.get(workPath) ?? new Set()).add(commit.day));
-  }
+    const piece = held.get(workPath) ?? { days: new Set<string>(), commits: 0 };
 
-  return [...days.entries()]
-    .map(([workPath, held]) => ({ workPath, days: [...held].sort() }))
+    piece.days.add(commit.day);
+    piece.commits++;
+    held.set(workPath, piece);
+  });
+
+  return [...held.entries()]
+    .map(([workPath, piece]) => ({ workPath, days: [...piece.days].sort(), commits: piece.commits }))
     .sort((left, right) => left.workPath.localeCompare(right.workPath));
 };
 
 /**
  * The directories a set of commits splits into, or nothing when they are not its grain.
  *
- * This is how a placeholder opened for a whole checkout is re-cut without the user choosing. The
- * store cannot answer it: a commit collected before Timetrack read file paths carries none, so the
- * caller reads them back out of `git log --name-only` and hands them here.
+ * This is how a placeholder opened for a whole checkout is re-cut without the user choosing. A
+ * directory under `minCommits` is left out: it is an edit made in passing, not a piece of work, and a
+ * checkout can produce a dozen of them. Two pieces are the least a split can mean.
+ *
+ * The store cannot answer this: a commit collected before Timetrack read file paths carries none, so
+ * the caller reads them back out of `git log --name-only` and hands them here.
  *
  * A commit counts toward the day it was made on rather than the day before it. The backwards reading
  * `workPathAt` does is about which minutes a commit describes, and a repair asks the coarser
@@ -118,10 +187,11 @@ export const workPathDays = (options: { commits: readonly WorkPathCommit[]; maxD
  */
 export const workPathPieces = (options: {
   commits: readonly WorkPathCommit[];
-  maxDepth?: number;
-  maxPaths?: number;
+  projectRoots?: readonly string[];
+  minCommits?: number;
 }): WorkPathPiece[] => {
-  const held = workPathDays(options);
+  const minCommits = options.minCommits ?? DEFAULT_MIN_WORK_PATH_COMMITS;
+  const held = workPathDays(options).filter((piece) => piece.commits >= minCommits);
 
-  return workPathsSplit({ paths: held.map((piece) => piece.workPath), maxPaths: options.maxPaths }) ? held : [];
+  return held.length >= 2 ? held : [];
 };

@@ -459,11 +459,12 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const splitStandIn$ = (
     request: Extract<AgentApiRequest, { op: 'standIn.split' }>,
   ): Observable<AgentApiStandInSplit> => {
-    const candidates = workPathDays({ commits: request.commits });
+    const { commits, projectRoots } = request;
+    const candidates = workPathDays({ commits, projectRoots });
     const chosen = new Set(request.paths);
     const pieces = chosen.size
       ? candidates.filter((piece) => chosen.has(piece.workPath))
-      : workPathPieces({ commits: request.commits });
+      : workPathPieces({ commits, projectRoots });
     const plan = (answer: { standIns: AgentApiStandIn[] }) => ({ candidates, pieces, ...answer });
 
     if (!request.apply) return standIns$().pipe(map(plan));

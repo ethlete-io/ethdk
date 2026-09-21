@@ -15,7 +15,7 @@ import {
 import { Evidence } from '../model/evidence';
 import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } from '../model/time-window';
-import { workPathOf, workPathsSplit } from '../model/work-path';
+import { TimetrackProjectRoots, workPathsOf, workPathsSplit } from '../model/work-path';
 import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
@@ -112,6 +112,11 @@ export type StreamDayOptions = {
    * commits touched does.
    */
   baseBranches?: readonly string[];
+  /**
+   * The projects each checkout declares, which is the grain a work path is cut to. Without them a
+   * checkout's own commits decide the grain between them - see `workPathsOf`.
+   */
+  projectRoots?: TimetrackProjectRoots;
   /**
    * What the day's blocks are turned into rows with — see `buildRows`.
    *
@@ -468,20 +473,27 @@ type WorkPathMark = { at: Date; workPath: string };
  * heartbeat says which file, but neither says which piece of work a stretch belongs to, and the files
  * a commit carries do.
  */
-const workPathMarks = (samples: readonly ActivityEvent[]) => {
-  const found = new Map<string, WorkPathMark[]>();
+const workPathMarks = (samples: readonly ActivityEvent[], projectRoots: TimetrackProjectRoots) => {
+  const commits = new Map<string, { at: Date; paths: readonly string[] }[]>();
 
   for (const sample of samples) {
     if (sample.kind !== 'git-commit') continue;
 
-    const workPath = workPathOf({ paths: sample.paths ?? [] });
+    const held = commits.get(sample.repoPath) ?? [];
 
-    if (!workPath) continue;
+    held.push({ at: sample.at, paths: sample.paths ?? [] });
+    commits.set(sample.repoPath, held);
+  }
 
-    const marks = found.get(sample.repoPath) ?? [];
+  const found = new Map<string, WorkPathMark[]>();
 
-    marks.push({ at: sample.at, workPath });
-    found.set(sample.repoPath, marks);
+  for (const [repoPath, held] of commits) {
+    const paths = workPathsOf({ commits: held, projectRoots: projectRoots[repoPath] });
+    const marks = held
+      .map((commit, index) => ({ at: commit.at, workPath: paths[index] }))
+      .filter((mark): mark is WorkPathMark => !!mark.workPath);
+
+    if (marks.length) found.set(repoPath, marks);
   }
 
   return found;
@@ -494,10 +506,10 @@ const workPathMarks = (samples: readonly ActivityEvent[]) => {
  * that touched nine is a checkout whose directories are structure. Both keep the grain they had, so
  * this never splits a checkout it has no evidence to split.
  */
-const workPathGrains = (samples: readonly ActivityEvent[]) => {
+const workPathGrains = (samples: readonly ActivityEvent[], projectRoots: TimetrackProjectRoots) => {
   const grains = new Map<string, WorkPathMark[]>();
 
-  for (const [repoPath, marks] of workPathMarks(samples)) {
+  for (const [repoPath, marks] of workPathMarks(samples, projectRoots)) {
     if (workPathsSplit({ paths: marks.map((mark) => mark.workPath) })) grains.set(repoPath, marks);
   }
 
@@ -859,7 +871,7 @@ export const streamDay = (options: {
    * The checkouts a directory says the piece of work for, and the branches that cannot say it
    * themselves. A feature branch is one piece of work already, so its directories never split it.
    */
-  const grains = workPathGrains(samples);
+  const grains = workPathGrains(samples, config.projectRoots ?? {});
   const baseBranches = new Set(config.baseBranches ?? []);
   /**
    * The directory a stretch of one checkout worked in, where the branch cannot name the piece of work.

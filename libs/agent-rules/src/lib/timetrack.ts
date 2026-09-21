@@ -120,7 +120,7 @@ export type TimetrackStandIn = {
 export type TimetrackWorkCommit = { day: string; paths: string[] };
 
 /** One directory a split names, with the days of the record that worked in it. */
-export type TimetrackStandInPiece = { workPath: string; days: string[] };
+export type TimetrackStandInPiece = { workPath: string; days: string[]; commits: number };
 
 /** What a split would do, or did. `candidates` is every directory; `pieces` is what gets written. */
 export type TimetrackStandInSplit = {
@@ -448,6 +448,8 @@ export const timetrackSplitStandIn = (options: {
   id: string;
   branch: string;
   commits: readonly TimetrackWorkCommit[];
+  /** The projects the checkout declares, relative to it. They are the grain a piece is cut to. */
+  projectRoots: readonly string[];
   /** The directories the user picked as the pieces. Empty lets the automatic reading answer. */
   paths: readonly string[];
   /** The directory that takes every day of the record no commit claims. */

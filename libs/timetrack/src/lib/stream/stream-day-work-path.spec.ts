@@ -34,10 +34,15 @@ const dayOn = (branch: string): CollectedEvent[] => [
   commit({ minutes: 90, branch, paths: ['context/tracks.md', `${REWORK}/index.md`, `${REWORK}/spec.md`] }),
 ];
 
-const blocksOf = (events: CollectedEvent[]) =>
-  streamDay({ events, options: { repoRoots: [SPECS], baseBranches: ['main'] } }).blocks.filter(
-    (block) => block.context.repoPath === SPECS,
-  );
+const blocksOf = (events: CollectedEvent[], projectRoots?: readonly string[]) =>
+  streamDay({
+    events,
+    options: {
+      repoRoots: [SPECS],
+      baseBranches: ['main'],
+      ...(projectRoots ? { projectRoots: { [SPECS]: projectRoots } } : {}),
+    },
+  }).blocks.filter((block) => block.context.repoPath === SPECS);
 
 describe('streamDay work paths', () => {
   it('splits a base branch into the two directories its commits worked in', () => {
@@ -60,6 +65,29 @@ describe('streamDay work paths', () => {
 
   it('leaves a feature branch whole, because the branch already names the piece of work', () => {
     expect(blocksOf(dayOn('spec/20260921_rework')).map((block) => block.context.workPath)).toEqual([undefined]);
+  });
+
+  it('cuts a deep pair of commits to the two projects the checkout declares', () => {
+    const one = 'libs/domain/public/competition';
+    const two = 'libs/domain/public/static';
+    const events = [
+      ...focusRun({ from: 0, to: 120 }),
+      commit({ minutes: 30, branch: 'main', paths: [`${one}/src/lib/table/table.component.ts`] }),
+      commit({ minutes: 90, branch: 'main', paths: [`${two}/src/lib/page/page.component.ts`] }),
+    ];
+
+    expect(new Set(blocksOf(events, [one, two]).map((block) => block.context.workPath))).toEqual(new Set([one, two]));
+  });
+
+  it('leaves one project whole when the commits only worked in two of its subdirectories', () => {
+    const project = 'libs/domain/platform';
+    const events = [
+      ...focusRun({ from: 0, to: 120 }),
+      commit({ minutes: 30, branch: 'main', paths: [`${project}/src/lib/campaign/wizard-views/one.ts`] }),
+      commit({ minutes: 90, branch: 'main', paths: [`${project}/src/lib/campaign/components/two.ts`] }),
+    ];
+
+    expect(blocksOf(events, [project]).map((block) => block.context.workPath)).toEqual([undefined]);
   });
 
   it('leaves a checkout that worked in one directory whole', () => {
