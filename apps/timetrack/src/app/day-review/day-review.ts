@@ -108,6 +108,7 @@ import {
   injectGitCollector,
   injectWindowCollector,
 } from '../../collectors';
+import { injectLaneIssueHistory } from '../jira';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectEpicSiblings } from '../naming/epic-siblings';
@@ -161,6 +162,7 @@ const loadedFor = <T>(options: { key: string; load$: Observable<T> }): Observabl
  */
 const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
+  const laneIssues = injectLaneIssueHistory();
   const destroyRef = inject(DestroyRef);
   const windows = injectWindowCollector();
   const callSource = injectCallCollector();
@@ -696,6 +698,15 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   };
 
   /**
+   * Names a row and re-reads what each lane was named with, so the issue just picked for one call is
+   * offered to the next call of the same day rather than only after a restart.
+   */
+  const nameRow = (row: ReviewedRow, issueKey: string) => {
+    apply(setRowIssue({ edits: edits(), row, issueKey }));
+    laneIssues.reload();
+  };
+
+  /**
    * Asks the local agent CLI about the contexts nothing could name.
    *
    * An answer is kept against the payload's own hash, so re-opening the day, or a collector tick that
@@ -830,7 +841,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
         apply(setRowRange({ edits: edits(), row, from: new Date(edit.fromMs), to: new Date(edit.toMs) }));
         break;
       case 'issue':
-        apply(setRowIssue({ edits: edits(), row, issueKey: edit.issueKey }));
+        nameRow(row, edit.issueKey);
         break;
       case 'description':
         apply(setRowDescription({ edits: edits(), row, description: edit.description }));
@@ -978,7 +989,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * the calendar never held is remembered against the call's own features instead.
      */
     setIssue: (row: ReviewedRow, issueKey: string) => {
-      apply(setRowIssue({ edits: edits(), row, issueKey }));
+      nameRow(row, issueKey);
 
       if (!issueKey) return;
 

@@ -9,7 +9,7 @@ import {
   localDayKey,
   shiftDayKey,
 } from '@ethlete/timetrack';
-import { Subject, catchError, exhaustMap, map, of } from 'rxjs';
+import { Subject, catchError, map, of, switchMap } from 'rxjs';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 
@@ -40,10 +40,11 @@ const LANE_ISSUE_HISTORY_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const reads$ = new Subject<void>();
 
-  // `exhaustMap`: every picker on the day asks on its first open, and they all want the one answer.
+  // `switchMap`: a re-read after a naming replaces whatever was still in flight, and the pickers
+  // that all ask on their first open want the one answer rather than one read each.
   const uses = toSignal<LaneIssueUse[] | null>(
     reads$.pipe(
-      exhaustMap(() => {
+      switchMap(() => {
         const today = localDayKey(new Date(), dayBoundaryOf(settings.settings()));
 
         return ports.review.editsBetween$(shiftDayKey(today, -WINDOW_DAYS), today).pipe(
@@ -60,6 +61,11 @@ const LANE_ISSUE_HISTORY_DEF = /* @__PURE__ */ defineRootProvider(() => {
     load: () => {
       if (uses() === null) reads$.next();
     },
+    /**
+     * Reads it again, after a row was named. A day being reviewed now is inside the window, so the
+     * issue just picked for one call is what the next call of the same day should be offered.
+     */
+    reload: () => reads$.next(),
     /** The issues one lane was named with, most recently named first. Empty until the read lands. */
     usesFor: (laneKey: string) => laneIssueUsesFor({ uses: uses() ?? [], laneKey, limit: LANE_ISSUE_LIMIT }),
     /** Every remembered key, so their summaries can be read in one call rather than one per lane. */
