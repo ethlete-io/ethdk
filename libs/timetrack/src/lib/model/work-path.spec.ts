@@ -43,6 +43,18 @@ describe('workPathOf', () => {
   it('answers nothing when the commit touched no file', () => {
     expect(workPathOf({ paths: [] })).toBeUndefined();
   });
+
+  it('answers nothing for the checkout.s own tooling', () => {
+    expect(workPathOf({ paths: ['.changeset/a-fix.md', '.changeset/another-fix.md'] })).toBeUndefined();
+    expect(workPathOf({ paths: ['.claude/skills/one/SKILL.md'] })).toBeUndefined();
+    expect(workPathOf({ paths: ['.ai-context/notes.md'] })).toBeUndefined();
+  });
+
+  it('still answers the source directory of a commit that also wrote one tooling file', () => {
+    const paths = ['.changeset/a-fix.md', 'libs/query/src/one.ts', 'libs/query/src/two.ts'];
+
+    expect(workPathOf({ paths })).toBe('libs/query/src');
+  });
 });
 
 describe('workPathsOf', () => {

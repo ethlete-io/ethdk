@@ -124,7 +124,9 @@ A placeholder is drawn per branch, and per directory where the branch names no p
 A base branch, or no branch at all, says nothing about what was worked on, so the directory the
 commits touched answers instead. That directory is the project the repository declares - the one
 carrying the `project.json` or `package.json` above the changed files. A repository that declares
-none lets its own commits pick the grain between them.
+none lets its own commits pick the grain between them. A directory named with a leading dot is
+the checkout's own tooling, so it never answers: a commit in `.changeset` or `.github` is
+bookkeeping for another piece of work.
 
 Where the directories cannot answer either, the branch the checkout was next cut onto does. A
 branch is very often cut once the work on it has started, so the minutes before the cut sit on

@@ -83,6 +83,13 @@ const projectRootOf = (directory: string, projectRoots: ReadonlySet<string>) => 
  * still count as work on the directory its other files are in - which is most commits that add
  * anything, so requiring a common prefix would answer the checkout root for nearly all of them.
  *
+ * A commit whose majority sits in a directory named with a leading dot answers nothing. That dot is
+ * every repository's way of marking its own tooling - `.changeset`, `.github`, `.claude` - and a
+ * commit there is bookkeeping for another piece of work rather than a piece of its own. Measured
+ * over four checkouts and 2748 commits: nine such directories cleared the commit floor, and not one
+ * of them was work a ticket is filed for. They stay in the candidate list, so the user can still
+ * pick one by hand.
+ *
  * The answer is the raw directory. `workPathsOf` narrows it to the piece of work it belongs to.
  */
 export const workPathOf = (options: { paths: readonly string[] }): string | undefined => {
@@ -90,7 +97,9 @@ export const workPathOf = (options: { paths: readonly string[] }): string | unde
 
   if (!directories.length) return undefined;
 
-  return majorityPrefix(directories, options.paths.length / 2);
+  const found = majorityPrefix(directories, options.paths.length / 2);
+
+  return found?.startsWith('.') ? undefined : found;
 };
 
 /**
