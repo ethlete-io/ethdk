@@ -10,6 +10,7 @@ import {
   standInAge,
   standInDays,
   standInHeldMs,
+  standInWhere,
   workdaysBetween,
 } from './stand-in';
 
@@ -69,6 +70,32 @@ describe('matchStandIn', () => {
 describe('findStandIn', () => {
   it('answers nothing for an id nothing holds', () => {
     expect(findStandIn({ id: 'stand-in-2', standIns: [standIn()] })).toBeUndefined();
+  });
+});
+
+describe('standInWhere', () => {
+  it('names the directory a piece was cut to, under its checkout', () => {
+    expect(
+      standInWhere({
+        openedFor: '/home/tom/dev/fifagg/specs',
+        openedForBranch: 'main',
+        openedForWorkPath: 'context/tracks/20260911_competition-journey-overlay',
+      }),
+    ).toBe('specs, context/tracks/20260911_competition-journey-overlay');
+  });
+
+  it('names the branch where no directory cut it', () => {
+    expect(
+      standInWhere({ openedFor: '/home/tom/dev/fifagg-frontend', openedForBranch: 'feature/20260911_overlay' }),
+    ).toBe('fifagg-frontend, on feature/20260911_overlay');
+  });
+
+  it('names the checkout alone where neither says more', () => {
+    expect(standInWhere({ openedFor: '/home/tom/dev/fifagg-frontend' })).toBe('fifagg-frontend');
+  });
+
+  it('says nothing for a record the user wrote by hand', () => {
+    expect(standInWhere({})).toBe('');
   });
 });
 

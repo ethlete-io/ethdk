@@ -165,14 +165,35 @@ const strandedDays = async (id: string) => {
   return standIn?.state === 'open' ? standIn.days.filter((day) => day !== now).sort() : [];
 };
 
+/**
+ * Where a placeholder stands for its work: the checkout, then the narrowest thing it was cut to.
+ *
+ * Two of them may carry one name and mean two pieces of work, because a spec track and the branch
+ * that implements it are both called after the feature. One the user wrote by hand names no
+ * checkout, and this answers nothing for it.
+ */
+const standInWhere = (standIn: TimetrackStandIn) => {
+  if (!standIn.openedFor) return '';
+
+  const checkout = standIn.openedFor.split('/').filter(Boolean).pop() ?? standIn.openedFor;
+
+  if (standIn.openedForWorkPath) return `${checkout}, ${standIn.openedForWorkPath}`;
+
+  return standIn.openedForBranch ? `${checkout}, on ${standIn.openedForBranch}` : checkout;
+};
+
 const describeStandIn = (options: { standIn: TimetrackStandIn; rules: readonly TimetrackAttributionRule[] }) => {
   const { standIn } = options;
   const days = Math.floor((Date.now() - standIn.createdAtMs) / DAY_MS);
-  const where = standIn.projectKey ? ` in ${standIn.projectKey}` : '';
+  const project = standIn.projectKey ? ` in ${standIn.projectKey}` : '';
+  const where = standInWhere(standIn);
   const held = wholeCheckoutHeld(options);
-  const grain = held ? `\n    covers all of ${held}, so no branch of it gets one of its own` : '';
+  const lines = [
+    where ? `\n    ${where}` : '',
+    held ? `\n    covers all of ${held}, so no branch of it gets one of its own` : '',
+  ];
 
-  return `${standIn.name}${where}  ${days}d old, ${standIn.days.length} day(s) of work${grain}`;
+  return `${standIn.name}${project}  ${days}d old, ${standIn.days.length} day(s) of work${lines.join('')}`;
 };
 
 const HOUR_MS = 60 * 60_000;

@@ -156,6 +156,24 @@ export const isStandInRefused = (options: { repoPath: string; branch?: string; r
 export const openStandIns = (standIns: readonly StandIn[]) =>
   standIns.filter((standIn) => standIn.state === 'open').sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
+/**
+ * Where a placeholder the app opened stands for its work: the checkout, then the narrowest thing the
+ * record was cut to.
+ *
+ * Two placeholders may carry one name and mean two pieces of work — a spec track and the branch that
+ * implements it are both called after the feature — so a list that shows the name alone cannot be
+ * acted on. A record the user wrote by hand names no checkout, and this answers nothing for it.
+ */
+export const standInWhere = (standIn: Pick<StandIn, 'openedFor' | 'openedForBranch' | 'openedForWorkPath'>) => {
+  if (!standIn.openedFor) return '';
+
+  const checkout = standIn.openedFor.split('/').filter(Boolean).pop() ?? standIn.openedFor;
+
+  if (standIn.openedForWorkPath) return `${checkout}, ${standIn.openedForWorkPath}`;
+
+  return standIn.openedForBranch ? `${checkout}, on ${standIn.openedForBranch}` : checkout;
+};
+
 /** The stand-in with this id, or nothing when a rule points at one that was deleted. */
 export const findStandIn = (options: { id: string; standIns: readonly StandIn[] }) =>
   options.standIns.find((standIn) => standIn.id === options.id);

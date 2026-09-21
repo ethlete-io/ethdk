@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { BUTTON_IMPORTS, EMPTY_STATE_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
-import { StandIn, StandInAge, formatDurationMs } from '@ethlete/timetrack';
+import { StandIn, StandInAge, formatDurationMs, standInWhere } from '@ethlete/timetrack';
 import { CreateTicketComponent } from '../day-review/create-ticket.component';
 import { injectTicketDraft } from '../day-review/ticket-draft';
 import { IssueSelectComponent } from '../jira';
@@ -39,6 +39,10 @@ import { injectStandIns } from './stand-ins';
               }
               <span class="shrink-0 text-small text-et-surface-muted">{{ entry.days }}</span>
             </div>
+
+            @if (entry.where) {
+              <div class="text-mono text-small text-et-surface-muted">{{ entry.where }}</div>
+            }
 
             @if (entry.age; as age) {
               <div class="flex flex-wrap items-center gap-2 text-small">
@@ -186,6 +190,7 @@ export class StandInsListComponent {
           standIn,
           projectKey: standIn.projectKey ?? '',
           days: daysLabel(standIn),
+          where: standInWhere(standIn),
           age: standIn.state === 'open' && age ? ageLabel(age) : '',
           isOverdue: !!age?.isOverdue,
           canReopen: this.store.canReopen(standIn),
