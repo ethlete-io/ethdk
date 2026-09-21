@@ -33,6 +33,11 @@ export const dayRowsOptionsOf = (options: {
    * pass, and handing it an answer it produced would let the day narrow its own input.
    */
   epics?: EpicOptions;
+  /**
+   * The instant the day is read through: now, or the day's end once the day is over. It holds the
+   * increment a running day is still in back from every background band — see `cutBackground`.
+   */
+  through?: Date;
 }): Omit<BuildRowsOptions, 'links' | 'calls'> => {
   const { settings } = options;
 
@@ -40,7 +45,7 @@ export const dayRowsOptionsOf = (options: {
     config: gitFlowConfigFor(settings),
     rules: settings.attributionRules,
     standIns: settings.standIns,
-    cut: { backgroundProjects: settings.backgroundProjects },
+    cut: { backgroundProjects: settings.backgroundProjects, through: options.through },
     patterns: [...(options.patterns ?? [])],
     epics: options.epics,
     fill: { maxFillGapMs: settings.gapFillMs },
@@ -69,6 +74,8 @@ export const streamDayOptionsOf = (options: {
   epics?: EpicOptions;
   /** The instant the window source has reported through, which is its last drain. */
   windowsSeenThroughMs?: number;
+  /** The instant the day is read through: now, or the day's end once the day is over. */
+  through?: Date;
   /** What this reader adds to the shared row options: the day's timer runs, pauses and edits. */
   rows?: Omit<BuildRowsOptions, 'links' | 'calls'>;
 }): Partial<StreamDayOptions> => ({
@@ -81,7 +88,12 @@ export const streamDayOptionsOf = (options: {
   transientApps: effectiveTransientApps(options.settings),
   minBreakMs: options.settings.gapFillMs,
   rows: {
-    ...dayRowsOptionsOf({ settings: options.settings, patterns: options.patterns, epics: options.epics }),
+    ...dayRowsOptionsOf({
+      settings: options.settings,
+      patterns: options.patterns,
+      epics: options.epics,
+      through: options.through,
+    }),
     ...options.rows,
   },
 });

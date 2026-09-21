@@ -72,6 +72,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
           settings,
           patterns: options.patterns,
           windowsSeenThroughMs: options.windowsSeenThroughMs,
+          through: at,
           rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
         }),
       });

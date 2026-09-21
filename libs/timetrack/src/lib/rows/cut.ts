@@ -25,9 +25,41 @@ export type CutOptions = {
   claimed?: readonly TimeWindow[];
   /** The increment the day's clock times sit on, which a reported stretch is snapped to. */
   round?: Partial<RoundOptions>;
+  /**
+   * The instant a day still being collected is read through. A background band claims nothing from the
+   * increment this instant falls in.
+   *
+   * That increment is not over, so the checkout that ends up holding its foreground cannot have
+   * declared itself yet. A background band that took it books a whole increment which the work beside
+   * it claims a minute later, and on the way there the row stands accepted and ready to sync.
+   *
+   * A day that is over is read through its own end, which is after every block it holds and cuts
+   * nothing.
+   */
+  through?: Date;
 };
 
 const windowOf = (entry: AttributedBlock): TimeWindow => ({ from: entry.block.from, to: entry.block.to });
+
+/** The start of the increment an instant falls in: everything before it is an increment already over. */
+const settledThrough = (options: { through?: Date; round?: Partial<RoundOptions> }) => {
+  if (!options.through) return Number.POSITIVE_INFINITY;
+
+  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
+
+  return Math.floor(options.through.getTime() / incrementMs) * incrementMs;
+};
+
+/** The part of a block that falls in an increment already over, or none where no part does. */
+const settledPart = (entry: AttributedBlock, through: number): AttributedBlock | undefined => {
+  if (entry.block.to.getTime() <= through) return entry;
+
+  const [block] = clipBlocks({ blocks: [entry.block], windows: [{ from: new Date(through), to: entry.block.to }] });
+
+  if (!block) return undefined;
+
+  return { ...entry, block, evidence: entry.evidence.filter((observed) => observed.at.getTime() <= through) };
+};
 
 /**
  * A stretch a background band lost to a foreground band.
@@ -175,8 +207,12 @@ export const joinTouching = (stretches: readonly BehindStretch[]): BehindStretch
  * are ranked against each other by the focus their streams held, then by which started first, so the
  * cut always resolves and never asks the reviewer to.
  *
- * What it loses is reported as `behind` rather than thrown away. The cut is silent otherwise: the lane
- * holds an hour of presence, no row covers it, and nothing on the day says which band took it.
+ * The increment a running day is read through is held back from every background band — see
+ * `through`. Those minutes are neither kept nor reported: nothing claims them yet.
+ *
+ * What it loses to a foreground band is reported as `behind` rather than thrown away. The cut is
+ * silent otherwise: the lane holds an hour of presence, no row covers it, and nothing on the day says
+ * which band took it.
  */
 export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & CutOptions): CutResult => {
   const background = new Set((options.backgroundProjects ?? []).map((key) => key.trim().toUpperCase()).filter(Boolean));
@@ -191,8 +227,14 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
   };
 
   const foreground = options.blocks.filter((entry) => !isBackground(entry));
+  const settled = settledThrough(options);
   const ranked = options.blocks
     .filter(isBackground)
+    .flatMap((entry) => {
+      const part = settledPart(entry, settled);
+
+      return part ? [part] : [];
+    })
     .map((entry) => ({ entry, focus: focusMs[streamKey(entry.block.context)] ?? 0 }))
     .sort((a, b) => b.focus - a.focus || a.entry.block.from.getTime() - b.entry.block.from.getTime());
 

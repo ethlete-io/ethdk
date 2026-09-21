@@ -370,6 +370,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       settings: settings.settings(),
       patterns: recurring.patterns(),
       epics: epics.optionsFor(day()),
+      through: evidence()?.through,
     }),
     timerRuns: evidence()?.runs ?? [],
     pauses: evidence()?.pauses ?? [],

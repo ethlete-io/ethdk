@@ -250,6 +250,46 @@ describe('cutBackground', () => {
       ['late'],
     ]);
   });
+
+  it('holds back the increment the day is still in, so the checkout beside it can still claim it', () => {
+    const cut = cutBackground({
+      blocks: [attributed({ repoPath: SDK, from: '09:15', to: '10:36', issueKey: 'ET-772' })],
+      backgroundProjects: ['ET'],
+      through: at('10:36'),
+    });
+
+    expect(spans(cut.blocks)).toEqual([{ issueKey: 'ET-772', from: '09:15', to: '10:30' }]);
+    expect(behinds(cut.behind)).toEqual([]);
+  });
+
+  it('drops a band that started inside the increment the day is still in', () => {
+    const cut = cutBackground({
+      blocks: [attributed({ repoPath: SDK, from: '10:34', to: '10:36', issueKey: 'ET-772' })],
+      backgroundProjects: ['ET'],
+      through: at('10:36'),
+    });
+
+    expect(spans(cut.blocks)).toEqual([]);
+  });
+
+  it('keeps the whole of a day that is over, which is read through its own end', () => {
+    const cut = cutBackground({
+      blocks: [attributed({ repoPath: SDK, from: '09:15', to: '12:00', issueKey: 'ET-772' })],
+      backgroundProjects: ['ET'],
+      through: at('23:59'),
+    });
+
+    expect(spans(cut.blocks)).toEqual([{ issueKey: 'ET-772', from: '09:15', to: '12:00' }]);
+  });
+
+  it('holds nothing back where no instant is handed in', () => {
+    const cut = cutBackground({
+      blocks: [attributed({ repoPath: SDK, from: '09:15', to: '10:36', issueKey: 'ET-772' })],
+      backgroundProjects: ['ET'],
+    });
+
+    expect(spans(cut.blocks)).toEqual([{ issueKey: 'ET-772', from: '09:15', to: '10:36' }]);
+  });
 });
 
 describe('meetLaneRows', () => {

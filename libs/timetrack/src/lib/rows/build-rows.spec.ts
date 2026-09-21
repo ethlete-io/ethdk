@@ -301,6 +301,23 @@ describe('buildRows on a day that is still running', () => {
     ]);
   });
 
+  it('draws no background band in the increment the day is still in', () => {
+    const rows = buildRows({
+      ...dayOptions(at(16, 30)),
+      blocks: [
+        block({ from: at(13), to: at(16, 36), context: { repoPath: SDK, branch: 'next' } }),
+        block({ from: at(13, 30), to: at(16, 30), context: { repoPath: APP, branch: 'next' } }),
+      ],
+      cut: { backgroundProjects: ['ET'], through: at(16, 36) },
+    });
+
+    expect(
+      [...rows.proposals, ...rows.unnamed]
+        .filter((row) => row.laneKey === `repo:${SDK}`)
+        .map((row) => [row.from, row.to]),
+    ).toEqual([[at(13), at(13, 30)]]);
+  });
+
   it.each([18, 22, 23, 28, 31, 38])('leaves the lane whole with the foreground band open at 16:%i', (minute) => {
     const covered = sdkLane(at(16, minute));
 
