@@ -16,6 +16,43 @@ const line = (options: { sha?: string; authored?: string; ref?: string; subject?
 const parse = (lines: string[]) => parseGitLog({ repoPath: REPO, output: lines.join('\n') });
 
 describe('parseGitLog', () => {
+  it('reads the paths that follow a commit', () => {
+    const events = parse([line({}), '', 'src/one.ts', 'src/two.ts']);
+
+    expect(events[0]?.paths).toEqual(['src/one.ts', 'src/two.ts']);
+  });
+
+  it('keeps each commit to its own paths', () => {
+    const events = parse([
+      line({ sha: 'a'.repeat(40), authored: '2026-08-11T15:00:00+02:00' }),
+      '',
+      'src/one.ts',
+      line({ sha: 'b'.repeat(40) }),
+      '',
+      'src/two.ts',
+    ]);
+
+    expect(events.map((event) => event.paths)).toEqual([['src/one.ts'], ['src/two.ts']]);
+  });
+
+  it('drops the paths of a commit it refused, rather than lending them to the one before', () => {
+    const events = parse([
+      line({ sha: 'a'.repeat(40) }),
+      '',
+      'src/one.ts',
+      line({ sha: 'b'.repeat(40), ref: 'refs/remotes/origin/next' }),
+      '',
+      'src/foreign.ts',
+    ]);
+
+    expect(events).toHaveLength(1);
+    expect(events[0]?.paths).toEqual(['src/one.ts']);
+  });
+
+  it('leaves paths off a commit that changed none', () => {
+    expect(parse([line({})])[0]?.paths).toBeUndefined();
+  });
+
   it('reads a commit with its author time, branch and subject', () => {
     const events = parse([line({})]);
 

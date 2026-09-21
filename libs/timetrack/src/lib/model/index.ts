@@ -16,3 +16,4 @@ export * from './statement';
 export * from './time-window';
 export * from './timer';
 export * from './tokens';
+export * from './work-path';

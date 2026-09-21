@@ -1,5 +1,5 @@
 import { GitCommitEvent } from '../model/event';
-import { GIT_FIELD_SEPARATOR, GitScanWindow } from './format';
+import { GIT_FIELD_SEPARATOR, GitScanWindow, isGitLogHeader } from './format';
 
 const FOREIGN_REF = /^refs\/(remotes|tags)\//;
 
@@ -27,6 +27,9 @@ const branchOf = (ref: string) => {
  * `owners` names the checkout that holds each branch. Every worktree of a repository shares
  * `refs/heads/`, so one log covers all of them and the ref a commit was reached from is what says which
  * checkout it belongs to. A branch no checkout holds falls back to `repoPath`.
+ *
+ * The paths `--name-only` prints follow their own commit's header, so a commit this drops has to stay
+ * the current one until the next header arrives. Otherwise its files join the commit before it.
  */
 export const parseGitLog = (options: {
   repoPath: string;
@@ -36,8 +39,19 @@ export const parseGitLog = (options: {
 }): GitCommitEvent[] => {
   const events: GitCommitEvent[] = [];
   const seen = new Set<string>();
+  let current: GitCommitEvent | null = null;
 
   for (const line of options.output.split('\n')) {
+    if (!isGitLogHeader(line)) {
+      const path = line.trim();
+
+      if (current && path) current.paths = [...(current.paths ?? []), path];
+
+      continue;
+    }
+
+    current = null;
+
     const [sha, authored, ref, ...rest] = line.split(GIT_FIELD_SEPARATOR);
     const branch = ref ? branchOf(ref) : undefined;
     const subject = rest.join(GIT_FIELD_SEPARATOR).trim();
@@ -50,7 +64,7 @@ export const parseGitLog = (options: {
     if (options.window && (at < options.window.from || at > options.window.to)) continue;
 
     seen.add(sha);
-    events.push({
+    current = {
       at,
       source: 'git',
       kind: 'git-commit',
@@ -58,7 +72,8 @@ export const parseGitLog = (options: {
       branch,
       sha,
       subject,
-    });
+    };
+    events.push(current);
   }
 
   return events.sort((a, b) => a.at.getTime() - b.at.getTime());

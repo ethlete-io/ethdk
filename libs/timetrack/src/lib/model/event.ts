@@ -48,6 +48,12 @@ export type GitCommitEvent = CollectedEventBase<'git', 'git-commit'> & {
   sha: string;
   /** The conventional-commit subject. Never carries an issue key — use it as description material. */
   subject: string;
+  /**
+   * The files the commit changed, relative to the checkout. Stored rather than reduced to the one
+   * directory the work-path rule picks, so changing that rule re-reads the day instead of needing a
+   * rescan of a week of git history.
+   */
+  paths?: string[];
 };
 
 export type AgentSessionEvent = CollectedEventBase<'agent-session', 'agent-session'> & {

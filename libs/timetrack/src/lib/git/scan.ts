@@ -43,6 +43,7 @@ const gitLogArgs = (repo: GitRepoScan) => [
   'log',
   '--branches',
   '--no-merges',
+  '--name-only',
   `--since=${repo.window.from.toISOString()}`,
   `--until=${repo.window.to.toISOString()}`,
   `--format=${GIT_LOG_FORMAT}`,

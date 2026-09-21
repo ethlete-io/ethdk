@@ -14,5 +14,13 @@ export const GIT_REFLOG_FORMAT = `%gd${GIT_FIELD_SEPARATOR}%gs`;
  */
 export const GIT_LOG_FORMAT = `%H${GIT_FIELD_SEPARATOR}%aI${GIT_FIELD_SEPARATOR}%S${GIT_FIELD_SEPARATOR}%s`;
 
+/**
+ * Whether the line is the header of a commit rather than one of the paths that follow it.
+ *
+ * `--name-only` prints the format line, a blank line, then one path per line, and the only thing that
+ * tells the two apart is the separator — which a path cannot contain.
+ */
+export const isGitLogHeader = (line: string) => line.includes(GIT_FIELD_SEPARATOR);
+
 /** The instants a scan reads. Both parsers filter to it, so rescanning a day re-emits nothing. */
 export type GitScanWindow = { from: Date; to: Date };
