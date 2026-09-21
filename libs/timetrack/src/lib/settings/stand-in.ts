@@ -1,6 +1,7 @@
 import { AttributionRule, standInIdOf } from '../model/attribution';
 import { describeProjectLink } from '../model/project-link';
 import { StandIn, StandInRefusal, openStandIn, standInBranches, standInDays } from '../model/stand-in';
+import { humanized } from '../ticket/draft';
 import { withReplacedAttributionRule } from './attribution';
 import { TimetrackSettings } from './model';
 
@@ -114,7 +115,7 @@ export type StandInSplitPiece = {
   workPath: string;
   /** The days of the record that worked in it. A day that worked in two of them belongs to both. */
   days: readonly string[];
-  /** What to call it. Without one the old name carries the directory's last segment after it. */
+  /** What to call it. Without one the directory it stands for names it. */
   name?: string;
 };
 
@@ -129,8 +130,16 @@ export type StandInSplit = {
   refused?: string;
 };
 
-const splitPieceName = (options: { standIn: StandIn; piece: StandInSplitPiece }) =>
-  options.piece.name?.trim() || `${options.standIn.name}: ${options.piece.workPath.split('/').pop()}`;
+/**
+ * What one piece of a split is called: its own directory, and nothing of the record it came out of.
+ *
+ * The old name was drafted from whichever piece of the checkout came last, so carrying it over put
+ * one feature's name in front of another's directory - `Competition journey spec frontend:
+ * 20260921_competition-navigation-rework` named two unrelated specs at once. The directory is the
+ * piece, so it is the whole name.
+ */
+const splitPieceName = (options: { piece: StandInSplitPiece }) =>
+  options.piece.name?.trim() || humanized(options.piece.workPath.split('/').pop() ?? options.piece.workPath);
 
 /**
  * The pieces with every day no piece claims added to the one `claim` names.
@@ -231,7 +240,7 @@ export const splitStandIn = (options: {
   const remainder = standIn.days.filter((day) => !covered.has(day));
   const opened = pieces.map((piece) => ({
     ...openStandIn({
-      name: splitPieceName({ standIn, piece }),
+      name: splitPieceName({ piece }),
       day: [...piece.days].sort()[0] as string,
       now,
       projectKey: standIn.projectKey,

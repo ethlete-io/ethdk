@@ -525,10 +525,7 @@ describe('splitStandIn', () => {
   });
 
   it('names each piece after its directory unless the caller says otherwise', () => {
-    expect(split().opened.map((entry) => entry.name)).toEqual([
-      'Competition journey spec frontend: competition-journey',
-      'Competition journey spec frontend: season-pass',
-    ]);
+    expect(split().opened.map((entry) => entry.name)).toEqual(['Competition journey', 'Season pass']);
     expect(split({ pieces: [{ ...pieces[0]!, name: 'Journey spec' }, pieces[1]!] }).opened[0]?.name).toBe(
       'Journey spec',
     );

@@ -25,7 +25,7 @@ export type TicketDraft = {
 export const ticketSubjectOf = (summary: string) => slugifySubject(summary);
 
 /** `user-management` reads as a branch; `User management` reads as a ticket. */
-const humanized = (subject: string) => {
+export const humanized = (subject: string) => {
   const words = subject.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
 
   return words ? `${words[0]?.toUpperCase()}${words.slice(1)}` : '';
