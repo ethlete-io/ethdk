@@ -120,8 +120,14 @@ npx ethlete-agents timetrack standins --json  # the whole answer, resolved ones 
 app is the only place they give it. If the user asks for a ticket, use `create` and tell them
 to resolve the stand-in in Timetrack.
 
-A placeholder is drawn per branch. One written before that was true covers a whole checkout,
-and it blocks a per-branch placeholder for every branch of it. The list says so:
+A placeholder is drawn per branch, and per directory where the branch names no piece of work.
+A base branch, or no branch at all, says nothing about what was worked on, so the directory the
+commits touched answers instead. That directory is the project the repository declares - the one
+carrying the `project.json` or `package.json` above the changed files. A repository that declares
+none lets its own commits pick the grain between them.
+
+One placeholder written before any of that was true covers a whole checkout, and it blocks a
+per-branch placeholder for every branch of it. The list says so:
 
 ```
 Competition journey spec frontend in FIFAGG  3d old, 3 day(s) of work
@@ -131,6 +137,28 @@ Competition journey spec frontend in FIFAGG  3d old, 3 day(s) of work
 Two separate things cause that, and either alone is enough: the record names no branch, or the
 rule naming it names no branch. The line above reports both, so take it at its word rather than
 reading `--json` yourself.
+
+### Re-cut one that named two pieces of work
+
+A record covering a whole checkout is repaired rather than deleted, because a delete strands its
+days. `--split` re-cuts it into one record per directory, and moves each day onto the right one:
+
+```bash
+npx ethlete-agents timetrack standins --split <id>              # the plan, writes nothing
+npx ethlete-agents timetrack standins --split <id> --force      # carry it out
+```
+
+Without `--force` it prints every directory the commits name, with its commit count and its days,
+then says which of them it would write. A directory under three commits is an edit made in
+passing rather than a piece of work, so it is listed but not written. Pass
+`--paths <dir>,<dir>` to pick the pieces yourself.
+
+A day the record covers that holds no commit at all has no automatic answer. The split refuses
+rather than guessing, and `--claim <dir>` is how the user says which piece that day belongs to.
+Ask them; only they know.
+
+The record must name the checkout it was opened for. One the user opened by hand names none, and
+the split refuses it.
 
 You may delete one, because that takes a name away rather than putting one on the day:
 
