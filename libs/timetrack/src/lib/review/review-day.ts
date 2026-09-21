@@ -48,10 +48,16 @@ const withOverride = (row: RowSource, override: ProposalOverride | undefined): R
     override.description !== undefined ||
     override.durationMs !== undefined;
 
+  // An override that names a placeholder names no issue. The form blanks its issue field to say so,
+  // and an empty key is not `undefined`, so without this it wins the `??` below and the row reads
+  // with no name at all.
+  const named = override.standInId
+    ? { issueKey: undefined, standInId: override.standInId }
+    : { issueKey: override.issueKey ?? row.issueKey, standInId: row.standInId };
+
   return {
     ...row,
-    issueKey: override.issueKey ?? row.issueKey,
-    standInId: override.standInId ?? row.standInId,
+    ...named,
     description: override.description ?? row.description,
     durationMs: override.durationMs ?? row.durationMs,
     state: override.state ?? (changed ? 'edited' : defaultState(row)),

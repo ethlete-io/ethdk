@@ -1299,8 +1299,8 @@ describe('reviewDay over a row named to a stand-in', () => {
   });
   const reviewed = (standIns: StandIn[]) => reviewDay({ rows: day, edits: named, standIns }).rows[0]!;
 
-  it('leaves the row on the stand-in while it still waits for an issue', () => {
-    expect(reviewed([standIn])).toMatchObject({ standInId: standIn.id, issueKey: '' });
+  it('leaves the row on the stand-in while it still waits for an issue, and on no issue key', () => {
+    expect(reviewed([standIn])).toMatchObject({ standInId: standIn.id, issueKey: undefined });
   });
 
   it('reads the issue a resolved stand-in was answered with, which no stored day holds', () => {
