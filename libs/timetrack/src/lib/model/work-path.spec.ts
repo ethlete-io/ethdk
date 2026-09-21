@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { workPathOf, workPathsSplit } from './work-path';
+import { workPathOf, workPathPieces, workPathsSplit } from './work-path';
 
 const TRACK = 'context/tracks/20260921_competition-navigation-rework';
 const OTHER_TRACK = 'context/tracks/20260808_competition-journey';
@@ -52,5 +52,37 @@ describe('workPathsSplit', () => {
 
   it('refuses to split a checkout whose directories are structure rather than work', () => {
     expect(workPathsSplit({ paths: ['a', 'b', 'c', 'd', 'e'] })).toBeNull();
+  });
+});
+
+describe('workPathPieces', () => {
+  const commits = [
+    { day: '2026-09-08', paths: ['context/tracks/journey/spec.md', 'context/tracks/journey/api.md'] },
+    {
+      day: '2026-09-09',
+      paths: ['context/tracks/journey/spec.md', 'context/tracks/journey/ui.md', 'context/tracks.md'],
+    },
+    { day: '2026-09-11', paths: ['context/tracks/season-pass/spec.md', 'context/tracks/season-pass/ui.md'] },
+  ];
+
+  it('answers one directory per piece of work, with the days that worked in it', () => {
+    expect(workPathPieces({ commits })).toEqual([
+      { workPath: 'context/tracks/journey', days: ['2026-09-08', '2026-09-09'] },
+      { workPath: 'context/tracks/season-pass', days: ['2026-09-11'] },
+    ]);
+  });
+
+  it('answers nothing when every commit worked in the same directory', () => {
+    expect(workPathPieces({ commits: [commits[0]!, commits[1]!] })).toEqual([]);
+  });
+
+  it('answers nothing when the directories are structure rather than work', () => {
+    const many = ['a', 'b', 'c', 'd', 'e'].map((name) => ({ day: '2026-09-08', paths: [`src/${name}/file.ts`] }));
+
+    expect(workPathPieces({ commits: many, maxPaths: 4 })).toEqual([]);
+  });
+
+  it('leaves out a commit whose files name no directory', () => {
+    expect(workPathPieces({ commits: [...commits, { day: '2026-09-11', paths: ['README.md'] }] })).toHaveLength(2);
   });
 });

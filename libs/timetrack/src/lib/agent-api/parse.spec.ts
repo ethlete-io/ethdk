@@ -89,6 +89,48 @@ describe('parseAgentRequest', () => {
     });
   });
 
+  it('takes the stand-in split op, and drops a commit that names no day or no file', () => {
+    expect(
+      parseAgentRequest({
+        op: 'standIn.split',
+        id: 'stand-in:1:repo',
+        branch: 'main',
+        apply: true,
+        commits: [
+          { day: '2026-09-08', paths: ['src/a/one.ts'] },
+          { day: 'yesterday', paths: ['src/b/two.ts'] },
+          { day: '2026-09-09', paths: [] },
+        ],
+      }),
+    ).toEqual({
+      ok: true,
+      request: {
+        op: 'standIn.split',
+        id: 'stand-in:1:repo',
+        branch: 'main',
+        apply: true,
+        paths: [],
+        commits: [{ day: '2026-09-08', paths: ['src/a/one.ts'] }],
+      },
+    });
+  });
+
+  it('reads a split without apply as a plan, and refuses one with no commit left', () => {
+    expect(
+      parseAgentRequest({
+        op: 'standIn.split',
+        id: 'x',
+        branch: 'main',
+        commits: [{ day: '2026-09-08', paths: ['a.ts'] }],
+      }),
+    ).toMatchObject({ ok: true, request: { apply: false } });
+
+    expect(parseAgentRequest({ op: 'standIn.split', id: 'x', branch: 'main', commits: [] })).toEqual({
+      ok: false,
+      message: 'standIn.split needs a commits.',
+    });
+  });
+
   it('says what it does not know', () => {
     expect(parseAgentRequest({ op: 'jira.delete' })).toEqual({
       ok: false,

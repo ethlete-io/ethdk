@@ -19,10 +19,12 @@ import {
   timetrackRules,
   timetrackSearch,
   timetrackRemoveStandIn,
+  timetrackSplitStandIn,
   timetrackStandIns,
   timetrackStatus,
 } from './timetrack';
 import { plain } from './plain-text';
+import { commitPathsOnDays, currentBranch } from './git';
 
 const FLAGS_WITH_VALUE = [
   '--root',
@@ -41,6 +43,10 @@ const FLAGS_WITH_VALUE = [
   '--from',
   '--to',
   '--state',
+  '--remove',
+  '--split',
+  '--branch',
+  '--paths',
 ];
 
 /** Every human-readable line, with anything a terminal would act on printed rather than obeyed. */
@@ -299,6 +305,62 @@ const printed = (value: unknown, json: boolean) => {
   return 0;
 };
 
+/**
+ * Cuts a placeholder that covered a whole checkout into one per directory its commits worked in.
+ *
+ * The directories are read here rather than in the app: a commit collected before Timetrack recorded
+ * file paths carries none in the store, and that is every commit such a placeholder covers. Without
+ * `--force` the plan is printed and nothing is written.
+ */
+const splitStandIn = async (options: { id: string; argv: string[]; json: boolean }) => {
+  const { id, argv, json } = options;
+  const standIn = (await timetrackStandIns()).find((entry) => entry.id === id);
+
+  if (!standIn) {
+    say(`Timetrack holds no stand-in ${id}.`);
+
+    return 1;
+  }
+
+  if (!standIn.openedFor) {
+    say(`${id} stands for work rather than for a checkout, so it has no directories to split into.`);
+
+    return 1;
+  }
+
+  const branch = flagValue(argv, '--branch') ?? currentBranch(standIn.openedFor);
+  const commits = commitPathsOnDays({ root: standIn.openedFor, days: standIn.days });
+
+  if (!commits.length) {
+    say(`No commit of ${standIn.openedFor} falls on ${standIn.days.join(', ')}, so nothing says how to split it.`);
+
+    return 1;
+  }
+
+  const paths = (flagValue(argv, '--paths') ?? '')
+    .split(',')
+    .map((path) => path.trim())
+    .filter(Boolean);
+  const apply = argv.includes('--force');
+  const answer = await timetrackSplitStandIn({ id, branch, commits, paths, apply });
+
+  if (!json) {
+    say(`${standIn.name}  ${standIn.days.length} day(s), branch ${branch}`);
+    say(`Directories the commits name (${answer.candidates.length})`);
+    answer.candidates.forEach((piece) => say(`  ${piece.workPath}  ${piece.days.join(', ')}`));
+
+    if (!answer.pieces.length) {
+      say('None of them is an automatic grain. Pick the pieces with --paths <dir>,<dir>.');
+    } else if (apply) {
+      say(`Split into ${answer.pieces.length}, and the rule that named it rewritten one per directory.`);
+    } else {
+      say(`Would write ${answer.pieces.map((piece) => piece.workPath).join(', ')}. Pass --force to carry it out.`);
+    }
+  }
+
+  return printed(answer, json);
+};
+
 const USAGE = `ethlete-agents timetrack — ask the running Timetrack app about Jira
 
 The app holds this machine's Jira credentials, so no repository needs a token of its own.
@@ -318,6 +380,8 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack standins            The names the user gave work Jira does not hold yet, and their age
   timetrack standins --remove <id>
                                 Delete one placeholder, and the rule that named it
+  timetrack standins --split <id> [--paths <dir>,<dir>] [--branch <name>] [--force]
+                                Cut one that covered a whole checkout into one per directory
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
 
 Options for search
@@ -578,6 +642,10 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
   }
 
   if (subcommand === 'standins') {
+    const split = flagValue(argv, '--split');
+
+    if (split) return await splitStandIn({ id: split, argv, json });
+
     const remove = flagValue(argv, '--remove');
     const stranded = remove ? await strandedDays(remove) : [];
 

@@ -51,3 +51,46 @@ export const defaultRemote = (root: string) => {
 
 export const remoteUrl = (options: { root: string; remote: string }) =>
   git({ root: options.root, args: ['remote', 'get-url', options.remote] });
+
+/** One commit as a repair reads it: the local day it was made on, and the files it changed. */
+export type CommitPaths = { day: string; paths: string[] };
+
+/**
+ * The commits of the given local days, with the files each changed.
+ *
+ * `%cd` with `--date=format-local:%F` is the day in the machine's own zone, which is the grain
+ * Timetrack keys a day by. The span is read from the days given, so one `git log` answers them all,
+ * and a commit on a day outside the list is dropped.
+ */
+export const commitPathsOnDays = (options: { root: string; days: readonly string[]; author?: string }) => {
+  const wanted = new Set(options.days);
+  const sorted = [...wanted].sort();
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+
+  if (!first || !last) return [];
+
+  const out = git({
+    root: options.root,
+    args: [
+      'log',
+      '--name-only',
+      '--no-merges',
+      '--pretty=format:%x00%cd',
+      '--date=format-local:%F',
+      `--since=${first} 00:00`,
+      `--until=${last} 23:59:59`,
+      ...(options.author ? [`--author=${options.author}`] : []),
+    ],
+  });
+
+  return out
+    .split('\0')
+    .flatMap((block): CommitPaths | [] => {
+      const lines = block.split('\n').filter(Boolean);
+      const day = lines.shift() ?? '';
+
+      return wanted.has(day) && lines.length ? { day, paths: lines } : [];
+    })
+    .reverse();
+};

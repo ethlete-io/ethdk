@@ -4,6 +4,7 @@ import { StandIn } from '../model/stand-in';
 import { DEFAULT_TIMETRACK_SETTINGS } from './model';
 import {
   reopenStandIn,
+  splitStandIn,
   resolveStandIn,
   withNamedStandIn,
   withStandIn,
@@ -381,5 +382,107 @@ describe('withNamedStandIn', () => {
     });
 
     expect(settings.attributionRules.map((entry) => entry.id)).toEqual([NAMES_IT.id]);
+  });
+});
+
+describe('splitStandIn', () => {
+  const wide = standIn({
+    id: 'stand-in:1:specs',
+    name: 'Competition journey spec frontend',
+    author: 'app',
+    openedFor: '/home/tom/dev/fifagg/specs',
+    projectKey: 'FIFAGG',
+    days: ['2026-09-08', '2026-09-09', '2026-09-11'],
+    createdAt: new Date('2026-09-08T08:00:00.000Z'),
+  });
+  const wideRule = rule({
+    id: 'repo:/home/tom/dev/fifagg/specs#1',
+    repoPath: '/home/tom/dev/fifagg/specs',
+    author: 'app',
+    target: { kind: 'stand-in', standInId: 'stand-in:1:specs' },
+  });
+  const pieces = [
+    { workPath: 'context/tracks/competition-journey', days: ['2026-09-08', '2026-09-09'] },
+    { workPath: 'context/tracks/season-pass', days: ['2026-09-11'] },
+  ];
+  const now = new Date('2026-09-21T10:00:00.000Z');
+
+  const split = (overrides: Partial<Parameters<typeof splitStandIn>[0]> = {}) =>
+    splitStandIn({
+      settings: settingsWith({ standIns: [wide], rules: [wideRule] }),
+      id: 'stand-in:1:specs',
+      branch: 'main',
+      pieces,
+      now,
+      ...overrides,
+    });
+
+  it('opens one record per directory and takes the old one out', () => {
+    const result = split();
+
+    expect(result.refused).toBeUndefined();
+    expect(result.settings.standIns).toHaveLength(2);
+    expect(result.settings.standIns.map((entry) => entry.openedForWorkPath)).toEqual([
+      'context/tracks/competition-journey',
+      'context/tracks/season-pass',
+    ]);
+    expect(result.settings.standIns.every((entry) => entry.openedForBranch === 'main')).toBe(true);
+  });
+
+  it('moves each day onto the directory that worked in it', () => {
+    expect(split().opened.map((entry) => entry.days)).toEqual([['2026-09-08', '2026-09-09'], ['2026-09-11']]);
+  });
+
+  it('keeps the age of the debt and the project it files into', () => {
+    expect(split().opened.every((entry) => entry.createdAt.getTime() === wide.createdAt.getTime())).toBe(true);
+    expect(split().opened.every((entry) => entry.projectKey === 'FIFAGG')).toBe(true);
+  });
+
+  it('rewrites the rule into one per directory, each naming the branch', () => {
+    const rules = split().settings.attributionRules;
+
+    expect(rules).toHaveLength(2);
+    expect(rules.map((entry) => [entry.branch, entry.workPath])).toEqual([
+      ['main', 'context/tracks/competition-journey'],
+      ['main', 'context/tracks/season-pass'],
+    ]);
+    expect(rules.map((entry) => standInIdOf(entry))).toEqual(split().opened.map((entry) => entry.id));
+  });
+
+  it('gives each rule the directory scope, so one directory no longer answers for the other', () => {
+    const rules = split().settings.attributionRules;
+    const match = matchAttributionRule({
+      context: { repoPath: '/home/tom/dev/fifagg/specs', branch: 'main', workPath: 'context/tracks/season-pass' },
+      rules,
+    });
+
+    expect(match?.rule.workPath).toBe('context/tracks/season-pass');
+  });
+
+  it('refuses when a day of the old record is claimed by no directory', () => {
+    const result = split({ pieces: [pieces[0]!, { workPath: 'context/tracks/season-pass', days: ['2026-09-30'] }] });
+
+    expect(result.refused).toContain('2026-09-11');
+    expect(result.settings.standIns).toHaveLength(1);
+  });
+
+  it('refuses a single directory, which is the whole checkout under another name', () => {
+    expect(split({ pieces: [pieces[0]!] }).refused).toContain('two directories or more');
+  });
+
+  it('refuses a record that stands for work rather than for a checkout', () => {
+    const result = split({ settings: settingsWith({ standIns: [standIn({ id: 'stand-in:1:specs' })], rules: [] }) });
+
+    expect(result.refused).toContain('stands for work');
+  });
+
+  it('names each piece after its directory unless the caller says otherwise', () => {
+    expect(split().opened.map((entry) => entry.name)).toEqual([
+      'Competition journey spec frontend: competition-journey',
+      'Competition journey spec frontend: season-pass',
+    ]);
+    expect(split({ pieces: [{ ...pieces[0]!, name: 'Journey spec' }, pieces[1]!] }).opened[0]?.name).toBe(
+      'Journey spec',
+    );
   });
 });

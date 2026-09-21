@@ -122,6 +122,8 @@ export type AgentApiStandIn = {
    * which is why such a record covers the whole checkout and blocks every branch of it.
    */
   openedForBranch?: string;
+  /** The directory of that branch it covers, where the branch names no piece of work of its own. */
+  openedForWorkPath?: string;
 };
 
 /** One standing statement about a path: whether it is work, and which project it files into. */
@@ -348,7 +350,31 @@ export type AgentApiRequest =
   | { op: 'settings.rules' }
   | { op: 'standIn.list' }
   | { op: 'standIn.remove'; id: string }
+  | { op: 'standIn.split'; id: string; branch: string; commits: AgentApiWorkCommit[]; paths: string[]; apply: boolean }
   | { op: 'naming.offers'; day: string };
+
+/**
+ * One commit a split reads a directory out of: the local day it counts toward, and its changed files.
+ *
+ * The caller reads these out of `git log --name-only`. A commit collected before Timetrack recorded
+ * file paths carries none in the store, which is every commit a wrongly grained placeholder covers.
+ */
+export type AgentApiWorkCommit = { day: string; paths: string[] };
+
+/** One directory a split names, with the days of the record that worked in it. */
+export type AgentApiStandInPiece = { workPath: string; days: string[] };
+
+/**
+ * What a split would do, or did.
+ *
+ * `candidates` is every directory the commits name, whether or not it is a grain. `pieces` is what
+ * gets written: the directories the caller chose, or the automatic reading where they chose none.
+ */
+export type AgentApiStandInSplit = {
+  candidates: AgentApiStandInPiece[];
+  pieces: AgentApiStandInPiece[];
+  standIns: AgentApiStandIn[];
+};
 
 export type AgentApiOp = AgentApiRequest['op'];
 

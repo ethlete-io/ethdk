@@ -1,5 +1,6 @@
 import { AttributionRule, standInIdOf } from '../model/attribution';
-import { StandIn, StandInRefusal, standInBranches, standInDays } from '../model/stand-in';
+import { describeProjectLink } from '../model/project-link';
+import { StandIn, StandInRefusal, openStandIn, standInBranches, standInDays } from '../model/stand-in';
 import { withReplacedAttributionRule } from './attribution';
 import { TimetrackSettings } from './model';
 
@@ -105,6 +106,118 @@ export const withoutOrphanedStandIns = (settings: TimetrackSettings): TimetrackS
   );
 
   return kept.length === settings.standIns.length ? settings : { ...settings, standIns: kept };
+};
+
+/** One of the pieces of work a record that named several is cut into. */
+export type StandInSplitPiece = {
+  /** The directory of the checkout this piece stands for. */
+  workPath: string;
+  /** The days of the record that worked in it. A day that worked in two of them belongs to both. */
+  days: readonly string[];
+  /** What to call it. Without one the old name carries the directory's last segment after it. */
+  name?: string;
+};
+
+/** What a split did, or why it did nothing. */
+export type StandInSplit = {
+  settings: TimetrackSettings;
+  /** The records the split opened. Empty when it refused. */
+  opened: StandIn[];
+  /** Why nothing was split. Absent when it was. */
+  refused?: string;
+};
+
+const splitPieceName = (options: { standIn: StandIn; piece: StandInSplitPiece }) =>
+  options.piece.name?.trim() || `${options.standIn.name}: ${options.piece.workPath.split('/').pop()}`;
+
+const splitProblem = (options: { standIn?: StandIn; id: string; pieces: readonly StandInSplitPiece[] }) => {
+  const { standIn, pieces } = options;
+
+  if (!standIn) return `Timetrack holds no stand-in ${options.id}.`;
+  if (standIn.state !== 'open') return `${options.id} is resolved, so there is nothing left to split.`;
+  if (!standIn.openedFor) return `${options.id} stands for work rather than for a checkout, so it has no directories.`;
+  if (pieces.length < 2) return `A split needs two directories or more, and ${pieces.length} was given.`;
+  if (new Set(pieces.map((piece) => piece.workPath)).size !== pieces.length)
+    return 'Two of the directories given are the same.';
+  if (pieces.some((piece) => !piece.workPath.trim() || !piece.days.length))
+    return 'Every directory needs a name and at least one day.';
+
+  const covered = new Set(pieces.flatMap((piece) => piece.days));
+  const stranded = standIn.days.filter((day) => !covered.has(day));
+
+  return stranded.length
+    ? `No directory was given for ${stranded.join(', ')}, so those days would be stranded.`
+    : undefined;
+};
+
+/**
+ * Cuts one placeholder into one per directory it turned out to cover, and moves its days onto them.
+ *
+ * This repairs a record opened while the grain was the whole checkout, on a checkout whose branch
+ * says nothing — the case `autoStandIns` can never reach, because it skips a base branch and would
+ * find the wide record already waiting. Every day the old record held has to be claimed by a
+ * directory, or the split refuses: a day left behind would go back to unnamed with nothing to reopen
+ * it, and the old record is deleted here.
+ *
+ * The new records keep the old `createdAt`. The debt is as old as the work, and a split is a
+ * correction of how it was named rather than a new question.
+ *
+ * Each rule that named the old record becomes one rule per directory, carrying the branch as well.
+ * A rule naming a directory and no branch would never narrow anything: `matchAttributionRule` reads
+ * it at repository scope and answers before it compares directories.
+ */
+export const splitStandIn = (options: {
+  settings: TimetrackSettings;
+  id: string;
+  /** The branch the work was on, which the new records and their rules name. */
+  branch: string;
+  pieces: readonly StandInSplitPiece[];
+  now: Date;
+}): StandInSplit => {
+  const { settings, id, branch, now } = options;
+  const standIn = settings.standIns.find((entry) => entry.id === id);
+  const refused = splitProblem({ standIn, id, pieces: options.pieces });
+
+  if (refused || !standIn?.openedFor) return { settings, opened: [], refused };
+
+  const checkout = standIn.openedFor;
+  const opened = options.pieces.map((piece) => ({
+    ...openStandIn({
+      name: splitPieceName({ standIn, piece }),
+      day: [...piece.days].sort()[0] as string,
+      now,
+      projectKey: standIn.projectKey,
+      author: standIn.author,
+      openedFor: checkout,
+      openedForBranch: branch,
+      openedForWorkPath: piece.workPath,
+      key: [describeProjectLink({ path: checkout }), branch, piece.workPath].join('-'),
+    }),
+    days: [...new Set(piece.days)].sort(),
+    createdAt: standIn.createdAt,
+  }));
+  const rewritten = settings.attributionRules.flatMap((rule) =>
+    standInIdOf(rule) === id
+      ? opened.map((entry, index) => ({
+          ...rule,
+          id: `${rule.id}#${options.pieces[index]?.workPath}`,
+          repoPath: rule.repoPath ?? checkout,
+          branch,
+          workPath: options.pieces[index]?.workPath,
+          target: { kind: 'stand-in', standInId: entry.id } as const,
+          createdAt: now,
+        }))
+      : [rule],
+  );
+
+  return {
+    settings: {
+      ...settings,
+      standIns: [...settings.standIns.filter((entry) => entry.id !== id), ...opened],
+      attributionRules: rewritten,
+    },
+    opened,
+  };
 };
 
 /**

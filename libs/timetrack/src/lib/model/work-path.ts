@@ -76,3 +76,52 @@ export const workPathsSplit = (options: { paths: readonly (string | undefined)[]
 
   return distinct.size >= 2 && distinct.size <= maxPaths ? distinct : null;
 };
+
+/** One commit of a repair: the local day it counts toward, and the files it changed. */
+export type WorkPathCommit = { day: string; paths: readonly string[] };
+
+/** One directory a set of commits worked in, with the days that worked in it. */
+export type WorkPathPiece = { workPath: string; days: string[] };
+
+/**
+ * Every directory a set of commits worked in, with the days that worked in each.
+ *
+ * This is the raw reading, with no judgment about whether the directories are a grain. It is what a
+ * user picking the pieces of a repair by hand is offered.
+ */
+export const workPathDays = (options: { commits: readonly WorkPathCommit[]; maxDepth?: number }): WorkPathPiece[] => {
+  const days = new Map<string, Set<string>>();
+
+  for (const commit of options.commits) {
+    const workPath = workPathOf({ paths: commit.paths, maxDepth: options.maxDepth });
+
+    if (!workPath) continue;
+
+    days.set(workPath, (days.get(workPath) ?? new Set()).add(commit.day));
+  }
+
+  return [...days.entries()]
+    .map(([workPath, held]) => ({ workPath, days: [...held].sort() }))
+    .sort((left, right) => left.workPath.localeCompare(right.workPath));
+};
+
+/**
+ * The directories a set of commits splits into, or nothing when they are not its grain.
+ *
+ * This is how a placeholder opened for a whole checkout is re-cut without the user choosing. The
+ * store cannot answer it: a commit collected before Timetrack read file paths carries none, so the
+ * caller reads them back out of `git log --name-only` and hands them here.
+ *
+ * A commit counts toward the day it was made on rather than the day before it. The backwards reading
+ * `workPathAt` does is about which minutes a commit describes, and a repair asks the coarser
+ * question of which directories a day touched at all.
+ */
+export const workPathPieces = (options: {
+  commits: readonly WorkPathCommit[];
+  maxDepth?: number;
+  maxPaths?: number;
+}): WorkPathPiece[] => {
+  const held = workPathDays(options);
+
+  return workPathsSplit({ paths: held.map((piece) => piece.workPath), maxPaths: options.maxPaths }) ? held : [];
+};

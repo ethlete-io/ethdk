@@ -47,6 +47,8 @@ import {
   withoutProjectLink,
   withStandInCheckoutAllowed,
   withoutStandIn,
+  splitStandIn,
+  StandInSplitPiece,
   reopenStandIn,
   resolveStandIn,
 } from '@ethlete/timetrack';
@@ -334,6 +336,18 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       apply(withNamedStandIn({ settings: settings(), ...options })),
 
     removeStandIn: (id: string) => apply(withoutStandIn({ settings: settings(), id })),
+
+    /**
+     * Cuts one placeholder into one per directory it covered. Answers what it did, or why it refused:
+     * a refused split writes nothing, so the caller can say what is missing.
+     */
+    splitStandIn: (options: { id: string; branch: string; pieces: readonly StandInSplitPiece[]; now: Date }) => {
+      const result = splitStandIn({ settings: settings(), ...options });
+
+      if (!result.refused) apply(result.settings);
+
+      return result;
+    },
 
     /** Lets the app open a placeholder for the work again, after a delete refused it. */
     allowStandInCheckout: (refusal: StandInRefusal) =>

@@ -12,6 +12,7 @@ import {
   AgentApiReviewedRow,
   AgentApiRules,
   AgentApiStandIn,
+  AgentApiStandInSplit,
   AgentApiStatus,
   JiraCredentials,
   JiraIssue,
@@ -33,6 +34,8 @@ import {
   readTempoCredentials$,
   ReviewedRow,
   suggestProjectForRepo,
+  workPathDays,
+  workPathPieces,
 } from '@ethlete/timetrack';
 import { Observable, catchError, forkJoin, map, mergeMap, of, switchMap, throwError } from 'rxjs';
 import { AGENT_REQUEST_EVENT, hostEventWith$, injectHostPorts, invokeHost$ } from '../../host';
@@ -421,6 +424,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         createdAtMs: standIn.createdAt.getTime(),
         openedFor: standIn.openedFor,
         openedForBranch: standIn.openedForBranch,
+        openedForWorkPath: standIn.openedForWorkPath,
       })),
     });
 
@@ -439,6 +443,36 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     settings.removeStandIn(id);
 
     return standIns$();
+  };
+
+  /**
+   * Cuts one placeholder into one per directory it turned out to cover.
+   *
+   * Without `apply` it answers the plan and writes nothing, so a caller can show the split before it
+   * happens. `candidates` is every directory the commits name; `pieces` is what would be written —
+   * the ones `paths` chose, or the automatic reading where the caller chose none. A checkout whose
+   * commits name more directories than a grain can hold has no automatic reading, and the user picks.
+   *
+   * The commits come from the caller rather than the store: one collected before Timetrack recorded
+   * file paths carries none, which is every commit a wrongly grained placeholder covers.
+   */
+  const splitStandIn$ = (
+    request: Extract<AgentApiRequest, { op: 'standIn.split' }>,
+  ): Observable<AgentApiStandInSplit> => {
+    const candidates = workPathDays({ commits: request.commits });
+    const chosen = new Set(request.paths);
+    const pieces = chosen.size
+      ? candidates.filter((piece) => chosen.has(piece.workPath))
+      : workPathPieces({ commits: request.commits });
+    const plan = (answer: { standIns: AgentApiStandIn[] }) => ({ candidates, pieces, ...answer });
+
+    if (!request.apply) return standIns$().pipe(map(plan));
+
+    const result = settings.splitStandIn({ id: request.id, branch: request.branch, pieces, now: new Date() });
+
+    if (result.refused) return throwError(() => new Error(result.refused));
+
+    return standIns$().pipe(map(plan));
   };
 
   const carryOut$ = (request: AgentApiRequest): Observable<unknown> => {
@@ -469,6 +503,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return standIns$();
       case 'standIn.remove':
         return removeStandIn$(request.id);
+      case 'standIn.split':
+        return splitStandIn$(request);
       case 'naming.offers':
         return naming$(request);
     }

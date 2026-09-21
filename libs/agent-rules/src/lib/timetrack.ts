@@ -112,6 +112,21 @@ export type TimetrackStandIn = {
    * which is why such a record covers the whole checkout and blocks every branch of it.
    */
   openedForBranch?: string;
+  /** The directory of that branch it covers, where the branch names no piece of work of its own. */
+  openedForWorkPath?: string;
+};
+
+/** One commit a split reads a directory out of: the day it counts toward, and its changed files. */
+export type TimetrackWorkCommit = { day: string; paths: string[] };
+
+/** One directory a split names, with the days of the record that worked in it. */
+export type TimetrackStandInPiece = { workPath: string; days: string[] };
+
+/** What a split would do, or did. `candidates` is every directory; `pieces` is what gets written. */
+export type TimetrackStandInSplit = {
+  candidates: TimetrackStandInPiece[];
+  pieces: TimetrackStandInPiece[];
+  standIns: TimetrackStandIn[];
 };
 
 /**
@@ -420,3 +435,20 @@ export const timetrackStandIns = async () =>
  */
 export const timetrackRemoveStandIn = async (id: string) =>
   (await askTimetrack<{ standIns: TimetrackStandIn[] }>({ op: 'standIn.remove', id })).standIns;
+
+/**
+ * Cuts one placeholder into one per directory it turned out to cover.
+ *
+ * Without `apply` it answers the plan and writes nothing. The commits come from the caller: one
+ * collected before Timetrack read file paths carries none, so only `git log --name-only` can say.
+ * A checkout whose commits name more directories than a grain can hold has no automatic reading,
+ * and `paths` is how the user picks which of them are the pieces.
+ */
+export const timetrackSplitStandIn = (options: {
+  id: string;
+  branch: string;
+  commits: readonly TimetrackWorkCommit[];
+  /** The directories the user picked as the pieces. Empty lets the automatic reading answer. */
+  paths: readonly string[];
+  apply: boolean;
+}) => askTimetrack<TimetrackStandInSplit>({ op: 'standIn.split', ...options });

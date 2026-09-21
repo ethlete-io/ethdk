@@ -1,4 +1,4 @@
-import { AgentApiRequest, AgentApiRowEdit } from './model';
+import { AgentApiRequest, AgentApiRowEdit, AgentApiWorkCommit } from './model';
 
 export type AgentApiRequestParse = { ok: true; request: AgentApiRequest } | { ok: false; message: string };
 
@@ -60,6 +60,15 @@ const asRowEdit = (value: unknown): AgentApiRowEdit | undefined => {
   return undefined;
 };
 
+/** One commit of a split, or nothing where it names no day or changed no file. */
+const asWorkCommit = (value: unknown): AgentApiWorkCommit | undefined => {
+  const raw = asRecord(value);
+  const day = asText(raw['day']);
+  const paths = (Array.isArray(raw['paths']) ? raw['paths'] : []).map(asText).filter(Boolean);
+
+  return DAY_KEY.test(day) && paths.length ? { day, paths } : undefined;
+};
+
 /**
  * Reads one request off the wire, or says which field is missing.
  *
@@ -78,6 +87,21 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     const id = asText(raw['id']);
 
     return id ? { ok: true, request: { op, id } } : missing(op, 'id');
+  }
+
+  if (op === 'standIn.split') {
+    const id = asText(raw['id']);
+    const branch = asText(raw['branch']);
+    const commits = (Array.isArray(raw['commits']) ? raw['commits'] : []).flatMap((entry) => asWorkCommit(entry) ?? []);
+
+    if (!id) return missing(op, 'id');
+    if (!branch) return missing(op, 'branch');
+
+    const paths = (Array.isArray(raw['paths']) ? raw['paths'] : []).map(asText).filter(Boolean);
+
+    return commits.length
+      ? { ok: true, request: { op, id, branch, commits, paths, apply: asFlag(raw['apply']) } }
+      : missing(op, 'commits');
   }
 
   if (op === 'jira.issue') {
