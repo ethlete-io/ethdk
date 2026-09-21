@@ -5,6 +5,11 @@ export type ActivityContext = {
   appId?: string;
   repoPath?: string;
   branch?: string;
+  /**
+   * The directory the checkout's commits say this stretch worked in, where the branch cannot say which
+   * piece of work it was. See `workPathOf` and `streamDay`.
+   */
+  workPath?: string;
 };
 
 /** Contiguous same-context time, after idle gaps have split it and sub-minute flapping is merged. */
@@ -21,9 +26,17 @@ export const blockDurationMs = (block: ActivityBlock) => block.to.getTime() - bl
  * Identity of a context, for deciding whether two adjacent samples continue the same block. A
  * repo and branch outrank the app: switching from the editor to the terminal inside the same
  * checkout is the same work, while the same editor on a different branch is not.
+ *
+ * A work path is left out of the key when there is none, so a checkout whose branch answers keeps the
+ * key it always had — and every rule stored against one keeps matching.
  */
-export const contextKey = (context: ActivityContext) =>
-  context.repoPath ? `repo:${context.repoPath}@${context.branch ?? ''}` : `app:${context.appId ?? ''}`;
+export const contextKey = (context: ActivityContext) => {
+  if (!context.repoPath) return `app:${context.appId ?? ''}`;
+
+  const key = `repo:${context.repoPath}@${context.branch ?? ''}`;
+
+  return context.workPath ? `${key}#${context.workPath}` : key;
+};
 
 /**
  * The context a set of blocks stands for: the one that held the most of their time.

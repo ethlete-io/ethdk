@@ -15,6 +15,7 @@ import {
 import { Evidence } from '../model/evidence';
 import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } from '../model/time-window';
+import { workPathOf, workPathsSplit } from '../model/work-path';
 import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
@@ -105,6 +106,12 @@ export type StreamDayOptions = {
    * the work around it is not also drawn as time away from it.
    */
   minBreakMs?: number;
+  /**
+   * The branches that are integration rather than one piece of work, from the git-flow config. Work on
+   * one is what a work path answers for: the branch names no piece of work, so the directory the
+   * commits touched does.
+   */
+  baseBranches?: readonly string[];
   /**
    * What the day's blocks are turned into rows with — see `buildRows`.
    *
@@ -300,7 +307,7 @@ type UnnamedDraft = {
   titles: Map<string, TimeWindow[]>;
 };
 
-type RepoState = { repoPath: string; branch?: string };
+type RepoState = { repoPath: string; branch?: string; workPath?: string };
 
 /** What a window manager puts between the parts of a title. */
 const TITLE_SEGMENTS = /\s[-–—|]\s/;
@@ -449,6 +456,72 @@ const firstBranches = (samples: readonly ActivityEvent[], roots: readonly string
   }
 
   return found;
+};
+
+/** One commit's answer to which directory the checkout was working in, at the instant it was made. */
+type WorkPathMark = { at: Date; workPath: string };
+
+/**
+ * When each checkout's commits said which directory was worked in, oldest first.
+ *
+ * Only a commit answers this. A window focus says which checkout is in front of you and an editor
+ * heartbeat says which file, but neither says which piece of work a stretch belongs to, and the files
+ * a commit carries do.
+ */
+const workPathMarks = (samples: readonly ActivityEvent[]) => {
+  const found = new Map<string, WorkPathMark[]>();
+
+  for (const sample of samples) {
+    if (sample.kind !== 'git-commit') continue;
+
+    const workPath = workPathOf({ paths: sample.paths ?? [] });
+
+    if (!workPath) continue;
+
+    const marks = found.get(sample.repoPath) ?? [];
+
+    marks.push({ at: sample.at, workPath });
+    found.set(sample.repoPath, marks);
+  }
+
+  return found;
+};
+
+/**
+ * The checkouts whose directories are their grain of work, with the commits that said so.
+ *
+ * A checkout that worked in one directory all day is one piece of work under a longer name, and one
+ * that touched nine is a checkout whose directories are structure. Both keep the grain they had, so
+ * this never splits a checkout it has no evidence to split.
+ */
+const workPathGrains = (samples: readonly ActivityEvent[]) => {
+  const grains = new Map<string, WorkPathMark[]>();
+
+  for (const [repoPath, marks] of workPathMarks(samples)) {
+    if (workPathsSplit({ paths: marks.map((mark) => mark.workPath) })) grains.set(repoPath, marks);
+  }
+
+  return grains;
+};
+
+/**
+ * The directory a stretch worked in, read from the next commit rather than the last one.
+ *
+ * A branch is reported when it is switched to, so it applies to the minutes after it. A commit is the
+ * opposite: its files are what the minutes *before* it were spent on. Reading the last one instead
+ * gives every stretch the name of the work that was already finished.
+ *
+ * After the day's last commit there is no next one, so the last one stands - the work carries on in
+ * the directory it was last committed in until something says otherwise.
+ */
+const workPathAt = (options: { marks: readonly WorkPathMark[] | undefined; at: Date }) => {
+  const marks = options.marks;
+
+  if (!marks?.length) return undefined;
+
+  const next = marks.find((mark) => mark.at.getTime() >= options.at.getTime());
+
+  return (next ?? marks[marks.length - 1])?.workPath;
 };
 
 /**
@@ -782,6 +855,22 @@ export const streamDay = (options: {
    * stranded on no branch.
    */
   const branches = firstBranches(samples, roots);
+  /**
+   * The checkouts a directory says the piece of work for, and the branches that cannot say it
+   * themselves. A feature branch is one piece of work already, so its directories never split it.
+   */
+  const grains = workPathGrains(samples);
+  const baseBranches = new Set(config.baseBranches ?? []);
+  /**
+   * The directory a stretch of one checkout worked in, where the branch cannot name the piece of work.
+   *
+   * A feature branch is one piece of work, so it answers on its own and a directory must not split it
+   * further. A base branch and no branch at all are the cases that have nothing else to go on.
+   */
+  const workPathFor = (options: { repoPath: string; branch?: string; at: Date }) =>
+    options.branch && !baseBranches.has(options.branch)
+      ? undefined
+      : workPathAt({ marks: grains.get(options.repoPath), at: options.at });
   const lastAgentSample = new Map<string, Date>();
   const marks: Mark[] = [];
   const focusSpans: ContextSpan[] = [];
@@ -868,7 +957,14 @@ export const streamDay = (options: {
     // checkout is plainly still that checkout, and a browser or a chat window is plainly not. Without
     // this, every page opened within the stickiness of an editor was booked to the editor's checkout.
     const holder = focused ?? (sticky?.appId === appId ? sticky?.repoPath : undefined);
-    const context: ActivityContext = holder ? { repoPath: holder, branch: branches.get(holder), appId } : { appId };
+    const context: ActivityContext = holder
+      ? {
+          repoPath: holder,
+          branch: branches.get(holder),
+          appId,
+          workPath: workPathFor({ repoPath: holder, branch: branches.get(holder), at: sample.at }),
+        }
+      : { appId };
     const next = samples[index + 1];
 
     // Every stretch between two samples belongs to whichever context held the focused window, so the
@@ -898,7 +994,12 @@ export const streamDay = (options: {
 
     if (sample.kind === 'agent-session') {
       const cwd = repoRootOf({ path: sample.cwd, roots });
-      const ran: ActivityContext = { repoPath: cwd, branch: branchOf(sample.gitBranch) ?? branches.get(cwd) };
+      const ranOn = branchOf(sample.gitBranch) ?? branches.get(cwd);
+      const ran: ActivityContext = {
+        repoPath: cwd,
+        branch: ranOn,
+        workPath: workPathFor({ repoPath: cwd, branch: ranOn, at: sample.at }),
+      };
       const draft = draftFor(drafts, ran);
       const last = lastAgentSample.get(cwd);
 
@@ -915,10 +1016,17 @@ export const streamDay = (options: {
     // A sample that names a checkout but no branch is not a checkout on no branch. Reading the day's
     // branch for it is what stops an agent session that reports no branch stranding its own minutes in
     // a context no rule can name and no placeholder can open for.
-    const state = observed && {
-      repoPath: observed.repoPath,
-      branch: observed.branch ?? branches.get(observed.repoPath),
-    };
+    const state =
+      observed &&
+      ((): RepoState => {
+        const on = observed.branch ?? branches.get(observed.repoPath);
+
+        return {
+          repoPath: observed.repoPath,
+          branch: on,
+          workPath: workPathFor({ repoPath: observed.repoPath, branch: on, at: sample.at }),
+        };
+      })();
     const of = state ?? context;
     const seenHere = secludedWindow || ownWindow ? null : evidenceFor(sample);
 
@@ -926,13 +1034,24 @@ export const streamDay = (options: {
     if (seenHere) observations.push({ at: sample.at, context: of, evidence: seenHere });
     marks.push({
       at: sample.at,
-      state: state ?? (holder ? { repoPath: holder, branch: branches.get(holder) } : null),
+      state:
+        state ??
+        (holder
+          ? {
+              repoPath: holder,
+              branch: branches.get(holder),
+              workPath: workPathFor({ repoPath: holder, branch: branches.get(holder), at: sample.at }),
+            }
+          : null),
     });
   });
 
   for (const prompt of prompts) {
     const repoPath = checkoutOf(prompt.cwd);
-    const state = repoPath ? { repoPath, branch: branchOf(prompt.gitBranch) } : null;
+    const on = branchOf(prompt.gitBranch);
+    const state: RepoState | null = repoPath
+      ? { repoPath, branch: on, workPath: workPathFor({ repoPath, branch: on, at: prompt.at }) }
+      : null;
 
     const typed = promptEvidence(prompt);
 
@@ -944,7 +1063,12 @@ export const streamDay = (options: {
   for (const turn of turns) {
     const repoPath = checkoutOf(turn.cwd);
 
-    marks.push({ at: turn.at, state: repoPath ? { repoPath, branch: branchOf(turn.gitBranch) } : null });
+    const on = branchOf(turn.gitBranch);
+
+    marks.push({
+      at: turn.at,
+      state: repoPath ? { repoPath, branch: on, workPath: workPathFor({ repoPath, branch: on, at: turn.at }) } : null,
+    });
   }
 
   marks.sort((a, b) => a.at.getTime() - b.at.getTime());

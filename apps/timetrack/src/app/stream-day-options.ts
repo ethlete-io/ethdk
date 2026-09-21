@@ -87,6 +87,7 @@ export const streamDayOptionsOf = (options: {
   noWorkContextApps: effectiveNoWorkContextApps(options.settings),
   transientApps: effectiveTransientApps(options.settings),
   minBreakMs: options.settings.gapFillMs,
+  baseBranches: Object.values(gitFlowConfigFor(options.settings).baseBranches),
   rows: {
     ...dayRowsOptionsOf({
       settings: options.settings,
