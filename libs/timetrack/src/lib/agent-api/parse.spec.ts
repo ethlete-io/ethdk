@@ -89,6 +89,20 @@ describe('parseAgentRequest', () => {
     });
   });
 
+  it('takes the stand-in rename op', () => {
+    expect(parseAgentRequest({ op: 'standIn.rename', id: 'stand-in:1:repo', name: 'Journey' })).toEqual({
+      ok: true,
+      request: { op: 'standIn.rename', id: 'stand-in:1:repo', name: 'Journey' },
+    });
+  });
+
+  it('refuses a stand-in rename that names no new name', () => {
+    expect(parseAgentRequest({ op: 'standIn.rename', id: 'stand-in:1:repo' })).toEqual({
+      ok: false,
+      message: 'standIn.rename needs a name.',
+    });
+  });
+
   it('takes the stand-in split op, and drops a commit that names no day or no file', () => {
     expect(
       parseAgentRequest({

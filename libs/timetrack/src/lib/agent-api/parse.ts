@@ -89,6 +89,15 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return id ? { ok: true, request: { op, id } } : missing(op, 'id');
   }
 
+  if (op === 'standIn.rename') {
+    const id = asText(raw['id']);
+    const name = asText(raw['name']);
+
+    if (!id) return missing(op, 'id');
+
+    return name ? { ok: true, request: { op, id, name } } : missing(op, 'name');
+  }
+
   if (op === 'standIn.split') {
     const id = asText(raw['id']);
     const branch = asText(raw['branch']);

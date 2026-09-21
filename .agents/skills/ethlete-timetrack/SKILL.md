@@ -28,22 +28,23 @@ nobody can rotate.
 
 ## What each command is for
 
-| Command                           | Use it when                                                             |
-| --------------------------------- | ----------------------------------------------------------------------- |
-| `status`                          | Before anything else, when a Jira command failed and you need the cause |
-| `instance`                        | A setup step needs the instance's levels or its branch-subject field    |
-| `issue <KEY>`                     | The user names a key and you need its summary, type or parent           |
-| `search [text]`                   | The user describes work but names no key                                |
-| `project [path]`                  | You need the project a repository files into                            |
-| `create --summary "…"`            | The work has no ticket and the user asked for one                       |
-| `log --issue <KEY> --minutes <n>` | The user asks to record time that nothing observed                      |
-| `day [YYYY-MM-DD]`                | You need the evidence a day holds, not a screenshot of it               |
-| `rows [YYYY-MM-DD]`               | You need the rows the day drew, and the ids an edit names them by       |
-| `edit <row-id> …`                 | The user asks you to correct one row of a day                           |
-| `rules`                           | You need to know why a band was named, or why it was not                |
-| `standins`                        | You need to know which work still waits for a ticket, and for how long  |
-| `standins --remove <id>`          | A placeholder is wrong or too wide, and the user asked you to delete it |
-| `naming [YYYY-MM-DD]`             | A checkout was never offered a name and you need the step that stopped  |
+| Command                                | Use it when                                                               |
+| -------------------------------------- | ------------------------------------------------------------------------- |
+| `status`                               | Before anything else, when a Jira command failed and you need the cause   |
+| `instance`                             | A setup step needs the instance's levels or its branch-subject field      |
+| `issue <KEY>`                          | The user names a key and you need its summary, type or parent             |
+| `search [text]`                        | The user describes work but names no key                                  |
+| `project [path]`                       | You need the project a repository files into                              |
+| `create --summary "…"`                 | The work has no ticket and the user asked for one                         |
+| `log --issue <KEY> --minutes <n>`      | The user asks to record time that nothing observed                        |
+| `day [YYYY-MM-DD]`                     | You need the evidence a day holds, not a screenshot of it                 |
+| `rows [YYYY-MM-DD]`                    | You need the rows the day drew, and the ids an edit names them by         |
+| `edit <row-id> …`                      | The user asks you to correct one row of a day                             |
+| `rules`                                | You need to know why a band was named, or why it was not                  |
+| `standins`                             | You need to know which work still waits for a ticket, and for how long    |
+| `standins --remove <id>`               | A placeholder is wrong or too wide, and the user asked you to delete it   |
+| `standins --rename <id> --name <text>` | The name a placeholder carries is wrong, and the user asked you to fix it |
+| `naming [YYYY-MM-DD]`                  | A checkout was never offered a name and you need the step that stopped    |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
 from a key you typed. Follow the repository's branch workflow when creating a branch.
@@ -143,6 +144,18 @@ Competition journey spec frontend in FIFAGG  3d old, 3 day(s) of work
 Two separate things cause that, and either alone is enough: the record names no branch, or the
 rule naming it names no branch. The line above reports both, so take it at its word rather than
 reading `--json` yourself.
+
+### Give one another name
+
+The name is only wrong, and the work behind it is right:
+
+```bash
+npx ethlete-agents timetrack standins --rename <id> --name '20260921 competition navigation rework'
+```
+
+The days it holds and the rules that name it stay, which is what a delete and a fresh record would
+lose. Rename one only when the user asks. The name is their own word for their work, so a name you
+find unclear is not a fault to correct.
 
 ### Re-cut one that named two pieces of work
 

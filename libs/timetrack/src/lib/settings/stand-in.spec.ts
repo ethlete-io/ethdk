@@ -7,6 +7,7 @@ import {
   splitStandIn,
   resolveStandIn,
   withNamedStandIn,
+  withRenamedStandIn,
   withStandIn,
   withStandInDay,
   withStandInCheckoutAllowed,
@@ -45,6 +46,38 @@ describe('withStandIn', () => {
 
     expect(settings.standIns).toHaveLength(1);
     expect(settings.standIns[0]?.name).toBe('Journey');
+  });
+});
+
+describe('withRenamedStandIn', () => {
+  it('gives the record another name and leaves everything else', () => {
+    const settings = withRenamedStandIn({
+      settings: settingsWith({ standIns: [standIn({ days: ['2026-09-11'] })] }),
+      id: 'stand-in-1',
+      name: '20260921 competition navigation rework',
+    });
+
+    expect(settings.standIns[0]?.name).toBe('20260921 competition navigation rework');
+    expect(settings.standIns[0]?.days).toEqual(['2026-09-11']);
+    expect(settings.attributionRules).toEqual(settingsWith().attributionRules);
+  });
+
+  it('trims the name it is given', () => {
+    const settings = withRenamedStandIn({ settings: settingsWith(), id: 'stand-in-1', name: '  Journey  ' });
+
+    expect(settings.standIns[0]?.name).toBe('Journey');
+  });
+
+  it('changes nothing for a blank name', () => {
+    const settings = withRenamedStandIn({ settings: settingsWith(), id: 'stand-in-1', name: '   ' });
+
+    expect(settings.standIns[0]?.name).toBe('Competition Journey');
+  });
+
+  it('changes nothing for an id it does not hold', () => {
+    const settings = withRenamedStandIn({ settings: settingsWith(), id: 'stand-in-9', name: 'Journey' });
+
+    expect(settings.standIns[0]?.name).toBe('Competition Journey');
   });
 });
 

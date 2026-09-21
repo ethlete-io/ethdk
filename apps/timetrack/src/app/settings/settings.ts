@@ -48,6 +48,7 @@ import {
   withStandInCheckoutAllowed,
   withoutStandIn,
   splitStandIn,
+  withRenamedStandIn,
   StandInSplitPiece,
   reopenStandIn,
   resolveStandIn,
@@ -336,6 +337,10 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       apply(withNamedStandIn({ settings: settings(), ...options })),
 
     removeStandIn: (id: string) => apply(withoutStandIn({ settings: settings(), id })),
+
+    /** Gives one placeholder another name, leaving its days and the rules that name it alone. */
+    renameStandIn: (options: { id: string; name: string }) =>
+      apply(withRenamedStandIn({ settings: settings(), ...options })),
 
     /**
      * Cuts one placeholder into one per directory it covered. Answers what it did, or why it refused:

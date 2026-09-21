@@ -446,6 +446,21 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   };
 
   /**
+   * Gives one placeholder another name, and answers with the list as it reads afterwards.
+   *
+   * Only the name changes: the days it holds, the rules that name it and the branch it stands for are
+   * all untouched, so a name a rule drafted wrongly is corrected without losing the work behind it.
+   */
+  const renameStandIn$ = (options: { id: string; name: string }): Observable<{ standIns: AgentApiStandIn[] }> => {
+    if (!settings.settings().standIns.some((standIn) => standIn.id === options.id))
+      return throwError(() => new Error(`Timetrack holds no stand-in ${options.id}.`));
+
+    settings.renameStandIn(options);
+
+    return standIns$();
+  };
+
+  /**
    * Cuts one placeholder into one per directory it turned out to cover.
    *
    * Without `apply` it answers the plan and writes nothing, so a caller can show the split before it
@@ -516,6 +531,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return standIns$();
       case 'standIn.remove':
         return removeStandIn$(request.id);
+      case 'standIn.rename':
+        return renameStandIn$(request);
       case 'standIn.split':
         return splitStandIn$(request);
       case 'naming.offers':

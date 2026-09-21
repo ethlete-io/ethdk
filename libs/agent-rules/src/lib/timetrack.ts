@@ -439,6 +439,15 @@ export const timetrackRemoveStandIn = async (id: string) =>
   (await askTimetrack<{ standIns: TimetrackStandIn[] }>({ op: 'standIn.remove', id })).standIns;
 
 /**
+ * Gives one placeholder another name and answers with the list as it reads afterwards.
+ *
+ * Only the name changes. The days it holds and the rules that name it stay, which is what a delete
+ * and a fresh record would lose.
+ */
+export const timetrackRenameStandIn = async (options: { id: string; name: string }) =>
+  (await askTimetrack<{ standIns: TimetrackStandIn[] }>({ op: 'standIn.rename', ...options })).standIns;
+
+/**
  * Cuts one placeholder into one per directory it turned out to cover.
  *
  * Without `apply` it answers the plan and writes nothing. The commits come from the caller: one

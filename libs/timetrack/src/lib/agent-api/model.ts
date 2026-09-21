@@ -350,6 +350,7 @@ export type AgentApiRequest =
   | { op: 'settings.rules' }
   | { op: 'standIn.list' }
   | { op: 'standIn.remove'; id: string }
+  | { op: 'standIn.rename'; id: string; name: string }
   | {
       op: 'standIn.split';
       id: string;

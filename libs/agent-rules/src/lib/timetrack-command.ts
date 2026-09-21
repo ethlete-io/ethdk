@@ -19,6 +19,7 @@ import {
   timetrackRules,
   timetrackSearch,
   timetrackRemoveStandIn,
+  timetrackRenameStandIn,
   timetrackSplitStandIn,
   timetrackStandIns,
   timetrackStatus,
@@ -411,6 +412,8 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack standins            The names the user gave work Jira does not hold yet, and their age
   timetrack standins --remove <id>
                                 Delete one placeholder, and the rule that named it
+  timetrack standins --rename <id> --name <text>
+                                Give one placeholder another name, keeping its days and its rules
   timetrack standins --split <id> [--repo <dir>] [--paths <dir>,<dir>] [--claim <dir>] [--author <email>]
                                 [--force]
                                 Cut one that covered a whole checkout into one per directory
@@ -677,6 +680,23 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     const split = flagValue(argv, '--split');
 
     if (split) return await splitStandIn({ id: split, argv, json });
+
+    const rename = flagValue(argv, '--rename');
+    const name = flagValue(argv, '--name');
+
+    if (rename && !name) {
+      say(`A rename needs the new name. Pass --name <text> with --rename ${rename}.`);
+
+      return 1;
+    }
+
+    if (rename && name) {
+      const renamed = await timetrackRenameStandIn({ id: rename, name });
+
+      if (!json) say(`Renamed ${rename} to ${name}.`);
+
+      return printed(renamed, json);
+    }
 
     const remove = flagValue(argv, '--remove');
     const stranded = remove ? await strandedDays(remove) : [];

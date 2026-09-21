@@ -34,6 +34,28 @@ export const withNamedStandIn = (options: {
   });
 
 /**
+ * Gives one placeholder another name, and changes nothing else about it.
+ *
+ * A name written by a rule that later turned out wrong - a split that carried the checkout-wide name
+ * in front of a piece's directory - can be corrected without a delete, which would take the days and
+ * the rules with it. An unknown id, or a name that is blank, changes nothing.
+ */
+export const withRenamedStandIn = (options: {
+  settings: TimetrackSettings;
+  id: string;
+  name: string;
+}): TimetrackSettings => {
+  const name = options.name.trim();
+
+  if (!name) return options.settings;
+
+  return {
+    ...options.settings,
+    standIns: options.settings.standIns.map((entry) => (entry.id === options.id ? { ...entry, name } : entry)),
+  };
+};
+
+/**
  * The checkout a record the app opened stands for, read from the record or from a rule that names it.
  *
  * The rule is the fallback, because a checkout that gets another answer has its rule replaced and the
