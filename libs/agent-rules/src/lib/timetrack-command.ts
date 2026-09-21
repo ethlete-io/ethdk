@@ -371,6 +371,17 @@ const splitStandIn = async (options: { id: string; argv: string[]; json: boolean
     } else {
       say(`Would write ${answer.pieces.map((piece) => piece.workPath).join(', ')}. Pass --force to carry it out.`);
     }
+
+    if (claim) {
+      const covered = new Set(answer.pieces.flatMap((piece) => piece.days));
+      const left = standIn.days.filter((day) => !covered.has(day));
+
+      say(
+        left.length
+          ? `${claim} takes ${left.join(', ')}.`
+          : `Every day already has a directory, so ${claim} takes none.`,
+      );
+    }
   }
 
   return printed(answer, json);
