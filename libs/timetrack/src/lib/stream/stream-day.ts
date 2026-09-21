@@ -536,6 +536,59 @@ const workPathAt = (options: { marks: readonly WorkPathMark[] | undefined; at: D
   return (next ?? marks[marks.length - 1])?.workPath;
 };
 
+/** One `git-checkout`'s answer to which branch a checkout was moved onto, at the instant it moved. */
+type BranchMark = { at: Date; branch: string };
+
+/**
+ * When each checkout was moved onto another branch, oldest first.
+ *
+ * Only a `git-checkout` answers this. Every other fact reports the branch a checkout is already on,
+ * which says nothing about when it got there.
+ */
+const branchMarks = (samples: readonly ActivityEvent[], roots: readonly string[]) => {
+  const found = new Map<string, BranchMark[]>();
+
+  for (const sample of samples) {
+    if (sample.kind !== 'git-checkout') continue;
+
+    const state = repoStateFor(sample, roots);
+
+    if (!state?.branch) continue;
+
+    const held = found.get(state.repoPath) ?? [];
+
+    held.push({ at: sample.at, branch: state.branch });
+    found.set(state.repoPath, held);
+  }
+
+  return found;
+};
+
+/**
+ * The branch a stretch on a base branch was cut onto next, or nothing.
+ *
+ * A checkout is reported when it happens, so it names the branch of the minutes after it. That is the
+ * right reading of which branch a stretch sat on, and the wrong reading of which piece of work it
+ * was: a branch is very often cut once the work on it has started, which leaves those minutes on the
+ * base branch although the branch cut from it is what they became. `workPathAt` reads a commit
+ * backwards for the same reason.
+ *
+ * Only the next mark counts, so a move onto another base branch ends the stretch instead of handing
+ * it on. The stretch reaches back to the move onto the base branch, which on a checkout that never
+ * left it is the whole day.
+ *
+ * A mark at the same instant is that move itself, not the next one, so the search is strict.
+ */
+const cutOntoAt = (options: {
+  marks: readonly BranchMark[] | undefined;
+  at: Date;
+  baseBranches: ReadonlySet<string>;
+}) => {
+  const next = options.marks?.find((mark) => mark.at.getTime() > options.at.getTime());
+
+  return next && !options.baseBranches.has(next.branch) ? next.branch : undefined;
+};
+
 /**
  * Which checkout a window title names, by the directory the checkout lives in.
  *
@@ -883,6 +936,24 @@ export const streamDay = (options: {
     options.branch && !baseBranches.has(options.branch)
       ? undefined
       : workPathAt({ marks: grains.get(options.repoPath), at: options.at });
+  /** When each checkout was cut onto another branch, so a base branch can be read the same way. */
+  const cuts = branchMarks(samples, roots);
+  /**
+   * The branch and the directory one stretch of a checkout belongs to.
+   *
+   * A base branch names no piece of work. Where the checkout's directories cannot say which piece it
+   * was either, the branch it was next cut onto is the only fact left that can, and it names the
+   * stretch whether or not the cut had happened yet.
+   */
+  const workedOn = (options: { repoPath: string; branch?: string; at: Date }) => {
+    const cutOnto =
+      options.branch && baseBranches.has(options.branch) && !workPathFor(options)
+        ? cutOntoAt({ marks: cuts.get(options.repoPath), at: options.at, baseBranches })
+        : undefined;
+    const branch = cutOnto ?? options.branch;
+
+    return { branch, workPath: workPathFor({ ...options, branch }) };
+  };
   const lastAgentSample = new Map<string, Date>();
   const marks: Mark[] = [];
   const focusSpans: ContextSpan[] = [];
@@ -970,12 +1041,7 @@ export const streamDay = (options: {
     // this, every page opened within the stickiness of an editor was booked to the editor's checkout.
     const holder = focused ?? (sticky?.appId === appId ? sticky?.repoPath : undefined);
     const context: ActivityContext = holder
-      ? {
-          repoPath: holder,
-          branch: branches.get(holder),
-          appId,
-          workPath: workPathFor({ repoPath: holder, branch: branches.get(holder), at: sample.at }),
-        }
+      ? { repoPath: holder, appId, ...workedOn({ repoPath: holder, branch: branches.get(holder), at: sample.at }) }
       : { appId };
     const next = samples[index + 1];
 
@@ -1007,11 +1073,7 @@ export const streamDay = (options: {
     if (sample.kind === 'agent-session') {
       const cwd = repoRootOf({ path: sample.cwd, roots });
       const ranOn = branchOf(sample.gitBranch) ?? branches.get(cwd);
-      const ran: ActivityContext = {
-        repoPath: cwd,
-        branch: ranOn,
-        workPath: workPathFor({ repoPath: cwd, branch: ranOn, at: sample.at }),
-      };
+      const ran: ActivityContext = { repoPath: cwd, ...workedOn({ repoPath: cwd, branch: ranOn, at: sample.at }) };
       const draft = draftFor(drafts, ran);
       const last = lastAgentSample.get(cwd);
 
@@ -1033,11 +1095,7 @@ export const streamDay = (options: {
       ((): RepoState => {
         const on = observed.branch ?? branches.get(observed.repoPath);
 
-        return {
-          repoPath: observed.repoPath,
-          branch: on,
-          workPath: workPathFor({ repoPath: observed.repoPath, branch: on, at: sample.at }),
-        };
+        return { repoPath: observed.repoPath, ...workedOn({ repoPath: observed.repoPath, branch: on, at: sample.at }) };
       })();
     const of = state ?? context;
     const seenHere = secludedWindow || ownWindow ? null : evidenceFor(sample);
@@ -1049,11 +1107,7 @@ export const streamDay = (options: {
       state:
         state ??
         (holder
-          ? {
-              repoPath: holder,
-              branch: branches.get(holder),
-              workPath: workPathFor({ repoPath: holder, branch: branches.get(holder), at: sample.at }),
-            }
+          ? { repoPath: holder, ...workedOn({ repoPath: holder, branch: branches.get(holder), at: sample.at }) }
           : null),
     });
   });
@@ -1062,7 +1116,7 @@ export const streamDay = (options: {
     const repoPath = checkoutOf(prompt.cwd);
     const on = branchOf(prompt.gitBranch);
     const state: RepoState | null = repoPath
-      ? { repoPath, branch: on, workPath: workPathFor({ repoPath, branch: on, at: prompt.at }) }
+      ? { repoPath, ...workedOn({ repoPath, branch: on, at: prompt.at }) }
       : null;
 
     const typed = promptEvidence(prompt);
@@ -1079,7 +1133,7 @@ export const streamDay = (options: {
 
     marks.push({
       at: turn.at,
-      state: repoPath ? { repoPath, branch: on, workPath: workPathFor({ repoPath, branch: on, at: turn.at }) } : null,
+      state: repoPath ? { repoPath, ...workedOn({ repoPath, branch: on, at: turn.at }) } : null,
     });
   }
 

@@ -126,6 +126,10 @@ commits touched answers instead. That directory is the project the repository de
 carrying the `project.json` or `package.json` above the changed files. A repository that declares
 none lets its own commits pick the grain between them.
 
+Where the directories cannot answer either, the branch the checkout was next cut onto does. A
+branch is very often cut once the work on it has started, so the minutes before the cut sit on
+the base branch although they are that branch's work.
+
 One placeholder written before any of that was true covers a whole checkout, and it blocks a
 per-branch placeholder for every branch of it. The list says so:
 

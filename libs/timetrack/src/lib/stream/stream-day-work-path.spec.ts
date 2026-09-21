@@ -100,3 +100,63 @@ describe('streamDay work paths', () => {
     expect(blocksOf(events).map((block) => block.context.workPath)).toEqual([undefined]);
   });
 });
+
+const checkout = (options: { minutes: number; branch: string }): CollectedEvent => ({
+  at: AT(options.minutes),
+  source: 'git',
+  kind: 'git-checkout',
+  repoPath: SPECS,
+  branch: options.branch,
+});
+
+const branchesOf = (events: CollectedEvent[]) => blocksOf(events).map((block) => block.context.branch);
+
+describe('streamDay branch cuts', () => {
+  it('gives a base branch the branch it was cut onto, where no directory says the piece of work', () => {
+    const events = [
+      ...focusRun({ from: 0, to: 120 }),
+      checkout({ minutes: 10, branch: 'main' }),
+      checkout({ minutes: 90, branch: 'spec/20260921_rework' }),
+      commit({ minutes: 91, branch: 'spec/20260921_rework', paths: [`${REWORK}/spec.md`] }),
+    ];
+
+    expect(new Set(branchesOf(events))).toEqual(new Set([undefined, 'spec/20260921_rework']));
+  });
+
+  it('leaves a base branch alone where the directories do say the piece of work', () => {
+    const events = [
+      ...dayOn('main'),
+      checkout({ minutes: 100, branch: 'spec/20260921_rework' }),
+      commit({ minutes: 101, branch: 'spec/20260921_rework', paths: [`${REWORK}/later.md`] }),
+    ];
+
+    expect(branchesOf(events).filter((branch) => branch === 'main').length).toBeGreaterThan(0);
+  });
+
+  it('ends the stretch at a move onto another base branch instead of handing it on', () => {
+    const events = [
+      ...focusRun({ from: 0, to: 120 }),
+      checkout({ minutes: 10, branch: 'main' }),
+      checkout({ minutes: 50, branch: 'next' }),
+      checkout({ minutes: 90, branch: 'spec/20260921_rework' }),
+      commit({ minutes: 91, branch: 'spec/20260921_rework', paths: [`${REWORK}/spec.md`] }),
+    ];
+    const held = streamDay({
+      events,
+      options: { repoRoots: [SPECS], baseBranches: ['main', 'next'] },
+    }).blocks.filter((block) => block.context.repoPath === SPECS);
+
+    expect(held.find((block) => block.from.getTime() === AT(10).getTime())?.context.branch).toBe('main');
+  });
+
+  it('leaves a feature branch on its own branch, whatever is cut next', () => {
+    const events = [
+      ...focusRun({ from: 0, to: 120 }),
+      checkout({ minutes: 10, branch: 'spec/first' }),
+      checkout({ minutes: 90, branch: 'spec/second' }),
+      commit({ minutes: 91, branch: 'spec/second', paths: [`${REWORK}/spec.md`] }),
+    ];
+
+    expect(branchesOf(events)).toContain('spec/first');
+  });
+});
