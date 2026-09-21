@@ -14,8 +14,6 @@ export interface AbstractParticipantView {
     countryOfResidence: CountryView | null;
     countryOfRepresentation: CountryView | null;
     identity: IdentityView | null;
-    mediaCollection: any[];
-    footballClubEmblem: MediaView | null;
 }
 
 export default AbstractParticipantView;
