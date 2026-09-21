@@ -24,11 +24,24 @@ export type TicketDraft = {
 /** The branch subject a summary would produce, for the instance's subject field. */
 export const ticketSubjectOf = (summary: string) => slugifySubject(summary);
 
-/** `user-management` reads as a branch; `User management` reads as a ticket. */
-export const humanized = (subject: string) => {
-  const words = subject.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+/**
+ * A leading date, as a branch or a directory of dated work writes one. Both shapes are matched after
+ * the separators became spaces, so `20260911_x` and `2026-09-11-x` reach here alike.
+ */
+const DATED_PREFIX = /^(?:\d{4} \d{2} \d{2}|\d{8}) /;
 
-  return words ? `${words[0]?.toUpperCase()}${words.slice(1)}` : '';
+/**
+ * `20260911_user-management` reads as a branch; `User management` reads as a ticket.
+ *
+ * The date goes: it says when the work was filed, which the days of the record already say, so it is
+ * noise in a name a person reads. A subject that is nothing but a date keeps it, because a name of
+ * nothing is worse than a date.
+ */
+export const humanized = (subject: string) => {
+  const plain = subject.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const named = plain.replace(DATED_PREFIX, '') || plain;
+
+  return named ? `${named[0]?.toUpperCase()}${named.slice(1)}` : '';
 };
 
 const repoNameOf = (path: string) => path.split('/').filter(Boolean).pop() ?? path;

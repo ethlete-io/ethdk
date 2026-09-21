@@ -4,7 +4,7 @@ import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
 import { ActivityBlock, contextKey } from '../model/block';
 import { Evidence } from '../model/evidence';
-import { draftParentDescription, draftTicket, standInNameFor } from './draft';
+import { draftParentDescription, draftTicket, humanized, standInNameFor } from './draft';
 
 const REPO = '/Users/tom/dev/ea-frontend';
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
@@ -157,11 +157,40 @@ describe('draftParentDescription', () => {
   });
 });
 
+describe('humanized', () => {
+  it('reads a branch subject as words', () => {
+    expect(humanized('user-management')).toBe('User management');
+  });
+
+  it('drops a leading date, whichever shape it is written in', () => {
+    expect(humanized('20260911_competition-journey-overlay')).toBe('Competition journey overlay');
+    expect(humanized('2026-09-11-competition-journey-overlay')).toBe('Competition journey overlay');
+  });
+
+  it('keeps a number that is not a leading date', () => {
+    expect(humanized('totw-16-9-special-layout')).toBe('Totw 16 9 special layout');
+    expect(humanized('20260911x-overlay')).toBe('20260911x overlay');
+  });
+
+  it('keeps the date of a subject that is nothing else', () => {
+    expect(humanized('20260911')).toBe('20260911');
+  });
+});
+
 describe('standInNameFor', () => {
   it('reads the branch subject as words, which is what the user called the work', () => {
     expect(standInNameFor({ context: { repoPath: REPO, branch: 'feat/competition-journey' }, config: CONFIG })).toBe(
       'Competition journey',
     );
+  });
+
+  it('drops the date a branch of dated work leads with', () => {
+    expect(
+      standInNameFor({
+        context: { repoPath: REPO, branch: 'feature/20260911_competition-journey-overlay' },
+        config: CONFIG,
+      }),
+    ).toBe('Competition journey overlay');
   });
 
   it('falls back to the checkout name when the branch carries no subject', () => {
