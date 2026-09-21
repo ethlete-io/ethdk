@@ -2618,6 +2618,15 @@ that settled:
 - **A typed key is still accepted.** The list is the hundred most recently touched issues, so logging
   against something nobody has opened in months has to stay possible. A picker that refuses a key the
   user knows is a picker they work around.
+- **A lane's own tickets sit above that list.** A call, a meeting or a checkout is logged against the
+  same few issues week after week, while the list underneath is ordered by whatever the Jira account
+  touched last. `laneIssueUses` reads the last sixty days of stored edits and ranks each lane's
+  issues by the day it was last named with them, and the picker draws them in one group. Only what
+  the reviewer decided counts — an override or a row built by hand, neither rejected nor hidden — so
+  a rule that guessed wrong for a week cannot teach the group its guess.
+- **The lane is stored, not parsed back out.** A proposal id holds the stream behind an unnamed band,
+  but a call carries no blocks at all, so its id names no lane. `setRowIssue` writes `laneKey` onto
+  the override instead. An edit stored before this carries none and is simply not counted.
 
 **2. A day could only ever be edited, never written to.** Every operation the review offered reshaped
 what the collectors saw — split, merge, move a boundary. A meeting held away from the desk, an hour on
