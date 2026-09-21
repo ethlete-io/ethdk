@@ -130,8 +130,36 @@ export type StandInSplit = {
 const splitPieceName = (options: { standIn: StandIn; piece: StandInSplitPiece }) =>
   options.piece.name?.trim() || `${options.standIn.name}: ${options.piece.workPath.split('/').pop()}`;
 
-const splitProblem = (options: { standIn?: StandIn; id: string; pieces: readonly StandInSplitPiece[] }) => {
-  const { standIn, pieces } = options;
+/**
+ * The pieces with every day no piece claims added to the one `claim` names.
+ *
+ * A day the record holds that no commit of it falls on cannot be placed by a directory, and it is
+ * real work — so the user says which piece it was rather than the split guessing or dropping it.
+ */
+const claimedPieces = (options: {
+  standIn: StandIn;
+  pieces: readonly StandInSplitPiece[];
+  claim?: string;
+}): StandInSplitPiece[] => {
+  const { pieces, claim } = options;
+
+  if (!claim) return [...pieces];
+
+  const covered = new Set(pieces.flatMap((piece) => piece.days));
+  const left = options.standIn.days.filter((day) => !covered.has(day));
+
+  return pieces.map((piece) =>
+    piece.workPath === claim ? { ...piece, days: [...new Set([...piece.days, ...left])].sort() } : piece,
+  );
+};
+
+const splitProblem = (options: {
+  standIn?: StandIn;
+  id: string;
+  pieces: readonly StandInSplitPiece[];
+  claim?: string;
+}) => {
+  const { standIn, pieces, claim } = options;
 
   if (!standIn) return `Timetrack holds no stand-in ${options.id}.`;
   if (standIn.state !== 'open') return `${options.id} is resolved, so there is nothing left to split.`;
@@ -141,12 +169,14 @@ const splitProblem = (options: { standIn?: StandIn; id: string; pieces: readonly
     return 'Two of the directories given are the same.';
   if (pieces.some((piece) => !piece.workPath.trim() || !piece.days.length))
     return 'Every directory needs a name and at least one day.';
+  if (claim && !pieces.some((piece) => piece.workPath === claim))
+    return `${claim} is not one of the directories the split writes, so it can claim no day.`;
 
   const covered = new Set(pieces.flatMap((piece) => piece.days));
   const stranded = standIn.days.filter((day) => !covered.has(day));
 
   return stranded.length
-    ? `No directory was given for ${stranded.join(', ')}, so those days would be stranded.`
+    ? `No commit claims ${stranded.join(', ')}. Name the directory those days belong to with --claim.`
     : undefined;
 };
 
@@ -172,16 +202,19 @@ export const splitStandIn = (options: {
   /** The branch the work was on, which the new records and their rules name. */
   branch: string;
   pieces: readonly StandInSplitPiece[];
+  /** The directory that takes every day of the record no piece claims. Without one such a day refuses. */
+  claim?: string;
   now: Date;
 }): StandInSplit => {
   const { settings, id, branch, now } = options;
   const standIn = settings.standIns.find((entry) => entry.id === id);
-  const refused = splitProblem({ standIn, id, pieces: options.pieces });
+  const pieces = standIn ? claimedPieces({ standIn, pieces: options.pieces, claim: options.claim }) : [];
+  const refused = splitProblem({ standIn, id, pieces, claim: options.claim });
 
   if (refused || !standIn?.openedFor) return { settings, opened: [], refused };
 
   const checkout = standIn.openedFor;
-  const opened = options.pieces.map((piece) => ({
+  const opened = pieces.map((piece) => ({
     ...openStandIn({
       name: splitPieceName({ standIn, piece }),
       day: [...piece.days].sort()[0] as string,
@@ -200,10 +233,10 @@ export const splitStandIn = (options: {
     standInIdOf(rule) === id
       ? opened.map((entry, index) => ({
           ...rule,
-          id: `${rule.id}#${options.pieces[index]?.workPath}`,
+          id: `${rule.id}#${pieces[index]?.workPath}`,
           repoPath: rule.repoPath ?? checkout,
           branch,
-          workPath: options.pieces[index]?.workPath,
+          workPath: pieces[index]?.workPath,
           target: { kind: 'stand-in', standInId: entry.id } as const,
           createdAt: now,
         }))

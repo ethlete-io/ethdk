@@ -47,6 +47,7 @@ const FLAGS_WITH_VALUE = [
   '--split',
   '--branch',
   '--paths',
+  '--claim',
 ];
 
 /** Every human-readable line, with anything a terminal would act on printed rather than obeyed. */
@@ -341,8 +342,9 @@ const splitStandIn = async (options: { id: string; argv: string[]; json: boolean
     .split(',')
     .map((path) => path.trim())
     .filter(Boolean);
+  const claim = flagValue(argv, '--claim');
   const apply = argv.includes('--force');
-  const answer = await timetrackSplitStandIn({ id, branch, commits, paths, apply });
+  const answer = await timetrackSplitStandIn({ id, branch, commits, paths, claim, apply });
 
   if (!json) {
     say(`${standIn.name}  ${standIn.days.length} day(s), branch ${branch}`);
@@ -380,7 +382,7 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack standins            The names the user gave work Jira does not hold yet, and their age
   timetrack standins --remove <id>
                                 Delete one placeholder, and the rule that named it
-  timetrack standins --split <id> [--paths <dir>,<dir>] [--branch <name>] [--force]
+  timetrack standins --split <id> [--paths <dir>,<dir>] [--claim <dir>] [--force]
                                 Cut one that covered a whole checkout into one per directory
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
 

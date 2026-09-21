@@ -341,7 +341,13 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * Cuts one placeholder into one per directory it covered. Answers what it did, or why it refused:
      * a refused split writes nothing, so the caller can say what is missing.
      */
-    splitStandIn: (options: { id: string; branch: string; pieces: readonly StandInSplitPiece[]; now: Date }) => {
+    splitStandIn: (options: {
+      id: string;
+      branch: string;
+      pieces: readonly StandInSplitPiece[];
+      claim?: string;
+      now: Date;
+    }) => {
       const result = splitStandIn({ settings: settings(), ...options });
 
       if (!result.refused) apply(result.settings);

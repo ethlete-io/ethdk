@@ -450,5 +450,7 @@ export const timetrackSplitStandIn = (options: {
   commits: readonly TimetrackWorkCommit[];
   /** The directories the user picked as the pieces. Empty lets the automatic reading answer. */
   paths: readonly string[];
+  /** The directory that takes every day of the record no commit claims. */
+  claim?: string;
   apply: boolean;
 }) => askTimetrack<TimetrackStandInSplit>({ op: 'standIn.split', ...options });

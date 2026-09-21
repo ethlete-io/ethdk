@@ -98,9 +98,13 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     if (!branch) return missing(op, 'branch');
 
     const paths = (Array.isArray(raw['paths']) ? raw['paths'] : []).map(asText).filter(Boolean);
+    const claim = asText(raw['claim']);
 
     return commits.length
-      ? { ok: true, request: { op, id, branch, commits, paths, apply: asFlag(raw['apply']) } }
+      ? {
+          ok: true,
+          request: { op, id, branch, commits, paths, ...(claim ? { claim } : {}), apply: asFlag(raw['apply']) },
+        }
       : missing(op, 'commits');
   }
 

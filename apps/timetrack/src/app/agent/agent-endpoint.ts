@@ -468,7 +468,13 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     if (!request.apply) return standIns$().pipe(map(plan));
 
-    const result = settings.splitStandIn({ id: request.id, branch: request.branch, pieces, now: new Date() });
+    const result = settings.splitStandIn({
+      id: request.id,
+      branch: request.branch,
+      pieces,
+      claim: request.claim,
+      now: new Date(),
+    });
 
     if (result.refused) return throwError(() => new Error(result.refused));
 

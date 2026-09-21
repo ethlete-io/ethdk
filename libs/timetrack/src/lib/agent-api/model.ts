@@ -350,7 +350,15 @@ export type AgentApiRequest =
   | { op: 'settings.rules' }
   | { op: 'standIn.list' }
   | { op: 'standIn.remove'; id: string }
-  | { op: 'standIn.split'; id: string; branch: string; commits: AgentApiWorkCommit[]; paths: string[]; apply: boolean }
+  | {
+      op: 'standIn.split';
+      id: string;
+      branch: string;
+      commits: AgentApiWorkCommit[];
+      paths: string[];
+      claim?: string;
+      apply: boolean;
+    }
   | { op: 'naming.offers'; day: string };
 
 /**

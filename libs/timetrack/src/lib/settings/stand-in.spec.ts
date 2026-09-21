@@ -466,6 +466,18 @@ describe('splitStandIn', () => {
     expect(result.settings.standIns).toHaveLength(1);
   });
 
+  it('gives a day no commit claims to the directory the caller names', () => {
+    const thin = [pieces[0]!, { workPath: 'context/tracks/season-pass', days: ['2026-09-30'] }];
+    const result = split({ pieces: thin, claim: 'context/tracks/season-pass' });
+
+    expect(result.refused).toBeUndefined();
+    expect(result.opened[1]?.days).toEqual(['2026-09-11', '2026-09-30']);
+  });
+
+  it('refuses a claim for a directory it does not write', () => {
+    expect(split({ claim: 'context/tracks/nowhere' }).refused).toContain('not one of the directories');
+  });
+
   it('refuses a single directory, which is the whole checkout under another name', () => {
     expect(split({ pieces: [pieces[0]!] }).refused).toContain('two directories or more');
   });
