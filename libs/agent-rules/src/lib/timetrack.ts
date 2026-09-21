@@ -126,6 +126,8 @@ export type TimetrackStandInPiece = { workPath: string; days: string[]; commits:
 export type TimetrackStandInSplit = {
   candidates: TimetrackStandInPiece[];
   pieces: TimetrackStandInPiece[];
+  /** The days no piece claims, which the record being split keeps rather than the split refusing. */
+  remainder: string[];
   standIns: TimetrackStandIn[];
 };
 

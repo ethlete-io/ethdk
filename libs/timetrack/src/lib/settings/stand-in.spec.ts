@@ -459,11 +459,25 @@ describe('splitStandIn', () => {
     expect(match?.rule.workPath).toBe('context/tracks/season-pass');
   });
 
-  it('refuses when a day of the old record is claimed by no directory', () => {
+  it('takes the record it split out even when a day of it is left with no directory', () => {
     const result = split({ pieces: [pieces[0]!, { workPath: 'context/tracks/season-pass', days: ['2026-09-30'] }] });
 
-    expect(result.refused).toContain('2026-09-11');
-    expect(result.settings.standIns).toHaveLength(1);
+    expect(result.refused).toBeUndefined();
+    expect(result.remainder).toEqual(['2026-09-11']);
+    expect(result.settings.standIns.some((standIn) => standIn.id === 'stand-in:1:specs')).toBe(false);
+  });
+
+  it('leaves no rule covering the whole checkout behind, so a later branch can open its own', () => {
+    const result = split({ pieces: [pieces[0]!, { workPath: 'context/tracks/season-pass', days: ['2026-09-30'] }] });
+
+    expect(result.settings.attributionRules.filter((rule) => !rule.branch)).toEqual([]);
+    expect(result.settings.attributionRules.filter((rule) => !!rule.workPath)).toHaveLength(2);
+  });
+
+  it('reports no remainder once every day it held has a directory', () => {
+    const result = split({ pieces });
+
+    expect(result.remainder).toEqual([]);
   });
 
   it('gives a day no commit claims to the directory the caller names', () => {

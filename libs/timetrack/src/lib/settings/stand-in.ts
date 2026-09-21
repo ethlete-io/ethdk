@@ -123,6 +123,8 @@ export type StandInSplit = {
   settings: TimetrackSettings;
   /** The records the split opened. Empty when it refused. */
   opened: StandIn[];
+  /** The days no piece claimed, which go back to unnamed. Empty when every day found a directory. */
+  remainder: string[];
   /** Why nothing was split. Absent when it was. */
   refused?: string;
 };
@@ -181,12 +183,7 @@ const splitProblem = (options: {
   if (claim && !pieces.some((piece) => piece.workPath === claim))
     return `Every day of ${options.id} already has a directory, so ${claim} can claim none.`;
 
-  const covered = new Set(pieces.flatMap((piece) => piece.days));
-  const stranded = standIn.days.filter((day) => !covered.has(day));
-
-  return stranded.length
-    ? `No commit claims ${stranded.join(', ')}. Name the directory those days belong to with --claim.`
-    : undefined;
+  return undefined;
 };
 
 /**
@@ -194,9 +191,12 @@ const splitProblem = (options: {
  *
  * This repairs a record opened while the grain was the whole checkout, on a checkout whose branch
  * says nothing — the case `autoStandIns` can never reach, because it skips a base branch and would
- * find the wide record already waiting. Every day the old record held has to be claimed by a
- * directory, or the split refuses: a day left behind would go back to unnamed with nothing to reopen
- * it, and the old record is deleted here.
+ * find the wide record already waiting. The old record and its checkout-wide rule always go, even
+ * when a day it held is left with no directory. Keeping either alive keeps the block that made the
+ * repair necessary: `alreadyWaiting` and `alreadyAnswered` both read a record and a rule that name no
+ * branch as covering every branch of the checkout, so no later branch could ever get one of its own.
+ * A day left with no directory goes back to unnamed, which `remainder` reports. That is the honest
+ * answer for a day no commit of the user's claims, and the day review is where it gets named.
  *
  * The new records keep the old `createdAt`. The debt is as old as the work, and a split is a
  * correction of how it was named rather than a new question.
@@ -226,7 +226,9 @@ export const splitStandIn = (options: {
   const checkout = standIn?.openedFor ?? options.repoPath?.trim();
   const refused = splitProblem({ standIn, id, pieces, claim: options.claim, checkout });
 
-  if (refused || !standIn || !checkout) return { settings, opened: [], refused };
+  if (refused || !standIn || !checkout) return { settings, opened: [], remainder: [], refused };
+  const covered = new Set(pieces.flatMap((piece) => piece.days));
+  const remainder = standIn.days.filter((day) => !covered.has(day));
   const opened = pieces.map((piece) => ({
     ...openStandIn({
       name: splitPieceName({ standIn, piece }),
@@ -244,15 +246,17 @@ export const splitStandIn = (options: {
   }));
   const rewritten = settings.attributionRules.flatMap((rule) =>
     standInIdOf(rule) === id
-      ? opened.map((entry, index) => ({
-          ...rule,
-          id: `${rule.id}#${pieces[index]?.workPath}`,
-          repoPath: rule.repoPath ?? checkout,
-          branch,
-          workPath: pieces[index]?.workPath,
-          target: { kind: 'stand-in', standInId: entry.id } as const,
-          createdAt: now,
-        }))
+      ? [
+          ...opened.map((entry, index) => ({
+            ...rule,
+            id: `${rule.id}#${pieces[index]?.workPath}`,
+            repoPath: rule.repoPath ?? checkout,
+            branch,
+            workPath: pieces[index]?.workPath,
+            target: { kind: 'stand-in', standInId: entry.id } as const,
+            createdAt: now,
+          })),
+        ]
       : [rule],
   );
 
@@ -263,6 +267,7 @@ export const splitStandIn = (options: {
       attributionRules: rewritten,
     },
     opened,
+    remainder,
   };
 };
 

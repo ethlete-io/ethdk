@@ -153,9 +153,18 @@ then says which of them it would write. A directory under three commits is an ed
 passing rather than a piece of work, so it is listed but not written. Pass
 `--paths <dir>,<dir>` to pick the pieces yourself.
 
-A day the record covers that holds no commit at all has no automatic answer. The split refuses
-rather than guessing, and `--claim <dir>` is how the user says which piece that day belongs to.
-Ask them; only they know.
+The commits are read across every branch, and only the ones the checkout's own `user.email`
+authored. That is the history the collector that opened the record read, so work left on an
+unmerged branch still counts and a colleague's commits never shape a piece. `--author <email>`
+overrides the address.
+
+A day the record covers that holds no commit of yours goes back to unnamed, and the split names
+it. That is the honest answer: nothing says which directory it was. The day review is where it
+gets named, and `--claim <dir>` gives every such day to one directory instead.
+
+The record and its checkout-wide rule always go, even when a day is left unnamed. Both are read
+as covering every branch of the checkout, so keeping either would block any later branch from
+getting a record of its own — which is the fault the repair exists to cure.
 
 The record must name the checkout it was opened for. One the user opened by hand names none, and
 the split refuses it.

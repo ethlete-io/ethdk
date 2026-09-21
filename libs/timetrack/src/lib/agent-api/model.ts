@@ -385,6 +385,8 @@ export type AgentApiStandInPiece = { workPath: string; days: string[]; commits: 
 export type AgentApiStandInSplit = {
   candidates: AgentApiStandInPiece[];
   pieces: AgentApiStandInPiece[];
+  /** The days no piece claims, which the record being split keeps rather than the split refusing. */
+  remainder: string[];
   standIns: AgentApiStandIn[];
 };
 

@@ -465,7 +465,12 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const pieces = chosen.size
       ? candidates.filter((piece) => chosen.has(piece.workPath))
       : workPathPieces({ commits, projectRoots });
-    const plan = (answer: { standIns: AgentApiStandIn[] }) => ({ candidates, pieces, ...answer });
+    const covered = new Set(pieces.flatMap((piece) => piece.days));
+    const plan = (answer: { standIns: AgentApiStandIn[] }) => {
+      const held = answer.standIns.find((entry) => entry.id === request.id)?.days ?? [];
+
+      return { candidates, pieces, remainder: held.filter((day) => !covered.has(day)), ...answer };
+    };
 
     if (!request.apply) return standIns$().pipe(map(plan));
 

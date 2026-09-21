@@ -383,6 +383,9 @@ const splitStandIn = async (options: { id: string; argv: string[]; json: boolean
           ? `${claim} takes ${left.join(', ')}.`
           : `Every day already has a directory, so ${claim} takes none.`,
       );
+    } else if (answer.remainder.length) {
+      say(`No commit claims ${answer.remainder.join(', ')}, so those days go back to unnamed.`);
+      say('Name them in the day review, or re-run with --claim <dir> to give them a directory.');
     }
   }
 
