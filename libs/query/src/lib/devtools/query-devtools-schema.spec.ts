@@ -486,4 +486,270 @@ describe('query devtools schema', () => {
       ]);
     });
   });
+
+  describe('before the description has loaded', () => {
+    it('should seed, name and route nothing', () => {
+      setQueryDevtoolsSchemaLoader(() => DOC);
+
+      expect(seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView')).toBeNull();
+      expect(seedQueryDevtoolsSchemaRoute({ clientName: CLIENT, method: 'GET', pattern: '/matches' })).toBeNull();
+      expect(queryDevtoolsSchemaNames(CLIENT)).toEqual([]);
+      expect(queryDevtoolsSchemaRoutes(CLIENT)).toEqual([]);
+    });
+
+    it('should report a loader that rejects with something other than an Error', async () => {
+      await install(() => Promise.reject('offline'));
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(queryDevtoolsSchemaState(CLIENT)).toEqual({ status: 'error', message: 'offline' });
+    });
+
+    it('should keep an object without a default export as the document itself', async () => {
+      await install(() => ({ title: 'A bare JSON Schema' }));
+
+      expect(queryDevtoolsSchemaState(CLIENT)).toEqual({ status: 'ready' });
+      expect(queryDevtoolsSchemaNames(CLIENT)).toEqual([]);
+    });
+
+    it('should read named schemas out of $defs', async () => {
+      await install(() => ({ $defs: { Thing: { type: 'string' } } }));
+
+      expect(queryDevtoolsSchemaNames(CLIENT)).toEqual(['Thing']);
+    });
+  });
+
+  describe('seeding every kind of schema', () => {
+    const nestArrays = (levels: number): unknown =>
+      levels ? { type: 'array', items: nestArrays(levels - 1) } : { type: 'string' };
+
+    const SHAPES_DOC = {
+      openapi: '3.1.0',
+      components: {
+        schemas: {
+          Base: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+          Shapes: {
+            type: 'object',
+            properties: {
+              count: { type: 'integer' },
+              label: { type: 'string', title: 'Display label' },
+              fixed: { const: 'v1' },
+              sample: { type: 'string', example: 'ex' },
+              fallback: { type: 'integer', default: 7 },
+              listed: { type: 'string', examples: ['first', 'second'] },
+              nothing: { type: 'null' },
+              flag: { type: 'boolean' },
+              loose: { properties: { a: { type: 'string' } } },
+              untyped: {},
+              unknownType: { type: 'file' },
+              map: { type: 'object', additionalProperties: { type: 'string' } },
+              bare: { type: 'object' },
+              itemless: { type: 'array' },
+              composed: {
+                allOf: [
+                  { $ref: '#/components/schemas/Base' },
+                  { type: 'object', properties: { extra: { type: 'string' } } },
+                ],
+              },
+              mixed: { allOf: [{ type: 'string' }, { type: 'object', properties: {} }] },
+              remote: { $ref: 'https://example.com/common.json#/Thing' },
+              dangling: { $ref: '#/openapi/version' },
+              anything: true,
+            },
+          },
+          Labels: {
+            type: 'object',
+            properties: {
+              pick: { oneOf: [{ type: 'string' }, { type: 'integer' }, { type: 'boolean' }, { type: 'null' }] },
+              level: { enum: ['a', 'b', 'c', 'd'] },
+              composedNamed: { allOf: [{ type: 'object' }, { $ref: '#/components/schemas/Base' }] },
+              composedAnon: { allOf: [{ type: 'string', format: 'email' }] },
+              nullableCount: { type: 'integer', nullable: true },
+              untyped: {},
+              deep: nestArrays(6),
+            },
+          },
+          Deep: nestArrays(14),
+          RootUntyped: {},
+          RootString: { type: 'string' },
+          Bounds: {
+            type: 'object',
+            properties: {
+              above: { type: 'integer', exclusiveMinimum: 0 },
+              below: { type: 'integer', exclusiveMaximum: 10 },
+              signed: { type: 'integer', minimum: -5 },
+            },
+          },
+        },
+      },
+    };
+
+    beforeEach(() => install(() => SHAPES_DOC));
+    afterEach(() => vi.restoreAllMocks());
+
+    it('should take what the schema declares before generating anything', () => {
+      expect(seedQueryDevtoolsSchemaBody(CLIENT, 'Shapes')?.body).toMatchObject({
+        count: 0,
+        label: 'Display label',
+        fixed: 'v1',
+        sample: 'ex',
+        fallback: 7,
+        listed: 'first',
+        nothing: null,
+        flag: false,
+      });
+    });
+
+    it('should generate an object for properties without a declared type', () => {
+      expect(seedQueryDevtoolsSchemaBody(CLIENT, 'Shapes')?.body).toMatchObject({ loose: { a: 'a' } });
+    });
+
+    it('should merge the members of an allOf into one object', () => {
+      expect(seedQueryDevtoolsSchemaBody(CLIENT, 'Shapes')?.body).toMatchObject({
+        composed: { id: 'id', extra: 'extra' },
+      });
+    });
+
+    it('should take the first non-object member of an allOf that does not compose to an object', () => {
+      expect(seedQueryDevtoolsSchemaBody(CLIENT, 'Shapes')?.body).toMatchObject({ mixed: 'mixed' });
+    });
+
+    it('should generate empty containers for a map and an array without items, and note the map', () => {
+      const seed = seedQueryDevtoolsSchemaBody(CLIENT, 'Shapes');
+
+      expect(seed?.body).toMatchObject({ map: {}, bare: {}, itemless: [] });
+      expect(seed?.notes).toContain('map is a free-form map - generated as an empty object.');
+      expect(seed?.notes.some((note) => note.startsWith('bare '))).toBe(false);
+    });
+
+    it('should generate null for what it cannot type or resolve, and say why', () => {
+      const seed = seedQueryDevtoolsSchemaBody(CLIENT, 'Shapes');
+
+      expect(seed?.body).toMatchObject({
+        untyped: null,
+        unknownType: null,
+        remote: null,
+        dangling: null,
+        anything: null,
+      });
+      expect(seed?.notes).toEqual(
+        expect.arrayContaining([
+          'untyped declares no type - generated as null.',
+          'unknownType declares no type - generated as null.',
+          'https://example.com/common.json#/Thing could not be resolved - generated as null at remote.',
+          '#/openapi/version could not be resolved - generated as null at dangling.',
+        ]),
+      );
+      expect(seed?.types.get('anything')).toBe('unknown?');
+    });
+
+    it('should name the root in a note about the root', () => {
+      const seed = seedQueryDevtoolsSchemaBody(CLIENT, 'RootUntyped');
+
+      expect(seed?.body).toBeNull();
+      expect(seed?.notes).toEqual(['the root declares no type - generated as null.']);
+    });
+
+    it('should fall back to a generic placeholder for a string with no key or title', () => {
+      expect(seedQueryDevtoolsSchemaBody(CLIENT, 'RootString')?.body).toBe('string');
+    });
+
+    it('should cut a schema nested past the depth limit', () => {
+      const seed = seedQueryDevtoolsSchemaBody(CLIENT, 'Deep');
+
+      expect(seed?.notes.some((note) => note.endsWith('is nested deeper than 12 levels - generated as null.'))).toBe(
+        true,
+      );
+    });
+
+    it('should label unions, enums, compositions and nullables in the field types', () => {
+      const types = seedQueryDevtoolsSchemaBody(CLIENT, 'Labels')?.types;
+
+      expect(types?.get('pick')).toBe('string | integer | boolean | …?');
+      expect(types?.get('level')).toBe('"a" | "b" | "c" | …?');
+      expect(types?.get('composedNamed')).toBe('Base?');
+      expect(types?.get('composedAnon')).toBe('string (email)?');
+      expect(types?.get('nullableCount')).toBe('integer | null?');
+      expect(types?.get('untyped')).toBe('unknown?');
+      expect(types?.get('deep')).toBe('unknown[][][][][]?');
+    });
+
+    it('should start a placeholder at an exclusive minimum', () => {
+      expect(seedQueryDevtoolsSchemaBody(CLIENT, 'Bounds')?.body).toMatchObject({ above: 1, below: 0, signed: -5 });
+    });
+
+    it('should clamp a stressed number to an exclusive maximum', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+      expect(seedQueryDevtoolsSchemaBody(CLIENT, 'Bounds', 'stress')?.body).toMatchObject({ below: 9 });
+    });
+
+    it('should stress a signed number with a negative value inside its minimum', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.4);
+
+      const body = seedQueryDevtoolsSchemaBody(CLIENT, 'Bounds', 'stress')?.body as { below: number; signed: number };
+
+      expect(body.signed).toBe(-5);
+      expect(body.below).toBeLessThan(0);
+    });
+  });
+
+  describe('seeding a route from an unusual response', () => {
+    const ROUTES_DOC = {
+      paths: {
+        '/broken': 'not an operation map',
+        '/no-responses': { get: {} },
+        '/fallback': {
+          get: { responses: { default: { content: { 'application/json': { schema: { type: 'string' } } } } } },
+        },
+        '/only-errors': { get: { responses: { '404': { description: 'gone' } } } },
+        '/not-a-response': { get: { responses: { '200': 'ok' } } },
+        '/swagger': { get: { responses: { '200': { schema: { type: 'integer' } } } } },
+        '/any-media': { get: { responses: { '200': { content: { '*/*': { schema: { type: 'boolean' } } } } } } },
+        '/empty-content': { get: { responses: { '200': { content: {} } } } },
+        '/bad-media': { get: { responses: { '200': { content: { 'application/json': 'nope' } } } } },
+        '/dangling': {
+          get: {
+            responses: {
+              '200': { content: { 'application/json': { schema: { $ref: '#/components/schemas/Gone' } } } },
+            },
+          },
+        },
+      },
+    };
+
+    const seedGet = (pattern: string) => seedQueryDevtoolsSchemaRoute({ clientName: CLIENT, method: 'GET', pattern });
+
+    beforeEach(() => install(() => ROUTES_DOC));
+
+    it('should skip a path that declares no operations', () => {
+      expect(queryDevtoolsSchemaRoutes(CLIENT).map((route) => route.pattern)).not.toContain('/broken');
+      expect(seedGet('/broken')).toBeNull();
+    });
+
+    it('should seed from the default response when no 2xx is declared', () => {
+      const seed = seedGet('/fallback');
+
+      expect(seed?.body).toBe('string');
+      expect(seed?.notes).toContain('Generated from /fallback GET default.');
+    });
+
+    it('should read the flat schema of a Swagger 2 response', () => {
+      expect(seedGet('/swagger')?.body).toBe(0);
+    });
+
+    it('should fall back to the only media type a response declares', () => {
+      expect(seedGet('/any-media')?.body).toBe(false);
+    });
+
+    it('should return null for a route without a usable success response', () => {
+      for (const pattern of ['/no-responses', '/only-errors', '/not-a-response', '/empty-content', '/bad-media']) {
+        expect(seedGet(pattern)).toBeNull();
+      }
+    });
+
+    it('should return null for a route whose response refs a schema the document lacks', () => {
+      expect(seedGet('/dangling')).toBeNull();
+    });
+  });
 });
