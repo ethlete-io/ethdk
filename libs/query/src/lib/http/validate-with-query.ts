@@ -28,6 +28,7 @@ export type ValidateWithQueryConfig<TCreator extends AnyQueryCreator, TValue, TP
   /**
    * Override the default violation → error mapping. Receives the violations extracted from the
    * failed request; return the errors to report (targeting child fields via their `fieldTree`).
+   * Runs only for a request that carries violations - any other error keeps the form-level error.
    * Defaults to `mapViolationsToFormErrors`, resolving each violation's `propertyPath` against the
    * validated field.
    */

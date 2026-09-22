@@ -983,6 +983,34 @@ describe('validateWithQuery', () => {
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
     c.destroy();
   });
+  it('keeps the form-level error for a non-violation failure even with mapViolations', async () => {
+    const s = scenario();
+    s.api.on('POST', '/validate', () => ({ status: 500, body: { message: 'Server exploded.' } }));
+
+    const validateEmail = s.post<{ body: { email: string }; response: void }>('/validate');
+    const c = s.consumer();
+    const testForm = c.run(() => {
+      const emailSchema = schema<{ email: string }>((p) => {
+        validateWithQuery(p.email, {
+          queryCreator: validateEmail,
+          args: (ctx) => ({ body: { email: ctx.value() } }),
+          debounce: 0,
+          mapViolations: (violations) =>
+            violations.map((violation) => ({ kind: 'appEmailViolation', message: violation.message })),
+        });
+      });
+
+      return form(signal({ email: 'ada@example.com' }), emailSchema);
+    });
+
+    await s.settle();
+
+    expect(testForm.email().errors()).toEqual([expect.objectContaining({ kind: SERVER_ERROR_KIND })]);
+    expect(testForm.email().valid()).toBe(false);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 500);
+    c.destroy();
+  });
 });
 
 describe('validateWithV2Query', () => {

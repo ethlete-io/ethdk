@@ -26,7 +26,7 @@ export const DEFAULT_QUERY_VALIDATION_DEBOUNCE = 300;
  * validators. Reuses the existing `mapViolationsToFormErrors` bridge: a `422` violation list is
  * resolved onto the child fields by `propertyPath`, while a network / non-violation error degrades
  * to a non-swallowed form-level error. A caller-supplied `mapViolations` overrides only the
- * violation → error step (it receives the already-extracted violations).
+ * violation → error step: it runs only when the error carries violations, and receives them.
  */
 export const mapQueryValidationError = <TValue, TPathKind extends PathKind>(
   error: unknown,
@@ -37,8 +37,10 @@ export const mapQueryValidationError = <TValue, TPathKind extends PathKind>(
   // into an `Error` and stashes the original on `.cause`, so unwrap it before extraction.
   const cause = error instanceof Error && error.cause !== undefined ? error.cause : error;
 
-  if (mapViolations) {
-    return mapViolations(extractFormViolations(cause), ctx);
+  const violations = extractFormViolations(cause);
+
+  if (mapViolations && violations.length) {
+    return mapViolations(violations, ctx);
   }
 
   // `ctx.fieldTree` is the (read-only) tree of the validated field; `propertyPath`s resolve against

@@ -173,7 +173,8 @@ protected form = form(signal({ email: '' }), this.emailSchema);
   the child fields by `propertyPath`; a **network / other error** degrades to a
   non-swallowed form-level error - the same mapping as `mapViolationsToFormErrors`.
 - **`debounce`** (default `300` ms), **`when`** (gate the request) and
-  **`mapViolations`** (override the violation → error step) tune the behavior.
+  **`mapViolations`** (override the violation → error step; a non-violation error
+  keeps the form-level error) tune the behavior.
 - **On the legacy `V2QueryClient`?** Use **`validateWithV2Query`** - same
   signature and behavior, for `V2Query` creators (`hubApiClient.post(...)`).
 
