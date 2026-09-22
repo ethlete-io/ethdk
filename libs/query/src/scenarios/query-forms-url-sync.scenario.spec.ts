@@ -566,6 +566,21 @@ describe('query forms URL sync scenario', () => {
     await s.settle();
     expect(router.url).toBe('/#details');
   });
+
+  it('unobserving commits a pending debounced edit without writing it to the URL', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const qf = s.run(() => defineQueryForm({ fields: { search: searchQueryField() } }).observe());
+
+    qf.patchValue({ search: 'shoes' });
+    s.tick(50);
+    qf.unobserve();
+    await s.settle(300);
+
+    expect(qf.value().search).toBe('shoes');
+    expect(router.parseUrl(router.url).queryParams).toEqual({});
+  });
 });
 
 describe.each(['merge', 'preserve'] as const)(

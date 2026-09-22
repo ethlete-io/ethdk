@@ -396,7 +396,8 @@ export type QueryFormSignals<TFields extends QueryFormFields> = {
   observe(options?: QueryFormSignalsObserveOptions): QueryFormSignals<TFields>;
 
   /**
-   * Stop syncing and strip the form's params from the URL. Only an explicit call strips them - the
+   * Stop syncing and strip the form's params from the URL. A pending debounced edit is committed to `value`
+   * but not written to the URL. Only an explicit call strips the params - the
    * form stops syncing when it is destroyed, but leaves the URL alone, because the route it lands on
    * owns the params by then.
    */
@@ -769,7 +770,13 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       return queryForm;
     },
 
-    unobserve: () => cleanup(),
+    unobserve: () => {
+      const hasPendingCommit = pendingTimer !== null;
+
+      cleanup();
+
+      if (hasPendingCommit) flush();
+    },
 
     setValue,
     patchValue,
