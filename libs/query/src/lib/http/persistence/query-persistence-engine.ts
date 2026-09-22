@@ -175,23 +175,27 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
   const adoptStoredIndex = async (storedIndex: PersistedQueryEntryMeta[]) => {
     const now = Date.now();
     const droppedKeys: QueryKey[] = [];
+    let foreignVersionCount = 0;
 
     for (const meta of storedIndex) {
       // A write that landed while the index was loading is newer than the snapshot the store returned.
       if (index.has(meta.key)) continue;
 
-      if (meta.version !== version || isExpired(meta, now)) {
+      if (isExpired(meta, now)) {
         droppedKeys.push(meta.key);
+      } else if (meta.version !== version) {
+        // Another build's entry - a tab still on the previous deploy, or the next one - is not ours to
+        // hydrate, nor to delete before it ages out.
+        foreignVersionCount++;
       } else {
         index.set(meta.key, meta);
       }
     }
 
     try {
-      // Nothing survived - the usual reason being a bumped `version`, i.e. a deploy whose response
-      // shapes changed. Emptying the store outright also collects anything the index does not know
-      // about, which a key-by-key removal cannot.
-      if (droppedKeys.length && !index.size) {
+      // Emptying the store outright also collects anything the index does not know about, which a
+      // key-by-key removal cannot.
+      if (droppedKeys.length && !index.size && !foreignVersionCount) {
         await enqueue(() => adapter.clear());
       } else if (droppedKeys.length) {
         await enqueue(() => removeKeys(droppedKeys));

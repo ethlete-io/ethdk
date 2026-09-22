@@ -647,7 +647,7 @@ describe('persistence scenario', () => {
       clientFeatures: [withQueryPersistence({ adapter: () => store.adapter, version: 1 })],
     });
 
-    it('ignores an entry written under a different version and forgets it', async () => {
+    it('ignores an entry written under a different version and leaves it on disk for that build', async () => {
       const s = scenario();
       s.api.on('GET', '/config', sequence([{ body: { schema: 'v1' } }, { body: { schema: 'v2' } }]));
 
@@ -680,12 +680,40 @@ describe('persistence scenario', () => {
 
       await s.settle();
 
-      expect(store.entries()).toEqual([]);
-      expect(store.calls().clear).toBe(1);
+      expect(store.calls().clear).toBe(0);
+      expect(store.entries().map((e) => e.version)).toEqual([1]);
 
       await secondClient.subtle.persistence?.flush();
       await s.settle();
       second.destroy();
+    });
+
+    it('removes an entry written under a different version once it is older than maxAge', async () => {
+      const s = scenario();
+      const now = Date.now();
+
+      store.seed([
+        {
+          ...persistedEntry({ key: 'stale-v0', url: 'https://api.test/0', persistedAt: now - 86_400_000 }),
+          version: 0,
+        },
+        { ...persistedEntry({ key: 'fresh-v2', url: 'https://api.test/2', persistedAt: now }), version: 2 },
+      ]);
+
+      const readerRef = createQueryClient({
+        name: 'persistence-version-age-reader',
+        baseUrl: 'https://api.test',
+        keepUnusedFor: 0,
+        features: [withQueryPersistence({ adapter: store.adapter, version: 1 })],
+      });
+      const reader = s.run(() => readerRef.inject());
+      if (!reader) throw new Error('expected the reader client to be created');
+
+      await reader.whenPersistenceReady;
+      await s.settle();
+
+      expect(store.entries().map((e) => e.key)).toEqual(['fresh-v2']);
+      expect(reader.subtle.persistence?.indexEntries()).toEqual([]);
     });
   });
 

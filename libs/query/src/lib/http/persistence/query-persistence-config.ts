@@ -34,7 +34,7 @@ export type QueryPersistenceConfig = {
 
   /**
    * The version of the *response shapes* this app persists. Every entry is written under it, and an
-   * entry written under a different one is dropped rather than hydrated.
+   * entry written under a different one is never hydrated, and only removed once older than `maxAge`.
    *
    * Bump it in the same commit that changes what a response looks like - a renamed field, a different
    * pagination envelope - so a returning user's disk copy cannot be handed to code that no longer

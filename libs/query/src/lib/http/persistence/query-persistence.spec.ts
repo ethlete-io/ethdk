@@ -302,7 +302,7 @@ describe('query persistence', () => {
       expect(store.entries()).toEqual([]);
     });
 
-    it('drops everything written under a different version', async () => {
+    it('ignores everything written under a different version without removing it', async () => {
       const first = createSession({ version: 1 });
       const firstQuery = mountQuery(first);
 
@@ -315,8 +315,8 @@ describe('query persistence', () => {
       await flushStore();
 
       expect(secondQuery.query.response()).toBeNull();
-      expect(store.calls().clear).toBe(1);
-      expect(store.entries()).toEqual([]);
+      expect(store.calls().clear).toBe(0);
+      expect(store.entries().map((entry) => entry.version)).toEqual([1]);
     });
   });
 

@@ -120,7 +120,7 @@ withQueryPersistence({
 | Option        | Default                        | Description                                                                                                              |
 | ------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | `storageName` | `et-query-persistence-${name}` | The IndexedDB database name. One per client, so two clients never overwrite each other.                                  |
-| `version`     | `1`                            | The version of your response shapes. Entries written under a different one are dropped.                                  |
+| `version`     | `1`                            | The version of your response shapes. Entries written under a different one are ignored, and removed once past `maxAge`.  |
 | `maxAge`      | `86400000` (24h)               | How old a response may be and still be shown. Older ones are dropped at startup.                                         |
 | `maxEntries`  | `50`                           | How many responses are kept. The least recently written go first, and the cap is re-applied at startup.                  |
 | `writeDelay`  | `1000`                         | How long writes are collected before one batched flush. Always flushed when the tab hides.                               |
@@ -142,9 +142,10 @@ by the deploy they had _last time_:
 withQueryPersistence({ version: 2 });
 ```
 
-Every entry is written under the version it was created with, and anything else is dropped rather than
+Every entry is written under the version it was created with, and anything else is ignored rather than
 handed to code that can no longer read it. Rolling back works for the same reason: the old build
-ignores what the new one wrote.
+ignores what the new one wrote. Neither build deletes the other's entries, so two tabs on either side
+of a deploy keep their own; an entry no build reads any more is removed once it is older than `maxAge`.
 
 ### Opting a single query out
 
