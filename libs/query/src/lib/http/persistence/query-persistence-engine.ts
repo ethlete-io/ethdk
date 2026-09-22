@@ -197,7 +197,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
 
     // An unreadable store is treated as an empty one rather than as a reason to give up on writing: the
     // write path has its own failure handling, and whatever broke here may not affect it.
-    const storedIndex = await adapter.loadIndex().catch((): PersistedQueryEntryMeta[] => []);
+    const storedIndex = await loadStoredIndex();
 
     // A `clear()` that ran while the load was open already emptied the store, so this snapshot lists
     // bodies that no longer exist - adopting it would leave the index reporting entries forever.

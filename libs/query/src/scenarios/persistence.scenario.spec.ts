@@ -1380,6 +1380,41 @@ describe('persistence scenario', () => {
     });
   });
 
+  describe('an index that throws instead of rejecting', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [
+        withQueryPersistence({
+          adapter: () => ({
+            ...store.adapter,
+            loadIndex: () => {
+              throw new Error('store unavailable');
+            },
+          }),
+        }),
+      ],
+    });
+
+    it('still resolves whenPersistenceReady and leaves queries unaffected', async () => {
+      const s = scenario();
+      s.api.on('GET', '/standings', () => ({ body: { rows: 4 } }));
+
+      let isReady = false;
+      void s.client.whenPersistenceReady.then(() => (isReady = true));
+      await s.settle();
+
+      expect(isReady).toBe(true);
+
+      const c = s.consumer();
+      const query = c.run(() => s.get<{ response: { rows: number } }>('/standings')());
+      s.tick();
+
+      expect(query.response()).toEqual({ rows: 4 });
+
+      c.destroy();
+    });
+  });
+
   describe('the default storage name', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
