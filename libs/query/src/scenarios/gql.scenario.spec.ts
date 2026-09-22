@@ -589,6 +589,36 @@ describe('gql scenario', () => {
       d.destroy();
     });
 
+    it('keeps variables that differ only in whitespace or braces inside a string apart via POST', () => {
+      const s = scenario();
+      s.api.on('POST', '/', ({ body }) => {
+        const { search } = (body as { variables: { search: string } }).variables;
+
+        return { body: { data: { search } } };
+      });
+
+      const search = createGqlQueryViaPost(s.clientRef)<{
+        response: { search: string };
+        variables: { search: string };
+      }>(gql`
+        query Search($search: String!) {
+          search(term: $search)
+        }
+      `);
+
+      const terms = ['new york', 'newyork', '{x}', 'x'];
+      const consumers = terms.map(() => s.consumer());
+      const queries = terms.map((term, i) =>
+        consumers[i]?.run(() => search(withArgs(() => ({ variables: { search: term } })))),
+      );
+      s.tick();
+
+      expect(s.api.requestCount('POST', '/')).toBe(4);
+      expect(queries.map((query) => query?.response()?.search)).toEqual(terms);
+
+      consumers.forEach((consumer) => consumer.destroy());
+    });
+
     it('never dedupes a gql mutation, even with identical variables', () => {
       const s = scenario();
       s.api.on('POST', '/', () => ({ body: { data: { renameUser: { ok: true } } } }));

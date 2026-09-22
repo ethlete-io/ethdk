@@ -73,13 +73,22 @@ describe('query cache utils', () => {
       expect(new Set([get, head, options, post]).size).toBe(4);
     });
 
-    it('should keep the key a GET already has, so persisted entries survive an upgrade', () => {
+    it('should keep the key a body-less GET already has, so persisted entries survive an upgrade', () => {
       expect(buildQueryCacheKey('/api/status', undefined)).toBe('06330470810770548246');
       expect(buildQueryCacheKey('/api/status', undefined, 'GET')).toBe('06330470810770548246');
-      expect(buildQueryCacheKey('/api/status', { body: { page: 1 } }, 'GET')).toBe('40377494252018032206');
+      expect(buildQueryCacheKey('/api/status', { body: {} }, 'GET')).toBe('06330470810770548246');
       expect(buildQueryCacheKey('/api/status', { headers: new HttpHeaders({ 'Accept-Language': 'en' }) }, 'GET')).toBe(
         '10877690302814443351',
       );
+    });
+
+    it('should ignore the key order of the body but not the contents of its strings', () => {
+      const key = (body: unknown) => buildQueryCacheKey('/api/test', { body }, 'POST');
+
+      expect(key({ a: 1, b: { c: 2, d: 3 } })).toBe(key({ b: { d: 3, c: 2 }, a: 1 }));
+      expect(key({ q: 'new york' })).not.toBe(key({ q: 'newyork' }));
+      expect(key({ q: '{x}' })).not.toBe(key({ q: 'x' }));
+      expect(key({ a: { b: 1 }, c: 2 })).not.toBe(key({ a: { b: 1, c: 2 } }));
     });
 
     it('should return a numeric string', () => {

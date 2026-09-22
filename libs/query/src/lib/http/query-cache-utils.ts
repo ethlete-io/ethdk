@@ -49,6 +49,18 @@ export const shouldCacheQuery = (method: QueryMethod) => {
   return method === 'GET' || method === 'OPTIONS' || method === 'HEAD';
 };
 
+const sortObjectKeys = (_key: string, value: unknown) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+
+  const record = value as Record<string, unknown>;
+
+  return Object.fromEntries(
+    Object.keys(record)
+      .sort()
+      .map((name) => [name, record[name]]),
+  );
+};
+
 /**
  * Builds the repository cache key for a request. `method` keeps two cacheable methods on one route
  * (a `HEAD` and an `OPTIONS`, a GraphQL query over POST and a plain `GET`) in separate entries.
@@ -64,12 +76,8 @@ export const buildQueryCacheKey = (route: string, args: RequestArgs<QueryArgs> |
     .sort()
     .map((name) => [name, headers.getAll(name)]);
 
-  // We need to hash the body in case it's a gql query and the query get's transported in the body
-  const body = JSON.stringify(args?.body || {})
-    // replace all curly braces with empty string
-    .replace(/{|}/g, '')
-    // replace new lines and whitespaces with empty string
-    .replace(/\s/g, '');
+  const serializedBody = JSON.stringify(args?.body || {}, sortObjectKeys);
+  const body = serializedBody === '{}' ? '' : serializedBody;
 
   const headerInput = serializedHeaders?.length ? `_${JSON.stringify(serializedHeaders)}` : '';
   const methodInput = method && method !== 'GET' ? `_${method}` : '';

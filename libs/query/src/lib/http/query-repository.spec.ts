@@ -59,7 +59,7 @@ describe('createQueryRepository', () => {
       args: { body: { foo: true }, headers, pathParams: { userId: 'abc123' }, queryParams: { page: 1 } },
     });
 
-    const expectedKey2 = '02575197862373240585';
+    const expectedKey2 = '34741043124225550895';
     expect(req4.key).toBe(expectedKey2);
   });
 
