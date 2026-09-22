@@ -107,6 +107,12 @@ export const createIndexedDbQueryPersistenceAdapter = (
           databasePromise = null;
         };
 
+        // The browser closes a connection itself when the user clears site data or the disk goes away.
+        // Every transaction on it throws from then on, so forget it and reopen on the next call.
+        database.onclose = () => {
+          databasePromise = null;
+        };
+
         resolve(database);
       };
 

@@ -14,12 +14,14 @@ import {
   createGetQuery,
   createGqlMutationViaPost,
   createGqlQueryViaPost,
+  createIndexedDbQueryPersistenceAdapter,
   createPostQuery,
   createQueryClient,
   createSecureGetQuery,
   gql,
   PersistedQueryEntry,
   QueryPersistenceAdapter,
+  QUERY_PERSISTENCE_STORE_VERSION,
   QueryPersistenceCandidate,
   withAuthenticationQuery,
   withBearerAuthMultiTabSync,
@@ -29,6 +31,7 @@ import {
   withRefreshQuery,
   withSuccessHandling,
 } from '../index';
+import { forceCloseDatabase, IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mintToken, Scenario, sequence, useScenario } from './harness';
 
@@ -1758,5 +1761,152 @@ describe('persistence scenario', () => {
 
       publicConsumer.destroy();
     });
+  });
+});
+
+describe('persistence scenario over IndexedDB', () => {
+  const STORAGE_NAME = 'persistence-scenario-idb';
+
+  let indexedDbDescriptor: PropertyDescriptor | undefined;
+  let openRequests: IDBOpenDBRequest[];
+
+  beforeEach(() => {
+    const factory = new IDBFactory();
+    const open = factory.open.bind(factory);
+
+    openRequests = [];
+    factory.open = (name, version) => {
+      const request = open(name, version);
+      openRequests.push(request);
+
+      return request;
+    };
+
+    indexedDbDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'indexedDB');
+    Object.defineProperty(globalThis, 'indexedDB', { configurable: true, value: factory });
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, 'indexedDB');
+    if (indexedDbDescriptor) Object.defineProperty(globalThis, 'indexedDB', indexedDbDescriptor);
+  });
+
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 0 },
+    clientFeatures: [withQueryPersistence({ storageName: STORAGE_NAME })],
+  });
+
+  const persistedUrls = async (s: Scenario) => {
+    const reader = createIndexedDbQueryPersistenceAdapter({ storageName: STORAGE_NAME });
+    const index = await reader.loadIndex();
+    await s.settle();
+
+    return index.map((entry) => entry.url).sort();
+  };
+
+  const persist = async (s: Scenario, path: string) => {
+    s.api.on('GET', path, () => ({ body: { path } }));
+
+    const getPath = s.get<{ response: { path: string } }>(path, { persistence: true });
+    const c = s.consumer();
+    const query = c.run(() => getPath());
+    s.tick();
+
+    await s.client.subtle.persistence?.flush();
+    await s.settle();
+
+    return { query, destroy: () => c.destroy() };
+  };
+
+  const connection = () => {
+    const database = openRequests[0]?.result;
+
+    if (!database) throw new Error('persistence scenario: the adapter never opened a connection');
+
+    return database;
+  };
+
+  it('writes to the database and reads it back on the next start', async () => {
+    const s = scenario();
+    await s.client.whenPersistenceReady;
+
+    const first = await persist(s, '/first');
+
+    expect(await persistedUrls(s)).toEqual(['https://api.test/first']);
+
+    first.destroy();
+  });
+
+  it('opens the database again after the browser closed the connection', async () => {
+    const s = scenario();
+    await s.client.whenPersistenceReady;
+
+    const first = await persist(s, '/first');
+    forceCloseDatabase(connection());
+
+    const later = await persist(s, '/later');
+
+    expect(later.query.response()).toEqual({ path: '/later' });
+    expect(await persistedUrls(s)).toEqual(['https://api.test/first', 'https://api.test/later']);
+
+    first.destroy();
+    later.destroy();
+  });
+
+  it('lets a newer tab upgrade the schema, then stops persisting with one warning while queries keep working', async () => {
+    const s = scenario();
+    await s.client.whenPersistenceReady;
+
+    const first = await persist(s, '/first');
+
+    const upgrade = indexedDB.open(STORAGE_NAME, QUERY_PERSISTENCE_STORE_VERSION + 1);
+    const outcome = await new Promise<string>((resolve) => {
+      upgrade.onsuccess = () => resolve('success');
+      upgrade.onblocked = () => resolve('blocked');
+      upgrade.onerror = () => resolve('error');
+    });
+
+    expect(outcome).toBe('success');
+    upgrade.result.close();
+
+    const later = await persist(s, '/later');
+
+    expect(later.query.response()).toEqual({ path: '/later' });
+    s.expectWarning(/disabled for this session/);
+
+    first.destroy();
+    later.destroy();
+  });
+
+  it('frees space and retries once when a write aborts with QuotaExceededError', async () => {
+    const s = scenario();
+    await s.client.whenPersistenceReady;
+
+    const first = await persist(s, '/first');
+
+    const database = connection();
+    const transaction = database.transaction.bind(database);
+    let quotaFailures = 1;
+
+    database.transaction = ((storeNames: string | string[], mode?: IDBTransactionMode) => {
+      const tx = transaction(storeNames, mode);
+
+      if (mode === 'readwrite' && quotaFailures > 0 && Array.isArray(storeNames)) {
+        quotaFailures--;
+        // fake-indexeddb has no quota; its internal abort is the only way to raise QuotaExceededError.
+        // It must run after the writes are queued, as a full disk does.
+        queueMicrotask(() => (tx as unknown as { _abort: (name: string) => void })._abort('QuotaExceededError'));
+      }
+
+      return tx;
+    }) as IDBDatabase['transaction'];
+
+    const later = await persist(s, '/later');
+
+    expect(later.query.response()).toEqual({ path: '/later' });
+    expect(await persistedUrls(s)).toEqual(['https://api.test/later']);
+
+    first.destroy();
+    later.destroy();
   });
 });
