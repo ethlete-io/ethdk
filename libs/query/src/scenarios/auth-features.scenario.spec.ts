@@ -12,9 +12,11 @@ import {
   createSecureGetQuery,
   isQueryDevtoolsEnabled,
   provideQueryDevtools,
+  queryDevtoolsEntries,
   queryDevtoolsTokenTtls,
   setQueryDevtoolsTokenTtl,
   withAuthenticationQuery,
+  withBearerAuthMultiTabSync,
   withInactivityLogout,
   withPersistentAuth,
   withRefreshQuery,
@@ -1035,6 +1037,306 @@ describe('auth features without the devtools', () => {
   });
 });
 
+describe('inactivity logout and tracking controls', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('disable() holds the logout off and reports no countdown, and enable() restarts the full window', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth({ features: [withInactivityLogout<ScenarioAuthBuilders>({ inactivityTimeout: 10_000 })] });
+    const inactivity = auth.features.inactivityLogout;
+
+    expect(inactivity.calculateTimeUntilLogout()).toBeNull();
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    s.tick();
+
+    expect(inactivity.calculateTimeUntilLogout()).toBe(10_000);
+
+    inactivity.disable();
+    s.tick();
+
+    expect(inactivity.enabled()).toBe(false);
+    expect(inactivity.calculateTimeUntilLogout()).toBeNull();
+
+    s.tick(30_000);
+
+    expect(auth.isAuthenticated()).toBe(true);
+
+    inactivity.enable();
+    s.tick();
+
+    expect(inactivity.enabled()).toBe(true);
+    expect(inactivity.calculateTimeUntilLogout()).toBe(10_000);
+
+    s.tick(9_000);
+
+    expect(auth.isAuthenticated()).toBe(true);
+
+    s.tick(1_001);
+
+    expect(auth.sessionEndCause()).toBe('inactivity');
+    expect(inactivity.calculateTimeUntilLogout()).toBeNull();
+
+    c.destroy();
+  });
+
+  it('fires every handler registered for an event, and an unsubscribe removes only its own', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth({ features: [withTracking<ScenarioAuthBuilders>()] });
+    const tracking = auth.features.tracking;
+    const events: string[] = [];
+    const first = () => events.push('first');
+    const second = () => events.push('second');
+
+    tracking.off('logout', first);
+    const unsubscribeFirst = tracking.on('logout', first);
+    tracking.on('logout', second);
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+    s.run(() => auth.logout());
+    s.tick();
+
+    expect(events).toEqual(['first', 'second']);
+
+    unsubscribeFirst();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+    s.run(() => auth.logout());
+    s.tick();
+
+    expect(events).toEqual(['first', 'second', 'second']);
+
+    tracking.off('logout', second);
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+    s.run(() => auth.logout());
+    s.tick();
+
+    expect(events).toEqual(['first', 'second', 'second']);
+
+    c.destroy();
+  });
+
+  it('reports a failed login once as loginFailure with the error, and the next attempt from Execute on', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const events: string[] = [];
+    const auth = s.auth({
+      features: [
+        withTracking<ScenarioAuthBuilders>({
+          on: {
+            loginExecute: () => events.push('loginExecute'),
+            loginSuccess: () => events.push('loginSuccess'),
+            loginFailure: ({ error }) => events.push(`loginFailure:${error.code}`),
+          },
+        }),
+      ],
+    });
+    s.api.once('POST', '/auth/login', () => ({ status: 401, body: { message: 'bad credentials' } }));
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+    await s.settle(1000);
+
+    expect(events).toEqual(['loginExecute', 'loginFailure:401']);
+
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(events).toEqual(['loginExecute', 'loginFailure:401', 'loginExecute', 'loginSuccess']);
+    expect(auth.isAuthenticated()).toBe(true);
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 401);
+
+    c.destroy();
+  });
+});
+
+describe('auth guard targets and a pending restore', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  afterEach(deleteCookie);
+
+  it('accepts a command array, a UrlTree and a (router) => UrlTree as its login and default URLs', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth();
+    const router = s.run(() => inject(Router));
+    const arrayGuard = createAuthGuard(auth.ref, { loginUrl: ['/sign-in', 'array'], defaultUrl: ['/home', 'array'] });
+    const treeGuard = createAuthGuard(auth.ref, {
+      loginUrl: router.parseUrl('/sign-in/tree'),
+      defaultUrl: router.parseUrl('/home/tree'),
+    });
+    const fnGuard = createAuthGuard(auth.ref, {
+      loginUrl: (r) => r.createUrlTree(['/sign-in', 'fn']),
+      defaultUrl: (r) => r.createUrlTree(['/home', 'fn']),
+    });
+
+    router.resetConfig([
+      { path: 'sign-in/:kind', children: [] },
+      { path: 'home/:kind', children: [] },
+      { path: 'array', canMatch: [arrayGuard.canMatch], children: [] },
+      { path: 'tree', canMatch: [treeGuard.canMatch], children: [] },
+      { path: 'fn', canMatch: [fnGuard.canMatch], children: [] },
+      { path: 'login-array', canMatch: [arrayGuard.canMatchAnonymous], children: [] },
+      { path: 'login-tree', canMatch: [treeGuard.canMatchAnonymous], children: [] },
+      { path: 'login-fn', canMatch: [fnGuard.canMatchAnonymous], children: [] },
+    ]);
+
+    for (const kind of ['array', 'tree', 'fn']) {
+      await s.run(() => router.navigateByUrl(`/${kind}`));
+      await s.settle();
+
+      expect(router.url).toBe(`/sign-in/${kind}?returnUrl=%2F${kind}`);
+    }
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    for (const kind of ['array', 'tree', 'fn']) {
+      await s.run(() => router.navigateByUrl(`/login-${kind}`));
+      await s.settle();
+
+      expect(router.url).toBe(`/home/${kind}`);
+    }
+
+    c.destroy();
+  });
+
+  it('navigateAfterLogin() lands on / when neither a return URL nor defaultUrl is there', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth();
+    const router = s.run(() => inject(Router));
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login' });
+
+    router.resetConfig([
+      { path: '', children: [] },
+      { path: 'login', children: [] },
+    ]);
+
+    await s.run(() => router.navigateByUrl('/login'));
+    await s.settle();
+
+    const subscription = s.run(() => guard.navigateAfterLogin()).subscribe();
+    await s.settle();
+
+    expect(router.url).toBe('/');
+
+    subscription.unsubscribe();
+  });
+
+  it('holds a navigation for as long as a slow session restore runs, then lets it through', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const persistentAuthFeature = () =>
+      withPersistentAuth<ScenarioAuthBuilders>({
+        autoLogin: { queryKey: 'refresh', buildArgs: (token: string) => ({ body: { token } }) },
+      });
+
+    const seed = s.auth({ features: [persistentAuthFeature()] });
+    const c = s.consumer();
+    c.run(() => seed.queries.login.execute({ body: {} }));
+    await s.settle();
+    c.destroy();
+
+    s.api.once('POST', '/auth/refresh', () => ({
+      delay: 5000,
+      body: {
+        accessToken: mintToken({ expiresInMs: 15 * 60 * 1000 }),
+        refreshToken: mintToken({ expiresInMs: 60 * 60 * 1000 }),
+      },
+    }));
+
+    const auth = s.auth({ features: [persistentAuthFeature()] });
+    const router = s.run(() => inject(Router));
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login' });
+
+    router.resetConfig([
+      { path: 'login', children: [] },
+      { path: 'dashboard', canMatch: [guard.canMatch], children: [] },
+    ]);
+
+    let landed: boolean | null = null;
+    void s.run(() => router.navigateByUrl('/dashboard')).then((result) => (landed = result));
+    await s.settle(1000);
+
+    expect(auth.sessionStatus()).toBe('restoring');
+    expect(landed).toBeNull();
+    expect(router.url).toBe('/');
+
+    await s.settle(4000);
+    await s.settle();
+
+    expect(auth.sessionStatus()).toBe('authenticated');
+    expect(landed).toBe(true);
+    expect(router.url).toBe('/dashboard');
+  });
+
+  it('drops the wait of a guard whose navigation another one superseded', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const persistentAuthFeature = () =>
+      withPersistentAuth<ScenarioAuthBuilders>({
+        autoLogin: { queryKey: 'refresh', buildArgs: (token: string) => ({ body: { token } }) },
+      });
+
+    const seed = s.auth({ features: [persistentAuthFeature()] });
+    const c = s.consumer();
+    c.run(() => seed.queries.login.execute({ body: {} }));
+    await s.settle();
+    c.destroy();
+
+    s.api.once('POST', '/auth/refresh', () => ({ delay: 5000, status: 401, body: { message: 'unauthorized' } }));
+
+    const auth = s.auth({ features: [persistentAuthFeature()] });
+    const router = s.run(() => inject(Router));
+    const guard = createAuthGuard(auth.ref, { loginUrl: '/login' });
+
+    router.resetConfig([
+      { path: 'login', children: [] },
+      { path: 'public', children: [] },
+      { path: 'dashboard', canMatch: [guard.canMatch], children: [] },
+    ]);
+
+    let landed: boolean | null = null;
+    void s.run(() => router.navigateByUrl('/dashboard')).then((result) => (landed = result));
+    await s.settle(1000);
+
+    await s.run(() => router.navigateByUrl('/public'));
+    await s.settle();
+
+    expect(landed).toBe(false);
+    expect(router.url).toBe('/public');
+
+    await s.settle(5000);
+
+    expect(auth.sessionStatus()).toBe('anonymous');
+    expect(router.url).toBe('/public');
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 401);
+  });
+});
+
 describe('auth features with the devtools attached', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 }, providers: () => [provideQueryDevtools()] });
 
@@ -1090,5 +1392,64 @@ describe('auth features with the devtools attached', () => {
     expect(auth.accessToken()).toBe(tokenAfterOverrideRefresh);
 
     destroy();
+  });
+
+  const featureDetailsOf = (auth: object, type: string) =>
+    queryDevtoolsEntries()
+      .find((entry) => entry.kind === 'auth-provider' && entry.handle === auth)
+      ?.meta.features?.find((feature) => feature.type === type)?.details;
+
+  it('describes the inactivity logout of a lone tab and of a tab that shares idleness with its siblings', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(true);
+
+    const lone = s.auth({ features: [withInactivityLogout<ScenarioAuthBuilders>()] });
+    const shared = s.auth({
+      features: [
+        withBearerAuthMultiTabSync(),
+        withInactivityLogout<ScenarioAuthBuilders>({
+          inactivityTimeout: 90_000,
+          activityEvents: ['keydown'],
+          customActivityCheck: () => false,
+        }),
+      ],
+    });
+    s.tick();
+
+    expect(featureDetailsOf(lone, 'INACTIVITY_LOGOUT')).toEqual([
+      { label: 'timeout', value: '15m' },
+      { label: 'activity events', value: 'mousedown, keydown, scroll, touchstart' },
+      { label: 'idleness', value: 'this tab only' },
+    ]);
+    expect(featureDetailsOf(shared, 'INACTIVITY_LOGOUT')).toEqual([
+      { label: 'timeout', value: '1.5m' },
+      { label: 'activity events', value: 'keydown' },
+      { label: 'idleness', value: 'shared across tabs' },
+      { label: 'custom activity check', value: 'yes' },
+    ]);
+  });
+
+  it('describes whether tracking hears internal executions and which handlers it was given', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(true);
+
+    const bare = s.auth({ features: [withTracking<ScenarioAuthBuilders>()] });
+    const configured = s.auth({
+      features: [
+        withTracking<ScenarioAuthBuilders>({
+          trackInternalEvents: false,
+          on: { loginSuccess: () => undefined, logout: () => undefined },
+        }),
+      ],
+    });
+    s.tick();
+
+    expect(featureDetailsOf(bare, 'TRACKING')).toEqual([{ label: 'internal events', value: 'tracked' }]);
+    expect(featureDetailsOf(configured, 'TRACKING')).toEqual([
+      { label: 'internal events', value: 'ignored' },
+      { label: 'handlers', value: 'loginSuccess, logout' },
+    ]);
   });
 });
