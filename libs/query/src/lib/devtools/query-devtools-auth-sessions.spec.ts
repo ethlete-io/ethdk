@@ -10,8 +10,11 @@ import {
   initQueryDevtoolsAuthSessions,
   loginQueryDevtoolsAuthAccount,
   queryDevtoolsAuthAccountsFor,
+  queryDevtoolsAuthActive,
+  queryDevtoolsAuthFieldsFor,
   queryDevtoolsAuthOtherScopeCount,
   queryDevtoolsAuthProviders,
+  queryDevtoolsAuthSessions,
   queryDevtoolsAuthSessionsFor,
   queryDevtoolsAuthTabLocal,
   readQueryDevtoolsAuthSeedFor,
@@ -749,6 +752,351 @@ describe('query devtools auth sessions', () => {
       const next = createProvider('hub-auth');
 
       expect(next.isTabLocalSession()).toBe(true);
+    });
+  });
+
+  describe('reading what it is handed', () => {
+    it('should store a token it cannot decode under a generic name and without an expiry', () => {
+      const provider = createProvider('opaque-auth');
+
+      provider.handle.setTokens('opaque-access-token', 'refresh-1');
+      flush();
+
+      expect(queryDevtoolsAuthSessionsFor('opaque-auth')[0]).toMatchObject({
+        label: 'session',
+        subject: null,
+        expiresAt: null,
+      });
+    });
+
+    it('should ignore an expiry claim that is not a number', () => {
+      const provider = createProvider('odd-exp-auth');
+
+      provider.handle.setTokens(token({ sub: 'user-1', exp: 'never' }), 'refresh-1');
+      flush();
+
+      expect(queryDevtoolsAuthSessionsFor('odd-exp-auth')[0]).toMatchObject({ label: 'user-1', expiresAt: null });
+    });
+
+    it('should drop stored sessions it cannot read, and fill in what an older build left out', () => {
+      localStorage.setItem(
+        STORE_KEY,
+        JSON.stringify({
+          sessions: [
+            null,
+            'not a session',
+            { id: 'missing-tokens', provider: 'hub-auth' },
+            { id: 'old-build', provider: 'hub-auth', accessToken: ADMIN, refreshToken: 'refresh-1' },
+          ],
+        }),
+      );
+
+      initQueryDevtoolsAuthSessions([]);
+
+      expect(queryDevtoolsAuthSessions()).toEqual([
+        {
+          id: 'old-build',
+          provider: 'hub-auth',
+          label: 'old-build',
+          scope: 'default',
+          accessToken: ADMIN,
+          refreshToken: 'refresh-1',
+          subject: null,
+          identity: null,
+          account: null,
+          expiresAt: null,
+          savedAt: 0,
+        },
+      ]);
+    });
+
+    it('should ignore storage events for other keys, and empty the vault when another tab clears it', () => {
+      const provider = createProvider('cleared-auth');
+
+      provider.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+
+      window.dispatchEvent(new StorageEvent('storage', { key: 'something-else', newValue: '{}' }));
+
+      expect(queryDevtoolsAuthSessionsFor('cleared-auth').length).toBe(1);
+
+      window.dispatchEvent(new StorageEvent('storage', { key: STORE_KEY, newValue: null }));
+
+      expect(queryDevtoolsAuthSessions()).toEqual([]);
+    });
+  });
+
+  describe('keeping sessions apart', () => {
+    it('should keep two accounts in two slots even where their tokens name the same person', () => {
+      const provider = createProvider('twin-auth');
+      const first = addQueryDevtoolsAuthAccount({ provider: 'twin-auth', label: 'First', loginQuery: 'login' });
+      const second = addQueryDevtoolsAuthAccount({ provider: 'twin-auth', label: 'Second', loginQuery: 'login' });
+
+      setQueryDevtoolsAuthCredentials({ accountId: first, values: { email: 'a@example.com', password: 'x' } });
+      setQueryDevtoolsAuthCredentials({ accountId: second, values: { email: 'b@example.com', password: 'x' } });
+
+      loginQueryDevtoolsAuthAccount(first);
+      provider.handle.setTokens(NAMED, 'refresh-1');
+      flush();
+
+      loginQueryDevtoolsAuthAccount(second);
+      provider.handle.setTokens(NAMED_AGAIN, 'refresh-2');
+      flush();
+
+      expect(queryDevtoolsAuthSessionsFor('twin-auth').map((session) => [session.label, session.refreshToken])).toEqual(
+        [
+          ['Admin', 'refresh-1'],
+          ['Admin', 'refresh-2'],
+        ],
+      );
+    });
+
+    it('should keep the sessions of another backend when a production session expires', () => {
+      const staging = createProvider('env-auth');
+
+      staging.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+      staging.stop();
+
+      localStorage.setItem('hubApiEnv', 'production');
+      setQueryDevtoolsApiEnvs([HUB]);
+      initQueryDevtoolsAuthSessions([]);
+
+      const production = createProvider('env-auth');
+
+      flush();
+      production.handle.setTokens(MEMBER, 'refresh-2');
+      flush();
+      expire(production);
+
+      localStorage.setItem('hubApiEnv', 'staging');
+      setQueryDevtoolsApiEnvs([HUB]);
+
+      expect(queryDevtoolsAuthSessionsFor('env-auth').map((session) => session.refreshToken)).toEqual(['refresh-1']);
+    });
+
+    it('should refuse to keep credentials while production is the pick', () => {
+      initQueryDevtoolsAuthSessions([{ provider: 'hub-auth', label: 'Admin', loginQuery: 'login' }]);
+
+      const id = queryDevtoolsAuthAccountsFor('hub-auth')[0]!.id;
+
+      localStorage.setItem('hubApiEnv', 'production');
+      setQueryDevtoolsApiEnvs([HUB]);
+      setQueryDevtoolsAuthCredentials({ accountId: id, values: { email: 'real@example.com', password: 'secret' } });
+
+      localStorage.setItem('hubApiEnv', 'staging');
+      setQueryDevtoolsApiEnvs([HUB]);
+
+      expect(queryDevtoolsAuthAccountsFor('hub-auth')[0]?.ready).toBe(false);
+      expect(localStorage.getItem(STORE_KEY) ?? '').not.toContain('secret');
+    });
+
+    it('should offer the fields of the first declared account when no login query is named', () => {
+      initQueryDevtoolsAuthSessions([
+        { provider: 'hub-auth', label: 'Plain', loginQuery: 'login' },
+        { provider: 'hub-auth', label: 'Handle', loginQuery: 'signin', fields: [{ name: 'handle', label: 'Handle' }] },
+      ]);
+
+      expect(queryDevtoolsAuthFieldsFor('hub-auth').map((field) => field.name)).toEqual(['handle']);
+    });
+
+    it('should rename and forget one session without touching the others', () => {
+      const hub = createProvider('rename-auth');
+      const shop = createProvider('rename-shop-auth');
+
+      hub.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+      hub.handle.setTokens(MEMBER, 'refresh-2');
+      flush();
+      shop.handle.setTokens(ADMIN, 'refresh-3');
+      flush();
+
+      const [admin, member] = queryDevtoolsAuthSessionsFor('rename-auth');
+
+      renameQueryDevtoolsAuthSession({ sessionId: admin!.id, label: 'The admin' });
+
+      expect(queryDevtoolsAuthSessionsFor('rename-auth').map((session) => session.label)).toEqual([
+        'The admin',
+        'Member',
+      ]);
+
+      forgetQueryDevtoolsAuthSession(admin!.id);
+
+      expect(queryDevtoolsAuthActive()['rename-auth']).toBe(member!.id);
+
+      forgetQueryDevtoolsAuthSessionsFor('rename-auth');
+
+      expect(queryDevtoolsAuthActive()['rename-auth']).toBeNull();
+      expect(queryDevtoolsAuthActive()['rename-shop-auth']).toBe(
+        queryDevtoolsAuthSessionsFor('rename-shop-auth')[0]!.id,
+      );
+    });
+  });
+
+  describe('switching and logging in', () => {
+    it('should not switch to a session it does not hold, of another backend, or of a provider that is gone', () => {
+      const provider = createProvider('switch-auth');
+
+      provider.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+      const admin = queryDevtoolsAuthSessionsFor('switch-auth')[0]!;
+
+      provider.handle.setTokens(MEMBER, 'refresh-2');
+      flush();
+
+      switchQueryDevtoolsAuthSession({ sessionId: 'no-such-session', reload: false });
+
+      localStorage.setItem('hubApiEnv', 'local');
+      setQueryDevtoolsApiEnvs([HUB]);
+      switchQueryDevtoolsAuthSession({ sessionId: admin.id, reload: false });
+
+      localStorage.setItem('hubApiEnv', 'staging');
+      setQueryDevtoolsApiEnvs([HUB]);
+      provider.stop();
+      switchQueryDevtoolsAuthSession({ sessionId: admin.id, reload: false });
+
+      expect(provider.accessToken()).toBe(MEMBER);
+      expect(provider.unbinds).toBe(0);
+    });
+
+    it('should follow a switch with the seed of a tab that owns its session', () => {
+      const provider = createProvider('seeded-switch-auth');
+
+      provider.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+      const admin = queryDevtoolsAuthSessionsFor('seeded-switch-auth')[0]!;
+
+      provider.handle.setTokens(MEMBER, 'refresh-2');
+      flush();
+      setQueryDevtoolsAuthTabLocal({ provider: 'seeded-switch-auth', tabLocal: true });
+      readQueryDevtoolsAuthSeedFor('seeded-switch-auth');
+
+      switchQueryDevtoolsAuthSession({ sessionId: admin.id });
+
+      expect(readQueryDevtoolsAuthSeedFor('seeded-switch-auth')).toEqual({
+        accessToken: ADMIN,
+        refreshToken: 'refresh-1',
+      });
+    });
+
+    it('should not log in through a query the provider does not have', () => {
+      initQueryDevtoolsAuthSessions([{ provider: 'no-query-auth', label: 'Admin', loginQuery: 'signin' }]);
+
+      const provider = createProvider('no-query-auth');
+      const id = queryDevtoolsAuthAccountsFor('no-query-auth')[0]!.id;
+
+      setQueryDevtoolsAuthCredentials({ accountId: id, values: { email: 'a@example.com', password: 'x' } });
+      loginQueryDevtoolsAuthAccount(id);
+
+      expect(provider.logins).toEqual([]);
+      expect(queryDevtoolsAuthActive()['no-query-auth']).toBeUndefined();
+    });
+
+    it('should not make a tab own a session it does not hold', () => {
+      createProvider('anonymous-auth');
+      setQueryDevtoolsAuthTabLocal({ provider: 'anonymous-auth', tabLocal: true });
+
+      expect(readQueryDevtoolsAuthSeedFor('anonymous-auth')).toBeNull();
+
+      localStorage.setItem('hubApiEnv', 'production');
+      setQueryDevtoolsApiEnvs([HUB]);
+
+      const production = createProvider('production-auth');
+
+      production.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+      setQueryDevtoolsAuthTabLocal({ provider: 'production-auth', tabLocal: true });
+
+      expect(readQueryDevtoolsAuthSeedFor('production-auth')).toBeNull();
+    });
+  });
+
+  describe('the floating pill', () => {
+    const selectOf = (providerName: string) => {
+      const shadow = document.getElementById('et-query-devtools-pill')?.shadowRoot;
+      const pill = [...(shadow?.querySelectorAll('.pill') ?? [])].find(
+        (element) => element.querySelector('.name')?.textContent === providerName,
+      );
+
+      return pill?.querySelector('select') ?? null;
+    };
+
+    const pick = (select: HTMLSelectElement | null, value: string) => {
+      if (!select) throw new Error('pill row not rendered');
+
+      select.value = value;
+      select.dispatchEvent(new Event('change'));
+    };
+
+    it('should tell same-named sessions apart by when they were saved', () => {
+      const provider = createProvider('pill-names-auth');
+
+      provider.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+      provider.handle.setTokens(MEMBER, 'refresh-2');
+      flush();
+
+      const member = queryDevtoolsAuthSessionsFor('pill-names-auth')[1];
+
+      renameQueryDevtoolsAuthSession({ sessionId: member!.id, label: 'Admin' });
+
+      const labels = [...(selectOf('pill-names-auth')?.options ?? [])]
+        .filter((option) => option.value.startsWith('session:'))
+        .map((option) => option.textContent);
+
+      expect(labels).toHaveLength(2);
+      expect(labels.every((label) => label?.startsWith('Admin · ') && label !== 'Admin · unknown')).toBe(true);
+    });
+
+    it('should mark a stored session an older build saved without a time', () => {
+      localStorage.setItem(
+        STORE_KEY,
+        JSON.stringify({
+          sessions: ['one', 'two'].map((id) => ({
+            id,
+            provider: 'pill-old-auth',
+            label: 'Admin',
+            scope: 'hubApiEnv=staging',
+            accessToken: ADMIN,
+            refreshToken: `refresh-${id}`,
+          })),
+        }),
+      );
+      initQueryDevtoolsAuthSessions([]);
+      createProvider('pill-old-auth');
+
+      const labels = [...(selectOf('pill-old-auth')?.options ?? [])]
+        .filter((option) => option.value.startsWith('session:'))
+        .map((option) => option.textContent);
+
+      expect(labels).toEqual(['Admin · unknown', 'Admin · unknown']);
+    });
+
+    it('should switch to the session picked in the pill', () => {
+      const provider = createProvider('pill-switch-auth');
+
+      provider.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+      const admin = queryDevtoolsAuthSessionsFor('pill-switch-auth')[0]!;
+
+      provider.handle.setTokens(MEMBER, 'refresh-2');
+      flush();
+
+      pick(selectOf('pill-switch-auth'), `session:${admin.id}`);
+
+      expect(provider.accessToken()).toBe(ADMIN);
+    });
+
+    it('should log in as the account picked in the pill', () => {
+      initQueryDevtoolsAuthSessions([{ provider: 'pill-login-auth', label: 'Admin', loginQuery: 'login' }]);
+
+      const provider = createProvider('pill-login-auth');
+      const id = queryDevtoolsAuthAccountsFor('pill-login-auth')[0]!.id;
+
+      setQueryDevtoolsAuthCredentials({ accountId: id, values: { email: 'admin@example.com', password: 'x' } });
+      pick(selectOf('pill-login-auth'), `account:${id}`);
+
+      expect(provider.logins).toEqual([{ body: { email: 'admin@example.com', password: 'x' } }]);
     });
   });
 });
