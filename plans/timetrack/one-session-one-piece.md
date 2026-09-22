@@ -75,7 +75,18 @@ Three facts, each true and each too coarse:
    about: the focused window and the rebuilt marks. Which session the window was really on is slice 3.
 3. **Book it once.** Two bands that overlap must not book twice. The minutes go to the session the
    user's own window was on, decided before the timeline draws them, because `proposedMs` is read off
-   the rows.
+   the rows. Slice 2 left `engagedMs` counting both on purpose - that number says what ran, and this
+   one says what is booked.
+
+   **Which session was watched is decided by the last prompt the user typed** - Tom, 2026-09-22. An
+   `agent-prompt` event carries a `sessionId`, so the session the user last prompted holds the checkout
+   until they prompt another one. It is the only direct evidence of attention the day holds. A prompt
+   sent through Claude remote names a session without adding presence of its own, which is the right
+   reading: it says which session the user was on, not that they were at the machine. The two rejected
+   candidates were the oldest running session, which books the minutes to whichever started first, and
+   the session whose directory the window title names, which says nothing where two sessions share a
+   directory.
+
 4. **Join the sessions that are one piece.** Before any stand-in opens, sessions of one checkout are
    gathered into pieces. What joins them is not decided yet - the candidates are the directory their
    commits touched, the branch they sat on, and the user saying so by hand. A wrong join is cheap to
