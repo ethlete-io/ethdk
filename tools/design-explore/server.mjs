@@ -3,23 +3,27 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
 
+/**
+ * The tool's own folder and the checkout it draws are two different roots. `here` carries the web
+ * pages and the authoring API; `target` carries the calls, the styles and the config.
+ */
 const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(here, '../..');
+const target = resolve(process.argv[2] ?? resolve(here, '../..'));
 
 const DESIGN_DIR = '.ethlete/design';
 
-const configPath = resolve(repoRoot, process.argv[2] ?? `${DESIGN_DIR}/config.json`);
+const configPath = resolve(target, `${DESIGN_DIR}/config.json`);
 if (!existsSync(configPath)) {
   console.error(`design-explore: no config at ${configPath}`);
   process.exit(1);
 }
 const config = JSON.parse(readFileSync(configPath, 'utf8'));
-const callsRoot = resolve(repoRoot, `${DESIGN_DIR}/calls`);
+const callsRoot = resolve(target, `${DESIGN_DIR}/calls`);
 
 /** What a slug says about which project drew it: its first segment. */
 const projectOf = (slug) => slug.split('/')[0] ?? '';
 
-const fsUrl = (path) => `/@fs/${resolve(repoRoot, path).replace(/^\//, '')}`;
+const fsUrl = (path) => `/@fs/${resolve(target, path).replace(/^\//, '')}`;
 
 const registry = () => {
   const root = callsRoot;
@@ -37,12 +41,16 @@ const registry = () => {
  * the one that carries the workspace paths. The aliases are read from the base config instead.
  */
 const workspaceAliases = () => {
-  const base = JSON.parse(readFileSync(resolve(repoRoot, 'tsconfig.base.json'), 'utf8'));
+  const basePath = resolve(target, 'tsconfig.base.json');
+
+  if (!existsSync(basePath)) return [];
+
+  const base = JSON.parse(readFileSync(basePath, 'utf8'));
   const paths = base.compilerOptions?.paths ?? {};
 
-  return Object.entries(paths).map(([key, [target]]) => ({
+  return Object.entries(paths).map(([key, [mapped]]) => ({
     find: key.endsWith('/*') ? new RegExp(`^${key.slice(0, -2)}/`) : new RegExp(`^${key}$`),
-    replacement: key.endsWith('/*') ? `${resolve(repoRoot, target.slice(0, -2))}/` : resolve(repoRoot, target),
+    replacement: key.endsWith('/*') ? `${resolve(target, mapped.slice(0, -2))}/` : resolve(target, mapped),
   }));
 };
 
@@ -86,7 +94,7 @@ const designExplore = () => ({
 
       if (!head) return html;
 
-      return html.replace('<!--head-->', readFileSync(resolve(repoRoot, head), 'utf8'));
+      return html.replace('<!--head-->', readFileSync(resolve(target, head), 'utf8'));
     },
   },
   /** The registry is built once per load, so a new call folder is invisible until it is invalidated. */
@@ -108,18 +116,21 @@ const designExplore = () => ({
 const server = await createServer({
   configFile: false,
   root: resolve(here, 'web'),
-  css: { postcss: repoRoot },
-  cacheDir: resolve(repoRoot, 'node_modules/.vite/design-explore'),
+  css: { postcss: target },
+  cacheDir: resolve(target, 'node_modules/.vite/design-explore'),
   resolve: {
     alias: [{ find: /^@design-explore$/, replacement: resolve(here, 'define-call.ts') }, ...workspaceAliases()],
   },
   plugins: [designExplore()],
   server: {
-    port: config.port ?? 4402,
+    port: Number(process.env.DE_PORT) || config.port || 4402,
     strictPort: true,
-    fs: { allow: [repoRoot] },
+    // The web pages live next to this file, which is outside the checkout as soon as the tool is
+    // installed as a package. Vite serves neither root unless both are allowed.
+    fs: { allow: [target, here] },
   },
 });
 
 await server.listen();
+console.log(`design-explore: drawing ${target}`);
 server.printUrls();
