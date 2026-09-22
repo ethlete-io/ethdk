@@ -1,4 +1,4 @@
-import { Locator, expect, test } from '@playwright/test';
+import { Locator, Page, expect, test } from '@playwright/test';
 import { boxOf, expectFocusVisible, openStory, settle, touchSwipe } from '../support';
 
 const DEFAULT_STORY_ID = 'components-layout-scrollbar--default';
@@ -16,6 +16,17 @@ async function thumbOffset(scrollbar: Locator): Promise<number> {
     .locator(THUMB)
     .evaluate((el) => getComputedStyle(el).getPropertyValue('--_et-scrollbar-thumb-offset'));
   return parseFloat(value);
+}
+
+/** A wheel sent before the container overflows, or before the compositor hit-tests it, is dropped. */
+async function wheelUntilScrolled(page: Page, container: Locator): Promise<void> {
+  await expect.poll(() => container.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(0);
+
+  await expect(async () => {
+    await container.hover();
+    await page.mouse.wheel(0, 100);
+    await expect.poll(() => container.evaluate((el) => el.scrollTop), { timeout: 1_000 }).toBeGreaterThan(0);
+  }).toPass();
 }
 
 test.describe('scrollbar / focus', () => {
@@ -91,8 +102,7 @@ test.describe('scrollbar / pointer', () => {
 
     expect(await thumbOffset(scrollbar)).toBe(0);
 
-    await container.hover();
-    await page.mouse.wheel(0, 100);
+    await wheelUntilScrolled(page, container);
 
     await expect.poll(() => thumbOffset(scrollbar)).toBeGreaterThan(0);
   });
@@ -193,8 +203,7 @@ test.describe('scrollbar / pointer', () => {
 
     await expect(scrollbar).not.toHaveClass(/et-scrollbar--visible/);
 
-    await container.hover();
-    await page.mouse.wheel(0, 50);
+    await wheelUntilScrolled(page, container);
 
     await expect(scrollbar).toHaveClass(/et-scrollbar--visible/);
 
