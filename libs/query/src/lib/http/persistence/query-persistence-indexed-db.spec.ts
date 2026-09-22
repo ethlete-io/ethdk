@@ -190,7 +190,7 @@ describe('the IndexedDB persistence adapter', () => {
         expiresAt: null,
       },
     ]);
-    await expect(adapter.read('a')).resolves.toEqual({ body: { a: 1 } });
+    await expect(adapter.read('a')).resolves.toEqual({ body: { a: 1 }, version: 1 });
     await expect(adapter.read('missing')).resolves.toBeNull();
 
     await adapter.remove(['a']);

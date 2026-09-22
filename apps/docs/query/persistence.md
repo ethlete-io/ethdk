@@ -193,7 +193,7 @@ origin private file system, a native store behind a Capacitor plugin.
 withQueryPersistence({
   adapter: {
     loadIndex: () => Promise<PersistedQueryEntryMeta[]>, // metadata only, once at startup
-    read: (key) => Promise<{ body: unknown } | null>, // one body, on a cold mount
+    read: (key) => Promise<{ body: unknown; version?: number } | null>, // one body, on a cold mount
     write: (entries: PersistedQueryEntry[]) => Promise<void>, // a coalesced batch
     remove: (keys) => Promise<void>,
     clear: () => Promise<void>,
@@ -210,7 +210,10 @@ default falls back to where `indexedDB` is missing, so there is only ever one co
 
 An adapter is handed `PersistedQueryEntry` objects - a `PersistedQueryEntryMeta` (`key`, `persistedAt`,
 `expiresAt`, `isSecure`, and the `version` the entry was written under) plus the raw `body` - and
-returns a `PersistedQueryBody` (`{ body }`, wrapped so a stored `null` is not a miss) from `read`.
+returns a `PersistedQueryBody` (`{ body, version }`, wrapped so a stored `null` is not a miss) from
+`read`. Return the entry's `version` with the body: builds on either side of a deploy share one store,
+and a body another build wrote over the same key after this one read its index is ignored only when
+`read` says which version it is. A body without a `version` is hydrated as before.
 The separate `QUERY_PERSISTENCE_STORE_VERSION` is the SDK's own schema version for that record shape:
 the IndexedDB adapter wipes its database when it changes, and a custom adapter that stores records
 verbatim should do the same. It is not the `version` an app bumps when its responses change.

@@ -135,12 +135,13 @@ export const createIndexedDbQueryPersistenceAdapter = (
 
   const read = async (key: QueryKey): Promise<PersistedQueryBody | null> => {
     const db = await database();
-    const transaction = db.transaction(BODY_STORE, 'readonly');
-    const record = await toPromise(
-      transaction.objectStore(BODY_STORE).get(key) as IDBRequest<PersistedBodyRecord | undefined>,
-    );
+    const transaction = db.transaction([META_STORE, BODY_STORE], 'readonly');
+    const [meta, record] = await Promise.all([
+      toPromise(transaction.objectStore(META_STORE).get(key) as IDBRequest<PersistedQueryEntryMeta | undefined>),
+      toPromise(transaction.objectStore(BODY_STORE).get(key) as IDBRequest<PersistedBodyRecord | undefined>),
+    ]);
 
-    return record ? { body: record.body } : null;
+    return record ? { body: record.body, version: meta?.version } : null;
   };
 
   const write = async (entries: PersistedQueryEntry[]) => {

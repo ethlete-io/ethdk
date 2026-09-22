@@ -276,6 +276,13 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     // finished while this body was on its way up must not be undone by it.
     if (!index.has(key)) return;
 
+    // Another build wrote over this key after the index was read. The body is that build's now.
+    if (stored.version !== undefined && stored.version !== meta.version) {
+      index.delete(key);
+
+      return;
+    }
+
     // Whether this still makes sense is the repository's call: it applies the body only while the
     // entry exists and has no response of its own yet, so a network response that won the race, a
     // sibling tab that got there first, and a destroyed query all end here harmlessly.

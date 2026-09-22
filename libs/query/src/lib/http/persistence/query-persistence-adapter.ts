@@ -22,7 +22,10 @@ export type QueryPersistenceAdapter = {
    */
   loadIndex: () => Promise<PersistedQueryEntryMeta[]>;
 
-  /** Reads a single body back, or `null` when the store does not hold that key. */
+  /**
+   * Reads a single body back with the `version` it was written under, or `null` when the store does
+   * not hold that key.
+   */
   read: (key: QueryKey) => Promise<PersistedQueryBody | null>;
 
   /**

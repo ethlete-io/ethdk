@@ -715,6 +715,53 @@ describe('persistence scenario', () => {
       expect(store.entries().map((e) => e.key)).toEqual(['fresh-v2']);
       expect(reader.subtle.persistence?.indexEntries()).toEqual([]);
     });
+
+    it('does not hydrate a body another version overwrote after this client indexed it', async () => {
+      const s = scenario();
+      s.api.on(
+        'GET',
+        '/config',
+        sequence([{ body: { schema: 'v1' } }, { body: { schema: 'v2' } }, { body: { schema: 'v1' }, delay: 50 }]),
+      );
+
+      const getConfig = s.get<{ response: { schema: string } }>('/config');
+
+      const first = s.consumer();
+      first.run(() => getConfig());
+      s.tick();
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+      first.destroy();
+
+      const otherRef = createQueryClient({
+        name: 'persistence-version-overwriter',
+        baseUrl: 'https://api.test',
+        keepUnusedFor: 0,
+        features: [withQueryPersistence({ adapter: store.adapter, version: 2 })],
+      });
+      const otherClient = s.run(() => otherRef.inject());
+      if (!otherClient) throw new Error('expected the other client to be created');
+
+      const other = s.consumer();
+      other.run(() => createGetQuery(otherRef)<{ response: { schema: string } }>('/config')());
+      s.tick();
+      await otherClient.subtle.persistence?.flush();
+      await s.settle();
+      other.destroy();
+
+      expect(store.entries().map((e) => e.version)).toEqual([2]);
+
+      const second = s.consumer();
+      const query = second.run(() => getConfig());
+      await s.settle(0);
+
+      expect(query.response()).toBeNull();
+
+      s.tick(50);
+      expect(query.response()).toEqual({ schema: 'v1' });
+
+      second.destroy();
+    });
   });
 
   describe('a write that lands before the store index has loaded', () => {
@@ -2151,6 +2198,56 @@ describe('persistence scenario over IndexedDB', () => {
     expect(await persistedUrls(s)).toEqual(['https://api.test/first']);
 
     first.destroy();
+  });
+
+  it('does not hydrate a body another version overwrote after this client indexed it', async () => {
+    const s = scenario();
+    await s.client.whenPersistenceReady;
+
+    s.api.on(
+      'GET',
+      '/shared',
+      sequence([{ body: { schema: 'v1' } }, { body: { schema: 'v2' } }, { body: { schema: 'v1' }, delay: 50 }]),
+    );
+    const getShared = s.get<{ response: { schema: string } }>('/shared', { persistence: true });
+
+    const first = s.consumer();
+    first.run(() => getShared());
+    s.tick();
+    await s.client.subtle.persistence?.flush();
+    await s.settle();
+    first.destroy();
+
+    const otherRef = createQueryClient({
+      name: 'persistence-idb-version-overwriter',
+      baseUrl: 'https://api.test',
+      keepUnusedFor: 0,
+      features: [withQueryPersistence({ storageName: STORAGE_NAME, version: 2 })],
+    });
+    const otherClient = s.run(() => otherRef.inject());
+    if (!otherClient) throw new Error('expected the other client to be created');
+    await otherClient.whenPersistenceReady;
+
+    const other = s.consumer();
+    other.run(() => createGetQuery(otherRef)<{ response: { schema: string } }>('/shared', { persistence: true })());
+    s.tick();
+    await otherClient.subtle.persistence?.flush();
+    await s.settle();
+    other.destroy();
+
+    const second = s.consumer();
+    const query = second.run(() => getShared());
+    for (let i = 0; i < 5; i++) {
+      await new Promise((resolve) => setImmediate(resolve));
+      await s.settle(0);
+    }
+
+    expect(query.response()).toBeNull();
+
+    s.tick(50);
+    expect(query.response()).toEqual({ schema: 'v1' });
+
+    second.destroy();
   });
 
   it('opens the database again after the browser closed the connection', async () => {

@@ -108,7 +108,7 @@ export const createFakeQueryPersistenceStore = (): FakeQueryPersistenceStoreHand
 
     const entry = store.get(key);
 
-    return entry ? { body: clone(entry.body) } : null;
+    return entry ? { body: clone(entry.body), version: entry.version } : null;
   };
 
   const write = async (entries: PersistedQueryEntry[]) => {

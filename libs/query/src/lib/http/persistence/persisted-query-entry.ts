@@ -60,4 +60,12 @@ export type PersistedQueryEntry = PersistedQueryEntryMeta & {
  */
 export type PersistedQueryBody = {
   body: unknown;
+
+  /**
+   * The {@link PersistedQueryEntryMeta.version} the body was written under. Return it: two builds
+   * share one store, and without it the engine cannot tell a body another build wrote over this key
+   * from its own. A body whose version differs from the index is ignored; one without a version is
+   * trusted.
+   */
+  version?: number;
 };
