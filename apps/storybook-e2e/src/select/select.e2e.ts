@@ -1,9 +1,10 @@
-import { Locator, expect, test } from '@playwright/test';
+import { Locator, Page, expect, test } from '@playwright/test';
 import { expectFieldFocusVisible, expectTouchMode, openStory, pressKey, settle, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-forms-select--default';
 const PRESELECTED_STORY_ID = 'components-forms-select--preselected';
 const SEARCHABLE_STORY_ID = 'components-forms-select--searchable';
+const SEARCHABLE_LONG_LABEL_STORY_ID = 'components-forms-select--searchable-long-label';
 
 /** The option's `id`, which `aria-activedescendant` must carry. No id is a failure, not a pass. */
 const idOf = async (option: Locator) => {
@@ -13,6 +14,32 @@ const idOf = async (option: Locator) => {
 
   return id;
 };
+
+interface ResizeWidthSample {
+  panel: number;
+  pane: number;
+}
+
+const startResizeWidthSampling = (page: Page) =>
+  page.evaluate(() => {
+    const samples: ResizeWidthSample[] = [];
+    const record = () => {
+      const panel = document.querySelector('.et-select-panel--resizing');
+      const pane = panel?.closest('.et-select-overlay-pane');
+
+      if (panel && pane) {
+        samples.push({ panel: panel.getBoundingClientRect().width, pane: pane.getBoundingClientRect().width });
+      }
+
+      requestAnimationFrame(record);
+    };
+
+    (window as unknown as { resizeWidthSamples: ResizeWidthSample[] }).resizeWidthSamples = samples;
+    requestAnimationFrame(record);
+  });
+
+const readResizeWidthSamples = (page: Page) =>
+  page.evaluate(() => (window as unknown as { resizeWidthSamples: ResizeWidthSample[] }).resizeWidthSamples);
 
 test.describe('select / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
@@ -167,6 +194,35 @@ test.describe('select / keyboard', () => {
       await expect(trigger).not.toBeFocused();
     });
   }
+});
+
+test.describe('select / layout', () => {
+  test('the panel keeps the pane width while its block size animates past a long truncated option', async ({
+    page,
+  }) => {
+    const root = await openStory(page, SEARCHABLE_LONG_LABEL_STORY_ID);
+    const search = page.getByPlaceholder('Search fruits');
+    const options = page.getByRole('option');
+
+    await root.getByRole('combobox').click();
+    await expect(search).toBeFocused();
+    await expect(options).toHaveCount(8);
+
+    await startResizeWidthSampling(page);
+
+    await search.pressSequentially('an');
+    await expect(options).toHaveCount(2);
+    await settle(page, 400);
+
+    await search.fill('');
+    await expect(options).toHaveCount(8);
+    await settle(page, 400);
+
+    const samples = await readResizeWidthSamples(page);
+
+    expect(samples.length).toBeGreaterThan(0);
+    expect(Math.max(...samples.map(({ panel, pane }) => panel - pane))).toBeLessThanOrEqual(1);
+  });
 });
 
 test.describe('select / touch', () => {

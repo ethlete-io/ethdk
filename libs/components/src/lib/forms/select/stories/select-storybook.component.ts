@@ -52,6 +52,9 @@ const FRUIT_OPTIONS = [
               {{ fruit.label }}
             </et-select-option>
           }
+          @if (longOption()) {
+            <et-select-option value="long">{{ longOption() }}</et-select-option>
+          }
         </et-select>
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -93,6 +96,7 @@ export class FormFieldSelectStorybookComponent {
   public readonly = input(false);
   public required = input(false);
   public disabledOption = input('elderberry');
+  public longOption = input('');
   public color = input('brand');
 
   protected readonly FRUITS = FRUIT_OPTIONS;

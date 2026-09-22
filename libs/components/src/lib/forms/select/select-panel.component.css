@@ -23,6 +23,9 @@
     position: relative;
     display: grid;
     grid-template-rows: minmax(0, 1fr);
+    /* while resizing, the scroller's `overflow: clip` is no scroll container, so an `auto` track
+       would grow to a long option's min-content and push the panel out of the field-wide pane */
+    grid-template-columns: minmax(0, 1fr);
     box-sizing: border-box;
     /* an anchored pane does not clip, so dropping the pane's own cap here lets a panel taller than
        the room next to the field hang out of the pane and past the viewport edge */

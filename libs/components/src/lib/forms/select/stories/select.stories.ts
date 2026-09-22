@@ -32,6 +32,7 @@ export default {
     customValueSeparators: { control: 'object' },
     commitCustomValueOnClose: { control: 'boolean' },
     maxSelection: { control: 'number' },
+    longOption: { control: 'text' },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -54,6 +55,7 @@ export default {
     allowCustomValues: false,
     customValueSeparators: [],
     commitCustomValueOnClose: false,
+    longOption: '',
     disabled: false,
     readonly: false,
     required: false,
@@ -107,6 +109,13 @@ export const MixedMultiple: Story = {
 
 export const Searchable: Story = {
   args: { withSearch: true },
+};
+
+export const SearchableLongLabel: Story = {
+  args: {
+    withSearch: true,
+    longOption: 'Kiwano-horned-melon-from-the-kalahari-desert-with-an-unbreakably-long-label-that-truncates',
+  },
 };
 
 export const CustomValues: Story = {
