@@ -1,6 +1,28 @@
 import { execSync } from 'child_process';
 import { askQuestion } from './utils';
 
+const NO_CHANGESETS_MESSAGE = 'No unreleased changesets found';
+
+const changesetMajorVersion = () => {
+  const version = execSync('yarn changeset --version').toString();
+
+  return Number(/(\d+)\.\d+\.\d+/.exec(version)?.[1] ?? 0);
+};
+
+const runChangesetVersion = () => {
+  try {
+    return execSync('yarn changeset version', { stdio: 'pipe' }).toString();
+  } catch (error) {
+    const { stdout, stderr } = error as { stdout?: Buffer; stderr?: Buffer };
+    const output = `${stdout ?? ''}${stderr ?? ''}`;
+
+    if (!output.includes(NO_CHANGESETS_MESSAGE)) throw error;
+
+    console.error(`${NO_CHANGESETS_MESSAGE}, aborting...\n`);
+    process.exit(1);
+  }
+};
+
 export const release = async (args: string[]) => {
   const shouldForce = args.findIndex((arg) => arg.includes('--force') || arg.includes('-f')) !== -1;
   const skipPush = args.findIndex((arg) => arg.includes('--skip-push') || arg.includes('-sp')) !== -1;
@@ -25,11 +47,9 @@ export const release = async (args: string[]) => {
     process.exit(1);
   }
 
-  const changesetVersion = execSync('yarn changeset version').toString();
+  console.log(runChangesetVersion());
 
-  console.log(changesetVersion);
-
-  const changesetTag = execSync('yarn changeset tag').toString();
+  const changesetTag = execSync(`yarn changeset ${changesetMajorVersion() >= 3 ? 'git-tag' : 'tag'}`).toString();
 
   console.log(changesetTag);
 
