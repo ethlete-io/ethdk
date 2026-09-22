@@ -15003,6 +15003,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ethlete-studio@workspace:apps/ethlete-studio":
+  version: 0.0.0-use.local
+  resolution: "ethlete-studio@workspace:apps/ethlete-studio"
+  languageName: unknown
+  linkType: soft
+
 "eventemitter3@npm:^4.0.0":
   version: 4.0.7
   resolution: "eventemitter3@npm:4.0.7"

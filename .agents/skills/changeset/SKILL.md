@@ -21,8 +21,8 @@ hang in this environment.
 
 ## 1. Pick the packages
 
-Every published package is named `@ethlete/<name>`. The Timetrack app is versioned the
-same way, but it is private, so it keeps its plain nx project name:
+Every published package is named `@ethlete/<name>`. The two Tauri apps are versioned the
+same way, but they are private, so they keep their plain nx project names:
 
 | Package                  | Covers |
 |--------------------------|--------|
@@ -39,6 +39,7 @@ same way, but it is private, so it keeps its plain nx project name:
 | `@ethlete/eslint-plugin` | Custom lint rules |
 | `@ethlete/agent-rules`   | Portable agent rules and skills |
 | `timetrack-app`          | The Timetrack desktop app (private, never published) |
+| `ethlete-studio`         | The Ethlete Studio desktop app (private, never published) |
 
 List **only** the packages whose source you actually changed. Story-only,
 test-only, or `.claude/` changes don't need a changeset. If one logical change

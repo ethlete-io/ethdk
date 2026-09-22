@@ -35,6 +35,7 @@ const PACKAGES = [
   '@ethlete/query-devtools',
   '@ethlete/timetrack',
   '@ethlete/types',
+  'ethlete-studio',
   'timetrack-app',
 ];
 

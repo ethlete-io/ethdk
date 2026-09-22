@@ -5,6 +5,7 @@
   "license": "MIT",
   "workspaces": [
     "libs/*",
+    "apps/ethlete-studio",
     "apps/timetrack"
   ],
   "scripts": {
