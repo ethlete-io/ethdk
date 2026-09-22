@@ -49,6 +49,10 @@ Three facts, each true and each too coarse:
   `a8251c7d` both worked on the totw layout in the same directory, one after the other, and they
   belong on one ticket. So the grain cuts and something else joins - the day must not turn into a
   stand-in per session.
+- **An overlap books once, to the watched band.** Where two sessions of one checkout ran at the same
+  time, the minutes go to the session the user's own window was on. The other band is drawn for those
+  minutes and books nothing. The day's booked time therefore never rises above the time the user was
+  present.
 
 ## Slices
 
@@ -62,10 +66,12 @@ Three facts, each true and each too coarse:
    counting as an agent running. The branch and the work path leave the key where a session answers,
    the way a feature branch already keeps its directories from splitting it.
 2. **Cut the day into parallel stretches.** `streamDay` stops being one sequence per day and becomes
-   one per session, joined by the checkout they run in. This is the large one. Open: what a lane's
-   own stretch is when the sessions in it overlap, and what the day's own presence line means then.
-3. **Book it once.** Two bands that overlap must not book twice. Decide where the minutes go before
-   the timeline draws them, because `proposedMs` is read off the rows.
+   one per session, joined by the checkout they run in. This is the large one. `sessionAt` picking the
+   oldest running session is the compromise it removes. Open: what a lane's own stretch is when the
+   sessions in it overlap.
+3. **Book it once.** Two bands that overlap must not book twice. The minutes go to the session the
+   user's own window was on, decided before the timeline draws them, because `proposedMs` is read off
+   the rows.
 4. **Join the sessions that are one piece.** Before any stand-in opens, sessions of one checkout are
    gathered into pieces. What joins them is not decided yet - the candidates are the directory their
    commits touched, the branch they sat on, and the user saying so by hand. A wrong join is cheap to
