@@ -2167,6 +2167,26 @@ describe('persistence scenario over IndexedDB', () => {
     later.destroy();
   });
 
+  it('leaves no record behind when a put in the write batch throws', async () => {
+    const s = scenario();
+    await s.client.whenPersistenceReady;
+
+    s.api.on('GET', '/uncloneable', () => ({ body: { format: () => 'not structured-cloneable' } }));
+
+    const getUncloneable = s.get<{ response: { format: () => string } }>('/uncloneable', { persistence: true });
+    const c = s.consumer();
+    c.run(() => getUncloneable());
+    s.tick();
+
+    await s.client.subtle.persistence?.flush();
+    await s.settle();
+
+    s.expectWarning(/disabled for this session/);
+    expect(await persistedUrls(s)).toEqual([]);
+
+    c.destroy();
+  });
+
   it('frees space and retries once when a write aborts with QuotaExceededError', async () => {
     const s = scenario();
     await s.client.whenPersistenceReady;

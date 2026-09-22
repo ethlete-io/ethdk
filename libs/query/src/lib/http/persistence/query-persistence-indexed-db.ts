@@ -151,9 +151,16 @@ export const createIndexedDbQueryPersistenceAdapter = (
     const meta = transaction.objectStore(META_STORE);
     const bodies = transaction.objectStore(BODY_STORE);
 
-    for (const { body, ...entryMeta } of entries) {
-      meta.put(entryMeta);
-      bodies.put({ key: entryMeta.key, body } satisfies PersistedBodyRecord);
+    // A put that throws (a `DataCloneError`) leaves the transaction to auto-commit the puts before it.
+    try {
+      for (const { body, ...entryMeta } of entries) {
+        meta.put(entryMeta);
+        bodies.put({ key: entryMeta.key, body } satisfies PersistedBodyRecord);
+      }
+    } catch (error) {
+      transaction.abort();
+
+      throw error;
     }
 
     await whenComplete(transaction);
