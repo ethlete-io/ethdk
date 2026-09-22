@@ -198,6 +198,86 @@ describe('auth features without the devtools', () => {
     destroy();
   });
 
+  it('a logout while a revoke runs sends no second revocation and leaves nothing loading', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    s.api.on('POST', '/auth/login', () => ({
+      body: { accessToken: mintToken(), refreshToken: mintToken({ expiresInMs: 3600000 }) },
+    }));
+    s.api.on('POST', '/auth/revoke', () => ({ status: 200, delay: 1000 }));
+
+    const { auth, destroy } = bootRevocationAuth(s);
+
+    auth.queries.login.execute({ body: {} });
+    s.tick();
+
+    const tokens = { accessToken: auth.accessToken(), refreshToken: auth.refreshToken() };
+    const running = auth.features.tokenRevocation.revoke();
+    s.tick(100);
+
+    expect(running?.isAlive()).toBe(true);
+
+    auth.logout();
+    s.tick();
+
+    expect(auth.features.tokenRevocation.revoke()).toBe(running);
+
+    await s.settle(1000);
+    s.flush();
+
+    expect(s.api.requests.filter((r) => r.path === '/auth/revoke').map((r) => r.body)).toEqual([tokens]);
+    expect(auth.sessionStatus()).toBe('anonymous');
+    expect(auth.sessionEndCause()).toBe('user');
+    expect(auth.executionState()?.state).not.toBe('loading');
+
+    destroy();
+  });
+
+  it('revoke() with no tokens returns null and sends nothing', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    s.api.on('POST', '/auth/revoke', () => ({ status: 200 }));
+
+    const { auth, destroy } = bootRevocationAuth(s);
+
+    expect(auth.features.tokenRevocation.revoke()).toBeNull();
+    s.flush();
+
+    expect(s.api.requestCount('POST', '/auth/revoke')).toBe(0);
+    expect(auth.executionState()).toBeNull();
+
+    destroy();
+  });
+
+  it('a second revoke() while one runs returns the running snapshot', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    s.api.on('POST', '/auth/login', () => ({
+      body: { accessToken: mintToken(), refreshToken: mintToken({ expiresInMs: 3600000 }) },
+    }));
+    s.api.on('POST', '/auth/revoke', () => ({ status: 200, delay: 1000 }));
+
+    const { auth, destroy } = bootRevocationAuth(s);
+
+    auth.queries.login.execute({ body: {} });
+    s.tick();
+
+    const first = auth.features.tokenRevocation.revoke();
+    const second = auth.features.tokenRevocation.revoke();
+    s.flush();
+
+    expect(second).toBe(first);
+    expect(s.api.requestCount('POST', '/auth/revoke')).toBe(1);
+
+    destroy();
+  });
+
   it('withTokenExpirationWarning flips isExpiringSoon at the configured threshold and resets once a refresh lands', async () => {
     const s = scenario();
 
