@@ -311,3 +311,30 @@ half; a synchronous throw inside the IndexedDB `write` can leave a meta record w
 open during a deploy wipe each other's store; a `leave-room` buffered while offline reaches a fresh
 session; `setAuthProvider(p)` with the same `p` kills its own refresh timer; the legacy infinity trigger
 may stall when the trigger stays visible; `validateWithV2Query` may hang on a Cancelled shared query.
+
+### Coverage pass (2026-09-22)
+
+Both wave 7 open items and every unverified item are settled. Open 1: a 200 with `errors` and no `data`
+fails with ET601, an `HttpErrorResponse` with `status: 0` (`ee90c2c22`; Tom has not confirmed the code
+choice). Open 2: an anonymous start purges secure entries (`52fc52b65`). Unverified, now fixed: only a
+quota error frees space (`e28b14e41`); a throwing put aborts the IndexedDB write (`58baf9871`); another
+version's entries stay on disk (`b4919deb1`) and its body is not hydrated under the same key
+(`a4109affe`, adds an optional `version` to `PersistedQueryBody`); the ws leave (`b9eeba6f1`); the
+same-provider `setAuthProvider` (`f805a55bb`); the infinity trigger (`4bc920537`); the cancelled shared
+validator query (`9a221581d`). The `destroy()` of a shared query was not a bug (`300e6f4ea`).
+
+Found by the coverage tests, each with a scenario that failed first: a secure validator query that stays
+Prepared while logged out settles (`0c9d6dfef`); `fetchNextPage` returns `null` for repeated args
+(`6e2e5326d`); `QueryForm` matches a function default (`b6f6a9aa8`); a refresh retries
+`retryConfig.maxAttempts` times, not one fewer (`f2dff3be9`); a follower restarts its delegation ladder
+after a takeover a new token pair made moot (`5b68ebdb3`). Two flaky scenarios are deterministic
+(`36016165b`, `300e6f4ea`).
+
+Coverage of `libs/query`, before → after: branches 78.96% → 85.27%, lines 89.38% → 92.22%. The runtime
+files that are left under 90% hold mostly SSR guards and fallbacks the public API cannot reach, listed in
+the commit reports. `query-devtools-registry.ts` (83%) is the largest of them. The generators
+(`libs/query/generators`, 54-88%) were not part of this pass.
+
+Dead code found, left in place: the number placeholder's `finiteNumber(schema['default'])` fallback in
+`query-devtools-schema.ts:419`; the query-count mismatch check in `paged-query-stack.ts:471-473`, which
+the `6e2e5326d` fix made unreachable.
