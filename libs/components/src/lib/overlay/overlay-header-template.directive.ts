@@ -22,24 +22,23 @@ export class OverlayHeaderTemplateDirective implements OnInit, OnDestroy {
 
   public template = inject<TemplateRef<unknown>>(TemplateRef);
   private overlayManager = injectOverlayManager();
-
-  constructor() {
-    this.overlayRef?.setHeaderTemplate(this.template);
-  }
+  private unregister = this.overlayRef?.registerHeaderTemplate(this.template);
 
   public ngOnInit() {
-    this.overlayRef = resolveClosestOverlay({
+    const overlayRef = resolveClosestOverlay({
       overlayRef: this.overlayRef,
       element: this.elementRef,
       openOverlays: this.overlayManager.openOverlays(),
     });
 
-    this.overlayRef.setHeaderTemplate(this.template);
+    if (overlayRef !== this.overlayRef) {
+      this.unregister?.();
+      this.overlayRef = overlayRef;
+      this.unregister = overlayRef.registerHeaderTemplate(this.template);
+    }
   }
 
   public ngOnDestroy() {
-    if (this.overlayRef?.headerTemplate() === this.template) {
-      this.overlayRef.setHeaderTemplate(null);
-    }
+    this.unregister?.();
   }
 }

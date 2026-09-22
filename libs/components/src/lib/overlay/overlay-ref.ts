@@ -1,4 +1,4 @@
-import { InjectionToken, TemplateRef, signal } from '@angular/core';
+import { InjectionToken, TemplateRef, computed, signal } from '@angular/core';
 import {
   OverlayRuntimeCloseEvent,
   OverlayRuntimeCloseGuard,
@@ -17,7 +17,8 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   let _runtimeRef: OverlayRuntimeRef<TComponent, TResult> | null = null;
   let _componentInstanceOverride: (() => TComponent | null) | null = null;
 
-  const _headerTemplate = signal<TemplateRef<unknown> | null>(null);
+  const _headerTemplates = signal<TemplateRef<unknown>[]>([]);
+  const headerTemplate = computed(() => _headerTemplates().at(-1) ?? null);
 
   const afterOpened$ = new Subject<void>();
   const beforeClosed$ = new Subject<TResult | undefined>();
@@ -159,9 +160,16 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
 
     config,
 
-    headerTemplate: _headerTemplate.asReadonly(),
-    /** @internal Set (or clear) the active header template. */
-    setHeaderTemplate: (template: TemplateRef<unknown> | null) => _headerTemplate.set(template),
+    headerTemplate,
+    /**
+     * @internal Registers a header template and returns its unregister function. The latest
+     * registration still alive is the active one.
+     */
+    registerHeaderTemplate: (template: TemplateRef<unknown>) => {
+      _headerTemplates.update((templates) => [...templates.filter((t) => t !== template), template]);
+
+      return () => _headerTemplates.update((templates) => templates.filter((t) => t !== template));
+    },
 
     componentInstance,
     close,
