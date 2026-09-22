@@ -270,3 +270,44 @@ Open: the real IndexedDB adapter (`onversionchange`/`onclose`, a `QuotaExceededE
 blocked open) has no scenario. It needs `fake-indexeddb` as a devDependency, which awaits a decision.
 The date-only scenario bites in every zone but UTC; `process.env.TZ` inside a spec has no effect in
 the threads pool, so a UTC CI runner does not catch a regression.
+
+### Wave 7: the recovered Low pass (2026-09-22)
+
+A fresh Low-severity read of `legacy`, `gql`, `ws`, `pipes`, `query-form-signals`, persistence and the
+signal-forms surface replaces the lost wave 6 Lows. `pipes` is clean. The IndexedDB adapter gap above is
+closed by `e45297f8f`. Fixed, each with a scenario that failed first:
+
+- Signal forms: a custom `mapViolations` result is used as-is (`b296c4c8c`); a validator keeps the
+  form-level error for a non-violation failure (`38ffb0452`).
+- Persistence: a logout purges secure entries another tab wrote (`596fddac1`); a synchronous `loadIndex`
+  throw still marks the engine ready (`db9968852`).
+- `query-form-signals`: a URL value is normalized on restore (`27fe44693`); `skipResets` covers only the
+  fields it writes (`d3db8234a`); a restored search stays a string and a single array value an array
+  (`f7a27742d`); an empty or null array round-trips (`b5b6e89f2`, new `ET_EMPTY_ARRAY__` marker); URL
+  writes keep the fragment (`1f12ea79b`) and replace query params explicitly (`53c1c99e4`); `unobserve()`
+  commits a pending debounced edit (`39cc0005a`).
+- `ws`: no double `join-room` after a ping timeout or a recovered reconnect (`b15143527`, the test double
+  now buffers like socket.io).
+- `gql`/http: request bodies that differ inside strings keep separate cache keys (`a3c378a44`, persisted
+  entries with a body miss once); the operation name is read after comments are stripped (`4160d9a2b`).
+- Legacy: the 401 retry no longer flashes Failure (`f8f302ff9`); smart polling stops when `takeUntil`
+  fires while paused (`8b176dfb8`); one bearer refresh timer (`9db694e6b`); falsy bodies are sent
+  (`44afe3cc5`); a secure query executed while logged out resets to Prepared (`b9721f463`); the interop
+  forwards gql `variables` (`e4be6f835`); the query store key keeps string contents (`b83daf180`); the
+  `skipQueryStore` JSDoc (`3d070b5e3`).
+
+Open, each needs a decision:
+
+1. **GraphQL `errors` in a 200.** `{data: null, errors}` succeeds with `null`, and `{errors}` without
+   `data` fails with the documented ET600 (`apps/docs/query/gql.md:67`), hiding the server message. Legacy
+   behaves the same (`legacy/query/query.ts:474-477`). Needs: what `raw.error` holds, whether the global
+   message ladder reads `[{message}]`, and whether ET600 stays.
+2. **Secure entries survive a session that ended without a logout.** `adoptStoredIndex` keeps them at
+   startup; persistence has no "no session" signal from the auth provider.
+
+Unverified, from the wave 7 reads: any IndexedDB write failure (not only a full quota) frees the oldest
+half; a synchronous throw inside the IndexedDB `write` can leave a meta record without a body; the
+`version` JSDoc says an old build ignores new entries, but `adoptStoredIndex` deletes them, so two builds
+open during a deploy wipe each other's store; a `leave-room` buffered while offline reaches a fresh
+session; `setAuthProvider(p)` with the same `p` kills its own refresh timer; the legacy infinity trigger
+may stall when the trigger stays visible; `validateWithV2Query` may hang on a Cancelled shared query.
