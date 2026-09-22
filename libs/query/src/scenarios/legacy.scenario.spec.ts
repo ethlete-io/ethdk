@@ -1128,6 +1128,28 @@ describe('legacy scenario', () => {
       });
     });
 
+    it('sends a falsy body with its content type', () => {
+      const s = scenario();
+      s.api.on('POST', '/flags', () => ({ body: { ok: true } }));
+
+      withLegacyClient(s, {}, (client, track) => {
+        const setFlag = client.post({
+          route: '/flags',
+          types: { args: def<{ body: boolean | number }>(), response: def<{ ok: boolean }>() },
+        });
+
+        track(setFlag.prepare({ body: false }).execute());
+        track(setFlag.prepare({ body: 0 }).execute());
+        s.tick();
+
+        expect(s.api.requests.map((r) => r.body)).toEqual([false, 0]);
+        expect(s.api.requests.map((r) => r.headers.get('Content-Type'))).toEqual([
+          'application/json',
+          'application/json',
+        ]);
+      });
+    });
+
     it('sends a gqlQuery as a POST with the query and variables, and a gqlMutate the same way', () => {
       const s = scenario();
       s.api.on('POST', '/graphql', ({ body }) =>

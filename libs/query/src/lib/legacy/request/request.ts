@@ -21,7 +21,7 @@ const XSSI_PREFIX = /^\)\]\}',?\n/;
 export const request = <Response = unknown>(config: RequestConfig): Observable<RequestEvent<Response>> => {
   const headers = config.headers || {};
   const responseType = config.responseType || 'json';
-  const body = config.body || null;
+  const body = config.body ?? null;
   const url = config.urlWithParams.split('?')[0] || '';
   const retryFn = config.retryFn || v2ShouldRetryRequest;
   let currentRetryCount = 0;
