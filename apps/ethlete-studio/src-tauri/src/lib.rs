@@ -2,6 +2,7 @@ mod agent;
 mod agent_claude;
 mod agent_codex;
 mod design;
+mod design_roots;
 mod design_server;
 mod design_watch;
 mod error;
@@ -124,6 +125,11 @@ pub fn run() {
             design::design_set_verdict,
             design::design_set_mode,
             design::design_add_options,
+            design_roots::design_roots,
+            design_roots::design_roots_add,
+            design_roots::design_roots_forget,
+            design_roots::design_roots_search,
+            design_roots::design_scan,
             design_watch::design_watch,
             design_server::design_server_start,
             design_server::design_server_state,

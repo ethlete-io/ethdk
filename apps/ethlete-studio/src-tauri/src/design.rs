@@ -933,7 +933,9 @@ export default defineCall({
         let checkout = a_checkout("handoff");
 
         std::fs::write(
-            checkout.join(".ethlete/design/calls/timetrack/kerbe/09-gutter").join(HANDOFF_FILE),
+            checkout
+                .join(".ethlete/design/calls/timetrack/kerbe/09-gutter")
+                .join(HANDOFF_FILE),
             "state",
         )
         .unwrap();
