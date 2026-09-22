@@ -143,8 +143,8 @@ export class V2QueryClient {
     });
 
   setAuthProvider = (authProvider: AuthProvider) => {
-    if (this.authProvider) {
-      this.authProvider?.cleanUp({ endSession: false });
+    if (this.authProvider && this.authProvider !== authProvider) {
+      this.authProvider.cleanUp({ endSession: false });
     }
 
     this._authProvider$.next(authProvider);

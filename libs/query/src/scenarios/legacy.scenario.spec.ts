@@ -992,6 +992,28 @@ describe('legacy scenario', () => {
       });
     });
 
+    it('keeps the scheduled refresh when setAuthProvider is called again with the same provider', () => {
+      const s = scenario();
+      const tenMinutes = 10 * 60 * 1000;
+
+      s.api.on('POST', '/auth/refresh', () => ({
+        body: { token: mintToken({ expiresInMs: tenMinutes }), refreshToken: mintToken() },
+      }));
+
+      withLegacyClient(s, {}, (client) => {
+        const provider = new V2BearerAuthProvider({
+          token: mintToken({ expiresInMs: tenMinutes }),
+          refreshConfig: { queryCreator: createRefreshQuery(client), token: mintToken() },
+        });
+
+        client.setAuthProvider(provider);
+        client.setAuthProvider(provider);
+
+        s.tick(5 * 60_000 + 1_000);
+        expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+      });
+    });
+
     it('sends the basic auth header of a BasicAuthProvider', () => {
       const s = scenario();
       s.api.on('GET', '/secure', () => ({ body: { ok: true } }));
