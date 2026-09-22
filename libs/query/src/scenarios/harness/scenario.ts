@@ -9,7 +9,7 @@ import {
   Provider,
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import {
   AnyCreateBearerAuthProviderResult,
   AnyNewQuery,
@@ -166,6 +166,12 @@ export type Scenario = {
   tick: (ms?: number) => void;
   settle: (ms?: number) => Promise<void>;
   flush: (maxMs?: number) => void;
+  /**
+   * Navigates to `url` as a page load would: the router parses the string again even when it equals the
+   * current URL, so the root route's query params hold the parsed shapes instead of the objects the
+   * last `router.navigate` was given.
+   */
+  reloadAt: (url: string) => Promise<void>;
   errors: ScenarioErrorEntry[];
   expectError: (matcher: string | RegExp | ((entry: ScenarioErrorEntry) => boolean)) => void;
   /**
@@ -349,6 +355,11 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
       throw new Error(`Scenario: flush() did not settle within ${maxMs}ms`);
     };
 
+    const reloadAt = async (url: string) => {
+      await TestBed.inject(Router).navigateByUrl(url, { onSameUrlNavigation: 'reload' });
+      await settle();
+    };
+
     const consumer = (providers: ScenarioProviders = [], parent: EnvironmentInjector = injector): ScenarioConsumer => {
       const childInjector = createEnvironmentInjector(providers, parent);
 
@@ -525,6 +536,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
       tick,
       settle,
       flush,
+      reloadAt,
       errors,
       expectError,
       warnings,

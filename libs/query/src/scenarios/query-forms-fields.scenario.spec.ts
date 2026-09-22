@@ -67,8 +67,7 @@ describe('query form fields scenario', () => {
     const url = router.url;
     c.destroy();
 
-    await router.navigateByUrl(url);
-    s.tick();
+    await s.reloadAt(url);
 
     const restored = s.run(() => defineQueryForm({ fields: { sort: sortQueryField() } }).observe());
     s.tick();
@@ -94,8 +93,7 @@ describe('query form fields scenario', () => {
     const url = router.url;
     c.destroy();
 
-    await router.navigateByUrl(url);
-    s.tick();
+    await s.reloadAt(url);
 
     const restored = s.run(() => defineQueryForm({ fields: { flags: booleanArrayQueryField() } }).observe());
     s.tick();
@@ -118,8 +116,7 @@ describe('query form fields scenario', () => {
     const url = router.url;
     c.destroy();
 
-    await router.navigateByUrl(url);
-    s.tick();
+    await s.reloadAt(url);
 
     const restored = s.run(() => defineQueryForm({ fields: { between: dateArrayQueryField() } }).observe());
     s.tick();

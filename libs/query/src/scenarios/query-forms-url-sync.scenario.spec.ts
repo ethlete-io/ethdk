@@ -85,8 +85,7 @@ describe('query forms URL sync scenario', () => {
     const url = router.url;
     c.destroy();
 
-    await router.navigateByUrl(url);
-    s.tick();
+    await s.reloadAt(url);
 
     const restored = s.run(() => defineQueryForm({ fields: { from: dateQueryField() } }).observe());
     s.tick();
@@ -112,8 +111,7 @@ describe('query forms URL sync scenario', () => {
     const url = router.url;
     c.destroy();
 
-    await router.navigateByUrl(url);
-    s.tick();
+    await s.reloadAt(url);
 
     const restored = s.run(() => defineQueryForm({ fields: { tags: stringArrayQueryField() } }).observe());
     s.tick();
@@ -351,8 +349,7 @@ describe('query forms URL sync scenario', () => {
     const url = router.url;
     c.destroy();
 
-    await router.navigateByUrl(url);
-    s.tick();
+    await s.reloadAt(url);
 
     const restored = s.run(() => defineQueryForm({ fields }).observe());
     s.tick();
