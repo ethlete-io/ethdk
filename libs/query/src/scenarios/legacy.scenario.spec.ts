@@ -932,6 +932,35 @@ describe('legacy scenario', () => {
       });
     });
 
+    it('replaces the scheduled refresh when a forced refresh lands first', () => {
+      const s = scenario();
+      const tenMinutes = 10 * 60 * 1000;
+
+      s.api.on('POST', '/auth/refresh', () => ({
+        body: { token: mintToken({ expiresInMs: tenMinutes }), refreshToken: mintToken() },
+      }));
+
+      withLegacyClient(s, {}, (client) => {
+        const provider = new V2BearerAuthProvider({
+          token: mintToken({ expiresInMs: tenMinutes }),
+          refreshConfig: { queryCreator: createRefreshQuery(client), token: mintToken() },
+        });
+
+        client.setAuthProvider(provider);
+
+        s.tick(60_000);
+        provider.forceRefresh();
+        s.tick(1);
+        expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+
+        s.tick(4 * 60_000 + 2_000);
+        expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+
+        s.tick(60_000);
+        expect(s.api.requestCount('POST', '/auth/refresh')).toBe(2);
+      });
+    });
+
     it('sends the basic auth header of a BasicAuthProvider', () => {
       const s = scenario();
       s.api.on('GET', '/secure', () => ({ body: { ok: true } }));

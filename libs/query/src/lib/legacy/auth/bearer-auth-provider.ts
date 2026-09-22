@@ -1,5 +1,5 @@
 import { deleteCookie, getCookie, setCookie } from '@ethlete/core';
-import { BehaviorSubject, Subject, takeUntil, tap, timer } from 'rxjs';
+import { BehaviorSubject, Subject, Subscription, takeUntil, tap, timer } from 'rxjs';
 import {
   isQueryStateFailure,
   isQueryStateLoading,
@@ -21,6 +21,7 @@ import { decryptBearer } from './auth-provider.utils';
  */
 export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthProvider {
   private destroy$ = new Subject<void>();
+  private refreshTimerSubscription: Subscription | null = null;
   private readonly _currentRefreshQuery$ = new BehaviorSubject<ConstructQuery<T> | null>(null);
 
   private readonly _tokens$ = new BehaviorSubject<TokenResponse>({
@@ -244,7 +245,8 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
 
     switch (strategy) {
       case AuthBearerRefreshStrategy.BeforeExpiration:
-        timer(remainingTime)
+        this.refreshTimerSubscription?.unsubscribe();
+        this.refreshTimerSubscription = timer(remainingTime)
           .pipe(takeUntil(this.destroy$))
           .subscribe(() => this._refreshQuery());
         break;
