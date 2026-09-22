@@ -142,6 +142,9 @@ expect(room()?.latestMessage()).toEqual({ room: 'lobby', event: 'score', data: {
 ```
 
 `serverSendRaw()` delivers an unparsable frame, for the malformed-message path.
+`serverPingExpire()` makes the socket buffer emits while it still reports itself connected, and
+`serverConnect({ recovered: true })` reconnects with connection state recovery, so no room is
+re-joined. `delivered()` lists what reached the server, `sent()` everything the client emitted.
 
 ## Debugging it
 

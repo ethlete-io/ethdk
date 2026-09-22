@@ -214,6 +214,58 @@ describe('ws scenario', () => {
     c.destroy();
   });
 
+  it('delivers a room joined after the ping expired exactly once, although isConnected was still true', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    double.serverConnect();
+
+    const c = s.consumer();
+    c.run(() => instance.joinRoom('lobby'));
+    s.tick();
+
+    double.serverPingExpire();
+    expect(instance.isConnected()).toBe(true);
+
+    c.run(() => instance.joinRoom('late'));
+    s.tick();
+
+    double.serverDisconnect();
+    double.serverConnect();
+
+    expect(double.delivered()).toEqual([
+      { event: 'join-room', data: 'lobby' },
+      { event: 'join-room', data: 'late' },
+      { event: 'join-room', data: 'lobby' },
+    ]);
+
+    c.destroy();
+  });
+
+  it('re-joins nothing after a recovered reconnect, because the server kept the rooms', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    double.serverConnect();
+
+    const c = s.consumer();
+    c.run(() => instance.joinRoom('lobby'));
+    s.tick();
+
+    double.serverDisconnect();
+    c.run(() => instance.joinRoom('late'));
+    s.tick();
+
+    double.serverConnect({ recovered: true });
+
+    expect(double.delivered()).toEqual([
+      { event: 'join-room', data: 'lobby' },
+      { event: 'join-room', data: 'late' },
+    ]);
+
+    c.destroy();
+  });
+
   it('patches a bound query response from a ws message without any network request', () => {
     const s = scenario();
     const { double, instance } = createSocket<SocketMessageView<{ home: number }>>(s);

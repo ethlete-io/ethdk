@@ -62,6 +62,8 @@ export type WebSocketClientSocket = {
   emit: (event: string, data: unknown) => void;
   on: (event: 'connect' | 'disconnect', listener: () => void) => void;
   onAny: (listener: (eventName: string, ...args: unknown[]) => void) => void;
+  onAnyOutgoing: (listener: (eventName: string, ...args: unknown[]) => void) => void;
+  readonly recovered: boolean;
 };
 
 /**
@@ -163,7 +165,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       });
 
       const rooms = new Map<string, InternalWebSocketRoom<TMessageData>>();
-      const bufferedJoins = new Set<string>();
+      const joinsDeliveredThisConnection = new Set<string>();
       const isConnected = signal(false);
 
       // Devtools instrumentation (no-op unless provideQueryDevtools() was called).
@@ -214,8 +216,6 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
           }
 
           emit({ event: 'join-room', data: name, room: name });
-
-          if (!isConnected()) bufferedJoins.add(name);
 
           const message = signal<TMessageData | null>(null);
 
@@ -282,22 +282,30 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         emit({ event: 'leave-room', data: room, room });
 
         rooms.delete(room);
-        bufferedJoins.delete(room);
         syncDevtoolsRooms();
       };
 
       const setupWebSocketConnectionListener = () => {
+        socket.onAnyOutgoing((eventName, room) => {
+          if (eventName === 'join-room' && typeof room === 'string') joinsDeliveredThisConnection.add(room);
+        });
+
+        // socket.io flushes the joins it buffered before firing `connect`, so by now they are in the set.
         socket.on('connect', () => {
           isConnected.set(true);
 
-          // socket.io delivers a join buffered while disconnected on this connect; re-emitting it would send it twice.
+          if (socket.recovered) return;
+
           for (const room of rooms.keys()) {
-            if (bufferedJoins.delete(room)) continue;
+            if (joinsDeliveredThisConnection.has(room)) continue;
 
             emit({ event: 'join-room', data: room, room });
           }
         });
-        socket.on('disconnect', () => isConnected.set(false));
+        socket.on('disconnect', () => {
+          isConnected.set(false);
+          joinsDeliveredThisConnection.clear();
+        });
       };
 
       const setupWebSocketListener = () => {
