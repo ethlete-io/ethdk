@@ -1,5 +1,76 @@
 # Changelog
 
+## 1.0.0-next.60
+
+### Major Changes
+
+- Bracket: a relayout now animates, with new `thirdPlaceTopOffset`, `finalRoundHeaderGap`, `alignRoundHeaders` and `focusInset` settings and a `--et-bracket-move-duration` token; `BracketLayout.drawEdges` now returns a `BracketDrawing` instead of an SVG string.
+- Bracket pick card: per-side pick marks, a note line, a `readonly` results mode and slot wording from
+  `provideBracketLabels`. **Breaking:** the `unresolvableLabel` and `unavailableLabel` inputs are gone.
+- **Breaking:** three features are opt-in. Import `MENU_SEARCH_IMPORTS` for `etMenuSearch`, register `provideSchedulerEditSurface()` for the default appointment editor, and `provideStreamPip()` for picture-in-picture on player slots.
+
+### Minor Changes
+
+- The Angular peer dependency moves from 22.0.7 to 22.1.6. Angular 22.0.x is affected by
+  GHSA-hh8m-fm6v-7cvg, a sanitization bypass through directive host bindings, fixed in 22.1.0.
+- Bracket: add `migrateBracketPicks()` so a pick follows its participant when a pairing changes, plus `realParticipantOutranksPick` and `keepPickWhileFeederSideIsOpen` on `resolveBracketSlot()`.
+- Bracket: add a framework-free prediction graph and resolver, prediction-aware slot states, an operable pick card, and focused round layout controls.
+- Match, bracket and standings: the Ethlete adapters accept any model with the fields they read (`EthleteMatchInput`, `EthleteRoundWithMatchesInput`, `EthletePlacementInput`, …), and `generateBracketDataForEthlete` keeps your own round and match types in the bracket data.
+- `OverlayConfig` takes `directives`, so a self-registering feature can be applied to an overlay
+  component the SDK itself defines and opens — a scheduler edit field is the case it exists for.
+- `createOverlayOpener(definition, { single: 'replace' })` keeps one overlay open and replaces it on the next `open()`, through the unsaved-changes guard (`dismissSources.replace`); share one slot across openers with `createOverlaySingleSlot()`.
+- Scheduler: mark the current time with a line across today's column, and open the edit surface beside an appointment instead of under it. The Timetrack day draws the same line.
+- Standings: add `<et-standings-pick>`, a group table a viewer reorders by drag or arrow keys, plus `standingPickOutcome` and `standingPickStartOrder` in `@ethlete/bracket`.
+
+### Patch Changes
+
+- `mirroredSingleEliminationBracketLayout`'s JSDoc now describes the fold as it works: it stops at the
+  first round it cannot halve, and that round and every later one are drawn whole in the middle.
+- Breadcrumb: collapsing and re-expanding now costs one layout measurement instead of two.
+- Breadcrumb: re-measure the full trail when a crumb's label changed while collapsed, so widening the container no longer flashes an overflowing trail for a frame.
+- An `et-button` keeps a `tabindex` its consumer set on the element. The host binding no longer removes it, so an opted-out control such as the scrollable's navigation buttons stays out of the tab order.
+- Button, FAB and icon button now share one copy of the variant opacity ramp instead of carrying three identical ones; rendering is unchanged.
+- Calendar: `ET2900` (an `[etCalendarGrid]` outside a calendar) now throws while the directive is constructed, on the template's stack, instead of once per grid after the first render.
+- Carousel: `pauseReason()` now reports `no-duration` when an `autoplayTime` of `0` keeps autoplay from
+  running, instead of staying `null`.
+- A warning under a card choice field now sits flush with the panel edge like its error and hint.
+- `et-choice-field` now renders the shared `et-form-support` region instead of its own copy; at-rest rendering is unchanged, and the error/warning/hint swap animates like every other control (no direction-specific leave). Every shared support region also gets `unicode-bidi: isolate` back.
+- Color input: `rgbColor({ allowAlpha: true })` no longer accepts a malformed alpha component such as `rgb(1 2 3 / .)`, which the picker could never read.
+- Color input: a Tab off the picker panel's last control - or a Shift+Tab off its first - closes the picker, even when the browser has no next tab stop to move focus to.
+- Color input: an empty string reads as unselected and `colorContrast` shares the picker's parser. A pasted OTP keeps its digits through separators, and choice-field support messages animate in severity order.
+- Range inputs no longer spin forever registering a side in development, `generateBracketDataForEthlete` accepts a stage whose leading rounds are empty, and forms and the calendar report a misplaced headless piece with an actionable error.
+- Focus follows the keyboard again: calendar arrow keys move DOM focus, the cascader sheet keeps it while drilling, a suffix-button icon click no longer steals it, and table `Enter` drills before it clicks the row.
+- Menu search keeps the runtime metadata Angular needs for its directives, and the phone input imports only the six select declarations its template uses.
+- Component CSS now loads with the feature that needs it. Calendar, dropzone, overlay, scheduler, select, cascader, table and the rich text editor ship none of their opt-in chrome unused, and related components share one stylesheet.
+- Toggletip follows a dismissal as it starts and re-opens during the leave transition; Escape dismisses a hover-shown tooltip from anywhere without blocking a dialog behind it.
+- Command palette: the search field drops `aria-controls` and reports `aria-expanded="false"` with no results, and `etCommandPaletteShortcut` closes a palette opened through `injectCommandPalette()` instead of stacking one.
+- Table selection checkboxes carry their accessible names again, the grid's default remove button emits the item's `remove` output, and pagination clamps a page past the end to the last one.
+- Date & time inputs: the structural dev guards `ET3000`, `ET3001`, `ET3002`, `ET3010`, `ET3030`, `ET3040`, `ET3050`, `ET3060` and `ET3070` now throw while the directive is constructed, on the template's stack, instead of once per element after the first render.
+- Animations: `@ethlete/core` now ships the `--ease-*` tokens its own stylesheets transition with, through `mountEasingTokens()`, so an app that loads no `@ethlete/cdk` stylesheet no longer loses every overlay animation.
+- Every field panel - select, cascader, the date and time pickers, the color input - now closes on a Tab past its last control or a Shift+Tab before its first, and leaves focus where it went.
+- Match card: the composed accessible name now announces the kick-off the card draws, even once a result exists.
+- `et-match-participant` draws the participant's first letter when an emblem is missing or fails to load, and
+  letterboxes a non-square logo instead of cropping it. A TBD slot stays blank.
+- Nav tabs: a disabled `a[et-nav-tab-link]` no longer carries an `href`, so pressing Enter on it no longer navigates.
+- Tabs: a disabled tab no longer holds the bar's tab stop - it moves to the first enabled tab, and a bar with none is skipped in the tab order.
+- A nav tab link that a user reached with Tab follows on Enter again - the tab bar no longer swallows a key it does not act on - and Space no longer follows a disabled link.
+- Correct the `NotificationConfig.duration` JSDoc: `0` never auto-dismisses, and only an omitted
+  `duration` falls back to the manager's `defaultDuration`.
+- Overlay: the anchored arrow now paints in WebKit, so tooltips, toggletips, menus and anchored dialogs show one in Safari too.
+- Overlays can be mounted `passive` and are then skipped as the top layer, so a dialog still closes on a backdrop press while a tooltip shows inside it.
+- Overlay routing: the route header no longer goes blank when a navigation returns to a page mid-transition or a disabled outlet is enabled again.
+- Overlay: a breakpoint strategy switch now adds or removes the arrow and the drag handle with the strategy, instead of keeping the ones the overlay mounted with.
+- Phone input: the country trigger now exposes `countryLabel` as its accessible name, open and closed.
+- `defineQueryForm`: `branch()` now debounces and runs the reset graph like the source form and exposes `liveValue`; the filter overlay applies `liveValue` on submit.
+- Scheduler: the edit surface may now open to the right or the left of an appointment, so a tall band no longer forces it past the bottom of the viewport.
+- A time-grid block now widens into the columns nothing overlapping it occupies, so one short overlap no longer thins the whole overlap group.
+- A select panel no longer grows wider than its field while its height animates. A long option label made the panel stick out of the field until the animation ended, for example when async options arrived after the panel opened.
+- Select: a Tab out of a panel-hosted search now leaves focus where it went instead of landing back on the field when the select is the last tab stop.
+- Select: a Tab out of the open trigger or its inline search no longer pulls focus back to the field when the select is the page's last tab stop.
+- Spinner: `--et-spinner-duration` now retimes every spinner animation, so `et-button`'s loading spinner runs at the 700ms it already sets.
+- Tabs: content tabs and nav tabs now share one stylesheet for their trigger chrome, divider and underline instead of two near-identical copies. Rendered styles, class names and tokens are unchanged.
+- Time picker: the structural dev guards `ET3020` and `ET3021` now throw while the directive is constructed, on the template's stack, instead of once per element after the first render.
+
 ## 1.0.0-next.59
 
 ### Patch Changes

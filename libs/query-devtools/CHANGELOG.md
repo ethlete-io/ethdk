@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.0.0-next.11
+
+### Minor Changes
+
+- The Angular peer dependency moves from 22.0.7 to 22.1.6. Angular 22.0.x is affected by
+  GHSA-hh8m-fm6v-7cvg, a sanitization bypass through directive host bindings, fixed in 22.1.0.
+
+### Patch Changes
+
+- The response diff now reports a changed `Blob`, `Date`, `Map` or `Set` instead of reading two
+  of them as identical, and searching a folded slice no longer overflows on a cyclic value.
+- The panel drops a client's Cache, Faults and Events entries once that client's injector is destroyed,
+  instead of keeping them alive for as long as one of its queries has a tombstone.
+- Query devtools exports stop carrying live credentials: a copied report slims its args, a session export omits auth-provider bodies and redacts credential-named keys, and an unchainable secure request drops its `Authorization`.
+- `<et-query-devtools-lazy>` renders nothing without `provideQueryDevtools()` - no floating button, no
+  shortcut, no panel download - and the now-public `isQueryDevtoolsEnabled()` is what it gates on.
+- Devtools panel: the Settings client picker now narrows the Events tab, exports survive cyclic and non-JSON bodies, the `no auth` chip covers mocks with a query string, and copy confirmations reset again.
+- The devtools session vault no longer uses `localStorage` outside a development build, so a deployed
+  app can mount the panel without leaving tokens and credentials behind.
+
 ## 1.0.0-next.10
 
 ### Minor Changes
