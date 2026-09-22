@@ -151,7 +151,7 @@ test.describe('select / keyboard', () => {
   for (const [name, id] of [
     ['trigger', DEFAULT_STORY_ID],
     ['trigger-hosted search', SEARCHABLE_STORY_ID],
-  ]) {
+  ] as const) {
     test(`a Tab from the open ${name} past the page's last tab stop does not pull focus back`, async ({ page }) => {
       const root = await openStory(page, id);
       const trigger = root.getByRole('combobox');
