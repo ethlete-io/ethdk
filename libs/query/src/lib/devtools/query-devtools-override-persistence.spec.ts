@@ -100,6 +100,17 @@ describe('query devtools override persistence', () => {
     expect(stored().ops).toEqual({});
   });
 
+  it('should report a restored query as disarmed once its ops are cleared by hand', () => {
+    setQueryDevtoolsOverridePersistence(true);
+    register('query|api|GET|/posts#0').arm({ type: 'set', path: ['a'], value: 1 });
+
+    initQueryDevtoolsOverridePersistence();
+    register('query|api|GET|/posts#0').clearAll();
+
+    expect(restoredQueryDevtoolsOverrides()).toEqual([{ id: 'query|api|GET|/posts#0', count: 1, armed: false }]);
+    expect(stored().ops).toEqual({});
+  });
+
   it('should empty the store when it is switched off, leaving armed ops alone', () => {
     setQueryDevtoolsOverridePersistence(true);
     const recorder = register('query|api|GET|/posts#0');

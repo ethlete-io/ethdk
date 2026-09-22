@@ -1,4 +1,5 @@
-import { withPageResetOnError, withPolling } from '../http/query-features';
+import { signal } from '@angular/core';
+import { withAutoRefresh, withLongPolling, withPageResetOnError, withPolling } from '../http/query-features';
 import {
   describeQueryDevtoolsFeatures,
   formatQueryDevtoolsDuration,
@@ -33,6 +34,54 @@ describe('query devtools features', () => {
       expect(byCallback?.details).toEqual([
         { label: 'resets', value: 'custom callback' },
         { label: 'when', value: 'page out of range' },
+      ]);
+    });
+    it('should say a polling feature executes initially', () => {
+      const [polling] = describeQueryDevtoolsFeatures([withPolling({ interval: 60_000, executeInitially: true })]);
+
+      expect(polling?.details).toContainEqual({ label: 'execute initially', value: 'yes' });
+    });
+
+    it('should show the long polling delay, falling back to the default', () => {
+      const nextArgs = () => null;
+      const [custom, fallback] = describeQueryDevtoolsFeatures([
+        withLongPolling({ nextArgs, delay: 2_000 }),
+        withLongPolling({ nextArgs }),
+      ]);
+
+      expect(custom?.details).toContainEqual({ label: 'delay', value: '2s' });
+      expect(fallback?.details).toContainEqual({ label: 'delay', value: '250ms' });
+    });
+
+    it('should say an auto refresh ignores manual only execution only when it does', () => {
+      const trigger = signal(0);
+      const [plain, ignoring] = describeQueryDevtoolsFeatures([
+        withAutoRefresh({ onSignalChanges: [trigger] }),
+        withAutoRefresh({ onSignalChanges: [trigger, trigger], ignoreOnlyManualExecution: true }),
+      ]);
+
+      expect(plain?.details).toEqual([{ label: 'signals', value: '1' }]);
+      expect(ignoring?.details).toEqual([
+        { label: 'signals', value: '2' },
+        { label: 'ignores manual only', value: 'yes' },
+      ]);
+    });
+
+    it('should show where a page reset by signal resets to, and a custom condition', () => {
+      const [byDefault, custom] = describeQueryDevtoolsFeatures([
+        withPageResetOnError({ page: signal(3) }),
+        withPageResetOnError({ page: signal(3), resetTo: 0, when: () => true }),
+      ]);
+
+      expect(byDefault?.details).toEqual([
+        { label: 'resets', value: 'page signal' },
+        { label: 'reset to', value: '1' },
+        { label: 'when', value: 'page out of range' },
+      ]);
+      expect(custom?.details).toEqual([
+        { label: 'resets', value: 'page signal' },
+        { label: 'reset to', value: '0' },
+        { label: 'when', value: 'custom' },
       ]);
     });
   });
