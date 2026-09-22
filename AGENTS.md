@@ -134,6 +134,9 @@ Every change to a published package needs a changeset. Use the **`changeset`**
 skill (`.agents/skills/changeset/`) - write the file directly; don't run the
 interactive `npx changeset` CLI.
 
+`publish.yml` runs the vendored Changesets action in `tools/changesets-action` (upstream
+`changesets/action` v2 plus a Slack notification). Its README names the upstream commit.
+
 The two Tauri apps are versioned the same way, under the names `timetrack-app` and
 `ethlete-studio`. Each is a private workspace package, so `changeset version` bumps it but
 never publishes it, and `yarn versions:sync` copies the new version into `tauri.conf.json`,

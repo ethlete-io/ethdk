@@ -1,0 +1,46 @@
+{
+  "name": "changesets-action",
+  "version": "2.1.2",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rolldown -c",
+    "test": "vitest run",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@actions/artifact": "^6.2.1",
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0",
+    "@actions/github": "^9.1.1",
+    "@changesets/get-release-plan": "^5.0.0",
+    "@changesets/ghcommit": "^3.0.0",
+    "@changesets/git": "^4.0.0",
+    "@changesets/pre": "^3.0.0",
+    "@changesets/read": "^1.0.0",
+    "@manypkg/get-packages": "^3.1.0",
+    "@octokit/core": "^7.0.7",
+    "@octokit/plugin-throttling": "^11.0.5",
+    "human-id": "^4.2.1",
+    "markdown-table": "^3.0.4",
+    "semver": "^7.8.5",
+    "tinyexec": "^1.3.0"
+  },
+  "devDependencies": {
+    "@changesets/cli": "3.0.3",
+    "@changesets/types": "^7.0.0",
+    "@changesets/write": "^1.0.1",
+    "@tsconfig/node24": "^24.0.5",
+    "@types/node": "24.13.3",
+    "@types/semver": "^7.8.0",
+    "fs-fixture": "^2.14.0",
+    "rolldown": "^1.2.5",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  },
+  "installConfig": {
+    "hoistingLimits": "workspaces"
+  }
+}

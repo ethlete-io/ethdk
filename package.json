@@ -6,7 +6,8 @@
   "workspaces": [
     "libs/*",
     "apps/ethlete-studio",
-    "apps/timetrack"
+    "apps/timetrack",
+    "tools/changesets-action"
   ],
   "scripts": {
     "agents:check": "nx build agent-rules && node dist/libs/agent-rules/src/index.js check",

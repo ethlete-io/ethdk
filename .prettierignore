@@ -24,3 +24,6 @@ CHANGELOG.md
 
 # Design-tool exports, written by the tool.
 *.dc.html
+
+tools/changesets-action
+.changeset/pre/
