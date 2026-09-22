@@ -91,7 +91,8 @@
       "plugin": "@nx/eslint/plugin",
       "options": {
         "targetName": "lint"
-      }
+      },
+      "exclude": ["tools/changesets-action/**/*"]
     },
     {
       "plugin": "@nx/vitest",
