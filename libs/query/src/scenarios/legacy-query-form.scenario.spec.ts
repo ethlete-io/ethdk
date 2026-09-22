@@ -2,7 +2,7 @@ import { FormControl } from '@angular/forms';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { describe, expect, it } from 'vitest';
-import { QueryField, QueryForm } from '../index';
+import { QueryField, QueryForm, SearchQueryField } from '../index';
 import { useScenario } from './harness';
 
 const createForm = () =>
@@ -299,6 +299,217 @@ describe('legacy QueryForm observed after a pre-observe write', () => {
 
     qf.unobserve();
     await s.settle();
+    c.destroy();
+  });
+});
+
+describe('legacy QueryForm url read', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  const field = <T>(
+    defaultValue: T | null = null,
+    extra: Partial<ConstructorParameters<typeof QueryField<T>>[0]> = {},
+  ) => new QueryField<T | null>({ control: new FormControl<T | null>(defaultValue), defaultValue, ...extra });
+
+  const commit = async (s: ReturnType<typeof scenario>) => {
+    for (let i = 0; i < 3; i++) await s.settle(1);
+  };
+
+  const navigate = async (s: ReturnType<typeof scenario>, queryParams: Record<string, string | null>) => {
+    await TestBed.inject(Router).navigate([], { queryParams, queryParamsHandling: 'merge' });
+    await commit(s);
+  };
+
+  it('converts numbers and booleans, but keeps strings that only look like numbers', async () => {
+    const s = scenario();
+
+    await navigate(s, {
+      page: '2',
+      active: 'true',
+      archived: 'false',
+      code: '007',
+      padded: ' 5',
+      version: '1.',
+      limit: 'abc',
+      raw: '42',
+    });
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({
+        page: field<number>(1),
+        active: field<boolean>(),
+        archived: field<boolean>(),
+        code: field<string>(),
+        padded: field<string>(),
+        version: field<string>(),
+        limit: field<number>(10),
+        raw: field<string>(null, { skipAutoTransform: true }),
+      }).observe(),
+    );
+    await commit(s);
+
+    expect(qf.value).toEqual({
+      page: 2,
+      active: true,
+      archived: false,
+      code: '007',
+      padded: ' 5',
+      version: '1.',
+      limit: null,
+      raw: '42',
+    });
+
+    c.destroy();
+  });
+
+  it('reads ET_NULL__ as null and writes null over a non-null default as ET_NULL__', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await navigate(s, { status: 'ET_NULL__' });
+
+    const c = s.consumer();
+    const qf = c.run(() => new QueryForm({ status: field<string>('open') }).observe());
+    await commit(s);
+
+    expect(qf.value).toEqual({ status: null });
+
+    qf.setValue({ status: 'closed' });
+    await commit(s);
+    qf.setValue({ status: null });
+    await commit(s);
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ status: 'ET_NULL__' });
+
+    c.destroy();
+  });
+
+  it('falls back to the default when a navigation removes the param', async () => {
+    const s = scenario();
+
+    await navigate(s, { page: '3', search: 'shoes' });
+
+    const c = s.consumer();
+    const qf = c.run(() => new QueryForm({ page: field<number>(1), search: field<string>() }).observe());
+    await commit(s);
+
+    expect(qf.value).toEqual({ page: 3, search: 'shoes' });
+
+    await navigate(s, { page: null, search: null });
+    await commit(s);
+
+    expect(qf.value).toEqual({ page: 1, search: null });
+
+    c.destroy();
+  });
+
+  it('resets a chain of isResetBy fields and commits the settled value once', async () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({
+        country: field<string>(),
+        league: field<string>(null, { isResetBy: 'country' }),
+        team: field<string>(null, { isResetBy: 'league' }),
+      }).observe(),
+    );
+
+    qf.setValue({ country: 'de', league: 'bl', team: 'fcb' }, { skipResets: true });
+    await commit(s);
+
+    const seen: unknown[] = [];
+    const sub = qf.changes$.subscribe(({ currentValue }) => seen.push(currentValue));
+
+    qf.patchValue({ country: 'es' });
+    await commit(s);
+
+    expect(qf.value).toEqual({ country: 'es', league: null, team: null });
+    expect(seen).toEqual([
+      { country: 'de', league: 'bl', team: 'fcb' },
+      { country: 'es', league: null, team: null },
+    ]);
+
+    sub.unsubscribe();
+    c.destroy();
+  });
+
+  it('resets an isResetBy field when a navigation changes its parent', async () => {
+    const s = scenario();
+
+    await navigate(s, { search: 'shoes', page: '4' });
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({ page: field<number>(1, { isResetBy: 'search' }), search: field<string>() }).observe(),
+    );
+    await commit(s);
+
+    expect(qf.value).toEqual({ page: 4, search: 'shoes' });
+
+    await navigate(s, { search: 'boots' });
+    await commit(s);
+
+    expect(qf.value).toEqual({ page: 1, search: 'boots' });
+
+    c.destroy();
+  });
+
+  it('skipResets keeps an isResetBy field the same write changes the parent of', async () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({ page: field<number>(1, { isResetBy: 'search' }), search: field<string>() }).observe(),
+    );
+
+    qf.setValue({ page: 3, search: 'shoes' }, { skipResets: true });
+    await commit(s);
+
+    expect(qf.value).toEqual({ page: 3, search: 'shoes' });
+
+    qf.patchValue({ search: 'boots' });
+    await commit(s);
+
+    expect(qf.value).toEqual({ page: 1, search: 'boots' });
+
+    c.destroy();
+  });
+
+  it('debounces a typed search but commits a cleared one at once', async () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() => new QueryForm({ search: new SearchQueryField() }).observe({ writeToQueryParams: false }));
+
+    qf.controls.search.setValue('shoes');
+    s.tick(50);
+    expect(qf.value.search).toBeNull();
+
+    s.tick(300);
+    expect(qf.value.search).toBe('shoes');
+
+    qf.controls.search.setValue(null);
+    s.tick(1);
+
+    expect(qf.value.search).toBeNull();
+
+    c.destroy();
+  });
+
+  it('applies a search from a navigation without waiting out the debounce', async () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() => new QueryForm({ search: new SearchQueryField() }).observe());
+    await commit(s);
+
+    await TestBed.inject(Router).navigate([], { queryParams: { search: 'boots' } });
+    s.tick(1);
+
+    expect(qf.value.search).toBe('boots');
+
     c.destroy();
   });
 });

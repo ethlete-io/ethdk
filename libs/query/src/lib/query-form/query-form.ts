@@ -188,6 +188,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   private isObserving = false;
   private removeQueryParamsOnCleanup = true;
   private skipNextResets = false;
+  private skipNextDebounce = false;
   private skipNextResetsFor: ReadonlySet<string> | undefined;
   private urlWriteVersion = 0;
   private readonly urlNavigationMarker = {};
@@ -361,7 +362,12 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           currentUniqueChangedFields = [...new Set(changedFields)];
         }),
         switchMap(({ currentValue, previousValue }) => {
-          if (changedFieldsInLastResetLoop.length) return of(null).pipe(map(() => ({ currentValue, previousValue })));
+          const skipDebounce = this.skipNextDebounce;
+          this.skipNextDebounce = false;
+
+          if (changedFieldsInLastResetLoop.length || skipDebounce) {
+            return of(null).pipe(map(() => ({ currentValue, previousValue })));
+          }
 
           const debounceValues = currentUniqueChangedFields.map((key) => {
             const field = this._fields[key];
@@ -419,6 +425,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
             });
 
             if (didValueChanges) {
+              this.skipNextDebounce = true;
               this.didValueChanges$.next(true);
             }
           }),
@@ -762,6 +769,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     if (equal(currentVal, newVal)) {
       this.skipNextResets = false;
       this.skipNextResetsFor = undefined;
+      this.skipNextDebounce = false;
 
       return;
     }
