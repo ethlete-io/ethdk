@@ -11,6 +11,20 @@ const SETTINGS_KEY = 'ethlete:query:devtools:settings:v1';
 
 const stored = () => JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? 'null');
 
+/** What `isDevMode()` reads. A production build of an application sets it to `false`. */
+const withProductionBuild = (run: () => void) => {
+  const globals = globalThis as Record<string, unknown>;
+  const previous = globals['ngDevMode'];
+
+  globals['ngDevMode'] = false;
+
+  try {
+    run();
+  } finally {
+    globals['ngDevMode'] = previous;
+  }
+};
+
 describe('query devtools settings', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -31,6 +45,34 @@ describe('query devtools settings', () => {
       maxDroppedCacheEntries: 20,
       responseHistory: null,
       reloadOnAuthSwitch: true,
+    });
+  });
+
+  it('should refuse the local scope for the session vault outside a development build', () => {
+    withProductionBuild(() => {
+      setQueryDevtoolsSettings({ authSessions: 'local' });
+
+      expect(queryDevtoolsSettings().authSessions).toBe('session');
+    });
+  });
+
+  it('should read a stored local vault scope back as session outside a development build', () => {
+    setQueryDevtoolsSettings({ authSessions: 'local' });
+
+    expect(queryDevtoolsSettings().authSessions).toBe('local');
+
+    withProductionBuild(() => {
+      initQueryDevtoolsSettings();
+
+      expect(queryDevtoolsSettings().authSessions).toBe('session');
+    });
+  });
+
+  it('should still allow none for the session vault outside a development build', () => {
+    withProductionBuild(() => {
+      setQueryDevtoolsSettings({ authSessions: 'none' });
+
+      expect(queryDevtoolsSettings().authSessions).toBe('none');
     });
   });
 

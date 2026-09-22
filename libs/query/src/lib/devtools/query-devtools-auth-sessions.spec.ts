@@ -45,6 +45,22 @@ const NAMED = token({ name: 'Admin', exp: 6000 });
 const NAMED_AGAIN = token({ name: 'Admin', exp: 7000 });
 const NAMED_OTHER = token({ name: 'Member', exp: 7000 });
 
+const STORE_KEY = 'ethlete:query:devtools:auth:v1';
+
+/** What `isDevMode()` reads. A production build of an application sets it to `false`. */
+const withProductionBuild = (run: () => void) => {
+  const globals = globalThis as Record<string, unknown>;
+  const previous = globals['ngDevMode'];
+
+  globals['ngDevMode'] = false;
+
+  try {
+    run();
+  } finally {
+    globals['ngDevMode'] = previous;
+  }
+};
+
 type Fake = {
   handle: QueryDevtoolsAuthProviderHandle;
   accessToken: ReturnType<typeof signal<string | null>>;
@@ -150,6 +166,35 @@ describe('query devtools auth sessions', () => {
     setQueryDevtoolsApiEnvs([HUB]);
     clearQueryDevtoolsAuthSessions();
     initQueryDevtoolsAuthSessions([]);
+  });
+
+  it('should keep the vault out of localStorage outside a development build', () => {
+    withProductionBuild(() => {
+      initQueryDevtoolsSettings();
+      initQueryDevtoolsAuthSessions([]);
+
+      const provider = createProvider('hub-auth');
+
+      provider.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+
+      expect(queryDevtoolsAuthSessionsFor('hub-auth').length).toBe(1);
+      expect(localStorage.getItem(STORE_KEY)).toBeNull();
+      expect(sessionStorage.getItem(STORE_KEY)).not.toBeNull();
+
+      provider.stop();
+    });
+  });
+
+  it('should drop a vault an earlier build left in localStorage', () => {
+    localStorage.setItem(STORE_KEY, JSON.stringify({ sessions: [], credentials: { a: { password: 'x' } } }));
+
+    withProductionBuild(() => {
+      initQueryDevtoolsSettings();
+      initQueryDevtoolsAuthSessions([]);
+
+      expect(localStorage.getItem(STORE_KEY)).toBeNull();
+    });
   });
 
   it('should forget a session that expired, tokens and all', () => {

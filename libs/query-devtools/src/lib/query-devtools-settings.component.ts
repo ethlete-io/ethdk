@@ -5,6 +5,7 @@ import {
   clearQueryDevtoolsArmedMocks,
   clearQueryDevtoolsAuthSessions,
   clearQueryDevtoolsFaults,
+  queryDevtoolsAllowsLocalAuthSessions,
   QueryDevtoolsApiEnvSwitch,
   queryDevtoolsApiEnvs,
   queryDevtoolsApiEnvValues,
@@ -80,7 +81,7 @@ const SCOPE_ROWS: ScopeRow[] = [
   {
     key: 'authSessions',
     label: 'Sessions and accounts',
-    hint: 'The token pairs the Auth tab switches between, and the credentials it logs in with. Local is the default: a vault that forgets the other user on every reload is not one. None keeps nothing at all.',
+    hint: 'The token pairs the Auth tab switches between, and the credentials it logs in with. Local is the default in a development build: a vault that forgets the other user on every reload is not one. None keeps nothing at all.',
     warn: {
       scopes: ['local'],
       text: 'Access and refresh tokens for every user you logged in as, plus what you typed into the account fields, stay in this browser until you forget them. They are never kept for an API env marked production.',
@@ -232,6 +233,13 @@ export class QueryDevtoolsSettingsComponent {
   /** What the picked scope means beyond where the state is kept, or `null` while it means nothing extra. */
   protected warningFor(row: ScopeRow, scope: QueryDevtoolsStorageScope) {
     return row.warn?.scopes.includes(scope) ? row.warn.text : null;
+  }
+
+  /** Why one scope is not on offer for a row, for the button's title, or `null` while it is. */
+  protected unavailableReason(row: ScopeRow, scope: QueryDevtoolsStorageScope) {
+    if (row.key !== 'authSessions' || scope !== 'local' || queryDevtoolsAllowsLocalAuthSessions()) return null;
+
+    return 'Unavailable outside a development build: live access and refresh tokens, and the credentials you typed in, must not outlive this tab on a deployed origin. Session keeps the vault for as long as the tab.';
   }
 
   protected setScope(key: ScopeKey, scope: QueryDevtoolsStorageScope) {

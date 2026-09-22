@@ -89,9 +89,12 @@
           <span>{{ row.label }}</span>
           <div class="et-query-devtools-btn-group">
             @for (option of SCOPES; track option.value) {
+              @let unavailable = unavailableReason(row, option.value);
               <button
                 [class.et-query-devtools-btn--active]="scope === option.value"
                 [attr.aria-pressed]="scope === option.value"
+                [disabled]="!!unavailable"
+                [title]="unavailable"
                 (click)="setScope(row.key, option.value)"
                 class="et-query-devtools-btn"
                 type="button"

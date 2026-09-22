@@ -2107,7 +2107,9 @@ provideQueryDevtools({
 ```
 
 Whoever runs the app fills the credentials in once, in the Auth tab, and they stay in that browser's
-`localStorage` - scoped to the API env in force, because a staging login is rarely a local one.
+`localStorage` - scoped to the API env in force, because a staging login is rarely a local one. In a
+build that is not a development one they stay in `sessionStorage` instead, see
+[the vault outside a development build](#the-vault-outside-a-development-build).
 **Log in as** then runs the provider's own login query with them, so the tokens are issued exactly
 the way the application issues them and the vault picks the session up like any other login.
 
@@ -2171,6 +2173,26 @@ The floating pill carries the same picker as the tab, next to the API env one, s
 need the panel open. Both sit behind the same
 [summary chip](#switching-the-api-environment), folded away until you ask for them.
 
+### The vault outside a development build
+
+Mounting the panel in a deployed build is worth doing: the rest of it is a debugging tool, and a
+staging or production bug is the one you most need it for. The vault is the part that cannot come
+along unchanged. It holds live access and refresh tokens, and the credentials somebody typed into
+the account fields, and `localStorage` outlives the person who opened the panel on that machine.
+
+So `isDevMode()` decides, and nothing else - no build flag an application has to remember to set,
+and no guess at which deployment is which. Outside a development build:
+
+- The **local** scope for **Sessions and accounts** is not on offer in Settings, and a stored
+  `local` reads back as `session`. The vault works exactly as before and dies with the tab.
+- A vault an earlier build left under `ethlete:query:devtools:auth:v1` in `localStorage` is
+  removed on the next load.
+- `none` is still on offer, for a machine where nothing of the sort may be kept.
+
+This is separate from, and on top of, the refusal that an API env marked
+[`production`](#switching-the-api-environment) already triggers: while one is the pick, no session
+and no credential is kept at all.
+
 ## Settings: what the panel keeps, and where
 
 The **⚙** button in the header opens Settings over whatever tab is showing. It holds where each
@@ -2194,7 +2216,11 @@ Each kind of state picks its own scope, because `none` costs something different
 | [**Designed mocks**](#mocks-answering-a-route-the-panel-not-the-api) | `local`   | the library dies with the tab                             |
 | [**Armed mocks**](#arming-it-is-loud)                                | `none`    | the default - a reload goes back to talking to the API    |
 | [**Armed faults**](#faults-making-requests-actually-misbehave)       | `none`    | the default - a reload disarms every client               |
-| [**Sessions and accounts**](#switching-the-user)                     | `local`   | the other user is forgotten on every reload               |
+| [**Sessions and accounts**](#switching-the-user)                     | `local`\* | the other user is forgotten on every reload               |
+
+\* `local` for the session vault only in a development build. Outside one it is not on offer,
+reads back as `session`, and a vault an earlier build left in `localStorage` is dropped on the next
+load. See [the vault outside a development build](#the-vault-outside-a-development-build).
 
 Changing a scope **moves** what is already stored and clears the copy the old scope left
 behind, so the next load cannot read a stale one. The two **Armed** scopes capture what is armed

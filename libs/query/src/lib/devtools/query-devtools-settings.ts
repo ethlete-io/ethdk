@@ -1,4 +1,4 @@
-import { Signal, signal } from '@angular/core';
+import { isDevMode, Signal, signal } from '@angular/core';
 
 /**
  * Where one kind of devtools state is kept between page loads. `none` means it is not kept at all -
@@ -40,7 +40,8 @@ export type QueryDevtoolsSettings = {
   /**
    * The session vault: the token pairs the panel switches between, and the credentials it logs in with.
    * `local` by default, because a vault that forgets the other user on every reload is not one - and
-   * `none` for a machine where nothing of the sort may be kept.
+   * `none` for a machine where nothing of the sort may be kept. Outside a development build `local` is
+   * refused and read back as `session`, see {@link queryDevtoolsAllowsLocalAuthSessions}.
    */
   authSessions: QueryDevtoolsStorageScope;
 
@@ -163,6 +164,19 @@ export const clearQueryDevtoolsStore = (key: string) => {
 const asScope = (value: unknown, fallback: QueryDevtoolsStorageScope): QueryDevtoolsStorageScope =>
   value === 'none' || value === 'session' || value === 'local' ? value : fallback;
 
+/**
+ * Whether the session vault may be kept in `localStorage`. Only a development build may: the vault
+ * holds live access and refresh tokens plus the credentials somebody typed in, and a deployed
+ * application that mounts the panel for its debugging value must not leave those on the machine of
+ * whoever opened it. Every other scope stays on offer, so the vault still works for one tab.
+ *
+ * Part of the devtools contract. **Not part of the general public contract.**
+ */
+export const queryDevtoolsAllowsLocalAuthSessions = (): boolean => isDevMode();
+
+const clampAuthSessions = (scope: QueryDevtoolsStorageScope): QueryDevtoolsStorageScope =>
+  scope === 'local' && !queryDevtoolsAllowsLocalAuthSessions() ? 'session' : scope;
+
 const asCount = (value: unknown, limits: { min: number; max: number }, fallback: number) => {
   const count = Math.floor(Number(value));
 
@@ -188,7 +202,7 @@ const sanitize = (value: Partial<QueryDevtoolsSettings> | null): QueryDevtoolsSe
   mocks: asScope(value?.mocks, DEFAULTS.mocks),
   armedMocks: asScope(value?.armedMocks, DEFAULTS.armedMocks),
   armedFaults: asScope(value?.armedFaults, DEFAULTS.armedFaults),
-  authSessions: asScope(value?.authSessions, DEFAULTS.authSessions),
+  authSessions: clampAuthSessions(asScope(value?.authSessions, DEFAULTS.authSessions)),
   maxEvents: asCount(value?.maxEvents, LIMITS.maxEvents, DEFAULTS.maxEvents),
   maxDroppedCacheEntries: asCount(
     value?.maxDroppedCacheEntries,

@@ -8,6 +8,7 @@ import {
 import { QueryDevtoolsAuthProviderRegistration, QueryDevtoolsAuthSeed } from './query-devtools-hook';
 import { setQueryDevtoolsAuthPill } from './query-devtools-pills';
 import {
+  queryDevtoolsAllowsLocalAuthSessions,
   queryDevtoolsSettings,
   queryDevtoolsStorage,
   readQueryDevtoolsStore,
@@ -340,6 +341,10 @@ let listening = false;
  * @internal
  */
 export const initQueryDevtoolsAuthSessions = (accounts: QueryDevtoolsAuthAccount[] | undefined) => {
+  // Before the read below, which never looks at `localStorage` once the scope is clamped: a vault an
+  // earlier version left there would otherwise sit on a deployed origin with nothing left to remove it.
+  if (!queryDevtoolsAllowsLocalAuthSessions()) queryDevtoolsStorage('local')?.removeItem(STORE_KEY);
+
   const scope = queryDevtoolsSettings().authSessions;
 
   declared.set(accounts ?? []);
