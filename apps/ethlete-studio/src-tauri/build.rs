@@ -1,4 +1,8 @@
 fn main() {
+    // tauri-build fails on a resource that is not there, and the workspace builds the design
+    // runtime, not cargo. An empty directory is skipped instead, so a bare `cargo build` still runs.
+    std::fs::create_dir_all("../../../dist/apps/ethlete-studio/cli-runtime").expect("the design runtime folder");
+
     tauri_build::try_build(
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
             "agent_cancel",

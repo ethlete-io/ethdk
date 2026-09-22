@@ -68,6 +68,10 @@ checkout defaults to the working directory, and `DE_PORT` overrules the config, 
 checkouts can be drawn at once. A repository that builds the tool rather than installing it
 wraps this in a script - in the ethlete SDK, `yarn design` and `yarn design:check`.
 
+Ethlete Studio carries its own copy of the tool, so it draws a checkout that installs nothing.
+The machine still needs Node, and the render stage still needs `playwright` where the copy in
+use can reach it.
+
 `call.ts` calls `defineCall` from `@design-explore`. Each option carries a `key`, a `name`,
 a `claim`, a `cost`, an optional `verdict` of `chosen` or `rejected`, and a `load` that
 imports its own module. The host greys a rejected option and shows it on hover.

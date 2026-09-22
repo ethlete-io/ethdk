@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream};
+use std::path::Path;
 use std::process::Stdio;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -10,6 +11,7 @@ use tokio::process::{Child, Command};
 
 use crate::design::{port_of, read_config};
 use crate::error::{StudioError, StudioResult};
+use crate::tools::cli_entry;
 
 /// Enough of the server's output to read a failure, short enough to send on every poll.
 const LOG_LINES: usize = 40;
@@ -95,24 +97,35 @@ fn collect<R: AsyncRead + Unpin + Send + 'static>(source: R, log: Arc<Mutex<Vec<
     });
 }
 
+/// Studio runs the design tool itself, so a checkout needs no script and no design tooling of its
+/// own. Node is the one thing the machine must still carry.
 fn spawn(servers: &DesignServers, checkout: &str) -> StudioResult<()> {
-    let mut command = Command::new("yarn");
+    let entry = cli_entry(Path::new(checkout)).ok_or_else(|| {
+        StudioError::Rejected(format!(
+            "No copy of @ethlete/cli is reachable for {checkout}. Build one with \
+             `npx nx cli-runtime ethlete-studio`, or point ETHLETE_CLI at a src/index.js."
+        ))
+    })?;
+
+    let mut command = Command::new("node");
 
     command
+        .arg(&entry)
         .arg("design")
+        .arg(checkout)
         .current_dir(checkout)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
 
-    // The script runs the server as a child of the package manager, so a stop has to reach the
+    // The server starts a bundler, which starts workers of its own, so a stop has to reach the
     // whole group. Its own group is what makes that reachable.
     #[cfg(unix)]
     command.process_group(0);
 
     let mut child = command.spawn().map_err(|error| match error.kind() {
-        std::io::ErrorKind::NotFound => StudioError::NotInstalled("yarn".to_owned()),
+        std::io::ErrorKind::NotFound => StudioError::NotInstalled("node".to_owned()),
         _ => StudioError::Io(error),
     })?;
 
@@ -264,21 +277,17 @@ mod tests {
         assert!(listening(listener.local_addr().expect("an address").port()));
     }
 
-    /// A directory whose `design` script answers on one port, which is all Studio asks of a checkout.
+    /// A checkout that installs a design tool which answers on one port, which is all Studio asks.
     fn fake_checkout(port: u16) -> String {
         let dir = std::env::temp_dir().join(format!("studio-design-server-{port}"));
+        let entry = dir.join("node_modules/@ethlete/cli/src/index.js");
 
-        std::fs::create_dir_all(&dir).expect("a temporary checkout");
+        std::fs::create_dir_all(entry.parent().expect("a parent")).expect("a temporary checkout");
         std::fs::write(
-            dir.join("package.json"),
-            r#"{ "name": "studio-check", "private": true, "scripts": { "design": "node server.mjs" } }"#,
+            &entry,
+            format!("const {{ createServer }} = require('node:http');\ncreateServer((_, response) => response.end('ok')).listen({port});\n"),
         )
-        .expect("a package manifest");
-        std::fs::write(
-            dir.join("server.mjs"),
-            format!("import {{ createServer }} from 'node:http';\ncreateServer((_, response) => response.end('ok')).listen({port});\n"),
-        )
-        .expect("a server script");
+        .expect("a design tool");
 
         dir.to_string_lossy().into_owned()
     }
@@ -294,16 +303,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_checkout_runs_its_design_script_and_the_stop_reaches_the_whole_group() {
+    async fn a_checkout_is_served_by_its_design_tool_and_the_stop_reaches_the_whole_group() {
         const PORT: u16 = 45872;
 
         let checkout = fake_checkout(PORT);
         let servers = DesignServers::default();
 
-        spawn(&servers, &checkout).expect("the design script runs");
+        spawn(&servers, &checkout).expect("the design tool runs");
         await_listening(PORT).await;
 
-        assert!(listening(PORT), "the design script never answered");
+        assert!(listening(PORT), "the design tool never answered");
         assert!(state(&servers, &checkout, PORT).expect("a state").managed);
 
         let taken = servers.0.lock().expect("the table").remove(&checkout);
@@ -311,7 +320,7 @@ mod tests {
         end(&mut taken.expect("the server").child).await;
         await_stopped(PORT).await;
 
-        assert!(!listening(PORT), "the server the package manager started is still up");
+        assert!(!listening(PORT), "the server the design tool started is still up");
         assert!(!state(&servers, &checkout, PORT).expect("a state").managed);
 
         let _ = std::fs::remove_dir_all(&checkout);
@@ -324,10 +333,10 @@ mod tests {
         let checkout = fake_checkout(PORT);
         let servers = DesignServers::default();
 
-        spawn(&servers, &checkout).expect("the design script runs");
+        spawn(&servers, &checkout).expect("the design tool runs");
         await_listening(PORT).await;
 
-        assert!(listening(PORT), "the design script never answered");
+        assert!(listening(PORT), "the design tool never answered");
 
         stop_every(&servers);
         await_stopped(PORT).await;
@@ -336,6 +345,19 @@ mod tests {
         assert!(!state(&servers, &checkout, PORT).expect("a state").managed);
 
         let _ = std::fs::remove_dir_all(&checkout);
+    }
+
+    #[test]
+    fn a_checkout_no_design_tool_can_be_found_for_is_refused() {
+        let bare = std::env::temp_dir().join(format!("studio-design-server-bare-{}", std::process::id()));
+
+        std::fs::create_dir_all(&bare).expect("a temporary checkout");
+
+        let refused = spawn(&DesignServers::default(), &bare.to_string_lossy());
+
+        assert!(matches!(refused, Err(StudioError::Rejected(_))));
+
+        let _ = std::fs::remove_dir_all(&bare);
     }
 
     #[tokio::test]

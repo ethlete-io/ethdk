@@ -15,10 +15,15 @@ const PROTOCOL_VERSION: &str = "2025-06-18";
 
 /// Where the design tool lives once a checkout installs it, and where this repository builds it.
 /// The first entry that exists wins, and `ETHLETE_CLI` overrules all of them.
-const CLI_ENTRIES: [&str; 2] = [
-    "node_modules/@ethlete/cli/src/index.js",
-    "dist/libs/cli/src/index.js",
-];
+const CLI_ENTRIES: [&str; 2] = ["node_modules/@ethlete/cli/src/index.js", "dist/libs/cli/src/index.js"];
+
+/// The product name `tauri.conf.json` gives the app. Tauri builds the resource directory out of it
+/// on Linux, so the two must stay equal.
+const PRODUCT_NAME: &str = "Ethlete Studio";
+
+/// The copy of the design tool the app carries, under Tauri's resource directory. It brings its own
+/// `node_modules`, so it draws a checkout that installs no design tooling at all.
+const SHIPPED_CLI: &str = "cli-runtime/node_modules/@ethlete/cli/src/index.js";
 
 /// What the run works on. Studio knows every one of these, so no tool takes an argument and no run
 /// can name the wrong call.
@@ -202,9 +207,25 @@ fn read_fixture(context: &ToolContext) -> Result<String, String> {
     read(&path)
 }
 
-/// The `et` entry point that draws and checks a checkout. Step by step: an explicit override, the
-/// copy the checkout installed, then the copy this repository builds.
-fn cli_entry(checkout: &Path) -> Option<PathBuf> {
+/// The copy of the design tool this app ships, or `None` when the app runs from a build that never
+/// made one. Reading it needs no app handle, so the tool server resolves it the same way.
+fn shipped_cli() -> Option<PathBuf> {
+    let package = tauri::utils::PackageInfo {
+        name: PRODUCT_NAME.to_owned(),
+        version: env!("CARGO_PKG_VERSION").parse().ok()?,
+        authors: "",
+        description: "",
+        crate_name: env!("CARGO_PKG_NAME"),
+    };
+
+    let path = tauri::utils::platform::resource_dir(&package, &tauri::Env::default())
+        .ok()?
+        .join(SHIPPED_CLI);
+
+    path.is_file().then_some(path)
+}
+
+fn entry_of(checkout: &Path, shipped: impl FnOnce() -> Option<PathBuf>) -> Option<PathBuf> {
     if let Some(named) = std::env::var_os("ETHLETE_CLI") {
         let path = PathBuf::from(named);
 
@@ -215,6 +236,13 @@ fn cli_entry(checkout: &Path) -> Option<PathBuf> {
         .iter()
         .map(|entry| checkout.join(entry))
         .find(|path| path.is_file())
+        .or_else(shipped)
+}
+
+/// The `et` entry point that draws and checks a checkout. Step by step: an explicit override, the
+/// copy the checkout installed, the copy this repository builds, then the copy the app ships.
+pub fn cli_entry(checkout: &Path) -> Option<PathBuf> {
+    entry_of(checkout, shipped_cli)
 }
 
 fn check_call(context: &ToolContext) -> Result<String, String> {
@@ -400,8 +428,48 @@ mod tests {
     }
 
     #[test]
-    fn a_checkout_without_the_cli_names_none() {
-        assert_eq!(cli_entry(&ground("bare")), None);
+    fn a_checkout_without_the_cli_falls_back_to_the_copy_the_app_ships() {
+        let shipped = ground("shipped").join("index.js");
+
+        std::fs::write(&shipped, "").expect("a shipped entry point");
+
+        assert_eq!(entry_of(&ground("bare"), || Some(shipped.clone())), Some(shipped));
+    }
+
+    #[test]
+    fn the_checkouts_own_cli_wins_over_the_copy_the_app_ships() {
+        let checkout = ground("own");
+        let path = checkout.join(CLI_ENTRIES[1]);
+
+        std::fs::create_dir_all(path.parent().expect("a parent")).expect("a directory");
+        std::fs::write(&path, "").expect("an entry point");
+
+        assert_eq!(
+            entry_of(&checkout, || Some(PathBuf::from("/nowhere/index.js"))),
+            Some(path)
+        );
+    }
+
+    #[test]
+    fn the_shipped_copy_is_where_the_tauri_config_puts_it() {
+        let config: Value = serde_json::from_str(include_str!("../tauri.conf.json")).expect("the tauri config parses");
+
+        assert_eq!(
+            config.get("productName").and_then(Value::as_str),
+            Some(PRODUCT_NAME),
+            "PRODUCT_NAME no longer matches productName, so the resource directory is resolved wrongly"
+        );
+
+        let shipped_under = SHIPPED_CLI.split('/').next().expect("a first segment");
+        let resources = config
+            .pointer("/bundle/resources")
+            .and_then(Value::as_object)
+            .expect("the bundle ships resources");
+
+        assert!(
+            resources.values().any(|target| target.as_str() == Some(shipped_under)),
+            "no resource is bundled as {shipped_under}, so SHIPPED_CLI points at nothing"
+        );
     }
 
     fn context() -> ToolContext {

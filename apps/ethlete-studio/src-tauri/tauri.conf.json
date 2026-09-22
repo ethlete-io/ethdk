@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../../../dist/apps/ethlete-studio/browser",
     "devUrl": "http://localhost:4221",
-    "beforeDevCommand": "npx nx serve ethlete-studio",
-    "beforeBuildCommand": "npx nx build ethlete-studio"
+    "beforeDevCommand": "npx nx cli-runtime ethlete-studio && npx nx serve ethlete-studio",
+    "beforeBuildCommand": "npx nx cli-runtime ethlete-studio && npx nx build ethlete-studio"
   },
   "app": {
     "windows": [
@@ -27,6 +27,7 @@
   "bundle": {
     "active": true,
     "targets": ["deb", "rpm", "appimage", "dmg", "app"],
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "resources": { "../../../dist/apps/ethlete-studio/cli-runtime": "cli-runtime" }
   }
 }

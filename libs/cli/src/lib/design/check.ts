@@ -53,9 +53,17 @@ const parse = (argv: string[], names: string[]): Flags => {
 
 const runBrowser = async (options: { base: string; slug: string; wanted?: string }): Promise<number> => {
   const { base, slug, wanted } = options;
-  const { chromium } = await import('playwright');
+  const playwright = await import('playwright').catch(() => null);
 
-  const browser = await chromium.launch();
+  if (!playwright) {
+    console.error(
+      'NO BROWSER - neither the checkout nor this package resolves playwright, so the render stage cannot run.',
+    );
+
+    return 1;
+  }
+
+  const browser = await playwright.chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 
   /** Angular throws at render time, and the overlay never shows those, so read the console too. */
