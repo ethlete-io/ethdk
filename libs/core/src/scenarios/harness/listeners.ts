@@ -8,6 +8,10 @@ export type ListenerRecord = {
   listener: EventListenerOrEventListenerObject;
 };
 
+// jsdom's selector engine adds nine window listeners on each document's first query and never removes
+// them - including a document built by `DOMParser` - so its registrations are not the scenario's.
+const isJsdomSelectorEngine = () => !!new Error().stack?.includes('@asamuzakjp/dom-selector');
+
 const readCapture = (options: boolean | AddEventListenerOptions | EventListenerOptions | undefined) =>
   typeof options === 'boolean' ? options : !!options?.capture;
 
@@ -35,7 +39,7 @@ export const trackListeners = () => {
       listener: EventListenerOrEventListenerObject | null,
       options?: boolean | AddEventListenerOptions,
     ) {
-      if (!listener) return originalAdd.call(this, type, listener, options);
+      if (!listener || isJsdomSelectorEngine()) return originalAdd.call(this, type, listener, options);
 
       const capture = readCapture(options);
       const once = typeof options === 'object' && !!options.once;
@@ -82,10 +86,6 @@ export const trackListeners = () => {
       target.removeEventListener = originalRemove;
     });
   };
-
-  // jsdom's selector engine (@asamuzakjp/dom-selector) adds nine window listeners on the document's
-  // first query and never removes them; run that query before counting starts.
-  document.querySelector('body');
 
   patch('document', document);
   patch('window', window);

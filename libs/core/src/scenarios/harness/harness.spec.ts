@@ -96,6 +96,12 @@ describe('scenario harness', () => {
       observer.disconnect();
     });
 
+    it('does not count the listeners jsdom adds when a parsed document is first queried', () => {
+      scenario();
+
+      new DOMParser().parseFromString('<p></p>', 'text/html').querySelectorAll('p');
+    });
+
     it('consumes an expected error', () => {
       const s = scenario();
 

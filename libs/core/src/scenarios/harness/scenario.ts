@@ -69,6 +69,9 @@ export type Scenario = {
 
 const FRAME_MS = 16;
 
+// A real macrotask: fake timers leave `setImmediate` alone, and every microtask queued before it runs first.
+const drainMicrotasks = () => new Promise<void>((resolve) => setImmediate(resolve));
+
 const buildScenario = (config: ScenarioConfig): Scenario => {
   const errors: ScenarioErrorEntry[] = [];
   const warnings: ScenarioWarningEntry[] = [];
@@ -152,7 +155,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
 
     const settle = async (maxRounds = 200) => {
       for (let round = 0; round < maxRounds; round++) {
-        for (let i = 0; i < 10; i++) await Promise.resolve();
+        await drainMicrotasks();
         if (isIdle()) return;
         frame();
         tick(FRAME_MS);
