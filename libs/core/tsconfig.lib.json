@@ -7,7 +7,14 @@
     "inlineSources": true,
     "types": ["mdx"]
   },
-  "exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts", "src/scenarios"],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/test-setup.ts",
+    "jest.config.ts",
+    "src/**/*.test.ts",
+    "src/scenarios",
+    "src/**/stories"
+  ],
   "include": ["src/**/*.ts"],
   "angularCompilerOptions": {
     "extendedDiagnostics": {

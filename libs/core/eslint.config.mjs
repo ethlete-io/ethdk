@@ -14,6 +14,7 @@ export default [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/vite.config.{js,cjs,mjs,ts,mts}',
             '{projectRoot}/src/scenarios/**',
+            '{projectRoot}/src/**/stories/**',
           ],
         },
       ],
