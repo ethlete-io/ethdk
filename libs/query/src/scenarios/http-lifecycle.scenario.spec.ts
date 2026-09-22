@@ -567,6 +567,25 @@ describe('http lifecycle scenario: execute() after the creating scope is destroy
     expect(s.errors).toHaveLength(0);
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  it('names a function-route query generically in the warning instead of calling its route', () => {
+    const s = scenario();
+    s.api.on('GET', '/after-destroy/:id', () => ({ body: { ok: true } }));
+
+    const getThing = s.get<{ response: { ok: boolean }; pathParams: { id: string } }>((p) => `/after-destroy/${p.id}`);
+
+    const c = s.consumer();
+    const query = c.run(() => getThing(withArgs(() => ({ pathParams: { id: '1' } }))));
+    s.tick();
+
+    c.destroy();
+
+    query.execute();
+    s.tick(1);
+
+    s.expectWarning(/^A query with a function route was executed after the scope that created it was destroyed/);
+    expect(s.api.requestCount('GET', '/after-destroy/1')).toBe(1);
+  });
 });
 
 describe('http lifecycle scenario: two retry policies on one cache key', () => {

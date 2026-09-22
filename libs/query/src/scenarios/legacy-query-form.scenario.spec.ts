@@ -2,7 +2,17 @@ import { FormControl } from '@angular/forms';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { describe, expect, it } from 'vitest';
-import { QueryField, QueryForm, SearchQueryField } from '../index';
+import {
+  BooleanArrayQueryField,
+  DateArrayQueryField,
+  DateQueryField,
+  NumberArrayQueryField,
+  QueryField,
+  QueryForm,
+  SearchQueryField,
+  SortQueryField,
+  StringArrayQueryField,
+} from '../index';
 import { useScenario } from './harness';
 
 const createForm = () =>
@@ -514,6 +524,262 @@ describe('legacy QueryForm url read', () => {
   });
 });
 
+describe('legacy QueryForm field types and helpers', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  const commit = async (s: ReturnType<typeof scenario>) => {
+    for (let i = 0; i < 3; i++) await s.settle(1);
+  };
+
+  const urlParams = () => {
+    const router = TestBed.inject(Router);
+
+    return router.parseUrl(router.url).queryParams;
+  };
+
+  it('restores the array and date field types from the URL', async () => {
+    const s = scenario();
+
+    await TestBed.inject(Router).navigate([], {
+      queryParams: {
+        tags: ['a', 'b'],
+        ids: ['1', 'x', '2'],
+        flags: ['true', '0'],
+        days: '2026-09-01',
+        day: '2026-09-02',
+      },
+    });
+    await commit(s);
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({
+        tags: new StringArrayQueryField(),
+        ids: new NumberArrayQueryField(),
+        flags: new BooleanArrayQueryField(),
+        days: new DateArrayQueryField(),
+        day: new DateQueryField(),
+      }).observe(),
+    );
+    await commit(s);
+
+    expect(qf.value).toEqual({
+      tags: ['a', 'b'],
+      ids: [1, 2],
+      flags: [true, false],
+      days: [new Date(2026, 8, 1)],
+      day: new Date(2026, 8, 2),
+    });
+
+    c.destroy();
+  });
+
+  it('counts the fields off their default in activeFilterCount$, comparing arrays, dates and objects by value', async () => {
+    const s = scenario();
+    const from = new Date('2026-01-01T00:00:00.000Z');
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({
+        page: new QueryField({ control: new FormControl<number | null>(1), defaultValue: 1 }),
+        status: new QueryField({ control: new FormControl<string | null>('open') }),
+        tags: new StringArrayQueryField({ control: new FormControl<string[] | null>(['a']) }),
+        from: new DateQueryField({ control: new FormControl<Date | null>(from) }),
+        range: new QueryField({ control: new FormControl<{ min: number } | null>({ min: 0 }) }),
+        hidden: new QueryField({ control: new FormControl<string | null>(null), skipInFilterCount: true }),
+      }).observe({ writeToQueryParams: false }),
+    );
+
+    const counts: number[] = [];
+    const subscription = qf.activeFilterCount$.subscribe((count) => counts.push(count));
+    await commit(s);
+
+    expect(qf.defaultFormValue).toEqual({
+      page: 1,
+      status: 'open',
+      tags: ['a'],
+      from,
+      range: { min: 0 },
+      hidden: null,
+    });
+
+    qf.setValue({ page: 4, status: 'closed', tags: ['b'], from: new Date(from), range: { min: 0 }, hidden: 'x' });
+    await commit(s);
+    qf.patchValue({ tags: ['a'], range: { min: 5 }, from: new Date('2026-02-01T00:00:00.000Z') });
+    await commit(s);
+
+    expect(counts.at(0)).toBe(0);
+    expect(counts.at(-1)).toBe(3);
+    expect(counts).toContain(2);
+
+    subscription.unsubscribe();
+    c.destroy();
+  });
+
+  it('warns and keeps the first observation when observe() is called twice', async () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(
+      () => new QueryForm({ search: new QueryField({ control: new FormControl<string | null>(null) }) }),
+    );
+
+    expect(qf.observe({ writeToQueryParams: false })).toBe(qf);
+    expect(qf.observe()).toBe(qf);
+    s.expectWarning(/observe\(\) was called multiple times/);
+
+    qf.setValue({ search: 'shoes' });
+    await commit(s);
+
+    expect(qf.value.search).toBe('shoes');
+    expect(urlParams()).toEqual({});
+
+    c.destroy();
+  });
+
+  it('reports a patchValue before observe() on value', () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(
+      () =>
+        new QueryForm({
+          search: new QueryField({ control: new FormControl<string | null>(null) }),
+          page: new QueryField({ control: new FormControl<number | null>(1) }),
+        }),
+    );
+
+    qf.patchValue({ search: 'shoes' });
+
+    expect(qf.value).toEqual({ search: 'shoes', page: 1 });
+
+    c.destroy();
+  });
+
+  it('resets a field to its default, clearing its isResetBy children unless skipResets is passed', async () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({
+        country: new QueryField({ control: new FormControl<string | null>(null) }),
+        league: new QueryField({ control: new FormControl<string | null>(null), isResetBy: ['country'] }),
+      }).observe({ writeToQueryParams: false }),
+    );
+
+    qf.setValue({ country: 'de', league: 'bl' }, { skipResets: true });
+    await commit(s);
+
+    qf.resetFieldToDefault('country', { skipResets: true });
+    await commit(s);
+    expect(qf.value).toEqual({ country: null, league: 'bl' });
+
+    qf.setValue({ country: 'fr', league: 'l1' }, { skipResets: true });
+    await commit(s);
+
+    qf.resetFieldToDefault('country');
+    await commit(s);
+    expect(qf.value).toEqual({ country: null, league: null });
+
+    qf.setValue({ country: 'es', league: 'll' }, { skipResets: true });
+    await commit(s);
+
+    qf.resetFieldsToDefault(['country'], { skipResets: true });
+    await commit(s);
+    expect(qf.value).toEqual({ country: null, league: 'll' });
+
+    qf.patchValue({ country: 'it' }, { skipResets: true });
+    await commit(s);
+    expect(qf.value).toEqual({ country: 'it', league: 'll' });
+
+    c.destroy();
+  });
+
+  it('warns about an isResetBy key that names no field', async () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({
+        country: new QueryField({ control: new FormControl<string | null>(null) }),
+        league: new QueryField({ control: new FormControl<string | null>('bl'), isResetBy: 'contry' }),
+      }).observe({ writeToQueryParams: false }),
+    );
+
+    qf.setValue({ country: 'de', league: 'bl' });
+    await commit(s);
+
+    expect(qf.value).toEqual({ country: 'de', league: 'bl' });
+    s.expectWarning(/"contry" is not defined in the QueryForm/);
+
+    c.destroy();
+  });
+
+  it.each([
+    { name: 'a string', queryParamPrefix: 'users' },
+    { name: 'a function', queryParamPrefix: () => 'users' },
+  ])('prefixes its URL params with $name prefix', async ({ queryParamPrefix }) => {
+    const s = scenario();
+
+    await TestBed.inject(Router).navigate([], { queryParams: { 'users-page': '3' } });
+    await commit(s);
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm(
+        { page: new QueryField({ control: new FormControl<number | null>(1), defaultValue: 1 }) },
+        { queryParamPrefix },
+      ).observe(),
+    );
+    await commit(s);
+
+    expect(qf.value.page).toBe(3);
+
+    qf.setValue({ page: 4 });
+    await commit(s);
+
+    expect(urlParams()).toEqual({ 'users-page': '4' });
+
+    c.destroy();
+  });
+
+  it('writes a sort as active:direction and falls back to the default for a sort without a direction', async () => {
+    const s = scenario();
+
+    await TestBed.inject(Router).navigate([], { queryParams: { sort: 'name:desc' } });
+    await commit(s);
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({
+        sort: new SortQueryField(),
+        search: new QueryField({ control: new FormControl<string | null>(null) }),
+      }).observe(),
+    );
+    await commit(s);
+
+    expect(qf.value.sort).toEqual({ active: 'name', direction: 'desc' });
+
+    qf.patchValue({ sort: { active: 'age', direction: 'asc' } });
+    await commit(s);
+    expect(urlParams()).toEqual({ sort: 'age:asc' });
+
+    qf.patchValue({ sort: { active: 'age', direction: '' } });
+    await commit(s);
+
+    expect(qf.value.sort).toBeNull();
+    expect(urlParams()).toEqual({});
+
+    qf.patchValue({ search: 'shoes' });
+    await commit(s);
+
+    expect(qf.value).toEqual({ sort: null, search: 'shoes' });
+    expect(urlParams()).toEqual({ search: 'shoes' });
+
+    c.destroy();
+  });
+});
+
 describe('legacy QueryForm function defaults', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
@@ -547,6 +813,7 @@ describe('legacy QueryForm function defaults', () => {
 
     expect(urlParams()).toEqual({});
     expect(count).toBe(0);
+    expect(qf.defaultFormValue).toEqual({ status: 'open' });
 
     subscription.unsubscribe();
     c.destroy();

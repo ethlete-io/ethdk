@@ -620,6 +620,62 @@ describe('gql scenario', () => {
       c.destroy();
     });
 
+    it('createSecureGqlQueryViaGet sends extra queryParams next to the document in the URL', () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/');
+      s.api.on('GET', '/', () => ({ body: { data: { user: { id: 'me', name: 'Ada' } } } }));
+
+      const getSecureUser = createSecureGqlQueryViaGet(
+        s.clientRef,
+        auth.ref,
+      )<{ response: UserResponse; variables: UserVariables; queryParams: { locale: string } }>(getUserDoc);
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      c.run(() => getSecureUser(withArgs(() => ({ variables: { userId: 'me' }, queryParams: { locale: 'de' } }))));
+      s.tick();
+
+      const request = s.api.requests.find((r) => r.method === 'GET' && r.path === '/');
+      if (!request) throw new Error('expected the gql request');
+
+      expect(request.query['locale']).toBe('de');
+      expect(request.query['operationName']).toBe('GetUser');
+      expect(JSON.parse(request.query['variables'] ?? '')).toEqual({ userId: 'me' });
+
+      c.destroy();
+    });
+
+    it('createSecureGqlQueryViaGet runs a document without variables', () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/');
+      s.api.on('GET', '/', () => ({ body: { data: { me: { id: 'me' } } } }));
+
+      const getMe = createSecureGqlQueryViaGet(
+        s.clientRef,
+        auth.ref,
+      )<{ response: { me: { id: string } } }>(commentedDoc);
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      const query = c.run(() => getMe());
+      query.execute();
+      s.tick();
+
+      const request = s.api.requests.find((r) => r.method === 'GET' && r.path === '/');
+      if (!request) throw new Error('expected the gql request');
+
+      expect(request.query['operationName']).toBe('Me');
+      expect(query.response()).toEqual({ me: { id: 'me' } });
+
+      c.destroy();
+    });
+
     it('createSecureGqlMutationViaPost sends the documented verb (POST) with the bearer header', () => {
       const s = scenario();
       const auth = s.auth();

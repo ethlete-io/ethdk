@@ -16,6 +16,9 @@ import {
   ethletePaginationAdapter,
   fakePaginationAdapter,
   ggLikePaginationAdapter,
+  isQueryDevtoolsEnabled,
+  provideQueryDevtools,
+  queryDevtoolsEntries,
   querySequence,
   transformArrayResponse,
   transformPaginatedResponse,
@@ -25,7 +28,7 @@ import {
 } from '../index';
 import { ObservedValueOf } from 'rxjs';
 import { describe, expect, it } from 'vitest';
-import { Scenario, useScenario } from './harness';
+import { inProductionMode, Scenario, useScenario } from './harness';
 
 /**
  * `querySequence.run()` is a deliberately Promise-based public API (see `AGENTS.md`'s note on
@@ -1526,5 +1529,251 @@ describe('stacks scenario', () => {
 
     expect(s.api.pending().length).toBe(0);
     expect(s.api.requests.every((r) => r.aborted)).toBe(true);
+  });
+});
+
+describe('paged stack edge cases', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  const pagedStack = (s: Scenario, route: `/${string}`, options: { initialPage?: number; delay?: number } = {}) => {
+    s.api.on('GET', route, ({ query }) => ({
+      body: ethletePage(Number(query['page']), 3),
+      delay: options.delay ?? 0,
+    }));
+
+    const getPage = s.get<PagedQueryArgs>(route);
+    const c = s.consumer();
+    const pages = c.run(() =>
+      createPagedQueryStack({
+        queryCreator: getPage,
+        responseNormalizer: ethletePaginationAdapter,
+        args: (page) => ({ queryParams: { page } }),
+        initialPage: options.initialPage,
+      }),
+    );
+
+    return { c, pages };
+  };
+
+  it('reports neither the first nor the last page as loaded before the first response arrives', () => {
+    const s = scenario();
+    const { c, pages } = pagedStack(s, '/unanswered-pages', { delay: 50 });
+
+    s.tick();
+
+    expect(pages.isFirstPageLoaded()).toBe(false);
+    expect(pages.isLastPageLoaded()).toBe(false);
+    expect(pages.canFetchNextPage()).toBe(false);
+
+    s.tick(50);
+
+    expect(pages.isFirstPageLoaded()).toBe(true);
+    expect(pages.isLastPageLoaded()).toBe(false);
+
+    c.destroy();
+  });
+
+  it('throws on fetchNextPage before the first page has loaded in dev mode, and ignores it in production', () => {
+    const s = scenario();
+    const { c, pages } = pagedStack(s, '/early-next-pages', { delay: 50 });
+
+    s.tick();
+
+    expect(() => pages.fetchNextPage()).toThrow(/current page is not yet loaded/);
+    expect(inProductionMode(() => pages.fetchNextPage())).toBeNull();
+
+    s.tick(50);
+
+    expect(s.api.requests.map((r) => r.query['page'])).toEqual(['1']);
+    expect(pages.items()).toEqual([{ id: 1 }]);
+
+    c.destroy();
+  });
+
+  it('throws on fetchPreviousPage at page 1 in dev mode, and ignores it in production', () => {
+    const s = scenario();
+    const { c, pages } = pagedStack(s, '/first-pages');
+
+    s.tick();
+
+    expect(pages.canFetchPreviousPage()).toBe(false);
+    expect(() => pages.fetchPreviousPage()).toThrow(/already the first page/);
+    expect(inProductionMode(() => pages.fetchPreviousPage())).toBeNull();
+
+    s.tick();
+
+    expect(s.api.requestCount('GET', '/first-pages')).toBe(1);
+    expect(pages.queries().length).toBe(1);
+
+    c.destroy();
+  });
+
+  it('throws on fetchNextPage past the last page in dev mode, and ignores it in production', () => {
+    const s = scenario();
+    const { c, pages } = pagedStack(s, '/last-pages', { initialPage: 3 });
+
+    s.tick();
+
+    expect(pages.isLastPageLoaded()).toBe(true);
+    expect(() => pages.fetchNextPage()).toThrow(/bigger than the total pages/);
+    expect(inProductionMode(() => pages.fetchNextPage())).toBeNull();
+
+    s.tick();
+
+    expect(s.api.requestCount('GET', '/last-pages')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('fetchPreviousPage returns null and keeps its position when its args repeat a loaded page', () => {
+    const s = scenario();
+    s.api.on('GET', '/clamped-pages', ({ query }) => ({ body: ethletePage(Number(query['page']), 3) }));
+
+    const getPage = s.get<PagedQueryArgs>('/clamped-pages');
+    const c = s.consumer();
+    const pages = c.run(() =>
+      createPagedQueryStack({
+        queryCreator: getPage,
+        responseNormalizer: ethletePaginationAdapter,
+        args: (page) => ({ queryParams: { page: Math.max(page, 2) } }),
+        initialPage: 2,
+      }),
+    );
+
+    s.tick();
+
+    expect(pages.fetchPreviousPage()).toBeNull();
+    s.tick();
+
+    expect(pages.queries().length).toBe(1);
+    expect(pages.isFirstPageLoaded()).toBe(false);
+    expect(pages.canFetchPreviousPage()).toBe(true);
+    expect(s.api.requestCount('GET', '/clamped-pages')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('execute({ where }) re-runs a failed page even when no item matches', () => {
+    const s = scenario();
+    s.api.once('GET', '/flaky-pages', ({ query }) =>
+      query['page'] === '2' ? { status: 500, body: { message: 'boom' } } : { body: ethletePage(1, 3) },
+    );
+    s.api.once('GET', '/flaky-pages', () => ({ status: 500, body: { message: 'boom' } }));
+    s.api.on('GET', '/flaky-pages', ({ query }) => ({ body: ethletePage(Number(query['page']), 3) }));
+
+    const getPage = s.get<PagedQueryArgs>('/flaky-pages');
+    const c = s.consumer();
+    const pages = c.run(() =>
+      createPagedQueryStack({
+        queryCreator: getPage,
+        responseNormalizer: ethletePaginationAdapter,
+        args: (page) => ({ queryParams: { page } }),
+      }),
+    );
+
+    s.tick();
+    pages.fetchNextPage();
+    s.tick();
+
+    expect(pages.error()?.code).toBe(500);
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 500);
+
+    pages.execute({ where: () => false });
+    s.tick();
+
+    expect(s.api.requests.map((r) => r.query['page'])).toEqual(['1', '2', '2']);
+    expect(pages.error()).toBeNull();
+    expect(pages.items()).toEqual([{ id: 1 }, { id: 2 }]);
+
+    c.destroy();
+  });
+});
+
+describe('stacks scenario with the devtools attached', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 }, providers: () => [provideQueryDevtools()] });
+
+  it('registers a paged stack with the devtools for as long as its scope lives', () => {
+    const s = scenario();
+    s.api.on('GET', '/devtools-pages', ({ query }) => ({ body: ethletePage(Number(query['page']), 2) }));
+
+    expect(isQueryDevtoolsEnabled()).toBe(true);
+
+    const getPage = s.get<PagedQueryArgs>('/devtools-pages');
+    const c = s.consumer();
+    const pages = c.run(() =>
+      createPagedQueryStack({
+        queryCreator: getPage,
+        responseNormalizer: ethletePaginationAdapter,
+        args: (page) => ({ queryParams: { page } }),
+      }),
+    );
+
+    s.tick();
+
+    const entriesOf = () =>
+      queryDevtoolsEntries().filter((entry) => entry.kind === 'paged-query-stack' && entry.handle === pages);
+
+    expect(entriesOf().length).toBe(1);
+    expect(queryDevtoolsEntries().filter((entry) => entry.kind === 'query-stack').length).toBe(0);
+
+    c.destroy();
+
+    expect(entriesOf().length).toBe(0);
+  });
+
+  it('registers a query sequence with the devtools and drops it with its scope', async () => {
+    const s = scenario();
+    s.api.on('POST', '/devtools-orders', () => ({ body: { id: 'order-1' } }));
+    s.api.on('POST', '/devtools-payments', () => ({ body: { id: 'payment-1' } }));
+
+    expect(isQueryDevtoolsEnabled()).toBe(true);
+
+    const createOrder = s.post<{ response: { id: string } }>('/devtools-orders');
+    const createPayment = s.post<{ response: { id: string }; body: { orderId: string } }>('/devtools-payments');
+
+    const c = s.consumer();
+    const checkout = c.run(() =>
+      querySequence(createOrder(), () => ({ args: {} })).then(createPayment(), (order) => ({
+        args: { body: { orderId: order.id } },
+      })),
+    );
+
+    const entriesOf = () =>
+      queryDevtoolsEntries().filter(
+        (entry) => entry.kind === 'query-sequence' && (entry.handle as { current: unknown }).current === checkout,
+      );
+
+    expect(entriesOf().length).toBe(1);
+
+    let result: Awaited<ReturnType<typeof checkout.run>> | undefined;
+    checkout.run().then((r) => (result = r));
+    await settleUntil(s, () => result !== undefined);
+
+    expect(result?.ok).toBe(true);
+    expect(entriesOf().length).toBe(1);
+
+    c.destroy();
+
+    expect(entriesOf().length).toBe(0);
+  });
+
+  it('keeps a query sequence created outside an injection context registered', () => {
+    const s = scenario();
+    const createOrder = s.post<{ response: { id: string } }>('/devtools-orphan-orders');
+
+    const c = s.consumer();
+    const order = c.run(() => createOrder());
+    const sequence = querySequence(order, () => ({ args: {} }));
+
+    const entriesOf = () =>
+      queryDevtoolsEntries().filter(
+        (entry) => entry.kind === 'query-sequence' && (entry.handle as { current: unknown }).current === sequence,
+      );
+
+    expect(entriesOf().length).toBe(1);
+
+    c.destroy();
+
+    expect(entriesOf().length).toBe(1);
   });
 });
