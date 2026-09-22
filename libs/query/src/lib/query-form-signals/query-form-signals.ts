@@ -29,6 +29,9 @@ import {
 /** URL sentinel for an explicit `null` value (a bare empty param would be ambiguous). */
 const ET_NULL_VALUE = 'ET_NULL__';
 
+/** URL sentinel for an empty list, which the router would otherwise drop from the URL. */
+const ET_EMPTY_ARRAY_VALUE = 'ET_EMPTY_ARRAY__';
+
 /**
  * Fields excluded from `activeFilterCount` by default - pagination, sorting and
  * search are navigation state, not filters.
@@ -70,8 +73,6 @@ const changedKeysBetween = (previous: Dict | null, current: Dict): string[] =>
 
 /** Best-effort URL string → value coercion, mirroring the auto-transform of the legacy QueryForm. */
 const autoCoerce = (raw: unknown, defaultValue: unknown): unknown => {
-  if (raw === ET_NULL_VALUE) return null;
-
   if (typeof raw !== 'string') return raw;
 
   if (Array.isArray(defaultValue)) return [raw];
@@ -502,11 +503,14 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     if (!writeToUrl || (isDefault && !writeDefault)) return undefined;
     if (def.valueToQueryParam) return def.valueToQueryParam(value);
     if (value === '' && defaults[key] === null) return undefined;
+    if (Array.isArray(value) && value.length === 0) return ET_EMPTY_ARRAY_VALUE;
 
     return value === null ? ET_NULL_VALUE : value;
   };
 
   const deserialize = (def: QueryFieldDef<unknown>, raw: unknown): unknown => {
+    if (!def.skipAutoTransform && raw === ET_NULL_VALUE) return null;
+    if (!def.skipAutoTransform && raw === ET_EMPTY_ARRAY_VALUE) return [];
     if (def.queryParamToValue) return def.queryParamToValue(raw);
     if (def.skipAutoTransform) return raw;
 

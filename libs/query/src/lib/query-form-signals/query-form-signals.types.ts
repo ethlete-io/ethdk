@@ -56,7 +56,7 @@ export type QueryFieldDef<T> = {
 
   /**
    * Skip the best-effort auto-coercion (numeric strings → number, `'true'`/`'false'`
-   * → boolean, the null sentinel → `null`) when reading the value back from the URL.
+   * → boolean, the null and empty-list sentinels → `null` and `[]`) when reading the value back from the URL.
    *
    * @default false
    */

@@ -3,6 +3,7 @@ import { effect } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
+  booleanArrayQueryField,
   dateQueryField,
   defineQueryForm,
   queryField,
@@ -518,5 +519,33 @@ describe('query forms URL sync scenario', () => {
 
     expect(qf.value().page).toBe(3);
     expect(router.parseUrl(router.url).queryParams['page']).toBe('3');
+  });
+
+  it('an array field with a non-null default round-trips an empty list and null', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+    const fields = {
+      tags: stringArrayQueryField({ defaultValue: ['a'] }),
+      flags: booleanArrayQueryField({ defaultValue: [true] }),
+      search: searchQueryField({ defaultValue: 'x' }),
+    };
+
+    const c = s.consumer();
+    const qf = c.run(() => defineQueryForm({ fields }).observe());
+
+    qf.setValue({ tags: [], flags: null, search: null });
+    await s.settle();
+
+    const queryParams = router.parseUrl(router.url).queryParams;
+    c.destroy();
+
+    await router.navigate(['/'], { queryParams: {} });
+    await router.navigate([], { queryParams });
+    s.tick();
+
+    const restored = s.run(() => defineQueryForm({ fields }).observe());
+    s.tick();
+
+    expect(restored.value()).toEqual({ tags: [], flags: null, search: null });
   });
 });

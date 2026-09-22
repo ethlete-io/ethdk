@@ -161,7 +161,8 @@ Serialization rules:
 - **Defaults are elided** - a field at its default is removed from the URL (unless
   `appendDefaultValueToUrl` is set), keeping URLs clean. A cleared text (`''`) or an
   emptied list (`[]`) on a field whose default is `null` commits as `null`.
-- **`null`** is written as the `ET_NULL__` sentinel (only when it isn't the default).
+- **`null`** is written as the `ET_NULL__` sentinel and an empty list as `ET_EMPTY_ARRAY__` (only when
+  it isn't the default), so both survive a reload.
 - **Sort** is `active:direction` (`name:asc`). This matches the table system's URL
   adapter, so the two interoperate.
 - **`queryParamPrefix`** namespaces every key (`prefix-page`), so two forms can
