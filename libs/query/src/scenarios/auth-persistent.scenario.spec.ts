@@ -33,8 +33,28 @@ type PersistentAuthFeatureRegistry = {
   };
 };
 
+type QueryLib = Pick<
+  typeof import('../index'),
+  | 'createBearerAuthProvider'
+  | 'createPostQuery'
+  | 'createQueryClient'
+  | 'withAuthenticationQuery'
+  | 'withPersistentAuth'
+  | 'withRefreshQuery'
+>;
+
+const staticLib: QueryLib = {
+  createBearerAuthProvider,
+  createPostQuery,
+  createQueryClient,
+  withAuthenticationQuery,
+  withPersistentAuth,
+  withRefreshQuery,
+};
+
 type BootOptions = {
   features?: readonly AnyFeatureBuilder[];
+  lib?: QueryLib;
   onRefreshFailure?: TokenRefreshQueryConfig<TokenArgs>['onRefreshFailure'];
 };
 
@@ -54,6 +74,8 @@ const serve = (s: Scenario, accessTokenExpiresInMs = 15 * 60 * 1000) => {
 
 /** One browser tab, or one page load: its own query client and auth provider on the scenario's fake API. */
 const boot = (s: Scenario, options: BootOptions = {}) => {
+  const { createBearerAuthProvider, createPostQuery, createQueryClient, withAuthenticationQuery, withRefreshQuery } =
+    options.lib ?? staticLib;
   const clientRef = createQueryClient({
     name: `auth-persistent-client-${++bootCounter}`,
     baseUrl: BASE_URL,
@@ -105,8 +127,8 @@ type PersistentAuthOverrides = {
 
 type CookieOverrides = { domain?: string; sameSite?: 'strict' | 'none' | 'lax'; expiresInDays?: number };
 
-const persistentAuth = (overrides: PersistentAuthOverrides = {}, cookie?: CookieOverrides) =>
-  withPersistentAuth<ScenarioAuthBuilders>({
+const persistentAuth = (overrides: PersistentAuthOverrides = {}, cookie?: CookieOverrides, lib = staticLib) =>
+  lib.withPersistentAuth<ScenarioAuthBuilders>({
     autoLogin: {
       queryKey: 'refresh',
       buildArgs: (token: string) => ({ body: { token } }),
@@ -849,6 +871,69 @@ describe('withPersistentAuth', () => {
 
     expect(second.auth.sessionStatus()).toBe('authenticated');
     expect(hasCookie()).toBe(true);
+
+    second.destroy();
+  });
+
+  it.each([
+    ['works', () => undefined],
+    [
+      'refuses writes',
+      () =>
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+          throw new DOMException('quota', 'QuotaExceededError');
+        }),
+    ],
+    ['is missing', () => vi.stubGlobal('localStorage', undefined)],
+    [
+      'throws on every access',
+      () => {
+        for (const method of ['getItem', 'setItem', 'removeItem'] as const) {
+          vi.spyOn(Storage.prototype, method).mockImplementation(() => {
+            throw new DOMException('denied', 'SecurityError');
+          });
+        }
+      },
+    ],
+  ])('restores the session on the next page load when localStorage %s', async (_, breakStorage) => {
+    const s = scenario();
+
+    serve(s, 20000);
+    s.api.once('POST', '/auth/login', () => ({
+      body: {
+        accessToken: mintToken({ expiresInMs: 20000 }),
+        refreshToken: mintToken({
+          expiresInMs: 60 * 60 * 1000,
+          claims: { sub: 'user-4711', email: 'someone@example.com' },
+        }),
+      },
+    }));
+    localStorage.removeItem('__eth_ek');
+    breakStorage();
+
+    const loadPage = async () => {
+      vi.resetModules();
+      const lib = await import('../index');
+
+      return boot(s, { lib, features: [persistentAuth({}, undefined, lib)] });
+    };
+
+    const first = await loadPage();
+    persistentFeatureOf(first.auth).setRememberMe(true);
+    await login(s, first);
+    const refreshToken = first.auth.refreshToken();
+    first.destroy();
+
+    const second = await loadPage();
+    await s.settle();
+    s.flush();
+    await s.settle();
+
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+
+    expect(s.api.requests.at(-1)?.body).toEqual({ token: refreshToken });
+    expect(second.auth.sessionStatus()).toBe('authenticated');
 
     second.destroy();
   });

@@ -1,45 +1,49 @@
 const ENCRYPTION_KEY_STORAGE = '__eth_ek';
 
-const generateEncryptionKey = () => {
+const deviceInfo = () => {
   const navigatorInfo = typeof navigator !== 'undefined' ? `${navigator.userAgent}${navigator.language}` : 'server';
   const screenInfo =
     typeof screen !== 'undefined' ? `${screen.width}${screen.height}${screen.colorDepth}` : 'no-screen';
 
-  const random = Math.random().toString(36).substring(2, 15);
+  return `${navigatorInfo}${screenInfo}`;
+};
 
-  return btoa(`${navigatorInfo}${screenInfo}${random}`);
+const generateEncryptionKey = () => btoa(`${deviceInfo()}${Math.random().toString(36).substring(2, 15)}`);
+
+const readStorage = (): Storage | null => {
+  try {
+    return typeof localStorage !== 'undefined' ? localStorage : null;
+  } catch {
+    return null;
+  }
 };
 
 let cachedKey: string | null = null;
 
+const loadOrPersistKey = () => {
+  const storage = readStorage();
+
+  if (!storage) return null;
+
+  try {
+    const stored = storage.getItem(ENCRYPTION_KEY_STORAGE);
+
+    if (stored) return stored;
+
+    const newKey = generateEncryptionKey();
+    storage.setItem(ENCRYPTION_KEY_STORAGE, newKey);
+
+    return storage.getItem(ENCRYPTION_KEY_STORAGE) === newKey ? newKey : null;
+  } catch {
+    return null;
+  }
+};
+
+// A key that cannot be persisted must not be random, or the next page load cannot decrypt the cookie.
 const getEncryptionKey = () => {
-  if (cachedKey) return cachedKey;
+  cachedKey ??= loadOrPersistKey() ?? btoa(deviceInfo());
 
-  if (typeof localStorage !== 'undefined') {
-    try {
-      const stored = localStorage.getItem(ENCRYPTION_KEY_STORAGE);
-      if (stored) {
-        cachedKey = stored;
-
-        return stored;
-      }
-    } catch {
-      cachedKey = null;
-    }
-  }
-
-  const newKey = generateEncryptionKey();
-  cachedKey = newKey;
-
-  if (typeof localStorage !== 'undefined') {
-    try {
-      localStorage.setItem(ENCRYPTION_KEY_STORAGE, newKey);
-    } catch {
-      return newKey;
-    }
-  }
-
-  return newKey;
+  return cachedKey;
 };
 
 const xorCipher = (text: string, key: string) => {
@@ -90,7 +94,10 @@ export const isEncrypted = (value: string) => {
 
 export const resetEncryptionKey = () => {
   cachedKey = null;
-  if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem(ENCRYPTION_KEY_STORAGE);
+
+  try {
+    readStorage()?.removeItem(ENCRYPTION_KEY_STORAGE);
+  } catch {
+    return;
   }
 };

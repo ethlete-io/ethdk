@@ -129,6 +129,22 @@ export const withPersistentAuth = <
   };
 };
 
+const readRememberMe = (key: string) => {
+  try {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeRememberMe = (key: string, enabled: boolean) => {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(key, String(enabled));
+  } catch {
+    return;
+  }
+};
+
 export const createPersistentAuthFeature = <
   TBuilders extends readonly AnyQueryBuilder[],
   TKey extends ExtractQueryKey<TBuilders[number]> = ExtractQueryKey<TBuilders[number]>,
@@ -142,7 +158,7 @@ export const createPersistentAuthFeature = <
   const route = injectRoute();
 
   const initializeRememberMe = () => {
-    const storedPreference = typeof localStorage !== 'undefined' ? localStorage.getItem(rememberMeStorageKey) : null;
+    const storedPreference = readRememberMe(rememberMeStorageKey);
     if (storedPreference !== null) {
       return storedPreference === 'true';
     }
@@ -313,9 +329,7 @@ export const createPersistentAuthFeature = <
   };
 
   const setRememberMe = (enabled: boolean) => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(rememberMeStorageKey, String(enabled));
-    }
+    writeRememberMe(rememberMeStorageKey, enabled);
     rememberMeSignal.set(enabled);
   };
 
