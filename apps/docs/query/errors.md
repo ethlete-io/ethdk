@@ -101,7 +101,7 @@ Submitting executes the query, waits for it to settle, and only then resolves - 
 | `args`          | Builds the request args from the submitted value. Return `null` to abort without a request; omit for a route that takes none. |
 | `onSuccess`     | Runs after the request succeeded, before the action resolves - notify, close the overlay, navigate. A `204` hands it `null`.  |
 | `rewritePath`   | Rewrites a violation's property path before it is resolved against the field tree.                                            |
-| `mapViolations` | Replaces the default violation → error mapping entirely.                                                                      |
+| `mapViolations` | Replaces the default violation → error mapping entirely; its result is used as-is, so returning `undefined` attaches nothing. |
 
 It returns `{ query, action }` - a `QuerySubmissionRef` - from a `CreateQuerySubmissionConfig`: hand `action` to the form and keep `query` for an error banner - never execute it yourself, or the form's submitting state stops matching what the query is doing.
 

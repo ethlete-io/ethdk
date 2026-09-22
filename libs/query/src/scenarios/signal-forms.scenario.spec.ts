@@ -532,6 +532,32 @@ describe('createQuerySubmission', () => {
     c.destroy();
   });
 
+  it('attaches nothing when config.mapViolations deliberately returns undefined', async () => {
+    const s = scenario();
+    s.api.on('POST', '/users', () => ({ status: 409, body: { message: 'Already exists.' } }));
+
+    const createUser = s.post<CreateUserArgs>('/users');
+    const c = s.consumer();
+    const submission = c.run(() =>
+      createQuerySubmission({
+        queryCreator: createUser,
+        args: (value: UserModel) => ({ body: value }),
+        mapViolations: () => undefined,
+      }),
+    );
+    const testForm = c.run(() => form(signal(baseModel()), { submission: { action: submission.action } }));
+
+    const submitted = submit(testForm);
+
+    await s.settle();
+    await submitted;
+
+    expect(testForm().errors()).toEqual([]);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 409);
+    c.destroy();
+  });
+
   it('resolves the submit action when the mutation is cancelled mid-flight, instead of leaving the form submitting', async () => {
     const s = scenario();
     s.api.on('POST', '/users', () => ({ status: 201, body: { id: 1, email: 'ada@example.com' }, delay: 500 }));

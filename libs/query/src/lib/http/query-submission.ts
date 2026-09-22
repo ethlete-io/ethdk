@@ -30,7 +30,8 @@ export type CreateQuerySubmissionConfig<TCreator extends AnyQueryCreator, TModel
   rewritePath?: (path: string, violation: FormViolationView) => string | null;
   /**
    * Override the default violation → error mapping. Receives the failed request's error; return the
-   * errors to report. Defaults to `mapViolationsToFormErrors` against the submitted field.
+   * errors to report, used as-is - `null` / `undefined` attaches nothing. Defaults to
+   * `mapViolationsToFormErrors` against the submitted field.
    */
   mapViolations?: (error: unknown, field: FieldTree<TModel>) => TreeValidationResult;
 };
@@ -88,10 +89,9 @@ export const createQuerySubmission = <TCreator extends AnyQueryCreator, TModel>(
     const error = snapshot.error();
 
     if (error) {
-      return (
-        config.mapViolations?.(error, field) ??
-        mapViolationsToFormErrors({ fieldTree: field, error, rewritePath: config.rewritePath })
-      );
+      return config.mapViolations
+        ? config.mapViolations(error, field)
+        : mapViolationsToFormErrors({ fieldTree: field, error, rewritePath: config.rewritePath });
     }
 
     config.onSuccess?.(snapshot.response() as ResponseType<TArgs>, field);
