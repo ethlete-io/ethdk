@@ -27,7 +27,7 @@ const settings = () => ({
 
 const remembered = (page: Page) => page.getByRole('group', { name: 'Used here before' });
 
-const rest = (page: Page) => page.getByRole('group', { name: 'Every other issue' });
+const rest = (page: Page) => page.getByRole('group', { name: 'All issues' });
 
 const optionsFor = (within: Page | Locator, key: string) => within.getByRole('option', { name: new RegExp(key) });
 

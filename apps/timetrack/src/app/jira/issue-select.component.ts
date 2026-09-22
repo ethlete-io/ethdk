@@ -91,7 +91,7 @@ type IssueOption = {
         </et-select-option-group>
 
         @if (options().length) {
-          <et-select-option-group label="Every other issue">
+          <et-select-option-group label="All issues">
             <ng-container [ngTemplateOutlet]="rest" />
           </et-select-option-group>
         }
