@@ -1,10 +1,10 @@
-import { inputBinding, signal } from '@angular/core';
+import { inputBinding } from '@angular/core';
 import {
   Appointment,
   SCHEDULER_ADD_SURFACE_OVERLAY,
   SCHEDULER_EDIT_SURFACE_OVERLAY,
-  SchedulerEditSurfaceResult,
   createOverlayOpener,
+  createOverlaySingleSlot,
 } from '@ethlete/components';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { ReviewedRow, syncsInState } from '@ethlete/timetrack';
@@ -23,9 +23,6 @@ import { appointmentOf, rowEntryOf } from './row-appointment';
 
 const DISABLED = { enabled: false } as const;
 
-/** What the surface was opened for: a band of the day, or a range drawn on empty grid. */
-type Pending = { kind: 'row'; row: ReviewedRow } | { kind: 'draft'; laneKey?: string };
-
 /**
  * The day's rows are edited on the scheduler's own edit surface, not in a list beside it.
  *
@@ -39,9 +36,6 @@ type Pending = { kind: 'row'; row: ReviewedRow } | { kind: 'draft'; laneKey?: st
  */
 const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const store = injectDayReview();
-
-  /** What the open surface is editing, so its result knows whether to change a row or add one. */
-  const pending = signal<Pending | null>(null);
 
   const editRow = (row: ReviewedRow, appointment: Appointment) => {
     const entry = rowEntryOf(appointment);
@@ -72,19 +66,9 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     });
   };
 
-  const applyResult = (result: SchedulerEditSurfaceResult | null) => {
-    const open = pending();
-
-    pending.set(null);
-
-    if (!open || result?.kind !== 'save') return;
-
-    if (open.kind === 'row') editRow(open.row, result.appointment);
-    else addRow(result.appointment, open.laneKey);
-  };
-
-  const rowOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, { afterClosed: applyResult });
-  const draftOpener = createOverlayOpener(SCHEDULER_ADD_SURFACE_OVERLAY, { afterClosed: applyResult });
+  const surfaceSlot = createOverlaySingleSlot();
+  const rowOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, { single: surfaceSlot });
+  const draftOpener = createOverlayOpener(SCHEDULER_ADD_SURFACE_OVERLAY, { single: surfaceSlot });
 
   /** The appointment under edit, and every built-in the surface bundles that a worklog cannot use. */
   const surfaceBindings = (appointment: Appointment, appointments: readonly Appointment[]) => [
@@ -100,9 +84,10 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   return {
     /** Opens the surface over the band that was pressed. */
     openRow: (options: { row: ReviewedRow; origin: HTMLElement; appointments: readonly Appointment[] }) => {
-      pending.set({ kind: 'row', row: options.row });
-
       rowOpener.open({
+        afterClosed: (result) => {
+          if (result?.kind === 'save') editRow(options.row, result.appointment);
+        },
         origin: options.origin,
         bindings: surfaceBindings(appointmentOf({ row: options.row }), options.appointments),
         directives: [
@@ -127,9 +112,10 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * the reviewer had no column in front of them, so the row lands beside the work nothing placed.
      */
     openDraft: (range: { from: Date; to: Date; laneKey?: string }) => {
-      pending.set({ kind: 'draft', laneKey: range.laneKey });
-
       draftOpener.open({
+        afterClosed: (result) => {
+          if (result?.kind === 'save') addRow(result.appointment, range.laneKey);
+        },
         bindings: surfaceBindings({ id: 'draft', parentId: null, title: '', start: range.from, end: range.to }, []),
         directives: [EditIssueDirective, EditMeetingDirective],
       });

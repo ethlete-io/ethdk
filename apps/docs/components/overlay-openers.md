@@ -103,6 +103,35 @@ private product = createOverlayOpener(productOverlay, {
 });
 ```
 
+A standard opener's `open()` takes the same three callbacks for that one open, on top of the opener's own - the place to capture what the overlay was opened for:
+
+```ts
+this.product.open({
+  bindings: [inputBinding('productId', () => id)],
+  afterClosed: (result) => this.save(id, result),
+});
+```
+
+## One overlay at a time {#single}
+
+With `single: 'replace'` a standard opener keeps at most one overlay open. `open()` closes the open one with close source `'replace'` and opens the new one in its place:
+
+```ts
+private edit = createOverlayOpener(editOverlay, { single: 'replace' });
+
+const ref = this.edit.open({ origin }); // OverlayRef | null
+```
+
+The replace is a normal, guardable close. When a close guard - typically [`createOverlayUnsavedChangesGuard`](/components/overlays#guarding-against-accidental-dismissal) - vetoes it, `open()` returns `null` and the open waits: it runs once the previous overlay closes with source `'replace'` (the user discarded), and is dropped if the user keeps editing or the overlay later closes any other way. Only the latest waiting open is kept.
+
+To share the one open overlay across several openers, pass the same slot to each:
+
+```ts
+private slot = createOverlaySingleSlot();
+private edit = createOverlayOpener(editOverlay, { single: this.slot });
+private add = createOverlayOpener(addOverlay, { single: this.slot });
+```
+
 ## The overlay ref
 
 Inside the overlay component, `definition.injectRef()` returns the fully typed `OverlayRef`. It must be called in the component's injection context (field initializer or constructor) and throws an actionable [`RuntimeError`](/core/utilities#runtime-errors) when no overlay is open - e.g. when the component is accidentally rendered outside an overlay.
@@ -156,15 +185,16 @@ Opens are triggered by URL state (deep links, back/forward), not by a call site 
 
 ## API overview
 
-| Export                                     | Kind      | Purpose                                                     |
-| ------------------------------------------ | --------- | ----------------------------------------------------------- |
-| `defineOverlay(config)`                    | function  | Overlay definition at module scope                          |
-| `defineQueryParamOverlay(config)`          | function  | URL-driven overlay definition (`queryParamKey`)             |
-| `createOverlayOpener(definition, config?)` | function  | Injection-context opener for either definition kind         |
-| `definition.injectRef()`                   | method    | Typed `OverlayRef` inside the overlay component             |
-| `mergeOverlayConfigs(...configs)`          | function  | The additive config merge used by openers                   |
-| `QueryParamOverlayLinkDirective`           | directive | `[etQueryParamOverlayLink]` - declarative query-param opens |
-| `OVERLAY_QUERY_PARAM_INPUT_NAME`           | const     | Name of the model contract (`'overlayQueryParam'`)          |
+| Export                                     | Kind      | Purpose                                                        |
+| ------------------------------------------ | --------- | -------------------------------------------------------------- |
+| `defineOverlay(config)`                    | function  | Overlay definition at module scope                             |
+| `defineQueryParamOverlay(config)`          | function  | URL-driven overlay definition (`queryParamKey`)                |
+| `createOverlayOpener(definition, config?)` | function  | Injection-context opener for either definition kind            |
+| `createOverlaySingleSlot()`                | function  | One open overlay shared by several [`single`](#single) openers |
+| `definition.injectRef()`                   | method    | Typed `OverlayRef` inside the overlay component                |
+| `mergeOverlayConfigs(...configs)`          | function  | The additive config merge used by openers                      |
+| `QueryParamOverlayLinkDirective`           | directive | `[etQueryParamOverlayLink]` - declarative query-param opens    |
+| `OVERLAY_QUERY_PARAM_INPUT_NAME`           | const     | Name of the model contract (`'overlayQueryParam'`)             |
 
 ## Migrating from overlay handlers
 

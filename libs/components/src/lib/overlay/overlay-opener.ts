@@ -13,7 +13,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { injectQueryParam } from '@ethlete/core';
-import { tap } from 'rxjs';
+import { take, tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
 import { mergeOverlayConfigs } from './overlay-config-merger';
 import {
@@ -50,9 +50,87 @@ export type OverlayLifecycleConfig<TResult = unknown> = {
  */
 export type OverlayOpenerConfig<TResult = unknown> = OverlayLifecycleConfig<TResult> & OverlayOpenConfig;
 
+/**
+ * Per-open config for a standard opener: config overrides plus lifecycle callbacks that apply to
+ * this open only, in addition to the opener's own callbacks.
+ */
+export type OverlayOpenerOpenConfig<TResult = unknown> = OverlayOpenConfig & OverlayLifecycleConfig<TResult>;
+
 export type OverlayOpener<TComponent extends object = object, TResult = unknown> = {
   /** Open the overlay. Per-open config is merged additively on top of the definition and opener configs. */
-  open: (config?: OverlayOpenConfig) => OverlayRef<TComponent, TResult>;
+  open: (config?: OverlayOpenerOpenConfig<TResult>) => OverlayRef<TComponent, TResult>;
+};
+
+export type SingleOverlayOpener<TComponent extends object = object, TResult = unknown> = {
+  /**
+   * Open the overlay, replacing the one the slot has open. Returns `null` while the previous overlay
+   * is still deciding whether to close (e.g. a pending unsaved-changes confirm) - the open then runs
+   * once it closes with source `'replace'`, and is dropped if it closes any other way.
+   */
+  open: (config?: OverlayOpenerOpenConfig<TResult>) => OverlayRef<TComponent, TResult> | null;
+};
+
+/**
+ * One open overlay shared by several single openers, created with {@link createOverlaySingleSlot}.
+ * Opening through any of them replaces the overlay any of them has open.
+ */
+export type OverlaySingleSlot = {
+  /** @internal */
+  open: (openFn: () => OverlayRef | null) => OverlayRef | null;
+};
+
+/**
+ * Creates a slot that lets several single openers share one open overlay:
+ * `createOverlayOpener(a, { single: slot })` and `createOverlayOpener(b, { single: slot })`.
+ */
+export const createOverlaySingleSlot = (): OverlaySingleSlot => {
+  let current: OverlayRef | null = null;
+  let waiting: (() => OverlayRef | null) | null = null;
+
+  const track = (ref: OverlayRef | null) => {
+    current = ref;
+
+    ref
+      ?.beforeClosedEvent()
+      .pipe(
+        take(1),
+        tap((event) => {
+          if (current !== ref) return;
+
+          current = null;
+
+          const next = waiting;
+          waiting = null;
+
+          if (next && event.source === 'replace') track(next());
+        }),
+      )
+      .subscribe();
+
+    return ref;
+  };
+
+  const open = (openFn: () => OverlayRef | null) => {
+    const previous = current;
+
+    if (!previous) return track(openFn());
+
+    waiting = openFn;
+    previous.closeVia('replace');
+
+    return current !== previous ? current : null;
+  };
+
+  return { open };
+};
+
+export type OverlaySingleOpenerConfig<TResult = unknown> = OverlayOpenerConfig<TResult> & {
+  /**
+   * Keep at most one overlay of this opener open: `open()` closes the open one with source
+   * `'replace'` (guardable, e.g. by `createOverlayUnsavedChangesGuard`) and opens the new one once it
+   * does. Pass an {@link OverlaySingleSlot} instead to share the one overlay across several openers.
+   */
+  single: 'replace' | OverlaySingleSlot;
 };
 
 export type QueryParamOverlayOpener<TQueryParam extends string = string> = {
@@ -68,6 +146,10 @@ type CreateOverlayOpenerFn = {
     definition: QueryParamOverlayDefinition<TComponent, TResult>,
     config?: OverlayOpenerConfig<TResult>,
   ): QueryParamOverlayOpener<QueryParamOverlayValue<TComponent>>;
+  <TComponent extends object, TResult>(
+    definition: OverlayDefinition<TComponent, TResult>,
+    config: OverlaySingleOpenerConfig<TResult>,
+  ): SingleOverlayOpener<TComponent, TResult>;
   <TComponent extends object, TResult>(
     definition: OverlayDefinition<TComponent, TResult>,
     config?: OverlayOpenerConfig<TResult>,
@@ -128,25 +210,41 @@ const attachLifecycle = <TComponent extends object, TResult>(options: AttachLife
 
 const createStandardOverlayOpener = <TComponent extends object, TResult>(
   definition: OverlayDefinition<TComponent, TResult>,
-  openerConfig?: OverlayOpenerConfig<TResult>,
-): OverlayOpener<TComponent, TResult> => {
+  openerConfig?: OverlayOpenerConfig<TResult> | OverlaySingleOpenerConfig<TResult>,
+): OverlayOpener<TComponent, TResult> | SingleOverlayOpener<TComponent, TResult> => {
   const overlayManager = injectOverlayManager();
   const destroyRef = inject(DestroyRef);
   const fallbackViewContainerRef = inject(ViewContainerRef, { optional: true }) ?? undefined;
-  const { lifecycle, overlayConfig } = splitOpenerConfig(openerConfig);
+  const { single, ...sharedConfig } = (openerConfig ?? {}) as Partial<OverlaySingleOpenerConfig<TResult>>;
+  const { lifecycle, overlayConfig } = splitOpenerConfig(sharedConfig);
+  const slot = single === 'replace' ? createOverlaySingleSlot() : (single ?? null);
 
-  const open = (config?: OverlayOpenConfig) => {
+  let destroyed = false;
+  destroyRef.onDestroy(() => (destroyed = true));
+
+  const openNow = (config?: OverlayOpenerOpenConfig<TResult>) => {
+    const { lifecycle: openLifecycle, overlayConfig: openConfig } = splitOpenerConfig(config);
+
     const overlayRef = overlayManager.open<TComponent, TResult>(
       definition.component,
-      mergeOverlayConfigs({ viewContainerRef: fallbackViewContainerRef }, definition.config, overlayConfig, config),
+      mergeOverlayConfigs({ viewContainerRef: fallbackViewContainerRef }, definition.config, overlayConfig, openConfig),
     );
 
     attachLifecycle({ overlayRef, lifecycle, destroyRef });
+    attachLifecycle({ overlayRef, lifecycle: openLifecycle, destroyRef });
 
     return overlayRef;
   };
 
-  return { open };
+  if (!slot) return { open: openNow };
+
+  return {
+    open: (config) =>
+      slot.open(() => (destroyed ? null : (openNow(config) as unknown as OverlayRef))) as OverlayRef<
+        TComponent,
+        TResult
+      > | null,
+  };
 };
 
 const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
@@ -270,7 +368,8 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
  * Creates an opener for the given overlay definition. Must be called in an injection context.
  *
  * - For a `defineOverlay` definition the opener exposes `open(config?)`, returning the typed
- *   `OverlayRef`.
+ *   `OverlayRef`. With `single: 'replace'` it keeps at most one overlay open and `open()` returns
+ *   `OverlayRef | null` - see {@link OverlaySingleOpenerConfig}.
  * - For a `defineQueryParamOverlay` definition the opener drives the overlay through the URL:
  *   `open(value)` writes the query param and `close()` clears it. It also reacts to external
  *   URL changes (deep links, browser navigation) for as long as the injection context lives.

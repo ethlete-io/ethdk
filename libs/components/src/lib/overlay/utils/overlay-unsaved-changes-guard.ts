@@ -10,13 +10,15 @@ import { OVERLAY_ROUTER_TOKEN } from '../routing/overlay-router';
 /**
  * Which close sources the guard should intercept. All default to `true`.
  * Maps to the runtime's close sources: `outsidePointer` → `outside-pointer`, `escape` → `escape`,
- * `closeCall` → `api` (programmatic `overlayRef.close()`), `drag` → drag-to-dismiss.
+ * `closeCall` → `api` (programmatic `overlayRef.close()`), `drag` → drag-to-dismiss, `replace` → `replace`
+ * (a `single` opener opening another overlay in this one's place).
  */
 export type OverlayUnsavedChangesDismissSources = {
   outsidePointer?: boolean;
   escape?: boolean;
   closeCall?: boolean;
   drag?: boolean;
+  replace?: boolean;
 };
 
 export type CreateOverlayUnsavedChangesGuardConfig<T> = CreateUnsavedChangesTrackerConfig<T> & {
@@ -78,6 +80,7 @@ export const createOverlayUnsavedChangesGuard = <T>(
     escape: dismiss.escape ?? true,
     api: dismiss.closeCall ?? true,
     drag: dismiss.drag ?? true,
+    replace: dismiss.replace ?? true,
   };
 
   if (isDevMode() && overlayRef.config.disableClose && (dismiss.outsidePointer || dismiss.escape || dismiss.drag)) {

@@ -1,11 +1,12 @@
-import { Component, model } from '@angular/core';
+import { Component, input, inputBinding, model, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import '../../test-helpers';
-import { defineQueryParamOverlay } from './overlay-definition';
+import { defineOverlay, defineQueryParamOverlay } from './overlay-definition';
 import { injectOverlayManager } from './overlay-manager';
-import { createOverlayOpener } from './overlay-opener';
+import { createOverlayOpener, createOverlaySingleSlot } from './overlay-opener';
 import { dialogOverlayStrategy } from './strategies';
+import { createOverlayUnsavedChangesGuard } from './utils/overlay-unsaved-changes-guard';
 
 @Component({ template: 'query param overlay' })
 class QueryParamOverlayComponent {
@@ -97,5 +98,132 @@ describe('query param overlay opener', () => {
     await flushFrames();
 
     expect(openOverlayCount()).toBe(0);
+  });
+});
+
+@Component({ template: '{{ label() }}', host: { class: 'single-surface' } })
+class SurfaceComponent {
+  public label = input('');
+  public value = signal('clean');
+
+  public guard = createOverlayUnsavedChangesGuard({
+    source: this.value,
+    confirm: () => SurfaceComponent.confirm(),
+  });
+
+  static confirm: () => Promise<boolean> = () => Promise.resolve(true);
+}
+
+const surfaceOverlay = defineOverlay<SurfaceComponent, string>({
+  component: SurfaceComponent,
+  strategies: dialogOverlayStrategy(),
+});
+
+const otherSurfaceOverlay = defineOverlay<SurfaceComponent, string>({
+  component: SurfaceComponent,
+  strategies: dialogOverlayStrategy(),
+});
+
+@Component({ template: '' })
+class SingleOpenerHostComponent {
+  public slot = createOverlaySingleSlot();
+  public surface = createOverlayOpener(surfaceOverlay, { single: 'replace' });
+  public first = createOverlayOpener(surfaceOverlay, { single: this.slot });
+  public second = createOverlayOpener(otherSurfaceOverlay, { single: this.slot });
+}
+
+describe('single overlay opener', () => {
+  let host: SingleOpenerHostComponent;
+  let resolveConfirm: (discard: boolean) => void;
+
+  const labels = () => [...document.querySelectorAll('.single-surface')].map((element) => element.textContent);
+  const withLabel = (label: string) => ({ bindings: [inputBinding('label', () => label)] });
+  const makeDirty = (ref: { componentInstance: () => SurfaceComponent | null }) => {
+    ref.componentInstance()?.value.set('dirty');
+    TestBed.tick();
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    SurfaceComponent.confirm = () => new Promise<boolean>((resolve) => (resolveConfirm = resolve));
+
+    const fixture = TestBed.createComponent(SingleOpenerHostComponent);
+    fixture.detectChanges();
+    host = fixture.componentInstance;
+  });
+
+  afterEach(async () => {
+    TestBed.runInInjectionContext(() => injectOverlayManager())
+      .openOverlays()
+      .forEach((ref) => ref.forceClose());
+    await flushFrames();
+  });
+
+  it('replaces an open overlay that has no reason to stay', async () => {
+    host.surface.open(withLabel('a'));
+    await flushFrames();
+
+    const replacement = host.surface.open(withLabel('b'));
+    await flushFrames();
+
+    expect(replacement).not.toBeNull();
+    expect(labels()).toEqual(['b']);
+  });
+
+  it('opens the replacement once the unsaved-changes confirm discards the previous one', async () => {
+    const previous = host.surface.open(withLabel('a'));
+    await flushFrames();
+    makeDirty(previous!);
+
+    expect(host.surface.open(withLabel('b'))).toBeNull();
+    await flushFrames();
+    expect(labels()).toEqual(['a']);
+
+    resolveConfirm(true);
+    await flushFrames();
+
+    expect(labels()).toEqual(['b']);
+  });
+
+  it('drops the replacement when the confirm keeps the previous one, even if it closes later', async () => {
+    const previous = host.surface.open(withLabel('a'));
+    await flushFrames();
+    makeDirty(previous!);
+
+    host.surface.open(withLabel('b'));
+    resolveConfirm(false);
+    await flushFrames();
+
+    expect(labels()).toEqual(['a']);
+
+    previous!.componentInstance()?.value.set('clean');
+    TestBed.tick();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await flushFrames();
+
+    expect(labels()).toEqual([]);
+  });
+
+  it('keeps only the latest open requested while a confirm is pending', async () => {
+    const previous = host.surface.open(withLabel('a'));
+    await flushFrames();
+    makeDirty(previous!);
+
+    host.surface.open(withLabel('b'));
+    host.surface.open(withLabel('c'));
+    resolveConfirm(true);
+    await flushFrames();
+
+    expect(labels()).toEqual(['c']);
+  });
+
+  it('replaces across openers that share a slot', async () => {
+    host.first.open(withLabel('a'));
+    await flushFrames();
+
+    host.second.open(withLabel('b'));
+    await flushFrames();
+
+    expect(labels()).toEqual(['b']);
   });
 });

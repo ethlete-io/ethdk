@@ -74,8 +74,8 @@ The `OverlayRef` is returned by `open` and injectable inside the overlay via the
 
 - `close(result?)` - close with an optional typed result
 - `afterOpened()`, `beforeClosed()`, `afterClosed()` - one-shot observables
-- `afterClosedEvent()` - like `afterClosed()`, but the emitted event also carries `source`
-  (`'api' | 'escape' | 'outside-pointer' | 'drag' | 'reference-detached'`) - e.g. to restore focus
+- `beforeClosedEvent()`, `afterClosedEvent()` - like `beforeClosed()` / `afterClosed()`, but the emitted event also carries `source`
+  (`'api' | 'escape' | 'outside-pointer' | 'drag' | 'reference-detached' | 'replace'`) - e.g. to restore focus
   on an explicit dismiss without stealing it from whatever an outside-pointer close was aimed at
 - `componentInstance()` - the content component instance
 - `updatePositionStrategy(strategy)` - reposition without remounting
@@ -119,7 +119,7 @@ export class EditItemOverlayComponent {
 - **`source`** is a signal-forms `FieldTree` (first-class), a `Signal<FieldTree | null>` for late/async forms, an `AbstractControl`, or a plain `WritableSignal`. Changes are detected by a deep-equal snapshot against a baseline - editing a field and reverting it is clean again (unlike signal-forms' `dirty()`).
 - **`confirm`** is required per call site and runs **only** when there are actual changes. Return a boolean, `Promise`, or `Observable` - a truthy result allows the discard.
 - **`refreshDefaultValue()`** re-baselines to the current value; call it after a save that keeps the overlay open. **`restoreDefaultValue()`** reverts the form to the baseline.
-- **`dismissSources`** opts individual sources out (`{ outsidePointer, escape, closeCall, drag }`, all `true` by default). With `disableClose`, only a programmatic `close()` can reach the guard.
+- **`dismissSources`** opts individual sources out (`{ outsidePointer, escape, closeCall, drag, replace }`, all `true` by default). `replace` is a [`single` opener](/components/overlay-openers#single) opening another overlay in this one's place. With `disableClose`, only a programmatic `close()` can reach the guard.
 - **`guardRouteChanges`** (default `true`) additionally vetoes [overlay router](#guarding-navigation) navigations away from the page holding the guard, so in a routed overlay one call covers both ways the edits can be lost - moving to another route and dismissing the overlay - and both go through the same `confirm`. Set it to `false` for a page whose edits survive a route change. It does nothing when the overlay has no router.
 - **`tab`** - while the form is dirty the guard also locks the **browser tab** (`beforeunload`), since closing or reloading the tab bypasses the overlay runtime entirely. Opt into a tab title marker, a blinking marker, a favicon dot or an app badge, or disable it with `tab: false` - see [Guarding the browser tab](/core/utilities#unsaved-changes-tab).
 - **Only one confirm shows at a time**, app-wide, and a logout releases the guard instead of stranding the dialog over the login page - wire `confirm`'s `signal` to close your dialog, see [Sessions ending underneath a guard](/core/utilities#unsaved-changes-coordinator).

@@ -154,6 +154,35 @@ describe('createOverlayUnsavedChangesGuard', () => {
     expect(paneCount()).toBe(0);
   });
 
+  it('guards a replace and re-issues it as a replace once confirmed', async () => {
+    const instance = await open();
+    const sources: string[] = [];
+    ref.afterClosedEvent().subscribe((event) => sources.push(event.source));
+
+    instance.form().value.set({ name: 'Grace' });
+    tick();
+
+    ref.closeVia('replace');
+    await flushFrames();
+
+    expect(instance.confirmCalls).toBe(1);
+    expect(sources).toEqual(['replace']);
+  });
+
+  it('lets a dirty replace through when replace is disabled in dismissSources', async () => {
+    GuardedOverlayComponent.nextDismissSources = { replace: false };
+    const instance = await open();
+
+    instance.form().value.set({ name: 'Grace' });
+    tick();
+
+    ref.closeVia('replace');
+    await flushFrames();
+
+    expect(instance.confirmCalls).toBe(0);
+    expect(paneCount()).toBe(0);
+  });
+
   it('treats the form as clean again after refreshDefaultValue', async () => {
     const instance = await open();
 

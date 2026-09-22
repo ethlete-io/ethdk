@@ -137,17 +137,17 @@ The active strategy can be swapped on a live overlay via `ref.updatePositionStra
 
 `mount()` returns an `OverlayRuntimeRef`:
 
-| Member                             | Description                                                                                                         |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `close(result?, source?)`          | Close with an optional result (`source` defaults to `'api'`). Runs registered close guards first.                   |
-| `forceClose(result?, source?)`     | Close bypassing every close guard - used by a guard's owner to commit a close it vetoed.                            |
-| `registerCloseGuard(guard)`        | Register a synchronous veto `(event) => boolean` for pending closes; returns an unregister fn.                      |
-| `state`                            | `Signal<'mounting' \| 'mounted' \| 'closing' \| 'closed'>`                                                          |
-| `componentInstance`                | `Signal<TComponent \| null>`                                                                                        |
-| `beforeOpened()` / `afterOpened()` | Open lifecycle observables.                                                                                         |
-| `beforeClosed()` / `afterClosed()` | Emit `{ result, source }` - `source` is `'api' \| 'escape' \| 'outside-pointer' \| 'drag' \| 'reference-detached'`. |
-| `elements`                         | The scaffold DOM (`rootElement`, `hostElement`, `paneElement`, and `backdropElement` as a signal).                  |
-| `updateBackdrop(hasBackdrop)`      | Add or remove the backdrop of an open overlay. Ignored once the overlay closes.                                     |
+| Member                             | Description                                                                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `close(result?, source?)`          | Close with an optional result (`source` defaults to `'api'`). Runs registered close guards first.                                |
+| `forceClose(result?, source?)`     | Close bypassing every close guard - used by a guard's owner to commit a close it vetoed.                                         |
+| `registerCloseGuard(guard)`        | Register a synchronous veto `(event) => boolean` for pending closes; returns an unregister fn.                                   |
+| `state`                            | `Signal<'mounting' \| 'mounted' \| 'closing' \| 'closed'>`                                                                       |
+| `componentInstance`                | `Signal<TComponent \| null>`                                                                                                     |
+| `beforeOpened()` / `afterOpened()` | Open lifecycle observables.                                                                                                      |
+| `beforeClosed()` / `afterClosed()` | Emit `{ result, source }` - `source` is `'api' \| 'escape' \| 'outside-pointer' \| 'drag' \| 'reference-detached' \| 'replace'`. |
+| `elements`                         | The scaffold DOM (`rootElement`, `hostElement`, `paneElement`, and `backdropElement` as a signal).                               |
+| `updateBackdrop(hasBackdrop)`      | Add or remove the backdrop of an open overlay. Ignored once the overlay closes.                                                  |
 
 Escape and outside-pointer closes only apply to the top-most overlay and are ignored until the enter transition has started - a click that opens an overlay can't immediately close it.
 

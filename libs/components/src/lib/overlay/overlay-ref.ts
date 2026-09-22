@@ -22,6 +22,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
 
   const afterOpened$ = new Subject<void>();
   const beforeClosed$ = new Subject<TResult | undefined>();
+  const beforeClosedEvent$ = new Subject<OverlayRuntimeCloseEvent<TResult | undefined>>();
   const afterClosed$ = new Subject<TResult | undefined>();
   const afterClosedEvent$ = new Subject<OverlayRuntimeCloseEvent<TResult | undefined>>();
   // Guards live here (not on the runtime ref directly) because the mounted component - where a guard
@@ -88,6 +89,11 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     return beforeClosed$.asObservable();
   };
 
+  /** Like `beforeClosed`, but also reports how the close was initiated. */
+  const beforeClosedEvent = (): Observable<OverlayRuntimeCloseEvent<TResult | undefined>> => {
+    return beforeClosedEvent$.asObservable();
+  };
+
   const afterClosed = (): Observable<TResult | undefined> => {
     return afterClosed$.asObservable();
   };
@@ -132,6 +138,8 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
         tap((event) => {
           beforeClosed$.next(event.result);
           beforeClosed$.complete();
+          beforeClosedEvent$.next(event);
+          beforeClosedEvent$.complete();
         }),
       )
       .subscribe();
@@ -180,6 +188,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     attachComponentInstanceOverride,
     afterOpened,
     beforeClosed,
+    beforeClosedEvent,
     afterClosed,
     afterClosedEvent,
     attachRuntime,
