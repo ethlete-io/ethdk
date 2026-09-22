@@ -101,7 +101,7 @@ describe('query form fields scenario', () => {
     expect(restored.value().flags).toEqual([true]);
   });
 
-  it('a date array survives the URL round trip', async () => {
+  it('a date array survives the URL round trip, including one item', async () => {
     const s = scenario();
     const router = TestBed.inject(Router);
     const from = new Date(2026, 0, 15, 10, 30, 0, 0);
@@ -122,6 +122,19 @@ describe('query form fields scenario', () => {
     s.tick();
 
     expect(restored.value().between?.map((date) => date.getTime())).toEqual([from.getTime(), to.getTime()]);
+
+    restored.setValue({ between: [from] });
+    await s.settle();
+    expect(Array.isArray(router.parseUrl(router.url).queryParams['between'])).toBe(false);
+
+    const oneItemUrl = router.url;
+
+    await s.reloadAt(oneItemUrl);
+
+    const restoredOne = s.run(() => defineQueryForm({ fields: { between: dateArrayQueryField() } }).observe());
+    s.tick();
+
+    expect(restoredOne.value().between?.map((date) => date.getTime())).toEqual([from.getTime()]);
   });
 
   it('waits out a per-field debounce before committing, and commits an undebounced field at once', () => {
