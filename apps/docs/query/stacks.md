@@ -59,7 +59,7 @@ The paged stack exposes `items`, `loading`, `error`, `isFirstLoad`, `canFetchNex
 
 The loading gate on those two signals is unconditional; `blockExecutionDuringLoading` governs the **methods** only. So under the default (`false`) a `fetchNextPage()` call mid-flight still runs, while the signals already read `false` - bind the UI to the signals and the two never disagree in practice. Set the option to `true` when a page's args depend on the previous page's response, so an out-of-order call cannot happen at all.
 
-- `fetchNextPage()` / `fetchPreviousPage()`
+- `fetchNextPage()` / `fetchPreviousPage()` - return the new page's query, or `null` when no page was added: there is no page in that direction, or the page's args repeat a loaded page. In dev mode, a call with no page in that direction throws instead.
 - `reset({ initialPage? })`
 - `execute({ where?, allowCache? })` - `where: (item) => boolean` selectively re-executes the pages containing matching items (plus their neighbors), e.g. after editing one row.
 
