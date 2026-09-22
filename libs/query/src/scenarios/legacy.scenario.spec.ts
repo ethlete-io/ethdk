@@ -1584,6 +1584,42 @@ describe('legacy scenario', () => {
 
       owner.destroy();
     });
+
+    it('keeps the form-level error for a non-violation failure when mapViolations is custom', async () => {
+      const s = scenario();
+      s.api.on('POST', '/validate', () => ({ status: 500, body: { message: 'boom' } }));
+
+      const owner = s.consumer();
+      const client = owner.run(
+        () => new V2QueryClient({ baseRoute: BASE_URL, request: { retryFn: () => ({ retry: false }) } }),
+      );
+      const validateEmail = client.post({
+        route: '/validate',
+        types: { args: def<{ body: { email: string } }>(), response: def<void>() },
+      });
+      const mapViolations = vi.fn(() => null);
+
+      const testForm = owner.run(() => {
+        const emailSchema = schema<{ email: string }>((p) => {
+          validateWithV2Query(p, {
+            queryCreator: validateEmail,
+            args: (ctx) => ({ body: { email: ctx.value().email } }),
+            debounce: 0,
+            mapViolations,
+          });
+        });
+
+        return form(signal({ email: 'ada@example.com' }), emailSchema);
+      });
+
+      await s.settle();
+
+      expect(mapViolations).not.toHaveBeenCalled();
+      expect(testForm().pending()).toBe(false);
+      expect(testForm().errors()).toHaveLength(1);
+
+      owner.destroy();
+    });
   });
   describe('query directives', () => {
     const blurThenFocus = (s: Scenario) => {
