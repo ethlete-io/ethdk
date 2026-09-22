@@ -57,7 +57,7 @@ See the [localization guide](/components/localization) for the full recipe and e
 
 ## Focus-visible tracker
 
-`injectFocusVisibleTracker()` returns `{ isFocusVisible: Signal<boolean> }` - whether focus is currently keyboard-driven. It flips to `true` after keyboard navigation (Tab & friends) and back to `false` on pointer input. Used by tooltips to decide whether a focus event should open them.
+`injectFocusVisibleTracker()` returns `{ isFocusVisible: Signal<boolean> }` - whether focus is currently keyboard-driven. It follows the browser's `:focus-visible`: it flips to `true` on any key press, a bare <kbd>Shift</kbd> included, and back to `false` on pointer input. A bare <kbd>Control</kbd>, <kbd>Alt</kbd> or <kbd>Meta</kbd>, or a shortcut with one of them, leaves it as it is. Used by tooltips to decide whether a focus event should open them.
 
 ## Renderer
 

@@ -10,7 +10,7 @@ const FOCUS_VISIBLE_TRACKER_DEF = /* @__PURE__ */ defineRootProvider(
     let hadKeyboardEvent = false;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey || e.altKey || e.ctrlKey || ['Shift', 'Meta', 'Alt', 'Control'].includes(e.key)) return;
+      if (e.metaKey || e.altKey || e.ctrlKey || ['Meta', 'Alt', 'Control'].includes(e.key)) return;
 
       hadKeyboardEvent = true;
       queueMicrotask(() => isFocusVisible.set(true));

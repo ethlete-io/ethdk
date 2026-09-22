@@ -60,13 +60,14 @@ test.describe('core focus-visible tracker / keyboard', () => {
     expect(await matchesFocusVisible(tracker.first)).toBe(false);
   });
 
-  test('a bare Shift after a click keeps pointer focus', async ({ page }) => {
+  test('a bare Shift after a click reports keyboard focus, like :focus-visible', async ({ page }) => {
     const tracker = await openTracker(page);
 
     await tracker.first.click();
     await pressKey(page, 'Shift');
 
-    await expectStaysHidden(page, tracker);
+    await expect(tracker.output).toHaveText('true');
+    expect(await matchesFocusVisible(tracker.first)).toBe(true);
   });
 
   test('Shift+Tab after a click reports keyboard focus on the element it reaches', async ({ page }) => {
