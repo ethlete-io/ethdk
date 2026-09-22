@@ -79,6 +79,15 @@ Three facts, each true and each too coarse:
 5. **Open one stand-in per piece.** `groupByWork` keys on the piece, and `alreadyWaiting` and
    `alreadyAnswered` follow it. A rule stored against `repo@branch` still has to match, or every
    answer the user already gave is lost.
+
+   The day screen shows nothing of slice 1 until this lands. `trackOf` in `rows/merge.ts:183` does key
+   on `contextKey`, so four sessions are four tracks - but when a track has no open row `openFor`
+   (`merge.ts:264-277`) falls back to `lastOfStream`, keyed by `streamKey`, which carries neither the
+   branch nor the session. Any unnamed row of the checkout therefore absorbs every session's blocks,
+   and `absorbSlivers` does the same for the short ones. That fallback is what slice 5 has to replace
+   with the piece - and not before slice 4, or a checkout turns into a row per session, which is the
+   grain Tom ruled out.
+
 6. **Draw them side by side.** `lanes.ts` and `day-timeline.component.ts` lay out a lane that holds
    more than one band at an instant.
 
