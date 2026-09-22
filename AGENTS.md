@@ -201,10 +201,12 @@ Playwright layer in `apps/storybook-e2e` - the **`component-behavior-tests`** sk
 
 ## Testing beyond unit specs
 
-jsdom unit specs catch value logic, not regressions in behavior. Two layers cover the rest:
+jsdom unit specs catch value logic, not regressions in behavior. Three layers cover the rest:
 
 - `libs/query/src/scenarios` - consumer-level scenarios against a fake API with leak
   invariants; the **`query-scenario-tests`** skill. Every bug fix in `libs/query` adds one.
+- `libs/core/src/scenarios` - the same for core: a real app on fake time and frames, with leak
+  invariants; the **`core-scenario-tests`** skill. Every bug fix in `libs/core` adds one.
 - `apps/storybook-e2e` - Playwright against real stories, desktop and touch; the
   **`component-behavior-tests`** skill.
 

@@ -78,6 +78,9 @@ it('dedupes identical requests', () => {
   `providedIn: 'root'`, so a query created elsewhere resolves a root-owned instance instead.
 - Persistence: the engine reads the adapter while the client is built, so create the store in a
   `beforeEach` registered before `useScenario` and pass it lazily (`adapter: () => store.adapter`).
+  To drive the real IndexedDB adapter, install a fresh `new IDBFactory()` from `fake-indexeddb` (a
+  root devDependency) as `globalThis.indexedDB` in that `beforeEach` - see `persistence scenario over
+  IndexedDB`. Import it only from `src/scenarios`, which `@nx/dependency-checks` ignores.
 - The harness router has no routes; a cross-route navigation needs
   `router.resetConfig([{ path: 'other', children: [] }])` inline.
 - `s.allow('timers', 'reason')` opts out of one invariant. Every opt-out is a smell: name the
