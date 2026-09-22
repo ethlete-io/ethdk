@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 const PORT = 4211;
 const BASE_URL = `http://localhost:${PORT}`;
 
+const DIST = process.env['TIMETRACK_E2E_DIST'];
+
 /**
  * Drives the app against `main.e2e.ts`, which swaps the desktop host for in-memory fakes. There is no
  * Tauri, no network and no keychain in this run — every answer comes from `src/e2e/world.ts`.
@@ -21,11 +23,19 @@ export default defineConfig({
     timezoneId: 'UTC',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: {
-    command: 'npx nx serve timetrack-app --configuration=e2e',
-    url: BASE_URL,
-    reuseExistingServer: !process.env['CI'],
-    timeout: 180_000,
-    cwd: '../..',
-  },
+  webServer: DIST
+    ? {
+        command: `npx vite preview --outDir ${DIST} --port ${PORT} --strictPort`,
+        url: BASE_URL,
+        reuseExistingServer: false,
+        timeout: 30_000,
+        cwd: '../..',
+      }
+    : {
+        command: 'npx nx serve timetrack-app --configuration=e2e',
+        url: BASE_URL,
+        reuseExistingServer: !process.env['CI'],
+        timeout: 180_000,
+        cwd: '../..',
+      },
 });

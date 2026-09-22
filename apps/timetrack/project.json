@@ -38,6 +38,7 @@
         },
         "e2e": {
           "browser": "apps/timetrack/src/main.e2e.ts",
+          "outputPath": "dist/apps/timetrack-e2e",
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true

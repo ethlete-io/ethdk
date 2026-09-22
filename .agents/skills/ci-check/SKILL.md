@@ -109,6 +109,14 @@ nor `apps/timetrack`.
   A spec that fails alone at `--workers=1` is a real failure. One that only fails in a wide
   parallel run is not.
 
+  CI does not start the dev server. It builds the app first and sets `TIMETRACK_E2E_DIST`, and
+  the config then serves that output statically, which holds at any worker count:
+
+  ```bash
+  yarn nx run timetrack-app:build:e2e --exclude-task-dependencies
+  TIMETRACK_E2E_DIST=dist/apps/timetrack-e2e/browser yarn nx e2e timetrack-e2e
+  ```
+
 - **A single task that fails inside `run-many` and passes on its own is flaky.** `run-many`
   starts every project at once, and `components:test` and `timetrack-app:lint` both lose to
   the load on a busy machine. Re-run the one task; Nx prints `Nx detected a flaky task` when

@@ -153,11 +153,13 @@ jobs:
         with:
           nx-cache-key: timetrack-e2e
 
+      - run: yarn nx run timetrack-app:build:e2e --exclude-task-dependencies
+
       - run: yarn playwright install --with-deps chromium
 
-      # Serves the app itself with the e2e host fakes, so unlike the Storybook job there is no
-      # prebuilt artifact to drive - the Playwright config starts the server.
       - run: yarn nx e2e timetrack-e2e
+        env:
+          TIMETRACK_E2E_DIST: dist/apps/timetrack-e2e/browser
 
   rust:
     name: Rust host
