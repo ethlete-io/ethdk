@@ -101,15 +101,15 @@ export const chromeDay = ({ rule }: { rule: ChromeRule }) =>
                   (lane) => html`
                     <div class="lane" style="minWidth: ${lane.widthRem}rem;">
                       ${lane.laid.map(
-                      (laid) => html`
-                        <div
-                          class="slot"
-                          style="top: ${laid.topRem}rem;left: ${laid.inlineOffset}%;width: ${laid.inlineSize}%;"
-                        >
-                          ${kerbeBand({ band: laid.band, treatment: 'plate' })}
-                        </div>
-                      `,
-                    )}
+                        (laid) => html`
+                          <div
+                            class="slot"
+                            style="top: ${laid.topRem}rem;left: ${laid.inlineOffset}%;width: ${laid.inlineSize}%;"
+                          >
+                            ${kerbeBand({ band: laid.band, treatment: 'plate' })}
+                          </div>
+                        `,
+                      )}
                     </div>
                   `,
                 )}

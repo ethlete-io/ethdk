@@ -1,11 +1,12 @@
 /** One thing that happened in the conversation, in the order it happened. */
 export type Turn =
-  | { kind: 'ask'; text: string }
-  | { kind: 'say'; text: string }
-  | { kind: 'act'; action: string; detail: string };
+  { kind: 'ask'; text: string } | { kind: 'say'; text: string } | { kind: 'act'; action: string; detail: string };
 
 export const TURNS: Turn[] = [
-  { kind: 'ask', text: 'Iterate: option "B · A hairline frame and the change" of the call "How a summary tile carries its number".' },
+  {
+    kind: 'ask',
+    text: 'Iterate: option "B · A hairline frame and the change" of the call "How a summary tile carries its number".',
+  },
   { kind: 'act', action: 'Read', detail: 'calls/sandbox/00-stat-tile/call.ts' },
   { kind: 'act', action: 'Read', detail: 'calls/sandbox/00-stat-tile/option-b.ts' },
   {

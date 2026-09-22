@@ -60,7 +60,7 @@ const WEEK = 7 * DAY;
 const count = (amount: number, unit: string) => `${amount} ${unit}${amount === 1 ? '' : 's'} ago`;
 
 /** How long ago a call was written, in the words the explorer prints. */
-export const touchedLabel = (touched: number, now = Date.now() / 1000): string => {
+export const touchedLabel = (touched: number, now = Date.now() / 1000) => {
   const ago = Math.max(0, now - touched);
 
   if (!touched) return '';

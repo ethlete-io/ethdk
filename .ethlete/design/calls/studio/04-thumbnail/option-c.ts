@@ -24,56 +24,56 @@ export default drawing({
             (variant) => html`
               <div class="thumb${variant.key === LARGE && 'on'}${variant.verdict === 'rejected' && 'faded'}">
                 ${
-                variant.stale
-                  ? html`
-                      <div class="thumb-pic waiting${variant.verdict === 'chosen' && 'picked'}">
-                        <span class="waiting-name">${variant.name}</span>
-                        <span class="waiting-note">
-                          <span class="dots">
-                            <span class="dot"></span>
-                            <span class="dot"></span>
-                            <span class="dot"></span>
+                  variant.stale
+                    ? html`
+                        <div class="thumb-pic waiting${variant.verdict === 'chosen' && 'picked'}">
+                          <span class="waiting-name">${variant.name}</span>
+                          <span class="waiting-note">
+                            <span class="dots">
+                              <span class="dot"></span>
+                              <span class="dot"></span>
+                              <span class="dot"></span>
+                            </span>
+                            <span>drawing a new picture</span>
                           </span>
-                          <span>drawing a new picture</span>
-                        </span>
-                      </div>
-                    `
-                  : html`
-                      <div class="thumb-pic${variant.verdict === 'chosen' && 'picked'}">
-                        <div class="mini">
-                          ${
-                      variant.change === 'over' &&
-                      html`
-                        <span class="mini-change" style="color: ${variant.accent ? ACCENT : MUTED};"
-                          >${TILE.change}</span
-                        >
-                      `
-                    }
-                          <span class="mini-label">${TILE.label}</span>
-                          <span class="mini-row">
-                            <span class="mini-number">${TILE.number}</span>
-                            <span class="mini-unit">${TILE.unit}</span>
-                            ${
-                        variant.change === 'beside' &&
-                        html`
-                          <span class="mini-change" style="color: ${variant.accent ? ACCENT : MUTED};"
-                            >${TILE.change}</span
-                          >
-                        `
-                      }
-                          </span>
-                          ${
-                      variant.change === 'under' &&
-                      html`
-                        <span class="mini-change" style="color: ${variant.accent ? ACCENT : MUTED};"
-                          >${TILE.change}</span
-                        >
-                      `
-                    }
                         </div>
-                      </div>
-                    `
-              }
+                      `
+                    : html`
+                        <div class="thumb-pic${variant.verdict === 'chosen' && 'picked'}">
+                          <div class="mini">
+                            ${
+                              variant.change === 'over' &&
+                              html`
+                                <span class="mini-change" style="color: ${variant.accent ? ACCENT : MUTED};"
+                                  >${TILE.change}</span
+                                >
+                              `
+                            }
+                            <span class="mini-label">${TILE.label}</span>
+                            <span class="mini-row">
+                              <span class="mini-number">${TILE.number}</span>
+                              <span class="mini-unit">${TILE.unit}</span>
+                              ${
+                                variant.change === 'beside' &&
+                                html`
+                                  <span class="mini-change" style="color: ${variant.accent ? ACCENT : MUTED};"
+                                    >${TILE.change}</span
+                                  >
+                                `
+                              }
+                            </span>
+                            ${
+                              variant.change === 'under' &&
+                              html`
+                                <span class="mini-change" style="color: ${variant.accent ? ACCENT : MUTED};"
+                                  >${TILE.change}</span
+                                >
+                              `
+                            }
+                          </div>
+                        </div>
+                      `
+                }
                 <div class="thumb-foot">
                   <span class="thumb-name${variant.verdict === 'chosen' && 'picked'}">${variant.name}</span>
                 </div>
@@ -89,28 +89,30 @@ export default drawing({
               <div class="large-pic${variant.verdict === 'rejected' && 'dim'}">
                 <div class="mini">
                   ${
-                  variant.change === 'over' &&
-                  html`
-                    <span class="mini-change" style="color: ${variant.accent ? ACCENT : MUTED};">${TILE.change}</span>
-                  `
-                }
+                    variant.change === 'over' &&
+                    html`
+                      <span class="mini-change" style="color: ${variant.accent ? ACCENT : MUTED};">${TILE.change}</span>
+                    `
+                  }
                   <span class="mini-label">${TILE.label}</span>
                   <span class="mini-row">
                     <span class="mini-number">${TILE.number}</span>
                     <span class="mini-unit">${TILE.unit}</span>
                     ${
-                    variant.change === 'beside' &&
+                      variant.change === 'beside' &&
+                      html`
+                        <span class="mini-change" style="color: ${variant.accent ? ACCENT : MUTED};"
+                          >${TILE.change}</span
+                        >
+                      `
+                    }
+                  </span>
+                  ${
+                    variant.change === 'under' &&
                     html`
                       <span class="mini-change" style="color: ${variant.accent ? ACCENT : MUTED};">${TILE.change}</span>
                     `
                   }
-                  </span>
-                  ${
-                  variant.change === 'under' &&
-                  html`
-                    <span class="mini-change" style="color: ${variant.accent ? ACCENT : MUTED};">${TILE.change}</span>
-                  `
-                }
                 </div>
               </div>
 
@@ -118,12 +120,12 @@ export default drawing({
                 <span class="large-name">${variant.name}</span>
                 <span class="marks">
                   ${
-                  variant.verdict === 'chosen'
-                    ? html` <span class="mark chosen">chosen</span> `
-                    : variant.verdict === 'rejected'
-                      ? html` <span class="mark rejected">rejected</span> `
-                      : ''
-                }
+                    variant.verdict === 'chosen'
+                      ? html` <span class="mark chosen">chosen</span> `
+                      : variant.verdict === 'rejected'
+                        ? html` <span class="mark rejected">rejected</span> `
+                        : ''
+                  }
                   ${variant.stale && html` <span class="mark stale">stale</span> `}
                 </span>
               </div>

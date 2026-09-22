@@ -139,8 +139,8 @@ export const breakDay = (labelAt: BreakLabelAt) =>
                         <span class="brk-sign">
                           <span
                             class="brk-pause brk-pause--${mark.pauseVariant} ${mark.signSmall && 'brk-pause--small'} ${
-                            mark.signFlat && 'brk-pause--flat'
-                          }"
+                              mark.signFlat && 'brk-pause--flat'
+                            }"
                           ></span>
                         </span>
                       `

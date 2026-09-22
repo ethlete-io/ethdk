@@ -119,7 +119,7 @@ const SETTLE_MS = 300;
                 <span class="studio__row-foot">
                   <span class="studio__tag">{{ call.feature || 'No feature' }}</span>
                   <span class="studio__pips">
-                    @for (settled of pips(call); track $index) {
+                    @for (settled of ROUND_PIPS(call); track $index) {
                       <i [class.studio__pip--settled]="settled" class="studio__pip"></i>
                     }
                   </span>
@@ -161,7 +161,7 @@ const SETTLE_MS = 300;
                         <b>{{ call.headline }}</b>
                         <span class="studio__row-foot">
                           <span class="studio__pips">
-                            @for (settled of pips(call); track $index) {
+                            @for (settled of ROUND_PIPS(call); track $index) {
                               <i [class.studio__pip--settled]="settled" class="studio__pip"></i>
                             }
                           </span>
@@ -576,6 +576,7 @@ export class CallViewComponent {
 
   /** The checkout the window showed last. The picker prefers it while Studio still keeps it. */
   protected remembered = rememberedView().checkout ?? '';
+  protected readonly ROUND_PIPS = roundPips;
 
   public checkout = signal('');
   protected project = signal('');
@@ -847,10 +848,6 @@ export class CallViewComponent {
 
   protected settled(call: Call) {
     return call.options.length - openOptions(call);
-  }
-
-  protected pips(call: Call) {
-    return roundPips(call);
   }
 
   protected touched(call: Call) {
