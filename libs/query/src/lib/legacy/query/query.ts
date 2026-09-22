@@ -70,6 +70,7 @@ export class V2Query<
   private pollingSubscription: Subscription | null = null;
   private onAbort$ = new Subject<void>();
   private currentPollConfig: PollConfig | null = null;
+  private pollStopSubscription: Subscription | null = null;
 
   /**
    * @internal
@@ -348,6 +349,10 @@ export class V2Query<
       complete: () => this.stopPolling(),
     });
 
+    if (this.currentPollConfig && !this.pollStopSubscription) {
+      this.pollStopSubscription = config.takeUntil.pipe(take(1)).subscribe(() => this.stopPolling());
+    }
+
     return this;
   }
 
@@ -355,6 +360,8 @@ export class V2Query<
     this.pollingSubscription?.unsubscribe();
     this.pollingSubscription = null;
     this.currentPollConfig = null;
+    this.pollStopSubscription?.unsubscribe();
+    this.pollStopSubscription = null;
 
     return this;
   }

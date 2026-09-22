@@ -760,6 +760,36 @@ describe('legacy scenario', () => {
       });
     });
 
+    it('does not resume on focus once takeUntil fired while the window was blurred', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      withLegacyClient(s, {}, (client, track) => {
+        const stopPolling$ = new Subject<void>();
+        const query = track(
+          createGetUser(client)
+            .prepare({ pathParams: { id: '1' } })
+            .execute(),
+        );
+
+        s.tick();
+        query.poll({ interval: 1_000, takeUntil: stopPolling$ });
+        s.tick(1_000);
+
+        window.dispatchEvent(new Event('blur'));
+        s.tick(6_000);
+        stopPolling$.next();
+
+        const afterStop = s.api.requestCount('GET', '/users/1');
+
+        window.dispatchEvent(new Event('focus'));
+        s.tick(5_000);
+
+        expect(query.isPolling).toBe(false);
+        expect(s.api.requestCount('GET', '/users/1')).toBe(afterStop);
+      });
+    });
+
     it('keeps polling while blurred when enableSmartPolling is false', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
