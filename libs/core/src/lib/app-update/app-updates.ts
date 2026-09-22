@@ -21,6 +21,14 @@ import { isStaleBuildError } from './stale-build-error';
 
 const RELOADED_AT_KEY = 'et-app-update-reloaded-at';
 
+// A subset check, not equality: the running document also holds every script the app appended to it,
+// which the served entry document never contains.
+const isNewBuild = (running: string, deployed: string) => {
+  const runningScripts = new Set(running.split('|'));
+
+  return deployed.split('|').some((source) => !runningScripts.has(source));
+};
+
 export type AppUpdatesConfig = {
   /**
    * The document the deployed build is read from - the app's own entry point, whose hashed script
@@ -113,8 +121,6 @@ const APP_UPDATES_DEF = /* @__PURE__ */ defineRootProvider(
     const router = inject(Router, { optional: true });
     const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-    // Read once, at startup: this is the build the tab is running, and it cannot change without a
-    // reload. Reading it live would drift as the app appends scripts of its own.
     const runningBuild = isBrowser ? readBuildFingerprint(document) : '';
 
     const reloadedAt = createSessionMemory<number>({
@@ -129,7 +135,7 @@ const APP_UPDATES_DEF = /* @__PURE__ */ defineRootProvider(
     const isAvailable = computed(() => {
       const deployed = _deployedBuild();
 
-      return !!runningBuild && !!deployed && deployed !== runningBuild;
+      return !!runningBuild && !!deployed && isNewBuild(runningBuild, deployed);
     });
 
     let lastCheckAt = 0;

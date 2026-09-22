@@ -1,6 +1,6 @@
 # Core scenario tests
 
-Status: slices 1-2 done. Slices 3-6 open.
+Status: slices 1-3 done. Slices 4-6 open.
 
 A behavior layer for `libs/core` next to its jsdom unit specs, shaped like `libs/query/src/scenarios`.
 
@@ -9,7 +9,7 @@ A behavior layer for `libs/core` next to its jsdom unit specs, shaped like `libs
 - [x] 1. Harness at `libs/core/src/scenarios/harness/` + overlay runtime scenarios
 - [x] 2. Timing/lifetime scenarios: `signalAnimatedNumber`, `injectAngularRootElement`, `setupScrollRestoration`,
       scroll-observer sentinels, css-vars writers, `KeyPressManager`, `controlValueSignal` `debounceFirst`
-- [ ] 3. Unsaved-changes and app-update through the real router
+- [x] 3. Unsaved-changes and app-update through the real router
 - [ ] 4. SEO bindings
 - [ ] 5. Core stories + Playwright suites: overlay runtime, `AnimatedLifecycle`, `ResizeHandles` in a pop-out
 - [ ] 6. Core stories + Playwright suites: focus-visible tracker, element observers
@@ -25,6 +25,10 @@ A behavior layer for `libs/core` next to its jsdom unit specs, shaped like `libs
   never settles). `s.settle()` also awaits promises.
 - `s.run(fn)` injection context; `s.consumer(providers?)` a fake component injector; `s.app()` a second
   `createApplication` on the same document; `s.keydown(key, target?)` dispatches a cancelable keydown.
+- `s.settle()` drains microtasks through a real `setImmediate` each round, so a router navigation reaches its
+  guards inside one `settle()`. Routed scenarios pass `provideRouter(routes)` and `provideLocationMocks()`.
+- Listeners jsdom's selector engine adds on a document's first query (including a `DOMParser` document) are
+  not counted.
 - A fake `IntersectionObserver` reports only what `s.intersect(element, isIntersecting)` says;
   `s.observedElements()` lists what is observed.
 - `destroy()` tears down apps, consumers and `TestBed`, then checks: `timers`, `frames` (pending rAF),
@@ -61,3 +65,19 @@ revert of the fix it guards:
 - `controlValueSignal` `debounceFirst` holding the first value back - the `startWith` after `debounceTime`.
 
 No defects found.
+
+## Slice 3 results
+
+`unsaved-changes.scenario.spec.ts` (guard, coordinator and tab lock on real routes) and
+`app-updates.scenario.spec.ts`:
+
+- A late `Signal<FieldTree | null>` source, navigated away from before the baseline effect runs - proven
+  against a revert of the `null`-baseline guard in `hasChanges` (the navigation is blocked by a spurious
+  confirm).
+- Decline/accept through `canDeactivate`, a second check adopting the pending confirm, `abandonAll` releasing a
+  pending navigation, and the app badge summed across trackers - behavior coverage, no past fix.
+
+Defect found and fixed: the head-only build fingerprint (the earlier fix for app-appended scripts) read
+nothing in an Angular CLI build, whose entry scripts sit at the end of `<body>`, so `isAvailable` never turned
+`true`. The fingerprint reads the whole document again and an update needs a deployed script the running
+document lacks. Both app-update scenarios fail against the respective old code.
