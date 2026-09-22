@@ -13,7 +13,7 @@ import { injectFocusVisibleTracker } from '../../focus-visible-tracker';
       <output data-testid="focus-visible">{{ tracker.isFocusVisible() }}</output>
     </div>
   `,
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
 })
 export class FocusVisibleTrackerStorybookComponent {
   protected tracker = injectFocusVisibleTracker();
