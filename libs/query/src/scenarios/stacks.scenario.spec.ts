@@ -151,6 +151,67 @@ describe('stacks scenario', () => {
     c.destroy();
   });
 
+  it('keeps the last query when an appended batch brings only args the stack already holds', () => {
+    const s = scenario();
+    s.api.on('GET', '/appended/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getItem = s.get<ItemQueryArgs>((p) => `/appended/${p.id}`);
+    const ids = signal<string[]>([]);
+    const c = s.consumer();
+    const stack = c.run(() =>
+      createQueryStack({
+        queryCreator: getItem,
+        args: () => ids().map((id) => ({ pathParams: { id } })),
+        append: true,
+      }),
+    );
+
+    s.tick();
+
+    expect(stack.queries()).toEqual([]);
+    expect(stack.lastQuery()).toBeNull();
+
+    ids.set(['1', '2']);
+    s.tick();
+
+    const last = stack.lastQuery();
+
+    expect(last?.args()).toEqual({ pathParams: { id: '2' } });
+
+    ids.set(['2']);
+    s.tick();
+
+    expect(stack.queries()).toHaveLength(2);
+    expect(stack.lastQuery()).toBe(last);
+    expect(s.api.requestCount('GET', '/appended/2')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('empties the stack and its last query when replace mode args become empty', () => {
+    const s = scenario();
+    s.api.on('GET', '/replaced/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getItem = s.get<ItemQueryArgs>((p) => `/replaced/${p.id}`);
+    const ids = signal(['1']);
+    const c = s.consumer();
+    const stack = c.run(() =>
+      createQueryStack({ queryCreator: getItem, args: () => ids().map((id) => ({ pathParams: { id } })) }),
+    );
+
+    s.tick();
+
+    expect(stack.lastQuery()).not.toBeNull();
+
+    ids.set([]);
+    s.tick();
+
+    expect(stack.queries()).toEqual([]);
+    expect(stack.lastQuery()).toBeNull();
+
+    c.destroy();
+  });
+
   it('deduplicates repeated args in the default replace mode', () => {
     const s = scenario();
     s.api.on('GET', '/posts/:postId', ({ params }) => ({ body: [{ id: params['postId'] }] }));
@@ -1719,6 +1780,36 @@ describe('stacks scenario with the devtools attached', () => {
     c.destroy();
 
     expect(entriesOf().length).toBe(0);
+  });
+
+  it('registers a plain stack with its features for as long as its scope lives', () => {
+    const s = scenario();
+    s.api.on('GET', '/devtools-stack/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    expect(isQueryDevtoolsEnabled()).toBe(true);
+
+    const getItem = s.get<ItemQueryArgs>((p) => `/devtools-stack/${p.id}`);
+    const c = s.consumer();
+    const stack = c.run(() =>
+      createQueryStack({
+        queryCreator: getItem,
+        args: () => [{ pathParams: { id: '1' } }],
+        features: [withSuccessHandling({ handler: () => undefined })],
+      }),
+    );
+
+    s.tick();
+
+    const entriesOf = () =>
+      queryDevtoolsEntries().filter((entry) => entry.kind === 'query-stack' && entry.handle === stack);
+
+    expect(entriesOf().map((entry) => entry.meta.features?.map((feature) => feature.type))).toEqual([
+      ['WITH_SUCCESS_HANDLING'],
+    ]);
+
+    c.destroy();
+
+    expect(entriesOf()).toEqual([]);
   });
 
   it('registers a query sequence with the devtools and drops it with its scope', async () => {

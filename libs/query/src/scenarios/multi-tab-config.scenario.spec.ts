@@ -726,6 +726,40 @@ describe('multi-tab sync configuration scenario', () => {
     tabB.destroy();
   });
 
+  it('lets every tab poll a key none of them has executed yet, then dedupes once the key is known', async () => {
+    const s = scenario();
+    s.api.on('GET', '/manual-poll', () => ({ body: { ok: true } }));
+
+    const tabA = createTab(s);
+    const tabB = createTab(s);
+    const getA = tabA.get<{ response: { ok: boolean } }>('/manual-poll');
+    const getB = tabB.get<{ response: { ok: boolean } }>('/manual-poll');
+
+    const a = tabA.consumer();
+    const b = tabB.consumer();
+    a.run(() => getA({ onlyManualExecution: true }, withPolling({ interval: 10_000 })));
+    b.run(() => getB({ onlyManualExecution: true }, withPolling({ interval: 10_000 })));
+
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    expect(s.api.requestCount('GET', '/manual-poll')).toBe(0);
+
+    await pollTick(s, 10_000);
+
+    expect(s.api.requestCount('GET', '/manual-poll')).toBe(2);
+
+    await pollTick(s, 10_000);
+
+    expect(s.api.requestCount('GET', '/manual-poll')).toBe(3);
+
+    a.destroy();
+    b.destroy();
+    tabA.destroy();
+    tabB.destroy();
+  });
+
   it('elects a holder per cache key, so two tabs each poll a different key', async () => {
     const s = scenario();
     let alpha = 0;

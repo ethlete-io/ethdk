@@ -632,6 +632,43 @@ describe('queries scenario: query string config', () => {
   });
 });
 
+describe('queries scenario: json query string', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 0, queryString: { objectNotation: 'json-stringify' } },
+  });
+
+  it('sends each object and array param as one JSON value and drops the empty ones', () => {
+    const s = scenario();
+    s.api.on('GET', '/search', () => ({ body: [] }));
+
+    const search = s.get<{ response: unknown[]; queryParams: Record<string, unknown> }>('/search');
+
+    const c = s.consumer();
+    c.run(() =>
+      search(
+        withArgs(() => ({
+          queryParams: {
+            filter: { status: 'active' },
+            tags: ['a', 'b'],
+            page: 2,
+            missing: undefined,
+            none: null,
+            unbounded: Infinity,
+            nan: NaN,
+            blank: '  ',
+          },
+        })),
+      ),
+    );
+
+    s.tick();
+
+    expect(s.api.requests[0]?.query).toEqual({ filter: '{"status":"active"}', tags: '["a","b"]', page: '2' });
+
+    c.destroy();
+  });
+});
+
 describe('queries scenario: client headers', () => {
   const previewToken = signal('a');
   const scenario = useScenario({
