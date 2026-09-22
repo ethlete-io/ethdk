@@ -4,9 +4,11 @@ import { TestBed } from '@angular/core/testing';
 import {
   AnyInfinityQueryConfig,
   AnyLegacyQuery,
+  createGqlQueryViaPost,
   createInfinityQueryConfig,
   createLegacyQueryCreator,
   filterSuccess,
+  gql,
   InfinityQueryDirective,
   InfinityQueryTriggerDirective,
   provideLegacyPrepareFallback,
@@ -96,6 +98,33 @@ describe('legacy interop scenario', () => {
       expect(query.rawState).toMatchObject({ type: QueryStateType.Success, response: { id: '1', name: 'Ada' } });
 
       recorded.stop();
+      c.destroy();
+    });
+
+    it('forwards variables to a wrapped gql creator', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: '2', name: 'Grace' } } } }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{
+        response: { user: User };
+        variables: { userId: string };
+      }>(gql`
+        query GetUser($userId: ID!) {
+          user(id: $userId) {
+            id
+            name
+          }
+        }
+      `);
+      const legacyGetUser = createLegacyQueryCreator({ creator: getUser });
+
+      const c = s.consumer();
+      const query = c.run(() => legacyGetUser.prepare({ variables: { userId: '2' } }).execute());
+      s.tick();
+
+      expect(s.api.requests[0]?.body).toMatchObject({ variables: { userId: '2' } });
+      expect(query.rawState).toMatchObject({ type: QueryStateType.Success });
+
       c.destroy();
     });
 

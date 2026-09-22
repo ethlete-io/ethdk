@@ -187,12 +187,15 @@ export class LegacyQueryCreator<
       }
     }
 
+    const variables = (args as { variables?: unknown } | undefined)?.variables;
+
     const queryArgs = {
       // Presence, not truthiness: `0`, `''` and `false` are bodies, and dropping them silently sends a
       // different request than the call site asked for.
       ...(args?.body !== undefined ? { body: args.body } : {}),
       ...(args?.pathParams ? { pathParams: args.pathParams } : {}),
       ...(args?.queryParams ? { queryParams: args.queryParams } : {}),
+      ...(variables !== undefined ? { variables } : {}),
       headers,
     } as RequestArgs<TArgs>;
 
