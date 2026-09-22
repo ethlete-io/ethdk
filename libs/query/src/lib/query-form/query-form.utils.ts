@@ -64,6 +64,8 @@ export const transformToBooleanArray = (value: unknown) => {
   return null;
 };
 
+const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
 export const transformToDate = (value: unknown) => {
   if (value instanceof Date) {
     return value;
@@ -75,7 +77,13 @@ export const transformToDate = (value: unknown) => {
       return null;
     }
 
-    return date;
+    const dateOnly = DATE_ONLY_PATTERN.exec(value);
+
+    if (!dateOnly) return date;
+
+    const [year, month, day] = dateOnly.slice(1).map(Number) as [number, number, number];
+
+    return new Date(year, month - 1, day);
   }
   return null;
 };

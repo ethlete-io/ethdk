@@ -1,9 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
+import { FormControl } from '@angular/forms';
 import {
   booleanArrayQueryField,
   dateArrayQueryField,
+  dateQueryField,
+  DateQueryField,
   defineQueryForm,
+  QueryForm,
   queryField,
   searchQueryField,
   sortQueryField,
@@ -226,5 +230,46 @@ describe('query form fields scenario', () => {
     await s.settle();
 
     expect(router.parseUrl(router.url).queryParams).toEqual({ amount: 'n5' });
+  });
+});
+
+// Bites in every zone but UTC. `process.env.TZ` set inside a spec does not apply in the threads pool.
+describe('query form date-only URL values', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  const localMidnight = (day: number) => new Date(2026, 8, day).getTime();
+
+  it('reads a date-only URL value as local midnight of that day', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await router.navigate([], { queryParams: { day: '2026-09-01', days: ['2026-09-01', '2026-09-02'] } });
+    s.tick();
+
+    const qf = s.run(() =>
+      defineQueryForm({ fields: { day: dateQueryField(), days: dateArrayQueryField() } }).observe(),
+    );
+    s.tick();
+
+    expect(qf.value().day?.getTime()).toBe(localMidnight(1));
+    expect(qf.value().days?.map((date) => date.getTime())).toEqual([localMidnight(1), localMidnight(2)]);
+  });
+
+  it('the legacy DateQueryField reads a date-only URL value as local midnight of that day', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await router.navigate([], { queryParams: { day: '2026-09-01' } });
+    s.tick();
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({ day: new DateQueryField({ control: new FormControl<Date | null>(null) }) }).observe(),
+    );
+    await s.settle();
+
+    expect(qf.form.value.day?.getTime()).toBe(localMidnight(1));
+
+    c.destroy();
   });
 });
