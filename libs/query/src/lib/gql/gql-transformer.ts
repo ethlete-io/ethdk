@@ -32,7 +32,9 @@ export type GqlTransformer = (
 export const transformGql = (str: string | string[]): GqlTransformer => {
   const normalizedStr = Array.isArray(str) ? str.join('') : str;
 
-  const operationName = getOpName.exec(normalizedStr)?.[1];
+  const operationName = getOpName.exec(
+    normalizedStr.replace(commentOutsideString, (_match, literal?: string) => (literal ? '""' : '')),
+  )?.[1];
   let minified: string | undefined;
 
   return (

@@ -349,6 +349,31 @@ describe('gql scenario', () => {
       c.destroy();
     });
 
+    it('ignores an operation that only appears in a comment above the real one', () => {
+      const s = scenario();
+      s.api.on('GET', '/', () => ({ body: { data: { user: { id: '1', name: 'Ada' } } } }));
+
+      const getUser = createGqlQueryViaGet(s.clientRef)<{ response: UserResponse }>(gql`
+        # query Old { user(id: "1") { id } }
+        query Current {
+          user(id: "1") {
+            id
+            name
+          }
+        }
+      `);
+
+      const c = s.consumer();
+      c.run(() => getUser());
+      s.tick();
+
+      const req = s.api.requests[0];
+      if (!req) throw new Error('expected a request');
+      expect(req.query['operationName']).toBe('Current');
+
+      c.destroy();
+    });
+
     it('derives the operation name across a multi-line variable list', () => {
       const s = scenario();
       s.api.on('GET', '/', () => ({ body: { data: { user: { id: '1', name: 'Ada' } } } }));
