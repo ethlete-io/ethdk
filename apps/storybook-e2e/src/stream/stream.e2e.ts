@@ -304,7 +304,7 @@ test.describe('stream / structure', () => {
     expect(embeds[0]?.videoId).toBe('dQw4w9WgXcQ');
     expect(embeds[0]?.width).toBe('100%');
     expect(embeds[0]?.height).toBe('100%');
-    expect(embeds[0]?.playerVars).toMatchObject({ enablejsapi: 1, rel: 0, origin: 'http://localhost:4401' });
+    expect(embeds[0]?.playerVars).toMatchObject({ enablejsapi: 1, rel: 0, origin: new URL(page.url()).origin });
     expect(embeds[0]?.playerVars['start']).toBeUndefined();
   });
 
