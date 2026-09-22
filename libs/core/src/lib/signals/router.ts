@@ -63,15 +63,17 @@ export const injectRouterEvent = /* @__PURE__ */ memoizeSignal(() => {
 
 /**
  * Signal that indicates whether the router has been initialized.
- * The router is considered initialized once the first NavigationEnd event with an id different than -1 has been emitted.
+ * The router is considered initialized once its first navigation has completed, including one that completed
+ * before this signal was first injected.
  */
 export const injectIsRouterInitialized = /* @__PURE__ */ memoizeSignal(() => {
   const event = injectRouterEvent();
+  const navigatedBefore = inject(Router).navigated;
 
   return computed(() => {
     const e = event();
 
-    return (e instanceof NavigationEnd && e.id !== -1) || e instanceof NavigationSkipped;
+    return navigatedBefore || (e instanceof NavigationEnd && e.id !== -1) || e instanceof NavigationSkipped;
   });
 });
 
