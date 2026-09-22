@@ -1,0 +1,400 @@
+name: API models
+
+# pull_request_target reads this file from the PR's base branch (main), so keep main's copy in
+# sync. Only the PR's model folder is taken over, as data: tools/api-models/import.sh and
+# validate.mjs make sure nothing from the PR head can run here. No job may restore or save a cache,
+# and no job that handles the models may hold a secret or a write token while PR-derived processes
+# run.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Number of the generator pull request to process.
+        required: true
+        type: number
+      dry_run:
+        description: Run every check, but push, publish and close nothing.
+        type: boolean
+        default: false
+
+permissions: {}
+
+env:
+  NX_NO_CLOUD: 'true'
+  HUSKY: '0'
+
+jobs:
+  resolve:
+    name: Resolve
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.user.login == 'nziermann' &&
+      github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      number: ${{ steps.pr.outputs.number }}
+      head_sha: ${{ steps.pr.outputs.head_sha }}
+      head_ref: ${{ steps.pr.outputs.head_ref }}
+      api_branch: ${{ steps.pr.outputs.api_branch }}
+      source_sha: ${{ steps.pr.outputs.source_sha }}
+      kind: ${{ steps.pr.outputs.kind }}
+      tag: ${{ steps.pr.outputs.tag }}
+      group: ${{ steps.pr.outputs.group }}
+      dry_run: ${{ steps.pr.outputs.dry_run }}
+    steps:
+      - id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+          DRY_RUN: ${{ inputs.dry_run == true }}
+        run: |
+          set -euo pipefail
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
+          author=$(jq -r '.user.login' <<<"$pr")
+          head_repo=$(jq -r '.head.repo.full_name' <<<"$pr")
+          state=$(jq -r '.state' <<<"$pr")
+          title=$(jq -r '.title' <<<"$pr")
+          head_ref=$(jq -r '.head.ref' <<<"$pr")
+          head_sha=$(jq -r '.head.sha' <<<"$pr")
+
+          [ "$author" = nziermann ] || { echo "::error::#$PR_NUMBER is by $author, not the generator"; exit 1; }
+          [ "$head_repo" = "$GITHUB_REPOSITORY" ] || { echo "::error::#$PR_NUMBER comes from $head_repo"; exit 1; }
+          [ "$state" = open ] || { echo "::error::#$PR_NUMBER is $state"; exit 1; }
+
+          title_pattern='^([^[:space:]]+) from API \(([0-9a-f]+)\)$'
+          [[ $title =~ $title_pattern ]] || { echo "::error::#$PR_NUMBER is not a generator PR: $title"; exit 1; }
+          api_branch=${BASH_REMATCH[1]}
+          source_sha=${BASH_REMATCH[2]}
+          [[ $api_branch =~ ^[A-Za-z0-9._/-]+$ ]] || { echo "::error::Unexpected API branch $api_branch"; exit 1; }
+          # The head branch is deleted at the end, so it must be the generator's own.
+          [ "$head_ref" = "$api_branch-$source_sha" ] || { echo "::error::Head branch $head_ref is not $api_branch-$source_sha"; exit 1; }
+
+          if [ "$api_branch" = master ]; then
+            kind=base
+            tag=
+            group=base
+          else
+            kind=variant
+            name=$(tr '[:upper:]' '[:lower:]' <<<"${api_branch#dev-}" | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g')
+            [ -n "$name" ] || { echo "::error::API branch $api_branch has no usable variant name"; exit 1; }
+            tag="api-$name"
+            group=$tag
+          fi
+
+          {
+            echo "number=$PR_NUMBER"
+            echo "head_sha=$head_sha"
+            echo "head_ref=$head_ref"
+            echo "api_branch=$api_branch"
+            echo "source_sha=$source_sha"
+            echo "kind=$kind"
+            echo "tag=$tag"
+            echo "group=$group"
+            echo "dry_run=$DRY_RUN"
+          } >> "$GITHUB_OUTPUT"
+
+  verify:
+    name: Verify
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    concurrency:
+      group: api-models-${{ needs.resolve.outputs.group }}
+      cancel-in-progress: true
+    outputs:
+      action: ${{ steps.decide.outputs.action }}
+      hash: ${{ steps.import.outputs.hash }}
+    env:
+      HEAD_SHA: ${{ needs.resolve.outputs.head_sha }}
+      SOURCE_SHA: ${{ needs.resolve.outputs.source_sha }}
+      KIND: ${{ needs.resolve.outputs.kind }}
+      TAG: ${{ needs.resolve.outputs.tag }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          ref: next
+          persist-credentials: false
+
+      - run: corepack enable
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24.11.0'
+          package-manager-cache: false
+
+      - run: yarn install --immutable
+
+      - id: import
+        run: |
+          set -euo pipefail
+          echo "base=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          bash tools/api-models/import.sh "$HEAD_SHA"
+          node tools/api-models/validate.mjs libs/types/src/lib/api
+          echo "hash=$(node tools/api-models/hash.mjs libs/types/src/lib/api)" >> "$GITHUB_OUTPUT"
+          if git diff --cached --quiet; then echo "changed=false"; else echo "changed=true"; fi >> "$GITHUB_OUTPUT"
+
+      - id: decide
+        env:
+          CHANGED: ${{ steps.import.outputs.changed }}
+          HASH: ${{ steps.import.outputs.hash }}
+        run: |
+          set -euo pipefail
+          if [ "$KIND" = base ]; then
+            if [ "$CHANGED" = true ]; then action=push; else action=skip; fi
+            echo "action=$action" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          current=$(npm view @ethlete/types "dist-tags.$TAG" 2>/dev/null || true)
+          if [ -n "$current" ] && [[ $current != 0.0.0-api-* ]]; then
+            echo "::error::The dist-tag $TAG points to $current, which is not an API models variant"
+            exit 1
+          fi
+          published=
+          [ -n "$current" ] && published=$(npm view "@ethlete/types@$current" ethleteApiModels.hash 2>/dev/null || true)
+          if [ "$published" = "$HASH" ]; then action=skip; else action=publish; fi
+          echo "action=$action" >> "$GITHUB_OUTPUT"
+
+      - if: steps.decide.outputs.action == 'push'
+        run: |
+          set -euo pipefail
+          bash tools/api-models/write-changeset.sh "$SOURCE_SHA"
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -qm "chore(types): Update the API models from master ($SOURCE_SHA)"
+
+      - if: steps.decide.outputs.action == 'push'
+        env:
+          BASE: ${{ steps.import.outputs.base }}
+        run: yarn nx affected -t typecheck lint test build --base="$BASE" --head=HEAD
+
+      - if: steps.decide.outputs.action == 'push'
+        run: yarn lint:changesets
+
+      # A variant ships only @ethlete/types. The other libs are built against the base models and
+      # use fields a variant may lack, so checking them against variant models fails spuriously.
+      - if: steps.decide.outputs.action == 'publish'
+        run: yarn nx run-many -t typecheck lint test build -p types
+
+  push:
+    name: Push to next
+    needs: [resolve, verify]
+    if: needs.verify.outputs.action == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    concurrency:
+      group: api-models-${{ needs.resolve.outputs.group }}
+      cancel-in-progress: true
+    outputs:
+      result: ${{ steps.push.outputs.result }}
+    env:
+      HEAD_SHA: ${{ needs.resolve.outputs.head_sha }}
+      SOURCE_SHA: ${{ needs.resolve.outputs.source_sha }}
+      DRY_RUN: ${{ needs.resolve.outputs.dry_run }}
+      VERIFIED_HASH: ${{ needs.verify.outputs.hash }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          ref: next
+          persist-credentials: false
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24.11.0'
+          package-manager-cache: false
+
+      - run: |
+          set -euo pipefail
+          bash tools/api-models/import.sh "$HEAD_SHA"
+          hash=$(node tools/api-models/hash.mjs libs/types/src/lib/api)
+          [ "$hash" = "$VERIFIED_HASH" ] || { echo "::error::Models hash $hash differs from the verified $VERIFIED_HASH"; exit 1; }
+          bash tools/api-models/write-changeset.sh "$SOURCE_SHA"
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -qm "chore(types): Update the API models from master ($SOURCE_SHA)"
+
+      # The commit is only verified on the next it was checked against. When next moved on, the
+      # push is rejected and a re-run verifies again.
+      - id: push
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sha=$(git rev-parse HEAD)
+          if [ "$DRY_RUN" = true ]; then
+            echo "result=Dry run: would push $sha to next." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          auth=$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          if ! git -c http.extraheader="AUTHORIZATION: basic $auth" push origin HEAD:next; then
+            echo "::error::next moved since the checks ran. Re-run this workflow to verify against the new next."
+            exit 1
+          fi
+          echo "result=Pushed $sha to \`next\`." >> "$GITHUB_OUTPUT"
+
+  package:
+    name: Package variant
+    needs: [resolve, verify]
+    if: needs.verify.outputs.action == 'publish'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    concurrency:
+      group: api-models-${{ needs.resolve.outputs.group }}
+      cancel-in-progress: true
+    outputs:
+      version: ${{ steps.pack.outputs.version }}
+      tarball: ${{ steps.pack.outputs.tarball }}
+      sha256: ${{ steps.pack.outputs.sha256 }}
+    env:
+      HEAD_SHA: ${{ needs.resolve.outputs.head_sha }}
+      API_BRANCH: ${{ needs.resolve.outputs.api_branch }}
+      SOURCE_SHA: ${{ needs.resolve.outputs.source_sha }}
+      TAG: ${{ needs.resolve.outputs.tag }}
+      VERIFIED_HASH: ${{ needs.verify.outputs.hash }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          ref: next
+          persist-credentials: false
+
+      - run: corepack enable
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24.11.0'
+          package-manager-cache: false
+
+      - run: yarn install --immutable
+
+      - run: |
+          set -euo pipefail
+          bash tools/api-models/import.sh "$HEAD_SHA"
+          node tools/api-models/validate.mjs libs/types/src/lib/api
+          hash=$(node tools/api-models/hash.mjs libs/types/src/lib/api)
+          [ "$hash" = "$VERIFIED_HASH" ] || { echo "::error::Models hash $hash differs from the verified $VERIFIED_HASH"; exit 1; }
+
+      - run: yarn nx build types
+
+      - id: pack
+        run: |
+          set -euo pipefail
+          version="0.0.0-$TAG-$(date -u +%Y%m%d%H%M%S)"
+          node tools/api-models/variant.mjs dist/libs/types/package.json "$version" "$API_BRANCH" "$SOURCE_SHA" "$VERIFIED_HASH"
+          mkdir -p "$RUNNER_TEMP/package"
+          tarball=$(cd dist/libs/types && npm pack --silent --pack-destination "$RUNNER_TEMP/package")
+          {
+            echo "version=$version"
+            echo "tarball=$tarball"
+            echo "sha256=$(sha256sum "$RUNNER_TEMP/package/$tarball" | cut -d' ' -f1)"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: api-models-package
+          path: ${{ runner.temp }}/package/${{ steps.pack.outputs.tarball }}
+          retention-days: 1
+          if-no-files-found: error
+
+  publish:
+    name: Publish variant
+    needs: [resolve, package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+    concurrency:
+      group: api-models-${{ needs.resolve.outputs.group }}
+      cancel-in-progress: true
+    outputs:
+      result: ${{ steps.publish.outputs.result }}
+    env:
+      TAG: ${{ needs.resolve.outputs.tag }}
+      DRY_RUN: ${{ needs.resolve.outputs.dry_run }}
+      VERSION: ${{ needs.package.outputs.version }}
+      TARBALL: ${{ needs.package.outputs.tarball }}
+      SHA256: ${{ needs.package.outputs.sha256 }}
+    steps:
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24.11.0'
+          package-manager-cache: false
+          registry-url: 'https://registry.npmjs.org'
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: api-models-package
+          path: ${{ runner.temp }}/package
+
+      - id: publish
+        env:
+          NODE_AUTH_TOKEN: ${{ needs.resolve.outputs.dry_run != 'true' && secrets.NPM_TOKEN || '' }}
+        run: |
+          set -euo pipefail
+          file="$RUNNER_TEMP/package/$TARBALL"
+          echo "$SHA256  $file" | sha256sum -c -
+          manifest=$(tar -xOzf "$file" package/package.json)
+          [ "$(jq -r .name <<<"$manifest")" = @ethlete/types ] || { echo "::error::The tarball is not @ethlete/types"; exit 1; }
+          [ "$(jq -r .version <<<"$manifest")" = "$VERSION" ] || { echo "::error::The tarball is not version $VERSION"; exit 1; }
+
+          current=$(npm view @ethlete/types "dist-tags.$TAG" 2>/dev/null || true)
+          if [ -n "$current" ] && [[ $current != 0.0.0-api-* ]]; then
+            echo "::error::The dist-tag $TAG points to $current, which is not an API models variant"
+            exit 1
+          fi
+
+          if [ "$DRY_RUN" = true ]; then
+            npm publish "$file" --access public --tag "$TAG" --dry-run
+            echo "result=Dry run: would publish @ethlete/types@$VERSION under the dist-tag \`$TAG\`." >> "$GITHUB_OUTPUT"
+          else
+            npm publish "$file" --access public --tag "$TAG"
+            echo "result=Published @ethlete/types@$VERSION under the dist-tag \`$TAG\`." >> "$GITHUB_OUTPUT"
+          fi
+
+  close:
+    name: Close
+    needs: [resolve, verify, push, package, publish]
+    if: >-
+      always() && needs.resolve.outputs.dry_run != 'true' && needs.verify.result == 'success' &&
+      !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NUMBER: ${{ needs.resolve.outputs.number }}
+      HEAD_REF: ${{ needs.resolve.outputs.head_ref }}
+      API_BRANCH: ${{ needs.resolve.outputs.api_branch }}
+      RESULT: ${{ needs.push.outputs.result || needs.publish.outputs.result || 'No model change.' }}
+    steps:
+      - run: |
+          set -euo pipefail
+          gh pr close "$NUMBER" -R "$GITHUB_REPOSITORY" --comment "$RESULT"
+          gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$HEAD_REF" ||
+            echo "::warning::Could not delete $HEAD_REF"
+
+      # cancel-in-progress leaves the PRs of cancelled runs open.
+      - run: |
+          set -euo pipefail
+          title_pattern='^([^[:space:]]+) from API \(([0-9a-f]+)\)$'
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&base=main&per_page=100" \
+            -q '.[] | [.number, .user.login, .head.repo.full_name, .head.ref, .title] | @tsv' |
+            while IFS=$'\t' read -r number author head_repo head_ref title; do
+              [ "$number" -lt "$NUMBER" ] || continue
+              [ "$author" = nziermann ] && [ "$head_repo" = "$GITHUB_REPOSITORY" ] || continue
+              [[ $title =~ $title_pattern ]] && [ "${BASH_REMATCH[1]}" = "$API_BRANCH" ] || continue
+              [ "$head_ref" = "$API_BRANCH-${BASH_REMATCH[2]}" ] || continue
+              gh pr close "$number" -R "$GITHUB_REPOSITORY" --comment "Superseded by #$NUMBER."
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$head_ref" ||
+                echo "::warning::Could not delete $head_ref"
+            done
