@@ -13,11 +13,12 @@ const editing = (clock: string): CollectedEvent => ({
 });
 
 /**
- * One checkout, worked on `next` for half an hour and then on the branch that names the issue. This
- * is what an agent does to itself: it starts where it was, then creates the branch for the work.
+ * One checkout, worked on `left` for half an hour and then on the branch that names the issue. From
+ * `next` this is what an agent does to itself: it starts where it was, then creates the branch for the
+ * work.
  */
-const swap = (): CollectedEvent[] => [
-  { at: at('09:00'), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: 'next' },
+const swap = (left = 'next'): CollectedEvent[] => [
+  { at: at('09:00'), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: left },
   ...['09:00', '09:15', '09:30'].map(editing),
   { at: at('09:30'), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: E2E_ISSUE_BRANCH },
   ...['09:45', '10:00'].map(editing),
@@ -40,10 +41,24 @@ test.describe('a checkout that swapped to the branch naming its issue', () => {
     await expect(page.locator('[data-lane] [data-kind="row"]')).toContainText('user management');
   });
 
+  test('marks no swap, since the minutes on the base branch already belong to the branch cut from it', async ({
+    page,
+  }) => {
+    await expect(page.locator('[data-lane] [data-kind="row"]')).toHaveCount(1);
+    await expect(page.locator('[data-kind="row"] [data-swap]')).toHaveCount(0);
+  });
+});
+
+test.describe('a checkout that swapped from a branch naming nothing to the branch naming its issue', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: swap('dev-toty') });
+    await page.goto('/day');
+  });
+
   test('marks inside the band where the checkout swapped, and names both branches', async ({ page }) => {
     const mark = page.locator('[data-kind="row"] [data-swap]');
 
     await expect(mark).toHaveCount(1);
-    await expect(mark).toHaveAttribute('title', `30m on \`next\` before it swapped to \`${E2E_ISSUE_BRANCH}\``);
+    await expect(mark).toHaveAttribute('title', `30m on \`dev-toty\` before it swapped to \`${E2E_ISSUE_BRANCH}\``);
   });
 });
