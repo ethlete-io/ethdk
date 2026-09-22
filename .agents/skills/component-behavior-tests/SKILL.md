@@ -34,7 +34,7 @@ When the dev server loops (`[HMR] Cannot find update ... Reloading page` on ever
 against the static build instead: `npx nx build-storybook storybook`, then run Playwright with
 `STORYBOOK_URL` unset. The config serves `dist/storybook` on `:4401` by itself. Tailwind's
 `source()` in `apps/storybook/src/styles/storybook.css` is limited to `libs` and
-`apps/storybook/src` for this reason: a wider scope makes webpack watch `test-results/` and
+`apps/storybook/src` for this reason: a wider scope makes the dev server watch `test-results/` and
 `.nx/`, so every test failure and every lint run rebuilds Storybook. Concurrent runs delete each
 other's results; pass `--output=apps/storybook-e2e/test-results/<domain>` per run.
 

@@ -19,11 +19,12 @@ theme, so a large part of what you'd type from muscle memory silently does
 nothing. Tailwind emits no class for an unknown token; there is no error, the
 element just renders unstyled.
 
-## The theme: `apps/storybook/src/styles/storybook.css`
+## The theme: `apps/storybook/src/styles/tokens.css`
 
-That file is the whole story-side design system: it imports Tailwind, sets the
-`@theme`, then pulls in `themes.css` / `surface-themes.css` (the generated theme
-vars). Read it before reaching for an unfamiliar utility. What it does:
+`storybook.css` is the entry: it imports Tailwind, then `tokens.css` (the `@theme`),
+then `themes.css` / `surface-themes.css` (the generated theme vars). Every `@import`
+must stay at the top of `storybook.css` - Vite drops one that follows a rule, without
+an error. Read `tokens.css` before reaching for an unfamiliar utility. What it does:
 
 ```css
 --color-*: initial; /* the entire default palette is GONE */
@@ -43,7 +44,7 @@ vars). Read it before reaching for an unfamiliar utility. What it does:
 Check before you guess - if `@theme` doesn't define the token, the class doesn't exist:
 
 ```bash
-grep -nE -- '--(color|text|font)-' apps/storybook/src/styles/storybook.css
+grep -nE -- '--(color|text|font)-' apps/storybook/src/styles/tokens.css
 ```
 
 ## Colors in a story come from theming, not utilities
@@ -70,7 +71,7 @@ token names).
 
 ## The 62.5% root font
 
-`storybook.css` sets `html { font-size: 62.5% }`, so `1rem` = 10px.
+`tokens.css` sets `html { font-size: 62.5% }`, so `1rem` = 10px.
 Every rem-based utility is therefore 62.5% of its nominal px
 value, which mostly *reads* fine because `--spacing` is scaled to match, but bites on
 the container scale: `max-w-3xl` is 480px, not 768px, and will truncate a demo you

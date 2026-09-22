@@ -129,6 +129,9 @@ jobs:
 
       - run: yarn playwright install --with-deps chromium
 
+      # Renders every story in Chromium through Vitest; a11y violations are reported, not failed.
+      - run: yarn nx run storybook:test-storybook
+
       # Component behavior tests drive the build above; `nx e2e storybook-e2e` would rebuild it.
       - run: yarn playwright test -c apps/storybook-e2e/playwright.config.ts
 

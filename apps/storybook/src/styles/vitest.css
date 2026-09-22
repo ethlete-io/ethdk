@@ -1,0 +1,3 @@
+/* Mirrors the `styles` option in project.json, which only the Storybook builders read. */
+@import '../../../../libs/cdk/src/lib/styles/index.css';
+@import './storybook.css';
