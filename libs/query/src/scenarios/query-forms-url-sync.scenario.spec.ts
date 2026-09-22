@@ -2,7 +2,14 @@ import { Location } from '@angular/common';
 import { effect } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { dateQueryField, defineQueryForm, queryField, searchQueryField, stringArrayQueryField } from '../index';
+import {
+  dateQueryField,
+  defineQueryForm,
+  queryField,
+  searchQueryField,
+  sortQueryField,
+  stringArrayQueryField,
+} from '../index';
 import { describe, expect, it, vi } from 'vitest';
 import { useScenario } from './harness';
 
@@ -486,5 +493,30 @@ describe('query forms URL sync scenario', () => {
     expect(qf.value()).toEqual({ search: 'shoes', page: 7 });
 
     c.destroy();
+  });
+
+  it.each([
+    ['an empty search', '/?search=&page=3'],
+    ['a sort without a direction', '/?sort=name&page=3'],
+  ])('restoring %s from the URL does not reset a page it resets', async (_, url) => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await router.navigateByUrl(url);
+    s.tick();
+
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: {
+          search: searchQueryField(),
+          sort: sortQueryField(),
+          page: queryField<number>({ defaultValue: 1, isResetBy: ['search', 'sort'] }),
+        },
+      }).observe(),
+    );
+    await s.settle();
+
+    expect(qf.value().page).toBe(3);
+    expect(router.parseUrl(router.url).queryParams['page']).toBe('3');
   });
 });

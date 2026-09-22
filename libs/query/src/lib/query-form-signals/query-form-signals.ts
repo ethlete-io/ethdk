@@ -621,7 +621,9 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     }
   };
 
-  const commitFromUrl = (next: Dict) => {
+  const commitFromUrl = (parsed: Dict) => {
+    const next = normalizeLive(fieldDefs, parsed, defaults);
+
     clearTimer();
     skipNextResets = false;
     skipNextResetsFor = undefined;
