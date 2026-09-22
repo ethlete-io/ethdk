@@ -254,6 +254,12 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
 
       const destroyRef = inject(DestroyRef);
 
+      destroyRef.onDestroy(() => {
+        for (const entry of repository.subtle.cacheEntries()) {
+          if (entry.isUnused) repository.subtle.evict(entry.key);
+        }
+      });
+
       // Only the client knows when its own injector dies. Without this the panel cannot tell a
       // destroyed client from a live one whose queries all happen to be destroyed, because a
       // tombstone keeps its `meta.repository`.

@@ -615,6 +615,35 @@ describe('caching scenario', () => {
     });
   });
 
+  describe('client teardown', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('releases a retained entry and its eviction timer when the client injector is destroyed', () => {
+      const s = scenario();
+      s.api.on('GET', '/retained-at-teardown', () => ({ body: { n: 1 } }));
+
+      const ref = createQueryClient({ name: 'caching-scenario-teardown', baseUrl: BASE_URL, keepUnusedFor: 60_000 });
+      const clientInjector = createEnvironmentInjector(
+        ref.provide(),
+        s.run(() => inject(EnvironmentInjector)),
+      );
+      const client = clientInjector.runInContext(() => ref.inject());
+      const consumerInjector = createEnvironmentInjector([], clientInjector);
+
+      consumerInjector.runInContext(() => createGetQuery(ref)<{ response: { n: number } }>('/retained-at-teardown')());
+      s.tick();
+      consumerInjector.destroy();
+
+      expect(client.repository.subtle.cacheEntries()).toEqual([expect.objectContaining({ isUnused: true })]);
+      const timersWhileRetained = vi.getTimerCount();
+
+      clientInjector.destroy();
+
+      expect(client.repository.subtle.cacheEntries()).toHaveLength(0);
+      expect(vi.getTimerCount()).toBe(timersWhileRetained - 1);
+    });
+  });
+
   describe('browser platform contrast', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 60_000 } });
 
