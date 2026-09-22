@@ -2,15 +2,13 @@
  * Lints changeset notes against the hard bar in the `changeset` skill: one to two sentences,
  * under 40 words, no second paragraph, at most three bullets.
  *
- * Only *unreleased* changesets are checked. An entry listed in `.changeset/pre.json` has already
- * been versioned and published as a prerelease, so its file is locked - rewriting it would change
- * a changelog that consumers have already read. Those files are consumed and deleted when the repo
- * leaves prerelease mode, at the same moment `pre.json` goes away, so "no pre.json" correctly means
- * "everything here is new".
+ * Only *unreleased* changesets are checked. Changesets v3 moves an entry that a prerelease
+ * already published into `.changeset/pre/`, so its file is locked - rewriting it would change a
+ * changelog that consumers have already read. Every `.md` file directly in `.changeset/` is new.
  *
  * Usage:
  *   node tools/scripts/lint-changesets.js              # every unreleased changeset
- *   node tools/scripts/lint-changesets.js <paths...>   # only these files (still skips locked ones)
+ *   node tools/scripts/lint-changesets.js <paths...>   # only these files (skips any under .changeset/pre/)
  */
 
 const { readFileSync, readdirSync, existsSync } = require('fs');
@@ -45,19 +43,6 @@ const SKILL_HINT =
   'The bar is in the `changeset` skill (.agents/skills/changeset/SKILL.md): the note is the line a\n' +
   'consumer skims to decide whether the release affects them, not a summary of the work. Mechanism,\n' +
   'API inventories and caveats belong in apps/docs; causes belong in the commit body.';
-
-/** Entries already versioned in prerelease mode - their files must not be rewritten. */
-const readLockedNames = () => {
-  const preJson = join(CHANGESET_DIR, 'pre.json');
-
-  if (!existsSync(preJson)) return new Set();
-
-  try {
-    return new Set(JSON.parse(readFileSync(preJson, 'utf8')).changesets ?? []);
-  } catch {
-    return new Set();
-  }
-};
 
 /** Splits a changeset into its frontmatter lines and its note, or reports why it cannot be read. */
 const parse = (raw) => {
@@ -132,11 +117,9 @@ const checkNote = (note) => {
 };
 
 const lint = (paths) => {
-  const locked = readLockedNames();
-
   const files = (
     paths.length > 0 ? paths.map((path) => basename(path)) : readdirSync(CHANGESET_DIR).filter((f) => f.endsWith('.md'))
-  ).filter((file) => file !== 'README.md' && !locked.has(file.replace(/\.md$/, '')));
+  ).filter((file) => file !== 'README.md');
 
   const failures = [];
 

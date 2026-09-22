@@ -191,24 +191,22 @@ checks every unreleased one - so an over-long note comes straight back at you.
 
 When it fires, **delete the note and write the one-sentence version**. Do not shave
 words off the paragraphs you have until the count passes: a 40-word note that is a
-compressed guide is still the wrong thing. Only entries already listed in
-`.changeset/pre.json` are exempt, and only because they are locked.
+compressed guide is still the wrong thing. Only entries already moved into
+`.changeset/pre/` are exempt, and only because they are locked.
 
 ## Editing and consolidating unreleased changesets
 
-A changeset is **unreleased** until its name appears in the `changesets` array of
-`.changeset/pre.json`. Those unreleased `.md` files are safe to edit, rename,
-merge, or delete - nothing has consumed them yet. Entries already listed in
-`pre.json` are **locked** (already versioned/published in prerelease); never edit
-or delete those files, and never hand-edit `pre.json` - dropping an entry
-re-publishes its file with the wrong bump.
+Every `.md` file directly in `.changeset/` (except `README.md`) is **unreleased**.
+Those files are safe to edit, rename, merge, or delete - nothing has consumed them
+yet. When `changeset version` publishes an entry in prerelease mode, it moves the
+file into `.changeset/pre/`. Those files are **locked** (already
+versioned/published in prerelease); never edit, move or delete them, and never
+hand-edit `.changeset/pre.json` - that re-publishes an entry with the wrong bump.
 
-Find the unreleased ones by diffing the `.md` filenames against that array:
+List the unreleased ones:
 
 ```bash
-comm -23 \
-  <(ls .changeset/*.md | xargs -n1 basename | grep -v '^README.md$' | sed 's/\.md$//' | sort) \
-  <(python3 -c "import json;[print(c) for c in json.load(open('.changeset/pre.json'))['changesets']]" | sort)
+ls .changeset/*.md | grep -v '/README.md$'
 ```
 
 When you touch these, actively keep them tidy - they are the next release's
