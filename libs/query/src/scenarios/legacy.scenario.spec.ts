@@ -1620,6 +1620,45 @@ describe('legacy scenario', () => {
 
       owner.destroy();
     });
+
+    it('settles when another consumer cancels the shared GET query in flight', async () => {
+      const s = scenario();
+      s.api.on('GET', '/validate', () => ({ status: 204, delay: 100 }));
+
+      const owner = s.consumer();
+      const client = owner.run(() => new V2QueryClient({ baseRoute: BASE_URL }));
+      const validateEmail = client.get({
+        route: '/validate',
+        types: { args: def<{ queryParams: { email: string } }>(), response: def<void>() },
+      });
+      const args = (email: string) => ({ queryParams: { email } });
+
+      const testForm = owner.run(() => {
+        const emailSchema = schema<{ email: string }>((p) => {
+          validateWithV2Query(p, {
+            queryCreator: validateEmail,
+            args: (ctx) => args(ctx.value().email),
+            debounce: 0,
+          });
+        });
+
+        return form(signal({ email: 'ada@example.com' }), emailSchema);
+      });
+
+      await s.settle();
+      expect(testForm().pending()).toBe(true);
+
+      validateEmail.prepare(args('ada@example.com')).abort();
+
+      await s.settle(100);
+      await s.settle(100);
+
+      expect(testForm().pending()).toBe(false);
+      expect(testForm().errors()).toEqual([]);
+      expect(s.api.requestCount('GET', '/validate')).toBe(2);
+
+      owner.destroy();
+    });
   });
   describe('query directives', () => {
     const blurThenFocus = (s: Scenario) => {

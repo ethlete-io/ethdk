@@ -1,11 +1,11 @@
 import { inject, Injector, Resource, resource, runInInjectionContext } from '@angular/core';
 import { FieldContext, PathKind, SchemaPath, SchemaPathRules, TreeValidationResult } from '@angular/forms/signals';
 import { FormViolationView } from '@ethlete/types';
-import { Observable, filter, firstValueFrom, take } from 'rxjs';
+import { Observable, filter, firstValueFrom, take, tap } from 'rxjs';
 import { applyQueryAsyncValidator } from '../http/query-validator-core';
 import { AnyLegacyQueryCreator } from './interop';
 import { AnyV2QueryCreator, QueryDataOf } from './query-creator';
-import { V2QueryState, isQueryStateFailure, isQueryStateSuccess } from './query';
+import { V2QueryState, isQueryStateCancelled, isQueryStateFailure, isQueryStateSuccess } from './query';
 
 // The legacy twin of `../http/validate-with-query.ts` for apps still on the class-based
 // `V2QueryClient`. Same signature and behavior; only the query engine differs - it prepares and
@@ -141,6 +141,9 @@ export const validateWithV2Query = <
           // `extractFormViolations` can unwrap the 422 body.
           return firstValueFrom(
             query.state$.pipe(
+              tap((state) => {
+                if (isQueryStateCancelled(state) && !abortSignal.aborted) query.execute();
+              }),
               filter((state) => isQueryStateSuccess(state) || isQueryStateFailure(state)),
               take(1),
             ),
