@@ -1,6 +1,7 @@
 {
   "name": "@ethlete/timetrack",
   "version": "0.1.0-next.5",
+  "private": true,
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
