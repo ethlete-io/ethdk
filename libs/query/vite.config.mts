@@ -2,6 +2,9 @@
 import angular from '@analogjs/vite-plugin-angular';
 import { defineConfig } from 'vite';
 
+// The date-only URL scenarios only fail off UTC, and the threads pool ignores a TZ set inside a spec.
+process.env.TZ = 'America/Los_Angeles';
+
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/libs/query',

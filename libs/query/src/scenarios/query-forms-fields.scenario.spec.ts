@@ -233,7 +233,6 @@ describe('query form fields scenario', () => {
   });
 });
 
-// Bites in every zone but UTC. `process.env.TZ` set inside a spec does not apply in the threads pool.
 describe('query form date-only URL values', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
