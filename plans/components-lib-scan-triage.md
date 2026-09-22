@@ -644,7 +644,7 @@ single-domain reach.
   `apps/docs/components/forms.md` state Tab and Shift+Tab for all four. M — **DONE 2026-09-12**
   `fix(components): Close every field panel on a Tab out of its last control`. Open follow-up: the
   select's own synchronous Tab close in `handleTriggerKeydown` does not report a focus leave, so a Tab
-  out of a panel-hosted search can still refocus the trigger when the field is the page's last tab stop.
+  out of a panel-hosted search can still refocus the trigger when the field is the page's last tab stop. — **DONE 2026-09-22**: the panel-hosted search in `a5cb95194`; the trigger and a trigger-hosted search now close through the controller's `closeByFocusLeave`, pinned by the select e2e suite.
 
 ## Improvements worth scheduling
 

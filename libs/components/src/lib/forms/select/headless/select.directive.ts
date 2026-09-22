@@ -995,7 +995,7 @@ export class SelectDirective
           return;
         }
 
-        this.hide();
+        this.panel.closeByFocusLeave();
 
         return;
       }

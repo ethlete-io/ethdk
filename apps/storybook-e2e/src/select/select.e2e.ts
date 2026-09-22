@@ -1,8 +1,9 @@
 import { Locator, expect, test } from '@playwright/test';
-import { expectFieldFocusVisible, expectTouchMode, openStory, pressKey, tap } from '../support';
+import { expectFieldFocusVisible, expectTouchMode, openStory, pressKey, settle, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-forms-select--default';
 const PRESELECTED_STORY_ID = 'components-forms-select--preselected';
+const SEARCHABLE_STORY_ID = 'components-forms-select--searchable';
 
 /** The option's `id`, which `aria-activedescendant` must carry. No id is a failure, not a pass. */
 const idOf = async (option: Locator) => {
@@ -146,6 +147,26 @@ test.describe('select / keyboard', () => {
     await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
+
+  for (const [name, id] of [
+    ['trigger', DEFAULT_STORY_ID],
+    ['trigger-hosted search', SEARCHABLE_STORY_ID],
+  ]) {
+    test(`a Tab from the open ${name} past the page's last tab stop does not pull focus back`, async ({ page }) => {
+      const root = await openStory(page, id);
+      const trigger = root.getByRole('combobox');
+
+      await pressKey(page, 'Tab');
+      await pressKey(page, 'ArrowDown');
+      await expect(page.getByRole('listbox')).toBeVisible();
+
+      await pressKey(page, 'Tab');
+
+      await expect(page.getByRole('listbox')).toHaveCount(0);
+      await settle(page, 300);
+      await expect(trigger).not.toBeFocused();
+    });
+  }
 });
 
 test.describe('select / touch', () => {

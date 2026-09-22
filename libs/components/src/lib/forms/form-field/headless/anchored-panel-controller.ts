@@ -271,5 +271,14 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
   return {
     /** Closes the pane. */
     close: () => overlayRef()?.close(),
+    /** Closes the pane as a focus leave, so `onAfterClosed` does not pull focus back to the field. */
+    closeByFocusLeave: () => {
+      if (!overlayRef()) {
+        return;
+      }
+
+      closedByFocusLeave = true;
+      requestClose();
+    },
   };
 };
