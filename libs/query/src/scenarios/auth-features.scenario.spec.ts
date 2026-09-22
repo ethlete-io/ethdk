@@ -894,6 +894,31 @@ describe('auth features without the devtools', () => {
     c.destroy();
   });
 
+  it('reports a refresh the app starts itself as tokenRefreshSuccess { automatic: false }', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const events: boolean[] = [];
+    const auth = s.auth({
+      features: [
+        withTracking<ScenarioAuthBuilders>({ on: { tokenRefreshSuccess: ({ automatic }) => events.push(automatic) } }),
+      ],
+    });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    c.run(() => auth.queries.refresh.execute({ body: {} }));
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(events).toEqual([false]);
+
+    c.destroy();
+  });
+
   it('polls customActivityCheck once a second and postpones the logout while it returns true', () => {
     const s = scenario();
 

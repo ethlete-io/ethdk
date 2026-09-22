@@ -23,6 +23,7 @@ import {
   withBearerAuthMultiTabSync,
   withPersistentAuth,
   withRefreshQuery,
+  withTracking,
 } from '../index';
 import { mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
 
@@ -36,7 +37,18 @@ let tabCounter = 0;
 
 const is401 = (entry: { error: unknown }) => entry.error instanceof HttpErrorResponse && entry.error.status === 401;
 
-type TabOptions = { name?: string; syncConfig?: BearerAuthMultiTabSyncConfig };
+type TabOptions = { name?: string; syncConfig?: BearerAuthMultiTabSyncConfig; trackInto?: string[] };
+
+const trackingInto = (events: string[]) =>
+  withTracking<ScenarioAuthBuilders>({
+    on: {
+      loginExecute: () => events.push('loginExecute'),
+      loginSuccess: () => events.push('loginSuccess'),
+      loginFailure: () => events.push('loginFailure'),
+      tokenRefreshSuccess: ({ automatic }) => events.push(`tokenRefreshSuccess:${automatic}`),
+      logout: ({ cause }) => events.push(`logout:${cause}`),
+    },
+  });
 
 /** One browser tab: its own query client and auth provider, sharing the fake API and the sync channel. */
 const createAuthTab = (s: Scenario, options: TabOptions = {}) => {
@@ -52,7 +64,10 @@ const createAuthTab = (s: Scenario, options: TabOptions = {}) => {
         autoRetryOn401: true,
       }),
     ],
-    features: [withBearerAuthMultiTabSync(options.syncConfig)],
+    features: [
+      withBearerAuthMultiTabSync(options.syncConfig),
+      ...(options.trackInto ? [trackingInto(options.trackInto)] : []),
+    ] as unknown as readonly [],
   });
 
   // Its own coordinator rather than the shared root one, or a guard in one tab is the same object as
@@ -668,6 +683,122 @@ describe('auth multi-tab scenario', () => {
     expect(b.auth.executionState()).toEqual({ type: 'logout', state: 'success' });
     expect(b.auth.sessionEndCause()).toBe('otherTab');
     expect(b.unsavedChanges.hasUnsavedChanges()).toBe(false);
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('delivers tracking events raised before the leader lock is granted, once', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const events: string[] = [];
+    const tab = createAuthTab(s, { trackInto: events });
+
+    expect(tab.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    tab.auth.queries.login.execute({ body: {} });
+    s.tick();
+
+    expect(tab.auth.features.multiTabSync.isLeader()).toBe(false);
+    expect(tab.auth.isAuthenticated()).toBe(true);
+
+    await sync(s);
+    await sync(s);
+
+    expect(tab.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(events).toEqual(['loginExecute', 'loginSuccess']);
+
+    tab.destroy();
+  });
+
+  it("fires each of a follower's tracking events once across the tabs, a snapshot-carrying one in the follower", async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const leaderEvents: string[] = [];
+    const followerEvents: string[] = [];
+    const a = createAuthTab(s, { trackInto: leaderEvents });
+    const b = createAuthTab(s, { trackInto: followerEvents });
+    await sync(s);
+    s.tick(251);
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    b.auth.queries.login.execute({ body: {} });
+    await sync(s);
+    await sync(s);
+
+    expect(leaderEvents).toEqual(['loginExecute']);
+    expect(followerEvents).toEqual(['loginSuccess']);
+    s.expectWarning(/Could not forward the "loginSuccess" tracking event/);
+
+    b.auth.logout();
+    await sync(s);
+
+    expect(leaderEvents).toEqual(['loginExecute', 'logout:user', 'logout:otherTab']);
+    expect(followerEvents).toEqual(['loginSuccess']);
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('keeps the tracking events of two providers on one origin apart', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const xLeader: string[] = [];
+    const xFollower: string[] = [];
+    const yLeader: string[] = [];
+    const x1 = createAuthTab(s, { name: `${PROVIDER_NAME}-x`, trackInto: xLeader });
+    const x2 = createAuthTab(s, { name: `${PROVIDER_NAME}-x`, trackInto: xFollower });
+    const y = createAuthTab(s, { name: `${PROVIDER_NAME}-y`, trackInto: yLeader });
+    await sync(s);
+    s.tick(251);
+    await sync(s);
+
+    x2.auth.queries.login.execute({ body: {} });
+    await sync(s);
+    await sync(s);
+
+    expect([...xLeader, ...xFollower]).toEqual(['loginExecute', 'loginSuccess']);
+    expect(yLeader).toEqual([]);
+    s.expectWarning(/Could not forward the "loginSuccess" tracking event/);
+
+    y.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(yLeader).toEqual(['loginExecute', 'loginSuccess']);
+    expect([...xLeader, ...xFollower]).toEqual(['loginExecute', 'loginSuccess']);
+
+    x1.destroy();
+    x2.destroy();
+    y.destroy();
+  });
+
+  it('reports a proactive refresh as tokenRefreshSuccess { automatic: true } once across the tabs', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+
+    const leaderEvents: string[] = [];
+    const followerEvents: string[] = [];
+    const a = createAuthTab(s, { trackInto: leaderEvents });
+    const b = createAuthTab(s, { trackInto: followerEvents });
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    s.tick(7.5 * 60 * 1000 + 1000);
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+    expect([...leaderEvents, ...followerEvents].filter((e) => e.startsWith('tokenRefresh'))).toEqual([
+      'tokenRefreshSuccess:true',
+    ]);
 
     a.destroy();
     b.destroy();
