@@ -355,6 +355,30 @@ describe('query forms scenario', () => {
     expect(qf.value()).toEqual({ search: 'next', page: 1 });
   });
 
+  it('a skipResets write does not skip the resets of a pending edit to another field', () => {
+    const s = scenario();
+
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: {
+          search: searchQueryField(),
+          limit: queryField<number>({ defaultValue: 10 }),
+          page: queryField<number>({ defaultValue: 1, isResetBy: 'search' }),
+        },
+      }).observe({ writeToQueryParams: false }),
+    );
+
+    qf.setValue({ search: null, limit: 10, page: 4 });
+    s.tick();
+
+    qf.patchValue({ search: 'shoes' });
+    s.tick(50);
+    qf.patchValue({ limit: 50 }, { skipResets: true });
+    s.tick();
+
+    expect(qf.value()).toEqual({ search: 'shoes', limit: 50, page: 1 });
+  });
+
   it('previousValue holds the committed value from before the latest change', () => {
     const s = scenario();
 

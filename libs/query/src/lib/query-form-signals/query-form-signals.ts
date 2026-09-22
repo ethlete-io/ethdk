@@ -195,7 +195,8 @@ const applyResets = (
  * triggering, so a cycle converges instead of reaching the cap - only a chain deeper than
  * `MAX_RESET_PASSES` hops does, and it commits with the fields below that hop left untouched.
  * A key the commit itself changed (`explicitKeys`) is never reset, in any pass, and so is a key
- * `protectedKeys` names - the fields a caller asked to skip.
+ * `protectedKeys` names - the fields a caller asked to skip. A key in `silentKeys` - written with
+ * `skipResets` - never triggers a reset.
  */
 const resolveResets = (
   fieldDefs: QueryFormFields,
@@ -203,6 +204,7 @@ const resolveResets = (
   live: Dict,
   defaultFor: (key: string) => unknown,
   protectedKeys?: ReadonlySet<string>,
+  silentKeys?: ReadonlySet<string>,
 ): Dict => {
   const explicitKeys = new Set([...changedKeysBetween(prev, live), ...(protectedKeys ?? [])]);
   const resetDefaults = new Map<string, unknown>();
@@ -212,7 +214,7 @@ const resolveResets = (
     const applied = applyResets(
       fieldDefs,
       next,
-      changedKeysBetween(prev, next),
+      changedKeysBetween(prev, next).filter((key) => !silentKeys?.has(key)),
       explicitKeys,
       resetDefaults,
       defaultFor,
@@ -473,7 +475,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
   let observeOptions: QueryFormSignalsObserveOptions | undefined;
   let pendingTimer: ReturnType<typeof setTimeout> | null = null;
-  let skipNextResets = false;
+  const skipResetsFor = new Set<string>();
   let skipNextResetsFor: ReadonlySet<string> | undefined;
   let urlWriteVersion = 0;
   const urlNavigationMarker = {};
@@ -568,7 +570,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     const prev = committed() as Dict;
 
     if (equal(live, prev)) {
-      skipNextResets = false;
+      skipResetsFor.clear();
       skipNextResetsFor = undefined;
 
       if (!equal(live, rawLive)) {
@@ -578,9 +580,9 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       return;
     }
 
-    const next = skipNextResets ? { ...live } : resolveResets(fieldDefs, prev, live, defaultFor, skipNextResetsFor);
+    const next = resolveResets(fieldDefs, prev, live, defaultFor, skipNextResetsFor, skipResetsFor);
 
-    skipNextResets = false;
+    skipResetsFor.clear();
     skipNextResetsFor = undefined;
 
     previous.set(clone(prev) as QueryFormModel<TFields>);
@@ -599,7 +601,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
   const onLiveChange = (live: Dict) => {
     if (equal(live, committed())) {
-      skipNextResets = false;
+      skipResetsFor.clear();
       skipNextResetsFor = undefined;
 
       return;
@@ -625,7 +627,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     const next = normalizeLive(fieldDefs, parsed, defaults);
 
     clearTimer();
-    skipNextResets = false;
+    skipResetsFor.clear();
     skipNextResetsFor = undefined;
     previous.set(clone(committed()) as QueryFormModel<TFields>);
     committed.set(clone(next) as QueryFormModel<TFields>);
@@ -677,30 +679,32 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     navigateWithParams(queryParams, { replaceUrl: true });
   };
 
-  const setValue = (value: QueryFormModel<TFields>, options?: QueryFormSignalsWriteOptions) => {
-    if (options?.skipResets) skipNextResets = true;
+  const writeModel = (next: Dict, options?: QueryFormSignalsWriteOptions) => {
+    for (const key of changedKeysBetween(model() as Dict, next)) {
+      if (options?.skipResets) {
+        skipResetsFor.add(key);
+      } else {
+        skipResetsFor.delete(key);
+      }
+    }
 
-    model.set(clone(value));
+    model.set(next as QueryFormModel<TFields>);
   };
 
-  const patchValue = (value: Partial<QueryFormModel<TFields>>, options?: QueryFormSignalsWriteOptions) => {
-    if (options?.skipResets) skipNextResets = true;
+  const setValue = (value: QueryFormModel<TFields>, options?: QueryFormSignalsWriteOptions) =>
+    writeModel(clone(value) as Dict, options);
 
-    model.update((cur) => ({ ...cur, ...value }));
-  };
+  const patchValue = (value: Partial<QueryFormModel<TFields>>, options?: QueryFormSignalsWriteOptions) =>
+    writeModel({ ...(model() as Dict), ...value }, options);
 
   const resetFieldsToDefault = (keys: (keyof QueryFormModel<TFields>)[], options?: QueryFormSignalsWriteOptions) => {
-    if (options?.skipResets) skipNextResets = true;
+    const next = { ...(model() as Dict) };
 
-    model.update((cur) => {
-      const next = { ...cur } as Dict;
+    for (const key of keys) {
+      next[key as string] = defaultFor(key as string);
+    }
 
-      for (const key of keys) {
-        next[key as string] = defaultFor(key as string);
-      }
-
-      return next as QueryFormModel<TFields>;
-    });
+    writeModel(next, options);
   };
 
   const devtoolsName = config.name ?? (typeof prefix === 'string' ? prefix : 'form');
