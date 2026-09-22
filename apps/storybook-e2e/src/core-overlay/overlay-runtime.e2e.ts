@@ -41,6 +41,17 @@ async function expectBelow(paneLocator: Locator, reference: Locator): Promise<vo
     .toBe(true);
 }
 
+async function expectAbove(paneLocator: Locator, reference: Locator): Promise<void> {
+  await expect
+    .poll(async () => {
+      const paneBox = await boxOf(paneLocator);
+      const referenceBox = await boxOf(reference);
+
+      return paneBox.y + paneBox.height <= referenceBox.y;
+    })
+    .toBe(true);
+}
+
 test.describe('core overlay runtime / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus handling');
 
@@ -144,6 +155,18 @@ test.describe('core overlay runtime / anchored popover', () => {
     await root.getByRole('button', { name: 'Open popover' }).click();
 
     await expectInsidePadding(page, pane(page, 'Popover'));
+  });
+
+  test('a popover opened at the right edge keeps its top placement and shifts left', async ({ page }) => {
+    const root = await openStory(page, POPOVER_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Open popover' });
+    const popover = pane(page, 'Popover');
+
+    await trigger.click();
+    await waitForEntered(popover);
+
+    await expectAbove(popover, trigger);
+    await expectInsidePadding(page, popover);
   });
 
   test('a scroll that moves the trigger to the top edge flips the popover below it, inside the padding', async ({

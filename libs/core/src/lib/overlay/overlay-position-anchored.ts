@@ -221,6 +221,8 @@ export const createAnchoredPositionCleanup = (
         ? flip({
             fallbackPlacements: strategy.fallbackPlacements ?? undefined,
             fallbackAxisSideDirection: 'start',
+            // shift owns cross-axis overflow; a full check here flips a pane near a side edge off its side
+            crossAxis: strategy.shift !== false ? 'alignment' : true,
             padding: viewportPadding,
             boundary: strategy.boundary,
           })
