@@ -35,7 +35,7 @@ export type SecureExecuteFactoryOptions<TArgs extends QueryArgs> = {
    * the request freezes the access token it was first built with.
    */
   transformAuthAndExec: (
-    executeArgs: QueryExecuteArgs<TArgs> | undefined,
+    executeArgs: QueryExecuteArgs<TArgs> & { args: RequestArgs<TArgs> },
     executeState: ReturnType<typeof setupQueryExecuteState>,
   ) => void;
 };
@@ -119,8 +119,8 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     state.args.set(null);
   };
 
-  const authAndExec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
-    const args = executeArgs?.args;
+  const authAndExec = (executeArgs: QueryExecuteArgs<TArgs>) => {
+    const args = executeArgs.args;
 
     const headerProvider = () => {
       const accessToken = options.authProvider.accessToken();
@@ -168,7 +168,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   // 401, and the refresh that answers that 401 is the one already in flight (a token seed hands over
   // an expired access token, and the refresh query's schedule fires on it at once). Waiting for it
   // spends one round trip instead of two.
-  const authAndExecWhenTokenReady = (executeArgs?: QueryExecuteArgs<TArgs>) => {
+  const authAndExecWhenTokenReady = (executeArgs: QueryExecuteArgs<TArgs>) => {
     const tokenAtWait = options.authProvider.accessToken();
 
     if (tokenAtWait && !options.authProvider.isAccessTokenExpired()) {

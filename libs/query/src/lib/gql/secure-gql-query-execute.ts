@@ -5,7 +5,6 @@ import {
   QueryDependencies,
   queryExecute,
   QueryState,
-  RequestArgs,
   RouteType,
   shouldAutoExecuteGqlQuery,
 } from '../http';
@@ -36,18 +35,18 @@ export const createSecureGqlExecuteFn = <TArgs extends GqlQueryArgs>(
       shouldAutoExecuteGqlQuery(executeOptions.creatorInternals.method) &&
       !executeOptions.queryConfig.onlyManualExecution,
     transformAuthAndExec: (executeArgs, executeState) => {
-      const { args, options: runOptions } = executeArgs ?? {};
+      const { args, options: runOptions } = executeArgs;
 
       let gqlParams = gqlTransformerFor(executeOptions.creatorInternals)(
-        args?.variables,
+        args.variables,
         executeOptions.creatorInternals.transport,
       );
 
-      if (args?.queryParams && executeOptions.creatorInternals.transport === 'GET') {
+      if (args.queryParams && executeOptions.creatorInternals.transport === 'GET') {
         gqlParams = { ...gqlParams, ...args.queryParams };
       }
 
-      const computedArgs = { ...(args ?? ({} as RequestArgs<TArgs>)) };
+      const computedArgs = { ...args };
 
       if (executeOptions.creatorInternals.transport === 'GET') {
         computedArgs.queryParams = gqlParams;

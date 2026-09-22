@@ -1,5 +1,5 @@
 import { shouldAutoExecuteQuery } from './base-query-factory';
-import { QueryArgs, RequestArgs } from './query';
+import { QueryArgs } from './query';
 import { CreateQueryExecuteOptions, InternalQueryExecute } from './query-execute';
 import { queryExecute } from './query-execute-utils';
 import { InternalSecureCreateQueryCreatorOptions } from './secure-query-creator';
@@ -24,13 +24,11 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
     autoExecutes:
       shouldAutoExecuteQuery(executeOptions.creatorInternals.method) && !executeOptions.queryConfig.onlyManualExecution,
     transformAuthAndExec: (executeArgs, executeState) => {
-      const { options: runOptions } = executeArgs ?? {};
-
       queryExecute({
         executeOptions: executeOptions,
         executeState,
-        args: executeArgs?.args ?? ({} as RequestArgs<TArgs>),
-        options: runOptions,
+        args: executeArgs.args,
+        options: executeArgs.options,
         isSecure: true,
       });
     },
