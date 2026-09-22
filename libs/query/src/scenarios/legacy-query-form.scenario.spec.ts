@@ -513,3 +513,42 @@ describe('legacy QueryForm url read', () => {
     c.destroy();
   });
 });
+
+describe('legacy QueryForm function defaults', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  const commit = async (s: ReturnType<typeof scenario>) => {
+    for (let i = 0; i < 3; i++) await s.settle(1);
+  };
+
+  const urlParams = () => {
+    const router = TestBed.inject(Router);
+
+    return router.parseUrl(router.url).queryParams;
+  };
+
+  it('treats a value equal to a function default as the default', async () => {
+    const s = scenario();
+
+    const c = s.consumer();
+    const qf = c.run(() =>
+      new QueryForm({
+        status: new QueryField({ control: new FormControl<string | null>('open'), defaultValue: () => 'open' }),
+      }).observe(),
+    );
+
+    let count = -1;
+    const subscription = qf.activeFilterCount$.subscribe((value) => (count = value));
+
+    qf.setValue({ status: 'closed' });
+    await commit(s);
+    qf.setValue({ status: 'open' });
+    await commit(s);
+
+    expect(urlParams()).toEqual({});
+    expect(count).toBe(0);
+
+    subscription.unsubscribe();
+    c.destroy();
+  });
+});

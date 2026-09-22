@@ -161,6 +161,15 @@ export class DateArrayQueryField {
   }
 }
 
+const serializeFieldValue = (value: unknown) => {
+  if (Array.isArray(value)) return `${ET_ARR_PREFIX}${JSON.stringify(value)}`;
+  if (value instanceof Date) return `${ET_DATE_PREFIX}${value.toISOString()}`;
+  if (typeof value === 'object' && value !== null) return `${ET_OBJ_PREFIX}${JSON.stringify(value)}`;
+  if (value === null) return ET_PROP_NULL_VALUE;
+
+  return value;
+};
+
 const IGNORED_FILTER_COUNT_FIELDS = ['page', 'skip', 'take', 'limit', 'sort', 'sortBy', 'sortOrder', 'query', 'search'];
 
 export type QueryFormOptions = {
@@ -656,17 +665,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private isDefaultValue(key: string, value: unknown) {
-    const normalizedValue = Array.isArray(value)
-      ? `${ET_ARR_PREFIX}${JSON.stringify(value)}`
-      : value instanceof Date
-        ? `${ET_DATE_PREFIX}${value.toISOString()}`
-        : typeof value === 'object' && value !== null
-          ? `${ET_OBJ_PREFIX}${JSON.stringify(value)}`
-          : value === null
-            ? ET_PROP_NULL_VALUE
-            : value;
+    const stored = this.defaultValues[key];
+    const defaultValue = typeof stored === 'function' ? serializeFieldValue(stored()) : stored;
 
-    return this.defaultValues[key] === normalizedValue;
+    return defaultValue === serializeFieldValue(value);
   }
 
   private setupFormGroup() {
@@ -691,17 +693,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     for (const [key, field] of Object.entries(this._fields)) {
       const value = field.data.defaultValue !== undefined ? field.data.defaultValue : field.control.value;
 
-      if (Array.isArray(value)) {
-        defaultValues[key] = `${ET_ARR_PREFIX}${JSON.stringify(value)}`;
-      } else if (value instanceof Date) {
-        defaultValues[key] = `${ET_DATE_PREFIX}${value.toISOString()}`;
-      } else if (typeof value === 'object' && value !== null) {
-        defaultValues[key] = `${ET_OBJ_PREFIX}${JSON.stringify(value)}`;
-      } else if (value === null) {
-        defaultValues[key] = ET_PROP_NULL_VALUE;
-      } else {
-        defaultValues[key] = value;
-      }
+      defaultValues[key] = serializeFieldValue(value);
     }
 
     return defaultValues;
