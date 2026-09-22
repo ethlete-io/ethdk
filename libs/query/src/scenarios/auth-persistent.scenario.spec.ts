@@ -13,6 +13,7 @@ import {
   withAuthenticationQuery,
   withPersistentAuth,
   withRefreshQuery,
+  withTokenRevocation,
 } from '../index';
 import { mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
 
@@ -21,6 +22,7 @@ const PROVIDER_NAME = 'auth-persistent-scenario';
 const COOKIE_NAME = 'etAuth';
 
 type TokenArgs = { body: { token?: string }; response: { accessToken: string; refreshToken: string } };
+type RevokeArgs = { body: { accessToken: string | null; refreshToken: string | null }; response: void };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyFeatureBuilder = (context: BearerAuthProviderFeatureContext<any, any>) => { type: string; instance: unknown };
@@ -92,6 +94,7 @@ const boot = (s: Scenario, options: BootOptions = {}) => {
         refreshStrategy: 0.5,
         onRefreshFailure: options.onRefreshFailure,
       }),
+      withAuthenticationQuery('revoke', { queryCreator: post<RevokeArgs>('/auth/revoke') }),
     ],
     features: (options.features ?? []) as unknown as readonly [],
   });
@@ -936,5 +939,51 @@ describe('withPersistentAuth', () => {
     expect(second.auth.sessionStatus()).toBe('authenticated');
 
     second.destroy();
+  });
+
+  const revocation = () =>
+    withTokenRevocation<
+      readonly [...ScenarioAuthBuilders, ReturnType<typeof withAuthenticationQuery<'revoke', RevokeArgs>>]
+    >({
+      queryKey: 'revoke',
+      buildArgs: (tokens) => ({ body: tokens }),
+    });
+
+  it.each([
+    ['persistent auth first', () => [persistentAuth(), revocation()]],
+    ['token revocation first', () => [revocation(), persistentAuth()]],
+  ])('logout with %s deletes the cookie and revokes the tokens it held', async (_, features) => {
+    const s = scenario();
+
+    serve(s);
+    s.api.on('POST', '/auth/revoke', () => ({ status: 200 }));
+
+    const tab = boot(s, { features: features() as unknown as readonly AnyFeatureBuilder[] });
+    await login(s, tab);
+
+    const tokens = { accessToken: tab.auth.accessToken(), refreshToken: tab.auth.refreshToken() };
+
+    expect(hasCookie()).toBe(true);
+
+    tab.auth.logout();
+    await s.settle();
+    s.flush();
+
+    expect(hasCookie()).toBe(false);
+    expect(s.api.requests.filter((r) => r.path === '/auth/revoke').map((r) => r.body)).toEqual([tokens]);
+    expect(tab.auth.sessionStatus()).toBe('anonymous');
+    expect(tab.auth.sessionEndCause()).toBe('user');
+
+    tab.destroy();
+
+    const requestsBeforeReload = s.api.requests.length;
+    const reloaded = boot(s, { features: features() as unknown as readonly AnyFeatureBuilder[] });
+    await s.settle();
+    s.flush();
+
+    expect(reloaded.auth.sessionStatus()).toBe('anonymous');
+    expect(s.api.requests.slice(requestsBeforeReload)).toEqual([]);
+
+    reloaded.destroy();
   });
 });
