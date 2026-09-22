@@ -9,14 +9,18 @@ concurrency:
 
 jobs:
   ci:
+    # Generator PRs are checked by api-models.yml.
+    if: >-
+      ${{ !(github.event.pull_request.user.login == 'nziermann' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.title, ' from API (')) }}
     uses: ./.github/workflows/ci.yml
     permissions:
       contents: read
       pull-requests: write
       checks: write
     with:
-      # A generated API pull request touches no story, and a fork has no access to the deploy secret.
-      run_storybook: ${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}
-      deploy: ${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}
+      # A fork has no access to the deploy secret.
+      deploy: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
       storybook_target: storybook-next
     secrets: inherit

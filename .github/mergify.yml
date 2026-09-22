@@ -1,8 +1,0 @@
-pull_request_rules:
-  - name: Automatic merge of api models on ci pass
-    conditions:
-      - check-success=ci / Verified
-      - title~=from API
-    actions:
-      merge:
-        method: merge
