@@ -78,6 +78,11 @@ A logged-in user's data is on the other side of the default:
   device is a decision per endpoint, not a blanket one.
 - **A logout removes them.** The auth provider tears down secure entries in every tab, and the
   persisted copies go with them, at the same moment.
+- **A session that ended without a logout removes them too.** Until the auth provider knows whether
+  the tab has a session, persisted secure responses are held back. An `authenticated` session gets them;
+  an `anonymous` start purges them as a logout would. Only the leader tab purges, so a follower that
+  starts without a session leaves the leader's copies alone. A client without an auth provider
+  hydrates them as before.
 - **A cache entry a secure query ever touched stays secure for its whole life.** A public query on
   the same route shares that entry, so the logout takes the shared copy too. The alternative is a body
   that was fetched with a bearer token sitting on disk marked public.

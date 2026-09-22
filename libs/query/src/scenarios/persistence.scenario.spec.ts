@@ -27,6 +27,7 @@ import {
   withBearerAuthMultiTabSync,
   withDefaultRetry,
   withLogging,
+  withPersistentAuth,
   withQueryPersistence,
   withRefreshQuery,
   withSuccessHandling,
@@ -57,7 +58,7 @@ type TabTokenArgs = { body: Record<string, unknown>; response: { accessToken: st
 let tabCounter = 0;
 
 /** One browser tab: its own persisted query client and auth provider, over the shared store and channel. */
-const createPersistedTab = (s: Scenario) => {
+const createPersistedTab = (s: Scenario, options: { syncTokens?: boolean } = {}) => {
   const clientRef = createQueryClient({
     name: `persistence-tab-client-${++tabCounter}`,
     baseUrl: 'https://api.test',
@@ -74,7 +75,7 @@ const createPersistedTab = (s: Scenario) => {
         refreshStrategy: 0.5,
       }),
     ],
-    features: [withBearerAuthMultiTabSync()],
+    features: [withBearerAuthMultiTabSync({ syncTokens: options.syncTokens })],
   });
 
   const injector = createEnvironmentInjector(
@@ -1583,6 +1584,42 @@ describe('persistence scenario', () => {
       a.destroy();
       b.destroy();
     });
+
+    it("keeps the leader's secure entries when a follower starts without a session", async () => {
+      const s = scenario();
+      s.api.on('POST', '/auth/login', () => ({
+        body: {
+          accessToken: mintToken({ expiresInMs: 15 * 60 * 1000 }),
+          refreshToken: mintToken({ expiresInMs: 60 * 60 * 1000 }),
+        },
+      }));
+      s.api.protect('/secure/**');
+      s.api.on('GET', '/secure/a', () => ({ body: { id: 'a' } }));
+
+      const a = createPersistedTab(s);
+      await syncTabs(s);
+      s.tick(251);
+      await syncTabs(s);
+
+      a.auth.queries.login.execute({ body: {} });
+      await syncTabs(s);
+      a.consumer().run(() => a.getSecure<{ response: { id: string } }>('/secure/a', { persistence: true })());
+      await syncTabs(s);
+      await a.client.subtle.persistence?.flush();
+      await syncTabs(s);
+
+      const b = createPersistedTab(s, { syncTokens: false });
+      await syncTabs(s);
+      s.tick(251);
+      await syncTabs(s);
+
+      expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+      expect(b.auth.sessionStatus()).toBe('anonymous');
+      expect(store.entries().map((e) => e.url)).toEqual(['https://api.test/secure/a']);
+
+      a.destroy();
+      b.destroy();
+    });
   });
 
   describe('a logout purge the store refuses', () => {
@@ -1633,6 +1670,171 @@ describe('persistence scenario', () => {
       expect(query.response()).toEqual({ id: 'grace' });
 
       second.destroy();
+    });
+  });
+
+  describe('a restart after a session that ended without a logout', () => {
+    const COOKIE_NAME = 'etAuth';
+
+    beforeEach(() => {
+      document.cookie = `${COOKIE_NAME}=; max-age=0; path=/`;
+    });
+
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    const serve = (s: Scenario, options: { protectsProfile: boolean } = { protectsProfile: true }) => {
+      const pair = () => ({
+        body: {
+          accessToken: mintToken({ expiresInMs: 15 * 60 * 1000 }),
+          refreshToken: mintToken({ expiresInMs: 60 * 60 * 1000 }),
+        },
+      });
+
+      s.api.on('POST', '/auth/login', pair);
+      s.api.on('POST', '/auth/refresh', pair);
+      if (options.protectsProfile) s.api.protect('/secure/**');
+      s.api.on('GET', '/secure/profile', sequence([{ body: { id: 'ada' } }, { body: { id: 'grace' }, delay: 50 }]));
+    };
+
+    const boot = (s: Scenario, options: { restoresFromCookie: boolean }) => {
+      const clientRef = createQueryClient({
+        name: `persistence-restart-client-${++tabCounter}`,
+        baseUrl: 'https://api.test',
+        keepUnusedFor: 0,
+        features: [withQueryPersistence({ adapter: store.adapter })],
+      });
+      const queries = [
+        withAuthenticationQuery('login', { queryCreator: createPostQuery(clientRef)<TabTokenArgs>('/auth/login') }),
+        withRefreshQuery('refresh', { queryCreator: createPostQuery(clientRef)<TabTokenArgs>('/auth/refresh') }),
+      ] as const;
+      const authRef = createBearerAuthProvider({
+        name: 'persistence-restart-auth',
+        queryClientRef: clientRef,
+        queries,
+        features: (options.restoresFromCookie
+          ? [
+              withPersistentAuth<typeof queries>({
+                autoLogin: { queryKey: 'refresh', buildArgs: (token: string) => ({ body: { token } }) },
+              }),
+            ]
+          : []) as unknown as readonly [],
+      });
+
+      const injector = createEnvironmentInjector(
+        [...clientRef.provide(), ...authRef.provide()],
+        s.run(() => inject(EnvironmentInjector)),
+      );
+      const auth = injector.runInContext(() => authRef.inject());
+      const client = injector.runInContext(() => clientRef.inject());
+
+      if (!auth || !client) throw new Error('persistence restart scenario: failed to boot');
+
+      const getProfile = createSecureGetQuery(clientRef, authRef)<{ response: { id: string } }>('/secure/profile', {
+        persistence: true,
+      });
+
+      return {
+        auth,
+        client,
+        profile: () => createEnvironmentInjector([], injector).runInContext(() => getProfile()),
+        publicProfile: () =>
+          createEnvironmentInjector([], injector).runInContext(() =>
+            createGetQuery(clientRef)<{ response: { id: string } }>('/secure/profile')(),
+          ),
+        destroy: () => injector.destroy(),
+      };
+    };
+
+    const persistProfileAndClose = async (s: Scenario, options: { restoresFromCookie: boolean }) => {
+      const app = boot(s, options);
+
+      app.auth.queries.login.execute({ body: {} });
+      await s.settle();
+      app.profile();
+      await s.settle();
+      await app.client.subtle.persistence?.flush();
+      await s.settle();
+      app.destroy();
+
+      expect(store.entries().map((entry) => entry.url)).toEqual(['https://api.test/secure/profile']);
+    };
+
+    it('purges the secure entries of a session that is gone and never hydrates them for the next login', async () => {
+      const s = scenario();
+      serve(s);
+
+      await persistProfileAndClose(s, { restoresFromCookie: false });
+
+      const app = boot(s, { restoresFromCookie: false });
+      await s.settle();
+
+      expect(app.auth.sessionStatus()).toBe('anonymous');
+      expect(store.entries()).toEqual([]);
+
+      app.auth.queries.login.execute({ body: {} });
+      await s.settle();
+
+      const query = app.profile();
+      await s.settle(0);
+
+      expect(query.response()).toBeNull();
+
+      s.tick(50);
+
+      expect(query.response()).toEqual({ id: 'grace' });
+
+      app.destroy();
+    });
+
+    it('hydrates the secure entries of a session that is restored', async () => {
+      const s = scenario();
+      serve(s);
+
+      await persistProfileAndClose(s, { restoresFromCookie: true });
+
+      const app = boot(s, { restoresFromCookie: true });
+      const query = app.profile();
+      await s.settle(0);
+      await s.settle(0);
+
+      expect(app.auth.sessionStatus()).toBe('authenticated');
+      expect(query.response()).toEqual({ id: 'ada' });
+
+      s.tick(50);
+
+      expect(query.response()).toEqual({ id: 'grace' });
+
+      app.destroy();
+    });
+
+    it('holds a secure entry back while the session restores and drops it when the restore fails', async () => {
+      const s = scenario();
+      serve(s, { protectsProfile: false });
+
+      await persistProfileAndClose(s, { restoresFromCookie: true });
+
+      s.api.once('POST', '/auth/refresh', () => ({ status: 401, delay: 20, body: { message: 'expired' } }));
+
+      const app = boot(s, { restoresFromCookie: true });
+      const query = app.publicProfile();
+      await s.settle(0);
+
+      expect(app.auth.sessionStatus()).toBe('restoring');
+      expect(query.response()).toBeNull();
+
+      await s.settle(20);
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 401);
+
+      expect(app.auth.sessionStatus()).toBe('anonymous');
+      expect(query.response()).toBeNull();
+      expect(store.entries()).toEqual([]);
+
+      s.tick(50);
+
+      expect(query.response()).toEqual({ id: 'grace' });
+
+      await app.client.subtle.persistence?.flush();
+      app.destroy();
     });
   });
 

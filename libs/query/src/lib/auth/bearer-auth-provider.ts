@@ -890,6 +890,35 @@ const createBearerAuthProviderImpl = <
     isTabLocalSession: isTabLocalSession.asReadonly(),
   });
 
+  const persistence = queryClient.subtle.persistence;
+
+  if (persistence) {
+    persistence.setSecureHydrationOpen(false);
+
+    effect(() => persistence.setSecureHydrationOpen(sessionStatus() === 'authenticated'));
+
+    let hasFirstSessionSettled = false;
+
+    effect(() => {
+      if (hasFirstSessionSettled) return;
+
+      const status = sessionStatus();
+
+      if (status === 'authenticated') {
+        hasFirstSessionSettled = true;
+
+        return;
+      }
+
+      // Only the leader purges: a follower can start anonymous while the leader's session, and the
+      // secure responses it persisted, are still valid.
+      if (status !== 'anonymous' || !isLeader.isLeaderFn()) return;
+
+      hasFirstSessionSettled = true;
+      untracked(() => queryClient.repository.unbindAllSecure());
+    });
+  }
+
   let readAccessTokenExpiry: (() => boolean) | null = null;
 
   const querySetupContext: BearerAuthProviderQueryContext<TBearerData, TBuilders> = {

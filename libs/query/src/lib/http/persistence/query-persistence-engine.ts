@@ -35,6 +35,12 @@ export type QueryPersistenceEngine = {
   /** The metadata of everything the store holds, for the devtools. Bodies are not read. */
   indexEntries: () => PersistedQueryEntryMeta[];
 
+  /**
+   * Holds persisted responses of secure queries back while `false` and hydrates what it held once it
+   * turns `true`. Open by default; a bearer auth provider opens it only for an authenticated session.
+   */
+  setSecureHydrationOpen: (isOpen: boolean) => void;
+
   /** Stops listening, flushes one last time. */
   destroy: () => void;
 };
@@ -62,6 +68,8 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
   /** Cache entries that were created before the index finished loading. */
   const pendingHydrations = new Set<QueryKey>();
 
+  const heldSecureHydrations = new Set<QueryKey>();
+
   /** Keys the store refused to remove. Retried by the next removal and by the next flush. */
   const pendingRemovals = new Set<QueryKey>();
 
@@ -70,6 +78,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
   let isDestroyed = false;
   let areWritesDisabled = false;
   let isSecurePurgeDeferred = false;
+  let isSecureHydrationOpen = true;
   let storeGeneration = 0;
   let markReady!: () => void;
 
@@ -142,11 +151,21 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
       if (entry.isSecure) pendingWrites.delete(key);
     }
 
+    heldSecureHydrations.clear();
+
+    const knownSecureKeys = Array.from(index.values())
+      .filter((meta) => meta.isSecure)
+      .map((meta) => meta.key);
+
+    for (const key of knownSecureKeys) {
+      index.delete(key);
+    }
+
     return enqueue(async () => {
       const storedIndex = await loadStoredIndex();
-      const secureKeys = [...index.values(), ...storedIndex].filter((meta) => meta.isSecure).map((meta) => meta.key);
+      const storedSecureKeys = storedIndex.filter((meta) => meta.isSecure).map((meta) => meta.key);
 
-      await removeKeys(secureKeys);
+      await removeKeys([...knownSecureKeys, ...storedSecureKeys]);
     });
   };
 
@@ -223,6 +242,12 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     const meta = index.get(key);
 
     if (!meta || isExpired(meta)) return;
+
+    if (meta.isSecure && !isSecureHydrationOpen) {
+      heldSecureHydrations.add(key);
+
+      return;
+    }
 
     let stored: PersistedQueryBody | null;
 
@@ -385,6 +410,19 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     });
   };
 
+  const setSecureHydrationOpen = (isOpen: boolean) => {
+    isSecureHydrationOpen = isOpen;
+
+    if (!isOpen) return;
+
+    const held = Array.from(heldSecureHydrations);
+    heldSecureHydrations.clear();
+
+    for (const key of held) {
+      void hydrate(key);
+    }
+  };
+
   const destroy = () => {
     isDestroyed = true;
     eventSubscription.unsubscribe();
@@ -403,6 +441,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     flush,
     clear,
     indexEntries: () => Array.from(index.values()),
+    setSecureHydrationOpen,
     destroy,
   };
 };
