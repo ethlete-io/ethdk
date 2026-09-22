@@ -402,4 +402,80 @@ describe('auth secure query scenario', () => {
 
     c.destroy();
   });
+
+  it('a secure GET with onlyManualExecution waits for execute(), sends the bearer token without args, and is not re-run by the next login', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    s.api.protect('/secure/**');
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const getSecureProfile = createSecureGetQuery(s.clientRef, auth.ref)<Profile>('/secure/profile');
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    const query = c.run(() => getSecureProfile({ onlyManualExecution: true }));
+    s.tick();
+
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(0);
+
+    c.run(() => query.execute());
+    await s.settle();
+
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(1);
+    expect(s.api.requests.find((r) => r.path === '/secure/profile')?.headers.get('Authorization')).toBe(
+      `Bearer ${auth.accessToken()}`,
+    );
+    expect(query.response()).toEqual({ id: 'me' });
+
+    s.run(() => auth.logout());
+    s.tick();
+
+    expect(query.response()).toBeNull();
+
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+    s.flush();
+
+    expect(auth.sessionStatus()).toBe('authenticated');
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(1);
+    expect(query.response()).toBeNull();
+
+    c.destroy();
+  });
+
+  it('an auto-executing secure GET is re-run by the next login after a logout', async () => {
+    const s = scenario();
+    const auth = s.auth();
+
+    s.api.protect('/secure/**');
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    const getSecureProfile = createSecureGetQuery(s.clientRef, auth.ref)<Profile>('/secure/profile');
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    const query = c.run(() => getSecureProfile());
+    await s.settle();
+
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(1);
+
+    s.run(() => auth.logout());
+    s.tick();
+
+    expect(query.response()).toBeNull();
+
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+    s.flush();
+
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(2);
+    expect(query.response()).toEqual({ id: 'me' });
+
+    c.destroy();
+  });
 });

@@ -1,8 +1,15 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { createEnvironmentInjector, EnvironmentInjector, inject } from '@angular/core';
-import { flushMultiTabSync, installFakeBroadcastChannel, installFakeWebLocks } from '@ethlete/query/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  FakeBroadcastChannelHandle,
+  FakeWebLocksHandle,
+  flushMultiTabSync,
+  installFakeBroadcastChannel,
+  installFakeWebLocks,
+} from '@ethlete/query/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  BearerAuthMultiTabSyncFeature,
   BearerAuthProviderFeatureContext,
   clearQueryDevtoolsAuthSessions,
   createBearerAuthProvider,
@@ -16,6 +23,7 @@ import {
   queryDevtoolsAuthAccountsFor,
   queryDevtoolsAuthActive,
   queryDevtoolsAuthSessionsFor,
+  queryDevtoolsEntries,
   setQueryDevtoolsAuthCredentials,
   setQueryDevtoolsAuthTabLocal,
   switchQueryDevtoolsAuthSession,
@@ -712,6 +720,122 @@ describe('devtools session vault', () => {
     expect(sessions.find((entry) => entry.account === account.id)?.accessToken).toBe(tokenOfAccount);
     expect(sessions.find((entry) => entry.id === own.id)?.accessToken).toBe(tab.auth.accessToken());
     expect(queryDevtoolsAuthActive()[ACCOUNT_PROVIDER_NAME]).toBe(own.id);
+
+    tab.destroy();
+  });
+});
+
+describe('multi-tab sync with the devtools attached', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 }, providers: devtoolsProviders });
+
+  let bus: FakeBroadcastChannelHandle;
+  let locks: FakeWebLocksHandle;
+
+  beforeEach(() => {
+    deleteCookie();
+    clearQueryDevtoolsAuthSessions();
+    bus = installFakeBroadcastChannel();
+    locks = installFakeWebLocks();
+  });
+
+  afterEach(() => {
+    bus.restore();
+    locks.restore();
+  });
+
+  const multiTabSyncOf = (tab: Tab) =>
+    (tab.auth.features as unknown as { multiTabSync: BearerAuthMultiTabSyncFeature }).multiTabSync;
+
+  const multiTabSyncDetailsOf = (tab: Tab) =>
+    queryDevtoolsEntries()
+      .find((entry) => entry.kind === 'auth-provider' && entry.handle === tab.auth)
+      ?.meta.features?.find((feature) => feature.type === 'MULTI_TAB_SYNC')?.details;
+
+  it('a tab that owns its session opens no channel, elects nobody and refreshes for itself', async () => {
+    const s = scenario();
+    const name = `${PROVIDER_NAME}-own-tab-sync`;
+
+    expect(isQueryDevtoolsEnabled()).toBe(true);
+
+    serve(s, 20000);
+
+    const first = boot(s, { name, accessTokenExpiresInMs: 20000, refreshStrategy: 0.5 });
+    await login(s, first);
+    setQueryDevtoolsAuthTabLocal({ provider: name, tabLocal: true });
+    first.destroy();
+
+    const own = boot(s, {
+      name,
+      accessTokenExpiresInMs: 20000,
+      refreshStrategy: 0.5,
+      features: [withBearerAuthMultiTabSync()],
+    });
+    await sync(s);
+
+    expect(own.auth.sessionStatus()).toBe('authenticated');
+    expect(multiTabSyncOf(own).leadership).toBe('off');
+    expect(multiTabSyncOf(own).isLeader()).toBe(true);
+    expect(multiTabSyncOf(own).instanceCount()).toBe(1);
+    expect(multiTabSyncDetailsOf(own)?.find((detail) => detail.label === 'channel')?.value).toBe(
+      "off (session is this tab's own)",
+    );
+
+    s.tick(10000);
+    await sync(s);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(bus.posted.filter((message) => message.channel === `ethlete-auth-sync:${name}`)).toEqual([]);
+
+    own.destroy();
+  });
+
+  it('describes the default configuration', async () => {
+    const s = scenario();
+    const name = `${PROVIDER_NAME}-sync-defaults`;
+
+    serve(s);
+
+    const tab = boot(s, { name, features: [withBearerAuthMultiTabSync()] });
+    await sync(s);
+
+    expect(multiTabSyncOf(tab).leadership).toBe('election');
+    expect(multiTabSyncDetailsOf(tab)).toEqual([
+      { label: 'channel', value: `ethlete-auth-sync:${name}` },
+      { label: 'tokens', value: 'synced' },
+      { label: 'logout', value: 'synced' },
+      { label: 'leader election', value: 'one tab refreshes' },
+    ]);
+
+    tab.destroy();
+  });
+
+  it('describes tab-local tokens and logout without an election, and every such tab leads', async () => {
+    const s = scenario();
+    const name = `${PROVIDER_NAME}-sync-off`;
+
+    serve(s);
+
+    const tab = boot(s, {
+      name,
+      features: [
+        withBearerAuthMultiTabSync({
+          channelName: 'custom-auth-channel',
+          syncTokens: false,
+          syncLogout: false,
+          leaderElection: false,
+        }),
+      ],
+    });
+    await sync(s);
+
+    expect(multiTabSyncOf(tab).leadership).toBe('off');
+    expect(multiTabSyncOf(tab).isLeader()).toBe(true);
+    expect(multiTabSyncDetailsOf(tab)).toEqual([
+      { label: 'channel', value: 'custom-auth-channel' },
+      { label: 'tokens', value: 'tab local' },
+      { label: 'logout', value: 'tab local' },
+      { label: 'leader election', value: 'every tab refreshes' },
+    ]);
 
     tab.destroy();
   });

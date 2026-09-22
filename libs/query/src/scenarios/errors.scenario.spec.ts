@@ -460,6 +460,41 @@ describe('withEthleteApiErrors (html + symfony + retry in one feature)', () => {
   });
 });
 
+describe('withEthleteApiErrors with its own retry options', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 0 },
+    clientFeatures: [withEthleteApiErrors({ retry: { maxAttempts: 1, baseDelayMs: 100, jitter: 0 } })],
+  });
+
+  it('retries a 503 once after 200ms instead of three times on the default 2s backoff', () => {
+    const s = scenario();
+    s.api.on('GET', '/reports-once', () => ({ status: 503, body: { message: 'unavailable' } }));
+
+    const getReports = s.get<{ response: unknown }>('/reports-once');
+    const c = s.consumer();
+    const query = c.run(() => getReports());
+
+    s.tick();
+    expect(s.api.requestCount('GET', '/reports-once')).toBe(1);
+    expect(query.error()).toBeNull();
+
+    s.tick(199);
+    expect(s.api.requestCount('GET', '/reports-once')).toBe(1);
+
+    s.tick(1);
+    s.tick(1);
+    expect(s.api.requestCount('GET', '/reports-once')).toBe(2);
+    expect(query.error()?.code).toBe(503);
+    expect(query.error()?.retryState).toEqual({ retry: false });
+
+    s.tick(30_000);
+    expect(s.api.requestCount('GET', '/reports-once')).toBe(2);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+    c.destroy();
+  });
+});
+
 // Placed after the blocks whose clients install the symfony and html parsers: this client declares no
 // error feature at all, so anything it parses beyond the baseline ladder came from another client.
 describe('error parsers are installed process-wide, not per client', () => {
