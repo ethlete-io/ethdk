@@ -1267,6 +1267,24 @@ describe('legacy scenario', () => {
       });
     });
 
+    it('keeps gqlQuery variables that differ only inside a string on separate instances', () => {
+      const s = scenario();
+
+      withLegacyClient(s, {}, (client) => {
+        const searchPosts = client.gqlQuery({
+          route: '/graphql',
+          query: 'query SearchPosts($q: String!) { posts(q: $q) { id } }',
+          types: { args: def<{ variables: { q: string } }>(), response: def<{ posts: { id: string }[] }>() },
+        });
+
+        const spaced = searchPosts.prepare({ variables: { q: 'a b' } });
+
+        expect(searchPosts.prepare({ variables: { q: 'ab' } })).not.toBe(spaced);
+        expect(searchPosts.prepare({ variables: { q: '{ab}' } })).not.toBe(spaced);
+        expect(searchPosts.prepare({ variables: { q: 'a b' } })).toBe(spaced);
+      });
+    });
+
     it('caches a gqlQuery within its TTL and never caches a gqlMutate', () => {
       const s = scenario();
       s.api.on('POST', '/graphql', ({ body }) =>
