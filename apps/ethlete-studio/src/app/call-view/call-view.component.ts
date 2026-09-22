@@ -34,7 +34,6 @@ import {
   designSetVerdict$,
   frameUrl,
 } from '../../host/design';
-import { workspaceRoot$ } from '../../host/workspace';
 import { Compose, Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import {
   openOptions,
@@ -45,6 +44,7 @@ import {
   touchedLabel,
   unsettledCalls,
 } from './grouping';
+import { CheckoutsComponent } from './checkouts.component';
 import { ProjectPickerComponent } from './project-picker.component';
 import {
   CONTEXT_LIMIT,
@@ -74,7 +74,7 @@ const SETTLE_MS = 300;
   selector: 'ethlete-call-view',
   template: `
     <div class="studio__body">
-      <aside [etProvideSurface]="'dark-elevated'" class="studio__explorer">
+      <aside class="studio__explorer" etProvideSurface="dark-elevated">
         <div class="studio__explorer-head">
           <div class="studio__project">
             <h1>{{ project() || 'Calls' }}</h1>
@@ -334,7 +334,7 @@ const SETTLE_MS = 300;
         }
       </main>
 
-      <aside [etProvideSurface]="'dark-elevated'" class="studio__chat">
+      <aside class="studio__chat" etProvideSurface="dark-elevated">
         <header class="studio__chat-head">
           <div class="studio__chat-head-row">
             <b>Chat</b>
@@ -492,13 +492,7 @@ const SETTLE_MS = 300;
     </div>
 
     <footer class="studio__status">
-      <input
-        [value]="checkout()"
-        (change)="setCheckout(typed($event))"
-        class="studio__checkout"
-        placeholder="The checkout the design work lives in"
-        title="The checkout the design work lives in"
-      />
+      <ethlete-checkouts [remembered]="remembered" (pick)="setCheckout($event)" />
 
       <button (click)="reload()" class="studio__status-button" type="button">
         <svg viewBox="0 0 24 24">
@@ -509,7 +503,7 @@ const SETTLE_MS = 300;
       </button>
 
       @if (trouble(); as message) {
-        <span [etProvideColor]="'danger'" [title]="message" class="studio__status-item studio__status-item--trouble">
+        <span [title]="message" class="studio__status-item studio__status-item--trouble" etProvideColor="danger">
           <span>{{ message }}</span>
         </span>
       }
@@ -565,7 +559,13 @@ const SETTLE_MS = 300;
   `,
   styleUrl: './call-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, ProjectPickerComponent, ProvideColorDirective, ProvideSurfaceDirective],
+  imports: [
+    CheckoutsComponent,
+    NgTemplateOutlet,
+    ProjectPickerComponent,
+    ProvideColorDirective,
+    ProvideSurfaceDirective,
+  ],
   host: { class: 'studio' },
 })
 export class CallViewComponent {
@@ -574,7 +574,10 @@ export class CallViewComponent {
 
   private thread = viewChild<ElementRef<HTMLElement>>('thread');
 
-  protected checkout = signal('');
+  /** The checkout the window showed last. The picker prefers it while Studio still keeps it. */
+  protected remembered = rememberedView().checkout ?? '';
+
+  public checkout = signal('');
   protected project = signal('');
   protected slug = signal('');
   protected optionKey = signal('');
@@ -658,7 +661,7 @@ export class CallViewComponent {
     return `Design server ${state.port} · ${state.listening ? 'running' : 'stopped'}`;
   });
 
-  protected serverLog = computed(() => {
+  public serverLog = computed(() => {
     const state = this.server();
 
     return state && !state.listening ? state.log.slice(-5) : [];
@@ -840,14 +843,6 @@ export class CallViewComponent {
 
       if (rail && count) rail.scrollTop = rail.scrollHeight;
     });
-
-    workspaceRoot$()
-      .pipe(
-        catchError(() => of('')),
-        tap((root) => this.setCheckout(root)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
   }
 
   protected settled(call: Call) {
@@ -958,7 +953,7 @@ export class CallViewComponent {
     rememberView({ checkout: this.checkout(), slug: this.slug(), option: option.key });
   }
 
-  protected pick(cli: AgentDescriptor | null) {
+  public pick(cli: AgentDescriptor | null) {
     this.cli.set(cli);
     this.model.set('');
   }
