@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { RuntimeError } from '@ethlete/core';
 
 // codes 0-999
@@ -39,6 +40,7 @@ export const QueryRuntimeErrorCode = {
 
   // GQL
   GQL_DATA_PROPERTY_MISSING_IN_RESPONSE: 600,
+  GQL_ERRORS_IN_RESPONSE: 601,
 
   // Secure Execute
   TOKENS_NOT_AVAILABLE_INSIDE_AUTH_AND_EXEC: 700,
@@ -218,6 +220,17 @@ export const gqlDataPropertyMissingInResponse = () => {
     QueryRuntimeErrorCode.GQL_DATA_PROPERTY_MISSING_IN_RESPONSE,
     `The GraphQL response is missing the required "data" property. Please add a custom transformResponse param to the query creator to handle this response format.`,
   );
+};
+
+export const gqlErrorsInResponse = (errors: unknown[]) => {
+  return new HttpErrorResponse({
+    error: errors,
+    status: 0,
+    statusText: new RuntimeError(
+      QueryRuntimeErrorCode.GQL_ERRORS_IN_RESPONSE,
+      `The GraphQL response carries errors and no data. The server's errors are in raw.error.`,
+    ).message,
+  });
 };
 
 export const tokensNotAvailableInsideAuthAndExec = () => {

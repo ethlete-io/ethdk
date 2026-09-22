@@ -4,7 +4,7 @@
 
 Failed requests resolve to a **`QueryErrorResponse`** on [`query.error()`](/query/queries#the-query-object): `{ raw: HttpErrorResponse, code: number, retryState }` plus a normalized message - either a single message (a `QueryErrorResponseSingle`: `isList: false`, `error.message`) or a violation list (a `QueryErrorResponseList`: `isList: true`, `errors[].message`). Both halves hold `QueryErrorResponseItem`s, which are just `{ message }`.
 
-Out of the box the normalizer reads the shapes every API has: `{ message }`, `{ detail }`, plain strings and string arrays - so templates can render error messages without caring about the backend flavor.
+Out of the box the normalizer reads the shapes every API has: `{ message }`, `{ detail }`, plain strings, string arrays, and lists of `{ message }` objects - bare (`[{ message }]`) or GraphQL-style (`{ errors: [{ message }] }`) - so templates can render error messages without caring about the backend flavor.
 
 ### Opt in to the shapes your API answers with
 
@@ -234,14 +234,15 @@ A request retries only while something is bound to it. When the last consumer of
 
 Misuse throws dev-mode `RuntimeError`s with numeric codes, grouped by area:
 
-| Range     | Area                                                                                                                                                                                                                      |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0–199     | Query core - e.g. a feature used twice, `withPolling` on a `POST`, a function route without `withArgs`.                                                                                                                   |
-| 800       | A circular query dependency: the same query ran with identical args more than five times in a row, each run less than 100 ms after the last. Fast runs with _different_ args (a search box, a slider) never count.        |
-| 200–299   | [Auth](/query/auth#error-codes) - missing token properties, an auth feature used twice.                                                                                                                                   |
-| 400–499   | [Paged query stacks](/query/stacks#paged-queries) - e.g. fetching past the last page.                                                                                                                                     |
-| 500–599   | [Query stacks](/query/stacks#query-stacks) - e.g. `withArgs` passed as a stack feature.                                                                                                                                   |
-| 900–999   | [Query sequences and batches](/query/batching) plus [legacy interop](/query/migrating-from-v2#prepare-needs-an-injector) - e.g. a second `run()` while one is in flight, or `prepare()` called with no injection context. |
-| 1000–1999 | [WebSockets](/query/ws#error-codes) - leaving a room that was never joined, malformed messages.                                                                                                                           |
+| Range     | Area                                                                                                                                                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0–199     | Query core - e.g. a feature used twice, `withPolling` on a `POST`, a function route without `withArgs`.                                                                                                                      |
+| 800       | A circular query dependency: the same query ran with identical args more than five times in a row, each run less than 100 ms after the last. Fast runs with _different_ args (a search box, a slider) never count.           |
+| 200–299   | [Auth](/query/auth#error-codes) - missing token properties, an auth feature used twice.                                                                                                                                      |
+| 400–499   | [Paged query stacks](/query/stacks#paged-queries) - e.g. fetching past the last page.                                                                                                                                        |
+| 500–599   | [Query stacks](/query/stacks#query-stacks) - e.g. `withArgs` passed as a stack feature.                                                                                                                                      |
+| 600–699   | [GraphQL](/query/gql#typing-args) - thrown by the default `{ data }` unwrapping in every build, not only in dev mode: `ET600` for a `200` with neither `data` nor `errors`, `ET601` for a `200` with `errors` and no `data`. |
+| 900–999   | [Query sequences and batches](/query/batching) plus [legacy interop](/query/migrating-from-v2#prepare-needs-an-injector) - e.g. a second `run()` while one is in flight, or `prepare()` called with no injection context.    |
+| 1000–1999 | [WebSockets](/query/ws#error-codes) - leaving a room that was never joined, malformed messages.                                                                                                                              |
 
 The error message names the problem and the fix; the codes exist so you can grep for them. Every code is also a member of the exported `QueryRuntimeErrorCode` object (and of the union type of the same name), so a spec can assert on one by name rather than by number.

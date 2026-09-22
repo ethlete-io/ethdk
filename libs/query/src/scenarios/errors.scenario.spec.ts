@@ -8,6 +8,7 @@ import {
   executeUntilSettled,
   isHtmlErrorPayload,
   mapViolationsToFormErrors,
+  queryErrorMessages,
   registerQueryErrorParser,
   SERVER_ERROR_KIND,
   setDefaultQueryRetryFn,
@@ -129,6 +130,41 @@ describe('baseline error normalization (no client features)', () => {
       'Email is required.',
       'Name is too short.',
     ]);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('normalizes a GraphQL-style { errors: [{ message }] } body into its messages', () => {
+    const s = scenario();
+    s.api.on('GET', '/errors-envelope', () => ({
+      status: 400,
+      body: { errors: [{ message: 'Email is required.' }, { message: 'Name is too short.' }] },
+    }));
+
+    const getErrorsEnvelope = s.get<{ response: unknown }>('/errors-envelope');
+    const c = s.consumer();
+    const query = c.run(() => getErrorsEnvelope());
+
+    s.tick();
+
+    expect(queryErrorMessages(query.error())).toEqual(['Email is required.', 'Name is too short.']);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('normalizes a bare [{ message }] body into its messages', () => {
+    const s = scenario();
+    s.api.on('GET', '/message-array-body', () => ({ status: 400, body: [{ message: 'The report is gone.' }] }));
+
+    const getMessageArrayBody = s.get<{ response: unknown }>('/message-array-body');
+    const c = s.consumer();
+    const query = c.run(() => getMessageArrayBody());
+
+    s.tick();
+
+    expect(queryErrorMessages(query.error())).toEqual(['The report is gone.']);
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
     c.destroy();

@@ -10,6 +10,8 @@ import {
   createSecureGqlQueryViaGet,
   createSecureGqlQueryViaPost,
   gql,
+  queryErrorMessage,
+  queryErrorMessages,
   withArgs,
   withPolling,
 } from '../index';
@@ -210,9 +212,10 @@ describe('gql scenario', () => {
       c.destroy();
     });
 
-    it('a 200 response with no data property (e.g. a GraphQL errors payload) is a failure instead of a silent unwrap', () => {
+    it('fails a 200 carrying errors and no data property with ET601 and the server errors', () => {
       const s = scenario();
-      s.api.on('POST', '/', () => ({ body: { errors: [{ message: 'boom' }] } }));
+      const errors = [{ message: 'User not found.' }, { message: 'Access denied.' }];
+      s.api.on('POST', '/', () => ({ body: { errors } }));
 
       const getUser = createGqlQueryViaPost(s.clientRef)<{ response: unknown }>(getUserDoc);
 
@@ -222,7 +225,65 @@ describe('gql scenario', () => {
 
       expect(query.response()).toBeNull();
       expect(query.error()?.code).toBe(0);
-      expect(String(query.error()?.raw.error)).toMatch(/missing the required "data" property/);
+      expect(query.error()?.raw.error).toEqual(errors);
+      expect(query.error()?.raw.message).toContain('ET601');
+      expect(queryErrorMessages(query.error())).toEqual(['User not found.', 'Access denied.']);
+      expect(query.executionState()).toMatchObject({ type: 'failure', hasCachedResponse: false });
+
+      c.destroy();
+    });
+
+    it('fails a 200 carrying errors and data: null with ET601', () => {
+      const s = scenario();
+      const errors = [{ message: 'User not found.' }];
+      s.api.on('POST', '/', () => ({ body: { data: null, errors } }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: UserResponse }>(getUserDoc);
+
+      const c = s.consumer();
+      const query = c.run(() => getUser());
+      s.tick();
+
+      expect(query.response()).toBeNull();
+      expect(query.error()?.raw.error).toEqual(errors);
+      expect(query.error()?.raw.message).toContain('ET601');
+      expect(queryErrorMessage(query.error())).toBe('User not found.');
+      expect(query.executionState()).toMatchObject({ type: 'failure' });
+
+      c.destroy();
+    });
+
+    it('keeps partial data alongside errors a success', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({
+        body: { data: { user: { id: '1', name: 'Ada' } }, errors: [{ message: 'friends unavailable' }] },
+      }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: UserResponse }>(getUserDoc);
+
+      const c = s.consumer();
+      const query = c.run(() => getUser());
+      s.tick();
+
+      expect(query.response()).toEqual({ user: { id: '1', name: 'Ada' } });
+      expect(query.error()).toBeNull();
+
+      c.destroy();
+    });
+
+    it('fails a 200 carrying neither data nor errors with ET600', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { result: 'unexpected' } }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: unknown }>(getUserDoc);
+
+      const c = s.consumer();
+      const query = c.run(() => getUser());
+      s.tick();
+
+      expect(query.response()).toBeNull();
+      expect(query.error()?.code).toBe(0);
+      expect(String(query.error()?.raw.error)).toMatch(/ET600.*missing the required "data" property/);
       expect(query.executionState()).toMatchObject({ type: 'failure', hasCachedResponse: false });
 
       c.destroy();
@@ -255,6 +316,28 @@ describe('gql scenario', () => {
 
       expect(gqlRequest.headers.get('Authorization')).toBe(`Bearer ${auth.accessToken()}`);
       expect(query.response()).toEqual({ user: { id: 'me', name: 'Ada' } });
+
+      c.destroy();
+    });
+
+    it('fails a secure gql 200 carrying errors and data: null with ET601', () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/');
+      s.api.on('POST', '/', () => ({ body: { data: null, errors: [{ message: 'Forbidden field.' }] } }));
+
+      const getSecureUser = createSecureGqlQueryViaPost(s.clientRef, auth.ref)<{ response: UserResponse }>(getUserDoc);
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      const query = c.run(() => getSecureUser());
+      s.tick();
+
+      expect(query.response()).toBeNull();
+      expect(query.error()?.raw.message).toContain('ET601');
+      expect(queryErrorMessages(query.error())).toEqual(['Forbidden field.']);
 
       c.destroy();
     });
@@ -814,9 +897,32 @@ describe('gql scenario', () => {
       c.destroy();
     });
 
-    it('fails a data-less 200 with ET600 outside dev mode too', () => {
+    it('fails a data-less 200 carrying errors with ET601 outside dev mode too', () => {
       const s = scenario();
       s.api.on('POST', '/', () => ({ body: { errors: [{ message: 'boom' }] } }));
+
+      const c = s.consumer();
+
+      const query = inProductionMode(() => {
+        const getUser = createGqlQueryViaPost(s.clientRef)<{ response: unknown }>(getUserDoc);
+        const created = c.run(() => getUser());
+        s.tick();
+
+        return created;
+      });
+
+      expect(query.response()).toBeNull();
+      expect(query.error()?.code).toBe(0);
+      expect(query.error()?.raw.message).toContain('ET601');
+      expect(queryErrorMessages(query.error())).toEqual(['boom']);
+      expect(query.executionState()).toMatchObject({ type: 'failure', hasCachedResponse: false });
+
+      c.destroy();
+    });
+
+    it('fails a 200 carrying neither data nor errors with ET600 outside dev mode too', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: {} }));
 
       const c = s.consumer();
 

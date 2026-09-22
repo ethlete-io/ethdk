@@ -2,13 +2,13 @@ import {
   AnyCreateQueryClientResult,
   createBaseQueryCreator,
   CreateQueryCreatorOptions,
-  gqlDataPropertyMissingInResponse,
   QueryCreator,
   RawResponseType,
   ResponseType,
   RouteType,
 } from '../http';
 import { createGqlQuery, GqlQueryArgs } from './gql-query';
+import { unwrapGqlResponse } from './gql-response';
 
 /**
  * The envelope a GraphQL endpoint puts on the wire: whatever the args declare as `rawResponse`, or
@@ -53,16 +53,7 @@ export const createGqlQueryCreator = <TArgs extends GqlQueryArgs>(
   createBaseQueryCreator({
     options: {
       ...options,
-      // Use custom transformResponse if provided, otherwise use default GQL unwrapping
-      transformResponse:
-        options?.transformResponse ??
-        ((rawResponse: unknown) => {
-          if (rawResponse && typeof rawResponse === 'object' && 'data' in rawResponse) {
-            return (rawResponse as { data: unknown }).data;
-          }
-
-          throw gqlDataPropertyMissingInResponse();
-        }),
+      transformResponse: options?.transformResponse ?? unwrapGqlResponse,
     } as CreateGqlQueryCreatorOptions<TArgs>,
     internals,
     queryFactory: createGqlQuery,

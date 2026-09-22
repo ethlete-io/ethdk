@@ -1,12 +1,8 @@
 import { AnyCreateBearerAuthProviderResult } from '../auth';
-import {
-  AnyCreateQueryClientResult,
-  createBaseQueryCreator,
-  gqlDataPropertyMissingInResponse,
-  QueryCreator,
-} from '../http';
+import { AnyCreateQueryClientResult, createBaseQueryCreator, QueryCreator } from '../http';
 import { GqlQueryArgs } from './gql-query';
 import { CreateGqlQueryCreatorOptions } from './gql-query-creator';
+import { unwrapGqlResponse } from './gql-response';
 import { createSecureGqlQuery } from './secure-gql-query';
 
 export type InternalSecureCreateGqlQueryCreatorOptions = {
@@ -24,16 +20,7 @@ export const createSecureGqlQueryCreator = <TArgs extends GqlQueryArgs>(
   createBaseQueryCreator({
     options: {
       ...options,
-      // Use custom transformResponse if provided, otherwise use default GQL unwrapping
-      transformResponse:
-        options?.transformResponse ??
-        ((rawResponse: unknown) => {
-          if (rawResponse && typeof rawResponse === 'object' && 'data' in rawResponse) {
-            return (rawResponse as { data: unknown }).data;
-          }
-
-          throw gqlDataPropertyMissingInResponse();
-        }),
+      transformResponse: options?.transformResponse ?? unwrapGqlResponse,
     },
     internals,
     queryFactory: createSecureGqlQuery,

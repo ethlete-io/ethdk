@@ -64,7 +64,7 @@ GQL args extend the core `QueryArgs` with a `variables` bag:
 | `variables`   | GraphQL variables, passed via `withArgs` / `execute` - a JSON string query param via GET, a JSON object in the body via POST.                               |
 | `rawResponse` | The envelope on the wire - what `transformResponse` receives. Defaults to `{ data: TResponse }`; declare it only when your endpoint returns something else. |
 
-**Response unwrapping:** by default the `{ data }` envelope is stripped automatically. A `200` without a `data` property (a GraphQL errors payload) is a `failure`: `error()` carries the `ET600` error with code `0`, in every build - see [a `transformResponse` that throws](/query/errors#a-transformresponse-that-throws). Supplying your own `transformResponse` replaces this default:
+**Response unwrapping:** by default the `{ data }` envelope is stripped automatically. A `200` whose `errors` array is non-empty while `data` is `null` or missing is a `failure` with code `0`: `error().raw.error` holds the server's `errors` array, `raw.message` names `ET601`, and [`queryErrorMessages`](/query/errors#rendering-error-messages) returns each error's `message`. Partial data - a non-null `data` next to `errors` - stays a success. A `200` with neither `data` nor `errors` fails with the `ET600` error as `raw.error`. Both hold in every build - see [a `transformResponse` that throws](/query/errors#a-transformresponse-that-throws). Supplying your own `transformResponse` replaces this default:
 
 ```ts
 const getUserName = gqlQueryPost<GetUserNameQueryArgs>(gqlDocument, {

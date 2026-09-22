@@ -54,6 +54,15 @@ export const queryErrorMessages = (error: QueryErrorResponse | null | undefined)
 export const queryErrorMessage = (error: QueryErrorResponse | null | undefined): string | null =>
   queryErrorMessages(error)[0] ?? null;
 
+const messageItemsOf = (list: unknown): QueryErrorResponseItem[] =>
+  Array.isArray(list)
+    ? list.flatMap((item) =>
+        typeof item === 'object' && !!item && 'message' in item && typeof item.message === 'string'
+          ? [{ message: item.message }]
+          : [],
+      )
+    : [];
+
 export const createQueryErrorResponse = (
   error: unknown,
   retry?: { retryCount: number; retryFn?: ShouldRetryRequestFn },
@@ -90,6 +99,10 @@ export const createQueryErrorResponse = (
     for (const error of detail) {
       errorList.push({ message: error });
     }
+  } else if (Array.isArray(detail)) {
+    errorList.push(...messageItemsOf(detail));
+  } else if (typeof detail === 'object' && !!detail && 'errors' in detail) {
+    errorList.push(...messageItemsOf(detail.errors));
   }
 
   if (errorList.length > 1) {
