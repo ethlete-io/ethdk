@@ -508,7 +508,12 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
           return;
         }
 
-        if (context.accessToken() !== tokenAtRequest) return;
+        if (context.accessToken() !== tokenAtRequest) {
+          delegatedRefreshAttempts = 0;
+          hasLeaderAnsweredDelegation = false;
+
+          return;
+        }
 
         await runTakenOverRefresh();
       });

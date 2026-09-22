@@ -1301,4 +1301,58 @@ describe('auth multi-tab leadership scenario', () => {
     s.expectWarning(/BroadcastChannel is not supported/);
     s.expectWarning(/BroadcastChannel is not supported/);
   });
+
+  it('runs a full ladder for the next unanswered delegation after a takeover a new pair made moot', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+    s.api.protect('/secure/**');
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.once('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.on('GET', '/secure/profile', () => ({ body: { id: 'me' } }));
+
+    setVisibility('hidden');
+    const leader = createFrozenLeaderTab(PROVIDER_NAME);
+
+    const b = createAuthTab(s);
+    const c = createAuthTab(s);
+    await sync(s);
+
+    b.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    const queryB = b.consumer().run(() => b.getSecure<Profile>('/secure/profile')());
+    s.tick();
+    await sync(s);
+
+    s.tick(3000);
+    await sync(s);
+    s.tick(3000);
+    await sync(s);
+
+    // Lands between the takeover's lock request and its grant.
+    const seeded = issueTokens(15 * 60 * 1000)().body;
+    c.auth.setTokens(seeded.accessToken, seeded.refreshToken);
+    s.tick(3000);
+    await sync(s);
+
+    expect(b.auth.accessToken()).toBe(seeded.accessToken);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(2);
+
+    for (let i = 0; i < 4; i++) {
+      s.tick(3000);
+      await sync(s);
+    }
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(b.auth.accessToken()).not.toBe(seeded.accessToken);
+    expect(queryB.response()).toEqual({ id: 'me' });
+
+    s.expectError(is401);
+    s.expectError(is401);
+    leader.close();
+    b.destroy();
+    c.destroy();
+  });
 });
