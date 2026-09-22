@@ -932,6 +932,37 @@ describe('legacy scenario', () => {
       });
     });
 
+    it('runs a secure query executed while logged out once it is executed again after login', () => {
+      const s = scenario();
+      s.api.on('GET', '/secure', () => ({ body: { ok: true } }));
+      s.api.protect('/secure');
+
+      withLegacyClient(s, {}, (client, track) => {
+        client.setAuthProvider(
+          new V2BearerAuthProvider({
+            refreshConfig: { queryCreator: createRefreshQuery(client), cookieName: COOKIE_NAME },
+          }),
+        );
+
+        const query = track(createSecureQuery(client).prepare().execute());
+        s.tick();
+
+        expect(query.rawState.type).not.toBe(QueryStateType.Loading);
+        expect(s.api.requests).toHaveLength(0);
+
+        client.setAuthProvider(
+          new V2BearerAuthProvider({
+            token: mintToken(),
+            refreshConfig: { queryCreator: createRefreshQuery(client), token: mintToken() },
+          }),
+        );
+        query.execute();
+        s.tick();
+
+        expect(query.rawState).toMatchObject({ type: QueryStateType.Success, response: { ok: true } });
+      });
+    });
+
     it('replaces the scheduled refresh when a forced refresh lands first', () => {
       const s = scenario();
       const tenMinutes = 10 * 60 * 1000;

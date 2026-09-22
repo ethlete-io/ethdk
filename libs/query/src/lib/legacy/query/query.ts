@@ -277,7 +277,9 @@ export class V2Query<
             }
 
             if (!state && !(tokens?.token || tokens?.refreshToken)) {
-              return EMPTY;
+              this.updateState({ type: QueryStateType.Prepared, meta });
+
+              return of(false);
             }
 
             return of(true as const);
@@ -288,6 +290,7 @@ export class V2Query<
 
       goSignal
         .pipe(
+          filter((go) => go),
           switchMap(() => {
             const method = computeQueryMethod({ config: queryConfig, client: this._client });
             const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._arguments, method });
