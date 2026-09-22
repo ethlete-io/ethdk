@@ -235,7 +235,7 @@ export class V2Query<
     const id = this.nextId;
     const meta: QueryStateMeta = { id, triggeredVia };
 
-    if (isQueryStateLoading(this.rawState)) {
+    if (isQueryStateLoading(this.rawState) && !options._isUnauthorizedRetry) {
       if (cancelPrevious) {
         this.abort();
       } else {
@@ -518,10 +518,9 @@ export class V2Query<
           .pipe(
             takeUntilResponse(),
             takeUntil(this.onAbort$),
+            filter((state) => isQueryStateSuccess(state) || isQueryStateFailure(state) || isQueryStateCancelled(state)),
             tap((state) =>
-              isQueryStateSuccess(state)
-                ? this.execute({ ...options, _isUnauthorizedRetry: true, cancelPrevious: true })
-                : failure(),
+              isQueryStateSuccess(state) ? this.execute({ ...options, _isUnauthorizedRetry: true }) : failure(),
             ),
           )
           .subscribe();

@@ -871,6 +871,37 @@ describe('legacy scenario', () => {
       });
     });
 
+    it('stays loading while the 401 refresh runs and reports only the retried success', () => {
+      const s = scenario();
+      const freshToken = mintToken({ claims: { scope: 'admin' } });
+
+      s.api.on('GET', '/secure', () => ({ body: { ok: true } }));
+      s.api.protect('/secure', ({ claims }) => claims['scope'] === 'admin');
+      s.api.on('POST', '/auth/refresh', () => ({ body: { token: freshToken, refreshToken: mintToken() }, delay: 100 }));
+
+      withLegacyClient(s, {}, (client, track) => {
+        client.setAuthProvider(
+          new V2BearerAuthProvider({
+            token: mintToken(),
+            refreshConfig: { queryCreator: createRefreshQuery(client), token: mintToken() },
+          }),
+        );
+
+        const onSuccess = vi.fn();
+        const onFailure = vi.fn();
+        const query = track(createSecureQuery(client).prepare());
+        const recorder = recordStates(query);
+
+        query.execute().onSuccess(onSuccess).onFailure(onFailure);
+        s.flush();
+        recorder.stop();
+
+        expect(recorder.types()).not.toContain(QueryStateType.Failure);
+        expect(onFailure).not.toHaveBeenCalled();
+        expect(onSuccess).toHaveBeenCalledWith({ ok: true });
+      });
+    });
+
     it('sends the basic auth header of a BasicAuthProvider', () => {
       const s = scenario();
       s.api.on('GET', '/secure', () => ({ body: { ok: true } }));
