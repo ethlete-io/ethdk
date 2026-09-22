@@ -19,6 +19,7 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
 
   private destroy = new Subject<boolean>();
   private observer: IntersectionObserver | null = null;
+  private isIntersecting = false;
 
   click$ = fromEvent(this.elementRef.nativeElement, 'click');
 
@@ -48,6 +49,8 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
 
         if (!entry) return;
 
+        this.isIntersecting = entry.isIntersecting;
+
         if (entry.isIntersecting && !this.infinityQuery().context.loading) {
           this.infinityQuery().loadNextPage();
         }
@@ -60,5 +63,15 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
     );
 
     this.observer.observe(this.elementRef.nativeElement);
+
+    this.infinityQuery()
+      .data$.pipe(takeUntil(this.destroy))
+      .subscribe(() => {
+        const { context } = this.infinityQuery();
+
+        if (this.isIntersecting && context.canLoadMore && !context.loading) {
+          this.infinityQuery().loadNextPage();
+        }
+      });
   }
 }

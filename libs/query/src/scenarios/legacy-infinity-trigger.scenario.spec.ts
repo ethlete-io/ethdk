@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AnyInfinityQueryConfig,
   createInfinityQueryConfig,
@@ -47,6 +47,42 @@ class GuardedTriggerHost {
   ids = (items: { id: string }[] | null) => (items ?? []).map((item) => item.id).join(',');
 }
 
+@Component({
+  imports: [InfinityQueryDirective, InfinityQueryTriggerDirective],
+  template: `
+    <div *etInfinityQuery="config(); let items">
+      <span data-slot="items">{{ ids(items) }}</span>
+      <et-infinity-query-trigger />
+    </div>
+  `,
+})
+class ObservedTriggerHost {
+  config = input.required<AnyInfinityQueryConfig>();
+
+  ids = (items: { id: string }[] | null) => (items ?? []).map((item) => item.id).join(',');
+}
+
+class FakeIntersectionObserver {
+  static instances: FakeIntersectionObserver[] = [];
+
+  constructor(private callback: IntersectionObserverCallback) {
+    FakeIntersectionObserver.instances.push(this);
+  }
+
+  observe(target: Element) {
+    setTimeout(() =>
+      this.callback(
+        [{ isIntersecting: true, target } as IntersectionObserverEntry],
+        this as unknown as IntersectionObserver,
+      ),
+    );
+  }
+
+  disconnect() {
+    FakeIntersectionObserver.instances = FakeIntersectionObserver.instances.filter((o) => o !== this);
+  }
+}
+
 const slotText = (fixture: { nativeElement: HTMLElement }, slot: string) =>
   (fixture.nativeElement.querySelector(`[data-slot="${slot}"]`)?.textContent ?? '').trim();
 
@@ -90,6 +126,38 @@ describe('legacy infinity query trigger scenario', () => {
 
       return { body: { items: [{ id: `${page}a` }, { id: `${page}b` }], totalPages: 2 } };
     });
+
+  describe('with an intersection observer', () => {
+    beforeEach(() => vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver));
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('keeps loading while the trigger stays visible after a page lands', () => {
+      const s = scenario();
+      s.api.on('GET', '/users', ({ query }) => {
+        const page = Number(query['page'] ?? '1');
+
+        return { body: { items: [{ id: `${page}a` }, { id: `${page}b` }], totalPages: 3 }, delay: 100 };
+      });
+
+      withLegacyClient(s, (client) => {
+        const fixture = TestBed.createComponent(ObservedTriggerHost);
+
+        fixture.componentRef.setInput('config', pagedUsers(client));
+        fixture.detectChanges();
+
+        for (let round = 0; round < 5; round++) {
+          s.tick(100);
+          fixture.detectChanges();
+        }
+
+        expect(slotText(fixture, 'items')).toBe('1a,1b,2a,2b,3a,3b');
+        expect(s.api.requestCount('GET', '/users')).toBe(3);
+
+        fixture.destroy();
+        expect(FakeIntersectionObserver.instances).toHaveLength(0);
+      });
+    });
+  });
 
   it('mounts a trigger that is a direct child of the infinity query template', () => {
     const s = scenario();
