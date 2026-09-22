@@ -12,7 +12,7 @@ export default defineConfig({
   retries: process.env['CI'] ? 2 : 0,
   workers: process.env['CI'] ? '100%' : undefined,
   reporter: process.env['CI'] ? 'dot' : 'list',
-  use: { baseURL: BASE_URL, trace: 'on-first-retry' },
+  use: { baseURL: BASE_URL, trace: 'on-first-retry', locale: 'en-US', timezoneId: 'Europe/Berlin' },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'touch', use: { ...devices['Pixel 7'] } },
