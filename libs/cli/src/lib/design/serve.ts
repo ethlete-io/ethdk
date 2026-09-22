@@ -123,13 +123,20 @@ export const serveDesign = async (options: { target: string }): Promise<number> 
 
   writeCallsTsconfig(target);
 
+  // Vite reads a tsconfig out of the working directory to transpile a call, and the calls sit
+  // outside its root. From a directory that holds none, every call compiles to an empty module.
+  process.chdir(target);
+
   const { createServer } = await import('vite');
+  const { default: tailwind } = await import('@tailwindcss/postcss');
   const here = assetRoot();
 
   const server = await createServer({
     configFile: false,
     root: resolve(here, 'web'),
-    css: { postcss: target },
+    // Every drawing is ruled under Tailwind 4, whatever the checkout installs. The tool brings its
+    // own pipeline so no checkout's postcss config reaches a drawing.
+    css: { postcss: { plugins: [tailwind()] } },
     cacheDir: resolve(workRootOf(target), 'vite'),
     resolve: {
       alias: [{ find: /^@design-explore$/, replacement: resolve(here, 'define-call.ts') }, ...workspaceAliases(target)],

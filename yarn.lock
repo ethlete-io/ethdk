@@ -5341,6 +5341,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cli@workspace:libs/cli"
   dependencies:
+    "@tailwindcss/postcss": "npm:4.3.3"
     typescript: "npm:6.0.3"
     vite: "npm:8.1.5"
   peerDependencies:

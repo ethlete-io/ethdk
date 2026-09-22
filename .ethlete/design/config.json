@@ -10,10 +10,6 @@
       "styles": ["apps/timetrack/src/styles.css"],
       "head": ".ethlete/design/calls/timetrack/head.html"
     },
-    "fifagg": {
-      "styles": ["apps/timetrack/src/styles.css"],
-      "head": ".ethlete/design/calls/timetrack/head.html"
-    },
     "studio": {
       "styles": ["apps/ethlete-studio/src/styles.css"]
     },
