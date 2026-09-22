@@ -101,16 +101,22 @@ const rendered = await page
     () => false,
   );
 
-/** The overlay is an iframe, so its text is only reachable through a frame locator. */
-const overlay = page.locator('#webpack-dev-server-client-overlay');
-const overlayText =
-  (await overlay.count()) > 0
+/** The webpack overlay is an iframe, so its text is only reachable through a frame locator. */
+const webpackOverlayText =
+  (await page.locator('#webpack-dev-server-client-overlay').count()) > 0
     ? await page
         .frameLocator('#webpack-dev-server-client-overlay')
         .locator('body')
         .innerText()
         .catch(() => '(overlay present, text unreadable)')
     : '';
+/** The Vite overlay keeps its text in a shadow root. */
+const viteOverlayText = await page.evaluate(() => {
+  const overlay = document.querySelector('vite-error-overlay');
+  if (!overlay) return '';
+  return overlay.shadowRoot?.textContent?.trim() || '(overlay present, text unreadable)';
+});
+const overlayText = webpackOverlayText || viteOverlayText;
 
 await browser.close();
 

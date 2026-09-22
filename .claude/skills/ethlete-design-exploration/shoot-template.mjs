@@ -33,7 +33,7 @@ const page = await browser.newPage({
 await page.goto(`${BASE}/iframe.html?id=${id}&viewMode=story`, { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('#storybook-root > *', { timeout: 15000 });
 
-const overlays = await page.locator('#webpack-dev-server-client-overlay').count();
+const overlays = await page.locator('#webpack-dev-server-client-overlay, vite-error-overlay').count();
 if (overlays > 0) {
   console.error('compile error overlay is present - the image would lie');
   await browser.close();
