@@ -296,7 +296,11 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         const overlayStillOwnsFocus = ownsActiveElement(hostElement, targetDocument);
 
         cleanupFns.forEach((cleanup) => cleanup());
-        appRef.detachView(componentRef.hostView);
+
+        // On app teardown the ApplicationRef is destroyed before this runs; detaching then warns NG0406.
+        if (!appRef.destroyed) {
+          appRef.detachView(componentRef.hostView);
+        }
         componentRef.destroy();
 
         // Angular does not own this injector, so nothing else tears down what the overlay's own
