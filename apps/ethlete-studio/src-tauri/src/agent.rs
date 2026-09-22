@@ -287,7 +287,7 @@ async fn start(
     let complaints = Arc::new(Mutex::new(String::new()));
     let pen = complaints.clone();
 
-    tokio::spawn(async move {
+    let complaints_read = tokio::spawn(async move {
         let mut lines = BufReader::new(stderr).lines();
 
         while let Ok(Some(line)) = lines.next_line().await {
@@ -334,6 +334,7 @@ async fn start(
             return;
         }
 
+        let _ = complaints_read.await;
         let summary = complaints.lock().map(|text| clip(text.trim())).unwrap_or_default();
 
         sink.emit(AgentEvent::Finished {
@@ -469,6 +470,15 @@ mod tests {
     #[tokio::test]
     async fn a_run_that_prints_nothing_still_finishes() {
         let seen = drive("echo 'the CLI complained' >&2; exit 3").await;
+
+        assert!(
+            matches!(seen.last(), Some(AgentEvent::Finished { ok: false, summary }) if summary == "the CLI complained")
+        );
+    }
+
+    #[tokio::test]
+    async fn a_complaint_that_arrives_after_the_exit_still_names_the_failure() {
+        let seen = drive("exec >&-; (sleep 0.3; echo 'the CLI complained' >&2) & exit 3").await;
 
         assert!(
             matches!(seen.last(), Some(AgentEvent::Finished { ok: false, summary }) if summary == "the CLI complained")
