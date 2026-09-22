@@ -1155,4 +1155,150 @@ describe('auth multi-tab leadership scenario', () => {
     a.destroy();
     b.destroy();
   });
+
+  const leaderChannelMessages = (type: string) =>
+    bus.posted.filter(
+      (m) => m.channel === `ethlete-auth-leader:${PROVIDER_NAME}` && (m.data as { type?: string })?.type === type,
+    );
+
+  const pageTransition = (type: 'pagehide' | 'pageshow') => {
+    const event = new Event(type);
+    Object.defineProperty(event, 'persisted', { value: true });
+
+    return event;
+  };
+
+  it('says goodbye once when a frozen page is also put into the back/forward cache', async () => {
+    const s = scenario();
+
+    const a = createAuthTab(s);
+    await sync(s);
+
+    const presenceBefore = leaderChannelMessages('presence').length;
+
+    document.dispatchEvent(new Event('freeze'));
+    window.dispatchEvent(pageTransition('pagehide'));
+    await sync(s);
+
+    expect(leaderChannelMessages('presence').length).toBe(presenceBefore + 1);
+    expect(locks.heldNames()).toEqual([]);
+
+    window.dispatchEvent(pageTransition('pageshow'));
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+
+    a.destroy();
+  });
+
+  it('a frozen tab that hears a claim while hidden stays out of the election', async () => {
+    const s = scenario();
+
+    const a = createAuthTab(s);
+    await sync(s);
+
+    document.dispatchEvent(new Event('freeze'));
+    await sync(s);
+
+    expect(locks.heldNames()).toEqual([]);
+
+    setVisibility('hidden');
+    const claimant = new BroadcastChannel(`ethlete-auth-leader:${PROVIDER_NAME}`);
+    claimant.postMessage({ type: 'claim' });
+    await sync(s);
+    claimant.close();
+
+    expect(locks.heldNames()).toEqual([]);
+    expect(locks.pendingNames()).toEqual([]);
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    a.destroy();
+  });
+
+  it('a hidden leader hands the lock to the next tab in line, which keeps it while it stays hidden', async () => {
+    const s = scenario();
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+
+    setVisibility('hidden');
+    await sync(s);
+
+    expect(a.auth.features.multiTabSync.isLeader()).toBe(false);
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(a.auth.features.multiTabSync.instanceCount()).toBe(2);
+    expect(b.auth.features.multiTabSync.instanceCount()).toBe(2);
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('keeps one claim armed however often the page turns visible while it waits for the leader', async () => {
+    const s = scenario();
+
+    const leader = createFrozenLeaderTab(PROVIDER_NAME);
+    await flushMultiTabSync();
+
+    const b = createAuthTab(s);
+    await sync(s);
+
+    expect(leaderChannelMessages('claim')).toHaveLength(1);
+
+    s.tick(500);
+    setVisibility('visible');
+    await sync(s);
+    s.tick(500);
+    setVisibility('visible');
+    await sync(s);
+
+    expect(leaderChannelMessages('claim')).toHaveLength(1);
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    s.tick(500);
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(true);
+    expect(leader.isLeader()).toBe(false);
+
+    leader.close();
+    b.destroy();
+  });
+
+  it('still elects one leader over Web Locks without BroadcastChannel, and hands it on when that tab closes', async () => {
+    const s = scenario();
+    const globals = globalThis as { BroadcastChannel?: unknown };
+    const original = globals.BroadcastChannel;
+
+    globals.BroadcastChannel = undefined;
+
+    try {
+      const a = createAuthTab(s);
+      const b = createAuthTab(s);
+      await sync(s);
+
+      expect(a.auth.features.multiTabSync.leadership).toBe('election');
+      expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+      expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+      s.tick(1500);
+      await sync(s);
+
+      expect(a.auth.features.multiTabSync.isLeader()).toBe(true);
+
+      a.destroy();
+      await sync(s);
+
+      expect(b.auth.features.multiTabSync.isLeader()).toBe(true);
+
+      b.destroy();
+    } finally {
+      globals.BroadcastChannel = original;
+    }
+
+    s.expectWarning(/BroadcastChannel is not supported/);
+    s.expectWarning(/BroadcastChannel is not supported/);
+  });
 });
