@@ -3388,7 +3388,7 @@ export class QueryDevtoolsComponent implements OnInit {
 
     for (const node of Array.from(this.document.head.children)) copy(node);
 
-    // eslint-disable-next-line ethlete/no-native-observers -- signalElementMutations reports only the first record of a batch (styles often arrive several per task), and this observer lives with the pop-out, not the component
+    // eslint-disable-next-line ethlete/no-native-observers -- this observer lives with the pop-out window, not with the component
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         mutation.removedNodes.forEach(drop);

@@ -9,7 +9,7 @@ export const signalElementMutations = (el: SignalElementBindingType, options?: M
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
 
-  const elementMutationsSignal = signal<MutationRecord | null>(null);
+  const elementMutationsSignal = signal<MutationRecord[]>([]);
 
   let observer: MutationObserver | null = null;
 
@@ -17,17 +17,15 @@ export const signalElementMutations = (el: SignalElementBindingType, options?: M
     const els = firstEl();
     const rendered = isRendered();
 
-    elementMutationsSignal.set(null);
+    elementMutationsSignal.set([]);
 
     if (!rendered || typeof MutationObserver === 'undefined') {
       return;
     }
 
-    observer ??= new MutationObserver((entries) => {
-      const entry = entries[0];
-
-      if (entry) {
-        zone.run(() => elementMutationsSignal.set(entry));
+    observer ??= new MutationObserver((records) => {
+      if (records.length) {
+        zone.run(() => elementMutationsSignal.set(records));
       }
     });
     observer.disconnect();

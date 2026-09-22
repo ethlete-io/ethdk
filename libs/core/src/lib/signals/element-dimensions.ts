@@ -90,7 +90,8 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
 
   const initialValue = () => createElementDimensions(firstEl().currentElement);
 
-  const elementDimensionsSignal = signal<NullableElementDimensions>(initialValue());
+  // A viewChild.required throws NG0951 until the view exists, so the element is first read in the effect.
+  const elementDimensionsSignal = signal<NullableElementDimensions>(createElementDimensions(null));
 
   let observer: ResizeObserver | null = null;
 

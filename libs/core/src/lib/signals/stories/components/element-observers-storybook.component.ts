@@ -49,7 +49,7 @@ const describeIntersection = (entry: { isVisible: boolean; isAbove: boolean; isB
       </section>
     </div>
   `,
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
 })
 export class ElementObserversStorybookComponent {
   private scroller = viewChild<ElementRef<HTMLElement>>('scroller');
@@ -66,7 +66,7 @@ export class ElementObserversStorybookComponent {
   protected intersection = computed(() => describeIntersection(this.intersections()[0]));
   protected width = computed(() => this.dimensions().offset?.width ?? 'none');
   protected mutation = computed(() => {
-    const record = this.mutations();
+    const record = this.mutations().at(-1);
 
     if (!record) return 'none';
 

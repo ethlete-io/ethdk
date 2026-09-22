@@ -67,7 +67,7 @@ Observe the content (children), not the host - observing the animated host would
 
 ## Mutations
 
-`signalElementMutations(el, options?)` / `signalHostElementMutations(options?)` → `Signal<MutationRecord | null>` with standard `MutationObserverInit` options.
+`signalElementMutations(el, options?)` / `signalHostElementMutations(options?)` → `Signal<MutationRecord[]>` with standard `MutationObserverInit` options. Each value holds every record of one observer batch; it is `[]` until the first mutation and again after the bound element changes.
 
 ## Scroll state
 
