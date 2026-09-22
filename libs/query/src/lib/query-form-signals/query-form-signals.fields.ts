@@ -35,12 +35,13 @@ export const queryField = <T = string>(config?: QueryFieldConfig<T | null>): Que
 
 /**
  * A debounced free-text search field. Debounces typing by 300ms but applies
- * clearing immediately (`disableDebounceIfFalsy`).
+ * clearing immediately (`disableDebounceIfFalsy`). Reads the URL value back as the raw string.
  */
 export const searchQueryField = (config?: QueryFieldConfig<string | null>): QueryFieldDef<string | null> => ({
   defaultValue: null,
   debounce: 300,
   disableDebounceIfFalsy: true,
+  queryParamToValue: (raw) => (typeof raw === 'string' ? raw : null),
   ...normalizeConfig(config),
 });
 

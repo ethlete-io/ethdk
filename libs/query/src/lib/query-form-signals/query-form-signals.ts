@@ -74,6 +74,8 @@ const autoCoerce = (raw: unknown, defaultValue: unknown): unknown => {
 
   if (typeof raw !== 'string') return raw;
 
+  if (Array.isArray(defaultValue)) return [raw];
+
   const defaultIsNumber = typeof defaultValue === 'number';
   const looksNumeric = raw.trim() === raw && !/^-?0\d/.test(raw) && !raw.endsWith('.') && !isNaN(Number(raw));
 

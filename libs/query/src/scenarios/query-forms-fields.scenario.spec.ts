@@ -231,6 +231,39 @@ describe('query form fields scenario', () => {
 
     expect(router.parseUrl(router.url).queryParams).toEqual({ amount: 'n5' });
   });
+
+  it.each(['2024', 'true', '0x10'])('keeps the search %s from the URL a string', async (search) => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await router.navigate([], { queryParams: { search } });
+    s.tick();
+
+    const qf = s.run(() => defineQueryForm({ fields: { search: searchQueryField() } }).observe());
+    s.tick();
+
+    expect(qf.value().search).toBe(search);
+  });
+
+  it.each([
+    ['a', ['a']],
+    ['5', ['5']],
+    [
+      ['a', 'b'],
+      ['a', 'b'],
+    ],
+  ])('a field with an array default restores %j from the URL as %j', async (param, tags) => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await router.navigate([], { queryParams: { tags: param } });
+    s.tick();
+
+    const qf = s.run(() => defineQueryForm({ fields: { tags: queryField<string[]>({ defaultValue: [] }) } }).observe());
+    s.tick();
+
+    expect(qf.value().tags).toEqual(tags);
+  });
 });
 
 describe('query form date-only URL values', () => {
