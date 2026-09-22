@@ -44,12 +44,14 @@ describe('app-update scenarios', () => {
 
     expect(updates.isAvailable()).toBe(false);
 
-    added.push(appendScript(document.head, '/chat-widget.js'));
+    const widget = appendScript(document.head, '/chat-widget.js');
 
     void updates.check();
     await s.settle();
 
     expect(updates.isAvailable()).toBe(false);
+
+    widget.remove();
   });
 
   it('reports an update once the entry document references a different entry script', async () => {

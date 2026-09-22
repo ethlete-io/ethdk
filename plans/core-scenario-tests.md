@@ -1,6 +1,6 @@
 # Core scenario tests
 
-Status: slices 1-3 done. Slices 4-6 open.
+Status: slices 1-4 done. Slices 5-6 open.
 
 A behavior layer for `libs/core` next to its jsdom unit specs, shaped like `libs/query/src/scenarios`.
 
@@ -10,7 +10,7 @@ A behavior layer for `libs/core` next to its jsdom unit specs, shaped like `libs
 - [x] 2. Timing/lifetime scenarios: `signalAnimatedNumber`, `injectAngularRootElement`, `setupScrollRestoration`,
       scroll-observer sentinels, css-vars writers, `KeyPressManager`, `controlValueSignal` `debounceFirst`
 - [x] 3. Unsaved-changes and app-update through the real router
-- [ ] 4. SEO bindings
+- [x] 4. SEO bindings
 - [ ] 5. Core stories + Playwright suites: overlay runtime, `AnimatedLifecycle`, `ResizeHandles` in a pop-out
 - [ ] 6. Core stories + Playwright suites: focus-visible tracker, element observers
 
@@ -33,7 +33,7 @@ A behavior layer for `libs/core` next to its jsdom unit specs, shaped like `libs
   `s.observedElements()` lists what is observed.
 - `destroy()` tears down apps, consumers and `TestBed`, then checks: `timers`, `frames` (pending rAF),
   `observers` (elements an `IntersectionObserver` still observes),
-  `listeners` (document/window add/remove counted), `overlay-roots`, `body` (children added and left),
+  `listeners` (document/window add/remove counted), `overlay-roots`, `body` and `head` (children added and left),
   `viewport-insets`, `errors` (ErrorHandler + `console.error`), `warnings` (`console.warn`). A failure names
   the invariant and dumps what is left. `s.expectError`/`s.expectWarning` consume one entry;
   `s.allow(name, reason)` opts out and must be reported.
@@ -81,3 +81,22 @@ Defect found and fixed: the head-only build fingerprint (the earlier fix for app
 nothing in an Angular CLI build, whose entry scripts sit at the end of `<body>`, so `isAvailable` never turned
 `true`. The fingerprint reads the whole document again and an update needs a deployed script the running
 document lacks. Both app-update scenarios fail against the respective old code.
+
+## Slice 4 results
+
+`seo.scenario.spec.ts`, each proven against a local revert of the fix it guards:
+
+- Description, canonical, keywords, robots and alternate bindings follow their signal and remove the tag on
+  `null` - the `untracked` reads in `head-binding.ts`, `applyKeywordsBinding`/`applyRobotsBinding` and
+  `applyAlternateBinding`, each reverted on its own.
+- `og:image` and `preconnect` arrays grow and shrink in order - the `untracked` read in
+  `createArrayPropertyBinding`.
+- `</SCRIPT >` stays inside the JSON of `<et-structured-data>` - the case-sensitive `</script>` replace. The
+  structured-data binding (text content) is covered too; it never had the hole.
+
+Defects found and fixed:
+
+- A link or meta binding whose key changed (a `preconnect` URL, an alternate's `hreflang`, a meta tag's
+  selector) left its old tag in `<head>`: shrinking a resource-hint array kept the dropped URL.
+- `injectIsRouterInitialized` created after the first navigation stayed `false` until the next one, so a
+  title binding (or the title store) created late showed the default title.

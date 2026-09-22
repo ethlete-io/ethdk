@@ -9,6 +9,7 @@ export type InvariantName =
   | 'listeners'
   | 'overlay-roots'
   | 'body'
+  | 'head'
   | 'viewport-insets'
   | 'errors'
   | 'warnings';
@@ -28,6 +29,7 @@ export type InvariantCheckContext = {
   observedElements: readonly Element[];
   listeners: readonly ListenerRecord[];
   initialBodyChildren: ReadonlySet<Element>;
+  initialHeadChildren: ReadonlySet<Element>;
   errors: readonly ScenarioErrorEntry[];
   warnings: readonly ScenarioWarningEntry[];
   allowed: ReadonlySet<InvariantName>;
@@ -87,6 +89,14 @@ export const checkInvariants = (ctx: InvariantCheckContext) => {
     'body',
     extraChildren.length
       ? `${extraChildren.length} body child(ren) added and left: ${extraChildren.map(describeElement).join(', ')}`
+      : null,
+  );
+
+  const extraHeadChildren = Array.from(document.head.children).filter((child) => !ctx.initialHeadChildren.has(child));
+  check(
+    'head',
+    extraHeadChildren.length
+      ? `${extraHeadChildren.length} head child(ren) added and left: ${extraHeadChildren.map(describeElement).join(', ')}`
       : null,
   );
 

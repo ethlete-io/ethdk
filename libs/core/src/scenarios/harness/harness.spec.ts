@@ -139,6 +139,13 @@ describe('scenario harness', () => {
         onTestFinished(() => root.remove());
       }, /overlay-roots: 1[\s\S]*body: 1 body child\(ren\) added and left: <div\.et-overlay-runtime-root>/));
 
+    it('names a head child added and left', () =>
+      expectDestroyToFail(() => {
+        const meta = document.createElement('meta');
+        document.head.appendChild(meta);
+        onTestFinished(() => meta.remove());
+      }, /head: 1 head child\(ren\) added and left: <meta>/));
+
     it('names a viewport reservation left set', () => {
       let release = () => undefined as void;
 

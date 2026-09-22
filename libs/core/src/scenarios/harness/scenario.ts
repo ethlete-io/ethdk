@@ -79,6 +79,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
   const consumers = new Set<EnvironmentInjector>();
   const apps = new Set<ScenarioApp>();
   const initialBodyChildren = new Set(Array.from(document.body.children));
+  const initialHeadChildren = new Set(Array.from(document.head.children));
   const errorHandler = { handleError: (error: unknown) => errors.push({ source: 'ErrorHandler', error }) };
 
   const frames = installFakeFrames();
@@ -246,6 +247,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
         observedElements: intersections.observed(),
         listeners: listeners.records(),
         initialBodyChildren,
+        initialHeadChildren,
         errors,
         warnings,
         allowed,
