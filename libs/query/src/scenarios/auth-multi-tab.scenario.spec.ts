@@ -864,4 +864,38 @@ describe('auth multi-tab scenario', () => {
     a.destroy();
     b.destroy();
   });
+
+  it("caps a follower's run of fresh-token 401s at three delegated refreshes, like a lone tab's", async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+    s.api.on('POST', '/auth/refresh', issueTokens(15 * 60 * 1000));
+    s.api.protect('/secure/**');
+    s.api.on('GET', '/secure/profile', () => ({ status: 401, body: { message: 'revoked' } }));
+
+    const a = createAuthTab(s);
+    const b = createAuthTab(s);
+    await sync(s);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+
+    expect(b.auth.features.multiTabSync.isLeader()).toBe(false);
+
+    const queryB = b.consumer().run(() => b.getSecure<Profile>('/secure/profile')());
+
+    for (let i = 0; i < 20; i++) {
+      s.tick(50);
+      await sync(s);
+    }
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(3);
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(4);
+    expect(queryB.error()?.code).toBe(401);
+    expect(b.auth.accessToken()).toBe(a.auth.accessToken());
+    expect(b.auth.isAuthenticated()).toBe(true);
+
+    for (let i = 0; i < 4; i++) s.expectError(is401);
+    a.destroy();
+    b.destroy();
+  });
 });
