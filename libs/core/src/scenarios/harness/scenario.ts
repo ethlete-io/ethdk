@@ -14,6 +14,7 @@ import { afterEach, beforeEach, vi } from 'vitest';
 import { installFakeFrames } from './frames';
 import { checkInvariants, InvariantName, ScenarioErrorEntry, ScenarioWarningEntry } from './invariants';
 import { trackListeners } from './listeners';
+import { installFakeIntersectionObserver } from './observers';
 
 export type ScenarioProviders = (EnvironmentProviders | Provider)[];
 
@@ -54,6 +55,10 @@ export type Scenario = {
   settle: (maxRounds?: number) => Promise<void>;
   pendingFrames: () => number;
   keydown: (key: string, target?: EventTarget) => KeyboardEvent;
+  /** Reports `target` as (not) intersecting to every fake `IntersectionObserver` observing it. */
+  intersect: (target: Element, isIntersecting: boolean) => void;
+  /** The elements some fake `IntersectionObserver` currently observes. */
+  observedElements: () => Element[];
   errors: ScenarioErrorEntry[];
   expectError: (matcher: string | RegExp) => void;
   warnings: ScenarioWarningEntry[];
@@ -75,6 +80,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
 
   const frames = installFakeFrames();
   const listeners = trackListeners();
+  const intersections = installFakeIntersectionObserver();
 
   const originalConsoleError = console.error;
   console.error = (...args: unknown[]) => {
@@ -91,6 +97,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
     console.warn = originalConsoleWarn;
     listeners.restore();
     frames.restore();
+    intersections.restore();
   };
 
   try {
@@ -233,6 +240,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
 
       checkInvariants({
         pendingFrames: frames.pending(),
+        observedElements: intersections.observed(),
         listeners: listeners.records(),
         initialBodyChildren,
         errors,
@@ -253,6 +261,11 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
       settle,
       pendingFrames: frames.pending,
       keydown,
+      intersect: (target, isIntersecting) => {
+        intersections.intersect(target, isIntersecting);
+        detectChanges();
+      },
+      observedElements: intersections.observed,
       errors,
       expectError: (matcher) => consume(errors, matcher, (entry) => entry.error),
       warnings,
@@ -267,7 +280,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
 };
 
 const useFakeTimers = () =>
-  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance'] });
 
 /** Builds a scenario without registering hooks. The caller installs fake timers and calls `destroy()`. */
 export const createScenario = (config: ScenarioConfig = {}) => buildScenario(config);

@@ -3,7 +3,7 @@ import { reserveOverlayViewportSpace } from '../../index';
 import { createScenario, useScenario } from './scenario';
 
 const withFakeTimers = (fn: () => void) => {
-  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance'] });
 
   try {
     fn();
@@ -44,6 +44,19 @@ describe('scenario harness', () => {
       expect(s.pendingFrames()).toBe(0);
     });
 
+    it('stamps each frame with the faked clock', () => {
+      const s = scenario();
+      const stamps: number[] = [];
+      const start = performance.now();
+
+      requestAnimationFrame((time) => stamps.push(time));
+      s.tick(40);
+      requestAnimationFrame((time) => stamps.push(time));
+      s.frame();
+
+      expect(stamps).toEqual([start + 40, start + 40]);
+    });
+
     it('flushes frames and timers until nothing is pending', () => {
       const s = scenario();
       let done = false;
@@ -64,6 +77,25 @@ describe('scenario harness', () => {
       expect(s.errors).toEqual([]);
     });
 
+    it('reports intersections only for observed elements', () => {
+      const s = scenario();
+      const observed = document.createElement('div');
+      const other = document.createElement('div');
+      const entries: [Element, boolean][] = [];
+      const observer = new IntersectionObserver((batch) =>
+        batch.forEach((entry) => entries.push([entry.target, entry.isIntersecting])),
+      );
+
+      observer.observe(observed);
+      s.intersect(observed, true);
+      s.intersect(other, true);
+
+      expect(entries).toEqual([[observed, true]]);
+      expect(s.observedElements()).toEqual([observed]);
+
+      observer.disconnect();
+    });
+
     it('consumes an expected error', () => {
       const s = scenario();
 
@@ -77,6 +109,12 @@ describe('scenario harness', () => {
 
     it('names a pending frame', () =>
       expectDestroyToFail(() => requestAnimationFrame(() => undefined), /frames: 1 animation frame/));
+
+    it('names an element still observed', () =>
+      expectDestroyToFail(
+        () => new IntersectionObserver(() => undefined).observe(document.createElement('section')),
+        /observers: 1 element\(s\) still observed by an IntersectionObserver: <section>/,
+      ));
 
     it('names a leftover document listener', () =>
       expectDestroyToFail(
@@ -128,6 +166,7 @@ describe('scenario harness', () => {
       withFakeTimers(() => {
         const originalAdd = document.addEventListener;
         const originalFrame = globalThis.requestAnimationFrame;
+        const originalObserver = globalThis.IntersectionObserver;
         const s = createScenario();
 
         expect(document.addEventListener).not.toBe(originalAdd);
@@ -136,6 +175,7 @@ describe('scenario harness', () => {
 
         expect(document.addEventListener).toBe(originalAdd);
         expect(globalThis.requestAnimationFrame).toBe(originalFrame);
+        expect(globalThis.IntersectionObserver).toBe(originalObserver);
       }));
   });
 });

@@ -3,7 +3,15 @@ import { overlayViewportInsets } from '../../index';
 import { ListenerRecord } from './listeners';
 
 export type InvariantName =
-  'timers' | 'frames' | 'listeners' | 'overlay-roots' | 'body' | 'viewport-insets' | 'errors' | 'warnings';
+  | 'timers'
+  | 'frames'
+  | 'observers'
+  | 'listeners'
+  | 'overlay-roots'
+  | 'body'
+  | 'viewport-insets'
+  | 'errors'
+  | 'warnings';
 
 export type ScenarioErrorEntry = {
   source: 'ErrorHandler' | 'console.error';
@@ -17,6 +25,7 @@ export type ScenarioWarningEntry = {
 
 export type InvariantCheckContext = {
   pendingFrames: number;
+  observedElements: readonly Element[];
   listeners: readonly ListenerRecord[];
   initialBodyChildren: ReadonlySet<Element>;
   errors: readonly ScenarioErrorEntry[];
@@ -50,6 +59,13 @@ export const checkInvariants = (ctx: InvariantCheckContext) => {
   check('timers', timerCount > 0 ? `${timerCount} timer(s) leaked` : null);
 
   check('frames', ctx.pendingFrames > 0 ? `${ctx.pendingFrames} animation frame request(s) still pending` : null);
+
+  check(
+    'observers',
+    ctx.observedElements.length
+      ? `${ctx.observedElements.length} element(s) still observed by an IntersectionObserver: ${ctx.observedElements.map(describeElement).join(', ')}`
+      : null,
+  );
 
   check(
     'listeners',

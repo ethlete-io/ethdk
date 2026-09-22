@@ -1,8 +1,6 @@
-const FRAME_DURATION_MS = 16;
-
 /**
  * A `requestAnimationFrame` that only runs when told to. A callback requested while a frame runs
- * waits for the next one, as it does in a browser.
+ * waits for the next one, as it does in a browser. Each frame is stamped with `performance.now()`.
  */
 export const installFakeFrames = () => {
   const globals = globalThis as unknown as Window;
@@ -12,7 +10,6 @@ export const installFakeFrames = () => {
   const windowCancel = window.cancelAnimationFrame;
 
   let nextId = 1;
-  let timestamp = 0;
   let queue = new Map<number, FrameRequestCallback>();
 
   const request = (callback: FrameRequestCallback) => {
@@ -36,7 +33,7 @@ export const installFakeFrames = () => {
     run: () => {
       const batch = queue;
       queue = new Map();
-      timestamp += FRAME_DURATION_MS;
+      const timestamp = performance.now();
       batch.forEach((callback) => callback(timestamp));
 
       return batch.size;

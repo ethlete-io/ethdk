@@ -1,13 +1,13 @@
 # Core scenario tests
 
-Status: slice 1 done (harness + overlay runtime scenarios). Slices 2-6 open.
+Status: slices 1-2 done. Slices 3-6 open.
 
 A behavior layer for `libs/core` next to its jsdom unit specs, shaped like `libs/query/src/scenarios`.
 
 ## Slices
 
 - [x] 1. Harness at `libs/core/src/scenarios/harness/` + overlay runtime scenarios
-- [ ] 2. Timing/lifetime scenarios: `signalAnimatedNumber`, `injectAngularRootElement`, `setupScrollRestoration`,
+- [x] 2. Timing/lifetime scenarios: `signalAnimatedNumber`, `injectAngularRootElement`, `setupScrollRestoration`,
       scroll-observer sentinels, css-vars writers, `KeyPressManager`, `controlValueSignal` `debounceFirst`
 - [ ] 3. Unsaved-changes and app-update through the real router
 - [ ] 4. SEO bindings
@@ -19,12 +19,16 @@ A behavior layer for `libs/core` next to its jsdom unit specs, shaped like `libs
 - `useScenario(config?)` registers `beforeEach`/`afterEach`; `createScenario` does not (install fake timers and
   call `destroy()` yourself). Boots the app through `TestBed`, like the query harness.
 - Scenarios import from `../index` only - the `@ethlete/core` public API.
-- Time: fake `setTimeout`/`setInterval`/`Date`; a fake `requestAnimationFrame` that runs only on `s.frame(n)`.
+- Time: fake `setTimeout`/`setInterval`/`Date`/`performance`; a fake `requestAnimationFrame` that runs only on
+  `s.frame(n)` and stamps each frame with `performance.now()`, so `s.frame()` alone does not move time.
   `s.tick(ms)` runs CD, timers, CD. `s.flush()` runs frames and timers until neither is pending (throws if it
   never settles). `s.settle()` also awaits promises.
 - `s.run(fn)` injection context; `s.consumer(providers?)` a fake component injector; `s.app()` a second
   `createApplication` on the same document; `s.keydown(key, target?)` dispatches a cancelable keydown.
+- A fake `IntersectionObserver` reports only what `s.intersect(element, isIntersecting)` says;
+  `s.observedElements()` lists what is observed.
 - `destroy()` tears down apps, consumers and `TestBed`, then checks: `timers`, `frames` (pending rAF),
+  `observers` (elements an `IntersectionObserver` still observes),
   `listeners` (document/window add/remove counted), `overlay-roots`, `body` (children added and left),
   `viewport-insets`, `errors` (ErrorHandler + `console.error`), `warnings` (`console.warn`). A failure names
   the invariant and dumps what is left. `s.expectError`/`s.expectWarning` consume one entry;
@@ -42,3 +46,18 @@ A behavior layer for `libs/core` next to its jsdom unit specs, shaped like `libs
 
 Defect found and fixed: app teardown with an open overlay logged NG0406 (detaching from a destroyed
 `ApplicationRef`).
+
+## Slice 2 results
+
+`timing-lifetime.scenario.spec.ts` and `scroll-restoration.scenario.spec.ts`, each proven against a local
+revert of the fix it guards:
+
+- `signalAnimatedNumber` destroyed mid-animation - the `DestroyRef` cancel (a frame stays pending).
+- `injectAngularRootElement` in an app torn down before a root mounts - the poll `clearTimeout` on destroy.
+- `setupScrollRestoration` destroyed with a marked return still pending - `cancelPendingRestore` on destroy.
+- `etScrollObserverStart` leaving an `@if` - the unregister on destroy (the detached sentinel stays observed).
+- css-vars writers in a second app after the first was torn down - the module-level `hasWritten*` latch.
+- `KeyPressManager` repeat on the second press - the count read before the increment.
+- `controlValueSignal` `debounceFirst` holding the first value back - the `startWith` after `debounceTime`.
+
+No defects found.
