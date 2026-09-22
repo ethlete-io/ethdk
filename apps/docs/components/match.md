@@ -69,14 +69,18 @@ passed straight through - including a full `srcset` candidate set if your API ha
 
 ### Adapters are plain functions
 
-For an `@ethlete/types` backend, the adapter ships with the library:
+For an Ethlete API backend, the adapter ships with the library:
 
-| Export                                | Maps                                                          |
-| ------------------------------------- | ------------------------------------------------------------- |
-| `normalizeEthleteMatch(match)`        | `MatchListView` / `DetailedMatchListView` → `NormalizedMatch` |
-| `normalizeEthleteParticipant(p)`      | `ParticipantViewUnion` → `NormalizedMatchParticipant`         |
-| `normalizeEthleteMedia(media)`        | `MediaView` → `NormalizedMedia`                               |
-| `normalizeEthleteMatchStatus(status)` | `MatchStatus` → the three states                              |
+| Export                                | Maps                                                     |
+| ------------------------------------- | -------------------------------------------------------- |
+| `normalizeEthleteMatch(match)`        | `EthleteMatchInput` → `NormalizedMatch`                  |
+| `normalizeEthleteParticipant(p)`      | `EthleteParticipantInput` → `NormalizedMatchParticipant` |
+| `normalizeEthleteMedia(media)`        | `EthleteMediaInput` → `NormalizedMedia`                  |
+| `normalizeEthleteMatchStatus(status)` | `EthleteMatchStatusInput` → the three states             |
+
+The `Ethlete*Input` types list only the fields the adapter reads, so the generated `@ethlete/types` models
+(`MatchListView`, `DetailedMatchListView`, `ParticipantViewUnion`, `MediaView`) fit them, and so does a customer
+API variant's own extended or reduced model - no cast needed.
 
 The smaller mappers are exported too, so a partial shape can reuse one without the whole match adapter. Any
 other backend writes its own `(data) => NormalizedMatch` - no DI, no registration.

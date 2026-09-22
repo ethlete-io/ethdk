@@ -234,9 +234,15 @@ either side of it relate to each other, so a stage can be published before its l
 
 The Ethlete API integration builds the source for you:
 
-| Integration | Function                                | Input                                                          |
-| ----------- | --------------------------------------- | -------------------------------------------------------------- |
-| Ethlete API | `generateBracketDataForEthlete(rounds)` | `RoundStageStructureWithMatchesView[]` (from `@ethlete/types`) |
+| Integration | Function                                | Input                            |
+| ----------- | --------------------------------------- | -------------------------------- |
+| Ethlete API | `generateBracketDataForEthlete(rounds)` | `EthleteRoundWithMatchesInput[]` |
+
+The input types (`EthleteRoundInput`, `EthleteBracketMatchInput`) list only the fields the integration
+reads, so the generated `RoundStageStructureWithMatchesView[]` from `@ethlete/types` fits, and so does an API
+variant's own model. The function is generic: the source it returns is typed with _your_ round and match
+types, so the extra fields of an extended model are still there on `bracketRound().data` /
+`bracketMatch().data`.
 
 It infers the tournament mode from the first round that has matches, so a stage whose opening
 rounds are drawn but still empty maps fine.
@@ -335,7 +341,7 @@ the [normalized shape](/components/match#any-backend-the-normalized-match) they 
 ```ts
 import { normalizeEthleteBracketMatch, provideBracketConfig } from '@ethlete/components';
 
-// for an @ethlete/types feed, the normalizer ships with the integration
+// for an Ethlete API feed, the normalizer ships with the integration - any match satisfying EthleteMatchInput
 provideBracketConfig({ matchNormalizer: normalizeEthleteBracketMatch });
 ```
 

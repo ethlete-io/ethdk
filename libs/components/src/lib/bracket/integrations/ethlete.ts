@@ -1,10 +1,4 @@
 import {
-  MatchListViewUnion,
-  RoundStageStructureView,
-  RoundStageStructureWithMatchesView,
-  RoundType,
-} from '@ethlete/types';
-import {
   BracketRoundType,
   COMMON_BRACKET_ROUND_TYPE,
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
@@ -15,12 +9,46 @@ import {
 } from '../core';
 import { BracketDataSource, BracketMatchSource, BracketRoundSource } from './base';
 import { RuntimeError } from '@ethlete/core';
-import { normalizeEthleteMatch } from '../../match';
-import { BracketMatchNormalizer } from '../bracket-card-context';
+import { EthleteMatchInput, EthleteMatchStatusInput, NormalizedMatch, normalizeEthleteMatch } from '../../match';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
+import { BracketMatch } from '../linked';
+
+/** The round kinds of the Ethlete API. */
+export type EthleteRoundTypeInput =
+  'normal' | 'third_place' | 'final' | 'reverse_final' | 'winner_bracket' | 'loser_bracket';
+
+/** The stage kinds of the Ethlete API, carried on each match as `matchType`. */
+export type EthleteStageTypeInput =
+  'single_elimination' | 'double_elimination' | 'league' | 'pools' | 'groups' | 'fifa_swiss';
+
+/** The round fields {@link generateBracketDataForEthlete} reads. */
+export type EthleteRoundInput = {
+  id: string;
+  name: string | null;
+  type: EthleteRoundTypeInput;
+};
+
+/** The match fields {@link generateBracketDataForEthlete} reads. */
+export type EthleteBracketMatchInput = {
+  id: string;
+  home: { id: string } | null;
+  away: { id: string } | null;
+  winningSide: 'home' | 'away' | null;
+  status: EthleteMatchStatusInput | null;
+  matchType: EthleteStageTypeInput | null;
+};
+
+/** One round with its matches, as the Ethlete API returns a stage. Your own round and match types flow through to the bracket's `data`. */
+export type EthleteRoundWithMatchesInput<
+  TRound extends EthleteRoundInput = EthleteRoundInput,
+  TMatch extends EthleteBracketMatchInput = EthleteBracketMatchInput,
+> = {
+  round: TRound;
+  matches: readonly TMatch[];
+};
 
 export const generateRoundTypeFromEthleteRoundType = (
-  type: RoundType,
+  type: EthleteRoundTypeInput,
   tournamentMode: TournamentMode,
   roundMatchCount: number,
   // eslint-disable-next-line max-params -- round-type derivation keyed on three independent facts (type, mode, matchCount)
@@ -57,7 +85,7 @@ export const generateRoundTypeFromEthleteRoundType = (
 };
 
 export const generateTournamentModeFormEthleteRounds = (
-  source: RoundStageStructureWithMatchesView[],
+  source: readonly EthleteRoundWithMatchesInput[],
 ): TournamentMode => {
   const firstDrawnRound = source.find((round) => round.matches.length > 0);
   const firstMatch = firstDrawnRound?.matches[0];
@@ -92,10 +120,15 @@ export const generateTournamentModeFormEthleteRounds = (
   }
 };
 
-export const generateBracketDataForEthlete = (source: RoundStageStructureWithMatchesView[]) => {
+export const generateBracketDataForEthlete = <
+  TRound extends EthleteRoundInput,
+  TMatch extends EthleteBracketMatchInput,
+>(
+  source: readonly EthleteRoundWithMatchesInput<TRound, TMatch>[],
+): BracketDataSource<TRound, TMatch> => {
   const tournamentMode = generateTournamentModeFormEthleteRounds(source);
 
-  const bracketData: BracketDataSource<RoundStageStructureView, MatchListViewUnion> = {
+  const bracketData: BracketDataSource<TRound, TMatch> = {
     rounds: [],
     matches: [],
     mode: tournamentMode,
@@ -115,7 +148,7 @@ export const generateBracketDataForEthlete = (source: RoundStageStructureWithMat
       currentItem.matches.length,
     );
 
-    const bracketRound: BracketRoundSource<RoundStageStructureView> = {
+    const bracketRound: BracketRoundSource<TRound> = {
       type: roundType,
       id: currentItem.round.id,
       data: currentItem.round,
@@ -132,7 +165,7 @@ export const generateBracketDataForEthlete = (source: RoundStageStructureWithMat
         );
       }
 
-      const bracketMatch: BracketMatchSource<MatchListViewUnion> = {
+      const bracketMatch: BracketMatchSource<TMatch> = {
         id: match.id,
         data: match,
         roundId: currentItem.round.id,
@@ -157,6 +190,6 @@ export const generateBracketDataForEthlete = (source: RoundStageStructureWithMat
  * @example
  * provideBracketConfig({ matchNormalizer: normalizeEthleteBracketMatch });
  */
-export const normalizeEthleteBracketMatch: BracketMatchNormalizer<RoundStageStructureView, MatchListViewUnion> = (
-  match,
-) => normalizeEthleteMatch(match.data);
+export const normalizeEthleteBracketMatch = <TRound, TMatch extends EthleteMatchInput>(
+  match: BracketMatch<TRound, TMatch>,
+): NormalizedMatch => normalizeEthleteMatch(match.data);

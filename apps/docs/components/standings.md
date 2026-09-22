@@ -56,10 +56,13 @@ The table **does not sort**. Whatever order you pass is the order drawn, because
 a real table (head-to-head, goals scored, fair-play points) live in the competition's rules, not in a UI
 component.
 
-| Export                                 | Maps                                                                                           |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `normalizeEthletePlacement(placement)` | `PlacementView` → `NormalizedStandingRow`                                                      |
-| `normalizeEthleteGroupRanking(opts)`   | `GroupRankingView` → `{ caption, rows, zones }`, with `qualifiedPlayers` as the advancing zone |
+| Export                                 | Maps                                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `normalizeEthletePlacement(placement)` | `EthletePlacementInput` → `NormalizedStandingRow`                                                      |
+| `normalizeEthleteGroupRanking(opts)`   | `EthleteGroupRankingInput` → `{ caption, rows, zones }`, with `qualifiedPlayers` as the advancing zone |
+
+Both input types list only the fields the adapter reads, so the generated `PlacementView` / `GroupRankingView`
+from `@ethlete/types` fit them, and so does an API variant's own model.
 
 Two mapping notes: `score` is what the API ranks by so it becomes `points`, and the list views carry no form
 history - fill `form` in yourself if you have it elsewhere.

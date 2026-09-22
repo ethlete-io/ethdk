@@ -59,7 +59,7 @@ export type NormalizedMatchSideState = 'occupied' | 'predicted' | 'unresolvable'
 
 /**
  * A match, in the shape this library's match components render. **Every backend maps into it** - the
- * `@ethlete/types` adapter in `integrations/` is the first-class example, not the model. Keep an
+ * Ethlete adapter in `integrations/` is the first-class example, not the model. Keep an
  * adapter of your own to this shape and everything here works; anything more exotic belongs in a card
  * of your own.
  *
