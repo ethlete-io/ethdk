@@ -1864,7 +1864,7 @@ describe('persistence scenario over IndexedDB', () => {
     return index.map((entry) => entry.url).sort();
   };
 
-  const persist = async (s: Scenario, path: string) => {
+  const persist = async (s: Scenario, path: `/${string}`) => {
     s.api.on('GET', path, () => ({ body: { path } }));
 
     const getPath = s.get<{ response: { path: string } }>(path, { persistence: true });
@@ -1902,7 +1902,8 @@ describe('persistence scenario over IndexedDB', () => {
     await s.client.whenPersistenceReady;
 
     const first = await persist(s, '/first');
-    forceCloseDatabase(connection());
+    // fake-indexeddb 6.2.5 types forceCloseDatabase's parameter as the FDBDatabase class, not an instance.
+    forceCloseDatabase(connection() as unknown as Parameters<typeof forceCloseDatabase>[0]);
 
     const later = await persist(s, '/later');
 

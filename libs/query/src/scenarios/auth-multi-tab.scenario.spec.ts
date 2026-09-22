@@ -67,7 +67,7 @@ const createAuthTab = (s: Scenario, options: TabOptions = {}) => {
     features: [
       withBearerAuthMultiTabSync(options.syncConfig),
       ...(options.trackInto ? [trackingInto(options.trackInto)] : []),
-    ] as unknown as readonly [],
+    ] as unknown as readonly [ReturnType<typeof withBearerAuthMultiTabSync>],
   });
 
   // Its own coordinator rather than the shared root one, or a guard in one tab is the same object as
