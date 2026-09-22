@@ -630,6 +630,31 @@ describe('auth refresh retry policy scenario', () => {
   const gapsInSeconds = (times: number[]) =>
     times.slice(1).map((at, index) => Math.round((at - (times[index] ?? 0)) / 1000));
 
+  it('gives a refresh up after retryConfig.maxAttempts, and keeps the session for a status it lists as retryable', async () => {
+    const s = scenario();
+    const auth = createAuth(s, { retryConfig: { maxAttempts: 2 } });
+
+    for (let i = 0; i < 3; i++) {
+      s.api.once('POST', '/auth/refresh', () => ({ status: 503, body: { message: 'unavailable' } }));
+    }
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    s.run(() => auth.queries.refresh.execute({ body: { token: auth.refreshToken() ?? '' } }));
+
+    for (let i = 0; i < 4; i++) await s.settle(10_000);
+
+    expect(gapsInSeconds(refreshAttemptsAt(s))).toEqual([2, 4]);
+    expect(auth.executionState()).toMatchObject({ type: 'tokenRefresh', state: 'error' });
+    expect(auth.isAuthenticated()).toBe(true);
+    expect(auth.sessionEndCause()).toBeNull();
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+    c.destroy();
+  });
+
   it('waits out a 429 for as long as retry-after or x-retry-after asks, capped at maxRetryDelayMs', async () => {
     const s = scenario();
     const auth = createAuth(s, { retryConfig: { maxRetryDelayMs: 10_000 } });

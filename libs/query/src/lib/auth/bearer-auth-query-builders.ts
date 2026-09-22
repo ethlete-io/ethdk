@@ -292,7 +292,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
   const refreshRetryFn: ShouldRetryRequestFn = ({ error, retryCount }) => {
     const { status } = error;
 
-    if (maxAttempts > 0 && retryCount >= maxAttempts) {
+    if (maxAttempts > 0 && retryCount > maxAttempts) {
       return { retry: false };
     }
 
