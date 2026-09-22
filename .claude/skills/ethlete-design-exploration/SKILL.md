@@ -45,9 +45,9 @@ If a second defect appears, add it to the open list and give it one line. Do not
 
 The exploration's plan file names the tool. Two shapes exist.
 
-**A repository with `tools/design-explore`** draws a call per page, each option in its own
-iframe. Start it with `yarn design`, which serves http://localhost:4402. Every repository keeps
-its own design work in `.ethlete/design/`, so a call argues in the repository it is about:
+**A repository with a `.ethlete/design` folder** draws a call per page, each option in its own
+iframe. The tool is `et design`, from `@ethlete/cli`, so the repository itself needs no design
+tooling. A call argues in the repository it is about:
 
 ```
 .ethlete/design/
@@ -62,6 +62,11 @@ its own design work in `.ethlete/design/`, so a call argues in the repository it
 The first segment of a slug is the **project**. `config.json` gives each project its own
 `styles` and its own `head`, so one project's type scale and fonts never reach another's
 drawings. A project the config names not draws bare.
+
+Start the page with `et design [checkout]`, which serves the port `config.json` names. The
+checkout defaults to the working directory, and `DE_PORT` overrules the config, so two
+checkouts can be drawn at once. A repository that builds the tool rather than installing it
+wraps this in a script - in the ethlete SDK, `yarn design` and `yarn design:check`.
 
 `call.ts` calls `defineCall` from `@design-explore`. Each option carries a `key`, a `name`,
 a `claim`, a `cost`, an optional `verdict` of `chosen` or `rejected`, and a `load` that
@@ -128,12 +133,14 @@ A broken build draws an overlay, so a screenshot of it looks like a design. **On
 covers that, and it is the whole gate.** Name the files you changed, never a whole project,
 which is far slower and can fight the user's own editor.
 
-With `tools/design-explore`, run the checker from the repository root - Node resolves
-`playwright` from the working directory, and the tool already sits inside the repository:
+With `et design`, run the checker from the checkout it draws:
 
 ```bash
-node tools/design-explore/check-call.mjs --lint <changed files> --tsconfig tools/design-explore/tsconfig.json
+et design check --lint <changed files> --tsconfig
 ```
+
+`--tsconfig` with no path types every call of the checkout. `--checkout <path>` names another
+one.
 
 With a Storybook, copy `check-story.mjs` (bundled next to this skill) to the **repository root** first:
 
@@ -147,8 +154,8 @@ transpile without type checking, so the render reports `ok` on a file that does 
 compile. Open it only when the check passes and the drawing still does not appear:
 
 ```bash
-node tools/design-explore/check-call.mjs --call <slug>            # every option of the call
-node tools/design-explore/check-call.mjs --call <slug> --option b # one of them
+et design check --call <slug>            # every option of the call
+et design check --call <slug> --option b # one of them
 node check-story.mjs --tsconfig <path> --story <story-id>
 ```
 

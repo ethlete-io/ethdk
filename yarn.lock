@@ -5340,8 +5340,15 @@ __metadata:
 "@ethlete/cli@workspace:libs/cli":
   version: 0.0.0-use.local
   resolution: "@ethlete/cli@workspace:libs/cli"
+  dependencies:
+    typescript: "npm:6.0.3"
+    vite: "npm:8.1.5"
   peerDependencies:
+    playwright: 1.61.1
     tslib: 2.8.1
+  peerDependenciesMeta:
+    playwright:
+      optional: true
   bin:
     et: ./src/index.js
   languageName: unknown

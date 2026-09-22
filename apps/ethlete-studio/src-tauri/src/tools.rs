@@ -13,9 +13,12 @@ pub const SERVE_ARGUMENT: &str = "mcp";
 
 const PROTOCOL_VERSION: &str = "2025-06-18";
 
-const CHECK_SCRIPT: &str = "tools/design-explore/check-call.mjs";
-
-const CHECK_TSCONFIG: &str = "tools/design-explore/tsconfig.json";
+/// Where the design tool lives once a checkout installs it, and where this repository builds it.
+/// The first entry that exists wins, and `ETHLETE_CLI` overrules all of them.
+const CLI_ENTRIES: [&str; 2] = [
+    "node_modules/@ethlete/cli/src/index.js",
+    "dist/libs/cli/src/index.js",
+];
 
 /// What the run works on. Studio knows every one of these, so no tool takes an argument and no run
 /// can name the wrong call.
@@ -199,27 +202,44 @@ fn read_fixture(context: &ToolContext) -> Result<String, String> {
     read(&path)
 }
 
-fn check_call(context: &ToolContext) -> Result<String, String> {
-    let script = context.checkout.join(CHECK_SCRIPT);
+/// The `et` entry point that draws and checks a checkout. Step by step: an explicit override, the
+/// copy the checkout installed, then the copy this repository builds.
+fn cli_entry(checkout: &Path) -> Option<PathBuf> {
+    if let Some(named) = std::env::var_os("ETHLETE_CLI") {
+        let path = PathBuf::from(named);
 
-    if !script.is_file() {
-        return Err(format!("{} does not hold {CHECK_SCRIPT}.", context.checkout.display()));
+        return path.is_file().then_some(path);
     }
+
+    CLI_ENTRIES
+        .iter()
+        .map(|entry| checkout.join(entry))
+        .find(|path| path.is_file())
+}
+
+fn check_call(context: &ToolContext) -> Result<String, String> {
+    let entry = cli_entry(&context.checkout).ok_or_else(|| {
+        format!(
+            "{} holds no @ethlete/cli. Install it, or set ETHLETE_CLI to its src/index.js.",
+            context.checkout.display()
+        )
+    })?;
 
     let output = Command::new("node")
         .current_dir(&context.checkout)
         .env("DE_URL", format!("http://localhost:{}", context.port))
-        .arg(CHECK_SCRIPT)
+        .arg(&entry)
+        .arg("design")
+        .arg("check")
         .arg("--lint")
         .arg(context.variant_file())
         .arg("--tsconfig")
-        .arg(CHECK_TSCONFIG)
         .arg("--call")
         .arg(&context.call)
         .arg("--option")
         .arg(&context.variant)
         .output()
-        .map_err(|error| format!("Unable to run {CHECK_SCRIPT}: {error}"))?;
+        .map_err(|error| format!("Unable to run {}: {error}", entry.display()))?;
 
     let said = format!(
         "{}{}",
@@ -356,6 +376,33 @@ pub fn serve(context: &ToolContext) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn ground(name: &str) -> PathBuf {
+        let ground = std::env::temp_dir().join(format!("ethlete-studio-tools-{}-{name}", std::process::id()));
+
+        let _ = std::fs::remove_dir_all(&ground);
+        std::fs::create_dir_all(&ground).expect("a temporary ground");
+
+        ground
+    }
+
+    #[test]
+    fn the_installed_cli_is_preferred_over_a_built_one() {
+        let checkout = ground("installed");
+
+        for entry in CLI_ENTRIES {
+            let path = checkout.join(entry);
+            std::fs::create_dir_all(path.parent().expect("a parent")).expect("a directory");
+            std::fs::write(&path, "").expect("an entry point");
+        }
+
+        assert_eq!(cli_entry(&checkout), Some(checkout.join(CLI_ENTRIES[0])));
+    }
+
+    #[test]
+    fn a_checkout_without_the_cli_names_none() {
+        assert_eq!(cli_entry(&ground("bare")), None);
+    }
 
     fn context() -> ToolContext {
         ToolContext {

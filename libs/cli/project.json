@@ -12,7 +12,10 @@
         "outputPath": "dist/libs/cli",
         "main": "libs/cli/src/index.ts",
         "tsConfig": "libs/cli/tsconfig.lib.json",
-        "assets": ["libs/cli/*.md"]
+        "assets": [
+          "libs/cli/*.md",
+          { "input": "libs/cli/design", "glob": "**/*", "output": "design", "ignore": ["tsconfig.json"] }
+        ]
       }
     },
     "publish": {

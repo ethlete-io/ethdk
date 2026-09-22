@@ -4,12 +4,19 @@ import baseConfig from '../../eslint.config.mjs';
 export default [
   ...baseConfig,
 
+  // The design page is a browser app Vite serves from source, not library code this project
+  // compiles. The Angular-flavoured rules of the styleguide do not apply to it.
+  { ignores: ['design/**'] },
+
   {
     files: ['**/*.json'],
     rules: {
       '@nx/dependency-checks': [
         'error',
         {
+          // `et design check` resolves these two out of the checkout it draws, or out of this
+          // package, so neither shows up as an import.
+          ignoredDependencies: ['playwright', 'typescript'],
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/src/**/*.spec.ts',

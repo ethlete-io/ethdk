@@ -1,6 +1,6 @@
 # Fifagg competition navigation
 
-Where the calls are drawn: `tools/design-explore` (`yarn design`, http://localhost:4402), calls under
+Where the calls are drawn: `et design` (`yarn design`, http://localhost:4402), calls under
 `.ethlete/design/calls/fifagg/competition-navigation/`.
 
 The source this redesigns is `/home/tom/dev/fifagg/fifagg-frontend`:
