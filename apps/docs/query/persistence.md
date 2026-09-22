@@ -217,7 +217,7 @@ verbatim should do the same. It is not the `version` an app bumps when its respo
 Adapters are deliberately dumb: they store what they are handed. `maxAge`, `maxEntries`, the `version`
 check and the logout purge are all decided before a call reaches one, so a custom adapter cannot get
 any of that subtly wrong. Every method may reject - a failing read is treated as a miss, a failing
-write as a full disk, and a failing removal drops the entry all the same, so it is never handed back,
+write is retried once, and a failing removal drops the entry all the same, so it is never handed back,
 and is tried again on the next removal.
 
 ## Safety and limits
@@ -231,8 +231,8 @@ and is tried again on the next removal.
 - **Side-effect features stay quiet for persisted responses.** As with a shared response,
   `withSuccessHandling`, `withLogging` and the query's `events$` fire for what _this_ request received
   over HTTP. Hydration updates the signals and emits nothing.
-- **A full disk gives up quietly.** A write that fails frees the oldest half of the store and retries
-  once; a second failure stops writing for the session with one dev-mode warning, until a
+- **A full disk gives up quietly.** A write that fails is retried once - after freeing the oldest half
+  of the store, when it failed with a `QuotaExceededError`; a second failure stops writing for the session with one dev-mode warning, until a
   `clearPersistedQueries()` frees the store again. Queries are unaffected either way.
 - **Removing beats writing.** Writes are batched and therefore in flight for a moment. A logout purge
   or a `clearPersistedQueries()` that starts in that window runs _after_ the write lands, never

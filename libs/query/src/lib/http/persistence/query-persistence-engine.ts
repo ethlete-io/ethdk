@@ -99,6 +99,9 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     return run;
   };
 
+  const isQuotaExceededError = (error: unknown) =>
+    error instanceof Error && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED');
+
   const isExpired = (meta: PersistedQueryEntryMeta, now = Date.now()) => meta.persistedAt + maxAge <= now;
 
   const metaOf = ({ body: _body, ...meta }: PersistedQueryEntry): PersistedQueryEntryMeta => meta;
@@ -290,16 +293,19 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
 
     try {
       await adapter.write(entries);
-    } catch {
-      // The realistic failure is a full quota. Free the oldest half and give it exactly one more go -
-      // repeated retries against a disk that is genuinely full would just burn transactions.
+    } catch (firstError) {
+      // Exactly one more go - repeated retries against a disk that is genuinely full would just burn
+      // transactions.
       try {
-        const oldestHalf = Array.from(index.values())
-          .sort((a, b) => a.persistedAt - b.persistedAt)
-          .slice(0, Math.ceil(index.size / 2))
-          .map((meta) => meta.key);
+        if (isQuotaExceededError(firstError)) {
+          const oldestHalf = Array.from(index.values())
+            .sort((a, b) => a.persistedAt - b.persistedAt)
+            .slice(0, Math.ceil(index.size / 2))
+            .map((meta) => meta.key);
 
-        await removeKeys(oldestHalf);
+          await removeKeys(oldestHalf);
+        }
+
         await adapter.write(entries);
       } catch (error) {
         areWritesDisabled = true;

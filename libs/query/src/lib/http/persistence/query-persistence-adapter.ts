@@ -11,9 +11,9 @@ import { PersistedQueryBody, PersistedQueryEntry, PersistedQueryEntryMeta } from
  * policy decision - how old a body may be, how many are kept, what happens on a logout - is made by
  * the persistence engine, so a custom adapter cannot get any of it subtly wrong.
  *
- * Every method may reject. The engine treats a failing read as a miss and a failing write as a full
- * disk (it prunes and retries once, then stops writing for the session), so an adapter never needs to
- * swallow its own errors.
+ * Every method may reject. The engine treats a failing read as a miss and retries a failing write once
+ * - after pruning the oldest half when it rejected with a `QuotaExceededError` - then stops writing for
+ * the session, so an adapter never needs to swallow its own errors.
  */
 export type QueryPersistenceAdapter = {
   /**

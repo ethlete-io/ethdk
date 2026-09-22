@@ -880,6 +880,32 @@ describe('persistence scenario', () => {
       c.destroy();
     });
 
+    it('retries a write that failed for another reason than the quota without freeing anything', async () => {
+      const s = scenario();
+      s.api.on('GET', '/new', () => ({ body: { fresh: true } }));
+
+      await s.client.whenPersistenceReady;
+
+      const getNew = s.get<{ response: { fresh: boolean } }>('/new');
+      const c = s.consumer();
+      c.run(() => getNew());
+      s.tick();
+
+      store.failNextWrites(1, new DOMException('The database connection is closing.', 'InvalidStateError'));
+      await s.client.subtle.persistence?.flush();
+      await s.settle();
+
+      expect(store.calls().write).toBe(2);
+      expect(store.calls().remove).toBe(0);
+      expect(store.entries().map((e) => e.url)).toEqual([
+        'https://api.test/1',
+        'https://api.test/2',
+        'https://api.test/new',
+      ]);
+
+      c.destroy();
+    });
+
     it('stops writing for the session after a second failure, with one dev-mode warning, and queries are unaffected', async () => {
       const s = scenario();
       s.api.on('GET', '/first', () => ({ body: { n: 1 } }));
