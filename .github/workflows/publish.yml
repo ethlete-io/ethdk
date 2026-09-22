@@ -28,7 +28,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           fetch-depth: 0
 
@@ -38,27 +38,34 @@ jobs:
         with:
           nx-cache-key: build
 
+      # Also builds tools/changesets-action, which the publish step below runs from dist.
       - run: yarn nx run-many -t build
+
+      # `changeset publish` authenticates through YARN_NPM_AUTH_TOKEN, but sync-dist-tags.js
+      # calls the npm CLI, which reads only .npmrc.
+      - name: Authenticate npm
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish packages
         id: changesets
-        uses: TomTomB/changesets-action@v1
+        uses: ./tools/changesets-action
         with:
-          version: ${{ inputs.version_command }}
-          commit: ${{ inputs.commit_message }}
-          publish: yarn release
-          title: ${{ inputs.title }}
-          slackTitle: ${{ inputs.slack_title }}
-          slackChannel: ${{ secrets.SLACK_CHANNEL_ID }}
+          version-script: ${{ inputs.version_command }}
+          commit-message: ${{ inputs.commit_message }}
+          publish-script: yarn release
+          pr-title: ${{ inputs.title }}
+          slack-title: ${{ inputs.slack_title }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           HUSKY: 0
 
       - name: Post release notes to slack
         if: steps.changesets.outputs.published == 'true'
-        uses: slackapi/slack-github-action@v2.1.1
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: ${{ steps.changesets.outputs.slackPayload }}
+          payload: ${{ steps.changesets.outputs.slack-payload }}
