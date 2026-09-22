@@ -381,7 +381,7 @@ export type WithMock<MockResponse> = {
  */
 export type V2QueryConfig = {
   /**
-   * Whether this query should be added to the internal query store.
+   * Whether this query should be kept out of the internal query store, so it is neither cached nor shared.
    *
    * Generally this should be left on `false` unless you know what you are doing.
    * @default false
