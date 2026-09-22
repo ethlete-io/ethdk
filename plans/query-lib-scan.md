@@ -256,3 +256,17 @@ Open: the remaining wave 6 Lows and each file's `## Unverified` claims cannot be
 only in `.claude/handoffs/wave6-scan-*.md`, which is gitignored and no longer exists; the fix commits
 of 2026-09-05 (`d3dd4cf9e`..`9ffd61f9b`) closed an unknown share of them. Recovering the rest needs a
 fresh Low-severity pass over those trees.
+
+### Gap-analysis pass (2026-09-22)
+
+Fixed with scenarios: a persisted session lost on reload when `localStorage` refuses writes or is
+missing (`b32041a51`), a date-only URL value parsed as UTC midnight (`913de8093`), and a legacy
+`QueryForm` debouncing a value that arrived by navigation (`4e66ecf11`). Pinned as by design:
+a follower's snapshot-carrying tracking event (`<key>Success`) cannot be cloned and fires in the
+follower with a dev warning, and one logout raises `logout` in every tab (`user` once, `otherTab` in
+the rest).
+
+Open: the real IndexedDB adapter (`onversionchange`/`onclose`, a `QuotaExceededError` abort, a
+blocked open) has no scenario. It needs `fake-indexeddb` as a devDependency, which awaits a decision.
+The date-only scenario bites in every zone but UTC; `process.env.TZ` inside a spec has no effect in
+the threads pool, so a UTC CI runner does not catch a regression.
