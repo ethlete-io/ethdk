@@ -1,7 +1,7 @@
 import { Location } from '@angular/common';
 import { effect } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { Router, provideRouter, withRouterConfig } from '@angular/router';
 import {
   booleanArrayQueryField,
   dateQueryField,
@@ -567,3 +567,28 @@ describe('query forms URL sync scenario', () => {
     expect(router.url).toBe('/#details');
   });
 });
+
+describe.each(['merge', 'preserve'] as const)(
+  'query forms URL sync with defaultQueryParamsHandling %s',
+  (defaultQueryParamsHandling) => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      providers: () => [provideRouter([], withRouterConfig({ defaultQueryParamsHandling }))],
+    });
+
+    it('writes and removes its params regardless of the app default', async () => {
+      const s = scenario();
+      const router = TestBed.inject(Router);
+
+      const qf = s.run(() => defineQueryForm({ fields: { search: queryField<string>() } }).observe());
+
+      qf.setValue({ search: 'shoes' });
+      await s.settle();
+      expect(router.parseUrl(router.url).queryParams).toEqual({ search: 'shoes' });
+
+      qf.setValue({ search: null });
+      await s.settle();
+      expect(router.parseUrl(router.url).queryParams).toEqual({});
+    });
+  },
+);
