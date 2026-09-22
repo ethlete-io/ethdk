@@ -548,4 +548,22 @@ describe('query forms URL sync scenario', () => {
 
     expect(restored.value()).toEqual({ tags: [], flags: null, search: null });
   });
+
+  it('keeps the URL fragment through its own writes', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await router.navigateByUrl('/#details');
+    s.tick();
+
+    const qf = s.run(() => defineQueryForm({ fields: { search: queryField<string>() } }).observe());
+
+    qf.setValue({ search: 'shoes' });
+    await s.settle();
+    expect(router.url).toBe('/?search=shoes#details');
+
+    qf.unobserve();
+    await s.settle();
+    expect(router.url).toBe('/#details');
+  });
 });

@@ -546,7 +546,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
         if (queryParams[key] === undefined) delete queryParams[key];
       }
 
-      router.navigate([], { queryParams, ...extras });
+      router.navigate([], { queryParams, fragment: base.fragment ?? undefined, ...extras });
     });
   };
 
