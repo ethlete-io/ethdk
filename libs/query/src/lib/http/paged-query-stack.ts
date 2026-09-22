@@ -436,7 +436,10 @@ export const createPagedQueryStack = <
 
     const args = options.args(page, allResponses);
     pageDirection.set('next');
-    const query = stack.subtle.runWithArgs(args);
+
+    const lastQueryBefore = stack.lastQuery();
+    const lastQueryAfter = stack.subtle.runWithArgs(args);
+    const query = lastQueryAfter === lastQueryBefore ? null : lastQueryAfter;
 
     if (query) {
       currentPageArgs.set(args);

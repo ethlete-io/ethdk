@@ -1473,6 +1473,36 @@ describe('stacks scenario', () => {
     c.destroy();
   });
 
+  it('fetchNextPage returns null and keeps its position when its args repeat a loaded page', () => {
+    const s = scenario();
+    s.api.on('GET', '/capped-pages', ({ query }) => ({ body: ethletePage(Number(query['page']), 3) }));
+
+    const getPage = s.get<PagedQueryArgs>('/capped-pages');
+    const c = s.consumer();
+    const pages = c.run(() =>
+      createPagedQueryStack({
+        queryCreator: getPage,
+        responseNormalizer: ethletePaginationAdapter,
+        args: (page) => ({ queryParams: { page: Math.min(page, 2) } }),
+      }),
+    );
+
+    s.tick();
+    pages.fetchNextPage();
+    s.tick();
+
+    expect(pages.fetchNextPage()).toBeNull();
+    s.tick();
+
+    expect(pages.queries().length).toBe(2);
+    expect(pages.isLastPageLoaded()).toBe(false);
+    expect(pages.canFetchNextPage()).toBe(true);
+    expect(() => pages.fetchNextPage()).not.toThrow();
+    expect(s.api.requestCount('GET', '/capped-pages')).toBe(2);
+
+    c.destroy();
+  });
+
   it('destroying a stack mid-flight aborts its requests', () => {
     const s = scenario();
     s.api.on('GET', '/items/:id', () => ({ body: { ready: true }, delay: 500 }));
