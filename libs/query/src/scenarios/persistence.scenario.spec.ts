@@ -612,6 +612,32 @@ describe('persistence scenario', () => {
 
       c.destroy();
     });
+
+    it('purges a secure entry another tab wrote after this one loaded its index', async () => {
+      const s = scenario();
+      const auth = s.auth();
+
+      await s.client.whenPersistenceReady;
+
+      store.seed([
+        {
+          ...persistedEntry({ key: 'other-tab', url: 'https://api.test/secure/other', persistedAt: Date.now() }),
+          isSecure: true,
+        },
+        persistedEntry({ key: 'other-tab-public', url: 'https://api.test/public/other', persistedAt: Date.now() }),
+      ]);
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+
+      s.run(() => auth.logout());
+      await s.settle();
+
+      expect(store.entries().map((e) => e.url)).toEqual(['https://api.test/public/other']);
+
+      c.destroy();
+    });
   });
 
   describe('version bump', () => {
@@ -1517,7 +1543,6 @@ describe('persistence scenario', () => {
 
       expect(store.entries().map((e) => e.url)).toEqual(['https://api.test/public/info']);
 
-      // One removal per tab: each engine only ever knows the keys it wrote itself.
       expect(store.calls().remove - removeCallsBeforeLogout).toBe(2);
 
       a.destroy();

@@ -126,6 +126,14 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     await removeKeys(excess);
   };
 
+  const loadStoredIndex = async (): Promise<PersistedQueryEntryMeta[]> => {
+    try {
+      return await adapter.loadIndex();
+    } catch {
+      return [];
+    }
+  };
+
   const purgeSecure = () => {
     // Dropping the queued bodies is not deferred like the disk half below: a flush scheduled before
     // the logout would otherwise still be holding them when it runs, and put the data back on disk
@@ -135,9 +143,8 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     }
 
     return enqueue(async () => {
-      const secureKeys = Array.from(index.values())
-        .filter((meta) => meta.isSecure)
-        .map((meta) => meta.key);
+      const storedIndex = await loadStoredIndex();
+      const secureKeys = [...index.values(), ...storedIndex].filter((meta) => meta.isSecure).map((meta) => meta.key);
 
       await removeKeys(secureKeys);
     });
