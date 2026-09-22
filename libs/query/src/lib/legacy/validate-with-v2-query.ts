@@ -5,7 +5,13 @@ import { Observable, filter, firstValueFrom, take, tap } from 'rxjs';
 import { applyQueryAsyncValidator } from '../http/query-validator-core';
 import { AnyLegacyQueryCreator } from './interop';
 import { AnyV2QueryCreator, QueryDataOf } from './query-creator';
-import { V2QueryState, isQueryStateCancelled, isQueryStateFailure, isQueryStateSuccess } from './query';
+import {
+  V2QueryState,
+  isQueryStateCancelled,
+  isQueryStateFailure,
+  isQueryStatePrepared,
+  isQueryStateSuccess,
+} from './query';
 
 // The legacy twin of `../http/validate-with-query.ts` for apps still on the class-based
 // `V2QueryClient`. Same signature and behavior; only the query engine differs - it prepares and
@@ -61,6 +67,7 @@ export type ValidateWithV2QueryConfig<
 /** The subset of the v2/legacy query surface the validator drives. */
 type PreparedV2Query<TData> = {
   execute: () => void;
+  rawState: V2QueryState<TData>;
   abort: () => void;
   destroy?: () => void;
   state$: Observable<V2QueryState<TData>>;
@@ -135,6 +142,14 @@ export const validateWithV2Query = <
             { once: true },
           );
           query.execute();
+
+          if (isQueryStatePrepared(query.rawState)) {
+            destroy();
+
+            return Promise.reject(
+              new Error('The validate query stayed prepared, most likely because no one is logged in.'),
+            );
+          }
 
           // Resolve once the query settles. A failure is thrown so it lands in `onError`, where the
           // violations are mapped onto the fields; the underlying `HttpErrorResponse` is thrown so

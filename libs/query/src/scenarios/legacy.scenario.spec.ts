@@ -1633,6 +1633,48 @@ describe('legacy scenario', () => {
       holder.destroy();
     });
 
+    it('settles with a form-level error when a secure query stays prepared while logged out', async () => {
+      const s = scenario();
+      s.api.on('POST', '/validate', () => ({ status: 204 }));
+
+      const owner = s.consumer();
+      const client = owner.run(() => new V2QueryClient({ baseRoute: BASE_URL }));
+      client.setAuthProvider(
+        new V2BearerAuthProvider({
+          refreshConfig: {
+            queryCreator: client.post({ route: '/auth/refresh', types: { response: def<Tokens>() } }),
+            cookieName: COOKIE_NAME,
+          },
+        }),
+      );
+      const validateEmail = client.post({
+        route: '/validate',
+        secure: true,
+        types: { args: def<{ body: { email: string } }>(), response: def<void>() },
+      });
+
+      const testForm = owner.run(() => {
+        const emailSchema = schema<{ email: string }>((p) => {
+          validateWithV2Query(p, {
+            queryCreator: validateEmail,
+            args: (ctx) => ({ body: { email: ctx.value().email } }),
+            debounce: 0,
+          });
+        });
+
+        return form(signal({ email: 'ada@example.com' }), emailSchema);
+      });
+
+      await settleUntil(s, () => !testForm().pending());
+
+      expect(s.api.requestCount('POST', '/validate')).toBe(0);
+      expect(testForm().pending()).toBe(false);
+      expect(testForm().errors()).toHaveLength(1);
+
+      client.clearAuthProvider();
+      owner.destroy();
+    });
+
     it('keeps the form-level error for a non-violation failure when mapViolations is custom', async () => {
       const s = scenario();
       s.api.on('POST', '/validate', () => ({ status: 500, body: { message: 'boom' } }));
