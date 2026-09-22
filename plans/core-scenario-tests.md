@@ -1,6 +1,6 @@
 # Core scenario tests
 
-Status: slices 1-4 done. Slices 5-6 open.
+Status: slices 1-6 done.
 
 A behavior layer for `libs/core` next to its jsdom unit specs, shaped like `libs/query/src/scenarios`.
 
@@ -11,8 +11,8 @@ A behavior layer for `libs/core` next to its jsdom unit specs, shaped like `libs
       scroll-observer sentinels, css-vars writers, `KeyPressManager`, `controlValueSignal` `debounceFirst`
 - [x] 3. Unsaved-changes and app-update through the real router
 - [x] 4. SEO bindings
-- [ ] 5. Core stories + Playwright suites: overlay runtime, `AnimatedLifecycle`, `ResizeHandles` in a pop-out
-- [ ] 6. Core stories + Playwright suites: focus-visible tracker, element observers
+- [x] 5. Core stories + Playwright suites: overlay runtime, `AnimatedLifecycle`, `ResizeHandles` in a pop-out
+- [x] 6. Core stories + Playwright suites: focus-visible tracker, element observers
 
 ## Harness contract
 
