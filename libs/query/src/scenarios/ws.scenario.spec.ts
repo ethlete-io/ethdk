@@ -266,6 +266,72 @@ describe('ws scenario', () => {
     c.destroy();
   });
 
+  it('does not flush a leave to a fresh session that never joined the room, when the room was left while the connection was down', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    double.serverConnect();
+
+    const c = s.consumer();
+    c.run(() => instance.joinRoom('lobby'));
+    s.tick();
+
+    double.serverDisconnect();
+    c.destroy();
+
+    double.serverConnect();
+
+    expect(double.delivered()).toEqual([{ event: 'join-room', data: 'lobby' }]);
+  });
+
+  it('leaves a room left while the connection was down after a recovered reconnect, because the server kept it', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    double.serverConnect();
+
+    const c = s.consumer();
+    c.run(() => instance.joinRoom('lobby'));
+    s.tick();
+
+    double.serverDisconnect();
+    c.destroy();
+
+    double.serverConnect({ recovered: true });
+
+    expect(double.delivered()).toEqual([
+      { event: 'join-room', data: 'lobby' },
+      { event: 'leave-room', data: 'lobby' },
+    ]);
+  });
+
+  it('leaves a room again after it was left, re-joined and left while the connection was down, because the re-join is buffered', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    double.serverConnect();
+
+    const first = s.consumer();
+    first.run(() => instance.joinRoom('lobby'));
+    s.tick();
+
+    double.serverDisconnect();
+    first.destroy();
+
+    const second = s.consumer();
+    second.run(() => instance.joinRoom('lobby'));
+    s.tick();
+    second.destroy();
+
+    double.serverConnect();
+
+    expect(double.delivered()).toEqual([
+      { event: 'join-room', data: 'lobby' },
+      { event: 'join-room', data: 'lobby' },
+      { event: 'leave-room', data: 'lobby' },
+    ]);
+  });
+
   it('patches a bound query response from a ws message without any network request', () => {
     const s = scenario();
     const { double, instance } = createSocket<SocketMessageView<{ home: number }>>(s);

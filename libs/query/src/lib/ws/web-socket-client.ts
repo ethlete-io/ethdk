@@ -166,6 +166,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
       const rooms = new Map<string, InternalWebSocketRoom<TMessageData>>();
       const joinsDeliveredThisConnection = new Set<string>();
+      const joinsDeliveredToClosedConnection = new Set<string>();
       const isConnected = signal(false);
 
       // Devtools instrumentation (no-op unless provideQueryDevtools() was called).
@@ -216,6 +217,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
           }
 
           emit({ event: 'join-room', data: name, room: name });
+          joinsDeliveredToClosedConnection.delete(name);
 
           const message = signal<TMessageData | null>(null);
 
@@ -279,7 +281,8 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
         if (joinedRoom.joinCount > 0) return;
 
-        emit({ event: 'leave-room', data: room, room });
+        // A buffered leave would reach the next session, which only knows this room after a recovered reconnect.
+        if (!joinsDeliveredToClosedConnection.has(room)) emit({ event: 'leave-room', data: room, room });
 
         rooms.delete(room);
         syncDevtoolsRooms();
@@ -294,7 +297,16 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         socket.on('connect', () => {
           isConnected.set(true);
 
-          if (socket.recovered) return;
+          const joinedByClosedConnection = [...joinsDeliveredToClosedConnection];
+          joinsDeliveredToClosedConnection.clear();
+
+          if (socket.recovered) {
+            for (const room of joinedByClosedConnection) {
+              if (!rooms.has(room)) emit({ event: 'leave-room', data: room, room });
+            }
+
+            return;
+          }
 
           for (const room of rooms.keys()) {
             if (joinsDeliveredThisConnection.has(room)) continue;
@@ -304,6 +316,8 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         });
         socket.on('disconnect', () => {
           isConnected.set(false);
+
+          for (const room of joinsDeliveredThisConnection) joinsDeliveredToClosedConnection.add(room);
           joinsDeliveredThisConnection.clear();
         });
       };
