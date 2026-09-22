@@ -21,3 +21,4 @@ export * from './rules';
 export * from './snap';
 export * from './stretches';
 export * from './timers';
+export * from './watched';

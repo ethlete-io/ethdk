@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { ActivityBlock, streamKey } from '../model/block';
 import { Evidence } from '../model/evidence';
 import { AttributedBlock } from './attribute';
-import { cutBackground, meetLaneRows } from './cut';
+import { CollectedEvent } from '../model/event';
+import { cutBackground, cutUnwatched, meetLaneRows } from './cut';
 
 const SDK = '/home/you/dev/shared-sdk';
 const APP = '/home/you/dev/abc-frontend';
@@ -330,5 +331,104 @@ describe('meetLaneRows', () => {
     });
 
     expect(met?.to).toEqual(at('16:15'));
+  });
+});
+
+describe('cutUnwatched', () => {
+  const ran = (options: { session: string; from: string; to: string; repoPath?: string }): AttributedBlock => ({
+    block: {
+      from: at(options.from),
+      to: at(options.to),
+      context: { repoPath: options.repoPath ?? APP, branch: 'next', session: options.session },
+      evidence: [],
+    },
+    confidence: 'weak',
+    evidence: [],
+  });
+
+  const typed = (options: { session: string; clock: string }): CollectedEvent => ({
+    at: at(options.clock),
+    source: 'agent-prompt',
+    kind: 'agent-prompt',
+    provider: 'claude-code',
+    sessionId: options.session,
+    promptId: `${options.session}-${options.clock}`,
+    cwd: APP,
+  });
+
+  const held = (blocks: readonly AttributedBlock[]) =>
+    blocks.map((entry) => ({
+      session: entry.block.context.session,
+      from: entry.block.from.toISOString().slice(11, 16),
+      to: entry.block.to.toISOString().slice(11, 16),
+    }));
+
+  it('books an overlap once, to the session the user prompted last', () => {
+    const kept = cutUnwatched({
+      blocks: [ran({ session: 'a', from: '10:15', to: '11:30' }), ran({ session: 'b', from: '11:15', to: '11:45' })],
+      events: [typed({ session: 'a', clock: '10:15' }), typed({ session: 'b', clock: '11:15' })],
+    });
+
+    expect(held(kept)).toEqual([
+      { session: 'a', from: '10:15', to: '11:15' },
+      { session: 'b', from: '11:15', to: '11:45' },
+    ]);
+  });
+
+  it('gives the overlap back when the user prompts the first session again', () => {
+    const kept = cutUnwatched({
+      blocks: [ran({ session: 'a', from: '10:15', to: '11:45' }), ran({ session: 'b', from: '11:00', to: '11:45' })],
+      events: [
+        typed({ session: 'a', clock: '10:15' }),
+        typed({ session: 'b', clock: '11:00' }),
+        typed({ session: 'a', clock: '11:30' }),
+      ],
+    });
+
+    expect(held(kept)).toEqual([
+      { session: 'a', from: '10:15', to: '11:00' },
+      { session: 'b', from: '11:00', to: '11:30' },
+      { session: 'a', from: '11:30', to: '11:45' },
+    ]);
+  });
+
+  it('leaves a session running alone its minutes, whatever the last prompt named', () => {
+    const kept = cutUnwatched({
+      blocks: [ran({ session: 'a', from: '10:15', to: '12:00' }), ran({ session: 'b', from: '11:00', to: '11:10' })],
+      events: [typed({ session: 'a', clock: '10:15' }), typed({ session: 'b', clock: '11:00' })],
+    });
+
+    expect(held(kept)).toEqual([
+      { session: 'a', from: '10:15', to: '11:00' },
+      { session: 'b', from: '11:00', to: '11:10' },
+      { session: 'a', from: '11:10', to: '12:00' },
+    ]);
+  });
+
+  it('gives an overlap the user prompted neither session in to the older one', () => {
+    const kept = cutUnwatched({
+      blocks: [ran({ session: 'a', from: '10:15', to: '11:30' }), ran({ session: 'b', from: '11:15', to: '11:45' })],
+      events: [],
+    });
+
+    expect(held(kept)).toEqual([
+      { session: 'a', from: '10:15', to: '11:30' },
+      { session: 'b', from: '11:30', to: '11:45' },
+    ]);
+  });
+
+  it('cuts nothing between two checkouts, which is a day that ran two things at once', () => {
+    const blocks = [
+      ran({ session: 'a', from: '10:15', to: '11:30' }),
+      ran({ session: 'b', from: '11:00', to: '11:45', repoPath: SDK }),
+    ];
+
+    expect(held(cutUnwatched({ blocks, events: [typed({ session: 'b', clock: '11:00' })] }))).toEqual(held(blocks));
+  });
+
+  it('leaves a checkout that ran no agent untouched', () => {
+    const blocks = [attributed({ repoPath: APP, from: '10:15', to: '11:30' })];
+
+    expect(cutUnwatched({ blocks, events: [] })).toEqual(blocks);
   });
 });

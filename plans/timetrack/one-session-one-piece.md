@@ -73,10 +73,37 @@ Three facts, each true and each too coarse:
    two checkouts running at once already do, so `engagedMs` sums the pieces and `concurrency` sees a
    second agent inside one lane. `sessionAt` stays for the stretches nothing but the checkout is known
    about: the focused window and the rebuilt marks. Which session the window was really on is slice 3.
-3. **Book it once.** Two bands that overlap must not book twice. The minutes go to the session the
-   user's own window was on, decided before the timeline draws them, because `proposedMs` is read off
-   the rows. Slice 2 left `engagedMs` counting both on purpose - that number says what ran, and this
-   one says what is booked.
+3. ~~**Book it once.**~~ Done on 2026-09-22. `cutUnwatched` in `rows/cut.ts` takes an instant away
+   from every session of a checkout but the one the user prompted last, and `buildRows` runs it before
+   donation - a minute another session already books must not lend its time to the work beside it
+   either. `watchedAt` in `rows/watched.ts` reads the day's `agent-prompt` events, skipping the ones an
+   agent gave itself, which is the reading `attendedAt` and `breakWindows` already take of `askedBy`.
+   `engagedMs` is untouched, as slice 2 left it on purpose - that number says what ran, and this one
+   says what is booked.
+
+   Only an instant two sessions really held is cut: a session running alone keeps its minutes whatever
+   the last prompt named, because nothing else claims them. A prompt is an edge of the sweep as much as
+   a block boundary is, or attention could not move inside a stretch both sessions held. Where the user
+   prompted neither, the older session keeps the minutes - the answer `sessionAt` already gives the rest
+   of the checkout, and it resolves rather than asking the reviewer to.
+
+   Measured on the real day of 2026-09-22, read through the running app: the evidence behind the day's
+   rows falls from 429 to 349 minutes, and only in the two checkouts that ran sessions at once -
+   `fut-frontend` 220 → 180, `ethlete-sdk` 121 → 81. The other three lanes are untouched. Those are
+   minutes one checkout held twice, and the day no longer holds them twice.
+
+   The time the day would **write** rose on that same day, from 405 to 450 minutes. That is
+   `snapRowBounds`, not this cut: a row books its whole snapped span, and the rule pulls an earlier
+   row's end back only while a later row needs the room. Three rows held more evidence than their span,
+   so shrinking them let the snap give each its own length back. Whether a row that observed more than
+   it is drawn for should book its span at all is a question for the rounding, and this slice does not
+   answer it. The day over-books its presence by far more than either number either way - 179 minutes of
+   presence against 481 engaged - which is the remote-work question in _Open questions_, not this one.
+
+   The stretch the unwatched band lost is **not** reported as a `BehindStretch` yet. Both sessions share
+   one lane until slice 6 draws them side by side, so a stretch reported now would be drawn over the very
+   row that took it. Nothing on screen is missing either: `openFor` still folds a checkout into one band,
+   so the cut only makes that band honest. Report it with slice 6.
 
    **Which session was watched is decided by the last prompt the user typed** - Tom, 2026-09-22. An
    `agent-prompt` event carries a `sessionId`, so the session the user last prompted holds the checkout

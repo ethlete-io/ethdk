@@ -8,7 +8,7 @@ import { TimeWindow } from '../model/time-window';
 import { attendedAt, markAttendance } from './attended';
 import { AttributeOptions, attribute } from './attribute';
 import { CallMatch, dropCallWindows, matchCalls } from './calls';
-import { BehindStretch, CutOptions, cutBackground, meetLaneRows } from './cut';
+import { BehindStretch, CutOptions, cutBackground, cutUnwatched, meetLaneRows } from './cut';
 import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { DEFAULT_FILL_OPTIONS, FillOptions, fillGaps } from './fill';
@@ -168,7 +168,10 @@ export const buildRows = (
     entry.privateLink ? [{ block: entry.block, link: entry.privateLink }] : [],
   );
   const working = attributed.filter((entry) => !entry.privateLink);
-  const donated = donateBlocks({ blocks: working, rules: options.rules, options: options.donate });
+  // Before donation rather than after: a minute another session of the same checkout already books
+  // must not lend its time to the work beside it either.
+  const watched = cutUnwatched({ blocks: working, events: options.events });
+  const donated = donateBlocks({ blocks: watched, rules: options.rules, options: options.donate });
   // Before the gaps are filled rather than after: a filled minute is idle time joined to the work
   // around it, and cutting one away afterwards would leave `filledMs` claiming time no row holds.
   // The calls are handed in raw rather than as the rows `matchCalls` builds later: a call is the

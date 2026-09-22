@@ -39,6 +39,23 @@ const blocksOf = (events: CollectedEvent[]) => dayOf(events).blocks.filter((bloc
 
 const streamOf = (events: CollectedEvent[]) => dayOf(events).streams.find((stream) => stream.repoPath === REPO);
 
+const promptAt = (options: { sessionId: string; minutes: number }): CollectedEvent => ({
+  at: AT(options.minutes),
+  source: 'agent-prompt',
+  kind: 'agent-prompt',
+  provider: 'claude-code',
+  sessionId: options.sessionId,
+  promptId: `${options.sessionId}-${options.minutes}`,
+  cwd: REPO,
+});
+
+/** Every minute the day would write, named or not. A row books its whole snapped span. */
+const bookedMs = (events: CollectedEvent[]) => {
+  const { rows } = dayOf(events);
+
+  return [...rows.proposals, ...rows.unnamed].reduce((sum, row) => sum + row.durationMs, 0);
+};
+
 describe('streamDay agent sessions', () => {
   it('names every stretch of a checkout after the one session it ran, including the minutes around it', () => {
     const blocks = blocksOf([...focusRun({ from: 0, to: 120 }), ...sessionRun({ sessionId: 'one', from: 20, to: 80 })]);
@@ -103,6 +120,29 @@ describe('streamDay agent sessions', () => {
     expect(blocks[0]?.from.getTime()).toBe(AT(0).getTime());
     expect(blocks[0]?.to.getTime()).toBe(AT(71).getTime());
     expect(blocks[1]?.to.getTime()).toBe(AT(120).getTime());
+  });
+
+  it('books the minutes two sessions of one checkout shared once, to the session prompted last', () => {
+    const events = [
+      ...focusRun({ from: 0, to: 120 }),
+      ...sessionRun({ sessionId: 'one', from: 10, to: 70 }),
+      ...sessionRun({ sessionId: 'two', from: 60, to: 110 }),
+      promptAt({ sessionId: 'one', minutes: 10 }),
+      promptAt({ sessionId: 'two', minutes: 60 }),
+    ];
+
+    expect(bookedMs(events)).toBe(120 * 60_000);
+    expect(streamOf(events)?.engagedMs).toBe((71 + 60) * 60_000);
+  });
+
+  it('books an overlap the user prompted neither session in once, to the older session', () => {
+    const events = [
+      ...focusRun({ from: 0, to: 120 }),
+      ...sessionRun({ sessionId: 'one', from: 10, to: 70 }),
+      ...sessionRun({ sessionId: 'two', from: 60, to: 110 }),
+    ];
+
+    expect(bookedMs(events)).toBe(120 * 60_000);
   });
 
   it('leaves a checkout that ran no session on the key it always had', () => {

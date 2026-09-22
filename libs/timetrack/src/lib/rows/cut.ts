@@ -1,9 +1,11 @@
 import { TimeWindow } from '../model/time-window';
 import { ActivityBlock, streamKey } from '../model/block';
+import { CollectedEvent } from '../model/event';
 import { projectKeyOf } from '../ticket/project';
 import { AttributedBlock } from './attribute';
 import { clipBlocks } from './overlap';
 import { DEFAULT_ROUND_OPTIONS, RoundOptions } from './round';
+import { watchPrompts, watchedAt } from './watched';
 
 export type CutOptions = {
   /**
@@ -40,6 +42,16 @@ export type CutOptions = {
 };
 
 const windowOf = (entry: AttributedBlock): TimeWindow => ({ from: entry.block.from, to: entry.block.to });
+
+/** The parts of a block the given windows leave, each keeping the evidence observed inside it. */
+const piecesOf = (entry: AttributedBlock, windows: readonly TimeWindow[]): AttributedBlock[] =>
+  clipBlocks({ blocks: [entry.block], windows }).map((block) => ({
+    ...entry,
+    block,
+    evidence: entry.evidence.filter(
+      (observed) => observed.at.getTime() >= block.from.getTime() && observed.at.getTime() <= block.to.getTime(),
+    ),
+  }));
 
 /** The start of the increment an instant falls in: everything before it is an increment already over. */
 const settledThrough = (options: { through?: Date; round?: Partial<RoundOptions> }) => {
@@ -244,13 +256,7 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
 
   for (const { entry } of ranked) {
     const issueKey = entry.issueKey;
-    const pieces = clipBlocks({ blocks: [entry.block], windows: covered }).map((block) => ({
-      ...entry,
-      block,
-      evidence: entry.evidence.filter(
-        (observed) => observed.at.getTime() >= block.from.getTime() && observed.at.getTime() <= block.to.getTime(),
-      ),
-    }));
+    const pieces = piecesOf(entry, covered);
 
     if (issueKey) {
       behind.push(
@@ -270,4 +276,103 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
     blocks: [...foreground, ...kept].sort((a, b) => a.block.from.getTime() - b.block.from.getTime()),
     behind: snapStretches(joinTouching(behind), options.round),
   };
+};
+
+/**
+ * Takes an instant away from every session of a checkout but the one the user was watching.
+ *
+ * Two agent sessions of one checkout can run at the same time, and they are two pieces of work, so
+ * the day holds two bands over the same minutes. Booking both claims an hour of the day twice. The
+ * minutes go to the session the user prompted last, because a prompt is the only direct evidence of
+ * attention a day holds — `plans/timetrack/one-session-one-piece.md` decides it.
+ *
+ * Only an instant two sessions really held is cut. A session running alone keeps its minutes whatever
+ * the last prompt named: nothing else claims them, so nothing would be booked twice.
+ *
+ * Where the user prompted none of the sessions running, the oldest of them keeps the minutes. That is
+ * the answer `sessionAt` gives the rest of the checkout, and it resolves rather than asking the
+ * reviewer to.
+ *
+ * What the checkout ran is untouched. `engagedMs` in `streamDay` keeps counting both sessions: that
+ * number says what ran, and this one says what is booked.
+ */
+export const cutUnwatched = (options: {
+  blocks: readonly AttributedBlock[];
+  events: readonly CollectedEvent[];
+}): AttributedBlock[] => {
+  const prompts = watchPrompts(options.events);
+  const byStream = new Map<string, AttributedBlock[]>();
+
+  for (const entry of options.blocks) {
+    if (!entry.block.context.session) continue;
+
+    const key = streamKey(entry.block.context);
+    const found = byStream.get(key);
+
+    if (found) found.push(entry);
+    else byStream.set(key, [entry]);
+  }
+
+  const cutKey = (stream: string, session: string) => `${stream}\u0000${session}`;
+  const unwatched = new Map<string, TimeWindow[]>();
+
+  for (const [stream, entries] of byStream) {
+    const startedAt = new Map<string, number>();
+
+    for (const entry of entries) {
+      const session = entry.block.context.session ?? '';
+      const from = entry.block.from.getTime();
+
+      startedAt.set(session, Math.min(startedAt.get(session) ?? from, from));
+    }
+
+    if (startedAt.size < 2) continue;
+
+    // A prompt is an edge as much as a block boundary is: attention moves to another session in the
+    // middle of a stretch both of them held, and an interval that spans the move has two answers.
+    const edges = [
+      ...new Set([
+        ...entries.flatMap((entry) => [entry.block.from.getTime(), entry.block.to.getTime()]),
+        ...prompts.filter((prompt) => startedAt.has(prompt.sessionId)).map((prompt) => prompt.at.getTime()),
+      ]),
+    ].sort((left, right) => left - right);
+
+    for (let index = 0; index < edges.length - 1; index++) {
+      const from = edges[index] ?? 0;
+      const to = edges[index + 1] ?? 0;
+      const covering = new Set(
+        entries
+          .filter((entry) => entry.block.from.getTime() <= from && entry.block.to.getTime() >= to)
+          .map((entry) => entry.block.context.session ?? ''),
+      );
+
+      if (covering.size < 2) continue;
+
+      const oldest = [...covering].sort(
+        (left, right) => (startedAt.get(left) ?? 0) - (startedAt.get(right) ?? 0) || left.localeCompare(right),
+      )[0];
+      const watched = watchedAt({ prompts, among: covering, at: new Date(from) }) ?? oldest;
+
+      for (const session of covering) {
+        if (session === watched) continue;
+
+        const key = cutKey(stream, session);
+        const found = unwatched.get(key);
+
+        if (found) found.push({ from: new Date(from), to: new Date(to) });
+        else unwatched.set(key, [{ from: new Date(from), to: new Date(to) }]);
+      }
+    }
+  }
+
+  if (!unwatched.size) return [...options.blocks];
+
+  return options.blocks
+    .flatMap((entry) => {
+      const session = entry.block.context.session;
+      const windows = session ? unwatched.get(cutKey(streamKey(entry.block.context), session)) : undefined;
+
+      return windows?.length ? piecesOf(entry, windows) : [entry];
+    })
+    .sort((left, right) => left.block.from.getTime() - right.block.from.getTime());
 };
