@@ -1,5 +1,5 @@
 import { Locator, expect, test } from '@playwright/test';
-import { expectFocusVisible, expectTouchMode, openStory, pressKey, touchSwipe } from '../support';
+import { boxOf, expectFocusVisible, expectTouchMode, openStory, pressKey, touchSwipe } from '../support';
 
 const DEFAULT_STORY_ID = 'components-layout-scrollable--default';
 const VERTICAL_STORY_ID = 'components-layout-scrollable--vertical';
@@ -213,8 +213,7 @@ test.describe('scrollable / pointer', () => {
     const container = root.locator(CONTAINER);
     const offsets = await readItemOffsets(root);
 
-    const box = await container.boundingBox();
-    if (!box) throw new Error('scroll container has no bounding box');
+    const box = await boxOf(container);
 
     const y = box.y + box.height / 2;
     const startX = box.x + box.width * 0.7;
@@ -241,8 +240,7 @@ test.describe('scrollable / touch', () => {
     const root = await openStory(page, DEFAULT_STORY_ID);
     const container = root.locator(CONTAINER);
 
-    const box = await container.boundingBox();
-    if (!box) throw new Error('scroll container has no bounding box');
+    const box = await boxOf(container);
 
     const y = box.y + box.height / 2;
     const before = await readScrollLeft(container);
@@ -257,8 +255,7 @@ test.describe('scrollable / touch', () => {
     const container = root.locator(CONTAINER);
     const offsets = await readItemOffsets(root);
 
-    const box = await container.boundingBox();
-    if (!box) throw new Error('scroll container has no bounding box');
+    const box = await boxOf(container);
 
     const y = box.y + box.height / 2;
 

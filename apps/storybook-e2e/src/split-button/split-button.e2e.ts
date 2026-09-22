@@ -1,5 +1,5 @@
 import { Locator, expect, test } from '@playwright/test';
-import { at, expectFocusVisible, openStory, pressKey, tabSequence, tap } from '../support';
+import { at, expectFocusVisible, openStory, pressKey, settle, tabSequence, tap } from '../support';
 
 const STORY_ID = 'components-actions-button-split--default';
 
@@ -98,7 +98,7 @@ test.describe('split-button / keyboard', () => {
 
     await action.focus();
     await pressKey(page, 'Enter');
-    await page.waitForTimeout(200);
+    await settle(page, 200);
 
     await expect(page.getByRole('menu')).toHaveCount(0);
   });

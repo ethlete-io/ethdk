@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { expectFieldFocusVisible, expectTouchMode, openStory, pressKey, tap } from '../support';
+import { expectFieldFocusVisible, expectTouchMode, openStory, pressKey, settle, tap } from '../support';
 
 const DEFAULT_ID = 'components-forms-color-input--default';
 const WITH_ALPHA_ID = 'components-forms-color-input--with-alpha';
@@ -117,9 +117,10 @@ test.describe('color-input / keyboard', () => {
 
     await openPickerWithKeyboard(page);
 
-    for (let i = 0; i < 10 && !(await outside.evaluate((el) => el === document.activeElement)); i++) {
+    await expect(async () => {
       await pressKey(page, 'Tab');
-    }
+      expect(await outside.evaluate((el) => el === document.activeElement)).toBe(true);
+    }).toPass({ intervals: [0], timeout: 5000 });
 
     await expect(outside).toBeFocused();
     await expect(panel(page)).toHaveCount(0);
@@ -316,7 +317,7 @@ test.describe('color-input / keyboard', () => {
     await expect(trigger(root)).toBeFocused();
 
     await pressKey(page, 'Enter');
-    await page.waitForTimeout(200);
+    await settle(page, 200);
 
     await expect(panel(page)).toHaveCount(0);
     await expect(trigger(root)).toHaveAttribute('aria-expanded', 'false');
@@ -395,7 +396,7 @@ test.describe('color-input / touch', () => {
     const root = await openStory(page, READONLY_ID);
 
     await tap(trigger(root));
-    await page.waitForTimeout(200);
+    await settle(page, 200);
 
     await expect(panel(page)).toHaveCount(0);
   });

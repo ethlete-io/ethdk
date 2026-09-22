@@ -5,6 +5,7 @@ import {
   focusedDescriptor,
   openStory,
   pressKey,
+  settle,
   tabSequence,
   tap,
 } from '../support';
@@ -364,7 +365,7 @@ test.describe('nav-tabs / touch', () => {
     await expect(links(root).nth(1)).toHaveCSS('pointer-events', 'none');
 
     await tapThroughScreen(page, links(root).nth(1));
-    await page.waitForTimeout(200);
+    await settle(page, 200);
 
     await expectRoute(page, root, 'One', 'Route One Content');
     await expect(links(root).first()).toHaveAttribute('aria-selected', 'true');

@@ -118,7 +118,7 @@ async function setMasonryInlineSize(page: Page, masonry: Locator, target: number
 
     width += target - current;
     await page.setViewportSize({ width, height: viewport.height });
-    await page.waitForTimeout(100);
+    await expect.poll(() => masonry.evaluate((el) => el.clientWidth)).not.toBe(current);
   }
 
   await waitForSettled(masonry);
