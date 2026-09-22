@@ -1,11 +1,6 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
-  "changelog": [
-    "../tools/changesets/changelog.cjs",
-    {
-      "repo": "ethlete-io/ethdk"
-    }
-  ],
+  "changelog": "../tools/changesets/changelog.cjs",
   "commit": false,
   "fixed": [],
   "linked": [],
