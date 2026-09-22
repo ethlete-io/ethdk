@@ -27,7 +27,7 @@ project at once.
 
 ```
 libs/query/src/scenarios/
-  harness/   fake-api.ts (createFakeApi, sequence), tokens.ts (mintToken), scenario.ts (useScenario, createScenario), invariants.ts
+  harness/   fake-api.ts (createFakeApi, sequence), fake-xhr.ts (legacy client), tokens.ts (mintToken), scenario.ts (useScenario, createScenario, inProductionMode), invariants.ts
   <domain>.scenario.spec.ts   one file per docs page under apps/docs/query/
 ```
 
@@ -55,7 +55,10 @@ it('dedupes identical requests', () => {
   does not register hooks; use it for two clients (multi-tab) and call `destroy()` yourself.
 - `s.api.on(method, route, handler)` answers every match; `once` answers the next match only;
   `sequence([...])` answers in order; `protect(route)` demands a valid unexpired bearer token
-  minted with `mintToken`. Handlers return `{ status?, body?, headers?, delay? }`.
+  minted with `mintToken`. Handlers return `{ status?, body?, headers?, delay?, progress?,
+  progressEvents? }`; `status: 0` is a network error. `s.api.httpRequests(method, path)` returns the
+  outgoing `HttpRequest`s, the only place wire options (`withCredentials`, `responseType`) show.
+- The legacy client's `XMLHttpRequest` is routed through the same fake API; nothing to set up.
 - Nothing lands until you `s.tick(ms)`. `tick` flushes effects, advances timers, drains
   microtasks, flushes effects again. `s.flush()` ticks until nothing is pending. `await
   s.settle(ms)` also awaits promises (persistence, a `router.navigate` from a query form).
@@ -66,9 +69,22 @@ it('dedupes identical requests', () => {
   `name` both tabs share, then hangs its consumers off `s.consumer([], auth.injector)` - see
   `auth-second-tab.scenario.spec.ts`.
 - Expected errors: `s.expectError(/unauthorized/)` consumes one entry so the `errors`
-  invariant passes. Never silence `console.error` yourself.
+  invariant passes. Never silence `console.error` yourself. `console.warn` lands in
+  `s.warnings` (`s.expectWarning`) and never fails an invariant.
+- `s.liveQueries()` lists the undestroyed queries the scenario's creators built, stacks and batches
+  included. `inProductionMode(fn)` runs a block with `isDevMode()` false and restores it.
+- A second tab: `createQueryClient()` installed with `ref.provide()` in a child injector of
+  `s.run(() => inject(EnvironmentInjector))`, its consumers below that injector - the client token is
+  `providedIn: 'root'`, so a query created elsewhere resolves a root-owned instance instead.
+- Persistence: the engine reads the adapter while the client is built, so create the store in a
+  `beforeEach` registered before `useScenario` and pass it lazily (`adapter: () => store.adapter`).
+- The harness router has no routes; a cross-route navigation needs
+  `router.resetConfig([{ path: 'other', children: [] }])` inline.
 - `s.allow('timers', 'reason')` opts out of one invariant. Every opt-out is a smell: name the
   finding or issue in the reason and mention it in your report.
+- `destroy()` destroys the consumers, resets the TestBed and then checks the invariants, so root
+  providers count only if they outlive their injector. The invariants do not see effect or injector
+  retention; a leak of that kind needs its own assertion.
 
 ## Rules
 
@@ -90,5 +106,4 @@ it('dedupes identical requests', () => {
    `isQueryDevtoolsEnabled()` in both halves. Mocks, faults, envs and the tab-local flag are
    module state: clear them in `beforeEach` and give each test its own route and provider name.
 
-The plan and open items are in `plans/query-scenario-tests.md` while the layer is being
-built out.
+Open query findings live in `plans/query-lib-scan.md`.

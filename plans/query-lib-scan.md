@@ -232,7 +232,7 @@ Two fix waves closed 43 of the 57 findings above. No Medium finding is open in `
 Closed: 1 (as `unobserve()` mid-navigation; destroy was already safe), 3 (false positive, branch
 collapsed), 4, 5, plus the leader `busy` silence from the wave 3 notes and the legacy `QueryStore`
 teardown. Item 2 is by design and pinned by scenarios. Still open: 6, 7, 8, 9, 10, and the new legacy
-`QueryForm.unobserve()` navigation cancel (see `plans/query-scenario-tests.md`, "Wave 4").
+`QueryForm.unobserve()` navigation cancel.
 
 ### Wave 5 (2026-09-05)
 
@@ -241,4 +241,18 @@ file is now either closed or pinned as by design (item 2, item 11). The wave 5 s
 live in `.claude/handoffs/wave5-scan-auth.md`, `-http.md` and `-devtools.md`; every High and Medium
 finding in all three is fixed, and of the Low ones only auth 6 (a negative numeric `refreshStrategy`,
 the same by-design branch as item 2), devtools 8 (the vault's cross-tab `storage` listener, harmless
-in a browser) and the `unbind` JSDoc note remain. See `plans/query-scenario-tests.md`, "Wave 5".
+in a browser) and the `unbind` JSDoc note remain.
+
+### Wave 6 and the scenario plan's close (2026-09-22)
+
+Wave 6 scanned `legacy`, `gql`, `ws`, `pipes`, `query-form-signals`, `persistence` and the signal-forms
+surface (4 High, 12 Medium, 14 Low). Every High and Medium is fixed with a scenario (`1356faad1`,
+`b00f3f384`, `3397c5e04`, `58adfb8e6`, `313532473` and neighbours). The gql document re-parse is fixed
+in `32ccf4092`. The nine `it.fails` the wave 5 coverage pass parked are all resolved - no `it.fails`,
+`it.todo` or `it.skip` remains in `libs/query/src` - as are the wave 5 new findings and harness gaps.
+A retained entry's evict timer outliving a destroyed client (wave 3) is fixed in `ed34ec327`.
+
+Open: the remaining wave 6 Lows and each file's `## Unverified` claims cannot be re-checked. They lived
+only in `.claude/handoffs/wave6-scan-*.md`, which is gitignored and no longer exists; the fix commits
+of 2026-09-05 (`d3dd4cf9e`..`9ffd61f9b`) closed an unknown share of them. Recovering the rest needs a
+fresh Low-severity pass over those trees.
