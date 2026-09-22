@@ -21,11 +21,11 @@ export const appConfig: ApplicationConfig = {
 
 ## Nothing to generate
 
-The deployed build is identified by the **hashed script filenames in its own `index.html`** - the
-same fingerprint read from the running document and from the freshly fetched one. Two documents match
-exactly when reloading would run the same code, which is the question being asked, so there is no
-version file to emit at build time, no git hash to bake into the bundle, and no CI step to keep in
-sync. Any bundler that content-hashes its entry points works as-is.
+The deployed build is identified by the **hashed script filenames in its `index.html`**, read from
+the whole document, wherever the bundler put them. A fresh fetch counts as a new deploy when it names
+a script the running page does not have. Scripts the app appends at runtime therefore never read as
+a deploy, and there is no version file to emit at build time, no git hash to bake into the bundle,
+and no CI step to keep in sync. Any bundler that content-hashes its entry points works as-is.
 
 Cross-origin scripts are excluded from the fingerprint, so an analytics tag with a cache-busting
 query does not read as a new deploy.
