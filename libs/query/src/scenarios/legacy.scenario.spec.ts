@@ -8,6 +8,7 @@ import {
   AnyV2Query,
   BasicAuthProvider,
   createInfinityQueryConfig,
+  createLegacyQueryCreator,
   CustomHeaderAuthProvider,
   def,
   EntityStore,
@@ -79,6 +80,12 @@ const withLegacyClient = (
 
     client.clearAuthProvider();
     owner.destroy();
+  }
+};
+
+const settleUntil = async (s: Scenario, done: () => boolean) => {
+  for (let round = 0; round < 20 && !done(); round++) {
+    await s.settle(10);
   }
 };
 
@@ -1585,6 +1592,47 @@ describe('legacy scenario', () => {
       owner.destroy();
     });
 
+    it('leaves an interop query another consumer holds for the same args usable', async () => {
+      const s = scenario();
+      s.api.on('GET', '/validate', ({ query }) => ({ body: { email: query['email'] } }));
+
+      const validateEmail = createLegacyQueryCreator({
+        creator: s.get<{ response: { email: string }; queryParams: { email: string } }>('/validate'),
+        name: 'validateEmail',
+      });
+      const args = { queryParams: { email: 'ada@example.com' } };
+
+      const holder = s.consumer();
+      const held = holder.run(() => validateEmail.prepare(args).execute());
+
+      await s.settle();
+      expect(held.rawState).toMatchObject({ type: QueryStateType.Success });
+
+      const owner = s.consumer();
+      const testForm = owner.run(() => {
+        const emailSchema = schema<{ email: string }>((p) => {
+          validateWithV2Query(p, {
+            queryCreator: validateEmail,
+            args: (ctx) => ({ queryParams: { email: ctx.value().email } }),
+            debounce: 0,
+          });
+        });
+
+        return form(signal({ email: 'ada@example.com' }), emailSchema);
+      });
+
+      await settleUntil(s, () => !testForm().pending());
+      expect(testForm().pending()).toBe(false);
+
+      held.execute({ skipCache: true });
+      await s.settle();
+
+      expect(held.rawState).toMatchObject({ type: QueryStateType.Success, response: { email: 'ada@example.com' } });
+
+      owner.destroy();
+      holder.destroy();
+    });
+
     it('keeps the form-level error for a non-violation failure when mapViolations is custom', async () => {
       const s = scenario();
       s.api.on('POST', '/validate', () => ({ status: 500, body: { message: 'boom' } }));
@@ -1645,13 +1693,12 @@ describe('legacy scenario', () => {
         return form(signal({ email: 'ada@example.com' }), emailSchema);
       });
 
-      await s.settle();
+      await settleUntil(s, () => s.api.pending().length === 1);
       expect(testForm().pending()).toBe(true);
 
       validateEmail.prepare(args('ada@example.com')).abort();
 
-      await s.settle(100);
-      await s.settle(100);
+      await settleUntil(s, () => !testForm().pending());
 
       expect(testForm().pending()).toBe(false);
       expect(testForm().errors()).toEqual([]);
