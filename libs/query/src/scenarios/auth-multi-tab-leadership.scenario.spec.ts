@@ -1355,4 +1355,37 @@ describe('auth multi-tab leadership scenario', () => {
     b.destroy();
     c.destroy();
   });
+
+  it('announces no activity from a tab without a session or with the inactivity logout disabled, and enable() announces', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens(15 * 60 * 1000));
+
+    const a = createInactivityTab(s, ['keydown']);
+    const b = createInactivityTab(s, ['mousedown']);
+    await sync(s);
+
+    document.dispatchEvent(new KeyboardEvent('keydown'));
+    await sync(s);
+
+    expect(activityMessages()).toEqual([]);
+
+    a.auth.queries.login.execute({ body: {} });
+    await sync(s);
+    a.auth.features.inactivityLogout.disable();
+
+    s.tick(30_000);
+    document.dispatchEvent(new KeyboardEvent('keydown'));
+    await sync(s);
+
+    expect(activityMessages()).toEqual([]);
+
+    a.auth.features.inactivityLogout.enable();
+    await sync(s);
+
+    expect(activityMessages()).toHaveLength(1);
+    expect(b.auth.features.inactivityLogout.calculateTimeUntilLogout()).toBe(INACTIVITY_TIMEOUT);
+
+    a.destroy();
+    b.destroy();
+  });
 });
