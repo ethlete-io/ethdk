@@ -32,6 +32,33 @@ const distanceTo = (block: ActivityBlock, at: Date) =>
 export const DEFAULT_MIN_BLOCK_MS = 5_000;
 
 /**
+ * The context that stands for a set of spans sharing one key: the one that held the most of their
+ * time.
+ *
+ * A key does not fix every field of the context behind it. One session's spans carry whichever
+ * branch the checkout was on at the time, and reading the first of them names a whole session after
+ * a branch it passed through for a minute on the way in.
+ */
+const longestContext = (spans: readonly [ContextSpan, ...ContextSpan[]]) => {
+  const held = new Map<string, { context: ActivityContext; ms: number }>();
+
+  for (const span of spans) {
+    const key = `${span.context.branch ?? ''}#${span.context.workPath ?? ''}#${span.context.appId ?? ''}`;
+    const found = held.get(key);
+    const ms = span.to.getTime() - span.from.getTime();
+
+    if (found) found.ms += ms;
+    else held.set(key, { context: span.context, ms });
+  }
+
+  let best: { context: ActivityContext; ms: number } | undefined;
+
+  for (const entry of held.values()) if (!best || entry.ms > best.ms) best = entry;
+
+  return best?.context ?? spans[0].context;
+};
+
+/**
  * Turns the stretches `streamDay` attributed into the contiguous same-context blocks a row is built
  * from, and hangs each observation on the block that holds it.
  *
@@ -50,7 +77,7 @@ export const blocksFromSpans = (options: {
   minBlockMs?: number;
 }): ActivityBlock[] => {
   const minBlockMs = options.minBlockMs ?? DEFAULT_MIN_BLOCK_MS;
-  const byContext = new Map<string, { context: ActivityContext; windows: TimeWindow[] }>();
+  const byContext = new Map<string, { spans: [ContextSpan, ...ContextSpan[]]; windows: TimeWindow[] }>();
 
   for (const span of options.spans) {
     if (span.to <= span.from) continue;
@@ -58,18 +85,22 @@ export const blocksFromSpans = (options: {
     const key = contextKey(span.context);
     const held = byContext.get(key);
 
-    if (held) held.windows.push({ from: span.from, to: span.to });
-    else byContext.set(key, { context: span.context, windows: [{ from: span.from, to: span.to }] });
+    if (held) {
+      held.spans.push(span);
+      held.windows.push({ from: span.from, to: span.to });
+    } else byContext.set(key, { spans: [span], windows: [{ from: span.from, to: span.to }] });
   }
 
   const blocks = new Map<string, ActivityBlock[]>();
 
   for (const [key, held] of byContext) {
+    const context = longestContext(held.spans);
+
     blocks.set(
       key,
       mergeWindows(held.windows)
         .filter((window) => window.to.getTime() - window.from.getTime() >= minBlockMs)
-        .map((window) => ({ ...window, context: held.context, evidence: [] })),
+        .map((window) => ({ ...window, context, evidence: [] })),
     );
   }
 

@@ -29,8 +29,13 @@ export const blockDurationMs = (block: ActivityBlock) => block.to.getTime() - bl
 
 /**
  * Identity of a context, for deciding whether two adjacent samples continue the same block. A
- * repo and branch outrank the app: switching from the editor to the terminal inside the same
- * checkout is the same work, while the same editor on a different branch is not.
+ * repo outranks the app: switching from the editor to the terminal inside the same checkout is the
+ * same work.
+ *
+ * A session answers on its own, and the branch then leaves the key: one session is one piece of
+ * work whatever branch it sits on, so a session that switched branch twice is one block rather than
+ * three overlapping ones. Where there is no session the branch decides, as it always did — the same
+ * editor on a different branch is not the same work.
  *
  * A work path and a session are each left out of the key when there is none, so a checkout whose
  * branch answers keeps the key it always had — and every rule stored against one keeps matching.
@@ -38,10 +43,11 @@ export const blockDurationMs = (block: ActivityBlock) => block.to.getTime() - bl
 export const contextKey = (context: ActivityContext) => {
   if (!context.repoPath) return `app:${context.appId ?? ''}`;
 
-  const key = `repo:${context.repoPath}@${context.branch ?? ''}`;
-  const worked = context.workPath ? `${key}#${context.workPath}` : key;
+  if (context.session) return `repo:${context.repoPath}~${context.session}`;
 
-  return context.session ? `${worked}~${context.session}` : worked;
+  const key = `repo:${context.repoPath}@${context.branch ?? ''}`;
+
+  return context.workPath ? `${key}#${context.workPath}` : key;
 };
 
 /**

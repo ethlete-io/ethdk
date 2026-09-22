@@ -59,7 +59,8 @@ Three facts, each true and each too coarse:
    sequence, so an instant two sessions both ran in goes to the oldest of them; that answer only ever
    moves forward, where reading the nearest sample would flap between the two. `lastAgentSample` is
    now keyed per session, so the gap between one session ending and the next starting stopped
-   counting as an agent running.
+   counting as an agent running. The branch and the work path leave the key where a session answers,
+   the way a feature branch already keeps its directories from splitting it.
 2. **Cut the day into parallel stretches.** `streamDay` stops being one sequence per day and becomes
    one per session, joined by the checkout they run in. This is the large one. Open: what a lane's
    own stretch is when the sessions in it overlap, and what the day's own presence line means then.
@@ -80,14 +81,12 @@ Three facts, each true and each too coarse:
 - **Answered by slice 1.** A session that is not an agent session - the user's own editor and
   terminal - has no session id, so it carries none and keys exactly as it did before: the checkout
   and the branch. A checkout that ran no agent all day is untouched.
-- **The branch has to leave the key where a session answers.** Tom decided a branch switch is no cut
-  of its own, and slice 1 left the branch in the key beside the session, so session `e9e4ac84` is
-  still cut in three by `dev-tappp-finals` / `next` / `dev-tappp-finals`. Two of those three blocks
-  overlap, which is a double booking of its own. Slice 2 or slice 5 has to drop the branch from the
-  key of a stretch that has a session.
-- Slice 1 added 2.5 minutes of overlapping blocks across the real day of 2026-09-22, in stretches of
-  10 to 50 seconds where an agent stretch and a focus stretch step onto the next session at slightly
-  different instants. Slice 3 owns this.
+- **Answered by slice 1.** The branch leaves the key where a session answers, so a session that
+  switched branch twice is one stretch rather than three overlapping ones. A merged block is then
+  named after the branch that held the most of its time, because a key no longer fixes the branch
+  behind it - see `longestContext` in `blocks.ts`. On the real day of 2026-09-22 this took the whole
+  day's overlapping block time from 2.9 minutes down to 1.0, below what it was before sessions were
+  carried at all.
 - Tom works through Claude remote, where a prompt leaves no local presence. A remote session's band
   is a band of work with nothing underneath it.
 - `standIn.split` exists for the opposite problem. Once sessions are joined into pieces, the list

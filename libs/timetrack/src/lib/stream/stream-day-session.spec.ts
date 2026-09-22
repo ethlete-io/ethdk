@@ -16,14 +16,20 @@ const focusRun = (options: { from: number; to: number }): CollectedEvent[] =>
     title: 'totw.component.ts - fut-frontend - Code',
   }));
 
-const sessionRun = (options: { sessionId: string; from: number; to: number; cwd?: string }): CollectedEvent[] =>
+const sessionRun = (options: {
+  sessionId: string;
+  from: number;
+  to: number;
+  cwd?: string;
+  branchAt?: (minutes: number) => string;
+}): CollectedEvent[] =>
   Array.from({ length: options.to - options.from + 1 }, (_, offset) => ({
     at: AT(options.from + offset),
     source: 'agent-session',
     kind: 'agent-session',
     sessionId: options.sessionId,
     cwd: options.cwd ?? REPO,
-    gitBranch: BRANCH,
+    gitBranch: options.branchAt?.(options.from + offset) ?? BRANCH,
   }));
 
 const blocksOf = (events: CollectedEvent[]) =>
@@ -67,5 +73,20 @@ describe('streamDay agent sessions', () => {
     const blocks = blocksOf(focusRun({ from: 0, to: 60 }));
 
     expect(blocks.map((block) => block.context.session)).toEqual([undefined]);
+  });
+
+  it('leaves a session that switched branch twice as one stretch, named after the branch it spent longest on', () => {
+    const blocks = blocksOf([
+      ...focusRun({ from: 0, to: 120 }),
+      ...sessionRun({
+        sessionId: 'one',
+        from: 10,
+        to: 110,
+        branchAt: (minutes) => (minutes < 20 || minutes >= 100 ? 'dev-tappp-finals' : 'next'),
+      }),
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]?.context.branch).toBe('next');
   });
 });
