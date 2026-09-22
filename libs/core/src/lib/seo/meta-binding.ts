@@ -306,7 +306,11 @@ export const applyMetaBinding = (binding: MaybeSignal<MetaTagConfig | null | und
   applyHeadBinding(
     binding,
     (config) => {
-      currentSelector = metaStore.getSelector(config);
+      const selector = metaStore.getSelector(config);
+
+      if (currentSelector !== undefined && currentSelector !== selector) metaStore.removeTag(tagId, currentSelector);
+
+      currentSelector = selector;
       metaStore.addTag(tagId, config);
     },
     () => metaStore.removeTag(tagId, currentSelector),

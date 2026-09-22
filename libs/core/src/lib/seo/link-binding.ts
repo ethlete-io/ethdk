@@ -238,7 +238,11 @@ export const applyLinkBinding = (binding: MaybeSignal<LinkConfig | null | undefi
   applyHeadBinding(
     binding,
     (config) => {
-      currentKey = linkStore.getLinkKey(config);
+      const key = linkStore.getLinkKey(config);
+
+      if (currentKey !== undefined && currentKey !== key) linkStore.removeLink(linkId, currentKey);
+
+      currentKey = key;
       linkStore.addLink(linkId, config);
     },
     () => linkStore.removeLink(linkId, currentKey),
