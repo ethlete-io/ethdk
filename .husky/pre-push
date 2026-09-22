@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# Runs the CI "Checks" job over the commits about to leave, so a push never lands code that job rejects.
+# Skip once with `git push --no-verify`.
+set -e
+
+export NX_NO_CLOUD=true
+
+base=$(git rev-parse --verify --quiet '@{upstream}' || git merge-base HEAD origin/main)
+
+yarn nx format:check --base="$base" --head=HEAD
+yarn agents:check
+yarn versions:check
+yarn lint:changesets
+yarn nx affected -t typecheck lint --base="$base" --head=HEAD
