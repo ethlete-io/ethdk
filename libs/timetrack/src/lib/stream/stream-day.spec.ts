@@ -91,7 +91,7 @@ const focusRun = (options: { from: number; to: number; appId: string; title?: st
 
 const sessionRun = (options: { from: number; to: number; cwd: string; sessionId?: string }): CollectedEvent[] =>
   Array.from({ length: options.to - options.from + 1 }, (_, offset) =>
-    session(options.from + offset, options.cwd, options.sessionId),
+    session(options.from + offset, options.cwd, options.sessionId ?? `session-${options.from}`),
   );
 
 const heartbeat = (options: {

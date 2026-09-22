@@ -536,6 +536,61 @@ const workPathAt = (options: { marks: readonly WorkPathMark[] | undefined; at: D
   return (next ?? marks[marks.length - 1])?.workPath;
 };
 
+/** One agent session's run in a checkout: the first and the last instant it was sampled there. */
+type SessionRun = { sessionId: string; from: Date; to: Date };
+
+/**
+ * The agent sessions each checkout ran, oldest start first.
+ *
+ * A session reports the directory it was started in, so the checkout it ran in is read the same way
+ * every other agent fact is read - through `repoRootOf`.
+ */
+const sessionRuns = (samples: readonly ActivityEvent[], roots: readonly string[]) => {
+  const held = new Map<string, Map<string, SessionRun>>();
+
+  for (const sample of samples) {
+    if (sample.kind !== 'agent-session') continue;
+
+    const repoPath = repoRootOf({ path: sample.cwd, roots });
+    const runs = held.get(repoPath) ?? new Map<string, SessionRun>();
+    const run = runs.get(sample.sessionId);
+
+    if (run) run.to = sample.at;
+    else runs.set(sample.sessionId, { sessionId: sample.sessionId, from: sample.at, to: sample.at });
+
+    held.set(repoPath, runs);
+  }
+
+  return new Map(
+    [...held].map(
+      ([repoPath, runs]) =>
+        [repoPath, [...runs.values()].sort((left, right) => left.from.getTime() - right.from.getTime())] as const,
+    ),
+  );
+};
+
+/**
+ * The agent session a stretch of a checkout belongs to: the oldest one still running at that instant.
+ *
+ * A day is one sequence, so an instant that two sessions both ran in gets one of them. The oldest
+ * holds the checkout until it ends, because that answer only ever moves forward: reading the nearest
+ * sample instead makes the sequence flap between two sessions, and a lane holding a quarter of an
+ * hour is then drawn as twenty slivers none of which a reader can name.
+ *
+ * Before the first run and after the last one the nearest run stands, the way `workPathAt` carries the
+ * last directory on. A checkout that ran one session therefore reads as that session all day, and cuts
+ * exactly where it cut before a session was carried at all.
+ */
+const sessionAt = (options: { runs: readonly SessionRun[] | undefined; at: Date }) => {
+  const runs = options.runs;
+
+  if (!runs?.length) return undefined;
+
+  const running = runs.find((run) => run.to.getTime() >= options.at.getTime());
+
+  return (running ?? runs[runs.length - 1])?.sessionId;
+};
+
 /** One `git-checkout`'s answer to which branch a checkout was moved onto, at the instant it moved. */
 type BranchMark = { at: Date; branch: string };
 
@@ -939,6 +994,12 @@ export const streamDay = (options: {
   /** When each checkout was cut onto another branch, so a base branch can be read the same way. */
   const cuts = branchMarks(samples, roots);
   /**
+   * The agent sessions each checkout ran. Every stretch of a checkout is read against them, rather
+   * than only the stretches an `agent-session` sample covers: a session and the window watching it
+   * are the same piece of work, and a key that told them apart would book those minutes twice.
+   */
+  const runs = sessionRuns(samples, roots);
+  /**
    * The branch and the directory one stretch of a checkout belongs to.
    *
    * A base branch names no piece of work. Where the checkout's directories cannot say which piece it
@@ -952,7 +1013,11 @@ export const streamDay = (options: {
         : undefined;
     const branch = cutOnto ?? options.branch;
 
-    return { branch, workPath: workPathFor({ ...options, branch }) };
+    return {
+      branch,
+      workPath: workPathFor({ ...options, branch }),
+      session: sessionAt({ runs: runs.get(options.repoPath), at: options.at }),
+    };
   };
   const lastAgentSample = new Map<string, Date>();
   const marks: Mark[] = [];
@@ -1075,16 +1140,25 @@ export const streamDay = (options: {
       const ranOn = branchOf(sample.gitBranch) ?? branches.get(cwd);
       const ran: ActivityContext = { repoPath: cwd, ...workedOn({ repoPath: cwd, branch: ranOn, at: sample.at }) };
       const draft = draftFor(drafts, ran);
-      const last = lastAgentSample.get(cwd);
+      // The gap between two samples is agent time only while it is one session's own gap. Read per
+      // checkout, the quarter of an hour between one session ending and the next one starting counted
+      // as an agent running, and the stretch straddled the cut the two sessions make.
+      const ranBy = `${cwd}\u0000${sample.sessionId}`;
+      const last = lastAgentSample.get(ranBy);
 
       draft.sessions.add(sample.sessionId);
 
       if (last && sample.at.getTime() - last.getTime() < config.maxUnobservedMs) {
+        // The session is read at the instant the stretch starts, the way a focused window names the
+        // stretch that follows it. Read at the instant it ends, an agent stretch and the window
+        // watching it disagree over the minute a session ends in, and the checkout books it twice.
+        const ranBefore = { ...ran, session: sessionAt({ runs: runs.get(cwd), at: last }) };
+
         draft.agent.push({ from: last, to: sample.at });
-        agentSpans.push({ from: last, to: sample.at, context: ran });
+        agentSpans.push({ from: last, to: sample.at, context: ranBefore });
       }
 
-      lastAgentSample.set(cwd, sample.at);
+      lastAgentSample.set(ranBy, sample.at);
     }
 
     // A sample that names a checkout but no branch is not a checkout on no branch. Reading the day's

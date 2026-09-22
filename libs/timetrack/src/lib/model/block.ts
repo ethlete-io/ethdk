@@ -10,6 +10,11 @@ export type ActivityContext = {
    * piece of work it was. See `workPathOf` and `streamDay`.
    */
   workPath?: string;
+  /**
+   * The agent session this stretch ran in, where the checkout ran one. It is the finest grain a piece
+   * of work is cut at. See `sessionAt` in `streamDay`.
+   */
+  session?: string;
 };
 
 /** Contiguous same-context time, after idle gaps have split it and sub-minute flapping is merged. */
@@ -27,15 +32,16 @@ export const blockDurationMs = (block: ActivityBlock) => block.to.getTime() - bl
  * repo and branch outrank the app: switching from the editor to the terminal inside the same
  * checkout is the same work, while the same editor on a different branch is not.
  *
- * A work path is left out of the key when there is none, so a checkout whose branch answers keeps the
- * key it always had — and every rule stored against one keeps matching.
+ * A work path and a session are each left out of the key when there is none, so a checkout whose
+ * branch answers keeps the key it always had — and every rule stored against one keeps matching.
  */
 export const contextKey = (context: ActivityContext) => {
   if (!context.repoPath) return `app:${context.appId ?? ''}`;
 
   const key = `repo:${context.repoPath}@${context.branch ?? ''}`;
+  const worked = context.workPath ? `${key}#${context.workPath}` : key;
 
-  return context.workPath ? `${key}#${context.workPath}` : key;
+  return context.session ? `${worked}~${context.session}` : worked;
 };
 
 /**
