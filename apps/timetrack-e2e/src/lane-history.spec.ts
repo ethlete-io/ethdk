@@ -27,6 +27,8 @@ const settings = () => ({
 
 const remembered = (page: Page) => page.getByRole('group', { name: 'Used here before' });
 
+const rest = (page: Page) => page.getByRole('group', { name: 'Every other issue' });
+
 const optionsFor = (within: Page | Locator, key: string) => within.getByRole('option', { name: new RegExp(key) });
 
 const openTheCallPicker = async (page: Page) => {
@@ -52,5 +54,12 @@ test.describe('a call the lane was named with before', () => {
     await expect(optionsFor(page, E2E_ISSUE_KEY)).toBeVisible();
     await expect(optionsFor(remembered(page), E2E_PARENT_KEY)).toBeVisible();
     await expect(optionsFor(page, E2E_PARENT_KEY)).toHaveCount(1);
+  });
+
+  test('leaves the rest of the list under a heading of its own', async ({ page }) => {
+    await openTheCallPicker(page);
+
+    await expect(optionsFor(remembered(page), E2E_ISSUE_KEY)).toHaveCount(0);
+    await expect(optionsFor(rest(page), E2E_ISSUE_KEY)).toBeVisible();
   });
 });

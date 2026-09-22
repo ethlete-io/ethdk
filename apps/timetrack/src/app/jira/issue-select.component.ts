@@ -39,6 +39,10 @@ type IssueOption = {
  * the same question the reviewer answers by hand every day — which work a checkout, or a standing
  * call, belongs to — and the answer barely moves from week to week. The group is filtered by whatever
  * is typed, the same way the list below it is, so it never offers a line the search rules out.
+ *
+ * The rest of the list gets a heading of its own whenever that group is there. A short-cut group that
+ * runs straight into the full list reads as one list under the short-cut's own heading, which says
+ * the lane was named with every issue the instance holds.
  */
 @Component({
   selector: 'ethlete-issue-select',
@@ -69,6 +73,14 @@ type IssueOption = {
            the one the closed field reads -->
       <input [placeholder]="placeholderText()" etSelectSearch />
 
+      <ng-template #rest>
+        @for (option of options(); track option.key) {
+          <et-select-option [value]="option.key" [label]="option.label">
+            <ng-container [ngTemplateOutlet]="line" [ngTemplateOutletContext]="{ $implicit: option }" />
+          </et-select-option>
+        }
+      </ng-template>
+
       @if (remembered().length) {
         <et-select-option-group label="Used here before">
           @for (option of remembered(); track option.key) {
@@ -77,12 +89,14 @@ type IssueOption = {
             </et-select-option>
           }
         </et-select-option-group>
-      }
 
-      @for (option of options(); track option.key) {
-        <et-select-option [value]="option.key" [label]="option.label">
-          <ng-container [ngTemplateOutlet]="line" [ngTemplateOutletContext]="{ $implicit: option }" />
-        </et-select-option>
+        @if (options().length) {
+          <et-select-option-group label="Every other issue">
+            <ng-container [ngTemplateOutlet]="rest" />
+          </et-select-option-group>
+        }
+      } @else {
+        <ng-container [ngTemplateOutlet]="rest" />
       }
     </et-select>
   `,
