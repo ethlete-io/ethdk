@@ -55,7 +55,7 @@ export type Project = {
   calls: Call[];
 };
 
-/** Reads every call of a checkout. The checkout must carry a `design-explore.config.json`. */
+/** Reads every call of a checkout. The checkout must carry a `.ethlete/design/config.json`. */
 export const designProject$ = (checkout: string): Observable<Project> =>
   invokeHost$<Project>('design_project', { checkout });
 

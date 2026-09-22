@@ -36,8 +36,9 @@ fn watch_root(root: &Path, report: impl Fn() + Send + 'static) -> Result<Recomme
 /// live watches over one root would report every change twice.
 #[tauri::command]
 pub fn design_watch(state: State<'_, DesignWatch>, checkout: String, changes: Channel<()>) -> Result<(), String> {
-    let config = read_config(&checkout)?;
-    let root = calls_root(&checkout, &config)?;
+    read_config(&checkout)?;
+
+    let root = calls_root(&checkout);
     let mut slot = state.0.lock().map_err(|_| "The design watch is poisoned.".to_owned())?;
 
     *slot = None;

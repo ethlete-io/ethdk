@@ -8,8 +8,8 @@
  *
  *   node tools/design-explore/check-call.mjs --lint <file>…                     # ~1s
  *   node tools/design-explore/check-call.mjs --tsconfig tools/design-explore/tsconfig.json
- *   node tools/design-explore/check-call.mjs --call kerbe/03-narrow-lane        # + the render
- *   node tools/design-explore/check-call.mjs --call kerbe/03-narrow-lane --option b
+ *   node tools/design-explore/check-call.mjs --call timetrack/kerbe/03-narrow-lane        # + the render
+ *   node tools/design-explore/check-call.mjs --call timetrack/kerbe/03-narrow-lane --option b
  *   DE_URL=http://localhost:4402 node tools/design-explore/check-call.mjs --call <slug>
  *
  * Three stages, because they cost three different amounts:
@@ -113,7 +113,8 @@ const onPage = await page
     () => false,
   );
 
-if (!onPage) await fail(`NO CALL "${slug}" - the host drew no page for it. Check the folder under callsRoot.`);
+if (!onPage)
+  await fail(`NO CALL "${slug}" - the host drew no page for it. Check the folder under .ethlete/design/calls.`);
 
 /** An unknown slug falls back to the first call, so read back which one the host actually drew. */
 const drawn = await page
@@ -123,7 +124,9 @@ const drawn = await page
   .then((href) => new URL(href ?? '', BASE).searchParams.get('call'));
 
 if (drawn !== slug) {
-  await fail(`NO CALL "${slug}" - the host fell back to "${drawn}". Pass the full slug, for example kerbe/${slug}.`);
+  await fail(
+    `NO CALL "${slug}" - the host fell back to "${drawn}". Pass the full slug, for example timetrack/kerbe/${slug}.`,
+  );
 }
 
 const problems = await page.locator('.problem').allInnerTexts();

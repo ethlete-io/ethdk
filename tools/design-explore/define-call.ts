@@ -1,5 +1,3 @@
-import type { Type } from '@angular/core';
-
 /**
  * A value inside a template. An array joins with nothing between, and `null`, `undefined` and
  * `false` write nothing, so `${rows.map(row)}` and `${isOn && html`…`}` both read as they look.
@@ -39,7 +37,7 @@ export const drawing = (drawn: Drawing): Drawing => drawn;
 
 /**
  * One drawn answer to a call. `load` resolves the module whose default export is the
- * Angular component that draws it, so a broken option breaks its own frame only.
+ * drawing that answers it, so a broken option breaks its own frame only.
  */
 export type CallOption = {
   key: string;
@@ -51,7 +49,7 @@ export type CallOption = {
   verdict?: 'chosen' | 'rejected';
   /** The `key` of the round that drew it. Left out by a call that runs no rounds. */
   round?: string;
-  load: () => Promise<{ default: Drawing | Type<unknown> }>;
+  load: () => Promise<{ default: Drawing }>;
 };
 
 /**

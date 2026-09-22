@@ -54,8 +54,12 @@ pub struct Project {
     pub calls: Vec<Call>,
 }
 
+/// Where a checkout keeps its design work. Every repository holds its own, so a call argues in
+/// the repository it is about.
+pub const DESIGN_DIR: &str = ".ethlete/design";
+
 fn config_path(checkout: &str) -> PathBuf {
-    Path::new(checkout).join("design-explore.config.json")
+    Path::new(checkout).join(DESIGN_DIR).join("config.json")
 }
 
 /// The value of `field: '…'`. A value that wraps over more than one line comes back as one
@@ -259,18 +263,12 @@ pub fn port_of(config: &serde_json::Value) -> u16 {
         .unwrap_or(DEFAULT_PORT)
 }
 
-pub fn calls_root(checkout: &str, config: &serde_json::Value) -> Result<PathBuf, String> {
-    let root = config
-        .get("callsRoot")
-        .and_then(|value| value.as_str())
-        .ok_or_else(|| "design-explore.config.json names no callsRoot.".to_owned())?;
-
-    Ok(Path::new(checkout).join(root))
+pub fn calls_root(checkout: &str) -> PathBuf {
+    Path::new(checkout).join(DESIGN_DIR).join("calls")
 }
 
 fn call_file(checkout: &str, slug: &str) -> Result<PathBuf, String> {
-    let config = read_config(checkout)?;
-    let path = calls_root(checkout, &config)?.join(slug).join("call.ts");
+    let path = calls_root(checkout).join(slug).join("call.ts");
 
     if path.exists() {
         Ok(path)
@@ -356,7 +354,7 @@ fn write_verdict(source: &str, option_key: &str, verdict: Option<&str>) -> Resul
 #[tauri::command]
 pub fn design_project(checkout: String) -> Result<Project, String> {
     let config = read_config(&checkout)?;
-    let root = calls_root(&checkout, &config)?;
+    let root = calls_root(&checkout);
 
     let calls = call_slugs(&root)
         .into_iter()
@@ -738,7 +736,7 @@ export default defineCall({
 
     #[test]
     fn a_call_reads_its_headline_and_its_options() {
-        let call = parse_call("kerbe/09-gutter", CALL);
+        let call = parse_call("timetrack/kerbe/09-gutter", CALL);
 
         assert_eq!(call.eyebrow, "Kerbe · call 9");
         assert_eq!(call.headline, "What the clock column costs the day");
@@ -827,7 +825,7 @@ export default defineCall({
 
     #[test]
     fn a_wrapped_intro_reads_as_one_line() {
-        let call = parse_call("kerbe/09-gutter", CALL);
+        let call = parse_call("timetrack/kerbe/09-gutter", CALL);
 
         assert_eq!(call.intro, "The gutter is 5rem wide.");
     }
@@ -903,13 +901,13 @@ export default defineCall({
 
     fn a_checkout(name: &str) -> PathBuf {
         let checkout = std::env::temp_dir().join(format!("ethlete-studio-{}-{name}", std::process::id()));
-        let call = checkout.join("design/calls/kerbe/09-gutter");
+        let call = checkout.join(DESIGN_DIR).join("calls/timetrack/kerbe/09-gutter");
 
         std::fs::create_dir_all(&call).unwrap();
         std::fs::write(call.join("call.ts"), CALL).unwrap();
         std::fs::write(
-            checkout.join("design-explore.config.json"),
-            r#"{ "port": 4405, "callsRoot": "design/calls", "defaultCall": "kerbe/09-gutter" }"#,
+            config_path(&checkout.to_string_lossy()),
+            r#"{ "port": 4405, "defaultCall": "timetrack/kerbe/09-gutter" }"#,
         )
         .unwrap();
 
@@ -922,9 +920,9 @@ export default defineCall({
         let project = design_project(checkout.to_string_lossy().into_owned()).unwrap();
 
         assert_eq!(project.port, 4405);
-        assert_eq!(project.default_call.as_deref(), Some("kerbe/09-gutter"));
+        assert_eq!(project.default_call.as_deref(), Some("timetrack/kerbe/09-gutter"));
         assert_eq!(project.calls.len(), 1);
-        assert_eq!(project.calls[0].slug, "kerbe/09-gutter");
+        assert_eq!(project.calls[0].slug, "timetrack/kerbe/09-gutter");
         assert!(!project.calls[0].handoff);
 
         std::fs::remove_dir_all(checkout).unwrap();
@@ -935,7 +933,7 @@ export default defineCall({
         let checkout = a_checkout("handoff");
 
         std::fs::write(
-            checkout.join("design/calls/kerbe/09-gutter").join(HANDOFF_FILE),
+            checkout.join(".ethlete/design/calls/timetrack/kerbe/09-gutter").join(HANDOFF_FILE),
             "state",
         )
         .unwrap();
@@ -954,7 +952,7 @@ export default defineCall({
 
         design_set_verdict(
             path.clone(),
-            "kerbe/09-gutter".to_owned(),
+            "timetrack/kerbe/09-gutter".to_owned(),
             "b".to_owned(),
             Some("chosen".to_owned()),
         )
@@ -1014,7 +1012,7 @@ export default defineCall({
     fn a_new_round_reads_back_with_its_empty_options() {
         let keys = vec!["c".to_owned(), "d".to_owned()];
         let written = add_options(CALL, "r2", "How the rail folds", &keys).unwrap();
-        let call = parse_call("kerbe/09-gutter", &written);
+        let call = parse_call("timetrack/kerbe/09-gutter", &written);
 
         assert_eq!(round_keys(&written), vec!["r1", "r2"]);
         assert_eq!(call.options.len(), 4);
@@ -1066,7 +1064,7 @@ export default defineCall({
 
         let added = design_add_options(
             path.clone(),
-            "kerbe/09-gutter".to_owned(),
+            "timetrack/kerbe/09-gutter".to_owned(),
             2,
             "How the gutter folds".to_owned(),
         )
@@ -1075,7 +1073,7 @@ export default defineCall({
         assert_eq!(added.round, "r2");
         assert_eq!(added.keys, vec!["c", "d"]);
 
-        let call = checkout.join("design/calls/kerbe/09-gutter");
+        let call = checkout.join(".ethlete/design/calls/timetrack/kerbe/09-gutter");
 
         assert!(call.join("option-c.ts").exists());
         assert!(call.join("option-d.ts").exists());
@@ -1093,7 +1091,7 @@ export default defineCall({
         let checkout = a_checkout("none");
         let path = checkout.to_string_lossy().into_owned();
 
-        assert!(design_add_options(path, "kerbe/09-gutter".to_owned(), 0, String::new()).is_err());
+        assert!(design_add_options(path, "timetrack/kerbe/09-gutter".to_owned(), 0, String::new()).is_err());
 
         std::fs::remove_dir_all(checkout).unwrap();
     }

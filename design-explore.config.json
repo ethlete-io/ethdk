@@ -1,8 +1,0 @@
-{
-  "port": 4402,
-  "callsRoot": "apps/timetrack/src/design/calls",
-  "preview": "apps/timetrack/src/design/preview.ts",
-  "styles": ["apps/timetrack/src/styles.css"],
-  "head": "apps/timetrack/src/design/head.html",
-  "defaultCall": "kerbe/03-narrow-lane"
-}

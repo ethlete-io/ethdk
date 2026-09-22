@@ -19,8 +19,10 @@ the same geometry. An option wins or loses only against the other options of its
 2. **Put the options in the call, then name your pick.** Two to four options, drawn for
    real, side by side, labelled, with what each one costs. Your pick is a proposal.
 3. **Commit only when the user says commit.**
-4. **Finish the task you were given, then stop.** Do not pick the next one. A plan file
-   with an open list is a record, not a queue you may serve yourself.
+4. **A clear rejection starts the next call.** Settle and record the rejected call, then draw
+   the next focused question automatically, within the user's original scope. Stop only when the
+   user asks to pause or end the exploration, or when their feedback leaves no grounded next
+   question.
 5. **Keep the answer short.** 120 words at most.
 
 Confirm the step size once, at the start. Do not ask again at every stop. A task is not
@@ -44,16 +46,22 @@ If a second defect appears, add it to the open list and give it one line. Do not
 The exploration's plan file names the tool. Two shapes exist.
 
 **A repository with `tools/design-explore`** draws a call per page, each option in its own
-iframe. Start it with `yarn design`, which serves http://localhost:4402. A call is a folder
-under the `callsRoot` of `design-explore.config.json`:
+iframe. Start it with `yarn design`, which serves http://localhost:4402. Every repository keeps
+its own design work in `.ethlete/design/`, so a call argues in the repository it is about:
 
 ```
-calls/<group>/<slug>/
-  call.ts        the eyebrow, the headline, the intro, frameWidth, the options and the round prose
-  fixture.ts     the data every option shares
-  option-a.ts    one default-exported Angular component per option
-  option-b.ts
+.ethlete/design/
+  config.json    the port, the default call, and one entry per project
+  calls/<project>/<group>/<slug>/
+    call.ts      the eyebrow, the headline, the intro, frameWidth, the options and the round prose
+    fixture.ts   the data every option shares
+    option-a.ts  one default-exported drawing per option
+    option-b.ts
 ```
+
+The first segment of a slug is the **project**. `config.json` gives each project its own
+`styles` and its own `head`, so one project's type scale and fonts never reach another's
+drawings. A project the config names not draws bare.
 
 `call.ts` calls `defineCall` from `@design-explore`. Each option carries a `key`, a `name`,
 a `claim`, a `cost`, an optional `verdict` of `chosen` or `rejected`, and a `load` that
@@ -179,4 +187,5 @@ node shoot.mjs <story-id> 1100 760 out.png
 
 Every settled call goes in the exploration's plan file: what won, what lost, and why. Keep
 an **Open** list for the calls not yet made. A rejected option written down stops the next
-session from drawing it again.
+session from drawing it again. After a clear rejection, use that record to frame and draw the
+next call; do not wait for the user to type “continue”.

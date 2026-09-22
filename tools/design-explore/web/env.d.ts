@@ -6,8 +6,6 @@ declare module 'virtual:design-explore' {
 }
 
 declare module 'virtual:design-explore/env' {
-  import type { EnvironmentProviders, Provider, Type } from '@angular/core';
-
-  export const providers: (Provider | EnvironmentProviders)[];
-  export const Wrapper: Type<unknown> | null;
+  /** Loads the stylesheet the project draws under. A project the config names not draws bare. */
+  export const loadEnv: (project: string) => Promise<unknown>;
 }

@@ -11,5 +11,5 @@
     "emitDecoratorMetadata": true,
     "ignoreDeprecations": "6.0"
   },
-  "include": ["web/**/*.ts", "define-call.ts", "../../apps/timetrack/src/design/**/*.ts"]
+  "include": ["web/**/*.ts", "define-call.ts", "../../.ethlete/design/calls/**/*.ts"]
 }

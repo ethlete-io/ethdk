@@ -12,7 +12,7 @@ Tom's words, in order of weight:
 2. **The agent lives in another window.** You drive the tool from a Claude CLI in a
    second window. That split feels unnatural — the agent belongs inside the app.
 3. **Every project's design files land in this repo.** `design-explore.config.json`
-   points at `apps/timetrack/src/design/calls`, whatever project the work is for.
+   pointed at `apps/timetrack/src/design/calls`, whatever project the work was for.
 4. **Talking costs walls of text.** The design conversation happens in a chat
    transcript instead of in the tool.
 
@@ -37,7 +37,7 @@ What the code shows, on top of that:
 ## What carries over
 
 The **call → rounds → options** model works and stays. 22 calls exist under
-`apps/timetrack/src/design/calls`. Most have 3 to 4 options in one round; the two large
+`.ethlete/design/calls`. Most have 3 to 4 options in one round; the two large
 ones are `kerbe/06-break-label` (24 options over 7 rounds) and `kerbe/08-lane-headers`
 (10 over 3).
 
@@ -160,7 +160,7 @@ file. The four verbs write a first draft of the prompt into an editable box unde
 run's events read beside the frame. The selected call and option are remembered in
 `localStorage`, so a reload comes back to them. So is the agent session of each call, with the size
 it grew to; a session past 70% of the 200k limit offers the handoff described below. `/agent` is the agent console. `design_project`
-reads `design-explore.config.json` from the checkout, so Studio needs no config of its own.
+reads `.ethlete/design/config.json` from the checkout, so Studio needs no config of its own.
 
 Studio starts the checkout's design server itself. When a checkout is set, the host probes the
 port the config names and runs `yarn design` there if nothing answers, so the frame is never empty.
@@ -222,7 +222,7 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    under study. A verdict reads without a word — a rejected tile falls to `opacity: 0.32`, a chosen
    one keeps full strength with an accent border and its name in the accent, an open one is plain —
    and the tile under study carries a full-strength border. Three calls under
-   `apps/timetrack/src/design/calls/studio/` settled that shape: `01-workbench`, `02-tile-controls`
+   `.ethlete/design/calls/studio/` settled that shape: `01-workbench`, `02-tile-controls`
    and `03-verdict-mark`.
 
    The fourth question, how a thumbnail is taken, was dropped instead of put to a call. A tile is

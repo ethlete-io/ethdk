@@ -363,7 +363,7 @@ mod tests {
             call: "studio/01-workbench".to_owned(),
             variant: "b".to_owned(),
             port: 4402,
-            calls_root: "apps/timetrack/src/design/calls".to_owned(),
+            calls_root: ".ethlete/design/calls".to_owned(),
             receipt: PathBuf::from("/tmp/receipt.json"),
         }
     }

@@ -127,7 +127,7 @@ const tree = (bands: Band[]) => {
 const load = slug ? calls[slug] : undefined;
 
 if (!load) {
-  document.body.innerHTML = `<p class="empty">No call under callsRoot in design-explore.config.json.</p>`;
+  document.body.innerHTML = `<p class="empty">No call under .ethlete/design/calls.</p>`;
 } else {
   const call: Call = (await load()).default;
   const bands = bandsOf(call);

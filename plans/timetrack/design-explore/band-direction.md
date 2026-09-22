@@ -61,7 +61,7 @@ geometry at the real window size, 1100x760: the four lanes, the narrow break lan
 all-day strip, two bands that overlap inside one lane, and background stretches.
 
 Inlay holds a full day. Three defects came out of it, all fixed in
-`apps/timetrack/src/design/kerbe-band.component.ts`:
+`.ethlete/design/calls/timetrack/shared/kerbe-band.component.ts`:
 
 - **A run of touching bands read as one slab.** Four bands that meet in one lane share one
   plate tone, and the metal cannot separate them, because the metal already says what each
@@ -383,7 +383,7 @@ The question under it stays real: what did today go into? It is answered as a to
 totals area, and never as geometry over the axis. It is not an open call, because no drawing
 fixes a bar that cannot mean what its length says.
 
-**Owed:** the sketch shells under `apps/timetrack/src/design/calls/` still draw the strip, and
+**Owed:** the sketch shells under `.ethlete/design/calls/timetrack/` still draw the strip, and
 calls 1 to 7 were judged with it in the picture. Every shell drawn from now on leaves it out.
 Removing it from the shipped `day-timeline.component.ts` is a code change, not a drawing, and it
 waits for the user to call it.
@@ -434,7 +434,7 @@ below is a rework and not a fix. Take one at a time, in the order the user asks 
 ## Where the calls live
 
 The three calls above were drawn on the timetrack Storybook, which is gone. Every call now
-lives under `apps/timetrack/src/design/calls/`, one folder each, and `yarn design` serves
+lives under `.ethlete/design/calls/timetrack/`, one folder each, and `yarn design` serves
 them on http://localhost:4402. A folder holds `call.ts`, a shared `fixture.ts` and one
 `option-*.ts` per option. A folder named `ref-*` is a view: one reference picture that
 answers no question.
