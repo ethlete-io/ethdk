@@ -9,7 +9,7 @@ import {
   withRefreshQuery,
 } from '../index';
 import { describe, expect, it, vi } from 'vitest';
-import { mintToken, Scenario, useScenario } from './harness';
+import { inProductionMode, mintToken, Scenario, useScenario } from './harness';
 
 type TokenArgs = { body: Record<string, unknown>; response: { accessToken: string; refreshToken: string } };
 
@@ -617,6 +617,155 @@ describe('auth refresh failure scenario', () => {
     expect(auth.sessionStatus()).toBe('anonymous');
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+});
+
+describe('auth refresh retry policy scenario', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  const refreshAttemptsAt = (s: Scenario) =>
+    s.api.requests.filter((request) => request.path === '/auth/refresh').map((request) => request.at);
+
+  const gapsInSeconds = (times: number[]) =>
+    times.slice(1).map((at, index) => Math.round((at - (times[index] ?? 0)) / 1000));
+
+  it('waits out a 429 for as long as retry-after or x-retry-after asks, capped at maxRetryDelayMs', async () => {
+    const s = scenario();
+    const auth = createAuth(s, { retryConfig: { maxRetryDelayMs: 10_000 } });
+    const tooManyRequests = (headers: Record<string, string>) => () => ({
+      status: 429,
+      headers,
+      body: { message: 'slow down' },
+    });
+
+    s.api.once('POST', '/auth/refresh', tooManyRequests({ 'retry-after': '5' }));
+    s.api.once('POST', '/auth/refresh', tooManyRequests({ 'x-retry-after': '3' }));
+    s.api.once('POST', '/auth/refresh', tooManyRequests({ 'retry-after': 'soon' }));
+    s.api.once('POST', '/auth/refresh', tooManyRequests({ 'retry-after': '120' }));
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    s.run(() => auth.queries.refresh.execute({ body: { token: auth.refreshToken() ?? '' } }));
+
+    for (let i = 0; i < 8; i++) await s.settle(5_000);
+
+    const attempts = refreshAttemptsAt(s);
+
+    expect(attempts).toHaveLength(5);
+    expect(gapsInSeconds(attempts)).toEqual([5, 3, 8, 10]);
+    expect(auth.executionState()).toMatchObject({ type: 'tokenRefresh', state: 'success' });
+
+    c.destroy();
+  });
+
+  it("retries a login by the retryFn it was configured with, which the credential query's clone keeps", async () => {
+    const s = scenario();
+    const issue = () => ({
+      body: {
+        accessToken: mintToken({ expiresInMs: 15 * 60 * 1000 }),
+        refreshToken: mintToken({ expiresInMs: 60 * 60 * 1000 }),
+      },
+    });
+
+    s.api.once('POST', '/auth/login', () => ({ status: 503, body: { message: 'unavailable' } }));
+    s.api.on('POST', '/auth/login', issue);
+
+    const ref = createBearerAuthProvider({
+      name: `auth-lifecycle-${++providerCounter}`,
+      queryClientRef: s.clientRef,
+      queries: [
+        withAuthenticationQuery('login', {
+          queryCreator: s.post<TokenArgs>('/auth/login'),
+          retryFn: ({ retryCount }) => (retryCount <= 1 ? { retry: true, delay: 250 } : { retry: false }),
+        }),
+        withRefreshQuery('refresh', { queryCreator: s.post<TokenArgs>('/auth/refresh') }),
+      ],
+    });
+    const auth = s.run(() => ref.inject());
+
+    const c = s.consumer();
+    c.run(() => auth?.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/auth/login')).toBe(1);
+
+    await s.settle(250);
+    s.flush();
+
+    expect(s.api.requestCount('POST', '/auth/login')).toBe(2);
+    expect(auth?.isAuthenticated()).toBe(true);
+
+    c.destroy();
+  });
+
+  it('isAccessTokenExpired() reads false without a session and true once the held token is past its expiry', async () => {
+    const s = scenario();
+    const auth = createAuth(s, { accessTokenExpiresInMs: 20_000, onRefreshFailure: () => undefined });
+
+    expect(auth.isAccessTokenExpired()).toBe(false);
+
+    s.api.once('POST', '/auth/refresh', () => ({ status: 400, body: { message: 'refresh token rejected' } }));
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(auth.isAccessTokenExpired()).toBe(false);
+
+    await s.settle(21_000);
+
+    expect(auth.isAuthenticated()).toBe(true);
+    expect(auth.isAccessTokenExpired()).toBe(true);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('schedules no refresh for a token without the configured expiry claim, and says nothing about it in production', async () => {
+    const s = scenario();
+    const auth = createAuth(s, { expiresInPropertyName: 'expiresAt' });
+
+    const c = s.consumer();
+
+    inProductionMode(() => {
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+    });
+
+    expect(auth.isAuthenticated()).toBe(true);
+
+    await s.settle(20 * 60 * 1000);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+    expect(s.warnings).toEqual([]);
+
+    c.destroy();
+  });
+
+  it('refreshes an already expired token straight away, and says nothing about it in production', async () => {
+    const s = scenario();
+    const auth = createAuth(s);
+
+    s.api.once('POST', '/auth/login', () => ({
+      body: { accessToken: mintToken({ expiresInMs: -5000 }), refreshToken: mintToken({ expiresInMs: 60_000 }) },
+    }));
+
+    const c = s.consumer();
+
+    inProductionMode(() => {
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+      s.tick();
+    });
+    s.flush();
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(auth.isAccessTokenExpired()).toBe(false);
+    expect(s.warnings).toEqual([]);
+
     c.destroy();
   });
 });
