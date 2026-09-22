@@ -57,9 +57,14 @@ describe('auth scenario', () => {
     const firstAccessToken = auth.accessToken();
     expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
 
-    // buffer = tokenLifetime * (1 - refreshStrategy) = 20000 * 0.5 = 10000ms before expiry
-    s.tick(10000);
-    s.tick();
+    // Due 10000ms before expiry, up to 500ms early since `mintToken` floors `exp`; one due at exactly
+    // 10000ms is answered a tick later.
+    s.tick(9000);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+
+    s.tick(1000);
+    s.tick(1);
 
     expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
     expect(auth.accessToken()).not.toBe(firstAccessToken);
