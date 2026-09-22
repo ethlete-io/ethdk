@@ -32,10 +32,12 @@ const sessionRun = (options: {
     gitBranch: options.branchAt?.(options.from + offset) ?? BRANCH,
   }));
 
-const blocksOf = (events: CollectedEvent[]) =>
-  streamDay({ events, options: { repoRoots: [REPO], baseBranches: ['main'] } }).blocks.filter(
-    (block) => block.context.repoPath === REPO,
-  );
+const dayOf = (events: CollectedEvent[]) =>
+  streamDay({ events, options: { repoRoots: [REPO], baseBranches: ['main'] } });
+
+const blocksOf = (events: CollectedEvent[]) => dayOf(events).blocks.filter((block) => block.context.repoPath === REPO);
+
+const streamOf = (events: CollectedEvent[]) => dayOf(events).streams.find((stream) => stream.repoPath === REPO);
 
 describe('streamDay agent sessions', () => {
   it('names every stretch of a checkout after the one session it ran, including the minutes around it', () => {
@@ -57,7 +59,7 @@ describe('streamDay agent sessions', () => {
     expect(blocks[0]?.to.getTime()).toBe(blocks[1]?.from.getTime());
   });
 
-  it('gives an instant two sessions both ran in to the one that started first', () => {
+  it('draws two sessions that ran at the same time as two stretches that overlap', () => {
     const blocks = blocksOf([
       ...focusRun({ from: 0, to: 120 }),
       ...sessionRun({ sessionId: 'one', from: 10, to: 70 }),
@@ -65,8 +67,42 @@ describe('streamDay agent sessions', () => {
     ]);
 
     expect(blocks.map((block) => block.context.session)).toEqual(['one', 'two']);
-    expect(blocks[1]?.from.getTime()).toBe(AT(71).getTime());
-    expect(blocks[0]?.to.getTime()).toBeLessThanOrEqual(blocks[1]?.from.getTime() ?? 0);
+    expect(blocks[1]?.from.getTime()).toBe(AT(60).getTime());
+    expect(blocks[0]?.to.getTime()).toBeGreaterThan(blocks[1]?.from.getTime() ?? 0);
+  });
+
+  it('books the minutes two sessions of one checkout shared to each of them', () => {
+    const stream = streamOf([
+      ...focusRun({ from: 0, to: 120 }),
+      ...sessionRun({ sessionId: 'one', from: 10, to: 70 }),
+      ...sessionRun({ sessionId: 'two', from: 60, to: 110 }),
+    ]);
+
+    expect(stream?.from.getTime()).toBe(AT(0).getTime());
+    expect(stream?.to.getTime()).toBe(AT(120).getTime());
+    expect(stream?.engagedMs).toBe((71 + 60) * 60_000);
+  });
+
+  it('leaves a checkout that ran one session at a time booking its minutes once', () => {
+    const stream = streamOf([
+      ...focusRun({ from: 0, to: 120 }),
+      ...sessionRun({ sessionId: 'one', from: 10, to: 50 }),
+      ...sessionRun({ sessionId: 'two', from: 60, to: 100 }),
+    ]);
+
+    expect(stream?.engagedMs).toBe(120 * 60_000);
+  });
+
+  it('gives the focused window of an instant two sessions ran in to the one that started first', () => {
+    const blocks = blocksOf([
+      ...focusRun({ from: 0, to: 120 }),
+      ...sessionRun({ sessionId: 'one', from: 10, to: 70 }),
+      ...sessionRun({ sessionId: 'two', from: 60, to: 110 }),
+    ]);
+
+    expect(blocks[0]?.from.getTime()).toBe(AT(0).getTime());
+    expect(blocks[0]?.to.getTime()).toBe(AT(71).getTime());
+    expect(blocks[1]?.to.getTime()).toBe(AT(120).getTime());
   });
 
   it('leaves a checkout that ran no session on the key it always had', () => {

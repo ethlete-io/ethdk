@@ -65,10 +65,14 @@ Three facts, each true and each too coarse:
    now keyed per session, so the gap between one session ending and the next starting stopped
    counting as an agent running. The branch and the work path leave the key where a session answers,
    the way a feature branch already keeps its directories from splitting it.
-2. **Cut the day into parallel stretches.** `streamDay` stops being one sequence per day and becomes
-   one per session, joined by the checkout they run in. This is the large one. `sessionAt` picking the
-   oldest running session is the compromise it removes. Open: what a lane's own stretch is when the
-   sessions in it overlap.
+2. ~~**Cut the day into parallel stretches.**~~ Done on 2026-09-22. An agent stretch carries the
+   session that ran it rather than the one `sessionAt` hands the checkout, so two sessions of one
+   checkout that ran at the same time are two stretches that overlap. A stream holds its windows per
+   piece - the key `blocksFromSpans` already cut blocks at - and unions inside a piece where it used
+   to union across the checkout. Tom decided on 2026-09-22 that the checkout **books both**, the way
+   two checkouts running at once already do, so `engagedMs` sums the pieces and `concurrency` sees a
+   second agent inside one lane. `sessionAt` stays for the stretches nothing but the checkout is known
+   about: the focused window and the rebuilt marks. Which session the window was really on is slice 3.
 3. **Book it once.** Two bands that overlap must not book twice. The minutes go to the session the
    user's own window was on, decided before the timeline draws them, because `proposedMs` is read off
    the rows.

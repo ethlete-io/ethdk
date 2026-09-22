@@ -1,4 +1,4 @@
-import { ActivityBlock, ActivityContext, streamKey } from '../model/block';
+import { ActivityBlock, ActivityContext, contextKey, streamKey } from '../model/block';
 import { CallWindow } from '../model/call';
 import { branchOf, repoRootOf } from '../model/context';
 import {
@@ -151,17 +151,19 @@ export type Stream = {
   apps: string[];
   /** The branches the checkout was seen on, first seen first. A branch never splits a stream. */
   branches: string[];
-  /**
-   * How many agent runs the checkout held. Five consoles in one checkout are one stream, so this count
-   * is what says so on the line — the blocks never sum to five and the evidence deduplicates by title.
-   */
+  /** How many agent runs the checkout held. Five consoles in one checkout are still one stream. */
   agentSessions: number;
-  /** Contiguous time, gaps kept: the union of what the focused window and the agents observed. */
+  /**
+   * Contiguous time, gaps kept: what the focused window and the agents observed, unioned inside each
+   * piece of the checkout and left to overlap between them. Two sessions that ran at once are two
+   * pieces, so the same minute appears twice — see {@link engagedMs}.
+   */
   blocks: TimeWindow[];
   /** The earliest instant the stream covers, attended or not. */
   from: Date;
-  /** The latest instant the stream covers. It disagrees with `engagedMs` exactly when there is a gap. */
+  /** The latest instant the stream covers. It disagrees with `engagedMs` when there is a gap. */
   to: Date;
+  /** Every block summed. On a checkout that ran two sessions at once it exceeds `to` minus `from`. */
   engagedMs: number;
   /**
    * Agent time outside presence: the machine worked and nobody was at it. It counts in neither
@@ -193,7 +195,10 @@ export type StreamDay = {
   presence: TimeWindow[];
   /** Every stream's blocks summed, the folded line included. It may exceed `presenceMs`, and that is the point. */
   engagedMs: number;
-  /** `engagedMs / presenceMs`. 1 is a serial day, 2.4 is a day that ran several agents, 0 is a day nothing observed. */
+  /**
+   * `engagedMs / presenceMs`. 1 is a serial day, 2.4 is a day that ran several agents, 0 is a day
+   * nothing observed. Two agent sessions inside one checkout raise it as much as two checkouts do.
+   */
   concurrency: number;
   /**
    * The focused window's time, every stream summed, clipped to what the machine watched. It is the
@@ -282,16 +287,28 @@ export type StreamDay = {
   calls: CallWindow[];
 };
 
+/**
+ * One piece of a checkout's day: the stretches of a single `contextKey`, which on a checkout that ran
+ * agents is a single session.
+ *
+ * The windows are unioned inside a piece and summed across pieces, so two sessions of one checkout
+ * that ran at the same time each book their full time. That is the same reading two checkouts running
+ * at once already get, and it is what lets `concurrency` see a second agent inside one lane.
+ */
+type PieceDraft = {
+  focus: TimeWindow[];
+  agent: TimeWindow[];
+  /** The stretches this piece claimed where nothing observed the day. Clipped to the rebuilt part. */
+  rebuilt: TimeWindow[];
+};
+
 type StreamDraft = {
   key: string;
   repoPath?: string;
   apps: string[];
   branches: string[];
   sessions: Set<string>;
-  focus: TimeWindow[];
-  agent: TimeWindow[];
-  /** The stretches this context claimed where nothing observed the day. Clipped to the rebuilt part. */
-  rebuilt: TimeWindow[];
+  pieces: Map<string, PieceDraft>;
   evidence: Evidence[];
   evidenceKeys: Set<string>;
   evidenceOmitted: number;
@@ -570,12 +587,18 @@ const sessionRuns = (samples: readonly ActivityEvent[], roots: readonly string[]
 };
 
 /**
- * The agent session a stretch of a checkout belongs to: the oldest one still running at that instant.
+ * The agent session a watched stretch of a checkout belongs to: the oldest one still running at that
+ * instant.
  *
- * A day is one sequence, so an instant that two sessions both ran in gets one of them. The oldest
- * holds the checkout until it ends, because that answer only ever moves forward: reading the nearest
- * sample instead makes the sequence flap between two sessions, and a lane holding a quarter of an
- * hour is then drawn as twenty slivers none of which a reader can name.
+ * An agent's own stretch names its session directly, so this answers only for the stretches nothing
+ * but the checkout is known about — the focused window and the rebuilt marks. The window names a
+ * checkout and never a session, so an instant that two sessions both ran in gets one of them. The
+ * oldest holds it until it ends, because that answer only ever moves forward: reading the nearest
+ * sample instead makes the stretch flap between two sessions, and a lane holding a quarter of an hour
+ * is then drawn as twenty slivers none of which a reader can name.
+ *
+ * Which of the two the user was really looking at is what slice 3 of
+ * `plans/timetrack/one-session-one-piece.md` decides.
  *
  * Before the first run and after the last one the nearest run stands, the way `workPathAt` carries the
  * last directory on. A checkout that ran one session therefore reads as that session all day, and cuts
@@ -779,9 +802,7 @@ const draftFor = (drafts: Map<string, StreamDraft>, context: ActivityContext) =>
     apps: context.appId ? [context.appId] : [],
     branches: context.branch ? [context.branch] : [],
     sessions: new Set(),
-    focus: [],
-    agent: [],
-    rebuilt: [],
+    pieces: new Map(),
     evidence: [],
     evidenceKeys: new Set(),
     evidenceOmitted: 0,
@@ -790,6 +811,23 @@ const draftFor = (drafts: Map<string, StreamDraft>, context: ActivityContext) =>
   drafts.set(key, draft);
 
   return draft;
+};
+
+/**
+ * The piece of a stream one stretch belongs to, keyed the way `blocksFromSpans` keys a block, so a
+ * stream's own numbers and the day's blocks cut the checkout at the same places.
+ */
+const pieceFor = (draft: StreamDraft, context: ActivityContext) => {
+  const key = contextKey(context);
+  const found = draft.pieces.get(key);
+
+  if (found) return found;
+
+  const piece: PieceDraft = { focus: [], agent: [], rebuilt: [] };
+
+  draft.pieces.set(key, piece);
+
+  return piece;
 };
 
 /**
@@ -1113,7 +1151,7 @@ export const streamDay = (options: {
     // Every stretch between two samples belongs to whichever context held the focused window, so the
     // focus time of every stream sums to presence exactly and the concurrency ratio has one meaning.
     if (next) {
-      draftFor(drafts, context).focus.push({ from: sample.at, to: next.at });
+      pieceFor(draftFor(drafts, context), context).focus.push({ from: sample.at, to: next.at });
       // A stretch naming neither a checkout nor an application is the app's own window. It holds
       // presence, and it is reported in the other-applications line, but it is not work to book: as a
       // block it is drawn on the timeline as a band asking which ticket the review belongs to.
@@ -1149,13 +1187,13 @@ export const streamDay = (options: {
       draft.sessions.add(sample.sessionId);
 
       if (last && sample.at.getTime() - last.getTime() < config.maxUnobservedMs) {
-        // The session is read at the instant the stretch starts, the way a focused window names the
-        // stretch that follows it. Read at the instant it ends, an agent stretch and the window
-        // watching it disagree over the minute a session ends in, and the checkout books it twice.
-        const ranBefore = { ...ran, session: sessionAt({ runs: runs.get(cwd), at: last }) };
+        // The stretch belongs to the session that ran it, not to whichever session `sessionAt` hands
+        // the checkout at that instant. That is the whole cut: two sessions of one checkout running at
+        // once are two pieces here, where reading the checkout's answer collapsed them into one.
+        const ranIn = { ...ran, session: sample.sessionId };
 
-        draft.agent.push({ from: last, to: sample.at });
-        agentSpans.push({ from: last, to: sample.at, context: ranBefore });
+        pieceFor(draft, ranIn).agent.push({ from: last, to: sample.at });
+        agentSpans.push({ from: last, to: sample.at, context: ranIn });
       }
 
       lastAgentSample.set(ranBy, sample.at);
@@ -1221,7 +1259,7 @@ export const streamDay = (options: {
 
     if (!next) return;
 
-    draftFor(drafts, mark.state ?? {}).rebuilt.push({ from: mark.at, to: next.at });
+    pieceFor(draftFor(drafts, mark.state ?? {}), mark.state ?? {}).rebuilt.push({ from: mark.at, to: next.at });
     rebuiltSpans.push({ from: mark.at, to: next.at, context: mark.state ?? {} });
   });
 
@@ -1229,13 +1267,26 @@ export const streamDay = (options: {
   let focusMs = 0;
 
   for (const draft of drafts.values()) {
-    const focus = clipWindows({ windows: draft.focus, within: seen });
+    const blocks: TimeWindow[] = [];
+    const unattended: TimeWindow[] = [];
+    let watchedMs = 0;
 
-    focusMs += windowsMs(focus);
-    const agent = mergeWindows(draft.agent);
-    const claimed = clipWindows({ windows: draft.rebuilt, within: rebuilt });
-    const blocks = mergeWindows([...focus, ...claimed, ...clipWindows({ windows: agent, within: presence })]);
-    const unattended = subtractWindows({ windows: agent, without: presence });
+    for (const piece of draft.pieces.values()) {
+      const focus = clipWindows({ windows: piece.focus, within: seen });
+
+      focusMs += windowsMs(focus);
+      watchedMs += windowsMs(focus);
+
+      const agent = mergeWindows(piece.agent);
+      const claimed = clipWindows({ windows: piece.rebuilt, within: rebuilt });
+
+      blocks.push(...mergeWindows([...focus, ...claimed, ...clipWindows({ windows: agent, within: presence })]));
+      unattended.push(...subtractWindows({ windows: agent, without: presence }));
+    }
+
+    blocks.sort((a, b) => a.from.getTime() - b.from.getTime() || a.to.getTime() - b.to.getTime());
+    unattended.sort((a, b) => a.from.getTime() - b.from.getTime() || a.to.getTime() - b.to.getTime());
+
     const span = mergeWindows([...blocks, ...unattended]);
 
     const first = span[0];
@@ -1254,7 +1305,7 @@ export const streamDay = (options: {
       to: last.to,
       engagedMs: windowsMs(blocks),
       unattendedMs: windowsMs(unattended),
-      neverFocused: !focus.length,
+      neverFocused: watchedMs === 0,
       rebuiltMs: windowsMs(clipWindows({ windows: blocks, within: rebuilt })),
       spend: emptySpend(),
       evidence: draft.evidence.slice().sort((a, b) => a.at.getTime() - b.at.getTime()),

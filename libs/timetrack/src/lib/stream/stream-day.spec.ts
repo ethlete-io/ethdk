@@ -190,7 +190,7 @@ describe('streamDay', () => {
     expect(day.concurrency).toBeCloseTo(50 / 30);
   });
 
-  it('counts five consoles in one checkout as one stream, and sums only their spend', () => {
+  it('counts five consoles in one checkout as one stream running five times over, and sums only their spend', () => {
     const day = streamDay({
       events: [
         ...focusRun({ from: 0, to: 20, appId: 'slack' }),
@@ -204,8 +204,8 @@ describe('streamDay', () => {
 
     const stream = streamOf(day, `repo:${SDK}`);
 
-    expect(stream?.blocks).toHaveLength(1);
-    expect(stream?.engagedMs).toBe(20 * MINUTE);
+    expect(stream?.blocks).toHaveLength(5);
+    expect(stream?.engagedMs).toBe(100 * MINUTE);
     expect(stream?.agentSessions).toBe(5);
     expect(stream?.spend.turns).toBe(5);
     expect(stream?.spend.usage.output).toBe(15_000);
