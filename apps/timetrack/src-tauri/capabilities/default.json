@@ -22,6 +22,7 @@
     "allow-compacted-through",
     "allow-day-nudge-record",
     "allow-day-review-edits",
+    "allow-day-review-edits-between",
     "allow-events-append",
     "allow-events-between",
     "allow-events-by-source",

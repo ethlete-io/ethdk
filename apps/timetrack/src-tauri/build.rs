@@ -17,6 +17,7 @@ const COMMANDS: &[&str] = &[
     "compacted_through",
     "day_nudge_record",
     "day_review_edits",
+    "day_review_edits_between",
     "events_append",
     "events_between",
     "events_by_source",

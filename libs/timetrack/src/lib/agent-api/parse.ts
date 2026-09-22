@@ -80,7 +80,13 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
   const raw = asRecord(value);
   const op = asText(raw['op']);
 
-  if (op === 'status' || op === 'jira.instance' || op === 'settings.rules' || op === 'standIn.list')
+  if (
+    op === 'status' ||
+    op === 'jira.instance' ||
+    op === 'settings.rules' ||
+    op === 'standIn.list' ||
+    op === 'lane.issues'
+  )
     return { ok: true, request: { op } };
 
   if (op === 'standIn.remove') {

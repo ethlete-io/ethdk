@@ -19,7 +19,7 @@ import { injectTimetrackSettings } from '../settings/settings';
  * Long enough that a fortnight away from a checkout does not empty its list, and short enough that
  * the ticket of a sprint two quarters ago has dropped off it.
  */
-const WINDOW_DAYS = 60;
+export const LANE_ISSUE_WINDOW_DAYS = 60;
 
 /** At most this many issues are offered per lane, so the group stays a short-cut and not a second list. */
 export const LANE_ISSUE_LIMIT = 6;
@@ -47,7 +47,7 @@ const LANE_ISSUE_HISTORY_DEF = /* @__PURE__ */ defineRootProvider(() => {
       switchMap(() => {
         const today = localDayKey(new Date(), dayBoundaryOf(settings.settings()));
 
-        return ports.review.editsBetween$(shiftDayKey(today, -WINDOW_DAYS), today).pipe(
+        return ports.review.editsBetween$(shiftDayKey(today, -LANE_ISSUE_WINDOW_DAYS), today).pipe(
           map((days) => laneIssueUses(days)),
           catchError(() => of<LaneIssueUse[]>([])),
         );

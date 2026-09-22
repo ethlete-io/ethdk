@@ -364,7 +364,8 @@ export type AgentApiRequest =
       claim?: string;
       apply: boolean;
     }
-  | { op: 'naming.offers'; day: string };
+  | { op: 'naming.offers'; day: string }
+  | { op: 'lane.issues' };
 
 /**
  * One commit a split reads a directory out of: the local day it counts toward, and its changed files.
@@ -389,6 +390,19 @@ export type AgentApiStandInSplit = {
   /** The days no piece claims, which the record being split keeps rather than the split refusing. */
   remainder: string[];
   standIns: AgentApiStandIn[];
+};
+
+/**
+ * What each lane of the day screen was named with before, as the picker's own short-cut group reads it.
+ *
+ * `daysRead` is the answer to the question this exists for: a group that stays empty is either a
+ * window with no namings in it or a read that returned nothing, and the two need different fixes.
+ */
+export type AgentApiLaneIssues = {
+  fromDay: string;
+  toDay: string;
+  daysRead: number;
+  uses: { laneKey: string; issueKey: string; count: number; lastUsedDay: string }[];
 };
 
 export type AgentApiOp = AgentApiRequest['op'];

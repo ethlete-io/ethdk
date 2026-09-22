@@ -5,6 +5,7 @@ import {
   AGENT_API_VERSION,
   AgentApiInstance,
   AgentApiIssue,
+  AgentApiLaneIssues,
   AgentApiDayRows,
   AgentApiEditedDay,
   AgentApiNaming,
@@ -23,11 +24,13 @@ import {
   fetchJiraIssuePicks$,
   fetchJiraIssues$,
   issueKeyOf,
+  laneIssueUses,
   standInIdOf,
   jiraSubjectFieldCandidates,
   dayBoundaryOf,
   localDayKey,
   localDayRange,
+  shiftDayKey,
   matchProjectLink,
   parseAgentRequest,
   readJiraCredentials$,
@@ -40,6 +43,7 @@ import {
 import { Observable, catchError, forkJoin, map, mergeMap, of, switchMap, throwError } from 'rxjs';
 import { AGENT_REQUEST_EVENT, hostEventWith$, injectHostPorts, invokeHost$ } from '../../host';
 import { injectDayReview } from '../day-review/day-review';
+import { LANE_ISSUE_WINDOW_DAYS } from '../jira';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectTimetrackSettings } from '../settings/settings';
 
@@ -503,6 +507,21 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return standIns$().pipe(map(plan));
   };
 
+  /**
+   * What each lane was named with over the window the picker's short-cut group reads.
+   *
+   * The group is either there or it is not, and a reviewer cannot tell an empty window from a read
+   * that answered nothing - which is why `daysRead` is reported beside the ranking.
+   */
+  const laneIssues$ = (): Observable<AgentApiLaneIssues> => {
+    const toDay = localDayKey(new Date(), dayBoundaryOf(settings.settings()));
+    const fromDay = shiftDayKey(toDay, -LANE_ISSUE_WINDOW_DAYS);
+
+    return ports.review
+      .editsBetween$(fromDay, toDay)
+      .pipe(map((days) => ({ fromDay, toDay, daysRead: days.length, uses: laneIssueUses(days) })));
+  };
+
   const carryOut$ = (request: AgentApiRequest): Observable<unknown> => {
     switch (request.op) {
       case 'status':
@@ -537,6 +556,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return splitStandIn$(request);
       case 'naming.offers':
         return naming$(request);
+      case 'lane.issues':
+        return laneIssues$();
     }
   };
 
