@@ -230,3 +230,15 @@ The user decides these on 2026-09-24. Each slice picked the most restrained opti
 7. Shares are whole percents, so a tiny slice can read 0% or 1%. There is no option for decimals.
 8. Empty state: a hairline circle in the border colour.
 9. `size` defaults to 200. There is no preset donut ratio, and the stories use 0.6.
+
+### Line and area (`8a02e0a99`)
+
+1. Hover delay: the tooltip keeps its 300ms delay, so moving across x values opens it again after the delay. The crosshair follows the pointer at once. Alternative: `showDelay` 0.
+2. Legend mark: a line for line charts, a rect for area charts.
+3. Area opacity: 0.12 unstacked, 0.32 stacked. A stacked area on dark looks muddy.
+4. The value axis always includes zero. There is no zero-free domain for lines.
+5. Time ticks: about one per 72px. Weeks start on Monday for every locale. January shows the year, and midnight shows the date.
+6. Category x: points sit at band centres, and labels thin out below 48px per category. A time axis runs edge to edge.
+7. Missing values are left out of the tooltip. An x with no values reads "–".
+8. Focus ring: a full-height rounded ring around the focused column. It gets thin on daily data.
+9. Shared tooltip bug: a square light-grey patch shows behind the rounded corners of the tooltip panel, in the bar chart too.
