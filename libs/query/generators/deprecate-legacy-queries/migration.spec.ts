@@ -102,4 +102,26 @@ describe('deprecate-legacy-queries', () => {
 
     expect(await run(source)).toBe(source);
   });
+  it('falls back to a generic target when the options are not an object literal', async () => {
+    const queries = await run(
+      `import { createLegacyQueryCreator } from '@ethlete/query';\n\nexport const getUserLegacy = createLegacyQueryCreator(legacyOptions);\n`,
+    );
+
+    expect(queries).toContain('@deprecated Legacy (v2) query wrapper.');
+    expect(queries).toContain('Migrate the call sites to the query creator it wraps');
+  });
+
+  it('skips formatting when asked', async () => {
+    tree.write(
+      'queries.ts',
+      `import { createLegacyQueryCreator } from '@ethlete/query';\nimport { getUser } from './user';\n\nexport const getUserLegacy = createLegacyQueryCreator({ creator: getUser });\nconst a    = 1;\n`,
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const queries = tree.read('queries.ts', 'utf-8') ?? '';
+
+    expect(queries).toContain('@deprecated');
+    expect(queries).toContain('a    = 1');
+  });
 });

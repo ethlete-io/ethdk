@@ -592,4 +592,81 @@ export const myQuery: Query<any> = null as any;
       expect(content).toContain('export const myQuery: V2Query<any> = null as any;');
     });
   });
+  it('runs the formatter when skipFormat is not set', async () => {
+    tree.write(
+      'apps/example/src/app/service.ts',
+      `import { Query } from '@ethlete/query';\n\nexport type Q = Query<unknown>;\n`,
+    );
+
+    await migration(tree, {});
+
+    expect(tree.read('apps/example/src/app/service.ts', 'utf-8')).toContain('export type Q = V2Query<unknown>;');
+  });
+
+  it('skips empty files', async () => {
+    tree.write('apps/example/src/app/empty.ts', '');
+
+    await migration(tree, { skipFormat: true });
+
+    expect(tree.read('apps/example/src/app/empty.ts', 'utf-8')).toBe('');
+  });
+
+  it('still renames named imports in a file that also has a namespace import', async () => {
+    tree.write(
+      'apps/example/src/app/service.ts',
+      `
+import { Query } from '@ethlete/query';
+import * as legacy from '@ethlete/query';
+
+export const myQuery: Query<unknown> = legacy.value;
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const content = tree.read('apps/example/src/app/service.ts', 'utf-8');
+
+    expect(content).toContain("import { V2Query } from '@ethlete/query';");
+    expect(content).toContain('export const myQuery: V2Query<unknown> = legacy.value;');
+  });
+
+  it('leaves a file that only mentions ExperimentalQuery in its own names untouched', async () => {
+    const source = `
+import { Component } from '@angular/core';
+
+@Component({ selector: 'app-experimental-query-panel', template: '' })
+export class ExperimentalQueryPanelComponent {}
+    `.trim();
+
+    tree.write('apps/example/src/app/panel.ts', source);
+
+    await migration(tree, { skipFormat: true });
+
+    expect(tree.read('apps/example/src/app/panel.ts', 'utf-8')).toBe(source);
+  });
+
+  it('keeps aliased and separately imported symbols when expanding ExperimentalQuery', async () => {
+    tree.write(
+      'apps/example/src/app/service.ts',
+      `
+import { inject } from '@angular/core';
+import { ExperimentalQuery, createQueryCreator as makeCreator } from '@ethlete/query';
+import type { QueryConfig } from '@ethlete/query';
+
+export const client = ExperimentalQuery.createQueryClient({ baseUrl: '' });
+export const creator = makeCreator({ method: 'GET', path: '/users' });
+export const config: QueryConfig = inject(TOKEN);
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const content = tree.read('apps/example/src/app/service.ts', 'utf-8');
+
+    expect(content).toContain("import { inject } from '@angular/core';");
+    expect(content).toContain("import { createQueryClient, createQueryCreator as makeCreator } from '@ethlete/query';");
+    expect(content).toContain("import type { V2QueryConfig } from '@ethlete/query';");
+    expect(content).toContain('export const client = createQueryClient({');
+    expect(content).not.toContain('ExperimentalQuery');
+  });
 });

@@ -105,4 +105,42 @@ describe('migrate-query-client-features', () => {
     expect(tree.read('unrelated.ts', 'utf-8')).toContain('a    = 1');
     expect(tree.read('query-client-features-migration-tasks.md', 'utf-8')).toContain('No open follow-up tasks');
   });
+  it('keeps a feature that was explicitly turned on', async () => {
+    const { client } = await run(
+      `import { createQueryClient } from '@ethlete/query';\n\nexport const CLIENT = createQueryClient({ baseUrl: 'x', name: 'api', multiTabSync: true, persistence: false });\n`,
+    );
+
+    expect(client).toContain('features: [withMultiTabSync()]');
+    expect(client).not.toContain('multiTabSync: true');
+    expect(client).not.toContain('withQueryPersistence');
+  });
+
+  it('migrates every client in a file', async () => {
+    const { client } = await run(
+      `import { createQueryClient } from '@ethlete/query';\n\nexport const API = createQueryClient({ baseUrl: 'a', name: 'api', persistence: false });\n\nexport const CMS = createQueryClient({ baseUrl: 'b', name: 'cms', multiTabSync: false });\n`,
+    );
+
+    expect(client).toContain(`createQueryClient({ baseUrl: 'a', name: 'api', features: [withMultiTabSync()] })`);
+    expect(client).toContain(`createQueryClient({ baseUrl: 'b', name: 'cms', features: [withQueryPersistence()] })`);
+    expect(client).toContain(
+      `import { createQueryClient, withMultiTabSync, withQueryPersistence } from '@ethlete/query';`,
+    );
+  });
+
+  it('groups repeated findings into one task and lists every location', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // noop
+    });
+
+    const { report } = await run(
+      `import { createQueryClient } from '@ethlete/query';\n\nexport const API = createQueryClient(apiConfig);\nexport const CMS = createQueryClient(cmsConfig);\nexport const AUTH = createQueryClient({ ...base });\n`,
+    );
+
+    expect(report).toContain('QCF-001 - createQueryClient called with a non-literal config');
+    expect(report).toContain('QCF-002 - createQueryClient config spreads another object');
+    expect(report).not.toContain('QCF-003');
+    expect(report).toContain('- client.ts:3\n- client.ts:4');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('Generated 2 follow-up tasks'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('(client.ts:3, client.ts:4)'));
+  });
 });

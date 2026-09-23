@@ -150,4 +150,182 @@ export const prepare = () => legacyGetUsers.prepare();
     expect(result).not.toContain('AnyV2QueryCreator');
     expect(result).toContain('legacyGetUsers.prepare({})');
   });
+  it('leaves a component that already imports the devtools from @ethlete/query-devtools alone', async () => {
+    const source = `import { QueryDevtoolsComponent } from '@ethlete/query-devtools';
+
+export const component = {
+  imports: [QueryDevtoolsComponent],
+};
+`;
+
+    tree.write('component.ts', source);
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('component.ts')).toBe(source);
+    expect(readFile('query-v3-migration-tasks.md')).not.toContain('Add @ethlete/query-devtools');
+  });
+
+  it('migrates a devtools provider that is imported through a local re-export', async () => {
+    tree.write(
+      'app.config.ts',
+      `
+import { provideQueryClientForDevtools } from './devtools';
+
+export const appConfig = {
+  providers: [provideQueryClientForDevtools({ client: apiClient })],
+};
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const appConfig = readFile('app.config.ts');
+
+    expect(appConfig).toContain('providers: [provideQueryDevtools()]');
+    expect(appConfig).toContain("import { provideQueryDevtools } from '@ethlete/query';");
+  });
+
+  it('keeps unrelated @ethlete/query imports when the devtools provider comes from elsewhere', async () => {
+    tree.write(
+      'app.config.ts',
+      `
+import { provideQueryClient } from '@ethlete/query';
+import { provideQueryClientForDevtools } from './devtools';
+
+export const appConfig = {
+  providers: [provideQueryClient(apiClient), provideQueryClientForDevtools({ client: apiClient })],
+};
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const appConfig = readFile('app.config.ts');
+
+    expect(appConfig).toContain('providers: [provideQueryClient(apiClient), provideQueryDevtools()]');
+    expect(appConfig).toMatch(
+      /import \{[^}]*provideQueryClient[^}]*provideQueryDevtools[^}]*\} from '@ethlete\/query';/,
+    );
+  });
+
+  it('removes a trailing devtools provider together with the comma before it', async () => {
+    tree.write(
+      'app.config.ts',
+      `
+import { provideQueryClientForDevtools } from '@ethlete/query';
+
+export const appConfig = {
+  providers: [provideQueryClientForDevtools({ client: apiClient }), provideQueryClientForDevtools({ client: cmsClient })],
+};
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('app.config.ts')).toContain('providers: [provideQueryDevtools()]');
+  });
+
+  it('removes the last devtools provider of a multi-line array without a trailing comma', async () => {
+    tree.write(
+      'app.config.ts',
+      `
+import { provideQueryClientForDevtools } from '@ethlete/query';
+
+export const appConfig = {
+  providers: [
+    provideQueryClientForDevtools({ client: apiClient }),
+    provideQueryClientForDevtools({ client: cmsClient })
+  ]
+};
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('app.config.ts')).toContain('providers: [\n    provideQueryDevtools()\n  ]');
+  });
+
+  it('removes a devtools provider that is the only entry of another providers array', async () => {
+    tree.write(
+      'app.config.ts',
+      `
+import { provideQueryClientForDevtools } from '@ethlete/query';
+
+export const appConfig = {
+  providers: [provideQueryClientForDevtools({ client: apiClient })],
+};
+
+export const cmsConfig = {
+  providers: [provideQueryClientForDevtools({ client: cmsClient })],
+};
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const appConfig = readFile('app.config.ts');
+
+    expect(appConfig.match(/provideQueryDevtools\(\)/g)).toHaveLength(1);
+    expect(appConfig).toContain('providers: [provideQueryDevtools()]');
+    expect(appConfig).toContain('providers: []');
+  });
+
+  it('migrates the devtools provider in a file with CRLF line endings', async () => {
+    tree.write(
+      'app.config.ts',
+      [
+        "import { provideQueryClientForDevtools } from '@ethlete/query';",
+        '',
+        'export const appConfig = {',
+        '  providers: [provideQueryClientForDevtools({ client: apiClient })],',
+        '};',
+        '',
+      ].join('\r\n'),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const appConfig = readFile('app.config.ts');
+
+    expect(appConfig).not.toContain('provideQueryClientForDevtools');
+    expect(appConfig).toContain("import { provideQueryDevtools } from '@ethlete/query';");
+    expect(appConfig).toContain('providers: [provideQueryDevtools()]');
+  });
+
+  it('skips empty files', async () => {
+    tree.write('empty.ts', '');
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('empty.ts')).toBe('');
+  });
+
+  it('leaves a .prepare() that only appears in a comment untouched', async () => {
+    const source = `// Call legacyGetUsers.prepare() before rendering.\nexport const value = 1;\n`;
+
+    tree.write('notes.ts', source);
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('notes.ts')).toBe(source);
+  });
+
+  it('normalizes every empty prepare call in a file', async () => {
+    tree.write(
+      'prepare.ts',
+      `
+export const first = () => getUsers.prepare();
+export const second = () => getTeams.prepare();
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const result = readFile('prepare.ts');
+
+    expect(result).toContain('getUsers.prepare({})');
+    expect(result).toContain('getTeams.prepare({})');
+    expect(result).not.toContain('.prepare()');
+  });
 });
