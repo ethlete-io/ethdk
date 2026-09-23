@@ -22,6 +22,8 @@ const LEGACY_HTTP_METHOD = {
   DELETE: 'delete',
 } as const;
 
+const HTTP_OPTION_NAMES: readonly string[] = ['reportProgress', 'responseType', 'transferCache', 'withCredentials'];
+
 type LegacyHttpMethod = (typeof LEGACY_HTTP_METHOD)[keyof typeof LEGACY_HTTP_METHOD];
 
 type LegacyQueryCreatorInfo = {
@@ -149,6 +151,7 @@ export const updateLegacyCreatorImportsAndUsages = (
   console.log(`\n✅ Found ${legacyCreators.size} legacy query creator wrappers`);
 
   const moduleGraph = createModuleGraph(tree);
+  const pendingWrites = new Map<string, string>();
 
   scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) {
@@ -170,9 +173,14 @@ export const updateLegacyCreatorImportsAndUsages = (
     });
 
     if (nextContent !== content) {
-      tree.write(filePath, nextContent);
-      updatedFiles.push(filePath);
+      pendingWrites.set(filePath, nextContent);
     }
+  });
+
+  // Writing a barrel mid-pass would hide its original re-exports from consumers visited after it.
+  pendingWrites.forEach((nextContent, filePath) => {
+    tree.write(filePath, nextContent);
+    updatedFiles.push(filePath);
   });
 
   if (updatedFiles.length > 0) {
@@ -359,6 +367,34 @@ const analyzeLegacyQueryCreators = (
 
       if (configObject && ts.isObjectLiteralExpression(configObject)) {
         configObject.properties.forEach((property) => {
+          if (ts.isSpreadAssignment(property)) {
+            report.addWarning({
+              title: `Restore the spread config of ${creatorName}`,
+              summary: `${creatorName} spreads \`${property.expression.getText(sourceFile)}\` into its v2 config. The migration cannot see what it contains, so none of it was carried over to the v3 creator.`,
+              action:
+                'Move the route, secure flag, types and http options it provides onto the generated creator by hand.',
+              locations: [
+                { filePath, line: sourceFile.getLineAndCharacterOfPosition(property.getStart(sourceFile)).line + 1 },
+              ],
+              source: 'legacy-query-creator-migration',
+              dedupeKey: `spread-config:${filePath}:${creatorName}`,
+            });
+
+            return;
+          }
+
+          if (ts.isShorthandPropertyAssignment(property)) {
+            if (property.name.text === 'route') {
+              info.route = property.name.text;
+            }
+
+            if (HTTP_OPTION_NAMES.includes(property.name.text)) {
+              info.httpOptions.set(property.name.text, property.name.text);
+            }
+
+            return;
+          }
+
           if (!ts.isPropertyAssignment(property) || !ts.isIdentifier(property.name)) {
             return;
           }
@@ -412,7 +448,7 @@ const analyzeLegacyQueryCreators = (
             });
           }
 
-          if (['reportProgress', 'responseType', 'transferCache', 'withCredentials'].includes(property.name.text)) {
+          if (HTTP_OPTION_NAMES.includes(property.name.text)) {
             info.httpOptions.set(property.name.text, property.initializer.getText(sourceFile));
           }
         });
@@ -454,17 +490,23 @@ const transformLegacyQueryCreators = (content: string, legacyCreators: LegacyQue
     creatorsByClient.get(creator.clientName)!.push(creator);
   });
 
+  const wrappersByStatement = new Map<ts.VariableStatement, string[]>();
+
   legacyCreators.forEach((creator) => {
-    const nextCreator = generateNewQueryCreator(creator);
-    const legacyWrapper = generateLegacyWrapper(creator);
     let variableStatement: ts.VariableStatement | undefined;
+    let declaration: ts.VariableDeclaration | undefined;
 
     const visit = (node: ts.Node) => {
-      if (ts.isVariableStatement(node)) {
-        const declaration = node.declarationList.declarations[0];
+      if (variableStatement) return;
 
-        if (declaration && ts.isIdentifier(declaration.name) && declaration.name.text === creator.name) {
+      if (ts.isVariableStatement(node)) {
+        declaration = node.declarationList.declarations.find(
+          (candidate) => ts.isIdentifier(candidate.name) && candidate.name.text === creator.name,
+        );
+
+        if (declaration) {
           variableStatement = node;
+          return;
         }
       }
 
@@ -473,13 +515,29 @@ const transformLegacyQueryCreators = (content: string, legacyCreators: LegacyQue
 
     visit(sourceFile);
 
-    if (variableStatement) {
+    if (!variableStatement || !declaration) return;
+
+    const isTopLevel = ts.isSourceFile(variableStatement.parent);
+    const exportPrefix = isTopLevel ? 'export ' : '';
+    const nextCreator = `${creator.name} = ${generateNewQueryCreator(creator)}`;
+    const legacyWrapper = generateLegacyWrapper(creator, exportPrefix);
+
+    if (variableStatement.declarationList.declarations.length === 1) {
       replacements.push({
         start: variableStatement.getStart(sourceFile),
         end: variableStatement.getEnd(),
-        replacement: `${nextCreator}\n${legacyWrapper}`,
+        replacement: `${exportPrefix}const ${nextCreator};\n${legacyWrapper}`,
       });
+
+      return;
     }
+
+    replacements.push({ start: declaration.getStart(sourceFile), end: declaration.getEnd(), replacement: nextCreator });
+    wrappersByStatement.set(variableStatement, [...(wrappersByStatement.get(variableStatement) ?? []), legacyWrapper]);
+  });
+
+  wrappersByStatement.forEach((wrappers, statement) => {
+    replacements.push({ start: statement.getEnd(), end: statement.getEnd(), replacement: `\n${wrappers.join('\n')}` });
   });
 
   let result = content;
@@ -597,7 +655,7 @@ const generateNewQueryCreator = (creator: LegacyQueryCreatorInfo) => {
   const options = Array.from(creator.httpOptions.entries()).map(([key, value]) => `${key}: ${value}`);
   const optionsBlock = options.length > 0 ? `, {\n  ${options.join(',\n  ')}\n}` : '';
 
-  return `export const ${creator.name} = ${creatorFunction}${typeParameter}(${creator.route}${optionsBlock});`;
+  return `${creatorFunction}${typeParameter}(${creator.route}${optionsBlock})`;
 };
 
 const getTypeParameter = (creator: LegacyQueryCreatorInfo) => {
@@ -636,10 +694,10 @@ const getTypeParameter = (creator: LegacyQueryCreatorInfo) => {
   return '';
 };
 
-const generateLegacyWrapper = (creator: LegacyQueryCreatorInfo) => {
+const generateLegacyWrapper = (creator: LegacyQueryCreatorInfo, exportPrefix: string) => {
   // `name` is what lets a `prepare()` called outside an injection context name itself in the error
   // instead of surfacing as a bare NG0203.
-  return `/**\n * ${legacyQueryDeprecationTag(creator.name)}\n */\nexport const ${toLegacyName(creator.name)} = createLegacyQueryCreator({ name: '${toLegacyName(creator.name)}', creator: ${creator.name} });`;
+  return `/**\n * ${legacyQueryDeprecationTag(creator.name)}\n */\n${exportPrefix}const ${toLegacyName(creator.name)} = createLegacyQueryCreator({ name: '${toLegacyName(creator.name)}', creator: ${creator.name} });`;
 };
 
 type CreateAuthProvidersOptions = {
