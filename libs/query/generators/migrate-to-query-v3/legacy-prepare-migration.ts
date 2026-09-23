@@ -19,6 +19,11 @@ type LegacyCreatorUsage = {
   hasExistingInjector: boolean;
 };
 
+/** `default` can never be a class name, so it cannot collide with a named class of the same file. */
+const ANONYMOUS_DEFAULT_CLASS_KEY = 'default';
+
+const getClassKey = (node: ts.ClassDeclaration) => node.name?.text ?? ANONYMOUS_DEFAULT_CLASS_KEY;
+
 /** Contexts that already have an injector of their own, so the call site needs no rewrite. */
 const CONTEXTS_WITH_INJECTOR: LegacyCreatorUsage['context'][] = [
   'queryComputed',
@@ -389,7 +394,7 @@ const findClassesNeedingInjector = (sourceFile: ts.SourceFile, usages: LegacyCre
 
   const visit = (node: ts.Node) => {
     if (ts.isClassDeclaration(node)) {
-      const className = node.name?.text ?? 'UnnamedClass';
+      const className = getClassKey(node);
       const usagesInClass = usages.filter((usage) => {
         return usage.position.start >= node.getStart(sourceFile) && usage.position.end <= node.getEnd();
       });
@@ -476,7 +481,7 @@ const addInjectorMemberToClass = (content: string, classInfo: ClassWithInjector)
   let targetClass: ts.ClassDeclaration | undefined;
 
   const visit = (node: ts.Node) => {
-    if (ts.isClassDeclaration(node) && node.name?.text === classInfo.className) {
+    if (ts.isClassDeclaration(node) && getClassKey(node) === classInfo.className) {
       targetClass = node;
     }
 
@@ -600,14 +605,7 @@ const transformPrepareCallsInFile = (
         const containingFunction = findContainingStandaloneFunction(node);
 
         if (containingClass) {
-          const className = containingClass.name?.text;
-
-          if (!className) {
-            ts.forEachChild(node, visit);
-            return;
-          }
-
-          const injectorMember = classNameToInjector.get(className);
+          const injectorMember = classNameToInjector.get(getClassKey(containingClass));
 
           if (!injectorMember) {
             ts.forEachChild(node, visit);

@@ -48,6 +48,31 @@ export class DemoComponent {
     expect(result).toContain('config: { destroyOnResponse: true }');
   });
 
+  it('should migrate a prepare call in an anonymous default-exported class', async () => {
+    tree.write(
+      'component.ts',
+      `
+import { createLegacyQueryCreator } from '@ethlete/query';
+
+const getUsers = {} as never;
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+
+export default class {
+  loadUsers() {
+    return legacyGetUsers.prepare();
+  }
+}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const result = readFile('component.ts');
+
+    expect(result).toContain('private injector = inject(Injector);');
+    expect(result).toContain('legacyGetUsers.prepare({ injector: this.injector');
+  });
+
   it('should avoid destroyOnResponse when polling is detected in the same function', async () => {
     tree.write(
       'component.ts',
