@@ -20,7 +20,6 @@ import {
   pagedQueryStackNextPageCalledWithoutPreviousPage,
   pagedQueryStackPageBiggerThanTotalPages,
   pagedQueryStackPreviousPageCalledButAlreadyAtFirstPage,
-  queryStackTotalQueriesAndExpectedQueriesMismatch,
 } from './query-errors';
 import { QueryFeature } from './query-features';
 import { createQueryStack, transformArrayResponse } from './query-stack';
@@ -465,15 +464,6 @@ export const createPagedQueryStack = <
     const isOnePlusMaxPagination = pageToLoad === currentMaxPagination.currentPage + 1;
 
     if (!options.blockExecutionDuringLoading) {
-      const totalQueries = stack.queries().length;
-      const expectedQueries = Math.abs(loadedMaxPage() - loadedMinPage()) + 1;
-
-      if (totalQueries !== expectedQueries) {
-        if (isDevMode()) {
-          throw queryStackTotalQueriesAndExpectedQueriesMismatch(totalQueries, expectedQueries);
-        }
-      }
-
       return true;
     }
 

@@ -416,7 +416,7 @@ const clampToBounds = (value: number, bounds: { min: number | null; max: number 
 const numberSample = (schema: Record<string, unknown>, ctx: SeedContext) => {
   const bounds = boundsOf(schema);
 
-  if (ctx.style === 'placeholder') return bounds.min ?? finiteNumber(schema['default']) ?? 0;
+  if (ctx.style === 'placeholder') return bounds.min ?? 0;
 
   if (ctx.style === 'realistic') {
     return generateQueryDevtoolsSampleNumber({ ...bounds, fractional: typeOf(schema) === 'number' });
