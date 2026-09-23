@@ -734,6 +734,10 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    visible, enabled options by value arithmetic - `createSelectionState().toggleAll` prunes values
    without a live option, so the select does not call it. Keeps disabled options, custom values and
    filtered-out values; honours `compareWith` and `maxSelection`; `SelectAll` story + e2e.
+   Confirm/alert dialog **DONE** in `ec7b9c5dd`: `createAlertDialogOpener()` with `confirm()` /
+   `alert()` returning cold Observables (unsubscribe closes), `role="alertdialog"`, focus on Cancel,
+   <kbd>Escape</kbd> cancels, backdrop press ignored, `destructive` via `injectErrorTheme()`,
+   `ALERT_DIALOG_LABELS`; the overlay guard docs now use it instead of a hand-written dialog.
 10. **Error-message and dev-guard quality pass.** Messages that name an API that does not exist
     (`registerScrollContainer`, `hostDirectives: [StreamPipChromeComponent]`,
     `et-filter-overlay-submit-label`, `exportTableToCsv`, the four-of-six picker host names), guards
