@@ -3,6 +3,9 @@
   "version": "1.0.0-next.60",
   "license": "MIT",
   "sideEffects": false,
+  "dependencies": {
+    "@ethlete/bracket": "^1.0.0-beta.0"
+  },
   "peerDependencies": {
     "@analogjs/vitest-angular": "2.6.3",
     "@angular/common": "22.1.6",
@@ -12,7 +15,6 @@
     "@angular/platform-browser": "22.1.6",
     "@angular/router": "22.1.6",
     "@date-fns/tz": "1.5.0",
-    "@ethlete/bracket": "^1.0.0-beta.0",
     "@ethlete/core": "^5.0.0-beta.11",
     "@ethlete/query": "^6.0.0-beta.8",
     "@ethlete/types": "^2.0.0-beta.4",
