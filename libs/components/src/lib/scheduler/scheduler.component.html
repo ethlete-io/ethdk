@@ -94,16 +94,16 @@
 <div class="et-scheduler-body">
   @switch (headless.view()) {
     @case ('week') {
-      <et-scheduler-time-grid-view />
+      <et-scheduler-time-grid-view [attr.aria-label]="headerLabel()" />
     }
     @case ('day') {
-      <et-scheduler-time-grid-view />
+      <et-scheduler-time-grid-view [attr.aria-label]="headerLabel()" />
     }
     @case ('agenda') {
       <et-scheduler-agenda-view />
     }
     @default {
-      <et-scheduler-month-view />
+      <et-scheduler-month-view [attr.aria-label]="headerLabel()" />
     }
   }
 </div>

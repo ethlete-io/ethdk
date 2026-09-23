@@ -68,6 +68,23 @@ describe('SchedulerComponent', () => {
     expectAriaGrid(view!);
   });
 
+  it('names each grid view after the period the header shows', () => {
+    const headerLabel = () => driver.query('.et-scheduler-header-label')?.textContent?.trim();
+
+    expect(headerLabel()).toBeTruthy();
+    expect(driver.query('et-scheduler-month-view')?.getAttribute('aria-label')).toBe(headerLabel());
+
+    driver.host.view.set('week');
+    driver.detectChanges();
+
+    expect(driver.query('et-scheduler-time-grid-view')?.getAttribute('aria-label')).toBe(headerLabel());
+
+    driver.host.view.set('day');
+    driver.detectChanges();
+
+    expect(driver.query('et-scheduler-time-grid-view')?.getAttribute('aria-label')).toBe(headerLabel());
+  });
+
   it('ignores an open request for an appointment it does not know', () => {
     driver.openEditSurface('nope');
 
