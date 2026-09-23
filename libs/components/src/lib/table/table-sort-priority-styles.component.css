@@ -1,0 +1,15 @@
+@layer components {
+  .et-table-sort-priority {
+    flex: none;
+    min-inline-size: 1.4em;
+    padding-inline: 0.3em;
+    font-size: 0.75em;
+    font-weight: 600;
+    line-height: 1.4em;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    color: var(--et-theme-color-primary-solid, currentColor);
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px currentColor;
+  }
+}

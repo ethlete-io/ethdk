@@ -119,7 +119,7 @@ than resetting them.
 | `errorTemplate`       | -            | Template for the error state. Context: `{ $implicit: error }`.                                                       |
 | `cellState`           | -            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                     |
 | `sort`                | `[]`         | Two-way bindable sort state - an ordered `{ key, direction }[]`. See [Sorting](#sorting).                            |
-| `multiSort`           | `false`      | Allow more than one column to be sorted at once.                                                                     |
+| `multiSort`           | `false`      | `true` layers a key per header click, `'shift'` per Shift + click - see [below](#multi-column-sorting).              |
 | `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                                |
 | `filters`             | `[]`         | Two-way bindable filter state - `{ key, values }[]`. See [Filtering](#filtering).                                    |
 | `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                            |
@@ -418,12 +418,53 @@ For explicit "sort ascending / descending / clear" entries, add the
 programmatically, without `toggleSort`'s cycle.
 
 - **Client mode** (default) sorts rows in the browser. Nullish values always sink
-  to the bottom. `multiSort` lets clicks layer multiple columns.
+  to the bottom.
 - **Server mode** (`sortMode="server"`) leaves rows untouched - read `sort()` and
   feed it into your query args (it maps directly onto the query form's sort field):
 
 ```html
 <et-table [(sort)]="sort" [data]="users()" [columns]="COLUMNS" sortMode="server" />
+```
+
+### Multi-column sorting
+
+`sort()` is an ordered list: the first entry is the primary key, and each later one breaks
+the ties the keys before it leave. `multiSort` decides how a header adds to it:
+
+| `multiSort`       | Plain click / Enter              | Shift + click / Shift + Enter    |
+| ----------------- | -------------------------------- | -------------------------------- |
+| `false` (default) | replaces the sort                | replaces the sort                |
+| `true`            | adds or cycles this column's key | adds or cycles this column's key |
+| `'shift'`         | replaces the sort                | adds or cycles this column's key |
+
+A key that is already sorted keeps its place when its direction flips; the third step of its
+cycle removes it and moves the keys after it up. Once more than one column is sorted, each
+sorted header shows its priority - `1` for the primary key - beside the arrow, and its button
+carries the `sortPriority` label as its accessible description. `sortPriority(key)` returns the
+same number, or `null`.
+
+<StoryEmbed id="components-data-display-table--shift-multi-sort" height="360px" />
+
+`toggleSort(key, { additive: true })` is the same Shift gesture from code; the flag does
+nothing unless `multiSort` is `'shift'`. `setSort(key, direction)` layers like a plain
+activation, so to set several keys at once write the list to `sort` directly.
+
+The backend gets the whole list. Map it in the order it comes:
+
+```ts
+users = tableRowsFromQuery({
+  queryCreator: getUsers,
+  args: ({ sort, page }) => ({
+    queryParams: {
+      // "role,-joinedAt": role ascending, then newest first within each role
+      sort: sort()
+        .map(({ key, direction }) => (direction === 'desc' ? `-${key}` : key))
+        .join(','),
+      page: page(),
+    },
+  }),
+  toRows: (res) => res.items,
+});
 ```
 
 The `sortRows({ rows, sort, columns })` helper the client mode uses is exported
@@ -1839,6 +1880,7 @@ provideTableLabels({
     next === null
       ? `Sortierung nach ${header} aufheben`
       : `${header} ${next === 'asc' ? 'aufsteigend' : 'absteigend'} sortieren`,
+  sortPriority: (priority, count) => `Sortierpriorität ${priority} von ${count}`,
   filterColumn: (header) => `${header} filtern`,
 });
 ```

@@ -47,6 +47,7 @@ import {
 import { TableCardSurfaceDirective } from './table-card-surface.directive';
 import { TABLE_ERROR_CODES } from './table-errors';
 import { TableRowBoxStylesComponent } from './table-row-box-styles.component';
+import { TableSortPriorityStylesComponent } from './table-sort-priority-styles.component';
 import {
   TABLE_FEATURE_HOST,
   TableCellErrorMark,
@@ -85,8 +86,10 @@ import {
   TableExpandedRowContext,
   TableFilter,
   TableRowLink,
+  TableMultiSort,
   TableSort,
   TableSortDirection,
+  TableSortGesture,
   TableState,
   TableTemplateSlot,
 } from './table.types';
@@ -118,6 +121,9 @@ type TableHeaderCellVm<T> = TableCellPinning & {
   ariaSort: 'ascending' | 'descending' | 'none' | null;
   sortLabel: string | null;
   direction: TableSortDirection | null;
+  /** The column's 1-based place in a sort of more than one key, else `null`. */
+  priority: number | null;
+  priorityLabel: string | null;
   template: TemplateRef<unknown> | null;
   /** Whether the column has scrolled behind a pinned one, which its adornments must not outlive. */
   obscured: boolean;
@@ -214,6 +220,11 @@ const SCROLL_FADE_EPSILON = 1;
 
 /** Sort indicator enter duration (must match the CSS animation) - see {@link TableComponent.sortIndicatorEnter}. */
 const SORT_INDICATOR_ANIMATION_MS = 150;
+
+type TableSortStep = { key: string; direction: TableSortDirection | null; additive: boolean };
+
+const multiSortAttribute = (value: TableMultiSort | '' | 'true' | 'false' | null | undefined): TableMultiSort =>
+  value === 'shift' ? 'shift' : booleanAttribute(value);
 
 /** What a cell renders as when nothing pins columns - see `registerColumnPinning`. */
 const NO_PIN: TableCellPinning = { stickyStart: false, stickyEnd: false, offsetStart: null, offsetEnd: null };
@@ -368,8 +379,15 @@ export class TableComponent<T> {
    */
   public sort = model<TableSort[]>([]);
 
-  /** Allow more than one column to be sorted at once. @default false */
-  public multiSort = input(false, { transform: booleanAttribute });
+  /**
+   * Allow more than one column to be sorted at once. `true` layers a key on every header activation;
+   * `'shift'` layers one on <kbd>Shift</kbd> + click or <kbd>Shift</kbd> + <kbd>Enter</kbd> and lets a
+   * plain activation replace the sort. A sorted header shows its priority once more than one key is
+   * sorted. @default false
+   */
+  public multiSort = input<TableMultiSort, TableMultiSort | '' | 'true' | 'false' | null | undefined>(false, {
+    transform: multiSortAttribute,
+  });
 
   /**
    * `'client'` sorts the rows in the browser via {@link sortRows}; `'server'`
@@ -989,9 +1007,11 @@ export class TableComponent<T> {
     const templates = this.columnTemplates().header;
     const labels = this.resolvedLabels();
     const obscured = this.obscuredColumns();
+    const sort = this.sort();
 
     return this.visibleColumns().map((column) => {
       const direction = this.sortDirection(column.key);
+      const priority = this.sortPriority(column.key);
       // The header announces what the *next* activation does, and the cycle is asc → desc → clear.
       const next = direction === null ? 'asc' : direction === 'asc' ? 'desc' : null;
 
@@ -1011,6 +1031,8 @@ export class TableComponent<T> {
           : null,
         sortLabel: column.sortable ? labels.sortAction(column.header ?? column.key, next) : null,
         direction,
+        priority,
+        priorityLabel: priority === null ? null : labels.sortPriority(priority, sort.length),
         template: templates.get(column.key) ?? null,
         obscured: obscured.has(column.key),
       };
@@ -1146,6 +1168,10 @@ export class TableComponent<T> {
     // switching the feature off never needs to reclaim it.
     effect(() => {
       if (this.rowBox()) styleManager.mount(TableRowBoxStylesComponent);
+    });
+
+    effect(() => {
+      if (this.multiSort() !== false) styleManager.mount(TableSortPriorityStylesComponent);
     });
 
     // A detail template with nothing to render it looks like a broken template rather than a missing
@@ -1603,34 +1629,44 @@ export class TableComponent<T> {
     return this.sort().find((entry) => entry.key === key)?.direction ?? null;
   }
 
-  /**
-   * Cycle a column's sort: unsorted → ascending → descending → unsorted. In
-   * single-sort mode this replaces any other sort; with `multiSort` it toggles
-   * this column while keeping the others (appended in click order).
-   */
-  public toggleSort(key: string) {
-    const current = this.sort();
-    const direction = this.sortDirection(key);
-    const others = this.multiSort() ? current.filter((entry) => entry.key !== key) : [];
+  /** A column's 1-based place in the sort while more than one key is sorted, else `null`. */
+  public sortPriority(key: string): number | null {
+    const sort = this.sort();
 
-    if (direction === null) {
-      this.applySort([...others, { key, direction: 'asc' }]);
-    } else if (direction === 'asc') {
-      this.applySort([...others, { key, direction: 'desc' }]);
-    } else {
-      this.applySort(others);
-    }
+    if (sort.length < 2) return null;
+
+    const index = sort.findIndex((entry) => entry.key === key);
+
+    return index === -1 ? null : index + 1;
+  }
+
+  /**
+   * Cycle a column's sort: unsorted → ascending → descending → unsorted. A sort that layers (see
+   * {@link multiSort}) keeps the other keys and the column's own place among them; otherwise the
+   * column replaces the sort.
+   */
+  public toggleSort(key: string, gesture: TableSortGesture = {}) {
+    const direction = this.sortDirection(key);
+    const next = direction === null ? 'asc' : direction === 'asc' ? 'desc' : null;
+
+    this.applySort(this.nextSort({ key, direction: next, additive: !!gesture.additive }));
   }
 
   /**
    * Set a column's sort direction outright, or clear it with `null` - what a column menu's explicit
    * "Sort ascending / descending / Clear" entries need, where {@link toggleSort}'s cycle would make
-   * the result depend on the column's current state. Honours `multiSort` the same way.
+   * the result depend on the column's current state. Layers like a plain header activation does.
    */
   public setSort(key: string, direction: TableSortDirection | null) {
-    const others = this.multiSort() ? this.sort().filter((entry) => entry.key !== key) : [];
+    this.applySort(this.nextSort({ key, direction, additive: false }));
+  }
 
-    this.applySort(direction ? [...others, { key, direction }] : others);
+  protected activateSortHeader(key: string, event: Event) {
+    if (event instanceof KeyboardEvent) event.preventDefault();
+
+    const additive = (event instanceof MouseEvent || event instanceof KeyboardEvent) && event.shiftKey;
+
+    this.toggleSort(key, { additive });
   }
 
   /** Whether a column carries a user width override (a resize), i.e. whether there is one to reset. */
@@ -1973,6 +2009,20 @@ export class TableComponent<T> {
     const changed = next.size !== current.size || [...next].some((key) => !current.has(key));
 
     if (changed) this.obscuredColumns.set(next);
+  }
+
+  private nextSort({ key, direction, additive }: TableSortStep): TableSort[] {
+    const multiSort = this.multiSort();
+    const layered = multiSort === true || (multiSort === 'shift' && additive);
+
+    if (!layered) return direction ? [{ key, direction }] : [];
+
+    const current = this.sort();
+
+    if (!direction) return current.filter((entry) => entry.key !== key);
+    if (!current.some((entry) => entry.key === key)) return [...current, { key, direction }];
+
+    return current.map((entry) => (entry.key === key ? { key, direction } : entry));
   }
 
   /**

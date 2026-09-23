@@ -46,7 +46,7 @@ export default {
     density: { control: 'inline-radio', options: ['sm', 'md', 'lg'] },
     constrainHeight: { control: 'boolean' },
     empty: { control: 'boolean' },
-    multiSort: { control: 'boolean' },
+    multiSort: { control: 'inline-radio', options: [false, true, 'shift'] },
     expandable: { control: 'boolean' },
     subTable: { control: 'boolean' },
     loading: { control: 'boolean' },
@@ -109,6 +109,20 @@ export const MultiSort: Story = {
     docs: {
       description: {
         story: 'With `multiSort`, clicking successive headers layers sorts; each header cycles asc → desc → off.',
+      },
+    },
+  },
+};
+
+export const ShiftMultiSort: Story = {
+  args: { multiSort: 'shift' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With `multiSort="shift"` a plain click sorts by that column alone, and Shift + click (or Shift + ' +
+          'Enter) adds it to the sort. Once more than one column is sorted, each sorted header shows its ' +
+          'priority.',
       },
     },
   },

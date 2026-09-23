@@ -28,6 +28,8 @@ export type TableLabels = {
    * does, so it takes the direction that click would apply - `null` meaning "clear the sort".
    */
   sortAction: (header: string, next: 'asc' | 'desc' | null) => string;
+  /** Accessible description of a sorted column's place in a multi-column sort, 1-based. */
+  sortPriority: (priority: number, count: number) => string;
 
   /** Accessible label for a column's filter trigger. */
   filterColumn: (header: string) => string;
@@ -80,6 +82,7 @@ export const DEFAULT_TABLE_LABELS: TableLabels = {
 
     return `Clear sort on ${header}`;
   },
+  sortPriority: (priority, count) => `Sort priority ${priority} of ${count}`,
 
   filterColumn: (header) => `Filter ${header}`,
   filterSearch: 'Search…',

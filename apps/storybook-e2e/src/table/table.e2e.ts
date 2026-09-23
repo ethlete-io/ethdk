@@ -6,6 +6,7 @@ const SELECTABLE_STORY_ID = 'components-data-display-table--selectable';
 const ROW_INTERACTIVE_STORY_ID = 'components-data-display-table--row-interactive';
 const EXPANDABLE_STORY_ID = 'components-data-display-table--expandable';
 const MULTI_SORT_STORY_ID = 'components-data-display-table--multi-sort';
+const SHIFT_MULTI_SORT_STORY_ID = 'components-data-display-table--shift-multi-sort';
 
 function cell(root: Locator, rowIndex: number, colKey: string): Locator {
   return root.locator('.et-table-row').nth(rowIndex).locator(`[data-col-key="${colKey}"]`);
@@ -13,6 +14,10 @@ function cell(root: Locator, rowIndex: number, colKey: string): Locator {
 
 function headerCell(root: Locator, colKey: string): Locator {
   return root.locator(`.et-table-header-cell[data-col-key="${colKey}"]`);
+}
+
+function sortPriority(root: Locator, colKey: string): Locator {
+  return headerCell(root, colKey).locator('.et-table-sort-priority');
 }
 
 function rowCheckbox(root: Locator, rowIndex = 0): Locator {
@@ -176,6 +181,49 @@ test.describe('table / keyboard', () => {
 
     await pressKey(page, 'Enter');
     await expect(nameHeader).toHaveAttribute('aria-sort', 'none');
+  });
+
+  test('Shift + Enter adds a header to the sort and plain Enter replaces it', async ({ page }) => {
+    const root = await openStory(page, SHIFT_MULTI_SORT_STORY_ID);
+    const nameButton = headerCell(root, 'name').locator('button');
+
+    await tabUntilFocused(page, nameButton);
+    await pressKey(page, 'Enter');
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Shift+Enter');
+
+    await expect(headerCell(root, 'name')).toHaveAttribute('aria-sort', 'ascending');
+    await expect(headerCell(root, 'email')).toHaveAttribute('aria-sort', 'ascending');
+    await expect(sortPriority(root, 'name')).toHaveText('1');
+    await expect(sortPriority(root, 'email')).toHaveText('2');
+    await expect(headerCell(root, 'email').locator('button')).toHaveAccessibleDescription('Sort priority 2 of 2');
+
+    await pressKey(page, 'Enter');
+
+    await expect(headerCell(root, 'name')).toHaveAttribute('aria-sort', 'none');
+    await expect(headerCell(root, 'email')).toHaveAttribute('aria-sort', 'descending');
+    await expect(sortPriority(root, 'email')).toHaveCount(0);
+  });
+
+  test('Shift + click adds a header to the sort without selecting text', async ({ page }) => {
+    const root = await openStory(page, SHIFT_MULTI_SORT_STORY_ID);
+
+    await headerCell(root, 'joined').locator('button').click();
+    await cell(root, 2, 'email').click();
+    await headerCell(root, 'name')
+      .locator('button')
+      .click({ modifiers: ['Shift'] });
+
+    await expect(sortPriority(root, 'joined')).toHaveText('1');
+    await expect(sortPriority(root, 'name')).toHaveText('2');
+    expect(await page.evaluate(() => window.getSelection()?.toString() ?? '')).toBe('');
+
+    await headerCell(root, 'name')
+      .locator('button')
+      .click({ modifiers: ['Shift'] });
+
+    await expect(headerCell(root, 'name')).toHaveAttribute('aria-sort', 'descending');
+    await expect(sortPriority(root, 'name')).toHaveText('2');
   });
 
   test('the expander button toggles aria-expanded', async ({ page }) => {

@@ -21,6 +21,19 @@ export type TableSort = {
   direction: TableSortDirection;
 };
 
+/**
+ * How a table layers sorts: `false` keeps one sort key, `true` makes every header activation add or
+ * cycle a key, and `'shift'` adds or cycles a key on <kbd>Shift</kbd> + activation while a plain one
+ * replaces the sort.
+ */
+export type TableMultiSort = boolean | 'shift';
+
+/** How a sort gesture treats the keys already sorted. */
+export type TableSortGesture = {
+  /** Add or cycle this key while keeping the others, as <kbd>Shift</kbd> does with `multiSort="shift"`. */
+  additive?: boolean;
+};
+
 /** A selectable value in a column's filter menu. */
 export type TableFilterOption = {
   label: string;

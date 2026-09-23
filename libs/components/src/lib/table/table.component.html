@@ -45,8 +45,10 @@
         @if (cell.sortable) {
           <button
             [attr.aria-label]="cell.sortLabel"
+            [attr.aria-description]="cell.priorityLabel"
             [disabled]="cell.disabled"
-            (click)="toggleSort(cell.key)"
+            (click)="activateSortHeader(cell.key, $event)"
+            (keydown.shift.enter)="activateSortHeader(cell.key, $event)"
             class="et-table-header-label et-table-header-label--sortable"
             type="button"
           >
@@ -67,6 +69,9 @@
                   class="et-table-sort-indicator"
                   etIcon="et-arrow-up"
                 ></i>
+              }
+              @if (cell.priority; as priority) {
+                <span class="et-table-sort-priority" aria-hidden="true">{{ priority }}</span>
               }
             </span>
           </button>

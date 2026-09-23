@@ -385,7 +385,7 @@ export class TableStorybookComponent {
   public rowCount = input(6);
   public constrainHeight = input(false);
   public empty = input(false);
-  public multiSort = input(false);
+  public multiSort = input<boolean | 'shift'>(false);
   public expandable = input(false);
   public subTable = input(false);
   public loading = input(false);

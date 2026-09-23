@@ -753,6 +753,13 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    line already shipped always-on, so `nowIndicator` defaults to `true` (FullCalendar defaults it
    off - open call whether to flip); its minute-aligned clock now runs only in the browser and only
    while the indicator is on. `WithoutNowIndicator` story + e2e on a fixed Playwright clock.
+   Table multi-sort priority **DONE** in
+   `feat(components): Add shift multi-sort and sort priority to the table`:
+   `multiSort="shift"` layers a key on Shift + click / Shift + Enter (`true` keeps
+   layering on every click), a layered key keeps its place when its direction flips (it used to
+   drop to last), sorted headers show a priority badge with a `sortPriority` label as accessible
+   description once two or more keys sort, `sortPriority(key)`; server data already gets the
+   ordered `sort()` list. `ShiftMultiSort` story + e2e.
 10. **Error-message and dev-guard quality pass.** Messages that name an API that does not exist
     (`registerScrollContainer`, `hostDirectives: [StreamPipChromeComponent]`,
     `et-filter-overlay-submit-label`, `exportTableToCsv`, the four-of-six picker host names), guards

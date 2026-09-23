@@ -329,6 +329,114 @@ describe('TableComponent', () => {
       ]);
     });
 
+    it('keeps a layered key in its place when its direction flips', () => {
+      const fixture = create(sortableColumns(), UNSORTED);
+      const table = fixture.componentInstance;
+      fixture.componentRef.setInput('multiSort', true);
+      fixture.detectChanges();
+
+      table.toggleSort('role');
+      table.toggleSort('name');
+      table.toggleSort('role');
+      expect(table.sort()).toEqual([
+        { key: 'role', direction: 'desc' },
+        { key: 'name', direction: 'asc' },
+      ]);
+
+      table.setSort('role', 'asc');
+      expect(table.sort()).toEqual([
+        { key: 'role', direction: 'asc' },
+        { key: 'name', direction: 'asc' },
+      ]);
+    });
+
+    it('layers a key only for an additive gesture with multiSort="shift"', () => {
+      const fixture = create(sortableColumns(), UNSORTED);
+      const table = fixture.componentInstance;
+      fixture.componentRef.setInput('multiSort', 'shift');
+      fixture.detectChanges();
+
+      table.toggleSort('role');
+      table.toggleSort('name');
+      expect(table.sort()).toEqual([{ key: 'name', direction: 'asc' }]);
+
+      table.toggleSort('role', { additive: true });
+      expect(table.sort()).toEqual([
+        { key: 'name', direction: 'asc' },
+        { key: 'role', direction: 'asc' },
+      ]);
+
+      table.toggleSort('role');
+      expect(table.sort()).toEqual([{ key: 'role', direction: 'desc' }]);
+    });
+
+    it('ignores an additive gesture while multiSort is off', () => {
+      const { componentInstance: table } = create(sortableColumns(), UNSORTED);
+
+      table.toggleSort('role');
+      table.toggleSort('name', { additive: true });
+      expect(table.sort()).toEqual([{ key: 'name', direction: 'asc' }]);
+    });
+
+    it('adds a key on Shift + click and Shift + Enter on a header', () => {
+      const fixture = create(
+        { ...sortableColumns(), id: { header: 'Id', value: (person: Person) => person.id, sortable: true } },
+        UNSORTED,
+      );
+      fixture.componentRef.setInput('multiSort', 'shift');
+      fixture.detectChanges();
+      const host = hostOf(fixture);
+      const button = (key: string) =>
+        host.querySelector<HTMLButtonElement>(`.et-table-header-cell[data-col-key="${key}"] button`);
+
+      button('role')?.click();
+      button('name')?.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }));
+      const enter = new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true, cancelable: true });
+      button('id')?.dispatchEvent(enter);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.sort()).toEqual([
+        { key: 'role', direction: 'asc' },
+        { key: 'name', direction: 'asc' },
+        { key: 'id', direction: 'asc' },
+      ]);
+      expect(enter.defaultPrevented).toBe(true);
+    });
+
+    it('accepts multiSort as a static attribute', () => {
+      const fixture = create(sortableColumns(), UNSORTED);
+      fixture.componentRef.setInput('multiSort', '');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.multiSort()).toBe(true);
+    });
+
+    it('shows each key its priority once more than one is sorted, and names it', () => {
+      const fixture = create(sortableColumns(), UNSORTED);
+      const table = fixture.componentInstance;
+      fixture.componentRef.setInput('multiSort', true);
+      fixture.detectChanges();
+      const host = hostOf(fixture);
+      const badge = (key: string) =>
+        host.querySelector(`.et-table-header-cell[data-col-key="${key}"] .et-table-sort-priority`);
+      const description = (key: string) =>
+        host.querySelector(`.et-table-header-cell[data-col-key="${key}"] button`)?.getAttribute('aria-description') ??
+        null;
+
+      table.toggleSort('role');
+      fixture.detectChanges();
+      expect(badge('role')).toBeNull();
+      expect(description('role')).toBeNull();
+
+      table.toggleSort('name');
+      fixture.detectChanges();
+      expect(badge('role')?.textContent?.trim()).toBe('1');
+      expect(badge('name')?.textContent?.trim()).toBe('2');
+      expect(badge('role')?.getAttribute('aria-hidden')).toBe('true');
+      expect(description('name')).toBe('Sort priority 2 of 2');
+      expect(table.sortPriority('role')).toBe(1);
+    });
+
     it('server sort mode leaves the row order untouched', () => {
       const fixture = create(sortableColumns(), UNSORTED);
       fixture.componentRef.setInput('sortMode', 'server');
