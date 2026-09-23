@@ -71,7 +71,6 @@ export class ScrollableComponent {
 
   public intersectionChange = outputFromObservable<ScrollableIntersectionChange[]>(
     toObservable(this.scrollableDir.childIntersections).pipe(
-      takeUntilDestroyed(),
       debounceTime(50),
       map((entries) =>
         entries.map((i, index) => ({
@@ -81,6 +80,7 @@ export class ScrollableComponent {
           isIntersecting: i.isIntersecting,
         })),
       ),
+      takeUntilDestroyed(),
     ),
   );
 
@@ -110,19 +110,19 @@ export class ScrollableComponent {
 
     scrollContainerEl$
       .pipe(
-        takeUntilDestroyed(),
         tap((el) => {
           if (el) this.scrollableDir.scrollContainerRef.set(el);
         }),
+        takeUntilDestroyed(),
       )
       .subscribe();
 
     scrollObserver$
       .pipe(
-        takeUntilDestroyed(),
         tap((obs) => {
           if (obs) this.scrollableDir.scrollObserverRef.set(obs);
         }),
+        takeUntilDestroyed(),
       )
       .subscribe();
 

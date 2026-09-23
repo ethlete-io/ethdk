@@ -78,8 +78,8 @@ export class MenuSelectionItemDirective {
 
       outputToObservable(menuItem.activate)
         .pipe(
-          takeUntilDestroyed(),
           tap((event) => this.handleActivation(event)),
+          takeUntilDestroyed(),
         )
         .subscribe();
     }

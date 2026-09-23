@@ -181,8 +181,8 @@ const attachLifecycle = <TComponent extends object, TResult>(options: AttachLife
     overlayRef
       .afterClosed()
       .pipe(
-        takeUntilDestroyed(destroyRef),
         tap((result) => afterClosed(result ?? null)),
+        takeUntilDestroyed(destroyRef),
       )
       .subscribe();
   }
@@ -191,8 +191,8 @@ const attachLifecycle = <TComponent extends object, TResult>(options: AttachLife
     overlayRef
       .beforeClosed()
       .pipe(
-        takeUntilDestroyed(destroyRef),
         tap((result) => beforeClosed(result ?? null)),
+        takeUntilDestroyed(destroyRef),
       )
       .subscribe();
   }
@@ -201,8 +201,8 @@ const attachLifecycle = <TComponent extends object, TResult>(options: AttachLife
     overlayRef
       .afterOpened()
       .pipe(
-        takeUntilDestroyed(destroyRef),
         tap(() => afterOpened()),
+        takeUntilDestroyed(destroyRef),
       )
       .subscribe();
   }

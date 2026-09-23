@@ -233,7 +233,6 @@ export class OverlayDirective {
       .afterClosed()
       .pipe(
         take(1),
-        takeUntilDestroyed(this.destroyRef),
         tap(() => {
           this.overlayRef.set(null);
 
@@ -241,6 +240,7 @@ export class OverlayDirective {
             this.open.set(false);
           }
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }

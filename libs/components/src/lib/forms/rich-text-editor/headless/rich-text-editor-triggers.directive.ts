@@ -425,7 +425,6 @@ export class RichTextEditorTriggersDirective {
       .afterClosed()
       .pipe(
         take(1),
-        takeUntilDestroyed(this.destroyRef),
         tap(() => {
           if (this.overlayRef() !== ref) return;
 
@@ -433,6 +432,7 @@ export class RichTextEditorTriggersDirective {
           this.setAriaExpanded(false);
           if (this.activeMatch()) this.dismiss();
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }

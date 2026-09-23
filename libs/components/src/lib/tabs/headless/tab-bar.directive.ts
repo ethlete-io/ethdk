@@ -28,8 +28,8 @@ let nextTabBarId = 0;
   selector: '[etTabBar]',
   providers: [{ provide: TAB_BAR_TOKEN, useExisting: TabBarDirective }],
   host: {
-    role: 'tablist',
-    '[attr.aria-orientation]': 'orientation()',
+    '[attr.role]': 'hostRole()',
+    '[attr.aria-orientation]': "hostRole() === 'tablist' ? orientation() : null",
     '(keydown)': 'handleKeydown($event)',
     '(focusout)': 'handleFocusout($event)',
   },
@@ -41,6 +41,8 @@ export class TabBarDirective {
   public fit = input<TabBarFit>(TAB_BAR_FITS.CONTENT);
   public variant = input<TabBarVariant>(TAB_BAR_VARIANTS.SECONDARY);
   public divider = input(true, { transform: booleanAttribute });
+  /** @internal */
+  public hostRole = signal<'tablist' | 'none'>('tablist');
   private registeredTriggers = signal<TabBarTriggerDirective[]>([]);
   /**
    * @internal The triggers in DOM order - registration follows creation order, so a tab inserted
@@ -90,10 +92,10 @@ export class TabBarDirective {
     afterNextRender(() => {
       timer(0)
         .pipe(
-          takeUntilDestroyed(this.destroyRef),
           tap(() => {
             this.animationsReady.set(true);
           }),
+          takeUntilDestroyed(this.destroyRef),
         )
         .subscribe();
     });

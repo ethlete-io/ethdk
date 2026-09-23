@@ -181,8 +181,8 @@ class OverlayUnsavedChangesStorybookComponent {
         map((tick) => tick * 10),
         // …then let the finished ring linger for a moment before the favicon is restored.
         concatWith(timer(600).pipe(map(() => null))),
-        takeUntilDestroyed(this.destroyRef),
         tap((progress) => this.uploadProgress.set(progress)),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }

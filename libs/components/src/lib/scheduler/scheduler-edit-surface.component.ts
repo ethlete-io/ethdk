@@ -140,15 +140,15 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
 
     outputToObservable(this.surface.save)
       .pipe(
-        takeUntilDestroyed(),
         tap((appointment) => this.overlayRef?.close({ kind: 'save', appointment })),
+        takeUntilDestroyed(),
       )
       .subscribe();
 
     outputToObservable(this.surface.deleteAppointments)
       .pipe(
-        takeUntilDestroyed(),
         tap((ids) => this.overlayRef?.close({ kind: 'delete', ids })),
+        takeUntilDestroyed(),
       )
       .subscribe();
   }

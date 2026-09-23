@@ -187,7 +187,6 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
       .beforeClosed()
       .pipe(
         take(1),
-        takeUntilDestroyed(destroyRef),
         tap(() => {
           if (overlayRef() !== currentRef) {
             return;
@@ -205,6 +204,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
             options.open.set(false);
           }
         }),
+        takeUntilDestroyed(destroyRef),
       )
       .subscribe();
 
@@ -212,7 +212,6 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
       .afterClosed()
       .pipe(
         take(1),
-        takeUntilDestroyed(destroyRef),
         tap(() => {
           if (overlayRef() !== currentRef) {
             return;
@@ -231,6 +230,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
           closedFromBottomSheet = false;
           options.onAfterClosed?.(info);
         }),
+        takeUntilDestroyed(destroyRef),
       )
       .subscribe();
   };

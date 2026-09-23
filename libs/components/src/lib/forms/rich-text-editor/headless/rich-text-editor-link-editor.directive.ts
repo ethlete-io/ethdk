@@ -164,7 +164,6 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
       .afterClosedEvent()
       .pipe(
         take(1),
-        takeUntilDestroyed(destroyRef),
         tap((event) => {
           editor.linkEditorOpen.set(false);
 
@@ -176,6 +175,7 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
             queueMicrotask(() => editor.activate());
           }
         }),
+        takeUntilDestroyed(destroyRef),
       )
       .subscribe();
   };

@@ -215,8 +215,8 @@ export class GridDebugComponent<TData = unknown> {
     this.copied.set(true);
     timer(2000)
       .pipe(
-        takeUntilDestroyed(this.destroyRef),
         tap(() => this.copied.set(false)),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }

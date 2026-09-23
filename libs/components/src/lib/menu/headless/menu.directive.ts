@@ -673,7 +673,6 @@ export class MenuDirective {
       .afterClosed()
       .pipe(
         take(1),
-        takeUntilDestroyed(this.destroyRef),
         tap(() => {
           if (this.overlayRef() !== overlayRef) {
             return;
@@ -698,6 +697,7 @@ export class MenuDirective {
           this.openSource = 'api';
           this.requestedFocus = null;
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }

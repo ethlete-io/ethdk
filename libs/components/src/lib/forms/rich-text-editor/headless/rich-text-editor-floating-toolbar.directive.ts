@@ -116,10 +116,10 @@ export const setupRichTextEditorFloatingToolbar = (editor: RichTextEditorDirecti
       .afterClosed()
       .pipe(
         take(1),
-        takeUntilDestroyed(destroyRef),
         tap(() => {
           if (overlayRef() === ref) overlayRef.set(null);
         }),
+        takeUntilDestroyed(destroyRef),
       )
       .subscribe();
   };

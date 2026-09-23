@@ -187,7 +187,6 @@ export class TooltipDirective {
     overlayRef
       .afterClosed()
       .pipe(
-        takeUntilDestroyed(this.destroyRef),
         tap(() => {
           if (this.overlayRef() === overlayRef) {
             this.overlayRef.set(null);
@@ -195,6 +194,7 @@ export class TooltipDirective {
 
           this.syncHostDescription(this.accessibleDescription() ? this.descriptionId : null);
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }
@@ -217,7 +217,6 @@ export class TooltipDirective {
         filter((event) => event.pointerType !== 'touch'),
         tap(() => this.hasHover.set(true)),
         switchMap(() => timer(this.showDelay()).pipe(takeUntil(leave$.pipe(tap(() => this.hasHover.set(false)))))),
-        takeUntilDestroyed(this.destroyRef),
         tap(() => {
           if (!this.hasHover()) {
             return;
@@ -225,12 +224,12 @@ export class TooltipDirective {
 
           this.show();
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
 
     leave$
       .pipe(
-        takeUntilDestroyed(this.destroyRef),
         tap(() => {
           this.hasHover.set(false);
 
@@ -238,6 +237,7 @@ export class TooltipDirective {
             this.hide();
           }
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }
@@ -253,7 +253,6 @@ export class TooltipDirective {
     fromEvent<PointerEvent>(this.document, 'pointerdown', { capture: true })
       .pipe(
         takeUntil(overlayRef.afterClosed()),
-        takeUntilDestroyed(this.destroyRef),
         filter((event) => !(event.target instanceof Node) || !hostElement.contains(event.target)),
         filter((event) => !isOnHigherOverlayLayer(event.target, resolveOverlayLayer(hostElement))),
         tap(() => {
@@ -261,6 +260,7 @@ export class TooltipDirective {
           this.hasFocus.set(false);
           this.hide();
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }
@@ -291,17 +291,16 @@ export class TooltipDirective {
       .pipe(
         map(() => this.focusVisibleTracker.isFocusVisible()),
         filter(Boolean),
-        takeUntilDestroyed(this.destroyRef),
         tap(() => {
           this.hasFocus.set(true);
           this.show();
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
 
     fromEvent(hostElement, 'blur')
       .pipe(
-        takeUntilDestroyed(this.destroyRef),
         tap(() => {
           this.hasFocus.set(false);
 
@@ -309,6 +308,7 @@ export class TooltipDirective {
             this.hide();
           }
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }

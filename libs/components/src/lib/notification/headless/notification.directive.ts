@@ -57,8 +57,8 @@ export class NotificationDirective {
             take(1),
           );
         }),
-        takeUntilDestroyed(),
         tap(() => this.ref().markDismissed()),
+        takeUntilDestroyed(),
       )
       .subscribe();
   }

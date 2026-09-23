@@ -33,10 +33,10 @@ export class NavTabLinkDirective {
 
     this.routerLinkActive?.isActiveChange
       .pipe(
-        takeUntilDestroyed(this.destroyRef),
         tap((active) => {
           this.routerLinkIsActive.set(active);
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
 
