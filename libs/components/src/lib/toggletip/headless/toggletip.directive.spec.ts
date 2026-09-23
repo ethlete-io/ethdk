@@ -71,6 +71,26 @@ describe('ToggletipDirective', () => {
     expect(toggletipDirective.overlayRef()?.config.ariaLabel).toBe('More information');
   });
 
+  it('follows aria config changes while open', () => {
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    const host = toggletipDirective.overlayRef()?.elements?.hostElement;
+    expect(host?.getAttribute('aria-label')).toBe('More information');
+
+    setInputSignal(toggletipDirective.ariaLabel, 'Help');
+    fixture.detectChanges();
+
+    expect(host?.getAttribute('aria-label')).toBe('Help');
+    expect(host?.getAttribute('aria-describedby')).toBe(`${toggletipDirective.overlayRef()?.config.id}-content`);
+
+    setInputSignal(toggletipDirective.ariaLabelledBy, 'external-label');
+    fixture.detectChanges();
+
+    expect(host?.getAttribute('aria-label')).toBeNull();
+    expect(host?.getAttribute('aria-labelledby')).toBe('external-label');
+  });
+
   it('re-renders content that changes while open', () => {
     toggletipDirective.show();
     fixture.detectChanges();

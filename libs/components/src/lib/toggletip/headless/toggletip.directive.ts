@@ -14,7 +14,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { COLOR_PROVIDER, RuntimeError } from '@ethlete/core';
+import { COLOR_PROVIDER, RuntimeError, injectRenderer } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { tap } from 'rxjs';
 import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
@@ -42,6 +42,7 @@ export class ToggletipDirective {
   private destroyRef = inject(DestroyRef);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
+  private renderer = injectRenderer();
 
   private overlayManager = injectOverlayManager();
 
@@ -127,6 +128,20 @@ export class ToggletipDirective {
           this.mountToggletip(content);
         });
       }
+    });
+
+    effect(() => {
+      const hostElement = this.overlayRef()?.elements?.hostElement;
+
+      if (!hostElement) {
+        return;
+      }
+
+      this.renderer.setAttributes(hostElement, {
+        'aria-label': this.resolvedAriaLabel(),
+        'aria-labelledby': this.ariaLabelledBy(),
+        'aria-describedby': this.resolvedAriaDescribedBy(),
+      });
     });
   }
 
