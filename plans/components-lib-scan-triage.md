@@ -4,7 +4,6 @@
 
 Still open:
 
-- **Scheduler roving tabindex** (decision 9 below): approved, needs a short keyboard design first.
 - **Two L refactors:** merging the two date-time picker abstract bases into one (only the commit
   logic is shared so far); moving phone, otp and tag onto `TextFieldControlDirective`.
 - **Improvement 11** (comment-policy cleanup) — partly done; stays opportunistic per domain.
@@ -24,9 +23,9 @@ Decision 2026-09-23 on the nine former decision items:
 7. Off-grid slider marks: done in `eaf855b49` - the keyboard stays on the `step` grid; a value on a
    labelled mark announces the label as `aria-valuetext`, with or without `snapToMarks`.
 8. Color picker `dir`-aware mirrored gradient: not doing, closed.
-9. Scheduler roving tabindex: approved as the full APG grid pattern (one tab stop, arrows by day or
-   slot, Enter opens, PageUp/PageDown by period, reusing the calendar model). Needs a short keyboard
-   design first, especially focus between cells and appointments. Still open.
+9. Scheduler roving tabindex: done in `c3a307566` - month and week/day grids are one tab stop with
+   the APG grid keys (hour slots, the all-day strip as row 0), Enter into a cell's appointments and
+   Escape back, Space or Enter on an empty cell to create.
 
 Also done 2026-09-23: a scheduler month day cell announces its full date, and today's cell carries
 `aria-current="date"` (`235f1d2c4`).
