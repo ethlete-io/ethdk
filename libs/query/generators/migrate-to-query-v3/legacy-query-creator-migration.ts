@@ -569,7 +569,7 @@ const transformLegacyQueryCreators = (content: string, legacyCreators: LegacyQue
 
   // The rewritten creators no longer go through `def<T>()` or the v2 client object, so whatever is
   // left over from those constructs would land as a lint error the moment `formatFiles` runs.
-  return pruneUnusedNamedImports(result, 'all');
+  return pruneUnusedNamedImports(result);
 };
 
 const addCreatorImports = (content: string, creatorsByClient: Map<string, LegacyQueryCreatorInfo[]>) => {

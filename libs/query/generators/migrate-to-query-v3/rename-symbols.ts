@@ -151,7 +151,7 @@ export const renameImportedReferences = (content: string, renames: Map<string, s
  * the same generator invocation so they land that way. Identifiers inside template strings count as
  * usage too - a component referenced only from an inline template must not be pruned.
  */
-export const pruneUnusedNamedImports = (content: string, moduleSpecifiers: readonly string[] | 'all') => {
+export const pruneUnusedNamedImports = (content: string) => {
   const sourceFile = createSourceFile(content);
   const used = new Set<string>();
 
@@ -186,7 +186,6 @@ export const pruneUnusedNamedImports = (content: string, moduleSpecifiers: reado
     if (
       !ts.isImportDeclaration(node) ||
       !ts.isStringLiteral(node.moduleSpecifier) ||
-      (moduleSpecifiers !== 'all' && !moduleSpecifiers.includes(node.moduleSpecifier.text)) ||
       !node.importClause?.namedBindings ||
       !ts.isNamedImports(node.importClause.namedBindings)
     ) {
