@@ -96,3 +96,37 @@ rejected outright, because the native top layer breaks consumers that rely on z-
    docked rich text editor toolbar all carry one.
 2. Treat the View Transition replacement as a separate compatibility project, not incidental overlay
    cleanup.
+
+## Spike: Fullscreen View Transitions (2026-09-23)
+
+Scope: `libs/components/src/lib/overlay/strategies/fullscreen-animation.ts` (770 lines) and `libs/core/src/lib/animations/flip-animation.ts` (253 lines). Probed in headless Chromium 149 and Firefox 151 with a throwaway page, since deleted. WebKit did not launch here.
+
+What the fullscreen animation does today:
+
+- It deep-clones the trigger into an `OverlayOriginCloneComponent` on `body` (`fullscreen-animation.ts:335-364`), at `z-index: 999999` (`overlay-origin-clone.component.css:5`).
+- The clone scales up to the viewport while the container scales down from the origin rect. Both read CSS variables from `calculateViewportTransforms` (`:116-155`, `:172-223`). The CSS morphs `border-radius` too (`full-screen-dialog-styles.component.css:5-9`).
+- The origin is hidden with a ref count, so several overlays can share one trigger (`:69-97`, `:366-397`).
+- On close it re-measures the origin, so it lands where the trigger is now. It builds a clone if none exists (`:569-598`).
+- Interruption: a close while the clone is `init` falls back to the reduced animation (`:602-628`). A close while `entering` swaps to the leave variables and the CSS transition reverses from where it is (`:630-650`). Cleanup waits for `left`, with a 500 ms timeout (`:720-751`).
+- The reduced path (reduced motion, viewport of 1000px or wider, no origin) is a 0.75 scale from a transform-origin (`:157-170`, `:225-256`).
+- Consumers: only `full-screen.strategy.ts:64-110`, through `presets.ts:29,50` (stories) and `scheduler-edit-surface.component.ts:193,231`.
+
+What View Transitions can replace:
+
+- Clone plus origin-to-viewport math: yes. A shared `view-transition-name` on the trigger and then the container morphs position and size natively. The old snapshot is static, the new one is live.
+- Border-radius morph: not built in. It needs custom keyframes on `::view-transition-old/new`.
+- Reduced motion: not automatic. It needs a `prefers-reduced-motion` rule. The 0.75-scale path needs no snapshot and can stay plain CSS.
+- Top-layer and z-index: fine. A `showModal` dialog with a name transitioned in both engines. The pseudo tree paints above everything, so the `999999` clone goes away.
+
+Gaps, measured:
+
+- Interruption does not reverse. Closing mid-enter restarted the group from the full-viewport rect (keyframe `matrix(1,0,0,1,0,0)`, 1280x720), not from the mid-flight rect (`40,300`, 120x40). The overlay jumps. A fix reads the pseudo's computed transform and writes its own keyframes, which rebuilds the math we wanted to delete.
+- One transition per document. A second `startViewTransition` skips the first, so any router `withViewTransitions` or other component transition will cut ours off. The repo calls `startViewTransition` nowhere today.
+- Input is blocked. During a transition `elementFromPoint` returned `<html>`, so real clicks on the page and the overlay are swallowed for the 400 ms. Today the overlay takes input while it animates.
+- Names must be unique. A duplicate `view-transition-name` aborts the transition, so the shared-trigger ref count becomes per-open generated names.
+- The update callback must render the overlay synchronously (`appRef.tick()`) before the new snapshot is taken.
+- Support: document transitions work in Chromium, Firefox 144+ and Safari 18+. Element-scoped `element.startViewTransition` exists in Chromium only (absent in Firefox 151).
+
+`flip-animation.ts` consumers (segmented button, dropzone, stream manager, tab underline) run small, concurrent, local movements while the user interacts. A global document transition would block input and the movements would skip each other. That is a no-go until scoped transitions ship in Firefox and Safari.
+
+Recommendation: go with conditions for the fullscreen enter/leave only. The conditions: accept or custom-key the mid-flight reversal, own a single transition coordinator in core, and accept input blocked for 400 ms. Effort: about 4-6 days, including e2e coverage of open/close/interrupt on desktop and touch. It would remove roughly 500 of the 770 lines. No-go for `flip-animation.ts`.
