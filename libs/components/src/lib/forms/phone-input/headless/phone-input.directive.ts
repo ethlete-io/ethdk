@@ -82,6 +82,8 @@ export class PhoneInputDirective
 
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
+  private countryPicked = false;
+
   /**
    * The active country's ISO code: derived from the value's dial code, manually selectable.
    * A manual pick survives value edits as long as its dial code still fits - dial codes are
@@ -95,8 +97,9 @@ export class PhoneInputDirective
     computation: (source, previous) => {
       // a defaultCountry that resolves late (a locale or geo lookup) still lands, but only while
       // nothing has moved the country off the previous default
-      const fallback =
-        previous === undefined || previous.value === previous.source.fallback ? source.fallback : previous.value;
+      const followsDefault =
+        previous === undefined || (!this.countryPicked && previous.value === previous.source.fallback);
+      const fallback = followsDefault ? source.fallback : previous.value;
 
       if (!source.matched) {
         return fallback;
@@ -184,6 +187,8 @@ export class PhoneInputDirective
     if (!this.interactive() || !PHONE_COUNTRIES.some((country) => country.iso2 === iso2)) {
       return;
     }
+
+    this.countryPicked = true;
 
     // while mixed a country pick is preparatory (like opening a select): it updates the
     // presentation only - rebuilding a value would leak the hidden national number, and

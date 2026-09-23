@@ -159,6 +159,15 @@ describe('PhoneInputDirective', () => {
     expect(driver.phone.country()).toBe('at');
   });
 
+  it('leaves a manual pick of the current default alone when a late defaultCountry arrives', () => {
+    driver.selectCountry('de');
+
+    driver.host.defaultCountry.set('fr');
+    driver.tick();
+
+    expect(driver.phone.country()).toBe('de');
+  });
+
   it('leaves a country derived from the value alone when a late defaultCountry arrives', () => {
     driver.host.value.set('+818012345678');
     driver.tick();
