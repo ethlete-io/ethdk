@@ -1,5 +1,90 @@
 # @ethlete/query
 
+## 6.0.0-next.46
+
+### Minor Changes
+
+- The Angular peer dependency moves from 22.0.7 to 22.1.6. Angular 22.0.x is affected by
+  GHSA-hh8m-fm6v-7cvg, a sanitization bypass through directive host bindings, fixed in 22.1.0.
+- `<et-query-devtools-lazy>` renders nothing without `provideQueryDevtools()` - no floating button, no
+  shortcut, no panel download - and the now-public `isQueryDevtoolsEnabled()` is what it gates on.
+- A GraphQL `200` with `errors` and no `data` now fails with `ET601` carrying the server's errors, and the error-message ladder reads `{ errors: [{ message }] }` and `[{ message }]` bodies.
+- GQL over POST sends `variables` as a JSON object, as the spec requires, instead of a JSON string. A server that relied on the string must accept the map. GET is unchanged.
+- `withDefaultRetry()` and `withEthleteApiErrors()` now retry only the client they are on. Before, the first call installed the policy process-wide. Migration: add the feature to every client that should retry - a second client without it no longer retries.
+- `defineQueryForm`: `branch()` now debounces and runs the reset graph like the source form and exposes `liveValue`; the filter overlay applies `liveValue` on submit.
+- HTTP queries gain `createHeadQuery` and `createOptionsQuery` with their secure twins, and `createFakeQueryPersistenceStore()` can fail a removal with `failNextRemoves(count)`.
+- WebSocket client: a room joined after the ping expired, or held across a recovered reconnect, is no longer joined twice. `WebSocketClientSocket` now requires `onAnyOutgoing` and `recovered`; add both to a hand-written fake.
+- Auth: `withTokenExpirationWarning` reads the expiry claim named by its new `expiresInPropertyName` option, so a token that carries the expiry under another name no longer reports no expiry at all.
+
+### Patch Changes
+
+- The panel drops a client's Cache, Faults and Events entries once that client's injector is destroyed,
+  instead of keeping them alive for as long as one of its queries has a tombstone.
+- Query persistence now opens the IndexedDB database again after the browser closes the connection, for example when the user clears the site data. Before, every later write failed and persistence stopped for the rest of the session.
+- Legacy `V2BearerAuthProvider`: a new token now replaces the pending refresh timer instead of adding a second, parallel refresh chain.
+- Legacy query: variables that differ only by whitespace or braces inside a string, or by nesting, no longer share one cached query instance.
+- Legacy `etInfinityQueryTrigger`: a trigger that stays visible after a page lands now keeps loading the next page instead of stalling.
+- Legacy interop: `abort()` publishes `Cancelled`, a second `execute()` while loading is a no-op again, a poll reports `refreshing`, `triggerImmediately` runs at once, and `state$` replays `Prepared`.
+- `createLegacyQueryCreator`: `prepare({ variables })` now forwards the variables to a wrapped gql creator.
+- Legacy query: a secure query that refreshes after a 401 now stays loading until the retry lands, instead of reporting a failure first.
+- Legacy query containers: teardown destroys an uncacheable query, stops the poll of the last container, tracks dependents per injector, tears down the store's listeners, and leaves a superseded mutation to settle.
+- Legacy `QueryForm`: a value arriving through a navigation (back/forward, a link) now commits at once instead of waiting out the field's debounce, matching `defineQueryForm`.
+- Legacy `QueryForm`: values track control writes without `observe()`, a commit no longer cancels an in-flight route change, and a committed value keeps its type through the form's own URL write.
+- Legacy query: polling no longer resumes on window focus when its `takeUntil` notifier fired while polling was paused.
+- Legacy query: a `false`, `0` or `''` body is now sent with its content type instead of being dropped.
+- Legacy query: a secure query executed while logged out returns to `Prepared` instead of staying `Loading`, so executing it after login sends the request.
+- Legacy query client: calling `setAuthProvider` again with the provider already set no longer cancels its scheduled token refresh.
+- Legacy: `[etInfinityQueryTrigger]` no longer throws NG0200, `v2BuildQueryCacheKey` takes the method, `setAuthProvider` keeps the refresh cookie, the prepare fallback survives several applications, and the barrel's re-exports carry `@deprecated`.
+- `validateWithV2Query`: a secure validate query run while logged out now reports a form-level error instead of leaving the field pending forever.
+- `validateWithV2Query`: a shared GET query cancelled by another consumer is re-run instead of leaving the field pending forever.
+- `fetchNextPage()` on a paged stack returns `null` and keeps its position when its args repeat an already loaded page, like `fetchPreviousPage()` does.
+- Multi-tab auth: a follower waits for the leader's in-flight refresh and spends one token per rotation, a cached login is no longer broadcast, and `withTracking` honors `trackInternalEvents`.
+- Bearer auth: a login that races the cookie restore, an empty `2xx` body and a refresh that yields no tokens now settle the session instead of stranding it, and the cookie clears in every reachable scope.
+- Caching: the key covers the request method and case-folds header names, and an entry's secure, refreshable and retention flags follow the queries still bound to it rather than the one that made it.
+- Cache keys no longer merge request bodies that differ only in whitespace or braces inside strings (GraphQL POST variables like `'new york'` vs `'newyork'`); persisted entries of requests with a body miss once after upgrading.
+- Query: the `ET800` circular-dependency guard counts only executions with identical args and measures its window with its own clock, so a fast-typed search no longer trips it.
+- Destroying a query client's injector now releases its retained unused cache entries and their eviction timers.
+- Query devtools: a tombstone drops the destroyed view, override recorders and host elements are released, the floating pills settle after first paint, and the Forms tab links every reader of a form.
+- Error handling: a malformed `violations` body degrades to a form-level `etServerError` instead of throwing, and the `416`, `408`, `410` and `425` status texts are corrected.
+- Query: `execute()` after destroy warns instead of throwing NG0205, `executeUntilSettled` settles on cancel, `reset()` detaches the request, a batch records a throwing item, and snapshots keep their own signals.
+- A follower tab whose refresh takeover was made moot by a new token pair now re-asks and takes over its next unanswered delegated refresh again.
+- Query forms: an array field with a non-null default now survives a reload holding an empty list or `null`, instead of restoring its default or `['ET_NULL__']`.
+- Query forms: a date-only URL value like `2026-09-01` now reads as local midnight of that day instead of shifting a day west of UTC.
+- A deprecated `QueryForm` field with a function `defaultValue` treats a value equal to its result as the default again, so it is neither written to the URL nor counted in `activeFilterCount$`.
+- Query forms: URL writes no longer break under an app-level `defaultQueryParamsHandling` of `'merge'` or `'preserve'`.
+- Query forms: writing to the URL no longer drops its `#fragment`.
+- `defineQueryForm`: an emptied array commits as its `null` default, `skipResets` and `skipFields` no longer leak into the next change, a value written before `observe()` survives, and `liveValue` reports the controls.
+- Query forms: `skipResets` now applies only to the fields that write changes, so a pending debounced edit to another field still resets its dependents.
+- Query forms: `unobserve()` now commits a pending debounced edit to `value` instead of dropping it.
+- Query forms: restoring an empty or unparseable URL value no longer counts as a change, so `?search=&page=3` keeps page 3 instead of resetting it.
+- Query forms: `searchQueryField` restores `?search=2024` as a string, and a field with an array default restores a single URL value as a one-item array.
+- `defineQueryForm`: two forms writing in one tick keep each other's params, `appendToUrl: false` leaves a foreign param alone, `0` reads back as a number, and a commit no longer cancels a route change.
+- GraphQL: a document is parsed once and minified without breaking on comments or string literals, `rawResponse` can declare its own envelope, and secure queries over POST cache like the rest.
+- GraphQL: the `operationName` sent with a document no longer comes from an operation that only appears in a comment above the real one.
+- Query persistence: a response body IndexedDB cannot store no longer leaves a metadata record without a body on disk.
+- Query persistence: mutations are never stored, one opted-in consumer is enough, GraphQL over POST persists, a failed IndexedDB open is retried, and a purge always beats a hydration or index load in flight.
+- Query persistence: only a `QuotaExceededError` frees the oldest half of the store before the write is retried; any other write failure retries without deleting entries.
+- Persistence: a tab no longer hydrates a body that a build with another `version` wrote over the same key; custom adapters should return `version` from `read`.
+- Query persistence: entries written under another `version` are ignored instead of deleted, so two tabs on either side of a deploy no longer wipe each other's store; they are removed once past `maxAge`.
+- Persistence: a logout now also removes secure responses another tab persisted after this one started.
+- Persistence: secure responses are held back until the session is known and purged when a tab starts without one, so a session that ended without a logout no longer hydrates the previous user's data.
+- Persistence: `whenPersistenceReady` now resolves when a custom adapter's `loadIndex` throws synchronously instead of rejecting.
+- Persistent auth: a session now survives a page reload when `localStorage` refuses writes or is unavailable, instead of silently logging the user out.
+- Query types: `QueryContext` and `setDefaultQueryRetryFn` leave the published types, `createQueryFeature()` takes any `type` string, and `createQuerySubmission`'s `onSuccess` allows the `null` a `204` hands it.
+- `withRefreshQuery`'s `retryConfig.maxAttempts` now retries a failed refresh that many times, instead of one fewer.
+- Query stacks and sequences: `deduplicateArgs` applies without `append`, each response runs its features once, `fetchPreviousPage()` returns the page it made, and every link reports the built `total`.
+- `createQuerySubmission`: a custom `mapViolations` that returns `undefined` or `null` no longer gets the default violation mapping attached to the form.
+- Testing entry point: `setupQueryTest` now installs one console filter instead of nesting a
+  new one per call, and exposes `restoreConsole`. `installFakeWebLocks` removes the `abort`
+  listeners it adds. The websocket double reports `withCredentials()`.
+- Query: a `transformResponse` that throws lands in `error()` with code `0`, keeps the last good `response()`, and no longer re-runs `withSuccessHandling`.
+- `validateWithQuery`: the in-flight request stops when the field goes idle, and the internal query's cache entry and resource are released with the form that owns them.
+- `validateWithQuery` / `validateWithV2Query`: a network or other non-violation error keeps its form-level error when a custom `mapViolations` is set, instead of validating the field as clean.
+- WebSockets: a room joined before the socket connects sends one `join-room`, and a frame carrying no `room` string is reported as malformed without flooding production logs.
+- The devtools session vault no longer uses `localStorage` outside a development build, so a deployed
+  app can mount the panel without leaving tokens and credentials behind.
+- A room left while the web socket is down no longer sends a `leave-room` to a fresh session that never joined it; after a recovered reconnect the leave is still sent.
+
 ## 6.0.0-next.45
 
 ### Patch Changes

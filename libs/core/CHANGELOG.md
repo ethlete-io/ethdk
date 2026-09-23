@@ -1,5 +1,35 @@
 # @ethlete/core
 
+## 5.0.0-next.57
+
+### Major Changes
+
+- `signalElementMutations` now returns `Signal<MutationRecord[]>` with every record of a batch, where it returned only the first record or `null`. Read `.at(-1)` for the old single record.
+
+### Minor Changes
+
+- The Angular peer dependency moves from 22.0.7 to 22.1.6. Angular 22.0.x is affected by
+  GHSA-hh8m-fm6v-7cvg, a sanitization bypass through directive host bindings, fixed in 22.1.0.
+- `createOverlayOpener(definition, { single: 'replace' })` keeps one overlay open and replaces it on the next `open()`, through the unsaved-changes guard (`dismissSources.replace`); share one slot across openers with `createOverlaySingleSlot()`.
+
+### Patch Changes
+
+- An anchored overlay near a side edge now keeps its placement and shifts along the edge. Before, a `top` pane next to the right edge flipped to `left`.
+- `provideAppUpdates` detects a new deploy again when the entry scripts sit at the end of `<body>`, as the Angular CLI emits them, and ignores scripts the app appended itself.
+- Core: overlays close and restore focus in a pop-up window, `unbindProps` undoes everything `bindProps` applied, cookie helpers no-op on the server, `equal()` compares `Date`s by tag, and `memoizeSignal` caches per application.
+- Animations: `@ethlete/core` now ships the `--ease-*` tokens its own stylesheets transition with, through `mountEasingTokens()`, so an app that loads no `@ethlete/cdk` stylesheet no longer loses every overlay animation.
+- `signalElementDimensions` now accepts a `viewChild.required(...)`. Before, it read the element while the component was created and threw NG0951.
+- The focus-visible tracker now reports keyboard focus after a bare Shift press, like the browser's `:focus-visible`.
+- Tearing down an app with an open overlay no longer logs Angular's NG0406 "ApplicationRef has already been destroyed" warning.
+- Overlays can be mounted `passive` and are then skipped as the top layer, so a dialog still closes on a backdrop press while a tooltip shows inside it.
+- An overlay now restores focus to its opener only when focus is still inside it at teardown, so an outside press that focuses another control keeps focus there.
+- Title bindings created after the first navigation has completed apply at once instead of waiting for the next navigation.
+- A meta or link binding that switches to another tag (a resource hint whose URL changes, an alternate link whose `hreflang` changes) removes the old tag instead of leaving it in `<head>`.
+- Type `SurfaceTheme['name']` as `RegisteredSurfaceThemeName`. An app that augments
+  `EthleteSurfaceThemeNameRegistry` now gets its theme definitions checked against the same union as
+  `etProvideSurface`, and the internal provider sync compiles again. Apps that register no names keep
+  plain `string`.
+
 ## 5.0.0-next.56
 
 ### Patch Changes
