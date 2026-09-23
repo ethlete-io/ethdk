@@ -500,6 +500,7 @@ Checked in dev mode only - `ET4900` whenever `for` changes, `ET4901` and `ET4902
 
 Checked in dev mode only, after the first render.
 
-| Code     | Cause                                                                      | Fix                                                         |
-| -------- | -------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| `ET5100` | A chart such as `[etBarChart]` rendered with nothing marked `etChartPlot`. | Add `etChartPlot` to the element the marks are laid out in. |
+| Code     | Cause                                                                                                   | Fix                                                                              |
+| -------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `ET5100` | A chart such as `[etBarChart]` rendered with nothing marked `etChartPlot`.                              | Add `etChartPlot` to the element the marks are laid out in.                      |
+| `ET5140` | A `[etPieChart]` datum has a negative or non-finite `value`. A dev-mode warning: the slice counts as 0. | Pass only parts of a whole - drop or fix the value before handing the data over. |

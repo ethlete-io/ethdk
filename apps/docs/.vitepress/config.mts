@@ -293,6 +293,7 @@ export default defineConfig({
             { text: 'Masonry', link: '/components/masonry' },
             { text: 'Match', link: '/components/match' },
             { text: 'Pagination', link: '/components/pagination' },
+            { text: 'Pie chart', link: '/components/pie-chart' },
             { text: 'Progress steps', link: '/components/progress-steps' },
             { text: 'Scheduler', link: '/components/scheduler' },
             { text: 'Scrollable', link: '/components/scrollable' },
