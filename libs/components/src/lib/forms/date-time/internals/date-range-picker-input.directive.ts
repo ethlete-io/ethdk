@@ -1,12 +1,9 @@
-import { DOCUMENT } from '@angular/common';
 import {
   DestroyRef,
   Directive,
   Signal,
   WritableSignal,
-  booleanAttribute,
   computed,
-  effect,
   inject,
   input,
   model,
@@ -14,25 +11,12 @@ import {
   untracked,
 } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
-import { FORM_FIELD, FormValueControl, ValidationError } from '@angular/forms/signals';
-import { Locale } from 'date-fns';
-import {
-  AccessibleNameControlDirective,
-  FORM_FIELD_TOKEN,
-  FormFieldControl,
-  FormFieldControlType,
-} from '../../form-field/headless';
-import { mountControlSuffixStyles } from '../../form-field/form-field-control-suffix-styles.component';
-import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
-import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
-import { injectDateLocale } from '../date-time-formats';
-import { DatePickerHost, DatePickerSurfaceBase, DatePickerTriggerBase } from '../picker/date-picker-host';
-import { DatePickerInputFieldBase } from './date-picker-input.directive';
-import { createDatePickerOverlay } from './date-picker-overlay';
+import { FORM_FIELD, FormValueControl } from '@angular/forms/signals';
+import { FormFieldControl } from '../../form-field/headless';
 import { parseDateValue } from './date-value';
-import { formatInZone, reinterpretInZone, zonedProxy } from './time-zone';
-import { maskPatternFromDisplayFormat } from './display-format-mask';
+import { DatePickerInputFieldBase, PickerInputBaseDirective } from './picker-input-base.directive';
 import { resolvePickerCommit } from './picker-input-commit';
+import { formatInZone, reinterpretInZone, zonedProxy } from './time-zone';
 
 /** The two wire strings a range control holds; a side is `null` while empty/unparseable. */
 export type DateRangeValue = {
@@ -59,34 +43,18 @@ type RegisterFieldOptions = {
 /**
  * Shared host for the two-sided range picker inputs (`et-date-range-input`, `et-time-range-input`,
  * `et-date-time-range-input`): one registered field-control containing two text inputs that share a
- * single range-mode picker.
+ * single range-mode picker, on top of `PickerInputBaseDirective`.
  *
  * Must be extended by an `@Directive` - Angular only surfaces inherited inputs from a decorated base.
  */
-@Directive({
-  host: {
-    '[attr.data-mixed]': 'mixed() || null',
-  },
-})
+@Directive()
 export abstract class DateRangePickerInputDirective
-  extends AccessibleNameControlDirective
-  implements FormValueControl<DateRangeValue>, FormFieldControl, DatePickerHost
+  extends PickerInputBaseDirective
+  implements FormValueControl<DateRangeValue>, FormFieldControl
 {
-  private formFieldLabels = injectFormFieldLabels();
-
-  private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private ngFormField = inject(FORM_FIELD, { optional: true });
   private destroyRef = inject(DestroyRef);
-  private document = inject(DOCUMENT);
 
-  public defaultLocale = injectDateLocale();
-
-  /** date-fns wire format used when `valueFormat` is unset - the token differs per control. */
-  protected abstract defaultValueFormat: string;
-  /** The form-field control-type tag (date-range-input / time-range-input / date-time-range-input). */
-  public abstract controlType: Signal<FormFieldControlType>;
-  /** The date-fns format in effect for both fields - declared per control. */
-  public abstract effectiveDisplayFormat: Signal<string>;
   /** The message the form field shows when either side's typed text does not parse. */
   public abstract resolvedParseErrorMessage: Signal<string>;
 
@@ -98,18 +66,6 @@ export abstract class DateRangePickerInputDirective
 
   /** Wire values in `valueFormat`; a side is `null` while empty/unparseable. */
   public value = model<DateRangeValue>({ start: null, end: null });
-  /**
-   * View state for a field whose source values disagree (bulk edit). One flag masks
-   * the whole range value - not per side.
-   */
-  public mixed = model(false);
-  public touched = model(false);
-  public disabled = input(false, { transform: booleanAttribute });
-  public readonly = input(false, { transform: booleanAttribute });
-  public invalid = input(false, { transform: booleanAttribute });
-  public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false, { transform: booleanAttribute });
-  public name = input('');
   public startPlaceholder = input('');
   public endPlaceholder = input('');
 
@@ -120,34 +76,9 @@ export abstract class DateRangePickerInputDirective
   public startAriaLabel = input<string | null>(null);
   /** Accessible name of the end field. See {@link startAriaLabel}. */
   public endAriaLabel = input<string | null>(null);
-  /**
-   * Placeholder both fields show while `mixed` is set. Presentation only - it never enters the form
-   * value.
-   */
-  public mixedLabel = input<string | null>(null);
-
-  /** date-fns format of the string values. Defaults to the `DATE_FORMAT` token. */
-  public valueFormat = input<string | undefined>(undefined);
-  public locale = input<Locale | null>(null);
-
-  /**
-   * Opt-in typing mask: when `displayFormat` is fixed-width numeric (`dd.MM.yyyy`),
-   * both fields get guide placeholders (`__.__.____`), auto-inserted separators,
-   * and paste filtering. Formats the mask cannot represent - locale formats like
-   * `P`/`Pp`, variable-width or text tokens - are refused and typing stays
-   * unmasked.
-   */
-  public mask = input(false, { transform: booleanAttribute });
-
-  public pickerOpen = model(false);
-
-  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
-
-  public effectiveValueFormat = computed(() => this.valueFormat() ?? this.defaultValueFormat);
 
   /** The IANA zone both fields' wall clock stands for, or `null` to stay in the runtime's own zone. */
   public effectiveTimeZone: Signal<string | null> = signal(null);
-  public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);
 
   /** The side the focused field edits. */
   public focusedSide = signal<DateRangeSide | null>(null);
@@ -167,31 +98,7 @@ export abstract class DateRangePickerInputDirective
   public endParseError: Signal<boolean> = this.sides.end.parseError.asReadonly();
   public parseError = computed(() => this.startParseError() || this.endParseError());
 
-  public describedBy = signal<string | null>(null);
-
-  /**
-   * @internal Ids the control contributes to `aria-describedby` itself, on top of the one the form
-   * field sets.
-   */
-  public ownDescribedBy: Signal<string | null> = signal(null);
-
-  /** @internal Everything the fields' `aria-describedby` must point at, in reading order. */
-  public describedByIds = computed(() => {
-    const ids = [this.describedBy(), this.ownDescribedBy()].filter((id): id is string => id !== null && id !== '');
-
-    return ids.length > 0 ? ids.join(' ') : null;
-  });
   public focused = computed(() => this.focusedSide() !== null || this.pickerOpen());
-  /** @internal Keeps the form field in its focused style while the picker overlay is open. */
-  public expanded = computed(() => this.pickerOpen());
-
-  /** @internal */
-  public registeredTrigger = signal<DatePickerTriggerBase | null>(null);
-  /** @internal */
-  public registeredSurface = signal<DatePickerSurfaceBase | null>(null);
-
-  public interactive = computed(() => !this.disabled() && !this.readonly());
-
   public hasValue = computed(() => {
     if (this.mixed()) {
       return true;
@@ -209,8 +116,6 @@ export abstract class DateRangePickerInputDirective
     );
   });
 
-  public shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
-
   /**
    * A range is named as a group: by the author's `aria-label`/`aria-labelledby` on the control, or
    * by naming both of its fields.
@@ -220,11 +125,6 @@ export abstract class DateRangePickerInputDirective
       !!this.ariaLabel()?.trim() ||
       !!this.ariaLabelledby()?.trim() ||
       (!!this.startAriaLabel()?.trim() && !!this.endAriaLabel()?.trim()),
-  );
-
-  /** The `[etInputMask]` pattern derived from the format in effect - `null` while `mask` is off or the format is refused. */
-  public maskPattern = computed(() =>
-    this.mask() ? maskPatternFromDisplayFormat(this.effectiveDisplayFormat()) : null,
   );
 
   private formFieldControlView: FormFieldControl = {
@@ -248,37 +148,13 @@ export abstract class DateRangePickerInputDirective
     activate: () => this.activate(),
   };
 
-  private overlay = createDatePickerOverlay({
-    interactive: this.interactive,
-    pickerOpen: this.pickerOpen,
-    surface: this.registeredSurface,
-    anchor: () => this.resolveAnchorElement(),
-    context: () => ({ $implicit: this, close: () => this.closePicker() }),
-    onAfterClosed: ({ byOutsidePointer, fromBottomSheet }) => {
-      if (!byOutsidePointer && !fromBottomSheet && this.document.activeElement === this.document.body) {
-        this.activate();
-      }
-    },
-  });
+  protected readonly KEEPS_FOCUS_ON_FOCUS_LEAVE = false;
 
   constructor() {
     super();
 
-    mountTextFieldShellStyles();
-    mountControlSuffixStyles();
-
     this.formField?.registerControl(this.formFieldControlView);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this.formFieldControlView));
-
-    if (ngDevMode) {
-      effect(() => {
-        if (this.mask() && this.maskPattern() === null) {
-          console.warn(
-            `[et-${this.controlType()}] displayFormat "${this.effectiveDisplayFormat()}" is not fixed-width numeric, so no typing mask can be derived - the mask input is ignored.`,
-          );
-        }
-      });
-    }
   }
 
   public inputText(side: DateRangeSide) {
@@ -322,10 +198,6 @@ export abstract class DateRangePickerInputDirective
     return date === null || timeZone === null ? date : zonedProxy(date, timeZone);
   }
 
-  public activate() {
-    this.focus();
-  }
-
   public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
@@ -334,30 +206,6 @@ export abstract class DateRangePickerInputDirective
     const target = this.mixed() || this.value().start === null || this.value().end !== null ? 'start' : 'end';
 
     this.sides[target].field()?.focus(options);
-  }
-
-  public openPicker() {
-    if (!this.interactive() || this.pickerOpen()) {
-      return;
-    }
-
-    this.pickerOpen.set(true);
-  }
-
-  public closePicker() {
-    if (this.pickerOpen()) {
-      this.pickerOpen.set(false);
-    }
-
-    this.overlay.close();
-  }
-
-  public togglePicker() {
-    if (this.pickerOpen()) {
-      this.closePicker();
-    } else {
-      this.openPicker();
-    }
   }
 
   /** @internal */
@@ -490,6 +338,10 @@ export abstract class DateRangePickerInputDirective
     this.sides[side].parseError.set(false);
   }
 
+  protected anchorField() {
+    return this.sides.start.field();
+  }
+
   private parseSide(value: string | null) {
     if (value === null) {
       return null;
@@ -504,13 +356,5 @@ export abstract class DateRangePickerInputDirective
     if (current[side] !== sideValue) {
       this.value.set({ ...current, [side]: sideValue });
     }
-  }
-
-  private resolveAnchorElement() {
-    return (
-      this.formField?.controlFrameElement() ??
-      this.sides.start.field()?.elementRef.nativeElement ??
-      this.registeredTrigger()?.elementRef.nativeElement
-    );
   }
 }
