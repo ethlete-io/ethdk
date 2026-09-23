@@ -11,11 +11,11 @@ import { injectStreamLabels } from '../stream-labels';
 
 const KEYBOARD_STEP_PX = 10;
 
-const KEYBOARD_ARROW_DELTAS: Record<string, { dx: number; dy: number } | undefined> = {
-  ArrowLeft: { dx: -KEYBOARD_STEP_PX, dy: 0 },
-  ArrowRight: { dx: KEYBOARD_STEP_PX, dy: 0 },
-  ArrowUp: { dx: 0, dy: -KEYBOARD_STEP_PX },
-  ArrowDown: { dx: 0, dy: KEYBOARD_STEP_PX },
+const KEYBOARD_ARROW_DIRECTIONS: Record<string, { x: number; y: number } | undefined> = {
+  ArrowLeft: { x: -1, y: 0 },
+  ArrowRight: { x: 1, y: 0 },
+  ArrowUp: { x: 0, y: -1 },
+  ArrowDown: { x: 0, y: 1 },
 };
 
 @Component({
@@ -73,9 +73,11 @@ export class PipWindowComponent {
       return;
     }
 
-    const delta = KEYBOARD_ARROW_DELTAS[event.key];
+    const direction = KEYBOARD_ARROW_DIRECTIONS[event.key];
 
-    if (delta) {
+    if (direction) {
+      const delta = { dx: direction.x * KEYBOARD_STEP_PX, dy: direction.y * KEYBOARD_STEP_PX };
+
       event.preventDefault();
 
       if (event.shiftKey) {
