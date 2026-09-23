@@ -363,6 +363,27 @@ const analyzeLegacyQueryCreators = (
         httpOptions: new Map<string, string>(),
       };
 
+      const warnUnreadableConfigValue = (
+        property: ts.ShorthandPropertyAssignment | ts.PropertyAssignment,
+        passedAs: string,
+      ) => {
+        const propertyName = property.name.getText(sourceFile);
+
+        report.addWarning({
+          title: `Carry over \`${propertyName}\` of ${creatorName}`,
+          summary: `${creatorName} passes \`${propertyName}\` ${passedAs} in its v2 config. The migration cannot read its value, so it was not carried over to the v3 creator.`,
+          action:
+            propertyName === 'secure'
+              ? 'If the value is true, switch the generated creator to the matching *Secure creator of the client by hand.'
+              : 'Move what it configures onto the generated creator by hand.',
+          locations: [
+            { filePath, line: sourceFile.getLineAndCharacterOfPosition(property.getStart(sourceFile)).line + 1 },
+          ],
+          source: 'legacy-query-creator-migration',
+          dedupeKey: `unreadable-config:${filePath}:${creatorName}:${propertyName}`,
+        });
+      };
+
       const configObject = node.initializer.arguments[0];
 
       if (configObject && ts.isObjectLiteralExpression(configObject)) {
@@ -393,19 +414,7 @@ const analyzeLegacyQueryCreators = (
             }
 
             if (property.name.text !== 'route' && !HTTP_OPTION_NAMES.includes(property.name.text)) {
-              report.addWarning({
-                title: `Carry over \`${property.name.text}\` of ${creatorName}`,
-                summary: `${creatorName} passes \`${property.name.text}\` as a shorthand property in its v2 config. The migration cannot read its value, so it was not carried over to the v3 creator.`,
-                action:
-                  property.name.text === 'secure'
-                    ? 'If the value is true, switch the generated creator to the matching *Secure creator of the client by hand.'
-                    : 'Move what it configures onto the generated creator by hand.',
-                locations: [
-                  { filePath, line: sourceFile.getLineAndCharacterOfPosition(property.getStart(sourceFile)).line + 1 },
-                ],
-                source: 'legacy-query-creator-migration',
-                dedupeKey: `shorthand-config:${filePath}:${creatorName}:${property.name.text}`,
-              });
+              warnUnreadableConfigValue(property, 'as a shorthand property');
             }
 
             return;
@@ -419,8 +428,12 @@ const analyzeLegacyQueryCreators = (
             info.route = property.initializer.getText(sourceFile);
           }
 
-          if (property.name.text === 'secure' && property.initializer.kind === ts.SyntaxKind.TrueKeyword) {
-            info.secure = true;
+          if (property.name.text === 'secure') {
+            if (property.initializer.kind === ts.SyntaxKind.TrueKeyword) {
+              info.secure = true;
+            } else if (property.initializer.kind !== ts.SyntaxKind.FalseKeyword) {
+              warnUnreadableConfigValue(property, 'with a value that is not a literal');
+            }
           }
 
           if (property.name.text === 'types' && ts.isObjectLiteralExpression(property.initializer)) {

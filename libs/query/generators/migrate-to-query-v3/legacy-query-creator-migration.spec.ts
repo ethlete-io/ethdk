@@ -419,6 +419,22 @@ export const getUsers = apiClient.get({ ...sharedOptions, route: '/users' });
     expect(report).not.toContain('Carry over `withCredentials`');
   });
 
+  it('should warn about a secure flag whose value is not a literal', async () => {
+    writeClient();
+    tree.write(
+      'queries.ts',
+      "import { apiClient } from './client';\n\nconst isProd = true;\n\nexport const getUsers = apiClient.get({ route: '/users', secure: isProd });\nexport const getPosts = apiClient.get({ route: '/posts', secure: false });",
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const report = readOrEmpty('query-v3-migration-tasks.md');
+
+    expect(report).toContain('Carry over `secure` of getUsers');
+    expect(report).toContain('*Secure creator');
+    expect(report).not.toContain('Carry over `secure` of getPosts');
+  });
+
   it('should keep every creator of a multi-declaration statement', async () => {
     writeClient();
     tree.write(
