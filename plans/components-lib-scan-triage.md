@@ -4,16 +4,32 @@
 
 Still open:
 
-- **Decision items** (need a human call before scheduling): a duplicate-registration guard in
-  `register-singleton.ts` (26 callers in 8 domains — conditional templates swap legally, so a throw
-  is not obviously right); making the scheduler's auto-open on `selectedAppointmentId` an opt-in
-  input; the missing `.et-stream-manager` / PiP-window CSS; the chip host becoming a tab stop; the
-  compact pager and `size="sm"` staying under 44px on touch; `et-dropzone`'s `clear()` firing no
-  server deletes; a mark-aware keyboard model for off-grid slider marks; a `dir`-aware mirrored
-  gradient option for the color picker; the scheduler's roving tabindex (needs a keyboard design).
+- **Scheduler roving tabindex** (decision 9 below): approved, needs a short keyboard design first.
 - **Two L refactors:** merging the two date-time picker abstract bases into one (only the commit
   logic is shared so far); moving phone, otp and tag onto `TextFieldControlDirective`.
 - **Improvement 11** (comment-policy cleanup) — partly done; stays opportunistic per domain.
+
+Decision 2026-09-23 on the nine former decision items:
+
+1. `register-singleton.ts` duplicate guard: not doing, closed - a throw or warning would fire on legal
+   `@if` swaps.
+2. Scheduler auto-open on `selectedAppointmentId`: stays the default, closed - `selectAppointment(id)`
+   already selects without opening.
+3. `.et-stream-manager` / PiP-window CSS: done in `1650a9995`.
+4. Chip host tab stop: kept as is, closed; a roving chip-list container only if a consumer asks.
+5. Compact pager and `size="sm"` under 44px on touch: done in `1cfef3518` - a 44px hit area through an
+   invisible pseudo-element on a coarse pointer; visual size and spacing unchanged.
+6. `et-dropzone` `clear()` firing no server deletes: done in `55269f138` - the new `removeAll()` runs
+   the configured `delete` per entry; `clear()` stays a local reset.
+7. Off-grid slider marks: done in `eaf855b49` - the keyboard stays on the `step` grid; a value on a
+   labelled mark announces the label as `aria-valuetext`, with or without `snapToMarks`.
+8. Color picker `dir`-aware mirrored gradient: not doing, closed.
+9. Scheduler roving tabindex: approved as the full APG grid pattern (one tab stop, arrows by day or
+   slot, Enter opens, PageUp/PageDown by period, reusing the calendar model). Needs a short keyboard
+   design first, especially focus between cells and appointments. Still open.
+
+Also done 2026-09-23: a scheduler month day cell announces its full date, and today's cell carries
+`aria-current="date"` (`235f1d2c4`).
 
 Triage date: 2026-08-22. Source: `plans/components-lib-scan.md` (22 batches, 66 High / 148 Medium / 219 Low + per-domain
 improvement lists). Items reference findings by **domain + short label**; bodies stay in the scan.
@@ -268,7 +284,8 @@ and the "keyed on the selected id" note; the navigation section now says navigat
 thing that resets the draft. Still open: no shared contract kit - the identity-keyed-reset defect
 class has only this one occurrence today, so a kit would have a single caller; and the auto-open on
 `selectedAppointmentId` stays the documented default rather than becoming an opt-in input, which
-would be an API change rather than a fix.
+would be an API change rather than a fix. **Decision 2026-09-23:** auto-open stays the default,
+closed - `selectAppointment(id)` already selects without opening.
 
 ### 13. Stream: leaving PiP strands the player, and late consent registers the wrong id · M · **DONE 2026-08-22**
 
@@ -294,7 +311,7 @@ verified to fail with the respective fix backed out. Docs: the consent section g
 Still open: no stream test driver (DX #3) - the two specs hand-roll their fakes, and one shared
 driver only pays off once the rest of the domain's spec-coverage table is attempted; the missing
 `.et-stream-manager` / PiP-window CSS (the other stream High) is a separate shipping-decision item,
-not a bug fix; and `anim.onfinish` still never fires under the jsdom animation mock, so the
+not a bug fix (**Decision 2026-09-23:** shipped, done in `1650a9995`); and `anim.onfinish` still never fires under the jsdom animation mock, so the
 scaleFadeIn latch clears only in a real browser - fixing the shared mock would touch every
 animation spec in the lib and belongs with the "destroyed mid-gesture" helper from item #16.
 
@@ -489,7 +506,8 @@ ancestor after an outside collapse`.
   never becomes a tab stop, so `Backspace`/`Delete` on the chip itself remains programmatic-focus-only.
   Making the host focusable would collide with `etSelectionOption`'s roving tabindex on filter chips
   and doubles the tab stops per chip, which is a design call rather than an S; the docs now state that
-  limit. `.et-grid-item` moving its styles from unlayered inline `styles` into `@layer components` -
+  limit. **Decision 2026-09-23:** the chip host stays as is, closed; a roving chip-list container
+  only if a consumer asks. `.et-grid-item` moving its styles from unlayered inline `styles` into `@layer components` -
   so a consumer rule at equal specificity (e.g. ea-frontend's edit-mode dotted outline) can no
   longer beat the ring - is **DONE 2026-09-23** in `2f0ca31b6 fix(components): Move the grid item
 styles into the components cascade layer`. The other three grid components still carry unlayered
@@ -505,7 +523,10 @@ styles into the components cascade layer`. The other three grid components still
   Left open: the compact pager (34px) and `size="sm"` (28px) still sit below 44px on touch. Both
   floors are deliberate - the compact chevrons exist to sit level with a small page-size select, and
   `sm` is documented as below the comfortable touch size - so raising them is a design call, not this
-  fix; the docs now state the carve-out instead of promising 44px everywhere.
+  fix; the docs now state the carve-out instead of promising 44px everywhere. **Decision
+  2026-09-23:** done in `1cfef3518` - on a coarse pointer both take a 44px hit area through an
+  invisible pseudo-element under every visible item; visual size and spacing unchanged, pinned by a
+  touch e2e suite.
 - **Split button silently accepts a second action and can end up with none** (button Medium). S —
   **DONE 2026-08-22**. `SplitButtonDirective` keeps a list per segment kind, so `registeredAction`/
   `registeredTrigger` resolve to the first registration and survive the removal of a duplicate; the
@@ -513,7 +534,8 @@ styles into the components cascade layer`. The other three grid components still
   signals turned from writable into computeds - the sub-directives call the new `@internal`
   `registerAction`/`registerTrigger`. Left open: the same clobbering shape exists in the shared
   `registerSingleton` helper (select/cascader/date-picker triggers); changing that reaches ten
-  domains and is its own item.
+  domains and is its own item. **Decision 2026-09-23:** not doing, closed (see the `register-singleton.ts`
+  entry below).
 - **`et-otp-input`: a `g`-flagged charset drops every other character; shrinking `length` leaves an
   over-long value; `complete` never fires for a programmatic value** (otp Medium ×3). S —
   **DONE 2026-08-22**. `charPattern` strips `g`/`y` off a consumer's RegExp, and one constructor
@@ -588,7 +610,11 @@ Re-elevate an open overlay when a breakpoint switch toggles its backdrop`.
   **DONE 2026-09-23** in `0bc79ece8 fix(components): Give every multi-month calendar row seven
 gridcells`. The scheduler grids naming themselves after the shown period are **DONE 2026-09-23**
   in `688acaa62 fix(components): Name the scheduler grids after the shown period`; the scheduler's
-  roving tabindex is still open and needs a keyboard design. The dead `role`/`aria-orientation` host
+  roving tabindex is still open and needs a keyboard design (**Decision 2026-09-23:** approved as the
+  full APG grid pattern - one tab stop, arrows by day or slot, Enter opens, PageUp/PageDown by period,
+  reusing the calendar model; a short keyboard design comes first, especially focus between cells and
+  appointments). The month day cell's accessible date and `aria-current="date"` on today are **DONE
+  2026-09-23** in `235f1d2c4`. The dead `role`/`aria-orientation` host
   bindings on `TabBarDirective` under `et-tab-group` are **DONE 2026-09-23** in `1232e3a55
 fix(components): Drop the dead tablist bindings from the tab group host`. Left open: the
   `menu`→owned-roles half of #6, which no fix here needed.
@@ -606,7 +632,8 @@ test(components): Run the expanded-state contract for the date and date range in
   the date-time, time and range-variant pickers are still not wired to the contract - their
   `expanded` is already correct, so it is coverage, not a fix; and the picker still has no
   `dir`-aware option for consumers who would rather see a mirrored gradient, since the pointer
-  reading in `color-picker-engine.ts` is documented as un-mirrored.
+  reading in `color-picker-engine.ts` is documented as un-mirrored. **Decision 2026-09-23:** no
+  `dir`-aware gradient option, closed.
 - **Dropzone: single-mode replace never fires the configured `delete`** (orphaned server file);
   **`clear()` ignores `disabled`/`readonly`**; **`DROPZONE_LABELS.uploading` is never read** (dropzone
   High + Medium ×2). S each · **DONE 2026-08-22**
@@ -617,6 +644,8 @@ test(components): Run the expanded-state contract for the date and date range in
   deletes at all - it is a bulk reset a custom UI drives, and whether wiping a field should delete
   every file server-side is a product call, not a bug; and no per-instance `uploadingLabel` input was
   added (the domain token is the only override, matching how the live region is documented).
+  **Decision 2026-09-23:** done in `55269f138` - a new `removeAll()` reuses `removeEntry`'s `delete`
+  path for every entry; `clear()` stays a local reset, and the docs state the difference.
 - **Slider: a tick press does not commit the tick's value without `snapToMarks`** (slider High) —
   documented as always doing so. S · **DONE 2026-08-22**
   Done: the code was the wrong half - `SLIDER_MARK_VALUE_ATTRIBUTE`'s JSDoc, the track's own comment
@@ -632,6 +661,8 @@ test(components): Run the expanded-state contract for the date and date range in
   the marks a second grid, which is what `snapToMarks` is for; and `thumbValueText` still announces a
   mark's label only while snapping, even though a thumb can now sit exactly on a labelled off-grid
   mark - `slider.md` documents the label-as-`aria-valuetext` rule as a `snapToMarks` feature.
+  **Decision 2026-09-23:** done in `eaf855b49` - the keyboard stays on the `step` grid, and a value
+  on a labelled mark announces the label with or without `snapToMarks`.
 - **RTE: `pruneEmptyInline` skips `u`/`code`**, leaking raw HTML into the Markdown value (rte High);
   **the trigger popup opens before an existing trigger char and leaves the literal text** (rte High);
   **tools commit without a history boundary**, so the next keystroke swallows them (rte Medium). S / M
@@ -846,7 +877,7 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
     agents), and the calendar's per-cell `afterNextRender` structural throws. **Batch 2 done 2026-09-12**: `registerScrollContainer`, the
     `etRatingIcon` guard and the calendar cell guard had already landed in `88000992a`; the calendar grid
     guard moved to the constructor in `fix(components): Throw the calendar grid guard at construction`.
-    **Batch 3 done 2026-09-12**: the host names and the range-field duplicate guards (`ET3011`/`ET3061`/`ET3071`) had already landed in `88000992a`; the nine structural date-time guards moved to the constructor in `fix(components): Throw the date-time structural guards at construction`. The time picker's `ET3020`/`ET3021` moved to the constructor 2026-09-12 in `bae50018b fix(components): Throw the time picker structural guards at construction`. Still open, and a human design call: a duplicate-registration guard in the shared `register-singleton.ts` (26 callers in 8 domains; conditional templates swap legally, so a throw is not obviously right).
+    **Batch 3 done 2026-09-12**: the host names and the range-field duplicate guards (`ET3011`/`ET3061`/`ET3071`) had already landed in `88000992a`; the nine structural date-time guards moved to the constructor in `fix(components): Throw the date-time structural guards at construction`. The time picker's `ET3020`/`ET3021` moved to the constructor 2026-09-12 in `bae50018b fix(components): Throw the time picker structural guards at construction`. A duplicate-registration guard in the shared `register-singleton.ts` (26 callers in 8 domains) was left to a human call. **Decision 2026-09-23:** not doing, closed - a throw or warning would fire on legal `@if` swaps.
 11. **Comment-policy cleanup where it is dense** (table — 34 % of non-spec TS — plus carousel, grid,
     bracket, calendar, scheduler, selection-controls). Not urgent, except the comments the scan proved
     _wrong_: the table keyboard-nav comment, the cascader column comment, `pruneEmptyInline`'s "three

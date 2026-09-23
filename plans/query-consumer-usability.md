@@ -3,7 +3,11 @@
 Audit of 2026-09-23. Almost every public feature of `@ethlete/query` has a scenario, but the
 scenarios drive auth through the `s.auth()` harness, so they test behaviour, not how consumer code
 has to be written. Trigger: `withTokenRevocation` passed its specs but needed Angular `HttpHeaders`
-in consumer code (fixed in `577b1b65c`, whose message is wrong: it says `fix(core)`).
+in consumer code (fixed in `567316046 feat(query): Let withTokenRevocation send a bearer header and
+revoke only for chosen session end causes`).
+
+Decision 2026-09-23: no automatic refetch when the client headers change; the consumer calls
+`client.refreshQueriesInUse()` explicitly.
 
 Rule for every fix below: a scenario that uses the feature only through the public API, with no
 `@angular/*` import in the consumer code (fut-frontend's queries libs ban them).
