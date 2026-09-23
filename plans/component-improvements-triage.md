@@ -150,6 +150,15 @@ Recommendation: go with conditions for the fullscreen enter/leave only. The cond
 - A single series uses the scope accent, not palette entry 0.
 - The docs page stays in "Layout & structure", next to Table and Grid.
 
+**Chart roadmap (user, 2026-09-23): all four slices.**
+
+1. Slice A: shared chart primitives, plus grouped, stacked and horizontal bars with a legend. This slice comes first.
+2. Line and area charts.
+3. Pie and donut charts.
+4. Sankey.
+
+Slices 2-4 start in parallel after slice A lands.
+
 **(a) `[innerHTML]` SVG precedent.** The precedent is `icon.directive.ts:27`, which binds a sanitized SVG string to the host.
 Option 1 keeps that: build the SVG as a string. Option 2 renders `<svg:rect>` marks from the template with `@for`.
 Recommendation: option 2, diverge. A string has no per-mark listeners, no `[etTooltip]`, no `aria-*` bindings and no signal updates without a full re-parse.
