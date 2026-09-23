@@ -34,9 +34,13 @@ export const ensureNamedImports = ({ content, importsNeeded, moduleSpecifier }: 
 
   ts.forEachChild(sourceFile, (node) => {
     if (
+      !importNode &&
       ts.isImportDeclaration(node) &&
       ts.isStringLiteral(node.moduleSpecifier) &&
-      node.moduleSpecifier.text === moduleSpecifier
+      node.moduleSpecifier.text === moduleSpecifier &&
+      !node.importClause?.isTypeOnly &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings)
     ) {
       importNode = node;
     }
