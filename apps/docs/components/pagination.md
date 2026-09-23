@@ -314,9 +314,10 @@ a standard tab stop, so keyboard users move through them with Tab and activate w
 Enter/Space (links also with the usual anchor semantics). Ellipses are inert and
 `aria-hidden`; the readout is an `aria-live="polite"` region. On coarse pointers
 (touch) the default density grows to a comfortable 44px tap target - and the
-page-size select with it, so the two stay level; `size="sm"` (28px) and the compact
-pager (34px) keep their tighter floors on purpose, for the tight spots they exist
-for. When a large set doesn't fit, the controls wrap (rather than scrolling) so
+page-size select with it, so the two stay level. `size="sm"` (28px) and the compact
+pager (34px) keep their visible size and spacing, and take a 44px hit area through an
+invisible pseudo-element instead. The hit areas sit below every visible item, so a tap on
+an item's own box always reaches that item, never its neighbour. When a large set doesn't fit, the controls wrap (rather than scrolling) so
 every one stays reachable.
 
 ## Theming

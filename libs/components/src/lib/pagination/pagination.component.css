@@ -30,6 +30,24 @@
     :where(.et-pagination-host) {
       --et-pagination-item-size: 44px;
     }
+
+    /* Without this stacking context the hit areas below (z-index -1) would drop under the host's
+       own box and catch nothing; inside it they sit under every visible item, so they never take a
+       tap from a neighbour. */
+    .et-pagination-host {
+      isolation: isolate;
+    }
+
+    .et-pagination-host .et-pagination-button::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      top: 50%;
+      left: 50%;
+      inline-size: max(100%, 44px);
+      block-size: max(100%, 44px);
+      translate: -50% -50%;
+    }
   }
 
   .et-pagination-list {

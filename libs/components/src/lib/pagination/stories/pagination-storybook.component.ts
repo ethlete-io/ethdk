@@ -40,6 +40,7 @@ import { GERMAN_LABELS } from './pagination-storybook.data';
           [pageSize]="pageSize()"
           [showJumpTo]="showJumpTo()"
           [labels]="labels()"
+          [size]="size()"
         />
         <p class="text-small mt-4 opacity-70">Page {{ page() }} of {{ totalPages() }}</p>
       }
@@ -61,6 +62,7 @@ export class PaginationStorybookComponent {
   public localized = input(false);
   public pageSizeSelect = input(false);
   public surface = input('dark');
+  public size = input<'sm' | 'md'>('md');
 
   protected page = signal(1);
 

@@ -18,6 +18,7 @@ export default {
     localized: false,
     pageSizeSelect: false,
     surface: 'dark',
+    size: 'md',
   },
   argTypes: {
     totalPages: { control: { type: 'range', min: 1, max: 500, step: 1 } },
@@ -32,6 +33,7 @@ export default {
     localized: { control: 'boolean' },
     pageSizeSelect: { control: 'boolean' },
     surface: { control: 'text' },
+    size: { control: 'radio', options: ['sm', 'md'] },
   },
 } as Meta<PaginationStorybookComponent>;
 
