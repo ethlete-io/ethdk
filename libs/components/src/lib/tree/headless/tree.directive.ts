@@ -5,6 +5,7 @@ import {
   Signal,
   TemplateRef,
   afterNextRender,
+  afterRenderEffect,
   booleanAttribute,
   computed,
   inject,
@@ -131,6 +132,8 @@ export class TreeDirective<T = unknown> {
   // written while the focused row is still visible: once a collapse destroys it, this is the only
   // record of where in the tree that row was
   private focusedPath = signal<readonly TreeNode<T>[]>([]);
+
+  private focusedRowElement: HTMLElement | null = null;
 
   /**
    * The flattened tree: every row that is currently visible, in DOM order - the root's children plus
@@ -273,6 +276,11 @@ export class TreeDirective<T = unknown> {
         takeUntilDestroyed(),
       )
       .subscribe();
+
+    afterRenderEffect(() => {
+      this.visibleRows();
+      untracked(() => this.restoreLostFocus());
+    });
 
     inject(DestroyRef).onDestroy(() => this.typeahead.destroy());
 
@@ -455,9 +463,10 @@ export class TreeDirective<T = unknown> {
   }
 
   /** @internal Called from a row's `focusin`: the path goes with the node so a collapse can fall back to an ancestor. */
-  public markFocused(row: TreeRow<T>) {
+  public markFocused(row: TreeRow<T>, element: HTMLElement) {
     this.focusedNode.set(row.node);
     this.focusedPath.set(row.path);
+    this.focusedRowElement = element.contains(element.ownerDocument.activeElement) ? element : null;
   }
 
   /** @internal Called from a node's constructor; the registration is undone when the row is destroyed. */
@@ -593,6 +602,24 @@ export class TreeDirective<T = unknown> {
       this.registeredNodes().find((registered) => compareWith(registered.row().node.value, node.value))?.elementRef
         .nativeElement ?? null
     );
+  }
+
+  // an outside `expandedValues` write destroys the focused row before any tree code runs, so DOM
+  // focus can only be handed on once the render that removed it has finished
+  private restoreLostFocus() {
+    const lost = this.focusedRowElement;
+
+    if (!lost || lost.isConnected) return;
+
+    this.focusedRowElement = null;
+
+    const active = lost.ownerDocument.activeElement;
+
+    if (active && active !== lost.ownerDocument.body) return;
+
+    const node = this.activeNode();
+
+    if (node) this.focusNode(node);
   }
 
   // must run before the collapse, while the surviving ancestor and the focused row are both rendered

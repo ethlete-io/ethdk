@@ -83,6 +83,6 @@ export class TreeNodeDirective<T = unknown> {
   }
 
   protected handleFocusIn() {
-    this.tree?.markFocused(this.row());
+    this.tree?.markFocused(this.row(), this.elementRef.nativeElement);
   }
 }

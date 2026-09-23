@@ -180,6 +180,20 @@ describe('TreeComponent', () => {
     expect(rows().map((row) => row.tabIndex)).toEqual([0, -1, -1, -1]);
   });
 
+  it('hands DOM focus to the surviving ancestor when an outside collapse removes the focused row', async () => {
+    fixture.componentInstance.expandedValues.set(['docs']);
+    await settle();
+
+    rowByLabel('guide.md')?.focus();
+    tick();
+
+    fixture.componentInstance.expandedValues.set([]);
+    await settle();
+
+    expect(document.activeElement).toBe(rowByLabel('docs'));
+    expect(rows().map((row) => row.tabIndex)).toEqual([-1, 0, -1, -1]);
+  });
+
   it('leaves the tab stop on the surviving ancestor after an outside collapse, without stealing focus', async () => {
     fixture.componentInstance.expandedValues.set(['docs']);
     await settle();
