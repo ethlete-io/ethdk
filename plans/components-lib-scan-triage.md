@@ -4,8 +4,8 @@
 
 Still open:
 
-- **Two L refactors:** merging the two date-time picker abstract bases into one (only the commit
-  logic is shared so far); moving phone, otp and tag onto `TextFieldControlDirective`.
+- **One L refactor:** moving phone, otp and tag onto `TextFieldControlDirective`. (Merging the two
+  date-time picker abstract bases is done in `57df30661`.)
 - Phone/otp/tag onto `TextFieldControlDirective`: phone and tag done in `b1a7be050`, on a new internal
   base `TextShellControlDirective` that `TextFieldControlDirective` now extends; extending it directly
   would add `hidden`/`warnings` (phone also `maxLength`/`pending`) as inputs signal forms auto-binds.
@@ -68,6 +68,12 @@ tests was verified to fail without the fix. Still open: the two abstract Angular
 separate classes (the DX item asked to fold them entirely - only the commit logic is shared so
 far), and the mask's optional `mixed` member is still unimplemented for this family (date-time
 Medium, separate).
+
+Done 2026-09-23 in `57df30661`: the two abstract bases now extend one
+`internals/picker-input-base.directive.ts` (`PickerInputBaseDirective`), which owns the shared
+inputs, the picker overlay, open/close/toggle, trigger/surface registration, `describedByIds`,
+`maskPattern` and the mask warning. The single and range bases keep only their value shape, field
+registration and commit paths; the range still re-focuses after a focus-leave close, as before.
 
 ### 2. Container `keydown` handlers that ignore `event.target` · S · **DONE 2026-08-22**
 
