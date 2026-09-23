@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 6.0.0-next.47
+
+### Patch Changes
+
+- `QueryRuntimeErrorCode` no longer has `QUERY_STACK_TOTAL_QUERIES_AND_EXPECTED_QUERIES_MISMATCH` (502). A paged query stack could no longer throw it.
+- `migrate-query-opt-in-features` no longer adds `withEthleteApiErrors()` or `withBearerAuthMultiTabSync()` to a config that already lists it.
+- `migrate-to-query-v3`: query clients with aliased imports, shorthand or spread options, a non-literal config, or no variable now migrate correctly or get a report task instead of producing broken code.
+- The v3 migration handles a shorthand `route`, a spread config, several creators in one statement, a creator inside a function and barrel re-exports regardless of file order.
+- `migrate-to-query-v3`: a query polled through `this.x.poll()` no longer gets `destroyOnResponse: true`, and the inserted injector lines keep the surrounding indentation.
+- The v3 migration keeps a shorthand property and a local `export { … }` of a renamed creator import pointing at its legacy wrapper.
+- The v3 migration adds a missing value import to the first value import of a module instead of a type-only one.
+
 ## 6.0.0-next.46
 
 ### Minor Changes
