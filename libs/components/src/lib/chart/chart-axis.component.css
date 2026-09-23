@@ -1,0 +1,40 @@
+@layer components {
+  .et-chart-axis {
+    display: grid;
+    min-inline-size: 0;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    .et-chart-axis-label {
+      grid-area: 1 / 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &:where([data-orientation='horizontal']) {
+      justify-items: start;
+
+      .et-chart-axis-label {
+        translate: calc(var(--_et-chart-axis-position) - 50%) 0;
+      }
+
+      .et-chart-axis-label:where([data-extent]) {
+        box-sizing: border-box;
+        inline-size: var(--_et-chart-axis-extent);
+        padding-inline: 2px;
+        text-align: center;
+        translate: calc(var(--_et-chart-axis-position) - var(--_et-chart-axis-extent) / 2) 0;
+      }
+    }
+
+    &:where([data-orientation='vertical']) {
+      justify-items: end;
+      align-items: start;
+
+      .et-chart-axis-label {
+        max-inline-size: 100%;
+        translate: 0 calc(var(--_et-chart-axis-position) - 50%);
+      }
+    }
+  }
+}

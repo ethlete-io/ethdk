@@ -1,0 +1,30 @@
+@layer components {
+  .et-chart-tooltip {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+
+    .et-chart-tooltip-key {
+      flex: none;
+      align-self: center;
+      inline-size: 12px;
+      block-size: 2px;
+      border-radius: 1px;
+      background: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    .et-chart-tooltip-value {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .et-chart-tooltip-series,
+    .et-chart-tooltip-label {
+      opacity: 0.75;
+    }
+
+    .et-chart-tooltip-series + .et-chart-tooltip-label::before {
+      content: '·' / '';
+      margin-inline-end: 6px;
+    }
+  }
+}

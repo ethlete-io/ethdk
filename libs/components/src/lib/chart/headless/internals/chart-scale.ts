@@ -7,8 +7,19 @@ export type ChartValueTicks = {
 export type ChartBandScale = {
   step: number;
   bandWidth: number;
-  bandStart: (index: number) => number;
+  bandStart: (index: number, member?: number) => number;
+  memberSlot: (index: number, member?: number) => { start: number; size: number };
 };
+
+export type ChartBandScaleOptions = {
+  count: number;
+  width: number;
+  maxBandWidth: number;
+  gap: number;
+  groupSize?: number;
+};
+
+export type ChartRoundedEnd = 'top' | 'bottom' | 'left' | 'right' | 'none';
 
 export type ChartBarPathOptions = {
   x: number;
@@ -16,8 +27,10 @@ export type ChartBarPathOptions = {
   width: number;
   height: number;
   radius: number;
-  roundedEnd: 'top' | 'bottom';
+  roundedEnd: ChartRoundedEnd;
 };
+
+const GROUP_PADDING = 0.2;
 
 const roundToStep = (value: number) => Number(value.toPrecision(12));
 
@@ -57,21 +70,25 @@ export const createLinearScale =
     return r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
   };
 
-export const createBandScale = (options: {
-  count: number;
-  width: number;
-  maxBandWidth: number;
-  gap: number;
-}): ChartBandScale => {
+export const createBandScale = (options: ChartBandScaleOptions): ChartBandScale => {
   const { count, width, maxBandWidth, gap } = options;
+  const groupSize = Math.max(1, options.groupSize ?? 1);
   const step = count > 0 ? width / count : 0;
-  const bandWidth = Math.max(0, Math.min(maxBandWidth, step - gap));
+  const groupGap = groupSize > 1 ? Math.max(gap, step * GROUP_PADDING) : gap;
+  const innerGaps = (groupSize - 1) * gap;
+  const bandWidth = Math.max(0, Math.min(maxBandWidth, (step - groupGap - innerGaps) / groupSize));
+  const groupWidth = bandWidth * groupSize + innerGaps;
 
-  return {
-    step,
-    bandWidth,
-    bandStart: (index: number) => index * step + (step - bandWidth) / 2,
+  const bandStart = (index: number, member = 0) => index * step + (step - groupWidth) / 2 + member * (bandWidth + gap);
+
+  const memberSlot = (index: number, member = 0) => {
+    const start = member === 0 ? index * step : bandStart(index, member) - gap / 2;
+    const end = member === groupSize - 1 ? (index + 1) * step : bandStart(index, member) + bandWidth + gap / 2;
+
+    return { start, size: end - start };
   };
+
+  return { step, bandWidth, bandStart, memberSlot };
 };
 
 export const createBarPath = (options: ChartBarPathOptions) => {
@@ -79,19 +96,37 @@ export const createBarPath = (options: ChartBarPathOptions) => {
 
   if (width <= 0 || height <= 0) return '';
 
-  const r = Math.min(options.radius, width / 2, height);
   const right = x + width;
   const bottom = y + height;
 
-  if (roundedEnd === 'top') {
+  if (roundedEnd === 'none') return `M${x},${y}H${right}V${bottom}H${x}Z`;
+
+  if (roundedEnd === 'top' || roundedEnd === 'bottom') {
+    const r = Math.min(options.radius, width / 2, height);
+
+    if (roundedEnd === 'top') {
+      return (
+        `M${x},${bottom}V${y + r}A${r},${r} 0 0 1 ${x + r},${y}` +
+        `H${right - r}A${r},${r} 0 0 1 ${right},${y + r}V${bottom}Z`
+      );
+    }
+
     return (
-      `M${x},${bottom}V${y + r}A${r},${r} 0 0 1 ${x + r},${y}` +
-      `H${right - r}A${r},${r} 0 0 1 ${right},${y + r}V${bottom}Z`
+      `M${x},${y}H${right}V${bottom - r}A${r},${r} 0 0 1 ${right - r},${bottom}` +
+      `H${x + r}A${r},${r} 0 0 1 ${x},${bottom - r}Z`
+    );
+  }
+
+  const r = Math.min(options.radius, height / 2, width);
+
+  if (roundedEnd === 'right') {
+    return (
+      `M${x},${y}H${right - r}A${r},${r} 0 0 1 ${right},${y + r}` +
+      `V${bottom - r}A${r},${r} 0 0 1 ${right - r},${bottom}H${x}Z`
     );
   }
 
   return (
-    `M${x},${y}H${right}V${bottom - r}A${r},${r} 0 0 1 ${right - r},${bottom}` +
-    `H${x + r}A${r},${r} 0 0 1 ${x},${bottom - r}Z`
+    `M${right},${y}V${bottom}H${x + r}A${r},${r} 0 0 1 ${x},${bottom - r}` + `V${y + r}A${r},${r} 0 0 1 ${x + r},${y}Z`
   );
 };

@@ -1,64 +1,60 @@
-<div [style.--_et-bar-chart-count]="chart.bars().length" class="et-bar-chart-figure">
-  <div [style.block-size.px]="chart.height()" class="et-bar-chart-value-axis" aria-hidden="true">
-    @for (tick of chart.ticks(); track tick.value) {
-      <span [style.--_et-bar-chart-tick-y.px]="tick.y" class="et-bar-chart-tick-label">{{ tick.text }}</span>
-    }
-  </div>
+@if (chart.legendItems().length) {
+  <et-chart-legend [items]="chart.legendItems()" [etProvideColor]="colorToken()" class="et-bar-chart-legend" />
+}
 
-  <div [style.block-size.px]="chart.height()" class="et-bar-chart-plot" etBarChartPlot>
+<div [attr.data-orientation]="chart.orientation()" class="et-bar-chart-figure">
+  <et-chart-axis
+    [labels]="chart.valueLabels()"
+    [orientation]="chart.isHorizontal() ? 'horizontal' : 'vertical'"
+    [style.block-size.px]="chart.isHorizontal() ? null : chart.height()"
+    class="et-bar-chart-value-axis"
+  />
+
+  <div [style.block-size.px]="chart.height()" class="et-bar-chart-plot" etChartPlot>
     @if (chart.plotWidth()) {
       <svg
         [attr.width]="chart.plotWidth()"
         [attr.height]="chart.height()"
         [attr.aria-label]="chart.label()"
+        [style.--_et-bar-chart-baseline.px]="chart.baseline()"
         class="et-bar-chart-svg"
         role="group"
       >
-        <svg:g class="et-bar-chart-grid" aria-hidden="true">
-          @for (tick of chart.ticks(); track tick.value) {
-            <svg:line
-              [attr.x2]="chart.plotWidth()"
-              [attr.y1]="tick.y"
-              [attr.y2]="tick.y"
-              [class.et-bar-chart-baseline]="tick.value === 0"
-              class="et-bar-chart-grid-line"
-              x1="0"
-              shape-rendering="crispEdges"
-            />
-          }
-        </svg:g>
+        <svg:g
+          [ticks]="chart.ticks()"
+          [direction]="chart.isHorizontal() ? 'vertical' : 'horizontal'"
+          [length]="chart.isHorizontal() ? chart.height() : chart.plotWidth()"
+          et-chart-grid
+        />
 
         <svg:g [etProvideColor]="colorToken()" class="et-bar-chart-bars">
-          @for (bar of chart.bars(); track bar.index) {
+          @for (bar of chart.bars(); track bar.key) {
             <svg:g
-              #tooltip="etTooltip"
-              [attr.aria-label]="bar.datum.label"
+              [etChartMark]="barTooltips()[bar.index] ?? null"
+              [etChartMarkDescription]="bar.valueText"
+              [etChartMarkAnchor]="anchor"
+              [etChartMarkPlacement]="bar.placement"
+              [etProvideColor]="bar.colorToken"
+              [attr.aria-label]="bar.name"
               [attr.data-negative]="bar.isNegative ? '' : null"
-              [etTooltip]="barTooltips()[bar.index] ?? null"
-              [etTooltipAriaDescription]="bar.valueText"
-              [anchor]="anchor"
-              [placement]="bar.isNegative ? 'bottom' : 'top'"
-              (click)="tooltip.show()"
               class="et-bar-chart-bar"
-              tabindex="0"
-              role="img"
             >
               <svg:rect
-                [attr.x]="bar.slotX + 1"
-                [attr.width]="bar.slotWidth - 2"
-                [attr.height]="chart.height()"
+                [attr.x]="bar.target.x"
+                [attr.y]="bar.target.y"
+                [attr.width]="bar.target.width"
+                [attr.height]="bar.target.height"
                 class="et-bar-chart-bar-target"
-                y="0"
                 rx="4"
               />
               <svg:path [attr.d]="bar.path" class="et-bar-chart-bar-mark" />
               <svg:rect
                 #anchor
-                [attr.x]="bar.x"
-                [attr.y]="bar.isNegative ? bar.y + bar.height : bar.y"
-                [attr.width]="bar.width"
+                [attr.x]="bar.anchor.x"
+                [attr.y]="bar.anchor.y"
+                [attr.width]="bar.anchor.width"
+                [attr.height]="bar.anchor.height"
                 class="et-bar-chart-bar-anchor"
-                height="0"
               />
             </svg:g>
           }
@@ -67,40 +63,18 @@
     }
   </div>
 
-  <div class="et-bar-chart-category-axis" aria-hidden="true">
-    @for (bar of chart.bars(); track bar.index) {
-      <span class="et-bar-chart-category-label">{{ bar.datum.label }}</span>
-    }
-  </div>
+  <et-chart-axis
+    [labels]="chart.categoryLabels()"
+    [orientation]="chart.isHorizontal() ? 'vertical' : 'horizontal'"
+    [style.block-size.px]="chart.isHorizontal() ? chart.height() : null"
+    class="et-bar-chart-category-axis"
+  />
 </div>
 
-@for (bar of chart.bars(); track bar.index) {
+@for (bar of chart.bars(); track bar.key) {
   <ng-template #barTooltip>
-    <span class="et-bar-chart-tooltip">
-      <strong class="et-bar-chart-tooltip-value">{{ bar.valueText }}</strong>
-      <span class="et-bar-chart-tooltip-label">{{ bar.datum.label }}</span>
-    </span>
+    <et-chart-tooltip [value]="bar.valueText" [label]="bar.datum.label" [series]="bar.series?.label ?? null" />
   </ng-template>
 }
 
-<table class="et-bar-chart-table">
-  <caption>
-    {{
-      chart.label()
-    }}
-  </caption>
-  <thead>
-    <tr>
-      <th scope="col">{{ chart.categoryHeader() }}</th>
-      <th scope="col">{{ chart.valueHeader() }}</th>
-    </tr>
-  </thead>
-  <tbody>
-    @for (bar of chart.bars(); track bar.index) {
-      <tr>
-        <th scope="row">{{ bar.datum.label }}</th>
-        <td>{{ bar.valueText }}</td>
-      </tr>
-    }
-  </tbody>
-</table>
+<et-chart-data-table [caption]="chart.label()" [model]="chart.table()" />

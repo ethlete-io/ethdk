@@ -500,6 +500,6 @@ Checked in dev mode only - `ET4900` whenever `for` changes, `ET4901` and `ET4902
 
 Checked in dev mode only, after the first render.
 
-| Code     | Cause                                                            | Fix                                                           |
-| -------- | ---------------------------------------------------------------- | ------------------------------------------------------------- |
-| `ET5100` | An `[etBarChart]` rendered with nothing marked `etBarChartPlot`. | Add `etBarChartPlot` to the element the bars are laid out in. |
+| Code     | Cause                                                                      | Fix                                                         |
+| -------- | -------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `ET5100` | A chart such as `[etBarChart]` rendered with nothing marked `etChartPlot`. | Add `etChartPlot` to the element the marks are laid out in. |
