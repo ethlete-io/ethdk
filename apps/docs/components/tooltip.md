@@ -52,6 +52,9 @@ floating-ui anchored, with an arrow pointing at the trigger:
 | `offset`             | `8`     |
 | `arrowPadding`       | `20`    |
 | `viewportPadding`    | `8`     |
+| `anchor`             | -       |
+
+`anchor` takes an element for the tooltip to point at instead of the trigger - e.g. one end of a larger hit target. Hover, focus and the accessible description stay on the trigger.
 
 The tooltip auto-flips and shifts to stay in the viewport, and auto-hides when its trigger is scrolled out of view.
 

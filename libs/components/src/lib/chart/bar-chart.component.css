@@ -95,6 +95,11 @@
       stroke-width: 2px;
     }
 
+    .et-bar-chart-bar-anchor {
+      fill: none;
+      pointer-events: none;
+    }
+
     .et-bar-chart-bar-mark {
       fill: var(--et-theme-color-primary-solid, currentColor);
       transform-box: fill-box;

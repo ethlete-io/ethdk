@@ -73,6 +73,21 @@ describe('TooltipDirective', () => {
     expect(button.getAttribute('aria-describedby')).toBe(fallbackDescriptionId);
   });
 
+  it('points at the anchor element while the trigger keeps the description', () => {
+    const anchor = document.createElement('span');
+    document.body.appendChild(anchor);
+    setInputSignal(tooltipDirective.anchor, anchor);
+
+    tooltipDirective.show();
+    fixture.detectChanges();
+
+    expect(tooltipDirective.overlayRef()?.config.origin).toBe(anchor);
+    expect(button.getAttribute('aria-describedby')).toBe(tooltipDirective.overlayRef()?.config.id ?? null);
+
+    tooltipDirective.hide();
+    anchor.remove();
+  });
+
   it('does not open when disabled', () => {
     setInputSignal(tooltipDirective.disabled, true);
     fixture.detectChanges();

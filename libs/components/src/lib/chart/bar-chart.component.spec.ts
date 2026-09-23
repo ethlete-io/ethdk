@@ -63,6 +63,23 @@ describe('BarChartComponent', () => {
     expect(element.querySelectorAll('.et-bar-chart-bar-mark').length).toBe(3);
   });
 
+  it('anchors each tooltip at the data end of its bar, and a zero bar at the baseline', () => {
+    const { fixture, chart, element } = setup();
+
+    fixture.componentInstance.data.update((data) => [...data, { label: 'Apr', value: 0 }]);
+    fixture.detectChanges();
+
+    const anchorYs = [...element.querySelectorAll('.et-bar-chart-bar-anchor')].map((anchor) =>
+      Number(anchor.getAttribute('y')),
+    );
+    const [jan, , mar] = chart.bars();
+
+    expect(anchorYs[0]).toBeCloseTo(jan?.y ?? NaN);
+    expect(anchorYs[1]).toBe(0);
+    expect(anchorYs[2]).toBeCloseTo((mar?.y ?? NaN) + (mar?.height ?? NaN));
+    expect(anchorYs[3]).toBeCloseTo(chart.baselineY());
+  });
+
   it('mirrors the data in a table view', () => {
     const { element } = setup();
 

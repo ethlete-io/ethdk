@@ -50,6 +50,12 @@ export class TooltipDirective {
 
   public content = input<TooltipContent | null>(null, { alias: 'etTooltip' });
   public ariaDescription = input<string | null>(null, { alias: 'etTooltipAriaDescription' });
+  /**
+   * The element the tooltip points at, when it should differ from the trigger - e.g. one end of a
+   * larger hit target. Hover, focus and the accessible description stay on the trigger.
+   * @default the trigger
+   */
+  public anchor = input<Element | null>(null);
   public placement = input<Placement>('top');
   public fallbackPlacements = input<Placement[] | undefined>(undefined);
   public offset = input<OffsetOptions | null>(8);
@@ -157,7 +163,7 @@ export class TooltipDirective {
       disableClose: true,
       hasBackdrop: false,
       mode: 'non-modal',
-      origin: hostElement,
+      origin: this.anchor() ?? hostElement,
       closeOnEscape: false,
       closeOnOutsidePointer: false,
       passive: true,

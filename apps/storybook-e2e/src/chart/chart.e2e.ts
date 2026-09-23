@@ -1,5 +1,5 @@
-import { Locator, expect, test } from '@playwright/test';
-import { openStory, pressKey, settle, tabSequence, tap } from '../support';
+import { Locator, Page, expect, test } from '@playwright/test';
+import { boxOf, openStory, pressKey, settle, tabSequence, tap } from '../support';
 
 const STORY_ID = 'components-data-display-bar-chart--default';
 const NEGATIVE_STORY_ID = 'components-data-display-bar-chart--negative';
@@ -22,6 +22,37 @@ async function expectBarFocusVisible(barLocator: Locator): Promise<void> {
   expect(stroke).not.toBe('none');
   expect(stroke).not.toBe('transparent');
   expect(stroke).not.toBe('rgba(0, 0, 0, 0)');
+}
+
+const TOOLTIP_GAP_MAX = 10;
+
+async function tooltipOffsetFromBarEnd(page: Page, barLocator: Locator, end: 'top' | 'bottom') {
+  const mark = await boxOf(barLocator.locator('.et-bar-chart-bar-mark'));
+  const panel = await boxOf(page.locator('.et-overlay--tooltip'));
+  const arrow = await boxOf(page.locator('.et-overlay--tooltip .et-overlay-arrow'));
+  const markCenter = mark.x + mark.width / 2;
+
+  return {
+    arrowOffCenter: Math.round(Math.abs(arrow.x + arrow.width / 2 - markCenter)),
+    panelOffCenter: Math.round(Math.abs(panel.x + panel.width / 2 - markCenter)),
+    gap: Math.round(end === 'top' ? mark.y - (panel.y + panel.height) : panel.y - (mark.y + mark.height)),
+  };
+}
+
+async function expectTooltipAtBarEnd(page: Page, barLocator: Locator, end: 'top' | 'bottom'): Promise<void> {
+  await expect(page.getByRole('tooltip')).toBeVisible();
+  await expect
+    .poll(async () => {
+      const offset = await tooltipOffsetFromBarEnd(page, barLocator, end);
+
+      return offset.arrowOffCenter <= 1 &&
+        offset.panelOffCenter <= 1 &&
+        offset.gap >= 0 &&
+        offset.gap <= TOOLTIP_GAP_MAX
+        ? 'at bar end'
+        : JSON.stringify(offset);
+    })
+    .toBe('at bar end');
 }
 
 test.describe('chart / keyboard', () => {
@@ -123,6 +154,33 @@ test.describe('chart / pointer', () => {
 
     await expect(tooltip).toBeHidden();
   });
+
+  test('the tooltip points at the top of the hovered bar, not the top of its column', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const april = bar(root, 'Apr');
+
+    await april.hover();
+
+    await expectTooltipAtBarEnd(page, april, 'top');
+  });
+
+  test('a negative bar opens its tooltip below its bottom end', async ({ page }) => {
+    const root = await openStory(page, NEGATIVE_STORY_ID);
+    const wanderers = bar(root, 'Wanderers');
+
+    await wanderers.hover();
+
+    await expectTooltipAtBarEnd(page, wanderers, 'bottom');
+  });
+
+  test('a short bar points its tooltip at its own top', async ({ page }) => {
+    const root = await openStory(page, NEGATIVE_STORY_ID);
+    const rovers = bar(root, 'Rovers');
+
+    await rovers.hover();
+
+    await expectTooltipAtBarEnd(page, rovers, 'top');
+  });
 });
 
 test.describe('chart / accessibility', () => {
@@ -160,6 +218,24 @@ test.describe('chart / touch', () => {
     await expect(tooltip).toBeVisible();
     await expect(tooltip.locator('.et-bar-chart-tooltip-value')).toHaveText('2,130');
     await expect(tooltip.locator('.et-bar-chart-tooltip-label')).toHaveText('Mar');
+  });
+
+  test('a tap points the tooltip at the top of the bar, not the top of its column', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const april = bar(root, 'Apr');
+
+    await tap(april);
+
+    await expectTooltipAtBarEnd(page, april, 'top');
+  });
+
+  test('a tap on a negative bar opens its tooltip below its bottom end', async ({ page }) => {
+    const root = await openStory(page, NEGATIVE_STORY_ID);
+    const wanderers = bar(root, 'Wanderers');
+
+    await tap(wanderers);
+
+    await expectTooltipAtBarEnd(page, wanderers, 'bottom');
   });
 
   test('a tap on another bar moves the tooltip to it', async ({ page }) => {

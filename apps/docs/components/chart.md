@@ -68,7 +68,7 @@ When a bar is first drawn it grows from the baseline and fades in. Under `prefer
 
 - The plot is an SVG with `role="group"`, named by `label`.
 - Each bar is focusable (`tabindex="0"`) with `role="img"`, named by its category and described by its formatted value. Tab moves from bar to bar; focus draws a ring around the bar's band.
-- Hovering a bar, focusing it from the keyboard, or tapping it opens a [tooltip](/components/tooltip) with the value and the category. A tap elsewhere closes it. The hover tint only applies on devices that can hover, so it never sticks after a tap.
+- Hovering a bar, focusing it from the keyboard, or tapping it opens a [tooltip](/components/tooltip) with the value and the category. It points at the bar's data end - above a positive bar, below a negative one - while the whole band stays the hit target. A tap elsewhere closes it. The hover tint only applies on devices that can hover, so it never sticks after a tap.
 - A visually hidden `<table>` repeats the data with `label` as its caption and `categoryHeader` / `valueHeader` as column headers, so a screen reader can read the values as a table.
 - The axis labels are `aria-hidden`; the bars and the table carry the same values.
 
