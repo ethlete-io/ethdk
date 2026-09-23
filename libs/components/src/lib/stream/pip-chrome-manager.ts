@@ -6,6 +6,7 @@ import {
   DOCUMENT,
   effect,
   EnvironmentInjector,
+  Injector,
   inject,
 } from '@angular/core';
 import { defineRootProvider, injectRenderer, RuntimeError, toInjectFn, toProvideFn } from '@ethlete/core';
@@ -19,6 +20,7 @@ const PIP_CHROME_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
     const pipManager = injectPipManager();
     const appRef = inject(ApplicationRef);
     const envInjector = inject(EnvironmentInjector);
+    const registrationInjector = inject(Injector);
     const destroyRef = inject(DestroyRef);
     const document = inject(DOCUMENT);
     const renderer = injectRenderer();
@@ -39,6 +41,7 @@ const PIP_CHROME_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
 
         const ref = createComponent(pipChromeComponent, {
           environmentInjector: envInjector,
+          elementInjector: registrationInjector,
         });
 
         if (ngDevMode && !ref.injector.get(PIP_CHROME_REF_TOKEN, null)) {
