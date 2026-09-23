@@ -28,6 +28,19 @@ describe('query devtools features', () => {
       ]);
     });
 
+    it('should list the opt-in polling triggers only when set', () => {
+      const [feature] = describeQueryDevtoolsFeatures([
+        withPolling({ interval: () => 2000, pauseWhileHidden: true, refetchOnReconnect: true }),
+      ]);
+
+      expect(feature?.details).toEqual([
+        { label: 'interval', value: '2s' },
+        { label: 'execute initially', value: 'no' },
+        { label: 'pause while hidden', value: 'yes' },
+        { label: 'refetch on reconnect', value: 'yes' },
+      ]);
+    });
+
     it('should tell a page reset by callback from one by signal', () => {
       const [byCallback] = describeQueryDevtoolsFeatures([withPageResetOnError({ reset: () => undefined })]);
 

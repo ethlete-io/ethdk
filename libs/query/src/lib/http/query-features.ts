@@ -187,9 +187,9 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
     devtools: () => [
       { label: 'interval', value: formatQueryDevtoolsDuration(untracked(() => readPollingInterval(options.interval))) },
       { label: 'execute initially', value: options.executeInitially ? 'yes' : 'no' },
-      { label: 'pause while hidden', value: options.pauseWhileHidden ? 'yes' : 'no' },
-      { label: 'refetch on focus', value: options.refetchOnFocus ? 'yes' : 'no' },
-      { label: 'refetch on reconnect', value: options.refetchOnReconnect ? 'yes' : 'no' },
+      ...(options.pauseWhileHidden ? [{ label: 'pause while hidden', value: 'yes' }] : []),
+      ...(options.refetchOnFocus ? [{ label: 'refetch on focus', value: 'yes' }] : []),
+      ...(options.refetchOnReconnect ? [{ label: 'refetch on reconnect', value: 'yes' }] : []),
     ],
     fn: (context) => {
       if (!context.flags.shouldAutoExecuteMethod) {
