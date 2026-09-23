@@ -5,13 +5,23 @@
 Like the [query client](/query/queries#the-query-client), it returns a root-provider definition (`{ provide, inject, token }`) - the whole definition is what you hand to secure creator templates, and `toInjectFn(…)` is how you reach the provider inside components. Nothing needs to be registered in your app config; the `provide` function and token exist for tests and overrides.
 
 ```ts
+import { toInjectFn } from '@ethlete/core';
 import {
   createBearerAuthProvider,
+  createPostQuery,
+  createQueryClient,
   createSecureGetQuery,
   withAuthenticationQuery,
   withRefreshQuery,
 } from '@ethlete/query';
 
+type TokenResponse = { accessToken: string; refreshToken: string };
+type LoginQueryArgs = { response: TokenResponse; body: { email: string; password: string } };
+type RefreshTokenQueryArgs = { response: TokenResponse; body: { token: string } };
+
+export const client = createQueryClient({ name: 'api', baseUrl: 'https://api.example.com/v1' });
+
+const postQuery = createPostQuery(client);
 const login = postQuery<LoginQueryArgs>('/auth/login');
 const refreshToken = postQuery<RefreshTokenQueryArgs>('/auth/refresh');
 
@@ -24,9 +34,9 @@ export const authProviderRef = createBearerAuthProvider({
   ],
 });
 
-export const [, injectAuthProvider] = authProviderRef;
+export const injectAuthProvider = toInjectFn(authProviderRef);
 
-// secure creators take the whole tuple
+// secure creators take the whole definition
 const secureGetQuery = createSecureGetQuery(client, authProviderRef);
 export const getMe = secureGetQuery<GetMeQueryArgs>('/me');
 ```
