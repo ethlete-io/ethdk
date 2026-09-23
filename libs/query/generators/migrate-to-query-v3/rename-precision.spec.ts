@@ -171,4 +171,194 @@ export const lookup = (injector: unknown) => getPerson.prepare({ injector });
     expect(plain).toContain("import { legacyGetPerson } from '@app/api';");
     expect(plain).toContain('legacyGetPerson.prepare(');
   });
+  const readOrEmpty = (path: string) => tree.read(path, 'utf-8') ?? '';
+
+  it('renames references but leaves same-named members, keys and labels alone', async () => {
+    tree.write(
+      'libs/app/src/members.ts',
+      `
+import { getPerson } from '@app/api';
+
+declare const api: { getPerson: typeof getPerson };
+
+export type Lookup = typeof api.getPerson;
+
+export interface Store {
+  getPerson(): void;
+}
+
+export enum Keys {
+  getPerson = 'getPerson',
+}
+
+export class Facade<getPerson> {
+  getPerson = getPerson;
+
+  get current() {
+    return getPerson;
+  }
+
+  set current(value: unknown) {
+    getPerson: for (const item of [value]) {
+      console.log(item);
+    }
+  }
+
+  prepare() {
+    const { getPerson: picked } = api;
+
+    return { picked, getPerson: getPerson.prepare };
+  }
+}
+
+export namespace getPerson {}
+
+export const accessors = {
+  getPerson() {
+    return getPerson;
+  },
+  get getPersonValue() {
+    return getPerson;
+  },
+};
+
+export const getters = {
+  get getPerson() {
+    return 1;
+  },
+  set getPerson(value: number) {
+    console.log(value);
+  },
+};
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const members = readOrEmpty('libs/app/src/members.ts');
+
+    expect(members).toContain("import { legacyGetPerson } from '@app/api';");
+    expect(members).toContain('declare const api: { getPerson: typeof legacyGetPerson };');
+    expect(members).toContain('export type Lookup = typeof api.getPerson;');
+    expect(members).toContain('  getPerson(): void;');
+    expect(members).toContain("  getPerson = 'getPerson',");
+    expect(members).toContain('export class Facade<getPerson> {');
+    expect(members).toContain('  getPerson = legacyGetPerson;');
+    expect(members).toContain('    return legacyGetPerson;');
+    expect(members).toContain('    getPerson: for (const item of [value]) {');
+    expect(members).toContain('const { getPerson: picked }');
+    expect(members).toContain('getPerson: legacyGetPerson.prepare');
+    expect(members).toContain('export namespace getPerson {}');
+    expect(members).toContain('  getPerson() {\n    return legacyGetPerson;');
+    expect(members).toContain('  get getPerson() {');
+    expect(members).toContain('  set getPerson(value: number) {');
+  });
+
+  it('keeps a shorthand property pointing at the renamed import', async () => {
+    tree.write(
+      'libs/app/src/shorthand.ts',
+      `
+import { getPerson } from '@app/api';
+
+export const creators = { getPerson };
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const shorthand = readOrEmpty('libs/app/src/shorthand.ts');
+
+    expect(shorthand).toContain("import { legacyGetPerson } from '@app/api';");
+    expect(shorthand).toContain('export const creators = { getPerson: legacyGetPerson };');
+  });
+
+  it('keeps a local export of the renamed import pointing at a binding that exists', async () => {
+    tree.write(
+      'libs/app/src/local-export.ts',
+      `
+import { getPerson } from '@app/api';
+
+export { getPerson };
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const localExport = readOrEmpty('libs/app/src/local-export.ts');
+
+    expect(localExport).toContain("import { legacyGetPerson } from '@app/api';");
+    expect(localExport).toMatch(/export \{ legacyGetPerson( as getPerson)? \};/);
+  });
+
+  it('leaves usages of an import alone and reports it when the file also declares that name', async () => {
+    tree.write(
+      'libs/app/src/shadowed.ts',
+      `
+import { getPerson, postLogin } from '@app/api';
+
+export const run = () => {
+  const getPerson = () => null;
+
+  return [getPerson(), postLogin];
+};
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const shadowed = readOrEmpty('libs/app/src/shadowed.ts');
+    const report = readOrEmpty('query-v3-migration-tasks.md');
+
+    expect(shadowed).toContain("import { legacyGetPerson, legacyPostLogin } from '@app/api';");
+    expect(shadowed).toContain('return [getPerson(), legacyPostLogin];');
+    expect(report).toContain('Point getPerson at its legacy wrapper by hand');
+    expect(report).toContain('point the query usages at `legacyGetPerson`');
+    expect(report).not.toContain('Point postLogin at its legacy wrapper by hand');
+  });
+
+  it('reports every shadowed import when none of them can be renamed', async () => {
+    tree.write(
+      'libs/app/src/all-shadowed.ts',
+      `
+import { getPerson } from '@app/api';
+
+export function getPersonLater(getPerson: unknown) {
+  return getPerson;
+}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const allShadowed = readOrEmpty('libs/app/src/all-shadowed.ts');
+
+    expect(allShadowed).toContain("import { legacyGetPerson } from '@app/api';");
+    expect(allShadowed).toContain('  return getPerson;');
+    expect(readOrEmpty('query-v3-migration-tasks.md')).toContain('Point getPerson at its legacy wrapper by hand');
+  });
+
+  it('points a named re-export at the legacy wrapper and rewrites several imports in one file', async () => {
+    tree.write(
+      'libs/app/src/reexports.ts',
+      `
+import { getPerson } from '@app/api';
+import { postLogin } from '@app/api';
+
+export { getPerson as person, postLogin as login } from '@app/api';
+export * from '@app/api';
+
+export const both = [getPerson, postLogin];
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const reexports = readOrEmpty('libs/app/src/reexports.ts');
+
+    expect(reexports).toContain("import { legacyGetPerson } from '@app/api';");
+    expect(reexports).toContain("import { legacyPostLogin } from '@app/api';");
+    expect(reexports).toContain("export { legacyGetPerson as person, legacyPostLogin as login } from '@app/api';");
+    expect(reexports).toContain("export * from '@app/api';");
+    expect(reexports).toContain('export const both = [legacyGetPerson, legacyPostLogin];');
+  });
 });

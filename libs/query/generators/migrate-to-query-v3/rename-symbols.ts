@@ -24,7 +24,6 @@ const isNamePosition = (node: ts.Identifier) => {
 
   // Object literal / type member keys, enum members, JSX-ish attribute names.
   if (ts.isPropertyAssignment(parent) && parent.name === node) return true;
-  if (ts.isShorthandPropertyAssignment(parent) && parent.name === node) return true;
   if (ts.isPropertySignature(parent) && parent.name === node) return true;
   if (ts.isMethodSignature(parent) && parent.name === node) return true;
   if (ts.isEnumMember(parent) && parent.name === node) return true;
@@ -47,10 +46,25 @@ const isNamePosition = (node: ts.Identifier) => {
   if (ts.isLabeledStatement(parent) && parent.label === node) return true;
 
   // Import / export clauses are rewritten by the caller, never by the reference pass.
-  if (ts.isImportSpecifier(parent) || ts.isExportSpecifier(parent)) return true;
+  if (ts.isImportSpecifier(parent)) return true;
+  if (
+    ts.isExportSpecifier(parent) &&
+    (parent.parent.parent.moduleSpecifier || (parent.propertyName && parent.name === node))
+  ) {
+    return true;
+  }
   if (ts.isImportClause(parent) || ts.isNamespaceImport(parent)) return true;
 
   return false;
+};
+
+const renamedReference = (node: ts.Identifier, nextName: string) => {
+  const parent = node.parent;
+
+  if (ts.isShorthandPropertyAssignment(parent)) return `${node.text}: ${nextName}`;
+  if (ts.isExportSpecifier(parent) && !parent.propertyName) return `${nextName} as ${node.text}`;
+
+  return nextName;
 };
 
 /** Every name the file declares itself - a local by the same name means the import is shadowed. */
@@ -105,7 +119,11 @@ export const renameImportedReferences = (content: string, renames: Map<string, s
       const nextName = applicable.get(node.text);
 
       if (nextName && !isNamePosition(node)) {
-        replacements.push({ start: node.getStart(sourceFile), end: node.getEnd(), replacement: nextName });
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: renamedReference(node, nextName),
+        });
       }
     }
 
