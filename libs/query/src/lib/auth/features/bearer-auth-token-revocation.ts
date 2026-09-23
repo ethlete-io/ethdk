@@ -1,12 +1,16 @@
+import { HttpHeaders } from '@angular/common/http';
 import { effect, Signal, signal, untracked } from '@angular/core';
-import { AnyQuerySnapshot, QuerySnapshot, RequestArgs } from '../../http';
+import { AnyQuerySnapshot, QueryArgs, QuerySnapshot, RequestArgs } from '../../http';
 import {
   AnyQueryBuilder,
   BearerAuthFeatureType,
+  BearerAuthSessionEndCause,
   BearerAuthProviderFeatureContext,
   ExtractQueryArgs,
   ExtractQueryKey,
 } from '../bearer-auth-provider';
+
+const AUTH_HEADER = 'Authorization';
 
 export type TokenRevocationConfig<
   TBuilders extends readonly AnyQueryBuilder[],
@@ -17,9 +21,9 @@ export type TokenRevocationConfig<
    */
   queryKey: TKey;
   /**
-   * Function to build the revocation request args from tokens
+   * Function to build the revocation request args from tokens. Leave it out for a query that takes no args.
    */
-  buildArgs: (tokens: {
+  buildArgs?: (tokens: {
     accessToken: string | null;
     refreshToken: string | null;
   }) => RequestArgs<ExtractQueryArgs<Extract<TBuilders[number], { key: TKey }>>>;
@@ -28,6 +32,16 @@ export type TokenRevocationConfig<
    * @default true
    */
   revokeOnLogout?: boolean;
+  /**
+   * The session end causes that revoke automatically. Leave it out to revoke on every cause.
+   * @example revokeOn: ['user'] // for an API whose revocation ends the sessions on all devices
+   */
+  revokeOn?: readonly BearerAuthSessionEndCause[];
+  /**
+   * Send the revoked access token as `Authorization: Bearer <token>`, unless the built args already set that header.
+   * @default false
+   */
+  bearer?: boolean;
 };
 
 export type TokenRevocationFeature<TQuerySnapshot extends AnyQuerySnapshot> = {
@@ -58,9 +72,26 @@ export const withTokenRevocation = <
   config: TokenRevocationConfig<TBuilders, TKey>,
 ) => {
   return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
-    type RevocationSnapshot = QuerySnapshot<ExtractQueryArgs<Extract<TBuilders[number], { key: TKey }>>>;
+    type RevocationArgs = ExtractQueryArgs<Extract<TBuilders[number], { key: TKey }>>;
+    type RevocationSnapshot = QuerySnapshot<RevocationArgs>;
 
     const revokeOnLogout = config.revokeOnLogout ?? true;
+
+    const withBearerHeader = (args: RequestArgs<RevocationArgs>, accessToken: string | null) => {
+      if (!config.bearer || !accessToken) return args;
+
+      const argHeaders = (args as Pick<QueryArgs, 'headers'>).headers;
+      const headers = () => {
+        const base = (typeof argHeaders === 'function' ? argHeaders() : argHeaders) ?? new HttpHeaders();
+
+        return base.has(AUTH_HEADER) ? base : base.set(AUTH_HEADER, `Bearer ${accessToken}`);
+      };
+
+      return { ...args, headers };
+    };
+
+    const shouldRevokeFor = (cause: BearerAuthSessionEndCause | null) =>
+      !config.revokeOn || (cause !== null && config.revokeOn.includes(cause));
 
     const enabled = signal(true);
     let previousAccessToken: string | null = null;
@@ -74,7 +105,10 @@ export const withTokenRevocation = <
         return null;
       }
 
-      const args = config.buildArgs({ accessToken, refreshToken });
+      const args = withBearerHeader(
+        config.buildArgs?.({ accessToken, refreshToken }) ?? ({} as RequestArgs<RevocationArgs>),
+        accessToken,
+      );
 
       context.executionState.set({ type: 'revocation', state: 'loading' });
 
@@ -103,7 +137,12 @@ export const withTokenRevocation = <
           const currentToken = context.accessToken();
           const currentRefreshToken = context.refreshToken();
 
-          if (previousAccessToken && !currentToken && enabled()) {
+          if (
+            previousAccessToken &&
+            !currentToken &&
+            enabled() &&
+            shouldRevokeFor(untracked(context.sessionEndCause))
+          ) {
             untracked(() => revokeWithTokens(previousAccessToken, previousRefreshToken));
           }
 
@@ -126,7 +165,8 @@ export const withTokenRevocation = <
       instance,
       devtools: () => [
         { label: 'query', value: config.queryKey },
-        { label: 'on logout', value: revokeOnLogout ? 'yes' : 'no' },
+        { label: 'on logout', value: revokeOnLogout ? (config.revokeOn?.join(', ') ?? 'yes') : 'no' },
+        { label: 'bearer', value: config.bearer ? 'yes' : 'no' },
       ],
     };
   };

@@ -1,11 +1,11 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpHeaders, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { getCookie, getDomain, injectRoute } from '@ethlete/core';
 import { createPostQuery, createQueryClient, QueryClientRef } from '../../http';
-import { createBearerAuthProvider } from '../bearer-auth-provider';
+import { BearerAuthSessionEndCause, createBearerAuthProvider } from '../bearer-auth-provider';
 import { withAuthenticationQuery } from '../bearer-auth-query-builders';
 import { withTokenRevocation } from './bearer-auth-token-revocation';
 
@@ -151,5 +151,119 @@ describe('bearer-auth-token-revocation', () => {
 
       await promise;
     });
+  });
+
+  describe('bearer and revokeOn', () => {
+    const setup = (revocation: { revokeOn?: readonly BearerAuthSessionEndCause[]; bearer?: boolean }) => {
+      const createPost = createPostQuery(queryClientRef);
+
+      const loginQuery = createPost<{
+        body: { username: string };
+        response: { accessToken: string; refreshToken: string };
+      }>('/auth/login');
+
+      const logoutQuery = createPost<{ response: void }>('/auth/logout');
+
+      const { inject: injectAuth } = createBearerAuthProvider({
+        name: 'test',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', { queryCreator: loginQuery }),
+          withAuthenticationQuery('logout', { queryCreator: logoutQuery }),
+        ],
+        features: [withTokenRevocation({ queryKey: 'logout', ...revocation })],
+      });
+
+      const auth = TestBed.runInInjectionContext(() => injectAuth());
+
+      auth.queries.login.execute({ body: { username: 'test' } });
+      httpTesting.expectOne('https://api.test.com/auth/login').flush({
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      });
+      TestBed.tick();
+
+      return auth;
+    };
+
+    it('sends the revoked access token as a bearer header without buildArgs', () => {
+      const auth = setup({ bearer: true });
+
+      auth.logout();
+      TestBed.tick();
+
+      const req = httpTesting.expectOne('https://api.test.com/auth/logout');
+      expect(req.request.headers.get('Authorization')).toBe('Bearer access-token');
+      req.flush(null);
+    });
+
+    it('sends no authorization header without bearer', () => {
+      const auth = setup({});
+
+      auth.logout();
+      TestBed.tick();
+
+      const req = httpTesting.expectOne('https://api.test.com/auth/logout');
+      expect(req.request.headers.has('Authorization')).toBe(false);
+      req.flush(null);
+    });
+
+    it('keeps an authorization header the built args set', () => {
+      const createPost = createPostQuery(queryClientRef);
+      const loginQuery = createPost<{
+        body: { username: string };
+        response: { accessToken: string; refreshToken: string };
+      }>('/auth/login');
+      const logoutQuery = createPost<{ response: void }>('/auth/logout');
+
+      const { inject: injectAuth } = createBearerAuthProvider({
+        name: 'test',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', { queryCreator: loginQuery }),
+          withAuthenticationQuery('logout', { queryCreator: logoutQuery }),
+        ],
+        features: [
+          withTokenRevocation({
+            queryKey: 'logout',
+            bearer: true,
+            buildArgs: () => ({ headers: new HttpHeaders({ Authorization: 'Custom value' }) }),
+          }),
+        ],
+      });
+
+      const auth = TestBed.runInInjectionContext(() => injectAuth());
+      auth.queries.login.execute({ body: { username: 'test' } });
+      httpTesting.expectOne('https://api.test.com/auth/login').flush({ accessToken: 'a', refreshToken: 'r' });
+      TestBed.tick();
+
+      auth.logout();
+      TestBed.tick();
+
+      const req = httpTesting.expectOne('https://api.test.com/auth/logout');
+      expect(req.request.headers.get('Authorization')).toBe('Custom value');
+      req.flush(null);
+    });
+
+    it('revokes automatically for a listed cause', () => {
+      const auth = setup({ bearer: true, revokeOn: ['user'] });
+
+      auth.logout('user');
+      TestBed.tick();
+
+      httpTesting.expectOne('https://api.test.com/auth/logout').flush(null);
+    });
+
+    it.each(['otherTab', 'expired', 'inactivity'] as const)(
+      'does not revoke automatically for the cause %s',
+      (cause) => {
+        const auth = setup({ bearer: true, revokeOn: ['user'] });
+
+        auth.logout(cause);
+        TestBed.tick();
+
+        httpTesting.expectNone('https://api.test.com/auth/logout');
+      },
+    );
   });
 });

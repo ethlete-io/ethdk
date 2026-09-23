@@ -4,6 +4,7 @@ import { createEnvironmentInjector, effect, EnvironmentInjector, inject } from '
 import { RedirectCommand, Router } from '@angular/router';
 import { isObservable } from 'rxjs';
 import {
+  BearerAuthSessionEndCause,
   clearQueryDevtoolsTokenTtl,
   createAuthGuard,
   createBearerAuthProvider,
@@ -94,6 +95,52 @@ const bootRevocationAuth = (s: Scenario) => {
   if (!auth) throw new Error('auth-features scenario: failed to create the revocation auth provider');
 
   return { auth, destroy: () => injector.destroy() };
+};
+
+type SessionEndLogoutArgs = { response: void };
+
+/**
+ * A provider configured the way a consumer lib without `@angular/*` imports can: `bearer` puts the token on
+ * the revocation request, and `revokeOn` picks the session end causes that call it.
+ */
+const bootBearerRevocationAuth = (
+  s: Scenario,
+  revocation: { bearer?: boolean; revokeOn?: readonly BearerAuthSessionEndCause[] },
+  options: { inactivityTimeout?: number } = {},
+) => {
+  const id = ++manualBootCounter;
+  const clientRef = createQueryClient({
+    name: `auth-features-bearer-revocation-client-${id}`,
+    baseUrl: BASE_URL,
+    keepUnusedFor: 0,
+  });
+  const post = createPostQuery(clientRef);
+
+  const authRef = createBearerAuthProvider({
+    name: `auth-features-bearer-revocation-provider-${id}`,
+    queryClientRef: clientRef,
+    queries: [
+      withAuthenticationQuery('login', { queryCreator: post<TokenArgs>('/auth/login') }),
+      withRefreshQuery('refresh', { queryCreator: post<TokenArgs>('/auth/refresh'), autoRetryOn401: true }),
+      withAuthenticationQuery('logout', { queryCreator: post<SessionEndLogoutArgs>('/auth/logout') }),
+    ],
+    features: [
+      withTokenRevocation({ queryKey: 'logout', ...revocation }),
+      ...(options.inactivityTimeout ? [withInactivityLogout({ inactivityTimeout: options.inactivityTimeout })] : []),
+    ],
+  });
+
+  const injector = createEnvironmentInjector(
+    [...clientRef.provide(), ...authRef.provide()],
+    s.run(() => inject(EnvironmentInjector)),
+  );
+  const auth = injector.runInContext(() => authRef.inject());
+
+  if (!auth) throw new Error('auth-features scenario: failed to create the bearer revocation auth provider');
+
+  const getSecureMe = createSecureGetQuery(clientRef, authRef)<{ response: { id: string } }>('/secure/me');
+
+  return { auth, getSecureMe, injector, destroy: () => injector.destroy() };
 };
 
 const deleteCookie = () => {
@@ -1034,6 +1081,164 @@ describe('auth features without the devtools', () => {
     expect(auth.sessionEndCause()).toBe('inactivity');
 
     c.destroy();
+  });
+});
+
+describe('token revocation with bearer and revokeOn', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  const logoutRequests = (s: Scenario) => s.api.requests.filter((r) => r.path === '/auth/logout');
+
+  const login = (s: Scenario, auth: ReturnType<typeof bootBearerRevocationAuth>['auth']) => {
+    s.api.on('POST', '/auth/login', () => ({
+      body: { accessToken: mintToken(), refreshToken: mintToken({ expiresInMs: 3600000 }) },
+    }));
+    s.api.on('POST', '/auth/logout', () => ({ status: 204 }));
+
+    auth.queries.login.execute({ body: {} });
+    s.tick();
+
+    return auth.accessToken();
+  };
+
+  it('bearer sends the revoked access token as the Authorization header of a query with no args', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const { auth, destroy } = bootBearerRevocationAuth(s, { bearer: true });
+    const accessTokenAtLogout = login(s, auth);
+
+    auth.logout();
+    s.tick();
+
+    expect(logoutRequests(s).map((r) => r.headers.get('Authorization'))).toEqual([`Bearer ${accessTokenAtLogout}`]);
+    expect(auth.sessionStatus()).toBe('anonymous');
+
+    destroy();
+  });
+
+  it('without bearer the revocation request carries no Authorization header', () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const { auth, destroy } = bootBearerRevocationAuth(s, {});
+    login(s, auth);
+
+    auth.logout();
+    s.tick();
+
+    expect(logoutRequests(s).map((r) => r.headers.has('Authorization'))).toEqual([false]);
+
+    destroy();
+  });
+
+  it("revokeOn: ['user'] revokes a logout() the user asked for", () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const { auth, destroy } = bootBearerRevocationAuth(s, { bearer: true, revokeOn: ['user'] });
+    login(s, auth);
+
+    auth.logout();
+    s.tick();
+
+    expect(auth.sessionEndCause()).toBe('user');
+    expect(logoutRequests(s)).toHaveLength(1);
+
+    destroy();
+  });
+
+  it("revokeOn: ['user'] does not revoke a session that expired after a failed refresh", () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const { auth, getSecureMe, injector, destroy } = bootBearerRevocationAuth(s, { bearer: true, revokeOn: ['user'] });
+    login(s, auth);
+
+    s.api.once('GET', '/secure/me', () => ({ status: 401, body: { message: 'revoked' } }));
+    s.api.once('POST', '/auth/refresh', () => ({ status: 400, body: { message: 'refresh token revoked' } }));
+
+    const c = s.consumer([], injector);
+    c.run(() => getSecureMe());
+    s.flush();
+
+    expect(auth.sessionEndCause()).toBe('expired');
+    expect(logoutRequests(s)).toHaveLength(0);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 401);
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+
+    c.destroy();
+    destroy();
+  });
+
+  it("revokeOn: ['user'] does not revoke an inactivity logout", () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const { auth, destroy } = bootBearerRevocationAuth(
+      s,
+      { bearer: true, revokeOn: ['user'] },
+      { inactivityTimeout: 5000 },
+    );
+    login(s, auth);
+
+    s.tick(5000);
+
+    expect(auth.sessionEndCause()).toBe('inactivity');
+    expect(logoutRequests(s)).toHaveLength(0);
+
+    destroy();
+  });
+
+  it("revokeOn: ['user'] does not revoke the logout another tab carried here", () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const { auth, destroy } = bootBearerRevocationAuth(s, { bearer: true, revokeOn: ['user'] });
+    login(s, auth);
+
+    auth.logout('otherTab');
+    s.tick();
+
+    expect(logoutRequests(s)).toHaveLength(0);
+
+    destroy();
+  });
+
+  it("revokeOn: ['expired', 'inactivity'] revokes an inactivity logout but not a user logout", () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const idle = bootBearerRevocationAuth(
+      s,
+      { bearer: true, revokeOn: ['expired', 'inactivity'] },
+      { inactivityTimeout: 5000 },
+    );
+    const accessTokenAtTimeout = login(s, idle.auth);
+
+    s.tick(5000);
+
+    expect(logoutRequests(s).map((r) => r.headers.get('Authorization'))).toEqual([`Bearer ${accessTokenAtTimeout}`]);
+
+    idle.destroy();
+
+    const user = bootBearerRevocationAuth(s, { bearer: true, revokeOn: ['expired', 'inactivity'] });
+    login(s, user.auth);
+
+    user.auth.logout();
+    s.tick();
+
+    expect(logoutRequests(s)).toHaveLength(1);
+
+    user.destroy();
   });
 });
 
