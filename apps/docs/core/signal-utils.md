@@ -130,6 +130,31 @@ what the SDK's own components use - the [form field](/components/forms#busy-stat
 [select](/components/select#how-a-wait-is-reported) and cascader panels, the menu's search spinner and
 the [table](/components/table#loading-error-states)'s busy bar.
 
+## Countdown
+
+`signalCountdown(deadline)` counts down to a deadline - a `Date`, an ISO string or a timestamp, read
+from a signal or getter so it can change:
+
+```ts
+import { signalCountdown } from '@ethlete/core';
+
+protected timeLeft = signalCountdown(computed(() => this.round()?.startsAt));
+```
+
+The result is `Signal<Countdown | null>`: `null` while the deadline is missing or not a valid date,
+otherwise `{ totalSeconds, days, hours, minutes, seconds, hasPassed }`. Seconds round **up**, so the
+display reads `1` for the last second and turns `hasPassed` exactly when the deadline arrives, never
+showing a zero that has not happened yet.
+
+The helper recounts on each whole second of the remaining time rather than on a free-running
+interval, so the value changes when the displayed second changes. Its timer stops once the deadline
+has passed or turns `null`, and restarts if the deadline moves into the future again. On the server
+it computes a single value and starts no timer - a pending interval would keep the app from ever
+becoming stable.
+
+Formatting is left to the caller: the breakdown carries numbers, not labels, so a template decides
+whether to show days, when to drop to seconds and how to pad them.
+
 ## Signal plumbing
 
 | Helper                                                     | Purpose                                                                                                                                       |

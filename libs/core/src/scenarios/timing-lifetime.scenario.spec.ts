@@ -9,6 +9,7 @@ import {
   ScrollObserverEndDirective,
   ScrollObserverStartDirective,
   signalAnimatedNumber,
+  signalCountdown,
   writeScrollbarSizeToCssVariables,
   writeViewportSizeToCssVariables,
 } from '../index';
@@ -97,6 +98,37 @@ describe('timing and lifetime scenarios', () => {
 
       expect(value()).toBe(midway);
       expect(ends).toEqual([]);
+    });
+  });
+
+  describe('signalCountdown', () => {
+    it('counts down on the whole second and stops its timer once the deadline passes', () => {
+      const s = scenario();
+      const deadline = signal(Date.now() + 61_500);
+      const countdown = s.consumer().run(() => signalCountdown(deadline));
+
+      s.tick(0);
+      expect(countdown()).toMatchObject({ minutes: 1, seconds: 2, hasPassed: false });
+
+      s.tick(500);
+      expect(countdown()).toMatchObject({ minutes: 1, seconds: 1 });
+
+      s.tick(61_000);
+      expect(countdown()).toMatchObject({ totalSeconds: 0, hasPassed: true });
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('stops ticking when its owner is destroyed mid-countdown', () => {
+      const s = scenario();
+      const c = s.consumer();
+      const countdown = c.run(() => signalCountdown(() => Date.now() + 3_600_000));
+
+      s.tick(1000);
+      expect(countdown()?.totalSeconds).toBe(3599);
+
+      c.destroy();
+
+      expect(vi.getTimerCount()).toBe(0);
     });
   });
 

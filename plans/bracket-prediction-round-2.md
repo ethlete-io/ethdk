@@ -103,9 +103,11 @@ adapters, and the chevron rail.
 
 ## Two findings outside the bracket
 
-- The SDK has no countdown helper anywhere. The consumer wrote
+- ~~The SDK has no countdown helper anywhere. The consumer wrote
   `injectBracketChallengeTimeLeft`: a signal recounted once a second, days-hours-minutes until under
-  a day, then down to seconds. `libs/core` is the natural home.
+  a day, then down to seconds. `libs/core` is the natural home.~~ **Done** - `signalCountdown(deadline)`
+  in `libs/core/src/lib/signals/countdown.ts`; it returns the numeric breakdown and leaves the
+  days-or-seconds formatting to the template.
 - `et-picture` reserves no space until the image decodes. Its `aspect-*` class sits on the `<img>`,
   which has no size until the file arrives, and behind an `@if` that costs two layout jumps rather
   than one. The box belongs around the `et-picture`, not on it.
