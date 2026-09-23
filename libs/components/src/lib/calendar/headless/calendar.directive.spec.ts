@@ -517,6 +517,24 @@ describe('CalendarDirective', () => {
       expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 13), end: null });
     });
 
+    it('drops the hover preview when the view changes under a resting pointer', () => {
+      host.rangeStrategy.set(createWeekRangeStrategy({ weekStartsOn: 1 }));
+      fixture.detectChanges();
+
+      cell(fixture, 16)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
+      fixture.detectChanges();
+
+      expect(bandedCells(fixture)).not.toEqual([]);
+
+      calendar.view.set('year');
+      fixture.detectChanges();
+      calendar.view.set('month');
+      fixture.detectChanges();
+
+      expect(calendar.hoveredDate()).toBeNull();
+      expect(bandedCells(fixture)).toEqual([]);
+    });
+
     it('bands nothing on an untouched calendar, and follows the roving cell once focus is in the grid', async () => {
       host.rangeStrategy.set(createFixedLengthRangeStrategy({ days: 7 }));
       fixture.detectChanges();

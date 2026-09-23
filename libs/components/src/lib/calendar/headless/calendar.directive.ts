@@ -308,8 +308,11 @@ export class CalendarDirective {
     },
   });
 
-  /** Range-preview endpoint while the pointer is over the grid. */
-  public hoveredDate = signal<Date | null>(null);
+  /** Range-preview endpoint while the pointer is over the grid. A view change clears it. */
+  public hoveredDate = linkedSignal<CalendarView, Date | null>({
+    source: () => this.view(),
+    computation: () => null,
+  });
 
   /**
    * The grid DOM focus is in, or `null` while focus is outside all of them.
