@@ -21,6 +21,20 @@ export const isHTMLElement = (value: unknown): value is HTMLElement => {
   return view ? value instanceof view.HTMLElement : value instanceof HTMLElement;
 };
 
+export const isElement = (value: unknown): value is Element => {
+  const view = (value as Node | null | undefined)?.ownerDocument?.defaultView;
+
+  return view ? value instanceof view.Element : value instanceof Element;
+};
+
+export const isHTMLOrSVGElement = (value: unknown): value is HTMLElement | SVGElement => {
+  const view = (value as Node | null | undefined)?.ownerDocument?.defaultView;
+
+  return view
+    ? value instanceof view.HTMLElement || value instanceof view.SVGElement
+    : value instanceof HTMLElement || value instanceof SVGElement;
+};
+
 /**
  * Whether the overlay rooted at `hostElement` is still the owner of DOM focus - focus is inside it, or
  * nothing is focused. False once the user has moved focus somewhere else.

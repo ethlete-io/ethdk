@@ -66,7 +66,7 @@ const RENDERER_DEF = /* @__PURE__ */ defineRootProvider(
       });
     };
 
-    const setAttribute = (element: HTMLElement, name: string, value: string | null, namespace?: string | null) => {
+    const setAttribute = (element: Element, name: string, value: string | null, namespace?: string | null) => {
       if (value !== null && value !== undefined) {
         renderer.setAttribute(element, name, value, namespace);
       } else {
@@ -74,7 +74,7 @@ const RENDERER_DEF = /* @__PURE__ */ defineRootProvider(
       }
     };
 
-    const removeAttribute = (element: HTMLElement, ...names: string[]) => {
+    const removeAttribute = (element: Element, ...names: string[]) => {
       names.forEach((name) => renderer.removeAttribute(element, name));
     };
 

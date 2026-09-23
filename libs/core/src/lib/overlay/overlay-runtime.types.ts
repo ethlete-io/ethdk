@@ -36,7 +36,7 @@ export type OverlayRuntimeShiftOptions = {
 
 export type OverlayRuntimeAnchoredPosition = {
   kind: 'anchored';
-  referenceElement: HTMLElement | VirtualElement;
+  referenceElement: Element | VirtualElement;
   placement?: Placement;
   fallbackPlacements?: Placement[];
   offset?: OffsetOptions | null;

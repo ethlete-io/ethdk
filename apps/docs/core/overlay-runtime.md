@@ -117,7 +117,7 @@ This is how the [query devtools](/query-devtools/#reserve-page-space) keep an ap
 
 - `{ kind: 'center' }` - centered with a 16px viewport padding (the default).
 - `{ kind: 'global', horizontal?, vertical?, padding? }` - edge/corner placement; alignments are `'start' | 'center' | 'end' | 'stretch'` (default `'center'`), padding default `0`.
-- `anchoredOverlayPosition({ referenceElement, … })` - Floating-UI anchored positioning with `placement` (default `'bottom'`), `fallbackPlacements`, `offset` (default `8`), `viewportPadding` (default `8`), `arrowPadding` (default `12`, i.e. how close the arrow's base may get to the pane's corners - raise it for a pane whose corner radius is larger than that), `shift` (default on), `autoResize`, `minAvailableSpace`, `autoHide`, `autoCloseIfReferenceHidden` and `mirrorWidth`.
+- `anchoredOverlayPosition({ referenceElement, … })` - Floating-UI anchored positioning against any `Element` (an SVG shape included) or a virtual element, with `placement` (default `'bottom'`), `fallbackPlacements`, `offset` (default `8`), `viewportPadding` (default `8`), `arrowPadding` (default `12`, i.e. how close the arrow's base may get to the pane's corners - raise it for a pane whose corner radius is larger than that), `shift` (default on), `autoResize`, `minAvailableSpace`, `autoHide`, `autoCloseIfReferenceHidden` and `mirrorWidth`.
 
   `minAvailableSpace` (px) is the alternative to `fallbackPlacements` for a pane that scrolls: the pane keeps its placement's own side while that side offers at least this much space and `autoResize` shrinks it into what is there, moves to the opposite side only below the minimum, and keeps the roomier side when neither reaches it. It measures the space around the reference rather than the pane, so a pane whose content changes while it is open can never flip sides mid-animation - which `flip` does, because it compares the pane's `size`-derived height against the space it has. Setting it replaces `flip` and forces `shift`'s cross axis off. See [the select's panel placement](/components/select#panel-placement).
 
@@ -161,4 +161,4 @@ The building blocks behind the runtime are exported for custom floating UI:
 
 - **Focus** - `getFocusableElements(container, document)` / `isFocusable(element, document)` (based on the exported `FOCUSABLE_SELECTOR`), `focusElement(el)`, `ownsActiveElement(host, document)`, `applyInitialFocus(…)` and `setupFocusTrap(…)` (returns a cleanup function).
 - **Positioning** - `setupPositioning(…)` plus the lower-level `applyCenteredPosition`, `applyGlobalPosition` and `createAnchoredPositionCleanup` used by the [position strategies](#position-strategies).
-- **Misc** - `getHeadingElement(container)` (finds the first heading for `aria-labelledby`) and the `isHTMLElement` guard.
+- **Misc** - `getHeadingElement(container)` (finds the first heading for `aria-labelledby`) and the realm-aware `isHTMLElement`, `isHTMLOrSVGElement` and `isElement` guards.

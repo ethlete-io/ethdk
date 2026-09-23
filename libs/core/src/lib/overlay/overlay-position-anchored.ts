@@ -12,7 +12,7 @@ import {
   SideObject,
 } from '@floating-ui/dom';
 import { AngularRenderer } from '../providers';
-import { isHTMLElement } from './overlay-focus';
+import { isElement, isHTMLElement } from './overlay-focus';
 import { registerAnchoredPositionSetup } from './overlay-position';
 import { OverlayRuntimeRef } from './overlay-runtime-ref';
 import { OverlayRuntimeAnchoredPosition } from './overlay-runtime.types';
@@ -204,7 +204,7 @@ export const createAnchoredPositionCleanup = (
     // or `autoCloseIfReferenceHidden` asked for it: a trigger destroyed while its overlay is open (a
     // menu item that removes the button it was opened from) would otherwise fly to the corner for the
     // frames the overlay takes to animate out.
-    if (isHTMLElement(strategy.referenceElement) && !strategy.referenceElement.isConnected) {
+    if (isElement(strategy.referenceElement) && !strategy.referenceElement.isConnected) {
       handleUnusableReference();
 
       return;

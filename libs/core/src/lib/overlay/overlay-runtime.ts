@@ -14,7 +14,7 @@ import { filter, take } from 'rxjs';
 import { ANIMATED_LIFECYCLE_TOKEN, animationDebugLog, nextFrame } from '../animations';
 import { injectRenderer } from '../providers';
 import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
-import { applyInitialFocus, isHTMLElement, ownsActiveElement, setupFocusTrap } from './overlay-focus';
+import { applyInitialFocus, isElement, isHTMLOrSVGElement, ownsActiveElement, setupFocusTrap } from './overlay-focus';
 import { DEFAULT_OVERLAY_LAYER, OVERLAY_LAYER_ATTRIBUTE, isOnHigherOverlayLayer } from './overlay-layer';
 import { resetPositioningStyles, setBackdropStyles, setBaseElementStyles, setupPositioning } from './overlay-position';
 import { OverlayRuntimeRef, createOverlayRuntimeRef } from './overlay-runtime-ref';
@@ -141,7 +141,9 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       const hostElement = renderer.createElement('div');
       const paneElement = renderer.createElement('div');
       const backdropElement = signal<HTMLElement | null>(null);
-      const previousFocusedElement = isHTMLElement(targetDocument.activeElement) ? targetDocument.activeElement : null;
+      const previousFocusedElement = isHTMLOrSVGElement(targetDocument.activeElement)
+        ? targetDocument.activeElement
+        : null;
       const autoFocus = config.autoFocus ?? 'first-tabbable';
       let currentHasBackdrop = config.hasBackdrop !== false;
       let currentPositionStrategy = config.positionStrategy;
@@ -247,7 +249,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       cleanupFns.push(() => positionCleanup());
 
       const getOriginElement = () =>
-        currentPositionStrategy?.kind === 'anchored' && isHTMLElement(currentPositionStrategy.referenceElement)
+        currentPositionStrategy?.kind === 'anchored' && isElement(currentPositionStrategy.referenceElement)
           ? currentPositionStrategy.referenceElement
           : null;
 
@@ -405,7 +407,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           }
 
           const target = event.target;
-          if (!isHTMLElement(target) || paneElement.contains(target)) {
+          if (!isElement(target) || paneElement.contains(target)) {
             return;
           }
 
@@ -424,7 +426,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           const originElement = getOriginElement();
           if (originElement && originElement.contains(target)) {
             const swallowReopenClick = (clickEvent: MouseEvent) => {
-              if (isHTMLElement(clickEvent.target) && originElement.contains(clickEvent.target)) {
+              if (isElement(clickEvent.target) && originElement.contains(clickEvent.target)) {
                 clickEvent.stopImmediatePropagation();
                 clickEvent.preventDefault();
               }
