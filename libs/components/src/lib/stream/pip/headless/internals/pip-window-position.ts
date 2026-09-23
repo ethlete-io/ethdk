@@ -44,6 +44,8 @@ export type PipWindowPosition = {
   isDragging: Signal<boolean>;
   isResizing: Signal<boolean>;
   initPosition(): void;
+  nudge(delta: { dx: number; dy: number }): void;
+  expand(): void;
   checkAndCollapse(): void;
   snapToViewport(): void;
   animateExit(callback: () => void): void;
@@ -296,6 +298,37 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
     untracked(() => applyInitialSize());
   });
 
+  const nudge = ({ dx, dy }: { dx: number; dy: number }) => {
+    initPosition();
+
+    if (isCollapsed()) {
+      snapToViewport();
+
+      return;
+    }
+
+    const elem = el.nativeElement;
+    const vw = viewportSize().width;
+    const vh = viewportSize().height;
+    const pad = params.viewportPadding();
+    const maxX = Math.max(pad, vw - pad - elem.offsetWidth);
+    const maxY = Math.max(pad, vh - pad - elem.offsetHeight);
+
+    pos.update((p) => ({
+      x: Math.max(pad, Math.min(maxX, p.x + dx)),
+      y: Math.max(pad, Math.min(maxY, p.y + dy)),
+    }));
+    deriveStickyEdges();
+  };
+
+  const expand = () => {
+    initPosition();
+
+    if (isCollapsed()) {
+      snapToViewport();
+    }
+  };
+
   const startDrag = () => {
     initPosition();
     isCollapsed.set(false);
@@ -462,6 +495,8 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
     isDragging,
     isResizing,
     initPosition,
+    nudge,
+    expand,
     checkAndCollapse,
     snapToViewport,
     animateExit: (callback) => {

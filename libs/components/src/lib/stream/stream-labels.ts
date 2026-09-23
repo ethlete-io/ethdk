@@ -40,6 +40,8 @@ export type StreamLabels = {
   pipClose: string;
   /** Accessible label for the PiP window's control that focuses the stream's page. */
   pipFocus: string;
+  /** Accessible label for the PiP window's title bar, which the arrow keys move. */
+  pipMove: string;
 };
 
 /** The built-in English labels. */
@@ -59,6 +61,7 @@ export const DEFAULT_STREAM_LABELS: StreamLabels = {
   pipPlaceholderBack: 'Back to player',
   pipClose: 'Close',
   pipFocus: 'Focus',
+  pipMove: 'Picture-in-picture window, move it with the arrow keys',
 };
 
 const STREAM_LABELS_DEF = /* @__PURE__ */ defineLabels<StreamLabels>('STREAM_LABELS', DEFAULT_STREAM_LABELS);

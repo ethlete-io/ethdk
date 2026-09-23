@@ -1,5 +1,16 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { expectTouchMode, openStory, tabSequence, tap } from '../support';
+import {
+  boxOf,
+  expectFocusVisible,
+  expectTouchMode,
+  openStory,
+  pressKey,
+  pressKeys,
+  tabSequence,
+  tabUntilFocused,
+  tap,
+  viewportOf,
+} from '../support';
 
 const YOUTUBE_STORY_ID = 'components-media-stream-youtube--default';
 const YOUTUBE_LIVE_STORY_ID = 'components-media-stream-youtube--live-stream';
@@ -13,6 +24,10 @@ const SOOP_STORY_ID = 'components-media-stream-soop--live-stream';
 const DAILYMOTION_STORY_ID = 'components-media-stream-dailymotion--default';
 const TIKTOK_STORY_ID = 'components-media-stream-tiktok--default';
 const MIXED_STORY_ID = 'components-media-stream-mixed--mixed-aspect-ratios';
+const YOUTUBE_PIP_STORY_ID = 'components-media-stream-youtube--slot-picture-in-picture';
+const PIP_WINDOW = 'et-pip-window';
+const PIP_TITLE_BAR = '.et-pip-window__title-bar';
+const PIP_VIEWPORT_PADDING = 8;
 
 const SLOT = '.et-stream-player-slot';
 const CONSENT = '.et-stream-consent';
@@ -539,6 +554,101 @@ test.describe('stream / structure', () => {
 
     expect(sequence[0]?.tag).toBe('BUTTON');
     expect(sequence[0]?.text).toBe('Retry');
+  });
+});
+
+/** Opens the PiP story, sends the first slot's player into the window, and Tabs to its title bar. */
+async function openPipAndFocusTitleBar(page: Page): Promise<{ pipWindow: Locator; titleBar: Locator }> {
+  await stubPlatformSdks(page);
+  const root = await openStory(page, YOUTUBE_PIP_STORY_ID);
+
+  await root.getByRole('button', { name: 'Enter PIP' }).first().click();
+
+  const pipWindow = page.locator(PIP_WINDOW);
+  const titleBar = pipWindow.locator(PIP_TITLE_BAR);
+
+  await expect(pipWindow).toBeVisible();
+  await tabUntilFocused(page, titleBar, 40);
+
+  return { pipWindow, titleBar };
+}
+
+test.describe('stream / pip keyboard', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard navigation');
+
+  test('the PiP title bar is a named tab stop with a visible focus ring', async ({ page }) => {
+    const { titleBar } = await openPipAndFocusTitleBar(page);
+
+    await expect(titleBar).toHaveAttribute('aria-label', /arrow keys/);
+    await expectFocusVisible(titleBar);
+  });
+
+  test('the arrow keys move the focused PiP window by ten pixels a press', async ({ page }) => {
+    const { pipWindow } = await openPipAndFocusTitleBar(page);
+    const before = await boxOf(pipWindow);
+
+    await pressKey(page, 'ArrowLeft');
+    await pressKey(page, 'ArrowLeft');
+    await pressKey(page, 'ArrowUp');
+
+    await expect.poll(async () => (await boxOf(pipWindow)).x).toBeCloseTo(before.x - 20, 0);
+    await expect.poll(async () => (await boxOf(pipWindow)).y).toBeCloseTo(before.y - 10, 0);
+  });
+
+  test('the arrow keys stop the PiP window at the viewport padding', async ({ page }) => {
+    const { pipWindow } = await openPipAndFocusTitleBar(page);
+    const viewport = viewportOf(page);
+
+    await pressKeys(
+      page,
+      Array.from({ length: 150 }, () => 'ArrowLeft'),
+      0,
+    );
+    await pressKeys(
+      page,
+      Array.from({ length: 150 }, () => 'ArrowUp'),
+      0,
+    );
+
+    await expect.poll(async () => (await boxOf(pipWindow)).x).toBeCloseTo(PIP_VIEWPORT_PADDING, 0);
+    await expect.poll(async () => (await boxOf(pipWindow)).y).toBeCloseTo(PIP_VIEWPORT_PADDING, 0);
+
+    await pressKeys(
+      page,
+      Array.from({ length: 150 }, () => 'ArrowRight'),
+      0,
+    );
+
+    await expect
+      .poll(async () => {
+        const box = await boxOf(pipWindow);
+
+        return box.x + box.width;
+      })
+      .toBeCloseTo(viewport.width - PIP_VIEWPORT_PADDING, 0);
+  });
+
+  test('Enter on the title bar brings a collapsed PiP window back into view', async ({ page }) => {
+    const { pipWindow, titleBar } = await openPipAndFocusTitleBar(page);
+    const viewport = viewportOf(page);
+    const bar = await boxOf(titleBar);
+
+    await page.mouse.move(bar.x + 8, bar.y + bar.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(viewport.width - 2, bar.y + bar.height / 2, { steps: 20 });
+    await page.mouse.up();
+    await expect(pipWindow).toHaveClass(/et-pip-window--collapsed/);
+
+    await titleBar.focus();
+    await pressKey(page, 'Enter');
+
+    await expect(pipWindow).not.toHaveClass(/et-pip-window--collapsed/);
+    await expect
+      .poll(async () => {
+        const box = await boxOf(pipWindow);
+        return box.x + box.width;
+      })
+      .toBeLessThanOrEqual(viewport.width);
   });
 });
 

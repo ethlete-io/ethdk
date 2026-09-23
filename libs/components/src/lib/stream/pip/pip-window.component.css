@@ -59,6 +59,12 @@
     cursor: grab;
     border-radius: var(--et-pip-border-radius) var(--et-pip-border-radius) 0 0;
   }
+  .et-pip-window__title-bar:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px
+      color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 60%, transparent);
+  }
+
   .et-pip-window__title-bar-spacer {
     flex: 1;
   }
@@ -67,7 +73,8 @@
   et-pip-window.et-pip-window--dragging,
   et-pip-window.et-pip-window--collapsed,
   et-pip-window.et-pip-window--title-bar-forced,
-  et-pip-window:has(.et-pip-window__title-bar :focus-visible) {
+  et-pip-window:has(.et-pip-window__title-bar :focus-visible),
+  et-pip-window:has(.et-pip-window__title-bar:focus-visible) {
     .et-pip-window__title-bar {
       transform: translateY(0);
       pointer-events: auto;
@@ -117,7 +124,8 @@
   et-pip-window.et-pip-window--dragging .et-pip-window__content,
   et-pip-window.et-pip-window--collapsed .et-pip-window__content,
   et-pip-window.et-pip-window--title-bar-forced .et-pip-window__content,
-  et-pip-window:has(.et-pip-window__title-bar :focus-visible) .et-pip-window__content {
+  et-pip-window:has(.et-pip-window__title-bar :focus-visible) .et-pip-window__content,
+  et-pip-window:has(.et-pip-window__title-bar:focus-visible) .et-pip-window__content {
     border-radius: 0 0 var(--et-pip-border-radius) var(--et-pip-border-radius);
   }
 

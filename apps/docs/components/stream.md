@@ -127,7 +127,7 @@ The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
 
 Every string the built-in chrome renders comes from `STREAM_LABELS` - the consent gate's
 heading/description/accept, the failure overlay's heading/description/retry, the PiP placeholder and
-its back button, the PiP window's close and focus controls, the loading overlay's announcement, and
+its back button, the PiP window's close and focus controls and its title bar, the loading overlay's announcement, and
 the `title` on iframes the library creates:
 
 ```ts
@@ -144,6 +144,7 @@ tokens keep only their button colors. See the [localization guide](/components/l
 ## Accessibility
 
 - The PiP chrome is fully operable: its focus/close/grid-toggle buttons carry `aria-label`s, and in grid mode each cell is a keyboard-activatable `role="button"` (<kbd>Enter</kbd>/<kbd>Space</kbd> selects the featured player).
+- The PiP window's title bar is a tab stop (`role="group"`, labelled from `STREAM_LABELS.pipMove`). While it has focus, the arrow keys move the window 10px per press and stop at the viewport padding, and <kbd>Enter</kbd>/<kbd>Space</kbd> brings a window parked at the viewport edge back into view. Resizing is pointer-only.
 - The built-in overlays carry live-region semantics: the loading overlay is a `role="status"` region labelled from `STREAM_LABELS.loading`, the error overlay announces via `role="alert"`, and the consent gate is a `role="group"` labelled by its heading. Custom replacements (via `provideStreamConfig`) should provide equivalents.
 - Iframes the library creates itself (Kick, SOOP, Dailymotion, TikTok) carry a descriptive `title` from `STREAM_LABELS.playerFrame`. The YouTube, Vimeo, Twitch and Facebook iframes are created by the platform SDKs and can't be titled from here - give those slots surrounding context (e.g. a heading).
 

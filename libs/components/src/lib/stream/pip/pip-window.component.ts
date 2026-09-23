@@ -7,6 +7,16 @@ import { PipTitleBarDirective } from './headless/pip-title-bar.directive';
 import { PipWindowParamsDirective } from './headless/pip-window-params.directive';
 import { createPipWindowPosition } from './headless/internals/pip-window-position';
 import { createPipWindowSize } from './headless/internals/pip-window-size';
+import { injectStreamLabels } from '../stream-labels';
+
+const KEYBOARD_MOVE_STEP_PX = 10;
+
+const KEYBOARD_MOVE_DELTAS: Record<string, { dx: number; dy: number } | undefined> = {
+  ArrowLeft: { dx: -KEYBOARD_MOVE_STEP_PX, dy: 0 },
+  ArrowRight: { dx: KEYBOARD_MOVE_STEP_PX, dy: 0 },
+  ArrowUp: { dx: 0, dy: -KEYBOARD_MOVE_STEP_PX },
+  ArrowDown: { dx: 0, dy: KEYBOARD_MOVE_STEP_PX },
+};
 
 @Component({
   selector: 'et-pip-window',
@@ -31,6 +41,7 @@ import { createPipWindowSize } from './headless/internals/pip-window-size';
 })
 export class PipWindowComponent {
   protected params = inject(PipWindowParamsDirective);
+  protected labels = injectStreamLabels();
 
   private resizeHandles = viewChild.required(ResizeHandlesComponent);
   private titleBar = viewChild.required(PipTitleBarDirective);
@@ -56,4 +67,20 @@ export class PipWindowComponent {
   });
 
   public readonly RESIZE_EDGES: ResizeEdge[] = ['s', 'e', 'w', 'se', 'sw'];
+
+  protected handleTitleBarKeydown(event: KeyboardEvent) {
+    if (event.target !== event.currentTarget || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+      return;
+    }
+
+    const delta = KEYBOARD_MOVE_DELTAS[event.key];
+
+    if (delta) {
+      event.preventDefault();
+      this.posState.nudge(delta);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.posState.expand();
+    }
+  }
 }

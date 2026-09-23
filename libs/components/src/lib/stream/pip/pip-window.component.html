@@ -4,7 +4,14 @@
   <div [dragHandle]="dragHandle()" etPipCollapseOverlay></div>
 }
 
-<div [dragDisabled]="posState.isResizing()" etPipTitleBar>
+<div
+  [dragDisabled]="posState.isResizing()"
+  [attr.aria-label]="labels().pipMove"
+  (keydown)="handleTitleBarKeydown($event)"
+  role="group"
+  tabindex="0"
+  etPipTitleBar
+>
   <ng-container [ngTemplateOutlet]="titleBarTemplate().template" />
 </div>
 
