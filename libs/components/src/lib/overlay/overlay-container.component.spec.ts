@@ -17,8 +17,9 @@ import {
   provideSurfaceThemesWithTailwind4,
 } from '@ethlete/core';
 import '../../test-helpers';
+import { FakeMatchMedia, fakeMatchMedia } from '../testing/fake-match-media';
 import { createOverlayDriver } from '../testing/overlay-driver';
-import { anchoredDialogOverlayStrategy, dialogOverlayStrategy } from './strategies';
+import { OverlayStrategy, anchoredDialogOverlayStrategy, dialogOverlayStrategy } from './strategies';
 
 const BRAND_THEME: ColorTheme = {
   name: 'brand',
@@ -180,9 +181,11 @@ const SURFACE_THEMES = [surface('night', 0, true), surface('night-1', 1), surfac
 
 describe('OverlayContainerComponent surface elevation', () => {
   let driver: ReturnType<typeof createOverlayDriver>;
+  let fakeBreakpoints: FakeMatchMedia;
   let origin: HTMLElement | null = null;
 
   beforeEach(() => {
+    fakeBreakpoints = fakeMatchMedia();
     TestBed.configureTestingModule({ providers: [provideSurfaceThemesWithTailwind4(SURFACE_THEMES)] });
 
     driver = createOverlayDriver();
@@ -224,6 +227,33 @@ describe('OverlayContainerComponent surface elevation', () => {
       origin: createElevatedOrigin(),
       strategies: dialogOverlayStrategy(),
     });
+
+    expect(surfaceName()).toBe('et-surface--night-1');
+  });
+
+  it('re-elevates when a breakpoint switch adds or removes the backdrop', async () => {
+    const strategy = (id: string, hasBackdrop: boolean): OverlayStrategy => ({
+      id,
+      config: { hasBackdrop, positionStrategy: () => ({ kind: 'center' }) },
+    });
+
+    await driver.open(OverlayContentComponent, {
+      origin: createElevatedOrigin(),
+      strategies: () => [
+        { strategy: strategy('small', true) },
+        { breakpoint: 'md', strategy: strategy('large', false) },
+      ],
+    });
+
+    expect(surfaceName()).toBe('et-surface--night-1');
+
+    fakeBreakpoints.setMatches('(min-width: 768px)', true);
+    TestBed.tick();
+
+    expect(surfaceName()).toBe('et-surface--night-2');
+
+    fakeBreakpoints.setMatches('(min-width: 768px)', false);
+    TestBed.tick();
 
     expect(surfaceName()).toBe('et-surface--night-1');
   });

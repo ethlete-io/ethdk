@@ -1,4 +1,4 @@
-import { InjectionToken } from '@angular/core';
+import { InjectionToken, Signal } from '@angular/core';
 import { OverlayConfig } from './overlay-config';
 import { OverlayBreakpointConfig } from './strategies/overlay-strategy.types';
 
@@ -9,5 +9,5 @@ import { OverlayBreakpointConfig } from './strategies/overlay-strategy.types';
 export const resolveOverlayHasBackdrop = (config: OverlayConfig, strategyConfig?: OverlayBreakpointConfig) =>
   config.hasBackdrop ?? strategyConfig?.hasBackdrop ?? config.mode !== 'non-modal';
 
-/** @internal The resolved backdrop state the overlay mounted with, for the container's elevation. */
-export const OVERLAY_HAS_BACKDROP = new InjectionToken<boolean>('OverlayHasBackdrop');
+/** @internal The resolved backdrop state of the active strategy, for the container's elevation. */
+export const OVERLAY_HAS_BACKDROP = new InjectionToken<Signal<boolean>>('OverlayHasBackdrop');

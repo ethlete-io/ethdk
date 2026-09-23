@@ -54,6 +54,9 @@ export type OverlayStrategyController = {
   /** Whether the active strategy renders a drag handle - follows breakpoint switches. */
   renderDragHandle: Signal<boolean>;
 
+  /** Whether the overlay renders a backdrop under the active strategy - follows breakpoint switches. */
+  hasBackdrop: Signal<boolean>;
+
   /** Wires strategy lifecycle hooks and breakpoint switching. Must be called right after mounting. */
   attach: (runtimeRef: OverlayRuntimeRef<object, unknown>, overlayRef: OverlayRef<object, unknown>) => void;
 };
@@ -484,6 +487,7 @@ export const createOverlayStrategyController = (
     },
     renderArrow: computed(() => activeStrategyConfig().arrow ?? false),
     renderDragHandle: computed(() => !!activeStrategyConfig().dragToDismiss),
+    hasBackdrop: computed(() => resolveOverlayHasBackdrop(config, activeStrategyConfig())),
     attach,
   };
 };

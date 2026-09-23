@@ -10,6 +10,7 @@ import {
   ViewEncapsulation,
   afterNextRender,
   booleanAttribute,
+  computed,
   effect,
   inject,
   input,
@@ -105,18 +106,38 @@ export class OverlayContainerComponent {
       // and fall back to DI (openers that pass a viewContainerRef but no origin).
       const parentSurface = this.resolveOriginSurface() ?? this.parentDiSurface();
       const parentType = parentSurface?.type ?? 'dark';
-      // a strategy's own `hasBackdrop` never reaches `overlayRef.config` - only the value the overlay
-      // actually mounted with accounts for it
-      const hasBackdrop = this.mountedHasBackdrop ?? resolveOverlayHasBackdrop(this.overlayRef.config);
-      const elevation = hasBackdrop || !parentSurface ? 1 : parentSurface.elevation + 1;
-      const resolved = resolveSurfaceByElevation(this.surfaceThemes, parentType, elevation);
+      const surfaceThemes = this.surfaceThemes;
+      const hasBackdrop = computed(
+        () => this.mountedHasBackdrop?.() ?? resolveOverlayHasBackdrop(this.overlayRef.config),
+      );
+      const elevation = computed(() => (hasBackdrop() || !parentSurface ? 1 : parentSurface.elevation + 1));
+      let unregister: (() => void) | null = null;
 
-      if (resolved) {
-        this.ownSurfaceProvider.forceSurface(resolved.name);
-      }
+      const applyElevation = (level: number) => {
+        const resolved = resolveSurfaceByElevation(surfaceThemes, parentType, level);
 
-      const unregister = this.surfaceContextTracker.register(parentType, elevation, this.elementRef.nativeElement);
-      this.destroyRef.onDestroy(unregister);
+        if (resolved) {
+          this.ownSurfaceProvider.forceSurface(resolved.name);
+        }
+
+        unregister?.();
+        unregister = this.surfaceContextTracker.register(parentType, level, this.elementRef.nativeElement);
+      };
+
+      let appliedElevation = untracked(elevation);
+
+      applyElevation(appliedElevation);
+
+      effect(() => {
+        const level = elevation();
+
+        if (level === appliedElevation) return;
+
+        appliedElevation = level;
+        untracked(() => applyElevation(level));
+      });
+
+      this.destroyRef.onDestroy(() => unregister?.());
     }
 
     this.rootBoundary.override.set(this.elementRef.nativeElement);

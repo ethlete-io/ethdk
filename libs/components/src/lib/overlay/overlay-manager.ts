@@ -160,7 +160,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         injector: resolvedConfig.injector,
         providers: [
           { provide: OVERLAY_REF, useValue: overlayRef },
-          { provide: OVERLAY_HAS_BACKDROP, useValue: controller.initialMountConfig.hasBackdrop },
+          { provide: OVERLAY_HAS_BACKDROP, useValue: controller.hasBackdrop },
           ...(resolvedConfig.providers ?? []),
         ],
         bindings: [
