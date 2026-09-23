@@ -115,6 +115,20 @@
     }
   }
 
+  .et-bar-chart-tooltip {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+
+    .et-bar-chart-tooltip-value {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .et-bar-chart-tooltip-label {
+      opacity: 0.75;
+    }
+  }
+
   .et-bar-chart-bar:where([data-negative]) .et-bar-chart-bar-mark {
     transform-origin: top;
   }

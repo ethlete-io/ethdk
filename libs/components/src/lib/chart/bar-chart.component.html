@@ -31,8 +31,10 @@
         <svg:g [etProvideColor]="colorToken()" class="et-bar-chart-bars">
           @for (bar of chart.bars(); track bar.index) {
             <svg:g
-              [attr.aria-label]="bar.ariaLabel"
+              [attr.aria-label]="bar.datum.label"
               [attr.data-negative]="bar.isNegative ? '' : null"
+              [etTooltip]="barTooltips()[bar.index] ?? null"
+              [etTooltipAriaDescription]="bar.valueText"
               class="et-bar-chart-bar"
               tabindex="0"
               role="img"
@@ -59,6 +61,15 @@
     }
   </div>
 </div>
+
+@for (bar of chart.bars(); track bar.index) {
+  <ng-template #barTooltip>
+    <span class="et-bar-chart-tooltip">
+      <strong class="et-bar-chart-tooltip-value">{{ bar.valueText }}</strong>
+      <span class="et-bar-chart-tooltip-label">{{ bar.datum.label }}</span>
+    </span>
+  </ng-template>
+}
 
 <table class="et-bar-chart-table">
   <caption>

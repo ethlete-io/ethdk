@@ -46,12 +46,19 @@ describe('BarChartComponent', () => {
     expect(mar?.height).toBeCloseTo((feb?.height ?? 0) * 0.2);
   });
 
-  it('renders one focusable, labelled mark per datum', () => {
+  it('renders one focusable mark per datum, named by its category and described by its value', () => {
     const { element } = setup();
 
     const bars = [...element.querySelectorAll('.et-bar-chart-bar')];
+    const descriptions = bars.map((bar) =>
+      (bar.getAttribute('aria-describedby') ?? '')
+        .split(' ')
+        .map((id) => element.ownerDocument.getElementById(id)?.textContent?.trim())
+        .join(' '),
+    );
 
-    expect(bars.map((bar) => bar.getAttribute('aria-label'))).toEqual(['Jan: 40', 'Feb: 100', 'Mar: -20']);
+    expect(bars.map((bar) => bar.getAttribute('aria-label'))).toEqual(['Jan', 'Feb', 'Mar']);
+    expect(descriptions).toEqual(['40', '100', '-20']);
     expect(bars.every((bar) => bar.getAttribute('tabindex') === '0')).toBe(true);
     expect(element.querySelectorAll('.et-bar-chart-bar-mark').length).toBe(3);
   });

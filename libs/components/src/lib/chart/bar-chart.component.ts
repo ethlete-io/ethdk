@@ -1,5 +1,6 @@
-import { Component, inject, input, ViewEncapsulation } from '@angular/core';
+import { Component, inject, input, TemplateRef, viewChildren, ViewEncapsulation } from '@angular/core';
 import { ProvideColorDirective, RegisteredColorThemeName } from '@ethlete/core';
+import { TooltipDirective } from '../tooltip/headless/tooltip.directive';
 import { BarChartPlotDirective } from './headless/bar-chart-plot.directive';
 import { BarChartDirective } from './headless/bar-chart.directive';
 
@@ -15,7 +16,7 @@ import { BarChartDirective } from './headless/bar-chart.directive';
   templateUrl: './bar-chart.component.html',
   styleUrl: './bar-chart.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [BarChartPlotDirective, ProvideColorDirective],
+  imports: [BarChartPlotDirective, ProvideColorDirective, TooltipDirective],
   hostDirectives: [
     {
       directive: BarChartDirective,
@@ -40,4 +41,6 @@ export class BarChartComponent {
 
   /** The color theme the bars are drawn in. @default the surrounding color scope's accent */
   public colorToken = input<RegisteredColorThemeName | null>(null);
+
+  protected barTooltips = viewChildren('barTooltip', { read: TemplateRef });
 }

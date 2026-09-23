@@ -50,7 +50,7 @@ When a bar is first drawn it grows from the baseline and fades in. Under `prefer
 
 ## Custom template
 
-`BarChartDirective` (`[etBarChart]`) holds the geometry without markup: `bars()` (position, size, `path` and `ariaLabel` per bar), `ticks()`, `baselineY()`, `plotWidth()` and `formatValue()`. Put `etBarChartPlot` on the element the bars are laid out in - its width is what the bands divide. Without one the directive throws `ET5100` in dev mode.
+`BarChartDirective` (`[etBarChart]`) holds the geometry without markup: `bars()` (position, size, `path`, `valueText` and an `ariaLabel` such as `Mar: 2,130` per bar), `ticks()`, `baselineY()`, `plotWidth()` and `formatValue()`. Put `etBarChartPlot` on the element the bars are laid out in - its width is what the bands divide. Without one the directive throws `ET5100` in dev mode.
 
 ```html
 <div #chart="etBarChart" [data]="data" etBarChart label="Sign-ups per month">
@@ -67,7 +67,8 @@ When a bar is first drawn it grows from the baseline and fades in. Under `prefer
 ## Accessibility
 
 - The plot is an SVG with `role="group"`, named by `label`.
-- Each bar is focusable (`tabindex="0"`) with `role="img"` and an `aria-label` of the category and its formatted value, e.g. `Mar: 2,130`. Tab moves from bar to bar; focus draws a ring around the bar's band.
+- Each bar is focusable (`tabindex="0"`) with `role="img"`, named by its category and described by its formatted value. Tab moves from bar to bar; focus draws a ring around the bar's band.
+- Hovering a bar, or focusing it from the keyboard, opens a [tooltip](/components/tooltip) with the value and the category.
 - A visually hidden `<table>` repeats the data with `label` as its caption and `categoryHeader` / `valueHeader` as column headers, so a screen reader can read the values as a table.
 - The axis labels are `aria-hidden`; the bars and the table carry the same values.
 
