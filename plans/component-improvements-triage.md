@@ -218,3 +218,15 @@ The user decides these on 2026-09-24. Each slice picked the most restrained opti
 8. Links are named with "→". Some screen readers read it as "right arrow".
 9. Entrance: nodes fade in, then ribbons after half of the 400ms duration.
 10. Links are tab stops after the nodes, with no arrow keys. Many links give many tab stops, and the table view is the faster route.
+
+### Pie and donut (`0a28804d3`)
+
+1. When the palette runs out, slices take steps of the accent, from 100% down to a 40% mix with the surface. Partial palette coverage mixes palette hues with accent steps.
+2. Tooltip: the value in bold, then "Label · 57%". The shared `et-chart-tooltip` has no slot for the share.
+3. Legend: the pie has its own legend with swatch, label, value and share, beside the circle, at most 360px wide, and it wraps below. The shared `et-chart-legend` has no value column.
+4. When the placement side has no room, the tooltip flips to the other side and covers the chart.
+5. Focus: a 2px stroke in the text colour plus the hover tint. Slice corners are not rounded.
+6. Donut centre: the total at 1.5em with a muted caption. Screen readers can read it.
+7. Shares are whole percents, so a tiny slice can read 0% or 1%. There is no option for decimals.
+8. Empty state: a hairline circle in the border colour.
+9. `size` defaults to 200. There is no preset donut ratio, and the stories use 0.6.
