@@ -18,7 +18,7 @@ import { SelectAllOptionDirective } from './headless';
       }
     </span>
   `,
-  styleUrl: './select-option.component.css',
+  styleUrls: ['./select-option.component.css', './select-all-option.component.css'],
   encapsulation: ViewEncapsulation.None,
   imports: [IconDirective],
   providers: [provideIcons(CHECK_ICON)],

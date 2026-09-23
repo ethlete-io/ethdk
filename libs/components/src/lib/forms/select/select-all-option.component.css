@@ -1,0 +1,14 @@
+@layer components {
+  .et-select-option.et-select-all-option {
+    .et-select-all-option-dash {
+      inline-size: 10px;
+      block-size: 2px;
+      border-radius: 1px;
+      background: currentColor;
+    }
+
+    &:where([aria-checked='true'], [aria-checked='mixed']) .et-select-option-check {
+      opacity: 1;
+    }
+  }
+}
