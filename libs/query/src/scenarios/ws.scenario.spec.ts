@@ -1,7 +1,6 @@
 import { EnvironmentInjector, createEnvironmentInjector, signal } from '@angular/core';
 import {
   SocketMessageView,
-  WebSocketClientIoOptions,
   WebSocketDevtoolsHandle,
   createWebSocketClient,
   isQueryDevtoolsEnabled,
@@ -473,24 +472,139 @@ describe('ws scenario', () => {
     expect(double.connection()).toEqual({ url: 'ws://localhost', transports: undefined });
   });
 
-  it('always connects with withCredentials: true', () => {
+  it('connects with withCredentials: true by default, and with the configured value when set', () => {
     const s = scenario();
-    const double = createWebSocketTestDouble();
-    const seen: WebSocketClientIoOptions[] = [];
 
+    const { double } = createSocket(s);
+    expect(double.withCredentials()).toBe(true);
+
+    const anonymous = createWebSocketTestDouble();
+    const anonymousClient = createWebSocketClient({
+      name: `ws-scenario-${socketCounter++}`,
+      url: 'ws://localhost',
+      io: anonymous.io,
+      withCredentials: false,
+    });
+    s.run(() => anonymousClient.inject());
+
+    expect(anonymous.withCredentials()).toBe(false);
+  });
+
+  it('sends a static auth payload with every handshake, and none when auth is omitted', () => {
+    const s = scenario();
+
+    const double = createWebSocketTestDouble();
     const client = createWebSocketClient({
       name: `ws-scenario-${socketCounter++}`,
       url: 'ws://localhost',
-      io: (url, options) => {
-        seen.push(options);
-
-        return double.io(url, options);
-      },
+      io: double.io,
+      auth: { token: 'static' },
     });
     s.run(() => client.inject());
 
-    expect(seen).toHaveLength(1);
-    expect(seen[0]?.withCredentials).toBe(true);
+    double.serverConnect();
+    double.serverDisconnect();
+    double.serverConnect();
+
+    expect(double.handshakes()).toEqual([{ token: 'static' }, { token: 'static' }]);
+
+    const { double: plain } = createSocket(s);
+    plain.serverConnect();
+
+    expect(plain.handshakes()).toEqual([null]);
+  });
+
+  it('reads the auth function again on every reconnect, so a rotated token reaches the next handshake', () => {
+    const s = scenario();
+
+    let token = 'first';
+    const double = createWebSocketTestDouble();
+    const client = createWebSocketClient({
+      name: `ws-scenario-${socketCounter++}`,
+      url: 'ws://localhost',
+      io: double.io,
+      auth: () => ({ token }),
+    });
+    s.run(() => client.inject());
+
+    double.serverConnect();
+    token = 'rotated';
+    double.serverDisconnect();
+    double.serverConnect();
+
+    expect(double.handshakes()).toEqual([{ token: 'first' }, { token: 'rotated' }]);
+  });
+
+  it('sends a consumer message through the public send, buffered until the connection is up', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    instance.send({ event: 'ping', data: { id: 1 } });
+
+    expect(double.sent()).toEqual([{ event: 'ping', data: { id: 1 } }]);
+    expect(double.delivered()).toEqual([]);
+
+    double.serverConnect();
+    instance.send({ event: 'ping', data: { id: 2 } });
+
+    expect(double.delivered()).toEqual([
+      { event: 'ping', data: { id: 1 } },
+      { event: 'ping', data: { id: 2 } },
+    ]);
+  });
+
+  it('streams every message of one tick through messages$, while latestMessage holds only the last', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    const c = s.consumer();
+    const room = c.run(() => instance.joinRoom('lobby'));
+    s.tick();
+
+    const received: SocketMessageView[] = [];
+    let completed = false;
+    room()?.messages$.subscribe({ next: (m) => received.push(m), complete: () => (completed = true) });
+
+    double.serverSend({ room: 'lobby', event: 'goal', data: { goals: 1 } });
+    double.serverSend({ room: 'other', event: 'goal', data: { goals: 9 } });
+    double.serverSend({ room: 'lobby', event: 'goal', data: { goals: 2 } });
+    s.tick();
+
+    expect(received).toEqual([
+      { room: 'lobby', event: 'goal', data: { goals: 1 } },
+      { room: 'lobby', event: 'goal', data: { goals: 2 } },
+    ]);
+    expect(room()?.latestMessage()).toEqual({ room: 'lobby', event: 'goal', data: { goals: 2 } });
+    expect(completed).toBe(false);
+
+    c.destroy();
+
+    expect(completed).toBe(true);
+  });
+
+  it('completes messages$ of a still-joined room when the providing injector is destroyed', () => {
+    const s = scenario();
+    const double = createWebSocketTestDouble();
+    const client = createWebSocketClient({
+      name: `ws-scenario-${socketCounter++}`,
+      url: 'ws://localhost',
+      io: double.io,
+    });
+
+    const scope = createEnvironmentInjector([client.provide()], s.injector.get(EnvironmentInjector));
+    const instance = scope.runInContext(() => client.inject());
+    const c = s.consumer();
+    const room = c.run(() => instance.joinRoom('lobby'));
+    s.tick();
+
+    let completed = false;
+    room()?.messages$.subscribe({ complete: () => (completed = true) });
+
+    scope.destroy();
+
+    expect(completed).toBe(true);
+
+    c.destroy();
   });
 
   it('disconnects the socket when the providing injector is destroyed', () => {

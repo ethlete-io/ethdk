@@ -1,4 +1,9 @@
-import type { SocketMessageView, WebSocketClientIo, WebSocketClientSocket } from '@ethlete/query';
+import type {
+  SocketMessageView,
+  WebSocketClientIo,
+  WebSocketClientIoOptions,
+  WebSocketClientSocket,
+} from '@ethlete/query';
 
 /** A scripted stand-in for `socket.io-client`'s `io`, driven from a spec. */
 export type WebSocketTestDouble = {
@@ -10,6 +15,9 @@ export type WebSocketTestDouble = {
 
   /** The `withCredentials` the client asked the factory for, or `null` until it called it. */
   withCredentials: () => boolean | null;
+
+  /** The auth payload of every handshake, oldest first - `null` for one made without `auth`. */
+  handshakes: () => (object | null)[];
 
   /** Every message the client emitted, newest last - room joins and leaves included, buffered ones too. */
   sent: () => { event: string; data: unknown }[];
@@ -61,6 +69,8 @@ export const createWebSocketTestDouble = (): WebSocketTestDouble => {
 
   let connection: { url: string; transports: string[] | undefined } | null = null;
   let withCredentials: boolean | null = null;
+  let auth: WebSocketClientIoOptions['auth'];
+  const handshakes: (object | null)[] = [];
   let connectRequested = false;
   let disconnected = false;
   let connected = false;
@@ -93,14 +103,19 @@ export const createWebSocketTestDouble = (): WebSocketTestDouble => {
     io: (url, options) => {
       connection = { url, transports: options.transports };
       withCredentials = options.withCredentials;
+      auth = options.auth;
       return socket;
     },
     connection: () => connection,
     withCredentials: () => withCredentials,
+    handshakes: () => [...handshakes],
     sent: () => [...sent],
     delivered: () => [...delivered],
     state: () => ({ connectRequested, disconnected }),
     serverConnect: (options) => {
+      if (auth) auth((data) => handshakes.push(data));
+      else handshakes.push(null);
+
       recovered = options?.recovered ?? false;
       connected = true;
       pingExpired = false;

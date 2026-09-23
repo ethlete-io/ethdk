@@ -10,6 +10,7 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { defineRootProvider, previousSignalValue, ProviderDefinition } from '@ethlete/core';
+import { Observable, Subject } from 'rxjs';
 import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import { messageMalformed, roomNotJoined } from './web-socket-errors';
 
@@ -53,7 +54,11 @@ export type WebSocketClientIoOptions = {
   withCredentials: boolean;
   autoConnect: boolean;
   transports: CreateWebSocketClientTransport[] | undefined;
+  auth?: (cb: (data: object) => void) => void;
 };
+
+/** The payload socket.io sends in the handshake of every (re)connect. */
+export type WebSocketClientAuth = Record<string, unknown>;
 
 /** The slice of a socket io `Socket` this client drives. */
 export type WebSocketClientSocket = {
@@ -97,6 +102,22 @@ export type CreateWebSocketClientConfigOptions = {
 
   /** A list of transports to try (in order). Engine.io always attempts to connect directly with the first one, provided the feature detection test for it passes. */
   transports?: CreateWebSocketClientTransport[];
+
+  /**
+   * Whether the polling transport sends cookies to a cross-origin server. Defaults to `true`.
+   */
+  withCredentials?: boolean;
+
+  /**
+   * The handshake payload, sent on every connect and reconnect. Pass a function to read a fresh value
+   * (e.g. the current access token) each time.
+   *
+   * @example
+   * ```ts
+   * createWebSocketClient({ name: 'match', url, io, auth: () => ({ token: auth.accessToken() }) });
+   * ```
+   */
+  auth?: WebSocketClientAuth | (() => WebSocketClientAuth);
 };
 
 /** A default socket io message view */
@@ -127,12 +148,17 @@ export type WebSocketClient<TMessageData extends SocketMessageView> = {
   /** Whether the client is connected to the server */
   isConnected: Signal<boolean>;
 
+  /** Sends a message to the server. socket.io buffers it while the connection is down. */
+  send: (message: { event: string; data: unknown }) => void;
+
   /** Advanced web socket features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
   subtle: WebSocketClientSubtle;
 };
 
 export type InternalWebSocketRoom<TMessageData extends SocketMessageView> = {
   latestMessage: WritableSignal<TMessageData | null>;
+  messages: Subject<TMessageData>;
+  messages$: Observable<TMessageData>;
 
   /**
    * How many callers currently hold this room. Joiners share one room object, so the room may only be
@@ -142,8 +168,11 @@ export type InternalWebSocketRoom<TMessageData extends SocketMessageView> = {
 };
 
 export type WebSocketRoom<TMessageData extends SocketMessageView> = {
-  /** The latest message received in the room */
+  /** The latest message received in the room. Messages that arrive in one tick collapse into the last. */
   latestMessage: Signal<TMessageData | null>;
+
+  /** Every message received in the room from the moment of subscribing. Completes when the room is left. */
+  messages$: Observable<TMessageData>;
 };
 
 export type WebSocketClientResult<TMessageData extends SocketMessageView = SocketMessageView> = ProviderDefinition<
@@ -158,10 +187,12 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 ): WebSocketClientResult<TMessageData> => {
   return defineRootProvider(
     () => {
+      const auth = options.auth;
       const socket = options.io(options.url, {
-        withCredentials: true,
+        withCredentials: options.withCredentials ?? true,
         autoConnect: false,
         transports: options.transports,
+        auth: auth ? (cb) => cb(typeof auth === 'function' ? auth() : auth) : undefined,
       });
 
       const rooms = new Map<string, InternalWebSocketRoom<TMessageData>>();
@@ -219,10 +250,12 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
           emit({ event: 'join-room', data: name, room: name });
           joinsDeliveredToClosedConnection.delete(name);
 
-          const message = signal<TMessageData | null>(null);
+          const messages = new Subject<TMessageData>();
 
           const newRoom: InternalWebSocketRoom<TMessageData> = {
-            latestMessage: message,
+            latestMessage: signal<TMessageData | null>(null),
+            messages,
+            messages$: messages.asObservable(),
             joinCount: 1,
           };
 
@@ -286,6 +319,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
         rooms.delete(room);
         syncDevtoolsRooms();
+        joinedRoom.messages.complete();
       };
 
       const setupWebSocketConnectionListener = () => {
@@ -324,6 +358,8 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
       const setupWebSocketListener = () => {
         socket.onAny((_eventName: string, ...args: unknown[]) => {
+          let json: TMessageData;
+
           try {
             const data = args[0];
 
@@ -339,23 +375,30 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
               throw messageMalformed();
             }
 
-            const json = parsed as TMessageData;
-
-            recordDevtoolsMessage({ room: json.room, event: json.event, data: json.data, direction: 'in' });
-
-            const room = rooms.get(json.room);
-
-            if (room) room.latestMessage.set(json);
+            json = parsed as TMessageData;
           } catch (error) {
             if (!isDevMode()) return;
 
             console.error(error);
             throw messageMalformed();
           }
+
+          recordDevtoolsMessage({ room: json.room, event: json.event, data: json.data, direction: 'in' });
+
+          const room = rooms.get(json.room);
+
+          if (!room) return;
+
+          room.latestMessage.set(json);
+          room.messages.next(json);
         });
       };
 
-      inject(DestroyRef).onDestroy(() => socket.disconnect());
+      inject(DestroyRef).onDestroy(() => {
+        socket.disconnect();
+
+        for (const room of rooms.values()) room.messages.complete();
+      });
 
       setupWebSocketConnectionListener();
       setupWebSocketListener();
@@ -364,6 +407,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       const client: WebSocketClient<TMessageData> = {
         joinRoom,
         isConnected: isConnected.asReadonly(),
+        send: (message) => emit({ event: message.event, data: message.data }),
         subtle: {
           leaveRoom,
         },

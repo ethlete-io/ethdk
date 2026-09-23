@@ -44,14 +44,31 @@ export class MatchComponent {
 
 ## Configuration
 
-| Option       | Default            | Description                                                           |
-| ------------ | ------------------ | --------------------------------------------------------------------- |
-| `name`       | - (required)       | Unique client name, used in the injection token.                      |
-| `url`        | - (required)       | The socket.io server URL.                                             |
-| `io`         | - (required)       | The `io` factory from `socket.io-client`.                             |
-| `transports` | socket.io defaults | Ordered transport list: `'polling' \| 'websocket' \| 'webtransport'`. |
+| Option            | Default            | Description                                                                      |
+| ----------------- | ------------------ | -------------------------------------------------------------------------------- |
+| `name`            | - (required)       | Unique client name, used in the injection token.                                 |
+| `url`             | - (required)       | The socket.io server URL.                                                        |
+| `io`              | - (required)       | The `io` factory from `socket.io-client`.                                        |
+| `transports`      | socket.io defaults | Ordered transport list: `'polling' \| 'websocket' \| 'webtransport'`.            |
+| `withCredentials` | `true`             | Whether the polling transport sends cookies to a cross-origin server.            |
+| `auth`            | -                  | Handshake payload, or a function returning it - read again on every (re)connect. |
 
-The underlying socket always connects with `withCredentials: true` and disconnects automatically when the providing scope is destroyed.
+The socket disconnects automatically when the providing scope is destroyed.
+
+### Authenticating the handshake
+
+`auth` becomes socket.io's handshake `auth` payload, which the server reads as
+`socket.handshake.auth`. Pass a function when the value changes over time - it is called on every
+connect and reconnect, so a rotated access token reaches the next handshake:
+
+```ts
+const MATCH_SOCKET = createWebSocketClient({
+  name: 'match-events',
+  url: 'https://ws.example.com',
+  io,
+  auth: () => ({ token: readAccessToken() }),
+});
+```
 
 ### Typing the messages
 
@@ -76,7 +93,22 @@ Pass a union of `SocketMessageView`s when the server sends several shapes and di
 - Call it in an **injection context** - a field initializer, a constructor, or inside `runInInjectionContext()`. The room is released with that context, so a call from a click handler or a plain method throws `NG0203`.
 - A **function** is evaluated in a reactive context - returning a new string leaves the previous room and joins the new one; returning `null` joins nothing.
 - Rooms are **shared**: joining the same room twice returns the same underlying room, and the room is left automatically when the consuming context is destroyed. Joins are counted, so the room is only left once the last of its joiners is gone - one component unmounting never stops the messages for another.
-- A room exposes `latestMessage()` - a signal holding the most recent message for that room (or `null`).
+- A room exposes `latestMessage()` - a signal holding the most recent message for that room (or `null`). Messages that arrive in the same tick collapse into the last one.
+- A room also exposes `messages$` - an Observable of **every** message for that room from the moment you subscribe. It completes when the room is left, or when the client is destroyed. Use it when no message may be lost, e.g. an event log:
+
+```ts
+const room = this.socket.joinRoom('match:1');
+
+room()?.messages$.subscribe((message) => this.log.push(message));
+```
+
+## Sending messages
+
+`send({ event, data })` emits a message to the server. While the connection is down socket.io buffers it and delivers it on the next connect.
+
+```ts
+this.socket.send({ event: 'cheer', data: { team: 'home' } });
+```
 
 ## Connection state & reconnects
 
@@ -144,7 +176,8 @@ expect(room()?.latestMessage()).toEqual({ room: 'lobby', event: 'score', data: {
 `serverSendRaw()` delivers an unparsable frame, for the malformed-message path.
 `serverPingExpire()` makes the socket buffer emits while it still reports itself connected, and
 `serverConnect({ recovered: true })` reconnects with connection state recovery, so no room is
-re-joined. `delivered()` lists what reached the server, `sent()` everything the client emitted.
+re-joined. `delivered()` lists what reached the server, `sent()` everything the client emitted,
+`handshakes()` the `auth` payload of each connect.
 
 ## Debugging it
 
@@ -162,13 +195,13 @@ installed, and every capture call is a no-op after that.
 
 ## Types
 
-| Type                                 | What it is                                                                                                                                                                                                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `SocketMessageView<TData>`           | The message envelope - `{ room, event, data }` - and the constraint on the client's type argument.                                                                                                                                                           |
-| `WebSocketClient<TMessageData>`      | The injected client (`joinRoom`, `isConnected`, `subtle`). `WebSocketClientResult` is the provider definition `createWebSocketClient` returns, and `AnyWebSocketClient` an alias of it. `WebSocketClientSubtle` is the escape-hatch namespace on the client. |
-| `WebSocketRoom<TMessageData>`        | What the `joinRoom` signal holds - just `latestMessage()`.                                                                                                                                                                                                   |
-| `CreateWebSocketClientConfigOptions` | The options bag above; `CreateWebSocketClientTransport` is the `'polling' \| 'websocket' \| 'webtransport'` union of `transports`.                                                                                                                           |
-| `WebSocketClientIo`                  | The `io` factory as this client calls it - `(url, options: WebSocketClientIoOptions) => WebSocketClientSocket`. socket.io's own `io` satisfies it, and so does a test double.                                                                                |
+| Type                                 | What it is                                                                                                                                                                                                                                                           |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SocketMessageView<TData>`           | The message envelope - `{ room, event, data }` - and the constraint on the client's type argument.                                                                                                                                                                   |
+| `WebSocketClient<TMessageData>`      | The injected client (`joinRoom`, `isConnected`, `send`, `subtle`). `WebSocketClientResult` is the provider definition `createWebSocketClient` returns, and `AnyWebSocketClient` an alias of it. `WebSocketClientSubtle` is the escape-hatch namespace on the client. |
+| `WebSocketRoom<TMessageData>`        | What the `joinRoom` signal holds - `latestMessage()` and `messages$`.                                                                                                                                                                                                |
+| `CreateWebSocketClientConfigOptions` | The options bag above; `CreateWebSocketClientTransport` is the `'polling' \| 'websocket' \| 'webtransport'` union of `transports`.                                                                                                                                   |
+| `WebSocketClientIo`                  | The `io` factory as this client calls it - `(url, options: WebSocketClientIoOptions) => WebSocketClientSocket`. socket.io's own `io` satisfies it, and so does a test double.                                                                                        |
 
 ## Error codes
 
