@@ -1,6 +1,6 @@
 [package]
 name = "ethlete-studio"
-version = "0.1.0"
+version = "0.2.0-next.0"
 description = "A local decision workspace for agent-assisted design work"
 edition = "2021"
 publish = false

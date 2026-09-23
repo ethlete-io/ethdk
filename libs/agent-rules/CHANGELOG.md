@@ -1,5 +1,71 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.15
+
+### Minor Changes
+
+- Three skills vendored from mattpocock/skills: `grilling`, `domain-modeling`, and the `grill-with-docs` entry point that runs both.
+- New opt-in `subagent-model-policy` hook: a Claude Code subagent call must name its `model`, and `fable` asks the user first. The new `subagent-models` rule says which model fits which task.
+- Add a `codex-subagent` skill: delegate a task to a Codex agent through a wrapper that prints only the final message, read-only unless you pass `--write`.
+- The `context-warning` hook now reaches the agent at session start, between its own tool
+  batches and as a turn ends, not only when the user sends a message.
+- Give a design call rounds, a result band for the chain of winners, a contact sheet of every option and a compare overlay
+- `spec/` is now a branch type of its own, for specification and planning work, so it no longer reports
+  `unknown-type`.
+- Two new agent endpoint ops: `day.rows` answers the rows a day drew with the id each edit names, and
+  `day.edits` corrects one. `timetrack rows` and `timetrack edit` reach both.
+- A new `settings.rules` agent op, and an `ethlete-agents timetrack rules` command, read the rules that
+  name a day's work out of the encrypted store.
+- `timetrack day --out` writes a private file it will not overwrite unasked, printed provider text can
+  no longer drive the terminal, and `timetrack edit` refuses a call naming two edits.
+- The timetrack CLI now makes the server prove it holds this run's token before it sends a request,
+  and follows no redirect. It needs Timetrack with agent contract version 2.
+
+### Patch Changes
+
+- A placeholder now says which checkout, and which piece of it, its name stands for. Two of them may
+  carry one name: a spec track and the branch that implements it are both called after the feature.
+- A placeholder repair now reads every branch and only the checkout's own author, so work on an
+  unmerged branch is no longer invisible to it.
+- Splitting a checkout-wide placeholder no longer refuses over a day with no commit. It always
+  removes the record and its checkout-wide rule, so later branches can get records of their own.
+- Let an agent delete a placeholder through `timetrack standins --remove`, and report
+  which checkout and branch each one covers. A record of the wider grain blocked every
+  branch of its checkout, and only a click could clear it.
+- A placeholder can be given another name: `timetrack standins --rename <id> --name <text>`. Its
+  days and the rules that name it stay, which a delete and a fresh record would lose.
+- Design exploration: the story checker and the screenshot template now also detect Vite's compile error overlay, not only webpack's.
+- The `handoff` skill now tells the agent to name only its own invocation form, so a saved handoff no longer reports the Claude Code and Codex commands side by side.
+- A handoff is now written only when work is actually left: the `handoff` skill tests for it first, and the `context-warning` hook's auto-mode escalation no longer forces a file.
+- `ethlete-agents timetrack day [YYYY-MM-DD]` reports the evidence a day holds, and `--out <path>`
+  writes it to a file. The app's store is encrypted, so this is the only way a script reads a real day.
+- `context-warning` hook: the critical tier now asks the agent to finish or hand off instead of forcing a handoff, and every later prompt repeats the remaining budget.
+- Context warnings now distinguish sub-agent pressure from the main session and track each thread independently.
+- A work path is cut to the project its checkout declares, not to a fixed depth. Where a repository
+  declares none, its own commits pick the grain between them.
+- Add the `design-exploration` skill: visual design work runs as a dialog, one open call at a time.
+- The design-exploration skill now works in calls instead of story ids, and carries three sub-agent
+  briefs for drawing, checking and writing up one.
+- The design-exploration skill now puts a repository's design work in `.ethlete/design/`, with one
+  project per slug segment. Each project names its own `styles` and `head`, so one project's type
+  scale and fonts no longer reach another project's drawings.
+- On resume, the handoff skill now says to read only what you are about to change, instead of
+  re-reading the plan files the handoff already summarises.
+- Say which placeholder holds a whole checkout, and refuse a delete that would strand
+  the days it covers. A checkout answered by a placeholder no longer reports as named
+  by an issue.
+- A placeholder that covered a whole checkout can be cut into one per directory its commits worked in.
+  `timetrack standins --split <id>` reads the directories and the user picks the pieces.
+- A split can name the checkout of a record that holds none, and a claimed directory the commits
+  never named opens a piece of its own.
+- `et design [checkout]` serves the design page of any repository that keeps a `.ethlete/design`
+  folder, and `et design check` says why a call does not render.
+- `et design check --call` now reports `NO BROWSER` when neither the checkout nor the package
+  resolves `playwright`, instead of throwing the module loader's own error.
+- `repoNamingDecisions`, the `naming.offers` op and `ethlete-agents timetrack naming` say why a checkout was offered no name.
+- An agent reads the open stand-ins through `standIn.list` and `ethlete-agents timetrack standins`. It may list them and never write one.
+- `status` and `ethlete-agents timetrack status` report `tempoReady`. Without a Tempo token the app reads no worklog history, and nothing said so.
+
 ## 0.1.0-next.14
 
 ### Minor Changes

@@ -1,5 +1,20 @@
 # @ethlete/cli
 
+## 2.1.0-next.9
+
+### Minor Changes
+
+- `et update` now writes the new range into every `package.json` in the repo, not only the root one, and refuses a dist tag that points at an older version than the repo is on.
+- `et design [checkout]` serves the design page of any repository that keeps a `.ethlete/design`
+  folder, and `et design check` says why a call does not render.
+
+### Patch Changes
+
+- `et release` now works with Changesets 3 and aborts when there are no pending changesets.
+- `et design` now rules a drawing with its own Tailwind 4 pipeline, so a repository on Tailwind 3, or none at all, can hold design calls.
+- `et design check --call` now reports `NO BROWSER` when neither the checkout nor the package
+  resolves `playwright`, instead of throwing the module loader's own error.
+
 ## 2.1.0-next.8
 
 ### Minor Changes

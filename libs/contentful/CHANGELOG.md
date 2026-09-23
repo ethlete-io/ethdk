@@ -1,5 +1,12 @@
 # @ethlete/contentful
 
+## 4.0.0-next.10
+
+### Minor Changes
+
+- The Angular peer dependency moves from 22.0.7 to 22.1.6. Angular 22.0.x is affected by
+  GHSA-hh8m-fm6v-7cvg, a sanitization bypass through directive host bindings, fixed in 22.1.0.
+
 ## 4.0.0-next.9
 
 ### Patch Changes
