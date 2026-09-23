@@ -1,5 +1,11 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.7
+
+### Patch Changes
+
+- A checkout linked to a project no longer takes a coincidental issue from another project, and an open stand-in a sibling checkout holds for the same branch slug now names the band.
+
 ## 0.1.0-next.6
 
 ### Minor Changes

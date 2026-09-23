@@ -1,5 +1,16 @@
 # @ethlete/core
 
+## 5.0.0-next.58
+
+### Minor Changes
+
+- Add `signalCountdown(deadline)`, a signal of the days, hours, minutes and seconds left until a deadline, recounted on the whole second.
+- Overlays and `[etTooltip]` can anchor to an SVG element, and `[etTooltip]` takes an `anchor` input to point at an element other than its trigger; core exports `isElement` and `isHTMLOrSVGElement`.
+
+### Patch Changes
+
+- Place `takeUntilDestroyed()` last in every pipe, so operators after it no longer run or stay subscribed after destroy.
+
 ## 5.0.0-next.57
 
 ### Major Changes

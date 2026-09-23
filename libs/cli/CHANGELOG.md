@@ -1,5 +1,11 @@
 # @ethlete/cli
 
+## 2.1.0-next.10
+
+### Patch Changes
+
+- A design call now lists its drawings as `variants` in `variant-<key>.ts` files, and `et design check` takes `--variant`; the old `options` key and `--option` flag are gone.
+
 ## 2.1.0-next.9
 
 ### Minor Changes

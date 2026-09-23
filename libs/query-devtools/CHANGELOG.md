@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-next.12
+
+### Patch Changes
+
+- Outside a development build the devtools session vault now defaults to `none`, so a plain login no longer leaves tokens in `sessionStorage`, and a vault left in either store is removed on load.
+- Client `headers` and per-request `args.headers` accept a plain record as well as `HttpHeaders`, for secure queries too, so a client needs no `@angular/*` import to set a header.
+
 ## 1.0.0-next.11
 
 ### Minor Changes

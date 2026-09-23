@@ -1,5 +1,12 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.16
+
+### Patch Changes
+
+- Name the `take-until-destroyed-last` lint rule in the styleguide lint lookup and the RxJS skill.
+- A design call now lists its drawings as `variants` in `variant-<key>.ts` files, and `et design check` takes `--variant`; the old `options` key and `--option` flag are gone.
+
 ## 0.1.0-next.15
 
 ### Minor Changes
