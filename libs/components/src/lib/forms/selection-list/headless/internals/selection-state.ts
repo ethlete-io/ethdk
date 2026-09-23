@@ -27,6 +27,8 @@ export type SelectionStateConfig<TValue = unknown> = {
    * state - the select family masks pull-based in its own layer instead.
    */
   mixed?: WritableSignal<boolean>;
+  /** Whether an item's value matches a value in `value`. Defaults to `===`. */
+  compareWith?: Signal<(itemValue: TValue, value: TValue) => boolean>;
 };
 
 export type SelectionState<TValue = unknown, TItem extends SelectionStateItem<TValue> = SelectionStateItem<TValue>> = {
@@ -103,6 +105,7 @@ export const createSelectionState = <
     // tracked: entering/leaving mixed must re-run the sync (masking on, or restoring the
     // checked states the raw value implies once mixed resolves)
     const isMixed = config.mixed?.() ?? false;
+    const compareWith = config.compareWith?.() ?? null;
 
     if (currentItems.length === 0) {
       return;
@@ -126,11 +129,15 @@ export const createSelectionState = <
         const valueArray = Array.isArray(currentValue) ? currentValue : [];
 
         for (const { item, itemValue } of syncEntries) {
-          item.checked.set(valueArray.includes(itemValue));
+          item.checked.set(
+            compareWith
+              ? valueArray.some((candidate) => compareWith(itemValue, candidate))
+              : valueArray.includes(itemValue),
+          );
         }
       } else {
         for (const { item, itemValue } of syncEntries) {
-          item.checked.set(itemValue === currentValue);
+          item.checked.set(compareWith ? compareWith(itemValue, currentValue as TValue) : itemValue === currentValue);
         }
       }
     });

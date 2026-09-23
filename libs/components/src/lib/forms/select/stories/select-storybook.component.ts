@@ -336,6 +336,70 @@ export class FormFieldSelectManyOptionsStorybookComponent {
   public demoForm = form(this.formModel);
 }
 
+type StoryTeam = { id: number; name: string };
+
+const TEAMS: StoryTeam[] = [
+  { id: 1, name: 'Platform' },
+  { id: 2, name: 'Payments' },
+  { id: 3, name: 'Growth' },
+  { id: 4, name: 'Design' },
+];
+
+const cloneTeam = (team: StoryTeam): StoryTeam => ({ ...team });
+const compareTeamsById = (a: StoryTeam, b: StoryTeam) => a.id === b.id;
+
+@Component({
+  selector: 'et-sb-form-field-select-object-values',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Teams</et-label>
+        <et-select
+          [formField]="demoForm.value"
+          [options]="options()"
+          [compareWith]="COMPARE_TEAMS"
+          multiple
+          placeholder="Pick teams"
+        />
+        <et-hint>The saved value holds copies of the team objects - compareWith matches them by id</et-hint>
+      </et-form-field>
+
+      <div class="flex gap-2">
+        <button (click)="reloadOptions()" class="et-sb-object-values-reload" type="button">Reload options</button>
+        <button (click)="resetToSaved()" class="et-sb-object-values-reset" type="button">Reset to saved</button>
+      </div>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class FormFieldSelectObjectValuesStorybookComponent {
+  protected options = signal(this.toOptions());
+
+  private formModel = signal({ value: this.savedTeams() });
+  public demoForm = form(this.formModel);
+
+  protected readonly COMPARE_TEAMS = compareTeamsById;
+
+  protected reloadOptions() {
+    this.options.set(this.toOptions());
+  }
+
+  protected resetToSaved() {
+    this.formModel.set({ value: this.savedTeams() });
+  }
+
+  private savedTeams() {
+    return [TEAMS[0], TEAMS[2]].filter((team) => team !== undefined).map(cloneTeam);
+  }
+
+  private toOptions() {
+    return TEAMS.map((team) => ({ value: cloneTeam(team), label: team.name }));
+  }
+}
+
 const FIRST_NAMES = ['Alex', 'Chris', 'Dana', 'Eli', 'Femi', 'Ines', 'Jona', 'Kim', 'Lior', 'Mara'];
 const LAST_NAMES = ['Adler', 'Berg', 'Castro', 'Diaz', 'Egede', 'Fuchs', 'Grau', 'Haas', 'Ito', 'Juhl'];
 

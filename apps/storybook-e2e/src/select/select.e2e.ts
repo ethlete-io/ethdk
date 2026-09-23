@@ -6,6 +6,7 @@ const PRESELECTED_STORY_ID = 'components-forms-select--preselected';
 const SEARCHABLE_STORY_ID = 'components-forms-select--searchable';
 const SEARCHABLE_LONG_LABEL_STORY_ID = 'components-forms-select--searchable-long-label';
 const ASYNC_OPTIONS_STORY_ID = 'components-forms-select--async-options';
+const OBJECT_VALUES_STORY_ID = 'components-forms-select--object-values';
 
 /** The option's `id`, which `aria-activedescendant` must carry. No id is a failure, not a pass. */
 const idOf = async (option: Locator) => {
@@ -246,6 +247,29 @@ test.describe('select / layout', () => {
 
     expect(samples.length).toBeGreaterThan(0);
     expect(Math.max(...samples.map(({ panel, pane }) => panel - pane))).toBeLessThanOrEqual(1);
+  });
+});
+
+test.describe('select / compareWith', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: value matching is covered once');
+
+  test('matches copied object values to their options, across an options reload', async ({ page }) => {
+    const root = await openStory(page, OBJECT_VALUES_STORY_ID);
+    const chips = root.locator('et-chip');
+
+    await expect(chips).toHaveText(['Platform', 'Growth']);
+
+    await root.getByRole('button', { name: 'Reload options' }).click();
+    await root.getByRole('combobox').click();
+
+    await expect(page.getByRole('option', { name: 'Platform' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('option', { name: 'Payments' })).toHaveAttribute('aria-selected', 'false');
+    await expect(page.getByRole('option', { name: 'Growth' })).toHaveAttribute('aria-selected', 'true');
+
+    await page.getByRole('option', { name: 'Platform' }).click();
+
+    await expect(page.getByRole('option', { name: 'Platform' })).toHaveAttribute('aria-selected', 'false');
+    await expect(chips).toHaveText(['Growth']);
   });
 });
 

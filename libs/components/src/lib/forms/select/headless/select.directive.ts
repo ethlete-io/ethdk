@@ -53,7 +53,7 @@ import { SelectSurfaceContext, SelectSurfaceDirective } from './select-surface.d
 import { SelectTriggerDirective } from './select-trigger.directive';
 import { SelectValueDirective } from './select-value.directive';
 import { SelectViewportDirective } from './select-viewport.directive';
-import { SelectItem, SelectOptionData, SelectSelectedEntry } from './select.tokens';
+import { SelectCompareWith, SelectItem, SelectOptionData, SelectSelectedEntry } from './select.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 
@@ -70,6 +70,15 @@ export type SelectFilterMode = (typeof SELECT_FILTER_MODES)[keyof typeof SELECT_
 
 const VIRTUALIZATION_MIN_ITEMS = 40;
 
+type SelectDataItemEntry = {
+  item: SelectItem;
+  value: WritableSignal<unknown>;
+  label: WritableSignal<string>;
+  disabledInput: WritableSignal<boolean>;
+  element: WritableSignal<HTMLElement | null>;
+  data: WritableSignal<SelectOptionData>;
+};
+
 /**
  * The async option state a source (e.g. the bundle from `selectOptionsFromQuery`) pushes into a
  * select via `[etSelectOptions]`. While one is set it overrides the `loading`/`error`/`hasMoreItems`
@@ -80,6 +89,8 @@ export type SelectAsyncOptions = {
   error: Signal<string | null>;
   hasMore: Signal<boolean>;
 };
+
+const referenceEquality: SelectCompareWith = (a, b) => a === b;
 
 const defaultNormalizeCustomValue = (raw: string) => {
   const trimmed = raw.trim();
@@ -128,6 +139,13 @@ export class SelectDirective
    */
   public options = input<readonly SelectOptionData[] | null>(null);
 
+  /**
+   * Decides whether an option's value and a value in the model are the same choice - set it when
+   * values are objects that are not the same instance (e.g. `(a, b) => a.id === b.id`). Only
+   * called with two non-null values; identical values always match. Defaults to `===`.
+   */
+  public compareWith = input<SelectCompareWith<never>>(referenceEquality);
+
   public filterModeInput = input<SelectFilterMode>(SELECT_FILTER_MODES.INTERNAL, { alias: 'filterMode' });
   /** Enter with a search query that matches no option commits the raw query string as the value. */
   public allowCustomValues = input(false, { transform: booleanAttribute });
@@ -173,6 +191,12 @@ export class SelectDirective
    * otherwise it fires alongside the normal value selection.
    */
   public pickOption = output<unknown>();
+
+  private valuesMatch = computed<SelectCompareWith>(() => {
+    const compareWith = this.compareWith() as SelectCompareWith;
+
+    return (a, b) => a === b || (a !== null && a !== undefined && b !== null && b !== undefined && compareWith(a, b));
+  });
 
   /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
@@ -257,6 +281,7 @@ export class SelectDirective
     value: this.value,
     multiple: this.multiple,
     disabled: this.disabled,
+    compareWith: this.valuesMatch,
   });
 
   public activeId = computed(() => this.activeItem()?.id() ?? null);
@@ -321,16 +346,7 @@ export class SelectDirective
   });
 
   private dataItems = signal<SelectItem[]>([]);
-  private dataItemRegistry = new Map<
-    unknown,
-    {
-      item: SelectItem;
-      label: WritableSignal<string>;
-      disabledInput: WritableSignal<boolean>;
-      element: WritableSignal<HTMLElement | null>;
-      data: WritableSignal<SelectOptionData>;
-    }
-  >();
+  private dataItemRegistry = new Map<unknown, SelectDataItemEntry>();
 
   public sortedItems = computed(() => {
     const dataItems = this.dataItems();
@@ -459,9 +475,7 @@ export class SelectDirective
       return null;
     }
 
-    const values = this.effectiveValues();
-
-    if (values.includes(candidate)) {
+    if (this.includesValue(this.effectiveValues(), candidate)) {
       return null;
     }
 
@@ -489,10 +503,14 @@ export class SelectDirective
     const values = this.effectiveValues();
     const items = this.sortedItems();
     const cache = this.labelCache();
+    const valuesMatch = this.valuesMatch();
 
     return values.map((entryValue) => {
-      const item = items.find((candidate) => candidate.value() === entryValue) ?? null;
-      const label = item?.label() || cache.get(entryValue) || (typeof entryValue === 'string' ? entryValue : null);
+      const item = items.find((candidate) => valuesMatch(candidate.value(), entryValue)) ?? null;
+      const label =
+        item?.label() ||
+        this.findCachedLabel(cache, entryValue) ||
+        (typeof entryValue === 'string' ? entryValue : null);
 
       return { value: entryValue, label, item };
     });
@@ -551,20 +569,44 @@ export class SelectDirective
 
     effect(() => {
       const optionsData = this.options();
+      const usesReferenceEquality = this.compareWith() === referenceEquality;
+      const valuesMatch = this.valuesMatch();
 
       untracked(() => {
         const registry = this.dataItemRegistry;
         const nextItems: SelectItem[] = [];
         const seenValues = new Set<unknown>();
+        const isDuplicate = (value: unknown) =>
+          seenValues.has(value) ||
+          (!usesReferenceEquality && nextItems.some((item) => valuesMatch(item.value(), value)));
+        const findReusableEntry = (value: unknown) => {
+          const exact = registry.get(value);
+
+          if (exact || usesReferenceEquality) {
+            return exact;
+          }
+
+          for (const [registeredValue, candidate] of registry) {
+            if (!seenValues.has(registeredValue) && valuesMatch(registeredValue, value)) {
+              registry.delete(registeredValue);
+              registry.set(value, candidate);
+              candidate.value.set(value);
+
+              return candidate;
+            }
+          }
+
+          return undefined;
+        };
 
         for (const data of optionsData ?? []) {
-          if (seenValues.has(data.value)) {
+          if (isDuplicate(data.value)) {
             continue;
           }
 
-          seenValues.add(data.value);
+          let entry = findReusableEntry(data.value);
 
-          let entry = registry.get(data.value);
+          seenValues.add(data.value);
 
           if (entry) {
             entry.label.set(data.label);
@@ -605,14 +647,15 @@ export class SelectDirective
       const value = this.value();
       const selectedValues = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
       const items = this.selection.items();
+      const valuesMatch = this.valuesMatch();
 
       const liveLabels = new Map<unknown, string>();
 
-      for (const item of items) {
-        const itemValue = item.value();
+      for (const selectedValue of selectedValues) {
+        const item = items.find((candidate) => valuesMatch(candidate.value(), selectedValue));
 
-        if (selectedValues.includes(itemValue)) {
-          liveLabels.set(itemValue, item.label());
+        if (item) {
+          liveLabels.set(selectedValue, item.label());
         }
       }
 
@@ -621,7 +664,7 @@ export class SelectDirective
           const next = new Map<unknown, string>();
 
           for (const selectedValue of selectedValues) {
-            const label = liveLabels.get(selectedValue) ?? cache.get(selectedValue);
+            const label = liveLabels.get(selectedValue) ?? this.findCachedLabel(cache, selectedValue);
 
             if (label !== undefined) {
               next.set(selectedValue, label);
@@ -699,8 +742,11 @@ export class SelectDirective
     }
 
     const current = this.value();
+    const valuesMatch = this.valuesMatch();
 
-    return Array.isArray(current) ? current.includes(value) : current === value;
+    return Array.isArray(current)
+      ? current.some((candidate) => valuesMatch(value, candidate))
+      : valuesMatch(value, current);
   }
 
   public show() {
@@ -781,13 +827,17 @@ export class SelectDirective
       const itemValue = item.value();
       const current = this.value();
       const values = Array.isArray(current) ? current : [];
-      const adding = !values.includes(itemValue);
+      const adding = !this.includesValue(values, itemValue);
 
       if (adding && this.isFull()) {
         return;
       }
 
-      this.value.set(adding ? [...values, itemValue] : values.filter((candidate) => candidate !== itemValue));
+      const valuesMatch = this.valuesMatch();
+
+      this.value.set(
+        adding ? [...values, itemValue] : values.filter((candidate) => !valuesMatch(itemValue, candidate)),
+      );
 
       if (adding) {
         this.registeredSearch()?.clear();
@@ -864,7 +914,8 @@ export class SelectDirective
       return;
     }
 
-    const entry = this.selectedEntries().find((candidate) => candidate.value === value);
+    const valuesMatch = this.valuesMatch();
+    const entry = this.selectedEntries().find((candidate) => valuesMatch(candidate.value, value));
 
     if (entry?.item && entry.item.disabled()) {
       return;
@@ -874,7 +925,7 @@ export class SelectDirective
       const current = this.value();
       const values = Array.isArray(current) ? current : [];
 
-      this.value.set(values.filter((candidate) => candidate !== value));
+      this.value.set(values.filter((candidate) => !valuesMatch(candidate, value)));
     } else {
       this.value.set(null);
     }
@@ -1053,16 +1104,41 @@ export class SelectDirective
     return true;
   }
 
-  private createDataItem(data: SelectOptionData) {
+  private includesValue(values: readonly unknown[], value: unknown) {
+    const valuesMatch = this.valuesMatch();
+
+    return values.some((candidate) => valuesMatch(candidate, value));
+  }
+
+  private findCachedLabel(cache: ReadonlyMap<unknown, string>, value: unknown) {
+    const exact = cache.get(value);
+
+    if (exact !== undefined) {
+      return exact;
+    }
+
+    const valuesMatch = this.valuesMatch();
+
+    for (const [cachedValue, label] of cache) {
+      if (valuesMatch(cachedValue, value)) {
+        return label;
+      }
+    }
+
+    return undefined;
+  }
+
+  private createDataItem(data: SelectOptionData): SelectDataItemEntry {
+    const value = signal(data.value);
     const label = signal(data.label);
     const disabledInput = signal(data.disabled ?? false);
     const element = signal<HTMLElement | null>(null);
     const dataSignal = signal(data);
 
-    const selected = computed(() => this.isValueSelected(data.value));
+    const selected = computed(() => this.isValueSelected(value()));
 
     const item: SelectItem = {
-      value: signal(data.value).asReadonly(),
+      value: value.asReadonly(),
       checked: signal(false),
       disabled: computed(() => disabledInput() || (this.isFull() && !selected())),
       element: element.asReadonly(),
@@ -1071,7 +1147,7 @@ export class SelectDirective
       data: dataSignal.asReadonly(),
     };
 
-    return { item, label, disabledInput, element, data: dataSignal };
+    return { item, value, label, disabledInput, element, data: dataSignal };
   }
 
   private handleClosedKeydown(event: KeyboardEvent) {
@@ -1148,7 +1224,7 @@ export class SelectDirective
       const current = this.value();
       const values = this.mixed() ? [] : Array.isArray(current) ? current : [];
 
-      if (values.includes(value)) {
+      if (this.includesValue(values, value)) {
         return false;
       }
 

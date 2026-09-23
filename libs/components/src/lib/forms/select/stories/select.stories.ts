@@ -6,6 +6,7 @@ import {
   FormFieldSelectAsyncStorybookComponent,
   FormFieldSelectCountryStorybookComponent,
   FormFieldSelectManyOptionsStorybookComponent,
+  FormFieldSelectObjectValuesStorybookComponent,
   FormFieldSelectOptionTemplateStorybookComponent,
   FormFieldSelectStorybookComponent,
 } from './select-storybook.component';
@@ -161,6 +162,11 @@ export const AddNewOption: StoryObj<FormFieldSelectAddNewStorybookComponent> = {
 export const ManyOptions: StoryObj<FormFieldSelectManyOptionsStorybookComponent> = {
   decorators: [moduleMetadata({ imports: [FormFieldSelectManyOptionsStorybookComponent] })],
   render: () => ({ template: `<et-sb-form-field-select-many-options />` }),
+};
+
+export const ObjectValues: StoryObj<FormFieldSelectObjectValuesStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectObjectValuesStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-object-values />` }),
 };
 
 export const OptionTemplate: StoryObj<FormFieldSelectOptionTemplateStorybookComponent> = {

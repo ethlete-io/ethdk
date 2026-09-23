@@ -37,3 +37,6 @@ export type SelectSelectedEntry = {
   /** The live option carrying this value, if one is rendered/registered. */
   item: SelectItem | null;
 };
+
+/** Whether an option value and a model value are the same choice - see the select's `compareWith` input. */
+export type SelectCompareWith<TValue = unknown> = (optionValue: TValue, value: TValue) => boolean;

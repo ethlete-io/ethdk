@@ -720,6 +720,9 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    validators the docs make every consumer copy-paste; business hours + a "now" line on the scheduler;
    an RTE read-only viewer; `Home`/`End` + typeahead on selection groups; select-all on multi
    selects (the machinery exists and is unused). L
+   **Progress 2026-09-23:** `compareWith` on `et-select` **DONE** (default `===`, one comparator for
+   selected state, labels/chips, multi toggle/remove, custom-value dupes, and data-`options` reuse
+   across a refetch; `ObjectValues` story + e2e). The other staples are still open.
 10. **Error-message and dev-guard quality pass.** Messages that name an API that does not exist
     (`registerScrollContainer`, `hostDirectives: [StreamPipChromeComponent]`,
     `et-filter-overlay-submit-label`, `exportTableToCsv`, the four-of-six picker host names), guards

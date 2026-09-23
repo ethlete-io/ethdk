@@ -33,6 +33,7 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `mixedLabel`               | `string \| null`                     | `null` ¹     | Value text shown while `mixed` is true.                                                                                                                                                                                       |
 | `placeholder`              | `string`                             | `''`         | Shown while nothing is selected - in the trigger, or on a projected inline search input that brings no placeholder of its own.                                                                                                |
 | `options`                  | `SelectOptionData[] \| null`         | `null`       | Data-driven options (`{ value, label, disabled? }`) - the select renders the rows itself, virtualizing long lists. See [large option lists](#large-option-lists-virtualization).                                              |
+| `compareWith`              | `(optionValue, value) => boolean`    | `===`        | Decides whether an option's value and a model value are the same choice - set it for object values that are not the same instance. See [object values](#object-values).                                                       |
 | `multiple`                 | `boolean`                            | `false`      | Multi-select: `value` is an array, options toggle (the panel stays open) and the trigger renders removable chips.                                                                                                             |
 | `filterMode`               | `'none' \| 'internal' \| 'external'` | `'internal'` | How a search query filters: `internal` hides non-matching options, `external` leaves the option list to you (react to `queryChange`), `none` never filters.                                                                   |
 | `allowCustomValues`        | `boolean`                            | `false`      | Enter with a query that matches no option commits the raw string as the value.                                                                                                                                                |
@@ -77,7 +78,25 @@ On `et-select-option`:
 | `disabled`          | `boolean` | `false` | Skipped by keyboard navigation, not committable.                                                                                                                                                    |
 | `customValueOption` | `boolean` | `false` | Marks the row as the "Create …" option for the current custom-value candidate, so the candidate doesn't hide itself as a duplicate label. Headless compositions only - `et-select` renders its own. |
 
-The trigger resolves the selected value's label from the options - including a preselected value that was set programmatically before the panel ever opened. Values are compared with reference equality; for object values, bind the same instances you set as `value`.
+The trigger resolves the selected value's label from the options - including a preselected value that was set programmatically before the panel ever opened. Values are compared with reference equality unless you set [`compareWith`](#object-values).
+
+## Object values
+
+<StoryEmbed id="components-forms-select--object-values" height="420px" />
+
+An option value can be any object, but by default the select matches it to the model with `===`, so a value that holds a _copy_ - a form model loaded from an API, a refetched option list - selects nothing. Pass `compareWith` to decide equality yourself:
+
+```ts
+protected readonly COMPARE_BY_ID = (a: Team, b: Team) => a.id === b.id;
+```
+
+```html
+<et-select [formField]="demoForm.teams" [options]="teamOptions()" [compareWith]="COMPARE_BY_ID" multiple />
+```
+
+The comparator is used everywhere the select relates two values: the selected state of each option, the trigger label and chips, toggling and removing values in multi mode, the duplicate checks for custom values, and matching data-driven `options` across a reload - a refetched list of fresh instances keeps the active option and the selection instead of rebuilding every row. It is only called with two non-`null` values, and identical values always match. Values the comparator treats as equal count as duplicates in `options`; the first one wins.
+
+A committed option writes _its own_ value into the model, so after the user picks, the model holds the option's instance rather than the copy you set.
 
 ## Multi-select
 
