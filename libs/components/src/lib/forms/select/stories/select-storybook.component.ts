@@ -43,6 +43,7 @@ const FRUIT_OPTIONS = [
           [customValueSeparators]="customValueSeparators()"
           [commitCustomValueOnClose]="commitCustomValueOnClose()"
           [maxSelection]="maxSelection()"
+          [selectAll]="selectAll()"
         >
           @if (withSearch()) {
             <input etSelectSearch placeholder="Search fruits" />
@@ -92,6 +93,7 @@ export class FormFieldSelectStorybookComponent {
   public customValueSeparators = input<string[]>([]);
   public commitCustomValueOnClose = input(false);
   public maxSelection = input<number | undefined>(undefined);
+  public selectAll = input(false);
   public disabled = input(false);
   public readonly = input(false);
   public required = input(false);

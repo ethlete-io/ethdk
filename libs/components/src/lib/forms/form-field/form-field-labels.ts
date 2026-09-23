@@ -9,7 +9,7 @@ export type FormFieldLabels = {
   mixed: string;
   /** Accessible label for a control's clear-value button. */
   clear: string;
-  /** The select-all row above a checkbox group (`<et-checkbox-group-select-all>`). */
+  /** The select-all row of a checkbox group (`<et-checkbox-group-select-all>`) and a multi `et-select` (`selectAll`). */
   selectAll: string;
 };
 

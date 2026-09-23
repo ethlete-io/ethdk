@@ -33,6 +33,7 @@ export default {
     customValueSeparators: { control: 'object' },
     commitCustomValueOnClose: { control: 'boolean' },
     maxSelection: { control: 'number' },
+    selectAll: { control: 'boolean' },
     longOption: { control: 'text' },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
@@ -56,6 +57,7 @@ export default {
     allowCustomValues: false,
     customValueSeparators: [],
     commitCustomValueOnClose: false,
+    selectAll: false,
     longOption: '',
     disabled: false,
     readonly: false,
@@ -105,6 +107,18 @@ export const MixedMultiple: Story = {
     label: 'Fruits',
     placeholder: 'Pick fruits',
     hint: 'The first committed option replaces the hidden raw selection, then regular multi-select toggling resumes.',
+  },
+};
+
+export const SelectAll: Story = {
+  args: {
+    multiple: true,
+    selectAll: true,
+    withSearch: true,
+    value: ['apple'],
+    label: 'Fruits',
+    placeholder: 'Pick fruits',
+    hint: 'Select all adds every visible, enabled option - Elderberry is disabled and stays out',
   },
 };
 

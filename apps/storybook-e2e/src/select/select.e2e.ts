@@ -7,6 +7,7 @@ const SEARCHABLE_STORY_ID = 'components-forms-select--searchable';
 const SEARCHABLE_LONG_LABEL_STORY_ID = 'components-forms-select--searchable-long-label';
 const ASYNC_OPTIONS_STORY_ID = 'components-forms-select--async-options';
 const OBJECT_VALUES_STORY_ID = 'components-forms-select--object-values';
+const SELECT_ALL_STORY_ID = 'components-forms-select--select-all';
 
 /** The option's `id`, which `aria-activedescendant` must carry. No id is a failure, not a pass. */
 const idOf = async (option: Locator) => {
@@ -270,6 +271,61 @@ test.describe('select / compareWith', () => {
 
     await expect(page.getByRole('option', { name: 'Platform' })).toHaveAttribute('aria-selected', 'false');
     await expect(chips).toHaveText(['Growth']);
+  });
+});
+
+test.describe('select / select all', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard navigation');
+
+  test('the select-all row leads the listbox and toggles every enabled option from the keyboard', async ({ page }) => {
+    const root = await openStory(page, SELECT_ALL_STORY_ID);
+    const chips = root.locator('et-chip');
+    const selectAll = page.getByRole('option', { name: 'Select all' });
+
+    await root.getByRole('combobox').click();
+
+    await expect(page.getByRole('option').first()).toHaveText('Select all');
+    await expect(selectAll).toHaveAttribute('aria-checked', 'mixed');
+    await expect(root.getByRole('combobox')).toBeFocused();
+
+    await expect(page.getByRole('option', { name: 'Apple' })).toHaveAttribute('data-active', 'true');
+
+    await pressKey(page, 'ArrowUp');
+    await expect(selectAll).toHaveAttribute('data-active', 'true');
+    await expect(root.getByRole('combobox')).toHaveAttribute('aria-activedescendant', await idOf(selectAll));
+
+    await pressKey(page, 'Enter');
+    await expect(selectAll).toHaveAttribute('aria-checked', 'true');
+    await expect(chips).toHaveText(['Apple', 'Banana', 'Cherry', 'Dragonfruit', 'Fig', 'Grape']);
+
+    await pressKey(page, 'Enter');
+    await expect(selectAll).toHaveAttribute('aria-checked', 'false');
+    await expect(chips).toHaveCount(0);
+  });
+
+  test('the mixed mark paints in the theme accent', async ({ page }) => {
+    const root = await openStory(page, SELECT_ALL_STORY_ID);
+
+    await root.getByRole('combobox').click();
+
+    const dash = page.locator('.et-select-all-option-dash');
+
+    await expect(dash).toBeVisible();
+
+    const colors = await dash.evaluate((element) => {
+      const probe = document.createElement('span');
+
+      probe.style.color = 'var(--et-theme-color-primary-solid)';
+      element.append(probe);
+
+      const accent = getComputedStyle(probe).color;
+
+      probe.remove();
+
+      return { dash: getComputedStyle(element).backgroundColor, accent };
+    });
+
+    expect(colors.dash).toBe(colors.accent);
   });
 });
 

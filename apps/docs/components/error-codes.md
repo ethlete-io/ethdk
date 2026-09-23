@@ -79,6 +79,7 @@ Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web so
 | `ET1004` | `etSelectListbox` is not rendered inside the surface of an `[etSelect]` element. | Move the listbox inside the surface template.                 |
 | `ET1005` | `etSelectOption` is not inside an `[etSelect]` element.                          | Move the option inside the select root.                       |
 | `ET1009` | `etSelectOptionGroup` is not inside an `[etSelect]` element.                     | Move the option group inside the select root.                 |
+| `ET1014` | `etSelectAllOption` is not inside an `[etSelect]` element.                       | Move the select-all row inside the select root.               |
 
 ## Tag input (ET27xx)
 

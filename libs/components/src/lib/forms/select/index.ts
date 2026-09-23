@@ -1,4 +1,5 @@
 export * from './headless';
+export * from './select-all-option.component';
 export * from './select-errors';
 export * from './select-labels';
 export * from './select-option-group.component';

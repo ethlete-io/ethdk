@@ -89,6 +89,10 @@
 
 <ng-template etSelectSurface>
   <et-select-panel>
+    @if (select.showSelectAll()) {
+      <et-select-all-option>{{ resolvedSelectAllLabel() }}</et-select-all-option>
+    }
+
     @if (select.options()) {
       <div
         [style.padding-block-start.px]="select.virtualWindow.paddingTop()"

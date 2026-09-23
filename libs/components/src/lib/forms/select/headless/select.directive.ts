@@ -180,6 +180,12 @@ export class SelectDirective
    * picked options in the panel.
    */
   public pickOnly = input(false, { transform: booleanAttribute });
+  /**
+   * Renders a tri-state "Select all" row above the options of a multi select. It adds or removes
+   * every visible, enabled option and leaves disabled options and values without a visible option
+   * as they are. Ignored for single and `pickOnly` selects.
+   */
+  public selectAll = input(false, { transform: booleanAttribute });
 
   public queryChange = output<string>();
   public loadMore = output<void>();
@@ -406,6 +412,45 @@ export class SelectDirective
   });
 
   public enabledItems = computed(() => this.visibleItems().filter((item) => !item.disabled()));
+
+  /** Whether the "Select all" row renders: `selectAll` on a multi select with at least one visible option. */
+  public showSelectAll = computed(
+    () =>
+      this.selectAll() && this.multiple() && !this.pickOnly() && this.visibleItems().some((item) => !item.custom?.()),
+  );
+
+  private selectAllTargets = computed(() => this.enabledItems().filter((item) => !item.custom?.()));
+
+  /** How many of the options the "Select all" row acts on are selected. */
+  public selectAllState = computed<'all' | 'some' | 'none'>(() => {
+    const targets = this.selectAllTargets();
+    const selectedCount = targets.filter((item) => this.isValueSelected(item.value())).length;
+
+    if (selectedCount === 0) {
+      return 'none';
+    }
+
+    return selectedCount === targets.length ? 'all' : 'some';
+  });
+
+  /** @internal The rendered "Select all" row, set by `etSelectAllOption`. */
+  public selectAllElement = signal<HTMLElement | null>(null);
+
+  /** @internal Holds virtual focus like an option, but is never registered with the selection. */
+  public selectAllItem: SelectItem = {
+    value: signal<unknown>(null).asReadonly(),
+    checked: signal(false),
+    disabled: computed(() => !this.selectAllTargets().length),
+    element: this.selectAllElement.asReadonly(),
+    id: signal(createComponentId('et-select-all-option')).asReadonly(),
+    label: computed(() => this.formFieldLabels().selectAll),
+  };
+
+  private navigableItems = computed(() =>
+    this.showSelectAll() && !this.selectAllItem.disabled()
+      ? [this.selectAllItem, ...this.enabledItems()]
+      : this.enabledItems(),
+  );
   public selectedItems = computed(() => (this.mixed() ? [] : this.sortedItems().filter((item) => item.checked())));
 
   /** @internal The query-visible slice of data-driven options - the virtual window renders these. */
@@ -678,6 +723,7 @@ export class SelectDirective
 
     effect(() => {
       const enabled = this.enabledItems();
+      const navigable = this.navigableItems();
       const isOpen = this.open();
 
       untracked(() => {
@@ -687,7 +733,7 @@ export class SelectDirective
 
         const active = this.activeItem();
 
-        if (active && enabled.includes(active)) {
+        if (active && navigable.includes(active)) {
           return;
         }
 
@@ -799,6 +845,12 @@ export class SelectDirective
       return;
     }
 
+    if (item === this.selectAllItem) {
+      this.toggleSelectAll();
+
+      return;
+    }
+
     if (this.mixed()) {
       if (!this.commitMixedOption(item)) {
         return;
@@ -849,6 +901,37 @@ export class SelectDirective
       this.registeredSearch()?.clear();
       this.hide();
     }
+  }
+
+  /**
+   * Selects every visible, enabled option (up to `maxSelection`), or deselects them once all are
+   * selected - wired to the "Select all" row.
+   */
+  public toggleSelectAll() {
+    if (this.disabled() || this.readonly() || !this.showSelectAll()) {
+      return;
+    }
+
+    const targets = this.selectAllTargets();
+    const current = this.value();
+    const values = this.mixed() || !Array.isArray(current) ? [] : current;
+
+    if (this.selectAllState() === 'all') {
+      const valuesMatch = this.valuesMatch();
+
+      this.value.set(values.filter((value) => !targets.some((item) => valuesMatch(item.value(), value))));
+
+      return;
+    }
+
+    const room = (this.maxSelection() ?? Infinity) - values.length;
+    const additions = targets
+      .map((item) => item.value())
+      .filter((value) => !this.includesValue(values, value))
+      .slice(0, Math.max(0, room));
+
+    this.value.set([...values, ...additions]);
+    this.mixed.set(false);
   }
 
   /** @internal Emits `loadMore` - wired to the panel's load-more control. */
@@ -1260,7 +1343,7 @@ export class SelectDirective
   }
 
   private moveActive(delta: 1 | -1) {
-    const items = this.enabledItems();
+    const items = this.navigableItems();
 
     if (!items.length) {
       return;
@@ -1292,7 +1375,7 @@ export class SelectDirective
   }
 
   private setActiveToEdge(edge: 'first' | 'last') {
-    const items = this.enabledItems();
+    const items = this.navigableItems();
     const target = edge === 'first' ? items[0] : items.at(-1);
 
     if (target) {

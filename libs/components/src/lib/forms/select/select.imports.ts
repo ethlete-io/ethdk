@@ -1,4 +1,5 @@
 import {
+  SelectAllOptionDirective,
   SelectDirective,
   SelectEmptyDirective,
   SelectErrorDirective,
@@ -15,6 +16,7 @@ import {
   SelectViewportDirective,
   SelectVirtualOptionDirective,
 } from './headless';
+import { SelectAllOptionComponent } from './select-all-option.component';
 import { SelectOptionGroupComponent } from './select-option-group.component';
 import { SelectOptionComponent } from './select-option.component';
 import { SelectPanelComponent } from './select-panel.component';
@@ -27,6 +29,7 @@ export const SELECT_IMPORTS = [
   SelectOptionGroupComponent,
   SelectPanelComponent,
   SelectVirtualOptionComponent,
+  SelectAllOptionComponent,
   SelectDirective,
   SelectTriggerDirective,
   SelectSurfaceDirective,
@@ -39,6 +42,7 @@ export const SELECT_IMPORTS = [
   SelectOptionsDirective,
   SelectViewportDirective,
   SelectVirtualOptionDirective,
+  SelectAllOptionDirective,
   SelectLoadingDirective,
   SelectErrorDirective,
   SelectEmptyDirective,

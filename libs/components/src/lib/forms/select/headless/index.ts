@@ -1,3 +1,4 @@
+export * from './select-all-option.directive';
 export * from './select-listbox.directive';
 export * from './select-option-group.directive';
 export * from './select-option-template.directive';

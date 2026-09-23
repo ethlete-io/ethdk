@@ -7,6 +7,7 @@ import { SpinnerComponent } from '../../loader';
 import { mountControlSuffixStyles } from '../form-field/form-field-control-suffix-styles.component';
 import { ControlSuffixDirective } from '../form-field/partials';
 import { SelectDirective, SelectSurfaceDirective, SelectTriggerDirective, SelectValueContext } from './headless';
+import { SelectAllOptionComponent } from './select-all-option.component';
 import { SelectOptionComponent } from './select-option.component';
 import { SelectPanelComponent } from './select-panel.component';
 import { SelectVirtualOptionComponent } from './select-virtual-option.component';
@@ -25,6 +26,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
     ControlSuffixDirective,
     SelectPanelComponent,
     SelectOptionComponent,
+    SelectAllOptionComponent,
     SelectVirtualOptionComponent,
     IconDirective,
     NgTemplateOutlet,
@@ -63,6 +65,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
         'error',
         'hasMoreItems',
         'pickOnly',
+        'selectAll',
         'mirrorPanelWidth',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
@@ -98,12 +101,16 @@ export class SelectComponent {
   /** Shows a clear (×) control while a value is selected. */
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
+  /** Text of the `selectAll` row. Defaults to the shared `selectAll` label - see {@link provideFormFieldLabels}. */
+  public selectAllLabel = input<string | null>(null);
 
   protected resolvedLoadMoreLabel = computed(() => this.loadMoreLabel() ?? this.selectLabels().loadMore);
 
   protected resolvedAddNewLabel = computed(() => this.addNewLabel() ?? this.selectLabels().addNew);
 
   protected resolvedCreateLabel = computed(() => this.createLabel() ?? this.selectLabels().create);
+
+  protected resolvedSelectAllLabel = computed(() => this.selectAllLabel() ?? this.formFieldLabels().selectAll);
 
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
   protected mixedLabelId = createComponentId('et-select-mixed-label');

@@ -42,6 +42,7 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `commitCustomValueOnClose` | `boolean`                            | `false`      | A pending query commits as a custom value when the panel closes via Tab or an outside click, instead of being discarded.                                                                                                      |
 | `maxSelection`             | `number \| undefined`                | `undefined`  | Caps the number of selected values (multi mode); at the cap the search input locks and every still-unselected option renders disabled.                                                                                        |
 | `pickOnly`                 | `boolean`                            | `false`      | Command picker: committing an option emits `pickOption` and never writes `value`, and the field displays no value of its own. With `multiple` the panel stays open for repeated picks. See [command picker](#command-picker). |
+| `selectAll`                | `boolean`                            | `false`      | Renders a tri-state "Select all" row as the first option of a multi select (not with `pickOnly`). See [select all](#select-all).                                                                                              |
 | `allowAddNew`              | `boolean`                            | `false`      | Renders an "Add new" action row at the end of the panel that emits `addNew` (label via `addNewLabel`, else [`SELECT_LABELS.addNew`](/components/localization)).                                                               |
 | `loading`                  | `boolean`                            | `false`      | Reports the wait: a spinner in the field while closed, and in the panel a loading row, a busy bar or a loading load-more row depending on what is on screen ([how a wait is reported](#how-a-wait-is-reported)).              |
 | `error`                    | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                                                                                          |
@@ -52,11 +53,12 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `createLabel`              | `string \| null`                     | `null` ²     | Leading text of the "Create …" custom-value row.                                                                                                                                                                              |
 | `clearable`                | `boolean`                            | `true`       | Shows a clear (×) button while a value is selected and the field is focused (never while `disabled` or `readonly`).                                                                                                           |
 | `clearLabel`               | `string \| null`                     | `null` ²     | Accessible label for the clear button.                                                                                                                                                                                        |
+| `selectAllLabel`           | `string \| null`                     | `null` ²     | Text of the `selectAll` row.                                                                                                                                                                                                  |
 | `aria-label`               | `string \| null`                     | `null`       | Names the combobox when no `et-label` is projected.                                                                                                                                                                           |
 | `aria-labelledby`          | `string \| null`                     | `null`       | Ids naming the combobox. Takes precedence over a projected `et-label`.                                                                                                                                                        |
 
 ¹ `null` falls through to [`FORM_FIELD_LABELS.mixed`](/components/localization) (`'Mixed'`) - set it only for one-off wording.
-² `null` falls through to the domain's label set - [`SELECT_LABELS`](/components/localization) for `loadMoreLabel`, `addNewLabel` and `createLabel`, [`FORM_FIELD_LABELS.clear`](/components/localization) for `clearLabel`, both overridable for a whole subtree with `provideSelectLabels({ … })` / `provideFormFieldLabels({ … })`.
+² `null` falls through to the domain's label set - [`SELECT_LABELS`](/components/localization) for `loadMoreLabel`, `addNewLabel` and `createLabel`, [`FORM_FIELD_LABELS.clear`](/components/localization) for `clearLabel` and `FORM_FIELD_LABELS.selectAll` for `selectAllLabel`, both overridable for a whole subtree with `provideSelectLabels({ … })` / `provideFormFieldLabels({ … })`.
 
 | Output          | Payload                        | Emitted when                                                                                                                                                               |
 | --------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -103,6 +105,24 @@ A committed option writes _its own_ value into the model, so after the user pick
 <StoryEmbed id="components-forms-select--multiple" height="420px" />
 
 With `multiple`, each selected value renders as a removable chip in the trigger; a chip's remove button (or Backspace/Delete on a chip) deselects that value without opening the panel, and the chips row wraps, growing the field. Committing an option toggles it and keeps the panel open - Escape, Tab or clicking outside close it. While `readonly`, the chips keep their normal (non-disabled) look but drop the remove button; while `disabled`, they render dimmed without it.
+
+### Select all
+
+<StoryEmbed id="components-forms-select--select-all" height="420px" />
+
+Set `selectAll` on a multi select to render a "Select all" row as the first option in the panel:
+
+```html
+<et-select [formField]="demoForm.fruits" multiple selectAll>
+  <input etSelectSearch placeholder="Search fruits" />
+  <et-select-option value="apple">Apple</et-select-option>
+  <et-select-option value="banana">Banana</et-select-option>
+</et-select>
+```
+
+The row acts on the options the panel currently shows, so with a search query it selects the matches only. Its check shows while every one of them is selected, and a dash in the theme accent while only some are. Activating it adds the unselected ones, or removes them all once every one is selected. Disabled options are never added or removed, and values without a visible option (custom values, options a search hides) stay in the model. With `maxSelection` it adds options in list order until the cap. Values are matched with [`compareWith`](#object-values), so the row works with object values too. In a mixed bulk-edit field the row replaces the hidden selection with every enabled option.
+
+The row takes virtual focus like any option: <kbd>ArrowUp</kbd> from the first option or <kbd>Home</kbd> reaches it, and <kbd>Enter</kbd> or <kbd>Space</kbd> toggles it (with a search input, <kbd>Home</kbd> and <kbd>Space</kbd> stay with the text, as they do for every option). The panel still opens on the first selected option (or the first option), never on the row. Its text defaults to [`FORM_FIELD_LABELS.selectAll`](/components/localization); set `selectAllLabel` for one field. A headless composition renders its own row with `etSelectAllOption` as the first child of the listbox.
 
 ## Mixed values in bulk editors
 
@@ -396,7 +416,7 @@ Focus stays on the trigger the whole time; options receive _virtual_ focus, expo
 | ----------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | <kbd>Enter</kbd> / <kbd>Space</kbd>       | Opens the panel                                                       | Commits the active option and closes (multi: toggles it, stays open)                                                |
 | <kbd>ArrowDown</kbd> / <kbd>ArrowUp</kbd> | Opens the panel                                                       | Moves virtual focus (no wrap); <kbd>ArrowDown</kbd> on the last option emits `loadMore` while `hasMoreItems` is set |
-| <kbd>Home</kbd> / <kbd>End</kbd>          | -                                                                     | First / last enabled option                                                                                         |
+| <kbd>Home</kbd> / <kbd>End</kbd>          | -                                                                     | First / last enabled option (the [select-all](#select-all) row counts as the first)                                 |
 | <kbd>Escape</kbd>                         | -                                                                     | Closes without committing                                                                                           |
 | <kbd>Tab</kbd>                            | Moves focus on                                                        | Closes, focus moves on                                                                                              |
 | Printable characters                      | Commits the first matching option directly (like a native `<select>`) | Moves virtual focus to the first match                                                                              |
@@ -406,7 +426,7 @@ Clicking anywhere on the form field's control frame - not just the trigger - ope
 ## Accessibility
 
 - The trigger is a `role="combobox"` element with `aria-haspopup="listbox"`, `aria-expanded`, `aria-controls` (the listbox id while open) and `aria-activedescendant` (the active option while open). It is not a native `<button>` - chips carry remove buttons, and buttons cannot nest - so the trigger directive manages `tabindex` (`0`, `-1` while disabled) and `aria-disabled` itself. It is labelled by the form field's `et-label` plus its own content, and carries `aria-required`/`aria-invalid`/`aria-describedby` from the form-field wiring. **With an inline search input, the input takes over the combobox role and all of this wiring** - the trigger element becomes a plain container.
-- The panel content is a `role="listbox"` (`aria-multiselectable` when `multiple`); options are `role="option"` with `aria-selected`, `aria-disabled` and stable ids. Options are never tab stops, and neither are the chips or their remove buttons.
+- The panel content is a `role="listbox"` (`aria-multiselectable` when `multiple`); options are `role="option"` with `aria-selected`, `aria-disabled` and stable ids. The select-all row is an option too, but carries `aria-checked` (`true`, `false` or `mixed`) instead of `aria-selected`, since it reports how many options are selected rather than being a choice itself. Options are never tab stops, and neither are the chips or their remove buttons.
 - The panel opens without moving DOM focus and closing restores nothing - focus simply never left the trigger.
 - `touched` is set on trigger blur, so errors display after the user leaves the field.
 - Dev mode throws when the trigger or surface is missing, or when a sub-directive is placed outside `[etSelect]`.
