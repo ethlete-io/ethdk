@@ -2,8 +2,10 @@
 
 **Status 2026-09-23: done.** All 7 High and the checked Medium/Low findings were fixed the same day
 in `1aabd4ebc` ("Harden rendering and migration behavior"), with specs added for each; minor
-follow-ups landed in `55736ec21`, `03872a84f`, `c2e37eaab`, `a6a550f54`. Still open: a Low - the
-video/audio/file components still import `NgClass` instead of using `[class]`.
+follow-ups landed in `55736ec21`, `03872a84f`, `c2e37eaab`, `a6a550f54`. Kept on purpose: the
+video/audio/file components still use `NgClass`. `[class]` silently drops a key or array item
+that contains a space (Angular's `classKeyValueArraySet`), while `NgClass` splits it, so the
+swap would break consumers who pass `'a b'` through the `NgClassType` inputs.
 
 Scan date: 2026-08-19. Scope: all of `libs/contentful` — about 2.7k lines of non-spec source,
 plus the v5 migration generator, the stories, and the packaging files. Three parallel review
