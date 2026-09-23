@@ -61,8 +61,6 @@ export abstract class PickerInputBaseDirective extends AccessibleNameControlDire
   /** `true` while a field holds text that does not parse. */
   public abstract parseError: Signal<boolean>;
 
-  protected abstract readonly KEEPS_FOCUS_ON_FOCUS_LEAVE: boolean;
-
   /**
    * View state for a field whose source values disagree (bulk edit). The raw form value stays
    * untouched; on a range one flag masks both sides.
@@ -141,7 +139,7 @@ export abstract class PickerInputBaseDirective extends AccessibleNameControlDire
     onAfterClosed: ({ byOutsidePointer, byFocusLeave, fromBottomSheet }) => {
       if (
         !byOutsidePointer &&
-        !(byFocusLeave && this.KEEPS_FOCUS_ON_FOCUS_LEAVE) &&
+        !byFocusLeave &&
         !fromBottomSheet &&
         this.document.activeElement === this.document.body
       ) {

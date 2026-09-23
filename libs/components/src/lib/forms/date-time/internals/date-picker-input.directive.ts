@@ -34,8 +34,6 @@ export abstract class DatePickerInputDirective
   public value = model<string | null>(null);
   public placeholder = input('');
 
-  protected readonly KEEPS_FOCUS_ON_FOCUS_LEAVE = true;
-
   /** Uncommitted field text - kept visible when it fails to parse. */
   public inputText = signal('');
   /** `true` while the field holds text that does not parse. */

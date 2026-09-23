@@ -253,6 +253,21 @@ test.describe('date-inputs / date range input keyboard', () => {
     await expect(page.locator(DIALOG)).toHaveCount(0);
     await expect(root.locator('.et-date-range-input-field').first()).toBeFocused();
   });
+
+  test('a Tab past the calendar closes the picker and leaves focus where it went', async ({ page }) => {
+    const root = await openStory(page, DATE_RANGE_INPUT_ID);
+    const fields = root.locator('.et-date-range-input-field');
+
+    await root.locator('.et-input-picker-trigger').click();
+    await waitForPickerEntered(page);
+    await tabUntilFocused(page, page.locator(FOCUSED_CELL));
+
+    await pressKey(page, 'Tab');
+
+    await expect(page.locator(DIALOG)).toHaveCount(0);
+    await expect(fields.first()).not.toBeFocused();
+    await expect(fields.last()).not.toBeFocused();
+  });
 });
 
 test.describe('date-inputs / date range input touch', () => {

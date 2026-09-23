@@ -73,7 +73,8 @@ Done 2026-09-23 in `57df30661`: the two abstract bases now extend one
 `internals/picker-input-base.directive.ts` (`PickerInputBaseDirective`), which owns the shared
 inputs, the picker overlay, open/close/toggle, trigger/surface registration, `describedByIds`,
 `maskPattern` and the mask warning. The single and range bases keep only their value shape, field
-registration and commit paths; the range still re-focuses after a focus-leave close, as before.
+registration and commit paths. A follow-up fix makes a focus-leave close leave focus alone on the
+ranges too, as on the single inputs.
 
 ### 2. Container `keydown` handlers that ignore `event.target` · S · **DONE 2026-08-22**
 

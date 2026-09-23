@@ -148,8 +148,6 @@ export abstract class DateRangePickerInputDirective
     activate: () => this.activate(),
   };
 
-  protected readonly KEEPS_FOCUS_ON_FOCUS_LEAVE = false;
-
   constructor() {
     super();
 

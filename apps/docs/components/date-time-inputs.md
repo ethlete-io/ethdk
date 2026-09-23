@@ -36,7 +36,8 @@ scalar - see below) shares one design:
   `parseError` signal turns on and the value clears to `null` - once touched,
   it's announced as a real error (`parseErrorMessage`) with matching
   `aria-invalid`/`aria-describedby`. <kbd>Alt</kbd>+<kbd>ArrowDown</kbd> opens the
-  picker.
+  picker. <kbd>Escape</kbd> closes it and returns focus to the field; tabbing out of
+  it closes it and leaves focus where it went, on single and range inputs alike.
 - **A commit is an edit, and only an edit.** Typed text commits on blur and on
   <kbd>Enter</kbd>. Focusing a field and leaving it again without typing commits
   nothing, so a `displayFormat` that carries fewer units than `valueFormat` (the
