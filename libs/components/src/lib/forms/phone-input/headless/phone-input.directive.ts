@@ -1,27 +1,11 @@
-import {
-  DestroyRef,
-  Directive,
-  booleanAttribute,
-  computed,
-  inject,
-  input,
-  linkedSignal,
-  model,
-  signal,
-} from '@angular/core';
-import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import {
-  AccessibleNameControlDirective,
-  FORM_FIELD_CONTROL_TYPES,
-  FORM_FIELD_TOKEN,
-  FormFieldControl,
-} from '../../form-field/headless';
+import { Directive, computed, input, linkedSignal, model, signal } from '@angular/core';
+import { FormValueControl } from '@angular/forms/signals';
+import { FORM_FIELD_CONTROL_TYPES } from '../../form-field/headless';
 import { PHONE_COUNTRIES, matchCountryByDialCode, stripTrunkZero } from './phone-countries';
 import { PhoneInputFieldDirective } from './phone-input-field.directive';
 import { PhoneInputFlagDirective } from './phone-input-flag.directive';
-import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
-import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { mountControlSuffixStyles } from '../../form-field/form-field-control-suffix-styles.component';
+import { TextShellControlDirective } from '../../form-field/headless/text-shell-control.directive';
 
 const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
 
@@ -29,51 +13,25 @@ const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
   selector: '[etPhoneInput]',
   exportAs: 'etPhoneInput',
   host: {
-    '[attr.data-mixed]': 'mixed() || null',
     '[attr.data-disabled]': 'disabled() || null',
     '[attr.data-readonly]': 'readonly() || null',
   },
 })
-export class PhoneInputDirective
-  extends AccessibleNameControlDirective
-  implements FormValueControl<string>, FormFieldControl
-{
-  private formFieldLabels = injectFormFieldLabels();
-
-  private formField = inject(FORM_FIELD_TOKEN, { optional: true });
-  private destroyRef = inject(DestroyRef);
-
+export class PhoneInputDirective extends TextShellControlDirective implements FormValueControl<string> {
   /** Normalized `+<dialCode><national digits>` - empty string while nothing is entered. */
   public value = model('');
-  /** View state for a field whose source values disagree. The raw form value stays untouched. */
-  public mixed = model(false);
-  public touched = model(false);
-  public disabled = input(false, { transform: booleanAttribute });
-  public readonly = input(false, { transform: booleanAttribute });
-  public invalid = input(false, { transform: booleanAttribute });
-  public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false, { transform: booleanAttribute });
-  public name = input('');
   public placeholder = input('');
-  /** Field placeholder shown while `mixed` is set. */
-  public mixedLabel = input<string | null>(null);
 
   public defaultCountry = input('us');
   /** ISO codes listed on top of the country dropdown. */
   public preferredCountries = input<string[]>([]);
 
-  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
-  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
-
-  public shouldDisplayError = computed(() => this.touched() && this.invalid());
   public hasValue = computed(() => this.mixed() || this.value().length > 0);
 
   /** The placeholder the tel field currently shows - `mixedLabel` while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
-  public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.PHONE_INPUT);
-  public focused = signal(false);
 
   /** @internal */
   public registeredField = signal<PhoneInputFieldDirective | null>(null);
@@ -145,23 +103,7 @@ export class PhoneInputDirective
   constructor() {
     super();
 
-    mountTextFieldShellStyles();
     mountControlSuffixStyles();
-
-    this.formField?.registerControl(this);
-    this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
-  }
-
-  public activate() {
-    this.focus();
-  }
-
-  public focus(options?: FocusOptions) {
-    if (this.disabled()) {
-      return;
-    }
-
-    this.registeredField()?.focus(options);
   }
 
   /** Clears the number (the selected country stays) - wired to the styled input's clear button. */
@@ -226,6 +168,10 @@ export class PhoneInputDirective
     const national = stripTrunkZero(digits, this.country());
 
     this.commitTypedValue(national ? `+${this.dialCode()}${national}` : '');
+  }
+
+  public focusControl(options?: FocusOptions) {
+    this.registeredField()?.focus(options);
   }
 
   /**

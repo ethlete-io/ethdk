@@ -1,14 +1,8 @@
-import { DestroyRef, Directive, booleanAttribute, computed, inject, input, model, signal } from '@angular/core';
-import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import {
-  AccessibleNameControlDirective,
-  FORM_FIELD_CONTROL_TYPES,
-  FORM_FIELD_TOKEN,
-  FormFieldControl,
-} from '../../form-field/headless';
+import { Directive, booleanAttribute, computed, input, model, signal } from '@angular/core';
+import { FormValueControl } from '@angular/forms/signals';
+import { FORM_FIELD_CONTROL_TYPES } from '../../form-field/headless';
 import { TagInputFieldDirective } from './tag-input-field.directive';
-import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
-import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
+import { TextShellControlDirective } from '../../form-field/headless/text-shell-control.directive';
 
 const defaultNormalizeTag = (raw: string) => {
   const trimmed = raw.trim();
@@ -22,28 +16,10 @@ const defaultNormalizeTag = (raw: string) => {
   host: {
     '[attr.data-disabled]': 'disabled() || null',
     '[attr.data-readonly]': 'readonly() || null',
-    '[attr.data-mixed]': 'mixed() || null',
   },
 })
-export class TagInputDirective
-  extends AccessibleNameControlDirective
-  implements FormValueControl<string[]>, FormFieldControl
-{
-  private formFieldLabels = injectFormFieldLabels();
-
-  private formField = inject(FORM_FIELD_TOKEN, { optional: true });
-  private destroyRef = inject(DestroyRef);
-
+export class TagInputDirective extends TextShellControlDirective implements FormValueControl<string[]> {
   public value = model<string[]>([]);
-  /** View state for a field whose source values disagree. The raw form value stays untouched. */
-  public mixed = model(false);
-  public touched = model(false);
-  public disabled = input(false, { transform: booleanAttribute });
-  public readonly = input(false, { transform: booleanAttribute });
-  public invalid = input(false, { transform: booleanAttribute });
-  public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false, { transform: booleanAttribute });
-  public name = input('');
 
   /**
    * The bound field's `maxLength()` limit - for an array value that is the maximum number of tags.
@@ -60,8 +36,6 @@ export class TagInputDirective
   public pending = input(false, { transform: booleanAttribute });
 
   public placeholder = input('');
-  /** Field placeholder shown while `mixed` is set. */
-  public mixedLabel = input<string | null>(null);
 
   /**
    * What commits the pending text as a tag: multi-character entries are key names
@@ -73,11 +47,6 @@ export class TagInputDirective
   public normalizeTag = input<(raw: string) => string | null>(defaultNormalizeTag);
   public maxTags = input<number | undefined>(undefined);
 
-  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
-  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
-
-  public shouldDisplayError = computed(() => this.touched() && this.invalid());
-
   /** The raw value normalized to the tags the control currently shows. Mixed has no effective tags. */
   public effectiveValues = computed<readonly string[]>(() => (this.mixed() ? [] : this.value()));
 
@@ -86,9 +55,7 @@ export class TagInputDirective
   /** The placeholder the text field currently shows - `mixedLabel` while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
-  public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TAG_INPUT);
-  public focused = signal(false);
 
   /** @internal */
   public registeredField = signal<TagInputFieldDirective | null>(null);
@@ -107,24 +74,7 @@ export class TagInputDirective
   /** @internal Multi-character separators are key names (e.g. `'Enter'`). */
   public keySeparators = computed(() => this.separators().filter((separator) => separator.length > 1));
 
-  constructor() {
-    super();
-
-    mountTextFieldShellStyles();
-
-    this.formField?.registerControl(this);
-    this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
-  }
-
-  public activate() {
-    this.focus();
-  }
-
-  public focus(options?: FocusOptions) {
-    if (this.disabled()) {
-      return;
-    }
-
+  public focusControl(options?: FocusOptions) {
     this.registeredField()?.focus(options);
   }
 
