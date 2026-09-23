@@ -5,3 +5,5 @@ export * from './chart.types';
 export * from './headless';
 export * from './pie-chart-errors';
 export * from './pie-chart.component';
+export * from './sankey-chart-errors';
+export * from './sankey-chart.component';
