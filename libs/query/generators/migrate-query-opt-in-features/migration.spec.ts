@@ -65,6 +65,24 @@ describe('migrate-query-opt-in-features', () => {
     expect(client).not.toContain('multiTabSync');
   });
 
+  it('does not add the error pipeline feature twice', async () => {
+    const { client, report } = await run(
+      `import { createQueryClient, withEthleteApiErrors } from '@ethlete/query';\n\nexport const CLIENT = createQueryClient({ name: 'api', baseUrl: 'x', features: [withEthleteApiErrors()] });\n`,
+    );
+
+    expect(client.match(/withEthleteApiErrors\(\)/g)).toHaveLength(1);
+    expect(report).not.toContain('Client kept the full error pipeline');
+  });
+
+  it('does not add multi-tab sync twice', async () => {
+    const { client } = await run(
+      `import { createBearerAuthProvider, withBearerAuthMultiTabSync } from '@ethlete/query';\n\nexport const AUTH = createBearerAuthProvider({ name: 'auth', queryClientRef: CLIENT, queries: [], features: [withBearerAuthMultiTabSync({ channelName: 'custom' })] });\n`,
+    );
+
+    expect(client.match(/withBearerAuthMultiTabSync\(/g)).toHaveLength(1);
+    expect(client).toContain(`features: [withBearerAuthMultiTabSync({ channelName: 'custom' })]`);
+  });
+
   it('only reports affected sites in reportOnly mode', async () => {
     const source = `import { createQueryClient } from '@ethlete/query';\n\nexport const CLIENT = createQueryClient({ baseUrl: 'https://api.example.com', name: 'api' });\n`;
     const { client, report } = await run(source, { reportOnly: true });

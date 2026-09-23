@@ -29,6 +29,19 @@ const propertyNamed = (config: ts.ObjectLiteralExpression, sourceFile: ts.Source
       ts.isPropertyAssignment(property) && property.name.getText(sourceFile) === name,
   );
 
+const hasFeature = (config: ts.ObjectLiteralExpression, sourceFile: ts.SourceFile, feature: string) => {
+  const features = propertyNamed(config, sourceFile, 'features')?.initializer;
+
+  return (
+    !!features &&
+    ts.isArrayLiteralExpression(features) &&
+    features.elements.some(
+      (element) =>
+        ts.isCallExpression(element) && ts.isIdentifier(element.expression) && element.expression.text === feature,
+    )
+  );
+};
+
 /** `{ enabled: false, channelName: 'x' }` -> `withBearerAuthMultiTabSync({ channelName: 'x' })`, or `null` when off. */
 const authFeatureCallFor = (property: ts.PropertyAssignment | undefined, sourceFile: ts.SourceFile) => {
   if (!property) return `${AUTH_FEATURE}()`;
@@ -112,6 +125,8 @@ const collectEdits = (filePath: string, sourceFile: ts.SourceFile, report: Query
             source: SOURCE,
             dedupeKey: `spread-config:${callee}`,
           });
+        } else if (isClient && hasFeature(config, sourceFile, CLIENT_FEATURE)) {
+          return;
         } else if (isClient) {
           const feature = `${CLIENT_FEATURE}()`;
 
@@ -133,6 +148,10 @@ const collectEdits = (filePath: string, sourceFile: ts.SourceFile, report: Query
           });
         } else {
           const syncProperty = propertyNamed(config, sourceFile, 'multiTabSync');
+          const alreadyAdded = hasFeature(config, sourceFile, AUTH_FEATURE);
+
+          if (alreadyAdded && !syncProperty) return;
+
           const value = syncProperty?.initializer;
 
           if (
@@ -153,7 +172,7 @@ const collectEdits = (filePath: string, sourceFile: ts.SourceFile, report: Query
             });
           }
 
-          const feature = authFeatureCallFor(syncProperty, sourceFile);
+          const feature = alreadyAdded ? null : authFeatureCallFor(syncProperty, sourceFile);
 
           if (feature) {
             report.addFollowUp({
