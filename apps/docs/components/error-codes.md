@@ -503,6 +503,7 @@ Checked in dev mode only, after the first render.
 | Code     | Cause                                                                                                   | Fix                                                                              |
 | -------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `ET5100` | A chart such as `[etBarChart]` rendered with nothing marked `etChartPlot`.                              | Add `etChartPlot` to the element the marks are laid out in.                      |
+| `ET5120` | A `[etLineChart]` has data that mixes `Date` and string `x` values.                                     | Give every datum a `Date` for a time axis, or a string for categories.           |
 | `ET5140` | A `[etPieChart]` datum has a negative or non-finite `value`. A dev-mode warning: the slice counts as 0. | Pass only parts of a whole - drop or fix the value before handing the data over. |
 | `ET5160` | The links of a `[etSankeyChart]` form a cycle. Checked on every layout.                                 | Remove a link that leads back to an earlier node.                                |
 | `ET5161` | A `[etSankeyChart]` link names a `source` or `target` that is no node's `id`. Checked on every layout.  | Add the node, or fix the link's id.                                              |

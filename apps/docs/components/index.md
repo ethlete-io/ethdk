@@ -127,6 +127,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Divider](/components/divider) - horizontal or vertical rule between groups of content, with a decorative mode.
 - [Grid](/components/grid) - drag & resize dashboard grid with breakpoints, keyboard editing and backend serialization.
 - [Kbd](/components/kbd) - renders a keyboard shortcut as keycaps, with the current platform's glyphs.
+- [Line chart](/components/line-chart) - multi-series lines or stacked areas on a category or time axis, with a crosshair tooltip that lists every series.
 - [Masonry](/components/masonry) - column-balancing layout for variable-height cards, with continuous measurement and stable columns.
 - [Match](/components/match) - container-adaptive match card and participant primitive, fed by a normalized view-model any backend can map into.
 - [Pagination](/components/pagination) - page-number paginator with ellipsis, jump controls and a headless tier.

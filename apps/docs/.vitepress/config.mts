@@ -290,6 +290,7 @@ export default defineConfig({
             { text: 'Divider', link: '/components/divider' },
             { text: 'Grid', link: '/components/grid' },
             { text: 'Kbd', link: '/components/kbd' },
+            { text: 'Line chart', link: '/components/line-chart' },
             { text: 'Masonry', link: '/components/masonry' },
             { text: 'Match', link: '/components/match' },
             { text: 'Pagination', link: '/components/pagination' },
