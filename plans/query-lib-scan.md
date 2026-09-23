@@ -371,4 +371,4 @@ property the v3 migration cannot carry over (`{ secure }`) now gets a report war
 legacy `prepare()` in an anonymous `export default class` is migrated (`1a9b929d1`). `prep-for-query-v3`
 follows `import * as q`, for renames and for `q.ExperimentalQuery.x` (`48efc25fe`). Dead code removed:
 `removeAnyQueryFromImports` and `describeTemplateLine` (`7a2a9d2d3`), `migration-scope.includes`
-(`d60515dc1`), the `pruneUnusedNamedImports` module filter (`f7bb00368`).
+(`d60515dc1`), the `pruneUnusedNamedImports` module filter (`f7bb00368`). A non-literal `secure` value (`secure: isProd`) gets the same warning instead of a silently non-secure creator (`14580fe71`).
