@@ -40,9 +40,10 @@ const data = toSignal(obs$);
   Do not use `takeWhile` as destruction cleanup: without another emission it stays
   subscribed. Use `take(1)` or `first()` only when one emission is the operation's
   intended semantics.
-- **Place lifecycle teardown after higher-order operators** such as `switchMap`, so their
-  inner subscriptions are also covered. Other limiting and finalization operators do not
-  have a universal “last” position; place them where their semantics belong.
+- **`takeUntilDestroyed()` goes last in its pipe** (`ethlete/take-until-destroyed-last`), so
+  higher-order operators such as `switchMap` and their inner subscriptions are covered.
+  Other limiting and finalization operators do not have a universal “last” position;
+  place them where their semantics belong.
 - **Side effects go in `tap()`**, never in the `subscribe()` callback - keep
   `subscribe()` empty.
 - **Don't reach for RxJS inside `effect()`/`computed()`.** Subscribing per run
