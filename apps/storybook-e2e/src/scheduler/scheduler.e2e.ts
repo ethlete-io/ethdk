@@ -8,6 +8,9 @@ const AGENDA_ID = 'components-date-time-scheduler--agenda';
 const NARROW_ID = 'components-date-time-scheduler--narrow';
 const WITHOUT_DRAG_ID = 'components-date-time-scheduler--without-appointment-drag';
 const BUSINESS_HOURS_ID = 'components-date-time-scheduler--business-hours';
+const WITHOUT_NOW_INDICATOR_ID = 'components-date-time-scheduler--without-now-indicator';
+
+const FIXED_NOW = new Date(2026, 6, 15, 10, 30);
 
 const DIALOG_ROOT = '[role="dialog"]';
 
@@ -75,6 +78,37 @@ test.describe('scheduler / business hours drag', () => {
     await expect(closedDay.locator('.et-scheduler-time-grid-draft')).toBeVisible();
 
     await page.mouse.up();
+  });
+});
+
+async function hourOfNowLine(root: Locator): Promise<number> {
+  const column = await boxOf(root.locator('.et-scheduler-time-grid-day'));
+  const line = await boxOf(root.locator('.et-scheduler-time-grid-now'));
+
+  return ((line.y - column.y) / column.height) * 24;
+}
+
+test.describe('scheduler / now line', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: FIXED_NOW });
+  });
+
+  test('marks the current time on today and moves with the clock', async ({ page }) => {
+    const root = await openStory(page, DAY_ID);
+
+    await expect(root.locator('.et-scheduler-time-grid-now')).toHaveCount(1);
+    expect(await hourOfNowLine(root)).toBeCloseTo(10.5, 1);
+
+    await page.clock.runFor(30 * 60_000);
+
+    await expect.poll(() => hourOfNowLine(root)).toBeCloseTo(11, 1);
+  });
+
+  test('draws no line with the now indicator off', async ({ page }) => {
+    const root = await openStory(page, WITHOUT_NOW_INDICATOR_ID);
+
+    await expect(root.locator('.et-scheduler-time-grid-day')).toHaveCount(1);
+    await expect(root.locator('.et-scheduler-time-grid-now')).toHaveCount(0);
   });
 });
 

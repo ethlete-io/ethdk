@@ -1,4 +1,4 @@
-import { Directive, computed, input, model, output, signal } from '@angular/core';
+import { Directive, booleanAttribute, computed, input, model, output, signal } from '@angular/core';
 import {
   Locale,
   addDays,
@@ -78,6 +78,9 @@ export class SchedulerDirective<TExtra = unknown> {
    * no entry lists is closed all day. `null` draws no business hours at all.
    */
   public businessHours = input<readonly SchedulerBusinessHours[] | null>(null);
+
+  /** Whether the time grid marks the current time on today's column. */
+  public nowIndicator = input(true, { transform: booleanAttribute });
 
   /**
    * Emits when a move or resize lands the appointment somewhere else - see

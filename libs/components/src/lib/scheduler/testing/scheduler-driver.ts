@@ -22,6 +22,7 @@ export type SchedulerTestDriverOptions = {
   selectedAppointmentId?: AppointmentId | null;
   focusedDate?: Date;
   businessHours?: readonly SchedulerBusinessHours[] | null;
+  nowIndicator?: boolean;
   editSurface?: boolean;
   providers?: Provider[];
 };
@@ -36,6 +37,7 @@ const SCHEDULER_TEST_OPTIONS = new InjectionToken<SchedulerTestDriverOptions>('S
       [view]="view()"
       [focusedDate]="focusedDate()"
       [businessHours]="businessHours()"
+      [nowIndicator]="nowIndicator()"
     />
   `,
   imports: [SchedulerComponent],
@@ -48,6 +50,7 @@ class SchedulerTestHost {
   public readonly selectedAppointmentId = signal(this.options.selectedAppointmentId ?? null);
   public readonly focusedDate = signal(this.options.focusedDate ?? testAppointment('_').start);
   public readonly businessHours = signal(this.options.businessHours ?? null);
+  public readonly nowIndicator = signal(this.options.nowIndicator ?? true);
 }
 
 export const schedulerTestDriver = (options: SchedulerTestDriverOptions = {}) => {

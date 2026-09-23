@@ -63,6 +63,7 @@ On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 | `firstDayOfWeek`        | `0–6`                                       | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                                        |
 | `agendaDays`            | `number \| null`                            | `null`              | How many days the agenda lists, from `focusedDate` on - see [infinite agenda](#infinite-agenda).              |
 | `businessHours`         | `readonly SchedulerBusinessHours[] \| null` | `null`              | Open hours per weekday; the time grid shades everything outside them - see [business hours](#business-hours). |
+| `nowIndicator`          | `boolean`                                   | `true`              | Marks the current time on today's time-grid column - see [the now line](#now-line).                           |
 
 | Model                   | Type                    | Description                                  |
 | ----------------------- | ----------------------- | -------------------------------------------- |
@@ -131,8 +132,6 @@ Clicking a badge (in the grid or the overflow popover) sets `selectedAppointment
 
 An hour axis with one column per day - a single column for the day view, seven for the week view. Both are the **same** `<et-scheduler-time-grid-view>`; only the visible range differs, driven by `view`. All-day appointments render as one bar spanning the visible days they cover in a strip above the hour grid - a 3-day appointment draws once, not once per day - stacked into rows when two spans overlap; timed appointments are laid out at their actual position and duration.
 
-A line marks the current time across today's column, with a dot on its leading edge, and moves on every minute boundary. It is drawn only when today is one of the visible days, so stepping to another week leaves the grid clean.
-
 The 24-hour body is bounded and internally scrollable (`--et-scheduler-time-grid-body-max-height`, default `600px`) rather than growing the page - the day header and all-day strip above it always stay in view. On mount it scrolls itself to a relevant hour: the current time (with an hour of lead-in) when today is one of the visible days, else the earliest appointment's hour, else 9am - so opening day/week view never starts on an empty screen scrolled to midnight. It scrolls once, on mount, not on every `focusedDate` change - stepping to the next day/week never yanks your own scroll position back.
 
 <StoryEmbed id="components-date-time-scheduler--week" height="640px" />
@@ -146,6 +145,10 @@ It takes no inputs of its own - like the month view, it reads its host `[etSched
 <StoryEmbed id="components-date-time-scheduler--day" height="640px" />
 
 Clicking a block (or an all-day entry) sets `selectedAppointmentId`, same as the month view. Both can also be dragged - a block to another time or day, an all-day entry across whole days - and resized by their edges: the block's top and bottom, the entry's leading and trailing. See [move and resize](#move-and-resize).
+
+### The now line {#now-line}
+
+A line marks the current time across today's column, with a dot on its leading edge, and moves on every minute boundary. It is drawn only when today is one of the visible days, so stepping to another week leaves the grid clean. Turn it off with `[nowIndicator]="false"`; the clock behind it then stops, and it never runs on the server.
 
 ### Business hours {#business-hours}
 
@@ -436,7 +439,7 @@ Adding your own piece is the same mechanism: write a directive that injects `SCH
 
 ## Headless usage {#headless-usage}
 
-`[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in - `inlineSize` can be several columns wide, so it is not `100 / columnCount`) - and `allDay()`, the all-day entries spanning across those days (`inlineOffset`/`inlineSize` as percentages of the whole visible range, `row` for the stacking row an overlapping span landed in; `allDayRowCount()` is how many rows that needs). `currentTime()` is where the clock stands on that grid - `{ dayIndex, at, offset }`, with `offset` in the same percent unit a block uses, or `null` when today is not visible - and it re-reads the clock every minute, so a custom time grid can draw its own now-line from it. `nonBusinessTime()` holds one list of `{ offset, span }` segments per entry of `days()`, the stretches outside `businessHours`:
+`[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in - `inlineSize` can be several columns wide, so it is not `100 / columnCount`) - and `allDay()`, the all-day entries spanning across those days (`inlineOffset`/`inlineSize` as percentages of the whole visible range, `row` for the stacking row an overlapping span landed in; `allDayRowCount()` is how many rows that needs). `currentTime()` is where the clock stands on that grid - `{ dayIndex, at, offset }`, with `offset` in the same percent unit a block uses, or `null` when today is not visible or `nowIndicator` is off - and it re-reads the clock every minute, so a custom time grid can draw its own now-line from it. `nonBusinessTime()` holds one list of `{ offset, span }` segments per entry of `days()`, the stretches outside `businessHours`:
 
 ```html
 <div #scheduler="etScheduler" [appointments]="appointments" etScheduler>

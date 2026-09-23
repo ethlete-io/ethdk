@@ -32,7 +32,7 @@ export class SchedulerTimeGridDirective {
 
   private scheduler = inject(SchedulerDirective, { optional: true });
 
-  private clock = injectSchedulerClock();
+  private clock = injectSchedulerClock(() => this.scheduler?.nowIndicator() ?? false);
 
   private grid = computed(() => {
     const scheduler = this.scheduler;
@@ -84,9 +84,12 @@ export class SchedulerTimeGridDirective {
   /**
    * Where the clock stands on this grid: the day column the current time falls in, and its `offset`
    * as a percentage of that column - the same unit {@link days}' blocks use. `null` when today is
-   * not one of the visible days. Re-reads the clock every minute, so whatever renders it moves.
+   * not one of the visible days or the scheduler's `nowIndicator` is off. Re-reads the clock every
+   * minute, so whatever renders it moves.
    */
   public currentTime = computed(() => {
+    if (!this.scheduler?.nowIndicator()) return null;
+
     const now = this.clock();
     const dayIndex = this.days().findIndex((day) => isSameDay(day.date, now));
 

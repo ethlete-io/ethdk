@@ -11,6 +11,7 @@ import { SchedulerTimeGridDirective } from './scheduler-time-grid.directive';
       [appointments]="appointments()"
       [view]="view()"
       [businessHours]="businessHours()"
+      [nowIndicator]="nowIndicator()"
       [firstDayOfWeek]="1"
       etScheduler
     >
@@ -24,6 +25,7 @@ class SchedulerTimeGridTestHostComponent {
   focusedDate = signal(new Date(2026, 6, 15));
   view = signal<'week' | 'day'>('week');
   businessHours = signal<SchedulerBusinessHours[] | null>(null);
+  nowIndicator = signal(true);
 }
 
 const appointment = (id: string, start: Date, end: Date): Appointment => ({
@@ -78,6 +80,14 @@ describe('SchedulerTimeGridDirective', () => {
 
     expect(currentTime?.dayIndex).toBe(0);
     expect(Math.abs(offsetMinutes - minutes)).toBeLessThan(1);
+  });
+
+  it('places no clock while the now indicator is off', () => {
+    host.focusedDate.set(new Date());
+    host.nowIndicator.set(false);
+    fixture.detectChanges();
+
+    expect(directive.currentTime()).toBeNull();
   });
 
   it('places no clock on a week today is not in', () => {

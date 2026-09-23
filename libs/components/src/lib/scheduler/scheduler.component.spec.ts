@@ -132,4 +132,17 @@ describe('SchedulerComponent', () => {
 
     plainDriver.fixture.destroy();
   });
+
+  it('draws the now line on today and drops it when the now indicator is turned off', () => {
+    const nowDriver = schedulerTestDriver({ view: 'day', focusedDate: new Date() });
+
+    expect(nowDriver.queryAll('.et-scheduler-time-grid-now')).toHaveLength(1);
+
+    nowDriver.host.nowIndicator.set(false);
+    nowDriver.detectChanges();
+
+    expect(nowDriver.queryAll('.et-scheduler-time-grid-now')).toHaveLength(0);
+
+    nowDriver.fixture.destroy();
+  });
 });

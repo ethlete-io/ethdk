@@ -28,6 +28,8 @@ export const BusinessHours: Story = {
   },
 };
 
+export const WithoutNowIndicator: Story = { args: { initialView: 'day', nowIndicator: false } };
+
 export const Agenda: Story = { args: { initialView: 'agenda' } };
 
 export const InfiniteAgenda: StoryObj<SchedulerInfiniteAgendaStorybookComponent> = {

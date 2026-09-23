@@ -73,6 +73,7 @@ const NARROW_CONTAINER_WIDTH = 480;
         'firstDayOfWeek',
         'agendaDays',
         'businessHours',
+        'nowIndicator',
       ],
       outputs: ['viewChange', 'focusedDateChange', 'selectedAppointmentIdChange', 'appointmentReschedule'],
     },

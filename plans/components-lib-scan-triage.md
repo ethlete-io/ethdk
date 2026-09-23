@@ -749,6 +749,10 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    `businessHours` (per-weekday `HH:mm` ranges, split days, `24:00`, `ET4506` on a bad entry) shades
    the time grid outside them via `nonBusinessTime()`; surface-interaction fill with an override
    token, drag-to-create still starts on shaded time; `BusinessHours` story + e2e.
+   Scheduler now line **DONE** in `feat(components): Let the scheduler turn its now line off`: the
+   line already shipped always-on, so `nowIndicator` defaults to `true` (FullCalendar defaults it
+   off - open call whether to flip); its minute-aligned clock now runs only in the browser and only
+   while the indicator is on. `WithoutNowIndicator` story + e2e on a fixed Playwright clock.
 10. **Error-message and dev-guard quality pass.** Messages that name an API that does not exist
     (`registerScrollContainer`, `hostDirectives: [StreamPipChromeComponent]`,
     `et-filter-overlay-submit-label`, `exportTableToCsv`, the four-of-six picker host names), guards
