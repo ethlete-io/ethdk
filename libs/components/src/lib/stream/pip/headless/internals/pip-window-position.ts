@@ -45,6 +45,7 @@ export type PipWindowPosition = {
   isResizing: Signal<boolean>;
   initPosition(): void;
   nudge(delta: { dx: number; dy: number }): void;
+  resizeBy(delta: { dw: number; dh: number }): void;
   expand(): void;
   checkAndCollapse(): void;
   snapToViewport(): void;
@@ -321,6 +322,49 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
     deriveStickyEdges();
   };
 
+  const resizeBy = ({ dw, dh }: { dw: number; dh: number }) => {
+    initPosition();
+
+    if (isCollapsed()) {
+      snapToViewport();
+
+      return;
+    }
+
+    const elem = el.nativeElement;
+    const ratio = params.aspectRatio();
+    const pad = params.viewportPadding();
+    const vw = viewportSize().width;
+    const vh = viewportSize().height;
+    const tbH = titleBarH();
+    const { w: currentW, h: currentH } = size.get();
+    const baseW = currentW ?? elem.offsetWidth;
+    const baseH = currentH ?? elem.offsetHeight;
+    const maxWFromHeight = ratio !== null ? Math.max(0, vh - pad * 2 - tbH) * ratio : params.maxWidth();
+    const maxW = Math.min(params.maxWidth(), vw - pad * 2, maxWFromHeight);
+    const clampW = (w: number) => Math.max(params.minWidth(), Math.min(maxW, w));
+
+    let newW: number;
+    let newH: number;
+
+    if (ratio !== null && ratio > 0) {
+      newW = clampW(dh !== 0 ? (baseH - tbH + dh) * ratio : baseW + dw);
+      newH = tbH + newW / ratio;
+    } else {
+      const maxH = Math.min(params.maxHeight(), vh - pad * 2);
+
+      newW = clampW(baseW + dw);
+      newH = Math.max(params.minHeight(), Math.min(maxH, baseH + dh));
+    }
+
+    size.update(() => ({ w: newW, h: newH }));
+    pos.update((p) => ({
+      x: Math.max(pad, Math.min(Math.max(pad, vw - pad - newW), p.x)),
+      y: Math.max(pad, Math.min(Math.max(pad, vh - pad - newH), p.y)),
+    }));
+    deriveStickyEdges();
+  };
+
   const expand = () => {
     initPosition();
 
@@ -496,6 +540,7 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
     isResizing,
     initPosition,
     nudge,
+    resizeBy,
     expand,
     checkAndCollapse,
     snapToViewport,

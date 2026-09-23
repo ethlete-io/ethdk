@@ -9,13 +9,13 @@ import { createPipWindowPosition } from './headless/internals/pip-window-positio
 import { createPipWindowSize } from './headless/internals/pip-window-size';
 import { injectStreamLabels } from '../stream-labels';
 
-const KEYBOARD_MOVE_STEP_PX = 10;
+const KEYBOARD_STEP_PX = 10;
 
-const KEYBOARD_MOVE_DELTAS: Record<string, { dx: number; dy: number } | undefined> = {
-  ArrowLeft: { dx: -KEYBOARD_MOVE_STEP_PX, dy: 0 },
-  ArrowRight: { dx: KEYBOARD_MOVE_STEP_PX, dy: 0 },
-  ArrowUp: { dx: 0, dy: -KEYBOARD_MOVE_STEP_PX },
-  ArrowDown: { dx: 0, dy: KEYBOARD_MOVE_STEP_PX },
+const KEYBOARD_ARROW_DELTAS: Record<string, { dx: number; dy: number } | undefined> = {
+  ArrowLeft: { dx: -KEYBOARD_STEP_PX, dy: 0 },
+  ArrowRight: { dx: KEYBOARD_STEP_PX, dy: 0 },
+  ArrowUp: { dx: 0, dy: -KEYBOARD_STEP_PX },
+  ArrowDown: { dx: 0, dy: KEYBOARD_STEP_PX },
 };
 
 @Component({
@@ -69,16 +69,21 @@ export class PipWindowComponent {
   public readonly RESIZE_EDGES: ResizeEdge[] = ['s', 'e', 'w', 'se', 'sw'];
 
   protected handleTitleBarKeydown(event: KeyboardEvent) {
-    if (event.target !== event.currentTarget || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+    if (event.target !== event.currentTarget || event.altKey || event.ctrlKey || event.metaKey) {
       return;
     }
 
-    const delta = KEYBOARD_MOVE_DELTAS[event.key];
+    const delta = KEYBOARD_ARROW_DELTAS[event.key];
 
     if (delta) {
       event.preventDefault();
-      this.posState.nudge(delta);
-    } else if (event.key === 'Enter' || event.key === ' ') {
+
+      if (event.shiftKey) {
+        this.posState.resizeBy({ dw: delta.dx, dh: delta.dy });
+      } else {
+        this.posState.nudge(delta);
+      }
+    } else if (!event.shiftKey && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault();
       this.posState.expand();
     }

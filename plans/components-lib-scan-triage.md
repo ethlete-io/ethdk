@@ -710,10 +710,9 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    PiP move **DONE** in `b79cbd510`: the title bar is a tab stop, arrows move 10px clamped to the
    viewport padding, <kbd>Enter</kbd>/<kbd>Space</kbd> expands a collapsed window; `f08b0a150` fixed
    the `NG0201` that broke PiP whenever `provideStreamPip()` sat in component `providers` (every
-   story). **Open, needs a design call:** PiP keyboard resize (which modifier - Ctrl+Arrow per Kendo
-   collides with macOS Spaces - or a focusable resize handle), and the bracket pin: the docs make
-   pinning deliberately consumer-driven and keep cells free of extra tab stops, so an in-grid
-   roving tab stop or a shipped `et-bracket-participants` legend is a product decision.
+   story). PiP keyboard resize **DONE** (user call: <kbd>Shift</kbd>+arrows on the title bar, same
+   10px step, clamped to min/max width and the viewport, no new tab stop). **Open:** the bracket pin
+   - user call: ship an `et-bracket-participants` legend, grid focus model unchanged.
 9. **Missing peer-library staples, ranked.** A confirm/alert dialog primitive (the overlay docs tell
    consumers to hand-write one); `compareWith` on `et-select`; runtime column pinning + multi-sort
    priority + a global quick filter on the table; date-range presets and range-order/min-max

@@ -28,6 +28,8 @@ const YOUTUBE_PIP_STORY_ID = 'components-media-stream-youtube--slot-picture-in-p
 const PIP_WINDOW = 'et-pip-window';
 const PIP_TITLE_BAR = '.et-pip-window__title-bar';
 const PIP_VIEWPORT_PADDING = 8;
+const PIP_MIN_WIDTH = 160;
+const PIP_MAX_WIDTH = 640;
 
 const SLOT = '.et-stream-player-slot';
 const CONSENT = '.et-stream-consent';
@@ -649,6 +651,52 @@ test.describe('stream / pip keyboard', () => {
         return box.x + box.width;
       })
       .toBeLessThanOrEqual(viewport.width);
+  });
+
+  test('Shift and the arrow keys resize the focused PiP window by ten pixels a press, keeping its aspect ratio', async ({
+    page,
+  }) => {
+    const { pipWindow } = await openPipAndFocusTitleBar(page);
+    const before = await boxOf(pipWindow);
+
+    await pressKeys(page, ['Shift+ArrowLeft', 'Shift+ArrowLeft']);
+
+    await expect.poll(async () => (await boxOf(pipWindow)).width).toBeCloseTo(before.width - 20, 0);
+
+    const shrunk = await boxOf(pipWindow);
+
+    expect(before.height - shrunk.height).toBeGreaterThan(0);
+
+    await pressKey(page, 'Shift+ArrowDown');
+
+    await expect.poll(async () => (await boxOf(pipWindow)).height).toBeCloseTo(shrunk.height + 10, 0);
+  });
+
+  test('keyboard resizing stops at the minimum and maximum width and stays inside the viewport', async ({ page }) => {
+    const { pipWindow } = await openPipAndFocusTitleBar(page);
+    const viewport = viewportOf(page);
+
+    await pressKeys(
+      page,
+      Array.from({ length: 60 }, () => 'Shift+ArrowLeft'),
+      0,
+    );
+
+    await expect.poll(async () => (await boxOf(pipWindow)).width).toBeCloseTo(PIP_MIN_WIDTH, 0);
+
+    await pressKeys(
+      page,
+      Array.from({ length: 60 }, () => 'Shift+ArrowRight'),
+      0,
+    );
+
+    await expect.poll(async () => (await boxOf(pipWindow)).width).toBeCloseTo(PIP_MAX_WIDTH, 0);
+
+    const box = await boxOf(pipWindow);
+
+    expect(box.x).toBeGreaterThanOrEqual(PIP_VIEWPORT_PADDING - 1);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width - PIP_VIEWPORT_PADDING + 1);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - PIP_VIEWPORT_PADDING + 1);
   });
 });
 
