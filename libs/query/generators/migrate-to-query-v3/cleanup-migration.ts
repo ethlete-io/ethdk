@@ -2,7 +2,7 @@ import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
 import { MigrationScope } from './migration-scope.js';
 import { QueryV3MigrationReport } from './report.js';
-import { createSourceFile, ensureImportFromQuery, ensureNamedImports, getLineNumberFromPosition } from './shared.js';
+import { createSourceFile, ensureImportFromQuery, ensureNamedImports } from './shared.js';
 
 /**
  * Points existing devtools usage at the v3 components instead of deleting it.
@@ -315,57 +315,7 @@ const replaceAnyQueryInFile = (content: string) => {
     result = result.slice(0, start) + replacement + result.slice(end);
   });
 
-  return removeAnyQueryFromImports(result);
-};
-
-const removeAnyQueryFromImports = (content: string) => {
-  const sourceFile = createSourceFile(content);
-  let importNode: ts.ImportDeclaration | undefined;
-
-  ts.forEachChild(sourceFile, (node) => {
-    if (
-      ts.isImportDeclaration(node) &&
-      ts.isStringLiteral(node.moduleSpecifier) &&
-      node.moduleSpecifier.text === '@ethlete/query'
-    ) {
-      importNode = node;
-    }
-  });
-
-  if (!importNode?.importClause?.namedBindings || !ts.isNamedImports(importNode.importClause.namedBindings)) {
-    return content;
-  }
-
-  const replaced = new Map([
-    ['AnyV2Query', 'AnyLegacyQuery'],
-    ['AnyV2QueryCreator', 'AnyLegacyQueryCreator'],
-  ]);
-
-  const names = new Set<string>();
-  let changed = false;
-
-  importNode.importClause.namedBindings.elements.forEach((element) => {
-    const replacement = replaced.get(element.name.text);
-
-    if (!replacement) {
-      names.add(element.getText(sourceFile));
-
-      return;
-    }
-
-    // Only add the alias that was actually imported. Adding both unconditionally is what put
-    // `AnyLegacyQuery` / `AnyLegacyQueryCreator` into hundreds of files that never referenced them.
-    changed = true;
-    names.add(replacement);
-  });
-
-  if (!changed) {
-    return content;
-  }
-
-  const nextImport = `import { ${Array.from(names).sort().join(', ')} } from '@ethlete/query';`;
-
-  return content.slice(0, importNode.getStart(sourceFile)) + nextImport + content.slice(importNode.getEnd());
+  return result;
 };
 
 const transformEmptyPrepareCalls = (content: string) => {
@@ -405,10 +355,4 @@ const transformEmptyPrepareCalls = (content: string) => {
   });
 
   return result;
-};
-
-export const describeTemplateLine = (content: string, position: number, suffix: string) => {
-  const lineNumber = getLineNumberFromPosition(content, position);
-
-  return `${lineNumber} (${suffix})`;
 };
