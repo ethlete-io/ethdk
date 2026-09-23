@@ -760,6 +760,13 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    drop to last), sorted headers show a priority badge with a `sortPriority` label as accessible
    description once two or more keys sort, `sortPriority(key)`; server data already gets the
    ordered `sort()` list. `ShiftMultiSort` story + e2e.
+   RTE read-only viewer **DONE** in `28ebce6b8`: `et-rich-text-viewer` with a Markdown `value`,
+   rendered through the editor's `markdownToHtml` (raw HTML escaped, unsafe URLs dropped) plus the
+   token codec when `provideRichTextEditorTokenRendering()` is in scope. The content rules moved
+   into a styles-only `RichTextContentStylesComponent` both mount; table/image styles mount on the
+   viewer only when the value has one. `rich-text-viewer` golden 8.1 kB gz (bare editor 39 kB).
+   While measuring it, `b76d9eaff` fixed the alert dialog pinning itself into every bundle
+   (components floor 33 kB -> 3.4 kB gz, an interpolated template literal at module scope).
 10. **Error-message and dev-guard quality pass.** Messages that name an API that does not exist
     (`registerScrollContainer`, `hostDirectives: [StreamPipChromeComponent]`,
     `et-filter-overlay-submit-label`, `exportTableToCsv`, the four-of-six picker host names), guards
