@@ -5,7 +5,6 @@ export * from './lib/drag-handle';
 export * from './lib/notifications';
 export * from './lib/overlay';
 export * from './lib/pipes';
-export * from './lib/props';
 export * from './lib/providers';
 export * from './lib/resize-handles';
 export * from './lib/scrolling';
