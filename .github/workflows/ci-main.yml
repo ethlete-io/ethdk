@@ -13,6 +13,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         name: Checkout [main]
@@ -49,6 +50,9 @@ jobs:
           projectId: ethlete-sdk
           target: prod
 
+      # npm trusted publishing (OIDC) needs npm 11.5.1 or later, and Node 22.20.0 ships npm 10.
+      - run: npm install -g npm@^11.5.1
+
       - name: Create and publish versions
         id: changesets
         uses: TomTomB/changesets-action@a594719799d193f80c6c50a6fb5b0715f6f7a0eb # v1.7.4
@@ -59,7 +63,6 @@ jobs:
           title: Release packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           HUSKY: 0
 
       - name: Post release notes to slack
