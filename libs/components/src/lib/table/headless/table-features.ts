@@ -2,7 +2,7 @@ import { inject, Injector, InjectionToken, InputSignal, Signal, TemplateRef, Typ
 import { RuntimeError } from '@ethlete/core';
 import { TABLE_ERROR_CODES } from '../table-errors';
 import { TableLabels } from './table-labels';
-import { TableColumnDef, TableSortDirection, TableTemplateSlot } from '../table.types';
+import { TableColumnDef, TableColumnPin, TableSortDirection, TableTemplateSlot } from '../table.types';
 
 /**
  * The row-type-independent half of a {@link TableColumnDef} - everything a feature needs to read
@@ -153,6 +153,13 @@ export type TableColumnPinning = {
   insets(): { start: number; end: number };
   /** Whether any visible column is pinned to the trailing edge, which already owns that edge. */
   hasStickyEnd(): boolean;
+  /**
+   * The runtime pins, by column key, that override what a column declares - `null` unpins a column that
+   * declares `sticky`. Read from a `computed`.
+   */
+  pins?(): Readonly<Record<string, TableColumnPin | null>>;
+  /** Pin a column to an edge at runtime, or unpin it with `null`. */
+  pin?(key: string, side: TableColumnPin | null): void;
   /** Whether pinning is live - see {@link TableHeaderAdornment.enabled}. */
   enabled?: Signal<boolean>;
 };
@@ -560,6 +567,12 @@ export type TableFeatureHost = {
    * nothing pins columns at all. What `etTableReorder` asks to leave pinned columns out of a drag.
    */
   effectiveStickyOf(key: string): 'start' | 'end' | null;
+  /** Whether a live feature can pin columns at runtime (`etTableStickyColumns`). */
+  canPinColumns(): boolean;
+  /** The edge a column is pinned to - its runtime pin, else its declared `sticky` - or `null`. */
+  columnPin(key: string): TableColumnPin | null;
+  /** Pin a column to an edge at runtime, or unpin it with `null`. */
+  pinColumn(key: string, side: TableColumnPin | null): void;
   /** Move a column next to another one in the full column order (hidden columns stay put). */
   moveColumnNextTo(key: string, target: { overKey: string; before: boolean }): void;
 

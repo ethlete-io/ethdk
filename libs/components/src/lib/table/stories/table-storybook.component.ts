@@ -78,7 +78,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
          and the pinned columns have something to pin against (narrow the viewport further to watch them
          auto-unstick). -->
     <div
-      [style.max-inline-size.px]="stickyColumns() ? 700 : 768"
+      [style.max-inline-size.px]="stickyColumns() || runtimePinning() ? 700 : 768"
       [etProvideSurface]="surface()"
       class="text-medium p-8 font-sans"
     >
@@ -410,6 +410,7 @@ export class TableStorybookComponent {
   public pageStickyHeader = input(false);
   public grouped = input(false);
   public stickyColumns = input(false);
+  public runtimePinning = input(false);
   public footer = input(false);
   public paginated = input(false);
   public rowInteractive = input(false);
@@ -521,6 +522,7 @@ export class TableStorybookComponent {
     // column wide squeezes the rest to nothing and their cell padding bursts out of the empty tracks.
     // 96px is the table's own default floor - see MIN_COLUMN_WIDTH.
     const sticky = this.stickyColumns();
+    const wide = sticky || this.runtimePinning();
     // `editable` alone does nothing: a column is only editable once it also has an etTableCellEdit
     // template, so the flag can be left on and gated by whether the demo renders the templates.
     const editable = this.inlineEdit();
@@ -531,7 +533,7 @@ export class TableStorybookComponent {
         value: (person) => person.name,
         sortable: true,
         editable,
-        width: sticky ? '220px' : 'minmax(96px, 2fr)',
+        width: wide ? '220px' : 'minmax(96px, 2fr)',
         sticky: sticky ? 'start' : undefined,
       },
       email: {
@@ -540,7 +542,7 @@ export class TableStorybookComponent {
         sortable: true,
         disabled,
         editable,
-        width: sticky ? '280px' : 'minmax(96px, 2fr)',
+        width: wide ? '280px' : 'minmax(96px, 2fr)',
         group: grouped ? 'Contact' : undefined,
       },
       role: {
@@ -555,7 +557,7 @@ export class TableStorybookComponent {
         filterSearch: true,
         filterSelection: this.singleSelectFilter() ? 'single' : 'multiple',
         filterOptions: ROLES.map((role) => ({ label: role, value: role })),
-        width: sticky ? '200px' : 'minmax(96px, 1fr)',
+        width: wide ? '200px' : 'minmax(96px, 1fr)',
         group: grouped ? 'Details' : undefined,
       },
       joined: {
@@ -565,7 +567,7 @@ export class TableStorybookComponent {
         // A cell with a control of its own, once the rows are links - see the Joined cell template.
         interactive: this.rowLinks(),
         align: 'end',
-        width: sticky ? '160px' : 'minmax(96px, 1fr)',
+        width: wide ? '160px' : 'minmax(96px, 1fr)',
         sticky: sticky ? 'end' : undefined,
         group: grouped ? 'Details' : undefined,
       },

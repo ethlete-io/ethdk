@@ -79,6 +79,7 @@ import {
   TableCellState,
   TableCellStateValue,
   TableColumnDef,
+  TableColumnPin,
   TableColumns,
   TableColumnState,
   TableColumnTemplate,
@@ -753,10 +754,29 @@ export class TableComponent<T> {
       .filter((column): column is TableColumnDef<T> => column !== undefined);
   });
 
-  /** Columns currently displayed, in order. */
-  public visibleColumns = computed(() =>
-    this.orderedColumns().filter((column) => !this.hiddenColumns().has(column.key)),
-  );
+  /**
+   * Columns currently displayed, in order. While a feature pins columns, each carries its effective
+   * `sticky` (a runtime pin wins over the declared one) and the pinned ones render in their edge's block.
+   */
+  public visibleColumns = computed(() => {
+    const visible = this.orderedColumns().filter((column) => !this.hiddenColumns().has(column.key));
+    const pinning = this.columnPinning();
+
+    if (!pinning) return visible;
+
+    const pins = pinning.pins?.() ?? {};
+    const pinned = visible.map((column) => {
+      const pin = column.key in pins ? pins[column.key] : column.sticky;
+
+      return (pin ?? undefined) === column.sticky ? column : { ...column, sticky: pin ?? undefined };
+    });
+
+    return [
+      ...pinned.filter((column) => column.sticky === 'start'),
+      ...pinned.filter((column) => !column.sticky),
+      ...pinned.filter((column) => column.sticky === 'end'),
+    ];
+  });
 
   private visibleColumnRecord = computed<TableColumns<T>>(() =>
     Object.fromEntries(this.visibleColumns().map((column) => [column.key, column])),
@@ -1849,6 +1869,45 @@ export class TableComponent<T> {
     return this.bodyCells()
       .map((ref) => ref.nativeElement)
       .filter((cell) => cell.dataset['colKey'] === key);
+  }
+
+  /** Whether a live feature can pin columns at runtime - `etTableStickyColumns`. */
+  public canPinColumns() {
+    return !!this.columnPinning()?.pin;
+  }
+
+  /**
+   * The edge a column is pinned to - a runtime {@link pinColumn} pin, else its declared `sticky` - or
+   * `null`. Pinning can still be suspended on a narrow viewport, see {@link effectiveStickyOf}.
+   */
+  public columnPin(key: string): TableColumnPin | null {
+    const pins = this.columnPinning()?.pins?.() ?? {};
+
+    if (key in pins) return pins[key] ?? null;
+
+    return this.columnsByKey().get(key)?.sticky ?? null;
+  }
+
+  /**
+   * Pin a column to the `'start'` or `'end'` edge, or unpin it with `null` - on top of what the column
+   * declares, and carried in `state()`. Needs `etTableStickyColumns`, which does the pinning.
+   */
+  public pinColumn(key: string, side: TableColumnPin | null) {
+    const pinning = this.columnPinning();
+
+    if (!pinning?.pin) {
+      if (ngDevMode) {
+        throw new RuntimeError(
+          TABLE_ERROR_CODES.MISSING_STICKY_COLUMNS,
+          '[et-table] pinColumn() needs the sticky-columns feature to pin anything. Add `etTableStickyColumns` to the table and import TABLE_STICKY_COLUMNS_IMPORTS.',
+          { element: this.elementRef.nativeElement },
+        );
+      }
+
+      return;
+    }
+
+    pinning.pin(key, side);
   }
 
   /** A column's effective pinning, or `null` when unpinned/suppressed. Part of the feature contract. */

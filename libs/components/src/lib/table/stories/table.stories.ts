@@ -24,6 +24,7 @@ export default {
     virtualScroll: false,
     grouped: false,
     stickyColumns: false,
+    runtimePinning: false,
     dragScroll: false,
     pageStickyHeader: false,
     footer: false,
@@ -60,6 +61,7 @@ export default {
     virtualScroll: { control: 'boolean' },
     grouped: { control: 'boolean' },
     stickyColumns: { control: 'boolean' },
+    runtimePinning: { control: 'boolean' },
     dragScroll: { control: 'boolean' },
     pageStickyHeader: { control: 'boolean' },
     footer: { control: 'boolean' },
@@ -323,6 +325,21 @@ export const StickyColumns: Story = {
         story:
           'Give columns `sticky: "start"` / `"end"` to pin them while the table scrolls horizontally. ' +
           'Here Name pins left and Joined pins right; scroll sideways to see the middle columns pass behind.',
+      },
+    },
+  },
+};
+
+export const PinColumnsAtRuntime: Story = {
+  args: { runtimePinning: true, columnMenu: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With `etTableColumnMenu` next to `etTableStickyColumns`, every column menu offers "Pin to start", ' +
+          '"Pin to end" and "Unpin". A pinned column moves into its edge block and stays put while the table ' +
+          'scrolls; unpinned, it goes back to its place in the column order. `pinColumn(key, side)` does the ' +
+          'same from code.',
       },
     },
   },

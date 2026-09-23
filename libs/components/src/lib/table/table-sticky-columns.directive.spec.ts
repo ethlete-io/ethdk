@@ -4,7 +4,13 @@ import '../../test-helpers';
 import { createTableDriver } from './testing/table-driver';
 import { TableStickyColumnsDirective } from './table-sticky-columns.directive';
 import { TableComponent } from './table.component';
-import { TABLE_IMPORTS, TABLE_SELECTION_IMPORTS, TABLE_STICKY_COLUMNS_IMPORTS } from './table.imports';
+import { TableColumnMenuDirective } from './table-column-menu.directive';
+import {
+  TABLE_COLUMN_MENU_IMPORTS,
+  TABLE_IMPORTS,
+  TABLE_SELECTION_IMPORTS,
+  TABLE_STICKY_COLUMNS_IMPORTS,
+} from './table.imports';
 import { TableColumns } from './table.types';
 
 type Person = { id: number; name: string; role: string };
@@ -95,6 +101,115 @@ describe('TableStickyColumnsDirective', () => {
 
     expect(table.effectiveStickyOf('name')).toBeNull();
     expect(headerOf(fixture, 'name')?.classList.contains('et-table-sticky-start')).toBe(false);
+  });
+
+  describe('runtime pinning', () => {
+    const keys = (fixture: ComponentFixture<HostComponent>) =>
+      fixture.componentInstance
+        .table()
+        .visibleColumns()
+        .map((column) => column.key);
+
+    it('pins a column at runtime and renders it in its edge block', () => {
+      const fixture = create();
+      const table = fixture.componentInstance.table();
+
+      table.pinColumn('role', 'end');
+      fixture.detectChanges();
+
+      expect(table.columnPin('role')).toBe('end');
+      expect(keys(fixture)).toEqual(['name', 'role', 'actions']);
+      expect(headerOf(fixture, 'role')?.classList.contains('et-table-sticky-end')).toBe(true);
+
+      table.pinColumn('actions', 'start');
+      fixture.detectChanges();
+
+      expect(keys(fixture)).toEqual(['name', 'actions', 'role']);
+      expect(headerOf(fixture, 'actions')?.classList.contains('et-table-sticky-start')).toBe(true);
+      expect(table.state().columns.map((column) => column.key)).toEqual(['name', 'role', 'actions']);
+    });
+
+    it('unpins a declared column and returns an unpinned one to its place in the order', () => {
+      const fixture = create();
+      const table = fixture.componentInstance.table();
+
+      table.pinColumn('name', null);
+      fixture.detectChanges();
+
+      expect(table.columnPin('name')).toBeNull();
+      expect(headerOf(fixture, 'name')?.classList.contains('et-table-sticky-start')).toBe(false);
+      expect(fixture.componentInstance.feature().hasStickyStart()).toBe(false);
+
+      table.pinColumn('role', 'start');
+      fixture.detectChanges();
+      expect(keys(fixture)).toEqual(['role', 'name', 'actions']);
+
+      table.pinColumn('role', null);
+      fixture.detectChanges();
+      expect(keys(fixture)).toEqual(['name', 'role', 'actions']);
+    });
+
+    it('round-trips runtime pins through state() and drops a pin back to the declaration', () => {
+      const fixture = create();
+      const table = fixture.componentInstance.table();
+
+      table.pinColumn('role', 'start');
+      table.pinColumn('name', null);
+      const state = table.state();
+
+      expect(state.features?.['pinning']).toEqual({ role: 'start', name: null });
+
+      table.pinColumn('role', null);
+      table.pinColumn('name', 'start');
+      expect(table.state().features?.['pinning']).toBeUndefined();
+
+      table.restoreState(state);
+      fixture.detectChanges();
+      expect(keys(fixture)).toEqual(['role', 'name', 'actions']);
+
+      table.restoreState({ ...state, features: { pinning: { role: 'middle' } } });
+      expect(table.columnPin('role')).toBeNull();
+    });
+  });
+
+  it('lets the column menu offer pinning only while the feature is live', () => {
+    @Component({
+      template: `
+        <et-table
+          [columns]="cols"
+          [data]="data"
+          [etTableStickyColumns]="{ enabled: sticky() }"
+          [etTableColumnMenu]="{ pinColumn: menuPins() }"
+        />
+      `,
+      imports: [TABLE_IMPORTS, TABLE_STICKY_COLUMNS_IMPORTS, TABLE_COLUMN_MENU_IMPORTS],
+    })
+    class MenuHost {
+      public cols = pinned();
+      public data = PEOPLE;
+      public sticky = signal(true);
+      public menuPins = signal(true);
+      public menu = viewChild.required(TableColumnMenuDirective);
+    }
+
+    const fixture = TestBed.createComponent(MenuHost);
+    fixture.detectChanges();
+    const menu = fixture.componentInstance.menu();
+
+    expect(menu.canPin()).toBe(true);
+    expect(menu.pinOf({ key: 'name', sticky: 'start' })).toBe('start');
+
+    menu.pin({ key: 'role' }, 'start');
+    expect(menu.pinOf({ key: 'role' })).toBe('start');
+
+    fixture.componentInstance.menuPins.set(false);
+    fixture.detectChanges();
+    expect(menu.canPin()).toBe(false);
+
+    fixture.componentInstance.menuPins.set(true);
+    fixture.componentInstance.sticky.set(false);
+    fixture.detectChanges();
+    expect(menu.canPin()).toBe(false);
   });
 
   it('pins nothing while disabled', () => {

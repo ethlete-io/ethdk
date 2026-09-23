@@ -22,4 +22,6 @@ export const TABLE_ERROR_CODES = {
   MISSING_ROW_ROUTER_LINK: 3509,
   /** A `rowsSource` publishes a `sort`/`filters` signal without the setter the table would write through. */
   UNPAIRED_ROWS_SOURCE_STATE: 3510,
+  /** A column was pinned at runtime on a table without `etTableStickyColumns` to pin it. */
+  MISSING_STICKY_COLUMNS: 3511,
 } as const;

@@ -6,6 +6,7 @@ import {
   tableFeatureConfig,
 } from './headless/table-features';
 import { TableColumnMenuTriggerComponent } from './table-column-menu-trigger.component';
+import { TableColumnPin } from './table.types';
 
 /** Options for {@link TableColumnMenuDirective}. */
 export type TableColumnMenuConfig = TableFeatureConfig & {
@@ -15,11 +16,14 @@ export type TableColumnMenuConfig = TableFeatureConfig & {
   resetWidth?: boolean;
   /** Offer "Hide column". The last visible column can never be hidden. @default true */
   hideColumn?: boolean;
+  /** Offer "Pin to start" / "Pin to end" / "Unpin" while `etTableStickyColumns` is on the table. @default true */
+  pinColumn?: boolean;
 };
 
 /**
  * Opt-in per-column menu for `et-table`: a `⋮` in every header cell opening the column's actions -
- * sort ascending / descending / clear, reset a resized width, hide the column.
+ * sort ascending / descending / clear, reset a resized width, hide the column, and pin it to an edge
+ * when `etTableStickyColumns` is on the table.
  *
  * It carries the menu system, so it is a separate feature: a table without it never pulls that in.
  * (If you also use `etTableFilters`, the two share that cost.)
@@ -102,5 +106,17 @@ export class TableColumnMenuDirective {
 
   public hide(column: TableColumnMeta) {
     this.table.setColumnVisible(column.key, false);
+  }
+
+  public canPin() {
+    return (this.config().pinColumn ?? true) && this.table.canPinColumns();
+  }
+
+  public pinOf(column: TableColumnMeta) {
+    return this.table.columnPin(column.key);
+  }
+
+  public pin(column: TableColumnMeta, side: TableColumnPin | null) {
+    this.table.pinColumn(column.key, side);
   }
 }

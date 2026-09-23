@@ -56,6 +56,12 @@ export type TableLabels = {
   resetWidth: string;
   /** Column-menu entry: hide this column. */
   hideColumn: string;
+  /** Column-menu entry: pin this column to the inline-start edge. */
+  pinColumnStart: string;
+  /** Column-menu entry: pin this column to the inline-end edge. */
+  pinColumnEnd: string;
+  /** Column-menu entry: let this pinned column scroll again. */
+  unpinColumn: string;
 
   /** The column chooser's trigger. */
   columns: string;
@@ -97,6 +103,9 @@ export const DEFAULT_TABLE_LABELS: TableLabels = {
   autosizeAllColumns: 'Autosize all columns',
   resetWidth: 'Reset width',
   hideColumn: 'Hide column',
+  pinColumnStart: 'Pin to start',
+  pinColumnEnd: 'Pin to end',
+  unpinColumn: 'Unpin',
 
   columns: 'Columns',
   showAllColumns: 'Show all columns',

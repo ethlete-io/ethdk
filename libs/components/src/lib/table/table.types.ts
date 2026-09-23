@@ -1,6 +1,9 @@
 import { Signal, TemplateRef } from '@angular/core';
 import { FieldTree } from '@angular/forms/signals';
 
+/** The inline edge a column is pinned to - see {@link TableColumn.sticky}. */
+export type TableColumnPin = 'start' | 'end';
+
 /** Horizontal alignment of a column's header and cells. */
 export type TableColumnAlign = 'start' | 'center' | 'end';
 
@@ -245,10 +248,11 @@ export type TableColumn<T, TValue = unknown> = {
   quickFilterValue?: (row: T) => TableQuickFilterValue;
 
   /**
-   * Pin this column to the inline-start or inline-end edge while the table scrolls horizontally.
-   * Pin from the edges - leading columns to `'start'`, trailing columns to `'end'`.
+   * Pin this column to the inline-start or inline-end edge while the table scrolls horizontally. A
+   * pinned column renders in its edge's block, whatever its place in the column order - and a user can
+   * change it at runtime, see `pinColumn`.
    */
-  sticky?: 'start' | 'end';
+  sticky?: TableColumnPin;
 
   /**
    * This column's cells hold controls of their own - a button, a menu trigger, a link. A

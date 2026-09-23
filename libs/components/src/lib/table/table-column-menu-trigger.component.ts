@@ -7,6 +7,7 @@ import { ELLIPSIS_VERTICAL_ICON } from '../icon/headless/ellipsis-vertical-icon'
 import { provideIcons } from '../icon/headless/icon-provider';
 import { IconDirective } from '../icon/headless/icon.directive';
 import { ROTATE_RIGHT_ICON } from '../icon/headless/rotate-right-icon';
+import { THUMBTACK_ICON } from '../icon/headless/thumbtack-icon';
 import { TIMES_ICON } from '../icon/headless/times-icon';
 import { MenuComponent, MenuDirective, MenuItemComponent, MenuSeparatorComponent, MenuSurfaceDirective } from '../menu';
 import { MenuTriggerDirective } from '../menu/headless';
@@ -45,6 +46,7 @@ import { TableColumnMeta } from './headless/table-features';
       TIMES_ICON,
       ROTATE_RIGHT_ICON,
       EYE_SLASH_ICON,
+      THUMBTACK_ICON,
     ),
   ],
 })

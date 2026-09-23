@@ -44,8 +44,32 @@
         </button>
       }
 
-      @if (menu.canResetWidth(column()) || menu.canHide()) {
+      @if (menu.canPin()) {
         @if (column().sortable || menu.canAutosize()) {
+          <et-menu-separator />
+        }
+        @if (menu.pinOf(column()) !== 'start') {
+          <button (activate)="menu.pin(column(), 'start')" et-menu-item type="button">
+            <i class="et-table-column-menu-icon" etIcon="et-thumbtack"></i>
+            {{ labels().pinColumnStart }}
+          </button>
+        }
+        @if (menu.pinOf(column()) !== 'end') {
+          <button (activate)="menu.pin(column(), 'end')" et-menu-item type="button">
+            <i class="et-table-column-menu-icon" etIcon="et-thumbtack"></i>
+            {{ labels().pinColumnEnd }}
+          </button>
+        }
+        @if (menu.pinOf(column())) {
+          <button (activate)="menu.pin(column(), null)" et-menu-item type="button">
+            <i class="et-table-column-menu-icon" etIcon="et-times"></i>
+            {{ labels().unpinColumn }}
+          </button>
+        }
+      }
+
+      @if (menu.canResetWidth(column()) || menu.canHide()) {
+        @if (column().sortable || menu.canAutosize() || menu.canPin()) {
           <et-menu-separator />
         }
         @if (menu.canResetWidth(column())) {

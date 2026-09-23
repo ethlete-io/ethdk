@@ -765,6 +765,12 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    searched through `quickFilterValue`, else a string/number `value`, `quickFilter: false` opts out;
    client filter mode only, `quickFilterRows` exported; both query adapters carry `quickFilter` +
    `setQuickFilter` (resets the page) for server search. `QuickFilter` story + e2e.
+   Table runtime column pinning **DONE** in `feat(components): Pin table columns at runtime`:
+   `pinColumn(key, 'start' | 'end' | null)` / `columnPin(key)` / `canPinColumns()` on the table,
+   state owned by `etTableStickyColumns` (the `pinning` feature slice, only pins that differ from
+   the declared `sticky`); pinned columns render in their edge block without touching the column
+   order; column menu Pin to start / Pin to end / Unpin (`pinColumn: false` opts out); `ET3511`
+   without the feature. `PinColumnsAtRuntime` story + e2e. Item #9's table staple is closed.
    RTE read-only viewer **DONE** in `28ebce6b8`: `et-rich-text-viewer` with a Markdown `value`,
    rendered through the editor's `markdownToHtml` (raw HTML escaped, unsafe URLs dropped) plus the
    token codec when `provideRichTextEditorTokenRendering()` is in scope. The content rules moved

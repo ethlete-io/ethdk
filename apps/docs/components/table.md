@@ -645,16 +645,17 @@ which it shares with [filtering](#filtering) when both are used.
 
 The entries adapt to the column, so the menu never offers a no-op:
 
-| Entry                                               | Shown when                                                 |
-| --------------------------------------------------- | ---------------------------------------------------------- |
-| **Sort ascending** / **descending**                 | the column is `sortable`                                   |
-| **Clear sort**                                      | the column is currently sorted                             |
-| **Autosize this column** / **Autosize all columns** | always                                                     |
-| **Reset width**                                     | the column carries a [resize](#resizable-columns) override |
-| **Hide column**                                     | it isn't the last visible column                           |
+| Entry                                               | Shown when                                                                   |
+| --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Sort ascending** / **descending**                 | the column is `sortable`                                                     |
+| **Clear sort**                                      | the column is currently sorted                                               |
+| **Autosize this column** / **Autosize all columns** | always                                                                       |
+| **Pin to start** / **Pin to end** / **Unpin**       | `etTableStickyColumns` is on - see [Pinning at runtime](#pinning-at-runtime) |
+| **Reset width**                                     | the column carries a [resize](#resizable-columns) override                   |
+| **Hide column**                                     | it isn't the last visible column                                             |
 
-Turn any of the last three off per table with
-`[etTableColumnMenu]="{ autosize: false }"`, `{ resetWidth: false }` or
+Turn any of the last four off per table with
+`[etTableColumnMenu]="{ autosize: false }"`, `{ pinColumn: false }`, `{ resetWidth: false }` or
 `{ hideColumn: false }`. Bringing a hidden column _back_ is the
 [column chooser](#column-chooser)'s job, not this menu's.
 
@@ -1049,14 +1050,36 @@ a mouse or a pen.
 
 Pinning is **opt-in**: import `TABLE_STICKY_COLUMNS_IMPORTS` and put `etTableStickyColumns`
 on the table. Columns then pin to an edge with `sticky: 'start' | 'end'` and stay put while
-the table scrolls horizontally. Pin from the edges (leading columns to `'start'`, trailing to
-`'end'`); give pinned columns explicit widths so the table has something to scroll.
+the table scrolls horizontally. A pinned column renders in its edge's block - the start pins
+first, the end pins last, each block in column order - whatever its place in the column order;
+give pinned columns explicit widths so the table has something to scroll.
 
 The offsets are **measured**, not declared - each pinned column stacks after the ones before
 it - so the feature re-measures the header cells whenever the table or a column is resized.
 That is why it is a feature rather than part of the base: a table that pins nothing runs none
 of that on resize. Without it a `sticky` column simply renders unpinned, and `enabled: false`
 turns pinning off at runtime.
+
+### Pinning at runtime
+
+A user can pin a column too. `pinColumn(key, 'start' | 'end' | null)` pins a column to an
+edge or unpins it - a column that declares `sticky` included - and `columnPin(key)` reads the
+edge in effect. The [column menu](#column-menu) offers the same as **Pin to start**, **Pin to
+end** and **Unpin** once `etTableStickyColumns` is on the table:
+
+```html
+<et-table #table [data]="rows()" [columns]="COLUMNS" etTableStickyColumns etTableColumnMenu />
+
+<button (click)="table.pinColumn('email', 'start')" type="button">Pin email</button>
+```
+
+<StoryEmbed id="components-data-display-table--pin-columns-at-runtime" height="420px" />
+
+Unpinned, a column goes back to its place in the column order, which pinning never changes.
+The pins travel in [`state()`](#table-state) as the `pinning` feature slice - only the ones
+that differ from the declaration - so a stored or linked setup restores them. `pinColumn`
+throws `ET3511` in dev on a table without `etTableStickyColumns`; `canPinColumns()` says whether
+one is live.
 
 On a viewport too narrow for the pinned columns to leave room - where they would
 otherwise cover the whole width and horizontal scrolling would reveal nothing -
@@ -1835,7 +1858,8 @@ The per-column shape maps 1:1 onto typical server-side list-view config (`hidden
 sort direction, `filterValues`), so bridging to a backend is mechanical. With
 `multiSort`, each sorted column also carries a `sortPriority` so the sort order
 survives the round-trip. Feature-owned keys - a selection, the expanded rows - serialize by
-their `rowKey`, so set a [`rowKey`](#inputs) for them to be captured at all.
+their `rowKey`, so set a [`rowKey`](#inputs) for them to be captured at all. Runtime [column pins](#pinning-at-runtime) travel as
+`features.pinning`, a `{ [key]: 'start' | 'end' | null }` record.
 
 ### Persist it to local or session storage
 

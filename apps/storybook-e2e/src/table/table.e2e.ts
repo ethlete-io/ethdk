@@ -1,5 +1,5 @@
-import { Locator, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, tabUntilFocused, tap } from '../support';
+import { Locator, Page, expect, test } from '@playwright/test';
+import { boxOf, expectFocusVisible, openStory, pressKey, tabUntilFocused, tap } from '../support';
 
 const KEYBOARD_NAV_STORY_ID = 'components-data-display-table--keyboard-navigation';
 const SELECTABLE_STORY_ID = 'components-data-display-table--selectable';
@@ -8,6 +8,7 @@ const EXPANDABLE_STORY_ID = 'components-data-display-table--expandable';
 const MULTI_SORT_STORY_ID = 'components-data-display-table--multi-sort';
 const SHIFT_MULTI_SORT_STORY_ID = 'components-data-display-table--shift-multi-sort';
 const QUICK_FILTER_STORY_ID = 'components-data-display-table--quick-filter';
+const PIN_COLUMNS_STORY_ID = 'components-data-display-table--pin-columns-at-runtime';
 
 function cell(root: Locator, rowIndex: number, colKey: string): Locator {
   return root.locator('.et-table-row').nth(rowIndex).locator(`[data-col-key="${colKey}"]`);
@@ -19,6 +20,26 @@ function headerCell(root: Locator, colKey: string): Locator {
 
 function sortPriority(root: Locator, colKey: string): Locator {
   return headerCell(root, colKey).locator('.et-table-sort-priority');
+}
+
+function headerKeys(root: Locator): Promise<(string | null)[]> {
+  return root
+    .locator('.et-table-header-cell[data-col-key]')
+    .evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-col-key')));
+}
+
+function columnMenuTrigger(root: Locator, header: string): Locator {
+  return root.getByRole('button', { name: `Column options for ${header}` });
+}
+
+async function arrowDownUntilFocused(page: Page, target: Locator, maxPresses = 12): Promise<void> {
+  for (let press = 0; press < maxPresses; press++) {
+    if (await target.evaluate((element) => element === document.activeElement)) return;
+
+    await pressKey(page, 'ArrowDown');
+  }
+
+  await expect(target).toBeFocused();
 }
 
 function rowCheckbox(root: Locator, rowIndex = 0): Locator {
@@ -229,6 +250,25 @@ test.describe('table / keyboard', () => {
     await expect(rows).toHaveCount(6);
   });
 
+  test('the column menu pins a column to the start edge from the keyboard', async ({ page }) => {
+    const root = await openStory(page, PIN_COLUMNS_STORY_ID);
+
+    await tabUntilFocused(page, columnMenuTrigger(root, 'Email'), 20);
+    await pressKey(page, 'Enter');
+    await arrowDownUntilFocused(page, page.getByRole('menuitem', { name: 'Pin to start' }));
+    await pressKey(page, 'Enter');
+
+    await expect(headerCell(root, 'email')).toHaveClass(/et-table-sticky-start/);
+    expect(await headerKeys(root)).toEqual(['email', 'name', 'role', 'joined']);
+
+    await tabUntilFocused(page, columnMenuTrigger(root, 'Email'), 20);
+    await pressKey(page, 'Enter');
+    await arrowDownUntilFocused(page, page.getByRole('menuitem', { name: 'Unpin' }));
+    await pressKey(page, 'Enter');
+
+    await expect(headerCell(root, 'email')).not.toHaveClass(/et-table-sticky-start/);
+  });
+
   test('the expander button toggles aria-expanded', async ({ page }) => {
     const root = await openStory(page, EXPANDABLE_STORY_ID);
     const expanderButton = root.locator('.et-table-row').first().locator('.et-table-expander');
@@ -266,6 +306,28 @@ test.describe('table / pointer', () => {
 
     await expect(headerCell(root, 'name')).toHaveAttribute('aria-sort', 'descending');
     await expect(sortPriority(root, 'name')).toHaveText('2');
+  });
+
+  test('a column pinned from the menu moves to its edge and stays put while the table scrolls', async ({ page }) => {
+    const root = await openStory(page, PIN_COLUMNS_STORY_ID);
+
+    await columnMenuTrigger(root, 'Role').click();
+    await page.getByRole('menuitem', { name: 'Pin to start' }).click();
+
+    await expect(headerCell(root, 'role')).toHaveClass(/et-table-sticky-start/);
+    expect(await headerKeys(root)).toEqual(['role', 'name', 'email', 'joined']);
+
+    const before = await boxOf(headerCell(root, 'role'));
+    await root.locator('et-table').evaluate((table) => table.scrollBy({ left: 300 }));
+    await expect.poll(() => root.locator('et-table').evaluate((table) => table.scrollLeft)).toBeGreaterThan(0);
+
+    expect((await boxOf(headerCell(root, 'role'))).x).toBeCloseTo(before.x, 0);
+
+    await columnMenuTrigger(root, 'Role').click();
+    await page.getByRole('menuitem', { name: 'Unpin' }).click();
+
+    await expect(headerCell(root, 'role')).not.toHaveClass(/et-table-sticky-start/);
+    expect(await headerKeys(root)).toEqual(['name', 'email', 'role', 'joined']);
   });
 
   test('a quick filter that matches nothing shows the empty state', async ({ page }) => {

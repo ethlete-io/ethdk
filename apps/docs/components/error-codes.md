@@ -349,6 +349,7 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 | `ET3508` | An `expandedRowTemplate` is bound, but nothing renders it.                         | Add `etTableRowExpansion` to the table and import `TABLE_ROW_EXPANSION_IMPORTS` - see [Row expansion](/components/table#row-expansion).                       |
 | `ET3509` | A `rowLink` answered with router commands, but nothing resolves them.              | Add `etTableRowRouterLink` and import `TABLE_ROW_ROUTER_LINK_IMPORTS`, or answer with an `href` string - see [Row links](/components/table#row-links).        |
 | `ET3510` | A `rowsSource` publishes `sort`/`filters` without the setter to write them.        | Add `setSort`/`setFilters`, or drop the signal and let the table own it - see [One binding instead of six](/components/table#one-binding-instead-of-six).     |
+| `ET3511` | `pinColumn()` was called on a table without `etTableStickyColumns`.                | Add `etTableStickyColumns` and import `TABLE_STICKY_COLUMNS_IMPORTS` - see [Pinning at runtime](/components/table#pinning-at-runtime).                        |
 
 `ET3500` is retired: it flagged duplicate column keys, which the keyed
 `TableColumns` record makes impossible.

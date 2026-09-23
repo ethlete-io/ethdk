@@ -841,6 +841,15 @@ describe('TableComponent', () => {
       }
     });
 
+    it('throws when a column is pinned at runtime without the feature', () => {
+      const { componentInstance: table } = create(columns());
+
+      expect(table.canPinColumns()).toBe(false);
+      expect(() => table.pinColumn('role', 'start')).toThrow(
+        expect.objectContaining({ code: TABLE_ERROR_CODES.MISSING_STICKY_COLUMNS }) as unknown as RuntimeError<number>,
+      );
+    });
+
     it('hasFooter reflects a registered etTableFooterCell, and renders it', () => {
       @Component({
         template: `

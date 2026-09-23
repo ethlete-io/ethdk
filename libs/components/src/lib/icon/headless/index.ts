@@ -46,6 +46,7 @@ export * from './rotate-right-icon';
 export * from './star-icon';
 export * from './strikethrough-icon';
 export * from './table-icon';
+export * from './thumbtack-icon';
 export * from './times-icon';
 export * from './trash-icon';
 export * from './triangle-exclamation-icon';

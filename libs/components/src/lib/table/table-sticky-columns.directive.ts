@@ -6,6 +6,7 @@ import {
   TableFeatureConfig,
   tableFeatureConfig,
 } from './headless/table-features';
+import { TableColumnPin } from './table.types';
 
 /**
  * Least horizontal room (px) the non-pinned columns must keep before pinning is suppressed: below this,
@@ -18,12 +19,22 @@ type StickyOffsets = { start: Record<string, number>; end: Record<string, number
 
 const NO_PINNING: TableCellPinning = { stickyStart: false, stickyEnd: false, offsetStart: null, offsetEnd: null };
 
+type TableColumnPins = Readonly<Record<string, TableColumnPin | null>>;
+
+const isColumnPins = (value: unknown): value is TableColumnPins =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  Object.values(value).every((pin) => pin === 'start' || pin === 'end' || pin === null);
+
 /** Options for {@link TableStickyColumnsDirective}. */
 export type TableStickyColumnsConfig = TableFeatureConfig;
 
 /**
- * Opt-in sticky columns for `et-table`: a column declaring `sticky: 'start' | 'end'` stays put while the
- * table scrolls horizontally, and the scroll fades move in to sit at the pinned column's inner edge.
+ * Opt-in sticky columns for `et-table`: a column declaring `sticky: 'start' | 'end'` - or pinned at
+ * runtime with the table's `pinColumn` - stays put while the table scrolls horizontally, and the scroll
+ * fades move in to sit at the pinned column's inner edge. Runtime pins travel in `state()` as the
+ * `pinning` slice.
  *
  * The offsets are measured, not declared - each pinned column stacks after the ones before it from its
  * own edge - so this runs a measurement whenever the host resizes or a column is resized. That is the
@@ -54,6 +65,7 @@ export class TableStickyColumnsDirective {
   // The feature is a directive on the table, so its host *is* the table's element.
   private hostDimensions = signalHostElementDimensions();
 
+  private pins = signal<TableColumnPins>({});
   private offsets = signal<StickyOffsets>({ start: {}, end: {} });
   private leadOffsets = signal<Record<string, number>>({});
   private trailOffsets = signal<Record<string, number>>({});
@@ -88,7 +100,15 @@ export class TableStickyColumnsDirective {
       trailPinning: (key) => this.trailPinning(key),
       insets: () => this.insets(),
       hasStickyEnd: () => this.hasStickyEnd(),
+      pins: () => this.pins(),
+      pin: (key, side) => this.pin(key, side),
       enabled,
+    });
+
+    this.table.registerStateSlice({
+      key: 'pinning',
+      read: () => (Object.keys(this.pins()).length ? this.pins() : undefined),
+      write: (value) => this.pins.set(isColumnPins(value) ? { ...value } : {}),
     });
 
     // Measure the pinned columns' inline offsets from the header cells' widths. Start pins stack from the
@@ -225,5 +245,15 @@ export class TableStickyColumnsDirective {
     const pinned = this.enabled() && !this.suppressed();
 
     return { sticky: pinned, offset: pinned ? (this.trailOffsets()[key] ?? 0) : null };
+  }
+
+  private pin(key: string, side: TableColumnPin | null) {
+    const declared = this.table.allColumns().find((column) => column.key === key)?.sticky ?? null;
+
+    this.pins.update((pins) => {
+      const { [key]: _previous, ...rest } = pins;
+
+      return side === declared ? rest : { ...rest, [key]: side };
+    });
   }
 }
