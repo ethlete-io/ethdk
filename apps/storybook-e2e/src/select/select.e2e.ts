@@ -5,6 +5,7 @@ const DEFAULT_STORY_ID = 'components-forms-select--default';
 const PRESELECTED_STORY_ID = 'components-forms-select--preselected';
 const SEARCHABLE_STORY_ID = 'components-forms-select--searchable';
 const SEARCHABLE_LONG_LABEL_STORY_ID = 'components-forms-select--searchable-long-label';
+const ASYNC_OPTIONS_STORY_ID = 'components-forms-select--async-options';
 
 /** The option's `id`, which `aria-activedescendant` must carry. No id is a failure, not a pass. */
 const idOf = async (option: Locator) => {
@@ -194,6 +195,29 @@ test.describe('select / keyboard', () => {
       await expect(trigger).not.toBeFocused();
     });
   }
+
+  test('ArrowDown on the last loaded option loads the next page, and the next ArrowDown moves into it', async ({
+    page,
+  }) => {
+    await openStory(page, ASYNC_OPTIONS_STORY_ID);
+    const options = page.getByRole('option');
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'ArrowDown');
+    await expect(options).toHaveCount(4);
+
+    await pressKey(page, 'ArrowDown');
+    await pressKey(page, 'ArrowDown');
+    await pressKey(page, 'ArrowDown');
+    await expect(options.nth(3)).toHaveAttribute('data-active', 'true');
+
+    await pressKey(page, 'ArrowDown');
+    await expect(options).toHaveCount(8);
+    await expect(options.nth(3)).toHaveAttribute('data-active', 'true');
+
+    await pressKey(page, 'ArrowDown');
+    await expect(options.nth(4)).toHaveAttribute('data-active', 'true');
+  });
 });
 
 test.describe('select / layout', () => {

@@ -1210,6 +1210,8 @@ export class SelectDirective
 
     if (next) {
       this.setActiveItem(next);
+    } else if (delta === 1 && this.hasMoreItems()) {
+      this.requestLoadMore();
     }
   }
 

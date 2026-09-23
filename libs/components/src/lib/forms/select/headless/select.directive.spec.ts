@@ -1207,6 +1207,37 @@ describe('SelectDirective (search)', () => {
     expect(busyBar()).toBeNull();
   });
 
+  it('requests the next page when ArrowDown is pressed on the last option', async () => {
+    driver.host.hasMore.set(true);
+    await driver.open();
+
+    driver.pressInSearch('ArrowDown');
+    driver.pressInSearch('ArrowDown');
+
+    expect(driver.activeLabel()).toBe('Cherry');
+    expect(driver.host.loadMoreCount).toBe(0);
+
+    driver.pressInSearch('ArrowDown');
+
+    expect(driver.activeLabel()).toBe('Cherry');
+    expect(driver.host.loadMoreCount).toBe(1);
+
+    driver.host.loading.set(true);
+    driver.detectChanges();
+    driver.pressInSearch('ArrowDown');
+
+    expect(driver.host.loadMoreCount).toBe(1);
+  });
+
+  it('does not request a page from ArrowDown on the last option when there is none', async () => {
+    await driver.open();
+
+    driver.pressInSearch('End');
+    driver.pressInSearch('ArrowDown');
+
+    expect(driver.host.loadMoreCount).toBe(0);
+  });
+
   it('runs the busy bar for a refetch the reader did not ask for by loading more', async () => {
     driver.host.hasMore.set(true);
     await driver.open();

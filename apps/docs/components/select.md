@@ -237,6 +237,8 @@ spinner nobody had time to read. Every indicator holds for a moment once shown (
 blink out either. `ng-template[etSelectLoading]` still replaces the row's content wholesale - its own
 height is yours to keep stable.
 
+The control stays out of the tab order, since focus never leaves the trigger: from the keyboard, <kbd>ArrowDown</kbd> on the last loaded option loads the next page, and the next <kbd>ArrowDown</kbd> moves into it once it arrives.
+
 While a load-more request is in flight the control is disabled (`requestLoadMore` is a no-op until it
 settles), and the panel exposes which wait it is in through `SelectDirective`: `loading()` is the raw
 flag, `showLoadingIndicator()` is the deferred one to paint from, `loadingMore()` says whether the
@@ -371,14 +373,14 @@ The threshold lives on the anchored overlay strategy as [`minAvailableSpace`](/c
 
 Focus stays on the trigger the whole time; options receive _virtual_ focus, exposed via `aria-activedescendant`.
 
-| Key                                       | Closed                                                                | Open                                                                 |
-| ----------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| <kbd>Enter</kbd> / <kbd>Space</kbd>       | Opens the panel                                                       | Commits the active option and closes (multi: toggles it, stays open) |
-| <kbd>ArrowDown</kbd> / <kbd>ArrowUp</kbd> | Opens the panel                                                       | Moves virtual focus (no wrap)                                        |
-| <kbd>Home</kbd> / <kbd>End</kbd>          | -                                                                     | First / last enabled option                                          |
-| <kbd>Escape</kbd>                         | -                                                                     | Closes without committing                                            |
-| <kbd>Tab</kbd>                            | Moves focus on                                                        | Closes, focus moves on                                               |
-| Printable characters                      | Commits the first matching option directly (like a native `<select>`) | Moves virtual focus to the first match                               |
+| Key                                       | Closed                                                                | Open                                                                                                                |
+| ----------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| <kbd>Enter</kbd> / <kbd>Space</kbd>       | Opens the panel                                                       | Commits the active option and closes (multi: toggles it, stays open)                                                |
+| <kbd>ArrowDown</kbd> / <kbd>ArrowUp</kbd> | Opens the panel                                                       | Moves virtual focus (no wrap); <kbd>ArrowDown</kbd> on the last option emits `loadMore` while `hasMoreItems` is set |
+| <kbd>Home</kbd> / <kbd>End</kbd>          | -                                                                     | First / last enabled option                                                                                         |
+| <kbd>Escape</kbd>                         | -                                                                     | Closes without committing                                                                                           |
+| <kbd>Tab</kbd>                            | Moves focus on                                                        | Closes, focus moves on                                                                                              |
+| Printable characters                      | Commits the first matching option directly (like a native `<select>`) | Moves virtual focus to the first match                                                                              |
 
 Clicking anywhere on the form field's control frame - not just the trigger - opens the panel (the frame is the visual "input box", so all of it is clickable); clicking outside while open closes it. Hovering an option moves virtual focus to it, and the pointer highlight clears when the pointer leaves the list (like in the [menu](/components/menu)) - a keyboard-set highlight stays visible without hover.
 
