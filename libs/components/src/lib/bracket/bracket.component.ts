@@ -348,8 +348,10 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     const elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
     const host = elementRef.nativeElement;
 
+    const journeyHighlightDisabled = computed(() => this.settings().disableJourneyHighlight);
+
     effect((onCleanup) => {
-      if (this.settings().disableJourneyHighlight) {
+      if (journeyHighlightDisabled()) {
         this.journeyController.set(null);
 
         return;

@@ -256,6 +256,20 @@ describe('BracketComponent participant focus', () => {
     expect(driver.activeMatchIds()).toEqual(['se-r0-m0', 'se-r1-m0', 'se-r2-m0']);
   });
 
+  it('keeps a hovered journey lit through a layout change', () => {
+    driver
+      .cellFor('se-r0-m0')
+      ?.querySelector('[data-participant-id="p1"]')
+      ?.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+
+    expect(driver.activeMatchIds()).toEqual(['se-r0-m0', 'se-r1-m0', 'se-r2-m0']);
+
+    driver.host.rowSpanRoundId.set('se-r2');
+    driver.detectChanges();
+
+    expect(driver.activeMatchIds()).toEqual(['se-r0-m0', 'se-r1-m0', 'se-r2-m0']);
+  });
+
   it('leaves the final card to measure its own cell', () => {
     expect(driver.element().querySelector('.et-bracket-final-card')?.getAttribute('data-size')).toBe('auto');
   });
