@@ -1,16 +1,24 @@
 # eslint-plugin lib scan — noteworthy findings
 
-**Status 2026-09-23: mostly done.** All 25 High findings and 10 of the 12 summary items are fixed,
-almost entirely in `a9113cb6c` ("Correct library scan findings", the same day as the scan), which
-added shared fixer helpers (`internals/member-accessibility-fix.js`,
-`internals/angular-metadata-fix.js`) plus per-rule corrections. Open: summary #10 (fixer comment
-handling - `class-member-order` still misplaces a trailing comment, the host-directives shorthand
-fix still drops comments) and #11 (name-only matching - an aliased import still defeats several
-rules, and a same-named symbol from the wrong source is still reported/fixed), plus a handful of
-lower-severity items reproduced directly (dangling `other._value` reference, duplicate `styleUrl`,
-a dropped `host: { ...BASE }` spread, `class-member-order`'s `static`-member fix bail-out,
-`no-screaming-case-local`'s double report, `no-trivial-return-type` on a `FunctionDeclaration`,
-`standalone` still sorted last).
+**Status 2026-09-23: done apart from the long tail of #11.** All 25 High findings and 11 of the 12
+summary items are fixed. Most landed in `a9113cb6c` ("Correct library scan findings"), which added
+shared fixer helpers (`internals/member-accessibility-fix.js`, `internals/angular-metadata-fix.js`).
+The rest followed: `82924121c` fixed #10 (`class-member-order` keeps a trailing comment with its
+member and now also fixes classes with `static` members or index signatures; the host-directives
+shorthand fix no longer drops comments and the reorder fix keeps a trailing comment with its
+property). `bcdce06b5` fixed the reproduced lower-severity items (dangling `other._value`,
+duplicate `styleUrl`, dropped `host: { ...BASE }` spread, `no-screaming-case-local`'s double
+report, `no-trivial-return-type` on a `FunctionDeclaration`, `standalone` sorted last).
+`d961a4308` added `internals/import-resolution.js` for #11: every `@Component`/`@Directive`/`@Pipe`
+/`@Input`-style decorator check, `effect`/`computed`/`afterRenderEffect`, `inject` in
+`no-inject-chain` and `no-angular-seo-services`, `takeUntilDestroyed`, and the
+`ViewEncapsulation`/`ChangeDetectionStrategy` values now resolve through the import (alias and
+namespace imports match, a same-named symbol from another source does not; an undeclared name
+still matches by name). Still open from #11: `inject` in the remaining rules
+(`no-angular-router-api`, `no-locale-id`, `no-typed-injected-element-ref`, `prefer-match-media`,
+the accessibility rules, `class-member-order`'s inject group), the `input`/`output` factories in
+`internals/angular-io.js`, bare-token matches (`document`, `setTimeout`, `.set()`, `.subscribe`,
+`.pipe`), and re-exports/dynamic imports in the import bans.
 
 Scan date: 2026-08-19. Scope: all of `libs/eslint-plugin` — 58 rules (~9.6k lines of non-spec
 source), the three shared `internals/` helpers, the `recommended` config, the packaging files,
