@@ -180,22 +180,29 @@ const migrateQueryClientToConfig = ({ content, filePath, renamesOut, report }: M
   const sourceFile = createSourceFile(content, filePath);
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
   const variableRenames = new Map<string, string>();
+  let hasUnmigratedClient = false;
 
   const visit = (node: ts.Node) => {
-    if (
-      ts.isNewExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      node.expression.text === 'V2QueryClient' &&
-      node.arguments &&
-      node.arguments.length > 0
-    ) {
-      const configArgument = node.arguments[0]!;
+    if (ts.isNewExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'V2QueryClient') {
+      const configArgument = node.arguments?.[0];
 
-      if (ts.isObjectLiteralExpression(configArgument)) {
+      if (!configArgument || !ts.isObjectLiteralExpression(configArgument)) {
+        hasUnmigratedClient = true;
+
+        report.addManualReview({
+          title: 'Migrate a V2QueryClient whose config is not an object literal',
+          summary: `\`${node.getText(sourceFile)}\` passes its config indirectly, so the migration cannot read it and left the client on v2.`,
+          action:
+            'Inline the config object and re-run the migration, or rewrite the client by hand as `createQueryClient({ baseUrl, name })` with provider aliases and creators.',
+          locations: [{ filePath, line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 }],
+          source: 'query-client-migration',
+          dedupeKey: `unmigrated-client:${filePath}:${node.getStart(sourceFile)}`,
+        });
+      } else {
         const oldVariableName = getVariableNameForQueryClient(node);
-        const newVariableName = ensureConfigSuffix(oldVariableName);
+        const newVariableName = oldVariableName && ensureConfigSuffix(oldVariableName);
 
-        if (oldVariableName !== newVariableName) {
+        if (oldVariableName && newVariableName && oldVariableName !== newVariableName) {
           const collisionRegex = new RegExp(`\\b(?:const|let|var)\\s+${newVariableName}\\b`);
 
           if (collisionRegex.test(content)) {
@@ -239,20 +246,24 @@ const migrateQueryClientToConfig = ({ content, filePath, renamesOut, report }: M
     result = result.slice(0, start) + replacement + result.slice(end);
   });
 
-  result = removeQueryClientImport(result);
+  result = removeQueryClientImport(result, hasUnmigratedClient);
 
   return renameVariables(result, variableRenames);
 };
 
-const removeQueryClientImport = (content: string) => {
+const removeQueryClientImport = (content: string, keepLegacyClient: boolean) => {
   const sourceFile = createSourceFile(content);
   let queryImportNode: ts.ImportDeclaration | undefined;
 
   ts.forEachChild(sourceFile, (node) => {
     if (
+      !queryImportNode &&
       ts.isImportDeclaration(node) &&
       ts.isStringLiteral(node.moduleSpecifier) &&
-      node.moduleSpecifier.text === '@ethlete/query'
+      node.moduleSpecifier.text === '@ethlete/query' &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings) &&
+      node.importClause.namedBindings.elements.some((element) => element.name.text === 'V2QueryClient')
     ) {
       queryImportNode = node;
     }
@@ -272,11 +283,11 @@ const removeQueryClientImport = (content: string) => {
   }
 
   const existingElements = queryImportNode.importClause.namedBindings.elements.filter((element) => {
-    return element.name.text !== 'V2QueryClient';
+    return keepLegacyClient || element.name.text !== 'V2QueryClient';
   });
 
   const nextImports = new Set<string>(requiredImports);
-  existingElements.forEach((element) => nextImports.add(element.name.text));
+  existingElements.forEach((element) => nextImports.add(element.getText(sourceFile)));
 
   const nextImportStatement = `import { ${Array.from(nextImports).sort().join(', ')} } from '@ethlete/query';`;
 
@@ -397,16 +408,52 @@ const reportDroppedClientOptions = ({
     });
   };
 
+  const raiseSpread = (spread: ts.SpreadAssignment) => {
+    const text = spread.getText(sourceFile);
+
+    report.addWarning({
+      title: `Reconfigure spread query client options "${text}"`,
+      summary: `The v2 client config spreads \`${text}\`. The migration cannot see which options it holds, so none of them were carried over to \`createQueryClient\`.`,
+      action:
+        'Inline the spread options that are still needed (`baseRoute` becomes `baseUrl`) and re-check the result.',
+      locations: [{ filePath, line: sourceFile.getLineAndCharacterOfPosition(spread.getStart(sourceFile)).line + 1 }],
+      source: 'query-client-migration',
+      dedupeKey: `dropped-client-spread:${filePath}:${spread.getStart(sourceFile)}`,
+    });
+  };
+
   configArgument.properties.forEach((property) => {
-    if (!ts.isPropertyAssignment(property) || !ts.isIdentifier(property.name)) {
+    if (ts.isSpreadAssignment(property)) {
+      raiseSpread(property);
+
+      return;
+    }
+
+    if (
+      (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) ||
+      !ts.isIdentifier(property.name)
+    ) {
       return;
     }
 
     const name = property.name.text;
 
-    if ((name === 'request' || name === 'logging') && ts.isObjectLiteralExpression(property.initializer)) {
+    if (
+      (name === 'request' || name === 'logging') &&
+      ts.isPropertyAssignment(property) &&
+      ts.isObjectLiteralExpression(property.initializer)
+    ) {
       property.initializer.properties.forEach((nested) => {
-        if (!ts.isPropertyAssignment(nested) || !ts.isIdentifier(nested.name)) {
+        if (ts.isSpreadAssignment(nested)) {
+          raiseSpread(nested);
+
+          return;
+        }
+
+        if (
+          (!ts.isPropertyAssignment(nested) && !ts.isShorthandPropertyAssignment(nested)) ||
+          !ts.isIdentifier(nested.name)
+        ) {
           return;
         }
 
@@ -426,57 +473,63 @@ const reportDroppedClientOptions = ({
   });
 };
 
-const migrateConfigObject = (configArgument: ts.ObjectLiteralExpression, node: ts.Node, sourceFile: ts.SourceFile) => {
-  const variableName = getVariableNameForQueryClient(node);
-  const nextConfig: string[] = [];
+const getPropertyValueText = (property: ts.ObjectLiteralElementLike, sourceFile: ts.SourceFile) => {
+  if (ts.isShorthandPropertyAssignment(property)) {
+    return property.name.text;
+  }
 
-  const baseRouteProperty = configArgument.properties.find((property) => {
-    return ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === 'baseRoute';
+  return ts.isPropertyAssignment(property) ? property.initializer.getText(sourceFile) : undefined;
+};
+
+const findProperty = (objectLiteral: ts.ObjectLiteralExpression, name: string) =>
+  objectLiteral.properties.find((property) => {
+    return (
+      (ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property)) &&
+      ts.isIdentifier(property.name) &&
+      property.name.text === name
+    );
   });
 
-  if (baseRouteProperty && ts.isPropertyAssignment(baseRouteProperty)) {
-    const baseRouteValue = baseRouteProperty.initializer
-      .getText(sourceFile)
-      .replace('as `https://${string}`', '')
-      .trim();
+const migrateConfigObject = (configArgument: ts.ObjectLiteralExpression, node: ts.Node, sourceFile: ts.SourceFile) => {
+  const variableName = getVariableNameForQueryClient(node) ?? 'client';
+  const nextConfig: string[] = [];
 
-    nextConfig.push(`baseUrl: ${baseRouteValue}`);
+  const baseRouteProperty = findProperty(configArgument, 'baseRoute');
+  const baseRouteText = baseRouteProperty && getPropertyValueText(baseRouteProperty, sourceFile);
+
+  if (baseRouteText) {
+    nextConfig.push(`baseUrl: ${baseRouteText.replace('as `https://${string}`', '').trim()}`);
   }
 
   nextConfig.push(`name: '${variableName}'`);
 
-  const requestProperty = configArgument.properties.find((property) => {
-    return ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === 'request';
-  });
+  const requestProperty = findProperty(configArgument, 'request');
 
   if (
     requestProperty &&
     ts.isPropertyAssignment(requestProperty) &&
     ts.isObjectLiteralExpression(requestProperty.initializer)
   ) {
-    requestProperty.initializer.properties.forEach((property) => {
-      if (!ts.isPropertyAssignment(property) || !ts.isIdentifier(property.name)) {
-        return;
-      }
+    const requestConfig = requestProperty.initializer;
 
-      if (property.name.text === 'queryParams') {
-        nextConfig.push(`queryString: ${property.initializer.getText(sourceFile)}`);
-      }
+    for (const [from, to] of [
+      ['queryParams', 'queryString'],
+      ['cacheAdapter', 'cacheAdapter'],
+      ['retryFn', 'retryFn'],
+    ] as const) {
+      const property = findProperty(requestConfig, from);
+      const valueText = property && getPropertyValueText(property, sourceFile);
 
-      if (property.name.text === 'cacheAdapter') {
-        nextConfig.push(`cacheAdapter: ${property.initializer.getText(sourceFile)}`);
+      if (valueText) {
+        nextConfig.push(`${to}: ${valueText}`);
       }
-
-      if (property.name.text === 'retryFn') {
-        nextConfig.push(`retryFn: ${property.initializer.getText(sourceFile)}`);
-      }
-    });
+    }
   }
 
   return `createQueryClient({\n  ${nextConfig.join(',\n  ')}\n})`;
 };
 
-const getVariableNameForQueryClient = (node: ts.Node): string => {
+const getVariableNameForQueryClient = (node: ts.Node): string | undefined => {
   let parent = node.parent;
 
   while (parent) {
@@ -487,7 +540,7 @@ const getVariableNameForQueryClient = (node: ts.Node): string => {
     parent = parent.parent;
   }
 
-  return 'client';
+  return undefined;
 };
 
 const extractClientConfigNames = (content: string) => {
@@ -620,6 +673,31 @@ const generateCreatorsForConfig = (configName: string) => {
   ].join('\n');
 };
 
+const declaresName = (declarations: readonly ts.NamedDeclaration[], name: string) =>
+  declarations.some(
+    (declaration) => declaration.name && ts.isIdentifier(declaration.name) && declaration.name.text === name,
+  );
+
+const isShadowedByLocalDeclaration = (identifier: ts.Identifier) => {
+  for (let scope: ts.Node | undefined = identifier.parent; scope && !ts.isSourceFile(scope); scope = scope.parent) {
+    if (ts.isFunctionLike(scope) && declaresName(scope.parameters, identifier.text)) {
+      return true;
+    }
+
+    if (
+      ts.isBlock(scope) &&
+      scope.statements.some(
+        (statement) =>
+          ts.isVariableStatement(statement) && declaresName(statement.declarationList.declarations, identifier.text),
+      )
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 const updateImportsInFile = (content: string, renames: Map<string, string>) => {
   const sourceFile = createSourceFile(content);
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
@@ -634,7 +712,7 @@ const updateImportsInFile = (content: string, renames: Map<string, string>) => {
       let hasChanges = false;
 
       node.importClause.namedBindings.elements.forEach((element) => {
-        const nextName = renames.get(element.name.text);
+        const nextName = renames.get(element.propertyName?.text ?? element.name.text);
 
         if (!nextName) {
           nextElements.push(element.getText(sourceFile));
@@ -700,7 +778,7 @@ const updateImportsInFile = (content: string, renames: Map<string, string>) => {
         return;
       }
 
-      if (ts.isPropertyAssignment(parent) && parent.name === node) {
+      if ((ts.isPropertyAssignment(parent) && parent.name === node) || isShadowedByLocalDeclaration(node)) {
         ts.forEachChild(node, visit);
         return;
       }

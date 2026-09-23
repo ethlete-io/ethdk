@@ -109,7 +109,9 @@ const readConfig = (
   }
 
   refreshConfig.initializer.properties.forEach((property) => {
-    if (!ts.isPropertyAssignment(property) || !ts.isIdentifier(property.name)) {
+    const isShorthand = ts.isShorthandPropertyAssignment(property);
+
+    if ((!ts.isPropertyAssignment(property) && !isShorthand) || !ts.isIdentifier(property.name)) {
       return;
     }
 
@@ -119,11 +121,12 @@ const readConfig = (
       return;
     }
 
-    const text = property.initializer.getText(sourceFile);
+    const value = isShorthand ? property.name : property.initializer;
+    const text = value.getText(sourceFile);
 
     if (key === 'queryCreator') {
-      if (ts.isIdentifier(property.initializer)) {
-        config.refreshCreatorName = property.initializer.text;
+      if (ts.isIdentifier(value)) {
+        config.refreshCreatorName = value.text;
       }
 
       return;
