@@ -1,7 +1,7 @@
 # eslint-plugin lib scan — noteworthy findings
 
-**Status 2026-09-23: done apart from the long tail of #11.** All 25 High findings and 11 of the 12
-summary items are fixed. Most landed in `a9113cb6c` ("Correct library scan findings"), which added
+**Status 2026-09-23: done.** All 25 High findings and all 12 summary items are fixed, apart from
+the type-dependent remainder of #11 listed at the end of this paragraph. Most landed in `a9113cb6c` ("Correct library scan findings"), which added
 shared fixer helpers (`internals/member-accessibility-fix.js`, `internals/angular-metadata-fix.js`).
 The rest followed: `82924121c` fixed #10 (`class-member-order` keeps a trailing comment with its
 member and now also fixes classes with `static` members or index signatures; the host-directives
@@ -14,11 +14,25 @@ report, `no-trivial-return-type` on a `FunctionDeclaration`, `standalone` sorted
 `no-inject-chain` and `no-angular-seo-services`, `takeUntilDestroyed`, and the
 `ViewEncapsulation`/`ChangeDetectionStrategy` values now resolve through the import (alias and
 namespace imports match, a same-named symbol from another source does not; an undeclared name
-still matches by name). Still open from #11: `inject` in the remaining rules
-(`no-angular-router-api`, `no-locale-id`, `no-typed-injected-element-ref`, `prefer-match-media`,
-the accessibility rules, `class-member-order`'s inject group), the `input`/`output` factories in
-`internals/angular-io.js`, bare-token matches (`document`, `setTimeout`, `.set()`, `.subscribe`,
-`.pipe`), and re-exports/dynamic imports in the import bans.
+still matches by name). `4686125bf` finished #11: `inject` resolves through its import in the remaining rules
+(`no-angular-router-api`, `no-locale-id`, `no-typed-injected-element-ref`, `prefer-match-media`, both
+accessibility rules, `class-member-order`'s inject/input/output/query groups), and so do the
+injected tokens (`Router`, `ActivatedRoute`, `LOCALE_ID`, `ElementRef`, `BreakpointObserver`); the
+`input`/`model`/`output` factories in `internals/angular-io.js` resolve too. `document` (in
+`no-document-cookie`), `setTimeout`/`setInterval`/`clear*` and `structuredClone` only match the
+global. `prefer-linked-signal` ignores a two-argument `.set()` (`Map.set`), `no-rxjs-in-effect` a
+`.subscribe('event', …)`, `no-subscribe-in-pipe` resolves `new Observable` through `rxjs`, and
+`require-dollar-suffix` resolves its RxJS creators/subjects through `rxjs` (lodash `merge` no longer
+reports). The import bans (`no-cdk-import`, `no-legacy-query-import`, `no-angular-router-api`,
+`no-angular-seo-services`, `prefer-match-media`, `prefer-clone-equal`) now also see
+`export { X } from`, and a whole-module ban (`no-cdk-import`, `lodash/cloneDeep`) also reports
+`export * from` and `import('…')`. Left on purpose: telling an RxJS `.pipe`/`.subscribe`/signal
+`.set()` receiver from a Node stream, a store or another one-argument `set` needs type information
+the rules do not have; `export *` and `import('…')` of a package where only some symbols are banned
+cannot name the symbol, so they stay unreported; `window` in `no-window-location` /
+`prefer-viewport-size` and the name lists in `no-readonly-signal` / `class-constant-property` /
+`no-legacy-prepare-without-injector` still match by name. The injected-`DOCUMENT` and
+`this.win.setTimeout` gaps are separate Medium findings, not part of #11.
 
 Scan date: 2026-08-19. Scope: all of `libs/eslint-plugin` — 58 rules (~9.6k lines of non-spec
 source), the three shared `internals/` helpers, the `recommended` config, the packaging files,
