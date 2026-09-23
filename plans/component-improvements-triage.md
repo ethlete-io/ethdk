@@ -130,3 +130,35 @@ Gaps, measured:
 `flip-animation.ts` consumers (segmented button, dropzone, stream manager, tab underline) run small, concurrent, local movements while the user interacts. A global document transition would block input and the movements would skip each other. That is a no-go until scoped transitions ship in Firefox and Safari.
 
 Recommendation: go with conditions for the fullscreen enter/leave only. The conditions: accept or custom-key the mid-flight reversal, own a single transition coordinator in core, and accept input blocked for 400 ms. Effort: about 4-6 days, including e2e coverage of open/close/interrupt on desktop and touch. It would remove roughly 500 of the 770 lines. No-go for `flip-animation.ts`.
+
+## Charts: open questions (2026-09-23)
+
+**(a) `[innerHTML]` SVG precedent.** The precedent is `icon.directive.ts:27`, which binds a sanitized SVG string to the host.
+Option 1 keeps that: build the SVG as a string. Option 2 renders `<svg:rect>` marks from the template with `@for`.
+Recommendation: option 2, diverge. A string has no per-mark listeners, no `[etTooltip]`, no `aria-*` bindings and no signal updates without a full re-parse.
+The icon precedent fits a static asset, not a data-bound figure, so this is not a real conflict.
+
+**(b) Categorical palette.** No categorical order exists in the theming skill; it has only surface and per-scope accent tokens.
+Option 1: the SDK defines slots (`--et-chart-series-1` … `-8`) and a provider; the app fills them, like colour themes. Option 2: each series takes a registered colour theme via `[etProvideColor]`.
+Recommendation: option 1. Theme names are app-registered (theming skill), and accent themes are not validated as a categorical set; the `dataviz` skill requires a fixed order checked with its CVD validator.
+The SDK ships the slots and the fallback to `--et-theme-color-primary-solid`, not the colours.
+
+**(c) `[etTooltip]` on an SVG host.** From the code it mostly works, but nobody has run it.
+`ElementRef<HTMLElement>` (`tooltip.directive.ts:45`) is only a type. `pointerenter`/`pointerleave` (`:213`, `:215`), `focus` (`:290`) and `aria-describedby` via `setAttribute` (`:318`-`:328`) all work on an `SVGElement`. floating-ui `computePosition` takes any `Element` (`overlay-position-anchored.ts:302`).
+The gap is in core: `isHTMLElement` (`overlay-focus.ts:16`) skips an SVG reference in the detached-trigger check (`overlay-position-anchored.ts:207`) and in `getOriginElement` (`overlay-runtime.ts:250`). `referenceElement` is typed `HTMLElement | VirtualElement` (`overlay-runtime.types.ts:39`). A mark also needs `tabindex="0"` to get focus.
+Option 1: widen those checks and the type to `Element`, with a core scenario test. Option 2: put invisible HTML hit targets over the SVG. Recommendation: option 1. It is small, and option 2 duplicates the geometry.
+
+**(d) Animating SVG attributes.** Nothing in `libs/core/src/lib/animations` tweens attributes. `flip-animation.ts` and the lifecycle directives work on CSS boxes.
+Option 1: CSS only. Use `transform: scaleY()` with `transform-box: fill-box` for bar growth, and opacity for enter and leave. Option 2: a signal-driven `requestAnimationFrame` tween for `d`, `x`, `height`.
+Recommendation: option 1 for bars. Option 2 is only needed for pie and sankey, where a path `d` morph cannot be done with CSS in every browser. Plain opacity fades also match the house style.
+
+**First slice: single-series vertical bar chart.** It needs none of the four open parts: one series uses the scope accent, and bars need only CSS transforms.
+It needs:
+
+- A headless directive plus a default component (component-architecture skill), with marks rendered from the template.
+- A linear value scale with nice ticks, a band scale, one axis, and a recessive grid.
+- The core `Element` widening from (c), plus a scenario test, so each bar can host `[etTooltip]`.
+- A table view or a visually hidden `<table>` for a11y, the dataviz mark specs (4px rounded data ends, 2px gap), and a dark mode check.
+- A docs page in `apps/docs/components/`, stories, and a changeset.
+
+Out of scope: multi-series (needs the palette from (b)), stacked bars, pie, sankey, attribute tweening.
