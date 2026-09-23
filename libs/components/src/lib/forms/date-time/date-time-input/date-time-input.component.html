@@ -37,7 +37,11 @@
   <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
     <div class="et-date-time-input-panel">
       <div class="et-date-time-input-panel-tabs">
-        <et-segmented-button-group [value]="activePane()" (valueChange)="setActivePane($event)">
+        <et-segmented-button-group
+          [value]="activePane()"
+          [aria-label]="dateTimeLabels().paneSwitch"
+          (valueChange)="setActivePane($event)"
+        >
           <et-segmented-button value="date">{{ resolvedDateTabLabel() }}</et-segmented-button>
           <et-segmented-button value="time">{{ resolvedTimeTabLabel() }}</et-segmented-button>
         </et-segmented-button-group>

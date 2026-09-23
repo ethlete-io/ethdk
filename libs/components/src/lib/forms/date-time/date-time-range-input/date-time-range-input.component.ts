@@ -91,7 +91,7 @@ const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
   },
 })
 export class DateTimeRangeInputComponent {
-  private dateTimeLabels = injectDateTimeLabels();
+  protected dateTimeLabels = injectDateTimeLabels();
 
   private formFieldLabels = injectFormFieldLabels();
 

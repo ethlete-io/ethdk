@@ -78,7 +78,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
   },
 })
 export class DateTimeInputComponent {
-  private dateTimeLabels = injectDateTimeLabels();
+  protected dateTimeLabels = injectDateTimeLabels();
 
   private formFieldLabels = injectFormFieldLabels();
 

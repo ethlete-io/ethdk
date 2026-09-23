@@ -150,7 +150,7 @@ The value is a `string | null`. On `et-date-input` (forwarded from the headless
 
 ¹ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Open calendar'`, and the matching `openTimePicker` / `openDateTimePicker` for the other controls), which `provideDateTimeLabels({ … })` overrides for a whole subtree.
 ² `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - `invalidDate` here, and the matching `invalidTime` / `invalidDateTime` / `invalidDateRange` / `invalidTimeRange` / `invalidDateTimeRange` / `invalidDuration` for the other controls.
-³ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - the range fields' `startDate`/`endDate` (`'Start date'` / `'End date'`), `startTime`/`endTime`, `startDateTime`/`endDateTime`, and the bottom sheet's `dateTab`/`timeTab` (`'Date'` / `'Time'`) and `datesTab`/`timesTab` (`'Dates'` / `'Times'`).
+³ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - the range fields' `startDate`/`endDate` (`'Start date'` / `'End date'`), `startTime`/`endTime`, `startDateTime`/`endDateTime`, and the bottom sheet's `dateTab`/`timeTab` (`'Date'` / `'Time'`) and `datesTab`/`timesTab` (`'Dates'` / `'Times'`), whose switch is named by `paneSwitch` (`'Picker view'`).
 ⁴ `null` derives the format from `precision`: the locale's short date (`'P'`) at day precision, that same pattern without its day at month precision, `'yyyy'` at year precision.
 ⁵ `null` falls through to [`TIME_PICKER_LABELS`](/components/localization) (`'Start time'` / `'End time'`). These name the [time picker's own side switch](/components/time-picker#range-picker), not the control's two fields - that is what `startAriaLabel`/`endAriaLabel` do.
 

@@ -36,6 +36,21 @@ describe('DateTimeRangeInputComponent - picker panes', () => {
     await driver.settle();
   });
 
+  it('names the date/time tab switch, so its form field raises no ET2201', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await driver.open();
+
+    const loggedErrors = consoleError.mock.calls.map((call) => String(call[0]));
+
+    consoleError.mockRestore();
+
+    expect(driver.paneEl('.et-date-time-range-input-panel-tabs [role="radiogroup"]')?.getAttribute('aria-label')).toBe(
+      'Picker view',
+    );
+    expect(loggedErrors.filter((message) => message.includes('ET2201'))).toEqual([]);
+  });
+
   it('holds the dates pane until both days are picked, then carries on to the times', async () => {
     await driver.open();
 

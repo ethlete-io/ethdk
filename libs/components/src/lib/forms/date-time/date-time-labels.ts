@@ -47,6 +47,8 @@ export type DateTimeLabels = {
   datesTab: string;
   /** The date & time range picker's tab showing the clock. */
   timesTab: string;
+  /** Accessible name of the date/time tab switch in the date & time pickers' bottom sheet. */
+  paneSwitch: string;
 
   /** Accessible label for the preset list in a range picker. */
   presets: string;
@@ -111,6 +113,7 @@ export const DEFAULT_DATE_TIME_LABELS: DateTimeLabels = {
   timeTab: 'Time',
   datesTab: 'Dates',
   timesTab: 'Times',
+  paneSwitch: 'Picker view',
 
   presets: 'Presets',
   presetToday: 'Today',
