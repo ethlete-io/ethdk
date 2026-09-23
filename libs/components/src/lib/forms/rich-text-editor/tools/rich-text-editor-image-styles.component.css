@@ -11,15 +11,16 @@
     initial-value: 140px;
   }
 
-  et-rich-text-editor .et-rte-content {
-    /* Images are block-level (the only shape `![alt](url)` round-trips), and clickable: the image
-         tool opens its popover from a click, so they keep a pointer cursor. */
+  .et-rte-content {
     img {
       display: block;
       max-inline-size: 100%;
       block-size: auto;
       margin-block: var(--et-rich-text-editor-content-gap);
       border-radius: var(--et-rich-text-editor-image-radius);
+    }
+
+    et-rich-text-editor & img {
       cursor: pointer;
     }
 

@@ -1,9 +1,10 @@
-import { expect, test } from '@playwright/test';
+import { expect, Locator, test } from '@playwright/test';
 import { expectFieldFocusVisible, expectFocusVisible, openStory, pressKey, tap } from '../support';
 
 const EDITOR_DEFAULT_ID = 'components-forms-rich-text-editor--default';
 const TRIGGERS_DEFAULT_ID = 'components-forms-rich-text-editor-triggers--default';
 const ML_WITH_TRANSLATIONS_ID = 'components-forms-rich-text-editor-multi-language--with-existing-translations';
+const VIEWER_BESIDE_EDITOR_ID = 'components-forms-rich-text-viewer--beside-editor';
 
 test.describe('rich-text-editor / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
@@ -200,5 +201,58 @@ test.describe('rich-text-editor / touch', () => {
     await tap(headingTrigger);
 
     await expect(headingTrigger).toHaveAttribute('aria-expanded', 'true');
+  });
+});
+
+const CONTENT_STYLE_PROPS = [
+  'font-size',
+  'font-weight',
+  'font-family',
+  'margin-top',
+  'padding-left',
+  'border-left-width',
+  'border-top-width',
+  'border-radius',
+  'list-style-type',
+  'white-space',
+  'text-decoration-line',
+];
+
+const CONTENT_SELECTORS = ['h1', 'h2', 'ul ul', 'ol', 'blockquote', 'pre', 'p code', 'a', 'th', 'td', 'u'];
+
+const readContentStyles = (scope: Locator) =>
+  scope.evaluate(
+    (el, { selectors, props }) =>
+      selectors.map((selector) => {
+        const target = el.querySelector(selector);
+
+        return [selector, target && props.map((prop) => getComputedStyle(target).getPropertyValue(prop))];
+      }),
+    { selectors: CONTENT_SELECTORS, props: CONTENT_STYLE_PROPS },
+  );
+
+test.describe('rich-text-viewer / rendering', () => {
+  test('renders every block with the same computed styles as the editor content area', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'touch floors the editable font size to 16px against iOS zoom');
+
+    const root = await openStory(page, VIEWER_BESIDE_EDITOR_ID);
+    const viewer = root.locator('et-rich-text-viewer');
+    const editable = root.locator('et-rich-text-editor .et-rte-content');
+
+    await expect(viewer.locator('table')).toBeVisible();
+    await expect(editable.locator('table')).toBeVisible();
+
+    const fromViewer = await readContentStyles(viewer);
+
+    expect(fromViewer.filter(([, values]) => !values)).toEqual([]);
+    expect(fromViewer).toEqual(await readContentStyles(editable));
+  });
+
+  test('keeps raw HTML in the value as text', async ({ page }) => {
+    const root = await openStory(page, VIEWER_BESIDE_EDITOR_ID);
+    const viewer = root.locator('et-rich-text-viewer');
+
+    await expect(viewer).toContainText('<script>alert(1)</script>');
+    await expect(viewer.locator('script')).toHaveCount(0);
   });
 });

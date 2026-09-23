@@ -11,6 +11,9 @@ Out of the box the toolbar has undo/redo, the inline marks (bold, italic, underl
 | `RICH_TEXT_EDITOR_IMPORTS`                | `et-rich-text-editor`                |
 | `MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS` | `et-multi-language-rich-text-editor` |
 
+To show a stored value read-only, import `RichTextViewerComponent` on its own - see
+[Displaying a stored value](#displaying-a-stored-value).
+
 Spread the editor's imports alongside `FORM_FIELD_IMPORTS` (from the [forms guide](/components/forms)) so the label/hint chrome comes along:
 
 ```ts
@@ -441,7 +444,8 @@ literal character.
 Item ids must match `[A-Za-z0-9._:-]+` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown
 untouched (a dev-mode error is thrown otherwise). To render stored token values as chips in a
 read-only/display context **without** the interactive picker, provide
-`provideRichTextEditorTokenRendering(triggers)` on that component instead of the directive.
+`provideRichTextEditorTokenRendering(triggers)` on that component instead of the directive - on an
+[`et-rich-text-viewer`](#displaying-a-stored-value), or on a `readonly` editor.
 
 **Pasted text becomes chips again.** Text that spells a token out the way it reads - `#First name`,
 the trigger character plus an item's label (or its id, case-insensitively) - is recognized on paste
@@ -537,6 +541,47 @@ _Rich Text Editor/Triggers_ shows it live.
 | `focusEditorOnInsert`                     | `boolean`                 | `true`       | Focus the editor after inserting so the user can keep typing. |
 
 ¹ `null` falls through to [`RICH_TEXT_EDITOR_LABELS.insertToken`](/components/localization) (`'Insert token'`).
+
+## Displaying a stored value
+
+`et-rich-text-viewer` renders an editor value - the Markdown string - for display. It uses the
+editor's own Markdown-to-HTML pass and the same content stylesheet as the editable region, so a
+value reads the same in both, but it ships none of the editor: no toolbar, no selection handling, no
+tools. An app that only displays content pays about 8 kB gz for it, against roughly 39 kB for the bare
+editor.
+
+```ts
+import { RichTextViewerComponent } from '@ethlete/components';
+```
+
+```html
+<et-rich-text-viewer [value]="report.body" />
+```
+
+<StoryEmbed id="components-forms-rich-text-viewer--beside-editor" height="560px" />
+
+| Input   | Type                          | Default | Description                                           |
+| ------- | ----------------------------- | ------- | ----------------------------------------------------- |
+| `value` | `string \| null \| undefined` | `''`    | The Markdown value an `et-rich-text-editor` produced. |
+
+- **Safe by construction.** Raw HTML in the value is escaped and shown as text, and link and image
+  URLs with a `javascript:` or `vbscript:` scheme, or a `data:` URL that is not a raster image, are
+  dropped - the same rules the editor applies when it renders a value. Only the markup the editor itself can produce reaches the
+  DOM, so a value typed into an API by hand cannot inject a script.
+- **Tokens.** Provide `provideRichTextEditorTokenRendering(triggers)` on the component (or a parent)
+  with the triggers the content was authored with, and <code v-pre>{{type:id}}</code> tokens render as labelled chips.
+  Without it they stay literal text.
+- **Tables and images** get the editor's table and image styles, injected only once a rendered value
+  contains one.
+- **Typography is inherited.** Like the editor, which takes its font from the form field, the viewer
+  takes font family, size and color from where it sits. The content tokens under
+  [Theming](#theming) (`--et-rich-text-editor-content-gap`, `-quote-*`, `-code-block-radius`,
+  `-image-radius`, `-token-*`) apply to both.
+
+The viewer has no chrome of its own - no padding, border or minimum height.
+
+`@ethlete/contentful`'s `et-contentful-rich-text-renderer` is not an alternative to it: that one
+renders a Contentful rich-text JSON document, this one renders the Markdown the editor stores.
 
 ## Multi-language rich text editor
 
@@ -658,6 +703,7 @@ Public design tokens, overridable in your CSS scope - all colors resolve through
 | Component                            | Tokens                                                                                                                                                                                                                                                 |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `et-rich-text-editor`                | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`, `-quote-indent`, `-quote-bar-width`, `-code-block-radius`, `-image-radius`, `-image-upload-height`, `-token-radius`, `-token-padding-inline` |
+| `et-rich-text-viewer`                | The content tokens of `et-rich-text-editor`: `-content-gap`, `-quote-indent`, `-quote-bar-width`, `-code-block-radius`, `-image-radius`, `-token-radius`, `-token-padding-inline`                                                                      |
 | `et-rich-text-editor-link-editor`    | `--et-rich-text-editor-link-editor-width`, `-radius`, `-gap`, `-padding`                                                                                                                                                                               |
 | `et-rich-text-editor-image-editor`   | `--et-rich-text-editor-image-editor-width`, `-radius`, `-gap`, `-padding`, `-thumb-size`                                                                                                                                                               |
 | `et-rich-text-editor-token-palette`  | `--et-rich-text-editor-token-palette-gap` (buttons follow the `et-button` `tonal` variant)                                                                                                                                                             |

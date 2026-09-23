@@ -1,5 +1,5 @@
 @layer components {
-  et-rich-text-editor .et-rte-content {
+  .et-rte-content {
     table {
       border-collapse: collapse;
       inline-size: 100%;

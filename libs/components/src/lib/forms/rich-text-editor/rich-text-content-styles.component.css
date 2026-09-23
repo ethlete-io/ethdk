@@ -1,0 +1,209 @@
+@layer components {
+  @property --et-rich-text-editor-content-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-rich-text-editor-quote-indent {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-rich-text-editor-quote-bar-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2px;
+  }
+
+  @property --et-rich-text-editor-code-block-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-rich-text-editor-token-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-rich-text-editor-token-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  .et-rte-content {
+    overflow-wrap: anywhere;
+
+    > :first-child {
+      margin-block-start: 0;
+    }
+
+    > :last-child {
+      margin-block-end: 0;
+    }
+
+    p {
+      margin-block: 0;
+    }
+
+    p + p,
+    ul,
+    ol,
+    blockquote,
+    pre {
+      margin-block-start: var(--et-rich-text-editor-content-gap);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      margin-block: 0;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    :is(h1, h2, h3, h4, h5, h6) + *,
+    * + :is(h1, h2, h3, h4, h5, h6) {
+      margin-block-start: var(--et-rich-text-editor-content-gap);
+    }
+
+    h1 {
+      font-size: 2.4rem;
+    }
+
+    h2 {
+      font-size: 2rem;
+    }
+
+    h3 {
+      font-size: 1.6rem;
+    }
+
+    ul,
+    ol {
+      margin-block-end: 0;
+      padding-inline-start: 1.5em;
+      list-style-position: outside;
+    }
+
+    /* marker style cycles by nesting depth (Slack-style): disc → circle → square, and
+       decimal → lower-alpha → lower-roman */
+    ul {
+      list-style-type: disc;
+    }
+
+    ul ul,
+    ul ul ul ul ul {
+      list-style-type: circle;
+    }
+
+    ul ul ul,
+    ul ul ul ul ul ul {
+      list-style-type: square;
+    }
+
+    ul ul ul ul {
+      list-style-type: disc;
+    }
+
+    ol {
+      list-style-type: decimal;
+    }
+
+    ol ol,
+    ol ol ol ol ol {
+      list-style-type: lower-alpha;
+    }
+
+    ol ol ol,
+    ol ol ol ol ol ol {
+      list-style-type: lower-roman;
+    }
+
+    ol ol ol ol {
+      list-style-type: decimal;
+    }
+
+    li {
+      margin-block: 0;
+    }
+
+    li::marker {
+      color: color-mix(in srgb, currentColor 60%, transparent);
+    }
+
+    a {
+      color: var(--et-theme-color-primary-solid, currentColor);
+      text-decoration: underline;
+    }
+
+    code {
+      padding: 0.1em 0.3em;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 14%, transparent);
+      font-family: var(--et-font-family-mono, ui-monospace, monospace);
+      font-size: 0.9em;
+    }
+
+    blockquote {
+      margin-inline: 0;
+      margin-block-end: 0;
+      padding-inline-start: var(--et-rich-text-editor-quote-indent);
+      border-inline-start: var(--et-rich-text-editor-quote-bar-width) solid
+        color-mix(in srgb, var(--et-surface-border-solid, currentColor) 80%, transparent);
+      color: color-mix(in srgb, currentColor 82%, transparent);
+    }
+
+    /* a quote inside a quote (`>>`) gets its own bar, so nesting depth stays readable */
+    blockquote blockquote {
+      margin-block-start: var(--et-rich-text-editor-content-gap);
+    }
+
+    pre {
+      margin-block-end: 0;
+      padding: 8px 10px;
+      border-radius: var(--et-rich-text-editor-code-block-radius);
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 10%, transparent);
+      font-family: var(--et-font-family-mono, ui-monospace, monospace);
+      font-size: 0.9em;
+      /* pre-wrap, not pre: newlines are the block's content (Enter inserts one), but a long line
+         must wrap instead of scrolling the field sideways */
+      white-space: pre-wrap;
+    }
+
+    /* the fence is the block — its inner <code> must not paint the inline-code chip on top */
+    pre code {
+      padding: 0;
+      border-radius: 0;
+      background: none;
+      font-size: inherit;
+    }
+
+    .et-rte-token {
+      --_et-rte-token-accent: var(--et-theme-color-primary-solid, var(--et-surface-interaction-solid, currentColor));
+
+      display: inline;
+      padding-inline: var(--et-rich-text-editor-token-padding-inline);
+      border-radius: var(--et-rich-text-editor-token-radius);
+      background: color-mix(in srgb, var(--_et-rte-token-accent) 22%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--_et-rte-token-accent) 45%, transparent);
+      color: var(--et-theme-color-ink-solid, inherit);
+      font-weight: 500;
+      white-space: nowrap;
+      user-select: all;
+      cursor: default;
+    }
+
+    .et-rte-token-prefix {
+      margin-inline-end: 1px;
+      opacity: 0.65;
+    }
+  }
+}

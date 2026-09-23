@@ -34,3 +34,4 @@ export * from './rich-text-editor-trigger-with-query';
 export * from './rich-text-editor-triggers.imports';
 export * from './rich-text-editor.component';
 export * from './rich-text-editor.imports';
+export * from './rich-text-viewer.component';

@@ -3,7 +3,7 @@ import { injectStyleManager } from '@ethlete/core';
 
 /**
  * How tables render inside the editor's content, as a styles-only component mounted by the table
- * tool — an editor without `provideRichTextEditorTableTool()` never pulls these rules in.
+ * tool and by `et-rich-text-viewer` when its content has a table.
  *
  * @internal
  */

@@ -1,0 +1,6 @@
+@layer components {
+  et-rich-text-viewer {
+    display: block;
+    min-inline-size: 0;
+  }
+}

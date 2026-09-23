@@ -33,6 +33,7 @@ import {
   UNDO_ICON,
 } from '../../icon';
 import { RichTextEditorDirective } from './headless';
+import { mountRichTextContentStyles } from './rich-text-content-styles.component';
 import { RICH_TEXT_EDITOR_FLOATING_TOOLBAR } from './rich-text-editor-floating-toolbar.token';
 import { richTextEditorToolLabel } from './rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_LINK_EDITOR } from './rich-text-editor-link-editor.token';
@@ -154,6 +155,7 @@ export class RichTextEditorComponent {
   protected dockedToolbar = computed(() => this.hasTouchInput() && this.editingActive());
 
   constructor() {
+    mountRichTextContentStyles();
     this.linkEditorSetup?.(this.dir, this.host.nativeElement);
     this.floatingToolbarSetup?.(this.dir);
 
