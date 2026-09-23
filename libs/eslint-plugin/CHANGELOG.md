@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0-next.24
+
+### Minor Changes
+
+- Add `take-until-destroyed-last` to the recommended config: `takeUntilDestroyed()` must be the last operator in a `.pipe()`, since an operator after it can keep the subscription alive.
+
+### Patch Changes
+
+- `class-member-order` now fixes classes with `static` members or index signatures and keeps a trailing comment with its member, and `prefer-concise-angular-host-directives` no longer drops or misplaces comments.
+- Angular and RxJS rules now resolve `Component`, `inject`, `input`, `effect` and friends through their imports, `document` and `setTimeout` match only the globals, and import bans also report re-exports and dynamic imports.
+- Several fixers no longer emit broken code (a dangling `other._value`, a duplicate `styleUrl`, a dropped `host` spread), `no-trivial-return-type` checks function declarations, `no-screaming-case-local` reports a function once, and `standalone` sorts after `selector`.
+
 ## 1.0.0-next.23
 
 ### Minor Changes

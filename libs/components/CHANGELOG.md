@@ -1,5 +1,60 @@
 # Changelog
 
+## 1.0.0-next.61
+
+### Minor Changes
+
+- Add `createAlertDialogOpener()`, whose `confirm()` and `alert()` open a ready-made `alertdialog` and return the answer as a cold Observable, with `ALERT_DIALOG_LABELS` for the action labels.
+- Bracket: add `et-bracket-participants`, a participants legend whose toggles pin a journey by keyboard, tap or click through the same `focusedParticipantId` model as the bracket.
+- Chart: add `et-bar-chart`, with grouped, stacked and horizontal bars, a legend, series colors from `provideColorPalette`, a table view for assistive tech and a headless `etBarChart` directive.
+- Add `et-line-chart`: multi-series lines or (stacked) areas on a category or time axis, with a keyboard- and touch-driven crosshair tooltip, gaps for missing values, and the headless `etLineChart` and `etLineChartSlice` directives.
+- Add `et-pie-chart`, a pie or donut chart with a legend of values and shares, per-slice tooltips and a table view.
+- Charts: add `et-sankey-chart`, a left-to-right flow of nodes and value-wide ribbons with tooltips, link highlighting and a table view.
+- Date & time inputs: `et-date-range-input` and `et-date-time-range-input` take `presets`, a list of ranges offered beside the picker calendar, with factories such as `lastDaysPreset(7)` and `thisMonthPreset()`.
+- Date & time inputs: add `dateRangeOrder`, `timeRangeOrder`, `dateRangeBounds` and `dateTimeRangeBounds` signal-forms validators for the three range controls.
+- Add `removeAll()` to `etDropzone`: it removes every entry like `removeEntry`, including the configured `delete` request per persisted value. `clear()` stays a local reset that never deletes on the server.
+- Overlays and `[etTooltip]` can anchor to an SVG element, and `[etTooltip]` takes an `anchor` input to point at an element other than its trigger; core exports `isElement` and `isHTMLOrSVGElement`.
+- Add `et-rich-text-viewer`, which displays a stored rich text editor value read-only, styled like the editor, without loading the editor.
+- Scheduler: add `businessHours`, which shades the time grid outside each weekday's open hours.
+- Scheduler: the month and week/day grids are one Tab stop with arrow-key, Home/End and PageUp/PageDown navigation, Enter into a cell's appointments, and Space or Enter on an empty cell to create one.
+- Scheduler: add `nowIndicator` to turn the time grid's now line off; its clock no longer runs on the server.
+- Select: the new `compareWith` input matches option values to the model with your own comparator, so object values that are copies of the options (a loaded form model, a refetched list) still select.
+- Select: `ArrowDown` on the last loaded option now emits `loadMore` while `hasMoreItems` is set, so a keyboard user can page an async select.
+- Select: `selectAll` renders a tri-state "Select all" row at the top of a multi select that toggles every visible, enabled option.
+- Selection groups: <kbd>Home</kbd>/<kbd>End</kbd> jump to the first/last enabled option and typing moves focus to the option whose label starts with the typed text.
+- Stream: the PiP window's title bar is now a tab stop - the arrow keys move the window, `Shift` + arrow keys resize it, and `Enter`/`Space` brings a collapsed one back into view.
+- Table: `multiSort="shift"` adds a sort key on Shift + click or Shift + Enter, sorted headers show their priority, and a layered key keeps its place when its direction flips.
+- Table: a `quickFilter` input keeps the rows containing every typed word in a visible column, with per-column `quickFilter` / `quickFilterValue`, and the query adapters carry `quickFilter` / `setQuickFilter` for server search.
+- Table: `pinColumn(key, side)` pins or unpins a column at runtime with `etTableStickyColumns`, pinned columns render in their edge's block, the pins round-trip in `state()`, and the column menu offers Pin to start / Pin to end / Unpin.
+- Time picker: `ArrowLeft` / `ArrowRight` now move focus between the hour, minute, second and period columns.
+
+### Patch Changes
+
+- Bracket: a layout setting change no longer tears down the journey highlight, so a hovered journey stays lit while the grid re-lays out.
+- Button: a bound `pressed="false"` now announces `aria-pressed="false"`, so an unpressed toggle reads as a toggle; leave `pressed` unset on a plain action button.
+- Calendar: a view change now clears the range hover preview, so drilling out and back while the pointer rests on a cell no longer brings back a stale band.
+- Give every week row of a multi-month `et-calendar` seven gridcells, so screen readers announce the right column after the leading or trailing blank days.
+- `@ethlete/bracket` is now a regular dependency instead of a peer dependency, so package managers install it with `@ethlete/components`. Before, an app that did not list `@ethlete/bracket` itself failed to build, because the main bundle imports it.
+- Place `takeUntilDestroyed()` last in every pipe, so operators after it no longer run or stay subscribed after destroy.
+- Date & time inputs: the bottom sheet's date/time tab switch in `et-date-time-input` and `et-date-time-range-input` is now named (`paneSwitch` label), so opening the picker no longer logs `ET2201`.
+- `et-form-field` and the group controls (selection groups, rating, sliders, OTP input, dropzone, choice field) now swap their hint and error with a plain opacity fade; the `--et-*-support-offset` tokens were removed.
+- Grid: the `.et-grid-item` styles now sit in `@layer components`, so a consumer rule or utility at equal specificity overrides them.
+- OTP input: shrinking `length` at runtime no longer emits `complete` when the truncated value lands on the new length; only a write to the value completes it.
+- Overlay: the pane now re-elevates its surface when a breakpoint switch changes whether the active strategy renders a backdrop.
+- On touch, the compact pager and `size="sm"` pagination items take a 44px hit area through an invisible pseudo-element. Their visible size and spacing stay unchanged, and a tap on an item never reaches its neighbour.
+- Phone input: a manually picked country that equals the current `defaultCountry` now survives a later `defaultCountry` change instead of being overwritten.
+- `et-picture` with `aspectRatio` (and no `width`) now reserves its box on the `<picture>`, so the space exists before the image or its URL arrives; the image fills the host's inline size at that ratio.
+- Date and time range inputs: tabbing out of an open picker no longer pulls focus back to the start field, matching the single inputs.
+- Rich text editor: picking a trigger item or deleting a chip with Backspace is now its own undo step, so one undo no longer also reverts the text typed around it.
+- `et-scheduler` names its month and time grids after the period its header shows, so a screen reader announces "July 2026" instead of an unnamed grid.
+- A scheduler month day cell now announces its full, locale-formatted date instead of the bare day number, and today's cell carries `aria-current="date"`.
+- A slider thumb whose value equals a labelled mark now announces the mark label as `aria-valuetext` without `snapToMarks` too. The keyboard still moves along the `step` grid.
+- Stream: the PiP window no longer fails with `NG0201` when `provideStreamPip()` is registered in a component's `providers` rather than the app config.
+- Ship the stream placement CSS: the body-level player container is hidden off-screen, and the PiP window opens in the bottom right corner with a `z-index`, set through `--et-pip-window-offset-right`, `--et-pip-window-offset-bottom` and `--et-pip-window-z-index`.
+- `et-tab-group` no longer puts `aria-orientation` on its `role="none"` host; the orientation stays on the inner tablist that owns the tabs.
+- Toggletip: an open panel now follows later changes to `etToggletipAriaLabel`, `etToggletipAriaLabelledBy` and string content instead of keeping the accessible name it opened with.
+- Tree: when a write to `[(expandedValues)]` removes the focused row, DOM focus now moves to the nearest surviving ancestor instead of falling to the page body.
+
 ## 1.0.0-next.60
 
 ### Major Changes

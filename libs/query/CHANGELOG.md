@@ -1,5 +1,28 @@
 # @ethlete/query
 
+## 6.0.0-next.49
+
+### Minor Changes
+
+- `withPersistentAuth`'s `autoLogin.buildArgs` and `withTokenExpirationWarning`'s `expiresInPropertyName` now default to the refresh query's own config.
+- `createAuthGuard` gets `redirectOnSessionEnd`, to send a visitor on a protected route to the login, and `redirectOnSessionStart`, to send a visitor on the login route to the return URL once a session starts.
+- `createAuthGuard` stops waiting for a session restore after `restoreTimeoutMs` (default 10s) and gets `canMatchWith`/`canActivateWith` permission guards; the refresh query now retries at most 8 times by default instead of forever (`retryConfig.maxAttempts: 0` restores that).
+- The bearer auth provider gets `session()`, its session status, end cause and execution state as one signal, so a consumer no longer combines three.
+- Add the `persistence` option to `defineQueryForm().observe()`, which stores the committed value and restores it when the URL carries none of the persisted fields.
+- `defineQueryForm` writes from code (`setValue`, `patchValue`, resets) now commit at once, skipping the field debounce, so `value()` is current on the next line; pass `{ debounce: true }` to keep the debounce.
+- GraphQL queries can keep the server's `errors` next to partial data with `transformResponse: unwrapGqlResponseWithErrors`.
+- `withPolling` accepts a signal `interval` and opt-in `pauseWhileHidden`, `refetchOnFocus` and `refetchOnReconnect`.
+- Client `headers` and per-request `args.headers` accept a plain record as well as `HttpHeaders`, for secure queries too, so a client needs no `@angular/*` import to set a header.
+- Behavior change: the default retry policy no longer retries a `POST`, a `PATCH` or a GraphQL mutation; opt back in with `createDefaultRetryFn({ retryNonIdempotent: true })`, and a `retryFn` now receives the request's `method` and `idempotent`.
+- `withTokenRevocation` gets `revokeOn`, to revoke automatically only for some session end causes, and `bearer`, to send the revoked access token as an `Authorization` header. `buildArgs` is now optional.
+- Add `send`, `auth` and `withCredentials` to `createWebSocketClient`, and a `messages$` stream of every room message next to `latestMessage`.
+
+### Patch Changes
+
+- Outside a development build the devtools session vault now defaults to `none`, so a plain login no longer leaves tokens in `sessionStorage`, and a vault left in either store is removed on load.
+- An unreadable URL value in a query form field now falls back to the field's `defaultValue` instead of `null`.
+- Mark `setupQueryDependencies`, `createQuerySyncEngine`, `createGqlExecuteFn` and `createSecureGqlExecuteFn` internal, so they leave the published types.
+
 ## 6.0.0-next.48
 
 ### Patch Changes

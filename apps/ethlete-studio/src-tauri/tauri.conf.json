@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Ethlete Studio",
-  "version": "0.2.0-next.0",
+  "version": "0.2.0-next.1",
   "identifier": "io.ethlete.studio",
   "build": {
     "frontendDist": "../../../dist/apps/ethlete-studio/browser",
