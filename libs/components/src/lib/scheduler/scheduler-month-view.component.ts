@@ -10,7 +10,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import { ProvideColorDirective, injectRenderer, injectStyleManager } from '@ethlete/core';
-import { addDays, differenceInCalendarDays, endOfDay, startOfDay } from 'date-fns';
+import { addDays, differenceInCalendarDays, endOfDay, format, startOfDay } from 'date-fns';
 import { MENU_IMPORTS } from '../menu';
 import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerMonthDirective } from './headless';
 import { startSchedulerDragGesture } from './headless/internals/scheduler-drag-gesture';
@@ -59,6 +59,12 @@ export class SchedulerMonthViewComponent {
 
   protected weekdays() {
     return this.scheduler?.weekdays() ?? [];
+  }
+
+  protected dayLabel(date: Date) {
+    const locale = this.scheduler?.effectiveLocale();
+
+    return format(date, 'PPPP', locale ? { locale } : undefined);
   }
 
   protected isSelected(appointment: Appointment) {

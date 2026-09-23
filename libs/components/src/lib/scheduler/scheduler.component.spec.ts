@@ -115,6 +115,26 @@ describe('SchedulerComponent', () => {
     expect(cell?.querySelector('[title="a"]')).not.toBeNull();
   });
 
+  it('announces the full date of a month day cell, not the bare day number', () => {
+    const cell = driver.cellFor(testAppointment('a').start);
+
+    expect(cell?.querySelector('.et-scheduler-month-view-cell-date')?.getAttribute('aria-hidden')).toBe('true');
+    expect(cell?.querySelector('.et-scheduler-month-view-cell-label')?.textContent?.trim()).toBe(
+      'Wednesday, July 15th, 2026',
+    );
+  });
+
+  it('marks only the month cell of today with aria-current="date"', () => {
+    driver.host.focusedDate.set(new Date());
+    driver.detectChanges();
+
+    const current = driver.queryAll('.et-scheduler-month-view-cell[aria-current]');
+
+    expect(current).toHaveLength(1);
+    expect(current[0]?.getAttribute('aria-current')).toBe('date');
+    expect(current[0]?.hasAttribute('data-today')).toBe(true);
+  });
+
   it('opens the edit surface when a rendered appointment badge is clicked', () => {
     const button = driver.clickAppointment('a');
 

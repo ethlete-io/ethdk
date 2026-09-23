@@ -16,12 +16,14 @@
           #cell
           [attr.data-outside-month]="cell.outsideMonth ? '' : null"
           [attr.data-today]="cell.today ? '' : null"
+          [attr.aria-current]="cell.today ? 'date' : null"
           [attr.data-draft]="isDrafted(cell.date) ? '' : null"
           [attr.data-drop-target]="isDropTarget(cell.date) ? '' : null"
           class="et-scheduler-month-view-cell"
           role="gridcell"
         >
-          <span class="et-scheduler-month-view-cell-date">{{ cell.date.getDate() }}</span>
+          <span class="et-scheduler-month-view-cell-date" aria-hidden="true">{{ cell.date.getDate() }}</span>
+          <span class="et-scheduler-month-view-cell-label">{{ dayLabel(cell.date) }}</span>
 
           <!-- pointerdown is stopped on everything interactive below so a press that starts on an
                appointment or the overflow trigger does not also draw a range across the grid -->
