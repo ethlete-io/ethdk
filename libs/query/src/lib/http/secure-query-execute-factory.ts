@@ -6,6 +6,7 @@ import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
 import { invalidStateInsideSecureExecuteFactory, tokensNotAvailableInsideAuthAndExec } from './query-errors';
 import { InternalQueryExecute, QueryExecuteArgs } from './query-execute';
+import { resolveQueryHeaders } from './query-headers';
 import { circularQueryDependencyChecker, resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
 import { QueryState } from './query-state';
 
@@ -124,7 +125,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
 
     const headerProvider = () => {
       const accessToken = options.authProvider.accessToken();
-      const baseHeaders = typeof args?.headers === 'function' ? args.headers() : args?.headers || new HttpHeaders();
+      const baseHeaders = resolveQueryHeaders(args?.headers) ?? new HttpHeaders();
 
       if (!accessToken) {
         throw tokensNotAvailableInsideAuthAndExec();

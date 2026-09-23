@@ -17,6 +17,7 @@ import {
   QueryClientErrorPipelineFeature,
 } from './query-client-features';
 import { queryClientFeatureUsedMultipleTimes } from './query-errors';
+import { QueryHeadersInput } from './query-headers';
 import { runDefaultQueryRetry } from './query-error-parsing';
 import { createQueryRepository, QueryRepository } from './query-repository';
 import { ShouldRetryRequestFn } from './query-retry-utils';
@@ -36,10 +37,11 @@ export type CreateQueryClientConfigOptions = {
 
   /**
    * Headers sent with every request of this client - an API token, a tenant id, a preview
-   * credential. Per-query `args.headers` are merged on top and win per header name.
+   * credential. A plain record or `HttpHeaders`. Per-query `args.headers` are merged on top and win
+   * per header name.
    *
-   * Pass a function to make them dynamic: it is called on every execution, so reading a signal
-   * inside means later requests pick the new value up on their own.
+   * Pass a function to make them dynamic: it is called on every execution, so reading a signal or a
+   * variable inside means later requests pick the new value up on their own.
    *
    * Client headers are deliberately **not** part of the cache key: they are the same for every
    * query of the client, so including them would only ever churn the whole cache at once. That
@@ -55,14 +57,14 @@ export type CreateQueryClientConfigOptions = {
    *   baseUrl: 'https://api.example.com',
    *   headers: () => {
    *     const token = previewToken();
-   *     return token ? new HttpHeaders({ 'X-Preview-Token': token }) : new HttpHeaders();
+   *     return token ? { 'X-Preview-Token': token } : {};
    *   },
    * });
    *
    * export const provideMyClient = toProvideFn(MY_CLIENT);
    * export const injectMyClient = toInjectFn(MY_CLIENT);
    */
-  headers?: HttpHeaders | (() => HttpHeaders);
+  headers?: QueryHeadersInput;
 
   /** The name of the client */
   name: string;

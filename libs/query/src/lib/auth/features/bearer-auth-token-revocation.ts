@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { effect, Signal, signal, untracked } from '@angular/core';
-import { AnyQuerySnapshot, QueryArgs, QuerySnapshot, RequestArgs } from '../../http';
+import { AnyQuerySnapshot, QueryArgs, QuerySnapshot, RequestArgs, resolveQueryHeaders } from '../../http';
 import {
   AnyQueryBuilder,
   BearerAuthFeatureType,
@@ -82,7 +82,7 @@ export const withTokenRevocation = <
 
       const argHeaders = (args as Pick<QueryArgs, 'headers'>).headers;
       const headers = () => {
-        const base = (typeof argHeaders === 'function' ? argHeaders() : argHeaders) ?? new HttpHeaders();
+        const base = resolveQueryHeaders(argHeaders) ?? new HttpHeaders();
 
         return base.has(AUTH_HEADER) ? base : base.set(AUTH_HEADER, `Bearer ${accessToken}`);
       };

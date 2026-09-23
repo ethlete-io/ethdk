@@ -1,6 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
 import { QueryArgs, RequestArgs } from './query';
 import { QueryMethod } from './query-creator';
+import { resolveQueryHeaders } from './query-headers';
 
 export const extractExpiresInSeconds = (headers: HttpHeaders) => {
   const cacheControl = headers.get('cache-control');
@@ -68,7 +69,7 @@ const sortObjectKeys = (_key: string, value: unknown) => {
  * entries written by an older version are stored under.
  */
 export const buildQueryCacheKey = (route: string, args: RequestArgs<QueryArgs> | undefined, method?: QueryMethod) => {
-  const headers = typeof args?.headers === 'function' ? args.headers() : args?.headers;
+  const headers = resolveQueryHeaders(args?.headers);
   const serializedHeaders = headers
     ?.keys()
     .map((name) => name.toLowerCase())

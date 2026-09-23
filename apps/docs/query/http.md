@@ -62,7 +62,7 @@ The generic `TArgs` type passed to a creator describes the whole request/respons
 | `pathParams`  | `Record<string, string \| number>` - declaring it requires a **function route**: `(p) => `/users/${p.userId}``. |
 | `queryParams` | Serialized into the query string using the client's `queryString` config.                                       |
 | `body`        | The request body (mutating methods).                                                                            |
-| `headers`     | Extra headers (`HttpHeaders` or a function returning them).                                                     |
+| `headers`     | Extra headers: a record, `HttpHeaders`, or a function returning either. Secure queries add `Authorization`.     |
 
 You pass everything except the type-only `response` and `rawResponse` fields when executing - via `withArgs(() => ({ … }))` or `execute({ args })`. A function route without a `withArgs` feature throws in dev mode (opt out with the `silenceMissingWithArgsFeatureError` query config if you always pass args to `execute`).
 

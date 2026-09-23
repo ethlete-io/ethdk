@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { HttpHeaders } from '@angular/common/http';
 import { DestroyRef, Injector } from '@angular/core';
 import { createBaseQuery } from './base-query-factory';
 import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
@@ -9,6 +8,7 @@ import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConf
 import { QueryErrorResponse } from './query-error-response';
 import { createExecuteFn, QueryExecute } from './query-execute';
 import { QueryFeature } from './query-features';
+import { QueryHeadersInput } from './query-headers';
 import { QueryExecutionState } from './query-state';
 
 export type QueryArgs = {
@@ -17,7 +17,7 @@ export type QueryArgs = {
   pathParams?: Record<string, string | number>;
   queryParams?: any;
   body?: any;
-  headers?: HttpHeaders | (() => HttpHeaders);
+  headers?: QueryHeadersInput;
 };
 
 export type ResponseType<T extends QueryArgs | null> = T extends QueryArgs ? T['response'] : never;

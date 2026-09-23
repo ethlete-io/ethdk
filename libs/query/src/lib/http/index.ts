@@ -26,6 +26,7 @@ export * from './query-errors';
 export * from './query-execute';
 export * from './query-execute-utils';
 export * from './query-features';
+export * from './query-headers';
 export * from './query-invalidation';
 export * from './query-repository';
 export * from './query-retry-utils';

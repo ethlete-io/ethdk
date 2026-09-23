@@ -51,6 +51,15 @@ describe('query cache utils', () => {
       expect(english).toBe(rotatedToken);
     });
 
+    it('should derive the same key from a header record as from equal HttpHeaders', () => {
+      const record = buildQueryCacheKey('/api/test', { headers: { 'X-Tenant': 'one', Authorization: 'Bearer one' } });
+      const httpHeaders = buildQueryCacheKey('/api/test', {
+        headers: () => new HttpHeaders({ 'X-Tenant': 'one' }),
+      });
+
+      expect(record).toBe(httpHeaders);
+    });
+
     it('should derive the same key regardless of header name casing', () => {
       const mixed = buildQueryCacheKey('/api/test', {
         headers: new HttpHeaders({ 'X-Tenant': 'one', 'accept-language': 'en' }),

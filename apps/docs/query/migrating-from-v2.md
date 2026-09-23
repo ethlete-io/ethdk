@@ -81,7 +81,7 @@ const API = createQueryClient({
   headers: () => {
     const token = previewToken();
 
-    return token ? new HttpHeaders({ 'X-Preview-Token': token }) : new HttpHeaders();
+    return token ? { 'X-Preview-Token': token } : {};
   },
 });
 
@@ -95,7 +95,7 @@ previewToken.set(token);
 injectApi().refreshQueriesInUse(); // re-runs every bound GET/HEAD/OPTIONS, in flight ones included
 ```
 
-An `HttpInterceptor` also works, but it only affects _subsequent_ requests - anything already resolved keeps data fetched under the old header.
+Headers can be a plain record, so this needs no `HttpInterceptor` and no `@angular/*` import. An interceptor also works, but it only affects _subsequent_ requests - anything already resolved keeps data fetched under the old header.
 
 ## 3. Migrate screens
 

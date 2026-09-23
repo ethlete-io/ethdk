@@ -32,6 +32,7 @@ import { extractExpiresInSeconds } from './query-cache-utils';
 import { CacheAdapterFn } from './query-client';
 import { CreateQueryCreatorOptions, QueryMethod } from './query-creator';
 import { QueryErrorResponse, createQueryErrorResponse } from './query-error-response';
+import { QueryHeadersInput, resolveQueryHeaders } from './query-headers';
 import { QueryRepositoryDependencies } from './query-repository';
 import { runDefaultQueryRetry } from './query-error-parsing';
 import { ShouldRetryRequestFn, ShouldRetryRequestOptions } from './query-retry-utils';
@@ -82,7 +83,7 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
    *
    * @see CreateQueryClientConfigOptions.headers
    */
-  clientHeaders?: HttpHeaders | (() => HttpHeaders);
+  clientHeaders?: QueryHeadersInput;
 
   /**
    * The cache adapter function to use for the request
@@ -366,8 +367,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   // Resolved per execution rather than once at creation, so a client whose headers are a function
   // reading a signal (a preview token, a tenant id) sees the current value on every re-run.
   const resolveHeaders = () => {
-    const clientHeaders = typeof options.clientHeaders === 'function' ? options.clientHeaders() : options.clientHeaders;
-    const argHeaders = typeof args?.headers === 'function' ? args.headers() : args?.headers;
+    const clientHeaders = resolveQueryHeaders(options.clientHeaders);
+    const argHeaders = resolveQueryHeaders(args?.headers);
 
     if (!clientHeaders) return argHeaders;
     if (!argHeaders) return clientHeaders;

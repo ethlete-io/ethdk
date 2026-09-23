@@ -91,6 +91,8 @@ import {
   QueryRepositoryEvent,
   QuerySequence,
   QuerySequenceStatus,
+  QueryHeadersInput,
+  resolveQueryHeaders,
   restoredQueryDevtoolsOverrides,
   setQueryDevtoolsOverridePersistence,
   setQueryDevtoolsUiMounted,
@@ -3165,9 +3167,7 @@ export class QueryDevtoolsComponent implements OnInit {
     try {
       if (request) return request.subtle.resolveHeaders();
 
-      return typeof args?.headers === 'function'
-        ? (args.headers as () => HttpHeaders)()
-        : (args?.headers as HttpHeaders | undefined);
+      return resolveQueryHeaders(args?.headers as QueryHeadersInput | undefined);
     } catch {
       return undefined;
     }
