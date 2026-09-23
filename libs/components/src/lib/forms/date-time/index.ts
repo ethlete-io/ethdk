@@ -5,6 +5,7 @@ export * from './date-time-formats';
 export * from './date-time-input';
 export * from './date-time-labels';
 export * from './date-time-range-input';
+export * from './date-time-range-validators';
 export * from './duration-input';
 export * from './picker';
 export * from './time-input';

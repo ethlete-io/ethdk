@@ -291,17 +291,25 @@ side. In the picker, the first click starts the range and a completed range clos
 partial pick keeps it open. See the `Masked` story.
 
 **Validation:** child-path errors (e.g. `required(s.range.start)`) show in the
-field's single error area alongside errors on the range path itself:
+field's single error area alongside errors on the range path itself. The control never
+reorders the two ends, and `minDate`/`maxDate` only shape the picker - typed or patched
+values are not gated by them - so the library ships the two
+[range validators](/components/forms#range-validators) for both jobs:
 
 ```ts
-validate(s.range, ({ value }) => {
-  const { start, end } = value();
+import { dateRangeBounds, dateRangeOrder } from '@ethlete/components';
 
-  return start !== null && end !== null && start > end
-    ? { kind: 'range-order', message: 'The start date must be before the end date' }
-    : null;
+form(model, (s) => {
+  required(s.range.start);
+  dateRangeOrder(s.range, { valueFormat: 'yyyy-MM-dd' });
+  dateRangeBounds(s.range, { min: new Date(), valueFormat: 'yyyy-MM-dd' });
 });
 ```
+
+Pass the control's `valueFormat` when it differs from the `DATE_FORMAT` token - the
+validators parse the wire strings and compare the dates, not the strings. `dateRangeBounds`
+compares in whole days by default, so a `min` of "now" still admits today; pass
+`precision` alongside the control's own for a month or year range.
 
 ## Time input - `et-time-input` {#time-input}
 
@@ -400,8 +408,9 @@ shows the same single set of columns.
 
 **Ordering is not enforced.** The control never reorders or clamps the two ends - same
 contract as the other two ranges - so an end before the start is a
-[validator's](/components/forms#validation) job. What the picker _can_ express is the
-same rule as a bound, because `timeFilter` receives the side it is filling:
+[validator's](/components/forms#range-validators) job: `timeRangeOrder(s.hours)`, which
+reads the `TIME_FORMAT` token (pass `valueFormat` otherwise). What the picker _can_
+express is the same rule as a bound, because `timeFilter` receives the side it is filling:
 
 ```ts
 const endAfterStart = (candidate: Date, side: 'start' | 'end') => {
@@ -577,15 +586,16 @@ range's width - or name a compact `displayFormat` such as `dd.MM.yy HH:mm`.
 
 **Ordering is not enforced.** The control never reorders or clamps the two ends -
 same contract as the date range input - so an end before the start is a
-[validator's](/components/forms#validation) job:
+[validator's](/components/forms#range-validators) job. `dateRangeOrder` reads both
+ends as instants, and `dateTimeRangeBounds` is the bounds check compared to the
+millisecond instead of the day:
 
 ```ts
-validate(s.slot, ({ value }) => {
-  const { start, end } = value();
+import { dateRangeOrder, dateTimeRangeBounds } from '@ethlete/components';
 
-  return start !== null && end !== null && start > end
-    ? { kind: 'range-order', message: 'The start must be before the end' }
-    : null;
+form(model, (s) => {
+  dateRangeOrder(s.slot, { strict: true });
+  dateTimeRangeBounds(s.slot, { min: new Date() });
 });
 ```
 

@@ -1,10 +1,11 @@
 import { JsonPipe } from '@angular/common';
 import { Component, ViewEncapsulation, computed, input, linkedSignal } from '@angular/core';
-import { FormField, disabled, form, readonly, validate } from '@angular/forms/signals';
+import { FormField, disabled, form, readonly } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { de } from 'date-fns/locale';
 import { parseTimeOfDay, resolveTimeFilterPreset } from '../../../../time-picker/stories/time-filter-presets';
 import { FORM_FIELD_IMPORTS } from '../../../form-field';
+import { timeRangeOrder } from '../../date-time-range-validators';
 import { TimeRangeTimeFilterFn, TimeRangeValue } from '../headless';
 import { TIME_RANGE_INPUT_IMPORTS } from '../time-range-input.imports';
 
@@ -88,13 +89,7 @@ export class TimeRangeInputStorybookComponent {
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
     readonly(s.range, () => this.readonly());
-    validate(s.range, ({ value }) => {
-      const { start, end } = value();
-
-      return start !== null && end !== null && start > end
-        ? { kind: 'range-order', message: 'The start must be before the end' }
-        : null;
-    });
+    timeRangeOrder(s.range, { valueFormat: this.valueFormat() });
   });
 
   protected filterFn = computed<TimeRangeTimeFilterFn | null>(() => {

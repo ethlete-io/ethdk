@@ -416,12 +416,16 @@ Signal forms bring their own (`required`, `min`, `pattern`, …); these fill gap
 documents a value format that nothing was actually checking. Add them to a `form()` schema like any
 other validator.
 
-| Validator                                      | From                   | Reports unless the value is                                        |
-| ---------------------------------------------- | ---------------------- | ------------------------------------------------------------------ |
-| `hexColor(path, options?)`                     | `et-color-input`       | a hex color - strict `#rrggbb` by default                          |
-| `rgbColor(path, options?)`                     | `et-color-input`       | a functional `rgb()` color, comma or space form, channels in 0-255 |
-| `colorContrast(path, { against, … })`          | `et-color-input`       | far enough from another color to be readable on it                 |
-| `requiredLanguages(path, { codes, message? })` | the multi-language RTE | non-empty for every listed language code                           |
+| Validator                                      | From                       | Reports unless the value is                                        |
+| ---------------------------------------------- | -------------------------- | ------------------------------------------------------------------ |
+| `hexColor(path, options?)`                     | `et-color-input`           | a hex color - strict `#rrggbb` by default                          |
+| `rgbColor(path, options?)`                     | `et-color-input`           | a functional `rgb()` color, comma or space form, channels in 0-255 |
+| `colorContrast(path, { against, … })`          | `et-color-input`           | far enough from another color to be readable on it                 |
+| `requiredLanguages(path, { codes, message? })` | the multi-language RTE     | non-empty for every listed language code                           |
+| `dateRangeOrder(path, options?)`               | the date(-time) ranges     | a range whose start is not after its end                           |
+| `timeRangeOrder(path, options?)`               | `et-time-range-input`      | a range whose start time is not after its end time                 |
+| `dateRangeBounds(path, { min?, max?, … })`     | `et-date-range-input`      | a range whose ends both lie within `min`/`max`, in whole days      |
+| `dateTimeRangeBounds(path, { min?, max?, … })` | `et-date-time-range-input` | a range whose ends both lie within `min`/`max`, to the millisecond |
 
 ```ts
 import { hexColor, rgbColor } from '@ethlete/components';
@@ -498,6 +502,39 @@ form, and returns `null` when either color is blank or unparseable - which is al
 passes, so a malformed value is `hexColor`'s error to report, not two errors at once. **Alpha is
 ignored**: compositing a translucent color needs a backdrop neither the helper nor the validator is
 given, so both measure the colors at full opacity.
+
+### Range validators {#range-validators}
+
+The three range controls never reorder or clamp their two ends, and their `minDate`/`maxDate`
+(`minTime`/`maxTime`) only shape the picker, so a typed, pasted or patched value can be out of order
+or out of bounds. These four validators close that gap on the range path itself, so the error shows
+in the control's single error area:
+
+```ts
+import { dateRangeBounds, dateRangeOrder, dateTimeRangeBounds, timeRangeOrder } from '@ethlete/components';
+
+form(model, (s) => {
+  dateRangeOrder(s.stay, { valueFormat: 'yyyy-MM-dd' });
+  dateRangeBounds(s.stay, { min: new Date(), valueFormat: 'yyyy-MM-dd' });
+  dateRangeOrder(s.slot, { strict: true });
+  dateTimeRangeBounds(s.slot, { min: () => new Date() });
+  timeRangeOrder(s.openingHours);
+});
+```
+
+| Option        | On                | Default                                      | What it does                                                                                 |
+| ------------- | ----------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `valueFormat` | all four          | `DATE_FORMAT` token (`TIME_FORMAT` for time) | date-fns format of the wire strings - pass the control's `valueFormat` when it names another |
+| `strict`      | the orders        | `false`                                      | Also fail while both ends are equal                                                          |
+| `min` / `max` | the bounds        | -                                            | A `Date`, or a function of the field context returning one (or `null` for no bound)          |
+| `precision`   | `dateRangeBounds` | `'day'`                                      | The unit ends and bounds are compared in - match the control's `precision`                   |
+| `message`     | all four          | -                                            | Replaces the generated text                                                                  |
+
+They parse both ends and compare the dates, not the strings, so two ISO values with different
+offsets order correctly. An empty or unparseable end passes - `required()` on the child path and
+the control's own parse error cover those. The kinds are `'rangeOrder'`, `'rangeMin'` and
+`'rangeMax'`; the last two carry the bound as `min`/`max`, so a
+[custom error resolver](#custom-error-messages) can format it in the user's locale.
 
 ### Server-side violations
 
