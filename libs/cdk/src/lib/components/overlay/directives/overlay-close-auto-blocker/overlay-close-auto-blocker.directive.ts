@@ -36,7 +36,6 @@ export class OverlayCloseBlockerDirective implements OnDestroy {
 
     combineLatest([this._animatedOverlay.isMounted$, this._animatedOverlay.isHidden$])
       .pipe(
-        takeUntilDestroyed(),
         tap(([mounted, hidden]) => {
           if (mounted && !hidden) {
             this._nearestOverlayRef?._addInternalBackdropCloseInitiator(this._id);
@@ -44,6 +43,7 @@ export class OverlayCloseBlockerDirective implements OnDestroy {
             this._nearestOverlayRef?._removeInternalBackdropCloseInitiator(this._id);
           }
         }),
+        takeUntilDestroyed(),
       )
       .subscribe();
   }

@@ -38,8 +38,8 @@ export class CarouselToggleAutoPlayButtonDirective {
   constructor() {
     fromEvent(injectHostElement(), 'click')
       .pipe(
-        takeUntilDestroyed(),
         tap(() => (this.carousel.isAutoPlayPaused() ? this.carousel.resumeAutoPlay() : this.carousel.stopAutoPlay())),
+        takeUntilDestroyed(),
       )
       .subscribe();
   }

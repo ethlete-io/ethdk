@@ -40,9 +40,9 @@ export class CarouselNextButtonDirective {
   constructor() {
     fromEvent(injectHostElement(), 'click')
       .pipe(
-        takeUntilDestroyed(),
         filter(() => this.canGoNext()),
         tap(() => this.carousel.next()),
+        takeUntilDestroyed(),
       )
       .subscribe();
   }

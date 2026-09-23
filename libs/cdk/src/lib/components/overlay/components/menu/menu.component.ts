@@ -116,15 +116,15 @@ export class MenuComponent implements OnDestroy {
 
     fromEvent(this.elementRef.nativeElement, 'focus')
       .pipe(
-        takeUntilDestroyed(),
         tap(() => this.focusFirstItem()),
+        takeUntilDestroyed(),
       )
       .subscribe();
 
     fromEvent<KeyboardEvent>(this.elementRef.nativeElement, 'keydown')
       .pipe(
-        takeUntilDestroyed(),
         tap((e) => this._handleKeydown(e)),
+        takeUntilDestroyed(),
       )
       .subscribe();
 

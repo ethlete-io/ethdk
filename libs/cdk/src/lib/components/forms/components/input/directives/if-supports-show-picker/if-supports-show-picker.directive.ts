@@ -29,7 +29,6 @@ export class IfSupportsShowPickerDirective {
   constructor() {
     this.input.nativeInputRef$
       .pipe(
-        takeUntilDestroyed(),
         distinctUntilChanged(),
         tap((value) => {
           const inputElement = value?.element.nativeElement;
@@ -46,6 +45,7 @@ export class IfSupportsShowPickerDirective {
             }
           }
         }),
+        takeUntilDestroyed(),
       )
       .subscribe();
   }

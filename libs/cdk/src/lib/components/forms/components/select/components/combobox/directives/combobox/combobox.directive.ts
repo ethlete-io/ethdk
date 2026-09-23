@@ -452,12 +452,12 @@ export class ComboboxDirective implements OnInit {
 
     this._selectionModel.allowMultiple$
       .pipe(
-        takeUntilDestroyed(),
         tap((allowMultiple) => {
           if (allowMultiple) {
             this._updateFilter('');
           }
         }),
+        takeUntilDestroyed(),
       )
       .subscribe();
 

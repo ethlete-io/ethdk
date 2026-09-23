@@ -66,15 +66,15 @@ export class DecoratedInputBase extends InputBase {
 
     this.hasPrefix$
       .pipe(
-        takeUntilDestroyed(),
         tap((hasPrefix) => this._formFieldStateService.hasPrefix$.next(hasPrefix)),
+        takeUntilDestroyed(),
       )
       .subscribe();
 
     this.hasSuffix$
       .pipe(
-        takeUntilDestroyed(),
         tap((hasSuffix) => this._formFieldStateService.hasSuffix$.next(hasSuffix)),
+        takeUntilDestroyed(),
       )
       .subscribe();
   }

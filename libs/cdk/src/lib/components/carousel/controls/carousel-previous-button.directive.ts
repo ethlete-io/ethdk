@@ -42,9 +42,9 @@ export class CarouselPreviousButtonDirective {
   constructor() {
     fromEvent(injectHostElement(), 'click')
       .pipe(
-        takeUntilDestroyed(),
         filter(() => this.canGoPrevious()),
         tap(() => this.carousel.prev()),
+        takeUntilDestroyed(),
       )
       .subscribe();
   }

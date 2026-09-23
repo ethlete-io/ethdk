@@ -96,8 +96,8 @@ export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverla
         ref
           .afterClosed()
           .pipe(
-            takeUntilDestroyed(destroyRef),
             tap((r) => afterClosedFn(r ?? null)),
+            takeUntilDestroyed(destroyRef),
           )
           .subscribe();
       }
@@ -106,8 +106,8 @@ export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverla
         ref
           .beforeClosed()
           .pipe(
-            takeUntilDestroyed(destroyRef),
             tap((r) => beforeClosedFn(r ?? null)),
+            takeUntilDestroyed(destroyRef),
           )
           .subscribe();
       }
@@ -116,8 +116,8 @@ export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverla
         ref
           .afterOpened()
           .pipe(
-            takeUntilDestroyed(destroyRef),
             tap(() => afterOpenedFn()),
+            takeUntilDestroyed(destroyRef),
           )
           .subscribe();
       }
@@ -252,8 +252,8 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
             currentOverlayRef
               .beforeClosed()
               .pipe(
-                takeUntilDestroyed(destroyRef),
                 tap(() => cleanup()),
+                takeUntilDestroyed(destroyRef),
               )
               .subscribe();
 

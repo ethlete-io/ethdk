@@ -202,9 +202,9 @@ export class ScrollableComponent {
 
   maxVisibleItemCount = toSignal(
     this.scrollableContentIntersections$.pipe(
-      takeUntilDestroyed(),
       debounceTime(150),
       map((entries) => entries.filter((i) => i.intersectionRatio > 0).length),
+      takeUntilDestroyed(),
     ),
     { initialValue: 0 },
   );
@@ -296,7 +296,6 @@ export class ScrollableComponent {
 
   intersectionChange = outputFromObservable<ScrollableIntersectionChange[]>(
     toObservable(this.scrollableContentIntersections).pipe(
-      takeUntilDestroyed(),
       debounceTime(50),
       map((entries) =>
         entries.map((i, index) => ({
@@ -306,6 +305,7 @@ export class ScrollableComponent {
           isIntersecting: i.isIntersecting,
         })),
       ),
+      takeUntilDestroyed(),
     ),
   );
 
@@ -370,7 +370,6 @@ export class ScrollableComponent {
 
     toObservable(this.snap)
       .pipe(
-        takeUntilDestroyed(),
         switchMap((enabled) => {
           if (!enabled) return EMPTY;
 
@@ -401,12 +400,12 @@ export class ScrollableComponent {
             }),
           );
         }),
+        takeUntilDestroyed(),
       )
       .subscribe();
 
     toObservable(this.manualActiveNavigationIndex)
       .pipe(
-        takeUntilDestroyed(),
         filter((i) => i !== null),
         switchMap(() =>
           scrollable$.pipe(
@@ -418,6 +417,7 @@ export class ScrollableComponent {
         ),
         debounceTime(50),
         tap(() => this.manualActiveNavigationIndex.set(null)),
+        takeUntilDestroyed(),
       )
       .subscribe();
   }
