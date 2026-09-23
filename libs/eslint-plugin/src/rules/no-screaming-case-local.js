@@ -79,6 +79,7 @@ const noScreamingCaseLocal = {
 
         // Only flag inside function bodies
         if (!isInsideFunction(node)) return;
+        if (node.init?.type === 'ArrowFunctionExpression' || node.init?.type === 'FunctionExpression') return;
 
         context.report({
           node: node.id,

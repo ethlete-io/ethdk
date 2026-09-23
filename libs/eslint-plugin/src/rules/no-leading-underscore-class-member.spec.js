@@ -52,5 +52,15 @@ tester.run('no-leading-underscore-class-member', rule, {
         { messageId: 'noLeadingUnderscore', data: { oldName: '__value', newName: 'value' } },
       ],
     },
+    {
+      code: `class Foo { private _value = 0; equals(other: Foo) { return other._value === this._value; } }`,
+      output: null,
+      errors: [{ messageId: 'noLeadingUnderscore' }],
+    },
+    {
+      code: `class Foo { private _value = 0; read() { const { _value } = this; return this['_value'] + _value; } }`,
+      output: null,
+      errors: [{ messageId: 'noLeadingUnderscore' }],
+    },
   ],
 });

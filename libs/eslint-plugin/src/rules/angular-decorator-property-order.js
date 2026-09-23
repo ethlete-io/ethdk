@@ -14,11 +14,13 @@ const DECORATOR_CONFIG = {
   Component: {
     order: [
       'selector',
+      'standalone',
       'template',
       'styleUrl',
       'encapsulation',
       'changeDetection',
       'imports',
+      'deferredImports',
       'providers',
       'viewProviders',
       'animations',
@@ -29,16 +31,28 @@ const DECORATOR_CONFIG = {
       'outputs',
       'queries',
       'preserveWhitespaces',
+      'interpolation',
       'schemas',
       'jit',
       'exportAs',
     ],
     orderText:
-      'selector, template/templateUrl, styleUrl/styleUrls, encapsulation, changeDetection, imports, providers, viewProviders, animations, hostDirectives, host, styles, inputs, outputs, queries, preserveWhitespaces, schemas, jit, exportAs',
+      'selector, standalone, template/templateUrl, styleUrl/styleUrls, encapsulation, changeDetection, imports, deferredImports, providers, viewProviders, animations, hostDirectives, host, styles, inputs, outputs, queries, preserveWhitespaces, interpolation, schemas, jit, exportAs',
   },
   Directive: {
-    order: ['selector', 'exportAs', 'providers', 'inputs', 'outputs', 'queries', 'hostDirectives', 'host', 'jit'],
-    orderText: 'selector, exportAs, providers, inputs, outputs, queries, hostDirectives, host, jit',
+    order: [
+      'selector',
+      'standalone',
+      'exportAs',
+      'providers',
+      'inputs',
+      'outputs',
+      'queries',
+      'hostDirectives',
+      'host',
+      'jit',
+    ],
+    orderText: 'selector, standalone, exportAs, providers, inputs, outputs, queries, hostDirectives, host, jit',
   },
 };
 

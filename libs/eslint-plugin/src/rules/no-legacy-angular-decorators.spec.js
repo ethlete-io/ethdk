@@ -112,6 +112,39 @@ class Foo {
       errors: [{ messageId: 'useHostBinding' }],
     },
     {
+      code: `@Component({ selector: 'et-x', host: { ...BASE_HOST, class: 'et-x' } }) class Foo { @HostBinding('class.active') active = true; }`,
+      output: `@Component({ selector: 'et-x', host: { ...BASE_HOST, class: 'et-x', '[class.active]': 'active' } }) class Foo { active = true; }`,
+      errors: [{ messageId: 'useHostBinding' }],
+    },
+    {
+      code: `
+@Directive({
+  selector: '[etFoo]',
+  host: {
+    class: 'et-foo',
+    ...BASE_HOST
+  },
+})
+class Foo {
+  @HostBinding('attr.aria-label') label = 'value';
+}
+`,
+      output: `
+@Directive({
+  selector: '[etFoo]',
+  host: {
+    class: 'et-foo',
+    ...BASE_HOST,
+    '[attr.aria-label]': 'label'
+  },
+})
+class Foo {
+  label = 'value';
+}
+`,
+      errors: [{ messageId: 'useHostBinding' }],
+    },
+    {
       code: `
 @Directive({
   selector: '[etFoo]',

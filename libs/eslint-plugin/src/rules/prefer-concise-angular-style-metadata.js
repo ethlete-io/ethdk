@@ -71,11 +71,16 @@ const preferConciseAngularStyleMetadata = {
         const metadata = expression.arguments[0];
         if (!metadata || metadata.type !== 'ObjectExpression') return;
 
+        const hasStyleUrl = metadata.properties.some(
+          (/** @type {any} */ property) => property.type === 'Property' && getPropertyName(property.key) === 'styleUrl',
+        );
+
         for (const property of metadata.properties) {
           if (property.type !== 'Property') continue;
 
           const propertyName = getPropertyName(property.key);
           if (propertyName !== 'styleUrls' && propertyName !== 'styles') continue;
+          if (propertyName === 'styleUrls' && hasStyleUrl) continue;
 
           const singleElement = getSingleArrayElement(property);
           if (!singleElement) continue;

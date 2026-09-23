@@ -27,6 +27,9 @@ tester.run('prefer-concise-angular-style-metadata', rule, {
     {
       code: `@Directive({ styleUrls: ['./foo.css'] }) class Foo {}`,
     },
+    {
+      code: `@Component({ styleUrl: './a.css', styleUrls: ['./b.css'] }) class Foo {}`,
+    },
   ],
   invalid: [
     {

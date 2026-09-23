@@ -106,7 +106,7 @@ const findObjectProperty = (objectExpression, propertyName) =>
  * @param {string} entryText
  */
 const buildObjectTextWithAppendedProperty = (sourceCode, objectExpression, entryText) => {
-  const properties = objectExpression.properties.filter((property) => property.type === 'Property');
+  const properties = objectExpression.properties;
   const isMultiline = Boolean(
     objectExpression.loc && objectExpression.loc.start.line !== objectExpression.loc.end.line,
   );
@@ -138,8 +138,7 @@ ${closingIndent}}`;
  * @param {any} objectExpression
  */
 const hasTrailingComma = (sourceCode, objectExpression) => {
-  const properties = objectExpression.properties.filter((property) => property.type === 'Property');
-  const lastProperty = properties[properties.length - 1];
+  const lastProperty = objectExpression.properties.at(-1);
   if (!lastProperty) return false;
 
   const tokenAfter = sourceCode.getTokenAfter(lastProperty);

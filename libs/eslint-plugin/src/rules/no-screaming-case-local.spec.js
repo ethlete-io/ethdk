@@ -41,5 +41,9 @@ tester.run('no-screaming-case-local', rule, {
       code: `const DO_THING = function() {};`,
       errors: [{ messageId: 'noScreamingCaseFunctionName' }],
     },
+    {
+      code: `function outer() { const MY_HANDLER = () => {}; return MY_HANDLER; }`,
+      errors: [{ messageId: 'noScreamingCaseFunctionName' }],
+    },
   ],
 });

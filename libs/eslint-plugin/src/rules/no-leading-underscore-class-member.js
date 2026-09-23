@@ -16,6 +16,16 @@ const getDirectMemberName = (node) => {
   return node.key?.type === 'Identifier' ? node.key.name : null;
 };
 
+/**
+ * @param {any} key
+ * @param {boolean} computed
+ */
+const getReferencedName = (key, computed) => {
+  if (!computed && key?.type === 'Identifier') return key.name;
+  if (key?.type === 'Literal' && typeof key.value === 'string') return key.value;
+  return null;
+};
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noLeadingUnderscoreClassMember = {
   meta: {
@@ -36,6 +46,7 @@ const noLeadingUnderscoreClassMember = {
      *   declaredNames: Set<string>,
      *   membersByName: Map<string, any[]>,
      *   memberReads: any[],
+     *   untrackedNames: Set<string>,
      * }>}
      */
     const classStack = [];
@@ -66,6 +77,7 @@ const noLeadingUnderscoreClassMember = {
           declaredNames: new Set(),
           membersByName: new Map(),
           memberReads: [],
+          untrackedNames: new Set(),
         });
       },
 
@@ -85,6 +97,7 @@ const noLeadingUnderscoreClassMember = {
             newName.length > 0 &&
             !frame.declaredNames.has(newName) &&
             targetNameCounts.get(newName) === 1 &&
+            !frame.untrackedNames.has(oldName) &&
             memberNodes.every((memberNode) => memberNode.accessibility === 'private');
 
           for (const memberNode of memberNodes) {
@@ -115,10 +128,20 @@ const noLeadingUnderscoreClassMember = {
       MemberExpression(node) {
         const frame = classStack[classStack.length - 1];
         if (!frame) return;
-        if (node.object?.type !== 'ThisExpression' || node.computed) return;
-        if (node.property?.type !== 'Identifier') return;
 
-        frame.memberReads.push(node);
+        if (node.object?.type === 'ThisExpression' && !node.computed && node.property?.type === 'Identifier') {
+          frame.memberReads.push(node);
+          return;
+        }
+
+        const name = getReferencedName(node.property, node.computed);
+        if (name) frame.untrackedNames.add(name);
+      },
+
+      'ObjectPattern > Property'(node) {
+        const frame = classStack[classStack.length - 1];
+        const name = getReferencedName(node.key, node.computed);
+        if (frame && name) frame.untrackedNames.add(name);
       },
     };
   },

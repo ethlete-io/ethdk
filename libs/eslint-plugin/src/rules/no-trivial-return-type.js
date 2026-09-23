@@ -191,6 +191,7 @@ const noTrivialReturnType = {
     return {
       ArrowFunctionExpression: checkReturnType,
       FunctionExpression: checkReturnType,
+      FunctionDeclaration: checkReturnType,
     };
   },
 };

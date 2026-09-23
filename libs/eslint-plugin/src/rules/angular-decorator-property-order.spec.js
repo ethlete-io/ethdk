@@ -12,6 +12,7 @@ const tester = new RuleTester({
 
 tester.run('angular-decorator-property-order', rule, {
   valid: [
+    { code: `@Component({ selector: 'et-a', standalone: true, template: '' }) class A {}` },
     {
       code: `
 @Component({
@@ -176,6 +177,11 @@ class TestComponent {}
     {
       code: `@Component({ host: {}, selector: 'et-test', template: '' }) class TestComponent {}`,
       output: `@Component({ selector: 'et-test', template: '', host: {} }) class TestComponent {}`,
+      errors: [{ messageId: 'outOfOrder' }],
+    },
+    {
+      code: `@Component({ standalone: true, selector: 'et-a', template: '' }) class A {}`,
+      output: `@Component({ selector: 'et-a', standalone: true, template: '' }) class A {}`,
       errors: [{ messageId: 'outOfOrder' }],
     },
   ],

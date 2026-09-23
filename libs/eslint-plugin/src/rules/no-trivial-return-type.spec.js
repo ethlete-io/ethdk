@@ -11,6 +11,7 @@ const tester = new RuleTester({
 
 tester.run('no-trivial-return-type', rule, {
   valid: [
+    { code: `function walk(node): boolean { return node.ok && walk(node.next); }` },
     // No return type annotation — inferred
     { code: `const fn = () => {};` },
     { code: `const fn = () => 'hello';` },
@@ -45,6 +46,11 @@ tester.run('no-trivial-return-type', rule, {
     {
       code: `class A { check(): boolean { return true; } }`,
       output: `class A { check() { return true; } }`,
+      errors: [{ messageId: 'trivialReturnType' }],
+    },
+    {
+      code: `export function go(): boolean { return true; }`,
+      output: `export function go() { return true; }`,
       errors: [{ messageId: 'trivialReturnType' }],
     },
   ],
