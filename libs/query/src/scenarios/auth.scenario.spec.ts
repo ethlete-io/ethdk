@@ -1,12 +1,51 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { createUnsavedChangesTracker, injectUnsavedChangesCoordinator } from '@ethlete/core';
 import { createSecureGetQuery, withInactivityLogout } from '../index';
+import { combineLatest } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { mintToken, useScenario } from './harness';
 
 describe('auth scenario', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('session() reports a finished login together with the session it started, where separate signals tear', async () => {
+    const s = scenario();
+    const auth = s.auth();
+    const c = s.consumer();
+
+    const combined: string[] = [];
+    const separate: string[] = [];
+
+    c.run(() => {
+      toObservable(auth.session).subscribe(({ status, executionState }) =>
+        combined.push(`${executionState?.type}:${executionState?.state}:${status}`),
+      );
+      combineLatest([toObservable(auth.executionState), toObservable(auth.isAuthenticated)]).subscribe(
+        ([executionState, isAuthenticated]) =>
+          separate.push(`${executionState?.type}:${executionState?.state}:${isAuthenticated}`),
+      );
+    });
+    s.tick();
+
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    auth.logout('expired');
+    await s.settle();
+
+    expect(separate).toContain('login:success:false');
+    expect(combined).toEqual([
+      'undefined:undefined:anonymous',
+      'login:loading:anonymous',
+      'login:success:authenticated',
+      'logout:success:anonymous',
+    ]);
+    expect(auth.session().endCause).toBe('expired');
+
+    c.destroy();
+  });
 
   it('login stores tokens, and a secure query sends the bearer header while a non-secure one does not', () => {
     const s = scenario();

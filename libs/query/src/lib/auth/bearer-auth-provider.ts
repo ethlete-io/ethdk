@@ -117,6 +117,16 @@ export type BearerAuthSessionEndCause =
   /** Another tab logged out and `withBearerAuthMultiTabSync` carried it here. */
   | 'otherTab';
 
+/**
+ * The provider's session state as one value, so a consumer that reacts to several parts of it reads
+ * them from the same moment - `toObservable()` of separate signals emits them one at a time.
+ */
+export type BearerAuthSession<TType extends string = string> = {
+  status: BearerAuthSessionStatus;
+  endCause: BearerAuthSessionEndCause | null;
+  executionState: BearerAuthExecutionState<TType> | null;
+};
+
 export const BearerAuthFeatureType = {
   PERSISTENT_AUTH: 'PERSISTENT_AUTH',
   TOKEN_EXPIRATION_WARNING: 'TOKEN_EXPIRATION_WARNING',
@@ -423,6 +433,13 @@ export type BearerAuthProvider<
    * Cleared as soon as tokens are applied again.
    */
   sessionEndCause: Signal<BearerAuthSessionEndCause | null>;
+
+  /** {@link sessionStatus}, {@link sessionEndCause} and {@link executionState} as one signal. */
+  session: Signal<
+    BearerAuthSession<
+      ExtractQueryKey<TBuilders[number]> | 'autoLogin' | 'tokenRefresh' | 'logout' | 'revocation' | 'tokenSeed'
+    >
+  >;
 
   /**
    * Seeds the provider with tokens that were issued outside of it - an SSO/OIDC callback that
@@ -1003,6 +1020,11 @@ const createBearerAuthProviderImpl = <
     executionState: executionState.asReadonly(),
     sessionStatus: sessionStatus.asReadonly(),
     sessionEndCause: sessionEndCause.asReadonly(),
+    session: computed<BearerAuthSession>(() => ({
+      status: sessionStatus(),
+      endCause: sessionEndCause(),
+      executionState: executionState(),
+    })),
     setTokens,
     logout,
     afterTokenRefresh$,
