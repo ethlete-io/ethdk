@@ -46,11 +46,15 @@
     grid-area: 1 / 1;
     min-inline-size: 0;
     opacity: 0;
-    transform: translateY(0);
 
     &[data-active] {
       opacity: 1;
-      transform: translateY(0);
+    }
+
+    &[data-state='leaving'] {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
     }
   }
 
@@ -87,14 +91,11 @@
     }
 
     .et-form-support-content {
-      transition:
-        opacity var(--et-form-support-duration) ease,
-        transform var(--et-form-support-duration) ease;
+      transition: opacity var(--et-form-support-duration) ease;
 
       @starting-style {
         &[data-active] {
           opacity: 0;
-          transform: translateY(calc(var(--et-form-support-offset) * -1));
         }
       }
     }

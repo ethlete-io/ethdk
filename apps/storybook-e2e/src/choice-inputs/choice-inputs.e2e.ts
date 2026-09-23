@@ -305,3 +305,60 @@ test.describe('choice-inputs / touch', () => {
     await expect(green).toHaveAttribute('aria-checked', 'true');
   });
 });
+
+test.describe('choice-inputs / support region', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: the fade does not depend on the input type');
+
+  test('the hint and the error swap with an opacity-only fade, the leaving one out of flow', async ({ page }) => {
+    const root = await openStory(page, RADIO_GROUP_DEFAULT, { args: { required: true, hint: 'Pick one' } });
+
+    await page.evaluate(() => {
+      const runs: { kind: string; property: string; position: string }[] = [];
+      (window as unknown as { __supportRuns: typeof runs }).__supportRuns = runs;
+
+      document.addEventListener('transitionrun', (event) => {
+        const target = event.target as HTMLElement;
+
+        if (!target.classList.contains('et-form-support-content')) return;
+
+        runs.push({
+          kind: target.classList.contains('et-form-support-hint') ? 'hint' : 'other',
+          property: event.propertyName,
+          position: getComputedStyle(target).position,
+        });
+      });
+    });
+
+    const option = root.getByRole('radio').first();
+
+    await option.focus();
+    await option.blur();
+
+    await expect(root.locator('.et-form-support-errors')).toHaveAttribute('data-active', 'true');
+
+    const readRuns = () =>
+      page.evaluate(
+        () =>
+          (window as unknown as { __supportRuns: { kind: string; property: string; position: string }[] })
+            .__supportRuns,
+      );
+
+    await expect
+      .poll(async () => new Set((await readRuns()).map((run) => run.kind)))
+      .toEqual(new Set(['hint', 'other']));
+
+    const runs = await readRuns();
+
+    expect(new Set(runs.map((run) => run.property))).toEqual(new Set(['opacity']));
+    expect(runs.filter((run) => run.kind === 'hint').map((run) => run.position)).toContain('absolute');
+  });
+
+  test('the fade collapses under reduced motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
+    const root = await openStory(page, RADIO_GROUP_DEFAULT, { args: { required: true, hint: 'Pick one' } });
+    const hint = root.locator('.et-form-support-hint');
+
+    await expect(hint).toHaveCSS('transition-duration', '0.001s');
+  });
+});
