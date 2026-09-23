@@ -48,5 +48,5 @@ Behaviour changes to note at release: the default retry skips POST, PATCH and GQ
 (`180e6aa86`); refresh retries stop after 8 attempts (`c1fede0ae`); writes from code skip the
 field debounce (`9b8053cdf`).
 
-Open gap: if a restore ends after the guard timeout, the visitor stays on the login page with a
-session. Nothing redirects when a session starts.
+A restore that ends after the guard timeout: opt-in `redirectOnSessionStart` sends the visitor
+from the login route to the return URL (`557292449`).
