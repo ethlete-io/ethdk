@@ -396,7 +396,7 @@ const restoreOriginElement = (renderer: AngularRenderer, element: HTMLElement) =
   }
 };
 
-const createInitialState = (origin: HTMLElement | Event | undefined): FullscreenAnimationState => {
+const createInitialState = (origin: Element | Event | undefined): FullscreenAnimationState => {
   const originData = getOriginCoordinatesAndDimensions(origin);
   const originElement = originData?.element ?? null;
 

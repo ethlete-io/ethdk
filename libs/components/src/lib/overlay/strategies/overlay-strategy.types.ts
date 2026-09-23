@@ -24,7 +24,7 @@ export type OverlayStrategyContext = {
 
   config: OverlayBreakpointConfig;
   previousConfig?: OverlayBreakpointConfig;
-  origin?: HTMLElement | Event;
+  origin?: Element | Event;
 };
 
 export type OverlayStrategy = {
@@ -155,7 +155,7 @@ export type OverlayBreakpointConfig = {
   height?: number | string;
 
   /** Position strategy to be used for the overlay. */
-  positionStrategy?: (origin?: HTMLElement) => OverlayRuntimePositionStrategy;
+  positionStrategy?: (origin?: Element) => OverlayRuntimePositionStrategy;
 
   /** Custom class for the overlay container (the runtime pane element hosting the overlay content). */
   containerClass?: string | string[];

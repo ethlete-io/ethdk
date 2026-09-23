@@ -21,6 +21,7 @@ import {
   injectBreakpointObserver,
   injectRenderer,
   injectStyleManager,
+  isElement,
   isHTMLElement,
   nextFrame,
 } from '@ethlete/core';
@@ -98,7 +99,7 @@ export const createOverlayStrategyController = (
 
   const origin = config.origin;
   // event origins climb to the nearest clickable element (e.g. the button instead of its icon)
-  const originElement = isHTMLElement(origin)
+  const originElement = isElement(origin)
     ? origin
     : origin && isHTMLElement(origin.target)
       ? (findNextRelevantHtmlElement(origin.target) ?? origin.target)

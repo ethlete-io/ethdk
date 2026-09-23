@@ -17,7 +17,7 @@ export type OverlayConfig = {
    * for anchored positioning and as the transform origin for strategy animations.
    * When omitted and strategies are used, falls back to the currently focused element.
    */
-  origin?: HTMLElement | Event;
+  origin?: Element | Event;
 
   role?: OverlayRole;
   hasBackdrop?: boolean;

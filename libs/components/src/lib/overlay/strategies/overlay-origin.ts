@@ -1,3 +1,5 @@
+import { isElement } from '@ethlete/core';
+
 export const isHtmlElement = (element: unknown): element is HTMLElement => element instanceof HTMLElement;
 export const isTouchEvent = (event: Event): event is TouchEvent => event.type[0] === 't';
 export const isPointerEvent = (event: Event): event is PointerEvent => event.type[0] === 'c';
@@ -12,7 +14,7 @@ export const findNextRelevantHtmlElement = (element: HTMLElement | null, depth =
   return findNextRelevantHtmlElement(element.parentElement, depth + 1);
 };
 
-export const getOriginCoordinatesAndDimensions = (origin: HTMLElement | Event | undefined) => {
+export const getOriginCoordinatesAndDimensions = (origin: Element | Event | undefined) => {
   if (!origin) return null;
 
   if (isHtmlElement(origin)) {
@@ -26,6 +28,8 @@ export const getOriginCoordinatesAndDimensions = (origin: HTMLElement | Event | 
       element: origin,
     };
   }
+
+  if (isElement(origin)) return null;
 
   if (isTouchEvent(origin) || isPointerEvent(origin)) {
     const target = origin.target as HTMLElement;

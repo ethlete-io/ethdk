@@ -64,7 +64,7 @@ export type AnchoredPositionOptions = Pick<
 
 export const buildAnchoredRuntimePositionStrategy =
   (options: AnchoredPositionOptions = {}) =>
-  (origin?: HTMLElement): OverlayRuntimePositionStrategy => {
+  (origin?: Element): OverlayRuntimePositionStrategy => {
     // the strategy exposes autoResize/autoHide/arrow, all of which need the extra middleware
     enableAnchoredOverlayPositionExtras();
 

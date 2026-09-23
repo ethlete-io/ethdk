@@ -200,3 +200,66 @@ describe('TooltipDirective inside a modal overlay', () => {
     expect(closedVia()).toBe('outside-pointer');
   });
 });
+
+@Component({
+  template: `
+    <svg>
+      <rect [showDelay]="0" class="svg-trigger" etTooltip="Bar tip" height="40" tabindex="0" width="20" />
+    </svg>
+  `,
+  imports: [TooltipDirective],
+})
+class SvgTooltipTestHost {}
+
+describe('TooltipDirective on an svg element', () => {
+  let fixture: ComponentFixture<SvgTooltipTestHost>;
+  let rect: SVGRectElement;
+  let tooltipDirective: TooltipDirective;
+  let driver: ReturnType<typeof createOverlayDriver>;
+
+  const tooltipPane = () =>
+    document.querySelector<HTMLElement>('.et-tooltip-panel')?.closest<HTMLElement>('.et-overlay-runtime-pane') ?? null;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [SvgTooltipTestHost] });
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: '.svg-trigger', rect: { x: 300, y: 200, width: 20, height: 40 } },
+    ]);
+    fixture = TestBed.createComponent(SvgTooltipTestHost);
+    fixture.detectChanges();
+    driver = createOverlayDriver();
+    rect = fixture.nativeElement.querySelector('rect');
+    tooltipDirective = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+  });
+
+  afterEach(() => {
+    tooltipDirective.hide();
+    driver.closeAll();
+  });
+
+  it('anchors the tooltip to the svg element and describes it', async () => {
+    tooltipDirective.show();
+    await driver.settle();
+    await driver.settle();
+
+    expect(rect.getAttribute('aria-describedby')).toBe(tooltipDirective.overlayRef()?.config.id ?? null);
+    expect(tooltipPane()?.getAttribute('data-overlay-placement')).toBe('top');
+    expect(tooltipPane()?.style.transform).toBe('translate3d(310px, 192px, 0)');
+  });
+
+  it('closes the tooltip when the svg element leaves the document', async () => {
+    tooltipDirective.show();
+    await driver.settle();
+    await driver.settle();
+
+    expect(tooltipPane()).not.toBeNull();
+
+    rect.remove();
+    window.dispatchEvent(new Event('resize'));
+    await driver.settle();
+    await driver.settle();
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+  });
+});

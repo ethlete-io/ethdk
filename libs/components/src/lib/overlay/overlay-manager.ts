@@ -3,6 +3,7 @@ import {
   anchoredOverlayPosition,
   defineRootProvider,
   injectOverlayRuntime,
+  isElement,
   OverlayRuntimeRef,
   resolveOverlayLayer,
   toInjectFn,
@@ -25,15 +26,14 @@ export type OverlayManager = {
 
 let overlayId = 0;
 
-const isValidOriginElement = (element: Element | null): element is HTMLElement => {
-  if (!element) return false;
-  if (!(element instanceof HTMLElement)) return false;
+const isValidOriginElement = (element: Element | null): element is Element => {
+  if (!isElement(element)) return false;
 
   const tagName = element.tagName.toLowerCase();
   return tagName !== 'html' && tagName !== 'body';
 };
 
-const resolveOrigin = (origin: HTMLElement | Event | undefined, document: Document) => {
+const resolveOrigin = (origin: Element | Event | undefined, document: Document) => {
   if (origin) return origin;
 
   const activeElement = document.activeElement;
@@ -44,8 +44,8 @@ const resolveOrigin = (origin: HTMLElement | Event | undefined, document: Docume
  * The document an overlay mounts into: its origin's, so an overlay opened from an element living in
  * another same-origin window (e.g. a panel adopted by a pop-up) opens in that window.
  */
-const resolveOriginDocument = (origin: HTMLElement | Event | undefined, fallback: Document) => {
-  if (origin instanceof HTMLElement) return origin.ownerDocument;
+const resolveOriginDocument = (origin: Element | Event | undefined, fallback: Document) => {
+  if (isElement(origin)) return origin.ownerDocument;
   if (origin && origin.target instanceof Node) return origin.target.ownerDocument ?? fallback;
 
   return fallback;
@@ -56,10 +56,10 @@ const resolveOriginDocument = (origin: HTMLElement | Event | undefined, fallback
  * declaring `data-et-overlay-layer` says, so an overlay opened from inside an always-on-top surface
  * (the query devtools panel, say) is not painted behind it.
  */
-const resolveZIndex = (origin: HTMLElement | Event | undefined, document: Document) => {
+const resolveZIndex = (origin: Element | Event | undefined, document: Document) => {
   const resolved = resolveOrigin(origin, document);
 
-  if (resolved instanceof HTMLElement) {
+  if (isElement(resolved)) {
     return resolveOverlayLayer(resolved);
   }
 
@@ -93,12 +93,11 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       const modal = config.mode !== 'non-modal';
       const role = config.role ?? (modal ? 'dialog' : undefined);
       const disableClose = config.disableClose ?? false;
-      const positionStrategy =
-        config.origin instanceof HTMLElement
-          ? anchoredOverlayPosition({ referenceElement: config.origin })
-          : {
-              kind: 'center' as const,
-            };
+      const positionStrategy = isElement(config.origin)
+        ? anchoredOverlayPosition({ referenceElement: config.origin })
+        : {
+            kind: 'center' as const,
+          };
       const runtimeRef = overlayRuntime.mount<TComponent, TResult>({
         id,
         component,

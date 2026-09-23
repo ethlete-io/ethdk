@@ -42,7 +42,7 @@ const DEFAULT_TOOLTIP_DELAY = 300;
 export class TooltipDirective {
   private document = inject(DOCUMENT);
   private destroyRef = inject(DestroyRef);
-  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private elementRef = inject<ElementRef<HTMLElement | SVGElement>>(ElementRef);
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
   private overlayManager = injectOverlayManager();
   private focusVisibleTracker = injectFocusVisibleTracker();

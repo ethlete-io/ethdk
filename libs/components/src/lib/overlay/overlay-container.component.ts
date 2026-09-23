@@ -260,7 +260,7 @@ export class OverlayContainerComponent {
       themeByClass.set(`${prefix}-surface--${createCssSurfaceName(theme.name)}`, theme);
     }
 
-    for (let el: HTMLElement | null = origin; el; el = el.parentElement) {
+    for (let el: Element | null = origin; el; el = el.parentElement) {
       for (const cls of Array.from(el.classList)) {
         const theme = themeByClass.get(cls);
 
@@ -271,15 +271,15 @@ export class OverlayContainerComponent {
     return null;
   }
 
-  private resolveOriginElement(): HTMLElement | null {
+  private resolveOriginElement(): Element | null {
     const origin = this.overlayRef.config.origin;
 
-    if (origin instanceof HTMLElement) return origin;
+    if (origin instanceof Element) return origin;
 
     if (origin instanceof Event) {
       const target = origin.target ?? origin.currentTarget;
 
-      return target instanceof HTMLElement ? target : null;
+      return target instanceof Element ? target : null;
     }
 
     return null;

@@ -9,8 +9,8 @@ export const getClosestOverlay = (element: ElementRef<HTMLElement>, openOverlays
   return openOverlays.find((overlay) => overlay.elements?.paneElement.contains(nativeElement)) ?? null;
 };
 
-const resolveOriginElement = (origin: HTMLElement | Event | undefined): Element | null => {
-  if (origin instanceof HTMLElement) {
+const resolveOriginElement = (origin: Element | Event | undefined): Element | null => {
+  if (origin instanceof Element) {
     return origin;
   }
 
