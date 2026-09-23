@@ -47,6 +47,7 @@ export type QueryDependencies = {
   hostElement: HTMLElement | null;
 };
 
+/** @internal */
 export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) => {
   const hostInjector = options.queryConfig?.injector ?? inject(Injector);
   const environmentInjector =

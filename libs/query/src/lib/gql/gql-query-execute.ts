@@ -25,6 +25,7 @@ export type CreateGqlQueryExecuteOptions<TArgs extends QueryArgs> = {
   queryConfig: QueryConfig;
 };
 
+/** @internal */
 export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
   executeOptions: CreateGqlQueryExecuteOptions<TArgs>,
 ): InternalQueryExecute<TArgs> => {

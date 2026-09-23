@@ -41,6 +41,7 @@ export type CreateQuerySyncEngineOptions = {
   lockManager: QueryKeyLockManager;
 };
 
+/** @internal */
 export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): QuerySyncEngine => {
   const { config, repository, transport, lockManager } = options;
 

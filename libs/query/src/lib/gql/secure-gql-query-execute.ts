@@ -22,6 +22,7 @@ export type CreateSecureGqlQueryExecuteOptions<TArgs extends GqlQueryArgs> = {
   queryConfig: QueryConfig;
 };
 
+/** @internal */
 export const createSecureGqlExecuteFn = <TArgs extends GqlQueryArgs>(
   executeOptions: CreateSecureGqlQueryExecuteOptions<TArgs>,
 ): InternalQueryExecute<TArgs> => {
