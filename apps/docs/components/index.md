@@ -132,6 +132,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Pagination](/components/pagination) - page-number paginator with ellipsis, jump controls and a headless tier.
 - [Pie chart](/components/pie-chart) - pie or donut chart for a handful of parts of a whole, with a legend of values and shares.
 - [Progress steps](/components/progress-steps) - wizard step indicator, numbered and connected purely in CSS.
+- [Sankey chart](/components/sankey-chart) - left-to-right flow of nodes and value-wide ribbons, with link highlighting and a table view.
 - [Scheduler](/components/scheduler) - composable appointment calendar with a month grid, per-day overflow and arbitrarily deep sub-appointment chains.
 - [Standings](/components/standings) - league and group table with position zones, a legend that can't drift from them, and column-dropping density.
 - [Standings pick](/components/standings-pick) - the group table a viewer predicts the order of: drag or arrow-key reordering, an advancing cut, and a row slot for your own score mark.

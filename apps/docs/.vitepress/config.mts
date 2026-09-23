@@ -295,6 +295,7 @@ export default defineConfig({
             { text: 'Pagination', link: '/components/pagination' },
             { text: 'Pie chart', link: '/components/pie-chart' },
             { text: 'Progress steps', link: '/components/progress-steps' },
+            { text: 'Sankey chart', link: '/components/sankey-chart' },
             { text: 'Scheduler', link: '/components/scheduler' },
             { text: 'Scrollable', link: '/components/scrollable' },
             { text: 'Scrollbar', link: '/components/scrollbar' },
