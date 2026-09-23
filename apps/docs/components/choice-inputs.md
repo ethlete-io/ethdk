@@ -94,12 +94,28 @@ keyboard navigation is roving-tabindex with wrapping arrows:
 - All three groups accept `size: 'sm' | 'md' | 'lg'` (default `'md'`), matching
   the `et-form-field` size scale.
 - All three groups honor `readonly`: options keep their normal focusable look,
-  arrow keys still move focus (without the radio pattern's select-while-roving),
-  but nothing can be (de)selected - distinct from the dimmed `disabled` state.
+  arrow keys, Home/End and typeahead still move focus (without the radio
+  pattern's select-while-roving), but nothing can be (de)selected - distinct
+  from the dimmed `disabled` state.
 - The segmented button group renders its options on a tonal track; the filled
   active pill animates between options on selection.
 
 Checkbox options and radios accept an `et-description` child for secondary text.
+
+#### Keyboard {#selection-list-keyboard}
+
+| Key                                          | Radio / segmented button group                                        | Checkbox group              |
+| -------------------------------------------- | --------------------------------------------------------------------- | --------------------------- |
+| <kbd>ArrowDown</kbd> / <kbd>ArrowRight</kbd> | Next enabled option, wrapping; checks it                              | Next enabled option         |
+| <kbd>ArrowUp</kbd> / <kbd>ArrowLeft</kbd>    | Previous enabled option, wrapping; checks it                          | Previous enabled option     |
+| <kbd>Home</kbd> / <kbd>End</kbd>             | First / last enabled option; checks it                                | First / last enabled option |
+| Printable characters                         | Next enabled option whose label starts with the typed text; checks it | Same, focus only            |
+| <kbd>Space</kbd> / <kbd>Enter</kbd>          | Checks the focused option                                             | Toggles the focused option  |
+
+Typeahead buffers characters typed within 500 ms, so `bl` reaches "Blueberry" past
+"Banana"; repeating one letter cycles through the options that start with it. The
+select-all row of a checkbox group is its own tab stop and is not part of this
+navigation.
 
 ### Select all {#select-all}
 

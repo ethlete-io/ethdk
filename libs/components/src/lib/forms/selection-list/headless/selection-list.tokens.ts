@@ -10,6 +10,8 @@ export type SelectionListItem<TValue = unknown> = {
   checked: WritableSignal<boolean>;
   disabled: Signal<boolean>;
   elementRef: ElementRef<HTMLElement>;
+  /** The option's rendered text, which typeahead matches by prefix - its label must lead it. */
+  label: () => string;
 };
 
 export type SelectionListDirectiveBase<TValue = unknown> = {
@@ -21,5 +23,7 @@ export type SelectionListDirectiveBase<TValue = unknown> = {
   name: Signal<string>;
   selection: SelectionState<TValue, SelectionListItem<TValue>>;
   focusItem(item: SelectionListItem<TValue>, options?: FocusOptions): void;
+  /** Buffers a typed character and returns the enabled item its prefix names next after `from`. */
+  findTypeaheadMatch(character: string, from: SelectionListItem<TValue>): SelectionListItem<TValue> | null;
   markTouched(): void;
 };

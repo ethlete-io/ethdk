@@ -11,7 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { DescriptionComponent } from '../../description/description.component';
-import { SELECTION_LIST_TOKEN } from './selection-list.tokens';
+import { SELECTION_LIST_TOKEN, SelectionListItem } from './selection-list.tokens';
 
 let uniqueOptionLabelId = 0;
 
@@ -35,6 +35,9 @@ const UNBOUND_VALUE = /* @__PURE__ */ Symbol('et-selection-option-unbound');
     '(keydown.ArrowRight)': 'focusNext($event)',
     '(keydown.ArrowUp)': 'focusPrevious($event)',
     '(keydown.ArrowLeft)': 'focusPrevious($event)',
+    '(keydown.Home)': 'focusEdge($event, "first")',
+    '(keydown.End)': 'focusEdge($event, "last")',
+    '(keydown)': 'focusTypeaheadMatch($event)',
     '(blur)': 'markTouched()',
   },
 })
@@ -78,6 +81,7 @@ export class SelectionOptionDirective {
     checked: this.checked,
     disabled: this.effectiveDisabled,
     elementRef: this.el,
+    label: () => this.el.nativeElement.textContent ?? '',
   };
 
   public tabindex = computed(() => {
@@ -126,32 +130,49 @@ export class SelectionOptionDirective {
   }
 
   public focusNext(event: Event) {
-    event.preventDefault();
-
-    if (!this.list || this.effectiveDisabled()) {
-      return;
-    }
-
-    const items = this.list.selection.items();
-    const currentIndex = items.indexOf(this.listItem);
-    let nextIndex = (currentIndex + 1) % items.length;
-
-    while (items[nextIndex]?.disabled() && nextIndex !== currentIndex) {
-      nextIndex = (nextIndex + 1) % items.length;
-    }
-
-    const nextItem = items[nextIndex];
-
-    if (nextItem && !nextItem.disabled()) {
-      if (!this.list.multiple() && !this.effectiveReadonly()) {
-        this.list.selection.select(nextItem);
-      }
-
-      this.list.focusItem(nextItem);
-    }
+    this.focusByStep(event, 1);
   }
 
   public focusPrevious(event: Event) {
+    this.focusByStep(event, -1);
+  }
+
+  /** Moves focus to the first or last enabled option (and, in a radio group, checks it). */
+  public focusEdge(event: Event, edge: 'first' | 'last') {
+    event.preventDefault();
+
+    if (!this.list || this.effectiveDisabled()) {
+      return;
+    }
+
+    const enabled = this.list.selection.items().filter((item) => !item.disabled());
+
+    this.moveFocusTo(edge === 'first' ? enabled[0] : enabled.at(-1));
+  }
+
+  /** Moves focus to the next option whose label starts with the typed characters. */
+  public focusTypeaheadMatch(event: KeyboardEvent) {
+    if (
+      !this.list ||
+      this.effectiveDisabled() ||
+      event.key.length !== 1 ||
+      event.key === ' ' ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    const match = this.list.findTypeaheadMatch(event.key, this.listItem);
+
+    if (match) {
+      event.preventDefault();
+      this.moveFocusTo(match);
+    }
+  }
+
+  private focusByStep(event: Event, step: 1 | -1) {
     event.preventDefault();
 
     if (!this.list || this.effectiveDisabled()) {
@@ -160,20 +181,24 @@ export class SelectionOptionDirective {
 
     const items = this.list.selection.items();
     const currentIndex = items.indexOf(this.listItem);
-    let prevIndex = (currentIndex - 1 + items.length) % items.length;
+    let index = (currentIndex + step + items.length) % items.length;
 
-    while (items[prevIndex]?.disabled() && prevIndex !== currentIndex) {
-      prevIndex = (prevIndex - 1 + items.length) % items.length;
+    while (items[index]?.disabled() && index !== currentIndex) {
+      index = (index + step + items.length) % items.length;
     }
 
-    const prevItem = items[prevIndex];
+    this.moveFocusTo(items[index]);
+  }
 
-    if (prevItem && !prevItem.disabled()) {
-      if (!this.list.multiple() && !this.effectiveReadonly()) {
-        this.list.selection.select(prevItem);
-      }
-
-      this.list.focusItem(prevItem);
+  private moveFocusTo(item: SelectionListItem | undefined) {
+    if (!this.list || !item || item.disabled()) {
+      return;
     }
+
+    if (!this.list.multiple() && !this.effectiveReadonly()) {
+      this.list.selection.select(item);
+    }
+
+    this.list.focusItem(item);
   }
 }

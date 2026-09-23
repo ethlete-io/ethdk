@@ -207,6 +207,74 @@ test.describe('choice-inputs / keyboard', () => {
   });
 });
 
+test.describe('choice-inputs / Home, End and typeahead', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard navigation');
+
+  test('a radio group jumps to its ends and to a typed prefix, checking as it moves', async ({ page }) => {
+    const root = await openStory(page, RADIO_GROUP_DEFAULT);
+    const red = root.getByRole('radio', { name: 'Red' });
+    const green = root.getByRole('radio', { name: 'Green' });
+    const blue = root.getByRole('radio', { name: 'Blue' });
+
+    await pressKey(page, 'Tab');
+    await expect(red).toBeFocused();
+
+    await pressKey(page, 'End');
+    await expect(blue).toBeFocused();
+    await expect(blue).toHaveAttribute('aria-checked', 'true');
+
+    await pressKey(page, 'Home');
+    await expect(red).toBeFocused();
+    await expect(red).toHaveAttribute('aria-checked', 'true');
+
+    await pressKey(page, 'g');
+    await expect(green).toBeFocused();
+    await expect(green).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('a checkbox group jumps to its ends and to a typed prefix without toggling', async ({ page }) => {
+    const root = await openStory(page, CHECKBOX_GROUP_DEFAULT);
+    const cheese = root.getByRole('checkbox', { name: 'Cheese' });
+    const pepperoni = root.getByRole('checkbox', { name: 'Pepperoni' });
+    const mushrooms = root.getByRole('checkbox', { name: 'Mushrooms' });
+
+    await pressKey(page, 'Tab');
+    await expect(cheese).toBeFocused();
+
+    await pressKey(page, 'End');
+    await expect(mushrooms).toBeFocused();
+
+    await pressKey(page, 'Home');
+    await expect(cheese).toBeFocused();
+
+    await pressKey(page, 'p');
+    await expect(pepperoni).toBeFocused();
+
+    await expect(root.getByRole('checkbox', { checked: true })).toHaveCount(0);
+  });
+
+  test('a segmented button group jumps to its ends and to a typed prefix', async ({ page }) => {
+    const root = await openStory(page, SEGMENTED_BUTTON_GROUP_DEFAULT);
+    const list = root.getByRole('radio', { name: 'List' });
+    const grid = root.getByRole('radio', { name: 'Grid' });
+    const table = root.getByRole('radio', { name: 'Table' });
+
+    await pressKey(page, 'Tab');
+    await expect(list).toBeFocused();
+
+    await pressKey(page, 'End');
+    await expect(table).toBeFocused();
+    await expect(table).toHaveAttribute('aria-checked', 'true');
+
+    await pressKey(page, 'Home');
+    await expect(list).toBeFocused();
+
+    await pressKey(page, 'g');
+    await expect(grid).toBeFocused();
+    await expect(grid).toHaveAttribute('aria-checked', 'true');
+  });
+});
+
 test.describe('choice-inputs / touch', () => {
   test.skip(({ isMobile }) => !isMobile, 'touch-only: tap interaction');
 

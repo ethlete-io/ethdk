@@ -729,7 +729,7 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    `valueFormat` (default `DATE_FORMAT`/`TIME_FORMAT`); kinds `rangeOrder`/`rangeMin`/`rangeMax`.
    Date-range presets **PARKED on a design call**: where the preset list renders (a column beside
    the calendar on the anchored panel, and a chip row, a tab or nothing on the bottom sheet).
-   Select-all **DONE** in `feat(components): Add a select-all row to the multi select`: `selectAll`
+   Select-all **DONE** in `d34e5d865`: `selectAll`
    renders a tri-state first option (`aria-checked`, accent dash while mixed) that toggles the
    visible, enabled options by value arithmetic - `createSelectionState().toggleAll` prunes values
    without a live option, so the select does not call it. Keeps disabled options, custom values and
@@ -738,6 +738,10 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    `alert()` returning cold Observables (unsubscribe closes), `role="alertdialog"`, focus on Cancel,
    <kbd>Escape</kbd> cancels, backdrop press ignored, `destructive` via `injectErrorTheme()`,
    `ALERT_DIALOG_LABELS`; the overlay guard docs now use it instead of a hand-written dialog.
+   Selection-group `Home`/`End` + typeahead **DONE** in
+   `feat(components): Add Home, End and typeahead to the selection groups`: radio, segmented and checkbox groups jump to the first/last
+   enabled option and to a typed label prefix (500 ms buffer on the list, repeats cycle), moving like
+   the arrows do - radio/segmented check as they move, checkbox and `readonly` only focus.
 10. **Error-message and dev-guard quality pass.** Messages that name an API that does not exist
     (`registerScrollContainer`, `hostDirectives: [StreamPipChromeComponent]`,
     `et-filter-overlay-submit-label`, `exportTableToCsv`, the four-of-six picker host names), guards

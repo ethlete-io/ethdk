@@ -6,6 +6,7 @@ import {
   FORM_FIELD_TOKEN,
   FormFieldControl,
 } from '../../form-field/headless';
+import { createTypeahead } from '../../../internals/typeahead';
 import { createSelectionState } from './internals/selection-state';
 import {
   SELECTION_LIST_MULTIPLE,
@@ -73,11 +74,16 @@ export class SelectionListDirective
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.SELECTION_LIST);
 
+  private typeahead = createTypeahead();
+
   constructor() {
     super();
 
     this.formField?.registerControl(this);
-    this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+    this.destroyRef.onDestroy(() => {
+      this.formField?.unregisterControl(this);
+      this.typeahead.destroy();
+    });
   }
 
   public markTouched() {
@@ -86,6 +92,24 @@ export class SelectionListDirective
 
   public focusItem(item: SelectionListItem, options?: FocusOptions) {
     item.elementRef.nativeElement.focus(options);
+  }
+
+  /** @internal */
+  public findTypeaheadMatch(character: string, from: SelectionListItem) {
+    const query = this.typeahead.append(character);
+    const items = this.selection.items();
+    const offset = query.length === 1 ? 1 : 0;
+    const start = items.indexOf(from) + offset;
+
+    for (let step = 0; step < items.length; step++) {
+      const item = items[(start + step + items.length) % items.length];
+
+      if (item && !item.disabled() && item.label().trim().toLowerCase().startsWith(query)) {
+        return item;
+      }
+    }
+
+    return null;
   }
 
   /** Mirrors the group's roving tabindex: the checked option, else the first enabled one. */
