@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
-import { mountRichTextEditor, RichTextEditorDriver } from '../testing/rich-text-editor-driver';
+import { caretIn, mountRichTextEditor, RichTextEditorDriver } from '../testing/rich-text-editor-driver';
 import { FORM_FIELD_IMPORTS } from '../form-field/form-field.imports';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from './rich-text-editor-trigger';
 import { RICH_TEXT_EDITOR_TRIGGERS_IMPORTS } from './rich-text-editor-triggers.imports';
@@ -132,6 +132,38 @@ describe('RichTextEditorComponent', () => {
       driver.type('- item');
 
       expect(driver.query('ul li')).not.toBeNull();
+    });
+
+    it('takes a picked chip and its trailing space back in one undo', () => {
+      driver.type('a b');
+      driver.caretAt(2);
+      driver.type('#');
+      driver.press('Enter');
+      driver.type('x');
+
+      expect(driver.value()).toBe('a {{block:firstName}} xb');
+
+      driver.editor.undo();
+
+      expect(driver.value()).toBe('a {{block:firstName}} b');
+
+      driver.editor.undo();
+
+      expect(driver.value()).toBe('a #b');
+    });
+
+    it('commits a chip deleted by Backspace as its own undo step', () => {
+      driver.type('#');
+      driver.press('Enter');
+      driver.type('ab');
+      caretIn(driver.query('[data-et-token]')!.nextSibling!, 0);
+      driver.press('Backspace');
+
+      expect(driver.value()).toBe('ab');
+
+      driver.editor.undo();
+
+      expect(driver.value()).toBe('{{block:firstName}} ab');
     });
   });
 });

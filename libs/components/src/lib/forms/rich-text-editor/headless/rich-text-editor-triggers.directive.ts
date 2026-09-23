@@ -301,7 +301,7 @@ export class RichTextEditorTriggersDirective {
   private insertItem(item: RichTextEditorTriggerItem) {
     const match = this.activeMatch();
 
-    if (!match || item.disabled || !this.editor) return;
+    if (!match || item.disabled || !this.editor || this.editor.disabled() || this.editor.readonly()) return;
 
     const { type } = match.trigger;
 
@@ -317,12 +317,12 @@ export class RichTextEditorTriggersDirective {
     selection?.removeAllRanges();
     selection?.addRange(range);
 
-    this.editor.insertAtomicToken(this.buildChip(match.trigger, item));
+    this.editor.editorDom.insertToken(this.buildChip(match.trigger, item));
     // Trailing space so the caret escapes the chip and the next word doesn't hug it. Must be a
     // no-break space: a plain space at the end of a line is CSS-collapsed and Chrome drops it from
     // the text node on the next keystroke. Serialization normalizes it back to a plain space.
     this.editor.editorDom.insertToken(this.renderer.createText('\u00a0'));
-    this.editor.syncFromDom();
+    this.editor.syncFromDom({ boundary: true });
 
     this.activeMatch.set(null);
     this.close();
@@ -358,7 +358,7 @@ export class RichTextEditorTriggersDirective {
     if (!(candidate instanceof HTMLElement) || !candidate.hasAttribute(TOKEN_CHIP_ATTR)) return false;
 
     candidate.remove();
-    this.editor.syncFromDom();
+    this.editor.syncFromDom({ boundary: true });
 
     return true;
   }
