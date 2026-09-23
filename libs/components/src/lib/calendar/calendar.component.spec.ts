@@ -33,6 +33,15 @@ class HostComponent {
 })
 class TwoCalendarsHostComponent {}
 
+@Component({
+  template: `<et-calendar [activeMonth]="activeMonth" [weekNumbers]="weekNumbers()" monthsShown="2" />`,
+  imports: [CalendarComponent],
+})
+class MultiMonthHostComponent {
+  activeMonth = new Date(2026, 6, 1);
+  weekNumbers = signal(false);
+}
+
 describe('CalendarComponent', () => {
   let fixture: ComponentFixture<HostComponent>;
   let host: HostComponent;
@@ -111,6 +120,23 @@ describe('CalendarComponent', () => {
 
     expectAriaGrid(query(fixture, '[role="grid"]')!);
     expectUniformCellsPerRow(query(fixture, '[role="grid"]')!);
+  });
+
+  it('keeps seven cells in every row of a multi-month grid', () => {
+    const multi = TestBed.createComponent(MultiMonthHostComponent);
+    multi.detectChanges();
+
+    const grid = query(multi, '[role="grid"]')!;
+
+    expect(queryAll(multi, '.et-calendar-cell--empty').length).toBeGreaterThan(0);
+    expectAriaGrid(grid);
+    expectUniformCellsPerRow(grid);
+
+    multi.componentInstance.weekNumbers.set(true);
+    multi.detectChanges();
+
+    expectAriaGrid(grid);
+    expectUniformCellsPerRow(grid);
   });
 
   it('mounts an on-demand stylesheet once, no matter how many calendars use it', () => {

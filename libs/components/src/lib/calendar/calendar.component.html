@@ -114,7 +114,7 @@
 
                     @for (cell of week; track cell.date.getTime()) {
                       @if (cell.outsideMonth && calendar.monthsShown() > 1) {
-                        <span class="et-calendar-cell et-calendar-cell--empty" aria-hidden="true"></span>
+                        <span class="et-calendar-cell et-calendar-cell--empty" role="gridcell"></span>
                       } @else {
                         <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
                           <span class="et-calendar-cell-content">{{ cell.label }}</span>
