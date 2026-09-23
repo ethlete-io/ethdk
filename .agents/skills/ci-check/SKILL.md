@@ -50,7 +50,9 @@ yarn nx e2e timetrack-e2e                 # 20. timetrack app e2e, against the h
 Step 11 is the slowest by far. Skip steps 11 and 12 only when the change touches no component
 source and no story - and say so rather than reporting a clean run you didn't do. Step 12 serves
 `dist/storybook` itself; to run it against the dev server instead, set
-`STORYBOOK_URL=http://localhost:4400` (see the **`component-behavior-tests`** skill).
+`STORYBOOK_URL=http://localhost:4400` (see the **`component-behavior-tests`** skill). CI runs only
+the suites the change can reach; `yarn e2e:affected` makes the same selection against
+`origin/next` and runs it in place of step 12.
 
 Steps 13 to 16 are the workflow's `rust` job. Skip 13 to 15 when the change touches nothing
 under `apps/timetrack/src-tauri`. Step 16 needs `cargo-audit` 0.22 or later, and it reads a

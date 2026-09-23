@@ -19,6 +19,7 @@
     "design": "nx build cli && node dist/libs/cli/src/index.js design",
     "design:check": "nx build cli && node dist/libs/cli/src/index.js design check",
     "docs": "nx serve docs",
+    "e2e:affected": "node apps/storybook-e2e/affected.mjs origin/next --run",
     "lint:changesets": "node ./tools/scripts/lint-changesets.js",
     "lint:css-properties": "node ./tools/scripts/lint-css-properties.js",
     "prepare": "husky",

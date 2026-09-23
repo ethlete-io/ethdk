@@ -21,9 +21,31 @@ STORYBOOK_URL=http://localhost:4400 npx playwright test -c apps/storybook-e2e/pl
 # one project only
 STORYBOOK_URL=http://localhost:4400 npx playwright test -c apps/storybook-e2e/playwright.config.ts --project=touch apps/storybook-e2e/src/select
 
-# what CI runs: build Storybook, serve dist/storybook, run everything
+# build Storybook, serve dist/storybook, run everything
 npx nx e2e storybook-e2e
+
+# only the suites the changes since origin/next can reach, against dist/storybook
+yarn e2e:affected
 ```
+
+## How CI runs them
+
+The `storybook` job builds Storybook, uploads `dist/storybook`, and asks
+`apps/storybook-e2e/affected.mjs` which suites the change can reach. Three `storybook-e2e` jobs
+download the build and each run a `--shard` of that selection. The script prints `ALL`, nothing, or
+folder names (`node apps/storybook-e2e/affected.mjs <base>` shows it):
+
+- A change under `libs/components/src/lib/<domain>` (`forms/<x>` and `overlay/<x>` count as their
+  own domain) selects every folder whose stories import that domain, directly or through other
+  domains. A folder is tied to story files through the story ids it opens, so no name map exists.
+- A change in `apps/storybook-e2e/src/<folder>` selects that folder.
+- Docs, changesets, specs, lint rules and the timetrack and studio apps select nothing.
+- Everything else - other libs, Storybook config and styles, `src/support`, the lockfile, CI, and
+  any component domain the Storybook preview itself imports - selects `ALL`.
+
+A new suite needs nothing here. A new top-level file type or folder the script does not know falls
+into `ALL`; add it to `IGNORED` only when it cannot change what a story renders. The mapping has a
+spec: `npx nx test storybook-e2e`.
 
 Check the dev server first: `curl -s -o /dev/null -w "%{http_code}" http://localhost:4400/`.
 When several agents share one dev server, pass `--workers=2`. A test that passes with

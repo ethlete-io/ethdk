@@ -19,6 +19,12 @@
       "options": {
         "command": "tsc -p apps/storybook-e2e/tsconfig.json --noEmit"
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node --test apps/storybook-e2e/affected.spec.mjs"
+      }
     }
   }
 }
