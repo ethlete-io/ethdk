@@ -143,7 +143,7 @@ Recommendation: go with conditions for the fullscreen enter/leave only. The cond
 **First slice landed 2026-09-23** (`82d1c2d05`, `f1643e907`, e2e `5f4e9536f`; core anchor `2d0a36d28`, `5d4592f21`). The user accepted these defaults:
 
 - The zero baseline looks the same as the gridlines.
-- Hover and focus tint the whole column, and the tooltip sits above the column.
+- Hover and focus tint the whole column. The tooltip points at the bar's data end, not the top of the column (user, after a phone check).
 - Axis text is muted at 12px, and a long category label is cut off with an ellipsis.
 - A single series uses the scope accent, not palette entry 0.
 - The docs page stays in "Layout & structure", next to Table and Grid.
