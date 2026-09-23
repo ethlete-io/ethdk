@@ -78,6 +78,7 @@ export * from './bracket-errors';
 export * from './bracket-fits-width';
 export * from './bracket-labels';
 export * from './bracket-layout';
+export * from './bracket-participants.component';
 export * from './bracket-pick-card.component';
 export * from './bracket.imports';
 export * from './bracket-default-continue.component';

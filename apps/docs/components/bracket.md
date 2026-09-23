@@ -693,11 +693,27 @@ participants legend beside the bracket, a search box, a query param. That is als
 screen-reader path, since a list of buttons is navigable in a way an absolutely-positioned grid
 is not.
 
+The legend ships as `et-bracket-participants` (in `BRACKET_IMPORTS`): a `role="group"` labelled
+from `BRACKET_LABELS.participantsLegend`, with one [pressed](/components/button) `et-button` per
+participant. It holds no pin of its own - bind its `focusedParticipantId` two-way to the same
+signal as the bracket's. A toggle pins that participant (<kbd>Enter</kbd>/<kbd>Space</kbd> or a
+tap), pressing the pinned one again drops the pin, and a pin dropped by the bracket (Escape, a click
+past the cells) un-presses the toggle. You pass the participants - the bracket's source carries ids,
+the names are your data:
+
 ```html
-<button (click)="focusedTeamId.set(team.id)" et-button type="button">{{ team.name }}</button>
+<et-bracket-participants [(focusedParticipantId)]="focusedTeamId" [participants]="teams()" />
 
 <et-bracket [(focusedParticipantId)]="focusedTeamId" [source]="source()" />
 ```
+
+| Input                  | Type                                      | Default | Description                                    |
+| ---------------------- | ----------------------------------------- | ------- | ---------------------------------------------- |
+| `participants`         | `readonly { id: string; name: string }[]` | -       | Required. One toggle each, in the given order. |
+| `focusedParticipantId` | `string \| null`                          | `null`  | Two-way. The pinned participant.               |
+
+The toggles wrap with a `--et-bracket-participants-gap` (`8px`) gap. A search box or query param
+drives the same model, so the legend is one option, not a requirement.
 
 The bracket drops the pin on <kbd>Escape</kbd> (anywhere on the page, while pinned) and on a click
 that lands past the cells, writing the `null` back through the model - bind it two-way, or listen
@@ -730,8 +746,8 @@ semantics live in the cards, and the shipped ones carry them:
   and the only tab stop in its cell. Nothing inside a card is ever a second one.
 - **A journey can be followed without a pointer.** Hover highlighting is still a pointer
   affordance, but [pinning](#participant-focus) is not: `focusedParticipantId` is driven by a
-  control of yours - a participants list is the usual one - which is reachable by keyboard and
-  announced as what it is. <kbd>Escape</kbd> clears the pin. The information is in the cards
+  control of yours - the shipped `et-bracket-participants` legend is the usual one - which is
+  reachable by keyboard and announced as what it is. <kbd>Escape</kbd> clears the pin. The information is in the cards
   either way; the highlight only makes one path easier to trace.
 
 A card of your own is responsible for its own semantics - the layout engine adds none.

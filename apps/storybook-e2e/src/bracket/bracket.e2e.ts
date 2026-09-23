@@ -3,6 +3,8 @@ import { expectFocusVisible, focusedDescriptor, openStory, pressKey, settle, tap
 
 const STORY_ID = 'components-sports-bracket-prediction--interactive';
 const SLOT_SOURCES_STORY_ID = 'components-sports-bracket-prediction--slot-sources';
+const PARTICIPANT_FOCUS_STORY_ID = 'components-sports-bracket--participant-focus';
+const JOURNEY_FOCUSED = /et-bracket-host--journey-focused/;
 
 test.describe('bracket prediction / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
@@ -217,5 +219,75 @@ test.describe('bracket prediction / journey highlight', () => {
 
     await expect(host).not.toHaveClass(/et-bracket-host--journey-hover/);
     await expect(root.locator('.et-bracket-journey-active')).toHaveCount(0);
+  });
+});
+
+test.describe('bracket participants / keyboard', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard navigation');
+
+  test('the legend is a labelled group whose toggles are the first tab stops, with a visible ring', async ({
+    page,
+  }) => {
+    const root = await openStory(page, PARTICIPANT_FOCUS_STORY_ID);
+    const legend = root.getByRole('group', { name: 'Participants' });
+    const first = legend.getByRole('button').first();
+
+    await expect(legend.getByRole('button')).not.toHaveCount(0);
+
+    await pressKey(page, 'Tab');
+
+    await expect(first).toBeFocused();
+    await expectFocusVisible(first);
+  });
+
+  test('Enter pins a journey, Space on another toggle moves the pin, and a second press drops it', async ({ page }) => {
+    const root = await openStory(page, PARTICIPANT_FOCUS_STORY_ID);
+    const toggles = root.getByRole('group', { name: 'Participants' }).getByRole('button');
+    const bracket = root.locator('et-bracket');
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Enter');
+
+    await expect(toggles.nth(0)).toHaveAttribute('aria-pressed', 'true');
+    await expect(bracket).toHaveClass(JOURNEY_FOCUSED);
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, ' ');
+
+    await expect(toggles.nth(1)).toHaveAttribute('aria-pressed', 'true');
+    await expect(toggles.nth(0)).not.toHaveAttribute('aria-pressed', 'true');
+
+    await pressKey(page, ' ');
+
+    await expect(toggles.nth(1)).not.toHaveAttribute('aria-pressed', 'true');
+    await expect(bracket).not.toHaveClass(JOURNEY_FOCUSED);
+  });
+
+  test('Escape drops the pin and the legend follows', async ({ page }) => {
+    const root = await openStory(page, PARTICIPANT_FOCUS_STORY_ID);
+    const first = root.getByRole('group', { name: 'Participants' }).getByRole('button').first();
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Enter');
+    await expect(first).toHaveAttribute('aria-pressed', 'true');
+
+    await pressKey(page, 'Escape');
+
+    await expect(first).not.toHaveAttribute('aria-pressed', 'true');
+    await expect(root.locator('et-bracket')).not.toHaveClass(JOURNEY_FOCUSED);
+  });
+});
+
+test.describe('bracket participants / touch', () => {
+  test.skip(({ isMobile }) => !isMobile, 'touch-only');
+
+  test('a tap on a legend toggle pins that journey', async ({ page }) => {
+    const root = await openStory(page, PARTICIPANT_FOCUS_STORY_ID);
+    const first = root.getByRole('group', { name: 'Participants' }).getByRole('button').first();
+
+    await tap(first);
+
+    await expect(first).toHaveAttribute('aria-pressed', 'true');
+    await expect(root.locator('et-bracket')).toHaveClass(JOURNEY_FOCUSED);
   });
 });

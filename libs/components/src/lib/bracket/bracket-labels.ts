@@ -48,6 +48,8 @@ export type BracketLabels = {
   slotPredictEarlierRound: string;
   /** The same side once no earlier round is left to predict, so the invitation would be a dead end. */
   slotNotPredicted: string;
+  /** Names the `et-bracket-participants` legend for assistive tech. */
+  participantsLegend: string;
 };
 
 /** The built-in English labels. */
@@ -74,6 +76,7 @@ export const DEFAULT_BRACKET_LABELS: BracketLabels = {
   slotUnknown: 'Not known yet',
   slotPredictEarlierRound: 'Predict the earlier round first',
   slotNotPredicted: 'Not predicted',
+  participantsLegend: 'Participants',
 };
 
 const BRACKET_LABELS_DEF = /* @__PURE__ */ defineLabels<BracketLabels>('BRACKET_LABELS', DEFAULT_BRACKET_LABELS);

@@ -1,0 +1,13 @@
+@layer components {
+  @property --et-bracket-participants-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 8px;
+  }
+
+  .et-bracket-participants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--et-bracket-participants-gap);
+  }
+}

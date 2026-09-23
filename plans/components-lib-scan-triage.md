@@ -711,8 +711,10 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    viewport padding, <kbd>Enter</kbd>/<kbd>Space</kbd> expands a collapsed window; `f08b0a150` fixed
    the `NG0201` that broke PiP whenever `provideStreamPip()` sat in component `providers` (every
    story). PiP keyboard resize **DONE** (user call: <kbd>Shift</kbd>+arrows on the title bar, same
-   10px step, clamped to min/max width and the viewport, no new tab stop). **Open:** the bracket pin
-   - user call: ship an `et-bracket-participants` legend, grid focus model unchanged.
+   10px step, clamped to min/max width and the viewport, no new tab stop) in `131fc13a7`. Bracket pin
+   **DONE** (user call): the shipped `et-bracket-participants` legend, one `et-button` pin toggle per
+   participant bound to the same `focusedParticipantId` model; the grid focus model and the
+   consumer-driven pin rule are unchanged. Item #8's four targets are closed.
 9. **Missing peer-library staples, ranked.** A confirm/alert dialog primitive (the overlay docs tell
    consumers to hand-write one); `compareWith` on `et-select`; runtime column pinning + multi-sort
    priority + a global quick filter on the table; date-range presets and range-order/min-max

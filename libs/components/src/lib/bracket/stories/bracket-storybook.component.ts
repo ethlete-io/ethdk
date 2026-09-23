@@ -11,6 +11,7 @@ import { BUTTON_IMPORTS } from '../../button';
 import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../../scrollable/scrollable.imports';
 import { BRACKET_DENSITY, BracketDensity } from '../bracket-density';
 import { BracketComponent } from '../bracket.component';
+import { BracketParticipantsComponent } from '../bracket-participants.component';
 import { BRACKET_ROUND_HEADER_ALIGN, BracketRoundHeaderAlign } from '../bracket.config';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout } from '../core/layout';
 import { BracketDataSource } from '../integrations/base';
@@ -211,21 +212,11 @@ export class StorybookBracketDensityComponent {
   selector: 'et-sb-bracket',
   template: `
     @if (withParticipantList()) {
-      <!-- The supported pin affordance: a control *outside* the bracket driving focusedParticipantId.
-           Nothing inside a card is a click target, so this is what touch and keyboard users get. -->
-      <div class="mb-4 flex flex-wrap gap-2">
-        @for (participant of participants(); track participant.id) {
-          <button
-            [variant]="focusedParticipantId() === participant.id ? 'filled' : 'outline'"
-            (click)="toggleFocus(participant.id)"
-            et-button
-            size="sm"
-            type="button"
-          >
-            {{ participant.name }}
-          </button>
-        }
-      </div>
+      <et-bracket-participants
+        [(focusedParticipantId)]="focusedParticipantId"
+        [participants]="participants()"
+        class="mb-4"
+      />
     }
 
     <et-scrollable [etScrollableButtons]="{ sticky: true }">
@@ -267,7 +258,7 @@ export class StorybookBracketDensityComponent {
     </et-scrollable>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BracketComponent, BUTTON_IMPORTS, ...SCROLLABLE_IMPORTS, ...SCROLLABLE_NAVIGATION_IMPORTS],
+  imports: [BracketComponent, BracketParticipantsComponent, ...SCROLLABLE_IMPORTS, ...SCROLLABLE_NAVIGATION_IMPORTS],
 })
 export class StorybookBracketComponent {
   public source = input.required<BracketDataSource<unknown, unknown>>();
@@ -336,8 +327,4 @@ export class StorybookBracketComponent {
 
   /** The story data carries no payload, so this derives its cards from the bracket's own structure. */
   protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
-
-  protected toggleFocus(participantId: string) {
-    this.focusedParticipantId.update((current) => (current === participantId ? null : participantId));
-  }
 }
