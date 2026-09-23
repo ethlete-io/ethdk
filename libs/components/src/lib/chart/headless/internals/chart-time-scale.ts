@@ -32,18 +32,15 @@ export type ChartZonedFields = {
 };
 
 const SECOND = 1000;
-const MINUTE = 60 * SECOND;
-const HOUR = 60 * MINUTE;
-const DAY = 24 * HOUR;
 
 const UNIT_DURATION: Record<ChartTimeUnit, number> = {
   second: SECOND,
-  minute: MINUTE,
-  hour: HOUR,
-  day: DAY,
-  week: 7 * DAY,
-  month: 30 * DAY,
-  year: 365 * DAY,
+  minute: 60_000,
+  hour: 3_600_000,
+  day: 86_400_000,
+  week: 604_800_000,
+  month: 2_592_000_000,
+  year: 31_536_000_000,
 };
 
 const INTERVALS: readonly ChartTimeInterval[] = [

@@ -17,7 +17,7 @@ export type ChartArcOptions = {
   gap: number;
 };
 
-const TAU = Math.PI * 2;
+const TAU = 6.283185307179586;
 const FULL_CIRCLE_EPSILON = 1e-9;
 
 const formatCoordinate = (value: number) => {
