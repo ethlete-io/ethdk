@@ -99,6 +99,8 @@ rejected outright, because the native top layer breaks consumers that rely on z-
 
 ## Spike: Fullscreen View Transitions (2026-09-23)
 
+**Decided 2026-09-23 (user): no.** View Transitions do not fit the fullscreen animation, and browser support is not good enough. `fullscreen-animation.ts` and `flip-animation.ts` stay as they are.
+
 Scope: `libs/components/src/lib/overlay/strategies/fullscreen-animation.ts` (770 lines) and `libs/core/src/lib/animations/flip-animation.ts` (253 lines). Probed in headless Chromium 149 and Firefox 151 with a throwaway page, since deleted. WebKit did not launch here.
 
 What the fullscreen animation does today:
