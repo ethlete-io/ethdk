@@ -310,7 +310,8 @@ jobs:
     needs: [resolve, package]
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions: {}
+    permissions:
+      id-token: write
     concurrency:
       group: api-models-${{ needs.resolve.outputs.group }}
       cancel-in-progress: true
@@ -335,8 +336,6 @@ jobs:
           path: ${{ runner.temp }}/package
 
       - id: publish
-        env:
-          NODE_AUTH_TOKEN: ${{ needs.resolve.outputs.dry_run != 'true' && secrets.NPM_TOKEN || '' }}
         run: |
           set -euo pipefail
           file="$RUNNER_TEMP/package/$TARBALL"

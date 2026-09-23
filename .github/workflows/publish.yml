@@ -43,13 +43,7 @@ jobs:
       - run: yarn nx run-many -t build
 
       # `yarn npm publish` authenticates through npm trusted publishing (OIDC), which Yarn uses
-      # only while YARN_NPM_AUTH_TOKEN is unset. OIDC does not cover `npm dist-tag add`, so
-      # sync-dist-tags.js still needs this token, which only the npm CLI reads.
-      - name: Authenticate npm
-        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
+      # only while YARN_NPM_AUTH_TOKEN is unset.
       - name: Publish packages
         id: changesets
         uses: ./tools/changesets-action
