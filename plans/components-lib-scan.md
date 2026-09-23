@@ -1,5 +1,11 @@
 # Components lib scan — noteworthy findings
 
+**Status 2026-09-23: nearly done.** Findings are triaged and tracked item-by-item in
+`plans/components-lib-scan-triage.md`, whose own "Status (2026-09-23)" section is current - see that
+file for shas. Still open: folding phone/otp/tag onto `TextFieldControlDirective` (partly done -
+phone and tag landed in `b1a7be050` on a new `TextShellControlDirective` base; otp stays out) and
+opportunistic comment-policy cleanup (Improvement 11).
+
 Scan date: 2026-08-22. Scope: all of `libs/components` — about 125k lines of
 non-spec source under `src/lib` across 48 domains, plus the matching guides under
 `apps/docs/components/`. Review agents read the source per batch; each agent verified its

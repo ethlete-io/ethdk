@@ -3,8 +3,11 @@
 Date: 2026-08-19. Reported from the `fut-frontend` hub Partners list view. The user scrolls with a
 mouse wheel and the page stops for seconds at a time.
 
-**Status: implemented and verified. The shipped horizontal sync uses a passive, frame-batched scroll
-listener, so neither the root scroller nor the table scroller carries a scroll timeline.**
+**Status 2026-09-23: done (`becdfd4f8`).** The shipped horizontal sync writes `--_et-table-inline-scroll`
+from a same-tick `(scroll)` handler in `table.component.ts`, and no CSS scroll-driven animation
+(`scroll-timeline`/`animation-timeline`) remains anywhere under `libs/components/src/lib/table` - so
+neither the root scroller nor the table scroller carries a scroll timeline. The Chromium bug report
+from "Limits of the repro" below was not filed.
 
 ## The symptom
 

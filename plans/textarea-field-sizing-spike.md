@@ -1,5 +1,11 @@
 # Textarea autosizing: the `field-sizing: content` spike
 
+**Status 2026-09-23: done (`d0a1826a0`).** `libs/components/src/lib/forms/textarea` ships
+`field-sizing: content` behind an `@supports` block in
+`textarea-autosize-styles.component.css`, with the JS measurement path kept as the fallback for
+engines that ignore it. Remove the fallback once Firefox ESR and iOS 26 both support
+`field-sizing`.
+
 Spike for the "Native textarea autosizing" row in `component-improvements-triage.md`
 (tags `C`,`D`). Run 2026-08-21.
 

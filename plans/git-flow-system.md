@@ -1,5 +1,7 @@
 # Git flow as one system: grammar, skill, lint, CLI
 
+**Status 2026-09-23: parked by the user on 2026-09-08.**
+
 Scope worked out with Tom on 2026-08-11, alongside `plans/timetrack.md`. `git-flow-draft.md`
 describes a branch convention in prose. This plan turns it into **one machine-readable
 grammar with many consumers** - a skill so agents follow it, a check command, a local hook, a

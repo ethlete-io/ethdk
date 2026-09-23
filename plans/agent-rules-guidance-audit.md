@@ -1,5 +1,13 @@
 # Agent-rules guidance audit
 
+**Status 2026-09-23: done in the SDK.** `a258308e0` ("Harden generated guidance", same day as the
+audit) fixed the local-build cleanup, the `api-source` single-entry fallback, the figma-export/handoff
+delete-on-sign-off behavior, the color-hardcoding policy split between `AGENTS.md` and `theming`, and
+the SDK docs/source/installed-type precedence wording; the styleguide split, the RxJS teardown
+wording, and the skill-provenance categories are also in place. The one item still open is
+consumer-only: `fut-frontend`'s handwritten login docs need a Password column so automation does not
+have to guess the credential mapping.
+
 Audit date: 2026-08-19. Consumer checked: `fut-frontend` using
 `@ethlete/agent-rules@0.1.0-next.11`.
 

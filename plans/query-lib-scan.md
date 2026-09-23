@@ -1,5 +1,10 @@
 # Query lib scan — noteworthy findings
 
+**Status 2026-09-23: done.** Every High and Medium finding from the original scan, and every item
+raised in the later waves (see "Triage against `next`" and the wave/pass sections below), is fixed or
+pinned as by design. The file's own tracking sections carry the shas; the most recent close is the
+generators follow-up (`14580fe71`).
+
 Scan date: 2026-08-19. Scope: all of `libs/query/src/lib` (about 28k lines of non-spec source).
 Five parallel review agents read the source. Each agent verified its claims against the code.
 Two agents also verified their top claims with throwaway specs (deleted after the run).

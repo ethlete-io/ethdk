@@ -1,5 +1,10 @@
 # Prediction brackets, round 2
 
+**Status 2026-09-23: done, file closed.** All six gaps and the group-picks addition shipped -
+animation and settings (`8b90cd46c`), the group table (`eb7135aa7`), pick card states
+(`59adb91fb`), pick-follow on pairing change (`40f64642d`), the participants legend
+(`c76babe5f`), and the swiss grid fixes (`f84582cb4`, `df314d8dd`), among others.
+
 Written 2026-09-08, after a comparison against the consumer that shipped the feature.
 
 The first plan is `bracket-prediction-support.md`. All seven of its items landed. This one records

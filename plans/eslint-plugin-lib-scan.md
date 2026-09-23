@@ -1,5 +1,17 @@
 # eslint-plugin lib scan — noteworthy findings
 
+**Status 2026-09-23: mostly done.** All 25 High findings and 10 of the 12 summary items are fixed,
+almost entirely in `a9113cb6c` ("Correct library scan findings", the same day as the scan), which
+added shared fixer helpers (`internals/member-accessibility-fix.js`,
+`internals/angular-metadata-fix.js`) plus per-rule corrections. Open: summary #10 (fixer comment
+handling - `class-member-order` still misplaces a trailing comment, the host-directives shorthand
+fix still drops comments) and #11 (name-only matching - an aliased import still defeats several
+rules, and a same-named symbol from the wrong source is still reported/fixed), plus a handful of
+lower-severity items reproduced directly (dangling `other._value` reference, duplicate `styleUrl`,
+a dropped `host: { ...BASE }` spread, `class-member-order`'s `static`-member fix bail-out,
+`no-screaming-case-local`'s double report, `no-trivial-return-type` on a `FunctionDeclaration`,
+`standalone` still sorted last).
+
 Scan date: 2026-08-19. Scope: all of `libs/eslint-plugin` — 58 rules (~9.6k lines of non-spec
 source), the three shared `internals/` helpers, the `recommended` config, the packaging files,
 the two docs pages under `apps/docs/eslint`, and the `docs/STYLEGUIDE.md` sync the plugin's own

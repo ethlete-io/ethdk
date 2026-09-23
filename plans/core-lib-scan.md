@@ -1,5 +1,13 @@
 # Core lib scan — noteworthy findings
 
+**Status 2026-09-23: done.** All 12 summary items and every High finding checked are fixed, almost
+all in one sweep, `a9113cb6c` ("Correct library scan findings", ~90 minutes after the scan landed),
+with follow-ups including `00b985d04`, `b98811137`, and the injector/teardown/`takeUntilDestroyed`
+fixes across `a07c23d74`, `d5eb742b2`, `ef2277d0a`, `4326376c9`, `ae96d237f`, `c06776704`, `744e709ea`,
+`0a3830c0d`, `e0e8cfb60`, `568918d32`, `82928e3bd`, `e73c78555`. Open, each deliberate: the animation
+directives still model sync state with a `BehaviorSubject` (a breaking API change); the unused `props/`
+module is still exported from `src/index.ts`.
+
 Scan date: 2026-08-19. Scope: all of `libs/core` — about 15.9k lines of non-spec source under
 `src/`, plus about 6.3k lines across the six Nx generators, the packaging files, the stories,
 and the 15 docs pages under `apps/docs/core`. Seven parallel review agents read the source.
