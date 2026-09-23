@@ -19,56 +19,73 @@
       #allDayLane
       [style.--_et-scheduler-time-grid-all-day-row-count]="grid.allDayRowCount()"
       class="et-scheduler-time-grid-all-day-lane"
-      role="gridcell"
+      role="presentation"
     >
-      @for (entry of grid.allDay(); track entry.node.appointment.id) {
-        <button
-          #appointmentButton
-          [style.--_et-scheduler-time-grid-all-day-offset]="entry.inlineOffset"
-          [style.--_et-scheduler-time-grid-all-day-size]="entry.inlineSize"
-          [style.--_et-scheduler-time-grid-all-day-row]="entry.row"
-          [attr.data-selected]="isSelected(entry.node.appointment) ? '' : null"
-          [attr.data-draggable]="canDragAppointments() ? '' : null"
-          [attr.data-dragging]="isDragging(entry.node.appointment) ? '' : null"
-          [attr.title]="entry.node.appointment.title"
-          [etProvideColor]="entry.node.appointment.colorToken ?? null"
-          (click)="select(entry.node.appointment, appointmentButton)"
-          (pointerdown)="
-            startAllDayDrag($event, { appointment: entry.node.appointment, mode: 'move', lane: allDayLane })
-          "
-          class="et-scheduler-appointment et-scheduler-time-grid-all-day-entry"
-          type="button"
+      @for (cell of allDayCells(); track cell.date.getTime(); let dayIndex = $index) {
+        <div
+          #allDayCell
+          [attr.aria-label]="cell.label"
+          [attr.tabindex]="cellTabIndex(dayIndex, 0)"
+          (focus)="focusedSlot.set({ day: cell.date, row: 0 })"
+          class="et-scheduler-time-grid-all-day-cell"
+          role="gridcell"
         >
-          @for (adornment of badgeAdornments(); track $index) {
-            <ng-container
-              *ngComponentOutlet="adornment.component; inputs: { node: entry.node }; injector: adornment.injector"
-            />
-          }
-
-          @if (canDragAppointments()) {
-            <span
+          @for (entry of cell.entries; track entry.node.appointment.id) {
+            <button
+              #appointmentButton
+              #allDayItem
+              [style.--_et-scheduler-time-grid-all-day-offset]="entry.inlineOffset"
+              [style.--_et-scheduler-time-grid-all-day-size]="entry.inlineSize"
+              [style.--_et-scheduler-time-grid-all-day-row]="entry.row"
+              [attr.data-selected]="isSelected(entry.node.appointment) ? '' : null"
+              [attr.data-draggable]="canDragAppointments() ? '' : null"
+              [attr.data-dragging]="isDragging(entry.node.appointment) ? '' : null"
+              [attr.title]="entry.node.appointment.title"
+              [etProvideColor]="entry.node.appointment.colorToken ?? null"
+              (click)="select(entry.node.appointment, appointmentButton)"
               (pointerdown)="
-                startAllDayDrag($event, {
-                  appointment: entry.node.appointment,
-                  mode: 'resize-start',
-                  lane: allDayLane,
-                })
+                startAllDayDrag($event, { appointment: entry.node.appointment, mode: 'move', lane: allDayLane })
               "
-              class="et-scheduler-time-grid-all-day-resize"
-              data-edge="start"
-              aria-hidden="true"
-            ></span>
+              class="et-scheduler-appointment et-scheduler-time-grid-all-day-entry"
+              type="button"
+              tabindex="-1"
+            >
+              @for (adornment of badgeAdornments(); track $index) {
+                <ng-container
+                  *ngComponentOutlet="adornment.component; inputs: { node: entry.node }; injector: adornment.injector"
+                />
+              }
 
-            <span
-              (pointerdown)="
-                startAllDayDrag($event, { appointment: entry.node.appointment, mode: 'resize-end', lane: allDayLane })
-              "
-              class="et-scheduler-time-grid-all-day-resize"
-              data-edge="end"
-              aria-hidden="true"
-            ></span>
+              @if (canDragAppointments()) {
+                <span
+                  (pointerdown)="
+                    startAllDayDrag($event, {
+                      appointment: entry.node.appointment,
+                      mode: 'resize-start',
+                      lane: allDayLane,
+                    })
+                  "
+                  class="et-scheduler-time-grid-all-day-resize"
+                  data-edge="start"
+                  aria-hidden="true"
+                ></span>
+
+                <span
+                  (pointerdown)="
+                    startAllDayDrag($event, {
+                      appointment: entry.node.appointment,
+                      mode: 'resize-end',
+                      lane: allDayLane,
+                    })
+                  "
+                  class="et-scheduler-time-grid-all-day-resize"
+                  data-edge="end"
+                  aria-hidden="true"
+                ></span>
+              }
+            </button>
           }
-        </button>
+        </div>
       }
     </div>
   </div>
@@ -84,18 +101,15 @@
   </div>
 
   <div class="et-scheduler-time-grid-days" role="presentation">
-    @for (day of grid.days(); track day.date.getTime(); let dayIndex = $index) {
+    @for (column of columns(); track column.day.date.getTime(); let dayIndex = $index) {
+      @let day = column.day;
       <div
         #dayColumn
         [attr.data-today]="day.today ? '' : null"
         (pointerdown)="startDraftRange($event, { element: dayColumn, day: day.date })"
         class="et-scheduler-time-grid-day"
-        role="gridcell"
+        role="presentation"
       >
-        @for (hour of hours(); track hour.hour) {
-          <div class="et-scheduler-time-grid-hour-row" role="presentation"></div>
-        }
-
         @for (segment of grid.nonBusinessTime()[dayIndex]; track segment.offset) {
           <div
             [style.--_et-scheduler-time-grid-block-offset]="segment.offset"
@@ -128,67 +142,80 @@
           }
         }
 
-        <!-- a block's own pointerdown moves it and stops there, so a press that starts on an
-             appointment never reaches the column's drag-to-create underneath it -->
-        @for (block of day.blocks; track block.node.appointment.id) {
-          <button
-            #appointmentButton
-            [style.--_et-scheduler-time-grid-block-offset]="block.offset"
-            [style.--_et-scheduler-time-grid-block-span]="block.span"
-            [style.--_et-scheduler-time-grid-block-inline-offset]="block.inlineOffset"
-            [style.--_et-scheduler-time-grid-block-inline-size]="block.inlineSize"
-            [style.--_et-scheduler-time-grid-block-depth]="block.node.depth"
-            [attr.data-selected]="isSelected(block.node.appointment) ? '' : null"
-            [attr.data-nested]="block.node.depth > 0 ? '' : null"
-            [attr.data-draggable]="canDragAppointments() ? '' : null"
-            [attr.data-dragging]="isDragging(block.node.appointment) ? '' : null"
-            [attr.title]="block.node.appointment.title"
-            [etProvideColor]="block.node.appointment.colorToken ?? null"
-            (click)="select(block.node.appointment, appointmentButton)"
-            (pointerdown)="
-              startAppointmentDrag($event, {
-                appointment: block.node.appointment,
-                mode: 'move',
-                column: { element: dayColumn, day: day.date },
-              })
-            "
-            class="et-scheduler-time-grid-block"
-            type="button"
+        @for (slot of column.slots; track slot.hour) {
+          <div
+            #slotCell
+            [attr.aria-label]="slot.label"
+            [attr.tabindex]="cellTabIndex(dayIndex, slot.hour + 1)"
+            (focus)="focusedSlot.set({ day: day.date, row: slot.hour + 1 })"
+            class="et-scheduler-time-grid-hour-row et-scheduler-time-grid-slot"
+            role="gridcell"
           >
-            @for (adornment of badgeAdornments(); track $index) {
-              <ng-container
-                *ngComponentOutlet="adornment.component; inputs: { node: block.node }; injector: adornment.injector"
-              />
-            }
-
-            @if (canDragAppointments()) {
-              <span
+            <!-- a block's own pointerdown moves it and stops there, so a press that starts on an
+                 appointment never reaches the column's drag-to-create underneath it -->
+            @for (block of slot.blocks; track block.node.appointment.id) {
+              <button
+                #appointmentButton
+                #slotItem
+                [style.--_et-scheduler-time-grid-block-offset]="block.offset"
+                [style.--_et-scheduler-time-grid-block-span]="block.span"
+                [style.--_et-scheduler-time-grid-block-inline-offset]="block.inlineOffset"
+                [style.--_et-scheduler-time-grid-block-inline-size]="block.inlineSize"
+                [style.--_et-scheduler-time-grid-block-depth]="block.node.depth"
+                [attr.data-selected]="isSelected(block.node.appointment) ? '' : null"
+                [attr.data-nested]="block.node.depth > 0 ? '' : null"
+                [attr.data-draggable]="canDragAppointments() ? '' : null"
+                [attr.data-dragging]="isDragging(block.node.appointment) ? '' : null"
+                [attr.title]="block.node.appointment.title"
+                [etProvideColor]="block.node.appointment.colorToken ?? null"
+                (click)="select(block.node.appointment, appointmentButton)"
                 (pointerdown)="
                   startAppointmentDrag($event, {
                     appointment: block.node.appointment,
-                    mode: 'resize-start',
+                    mode: 'move',
                     column: { element: dayColumn, day: day.date },
                   })
                 "
-                class="et-scheduler-time-grid-block-resize"
-                data-edge="start"
-                aria-hidden="true"
-              ></span>
+                class="et-scheduler-time-grid-block"
+                type="button"
+                tabindex="-1"
+              >
+                @for (adornment of badgeAdornments(); track $index) {
+                  <ng-container
+                    *ngComponentOutlet="adornment.component; inputs: { node: block.node }; injector: adornment.injector"
+                  />
+                }
 
-              <span
-                (pointerdown)="
-                  startAppointmentDrag($event, {
-                    appointment: block.node.appointment,
-                    mode: 'resize-end',
-                    column: { element: dayColumn, day: day.date },
-                  })
-                "
-                class="et-scheduler-time-grid-block-resize"
-                data-edge="end"
-                aria-hidden="true"
-              ></span>
+                @if (canDragAppointments()) {
+                  <span
+                    (pointerdown)="
+                      startAppointmentDrag($event, {
+                        appointment: block.node.appointment,
+                        mode: 'resize-start',
+                        column: { element: dayColumn, day: day.date },
+                      })
+                    "
+                    class="et-scheduler-time-grid-block-resize"
+                    data-edge="start"
+                    aria-hidden="true"
+                  ></span>
+
+                  <span
+                    (pointerdown)="
+                      startAppointmentDrag($event, {
+                        appointment: block.node.appointment,
+                        mode: 'resize-end',
+                        column: { element: dayColumn, day: day.date },
+                      })
+                    "
+                    class="et-scheduler-time-grid-block-resize"
+                    data-edge="end"
+                    aria-hidden="true"
+                  ></span>
+                }
+              </button>
             }
-          </button>
+          </div>
         }
       </div>
     }

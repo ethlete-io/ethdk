@@ -3,17 +3,25 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  Injector,
   ViewEncapsulation,
+  afterNextRender,
   computed,
   inject,
+  linkedSignal,
   viewChild,
   viewChildren,
 } from '@angular/core';
 import { ProvideColorDirective, injectRenderer, injectStyleManager } from '@ethlete/core';
-import { addDays, differenceInCalendarDays, endOfDay, format, startOfDay } from 'date-fns';
+import { addDays, differenceInCalendarDays, endOfDay, format, isSameDay, startOfDay } from 'date-fns';
 import { MENU_IMPORTS } from '../menu';
-import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerMonthDirective } from './headless';
+import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerMonthDayCell, SchedulerMonthDirective } from './headless';
 import { startSchedulerDragGesture } from './headless/internals/scheduler-drag-gesture';
+import {
+  resolveSchedulerCellItemFocus,
+  resolveSchedulerMonthKeyboardDate,
+  schedulerCellItemOffset,
+} from './headless/internals/scheduler-keyboard';
 import { SchedulerAppointmentDragDirective } from './scheduler-appointment-drag.directive';
 import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-styles.component';
 import { injectSchedulerLabels } from './scheduler-labels';
@@ -30,6 +38,7 @@ import { Appointment } from './scheduler.types';
   host: {
     class: 'et-scheduler-month-view',
     role: 'grid',
+    '(keydown)': 'handleKeydown($event)',
   },
 })
 export class SchedulerMonthViewComponent {
@@ -40,12 +49,20 @@ export class SchedulerMonthViewComponent {
   private featureHost = inject(SCHEDULER_FEATURE_HOST, { optional: true });
   private appointmentDrag = inject(SchedulerAppointmentDragDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
+  protected injector = inject(Injector);
   private renderer = injectRenderer();
+  private weeksElement = viewChild.required<ElementRef<HTMLElement>>('weeks');
   private weekRows = viewChildren<ElementRef<HTMLElement>>('weekRow');
   private cells = viewChildren<ElementRef<HTMLElement>>('cell');
+  private cellItems = viewChildren<ElementRef<HTMLElement>>('cellItem');
   public draftAnchor = viewChild<ElementRef<HTMLElement>>('draftAnchor');
 
   protected canDragAppointments = computed(() => this.appointmentDrag?.isEnabled() ?? false);
+
+  protected focusedDate = linkedSignal(() => startOfDay(this.scheduler?.focusedDate() ?? new Date()));
+
+  private flatCells = computed(() => this.month.weeks().flat());
+  private cellItemCounts = computed(() => this.flatCells().map((cell) => this.itemCount(cell)));
 
   private hasDragged = false;
 
@@ -65,6 +82,22 @@ export class SchedulerMonthViewComponent {
     const locale = this.scheduler?.effectiveLocale();
 
     return format(date, 'PPPP', locale ? { locale } : undefined);
+  }
+
+  protected isFocused(date: Date) {
+    return isSameDay(date, this.focusedDate());
+  }
+
+  protected handleKeydown(event: KeyboardEvent) {
+    if (event.defaultPrevented) return;
+
+    const cellIndex = this.cells().findIndex((cell) => cell.nativeElement === event.target);
+
+    if (cellIndex !== -1) return this.handleCellKeydown(event, cellIndex);
+
+    const itemIndex = this.cellItems().findIndex((item) => item.nativeElement === event.target);
+
+    if (itemIndex !== -1) this.handleItemKeydown(event, itemIndex);
   }
 
   protected isSelected(appointment: Appointment) {
@@ -163,11 +196,89 @@ export class SchedulerMonthViewComponent {
           return;
         }
 
-        scheduler.surfaceAnchor.set(this.coverDraftRange(weeks));
-        scheduler.commitDraftRange();
+        this.openDraftSurface(scheduler, weeks);
       },
       cancel: () => scheduler.clearDraftRange(),
     });
+  }
+
+  private handleCellKeydown(event: KeyboardEvent, cellIndex: number) {
+    const cell = this.flatCells()[cellIndex];
+
+    if (!cell) return;
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+
+      const hasItems = (this.cellItemCounts()[cellIndex] ?? 0) > 0;
+
+      if (event.key === 'Enter' && hasItems) {
+        this.cellItems()[schedulerCellItemOffset(this.cellItemCounts(), cellIndex)]?.nativeElement.focus();
+      } else {
+        this.createAppointmentOn(cell.date);
+      }
+
+      return;
+    }
+
+    const scheduler = this.scheduler;
+
+    if (!scheduler) return;
+
+    const target = resolveSchedulerMonthKeyboardDate(event.key, {
+      focusedDate: cell.date,
+      weekStartsOn: scheduler.effectiveFirstDayOfWeek(),
+    });
+
+    if (!target) return;
+
+    event.preventDefault();
+    this.focusedDate.set(target);
+
+    const { start, end } = scheduler.visibleRange();
+
+    if (target < start || target > end) scheduler.focusedDate.set(target);
+
+    afterNextRender(() => this.focusRovingCell(), { injector: this.injector });
+  }
+
+  private handleItemKeydown(event: KeyboardEvent, itemIndex: number) {
+    const target = resolveSchedulerCellItemFocus(event.key, {
+      itemCounts: this.cellItemCounts(),
+      flatIndex: itemIndex,
+    });
+
+    if (!target) return;
+
+    event.preventDefault();
+
+    const refs = target.kind === 'cell' ? this.cells() : this.cellItems();
+
+    refs[target.index]?.nativeElement.focus();
+  }
+
+  private focusRovingCell() {
+    const index = this.flatCells().findIndex((cell) => this.isFocused(cell.date));
+
+    this.cells()[index]?.nativeElement.focus();
+  }
+
+  private createAppointmentOn(date: Date) {
+    const scheduler = this.scheduler;
+
+    if (!scheduler || scheduler.draftRange() || scheduler.selectedAppointmentId()) return;
+
+    scheduler.setDraftRange({ start: startOfDay(date), end: endOfDay(date), allDay: true });
+    this.openDraftSurface(scheduler, this.weeksElement().nativeElement);
+  }
+
+  private openDraftSurface(scheduler: SchedulerDirective, weeks: HTMLElement) {
+    scheduler.surfaceAnchor.set(this.coverDraftRange(weeks));
+    scheduler.commitDraftRange();
+  }
+
+  private itemCount(cell: SchedulerMonthDayCell) {
+    return cell.visible.length + (cell.overflow.length > 0 ? 1 : 0);
   }
 
   private coverDraftRange(weeks: HTMLElement): HTMLElement | null {

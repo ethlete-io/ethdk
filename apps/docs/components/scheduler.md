@@ -247,6 +247,8 @@ Dragging across empty space on the **week**, **day** or **month** view draws a n
 
 The range stays visible while the surface is open and disappears when it closes - dismiss without saving and nothing is created. Clicking the drawn range itself counts as clicking outside the surface, so it closes and clears, rather than drawing a fresh range underneath. A gesture the browser takes away (a `pointercancel`) clears it without opening anything.
 
+The keyboard creates the same way: Space on any cell, or Enter on an empty one, draws that default - an hour from the focused slot, or the focused day as an all-day appointment - and opens the surface over it. See [keyboard](#keyboard).
+
 The state behind it lives on the headless directive, so a custom view can drive the same flow: `draftRange` (the live range, whether it is `dragging` or `committed`, and `allDay` for day-granular views), written with `beginDraftRange()` / `extendDraftRange()` for a time axis or `setDraftRange()` for whole days, settled with `commitDraftRange()` and dropped with `clearDraftRange()`.
 
 ## Move and resize {#move-and-resize}
@@ -461,12 +463,33 @@ Adding your own piece is the same mechanism: write a directive that injects `SCH
 
 `SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `appointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, `registerBadgeAdornment()` / `badgeAdornments()` (see [badge composability](#badge-composability)), and `registerToolbarAction()` / `toolbarActions()` (see [toolbar](#toolbar)). It's modeled on the [table](/components/table)'s feature host. `addAppointment()` opens the default edit surface for a brand-new appointment - the same "only meaningful with that default surface" caveat as `etSchedulerActionAddAppointment`, exposed here so the built-in toolbar action can call it without importing `SchedulerComponent` directly. The [edit surface](#edit-surface) has its own, separately-scoped host - see [edit-surface feature host](#edit-surface-feature-host).
 
+## Keyboard {#keyboard}
+
+The month grid and the time grid each follow the ARIA grid pattern the [calendar](/components/calendar#accessibility) uses: the whole grid is **one Tab stop**, and the arrow keys move a roving focus between its cells. Only the focused cell has `tabindex="0"`; every other cell, every appointment and the "+N more" trigger have `tabindex="-1"`, so Tab leaves the grid in one press. The grid's stop starts on `focusedDate`'s day - on the time grid, at the hour the body opens scrolled to.
+
+The month grid's cells are days. The time grid's cells are hour slots, one per hour per day, with the all-day strip as row 0 above the first slot while the strip is shown (it is only rendered when an all-day appointment is in view).
+
+| Key                    | Month view                                                | Week and day view                                                |
+| ---------------------- | --------------------------------------------------------- | ---------------------------------------------------------------- |
+| ArrowLeft / ArrowRight | Previous / next day                                       | Previous / next day, same hour                                   |
+| ArrowUp / ArrowDown    | Same weekday a week earlier / later                       | Previous / next hour; up from 00:00 into that day's all-day cell |
+| Home / End             | First / last day of the week (`firstDayOfWeek`)           | First / last day of the week, same hour                          |
+| PageUp / PageDown      | Same day a month earlier / later                          | Same slot a week (week view) or a day (day view) earlier / later |
+| Enter                  | Into the day's first appointment; on an empty day, create | Into the slot's first appointment; on an empty slot, create      |
+| Space                  | Create an all-day appointment on the day                  | Create an hour-long appointment at the slot                      |
+
+Focus that leaves the visible range takes the range with it: `focusedDate` moves to the newly focused day (and `focusedDateChange` emits), exactly like the toolbar's previous/next. Moving onto a leading or trailing day of an adjacent month that the month grid already shows does not page.
+
+**Inside a cell** the arrow keys move between that cell's appointments (the month view's "+N more" trigger is the last of them, and opens its menu with ArrowUp/ArrowDown like any [menu trigger](/components/menu#accessibility)), Enter or Space opens the focused appointment's [edit surface](#edit-surface), and Escape returns focus to the cell. A time slot holds the appointments that **start** in that hour, so a block spanning several hours belongs to its first slot; an all-day cell holds the all-day appointments that start on that day in view.
+
+The time grid's all-day cells have nothing to create - an all-day appointment there has no pointer gesture either - so Space and Enter on an empty one do nothing. Arrow directions do not flip in a right-to-left layout, matching the calendar.
+
 ## Accessibility
 
-- Both grid views carry `role="grid"` on their own host, named by `<et-scheduler>` after the period its header shows (`aria-label`, e.g. "July 2026"), so their rows, row groups and cells are owned by a real grid; the layout wrappers in between (the day track, the hour gutter) are `role="presentation"`. Weekday/day headers are `columnheader`s named by the full weekday (`aria-label` in the month view); day cells are `gridcell`s in both grid views. The agenda view is a flat list, not a grid, so its day headers carry no grid role.
+- Both grid views carry `role="grid"` on their own host, named by `<et-scheduler>` after the period its header shows (`aria-label`, e.g. "July 2026"), so their rows, row groups and cells are owned by a real grid; the layout wrappers in between (the day track, the day columns, the all-day lane, the hour gutter) are `role="presentation"`. Weekday/day headers are `columnheader`s named by the full weekday (`aria-label` in the month view); the month view's day cells and the time grid's hour slots and all-day cells are `gridcell`s. The agenda view is a flat list, not a grid, so its day headers carry no grid role.
 - A month day cell announces its full date (e.g. "Wednesday, July 15th, 2026", formatted with the scheduler's `locale`) instead of the bare day number, which is `aria-hidden`. Today's cell carries `aria-current="date"`.
-- Every appointment badge/block and the "+N more" trigger are real `<button>`s, reachable by Tab; the overflow popover is an `et-menu` and inherits its full [keyboard model](/components/menu#accessibility).
-- Neither grid implements the ARIA grid roving-tabindex pattern the [calendar](/components/calendar#accessibility) uses yet - each badge/block is independently tabbable, same as the agenda's badges.
+- Both grids are a single Tab stop with a roving focus - see [keyboard](#keyboard). The focused cell draws a `:focus-visible` ring in the theme's primary color. Every appointment badge/block and the "+N more" trigger are real `<button>`s reached from their cell; the overflow popover is an `et-menu` and inherits its full [keyboard model](/components/menu#accessibility). The agenda view is a flat list whose badges are each tabbable.
+- A time-grid slot is named by its day and hour (e.g. "Wednesday, July 15th, 2026, 09:00") and an all-day cell by its day and the `allDay` label ("…, All day"), both formatted with the scheduler's `locale`; word the latter with `provideSchedulerLabels({ allDay: '…' })`.
 - The Month/Week/Day/Agenda toolbar control is a real [`et-segmented-button-group`](/components/choice-inputs#selection-lists): a `radiogroup` of `radio`s, arrow-key navigable, with a projected (visually hidden) `<et-label>` supplying its accessible name.
 
 ## Theming

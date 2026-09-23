@@ -21,11 +21,17 @@ export const startSchedulerDragGesture = (options: SchedulerDragGestureOptions) 
   const touch = event.pointerType === 'touch';
   let armed = !touch;
 
-  const stopBlockingScroll = touch
-    ? renderer.listen(element, 'touchmove', (touchEvent: Event) => {
-        if (armed && touchEvent.cancelable) touchEvent.preventDefault();
-      })
-    : () => undefined;
+  const blockScroll = (touchEvent: Event) => {
+    if (armed && touchEvent.cancelable) touchEvent.preventDefault();
+  };
+
+  // a touch keeps targeting the node it started on, and once a re-render moves the dragged
+  // appointment into another cell that node is detached - its touchmove no longer bubbles to `element`
+  const pressed = event.target instanceof HTMLElement && event.target !== element ? event.target : null;
+  const scrollBlockers = touch
+    ? [element, ...(pressed ? [pressed] : [])].map((node) => renderer.listen(node, 'touchmove', blockScroll))
+    : [];
+  const stopBlockingScroll = () => scrollBlockers.forEach((stop) => stop());
 
   const arm = () => {
     armed = true;

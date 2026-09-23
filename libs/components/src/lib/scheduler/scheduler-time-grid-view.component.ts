@@ -8,6 +8,8 @@ import {
   ViewEncapsulation,
   computed,
   inject,
+  linkedSignal,
+  untracked,
   viewChild,
   viewChildren,
 } from '@angular/core';
@@ -18,13 +20,27 @@ import {
   differenceInCalendarDays,
   differenceInMinutes,
   format,
+  isSameDay,
   setHours,
   startOfDay,
 } from 'date-fns';
-import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerTimeGridDirective } from './headless';
+import {
+  SCHEDULER_FEATURE_HOST,
+  SchedulerDirective,
+  SchedulerTimeGridBlock,
+  SchedulerTimeGridDirective,
+} from './headless';
 import { startSchedulerDragGesture } from './headless/internals/scheduler-drag-gesture';
+import {
+  SCHEDULER_TIME_GRID_ALL_DAY_ROW,
+  SchedulerTimeGridKeyboardCell,
+  resolveSchedulerCellItemFocus,
+  resolveSchedulerTimeGridKeyboardCell,
+  schedulerCellItemOffset,
+} from './headless/internals/scheduler-keyboard';
 import { SchedulerAppointmentDragDirective } from './scheduler-appointment-drag.directive';
 import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-styles.component';
+import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment, SchedulerAppointmentDragMode } from './scheduler.types';
 
 const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
@@ -57,6 +73,17 @@ type SchedulerTimeGridAllDayDrag = Omit<SchedulerTimeGridAllDayDragTarget, 'lane
   grabDay: Date;
 };
 
+type SchedulerTimeGridCellGroup = {
+  cells: readonly ElementRef<HTMLElement>[];
+  items: readonly ElementRef<HTMLElement>[];
+  itemCounts: readonly number[];
+};
+
+type SchedulerTimeGridRovingCell = { dayIndex: number; row: number };
+
+const blockStartHour = (block: SchedulerTimeGridBlock) =>
+  Math.min(Math.floor((block.offset / 100) * HOURS.length + 1e-6), HOURS.length - 1);
+
 /**
  * The default time grid: an hour axis, an all-day strip, and appointments packed into
  * overlap-free columns. Backs both the week and day views - the day view is this same component
@@ -72,11 +99,13 @@ type SchedulerTimeGridAllDayDrag = Omit<SchedulerTimeGridAllDayDragTarget, 'lane
   host: {
     class: 'et-scheduler-time-grid-view',
     role: 'grid',
+    '(keydown)': 'handleKeydown($event)',
   },
 })
 export class SchedulerTimeGridViewComponent {
   private scheduler = inject(SchedulerDirective, { optional: true });
   protected grid = inject(SchedulerTimeGridDirective);
+  private labels = injectSchedulerLabels();
 
   private featureHost = inject(SCHEDULER_FEATURE_HOST, { optional: true });
   private appointmentDrag = inject(SchedulerAppointmentDragDirective, { optional: true });
@@ -87,6 +116,10 @@ export class SchedulerTimeGridViewComponent {
   private firstHourRow = viewChild<ElementRef<HTMLElement>>('hourRow');
   private dayColumns = viewChildren<ElementRef<HTMLElement>>('dayColumn');
   public draftBlock = viewChild<ElementRef<HTMLElement>>('draftBlock');
+  private slotCells = viewChildren<ElementRef<HTMLElement>>('slotCell');
+  private slotItems = viewChildren<ElementRef<HTMLElement>>('slotItem');
+  private allDayCellElements = viewChildren<ElementRef<HTMLElement>>('allDayCell');
+  private allDayItems = viewChildren<ElementRef<HTMLElement>>('allDayItem');
 
   protected canDragAppointments = computed(() => this.appointmentDrag?.isEnabled() ?? false);
 
@@ -101,6 +134,65 @@ export class SchedulerTimeGridViewComponent {
       label: format(setHours(reference, hour), 'HH:mm', locale ? { locale } : undefined),
     }));
   });
+
+  protected columns = computed(() => {
+    const hours = this.hours();
+
+    return this.grid.days().map((day) => {
+      const dayLabel = this.dayLabel(day.date);
+
+      return {
+        day,
+        slots: hours.map(({ hour, label }) => ({
+          hour,
+          label: `${dayLabel}, ${label}`,
+          blocks: day.blocks.filter((block) => blockStartHour(block) === hour),
+        })),
+      };
+    });
+  });
+
+  protected allDayCells = computed(() => {
+    const days = this.grid.days();
+    const entries = this.grid.allDay();
+    const allDay = this.labels().allDay;
+
+    return days.map((day, dayIndex) => ({
+      date: day.date,
+      label: `${this.dayLabel(day.date)}, ${allDay}`,
+      entries: entries.filter((entry) => Math.round((entry.inlineOffset / 100) * days.length) === dayIndex),
+    }));
+  });
+
+  protected focusedSlot = linkedSignal<Date, SchedulerTimeGridKeyboardCell>({
+    source: () => startOfDay(this.scheduler?.focusedDate() ?? new Date()),
+    computation: (day, previous) => ({
+      day,
+      row: previous?.value.row ?? untracked(() => this.grid.initialScrollHour()) + 1,
+    }),
+  });
+
+  private rovingCell = computed<SchedulerTimeGridRovingCell>(() => {
+    const { day, row } = this.focusedSlot();
+    const hasAllDayRow = this.grid.allDayRowCount() > 0;
+
+    return {
+      dayIndex: this.grid.days().findIndex((column) => isSameDay(column.date, day)),
+      row: row === SCHEDULER_TIME_GRID_ALL_DAY_ROW && !hasAllDayRow ? row + 1 : row,
+    };
+  });
+
+  private slotGroup = computed<SchedulerTimeGridCellGroup>(() => ({
+    cells: this.slotCells(),
+    items: this.slotItems(),
+    itemCounts: this.columns().flatMap((column) => column.slots.map((slot) => slot.blocks.length)),
+  }));
+
+  private allDayGroup = computed<SchedulerTimeGridCellGroup>(() => ({
+    cells: this.allDayCellElements(),
+    items: this.allDayItems(),
+    itemCounts: this.allDayCells().map((cell) => cell.entries.length),
+  }));
 
   constructor() {
     injectStyleManager().mount(SchedulerAppointmentStylesComponent);
@@ -127,6 +219,37 @@ export class SchedulerTimeGridViewComponent {
     const locale = this.scheduler?.effectiveLocale();
 
     return format(date, 'EEE', locale ? { locale } : undefined);
+  }
+
+  protected cellTabIndex(dayIndex: number, row: number) {
+    const roving = this.rovingCell();
+
+    return roving.dayIndex === dayIndex && roving.row === row ? 0 : -1;
+  }
+
+  protected handleKeydown(event: KeyboardEvent) {
+    if (event.defaultPrevented) return;
+
+    const slotIndex = this.slotCells().findIndex((cell) => cell.nativeElement === event.target);
+
+    if (slotIndex !== -1) {
+      return this.handleCellKeydown(event, {
+        dayIndex: Math.floor(slotIndex / HOURS.length),
+        row: (slotIndex % HOURS.length) + 1,
+      });
+    }
+
+    const allDayIndex = this.allDayCellElements().findIndex((cell) => cell.nativeElement === event.target);
+
+    if (allDayIndex !== -1) {
+      return this.handleCellKeydown(event, { dayIndex: allDayIndex, row: SCHEDULER_TIME_GRID_ALL_DAY_ROW });
+    }
+
+    for (const group of [this.slotGroup(), this.allDayGroup()]) {
+      const itemIndex = group.items.findIndex((item) => item.nativeElement === event.target);
+
+      if (itemIndex !== -1) return this.handleItemKeydown(event, { ...group, itemIndex });
+    }
   }
 
   protected isSelected(appointment: Appointment) {
@@ -241,7 +364,7 @@ export class SchedulerTimeGridViewComponent {
       settle: () => {
         const draft = scheduler.draftRange();
 
-        if (!draft) return this.draftHourAt(column, event.clientY);
+        if (!draft) return this.draftHourFrom(this.draftTimeAt(column, event.clientY));
         if (draft.phase !== 'dragging') return;
 
         // the preview is what the create surface anchors to, so hand it over before committing
@@ -314,12 +437,85 @@ export class SchedulerTimeGridViewComponent {
     return element && day ? { element, day: day.date } : null;
   }
 
-  private draftHourAt(column: SchedulerTimeGridColumn, clientY: number) {
+  private handleCellKeydown(event: KeyboardEvent, cell: SchedulerTimeGridRovingCell) {
+    const scheduler = this.scheduler;
+    const day = this.grid.days()[cell.dayIndex];
+
+    if (!scheduler || !day) return;
+
+    const isAllDay = cell.row === SCHEDULER_TIME_GRID_ALL_DAY_ROW;
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+
+      const group = isAllDay ? this.allDayGroup() : this.slotGroup();
+      const flatIndex = isAllDay ? cell.dayIndex : cell.dayIndex * HOURS.length + cell.row - 1;
+
+      if (event.key === 'Enter' && (group.itemCounts[flatIndex] ?? 0) > 0) {
+        group.items[schedulerCellItemOffset(group.itemCounts, flatIndex)]?.nativeElement.focus();
+      } else if (!isAllDay && !scheduler.draftRange()) {
+        this.draftHourFrom(setHours(startOfDay(day.date), cell.row - 1));
+      }
+
+      return;
+    }
+
+    const target = resolveSchedulerTimeGridKeyboardCell(event.key, {
+      focused: { day: day.date, row: cell.row },
+      weekStartsOn: scheduler.effectiveFirstDayOfWeek(),
+      view: scheduler.view() === 'day' ? 'day' : 'week',
+      hasAllDayRow: this.grid.allDayRowCount() > 0,
+    });
+
+    if (!target) return;
+
+    event.preventDefault();
+    this.focusedSlot.set(target);
+
+    const { start, end } = scheduler.visibleRange();
+
+    if (target.day < start || target.day > end) scheduler.focusedDate.set(target.day);
+
+    afterNextRender(() => this.focusRovingCell(), { injector: this.hostInjector });
+  }
+
+  private handleItemKeydown(event: KeyboardEvent, group: SchedulerTimeGridCellGroup & { itemIndex: number }) {
+    const target = resolveSchedulerCellItemFocus(event.key, {
+      itemCounts: group.itemCounts,
+      flatIndex: group.itemIndex,
+    });
+
+    if (!target) return;
+
+    event.preventDefault();
+
+    const refs = target.kind === 'cell' ? group.cells : group.items;
+
+    refs[target.index]?.nativeElement.focus();
+  }
+
+  private focusRovingCell() {
+    const { dayIndex, row } = this.rovingCell();
+    const cell =
+      row === SCHEDULER_TIME_GRID_ALL_DAY_ROW
+        ? this.allDayCellElements()[dayIndex]
+        : this.slotCells()[dayIndex * HOURS.length + row - 1];
+
+    cell?.nativeElement.focus();
+  }
+
+  private dayLabel(date: Date) {
+    const locale = this.scheduler?.effectiveLocale();
+
+    return format(date, 'PPPP', locale ? { locale } : undefined);
+  }
+
+  private draftHourFrom(at: Date) {
     const scheduler = this.scheduler;
 
     if (!scheduler || scheduler.selectedAppointmentId()) return;
 
-    scheduler.beginDraftRange(this.draftTimeAt(column, clientY), DEFAULT_DRAFT_DURATION);
+    scheduler.beginDraftRange(at, DEFAULT_DRAFT_DURATION);
 
     afterNextRender(
       () => {

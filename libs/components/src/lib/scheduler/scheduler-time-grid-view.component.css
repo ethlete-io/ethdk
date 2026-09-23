@@ -92,7 +92,10 @@
 
   .et-scheduler-time-grid-all-day-lane {
     position: relative;
+    display: grid;
     flex: 1;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
     min-block-size: calc(
       var(--_et-scheduler-time-grid-all-day-row-count, 0) * var(--et-scheduler-time-grid-all-day-row-size)
     );
@@ -112,6 +115,14 @@
     box-sizing: border-box;
     block-size: var(--et-scheduler-time-grid-hour-size);
     border-block-end: 1px solid var(--et-surface-border-solid);
+  }
+
+  .et-scheduler-time-grid-slot,
+  .et-scheduler-time-grid-all-day-cell {
+    &:focus-visible {
+      outline: 2px solid var(--et-theme-color-primary-solid);
+      outline-offset: -2px;
+    }
   }
 
   .et-scheduler-time-grid-body .et-scheduler-time-grid-gutter .et-scheduler-time-grid-hour-row {

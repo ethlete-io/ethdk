@@ -11,6 +11,8 @@ export type SchedulerLabels = {
   next: string;
   /** Accessible label for the control that jumps back to today. */
   today: string;
+  /** Appended to a date to name a time-grid all-day cell, e.g. "Wednesday, July 15th, 2026, All day". */
+  allDay: string;
   /** The "+N more" overflow affordance in a day cell with more appointments than it can show. */
   moreAppointments: (count: number) => string;
   /** Accessible label for the view-switch control (month/week/day). */
@@ -64,6 +66,7 @@ export const DEFAULT_SCHEDULER_LABELS: SchedulerLabels = {
   previous: 'Previous',
   next: 'Next',
   today: 'Today',
+  allDay: 'All day',
   moreAppointments: (count) => `+${count} more`,
   switchView: 'Switch view',
   month: 'Month',

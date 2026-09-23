@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, expectFocusVisible, openStory, pressKey, touchDrag } from '../support';
+import { boxOf, expectFocusVisible, openStory, pressKey, pressKeys, touchDrag } from '../support';
 
 const DEFAULT_ID = 'components-date-time-scheduler--default';
 const WEEK_ID = 'components-date-time-scheduler--week';
@@ -145,17 +145,22 @@ test.describe('scheduler / focus', () => {
     await expect(month).toHaveAttribute('aria-checked', 'true');
   });
 
-  test('Tab moves on from the view switch into an appointment badge with a visible focus ring', async ({ page }) => {
+  test('Tab moves on from the view switch into the grid as a single stop with a visible focus ring', async ({
+    page,
+  }) => {
     await openStory(page, WEEK_ID);
 
-    for (let i = 0; i < 6; i++) {
-      await pressKey(page, 'Tab');
-    }
+    await pressKeys(
+      page,
+      Array.from({ length: 6 }, () => 'Tab'),
+    );
 
     const focused = page.locator(':focus');
     await expectFocusVisible(focused);
-    await expect(focused).toHaveAttribute('type', 'button');
-    await expect(focused).toHaveAttribute('title', /.+/);
+    await expect(focused).toHaveAttribute('role', 'gridcell');
+
+    await pressKey(page, 'Tab');
+    await expect(page.locator('et-scheduler-time-grid-view :focus')).toHaveCount(0);
   });
 });
 
@@ -243,6 +248,117 @@ test.describe('scheduler / keyboard', () => {
 
     await pressKey(page, 'Shift+Tab');
     await expect(cancel).toBeFocused();
+  });
+});
+
+/** Tabs from the top of the story past the toolbar onto the grid's one tab stop. */
+async function tabIntoGrid(page: Page): Promise<Locator> {
+  await pressKeys(
+    page,
+    Array.from({ length: 6 }, () => 'Tab'),
+  );
+
+  const cell = page.locator('[role="gridcell"][tabindex="0"]');
+  await expectFocusVisible(cell);
+
+  return cell;
+}
+
+test.describe('scheduler / grid keyboard', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard model');
+
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: FIXED_NOW });
+  });
+
+  test('the month grid starts on today and moves by day and week with the focus ring along', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_ID);
+    const cell = await tabIntoGrid(page);
+
+    await expect(cell).toContainText('Wednesday, July 15th, 2026');
+
+    await pressKey(page, 'ArrowRight');
+    await expectFocusVisible(root.locator('[role="gridcell"]', { hasText: 'Thursday, July 16th, 2026' }));
+
+    await pressKey(page, 'ArrowDown');
+    await expectFocusVisible(root.locator('[role="gridcell"]', { hasText: 'Thursday, July 23rd, 2026' }));
+    await expect(root.locator('[role="gridcell"][tabindex="0"]')).toHaveCount(1);
+  });
+
+  test('PageDown pages the month grid and keeps the focus on the same day', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_ID);
+    await tabIntoGrid(page);
+
+    await pressKey(page, 'PageDown');
+
+    await expect(root.locator('.et-scheduler-header-label')).toHaveText('August 2026');
+    await expectFocusVisible(root.locator('[role="gridcell"]', { hasText: 'Saturday, August 15th, 2026' }));
+  });
+
+  test('Enter walks into the day appointments, arrows move between them, Escape returns', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_ID);
+    const cell = await tabIntoGrid(page);
+    const appointments = cell.locator('.et-scheduler-appointment');
+
+    await pressKey(page, 'Enter');
+    await expectFocusVisible(appointments.nth(0));
+
+    await pressKey(page, 'ArrowDown');
+    await expectFocusVisible(appointments.nth(1));
+
+    await pressKey(page, 'Escape');
+    await expectFocusVisible(cell);
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
+
+    await pressKey(page, 'Enter');
+    await pressKey(page, 'Enter');
+    await expect(page.locator(DIALOG_ROOT)).toBeVisible({ timeout: 8_000 });
+    await expect(root.locator('.et-scheduler-appointment[data-selected]')).toHaveCount(1);
+  });
+
+  test('Enter on an empty month day opens the create surface', async ({ page }) => {
+    await openStory(page, DEFAULT_ID);
+    await tabIntoGrid(page);
+
+    await pressKey(page, 'ArrowRight');
+    await pressKey(page, 'Enter');
+
+    await expect(page.locator(DIALOG_ROOT)).toBeVisible({ timeout: 8_000 });
+  });
+
+  test('the time grid moves by slot, climbs into the all-day row, and pages by week', async ({ page }) => {
+    const root = await openStory(page, WEEK_ID);
+    const header = root.locator('.et-scheduler-header-label');
+    const cell = await tabIntoGrid(page);
+
+    await expect(cell).toHaveAttribute('aria-label', /^Wednesday, July 15th, 2026, \d\d:00$/);
+
+    await pressKeys(
+      page,
+      Array.from({ length: 25 }, () => 'ArrowUp'),
+    );
+    await expectFocusVisible(root.getByRole('gridcell', { name: 'Wednesday, July 15th, 2026, All day' }));
+
+    await pressKey(page, 'ArrowDown');
+    await expectFocusVisible(root.getByRole('gridcell', { name: 'Wednesday, July 15th, 2026, 00:00' }));
+
+    await pressKey(page, 'ArrowRight');
+    await expectFocusVisible(root.getByRole('gridcell', { name: 'Thursday, July 16th, 2026, 00:00' }));
+
+    const before = await header.textContent();
+    await pressKey(page, 'PageDown');
+
+    await expect(header).not.toHaveText(before ?? '');
+    await expectFocusVisible(root.getByRole('gridcell', { name: 'Thursday, July 23rd, 2026, 00:00' }));
+  });
+
+  test('Space on a time slot opens the create surface', async ({ page }) => {
+    await openStory(page, WEEK_ID);
+    await tabIntoGrid(page);
+
+    await pressKey(page, 'Space');
+
+    await expect(page.locator(DIALOG_ROOT)).toBeVisible({ timeout: 8_000 });
   });
 });
 
