@@ -122,6 +122,158 @@
   --color-et-neutral-dark-ink-active: rgb(10 10 10);
   --color-et-neutral-dark-ink-disabled: rgb(115 115 115);
 
+  /* chart-blue theme */
+  --color-et-chart-blue: rgb(42 120 214);
+  --color-et-chart-blue-hover: rgb(42 120 214);
+  --color-et-chart-blue-focus: rgb(42 120 214);
+  --color-et-chart-blue-active: rgb(42 120 214);
+  --color-et-chart-blue-disabled: rgb(42 120 214);
+
+  --color-et-on-chart-blue: rgb(255 255 255);
+  --color-et-on-chart-blue-hover: rgb(255 255 255);
+  --color-et-on-chart-blue-focus: rgb(255 255 255);
+  --color-et-on-chart-blue-active: rgb(255 255 255);
+  --color-et-on-chart-blue-disabled: rgb(255 255 255);
+
+  --color-et-chart-blue-ink: rgb(42 120 214);
+  --color-et-chart-blue-ink-hover: rgb(42 120 214);
+  --color-et-chart-blue-ink-focus: rgb(42 120 214);
+  --color-et-chart-blue-ink-active: rgb(42 120 214);
+  --color-et-chart-blue-ink-disabled: rgb(42 120 214);
+
+  /* chart-orange theme */
+  --color-et-chart-orange: rgb(235 104 52);
+  --color-et-chart-orange-hover: rgb(235 104 52);
+  --color-et-chart-orange-focus: rgb(235 104 52);
+  --color-et-chart-orange-active: rgb(235 104 52);
+  --color-et-chart-orange-disabled: rgb(235 104 52);
+
+  --color-et-on-chart-orange: rgb(255 255 255);
+  --color-et-on-chart-orange-hover: rgb(255 255 255);
+  --color-et-on-chart-orange-focus: rgb(255 255 255);
+  --color-et-on-chart-orange-active: rgb(255 255 255);
+  --color-et-on-chart-orange-disabled: rgb(255 255 255);
+
+  --color-et-chart-orange-ink: rgb(235 104 52);
+  --color-et-chart-orange-ink-hover: rgb(235 104 52);
+  --color-et-chart-orange-ink-focus: rgb(235 104 52);
+  --color-et-chart-orange-ink-active: rgb(235 104 52);
+  --color-et-chart-orange-ink-disabled: rgb(235 104 52);
+
+  /* chart-aqua theme */
+  --color-et-chart-aqua: rgb(27 175 122);
+  --color-et-chart-aqua-hover: rgb(27 175 122);
+  --color-et-chart-aqua-focus: rgb(27 175 122);
+  --color-et-chart-aqua-active: rgb(27 175 122);
+  --color-et-chart-aqua-disabled: rgb(27 175 122);
+
+  --color-et-on-chart-aqua: rgb(255 255 255);
+  --color-et-on-chart-aqua-hover: rgb(255 255 255);
+  --color-et-on-chart-aqua-focus: rgb(255 255 255);
+  --color-et-on-chart-aqua-active: rgb(255 255 255);
+  --color-et-on-chart-aqua-disabled: rgb(255 255 255);
+
+  --color-et-chart-aqua-ink: rgb(27 175 122);
+  --color-et-chart-aqua-ink-hover: rgb(27 175 122);
+  --color-et-chart-aqua-ink-focus: rgb(27 175 122);
+  --color-et-chart-aqua-ink-active: rgb(27 175 122);
+  --color-et-chart-aqua-ink-disabled: rgb(27 175 122);
+
+  /* chart-yellow theme */
+  --color-et-chart-yellow: rgb(237 161 0);
+  --color-et-chart-yellow-hover: rgb(237 161 0);
+  --color-et-chart-yellow-focus: rgb(237 161 0);
+  --color-et-chart-yellow-active: rgb(237 161 0);
+  --color-et-chart-yellow-disabled: rgb(237 161 0);
+
+  --color-et-on-chart-yellow: rgb(255 255 255);
+  --color-et-on-chart-yellow-hover: rgb(255 255 255);
+  --color-et-on-chart-yellow-focus: rgb(255 255 255);
+  --color-et-on-chart-yellow-active: rgb(255 255 255);
+  --color-et-on-chart-yellow-disabled: rgb(255 255 255);
+
+  --color-et-chart-yellow-ink: rgb(237 161 0);
+  --color-et-chart-yellow-ink-hover: rgb(237 161 0);
+  --color-et-chart-yellow-ink-focus: rgb(237 161 0);
+  --color-et-chart-yellow-ink-active: rgb(237 161 0);
+  --color-et-chart-yellow-ink-disabled: rgb(237 161 0);
+
+  /* chart-blue-dark theme */
+  --color-et-chart-blue-dark: rgb(57 135 229);
+  --color-et-chart-blue-dark-hover: rgb(57 135 229);
+  --color-et-chart-blue-dark-focus: rgb(57 135 229);
+  --color-et-chart-blue-dark-active: rgb(57 135 229);
+  --color-et-chart-blue-dark-disabled: rgb(57 135 229);
+
+  --color-et-on-chart-blue-dark: rgb(255 255 255);
+  --color-et-on-chart-blue-dark-hover: rgb(255 255 255);
+  --color-et-on-chart-blue-dark-focus: rgb(255 255 255);
+  --color-et-on-chart-blue-dark-active: rgb(255 255 255);
+  --color-et-on-chart-blue-dark-disabled: rgb(255 255 255);
+
+  --color-et-chart-blue-dark-ink: rgb(57 135 229);
+  --color-et-chart-blue-dark-ink-hover: rgb(57 135 229);
+  --color-et-chart-blue-dark-ink-focus: rgb(57 135 229);
+  --color-et-chart-blue-dark-ink-active: rgb(57 135 229);
+  --color-et-chart-blue-dark-ink-disabled: rgb(57 135 229);
+
+  /* chart-orange-dark theme */
+  --color-et-chart-orange-dark: rgb(217 89 38);
+  --color-et-chart-orange-dark-hover: rgb(217 89 38);
+  --color-et-chart-orange-dark-focus: rgb(217 89 38);
+  --color-et-chart-orange-dark-active: rgb(217 89 38);
+  --color-et-chart-orange-dark-disabled: rgb(217 89 38);
+
+  --color-et-on-chart-orange-dark: rgb(255 255 255);
+  --color-et-on-chart-orange-dark-hover: rgb(255 255 255);
+  --color-et-on-chart-orange-dark-focus: rgb(255 255 255);
+  --color-et-on-chart-orange-dark-active: rgb(255 255 255);
+  --color-et-on-chart-orange-dark-disabled: rgb(255 255 255);
+
+  --color-et-chart-orange-dark-ink: rgb(217 89 38);
+  --color-et-chart-orange-dark-ink-hover: rgb(217 89 38);
+  --color-et-chart-orange-dark-ink-focus: rgb(217 89 38);
+  --color-et-chart-orange-dark-ink-active: rgb(217 89 38);
+  --color-et-chart-orange-dark-ink-disabled: rgb(217 89 38);
+
+  /* chart-aqua-dark theme */
+  --color-et-chart-aqua-dark: rgb(25 158 112);
+  --color-et-chart-aqua-dark-hover: rgb(25 158 112);
+  --color-et-chart-aqua-dark-focus: rgb(25 158 112);
+  --color-et-chart-aqua-dark-active: rgb(25 158 112);
+  --color-et-chart-aqua-dark-disabled: rgb(25 158 112);
+
+  --color-et-on-chart-aqua-dark: rgb(255 255 255);
+  --color-et-on-chart-aqua-dark-hover: rgb(255 255 255);
+  --color-et-on-chart-aqua-dark-focus: rgb(255 255 255);
+  --color-et-on-chart-aqua-dark-active: rgb(255 255 255);
+  --color-et-on-chart-aqua-dark-disabled: rgb(255 255 255);
+
+  --color-et-chart-aqua-dark-ink: rgb(25 158 112);
+  --color-et-chart-aqua-dark-ink-hover: rgb(25 158 112);
+  --color-et-chart-aqua-dark-ink-focus: rgb(25 158 112);
+  --color-et-chart-aqua-dark-ink-active: rgb(25 158 112);
+  --color-et-chart-aqua-dark-ink-disabled: rgb(25 158 112);
+
+  /* chart-yellow-dark theme */
+  --color-et-chart-yellow-dark: rgb(201 133 0);
+  --color-et-chart-yellow-dark-hover: rgb(201 133 0);
+  --color-et-chart-yellow-dark-focus: rgb(201 133 0);
+  --color-et-chart-yellow-dark-active: rgb(201 133 0);
+  --color-et-chart-yellow-dark-disabled: rgb(201 133 0);
+
+  --color-et-on-chart-yellow-dark: rgb(255 255 255);
+  --color-et-on-chart-yellow-dark-hover: rgb(255 255 255);
+  --color-et-on-chart-yellow-dark-focus: rgb(255 255 255);
+  --color-et-on-chart-yellow-dark-active: rgb(255 255 255);
+  --color-et-on-chart-yellow-dark-disabled: rgb(255 255 255);
+
+  --color-et-chart-yellow-dark-ink: rgb(201 133 0);
+  --color-et-chart-yellow-dark-ink-hover: rgb(201 133 0);
+  --color-et-chart-yellow-dark-ink-focus: rgb(201 133 0);
+  --color-et-chart-yellow-dark-ink-active: rgb(201 133 0);
+  --color-et-chart-yellow-dark-ink-disabled: rgb(201 133 0);
+
   /* Dynamic theme colors (references runtime CSS variables) */
   --color-et-theme: rgb(var(--et-color-primary));
   --color-et-theme-hover: rgb(var(--et-color-primary-hover));
@@ -264,6 +416,166 @@
     --et-color-primary-ink-active: 10 10 10;
     --et-color-primary-ink-disabled: 115 115 115;
   }
+
+  .et-color--chart-blue {
+    --et-color-primary: 42 120 214;
+    --et-color-primary-hover: 42 120 214;
+    --et-color-primary-focus: 42 120 214;
+    --et-color-primary-active: 42 120 214;
+    --et-color-primary-disabled: 42 120 214;
+
+    --et-color-on-primary: 255 255 255;
+    --et-color-on-primary-hover: 255 255 255;
+    --et-color-on-primary-focus: 255 255 255;
+    --et-color-on-primary-active: 255 255 255;
+    --et-color-on-primary-disabled: 255 255 255;
+
+    --et-color-primary-ink: 42 120 214;
+    --et-color-primary-ink-hover: 42 120 214;
+    --et-color-primary-ink-focus: 42 120 214;
+    --et-color-primary-ink-active: 42 120 214;
+    --et-color-primary-ink-disabled: 42 120 214;
+  }
+
+  .et-color--chart-orange {
+    --et-color-primary: 235 104 52;
+    --et-color-primary-hover: 235 104 52;
+    --et-color-primary-focus: 235 104 52;
+    --et-color-primary-active: 235 104 52;
+    --et-color-primary-disabled: 235 104 52;
+
+    --et-color-on-primary: 255 255 255;
+    --et-color-on-primary-hover: 255 255 255;
+    --et-color-on-primary-focus: 255 255 255;
+    --et-color-on-primary-active: 255 255 255;
+    --et-color-on-primary-disabled: 255 255 255;
+
+    --et-color-primary-ink: 235 104 52;
+    --et-color-primary-ink-hover: 235 104 52;
+    --et-color-primary-ink-focus: 235 104 52;
+    --et-color-primary-ink-active: 235 104 52;
+    --et-color-primary-ink-disabled: 235 104 52;
+  }
+
+  .et-color--chart-aqua {
+    --et-color-primary: 27 175 122;
+    --et-color-primary-hover: 27 175 122;
+    --et-color-primary-focus: 27 175 122;
+    --et-color-primary-active: 27 175 122;
+    --et-color-primary-disabled: 27 175 122;
+
+    --et-color-on-primary: 255 255 255;
+    --et-color-on-primary-hover: 255 255 255;
+    --et-color-on-primary-focus: 255 255 255;
+    --et-color-on-primary-active: 255 255 255;
+    --et-color-on-primary-disabled: 255 255 255;
+
+    --et-color-primary-ink: 27 175 122;
+    --et-color-primary-ink-hover: 27 175 122;
+    --et-color-primary-ink-focus: 27 175 122;
+    --et-color-primary-ink-active: 27 175 122;
+    --et-color-primary-ink-disabled: 27 175 122;
+  }
+
+  .et-color--chart-yellow {
+    --et-color-primary: 237 161 0;
+    --et-color-primary-hover: 237 161 0;
+    --et-color-primary-focus: 237 161 0;
+    --et-color-primary-active: 237 161 0;
+    --et-color-primary-disabled: 237 161 0;
+
+    --et-color-on-primary: 255 255 255;
+    --et-color-on-primary-hover: 255 255 255;
+    --et-color-on-primary-focus: 255 255 255;
+    --et-color-on-primary-active: 255 255 255;
+    --et-color-on-primary-disabled: 255 255 255;
+
+    --et-color-primary-ink: 237 161 0;
+    --et-color-primary-ink-hover: 237 161 0;
+    --et-color-primary-ink-focus: 237 161 0;
+    --et-color-primary-ink-active: 237 161 0;
+    --et-color-primary-ink-disabled: 237 161 0;
+  }
+
+  .et-color--chart-blue-dark {
+    --et-color-primary: 57 135 229;
+    --et-color-primary-hover: 57 135 229;
+    --et-color-primary-focus: 57 135 229;
+    --et-color-primary-active: 57 135 229;
+    --et-color-primary-disabled: 57 135 229;
+
+    --et-color-on-primary: 255 255 255;
+    --et-color-on-primary-hover: 255 255 255;
+    --et-color-on-primary-focus: 255 255 255;
+    --et-color-on-primary-active: 255 255 255;
+    --et-color-on-primary-disabled: 255 255 255;
+
+    --et-color-primary-ink: 57 135 229;
+    --et-color-primary-ink-hover: 57 135 229;
+    --et-color-primary-ink-focus: 57 135 229;
+    --et-color-primary-ink-active: 57 135 229;
+    --et-color-primary-ink-disabled: 57 135 229;
+  }
+
+  .et-color--chart-orange-dark {
+    --et-color-primary: 217 89 38;
+    --et-color-primary-hover: 217 89 38;
+    --et-color-primary-focus: 217 89 38;
+    --et-color-primary-active: 217 89 38;
+    --et-color-primary-disabled: 217 89 38;
+
+    --et-color-on-primary: 255 255 255;
+    --et-color-on-primary-hover: 255 255 255;
+    --et-color-on-primary-focus: 255 255 255;
+    --et-color-on-primary-active: 255 255 255;
+    --et-color-on-primary-disabled: 255 255 255;
+
+    --et-color-primary-ink: 217 89 38;
+    --et-color-primary-ink-hover: 217 89 38;
+    --et-color-primary-ink-focus: 217 89 38;
+    --et-color-primary-ink-active: 217 89 38;
+    --et-color-primary-ink-disabled: 217 89 38;
+  }
+
+  .et-color--chart-aqua-dark {
+    --et-color-primary: 25 158 112;
+    --et-color-primary-hover: 25 158 112;
+    --et-color-primary-focus: 25 158 112;
+    --et-color-primary-active: 25 158 112;
+    --et-color-primary-disabled: 25 158 112;
+
+    --et-color-on-primary: 255 255 255;
+    --et-color-on-primary-hover: 255 255 255;
+    --et-color-on-primary-focus: 255 255 255;
+    --et-color-on-primary-active: 255 255 255;
+    --et-color-on-primary-disabled: 255 255 255;
+
+    --et-color-primary-ink: 25 158 112;
+    --et-color-primary-ink-hover: 25 158 112;
+    --et-color-primary-ink-focus: 25 158 112;
+    --et-color-primary-ink-active: 25 158 112;
+    --et-color-primary-ink-disabled: 25 158 112;
+  }
+
+  .et-color--chart-yellow-dark {
+    --et-color-primary: 201 133 0;
+    --et-color-primary-hover: 201 133 0;
+    --et-color-primary-focus: 201 133 0;
+    --et-color-primary-active: 201 133 0;
+    --et-color-primary-disabled: 201 133 0;
+
+    --et-color-on-primary: 255 255 255;
+    --et-color-on-primary-hover: 255 255 255;
+    --et-color-on-primary-focus: 255 255 255;
+    --et-color-on-primary-active: 255 255 255;
+    --et-color-on-primary-disabled: 255 255 255;
+
+    --et-color-primary-ink: 201 133 0;
+    --et-color-primary-ink-hover: 201 133 0;
+    --et-color-primary-ink-focus: 201 133 0;
+    --et-color-primary-ink-active: 201 133 0;
+    --et-color-primary-ink-disabled: 201 133 0;
+  }
 }
 
 /* Convenience aliases (rgb + solid + opacity variants) */
@@ -287,7 +599,7 @@
     --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb) / var(--et-theme-color-ink-opacity));
     --et-theme-color-ink: rgb(var(--et-theme-color-ink-rgb) / var(--et-theme-color-ink-opacity));
 
-    /* Dynamic Tailwind theme colors — re-declared per color scope so that
+    /* Dynamic Tailwind theme colors - re-declared per color scope so that
        bg-et-theme-* utilities resolve against the nearest .et-color--*
        scope instead of the value computed once at :root. */
     --color-et-theme: rgb(var(--et-color-primary));
