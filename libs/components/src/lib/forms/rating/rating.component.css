@@ -23,12 +23,6 @@
     initial-value: 180ms;
   }
 
-  @property --et-rating-support-offset {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 4px;
-  }
-
   @property --et-rating-error-font-size {
     syntax: '<length>';
     inherits: true;
@@ -55,7 +49,6 @@
     outline: none;
 
     --et-form-support-duration: var(--et-rating-support-duration);
-    --et-form-support-offset: var(--et-rating-support-offset);
     --et-form-support-error-font-size: var(--et-rating-error-font-size);
     --et-form-support-warning-font-size: var(--et-rating-warning-font-size);
     --et-form-support-hint-font-size: var(--et-rating-hint-font-size);

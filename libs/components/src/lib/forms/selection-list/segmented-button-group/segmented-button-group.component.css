@@ -5,12 +5,6 @@
     initial-value: 180ms;
   }
 
-  @property --et-segmented-button-group-support-offset {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 4px;
-  }
-
   @property --et-segmented-button-group-error-font-size {
     syntax: '<length>';
     inherits: true;
@@ -60,7 +54,6 @@
     color: var(--et-surface-color-solid, currentColor);
 
     --et-form-support-duration: var(--et-segmented-button-group-support-duration);
-    --et-form-support-offset: var(--et-segmented-button-group-support-offset);
     --et-form-support-error-font-size: var(--et-segmented-button-group-error-font-size);
     --et-form-support-warning-font-size: var(--et-segmented-button-group-warning-font-size);
     --et-form-support-hint-font-size: var(--et-segmented-button-group-hint-font-size);

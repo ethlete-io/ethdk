@@ -23,7 +23,6 @@ const choiceFieldCss = readFileSync(
 describe('ChoiceFieldComponent styles', () => {
   it('feeds the shared support region from its own public tokens', () => {
     expect(choiceFieldCss).toContain('--et-form-support-duration: var(--et-choice-field-support-duration)');
-    expect(choiceFieldCss).toContain('--et-form-support-offset: var(--et-choice-field-support-offset)');
     expect(choiceFieldCss).toContain('--et-form-support-error-font-size: var(--et-choice-field-error-font-size)');
     expect(choiceFieldCss).toContain('--et-form-support-warning-font-size: var(--et-choice-field-warning-font-size)');
     expect(choiceFieldCss).toContain('--et-form-support-hint-font-size: var(--et-choice-field-hint-font-size)');

@@ -22,6 +22,18 @@ import { LabelDirective } from './headless';
 // place the rules are observable from a spec.
 const readSheet = (file: string) => readFileSync(fileURLToPath(import.meta.url).replace(/[^/]+$/, file), 'utf8');
 
+const CONTROL_SHEETS = [
+  '../choice-field/choice-field.component.css',
+  '../selection-list/checkbox-group/checkbox-group.component.css',
+  '../selection-list/radio-group/radio-group.component.css',
+  '../selection-list/segmented-button-group/segmented-button-group.component.css',
+  '../rating/rating.component.css',
+  '../slider/slider.component.css',
+  '../slider/range-slider.component.css',
+  '../otp-input/otp-input.component.css',
+  '../dropzone/dropzone.component.css',
+];
+
 const CONTROLS = [
   'et-otp-input',
   'et-rating',
@@ -174,10 +186,17 @@ describe('support region fade', () => {
     expect(shared).not.toMatch(/transform/);
   });
 
-  it('leaves the form field on its direction slide', () => {
+  it('fades the form field the same way, without a slide', () => {
     const formField = readSheet('form-field.component.css');
 
-    expect(formField).toMatch(/&\[data-state='leaving'\]\[data-direction='to-above'\]/);
-    expect(formField).toMatch(/transform: translateY\(var\(--et-form-field-support-offset\)\);/);
+    expect(formField).toMatch(/transition: opacity var\(--et-form-field-support-duration\) ease;/);
+    expect(formField).not.toMatch(/support-offset/);
+    expect(formField).not.toMatch(/data-direction/);
+  });
+
+  it('keeps no support offset token on any control', () => {
+    for (const sheet of [shared, ...CONTROL_SHEETS.map(readSheet)]) {
+      expect(sheet).not.toMatch(/support-offset/);
+    }
   });
 });

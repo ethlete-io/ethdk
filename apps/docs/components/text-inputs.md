@@ -399,7 +399,6 @@ re-sanitizes the value that is already in the field.
 | `--et-otp-input-segment-radius`    | `8px`   |
 | `--et-otp-input-label-font-size`   | `13px`  |
 | `--et-otp-input-support-duration`  | `180ms` |
-| `--et-otp-input-support-offset`    | `4px`   |
 | `--et-otp-input-error-font-size`   | `12px`  |
 | `--et-otp-input-warning-font-size` | `12px`  |
 | `--et-otp-input-hint-font-size`    | `12px`  |

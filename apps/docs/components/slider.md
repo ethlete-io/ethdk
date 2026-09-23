@@ -208,7 +208,6 @@ The rail is a neutral `--et-surface-interaction-solid` tint; the fill and thumbs
 | `--et-slider-warning-font-size`     | `12px`  | Warning messages               |
 | `--et-slider-hint-font-size`        | `12px`  | Hint text                      |
 | `--et-slider-support-duration`      | `180ms` | Error/hint transition duration |
-| `--et-slider-support-offset`        | `4px`   | Error/hint slide-in offset     |
 
 ## Error codes
 

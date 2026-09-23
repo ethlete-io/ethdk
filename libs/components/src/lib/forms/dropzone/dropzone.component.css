@@ -59,12 +59,6 @@
     initial-value: 180ms;
   }
 
-  @property --et-dropzone-support-offset {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 4px;
-  }
-
   @property --et-dropzone-error-font-size {
     syntax: '<length>';
     inherits: true;
@@ -90,7 +84,6 @@
     color: var(--et-surface-color-solid, currentColor);
 
     --et-form-support-duration: var(--et-dropzone-support-duration);
-    --et-form-support-offset: var(--et-dropzone-support-offset);
     --et-form-support-error-font-size: var(--et-dropzone-error-font-size);
     --et-form-support-warning-font-size: var(--et-dropzone-warning-font-size);
     --et-form-support-hint-font-size: var(--et-dropzone-hint-font-size);

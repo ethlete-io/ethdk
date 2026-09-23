@@ -5,12 +5,6 @@
     initial-value: 180ms;
   }
 
-  @property --et-form-support-offset {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 4px;
-  }
-
   @property --et-form-support-error-font-size {
     syntax: '<length>';
     inherits: true;
@@ -101,12 +95,11 @@
     }
   }
 
-  /* On the region, not on the control host: a control aliases these two from its own public
-     tokens on the host, and the closer declaration has to win. */
+  /* On the region, not on the control host: a control aliases the duration from its own public
+     token on the host, and the closer declaration has to win. */
   @media (prefers-reduced-motion: reduce) {
     .et-form-support {
       --et-form-support-duration: 1ms;
-      --et-form-support-offset: 0px;
     }
   }
 }

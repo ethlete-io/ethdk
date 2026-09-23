@@ -265,7 +265,6 @@ Colors come from the app-registered [surface and color theme systems](/component
 | `--et-dropzone-opacity-disabled`    | `0.5`   | Disabled dimming                     |
 | `--et-dropzone-label-font-size`     | `13px`  | Projected `et-label` font size       |
 | `--et-dropzone-support-duration`    | `180ms` | Hint/error region animation          |
-| `--et-dropzone-support-offset`      | `4px`   | Hint/error region slide offset       |
 | `--et-dropzone-error-font-size`     | `12px`  | Error text font size                 |
 | `--et-dropzone-warning-font-size`   | `12px`  | Warning text font size               |
 | `--et-dropzone-hint-font-size`      | `12px`  | Hint text font size                  |
