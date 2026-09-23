@@ -109,8 +109,8 @@ export class ResizeHandlesComponent {
 
   private gesture$ = this.gestureStart$.pipe(
     exhaustMap(({ event, edge }) => setupResizeObservable(event, edge, this.el.nativeElement.ownerDocument)),
-    takeUntilDestroyed(),
     share(),
+    takeUntilDestroyed(),
   );
 
   resizeStarted = outputFromObservable<ResizeEdge>(

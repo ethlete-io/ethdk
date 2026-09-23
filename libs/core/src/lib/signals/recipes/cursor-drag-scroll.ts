@@ -206,17 +206,17 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
 
     mouseMove
       .pipe(
-        takeUntilDestroyed(destroyRef),
         takeUntil(dragEnd),
         tap((e) => updateDragging(e)),
+        takeUntilDestroyed(destroyRef),
       )
       .subscribe();
 
     dragEnd
       .pipe(
         take(1),
-        takeUntilDestroyed(destroyRef),
         tap(() => updateDraggingEnd()),
+        takeUntilDestroyed(destroyRef),
       )
       .subscribe();
 

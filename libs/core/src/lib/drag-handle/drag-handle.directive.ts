@@ -23,8 +23,8 @@ export class DragHandleDirective {
 
   private gesture$ = this.gestureStart$.pipe(
     exhaustMap((event) => dragGestureFrom(event, this.el.nativeElement, { commitThreshold: this.commitThreshold() })),
-    takeUntilDestroyed(),
     share(),
+    takeUntilDestroyed(),
   );
 
   dragTapped = outputFromObservable<void>(
