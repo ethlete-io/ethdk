@@ -188,3 +188,20 @@ It needs:
 - A docs page in `apps/docs/components/`, stories, and a changeset.
 
 Out of scope: multi-series (needs the palette from (b)), stacked bars, pie, sankey, attribute tweening.
+
+## Chart design calls, open for the user (collected 2026-09-23)
+
+The user decides these on 2026-09-24. Each slice picked the most restrained option, listed first.
+
+### Slice A: bars (`6278e205b`)
+
+1. Legend: above the plot, left-aligned, wrapping, 10px rounded squares, not interactive. Alternatives: below the plot, or toggle-to-isolate.
+2. Stacked segments: a 2px surface gap (1px from each neighbour). Positive and negative stacks meet at zero with no gap.
+3. Horizontal: category labels on the left, end-aligned, at most 40% width with an ellipsis. The tooltip opens right of positive bars and left of negative ones.
+4. Grouped: bars 2px apart, and at least 20% of the band stays as air between groups.
+5. No direct labels. The dataviz skill suggests them for 4 or fewer series.
+6. The series tooltip shows key, value, series and category. A stacked tooltip has no total.
+7. Several series without a palette: all get the accent, plus a dev `console.warn`. Alternative: an error, or a built-in variation.
+8. `provideColorPalette` is one static list, so dark mode needs a second palette from the app. Should the SDK support a palette that follows the surface?
+9. Colour follows the position in `series`. As a result, filtering series repaints the rest unless each series sets `colorToken`.
+10. `BarChartDirective.baselineY` is `@deprecated` in favour of `baseline`. Recommendation: remove it, because the chart is not released yet.
