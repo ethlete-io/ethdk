@@ -1,5 +1,14 @@
 # @ethlete/query
 
+## 6.0.0-next.48
+
+### Patch Changes
+
+- `prep-for-query-v3` renames symbols and flattens `ExperimentalQuery` when they are reached through a namespace import such as `import * as q from '@ethlete/query'`.
+- The v3 migration rewrites a legacy `prepare()` call inside an anonymous `export default class`, instead of leaving it unmigrated behind an unused `Injector` import.
+- The v3 migration now warns about a creator whose `secure` value is not a literal `true` or `false`, instead of silently generating a non-secure creator.
+- The v3 migration reports a shorthand creator config property it cannot carry over, such as `{ secure }`, instead of dropping it silently.
+
 ## 6.0.0-next.47
 
 ### Patch Changes
