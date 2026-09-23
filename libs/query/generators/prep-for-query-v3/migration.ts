@@ -98,8 +98,22 @@ function renameSymbolsInFile(content: string, filePath: string, symbolUsageCount
 
   // Track which symbols are imported from @ethlete/query
   const importedSymbols = new Set<string>();
+  const namespaceAliases = collectQueryNamespaceAliases(sourceFile);
 
   function visit(node: ts.Node) {
+    const namespaceMember = getNamespaceMember(node, namespaceAliases)?.member;
+    const renamedMember =
+      namespaceMember && (TYPE_RENAMES.get(namespaceMember.text) || FUNCTION_RENAMES.get(namespaceMember.text));
+
+    if (namespaceMember && renamedMember) {
+      replacements.push({
+        start: namespaceMember.getStart(sourceFile),
+        end: namespaceMember.getEnd(),
+        replacement: renamedMember,
+        oldName: namespaceMember.text,
+      });
+    }
+
     // Track imports from @ethlete/query
     if (ts.isImportDeclaration(node)) {
       const moduleSpecifier = node.moduleSpecifier;
@@ -134,7 +148,11 @@ function renameSymbolsInFile(content: string, filePath: string, symbolUsageCount
       }
 
       // Skip if it's the imported name in an import specifier (we'll handle that separately)
-      if (ts.isImportSpecifier(parent) && (parent.propertyName === node || parent.name === node)) {
+      if (
+        (ts.isImportSpecifier(parent) && (parent.propertyName === node || parent.name === node)) ||
+        (ts.isPropertyAccessExpression(parent) && parent.name === node) ||
+        (ts.isQualifiedName(parent) && parent.right === node)
+      ) {
         ts.forEachChild(node, visit);
         return;
       }
@@ -172,6 +190,46 @@ function renameSymbolsInFile(content: string, filePath: string, symbolUsageCount
   }
 
   return result;
+}
+
+function collectQueryNamespaceAliases(sourceFile: ts.SourceFile): Set<string> {
+  const aliases = new Set<string>();
+
+  sourceFile.statements.forEach((statement) => {
+    if (!ts.isImportDeclaration(statement)) {
+      return;
+    }
+
+    const namedBindings = statement.importClause?.namedBindings;
+
+    if (
+      namedBindings &&
+      ts.isNamespaceImport(namedBindings) &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      statement.moduleSpecifier.text === '@ethlete/query'
+    ) {
+      aliases.add(namedBindings.name.text);
+    }
+  });
+
+  return aliases;
+}
+
+function getNamespaceMember(
+  node: ts.Node,
+  namespaceAliases: Set<string>,
+): { namespace: ts.Identifier; member: ts.Identifier } | undefined {
+  const [namespace, member] = ts.isPropertyAccessExpression(node)
+    ? [node.expression, node.name]
+    : ts.isQualifiedName(node)
+      ? [node.left, node.right]
+      : [];
+
+  if (!namespace || !member || !ts.isIdentifier(namespace) || !ts.isIdentifier(member)) {
+    return undefined;
+  }
+
+  return namespaceAliases.has(namespace.text) ? { namespace, member } : undefined;
 }
 
 function updateImports(
@@ -289,9 +347,12 @@ function replaceNamespaceInFile(
 
   collectImport(sourceFile);
 
+  const namespaceAliases = collectQueryNamespaceAliases(sourceFile);
+  const namespaceReplacements = collectNamespacedExperimentalQueryReplacements(sourceFile, namespaceAliases);
+
   // If no ExperimentalQuery import found, return unchanged
   if (!hasExperimentalQueryImport || !experimentalQueryAlias) {
-    return { content, modified: false, replacementCount: 0 };
+    return applyReplacements(content, namespaceReplacements, namespaceReplacements.length);
   }
 
   // Second pass: collect used symbols
@@ -383,19 +444,53 @@ function replaceNamespaceInFile(
 
   createReplacements(sourceFile);
 
-  // Apply replacements in reverse order
-  let result = content;
-  replacements.sort((a, b) => b.start - a.start);
+  // Subtract 1 for the import replacement
+  return applyReplacements(
+    content,
+    [...replacements, ...namespaceReplacements],
+    replacements.length - 1 + namespaceReplacements.length,
+  );
+}
 
-  for (const { start, end, replacement } of replacements) {
-    result = result.slice(0, start) + replacement + result.slice(end);
+function collectNamespacedExperimentalQueryReplacements(
+  sourceFile: ts.SourceFile,
+  namespaceAliases: Set<string>,
+): Array<{ start: number; end: number; replacement: string }> {
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  if (namespaceAliases.size === 0) {
+    return replacements;
   }
 
-  return {
-    content: result,
-    modified: replacements.length > 0,
-    replacementCount: replacements.length - 1, // Subtract 1 for the import replacement
-  };
+  function visit(node: ts.Node) {
+    const access = getNamespaceMember(node, namespaceAliases);
+
+    if (access?.member.text === 'ExperimentalQuery') {
+      replacements.push({ start: node.getStart(sourceFile), end: node.getEnd(), replacement: access.namespace.text });
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  return replacements;
+}
+
+function applyReplacements(
+  content: string,
+  replacements: Array<{ start: number; end: number; replacement: string }>,
+  replacementCount: number,
+): { content: string; modified: boolean; replacementCount: number } {
+  let result = content;
+
+  [...replacements]
+    .sort((a, b) => b.start - a.start)
+    .forEach(({ start, end, replacement }) => {
+      result = result.slice(0, start) + replacement + result.slice(end);
+    });
+
+  return { content: result, modified: replacements.length > 0, replacementCount };
 }
 
 //#endregion

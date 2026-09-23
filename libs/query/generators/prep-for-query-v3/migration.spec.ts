@@ -630,6 +630,49 @@ export const myQuery: Query<unknown> = legacy.value;
     expect(content).toContain('export const myQuery: V2Query<unknown> = legacy.value;');
   });
 
+  it('renames symbols reached through a namespace import', async () => {
+    tree.write(
+      'apps/example/src/app/service.ts',
+      `
+import { Query } from '@ethlete/query';
+import * as q from '@ethlete/query';
+
+export const key = q.buildQueryCacheKey('/users', {});
+export const query: q.Query<unknown> = q.def<Query<unknown>>();
+export const other = q.def();
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const content = tree.read('apps/example/src/app/service.ts', 'utf-8');
+
+    expect(content).toContain("import { V2Query } from '@ethlete/query';");
+    expect(content).toContain("export const key = q.v2BuildQueryCacheKey('/users', {});");
+    expect(content).toContain('export const query: q.V2Query<unknown> = q.def<V2Query<unknown>>();');
+    expect(content).toContain('export const other = q.def();');
+  });
+
+  it('flattens ExperimentalQuery reached through a namespace import', async () => {
+    tree.write(
+      'apps/example/src/app/service.ts',
+      `
+import * as q from '@ethlete/query';
+
+export const creator = q.ExperimentalQuery.createQueryCreator({ method: 'GET', path: '/users' });
+export type Creator = q.ExperimentalQuery.QueryCreator;
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const content = tree.read('apps/example/src/app/service.ts', 'utf-8');
+
+    expect(content).toContain("import * as q from '@ethlete/query';");
+    expect(content).toContain('export const creator = q.createQueryCreator({');
+    expect(content).toContain('export type Creator = q.QueryCreator;');
+  });
+
   it('leaves a file that only mentions ExperimentalQuery in its own names untouched', async () => {
     const source = `
 import { Component } from '@angular/core';
