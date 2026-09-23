@@ -163,6 +163,14 @@ describe('RangeSliderDirective', () => {
       expect(driver.thumbAttrs('aria-valuenow')).toEqual(['25', '80']);
     });
 
+    it('announces the mark label a thumb sits on without snapToMarks', () => {
+      driver.host.marks.set([{ value: 25, label: 'Quarter' }]);
+      driver.host.value.set([25, 80]);
+      driver.tick();
+
+      expect(driver.thumbAttrs('aria-valuetext')).toEqual(['Quarter', null]);
+    });
+
     it('snaps both thumbs onto the marks while honoring minDistance', () => {
       driver.host.marks.set([{ value: 0 }, { value: 25 }, { value: 50 }, { value: 75 }, { value: 100 }]);
       driver.host.snapToMarks.set(true);

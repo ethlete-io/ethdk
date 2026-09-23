@@ -191,11 +191,6 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
       return this.resolvedMixedLabel();
     }
 
-    // only a mark-snapped slider can be sure the thumb sits on a labelled stop
-    if (!this.snapToMarks()) {
-      return null;
-    }
-
     const value = this.thumbValues()[index];
 
     return this.resolvedMarks().find((mark) => mark.value === value)?.label ?? null;

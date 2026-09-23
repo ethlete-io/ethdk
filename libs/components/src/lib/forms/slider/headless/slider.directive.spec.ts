@@ -286,6 +286,21 @@ describe('SliderDirective', () => {
       expect(driver.thumbAttr('aria-valuenow')).toBe('25');
     });
 
+    it('announces an off-grid mark label without snapToMarks, and keeps the keyboard on the step grid', () => {
+      driver.host.step.set(10);
+      driver.host.marks.set([{ value: 25, label: 'Quarter' }, { value: 50 }]);
+      driver.tick();
+
+      driver.pointerOnMark(0);
+
+      expect(driver.thumbAttr('aria-valuetext')).toBe('Quarter');
+
+      driver.press('ArrowRight');
+
+      expect(driver.host.value() % 10).toBe(0);
+      expect(driver.thumbAttr('aria-valuetext')).toBeNull();
+    });
+
     it('still snaps a press on the bare track onto the step grid', () => {
       driver.host.step.set(10);
       driver.host.marks.set([{ value: 25 }]);
@@ -323,7 +338,7 @@ describe('SliderDirective', () => {
         driver.host.snapToMarks.set(false);
         driver.tick();
 
-        expect(driver.thumbAttr('aria-valuetext')).toBeNull();
+        expect(driver.thumbAttr('aria-valuetext')).toBe('High');
       });
 
       it('steps from mark to mark with the keyboard', () => {

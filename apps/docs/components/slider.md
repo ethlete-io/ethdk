@@ -104,13 +104,12 @@ const qualityMarks = [
 - Ticks inside the filled part of the track (between the thumbs, for a range) render in the theme's on-primary color; the rest sit on the neutral rail.
 - Explicit marks are sorted, de-duplicated and clipped to the bounds. `marks="true"` refuses to generate more than 200 ticks - raise the `step` or pass an array ([`ET3104`](/components/error-codes#slider-et31xx)).
 - A pointer press that starts on a tick (or its label) commits **that exact value**, not the value under the pointer - a mark that sits off the `step` grid included. The arrow keys still move along the `step` grid, so reach for `snapToMarks` when the marks are meant to be the only stops.
+- Whenever the value equals a labelled mark, the mark's `label` becomes the thumb's `aria-valuetext`, so screen readers announce "Medium" instead of "1". This holds with or without `snapToMarks`; on any other value the raw number is announced.
 - Labels are decoration: the whole tick layer is `aria-hidden`, and the accessible value stays on the thumb.
 
 ### snapToMarks
 
 With `snapToMarks`, the marks replace the `step` grid entirely - commits land on the nearest mark, the arrow keys move one mark at a time (Page keys ten), and Home/End go to the outermost marks. A range slider still honors `minDistance`: a thumb that would come too close to its sibling falls back to the closest mark that keeps the gap.
-
-While snapping, a mark's `label` also becomes the thumb's `aria-valuetext`, so screen readers announce "Medium" instead of "1".
 
 <StoryEmbed id="components-forms-slider--labelled-marks" height="260px" />
 
@@ -180,7 +179,7 @@ All of the behavior above lives in the headless tier - the default components on
 - Clicking or dragging anywhere on the track moves the nearest thumb (and focuses it); the drag captures the pointer, and touch scrolling on the other axis stays native (`touch-action: pan-y` horizontally, `pan-x` vertically).
 - A drag the browser takes away mid-gesture - a system back/home swipe, an incoming call, the tab going to the background - reverts the thumb to the value the press landed on. The user never released, so the position the pointer happened to be at is not one they chose.
 - Right-to-left contexts mirror a horizontal slider: positioning uses logical properties and the horizontal arrow keys follow the visual direction. A vertical slider is never mirrored.
-- Tick labels are `aria-hidden`. With `snapToMarks`, the current mark's label becomes the thumb's `aria-valuetext`.
+- Tick labels are `aria-hidden`. When the value sits on a labelled mark, that label becomes the thumb's `aria-valuetext`, with or without `snapToMarks`.
 
 | Key               | Action                                                            |
 | ----------------- | ----------------------------------------------------------------- |
