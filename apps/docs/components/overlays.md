@@ -89,23 +89,23 @@ The manager also exposes an `openOverlays` computed with every currently open re
 An overlay that hosts a form should not silently throw away unsaved edits when the user clicks the backdrop, hits <kbd>Escape</kbd>, drags the sheet away, or a programmatic `close()` runs. `createOverlayUnsavedChangesGuard` (the overlay flavor of the [`unsavedChanges` family](/core/utilities#unsaved-changes)) handles exactly this: called from the overlay content component's injection context, it injects the current `OVERLAY_REF`, and while the watched form differs from its baseline it **vetoes** the close, runs your async `confirm`, and only re-issues the close if the user agrees. In a [routed overlay](#routing-inside-overlays) it guards route changes away from the page the same way, so a form on a route needs no separate navigation guard.
 
 ```ts
-import { createOverlayUnsavedChangesGuard, injectOverlayManager, OVERLAY_REF } from '@ethlete/components';
+import { createAlertDialogOpener, createOverlayUnsavedChangesGuard, OVERLAY_REF } from '@ethlete/components';
 import { form } from '@angular/forms/signals';
+import { fromEvent, takeUntil } from 'rxjs';
 
 @Component({/* … */})
 export class EditItemOverlayComponent {
-  private overlays = injectOverlayManager();
+  private dialogs = createAlertDialogOpener();
   private overlayRef = inject(OVERLAY_REF);
 
   protected form = form(signal({ title: '', notes: '' }));
 
   private guard = createOverlayUnsavedChangesGuard({
     source: this.form, // a signal-forms FieldTree (also: Signal<FieldTree | null>, AbstractControl, WritableSignal)
-    confirm: (value, { signal }) => {
-      const ref = this.overlays.open(ConfirmDiscardComponent); // truthy result = discard
-      signal.addEventListener('abort', () => ref.close(false)); // the session ended - don't strand it
-      return ref.afterClosed();
-    },
+    confirm: (value, { signal }) =>
+      this.dialogs
+        .confirm({ title: 'Discard changes?', confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true })
+        .pipe(takeUntil(fromEvent(signal, 'abort'))), // the session ended - unsubscribing closes the dialog
   });
 
   protected save() {
@@ -122,7 +122,7 @@ export class EditItemOverlayComponent {
 - **`dismissSources`** opts individual sources out (`{ outsidePointer, escape, closeCall, drag, replace }`, all `true` by default). `replace` is a [`single` opener](/components/overlay-openers#single) opening another overlay in this one's place. With `disableClose`, only a programmatic `close()` can reach the guard.
 - **`guardRouteChanges`** (default `true`) additionally vetoes [overlay router](#guarding-navigation) navigations away from the page holding the guard, so in a routed overlay one call covers both ways the edits can be lost - moving to another route and dismissing the overlay - and both go through the same `confirm`. Set it to `false` for a page whose edits survive a route change. It does nothing when the overlay has no router.
 - **`tab`** - while the form is dirty the guard also locks the **browser tab** (`beforeunload`), since closing or reloading the tab bypasses the overlay runtime entirely. Opt into a tab title marker, a blinking marker, a favicon dot or an app badge, or disable it with `tab: false` - see [Guarding the browser tab](/core/utilities#unsaved-changes-tab).
-- **Only one confirm shows at a time**, app-wide, and a logout releases the guard instead of stranding the dialog over the login page - wire `confirm`'s `signal` to close your dialog, see [Sessions ending underneath a guard](/core/utilities#unsaved-changes-coordinator).
+- **Only one confirm shows at a time**, app-wide, and a logout releases the guard instead of stranding the dialog over the login page - wire `confirm`'s `signal` to close your dialog (with a [confirm dialog](#confirm-and-alert-dialogs), unsubscribing is enough), see [Sessions ending underneath a guard](/core/utilities#unsaved-changes-coordinator).
 - The guard auto-cleans up on injector destroy; call `guard.destroy()` to stop guarding earlier.
 
 For route-level protection (a form on a page rather than in an overlay) use [`createUnsavedChangesGuard`](/core/utilities#unsaved-changes) from `@ethlete/core`, which adds a `canDeactivate` bridge.
@@ -132,6 +132,63 @@ For route-level protection (a form on a page rather than in an overlay) use [`cr
 ## Live demo
 
 <StoryEmbed id="components-overlays-overlay--default" height="480px" />
+
+## Confirm and alert dialogs
+
+For a yes/no question or a notice, don't build an overlay component: `createAlertDialogOpener()` opens a ready-made one and hands the answer back as a cold `Observable`.
+
+```ts
+import { createAlertDialogOpener } from '@ethlete/components';
+import { filter, switchMap } from 'rxjs';
+
+export class ProjectSettingsComponent {
+  private dialogs = createAlertDialogOpener();
+
+  protected deleteProject() {
+    this.dialogs
+      .confirm({
+        title: 'Delete project?',
+        message: 'The project and its boards are deleted for everyone.',
+        confirmLabel: 'Delete project',
+        destructive: true,
+      })
+      .pipe(
+        filter(Boolean),
+        switchMap(() => this.api.deleteProject()),
+      )
+      .subscribe();
+  }
+
+  protected exportFinished() {
+    this.dialogs.alert({ title: 'Export finished' }).subscribe();
+  }
+}
+```
+
+Call it in an injection context, like `createOverlayOpener`. Nothing opens until you subscribe, and each subscription opens its own dialog:
+
+| Method            | Emits, then completes                                                             |
+| ----------------- | --------------------------------------------------------------------------------- |
+| `confirm(config)` | `true` when the confirm action is pressed, `false` on cancel or <kbd>Escape</kbd> |
+| `alert(config)`   | once (`void`) when the dialog is acknowledged or dismissed with <kbd>Escape</kbd> |
+
+Unsubscribing before the user answers closes the dialog and emits nothing - which is how `takeUntil`, a `switchMap` that moves on, or a destroyed component clean it up.
+
+| Option             | On        | Default                           | Purpose                                                                                    |
+| ------------------ | --------- | --------------------------------- | ------------------------------------------------------------------------------------------ |
+| `title`            | both      | required                          | The heading, and the dialog's accessible name                                              |
+| `message`          | both      | none                              | Body text, wired to `aria-describedby`; line breaks are kept                               |
+| `confirmLabel`     | `confirm` | `ALERT_DIALOG_LABELS.confirm`     | Name the action (`'Delete project'`) rather than `'OK'`                                    |
+| `cancelLabel`      | `confirm` | `ALERT_DIALOG_LABELS.cancel`      |                                                                                            |
+| `destructive`      | `confirm` | `false`                           | Renders the confirm action in the app's `type: 'error'` color theme (`injectErrorTheme()`) |
+| `acknowledgeLabel` | `alert`   | `ALERT_DIALOG_LABELS.acknowledge` |                                                                                            |
+| `origin`           | both      | the focused element               | Where the dialog animates from and returns focus to                                        |
+
+The dialog is an `alertdialog`: initial focus lands on the least destructive action - **Cancel** on a confirm, even a destructive one, and the only action on an alert - <kbd>Escape</kbd> cancels, and a press on the backdrop does nothing, so an answer takes a deliberate choice. It uses the [dialog strategy](#strategies) at up to `420px` wide. The action labels come from [`ALERT_DIALOG_LABELS`](/components/localization) (`provideAlertDialogLabels({ confirm, cancel, acknowledge })`); the title and message are always yours. `destructive` needs a color theme with `type: 'error'` registered, the same requirement form fields have.
+
+For anything more than a title, a message and two actions - a form, a list, a third choice - write an overlay component with an [opener](/components/overlay-openers).
+
+<StoryEmbed id="components-overlays-alert-dialog--default" height="420px" />
 
 ## Building overlay content
 
@@ -433,7 +490,7 @@ While it renders inline the sidebar is the content grid's first column and a fle
 
 ## Accessibility
 
-- **Role**: modal overlays default to `role="dialog"` (`config.role` accepts `'dialog' | 'alertdialog'`); non-modal overlays get no role unless you set one.
+- **Role**: modal overlays default to `role="dialog"` (`config.role` accepts `'dialog' | 'alertdialog'`); non-modal overlays get no role unless you set one [Confirm and alert dialogs](#confirm-and-alert-dialogs) are `alertdialog`s.
 - **Name/description**: set `ariaLabel`, `ariaLabelledBy` or `ariaDescribedBy` in the config - or just use `[et-overlay-title]`, which auto-wires the overlay's `aria-labelledby` to the title element when nothing else names it.
 - **Focus**: `autoFocus` targets `'container' | 'first-heading' | 'first-tabbable'`, a CSS selector, or `false`; `restoreFocus` (default `true`) returns focus to the opener on close - but only when focus still sits inside the overlay (or nowhere) at that moment, so a press that moved focus to another control keeps it there. With the overlay router, each navigation re-applies initial focus to the new page (default `'first-tabbable'`), and `[etOverlayRouterLink]` sets `aria-current="page"` on the active link.
 - **Dismissal & scroll**: `closeOnEscape` and `closeOnOutsidePointer` default to `true` (`disableClose` forces both off), and body scroll is locked while any overlay that is _modal_ or shows a _backdrop_ is open. A non-modal overlay that leaves the page visible - a tooltip, a popover, an anchored pane - never locks it. The two are checked separately because a breakpoint switch can add a backdrop to an overlay that is already open: a non-modal picker anchored to its field above `md` becomes a backdropped bottom sheet below it, and the page locks on the switch and unlocks again on the way back.

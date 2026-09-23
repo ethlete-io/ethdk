@@ -1,0 +1,45 @@
+@layer components {
+  @property --et-alert-dialog-title-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 18px;
+  }
+
+  @property --et-alert-dialog-message-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  @property --et-alert-dialog-actions-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  .et-alert-dialog {
+    --et-overlay-body-min-block-size: 0px;
+
+    color: var(--et-surface-color-solid, currentColor);
+
+    .et-alert-dialog-title {
+      margin: 0;
+      font-size: var(--et-alert-dialog-title-font-size);
+      font-weight: 600;
+    }
+
+    .et-alert-dialog-message {
+      margin: 0;
+      font-size: var(--et-alert-dialog-message-font-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+      white-space: pre-line;
+    }
+
+    .et-alert-dialog-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: var(--et-alert-dialog-actions-gap);
+    }
+  }
+}

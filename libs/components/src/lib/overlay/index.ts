@@ -1,3 +1,4 @@
+export * from './alert-dialog';
 export * from './get-closest-overlay';
 export * from './headless';
 export * from './overlay-body.component';

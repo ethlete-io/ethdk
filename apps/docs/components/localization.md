@@ -124,6 +124,7 @@ that provides labels needs no per-instance wiring at all.
 | `GRID_LABELS`             | `provideGridLabels`           | Interactive/read-only grid names, item remove                                                                 |
 | `LOADER_LABELS`           | `provideLoaderLabels`         | What spinners, brand loaders and skeletons announce                                                           |
 | `NOTIFICATION_LABELS`     | `provideNotificationLabels`   | The dismiss button                                                                                            |
+| `ALERT_DIALOG_LABELS`     | `provideAlertDialogLabels`    | The confirm, cancel and acknowledge actions of `createAlertDialogOpener` dialogs                              |
 | `STREAM_LABELS`           | `provideStreamLabels`         | Consent gate, failure overlay, PiP placeholder and controls, frame title                                      |
 | `QUERY_ERROR_LABELS`      | `provideQueryErrorLabels`     | Status titles/messages and retry - **English and German ship**                                                |
 | `FILTER_OVERLAY_LABELS`   | `provideFilterOverlayLabels`  | Result-count submit button and reset - **English and German ship**                                            |

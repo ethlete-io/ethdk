@@ -141,6 +141,8 @@ confirm: (value, { signal }) => {
 };
 ```
 
+With `@ethlete/components`, [`createAlertDialogOpener()`](/components/overlays#confirm-and-alert-dialogs) closes its dialog when you unsubscribe, so `dialogs.confirm({ … }).pipe(takeUntil(fromEvent(signal, 'abort')))` is the whole wiring.
+
 Call `abandonAll()` yourself for anything else that ends a session: an inactivity timeout, a hard workspace switch, a forced re-auth.
 
 `hasUnsavedChanges` answers the same question without asking the user: whether any live tracker currently holds changes worth confirming (abandoned ones excluded). It is how [app updates](/core/app-updates) decide whether a stale build may reload itself silently.
