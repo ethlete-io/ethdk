@@ -67,7 +67,7 @@ describe('query form transforms scenario', () => {
     expect(qf.value()).toEqual({ from: null, owner: 'ada' });
   });
 
-  it.fails('falls back to the default when a transform rejects the URL value (reads null instead)', async () => {
+  it('falls back to the default when a transform rejects the URL value', async () => {
     const s = scenario();
     const positive = (value: unknown) => {
       const n = transformToNumber(value);

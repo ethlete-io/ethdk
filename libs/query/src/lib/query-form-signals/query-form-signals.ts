@@ -601,10 +601,10 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   const deserialize = (def: QueryFieldDef<unknown>, raw: unknown): unknown => {
     if (!def.skipAutoTransform && raw === ET_NULL_VALUE) return null;
     if (!def.skipAutoTransform && raw === ET_EMPTY_ARRAY_VALUE) return [];
-    if (def.queryParamToValue) return def.queryParamToValue(raw);
+    if (def.queryParamToValue) return def.queryParamToValue(raw) ?? resolveDefault(def);
     if (def.skipAutoTransform) return raw;
 
-    return autoCoerce(raw, resolveDefault(def));
+    return autoCoerce(raw, resolveDefault(def)) ?? resolveDefault(def);
   };
 
   const clearTimer = () => {
