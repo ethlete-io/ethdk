@@ -48,8 +48,8 @@ async function tapSlice(page: Page, root: Locator, label: string): Promise<void>
 async function expectTooltipFor(page: Page, expected: { value: string; label: string }): Promise<void> {
   const tooltip = page.getByRole('tooltip');
 
-  await expect(tooltip).toBeVisible();
   await expect(tooltip).toHaveCount(1);
+  await expect(tooltip).toBeVisible();
   await expect(tooltip.locator('.et-chart-tooltip-value')).toHaveText(expected.value);
   await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText(expected.label);
 }
