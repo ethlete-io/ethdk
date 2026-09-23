@@ -3,6 +3,8 @@ export * from './chart-errors';
 export * from './chart.imports';
 export * from './chart.types';
 export * from './headless';
+export * from './line-chart-errors';
+export * from './line-chart.component';
 export * from './pie-chart-errors';
 export * from './pie-chart.component';
 export * from './sankey-chart-errors';
