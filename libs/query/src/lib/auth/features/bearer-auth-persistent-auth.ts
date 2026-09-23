@@ -60,10 +60,10 @@ export type PersistentAuthConfig<
      */
     queryKey: TKey;
     /**
-     * A function that turns the token gotten from the cookie into the body for the auto-login request
-     * @default (token) => ({ body: { token } })
+     * Turns the refresh token read from the cookie into the args of the auto-login request.
+     * @default the `buildArgs` of the refresh query when `queryKey` names it, otherwise `(token) => ({ body: { token } })`
      */
-    buildArgs: (token: string) => RequestArgs<ExtractQueryArgs<Extract<TBuilders[number], { key: TKey }>>>;
+    buildArgs?: (token: string) => RequestArgs<ExtractQueryArgs<Extract<TBuilders[number], { key: TKey }>>>;
     /**
      * An array of routes where the auto login via cookie should not be triggered. Prefix-matched, so
      * `'/reset-password'` also excludes `/reset-password-templates`; reach for `shouldAutoLogin` when
@@ -281,13 +281,24 @@ export const createPersistentAuthFeature = <
     if (wasRejected && !context.isTabLocalSession()) removeCookie();
   });
 
+  const autoLoginBuilder = context.queryBuilders.find((builder) => builder.key === config.autoLogin.queryKey);
+
+  type AutoLoginArgs = RequestArgs<ExtractQueryArgs<Extract<TBuilders[number], { key: TKey }>>>;
+
+  const buildAutoLoginArgs = (token: string): AutoLoginArgs => {
+    if (config.autoLogin.buildArgs) return config.autoLogin.buildArgs(token);
+    if (autoLoginBuilder?._type === 'tokenRefreshQuery') return autoLoginBuilder.buildArgs(token) as AutoLoginArgs;
+
+    return { body: { token } } as unknown as AutoLoginArgs;
+  };
+
   const exchangeCookie = () => {
     const storedToken = getCookie(cookieName);
 
     if (!storedToken) return;
 
     const decryptedToken = decryptToken(storedToken);
-    const args = config.autoLogin.buildArgs(decryptedToken);
+    const args = buildAutoLoginArgs(decryptedToken);
 
     context.queries[config.autoLogin.queryKey].execute(args, { triggeredBy: 'persistent-auth' });
   };

@@ -17,8 +17,7 @@ export type TokenExpirationWarningConfig = {
   checkInterval?: number;
   /**
    * Name of the claim in the decoded access token that carries the expiry, as seconds since the epoch.
-   * Must match the `expiresInPropertyName` of the refresh query.
-   * @default 'exp'
+   * @default the refresh query's `expiresInPropertyName`, otherwise `'exp'`
    */
   expiresInPropertyName?: string;
 };
@@ -44,7 +43,11 @@ export const withTokenExpirationWarning = <TBuilders extends readonly AnyQueryBu
   return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
     const warningThreshold = config.warningThreshold ?? 5 * 60 * 1000;
     const checkInterval = config.checkInterval ?? 1000;
-    const expiresInPropertyName = config.expiresInPropertyName ?? 'exp';
+    const refreshBuilder = context.queryBuilders.find((builder) => builder._type === 'tokenRefreshQuery');
+    const expiresInPropertyName =
+      config.expiresInPropertyName ??
+      (refreshBuilder?._type === 'tokenRefreshQuery' ? refreshBuilder.config.expiresInPropertyName : undefined) ??
+      'exp';
     const expiresAt = computed<Date | null>(() => {
       const decoded = context.bearerData() as Record<string, unknown> | null;
       if (!decoded) return null;

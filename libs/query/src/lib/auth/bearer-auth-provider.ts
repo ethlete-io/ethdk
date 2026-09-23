@@ -489,6 +489,9 @@ export type BearerAuthProviderFeatureContext<
    */
   activityCoordination?: BearerAuthActivityCoordination;
   queries: QueryRegistry<TBuilders>;
+
+  /** The query builders the provider was created with, so a feature can read a query's own config. */
+  queryBuilders: TBuilders;
   latestExecutedQuery: Signal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>;
   executionState: WritableSignal<BearerAuthExecutionState | null>;
   sessionStatus: Signal<BearerAuthSessionStatus>;
@@ -961,6 +964,7 @@ const createBearerAuthProviderImpl = <
     activityCoordination: isLeader.activityCoordination,
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
+    queryBuilders: config.queries,
     latestExecutedQuery: latestExecutedQuery.asReadonly(),
     executionState,
     sessionStatus: sessionStatus.asReadonly(),
@@ -1063,7 +1067,7 @@ export type AnyCreateBearerAuthProviderResult = BearerAuthProviderRef<any, any, 
  * export const myApiAuthProviderRef = createBearerAuthProvider({ ... });
  * export type MyApiAuthProvider = BearerAuthProviderOf<typeof myApiAuthProviderRef>;
  *
- * const doLogin = (provider: MyApiAuthProvider) => provider.queries.login({ body: { ... } });
+ * const doLogin = (provider: MyApiAuthProvider) => provider.queries.login.execute({ body: { ... } });
  * ```
  */
 export type BearerAuthProviderOf<TRef extends AnyCreateBearerAuthProviderResult> = NonNullable<

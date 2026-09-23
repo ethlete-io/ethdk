@@ -21,7 +21,10 @@ const BASE_URL = 'https://api.test';
 const PROVIDER_NAME = 'auth-persistent-scenario';
 const COOKIE_NAME = 'etAuth';
 
-type TokenArgs = { body: { token?: string }; response: { accessToken: string; refreshToken: string } };
+type TokenArgs = {
+  body: { token?: string; refresh_token?: string };
+  response: { accessToken: string; refreshToken: string };
+};
 type RevokeArgs = { body: { accessToken: string | null; refreshToken: string | null }; response: void };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,6 +61,7 @@ type BootOptions = {
   features?: readonly AnyFeatureBuilder[];
   lib?: QueryLib;
   onRefreshFailure?: TokenRefreshQueryConfig<TokenArgs>['onRefreshFailure'];
+  refreshBuildArgs?: TokenRefreshQueryConfig<TokenArgs>['buildArgs'];
 };
 
 let bootCounter = 0;
@@ -93,6 +97,7 @@ const boot = (s: Scenario, options: BootOptions = {}) => {
         queryCreator: post<TokenArgs>('/auth/refresh'),
         refreshStrategy: 0.5,
         onRefreshFailure: options.onRefreshFailure,
+        buildArgs: options.refreshBuildArgs,
       }),
       withAuthenticationQuery('revoke', { queryCreator: post<RevokeArgs>('/auth/revoke') }),
     ],
@@ -206,6 +211,30 @@ describe('withPersistentAuth', () => {
     expect(s.api.requests.slice(requestsBeforeReload)).toEqual([]);
 
     third.destroy();
+  });
+
+  it('an auto-login through the refresh query sends the body that query builds, without a buildArgs of its own', async () => {
+    const s = scenario();
+
+    serve(s);
+
+    const refreshBuildArgs = (token: string) => ({ body: { refresh_token: token } });
+    const autoLogin = () => withPersistentAuth<ScenarioAuthBuilders>({ autoLogin: { queryKey: 'refresh' } });
+
+    const first = boot(s, { features: [autoLogin()], refreshBuildArgs });
+    await login(s, first);
+    const cookieToken = first.auth.refreshToken();
+    first.destroy();
+
+    const second = boot(s, { features: [autoLogin()], refreshBuildArgs });
+    await s.settle();
+
+    const restore = s.api.requests.filter((entry) => entry.path === '/auth/refresh');
+
+    expect(restore.map((entry) => entry.body)).toEqual([{ refresh_token: cookieToken }]);
+    expect(second.auth.sessionStatus()).toBe('authenticated');
+
+    second.destroy();
   });
 
   it('logout deletes the cookie', async () => {
