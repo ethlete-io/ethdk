@@ -3,7 +3,6 @@
 
 /** @typedef {'inject' | 'input' | 'output' | 'query' | 'property' | 'constructor' | 'method' | 'private-method'} TMemberGroup */
 /** @typedef {{ dependencies: Set<string>; group: TMemberGroup; groupIndex: number; name: string; node: any; originalIndex: number }} TMemberEntry */
-/** @typedef {TMemberEntry & { segmentText: string }} TSegmentEntry */
 
 const INPUT_APIS = new Set(['input', 'model']);
 const OUTPUT_APIS = new Set(['output', 'outputFromObservable']);
@@ -275,10 +274,22 @@ const sortMembers = (members) => {
 
 /**
  * @param {import('eslint').SourceCode} sourceCode
- * @param {any} classBodyNode
- * @param {TMemberEntry[]} members
+ * @param {any} node
  */
-const getSegmentEntries = (sourceCode, classBodyNode, members) => {
+const getMemberEnd = (sourceCode, node) => {
+  const trailingComments = sourceCode
+    .getCommentsAfter(node)
+    .filter((comment) => comment.loc?.start.line === node.loc.end.line);
+  const lastComment = trailingComments.at(-1);
+
+  return lastComment?.range ? lastComment.range[1] : node.range[1];
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} classBodyNode
+ */
+const getSegments = (sourceCode, classBodyNode) => {
   const openingBrace = sourceCode.getFirstToken(classBodyNode);
   const closingBrace = sourceCode.getLastToken(classBodyNode);
 
@@ -288,22 +299,23 @@ const getSegmentEntries = (sourceCode, classBodyNode, members) => {
 
   let segmentStart = openingBrace.range[1];
 
-  const segmentEntries = members.map((member) => {
-    const segmentText = sourceCode.text.slice(segmentStart, member.node.range[1]);
-    segmentStart = member.node.range[1];
+  /** @type {string[]} */
+  const segmentTexts = classBodyNode.body.map(
+    /** @param {any} node */ (node) => {
+      const segmentEnd = getMemberEnd(sourceCode, node);
+      const segmentText = sourceCode.text.slice(segmentStart, segmentEnd);
+      segmentStart = segmentEnd;
 
-    return {
-      ...member,
-      segmentText,
-    };
-  });
+      return segmentText;
+    },
+  );
 
   const suffix = sourceCode.text.slice(segmentStart, closingBrace.range[0]);
 
   return {
     closingBrace,
     openingBrace,
-    segmentEntries,
+    segmentTexts,
     suffix,
   };
 };
@@ -314,43 +326,37 @@ const getSegmentEntries = (sourceCode, classBodyNode, members) => {
  * @param {TMemberEntry[]} members
  */
 const buildClassOrderFix = (sourceCode, classBodyNode, members) => {
-  if (classBodyNode.body.length !== members.length) {
-    return null;
-  }
-
   const sortedMembers = sortMembers(members);
 
   if (!sortedMembers) {
     return null;
   }
 
-  const segments = getSegmentEntries(sourceCode, classBodyNode, members);
-
-  if (!segments) {
-    return null;
-  }
-
-  const { closingBrace, openingBrace, segmentEntries, suffix } = segments;
-  const segmentEntriesByOriginalIndex = new Map(
-    segmentEntries.map(
-      /** @param {TSegmentEntry} segmentEntry */ (segmentEntry) => [segmentEntry.originalIndex, segmentEntry],
-    ),
-  );
-  const sortedSegmentEntries = sortedMembers.map((member) => segmentEntriesByOriginalIndex.get(member.originalIndex));
-
-  if (sortedSegmentEntries.some((entry) => entry === undefined)) {
-    return null;
-  }
-
-  const isAlreadySorted = sortedSegmentEntries.every((entry, index) => entry === segmentEntries[index]);
+  const isAlreadySorted = sortedMembers.every((member, index) => member === members[index]);
 
   if (isAlreadySorted) {
     return null;
   }
 
-  const reorderedBody = sortedSegmentEntries.map((entry) => entry.segmentText).join('') + suffix;
+  const segments = getSegments(sourceCode, classBodyNode);
 
-  return (fixer) => fixer.replaceTextRange([openingBrace.range[1], closingBrace.range[0]], reorderedBody);
+  if (!segments) {
+    return null;
+  }
+
+  const { closingBrace, openingBrace, segmentTexts, suffix } = segments;
+  const rankedIndexes = new Set(members.map((member) => member.originalIndex));
+  let nextSortedMember = 0;
+
+  const reorderedBody =
+    segmentTexts
+      .map((segmentText, index) =>
+        rankedIndexes.has(index) ? segmentTexts[sortedMembers[nextSortedMember++].originalIndex] : segmentText,
+      )
+      .join('') + suffix;
+
+  return (/** @type {import('eslint').Rule.RuleFixer} */ fixer) =>
+    fixer.replaceTextRange([openingBrace.range[1], closingBrace.range[0]], reorderedBody);
 };
 
 /** @type {import('eslint').Rule.RuleModule} */

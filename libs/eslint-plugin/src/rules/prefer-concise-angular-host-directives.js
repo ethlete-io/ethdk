@@ -5,7 +5,7 @@
 /** @typedef {import('estree').Property & { range: [number, number] }} TPropertyNode */
 /** @typedef {import('estree').ArrayExpression & { elements: Array<import('estree').Expression | import('estree').SpreadElement | null> }} TArrayExpressionNode */
 /** @typedef {import('estree').ObjectExpression & { properties: Array<TPropertyNode | import('estree').SpreadElement> }} TObjectExpressionNode */
-/** @typedef {{ hasComma: boolean; originalIndex: number; orderIndex: number; property: TPropertyNode; segmentText: string }} TPropertyEntry */
+/** @typedef {{ bodyText: string; hasComma: boolean; originalIndex: number; orderIndex: number; property: TPropertyNode; trailingText: string }} TPropertyEntry */
 
 const HOST_DIRECTIVE_PROPERTY_ORDER = ['directive', 'inputs', 'outputs'];
 
@@ -98,22 +98,24 @@ const buildSortedObjectText = (node, sourceCode) => {
     /** @param {TPropertyNode} property @param {number} originalIndex @returns {TPropertyEntry} */
     (property, originalIndex) => {
       const tokenAfter = sourceCode.getTokenAfter(property);
-      const hasComma = Boolean(tokenAfter && tokenAfter.type === 'Punctuator' && tokenAfter.value === ',');
-      const segmentEnd = hasComma && tokenAfter ? tokenAfter.range[0] : property.range[1];
-      const segmentText = sourceCode.text.slice(segmentStart, segmentEnd);
+      const comma = tokenAfter && tokenAfter.type === 'Punctuator' && tokenAfter.value === ',' ? tokenAfter : null;
+      const bodyText = sourceCode.text.slice(segmentStart, property.range[1]);
+      const afterProperty = comma ?? property;
+      const trailingComment = sourceCode
+        .getCommentsAfter(afterProperty)
+        .filter((comment) => comment.loc?.start.line === property.loc?.end.line)
+        .at(-1);
+      const trailingEnd = trailingComment?.range ? trailingComment.range[1] : afterProperty.range[1];
 
-      if (hasComma && tokenAfter) {
-        segmentStart = tokenAfter.range[1];
-      } else {
-        segmentStart = property.range[1];
-      }
+      segmentStart = trailingEnd;
 
       return {
-        hasComma,
+        bodyText,
+        hasComma: Boolean(comma),
         originalIndex,
         orderIndex: orderIndexMap.get(getPropertyName(property.key)) ?? HOST_DIRECTIVE_PROPERTY_ORDER.length,
         property,
-        segmentText,
+        trailingText: trailingComment ? sourceCode.text.slice(afterProperty.range[1], trailingEnd) : '',
       };
     },
   );
@@ -131,7 +133,10 @@ const buildSortedObjectText = (node, sourceCode) => {
   return (
     '{' +
     sortedEntries
-      .map((entry, index) => `${entry.segmentText}${index < sortedEntries.length - 1 || trailingComma ? ',' : ''}`)
+      .map(
+        (entry, index) =>
+          `${entry.bodyText}${index < sortedEntries.length - 1 || trailingComma ? ',' : ''}${entry.trailingText}`,
+      )
       .join('') +
     suffix +
     '}'
@@ -199,10 +204,12 @@ const preferConciseAngularHostDirectives = {
             const directiveValue = getDirectiveValueNode(config);
             if (!directiveValue) continue;
 
+            const hasComments = sourceCode.getCommentsInside(config).length > 0;
+
             context.report({
               node: config,
               messageId: 'preferShorthand',
-              fix: (fixer) => fixer.replaceText(config, sourceCode.getText(directiveValue)),
+              fix: hasComments ? null : (fixer) => fixer.replaceText(config, sourceCode.getText(directiveValue)),
             });
 
             continue;

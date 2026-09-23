@@ -144,5 +144,31 @@ tester.run('class-member-order', rule, {
 }`,
       errors: [{ messageId: 'groupOrder' }],
     },
+    {
+      code: `class C {
+  size = input(0); // the size
+  private service = inject(Service);
+}`,
+      output: `class C {
+  private service = inject(Service);
+  size = input(0); // the size
+}`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
+    {
+      code: `class C {
+  static readonly NAME = 'x';
+  size = input(0);
+  [key: string]: unknown;
+  private service = inject(Service);
+}`,
+      output: `class C {
+  static readonly NAME = 'x';
+  private service = inject(Service);
+  [key: string]: unknown;
+  size = input(0);
+}`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
   ],
 });

@@ -105,5 +105,45 @@ class TestDirective {}
 `,
       errors: [{ messageId: 'hostDirectiveOrder' }],
     },
+    {
+      code: `
+@Component({
+  hostDirectives: [
+    {
+      // keeps the theme in sync
+      directive: ColoredDirective,
+    },
+  ],
+})
+class TestComponent {}
+`,
+      output: null,
+      errors: [{ messageId: 'preferShorthand' }],
+    },
+    {
+      code: `
+@Component({
+  hostDirectives: [
+    {
+      outputs: ['themeChange'], // the change stream
+      directive: ProvideColorDirective,
+    },
+  ],
+})
+class TestComponent {}
+`,
+      output: `
+@Component({
+  hostDirectives: [
+    {
+      directive: ProvideColorDirective,
+      outputs: ['themeChange'], // the change stream
+    },
+  ],
+})
+class TestComponent {}
+`,
+      errors: [{ messageId: 'hostDirectiveOrder' }],
+    },
   ],
 });
